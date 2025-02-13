@@ -1,0 +1,4 @@
+# ignore azurite bits
+__azurite*
+__blobstorage__
+__queuestorage__
