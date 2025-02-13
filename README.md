@@ -18,3 +18,26 @@ If you want to learn more about creating good readme files then refer the follow
 - [ASP.NET Core](https://github.com/aspnet/Home)
 - [Visual Studio Code](https://github.com/Microsoft/vscode)
 - [Chakra Core](https://github.com/Microsoft/ChakraCore)
+
+e2e/
+
+backend/
+    CPS.ComplexCases.API        <-- durable to begin with
+    CPS.ComplexCases.API.Tests
+    ...
+    CPS.ComplexCases.Egress
+    CPS.ComplexCases.Egress.Tests       <-- unit
+    CPS.ComplexCases.Egress.Integration <-- e2e 
+    CPS.ComplexCases.Egress.Mock <-- wiremock.net
+
+    CPS.ComplexCases.NetApp
+    CPS.ComplexCases.NetApp.Tests
+    CPS.ComplexCases.NetApp.Integration <-- e2e
+    CPS.ComplexCases.NetApp.Mock <-- wiremock.net
+    
+    ...
+
+    CPS.ComplexCases.sln
+terraform
+ui
+
