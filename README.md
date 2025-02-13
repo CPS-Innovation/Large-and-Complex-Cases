@@ -39,5 +39,6 @@ backend/
 
     CPS.ComplexCases.sln
 terraform
+pipelines
 ui
 
