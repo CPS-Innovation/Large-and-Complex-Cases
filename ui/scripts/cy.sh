@@ -1,0 +1,1 @@
+NODE_ENV=test start-server-and-test dev http://localhost:3000 \"cypress open --e2e\"
