@@ -1,12 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Input, Button,Label, LabelText } from "govuk-react";
+import { Input, Button, Label, LabelText } from "govuk-react";
 import { FEATURE_FLAG_FIND_A_CASE } from "../config";
 import styles from "./page.module.scss";
-import { CLIENT_STATIC_FILES_RUNTIME_POLYFILLS } from "next/dist/shared/lib/constants";
 
-export const Home = () => {
-  console.log("FEATURE_FLAG_FIND_A_CASE", FEATURE_FLAG_FIND_A_CASE);
+const FindCase = () => {
   const [isClient, setIsClient] = useState(false);
   useEffect(() => {
     setIsClient(true);
@@ -24,19 +22,18 @@ export const Home = () => {
           Find a case
         </h1>
 
-        {FEATURE_FLAG_FIND_A_CASE && 
-        <div className={styles.inputWrapper}>
-          <Label>
-            <LabelText>
-            Search by Operation name
-            </LabelText>
-        <Input className="govuk-input--width-20"/>
-        </Label>
-        <Button >Search</Button>
-        </div>}
+        {FEATURE_FLAG_FIND_A_CASE && (
+          <div className={styles.inputWrapper}>
+            <Label>
+              <LabelText>Search by Operation name</LabelText>
+              <Input className="govuk-input--width-20" />
+            </Label>
+            <Button>Search</Button>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default Home;
+export default FindCase;
