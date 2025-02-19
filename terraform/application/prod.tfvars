@@ -8,26 +8,38 @@ dns_server                               = "10.7.204.164"
 dns_alt_server                           = "168.63.129.16"
 
 service_plans = {
-  ui_service_plan_sku = "P1v3"
-  api_service_plan_sku = "P3mv3"
-  egress_service_plan_sku = "EP3"
-  egress_always_ready_instances     = 3
-  egress_maximum_scale_out_limit    = 15
-  egress_plan_maximum_burst         = 15
-  netapp_service_plan_sku = "EP3"
-  netapp_always_ready_instances     = 3
-  netapp_maximum_scale_out_limit    = 15
-  netapp_plan_maximum_burst         = 15
+  ui_service_plan_sku    = "P1mv3"
+  api_service_plan_sku   = "P3mv3"
+  proxy_service_plan_sku = "P1mv3"
 }
 
-api_config = {
-  control_queue_buffer_threshold        = 1000
-  max_concurrent_orchestrator_functions = 1000
-  max_concurrent_activity_functions     = 1000
-  max_queue_polling_interval            = "00:00:02"
-}
-
-scale_controller_logging = {
-  egress = "AppInsights:None"
-  netapp = "AppInsights:None"
+cms_details = {
+  default_upstream_cms_ip_corsham            = "10.2.177.2"
+  default_upstream_cms_modern_ip_corsham     = "10.2.177.65"
+  default_upstream_cms_ip_farnborough        = "10.3.177.2"
+  default_upstream_cms_modern_ip_farnborough = "10.3.177.65"
+  default_upstream_cms_domain_name           = "cms.cps.gov.uk"
+  default_upstream_cms_modern_domain_name    = "cmsmodern.cps.gov.uk"
+  default_upstream_cms_services_domain_name  = "cms-services.cps.gov.uk"
+  cin2_upstream_cms_ip_corsham               = "10.2.177.3"
+  cin2_upstream_cms_modern_ip_corsham        = "10.2.177.67"
+  cin2_upstream_cms_ip_farnborough           = "10.3.177.3"
+  cin2_upstream_cms_modern_ip_farnborough    = "10.3.177.67"
+  cin2_upstream_cms_domain_name              = "cin2.cps.gov.uk"
+  cin2_upstream_cms_modern_domain_name       = "cmsmodcin2.cps.gov.uk"
+  cin2_upstream_cms_services_domain_name     = "not-used-in-cin2.cps.gov.uk"
+  cin4_upstream_cms_ip_corsham               = "10.2.177.35"
+  cin4_upstream_cms_modern_ip_corsham        = "10.2.177.67"
+  cin4_upstream_cms_ip_farnborough           = "10.3.177.35"
+  cin4_upstream_cms_modern_ip_farnborough    = "10.3.177.67"
+  cin4_upstream_cms_domain_name              = "cin4.cps.gov.uk"
+  cin4_upstream_cms_modern_domain_name       = "cmsmodstage.cps.gov.uk"
+  cin4_upstream_cms_services_domain_name     = "not-used-in-cin4.cps.gov.uk"
+  cin5_upstream_cms_ip_corsham               = "10.2.177.21"
+  cin5_upstream_cms_modern_ip_corsham        = "10.2.177.67"
+  cin5_upstream_cms_ip_farnborough           = "10.3.177.21"
+  cin5_upstream_cms_modern_ip_farnborough    = "10.3.177.67"
+  cin5_upstream_cms_domain_name              = "cin5.cps.gov.uk"
+  cin5_upstream_cms_modern_domain_name       = "cmsmodcin5.cps.gov.uk"
+  cin5_upstream_cms_services_domain_name     = "not-used-in-cin5.cps.gov.uk"
 }

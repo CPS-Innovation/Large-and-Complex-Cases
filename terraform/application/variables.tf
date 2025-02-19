@@ -15,16 +15,9 @@ variable "terraform_service_principal_display_name" {
 
 variable "service_plans" {
   type = object({
-    ui_service_plan_sku = string
-    api_service_plan_sku = string
-    egress_service_plan_sku = string
-    egress_always_ready_instances     = number
-    egress_maximum_scale_out_limit    = number
-    egress_plan_maximum_burst         = number
-    netapp_service_plan_sku = string
-    netapp_always_ready_instances     = number
-    netapp_maximum_scale_out_limit    = number
-    netapp_plan_maximum_burst         = number
+    ui_service_plan_sku    = string
+    api_service_plan_sku   = string
+    proxy_service_plan_sku = string
   })
 }
 
@@ -36,18 +29,43 @@ variable "dns_alt_server" {
   type = string
 }
 
-variable "api_config" {
+variable "cms_details" {
   type = object({
-    control_queue_buffer_threshold        = number
-    max_concurrent_activity_functions     = number
-    max_concurrent_orchestrator_functions = number
-    max_queue_polling_interval            = string #hh:mm:ss format e.g. "00:00:05" for 5 seconds
+    default_upstream_cms_ip_corsham            = string
+    default_upstream_cms_modern_ip_corsham     = string
+    default_upstream_cms_ip_farnborough        = string
+    default_upstream_cms_modern_ip_farnborough = string
+    default_upstream_cms_domain_name           = string
+    default_upstream_cms_modern_domain_name    = string
+    default_upstream_cms_services_domain_name  = string
+    cin2_upstream_cms_ip_corsham               = string
+    cin2_upstream_cms_modern_ip_corsham        = string
+    cin2_upstream_cms_ip_farnborough           = string
+    cin2_upstream_cms_modern_ip_farnborough    = string
+    cin2_upstream_cms_domain_name              = string
+    cin2_upstream_cms_modern_domain_name       = string
+    cin2_upstream_cms_services_domain_name     = string
+    cin4_upstream_cms_ip_corsham               = string
+    cin4_upstream_cms_modern_ip_corsham        = string
+    cin4_upstream_cms_ip_farnborough           = string
+    cin4_upstream_cms_modern_ip_farnborough    = string
+    cin4_upstream_cms_domain_name              = string
+    cin4_upstream_cms_modern_domain_name       = string
+    cin4_upstream_cms_services_domain_name     = string
+    cin5_upstream_cms_ip_corsham               = string
+    cin5_upstream_cms_modern_ip_corsham        = string
+    cin5_upstream_cms_ip_farnborough           = string
+    cin5_upstream_cms_modern_ip_farnborough    = string
+    cin5_upstream_cms_domain_name              = string
+    cin5_upstream_cms_modern_domain_name       = string
+    cin5_upstream_cms_services_domain_name     = string
   })
 }
 
-variable "scale_controller_logging" {
-  type = object({
-    egress  = string
-    netapp = string
-  })
+variable "complex_cases_ui_sub_folder" {
+  type = string
+  // this value must match the PUBLIC_URL=... value
+  //  as seen in the ui project top-level package.json
+  //  scripts section.
+  default = "complex-cases-ui"
 }

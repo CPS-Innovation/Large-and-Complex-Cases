@@ -15,7 +15,7 @@ resource "azurerm_linux_web_app" "complex_cases_ui" {
     "WEBSITE_ADD_SITENAME_BINDINGS_IN_APPHOST_CONFIG" = "1"
     "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING"        = azurerm_storage_account.sacpsccui.primary_connection_string
     "WEBSITE_CONTENTOVERVNET"                         = "1"
-    "WEBSITE_CONTENTSHARE"                            = azapi_resource.sacpsccui_ui_file_share.name
+    "WEBSITE_CONTENTSHARE"                            = azapi_resource.sacpsccui_file_share.name
     "WEBSITE_DNS_ALT_SERVER"                          = var.dns_alt_server
     "WEBSITE_DNS_SERVER"                              = var.dns_server
     "WEBSITE_ENABLE_SYNC_UPDATE_SITE"                 = "1"
@@ -119,7 +119,7 @@ resource "azuread_application" "complex_cases_ui" {
   display_name            = "${local.product_name_prefix}-ui"
   identifier_uris         = ["https://CPSGOVUK.onmicrosoft.com/${local.product_name_prefix}-ui"]
   prevent_duplicate_names = true
-  owners = [data.azuread_service_principal.terraform_service_principal.object_id]
+  owners                  = [data.azuread_service_principal.terraform_service_principal.object_id]
   group_membership_claims = ["ApplicationGroup"]
   optional_claims {
     access_token {
@@ -133,6 +133,7 @@ resource "azuread_application" "complex_cases_ui" {
     }
   }
 
+  /*clarify permissions
   required_resource_access {
     resource_app_id = "00000002-0000-0000-c000-000000000000"
 
@@ -151,27 +152,26 @@ resource "azuread_application" "complex_cases_ui" {
     }
   }
 
-  #add api/function app resource access details below, when known/defined
-  #required_resource_access {
-    #resource_app_id = azuread_application.fa_redaction_log_reporting.client_id
+  required_resource_access {
+    resource_app_id = azuread_application.complex_cases_api.client_id
 
-    #dynamic "resource_access" {
-    #  for_each = azuread_application.fa_redaction_log_reporting.api.0.oauth2_permission_scope
-    #  iterator = scope
+    dynamic "resource_access" {
+      for_each = azuread_application.complex_cases_api.api.0.oauth2_permission_scope
+      iterator = scope
 
-    #  content {
-    #    id   = scope.value.id
-    #    type = "Scope"
-    #  }
-    #}
-  #}
+      content {
+        id   = scope.value.id
+        type = "Scope"
+      }
+    }
+  }*/
 
   single_page_application {
     redirect_uris = var.environment.alias != "prod" ? ["http://localhost:3000"] : ["https://${local.product_name_prefix}-ui.azurewebsites.net"]
   }
 
   api {
-    mapped_claims_enabled = true
+    mapped_claims_enabled          = true
     requested_access_token_version = 1
   }
 
@@ -193,19 +193,25 @@ resource "azuread_application" "complex_cases_ui" {
 }
 
 resource "azuread_application_password" "asap_complex_cases_ui" {
-  application_id    = azuread_application.complex_cases_ui.id
-  end_date_relative = "17520h"
+  application_id = azuread_application.complex_cases_ui.id
+  rotate_when_changed = {
+    rotation = time_rotating.schedule_ui.id
+  }
 }
 
-resource "time_rotating" "schedule" {
+resource "time_rotating" "schedule_ui" {
+  rotation_days = 90
+}
+
+resource "time_rotating" "schedule_e2e_tests" {
   rotation_days = 90
 }
 
 resource "azuread_application_password" "e2e_test_secret" {
   application_id = azuread_application.complex_cases_ui.application_id
-  display_name          = "e2e-tests client secret"
+  display_name   = "e2e-tests client secret"
   rotate_when_changed = {
-    rotation = time_rotating.schedule.id
+    rotation = time_rotating.schedule_e2e_tests.id
   }
 }
 

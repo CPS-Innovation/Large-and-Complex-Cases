@@ -1,4 +1,4 @@
-resource "azurerm_linux_function_app" "fa_api" {
+resource "azurerm_linux_function_app" "complex_cases_api" {
   name                          = "${local.product_name_prefix}-api"
   location                      = azurerm_resource_group.rg_complex_cases.location
   resource_group_name           = azurerm_resource_group.rg_complex_cases.name
@@ -13,20 +13,15 @@ resource "azurerm_linux_function_app" "fa_api" {
   builtin_logging_enabled       = false
 
   app_settings = {
-    "AzureFunctionsJobHost__extensions__durableTask__storageProvider__MaxQueuePollingInterval"     = var.api_config.max_queue_polling_interval
-    "AzureFunctionsJobHost__extensions__durableTask__storageProvider__ControlQueueBufferThreshold" = var.api_config.control_queue_buffer_threshold
-    "AzureFunctionsJobHost__extensions__durableTask__MaxConcurrentActivityFunctions"               = var.api_config.max_concurrent_activity_functions
-    "AzureFunctionsJobHost__extensions__durableTask__MaxConcurrentOrchestratorFunctions"           = var.api_config.max_concurrent_orchestrator_functions
-    "AzureWebJobsStorage"                                                                          = azurerm_storage_account.sacpsccapi.primary_connection_string
+    "AzureWebJobsStorage"                             = azurerm_storage_account.sacpsccapi.primary_connection_string
     "Storage"                                         = azurerm_storage_account.sacpsccapi.primary_connection_string
-    "ApiTaskHub"                              = "${local.product_name_prefix}api"
     "FUNCTIONS_EXTENSION_VERSION"                     = "~4"
     "FUNCTIONS_WORKER_RUNTIME"                        = "dotnet-isolated"
     "HostType"                                        = "Production"
     "WEBSITE_ADD_SITENAME_BINDINGS_IN_APPHOST_CONFIG" = "1"
     "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING"        = azurerm_storage_account.sacpsccapi.primary_connection_string
     "WEBSITE_CONTENTOVERVNET"                         = "1"
-    "WEBSITE_CONTENTSHARE"                            = azapi_resource.sacpsccapi.name
+    "WEBSITE_CONTENTSHARE"                            = azapi_resource.sacpsccapi_file_share.name
     "WEBSITE_DNS_ALT_SERVER"                          = var.dns_alt_server
     "WEBSITE_DNS_SERVER"                              = var.dns_server
     "WEBSITE_ENABLE_SYNC_UPDATE_SITE"                 = "1"
@@ -41,7 +36,7 @@ resource "azurerm_linux_function_app" "fa_api" {
   }
 
   sticky_settings {
-    app_setting_names = ["ApiTaskHub", "HostType"]
+    app_setting_names = ["HostType"]
   }
 
   site_config {
@@ -95,7 +90,6 @@ resource "azurerm_linux_function_app" "fa_api" {
   lifecycle {
     ignore_changes = [
       app_settings["AzureWebJobsStorage"],
-      app_settings["ApiTaskHub"],
       app_settings["WEBSITE_ADD_SITENAME_BINDINGS_IN_APPHOST_CONFIG"],
       app_settings["WEBSITE_CONTENTAZUREFILECONNECTIONSTRING"],
       app_settings["WEBSITE_CONTENTOVERVNET"],
@@ -114,5 +108,61 @@ resource "azurerm_linux_function_app" "fa_api" {
     ]
   }
 
-  depends_on = [ azurerm_storage_account.sacpsccapi, azapi_resource.sacpsccapi_ui_file_share ]
+  depends_on = [azurerm_storage_account.sacpsccapi, azapi_resource.sacpsccapi_ui_file_share]
+}
+
+resource "azuread_application" "fa_redaction_log_reporting" {
+  display_name            = "${local.product_name_prefix}-api"
+  identifier_uris         = ["https://CPSGOVUK.onmicrosoft.com/${local.product_name_prefix}-api"]
+  prevent_duplicate_names = true
+
+  api {
+    requested_access_token_version = 1
+    oauth2_permission_scope {
+      admin_consent_description  = "Access Complex Cases API as a user"
+      admin_consent_display_name = "Access Complex Cases API as a user"
+      id                         = element(random_uuid.random_id[*].result, 0)
+      enabled                    = true
+      type                       = "Admin"
+      user_consent_description   = "Access Complex Cases API as a user"
+      user_consent_display_name  = "Access Complex Cases API as a user"
+      value                      = "user_impersonation"
+    }
+  }
+
+  /* add permissions
+  required_resource_access {
+    resource_app_id = "00000003-0000-0000-c000-000000000000"
+
+    resource_access {
+      id   = "e1fe6dd8-ba31-4d61-89e7-88639da4683d"
+      type = "Scope"
+    }
+
+    resource_access {
+      id   = "5f8c59db-677d-491f-a6b8-5f174b11ec1d"
+      type = "Scope"
+    }
+  }
+  */
+
+  web {
+    redirect_uris = ["https://${local.product_name_prefix}-ui.azurewebsites.net/.auth/login/aad/callback"]
+
+    implicit_grant {
+      access_token_issuance_enabled = false
+      id_token_issuance_enabled     = true
+    }
+  }
+}
+
+resource "azuread_application_password" "faap_reporting_log_app" {
+  application_id = azuread_application.fa_redaction_log_reporting.id
+  rotate_when_changed = {
+    rotation = time_rotating.schedule_api.id
+  }
+}
+
+resource "time_rotating" "schedule_api" {
+  rotation_days = 90
 }

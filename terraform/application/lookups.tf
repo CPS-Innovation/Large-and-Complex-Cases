@@ -1,5 +1,12 @@
 data "azuread_client_config" "current" {}
 
+# begin: ddei lookup
+data "azurerm_function_app_host_keys" "fa_ddei_host_keys" {
+  name                = local.ddei_resource_name
+  resource_group_name = "rg-${local.ddei_resource_name}"
+}
+# end: ddei lookup
+
 #placeholder vnet
 data "azurerm_virtual_network" "complex_cases_vnet" {
   name                = "vnet-complex-cases-${var.environment.alias}"

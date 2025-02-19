@@ -10,7 +10,7 @@ resource "azurerm_linux_web_app_slot" "complex_cases_ui_staging" {
     "WEBSITE_ADD_SITENAME_BINDINGS_IN_APPHOST_CONFIG" = "1"
     "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING"        = azurerm_storage_account.sacpsccui.primary_connection_string
     "WEBSITE_CONTENTOVERVNET"                         = "1"
-    "WEBSITE_CONTENTSHARE"                            = azapi_resource.sacpsccui_ui_staging_file_share.name
+    "WEBSITE_CONTENTSHARE"                            = azapi_resource.sacpsccui_staging_file_share.name
     "WEBSITE_DNS_ALT_SERVER"                          = var.dns_alt_server
     "WEBSITE_DNS_SERVER"                              = var.dns_server
     "WEBSITE_ENABLE_SYNC_UPDATE_SITE"                 = "1"

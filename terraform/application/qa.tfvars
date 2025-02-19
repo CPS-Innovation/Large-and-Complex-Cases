@@ -4,30 +4,44 @@ environment = {
 }
 
 terraform_service_principal_display_name = "Azure Pipeline: Complex-Cases-QA"
-dns_server      = "10.7.197.20"
-dns_alt_server  = "168.63.129.16"
+dns_server                               = "10.7.197.20"
+dns_alt_server                           = "168.63.129.16"
 
 service_plans = {
-  ui_service_plan_sku = "P1v3"
-  api_service_plan_sku = "P1mv3"
-  egress_service_plan_sku = "EP2"
-  egress_always_ready_instances     = 1
-  egress_maximum_scale_out_limit    = 10
-  egress_plan_maximum_burst         = 10
-  netapp_service_plan_sku = "EP2"
-  netapp_always_ready_instances     = 1
-  netapp_maximum_scale_out_limit    = 10
-  netapp_plan_maximum_burst         = 10
+  ui_service_plan_sku    = "P1mv3"
+  api_service_plan_sku   = "P1mv3"
+  proxy_service_plan_sku = "P1mv3"
 }
 
-api_config = {
-  control_queue_buffer_threshold        = 256
-  max_concurrent_orchestrator_functions = 325
-  max_concurrent_activity_functions     = 325
-  max_queue_polling_interval            = "00:00:02"
-}
-
-scale_controller_logging = {
-  egress = "AppInsights:None"
-  netapp = "AppInsights:None"
+cms_details = {
+  // for non-prod environments, current thinking is to try to go to Corsham's IP
+  //  even if we detect a farnborough cookie
+  default_upstream_cms_ip_corsham            = "10.2.177.14"
+  default_upstream_cms_modern_ip_corsham     = "10.2.177.67"
+  default_upstream_cms_ip_farnborough        = "10.3.177.14"
+  default_upstream_cms_modern_ip_farnborough = "10.3.177.67"
+  default_upstream_cms_domain_name           = "cin3.cps.gov.uk"
+  default_upstream_cms_modern_domain_name    = "cmsmodcin3.cps.gov.uk"
+  default_upstream_cms_services_domain_name  = "not-used-in-cin3.cps.gov.uk"
+  cin2_upstream_cms_ip_corsham               = "10.2.177.3"
+  cin2_upstream_cms_modern_ip_corsham        = "10.2.177.67"
+  cin2_upstream_cms_ip_farnborough           = "10.3.177.3"
+  cin2_upstream_cms_modern_ip_farnborough    = "10.3.177.67"
+  cin2_upstream_cms_domain_name              = "cin2.cps.gov.uk"
+  cin2_upstream_cms_modern_domain_name       = "cmsmodcin2.cps.gov.uk"
+  cin2_upstream_cms_services_domain_name     = "not-used-in-cin2.cps.gov.uk"
+  cin4_upstream_cms_ip_corsham               = "10.2.177.35"
+  cin4_upstream_cms_modern_ip_corsham        = "10.2.177.67"
+  cin4_upstream_cms_ip_farnborough           = "10.3.177.35"
+  cin4_upstream_cms_modern_ip_farnborough    = "10.3.177.67"
+  cin4_upstream_cms_domain_name              = "cin4.cps.gov.uk"
+  cin4_upstream_cms_modern_domain_name       = "cmsmodstage.cps.gov.uk"
+  cin4_upstream_cms_services_domain_name     = "not-used-in-cin4.cps.gov.uk"
+  cin5_upstream_cms_ip_corsham               = "10.2.177.21"
+  cin5_upstream_cms_modern_ip_corsham        = "10.2.177.67"
+  cin5_upstream_cms_ip_farnborough           = "10.3.177.21"
+  cin5_upstream_cms_modern_ip_farnborough    = "10.3.177.67"
+  cin5_upstream_cms_domain_name              = "cin5.cps.gov.uk"
+  cin5_upstream_cms_modern_domain_name       = "cmsmodcin5.cps.gov.uk"
+  cin5_upstream_cms_services_domain_name     = "not-used-in-cin5.cps.gov.uk"
 }

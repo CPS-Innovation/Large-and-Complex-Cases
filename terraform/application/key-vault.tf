@@ -1,16 +1,16 @@
 resource "azurerm_key_vault" "kv_complex_cases" {
-    name = "${local.product_name_prefix}-kv"
-    location = azurerm_resource_group.rg_complex_cases.location
-    resource_group_name = azurerm_resource_group.rg_complex_cases.name
-    tenant_id = data.azurerm_client_config.current.tenant_id
-    
-    enable_rbac_authorization = true
-    enabled_for_template_deployment = true
-    public_network_access_enabled   = false
+  name                = "${local.product_name_prefix}-kv"
+  location            = azurerm_resource_group.rg_complex_cases.location
+  resource_group_name = azurerm_resource_group.rg_complex_cases.name
+  tenant_id           = data.azurerm_client_config.current.tenant_id
 
-    sku_name = "standard"
+  enable_rbac_authorization       = true
+  enabled_for_template_deployment = true
+  public_network_access_enabled   = false
 
-    network_acls {
+  sku_name = "standard"
+
+  network_acls {
     default_action = "Deny"
     bypass         = "AzureServices"
     virtual_network_subnet_ids = [
@@ -72,7 +72,7 @@ resource "azurerm_key_vault_secret" "kvs_complex_cases_ui_client_secret" {
   name         = "ComplexCasesUIClientSecret"
   value        = azuread_application_password.complex_cases_ui.value
   key_vault_id = azurerm_key_vault.kv_complex_cases.id
-  depends_on   = [
+  depends_on = [
     azurerm_role_assignment.kv_role_terraform_sp,
     azuread_application_password.complex_cases_ui
   ]
