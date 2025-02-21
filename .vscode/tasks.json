@@ -76,6 +76,97 @@
       "command": "host start",
       "isBackground": true,
       "problemMatcher": "$func-dotnet-watch"
+    },
+    {
+      "label": "clean-backend",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "clean",
+        "${workspaceFolder}/backend"
+      ],
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "revealProblems": "onProblem",
+        "close": true
+      }
+    },
+    {
+      "label": "build-backend",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "${workspaceFolder}/backend"
+      ],
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "revealProblems": "onProblem",
+        "close": true
+      }
+    },
+    {
+      "label": "run-CPS.ComplexCases.Egress.WireMock",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.Egress.WireMock"
+      },
+      "command": "dotnet run",
+      "isBackground": true
+    },
+    {
+      "label": "run-CPS.ComplexCases.API",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.API/bin/Debug/net8.0",
+        "env": {
+          "EgressOptions__Url": "http://localhost:7080",
+        }
+      },
+      "command": "func host start --no-build --password CPS.ComplexCases.API --verbose",
+      "isBackground": true,
+      "problemMatcher": "$func-dotnet-watch"
+    },
+    {
+      "label": "run-ui",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}/ui"
+      },
+      "command": "npm run dev",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "custom",
+        "pattern": {
+          "regexp": "^.*$",
+          "file": 1,
+          "location": 2,
+          "message": 3
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*$",
+          "endsPattern": "^.*$"
+        }
+      }
+    },
+    {
+      "label": "run-all",
+      "dependsOn": [
+        "run-CPS.ComplexCases.Egress.WireMock",
+        "run-CPS.ComplexCases.API",
+        "run-ui"
+      ]
+    },
+    {
+      "label": "build-and-run-all",
+      "dependsOn": [
+        "clean-backend",
+        "build-backend",
+        "run-all"
+      ],
+      "dependsOrder": "sequence",
+      "problemMatcher": []
     }
   ]
 }
