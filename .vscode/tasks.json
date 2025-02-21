@@ -115,6 +115,15 @@
       "isBackground": true
     },
     {
+      "label": "run-CPS.ComplexCases.NetApp.WireMock",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.NetApp.WireMock"
+      },
+      "command": "dotnet run",
+      "isBackground": true
+    },
+    {
       "label": "run-CPS.ComplexCases.API",
       "type": "shell",
       "options": {
@@ -154,6 +163,7 @@
       "label": "run-all",
       "dependsOn": [
         "run-CPS.ComplexCases.Egress.WireMock",
+        "run-CPS.ComplexCases.NetApp.WireMock",
         "run-CPS.ComplexCases.API",
         "run-ui"
       ]

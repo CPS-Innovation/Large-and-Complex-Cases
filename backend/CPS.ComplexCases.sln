@@ -15,6 +15,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.NetApp", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.NetApp.Tests", "CPS.ComplexCases.NetApp.Tests\CPS.ComplexCases.NetApp.Tests.csproj", "{75C9FB18-480D-48D5-AFAD-6A3F56AA7765}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.NetApp.WireMock", "CPS.ComplexCases.NetApp.WireMock\CPS.ComplexCases.NetApp.WireMock.csproj", "{73AF25E9-C77C-4B21-8F93-283FB316A38A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.NetApp.Integration", "CPS.ComplexCases.NetApp.Integration\CPS.ComplexCases.NetApp.Integration.csproj", "{64B5DA35-866D-42CE-915C-97672ED2838D}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.Egress.WireMock", "CPS.ComplexCases.Egress.WireMock\CPS.ComplexCases.Egress.WireMock.csproj", "{C2113049-9717-4854-B3F8-065B0EFC58EB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.Egress.Integration", "CPS.ComplexCases.Egress.Integration\CPS.ComplexCases.Egress.Integration.csproj", "{69F184ED-ED81-4713-BEE8-F7C292EB8449}"
@@ -52,6 +56,14 @@ Global
 		{75C9FB18-480D-48D5-AFAD-6A3F56AA7765}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{75C9FB18-480D-48D5-AFAD-6A3F56AA7765}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{75C9FB18-480D-48D5-AFAD-6A3F56AA7765}.Release|Any CPU.Build.0 = Release|Any CPU
+		{73AF25E9-C77C-4B21-8F93-283FB316A38A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{73AF25E9-C77C-4B21-8F93-283FB316A38A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{73AF25E9-C77C-4B21-8F93-283FB316A38A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{73AF25E9-C77C-4B21-8F93-283FB316A38A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{64B5DA35-866D-42CE-915C-97672ED2838D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{64B5DA35-866D-42CE-915C-97672ED2838D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{64B5DA35-866D-42CE-915C-97672ED2838D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{64B5DA35-866D-42CE-915C-97672ED2838D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C2113049-9717-4854-B3F8-065B0EFC58EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C2113049-9717-4854-B3F8-065B0EFC58EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C2113049-9717-4854-B3F8-065B0EFC58EB}.Release|Any CPU.ActiveCfg = Release|Any CPU

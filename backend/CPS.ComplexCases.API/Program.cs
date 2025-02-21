@@ -1,5 +1,9 @@
-using Microsoft.Azure.Functions.Worker;
+using Amazon.S3;
+using CPS.ComplexCases.NetApp.Client;
+using CPS.ComplexCases.NetApp.Factories;
 using Microsoft.Azure.Functions.Worker.Builder;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using CPS.ComplexCases.Egress.Client;
@@ -27,5 +31,10 @@ builder.Services.AddHttpClient<IEgressClient, EgressClient>(client =>
   }
   client.BaseAddress = new Uri(egressServiceUrl);
 });
+
+builder.Services.AddDefaultAWSOptions(builder.Configuration.GetAWSOptions());
+builder.Services.AddAWSService<IAmazonS3>();
+builder.Services.AddTransient<INetAppClient, NetAppClient>();
+builder.Services.AddTransient<INetAppArgFactory, NetAppArgFactory>();
 
 builder.Build().Run();
