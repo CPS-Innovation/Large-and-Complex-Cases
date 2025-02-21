@@ -1,0 +1,118 @@
+---
+parameters:
+  - name: buildAgentName
+    type: string
+  - name: initialStageDependsOn
+    type: object
+  - name: targetEnv
+    type: string
+  - name: targetBuild
+    type: string
+  - name: targetLabel
+    type: string
+  - name: appInsightsKey
+    type: string
+  - name: azureSubscription
+    type: string
+  - name: targetPlanName
+    type: string
+  - name: terraformStorageAccount
+    type: string
+  - name: applicationTerraformContainerName
+    type: string
+  - name: terraformStateKey
+    type: string
+  - name: terraformStateAccessKey
+    type: string
+  - name: targetSuffix
+    type: string
+  - name: logRetentionTime
+    type: string
+  - name: totalLogRetentionTime
+    type: string
+  - name: statusCheckMethod
+    type: string
+  - name: statusCheckRetries
+    type: string
+  - name: statusCheckDelaySeconds
+    type: string
+  - name: statusCheckTimeoutSeconds
+    type: string
+  - name: e2eTestsStageDependsOn
+    type: object
+  - name: e2eTestsBuildDefinitionId
+    type: string
+  
+stages:
+  - template: stages/stage_apply-terraform.yml
+    parameters:
+      buildAgentName: ${{ parameters.buildAgentName }}
+      targetEnv: ${{ parameters.targetEnv }}
+      targetBuild: ${{ parameters.targetBuild }}
+      targetLabel: ${{ parameters.targetLabel }}
+      appInsightsKey: ${{ parameters.appInsightsKey }}
+      azureSubscription: ${{ parameters.azureSubscription }}
+      targetPlanName: ${{ parameters.targetPlanName }}
+      terraformStorageAccount: ${{ parameters.terraformStorageAccount }}
+      applicationTerraformContainerName: ${{ parameters.applicationTerraformContainerName }}
+      terraformStateKey: ${{ parameters.terraformStateKey }}
+      terraformStateAccessKey: ${{ parameters.terraformStateAccessKey }}
+      targetSuffix: ${{ parameters.targetSuffix }}
+      logRetentionTime: ${{ parameters.logRetentionTime }}
+      totalLogRetentionTime: ${{ parameters.totalLogRetentionTime }}
+      stageDependsOn: ${{ parameters.initialStageDependsOn }}
+
+  - template: stages/stage_deploy-codebase.yml
+    parameters:
+      buildAgentName: ${{ parameters.buildAgentName }}
+      targetBuild: ${{ parameters.targetBuild }}
+      targetLabel: ${{ parameters.targetLabel }}
+      appInsightsKey: ${{ parameters.appInsightsKey }}
+      targetSuffix: ${{ parameters.targetSuffix }}
+      azureSubscription: ${{ parameters.azureSubscription }}
+
+  - template: stages/stage_swap-slots.yml
+    parameters:
+      buildAgentName: ${{ parameters.buildAgentName }}
+      targetBuild: ${{ parameters.targetBuild }}
+      targetLabel: ${{ parameters.targetLabel }}
+      appInsightsKey: ${{ parameters.appInsightsKey }}
+      targetSuffix: ${{ parameters.targetSuffix }}
+      azureSubscription: ${{ parameters.azureSubscription }}
+
+  - template: stages/stage_check-status.yml
+    parameters:
+      buildAgentName: ${{ parameters.buildAgentName }}
+      targetBuild: ${{ parameters.targetBuild }}
+      targetLabel: ${{ parameters.targetLabel }}
+      appInsightsKey: ${{ parameters.appInsightsKey }}
+      targetSuffix: ${{ parameters.targetSuffix }}
+      azureSubscription: ${{ parameters.azureSubscription }}
+      statusCheckMethod: ${{ parameters.statusCheckMethod }}
+      statusCheckRetries: ${{ parameters.statusCheckRetries }}
+      statusCheckDelaySeconds: ${{ parameters.statusCheckDelaySeconds }}
+      statusCheckTimeoutSeconds: ${{ parameters.statusCheckTimeoutSeconds }}
+
+  - template: stages/stage_create-commit-report.yml
+    parameters:
+      buildAgentName: ${{ parameters.buildAgentName }}
+      targetBuild: ${{ parameters.targetBuild }}
+      targetLabel: ${{ parameters.targetLabel }}
+      targetLabelLower: ${{ parameters.targetLabelLower }}
+      appInsightsKey: ${{ parameters.appInsightsKey }}
+
+  - template: stages/stage_update-git-hub-tag.yml
+    parameters:
+      buildAgentName: ${{ parameters.buildAgentName }}
+      targetBuild: ${{ parameters.targetBuild }}
+      targetLabel: ${{ parameters.targetLabel }}
+      appInsightsKey: ${{ parameters.appInsightsKey }}
+
+  - template: ../stages/stage_run-e2e-tests.yml
+    parameters:
+      buildAgentName: ${{ parameters.buildAgentName }}
+      targetBuild: ${{ parameters.targetBuild }}
+      targetLabel: "${{ parameters.targetLabel }}
+      appInsightsKey: ${{ parameters.appInsightsKey }}
+      buildDefinitionId: ${{ parameters.buildDefinitionId }}
+      stageDependsOn: ${{ parameters.stageDependsOn }}

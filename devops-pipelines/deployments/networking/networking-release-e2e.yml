@@ -1,0 +1,49 @@
+---
+trigger: none
+pr: none
+
+resources:
+  pipelines:
+    - pipeline: ComplexCasesNetworkingBuild
+      source: Complex Cases Networking Build - E2E
+      trigger: true
+            
+variables:
+  - group: complex-cases-secure-pre-prod
+  - group: complex-cases-global
+  - group: complex-cases-terraform
+    
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - stage: Apply_E2E
+    displayName: E2E > Apply Terraform
+    jobs:
+      - deployment: Apply_Networking_Terraform
+        environment: "Complex_Cases_E2E"
+        workspace:
+          clean: all
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: ../templates/stages/jobs/tasks/task_get-credentials.yml
+                  parameters:
+                    azureSubscription: $(azure-subscription-pre-prod)
+                    
+                - template: ../templates/stages/jobs/tasks/task_apply-terraform.yml
+                  parameters:
+                    targetBuild: ComplexCasesNetworkingBuild
+                    targetTerraformArtifact: "terraform-files-networking"
+                    targetLabel: "E2E"
+                    targetName: "Networking Terraform CI Deployment"
+                    targetPlanName: "e2e"
+                    terraformStorageAccount: $(terraform-storage-name-e2e)
+                    terraformContainerName: $(terraform-container-name-networking)
+                    terraformStateKey: $(terraform-state-file)
+                    terraformStateAccessKey: $(terraform-storage-shared-key-e2e)
+                    armClientId: $(clientId)
+                    armClientSecret: $(clientSecret)
+                    armTenantId: $(tenantId)
+                    armSubscriptionId: $(subscriptionId)

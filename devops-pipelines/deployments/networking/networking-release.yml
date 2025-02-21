@@ -1,0 +1,124 @@
+---
+trigger: none
+pr: none
+
+resources:
+  pipelines:
+    - pipeline: ComplexCasesNetworkingBuild
+      source: Complex Cases Networking Build
+      trigger:
+        branches:
+          include:
+            - refs/heads/main
+        stages:
+          - Publish_Artifacts
+            
+variables:
+  - group: complex-cases-secure-pre-prod
+  - group: complex-cases-secure-prod
+  - group: complex-cases-global
+  - group: complex-cases-status-check-endpoints
+  - group: complex-cases-terraform
+    
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - stage: Apply_DEV
+    displayName: DEV > Apply Terraform
+    jobs:
+      - deployment: Apply_Networking_Terraform
+        environment: "Dev"
+        workspace:
+          clean: all
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: ../templates/stages/jobs/tasks/task_get-credentials.yml
+                  parameters:
+                    azureSubscription: $(azure-subscription-pre-prod)
+                    
+                - template: ../templates/stages/jobs/tasks/task_apply-terraform.yml
+                  parameters:
+                    targetBuild: ComplexCasesNetworkingBuild
+                    targetTerraformArtifact: "terraform-files-networking"
+                    targetLabel: "DEV"
+                    targetName: "Networking Terraform CI Deployment"
+                    targetPlanName: "dev"
+                    terraformStorageAccount: $(terraform-storage-name-dev)
+                    terraformContainerName: $(terraform-container-name-networking)
+                    terraformStateKey: $(terraform-state-file)
+                    terraformStateAccessKey: $(terraform-storage-shared-key-dev)
+                    armClientId: $(clientId)
+                    armClientSecret: $(clientSecret)
+                    armTenantId: $(tenantId)
+                    armSubscriptionId: $(subscriptionId)
+                    
+  # QA Apply to QA
+  - stage: Apply_QA
+    displayName: QA > Apply Terraform
+    dependsOn: Apply_DEV
+    condition: succeeded()
+    jobs:
+      - deployment: Apply_Networking_Terraform
+        environment: "QA"
+        workspace:
+          clean: all
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: ../templates/stages/jobs/tasks/task_get-credentials.yml
+                  parameters:
+                    azureSubscription: $(azure-subscription-pre-prod)
+                    
+                - template: ../templates/stages/jobs/tasks/task_apply-terraform.yml
+                  parameters:
+                    targetBuild: ComplexCasesNetworkingBuild
+                    targetTerraformArtifact: "terraform-files-networking"
+                    targetLabel: "QA"
+                    targetName: "Networking Terraform CI Deployment"
+                    targetPlanName: "qa"
+                    terraformStorageAccount: $(terraform-storage-name-qa)
+                    terraformContainerName: $(terraform-container-name-networking)
+                    terraformStateKey: $(terraform-state-file)
+                    terraformStateAccessKey: $(terraform-storage-shared-key-qa)
+                    armClientId: $(clientId)
+                    armClientSecret: $(clientSecret)
+                    armTenantId: $(tenantId)
+                    armSubscriptionId: $(subscriptionId)
+
+  # Apply to PROD              
+  - stage: Apply_PROD
+    displayName: PROD > Apply Terraform
+    dependsOn: Apply_DEV
+    condition: succeeded()
+    jobs:
+      - deployment: Apply_Networking_Terraform
+        environment: "Prod"
+        workspace:
+          clean: all
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: ../templates/stages/jobs/tasks/task_get-credentials.yml
+                  parameters:
+                    azureSubscription: $(prod-azure-subscription-prod)
+                    
+                - template: ../templates/stages/jobs/tasks/task_apply-terraform.yml
+                  parameters:
+                    targetBuild: ComplexCasesNetworkingBuild
+                    targetTerraformArtifact: "terraform-files-networking"
+                    targetLabel: "PROD"
+                    targetName: "Networking Terraform CI Deployment"
+                    targetPlanName: "prod"
+                    terraformStorageAccount: $(terraform-storage-name-prod)
+                    terraformContainerName: $(terraform-container-name-networking)
+                    terraformStateKey: $(terraform-state-file)
+                    terraformStateAccessKey: $(terraform-storage-shared-key-prod)
+                    armClientId: $(clientId)
+                    armClientSecret: $(clientSecret)
+                    armTenantId: $(tenantId)
+                    armSubscriptionId: $(subscriptionId)

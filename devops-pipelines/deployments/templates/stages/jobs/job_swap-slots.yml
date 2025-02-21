@@ -1,0 +1,78 @@
+﻿---
+parameters:
+  - name: targetSuffix
+    type: string
+  - name: azureSubscription
+    type: string
+
+jobs:
+  - job: Pause_Pipeline
+    dependsOn: Log_Start
+    condition: succeeded()
+    displayName: Pause for 2 mins
+    steps:
+      - template: tasks/task_pause-pipeline.yml
+
+  - job: Swap_API_Slot
+    dependsOn: Pause_Pipeline
+    condition: succeeded()
+    strategy:
+      matrix:
+        API:
+          Name: "API"
+          AppServiceName: "cc${{ parameters.targetSuffix }}-api"
+    displayName: Swap
+    steps:
+      - checkout: none
+      - task: AzureAppServiceManage@0
+        displayName: Swap slot
+        inputs:
+          action: "Swap Slots"
+          sourceSlot: "staging"
+          azureSubscription: ${{ parameters.azureSubscription }}
+          resourceGroupName: "rg-complex-cases${{ parameters.targetSuffix }}"
+          webAppName: $(AppServiceName)
+          PreserveVnet: true
+
+  - job: Swap_UI_Slot
+    dependsOn: Pause_Pipeline
+    condition: succeeded()
+    strategy:
+      matrix:
+        SPA:
+          Name: "UI"
+          AppServiceName: "cc${{ parameters.targetSuffix }}-ui"
+    displayName: Swap
+    steps:
+      - checkout: none
+      - task: AzureAppServiceManage@0
+        displayName: Swap slot
+        inputs:
+          action: "Swap Slots"
+          sourceSlot: "staging"
+          azureSubscription: ${{ parameters.azureSubscription }}
+          resourceGroupName: "rg-complex-cases${{ parameters.targetSuffix }}"
+          webAppName: $(AppServiceName)
+          PreserveVnet: true
+
+  - job: Swap_Proxy_Slot
+    dependsOn: Pause_Pipeline
+    condition: succeeded()
+    strategy:
+      matrix:
+        Proxy:
+          Name: "Proxy"
+          AppServiceName: "cc${{ parameters.targetSuffix }}-cmsproxy"
+    displayName: Swap
+    steps:
+      - checkout: none
+      - task: AzureAppServiceManage@0
+        displayName: Swap slot
+        inputs:
+          action: "Swap Slots"
+          sourceSlot: "staging"
+          azureSubscription: ${{ parameters.azureSubscription }}
+          resourceGroupName: "rg-complex-cases${{ parameters.targetSuffix }}"
+          webAppName: $(AppServiceName)
+          PreserveVnet: true
+  

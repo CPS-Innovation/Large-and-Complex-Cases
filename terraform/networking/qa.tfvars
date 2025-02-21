@@ -5,7 +5,7 @@ environment = {
 
 terraform_service_principal_display_name = "Azure Pipeline: Complex-Cases-QA"
 
-insights_configuration = {
+appinsights_configuration = {
   log_retention_days                   = 90
   log_total_retention_days             = 2555
   analytics_internet_ingestion_enabled = false

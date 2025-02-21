@@ -1,0 +1,385 @@
+---
+trigger: none
+
+pr:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - terraform/application/*
+      - backend/CPS.ComplexCases.API/*
+      - backend/CPS.ComplexCases.Egress/*
+      - backend/CPS.ComplexCases.NetApp/*
+      - ui/*
+      - e2e/*
+        
+variables:
+  - group: complex-cases-secure-pre-prod
+  - group: complex-cases-global
+  - group: complex-cases-terraform
+  - name: buildConfiguration
+    value: "Release"
+  - name: terraformWorkingDir
+    value: "$(System.DefaultWorkingDirectory)/terraform/application"
+
+stages:
+  - stage: Wait_For_Running_PRs
+    displayName: Wait for running PRs
+    jobs:
+      - job:
+        pool:
+          name: $(build-agent-pre-prod)
+        steps:
+          - template: ../templates/stages/jobs/tasks/task_wait-for-running-releases.yml
+            parameters:
+              devOpsPatToken: $(System.AccessToken)
+      
+  - stage: Determine_Changes
+    displayName: Determine Changes
+    dependsOn: Wait_For_Running_PRs
+    jobs:
+      - job: Generate_Diff
+        pool:
+          name: $(build-agent-pre-prod)
+        steps:
+          - task: PowerShell@2
+            inputs:
+              targetType: 'inline'
+              script: |
+                $files = $(git diff --name-only origin/main)
+                $temp=$files -split ' '
+                $count=$temp.Length
+                echo "Total changed $count files"
+
+                For ($i=0; $i -lt $temp.Length; $i++)
+                {
+                  $name=$temp[$i]
+                  echo "this is $name file"
+                  if ($name -like 'terraform/application/*')
+                  {
+                    echo "check application terraform..."
+                    Write-Host "##vso[task.setvariable variable=CHECK_APPLICATION_TERRAFORM;isOutput=true]true"
+                  }
+                  if ($name -like 'backend/*')
+                  {
+                    echo "check ComplexCases backend..."
+                    Write-Host "##vso[task.setvariable variable=CHECK_BACKEND;isOutput=true]true"
+                  }
+                  if ($name -like 'ui/*')
+                  {
+                    echo "check ComplexCases UI..."
+                    Write-Host "##vso[task.setvariable variable=CHECK_UI;isOutput=true]true"
+                  }
+                }
+            name: Change_Results
+            displayName: Processing changes to repo
+
+  - stage: Validate_Changes
+    condition: succeeded()
+    displayName: Validate Changes
+    dependsOn: Determine_Changes
+    variables:
+      runApplicationTerraform: $[stageDependencies.Determine_Changes.Generate_Diff.outputs['Change_Results.CHECK_APPLICATION_TERRAFORM']]
+      runBackend: $[stageDependencies.Determine_Changes.Generate_Diff.outputs['Change_Results.CHECK_BACKEND']]
+      runUI: $[stageDependencies.Determine_Changes.Generate_Diff.outputs['Change_Results.CHECK_UI']]
+    jobs:
+      - job: Validate_Application_Terraform
+        condition: eq(variables.runApplicationTerraform, 'true')
+        displayName: Validate Application Terraform
+        pool:
+          name: $(build-agent-pre-prod)
+        steps:
+          - task: JasonBJohnson.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@1
+            displayName: Terraform > Install
+            inputs:
+              terraformVersion: latest
+              
+          # Terraform Init
+          - bash: |
+              terraform init \
+                -backend-config="storage_account_name=$TF_STATE_ACCOUNT_NAME" \
+                -backend-config="container_name=$TF_STATE_CONTAINER_NAME" \
+                -backend-config="key=$TF_STATE_KEY" \
+                -backend-config="access_key=$TF_STATE_ACCESS_KEY"
+            displayName: Terraform > Init
+            workingDirectory: $(terraformWorkingDir)
+            env:
+              TF_STATE_ACCOUNT_NAME: $(terraform-storage-name-dev)
+              TF_STATE_CONTAINER_NAME: $(terraform-container-name-application)
+              TF_STATE_KEY: $(terraform-state-file)
+              TF_STATE_ACCESS_KEY: $(terraform-storage-shared-key-dev)
+              TF_LOG: $(log-level-dev)
+
+          # Validate
+          - bash: terraform validate
+            displayName: Terraform > Validate Config
+            workingDirectory: $(terraformWorkingDir)
+
+      - job: Check_Application_Plan
+        pool:
+          name: $(build-agent-pre-prod)
+        dependsOn: Validate_Application_Terraform
+        condition: and(succeeded(), eq(variables.runApplicationTerraform, 'true'))
+        displayName: Check Application Terraform
+        steps:
+          - template: ../templates/stages/jobs/tasks/task_get-credentials.yml
+            parameters:
+              azureSubscription: $(azure-subscription-pre-prod)
+              
+          - task: JasonBJohnson.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@1
+            displayName: Terraform > Install
+            inputs:
+              terraformVersion: latest
+              
+          # Terraform Init
+          - bash: |
+              terraform init \
+                -backend-config="storage_account_name=$TF_STATE_ACCOUNT_NAME" \
+                -backend-config="container_name=$TF_STATE_CONTAINER_NAME" \
+                -backend-config="key=$TF_STATE_KEY" \
+                -backend-config="access_key=$TF_STATE_ACCESS_KEY"
+            displayName: Terraform > Init
+            workingDirectory: $(terraformWorkingDir)
+            env:
+              TF_STATE_ACCOUNT_NAME: $(terraform-storage-name-dev)
+              TF_STATE_CONTAINER_NAME: $(terraform-container-name-application)
+              TF_STATE_KEY: $(terraform-state-file)
+              TF_STATE_ACCESS_KEY: $(terraform-storage-shared-key-dev)
+              TF_LOG: $(log-level-dev)
+
+          # Terraform Plan
+          - bash: |
+              terraform plan -input=false -out=dev.tfplan -var-file="dev.tfvars"
+            displayName: "Terraform > Write Pipeline Plan"
+            workingDirectory: $(terraformWorkingDir)
+            env:
+              ARM_CLIENT_ID: $(clientId)
+              ARM_CLIENT_SECRET: $(clientSecret)
+              ARM_TENANT_ID: $(tenantId)
+              ARM_SUBSCRIPTION_ID: $(subscriptionId)
+              TF_LOG: $(log-level-dev)
+              
+      - job: Validate_Application_Codebase
+        condition: eq(variables.runBackend, 'true')
+        displayName: Test - Backend
+        pool:
+          name: $(dev-build-agent)
+        steps:
+          - task: DotNetCoreCLI@2
+            inputs:
+              command: "build"
+              projects: "backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj"
+              arguments: "--configuration $(buildConfiguration)"
+            displayName: "Build ComplexCases API"
+
+          - task: DotNetCoreCLI@2
+            inputs:
+              command: "build"
+              projects: "backend/CPS.ComplexCases.Egress/CPS.ComplexCases.Egress.csproj"
+              arguments: "--configuration $(buildConfiguration)"
+            displayName: "Build ComplexCases Egress"
+
+          - task: DotNetCoreCLI@2
+            inputs:
+              command: "build"
+              projects: "backend/CPS.ComplexCases.NetApp/CPS.ComplexCases.NetApp.csproj"
+              arguments: "--configuration $(buildConfiguration)"
+            displayName: "Build ComplexCases NetApp"
+
+          - task: DotNetCoreCLI@2
+            inputs:
+              command: "test"
+              projects: "backend/CPS.ComplexCases.Egress.Tests/CPS.ComplexCases.Egress.Tests.csproj"
+              arguments: "--configuration $(buildConfiguration) /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura"
+            displayName: "Run ComplexCases Egress tests"
+
+          - publish: $(System.DefaultWorkingDirectory)/backend/CPS.ComplexCases.Egress.Tests/coverage.cobertura.xml
+            artifact: EgressTestResults
+            displayName: Publish Egress Test Results
+
+          - task: DotNetCoreCLI@2
+            inputs:
+              command: "test"
+              projects: "backend/CPS.ComplexCases.NetApp.Tests/CPS.ComplexCases.NetApp.Tests.csproj"
+              arguments: "--configuration $(buildConfiguration) /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura"
+            displayName: "Run ComplexCases NetApp tests"
+
+          - publish: $(System.DefaultWorkingDirectory)/backend/CPS.ComplexCases.NetApp.Tests/coverage.cobertura.xml
+            artifact: NetAppTestResults
+            displayName: Publish NetApp Test Results
+            
+          - task: DotNetCoreCLI@2
+            inputs:
+              command: "test"
+              projects: "backend/CPS.ComplexCases.API.Tests/CPS.ComplexCases.API.Tests.csproj"
+              arguments: "--configuration $(buildConfiguration) /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura"
+            displayName: "Run ComplexCases API tests"
+            
+          - publish: $(System.DefaultWorkingDirectory)/backend/CPS.ComplexCases.API.Tests/coverage.cobertura.xml
+            artifact: APITestResults
+            displayName: Publish API Test Results
+
+          - bash: echo "##vso[task.setvariable variable=testsAvailable;isOutput=true]true"
+            name: result
+                
+      - job: Validate_UI_Codebase
+        condition: eq(variables.runUI, 'true')
+        displayName: Test - UI
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          # Begin UI testing
+          # We want to rely only on the .env.production file, anything in .env is still included
+          #  if not overwritten by .env.production.  For safety, just delete .env
+          - task: DeleteFiles@1
+            displayName: "Remove .env file"
+            inputs:
+              contents: |
+                complex-cases-ui/.env
+
+          - task: Npm@1
+            inputs:
+              command: "install"
+              workingDir: "complex-cases-ui"
+            displayName: "npm install"
+
+          - task: Npm@1
+            inputs:
+              command: "custom"
+              workingDir: "complex-cases-ui"
+              customCommand: "run prettier"
+            displayName: "npm prettier"
+
+          - task: Npm@1
+            inputs:
+              command: "custom"
+              workingDir: "complex-cases-ui"
+              customCommand: "run test:ci"
+            displayName: "npm test"
+
+          - task: Npm@1
+            inputs:
+              command: "custom"
+              workingDir: "complex-cases-ui"
+              customCommand: "run cy:ci"
+            displayName: "cypress run tests"
+
+          - task: Npm@1
+            inputs:
+              command: "custom"
+              workingDir: "complex-cases-ui"
+              customCommand: "run build"
+            displayName: "npm build"
+
+          - task: Npm@1
+            inputs:
+              command: "custom"
+              workingDir: "complex-cases-ui"
+              customCommand: "run coverage"
+            displayName: "combine unit and cypress coverage"
+
+          - task: PublishBuildArtifacts@1
+            condition: always()  # this step will always run, helpful to diagnose failing cypress tests
+            inputs:
+              PathtoPublish: "complex-cases-ui/cypress/videos"
+              ArtifactName: "Cypress failure vidoes"
+              publishLocation: "Container"
+            displayName: "Publish UI Cypress Failure Videos"
+
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: "complex-cases-ui/report"
+              ArtifactName: "Unit test report"
+              publishLocation: "Container"
+            displayName: "Publish UI Unit Test Report"
+
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: "complex-cases-ui/report-cypress"
+              ArtifactName: "Cypress test report"
+              publishLocation: "Container"
+            displayName: "Publish UI Cypress Test Report"
+
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: "complex-cases-ui/coverage"
+              ArtifactName: "Unit test coverage report"
+              publishLocation: "Container"
+            displayName: "Publish UI Unit Test Coverage Report"
+
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: "complex-cases-ui/coverage-cypress"
+              ArtifactName: "Cypress coverage report"
+              publishLocation: "Container"
+            displayName: "Publish UI Cypress Coverage Report"
+
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: "complex-cases-ui/coverage-merged"
+              ArtifactName: "Merged coverage report"
+              publishLocation: "Container"
+            displayName: "Publish UI Merged Coverage Report"
+
+          - task: PublishTestResults@2
+            inputs:
+              testResultsFormat: "JUnit"
+              testResultsFiles: "complex-cases-ui/report/*.xml"
+              testRunTitle: "Unit tests"
+            displayName: "Publish UI Unit Test XML"
+
+          - task: PublishTestResults@2
+            inputs:
+              testResultsFormat: "JUnit"
+              testResultsFiles: "complex-cases-ui/report-cypress/test-*.xml"
+              testRunTitle: "Cypress tests"
+              mergeTestResults: true
+            displayName: "Publish UI Unit Test Cypress Tests XML"
+
+          - script: |
+              cp $(System.DefaultWorkingDirectory)/complex-cases-ui/coverage-merged/cobertura-coverage.xml $(System.DefaultWorkingDirectory)/uiresults.cobertura.xml
+            displayName: "Moving ui coverage results"
+
+          - publish: $(System.DefaultWorkingDirectory)/uiresults.cobertura.xml
+            artifact: UITestResults
+            
+          - bash: echo "##vso[task.setvariable variable=testsAvailable;isOutput=true]true"
+            name: result
+
+  - stage: Generate_Reports
+    displayName: Collate and publish test results
+    dependsOn: Validate_complex-cases
+    variables:
+      backendTestsAvailable: $[stageDependencies.Validate_Changes.Validate_Application_Codebase.outputs['result.testsAvailable']]
+      uiTestsAvailable: $[stageDependencies.Validate_Changes.Validate_UI_Codebase.outputs['result.testsAvailable']]
+    jobs:
+      - job:
+        displayName: Compiling report
+        condition: or(eq(variables.backendTestsAvailable, 'true'),eq(variables.uiTestsAvailable, 'true'))
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - task: DotNetCoreCLI@2
+            displayName: "Install ReportGenerator"
+            inputs:
+              command: custom
+              custom: tool
+              arguments: "install --global dotnet-reportgenerator-globaltool"
+
+          - script: echo "##vso[task.prependpath]$HOME/.dotnet/tools"
+            displayName: "Update PATH"
+
+          - download: current
+            patterns: '**/*.cobertura.xml'
+            displayName: Retrieve published test reports
+
+          - script: |
+              reportgenerator -reports:$(Pipeline.Workspace)/**/*.cobertura.xml -targetdir:$(Pipeline.Workspace)/CodeCoverage -reporttypes:Cobertura
+            displayName: "Create code coverage report"
+
+          - task: PublishCodeCoverageResults@1
+            displayName: "Publish code coverage report"
+            inputs:
+              codeCoverageTool: "cobertura"
+              summaryFileLocation: "$(Pipeline.Workspace)/CodeCoverage/Cobertura.xml"
