@@ -140,7 +140,7 @@
       "label": "run-ui",
       "type": "shell",
       "options": {
-        "cwd": "${workspaceFolder}/ui"
+        "cwd": "${workspaceFolder}/ui-spa"
       },
       "command": "npm run dev",
       "isBackground": true,
