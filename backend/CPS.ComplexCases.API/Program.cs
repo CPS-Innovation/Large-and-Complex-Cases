@@ -9,6 +9,10 @@ using Microsoft.Extensions.Hosting;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Models;
 using CPS.ComplexCases.Egress.Factories;
+using CPS.ComplexCases.API.Handlers;
+using CPS.ComplexCases.API.Validators;
+using Microsoft.IdentityModel.Protocols;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
@@ -18,6 +22,11 @@ builder.ConfigureFunctionsWebApplication();
 builder.Services
     .AddApplicationInsightsTelemetryWorkerService()
     .ConfigureFunctionsApplicationInsights();
+
+builder.Services.AddSingleton<IUnhandledExceptionHandler, UnhandledExceptionHandler>();
+
+builder.Services.AddTransient<IInitializationHandler, InitializationHandler>();
+builder.Services.AddSingleton<IAuthorizationValidator, AuthorizationValidator>();
 
 builder.Services.AddTransient<IEgressRequestFactory, EgressRequestFactory>();
 builder.Services.AddTransient<IEgressArgFactory, EgressArgFactory>();
@@ -36,5 +45,13 @@ builder.Services.AddDefaultAWSOptions(builder.Configuration.GetAWSOptions());
 builder.Services.AddAWSService<IAmazonS3>();
 builder.Services.AddTransient<INetAppClient, NetAppClient>();
 builder.Services.AddTransient<INetAppArgFactory, NetAppArgFactory>();
+builder.Services.AddSingleton(_ =>
+{
+  // as per https://github.com/dotnet/aspnetcore/issues/43220, there is guidance to only have one instance of ConfigurationManager.
+  return new ConfigurationManager<OpenIdConnectConfiguration>(
+              $"https://sts.windows.net/{builder.Configuration["TenantId"]}/.well-known/openid-configuration",
+              new OpenIdConnectConfigurationRetriever(),
+              new HttpDocumentRetriever());
+});
 
 builder.Build().Run();
