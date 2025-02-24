@@ -54,7 +54,12 @@ data "azurerm_subscription" "current" {}
 data "azuread_application_published_app_ids" "well_known" {}
 
 resource "azuread_service_principal" "msgraph" {
-  client_id    = data.azuread_application_published_app_ids.well_known.result.MicrosoftGraph
+  client_id    = data.azuread_application_published_app_ids.well_known.result["MicrosoftGraph"]
+  use_existing = true
+}
+
+resource "azuread_service_principal" "sharepointonline" {
+  client_id    = data.azuread_application_published_app_ids.well_known.result["Office365SharePointOnline"]
   use_existing = true
 }
 

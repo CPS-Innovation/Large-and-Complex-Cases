@@ -29,7 +29,7 @@ steps:
   # download UI build artifact
   - download: ${{ parameters.targetBuild }}
     displayName: Deploy > Download UI Build
-    artifact: "complex-cases-ui-drop"
+    artifact: "ui-spa-drop"
 
   # Deploy Related Codebase to Env
   - task: AzureRmWebAppDeployment@4
@@ -38,7 +38,7 @@ steps:
       azureSubscription: ${{ parameters.azureSubscription }}
       appType: webAppLinux
       WebAppName: "cc${{ parameters.targetSuffix }}-ui"
-      packageForLinux: $(Pipeline.Workspace)/${{ parameters.targetBuild }}/complex-cases-ui-drop
+      packageForLinux: $(Pipeline.Workspace)/${{ parameters.targetBuild }}/ui-spa-drop
       deployToSlotOrASE: true
       resourceGroupName: "rg-complex-cases${{ parameters.targetSuffix }}"
       slotName: "staging"
