@@ -18,6 +18,7 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
     "FUNCTIONS_EXTENSION_VERSION"                     = "~4"
     "FUNCTIONS_WORKER_RUNTIME"                        = "dotnet-isolated"
     "HostType"                                        = "Production"
+    "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"        = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.kvs_complex_cases_api_client_secret.id})"
     "WEBSITE_ADD_SITENAME_BINDINGS_IN_APPHOST_CONFIG" = "1"
     "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING"        = azurerm_storage_account.sacpsccapi.primary_connection_string
     "WEBSITE_CONTENTOVERVNET"                         = "1"
@@ -111,7 +112,7 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
   depends_on = [azurerm_storage_account.sacpsccapi, azapi_resource.sacpsccapi_ui_file_share]
 }
 
-resource "azuread_application" "fa_redaction_log_reporting" {
+resource "azuread_application" "complex_cases_api" {
   display_name            = "${local.product_name_prefix}-api"
   identifier_uris         = ["https://CPSGOVUK.onmicrosoft.com/${local.product_name_prefix}-api"]
   prevent_duplicate_names = true
@@ -130,21 +131,73 @@ resource "azuread_application" "fa_redaction_log_reporting" {
     }
   }
 
-  /* add permissions
   required_resource_access {
-    resource_app_id = "00000003-0000-0000-c000-000000000000"
+    resource_app_id = data.azuread_application_published_app_ids.well_known.result["MicrosoftGraph"]
 
     resource_access {
-      id   = "e1fe6dd8-ba31-4d61-89e7-88639da4683d"
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["Files.ReadWrite.All"]
       type = "Scope"
     }
 
     resource_access {
-      id   = "5f8c59db-677d-491f-a6b8-5f174b11ec1d"
+      id   = azuread_service_principal.msgraph.app_role_ids["Files.ReadWrite.All"]
+      type = "Role"
+    }
+
+    resource_access {
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["FileStorageContainer.Manage"]
+      type = "Scope"
+    }
+
+    resource_access {
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["FileStorageContainer.Selected"]
+      type = "Scope"
+    }
+
+    resource_access {
+      id   = azuread_service_principal.msgraph.app_role_ids["FileStorageContainer.Selected"]
+      type = "Role"
+    }
+
+    resource_access {
+      id   = azuread_service_principal.msgraph.app_role_ids["Mail.ReadWrite"]
+      type = "Role"
+    }
+
+    resource_access {
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["Mail.ReadWrite.Shared"]
+      type = "Scope"
+    }
+
+    resource_access {
+      id   = azuread_service_principal.msgraph.app_role_ids["Mail.Send"]
+      type = "Role"
+    }
+
+    resource_access {
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["Sites.Read.All"]
+      type = "Scope"
+    }
+
+    resource_access {
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["User.Read"]
+      type = "Scope"
+    }
+
+    resource_access {
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["User.Read.All"]
       type = "Scope"
     }
   }
-  */
+
+  required_resource_access {
+    resource_app_id = data.azuread_application_published_app_ids.well_known.result["Office365SharePointOnline"]
+
+    resource_access {
+      id   = data.azuread_service_principal.msgraph.oauth2_permission_scope_ids["Container.Manager"]
+      type = "Scope"
+    }
+  }
 
   web {
     redirect_uris = ["https://${local.product_name_prefix}-ui.azurewebsites.net/.auth/login/aad/callback"]
@@ -156,8 +209,8 @@ resource "azuread_application" "fa_redaction_log_reporting" {
   }
 }
 
-resource "azuread_application_password" "faap_reporting_log_app" {
-  application_id = azuread_application.fa_redaction_log_reporting.id
+resource "azuread_application_password" "pwd_complex_cases_api" {
+  application_id = azuread_application.complex_cases_api.id
   rotate_when_changed = {
     rotation = time_rotating.schedule_api.id
   }

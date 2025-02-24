@@ -28,6 +28,7 @@ resource "azurerm_linux_web_app" "complex_cases_proxy" {
     "XDT_MicrosoftApplicationInsights_BaseExtensions" = "disabled"
     "XDT_MicrosoftApplicationInsights_Mode"           = "recommended"
     "XDT_MicrosoftApplicationInsights_PreemptSdk"     = "disabled"
+    "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"        = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.kvs_complex_cases_proxy_client_secret.id})"
     "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING"        = azurerm_storage_account.sacpsccproxy.primary_connection_string
     "WEBSITE_CONTENTSHARE"                            = azapi_resource.sacpsccproxy_file_share.name
     "DEFAULT_UPSTREAM_CMS_IP_CORSHAM"                 = var.cms_details.default_upstream_cms_ip_corsham
@@ -217,10 +218,10 @@ resource "azuread_application" "complex_cases_proxy" {
   owners                  = [data.azuread_service_principal.terraform_service_principal.object_id]
 
   required_resource_access {
-    resource_app_id = "00000003-0000-0000-c000-000000000000"
+    resource_app_id = data.azuread_application_published_app_ids.well_known.result["MicrosoftGraph"]
 
     resource_access {
-      id   = "e1fe6dd8-ba31-4d61-89e7-88639da4683d" # User.Read
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["User.Read"]
       type = "Scope"
     }
   }
@@ -228,7 +229,7 @@ resource "azuread_application" "complex_cases_proxy" {
   tags = local.common_tags
 }
 
-resource "azuread_application_password" "asap_complex_cases_cms_proxy" {
+resource "azuread_application_password" "pwd_complex_cases_cms_proxy" {
   application_id = azuread_application.complex_cases_proxy.id
   rotate_when_changed = {
     rotation = time_rotating.schedule_proxy.id

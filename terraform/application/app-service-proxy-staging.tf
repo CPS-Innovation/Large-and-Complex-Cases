@@ -27,6 +27,7 @@ resource "azurerm_linux_web_app_slot" "complex_cases_proxy_staging" {
     "XDT_MicrosoftApplicationInsights_BaseExtensions" = "disabled"
     "XDT_MicrosoftApplicationInsights_Mode"           = "recommended"
     "XDT_MicrosoftApplicationInsights_PreemptSdk"     = "disabled"
+    "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"        = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.kvs_complex_cases_proxy_client_secret.id})"
     "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING"        = azurerm_storage_account.sacpsccproxy.primary_connection_string
     "WEBSITE_CONTENTSHARE"                            = azapi_resource.sacpsccproxy_staging_file_share.name
     "DEFAULT_UPSTREAM_CMS_IP_CORSHAM"                 = var.cms_details.default_upstream_cms_ip_corsham

@@ -236,88 +236,88 @@ stages:
             displayName: "Remove .env file"
             inputs:
               contents: |
-                complex-cases-ui/.env
+                ui-spa/.env
 
           - task: Npm@1
             inputs:
               command: "install"
-              workingDir: "complex-cases-ui"
+              workingDir: "ui-spa"
             displayName: "npm install"
 
           - task: Npm@1
             inputs:
               command: "custom"
-              workingDir: "complex-cases-ui"
+              workingDir: "ui-spa"
               customCommand: "run prettier"
             displayName: "npm prettier"
 
           - task: Npm@1
             inputs:
               command: "custom"
-              workingDir: "complex-cases-ui"
+              workingDir: "ui-spa"
               customCommand: "run test:ci"
             displayName: "npm test"
 
           - task: Npm@1
             inputs:
               command: "custom"
-              workingDir: "complex-cases-ui"
+              workingDir: "ui-spa"
               customCommand: "run cy:ci"
             displayName: "cypress run tests"
 
           - task: Npm@1
             inputs:
               command: "custom"
-              workingDir: "complex-cases-ui"
+              workingDir: "ui-spa"
               customCommand: "run build"
             displayName: "npm build"
 
           - task: Npm@1
             inputs:
               command: "custom"
-              workingDir: "complex-cases-ui"
+              workingDir: "ui-spa"
               customCommand: "run coverage"
             displayName: "combine unit and cypress coverage"
 
           - task: PublishBuildArtifacts@1
             condition: always()  # this step will always run, helpful to diagnose failing cypress tests
             inputs:
-              PathtoPublish: "complex-cases-ui/cypress/videos"
+              PathtoPublish: "ui-spa/cypress/videos"
               ArtifactName: "Cypress failure vidoes"
               publishLocation: "Container"
             displayName: "Publish UI Cypress Failure Videos"
 
           - task: PublishBuildArtifacts@1
             inputs:
-              PathtoPublish: "complex-cases-ui/report"
+              PathtoPublish: "ui-spa/report"
               ArtifactName: "Unit test report"
               publishLocation: "Container"
             displayName: "Publish UI Unit Test Report"
 
           - task: PublishBuildArtifacts@1
             inputs:
-              PathtoPublish: "complex-cases-ui/report-cypress"
+              PathtoPublish: "ui-spa/report-cypress"
               ArtifactName: "Cypress test report"
               publishLocation: "Container"
             displayName: "Publish UI Cypress Test Report"
 
           - task: PublishBuildArtifacts@1
             inputs:
-              PathtoPublish: "complex-cases-ui/coverage"
+              PathtoPublish: "ui-spa/coverage"
               ArtifactName: "Unit test coverage report"
               publishLocation: "Container"
             displayName: "Publish UI Unit Test Coverage Report"
 
           - task: PublishBuildArtifacts@1
             inputs:
-              PathtoPublish: "complex-cases-ui/coverage-cypress"
+              PathtoPublish: "ui-spa/coverage-cypress"
               ArtifactName: "Cypress coverage report"
               publishLocation: "Container"
             displayName: "Publish UI Cypress Coverage Report"
 
           - task: PublishBuildArtifacts@1
             inputs:
-              PathtoPublish: "complex-cases-ui/coverage-merged"
+              PathtoPublish: "ui-spa/coverage-merged"
               ArtifactName: "Merged coverage report"
               publishLocation: "Container"
             displayName: "Publish UI Merged Coverage Report"
@@ -325,20 +325,20 @@ stages:
           - task: PublishTestResults@2
             inputs:
               testResultsFormat: "JUnit"
-              testResultsFiles: "complex-cases-ui/report/*.xml"
+              testResultsFiles: "ui-spa/report/*.xml"
               testRunTitle: "Unit tests"
             displayName: "Publish UI Unit Test XML"
 
           - task: PublishTestResults@2
             inputs:
               testResultsFormat: "JUnit"
-              testResultsFiles: "complex-cases-ui/report-cypress/test-*.xml"
+              testResultsFiles: "ui-spa/report-cypress/test-*.xml"
               testRunTitle: "Cypress tests"
               mergeTestResults: true
             displayName: "Publish UI Unit Test Cypress Tests XML"
 
           - script: |
-              cp $(System.DefaultWorkingDirectory)/complex-cases-ui/coverage-merged/cobertura-coverage.xml $(System.DefaultWorkingDirectory)/uiresults.cobertura.xml
+              cp $(System.DefaultWorkingDirectory)/ui-spa/coverage-merged/cobertura-coverage.xml $(System.DefaultWorkingDirectory)/uiresults.cobertura.xml
             displayName: "Moving ui coverage results"
 
           - publish: $(System.DefaultWorkingDirectory)/uiresults.cobertura.xml

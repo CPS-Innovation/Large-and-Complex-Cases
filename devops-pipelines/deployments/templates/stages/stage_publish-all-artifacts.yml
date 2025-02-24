@@ -58,14 +58,14 @@ stages:
             displayName: "Remove .env file"
             inputs:
               contents: |
-                complex-cases-ui/.env
+                ui-spa/.env
 
           # Add build version
           - task: PowerShell@2
             displayName: "Record build version"
             inputs:
               targetType: 'inline'
-              workingDirectory: complex-cases-ui/public
+              workingDirectory: ui-spa/public
               script: |
                 New-Item build-version.txt -force
                 $currentDate = Get-Date
@@ -74,26 +74,26 @@ stages:
           - task: Npm@1
             inputs:
               command: "install"
-              workingDir: "complex-cases-ui"
+              workingDir: "ui-spa"
             displayName: "npm install"
 
           - task: Npm@1
             inputs:
               command: "custom"
-              workingDir: "complex-cases-ui"
+              workingDir: "ui-spa"
               customCommand: "run prettier"
             displayName: "npm prettier"
 
           - task: Npm@1
             inputs:
               command: "custom"
-              workingDir: "complex-cases-ui"
+              workingDir: "ui-spa"
               customCommand: "run build"
             displayName: "npm build"
 
           - task: PublishBuildArtifacts@1
             inputs:
-              PathtoPublish: "complex-cases-ui/build"
-              ArtifactName: "complex-cases-ui-drop"
+              PathtoPublish: "ui-spa/build"
+              ArtifactName: "ui-spa-drop"
               publishLocation: "Container"
             displayName: Publish UI artifact

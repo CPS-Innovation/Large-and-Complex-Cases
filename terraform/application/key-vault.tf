@@ -70,11 +70,31 @@ resource "azurerm_role_assignment" "kv_role_complex_cases_ui_secrets_user" {
 
 resource "azurerm_key_vault_secret" "kvs_complex_cases_ui_client_secret" {
   name         = "ComplexCasesUIClientSecret"
-  value        = azuread_application_password.complex_cases_ui.value
+  value        = azuread_application_password.pwd_complex_cases_ui.value
   key_vault_id = azurerm_key_vault.kv_complex_cases.id
   depends_on = [
     azurerm_role_assignment.kv_role_terraform_sp,
     azuread_application_password.complex_cases_ui
+  ]
+}
+
+resource "azurerm_key_vault_secret" "kvs_complex_cases_api_client_secret" {
+  name         = "ComplexCasesAPIClientSecret"
+  value        = azuread_application_password.pwd_complex_cases_api.value
+  key_vault_id = azurerm_key_vault.kv_complex_cases.id
+  depends_on = [
+    azurerm_role_assignment.kv_role_terraform_sp,
+    azuread_application_password.complex_cases_api
+  ]
+}
+
+resource "azurerm_key_vault_secret" "kvs_complex_cases_proxy_client_secret" {
+  name         = "ComplexCasesProxyClientSecret"
+  value        = azuread_application_password.pwd_complex_cases_cms_proxy.value
+  key_vault_id = azurerm_key_vault.kv_complex_cases.id
+  depends_on = [
+    azurerm_role_assignment.kv_role_terraform_sp,
+    azuread_application_password.com
   ]
 }
 

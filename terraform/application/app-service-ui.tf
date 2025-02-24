@@ -133,21 +133,60 @@ resource "azuread_application" "complex_cases_ui" {
     }
   }
 
-  /*clarify permissions
   required_resource_access {
-    resource_app_id = "00000002-0000-0000-c000-000000000000"
+    resource_app_id = data.azuread_application_published_app_ids.well_known.result["MicrosoftGraph"]
 
     resource_access {
-      id   = "311a71cc-e848-46a1-bdf8-97ff7156d8e6"
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["email"]
+      type = "Scope"
+    }
+
+    resource_access {
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["Files.ReadWrite.All"]
+      type = "Scope"
+    }
+
+    resource_access {
+      id   = azuread_service_principal.msgraph.app_role_ids["Files.ReadWrite.All"]
+      type = "Role"
+    }
+
+    resource_access {
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["FileStorageContainer.Selected"]
+      type = "Scope"
+    }
+
+    resource_access {
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["Mail.ReadWrite.Shared"]
+      type = "Scope"
+    }
+
+    resource_access {
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["offline_access"]
+      type = "Scope"
+    }
+
+    resource_access {
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["openid"]
+      type = "Scope"
+    }
+
+    resource_access {
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["profile"]
+      type = "Scope"
+    }
+
+    resource_access {
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["User.Read"]
       type = "Scope"
     }
   }
 
   required_resource_access {
-    resource_app_id = "00000003-0000-0000-c000-000000000000"
+    resource_app_id = data.azuread_application_published_app_ids.well_known.result["Office365SharePointOnline"]
 
     resource_access {
-      id   = "5f8c59db-677d-491f-a6b8-5f174b11ec1d"
+      id   = data.azuread_service_principal.msgraph.oauth2_permission_scope_ids["Container.Manager"]
       type = "Scope"
     }
   }
@@ -164,7 +203,7 @@ resource "azuread_application" "complex_cases_ui" {
         type = "Scope"
       }
     }
-  }*/
+  }
 
   single_page_application {
     redirect_uris = var.environment.alias != "prod" ? ["http://localhost:3000"] : ["https://${local.product_name_prefix}-ui.azurewebsites.net"]
@@ -187,12 +226,12 @@ resource "azuread_application" "complex_cases_ui" {
   }
 
   depends_on = [
-    #azuread_application.fa_redaction_log_reporting
+    azuread_application.complex_cases_api
   ]
   tags = local.common_tags
 }
 
-resource "azuread_application_password" "asap_complex_cases_ui" {
+resource "azuread_application_password" "pwd_complex_cases_ui" {
   application_id = azuread_application.complex_cases_ui.id
   rotate_when_changed = {
     rotation = time_rotating.schedule_ui.id
@@ -207,7 +246,7 @@ resource "time_rotating" "schedule_e2e_tests" {
   rotation_days = 90
 }
 
-resource "azuread_application_password" "e2e_test_secret" {
+resource "azuread_application_password" "pwd_e2e_test_secret" {
   application_id = azuread_application.complex_cases_ui.application_id
   display_name   = "e2e-tests client secret"
   rotate_when_changed = {
@@ -219,7 +258,7 @@ resource "azuread_application_password" "e2e_test_secret" {
 resource "azurerm_key_vault_secret" "kvs_ui_client_id" {
   #checkov:skip=CKV_AZURE_41:Ensure that the expiration date is set on all secrets
   #checkov:skip=CKV_AZURE_114:Ensure that key vault secrets have "content_type" set
-  name         = "complex-cases-ui-client-id"
+  name         = "ui-spa-client-id"
   value        = azuread_application.complex_cases_ui.client_id
   key_vault_id = data.azurerm_key_vault.terraform_key_vault.id
   depends_on = [
@@ -230,8 +269,8 @@ resource "azurerm_key_vault_secret" "kvs_ui_client_id" {
 resource "azurerm_key_vault_secret" "kvs_ui_client_secret" {
   #checkov:skip=CKV_AZURE_41:Ensure that the expiration date is set on all secrets
   #checkov:skip=CKV_AZURE_114:Ensure that key vault secrets have "content_type" set
-  name         = "complex-cases-ui-client-secret"
-  value        = azuread_application_password.e2e_test_secret.value
+  name         = "ui-spa-client-secret"
+  value        = azuread_application_password.pwd_e2e_test_secret.value
   key_vault_id = data.azurerm_key_vault.terraform_key_vault.id
   depends_on = [
     azurerm_role_assignment.kv_role_terraform_sp

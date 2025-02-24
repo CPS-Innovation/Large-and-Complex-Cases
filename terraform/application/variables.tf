@@ -67,5 +67,5 @@ variable "complex_cases_ui_sub_folder" {
   // this value must match the PUBLIC_URL=... value
   //  as seen in the ui project top-level package.json
   //  scripts section.
-  default = "complex-cases-ui"
+  default = "ui-spa"
 }
