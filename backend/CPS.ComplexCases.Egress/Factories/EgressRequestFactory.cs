@@ -17,7 +17,14 @@ public class EgressRequestFactory : IEgressRequestFactory
 
   public HttpRequestMessage FindWorkspaceRequest(FindWorkspaceArg workspace, string token)
   {
-    var request = new HttpRequestMessage(HttpMethod.Get, $"api/v1/workspaces?name={workspace.Name}");
+    var relativeUrl = new StringBuilder($"/api/v1/workspaces");
+
+    if (!string.IsNullOrEmpty(workspace.Name))
+    {
+      relativeUrl.Append($"?name={workspace.Name}");
+    }
+
+    var request = new HttpRequestMessage(HttpMethod.Get, relativeUrl.ToString());
 
     AppendToken(request, token);
 

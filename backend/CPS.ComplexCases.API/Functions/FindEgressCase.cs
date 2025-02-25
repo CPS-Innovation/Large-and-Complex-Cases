@@ -21,7 +21,7 @@ public class FindEgressCase(ILogger<FindEgressCase> logger,
   private readonly IUnhandledExceptionHandler _unhandledExceptionHandler = unhandledExceptionHandler;
 
   [Function(nameof(FindEgressCase))]
-  public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "cases/{operationName}/egress")] HttpRequest req, string operationName)
+  public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "cases/egress")] HttpRequest req)
   {
     try
     {
@@ -31,6 +31,8 @@ public class FindEgressCase(ILogger<FindEgressCase> logger,
       {
         return new UnauthorizedResult();
       }
+
+      var operationName = req.Query["operationName"];
 
       var egressArg = _egressArgFactory.CreateFindWorkspaceArg(operationName);
 
