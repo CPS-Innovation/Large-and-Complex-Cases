@@ -4,6 +4,6 @@ namespace CPS.ComplexCases.Egress.Factories;
 
 public interface IEgressArgFactory
 {
-  FindWorkspaceArg CreateFindWorkspaceArg(string name);
+  FindWorkspaceArg CreateFindWorkspaceArg(string? name);
   GetCaseMaterialArg CreateGetCaseMaterialArg(string caseId, int page, int count, string? folderId);
 }

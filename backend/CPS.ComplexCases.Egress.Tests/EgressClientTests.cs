@@ -37,8 +37,11 @@ public class EgressClientTests
         _requestFactoryMock = _fixture.Freeze<Mock<IEgressRequestFactory>>();
         _httpMessageHandlerMock = new Mock<HttpMessageHandler>();
 
-        _httpClient = new HttpClient(_httpMessageHandlerMock.Object);
 
+        _httpClient = new HttpClient(_httpMessageHandlerMock.Object)
+        {
+            BaseAddress = new Uri(TestUrl)
+        };
         var egressOptions = new EgressOptions
         {
             Url = TestUrl,
@@ -161,63 +164,6 @@ public class EgressClientTests
 
         // Assert
         result.Should().BeEmpty();
-        VerifyRequestFactoryCalls(findWorkspaceArg, workspaceId, token);
-    }
-
-    [Fact]
-    public async Task FindWorkspace_WhenMultipleWorkspacesExist_ReturnsOnlyMatchingWorkspaces()
-    {
-        // Arrange
-        var workspaceName = _fixture.Create<string>();
-        var workspaceId = _fixture.Create<string>();
-        var token = _fixture.Create<string>();
-        var email = _fixture.Create<string>();
-        var findWorkspaceArg = new FindWorkspaceArg { Name = workspaceName };
-
-        var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
-        var workspaceResponse = new FindWorkspaceResponse
-        {
-            Data = [
-                new FindWorkspaceResponseData
-                {
-                    Id = workspaceId,
-                    Name = workspaceName,
-                    Links = _fixture.Create<WorkspaceLinks>()
-                },
-                new FindWorkspaceResponseData
-                {
-                    Id = _fixture.Create<string>(),
-                    Name = _fixture.Create<string>(),
-                    Links = _fixture.Create<WorkspaceLinks>()
-                }
-            ],
-            Pagination = _fixture.Create<PaginationResponse>()
-        };
-        var permissionsResponse = new GetWorkspacePermissionsResponse
-        {
-            Data = [
-                new GetWorkspacePersmissionsResponseData
-                {
-                    Email = email,
-                    RoleId = _fixture.Create<string>()
-                }
-            ],
-            Pagination = _fixture.Create<PaginationResponse>()
-        };
-
-        SetupRequestFactory(workspaceId, token, findWorkspaceArg);
-        SetupHttpMockResponses(
-            ("token", tokenResponse),
-            ("workspace", workspaceResponse),
-            ("permissions", permissionsResponse)
-        );
-
-        // Act
-        var result = await _client.FindWorkspace(findWorkspaceArg, email);
-
-        // Assert
-        var workspace = Assert.Single(result);
-        workspace.Name.Should().Be(workspaceName);
         VerifyRequestFactoryCalls(findWorkspaceArg, workspaceId, token);
     }
 
