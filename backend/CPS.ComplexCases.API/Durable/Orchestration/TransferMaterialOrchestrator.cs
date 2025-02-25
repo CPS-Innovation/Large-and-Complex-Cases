@@ -17,6 +17,6 @@ public class TransferMaterialOrchestrator
   {
     var payload = context.GetInput<TransferMaterialOrchestrationPayload>() ?? throw new ArgumentException("Orchestration payload cannot be null.", nameof(context));
 
-    await context.CallActivityAsync(nameof(TransferMaterial), payload);
+    await context.CallActivityAsync(nameof(InitiateTransferMaterial), payload);
   }
 }

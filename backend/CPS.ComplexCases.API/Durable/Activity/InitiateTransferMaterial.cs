@@ -6,18 +6,18 @@ using Microsoft.Azure.Functions.Worker;
 
 namespace CPS.ComplexCases.API.Durable.Activity;
 
-public class TransferMaterial
+public class InitiateTransferMaterial
 {
   private readonly IEgressClient _egressClient;
   private readonly INetAppClient _netAppClient;
 
-  public TransferMaterial(IEgressClient egressClient, INetAppClient netAppClient)
+  public InitiateTransferMaterial(IEgressClient egressClient, INetAppClient netAppClient)
   {
     _egressClient = egressClient;
     _netAppClient = netAppClient;
   }
 
-  [Function(nameof(TransferMaterial))]
+  [Function(nameof(InitiateTransferMaterial))]
   public async Task Run([ActivityTrigger] TransferMaterialOrchestrationPayload payload)
   {
     // download doc from Egress
@@ -31,5 +31,6 @@ public class TransferMaterial
 
 
     // upload doc to NetApp s3
+    // await _netAppClient.UploadObjectAsync();
   }
 }
