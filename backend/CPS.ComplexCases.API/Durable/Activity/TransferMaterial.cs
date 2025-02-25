@@ -25,8 +25,9 @@ public class TransferMaterial
     {
       CaseId = payload.WorkspaceId,
       FileId = payload.DocumentId
-    }
-    var doc = await _egressClient.GetCaseDocument();
+    };
+
+    using var stream = await _egressClient.GetCaseDocument(egressPayload);
 
 
     // upload doc to NetApp s3
