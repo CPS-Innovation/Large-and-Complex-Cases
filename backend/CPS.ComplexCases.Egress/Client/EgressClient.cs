@@ -22,7 +22,6 @@ public class EgressClient(ILogger<EgressClient> logger, IOptions<EgressOptions> 
     var response = await SendRequestAsync<FindWorkspaceResponse>(_egressRequestFactory.FindWorkspaceRequest(workspace, token));
 
     var workspaces = response.Data
-        .Where(data => data.Name == workspace.Name)
         .Select(data => new FindWorkspaceDto
         {
           Id = data.Id,

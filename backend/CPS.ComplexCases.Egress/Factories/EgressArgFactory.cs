@@ -4,7 +4,7 @@ namespace CPS.ComplexCases.Egress.Factories;
 
 public class EgressArgFactory : IEgressArgFactory
 {
-  public FindWorkspaceArg CreateFindWorkspaceArg(string name)
+  public FindWorkspaceArg CreateFindWorkspaceArg(string? name)
   {
     return new FindWorkspaceArg
     {
