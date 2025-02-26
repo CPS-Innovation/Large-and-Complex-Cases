@@ -21,9 +21,9 @@ public class InitiateTransferMaterial
   public async Task Run([ActivityTrigger] TransferMaterialOrchestrationPayload payload)
   {
     // download doc from Egress
-    var egressPayload = new GetCaseDocumentArg
+    var egressPayload = new GetWorkspaceDocumentArg
     {
-      CaseId = payload.WorkspaceId,
+      WorkspaceId = payload.WorkspaceId,
       FileId = payload.DocumentId
     };
 
