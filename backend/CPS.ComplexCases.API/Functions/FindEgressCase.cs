@@ -36,7 +36,7 @@ public class FindEgressCase(ILogger<FindEgressCase> logger,
 
       var egressArg = _egressArgFactory.CreateFindWorkspaceArg(operationName);
 
-      var response = await _egressClient.FindWorkspace(egressArg, "integration@cps.gov.uk");
+      var response = await _egressClient.FindWorkspace(egressArg, validateTokenResult.Username);
 
       return new OkObjectResult(response);
     }
