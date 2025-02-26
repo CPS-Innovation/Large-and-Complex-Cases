@@ -73,7 +73,7 @@ public class EgressClientTests
     public async Task GetCaseMaterial_ShouldReturnPaginatedCaseMaterial()
     {
         // Arrange
-        var arg = _egressArgFactory.CreateGetCaseMaterialArg("workspace-id", 1, 10, null);
+        var arg = _egressArgFactory.CreateGetWorkspaceMaterialArg("workspace-id", 1, 10, null);
 
         // Act
         var result = await _client.GetCaseMaterial(arg);
@@ -98,7 +98,7 @@ public class EgressClientTests
     public async Task GetCaseMaterial_ShouldReturnTraversedFolderMaterial()
     {
         // Arrange
-        var arg = _egressArgFactory.CreateGetCaseMaterialArg("workspace-id", 1, 10, "folder-id");
+        var arg = _egressArgFactory.CreateGetWorkspaceMaterialArg("workspace-id", 1, 10, "folder-id");
 
         // Act
         var result = await _client.GetCaseMaterial(arg);

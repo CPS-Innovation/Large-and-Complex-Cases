@@ -51,10 +51,10 @@ public class EgressClient(ILogger<EgressClient> logger, IOptions<EgressOptions> 
     return filteredWorkspaces;
   }
 
-  public async Task<GetCaseMaterialDto> GetCaseMaterial(GetCaseMaterialArg arg)
+  public async Task<GetCaseMaterialDto> GetCaseMaterial(GetWorkspaceMaterialArg arg)
   {
     var token = await GetWorkspaceToken();
-    var response = await SendRequestAsync<GetCaseMaterialResponse>(_egressRequestFactory.GetCaseMaterialRequest(arg, token));
+    var response = await SendRequestAsync<GetCaseMaterialResponse>(_egressRequestFactory.GetWorkspaceMaterialRequest(arg, token));
 
     var materialsData = response.Data.Select(data => new GetCaseMaterialDataDto
     {
@@ -76,10 +76,10 @@ public class EgressClient(ILogger<EgressClient> logger, IOptions<EgressOptions> 
     };
   }
 
-  public async Task<Stream> GetCaseDocument(GetCaseDocumentArg arg)
+  public async Task<Stream> GetCaseDocument(GetWorkspaceDocumentArg arg)
   {
     var token = await GetWorkspaceToken();
-    var response = await SendRequestAsync(_egressRequestFactory.GetCaseDocumentRequest(arg, token));
+    var response = await SendRequestAsync(_egressRequestFactory.GetWorkspaceDocumentRequest(arg, token));
     return await response.Content.ReadAsStreamAsync();
   }
 

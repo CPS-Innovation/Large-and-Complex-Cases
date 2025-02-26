@@ -12,11 +12,11 @@ public class EgressArgFactory : IEgressArgFactory
     };
   }
 
-  public GetCaseMaterialArg CreateGetCaseMaterialArg(string caseId, int page, int count, string? folderId)
+  public GetWorkspaceMaterialArg CreateGetWorkspaceMaterialArg(string workspaceId, int page, int count, string? folderId)
   {
-    return new GetCaseMaterialArg
+    return new GetWorkspaceMaterialArg
     {
-      CaseId = caseId,
+      WorkspaceId = workspaceId,
       Page = page,
       Count = count,
       FolderId = folderId

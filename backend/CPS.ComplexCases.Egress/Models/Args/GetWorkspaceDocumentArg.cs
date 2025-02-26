@@ -1,8 +1,8 @@
 
 namespace CPS.ComplexCases.Egress.Models.Args;
 
-public class GetCaseDocumentArg
+public class GetWorkspaceDocumentArg
 {
-  public required string CaseId { get; set; }
+  public required string WorkspaceId { get; set; }
   public required string FileId { get; set; }
 }
