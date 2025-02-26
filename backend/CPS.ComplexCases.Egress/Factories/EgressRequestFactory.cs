@@ -31,9 +31,9 @@ public class EgressRequestFactory : IEgressRequestFactory
     return request;
   }
 
-  public HttpRequestMessage GetCaseMaterialRequest(GetCaseMaterialArg arg, string token)
+  public HttpRequestMessage GetWorkspaceMaterialRequest(GetWorkspaceMaterialArg arg, string token)
   {
-    var relativeUrl = new StringBuilder($"/api/v1/workspaces/{arg.CaseId}/files");
+    var relativeUrl = new StringBuilder($"/api/v1/workspaces/{arg.WorkspaceId}/files");
     var query = $"?view=full&page={arg.Page}&count={arg.Count}";
 
     if (!string.IsNullOrEmpty(arg.FolderId))
@@ -67,9 +67,9 @@ public class EgressRequestFactory : IEgressRequestFactory
     return request;
   }
 
-  public HttpRequestMessage GetCaseDocumentRequest(GetCaseDocumentArg arg, string token)
+  public HttpRequestMessage GetWorkspaceDocumentRequest(GetWorkspaceDocumentArg arg, string token)
   {
-    var request = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/workspaces/{arg.CaseId}/files/{arg.FileId}");
+    var request = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/workspaces/{arg.WorkspaceId}/files/{arg.FileId}");
 
     AppendToken(request, token);
 
