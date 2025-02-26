@@ -4,6 +4,7 @@ using Amazon.S3;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
+using CPS.ComplexCases.NetApp.Wrappers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -14,6 +15,7 @@ namespace CPS.ComplexCases.NetApp.Integration
         private readonly NetAppClient _client;
         private readonly NetAppArgFactory _netAppArgFactory;
         private readonly AmazonS3Client _s3Client;
+        private readonly IAmazonS3UtilsWrapper _amazonS3UtilsWrapper;
 
         public NetAppClientTests()
         {
@@ -22,7 +24,7 @@ namespace CPS.ComplexCases.NetApp.Integration
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
                 .Build();
 
-            var netAppOptions = configuration.GetSection("NetAppOptions").Get<NetAppOptions>();
+            var netAppOptions = configuration.GetSection("NetAppOptions").Get<NetAppOptions>() ?? throw new InvalidOperationException("NetAppOptions section is missing or invalid.");
 
             var s3ClientConfig = new AmazonS3Config
             {
@@ -32,10 +34,11 @@ namespace CPS.ComplexCases.NetApp.Integration
 
             var credentials = new BasicAWSCredentials("fakeAccessKey", "fakeSecretKey");
             _s3Client = new AmazonS3Client(credentials, s3ClientConfig);
+            _amazonS3UtilsWrapper = new AmazonS3UtilsWrapper();
 
             var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<NetAppClient>();
 
-            _client = new NetAppClient(logger, _s3Client);
+            _client = new NetAppClient(logger, _s3Client, _amazonS3UtilsWrapper);
             _netAppArgFactory = new NetAppArgFactory();
         }
 

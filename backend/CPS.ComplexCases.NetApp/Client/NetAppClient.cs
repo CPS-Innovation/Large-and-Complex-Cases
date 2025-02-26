@@ -1,27 +1,29 @@
 using Amazon.S3;
 using Amazon.S3.Model;
-using Amazon.S3.Util;
 using CPS.ComplexCases.NetApp.Models.Args;
+using CPS.ComplexCases.NetApp.Wrappers;
 using Microsoft.Extensions.Logging;
 
 namespace CPS.ComplexCases.NetApp.Client
 {
     public class NetAppClient : INetAppClient
     {
-        private readonly IAmazonS3 _client;
         private readonly ILogger<NetAppClient> _logger;
+        private readonly IAmazonS3UtilsWrapper _amazonS3UtilsWrapper;
+        private readonly IAmazonS3 _client;
 
-        public NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 amazonS3Client)
+        public NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazonS3UtilsWrapper amazonS3UtilsWrapper)
         {
-            _client = amazonS3Client;
             _logger = logger;
+            _amazonS3UtilsWrapper = amazonS3UtilsWrapper;
+            _client = client;
         }
 
         public async Task<bool> CreateBucketAsync(CreateBucketArg arg)
         {
             try
             {
-                var bucketExists = AmazonS3Util.DoesS3BucketExistV2Async(_client, arg.BucketName).Result;
+                var bucketExists = await _amazonS3UtilsWrapper.DoesS3BucketExistV2Async(_client, arg.BucketName);
                 if (bucketExists)
                 {
                     _logger.LogInformation($"Bucket with name {arg.BucketName} already exists.");
