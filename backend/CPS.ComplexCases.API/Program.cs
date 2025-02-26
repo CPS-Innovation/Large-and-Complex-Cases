@@ -13,6 +13,8 @@ using CPS.ComplexCases.API.Handlers;
 using CPS.ComplexCases.API.Validators;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using CPS.ComplexCases.NetApp.Models;
+using CPS.ComplexCases.NetApp.Wrappers;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
@@ -42,9 +44,23 @@ builder.Services.AddHttpClient<IEgressClient, EgressClient>(client =>
 });
 
 builder.Services.AddDefaultAWSOptions(builder.Configuration.GetAWSOptions());
-builder.Services.AddAWSService<IAmazonS3>();
+//builder.Services.AddAWSService<IAmazonS3>();
 builder.Services.AddTransient<INetAppClient, NetAppClient>();
 builder.Services.AddTransient<INetAppArgFactory, NetAppArgFactory>();
+builder.Services.AddSingleton<IAmazonS3UtilsWrapper, AmazonS3UtilsWrapper>();
+builder.Services.Configure<NetAppOptions>(builder.Configuration.GetSection("NetAppOptions"));
+builder.Services.AddTransient<IAmazonS3, AmazonS3Client>(client =>
+{
+  var s3ClientConfig = new AmazonS3Config
+  {
+    ServiceURL = builder.Configuration["NetAppOptions:Url"],
+    ForcePathStyle = true,
+    RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(builder.Configuration["NetAppOptions:Region"])
+  };
+
+  var credentials = new Amazon.Runtime.BasicAWSCredentials(builder.Configuration["NetAppOptions:AccessKey"], builder.Configuration["NetAppOptions:SecretKey"]);
+  return new AmazonS3Client(credentials, s3ClientConfig);
+});
 builder.Services.AddSingleton(_ =>
 {
   // as per https://github.com/dotnet/aspnetcore/issues/43220, there is guidance to only have one instance of ConfigurationManager.
