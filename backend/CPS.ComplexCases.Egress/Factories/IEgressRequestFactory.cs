@@ -6,7 +6,7 @@ public interface IEgressRequestFactory
 {
   HttpRequestMessage GetWorkspaceTokenRequest(string serviceAccountUsername, string serviceAccountPassword);
   HttpRequestMessage FindWorkspaceRequest(FindWorkspaceArg workspace, string token);
-  HttpRequestMessage GetCaseMaterialRequest(GetCaseMaterialArg arg, string token);
+  HttpRequestMessage GetWorkspaceMaterialRequest(GetWorkspaceMaterialArg arg, string token);
   HttpRequestMessage GetWorkspacePermissionsRequest(GetWorkSpacePermissionArg arg, string token);
-  HttpRequestMessage GetCaseDocumentRequest(GetCaseDocumentArg arg, string token);
+  HttpRequestMessage GetWorkspaceDocumentRequest(GetWorkspaceDocumentArg arg, string token);
 }
