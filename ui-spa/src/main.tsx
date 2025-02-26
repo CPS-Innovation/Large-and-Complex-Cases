@@ -1,12 +1,11 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import App from "./App.tsx";
+import App from "./components/app.tsx";
 import { MOCK_API_SOURCE } from "./config.ts";
 import "./index.scss";
 
 async function enableMocking() {
-  console.log("MOCK_API_SOURCE>>", MOCK_API_SOURCE);
-  if (!MOCK_API_SOURCE || process.env.NODE_ENV !== "development") {
+  if (!MOCK_API_SOURCE) {
     return;
   }
 
