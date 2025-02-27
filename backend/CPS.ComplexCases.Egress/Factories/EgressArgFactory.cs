@@ -22,4 +22,13 @@ public class EgressArgFactory : IEgressArgFactory
       FolderId = folderId
     };
   }
+
+  public GetWorkspaceDocumentArg CreateGetWorkspaceDocumentArg(string workspaceId, string fileId)
+  {
+    return new GetWorkspaceDocumentArg
+    {
+      WorkspaceId = workspaceId,
+      FileId = fileId
+    };
+  }
 }

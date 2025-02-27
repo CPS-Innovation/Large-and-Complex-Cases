@@ -7,16 +7,19 @@ using Microsoft.DurableTask.Client;
 using CPS.ComplexCases.API.Durable.Payloads;
 using CPS.ComplexCases.API.Handlers;
 using CPS.ComplexCases.API.Domain;
+using CPS.ComplexCases.API.Validators;
 
 namespace CPS.ComplexCases.API.Functions;
 
 public class TransferMaterial(ILogger<TransferMaterial> logger,
   IOrchestrationProvider orchestrationProvider,
-  IUnhandledExceptionHandler exceptionHandler)
+  IUnhandledExceptionHandler exceptionHandler,
+  IInitializationHandler initializationHandler)
 {
   private readonly ILogger<TransferMaterial> _logger = logger;
   private readonly IOrchestrationProvider _orchestrationProvider = orchestrationProvider;
   private readonly IUnhandledExceptionHandler _unhandledExceptionHandler = exceptionHandler;
+  private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
   [Function(nameof(TransferMaterial))]
   public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "workspaces/{workspaceId}/files/{fileId}")] HttpRequest req, [DurableClient] DurableTaskClient client,
@@ -24,10 +27,23 @@ public class TransferMaterial(ILogger<TransferMaterial> logger,
   {
     try
     {
-      var payload = new TransferMaterialOrchestrationPayload(workspaceId, fileId);
+      var validateTokenResult = await _initializationHandler.Initialize(req);
+
+      if (!validateTokenResult.IsValid || string.IsNullOrEmpty(validateTokenResult.Username))
+      {
+        return new UnauthorizedResult();
+      }
+
+      var transferRequest = await ValidatorHelper.GetJsonBody<TransferMaterialDto, TransferMaterialValidator>(req);
+
+      if (!transferRequest.IsValid)
+      {
+        return new BadRequestObjectResult(transferRequest.ValidationErrors);
+      }
+
+      var payload = new TransferMaterialOrchestrationPayload(workspaceId, fileId, transferRequest.Value.DestinationPath);
 
       var result = await _orchestrationProvider.TransferMaterialAsync(client, payload);
-
 
       return result switch
       {
