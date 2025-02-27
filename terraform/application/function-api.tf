@@ -50,7 +50,6 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
     cors {
       allowed_origins = [
         "https://${local.product_name_prefix}-ui.azurewebsites.net",
-        "https://${local.product_name_prefix}-cmsproxy.azurewebsites.net",
         var.environment.alias == "dev" ? "http://localhost:3000" : ""
       ]
       support_credentials = true

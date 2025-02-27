@@ -17,7 +17,13 @@ variable "service_plans" {
   type = object({
     ui_service_plan_sku    = string
     api_service_plan_sku   = string
-    proxy_service_plan_sku = string
+  })
+}
+
+variable "service_capacity" {
+  type = object({
+    ui_max_capacity = string
+    api_max_capacity = string
   })
 }
 
@@ -27,45 +33,4 @@ variable "dns_server" {
 
 variable "dns_alt_server" {
   type = string
-}
-
-variable "cms_details" {
-  type = object({
-    default_upstream_cms_ip_corsham            = string
-    default_upstream_cms_modern_ip_corsham     = string
-    default_upstream_cms_ip_farnborough        = string
-    default_upstream_cms_modern_ip_farnborough = string
-    default_upstream_cms_domain_name           = string
-    default_upstream_cms_modern_domain_name    = string
-    default_upstream_cms_services_domain_name  = string
-    cin2_upstream_cms_ip_corsham               = string
-    cin2_upstream_cms_modern_ip_corsham        = string
-    cin2_upstream_cms_ip_farnborough           = string
-    cin2_upstream_cms_modern_ip_farnborough    = string
-    cin2_upstream_cms_domain_name              = string
-    cin2_upstream_cms_modern_domain_name       = string
-    cin2_upstream_cms_services_domain_name     = string
-    cin4_upstream_cms_ip_corsham               = string
-    cin4_upstream_cms_modern_ip_corsham        = string
-    cin4_upstream_cms_ip_farnborough           = string
-    cin4_upstream_cms_modern_ip_farnborough    = string
-    cin4_upstream_cms_domain_name              = string
-    cin4_upstream_cms_modern_domain_name       = string
-    cin4_upstream_cms_services_domain_name     = string
-    cin5_upstream_cms_ip_corsham               = string
-    cin5_upstream_cms_modern_ip_corsham        = string
-    cin5_upstream_cms_ip_farnborough           = string
-    cin5_upstream_cms_modern_ip_farnborough    = string
-    cin5_upstream_cms_domain_name              = string
-    cin5_upstream_cms_modern_domain_name       = string
-    cin5_upstream_cms_services_domain_name     = string
-  })
-}
-
-variable "complex_cases_ui_sub_folder" {
-  type = string
-  // this value must match the PUBLIC_URL=... value
-  //  as seen in the ui project top-level package.json
-  //  scripts section.
-  default = "ui-spa"
 }

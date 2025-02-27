@@ -19,7 +19,7 @@ resource "azurerm_monitor_autoscale_setting" "amas_complex_cases_ui" {
     capacity {
       default = 1
       minimum = 1
-      maximum = 10
+      maximum = var.service_capacity.ui_max_capacity
     }
     rule {
       metric_trigger {

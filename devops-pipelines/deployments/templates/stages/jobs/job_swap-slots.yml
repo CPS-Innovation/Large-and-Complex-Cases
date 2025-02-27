@@ -54,25 +54,4 @@ jobs:
           resourceGroupName: "rg-complex-cases${{ parameters.targetSuffix }}"
           webAppName: $(AppServiceName)
           PreserveVnet: true
-
-  - job: Swap_Proxy_Slot
-    dependsOn: Pause_Pipeline
-    condition: succeeded()
-    strategy:
-      matrix:
-        Proxy:
-          Name: "Proxy"
-          AppServiceName: "cc${{ parameters.targetSuffix }}-cmsproxy"
-    displayName: Swap
-    steps:
-      - checkout: none
-      - task: AzureAppServiceManage@0
-        displayName: Swap slot
-        inputs:
-          action: "Swap Slots"
-          sourceSlot: "staging"
-          azureSubscription: ${{ parameters.azureSubscription }}
-          resourceGroupName: "rg-complex-cases${{ parameters.targetSuffix }}"
-          webAppName: $(AppServiceName)
-          PreserveVnet: true
   
