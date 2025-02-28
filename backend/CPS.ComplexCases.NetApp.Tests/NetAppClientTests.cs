@@ -382,5 +382,73 @@ namespace CPS.ComplexCases.NetApp.Tests
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
         }
+
+        [Fact]
+        public async Task ListFoldersInBucketAsync_WhenFoldersExist_ReturnsCommonPrefixes()
+        {
+            // Arrange
+            var arg = _fixture.Create<ListFoldersInBucketArg>();
+            var listObjectsResponse = new ListObjectsV2Response
+            {
+                CommonPrefixes = new List<string> { "folder1/", "folder2/" }
+            };
+
+            _amazonS3Mock.Setup(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
+                .ReturnsAsync(listObjectsResponse);
+
+            // Act
+            var result = await _client.ListFoldersInBucketAsync(arg);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(2, result.Count());
+            Assert.Contains("folder1/", result);
+            Assert.Contains("folder2/", result);
+        }
+
+        [Fact]
+        public async Task ListFoldersInBucketAsync_WhenNoFoldersExist_ReturnsEmptyList()
+        {
+            // Arrange
+            var arg = _fixture.Create<ListFoldersInBucketArg>();
+            var listObjectsResponse = new ListObjectsV2Response
+            {
+                CommonPrefixes = new List<string>()
+            };
+
+            _amazonS3Mock.Setup(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
+                .ReturnsAsync(listObjectsResponse);
+
+            // Act
+            var result = await _client.ListFoldersInBucketAsync(arg);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public async Task ListFoldersInBucketAsync_WhenExceptionThrown_LogsErrorAndReturnsEmptyList()
+        {
+            // Arrange
+            var arg = _fixture.Create<ListFoldersInBucketArg>();
+            var expectedExceptionMessage = $"Failed to list objects in bucket {arg.BucketName}.";
+
+            _amazonS3Mock.Setup(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
+                .ThrowsAsync(new AmazonS3Exception(expectedExceptionMessage));
+
+            // Act
+            var result = await _client.ListFoldersInBucketAsync(arg);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Empty(result);
+            _loggerMock.Verify(x => x.Log(
+                It.Is<LogLevel>(logLevel => logLevel == LogLevel.Error),
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedExceptionMessage)),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
+        }
     }
 }
