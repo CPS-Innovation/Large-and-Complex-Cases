@@ -55,7 +55,9 @@ Internal:
 
  - consider using stream out - stream in thing that Polaris did (https://github.com/CPS-Innovation/Polaris/blob/ee5fc2b8790bdd2019a59d49ef8bbdf8309f8669/polaris-pipeline/Common/Streaming/HttpResponseMessageStream.cs#L8)
 
-Zips - for first pass do not unzip, but we can/have started thinking about this
+Zips - 
+ - for first pass do not unzip, but we can/have started thinking about this
+ - Detect zip using Content-Type header
 
 UI:
     - folder a/
