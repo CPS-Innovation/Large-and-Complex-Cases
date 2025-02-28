@@ -77,26 +77,6 @@ stages:
               statusCheckTimeoutSeconds: ${{ parameters.statusCheckTimeoutSeconds }}
               successTextContent: $(resources.pipeline.PolarisBuild.runName)
 
-      - job: Check_Proxy
-        dependsOn: Get_Status_URIs
-        condition: succeeded()
-        displayName: Check Proxy
-        variables:
-          uri: $[dependencies.Get_Status_URIs.outputs['uris.proxyUri']]
-        steps:
-          - template: jobs/tasks/task_call-status-endpoint.yml
-            parameters:
-              targetBuild: ${{ parameters.targetBuild }}
-              targetLabel: ${{ parameters.targetLabel }}
-              targetAppName: "Proxy"
-              targetScript: "InvokeRequestWithRetryNonNumeric.ps1"
-              endpointUri: "$(uri)/"
-              statusCheckMethod: ${{ parameters.statusCheckMethod }}
-              statusCheckRetries: ${{ parameters.statusCheckRetries }}
-              statusCheckDelaySeconds: ${{ parameters.statusCheckDelaySeconds }}
-              statusCheckTimeoutSeconds: ${{ parameters.statusCheckTimeoutSeconds }}
-              successTextContent: "Polaris Proxy is online"
-
       - job: Check_UI
         dependsOn: Get_Status_URIs
         condition: succeeded()
@@ -124,7 +104,6 @@ stages:
           - Log_Start
           - Get_Status_URIs
           - Check_API
-          - Check_Proxy
           - Check_UI
         steps:
           - template: jobs/tasks/task_log-result.yml

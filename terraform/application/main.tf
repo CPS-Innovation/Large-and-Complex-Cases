@@ -66,8 +66,8 @@ resource "azuread_service_principal" "sharepointonline" {
 locals {
   product_name        = "complex-cases"
   resource_suffix     = var.environment.alias != "prod" ? "-${var.environment.alias}" : ""
-  product_name_prefix = "cc${local.resource_suffix}"
-  ddei_resource_name  = "cc${local.resource_suffix}-ddei"
+  product_name_prefix = "${local.product_name}${local.resource_suffix}"
+  ddei_resource_name  = "${local.product_name}${local.resource_suffix}-ddei"
   common_tags = {
     environment = var.environment.name
     project     = ""
