@@ -41,12 +41,11 @@ public class TransferMaterial(ILogger<TransferMaterial> logger,
       }
 
       var filePaths = transferRequest.Value.FilePaths;
-      var destination = transferRequest.Value.DestinationPath;
       var operationIdRoot = Guid.NewGuid();
 
       foreach (var filePath in filePaths)
       {
-        var payload = new TransferMaterialOrchestrationPayload(operationIdRoot, filePath, destination);
+        var payload = new TransferMaterialOrchestrationPayload(operationIdRoot, filePath.Source, filePath.Destination);
         await _orchestrationProvider.TransferMaterialAsync(client, payload);
       }
 
