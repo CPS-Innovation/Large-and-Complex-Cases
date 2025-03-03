@@ -5,6 +5,7 @@ using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Wrappers;
+using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -53,7 +54,7 @@ namespace CPS.ComplexCases.NetApp.Integration
             var result = await _client.CreateBucketAsync(arg);
 
             // Assert
-            Assert.True(result);
+            result.Should().BeTrue();
         }
 
         [Fact]
@@ -67,8 +68,19 @@ namespace CPS.ComplexCases.NetApp.Integration
             var result = await _client.FindBucketAsync(arg);
 
             // Assert
-            Assert.NotNull(result);
-            Assert.Equal(bucketName, result!.BucketName);
+            result.Should().NotBeNull();
+            result.BucketName.Should().Be(bucketName);
+        }
+
+        [Fact]
+        public async Task ListBuckets_WhenBucketsExist_ReturnsBuckets()
+        {
+            // Act
+            var result = await _client.ListBucketsAsync();
+
+            // Assert
+            result.Should().NotBeNullOrEmpty();
+            result.Count().Should().BeGreaterThanOrEqualTo(1);
         }
 
         [Fact]
@@ -84,7 +96,7 @@ namespace CPS.ComplexCases.NetApp.Integration
             var result = await _client.UploadObjectAsync(arg);
 
             // Assert
-            Assert.True(result);
+            result.Should().BeTrue();
         }
 
         [Fact]
@@ -99,10 +111,10 @@ namespace CPS.ComplexCases.NetApp.Integration
             var result = await _client.ListObjectsInBucketAsync(arg);
 
             // Assert
-            Assert.NotNull(result);
-            Assert.Equal(bucketName, result.Name);
-            Assert.Equal(2, result.S3Objects.Count);
-            Assert.Equal(objectName, result.S3Objects[0].Key);
+            result.Should().NotBeNull();
+            result.Name.Should().Be(bucketName);
+            result.S3Objects.Should().HaveCount(2);
+            result.S3Objects[0].Key.Should().Be(objectName);
         }
 
         [Fact]
@@ -117,9 +129,27 @@ namespace CPS.ComplexCases.NetApp.Integration
             var result = await _client.GetObjectAsync(arg);
 
             // Assert
-            Assert.NotNull(result);
-            Assert.Equal(bucketName, result.BucketName);
-            Assert.Equal(objectName, result.Key);
+            result.Should().NotBeNull();
+            result.BucketName.Should().Be(bucketName);
+            result.Key.Should().Be(objectName);
+        }
+
+        [Fact]
+        public async Task ListNestedObjects_WhenObjectsExists_ReturnsObjects()
+        {
+            // Arrange
+            var bucketName = "nested-objects";
+            var arg = _netAppArgFactory.CreateListFoldersInBucketArg(bucketName);
+
+            // Act
+            var result = await _client.ListFoldersInBucketAsync(arg);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Should().HaveCount(3);
+            result.Should().Contain("counsel/");
+            result.Should().Contain("counsel/statements/");
+            result.Should().Contain("multimedia/");
         }
     }
 }

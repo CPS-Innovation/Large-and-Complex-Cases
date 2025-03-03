@@ -13,6 +13,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="fluentassertions" Version="8.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="2.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.13" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.2" />
