@@ -4,5 +4,6 @@ public enum OrchestrationStatus
 {
   Accepted,
   InProgress,
-  Completed
+  Completed,
+  Failed
 }

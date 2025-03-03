@@ -2,12 +2,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace CPS.ComplexCases.API.Durable.Payloads;
 
-public class TransferMaterialOrchestrationPayload(string workspaceId, string documentId, string destinationPath)
+public class TransferMaterialOrchestrationPayload(Guid operationIdRoot, string source, string destination)
 {
   [Required]
-  public string WorkspaceId { get; set; } = workspaceId;
+  public Guid OperationIdRoot { get; set; } = operationIdRoot;
   [Required]
-  public string DocumentId { get; set; } = documentId;
+  public string Source { get; set; } = source;
   [Required]
-  public string DestinationPath { get; set; } = destinationPath;
+  public string Destination { get; set; } = destination;
 }

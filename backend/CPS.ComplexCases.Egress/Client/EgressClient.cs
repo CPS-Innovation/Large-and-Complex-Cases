@@ -63,7 +63,7 @@ public class EgressClient(ILogger<EgressClient> logger, IOptions<EgressOptions> 
       Path = data.Path,
       DateUpdated = data.DateUpdated,
       IsFolder = data.IsFolder,
-      Version = data.Version
+      Version = data.Version,
     });
 
     return new GetCaseMaterialDto

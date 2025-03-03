@@ -7,9 +7,9 @@ namespace CPS.ComplexCases.API.Durable.Orchestration;
 
 public class TransferMaterialOrchestrator
 {
-  public static string GetKey(string workspaceId, string documentId)
+  public static string GetKey(Guid operationIdRoot)
   {
-    return $"[{workspaceId}]-{documentId}-transfer";
+    return $"[{operationIdRoot}]-{Guid.NewGuid()}";
   }
 
   [Function(nameof(TransferMaterialOrchestrator))]

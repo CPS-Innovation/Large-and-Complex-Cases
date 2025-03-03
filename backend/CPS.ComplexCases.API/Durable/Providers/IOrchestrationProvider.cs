@@ -8,4 +8,5 @@ namespace CPS.ComplexCases.API.Durable.Providers;
 public interface IOrchestrationProvider
 {
   Task<OrchestrationStatus> TransferMaterialAsync(DurableTaskClient client, TransferMaterialOrchestrationPayload payload);
+  Task<IEnumerable<TransferMaterialStatus>> GetTransferMaterialStatusAsync(DurableTaskClient client, string operationIdRoot);
 }

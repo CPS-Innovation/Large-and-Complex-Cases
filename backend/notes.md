@@ -1,5 +1,13 @@
 # API endpoints
 
+Middleware
+
+- auth validation 
+    - add username and token to the context object
+    - maybe have a helper/extension that reads the context we care about from the context object as a strongly typed
+- global error handling
+
+
 ```
  https://comples-cases.com/api/
     
@@ -14,17 +22,41 @@
     GET /file-system/egress/{workspaceId}/files/{?fileId} NOT EXPOSED REALLY
         Response: binary of file
      
+    HEAD /file-system/egress/{workspaceId}/files/{?fileId}  FOR LOOKUP IF FILE EXISTS - NEEDS LOOKING UP IN EGRESS SPEC 
+        Response: 200 or 404
+
     GET /file-system/net-app/{*path} (if bucket)
         Response: <PaginatedResponse>{entityId, name, isFolder, path }[]
 
     GET /file-system/net-app/{*path} (if file) NOT EXPOSED REALLY
         Response: binary of file
 
+    HEAD /file-system/net-app/{*path} FOR LOOKUP IF FILE EXISTS
+        Response: 200 or 404
 
-    POST /transfers/
+    either:
+    POST /transfers/ (NOT PREFERRED)
         Request: {
-            "filePaths": string[],  ["/file-system/egress/78127389123/files/123123123123", "/file-system/egress/123123123123/files/123123123123", "/file-system/net-app/some/file/path/doc1.docx"]
-            "destination": path
+            "filePaths": {source, destinationSubPath} [] 
+                [
+                    {source: "/file-system/egress/78127389123/files/123123123123.txt", "destinationSubPath": "123123123123.txt" },
+                    {source: "/file-system/egress/asdasdasdads/files/asdasdadsasdas.txt", "destinationSubPath": "/files/asdasdadsasdas.txt" },
+                ]
+            "destination": "/file-system/net-app/uuhuhfuiui/"
+        }
+
+        Response: {
+            "transferId": "diowjiqwojeiqwjeioqwjeioqw11qweqwe"
+        }
+
+    or:
+    POST /transfers/ (PREFERRED)
+        Request: {
+            "filePaths": {source, destination} [] 
+                [
+                    {"source": "/file-system/egress/78127389123/files/123123123123.txt", "destination":"/file-system/net-app/some-folder/78127389123/files/123123123123"},
+                    {"source": "/file-system/egress/asasasasas/123123123124.txt", "destination":"/file-system/net-app/some-folder/123123123123.txt"} 
+                ],
         }
 
         Response: {

@@ -1,7 +1,6 @@
 namespace CPS.ComplexCases.API.Domain;
 
-public class TransferResponse(string workspaceId, string documentId)
+public class TransferResponse(Guid transferId)
 {
-  public string WorkspaceId { get; set; } = workspaceId;
-  public string DocumentId { get; set; } = documentId;
+  public Guid TransferId { get; set; } = transferId;
 }

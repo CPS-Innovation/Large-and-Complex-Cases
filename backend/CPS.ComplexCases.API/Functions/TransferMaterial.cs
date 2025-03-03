@@ -22,8 +22,7 @@ public class TransferMaterial(ILogger<TransferMaterial> logger,
   private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
   [Function(nameof(TransferMaterial))]
-  public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "workspaces/{workspaceId}/files/{fileId}")] HttpRequest req, [DurableClient] DurableTaskClient client,
-    string workspaceId, string fileId)
+  public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "transfers")] HttpRequest req, [DurableClient] DurableTaskClient client)
   {
     try
     {
@@ -41,19 +40,17 @@ public class TransferMaterial(ILogger<TransferMaterial> logger,
         return new BadRequestObjectResult(transferRequest.ValidationErrors);
       }
 
-      var payload = new TransferMaterialOrchestrationPayload(workspaceId, fileId, transferRequest.Value.DestinationPath);
+      var filePaths = transferRequest.Value.FilePaths;
+      var destination = transferRequest.Value.DestinationPath;
+      var operationIdRoot = Guid.NewGuid();
 
-      var result = await _orchestrationProvider.TransferMaterialAsync(client, payload);
-
-      return result switch
+      foreach (var filePath in filePaths)
       {
-        OrchestrationStatus.Accepted or OrchestrationStatus.Completed => new ObjectResult(new TransferResponse(workspaceId, fileId))
-        {
-          StatusCode = StatusCodes.Status202Accepted
-        },
-        OrchestrationStatus.InProgress => new StatusCodeResult(StatusCodes.Status423Locked),
-        _ => new StatusCodeResult(StatusCodes.Status500InternalServerError),
-      };
+        var payload = new TransferMaterialOrchestrationPayload(operationIdRoot, filePath, destination);
+        await _orchestrationProvider.TransferMaterialAsync(client, payload);
+      }
+
+      return new ObjectResult(new TransferResponse(operationIdRoot));
     }
     catch (Exception ex)
     {
