@@ -1,9 +1,9 @@
 resource "azurerm_linux_function_app_slot" "complex_cases_api_staging" {
   name                          = "staging"
-  function_app_id               = azure_linux_function_app.complex_cases_api.id
+  function_app_id               = azurerm_linux_function_app.complex_cases_api.id
   storage_account_name          = azurerm_storage_account.sacpsccapi.name
   storage_account_access_key    = azurerm_storage_account.sacpsccapi.primary_access_key
-  virtual_network_subnet_id     = data.azurerm_subnet.complex_cases_placeholder_subnet.id
+  virtual_network_subnet_id     = data.azurerm_subnet.complex_cases_api_subnet.id
   tags                          = local.common_tags
   functions_extension_version   = "~4"
   https_only                    = true
@@ -37,20 +37,24 @@ resource "azurerm_linux_function_app_slot" "complex_cases_api_staging" {
   site_config {
     ftps_state                             = "FtpsOnly"
     http2_enabled                          = true
-    runtime_scale_monitoring_enabled       = true
     vnet_route_all_enabled                 = true
-    elastic_instance_minimum               = var.service_plans.api_always_ready_instances
-    app_scale_limit                        = var.service_plans.api_maximum_scale_out_limit
-    pre_warmed_instance_count              = var.service_plans.api_always_ready_instances
     application_insights_connection_string = data.azurerm_application_insights.complex_cases_ai.connection_string
     application_insights_key               = data.azurerm_application_insights.complex_cases_ai.instrumentation_key
-    health_check_path                      = "/api/status"
-    health_check_eviction_time_in_min      = "2"
-    use_32_bit_worker                      = false
+    always_on                              = true
+    cors {
+      allowed_origins = [
+        "https://${local.product_prefix}-ui.azurewebsites.net",
+        var.environment.alias == "dev" ? "http://localhost:3000" : ""
+      ]
+      support_credentials = true
+    }
     application_stack {
       dotnet_version              = "8.0"
       use_dotnet_isolated_runtime = true
     }
+    health_check_path                 = "/api/status"
+    health_check_eviction_time_in_min = "2"
+    use_32_bit_worker                 = false
   }
 
   identity {
@@ -74,7 +78,7 @@ resource "azurerm_private_endpoint" "complex_cases_api_staging_pe" {
   name                = "${azurerm_linux_function_app.complex_cases_api.name}-staging-pe"
   resource_group_name = azurerm_resource_group.rg_complex_cases.name
   location            = azurerm_resource_group.rg_complex_cases.location
-  subnet_id           = data.azurerm_subnet.complex_cases_placeholder_subnet.id
+  subnet_id           = data.azurerm_subnet.complex_cases_endpoints_subnet.id
   tags                = local.common_tags
 
   private_dns_zone_group {

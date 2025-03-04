@@ -5,7 +5,7 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
   service_plan_id               = azurerm_service_plan.asp_complex_cases_api.id
   storage_account_name          = azurerm_storage_account.sacpsccapi.name
   storage_account_access_key    = azurerm_storage_account.sacpsccapi.primary_access_key
-  virtual_network_subnet_id     = data.azurerm_subnet.complex_cases_placeholder_subnet.id
+  virtual_network_subnet_id     = data.azurerm_subnet.complex_cases_api_subnet.id
   tags                          = local.common_tags
   functions_extension_version   = "~4"
   https_only                    = true
@@ -60,6 +60,7 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
     }
     health_check_path                 = "/api/status"
     health_check_eviction_time_in_min = "2"
+    use_32_bit_worker                 = false
   }
 
   identity {
@@ -108,7 +109,7 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
     ]
   }
 
-  depends_on = [azurerm_storage_account.sacpsccapi, azapi_resource.sacpsccapi_ui_file_share]
+  depends_on = [azurerm_storage_account.sacpsccapi, azapi_resource.sacpsccapi_file_share]
 }
 
 resource "azuread_application" "complex_cases_api" {
@@ -193,7 +194,7 @@ resource "azuread_application" "complex_cases_api" {
     resource_app_id = data.azuread_application_published_app_ids.well_known.result["Office365SharePointOnline"]
 
     resource_access {
-      id   = data.azuread_service_principal.msgraph.oauth2_permission_scope_ids["Container.Manager"]
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["Container.Manager"]
       type = "Scope"
     }
   }
@@ -219,6 +220,26 @@ resource "azuread_application" "complex_cases_api" {
       access_token_issuance_enabled = false
       id_token_issuance_enabled     = true
     }
+  }
+}
+
+resource "azurerm_private_endpoint" "complex_cases_api_pe" {
+  name                = "${azurerm_linux_function_app.complex_cases_api.name}-pe"
+  resource_group_name = azurerm_resource_group.rg_complex_cases.name
+  location            = azurerm_resource_group.rg_complex_cases.location
+  subnet_id           = data.azurerm_subnet.complex_cases_api_subnet.id
+  tags                = local.common_tags
+
+  private_dns_zone_group {
+    name                 = data.azurerm_private_dns_zone.dns_zone_apps.name
+    private_dns_zone_ids = [data.azurerm_private_dns_zone.dns_zone_apps.id]
+  }
+
+  private_service_connection {
+    name                           = "${azurerm_linux_function_app.complex_cases_api.name}-psc"
+    private_connection_resource_id = azurerm_linux_function_app.complex_cases_api.id
+    is_manual_connection           = false
+    subresource_names              = ["sites"]
   }
 }
 

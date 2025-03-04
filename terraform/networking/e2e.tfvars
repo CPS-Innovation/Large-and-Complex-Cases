@@ -16,5 +16,9 @@ appinsights_configuration = {
 
 
 subnets {
-  ampls = []
+  ampls     = []
+  storage   = []
+  ui        = []
+  api       = []
+  endpoints = []
 }

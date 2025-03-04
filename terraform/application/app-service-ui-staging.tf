@@ -1,6 +1,6 @@
 resource "azurerm_linux_web_app_slot" "complex_cases_ui_staging" {
   name           = "staging"
-  app_service_id = azurerm_linux_web_app.as_complex_cases_ui.id
+  app_service_id = azurerm_linux_web_app.complex_cases_ui.id
   https_only     = true
 
   app_settings = {
@@ -26,9 +26,9 @@ resource "azurerm_linux_web_app_slot" "complex_cases_ui_staging" {
   site_config {
     ftps_state    = "FtpsOnly"
     http2_enabled = true
-    #app_command_line       = "node polaris-ui/subsititute-config.js; npx serve -s"
+    app_command_line       = "node complex-cases-ui/subsititute-config.js; npx serve -s"
     always_on = true
-    #vnet_route_all_enabled = true
+    vnet_route_all_enabled = true
     use_32_bit_worker = false
 
     application_stack {
@@ -75,7 +75,7 @@ resource "azurerm_private_endpoint" "complex_cases_ui_staging_pe" {
   name                = "${azurerm_linux_web_app.complex_cases_ui.name}-staging-pe"
   resource_group_name = azurerm_resource_group.rg_complex_cases.name
   location            = azurerm_resource_group.rg_complex_cases.location
-  subnet_id           = data.azurerm_subnet.complex_cases_placeholder_subnet.id
+  subnet_id           = data.azurerm_subnet.complex_cases_endpoints_subnet.id
   tags                = local.common_tags
 
   private_dns_zone_group {

@@ -54,41 +54,27 @@ resource "azuread_application" "sharepoint_embedded" {
     resource_app_id = data.azuread_application_published_app_ids.well_known.result["Office365SharePointOnline"]
 
     resource_access {
-      id   = data.azuread_service_principal.msgraph.oauth2_permission_scope_ids["AllSites.Read"]
+      id   = azuread_service_principal.sharepointonline.oauth2_permission_scope_ids["AllSites.Read"]
       type = "Scope"
     }
 
     resource_access {
-      id   = data.azuread_service_principal.msgraph.oauth2_permission_scope_ids["AllSites.Write"]
+      id   = azuread_service_principal.sharepointonline.oauth2_permission_scope_ids["AllSites.Write"]
       type = "Scope"
     }
 
     resource_access {
-      id   = data.azuread_service_principal.msgraph.oauth2_permission_scope_ids["Sites.ReadWrite.All"]
+      id   = azuread_service_principal.sharepointonline.oauth2_permission_scope_ids["Sites.ReadWrite.All"]
       type = "Role"
     }
   }
 
-  required_resource_access {
-    resource_app_id = azuread_application.complex_cases_api.client_id
-
-    dynamic "resource_access" {
-      for_each = azuread_application.complex_cases_api.api.0.oauth2_permission_scope
-      iterator = scope
-
-      content {
-        id   = scope.value.id
-        type = "Scope"
-      }
-    }
-  }
-
   single_page_application {
-    redirect_uris = ["http://localhost"]
+    redirect_uris = ["http://localhost/"]
   }
 
   web {
-    redirect_uris = ["http://localhost:7071", "https://oauth.pstmn.io/v1/browser-callback", "https://oauth.pstmn.io/v1/callback"]
+    redirect_uris = ["http://localhost:7071/", "https://oauth.pstmn.io/v1/browser-callback/", "https://oauth.pstmn.io/v1/callback/"]
 
     implicit_grant {
       access_token_issuance_enabled = true

@@ -26,6 +26,10 @@ variable "appinsights_configuration" {
 
 variable "subnets" {
   type = object({
-    ampls = list(string)
+    ampls     = list(string)
+    storage   = list(string)
+    ui        = list(string)
+    api       = list(string)
+    endpoints = list(string)
   })
 }

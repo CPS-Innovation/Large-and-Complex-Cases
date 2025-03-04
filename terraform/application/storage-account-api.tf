@@ -1,5 +1,5 @@
 resource "azurerm_storage_account" "sacpsccapi" {
-  name                = "sacps${var.environment.aliasironment.alias != "prod" ? var.environment.alias : ""}ccapi"
+  name                = "sacps${var.environment.alias != "prod" ? var.environment.alias : ""}ccapi"
   resource_group_name = azurerm_resource_group.rg_complex_cases.name
   location            = azurerm_resource_group.rg_complex_cases.location
 
@@ -28,9 +28,9 @@ resource "azurerm_storage_account" "sacpsccapi" {
 
 resource "azurerm_private_endpoint" "sacpsccapi_blob_pe" {
   name                = "sacps${var.environment.alias != "prod" ? var.environment.alias : ""}ccapi-blob-pe"
-  resource_group_name = ui-azurerm_resource_group.rg_complex_cases.name
-  location            = ui-azurerm_resource_group.rg_complex_cases.location
-  subnet_id           = data.azurerm_subnet.complex_cases_placeholder_subnet.id
+  resource_group_name = azurerm_resource_group.rg_complex_cases.name
+  location            = azurerm_resource_group.rg_complex_cases.location
+  subnet_id           = data.azurerm_subnet.complex_cases_storage_subnet.id
   tags                = local.common_tags
 
   private_dns_zone_group {
@@ -48,9 +48,9 @@ resource "azurerm_private_endpoint" "sacpsccapi_blob_pe" {
 
 resource "azurerm_private_endpoint" "sacpsccapi_table_pe" {
   name                = "sacps${var.environment.alias != "prod" ? var.environment.alias : ""}ccapi-table-pe"
-  resource_group_name = ui-azurerm_resource_group.rg_complex_cases.name
-  location            = ui-azurerm_resource_group.rg_complex_cases.location
-  subnet_id           = data.azurerm_subnet.complex_cases_placeholder_subnet.id
+  resource_group_name = azurerm_resource_group.rg_complex_cases.name
+  location            = azurerm_resource_group.rg_complex_cases.location
+  subnet_id           = data.azurerm_subnet.complex_cases_storage_subnet.id
   tags                = local.common_tags
 
   private_dns_zone_group {
@@ -68,9 +68,9 @@ resource "azurerm_private_endpoint" "sacpsccapi_table_pe" {
 
 resource "azurerm_private_endpoint" "sacpsccapi_file_pe" {
   name                = "sacps${var.environment.alias != "prod" ? var.environment.alias : ""}ccapi-file-pe"
-  resource_group_name = ui-azurerm_resource_group.rg_complex_cases.name
-  location            = ui-azurerm_resource_group.rg_complex_cases.location
-  subnet_id           = data.azurerm_subnet.complex_cases_placeholder_subnet.id
+  resource_group_name = azurerm_resource_group.rg_complex_cases.name
+  location            = azurerm_resource_group.rg_complex_cases.location
+  subnet_id           = data.azurerm_subnet.complex_cases_storage_subnet.id
   tags                = local.common_tags
 
   private_dns_zone_group {

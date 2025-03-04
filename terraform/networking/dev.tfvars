@@ -16,5 +16,9 @@ appinsights_configuration = {
 
 
 subnets {
-  ampls = ["10.7.184.32/28"]
+  ampls     = ["10.7.184.32/28"]
+  storage   = ["10.7.184.48/28"]
+  ui        = ["10.7.184.64/27"]
+  api       = ["10.7.184.96/27"]
+  endpoints = ["10.7.184.128/28"]
 }

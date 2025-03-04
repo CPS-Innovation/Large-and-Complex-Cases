@@ -54,7 +54,7 @@ locals {
   product_name    = "LaCC"
   resource_suffix = var.environment.alias != "prod" ? "-${var.environment.alias}" : ""
   product_prefix  = "${local.product_name}${local.resource_suffix}"
-  shared_suffix    = var.environment.alias != "prod" ? "preprod" : ""
+  shared_suffix   = var.environment.alias != "prod" ? "preprod" : ""
 
   common_tags = {
     environment = var.environment.name
