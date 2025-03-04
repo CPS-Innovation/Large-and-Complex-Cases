@@ -59,7 +59,7 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
       use_dotnet_isolated_runtime = true
     }
     health_check_path                 = "/api/status"
-    health_check_eviction_time_in_min = "2"
+    health_check_eviction_time_in_min = "5"
     use_32_bit_worker                 = false
   }
 
