@@ -66,17 +66,17 @@ data "azurerm_private_dns_zone" "dns_zone_search_service" {
 
 # begin: app insights lookups
 data "azurerm_application_insights" "complex_cases_ai" {
-  name                = "${local.product_name}-ai"
-  resource_group_name = "rg-${local.product_name}-analytics${local.resource_suffix}"
+  name                = "${local.product_prefix}-ai"
+  resource_group_name = "rg-${local.product_prefix}-analytics"
 }
 
 data "azurerm_log_analytics_workspace" "complex_cases_la" {
-  name                = "${local.product_name}-la"
-  resource_group_name = "rg-${local.product_name}-analytics${local.resource_suffix}"
+  name                = "${local.product_prefix}-la"
+  resource_group_name = "rg-${local.product_prefix}-analytics"
 }
 # end: app insights lookups
 
 data "azurerm_key_vault" "terraform_key_vault" {
-  name                = "kv-terraform${local.resource_suffix}"
-  resource_group_name = "rg-terraform${local.resource_suffix}"
+  name                = "${local.product_name}kv${local.shared_suffix}terraform"
+  resource_group_name = "rg-${local.product_name}terraform"
 }

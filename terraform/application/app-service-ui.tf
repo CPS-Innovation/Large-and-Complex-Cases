@@ -1,5 +1,5 @@
 resource "azurerm_linux_web_app" "complex_cases_ui" {
-  name                          = "${local.product_name_prefix}-ui"
+  name                          = "${local.product_prefix}-ui"
   location                      = var.location
   resource_group_name           = azurerm_resource_group.rg_complex_cases.name
   service_plan_id               = azurerm_service_plan.asp_complex_cases_ui.id
@@ -116,8 +116,8 @@ resource "azurerm_private_endpoint" "complex_cases_ui_pe" {
 }
 
 resource "azuread_application" "complex_cases_ui" {
-  display_name            = "${local.product_name_prefix}-ui"
-  identifier_uris         = ["https://CPSGOVUK.onmicrosoft.com/${local.product_name_prefix}-ui"]
+  display_name            = "${local.product_prefix}-ui"
+  identifier_uris         = ["https://CPSGOVUK.onmicrosoft.com/${local.product_prefix}-ui"]
   prevent_duplicate_names = true
   owners                  = [data.azuread_service_principal.terraform_service_principal.object_id]
   group_membership_claims = ["ApplicationGroup"]
@@ -183,15 +183,6 @@ resource "azuread_application" "complex_cases_ui" {
   }
 
   required_resource_access {
-    resource_app_id = data.azuread_application_published_app_ids.well_known.result["Office365SharePointOnline"]
-
-    resource_access {
-      id   = data.azuread_service_principal.msgraph.oauth2_permission_scope_ids["Container.Manager"]
-      type = "Scope"
-    }
-  }
-
-  required_resource_access {
     resource_app_id = azuread_application.complex_cases_api.client_id
 
     dynamic "resource_access" {
@@ -206,7 +197,7 @@ resource "azuread_application" "complex_cases_ui" {
   }
 
   single_page_application {
-    redirect_uris = var.environment.alias != "prod" ? ["http://localhost:3000"] : ["https://${local.product_name_prefix}-ui.azurewebsites.net"]
+    redirect_uris = var.environment.alias != "prod" ? ["http://localhost:3000"] : ["https://${local.product_prefix}-ui.azurewebsites.net"]
   }
 
   api {
@@ -215,8 +206,8 @@ resource "azuread_application" "complex_cases_ui" {
   }
 
   web {
-    homepage_url = "https://${local.product_name_prefix}-ui.azurewebsites.net"
-    redirect_uris = ["https://${local.product_name_prefix}-ui.azurewebsites.net/.auth/login/aad/callback",
+    homepage_url = "https://${local.product_prefix}-ui.azurewebsites.net"
+    redirect_uris = ["https://${local.product_prefix}-ui.azurewebsites.net/.auth/login/aad/callback",
     "https://getpostman.com/oauth2/callback"]
 
     implicit_grant {
@@ -258,7 +249,7 @@ resource "azuread_application_password" "pwd_e2e_test_secret" {
 resource "azurerm_key_vault_secret" "kvs_ui_client_id" {
   #checkov:skip=CKV_AZURE_41:Ensure that the expiration date is set on all secrets
   #checkov:skip=CKV_AZURE_114:Ensure that key vault secrets have "content_type" set
-  name         = "ui-spa-client-id"
+  name         = "ui-client-id${local.resource_suffix}"
   value        = azuread_application.complex_cases_ui.client_id
   key_vault_id = data.azurerm_key_vault.terraform_key_vault.id
   depends_on = [
@@ -266,13 +257,24 @@ resource "azurerm_key_vault_secret" "kvs_ui_client_id" {
   ]
 }
 
+resource "azurerm_key_vault_secret" "kvs_complex_cases_ui_client_secret" {
+  name         = "ui-client-secret${local.resource_suffix}"
+  value        = azuread_application_password.pwd_complex_cases_ui.value
+  key_vault_id = azurerm_key_vault.kv_complex_cases.id
+  depends_on = [
+    azurerm_role_assignment.kv_role_terraform_sp,
+    azuread_application_password.pwd_complex_cases_ui
+  ]
+}
+
 resource "azurerm_key_vault_secret" "kvs_ui_client_secret" {
   #checkov:skip=CKV_AZURE_41:Ensure that the expiration date is set on all secrets
   #checkov:skip=CKV_AZURE_114:Ensure that key vault secrets have "content_type" set
-  name         = "ui-spa-client-secret"
+  name         = "ui-e2e-client-secret${local.resource_suffix}"
   value        = azuread_application_password.pwd_e2e_test_secret.value
   key_vault_id = data.azurerm_key_vault.terraform_key_vault.id
   depends_on = [
-    azurerm_role_assignment.kv_role_terraform_sp
+    azurerm_role_assignment.kv_role_terraform_sp,
+    azuread_application_password.pwd_e2e_test_secret
   ]
 }

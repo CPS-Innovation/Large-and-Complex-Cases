@@ -51,9 +51,10 @@ resource "azuread_service_principal" "msgraph" {
 }
 
 locals {
-  product_name        = "complex-cases"
-  resource_suffix     = var.environment.alias != "prod" ? "-${var.environment.alias}" : ""
-  product_name_prefix = "cc${local.resource_suffix}"
+  product_name    = "LaCC"
+  resource_suffix = var.environment.alias != "prod" ? "-${var.environment.alias}" : ""
+  product_prefix  = "${local.product_name}${local.resource_suffix}"
+  shared_suffix    = var.environment.alias != "prod" ? "preprod" : ""
 
   common_tags = {
     environment = var.environment.name

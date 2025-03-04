@@ -13,3 +13,8 @@ appinsights_configuration = {
   insights_internet_ingestion_enabled  = true
   insights_internet_query_enabled      = false
 }
+
+
+subnets {
+  ampls = ["10.7.184.32/28"]
+}

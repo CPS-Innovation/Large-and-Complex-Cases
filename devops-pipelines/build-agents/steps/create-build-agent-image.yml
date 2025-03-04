@@ -34,7 +34,7 @@ steps:
     
   - bash: |
       packer init -upgrade "packer-config.pkr.hcl"
-    workingDirectory: "$(Pipeline.Workspace)/s/polaris-devops-pipelines/scale-set/"
+    workingDirectory: "$(Pipeline.Workspace)/s/pdevops-pipelines/build-agents/"
       
   - task: PackerBuild@1
     displayName: Build Image with Packer
@@ -48,7 +48,7 @@ steps:
       azureResourceGroup: ${{ parameters.resourceGroup }}
       baseImageSource: "default"
       baseImage: ${{ parameters.baseImage }}
-      packagePath: "polaris-devops-pipelines/scale-set"
+      packagePath: "devops-pipelines/build-agents"
       deployScriptPath: "build-agent.sh"
       additionalBuilderParameters: ${{ parameters.additionalBuilderParams }}
       skipTempFileCleanupDuringVMDeprovision: false

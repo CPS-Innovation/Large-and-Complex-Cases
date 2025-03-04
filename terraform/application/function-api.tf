@@ -1,5 +1,5 @@
 resource "azurerm_linux_function_app" "complex_cases_api" {
-  name                          = "${local.product_name_prefix}-api"
+  name                          = "${local.product_prefix}-api"
   location                      = azurerm_resource_group.rg_complex_cases.location
   resource_group_name           = azurerm_resource_group.rg_complex_cases.name
   service_plan_id               = azurerm_service_plan.asp_complex_cases_api.id
@@ -49,7 +49,7 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
     always_on                              = true
     cors {
       allowed_origins = [
-        "https://${local.product_name_prefix}-ui.azurewebsites.net",
+        "https://${local.product_prefix}-ui.azurewebsites.net",
         var.environment.alias == "dev" ? "http://localhost:3000" : ""
       ]
       support_credentials = true
@@ -79,7 +79,7 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
       #checkov:skip=CKV_SECRET_6:Base64 High Entropy String - Misunderstanding of setting "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"
       client_secret_setting_name = "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"
       client_id                  = azuread_application.complex_cases_api.client_id
-      allowed_audiences          = ["https://CPSGOVUK.onmicrosoft.com/${local.product_name_prefix}-api"]
+      allowed_audiences          = ["https://CPSGOVUK.onmicrosoft.com/${local.product_prefix}-api"]
     }
 
     login {
@@ -112,8 +112,8 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
 }
 
 resource "azuread_application" "complex_cases_api" {
-  display_name            = "${local.product_name_prefix}-api"
-  identifier_uris         = ["https://CPSGOVUK.onmicrosoft.com/${local.product_name_prefix}-api"]
+  display_name            = "${local.product_prefix}-api"
+  identifier_uris         = ["https://CPSGOVUK.onmicrosoft.com/${local.product_prefix}-api"]
   prevent_duplicate_names = true
 
   api {
@@ -121,7 +121,7 @@ resource "azuread_application" "complex_cases_api" {
     oauth2_permission_scope {
       admin_consent_description  = "Access Complex Cases API as a user"
       admin_consent_display_name = "Access Complex Cases API as a user"
-      id                         = element(random_uuid.random_id[*].result, 0)
+      id                         = element(random_uuid.random_id[*].result, 1)
       enabled                    = true
       type                       = "Admin"
       user_consent_description   = "Access Complex Cases API as a user"
@@ -198,8 +198,22 @@ resource "azuread_application" "complex_cases_api" {
     }
   }
 
+  required_resource_access {
+    resource_app_id = azuread_application.sharepoint_embedded.client_id
+
+    dynamic "resource_access" {
+      for_each = azuread_application.complex_cases_api.api.0.oauth2_permission_scope
+      iterator = scope
+
+      content {
+        id   = scope.value.id
+        type = "Scope"
+      }
+    }
+  }
+
   web {
-    redirect_uris = ["https://${local.product_name_prefix}-ui.azurewebsites.net/.auth/login/aad/callback"]
+    redirect_uris = ["https://${local.product_prefix}-ui.azurewebsites.net/.auth/login/aad/callback"]
 
     implicit_grant {
       access_token_issuance_enabled = false
@@ -217,4 +231,14 @@ resource "azuread_application_password" "pwd_complex_cases_api" {
 
 resource "time_rotating" "schedule_api" {
   rotation_days = 90
+}
+
+resource "azurerm_key_vault_secret" "kvs_complex_cases_api_client_secret" {
+  name         = "api-client-secret${local.resource_suffix}"
+  value        = azuread_application_password.pwd_complex_cases_api.value
+  key_vault_id = azurerm_key_vault.kv_complex_cases.id
+  depends_on = [
+    azurerm_role_assignment.kv_role_terraform_sp,
+    azuread_application_password.pwd_complex_cases_api
+  ]
 }

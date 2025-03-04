@@ -23,3 +23,9 @@ variable "appinsights_configuration" {
     insights_internet_query_enabled      = bool
   })
 }
+
+variable "subnets" {
+  type = object({
+    ampls = list(string)
+  })
+}

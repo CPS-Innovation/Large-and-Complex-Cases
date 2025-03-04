@@ -1,5 +1,5 @@
 resource "azurerm_key_vault" "kv_complex_cases" {
-  name                = "${local.product_name_prefix}-kv"
+  name                = "${local.product_prefix}-kv"
   location            = azurerm_resource_group.rg_complex_cases.location
   resource_group_name = azurerm_resource_group.rg_complex_cases.name
   tenant_id           = data.azurerm_client_config.current.tenant_id
@@ -65,27 +65,3 @@ resource "azurerm_role_assignment" "kv_role_complex_cases_ui_secrets_user" {
 }
 
 #end: assign roles
-
-#begin: store values
-
-resource "azurerm_key_vault_secret" "kvs_complex_cases_ui_client_secret" {
-  name         = "ComplexCasesUIClientSecret"
-  value        = azuread_application_password.pwd_complex_cases_ui.value
-  key_vault_id = azurerm_key_vault.kv_complex_cases.id
-  depends_on = [
-    azurerm_role_assignment.kv_role_terraform_sp,
-    azuread_application_password.complex_cases_ui
-  ]
-}
-
-resource "azurerm_key_vault_secret" "kvs_complex_cases_api_client_secret" {
-  name         = "ComplexCasesAPIClientSecret"
-  value        = azuread_application_password.pwd_complex_cases_api.value
-  key_vault_id = azurerm_key_vault.kv_complex_cases.id
-  depends_on = [
-    azurerm_role_assignment.kv_role_terraform_sp,
-    azuread_application_password.complex_cases_api
-  ]
-}
-
-#end: store values
