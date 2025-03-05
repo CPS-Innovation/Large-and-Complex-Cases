@@ -113,7 +113,7 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
 }
 
 resource "azuread_application" "complex_cases_api" {
-  display_name            = "${local.product_prefix}-api"
+  display_name            = "${local.product_prefix}-api-appreg"
   identifier_uris         = ["https://CPSGOVUK.onmicrosoft.com/${local.product_prefix}-api"]
   prevent_duplicate_names = true
 

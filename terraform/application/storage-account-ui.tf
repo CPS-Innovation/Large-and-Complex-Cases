@@ -88,7 +88,7 @@ resource "azurerm_private_endpoint" "sacpsccui_file_pe" {
 
 resource "azapi_resource" "sacpsccui_file_share" {
   type      = "Microsoft.Storage/storageAccounts/fileServices/shares@2022-09-01"
-  name      = "ccui-content-share"
+  name      = "ui-content-share"
   parent_id = "${data.azurerm_subscription.current.id}/resourceGroups/${azurerm_resource_group.rg_complex_cases.name}/providers/Microsoft.Storage/storageAccounts/${azurerm_storage_account.sacpsccui.name}/fileServices/default"
 
   depends_on = [azurerm_storage_account.sacpsccui]
@@ -96,7 +96,23 @@ resource "azapi_resource" "sacpsccui_file_share" {
 
 resource "azapi_resource" "sacpsccui_staging_file_share" {
   type      = "Microsoft.Storage/storageAccounts/fileServices/shares@2022-09-01"
-  name      = "ccui-content-share-1"
+  name      = "ui-content-share-1"
+  parent_id = "${data.azurerm_subscription.current.id}/resourceGroups/${azurerm_resource_group.rg_complex_cases.name}/providers/Microsoft.Storage/storageAccounts/${azurerm_storage_account.sacpsccui.name}/fileServices/default"
+
+  depends_on = [azurerm_storage_account.sacpsccui]
+}
+
+resource "azapi_resource" "sacpsccui_egressMock_file_share" {
+  type      = "Microsoft.Storage/storageAccounts/fileServices/shares@2022-09-01"
+  name      = "egressMock-content-share"
+  parent_id = "${data.azurerm_subscription.current.id}/resourceGroups/${azurerm_resource_group.rg_complex_cases.name}/providers/Microsoft.Storage/storageAccounts/${azurerm_storage_account.sacpsccui.name}/fileServices/default"
+
+  depends_on = [azurerm_storage_account.sacpsccui]
+}
+
+resource "azapi_resource" "sacpsccui_netAppMock_file_share" {
+  type      = "Microsoft.Storage/storageAccounts/fileServices/shares@2022-09-01"
+  name      = "netAppMock-content-share"
   parent_id = "${data.azurerm_subscription.current.id}/resourceGroups/${azurerm_resource_group.rg_complex_cases.name}/providers/Microsoft.Storage/storageAccounts/${azurerm_storage_account.sacpsccui.name}/fileServices/default"
 
   depends_on = [azurerm_storage_account.sacpsccui]

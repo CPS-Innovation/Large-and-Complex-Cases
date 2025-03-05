@@ -15,15 +15,19 @@ variable "terraform_service_principal_display_name" {
 
 variable "service_plans" {
   type = object({
-    ui_service_plan_sku  = string
-    api_service_plan_sku = string
+    ui_service_plan_sku         = string
+    api_service_plan_sku        = string
+    egressMock_service_plan_sku = string
+    netAppMock_service_plan_sku = string
   })
 }
 
 variable "service_capacity" {
   type = object({
-    ui_max_capacity  = string
-    api_max_capacity = string
+    ui_max_capacity         = string
+    api_max_capacity        = string
+    egressMock_max_capacity = string
+    netAppMock_max_capacity = string
   })
 }
 

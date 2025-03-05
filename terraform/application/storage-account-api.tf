@@ -88,7 +88,7 @@ resource "azurerm_private_endpoint" "sacpsccapi_file_pe" {
 
 resource "azapi_resource" "sacpsccapi_file_share" {
   type      = "Microsoft.Storage/storageAccounts/fileServices/shares@2022-09-01"
-  name      = "ccapi-content-share"
+  name      = "api-content-share"
   parent_id = "${data.azurerm_subscription.current.id}/resourceGroups/${azurerm_resource_group.rg_complex_cases.name}/providers/Microsoft.Storage/storageAccounts/${azurerm_storage_account.sacpsccapi.name}/fileServices/default"
 
   depends_on = [azurerm_storage_account.sacpsccapi]
@@ -96,7 +96,7 @@ resource "azapi_resource" "sacpsccapi_file_share" {
 
 resource "azapi_resource" "sacpsccapi_staging_file_share" {
   type      = "Microsoft.Storage/storageAccounts/fileServices/shares@2022-09-01"
-  name      = "ccapi-content-share-1"
+  name      = "api-content-share-1"
   parent_id = "${data.azurerm_subscription.current.id}/resourceGroups/${azurerm_resource_group.rg_complex_cases.name}/providers/Microsoft.Storage/storageAccounts/${azurerm_storage_account.sacpsccapi.name}/fileServices/default"
 
   depends_on = [azurerm_storage_account.sacpsccapi]
