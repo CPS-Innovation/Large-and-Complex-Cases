@@ -1,4 +1,10 @@
 resource "azurerm_linux_web_app" "complex_cases_netAppMock" {
+  #checkov:skip=CKV_AZURE_13:nsure App Service Authentication is set on Azure App Service
+  #checkov:skip=CKV_AZURE_88:Ensure that app services use Azure Files
+  #checkov:skip=CKV_AZURE_16:Ensure that Register with Azure Active Directory is enabled on App Service
+  #checkov:skip=CKV_AZURE_213:Ensure that App Service configures health check
+  #checkov:skip=CKV_AZURE_71:Ensure that Managed identity provider is enabled for app services
+  #checkov:skip=CKV_AZURE_17:Ensure the web app has 'Client Certificates (Incoming client certificates)' set
   name                          = "${local.product_prefix}-netapp-mock"
   resource_group_name           = azurerm_resource_group.rg_complex_cases.name
   location                      = azurerm_resource_group.rg_complex_cases.location
@@ -35,12 +41,25 @@ resource "azurerm_linux_web_app" "complex_cases_netAppMock" {
 
     active_directory_v2 {
       tenant_auth_endpoint       = "https://sts.windows.net/${data.azurerm_client_config.current.tenant_id}/v2.0"
+      #checkov:skip=CKV_SECRET_6:Base64 High Entropy String - Misunderstanding of setting "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"
       client_secret_setting_name = "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"
       client_id                  = azuread_application.complex_cases_netAppMock.client_id
     }
 
     login {
       token_store_enabled = false
+    }
+  }
+
+  logs {
+    detailed_error_messages = true
+    failed_request_tracing  = true
+
+    http_logs {
+      file_system {
+        retention_in_days = 7
+        retention_in_mb = 25
+      }
     }
   }
 

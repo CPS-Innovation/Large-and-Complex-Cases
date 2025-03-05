@@ -1,7 +1,6 @@
 resource "azurerm_linux_web_app" "complex_cases_ui" {
   #checkov:skip=CKV_AZURE_88:Ensure that app services use Azure Files
   #checkov:skip=CKV_AZURE_16:Ensure that Register with Azure Active Directory is enabled on App Service
-  #checkov:skip=CKV_AZURE_63:Ensure that App service enables HTTP logging
   #checkov:skip=CKV_AZURE_213:Ensure that App Service configures health check
   #checkov:skip=CKV_AZURE_71:Ensure that Managed identity provider is enabled for app services
   #checkov:skip=CKV_AZURE_17:Ensure the web app has 'Client Certificates (Incoming client certificates)' set
@@ -73,6 +72,13 @@ resource "azurerm_linux_web_app" "complex_cases_ui" {
   logs {
     detailed_error_messages = true
     failed_request_tracing  = true
+
+    http_logs {
+      file_system {
+        retention_in_days = 7
+        retention_in_mb = 25
+      }
+    }
   }
 
   identity {
