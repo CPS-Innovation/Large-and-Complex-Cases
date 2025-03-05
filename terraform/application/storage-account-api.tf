@@ -22,7 +22,7 @@ resource "azurerm_storage_account" "sacpsccapi" {
     default_action = "Deny"
     bypass         = ["Metrics", "Logging", "AzureServices"]
     virtual_network_subnet_ids = [
-data.azurerm_subnet.complex_cases_api_subnet
+      data.azurerm_subnet.complex_cases_api_subnet
     ]
   }
 
@@ -41,6 +41,29 @@ data.azurerm_subnet.complex_cases_api_subnet
   }
 
   tags = local.common_tags
+}
+
+resource "azurerm_storage_account_queue_properties" "sacpsccapi_queue_properties" {
+  storage_account_id = azurerm_storage_account.sacpsccapi.id
+  logging {
+    delete                = true
+    read                  = true
+    write                 = true
+    version               = "1.0"
+    retention_policy_days = 7
+  }
+
+  hour_metrics {
+    include_apis          = true
+    version               = "1.0"
+    retention_policy_days = 7
+  }
+
+  minute_metrics {
+    include_apis          = true
+    version               = "1.0"
+    retention_policy_days = 7
+  }
 }
 
 resource "azurerm_private_endpoint" "sacpsccapi_blob_pe" {

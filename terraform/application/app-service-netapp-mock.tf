@@ -40,7 +40,7 @@ resource "azurerm_linux_web_app" "complex_cases_netAppMock" {
     default_provider       = "AzureActiveDirectory"
 
     active_directory_v2 {
-      tenant_auth_endpoint       = "https://sts.windows.net/${data.azurerm_client_config.current.tenant_id}/v2.0"
+      tenant_auth_endpoint = "https://sts.windows.net/${data.azurerm_client_config.current.tenant_id}/v2.0"
       #checkov:skip=CKV_SECRET_6:Base64 High Entropy String - Misunderstanding of setting "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"
       client_secret_setting_name = "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"
       client_id                  = azuread_application.complex_cases_netAppMock.client_id
@@ -58,7 +58,7 @@ resource "azurerm_linux_web_app" "complex_cases_netAppMock" {
     http_logs {
       file_system {
         retention_in_days = 7
-        retention_in_mb = 25
+        retention_in_mb   = 25
       }
     }
   }

@@ -45,6 +45,29 @@ resource "azurerm_storage_account" "sacpsccui" {
   tags = local.common_tags
 }
 
+resource "azurerm_storage_account_queue_properties" "sacpsccui_queue_properties" {
+  storage_account_id = azurerm_storage_account.sacpsccui.id
+  logging {
+    delete                = true
+    read                  = true
+    write                 = true
+    version               = "1.0"
+    retention_policy_days = 7
+  }
+
+  hour_metrics {
+    include_apis          = true
+    version               = "1.0"
+    retention_policy_days = 7
+  }
+
+  minute_metrics {
+    include_apis          = true
+    version               = "1.0"
+    retention_policy_days = 7
+  }
+}
+
 resource "azurerm_private_endpoint" "sacpsccui_blob_pe" {
   name                = "sacps${var.environment.alias != "prod" ? var.environment.alias : ""}ccui-blob-pe"
   resource_group_name = azurerm_resource_group.rg_complex_cases.name

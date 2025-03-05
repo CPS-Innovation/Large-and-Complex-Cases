@@ -1,11 +1,11 @@
 resource "azurerm_service_plan" "asp_complex_cases_egressMock" {
-  name                = "${local.product_prefix}-egressMock-asp"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.rg_complex_cases.name
-  os_type             = "Linux"
-  sku_name            = var.service_plans.egressMock_service_plan_sku
+  name                   = "${local.product_prefix}-egressMock-asp"
+  location               = var.location
+  resource_group_name    = azurerm_resource_group.rg_complex_cases.name
+  os_type                = "Linux"
+  sku_name               = var.service_plans.egressMock_service_plan_sku
   zone_balancing_enabled = true
-  worker_count = var.service_plans.egressMock_worker_count
+  worker_count           = var.service_plans.egressMock_worker_count
 
   tags = local.common_tags
 }
@@ -63,13 +63,13 @@ resource "azurerm_monitor_autoscale_setting" "amas_complex_cases_egressMock" {
 }
 
 resource "azurerm_service_plan" "asp_complex_cases_netAppMock" {
-  name                = "${local.product_prefix}-netAppMock-asp"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.rg_complex_cases.name
-  os_type             = "Linux"
-  sku_name            = var.service_plans.netAppMock_service_plan_sku
+  name                   = "${local.product_prefix}-netAppMock-asp"
+  location               = var.location
+  resource_group_name    = azurerm_resource_group.rg_complex_cases.name
+  os_type                = "Linux"
+  sku_name               = var.service_plans.netAppMock_service_plan_sku
   zone_balancing_enabled = true
-  worker_count = var.service_plans.ui_worker_count
+  worker_count           = var.service_plans.ui_worker_count
 
   tags = local.common_tags
 }
