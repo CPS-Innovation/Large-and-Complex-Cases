@@ -13,7 +13,7 @@ public class AuthorizationValidator(ILogger<AuthorizationValidator> logger, Conf
   private readonly ConfigurationManager<OpenIdConnectConfiguration> _configurationManager = configurationManager;
   private const string ScopeType = @"http://schemas.microsoft.com/identity/claims/scope";
 
-  public async Task<ValidateTokenResult> ValidateTokenAsync(string token, string? requiredScopes = null, string? requiredRoles = null)
+  public async Task<ValidateTokenResult> ValidateTokenAsync(string token, Guid correlationId, string? requiredScopes = null, string? requiredRoles = null)
   {
     if (string.IsNullOrEmpty(token)) throw new ArgumentNullException(nameof(token));
     try
