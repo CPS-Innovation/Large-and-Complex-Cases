@@ -1,5 +1,6 @@
 import Footer from "../components/footer";
 import Header from "../components/header";
+import styles from "./layout.module.scss";
 
 export default function RootLayout({
   children,
@@ -9,7 +10,7 @@ export default function RootLayout({
   return (
     <>
       <Header />
-      {children}
+      <div className={styles.mainContent}>{children}</div>
       <Footer />
     </>
   );

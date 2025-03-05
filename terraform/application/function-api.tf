@@ -1,11 +1,11 @@
 resource "azurerm_linux_function_app" "complex_cases_api" {
-  name                          = "${local.product_name_prefix}-api"
+  name                          = "${local.product_prefix}-api"
   location                      = azurerm_resource_group.rg_complex_cases.location
   resource_group_name           = azurerm_resource_group.rg_complex_cases.name
   service_plan_id               = azurerm_service_plan.asp_complex_cases_api.id
   storage_account_name          = azurerm_storage_account.sacpsccapi.name
   storage_account_access_key    = azurerm_storage_account.sacpsccapi.primary_access_key
-  virtual_network_subnet_id     = data.azurerm_subnet.complex_cases_placeholder_subnet.id
+  virtual_network_subnet_id     = data.azurerm_subnet.complex_cases_api_subnet.id
   tags                          = local.common_tags
   functions_extension_version   = "~4"
   https_only                    = true
@@ -49,7 +49,7 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
     always_on                              = true
     cors {
       allowed_origins = [
-        "https://${local.product_name_prefix}-ui.azurewebsites.net",
+        "https://${local.product_prefix}-ui.azurewebsites.net",
         var.environment.alias == "dev" ? "http://localhost:3000" : ""
       ]
       support_credentials = true
@@ -59,7 +59,8 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
       use_dotnet_isolated_runtime = true
     }
     health_check_path                 = "/api/status"
-    health_check_eviction_time_in_min = "2"
+    health_check_eviction_time_in_min = "5"
+    use_32_bit_worker                 = false
   }
 
   identity {
@@ -79,7 +80,7 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
       #checkov:skip=CKV_SECRET_6:Base64 High Entropy String - Misunderstanding of setting "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"
       client_secret_setting_name = "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"
       client_id                  = azuread_application.complex_cases_api.client_id
-      allowed_audiences          = ["https://CPSGOVUK.onmicrosoft.com/${local.product_name_prefix}-api"]
+      allowed_audiences          = ["https://CPSGOVUK.onmicrosoft.com/${local.product_prefix}-api"]
     }
 
     login {
@@ -108,12 +109,12 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
     ]
   }
 
-  depends_on = [azurerm_storage_account.sacpsccapi, azapi_resource.sacpsccapi_ui_file_share]
+  depends_on = [azurerm_storage_account.sacpsccapi, azapi_resource.sacpsccapi_file_share]
 }
 
 resource "azuread_application" "complex_cases_api" {
-  display_name            = "${local.product_name_prefix}-api"
-  identifier_uris         = ["https://CPSGOVUK.onmicrosoft.com/${local.product_name_prefix}-api"]
+  display_name            = "${local.product_prefix}-api"
+  identifier_uris         = ["https://CPSGOVUK.onmicrosoft.com/${local.product_prefix}-api"]
   prevent_duplicate_names = true
 
   api {
@@ -121,7 +122,7 @@ resource "azuread_application" "complex_cases_api" {
     oauth2_permission_scope {
       admin_consent_description  = "Access Complex Cases API as a user"
       admin_consent_display_name = "Access Complex Cases API as a user"
-      id                         = element(random_uuid.random_id[*].result, 0)
+      id                         = element(random_uuid.random_id[*].result, 1)
       enabled                    = true
       type                       = "Admin"
       user_consent_description   = "Access Complex Cases API as a user"
@@ -193,18 +194,52 @@ resource "azuread_application" "complex_cases_api" {
     resource_app_id = data.azuread_application_published_app_ids.well_known.result["Office365SharePointOnline"]
 
     resource_access {
-      id   = data.azuread_service_principal.msgraph.oauth2_permission_scope_ids["Container.Manager"]
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["Container.Manager"]
       type = "Scope"
     }
   }
 
+  required_resource_access {
+    resource_app_id = azuread_application.sharepoint_embedded.client_id
+
+    dynamic "resource_access" {
+      for_each = azuread_application.complex_cases_api.api.0.oauth2_permission_scope
+      iterator = scope
+
+      content {
+        id   = scope.value.id
+        type = "Scope"
+      }
+    }
+  }
+
   web {
-    redirect_uris = ["https://${local.product_name_prefix}-ui.azurewebsites.net/.auth/login/aad/callback"]
+    redirect_uris = ["https://${local.product_prefix}-ui.azurewebsites.net/.auth/login/aad/callback"]
 
     implicit_grant {
       access_token_issuance_enabled = false
       id_token_issuance_enabled     = true
     }
+  }
+}
+
+resource "azurerm_private_endpoint" "complex_cases_api_pe" {
+  name                = "${azurerm_linux_function_app.complex_cases_api.name}-pe"
+  resource_group_name = azurerm_resource_group.rg_complex_cases.name
+  location            = azurerm_resource_group.rg_complex_cases.location
+  subnet_id           = data.azurerm_subnet.complex_cases_api_subnet.id
+  tags                = local.common_tags
+
+  private_dns_zone_group {
+    name                 = data.azurerm_private_dns_zone.dns_zone_apps.name
+    private_dns_zone_ids = [data.azurerm_private_dns_zone.dns_zone_apps.id]
+  }
+
+  private_service_connection {
+    name                           = "${azurerm_linux_function_app.complex_cases_api.name}-psc"
+    private_connection_resource_id = azurerm_linux_function_app.complex_cases_api.id
+    is_manual_connection           = false
+    subresource_names              = ["sites"]
   }
 }
 
@@ -217,4 +252,14 @@ resource "azuread_application_password" "pwd_complex_cases_api" {
 
 resource "time_rotating" "schedule_api" {
   rotation_days = 90
+}
+
+resource "azurerm_key_vault_secret" "kvs_complex_cases_api_client_secret" {
+  name         = "api-client-secret${local.resource_suffix}"
+  value        = azuread_application_password.pwd_complex_cases_api.value
+  key_vault_id = azurerm_key_vault.kv_complex_cases.id
+  depends_on = [
+    azurerm_role_assignment.kv_role_terraform_sp,
+    azuread_application_password.pwd_complex_cases_api
+  ]
 }

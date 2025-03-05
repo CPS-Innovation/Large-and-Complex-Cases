@@ -1,5 +1,5 @@
 resource "azurerm_service_plan" "asp_complex_cases_ui" {
-  name                = "${local.product_name_prefix}-ui-asp"
+  name                = "${local.product_prefix}-ui-asp"
   location            = var.location
   resource_group_name = azurerm_resource_group.rg_complex_cases.name
   os_type             = "Linux"
@@ -9,7 +9,7 @@ resource "azurerm_service_plan" "asp_complex_cases_ui" {
 }
 
 resource "azurerm_monitor_autoscale_setting" "amas_complex_cases_ui" {
-  name                = "${local.product_name_prefix}-ui-amas"
+  name                = "${local.product_prefix}-ui-amas"
   tags                = local.common_tags
   resource_group_name = azurerm_resource_group.rg_complex_cases.name
   location            = azurerm_resource_group.rg_complex_cases.location

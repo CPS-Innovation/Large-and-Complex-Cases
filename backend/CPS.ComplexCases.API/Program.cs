@@ -9,25 +9,26 @@ using Microsoft.Extensions.Hosting;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Models;
 using CPS.ComplexCases.Egress.Factories;
-using CPS.ComplexCases.API.Handlers;
 using CPS.ComplexCases.API.Validators;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Wrappers;
+using CPS.ComplexCases.API.Middleware;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
 builder.ConfigureFunctionsWebApplication();
 
+builder
+    .UseMiddleware<RequestValidationMiddleware>()
+    .UseMiddleware<ExceptionHandlingMiddleware>();
 
 builder.Services
     .AddApplicationInsightsTelemetryWorkerService()
     .ConfigureFunctionsApplicationInsights();
 
-builder.Services.AddSingleton<IUnhandledExceptionHandler, UnhandledExceptionHandler>();
 
-builder.Services.AddTransient<IInitializationHandler, InitializationHandler>();
 builder.Services.AddSingleton<IAuthorizationValidator, AuthorizationValidator>();
 
 builder.Services.AddTransient<IEgressRequestFactory, EgressRequestFactory>();

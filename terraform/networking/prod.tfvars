@@ -13,3 +13,12 @@ appinsights_configuration = {
   insights_internet_ingestion_enabled  = false
   insights_internet_query_enabled      = false
 }
+
+
+subnets {
+  ampls     = []
+  storage   = []
+  ui        = []
+  api       = []
+  endpoints = []
+}

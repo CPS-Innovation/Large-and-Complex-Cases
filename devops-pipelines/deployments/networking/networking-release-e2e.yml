@@ -40,7 +40,7 @@ stages:
                     targetName: "Networking Terraform CI Deployment"
                     targetPlanName: "e2e"
                     terraformStorageAccount: $(terraform-storage-name-e2e)
-                    terraformContainerName: $(terraform-container-name-networking)
+                    terraformContainerName: $(terraform-container-name-networking-e2e)
                     terraformStateKey: $(terraform-state-file)
                     terraformStateAccessKey: $(terraform-storage-shared-key-e2e)
                     armClientId: $(clientId)

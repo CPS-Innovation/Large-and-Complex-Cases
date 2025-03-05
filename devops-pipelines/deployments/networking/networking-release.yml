@@ -47,7 +47,7 @@ stages:
                     targetName: "Networking Terraform CI Deployment"
                     targetPlanName: "dev"
                     terraformStorageAccount: $(terraform-storage-name-dev)
-                    terraformContainerName: $(terraform-container-name-networking)
+                    terraformContainerName: $(terraform-container-name-networking-dev)
                     terraformStateKey: $(terraform-state-file)
                     terraformStateAccessKey: $(terraform-storage-shared-key-dev)
                     armClientId: $(clientId)
@@ -81,7 +81,7 @@ stages:
                     targetName: "Networking Terraform CI Deployment"
                     targetPlanName: "qa"
                     terraformStorageAccount: $(terraform-storage-name-qa)
-                    terraformContainerName: $(terraform-container-name-networking)
+                    terraformContainerName: $(terraform-container-name-networking-qa)
                     terraformStateKey: $(terraform-state-file)
                     terraformStateAccessKey: $(terraform-storage-shared-key-qa)
                     armClientId: $(clientId)
@@ -115,7 +115,7 @@ stages:
                     targetName: "Networking Terraform CI Deployment"
                     targetPlanName: "prod"
                     terraformStorageAccount: $(terraform-storage-name-prod)
-                    terraformContainerName: $(terraform-container-name-networking)
+                    terraformContainerName: $(terraform-container-name-networking-prod)
                     terraformStateKey: $(terraform-state-file)
                     terraformStateAccessKey: $(terraform-storage-shared-key-prod)
                     armClientId: $(clientId)

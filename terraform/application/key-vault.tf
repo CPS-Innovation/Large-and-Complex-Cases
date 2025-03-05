@@ -1,5 +1,5 @@
 resource "azurerm_key_vault" "kv_complex_cases" {
-  name                = "${local.product_name_prefix}-kv"
+  name                = "${local.product_prefix}-kv"
   location            = azurerm_resource_group.rg_complex_cases.location
   resource_group_name = azurerm_resource_group.rg_complex_cases.name
   tenant_id           = data.azurerm_client_config.current.tenant_id
@@ -24,7 +24,7 @@ resource "azurerm_private_endpoint" "kv_complex_cases_pe" {
   name                = "${azurerm_key_vault.kv_complex_cases.name}-pe"
   resource_group_name = azurerm_resource_group.rg_complex_cases.name
   location            = azurerm_resource_group.rg_complex_cases.location
-  subnet_id           = data.azurerm_subnet.complex_cases_placeholder_subnet.id
+  subnet_id           = data.azurerm_subnet.complex_cases_endpoints_subnet.id
   tags                = local.common_tags
 
   private_dns_zone_group {
@@ -59,33 +59,9 @@ resource "azurerm_role_assignment" "kv_role_complex_cases_ui_crypto_user" {
 resource "azurerm_role_assignment" "kv_role_complex_cases_ui_secrets_user" {
   scope                = azurerm_key_vault.kv_complex_cases.id
   role_definition_name = "Key Vault Secrets User"
-  principal_id         = azurerm_linux_web_app.kv_complex_cases.identity[0].principal_id
+  principal_id         = azurerm_linux_web_app.complex_cases_ui.identity[0].principal_id
 
-  depends_on = [azurerm_linux_web_app.kv_complex_cases]
+  depends_on = [azurerm_linux_web_app.complex_cases_ui]
 }
 
 #end: assign roles
-
-#begin: store values
-
-resource "azurerm_key_vault_secret" "kvs_complex_cases_ui_client_secret" {
-  name         = "ComplexCasesUIClientSecret"
-  value        = azuread_application_password.pwd_complex_cases_ui.value
-  key_vault_id = azurerm_key_vault.kv_complex_cases.id
-  depends_on = [
-    azurerm_role_assignment.kv_role_terraform_sp,
-    azuread_application_password.complex_cases_ui
-  ]
-}
-
-resource "azurerm_key_vault_secret" "kvs_complex_cases_api_client_secret" {
-  name         = "ComplexCasesAPIClientSecret"
-  value        = azuread_application_password.pwd_complex_cases_api.value
-  key_vault_id = azurerm_key_vault.kv_complex_cases.id
-  depends_on = [
-    azurerm_role_assignment.kv_role_terraform_sp,
-    azuread_application_password.complex_cases_api
-  ]
-}
-
-#end: store values

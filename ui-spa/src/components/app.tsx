@@ -1,37 +1,17 @@
-import React, { useState } from "react";
-import { Button, H1 } from "govuk-react";
 import Layout from "./layout";
-import { getInitialMessage } from "../apis/gateway-api";
-import { Auth, useUserDetails } from "../auth";
-import styles from "./app.module.scss";
-
-const Inner: React.FC = () => {
-  const { username } = useUserDetails();
-  return <div className={styles.username}>{username}</div>;
-};
+import { Auth } from "../auth";
+import { BrowserRouter } from "react-router";
+import AppRoutes from "../components/routes";
 
 function App() {
-  const [message, setMessage] = useState("abc");
-
-  const handleButtonClick = async () => {
-    const result = await getInitialMessage();
-
-    if (result) setMessage(result.message);
-  };
-
   return (
-    <div>
+    <BrowserRouter>
       <Auth>
         <Layout>
-          <div className={`${styles.wrapper} govuk-width-container`}>
-            <H1>{`${message}`}</H1>
-            <Inner />
-
-            <Button onClick={handleButtonClick}>Click</Button>
-          </div>
+          <AppRoutes />
         </Layout>
       </Auth>
-    </div>
+    </BrowserRouter>
   );
 }
 

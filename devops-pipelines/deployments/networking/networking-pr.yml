@@ -43,7 +43,7 @@ stages:
             workingDirectory: $(terraformWorkingDir)
             env:
               TF_STATE_ACCOUNT_NAME: $(terraform-storage-name-dev)
-              TF_STATE_CONTAINER_NAME: $(terraform-container-name-networking)
+              TF_STATE_CONTAINER_NAME: $(terraform-container-name-networking-dev)
               TF_STATE_KEY: $(terraform-state-file)
               TF_STATE_ACCESS_KEY: $(terraform-storage-shared-key-dev)
               TF_LOG: $(log-level-dev)
@@ -78,7 +78,7 @@ stages:
             workingDirectory: $(terraformWorkingDir)
             env:
               TF_STATE_ACCOUNT_NAME: $(terraform-storage-name-dev)
-              TF_STATE_CONTAINER_NAME: $(terraform-container-name-networking)
+              TF_STATE_CONTAINER_NAME: $(terraform-container-name-networking-dev)
               TF_STATE_KEY: $(terraform-state-file)
               TF_STATE_ACCESS_KEY: $(terraform-storage-shared-key-dev)
               TF_LOG: $(log-level-dev)
