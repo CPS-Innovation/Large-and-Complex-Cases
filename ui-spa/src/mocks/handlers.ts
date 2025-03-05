@@ -35,4 +35,4 @@ type caseSearchResult = {
   leadDefendantName: string;
   urn: string;
 };
-type caseSearchResults = caseSearchResult[];
+export type caseSearchResults = caseSearchResult[];
