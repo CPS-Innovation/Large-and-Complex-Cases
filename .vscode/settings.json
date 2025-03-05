@@ -9,5 +9,8 @@
   "[csharp]": {
     "editor.defaultFormatter": "ms-dotnettools.csharp"
   },
-  "azureFunctions.projectSubpath": "backend\\CPS.ComplexCases.API"
+  "azureFunctions.projectSubpath": "backend\\CPS.ComplexCases.API",
+  "[terraform]": {
+    "editor.defaultFormatter": "hashicorp.terraform"
+  }
 }

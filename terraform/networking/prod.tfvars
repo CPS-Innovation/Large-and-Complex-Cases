@@ -16,9 +16,11 @@ appinsights_configuration = {
 
 
 subnets {
-  ampls     = []
-  storage   = []
-  ui        = []
-  api       = []
-  endpoints = []
+  ampls      = []
+  storage    = []
+  ui         = []
+  api        = []
+  endpoints  = []
+  egressMock = []
+  netAppMock = []
 }

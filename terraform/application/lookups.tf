@@ -43,6 +43,18 @@ data "azurerm_subnet" "complex_cases_endpoints_subnet" {
   resource_group_name  = data.azurerm_resource_group.networking_resource_group.name
 }
 
+data "azurerm_subnet" "complex_cases_egressMock_subnet" {
+  name                 = "${local.product_prefix}-egressMock-subnet"
+  virtual_network_name = data.azurerm_virtual_network.complex_cases_vnet.name
+  resource_group_name  = data.azurerm_resource_group.networking_resource_group.name
+}
+
+data "azurerm_subnet" "complex_cases_netAppMock_subnet" {
+  name                 = "${local.product_prefix}-netAppMock-subnet"
+  virtual_network_name = data.azurerm_virtual_network.complex_cases_vnet.name
+  resource_group_name  = data.azurerm_resource_group.networking_resource_group.name
+}
+
 #end: vnet subnet lookups
 
 # begin: vnet dns zone lookups

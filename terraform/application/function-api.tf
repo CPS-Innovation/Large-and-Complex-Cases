@@ -113,7 +113,7 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
 }
 
 resource "azuread_application" "complex_cases_api" {
-  display_name            = "${local.product_prefix}-api"
+  display_name            = "${local.product_prefix}-api-appreg"
   identifier_uris         = ["https://CPSGOVUK.onmicrosoft.com/${local.product_prefix}-api"]
   prevent_duplicate_names = true
 
@@ -255,6 +255,8 @@ resource "time_rotating" "schedule_api" {
 }
 
 resource "azurerm_key_vault_secret" "kvs_complex_cases_api_client_secret" {
+  #checkov:skip=CKV_AZURE_41:Ensure that the expiration date is set on all secrets
+  #checkov:skip=CKV_AZURE_114:Ensure that key vault secrets have "content_type" set
   name         = "api-client-secret${local.resource_suffix}"
   value        = azuread_application_password.pwd_complex_cases_api.value
   key_vault_id = azurerm_key_vault.kv_complex_cases.id

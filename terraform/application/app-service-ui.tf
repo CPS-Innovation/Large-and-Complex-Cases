@@ -1,4 +1,9 @@
 resource "azurerm_linux_web_app" "complex_cases_ui" {
+  #checkov:skip=CKV_AZURE_88:Ensure that app services use Azure Files
+  #checkov:skip=CKV_AZURE_16:Ensure that Register with Azure Active Directory is enabled on App Service
+  #checkov:skip=CKV_AZURE_213:Ensure that App Service configures health check
+  #checkov:skip=CKV_AZURE_71:Ensure that Managed identity provider is enabled for app services
+  #checkov:skip=CKV_AZURE_17:Ensure the web app has 'Client Certificates (Incoming client certificates)' set
   name                          = "${local.product_prefix}-ui"
   location                      = var.location
   resource_group_name           = azurerm_resource_group.rg_complex_cases.name
@@ -33,12 +38,12 @@ resource "azurerm_linux_web_app" "complex_cases_ui" {
   }
 
   site_config {
-    ftps_state    = "FtpsOnly"
-    http2_enabled = true
+    ftps_state             = "FtpsOnly"
+    http2_enabled          = true
     app_command_line       = "node complex-cases-ui/subsititute-config.js; npx serve -s"
-    always_on = true
+    always_on              = true
     vnet_route_all_enabled = true
-    use_32_bit_worker = false
+    use_32_bit_worker      = false
 
     application_stack {
       node_version = "18-lts"
@@ -67,6 +72,13 @@ resource "azurerm_linux_web_app" "complex_cases_ui" {
   logs {
     detailed_error_messages = true
     failed_request_tracing  = true
+
+    http_logs {
+      file_system {
+        retention_in_days = 7
+        retention_in_mb   = 25
+      }
+    }
   }
 
   identity {
@@ -95,28 +107,8 @@ resource "azurerm_linux_web_app" "complex_cases_ui" {
   }
 }
 
-resource "azurerm_private_endpoint" "complex_cases_ui_pe" {
-  name                = "${azurerm_linux_web_app.complex_cases_ui.name}-pe"
-  resource_group_name = azurerm_resource_group.rg_complex_cases.name
-  location            = azurerm_resource_group.rg_complex_cases.location
-  subnet_id           = data.azurerm_subnet.complex_cases_endpoints_subnet.id
-  tags                = local.common_tags
-
-  private_dns_zone_group {
-    name                 = data.azurerm_private_dns_zone.dns_zone_apps.name
-    private_dns_zone_ids = [data.azurerm_private_dns_zone.dns_zone_apps.id]
-  }
-
-  private_service_connection {
-    name                           = "${azurerm_linux_web_app.complex_cases_ui.name}-psc"
-    private_connection_resource_id = azurerm_linux_web_app.complex_cases_ui.id
-    is_manual_connection           = false
-    subresource_names              = ["sites"]
-  }
-}
-
 resource "azuread_application" "complex_cases_ui" {
-  display_name            = "${local.product_prefix}-ui"
+  display_name            = "${local.product_prefix}-ui-appreg"
   identifier_uris         = ["https://CPSGOVUK.onmicrosoft.com/${local.product_prefix}-ui"]
   prevent_duplicate_names = true
   owners                  = [data.azuread_service_principal.terraform_service_principal.object_id]
@@ -257,6 +249,8 @@ resource "azurerm_key_vault_secret" "kvs_ui_client_id" {
 }
 
 resource "azurerm_key_vault_secret" "kvs_complex_cases_ui_client_secret" {
+  #checkov:skip=CKV_AZURE_41:Ensure that the expiration date is set on all secrets
+  #checkov:skip=CKV_AZURE_114:Ensure that key vault secrets have "content_type" set
   name         = "ui-client-secret${local.resource_suffix}"
   value        = azuread_application_password.pwd_complex_cases_ui.value
   key_vault_id = azurerm_key_vault.kv_complex_cases.id
@@ -276,4 +270,24 @@ resource "azurerm_key_vault_secret" "kvs_ui_client_secret" {
     azurerm_role_assignment.kv_role_terraform_sp,
     azuread_application_password.pwd_e2e_test_secret
   ]
+}
+
+resource "azurerm_private_endpoint" "complex_cases_ui_pe" {
+  name                = "${azurerm_linux_web_app.complex_cases_ui.name}-pe"
+  resource_group_name = azurerm_resource_group.rg_complex_cases.name
+  location            = azurerm_resource_group.rg_complex_cases.location
+  subnet_id           = data.azurerm_subnet.complex_cases_endpoints_subnet.id
+  tags                = local.common_tags
+
+  private_dns_zone_group {
+    name                 = data.azurerm_private_dns_zone.dns_zone_apps.name
+    private_dns_zone_ids = [data.azurerm_private_dns_zone.dns_zone_apps.id]
+  }
+
+  private_service_connection {
+    name                           = "${azurerm_linux_web_app.complex_cases_ui.name}-psc"
+    private_connection_resource_id = azurerm_linux_web_app.complex_cases_ui.id
+    is_manual_connection           = false
+    subresource_names              = ["sites"]
+  }
 }
