@@ -6,6 +6,7 @@ resource "azurerm_storage_account" "sacpsccapi" {
   #checkov:skip=CKV2_AZURE_40:Ensure storage account is not configured with Shared Key authorization
   #checkov:skip=CKV2_AZURE_50:Ensure Azure Storage Account storing Machine Learning workspace high business impact data is not publicly accessible
   #checkov:skip=CKV_AZURE_244:Avoid the use of local users for Azure Storage unless necessary
+  #checkov:skip=CKV_AZURE_33:False positive - Checkov not picking up that "queue_properties" is now deprecated and is defined in its own resource
   name                = "sacps${var.environment.alias != "prod" ? var.environment.alias : ""}ccapi"
   resource_group_name = azurerm_resource_group.rg_complex_cases.name
   location            = azurerm_resource_group.rg_complex_cases.location
