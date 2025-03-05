@@ -4,6 +4,8 @@ resource "azurerm_service_plan" "asp_complex_cases_egressMock" {
   resource_group_name = azurerm_resource_group.rg_complex_cases.name
   os_type             = "Linux"
   sku_name            = var.service_plans.egressMock_service_plan_sku
+  zone_balancing_enabled = true
+  worker_count = var.service_plans.egressMock_worker_count
 
   tags = local.common_tags
 }
@@ -17,8 +19,8 @@ resource "azurerm_monitor_autoscale_setting" "amas_complex_cases_egressMock" {
   profile {
     name = "Complex Cases Egress Mock Performance Scaling Profile"
     capacity {
-      default = 1
-      minimum = 1
+      default = var.service_capacity.egressMock_default_capacity
+      minimum = var.service_capacity.egressMock_minimum_capacity
       maximum = var.service_capacity.egressMock_max_capacity
     }
     rule {
@@ -66,6 +68,8 @@ resource "azurerm_service_plan" "asp_complex_cases_netAppMock" {
   resource_group_name = azurerm_resource_group.rg_complex_cases.name
   os_type             = "Linux"
   sku_name            = var.service_plans.netAppMock_service_plan_sku
+  zone_balancing_enabled = true
+  worker_count = var.service_plans.ui_worker_count
 
   tags = local.common_tags
 }
@@ -79,8 +83,8 @@ resource "azurerm_monitor_autoscale_setting" "amas_complex_cases_netAppMock" {
   profile {
     name = "Complex Cases NetApp Mock Performance Scaling Profile"
     capacity {
-      default = 1
-      minimum = 1
+      default = var.service_capacity.netAppMock_default_capacity
+      minimum = var.service_capacity.netAppMock_minimum_capacity
       maximum = var.service_capacity.netAppMock_max_capacity
     }
     rule {

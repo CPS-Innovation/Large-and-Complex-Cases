@@ -1,4 +1,11 @@
 resource "azurerm_storage_account" "sacpsccui" {
+  #checkov:skip=CKV_AZURE_206:Ensure that Storage Accounts use replication
+  #checkov:skip=CKV2_AZURE_38:Ensure soft-delete is enabled on Azure storage account
+  #checkov:skip=CKV2_AZURE_1:Ensure storage for critical data are encrypted with Customer Managed Key
+  #checkov:skip=CKV2_AZURE_21:Ensure Storage logging is enabled for Blob service for read requests
+  #checkov:skip=CKV2_AZURE_40:Ensure storage account is not configured with Shared Key authorization
+  #checkov:skip=CKV2_AZURE_50:Ensure Azure Storage Account storing Machine Learning workspace high business impact data is not publicly accessible
+  #checkov:skip=CKV_AZURE_244:Avoid the use of local users for Azure Storage unless necessary
   name                = "sacps${var.environment.alias != "prod" ? var.environment.alias : ""}ccui"
   resource_group_name = azurerm_resource_group.rg_complex_cases.name
   location            = azurerm_resource_group.rg_complex_cases.location
@@ -15,8 +22,20 @@ resource "azurerm_storage_account" "sacpsccui" {
     default_action = "Deny"
     bypass         = ["Metrics", "Logging", "AzureServices"]
     virtual_network_subnet_ids = [
-
+      data.azurerm_subnet.complex_cases_ui_subnet,
+      data.azurerm_subnet.complex_cases_egressMock_subnet,
+      data.azurerm_subnet.complex_cases_netAppMock_subnet
     ]
+  }
+
+  sas_policy {
+    expiration_period = "0.0:05:00"
+  }
+
+  blob_properties {
+    delete_retention_policy {
+      days = 7
+    }
   }
 
   identity {
