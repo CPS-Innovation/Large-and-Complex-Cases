@@ -4,7 +4,6 @@ import { useQueryParamsState } from "../../common/hooks/useQueryParamsState";
 import { useCaseSearchInputLogic } from "../../common/hooks/useCaseSearchInputLogic";
 import { CaseSearchQueryParams } from "../../common/types/CaseSearchQueryParams";
 import { getCaseSearchResults } from "../../apis/gateway-api";
-import { Input, Button, Label, LabelText, ErrorSummary } from "govuk-react";
 import styles from "./index.module.scss";
 
 const validationFailMessage = "Operation name should not be empty";
@@ -35,7 +34,7 @@ const CaseSearchResultPage = () => {
   console.log("apiState>>", apiState);
   return (
     <div>
-      <div className={styles.fullWidthContainer}>
+      {/* <div className={styles.fullWidthContainer}>
         <div className="govuk-width-container">
           <div className={styles.contentTop}>
             {isError && (
@@ -103,7 +102,7 @@ const CaseSearchResultPage = () => {
               );
             })}
         </ul>
-      </div>
+      </div> */}
     </div>
   );
 };

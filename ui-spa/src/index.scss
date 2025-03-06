@@ -24,8 +24,8 @@ $govuk-font-family: "NewTransport", "Arial", sans-serif;
   font-family: "NewTransport", "Arial", sans-serif !important;
 }
 
-@import "../node_modules/govuk-frontend/dist/govuk/index";
-
+$govuk-assets-path: "/node_modules/govuk-frontend/govuk/assets/";
+@import "/node_modules/govuk-frontend/govuk/all";
 body {
   margin: 0;
   font-size: 19px;
