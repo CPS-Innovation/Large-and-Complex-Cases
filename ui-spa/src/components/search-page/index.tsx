@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useRef } from "react";
 import { useQueryParamsState } from "../../common/hooks/useQueryParamsState";
 import { useCaseSearchInputLogic } from "../../common/hooks/useCaseSearchInputLogic";
 import { CaseSearchQueryParams } from "../../common/types/CaseSearchQueryParams";
