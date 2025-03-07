@@ -1,17 +1,17 @@
 import { useRef, useState, useCallback, useMemo, useEffect } from "react";
-import { useQueryParamsState } from "../../common/hooks/useQueryParamsState";
-import { useCaseSearchInputLogic } from "../../common/hooks/useCaseSearchInputLogic";
-import { CaseSearchQueryParams } from "../../common/types/CaseSearchQueryParams";
+// import { useQueryParamsState } from "../../common/hooks/useQueryParamsState";
+// import { useCaseSearchInputLogic } from "../../common/hooks/useCaseSearchInputLogic";
+// import { CaseSearchQueryParams } from "../../common/types/CaseSearchQueryParams";
 import { Button, Radios, Input, Select, ErrorSummary } from "../govuk";
+import useSearchNavigation, {
+  SearchParamsType,
+} from "../../common/hooks/useSearchNavigation";
 import styles from "./index.module.scss";
 
 const CaseSearchPage = () => {
-  const {
-    search: searchKeyFromSearchParams,
-    setParams,
-    search,
-  } = useQueryParamsState<CaseSearchQueryParams>();
   const errorSummaryRef = useRef<HTMLInputElement>(null);
+
+  const { navigateWithParams } = useSearchNavigation();
 
   enum SearchFormField {
     searchType = "searchType",
@@ -60,16 +60,6 @@ const CaseSearchPage = () => {
     urn: "",
   };
 
-  const handleFormChange = (
-    field: SearchFormField,
-    value: string | number | boolean,
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
   const [formData, setFormData] = useState<SearchFromData>(initialData);
 
   const [formDataErrors, setFormDataErrors] =
@@ -77,7 +67,6 @@ const CaseSearchPage = () => {
 
   const errorSummaryProperties = useCallback(
     (inputName: SearchFormField) => {
-      console.log("inputName>>", inputName);
       switch (inputName) {
         case SearchFormField.defendantName:
           return {
@@ -130,6 +119,10 @@ const CaseSearchPage = () => {
     return errorSummary;
   }, [formDataErrors]);
 
+  useEffect(() => {
+    if (errorList.length) errorSummaryRef.current?.focus();
+  }, [errorList]);
+
   const validateFormData = () => {
     const errorTexts: SearchFormDataErrors = {
       operationName: "",
@@ -168,20 +161,55 @@ const CaseSearchPage = () => {
         break;
       }
     }
-    setFormDataErrors(errorTexts);
+
+    const isValid = !Object.entries(errorTexts).filter(([_, value]) => value)
+      .length;
+
+    if (!isValid) setFormDataErrors(errorTexts);
+    return isValid;
   };
 
-  const { handleChange, handleSubmit, isError, searchKey } =
-    useCaseSearchInputLogic({ searchKeyFromSearchParams, setParams, search });
+  const handleFormChange = (
+    field: SearchFormField,
+    value: string | number | boolean,
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const getSearchParams = () => {
+    let searchParams: SearchParamsType = {};
+
+    switch (formData[SearchFormField.searchType]) {
+      case "urn":
+        searchParams = { urn: formData[SearchFormField.urn] };
+        break;
+      case "defendant name":
+        searchParams = {
+          "defendant-name": formData[SearchFormField.defendantName],
+          area: formData[SearchFormField.defendantArea],
+        };
+        break;
+      case "operation name":
+        searchParams = {
+          "operation-name": formData[SearchFormField.operationName],
+          area: formData[SearchFormField.operationArea],
+        };
+        break;
+    }
+
+    return searchParams;
+  };
 
   const handleSearch = () => {
-    validateFormData();
-    handleSubmit();
+    const isFromValid = validateFormData();
+    if (isFromValid) {
+      const searchParams = getSearchParams();
+      navigateWithParams(searchParams);
+    }
   };
-
-  useEffect(() => {
-    if (errorList.length) errorSummaryRef.current?.focus();
-  }, [errorList]);
 
   return (
     <div className={`govuk-width-container ${styles.pageWrapper}`}>
@@ -203,205 +231,187 @@ const CaseSearchPage = () => {
             />
           </div>
         )}
+        <div>
+          <div className={styles.inputWrapper}>
+            <Radios
+              fieldset={{
+                legend: {
+                  children: <b>Search Large and Complex Cases</b>,
+                },
+              }}
+              hint={{
+                children: "Select one option",
+              }}
+              items={[
+                {
+                  children: "Operation name",
+                  conditional: {
+                    children: [
+                      <Input
+                        id="search-operation-name"
+                        data-testid="search-operation-name"
+                        className="govuk-input--width-20"
+                        label={{
+                          children: "Operation name",
+                        }}
+                        errorMessage={
+                          formDataErrors[SearchFormField.operationName]
+                            ? {
+                                children:
+                                  formDataErrors[SearchFormField.operationName],
+                              }
+                            : undefined
+                        }
+                        name="operation-name"
+                        type="text"
+                        value={formData[SearchFormField.operationName]}
+                        onChange={(value: string) =>
+                          handleFormChange(SearchFormField.operationName, value)
+                        }
+                        disabled={false}
+                      />,
 
-        {
-          <div>
-            <div className={styles.inputWrapper}>
-              <Radios
-                fieldset={{
-                  legend: {
-                    children: <b>Search Large and Complex Cases</b>,
+                      <Select
+                        label={{
+                          htmlFor: "search-operation-area",
+                          children: "Select Area",
+                          className: styles.areaSelectLabel,
+                        }}
+                        id="search-operation-area"
+                        data-testid="search-operation-area"
+                        value={formData.operationArea}
+                        items={[
+                          { children: "--Select Area--", value: 0 },
+                          { children: "option 1", value: 1 },
+                          { children: "option 2", value: 2 },
+                        ]}
+                        formGroup={{
+                          className: styles.select,
+                        }}
+                        onChange={(ev) =>
+                          handleFormChange(
+                            SearchFormField.operationArea,
+                            ev.target.value,
+                          )
+                        }
+                        errorMessage={
+                          formDataErrors[SearchFormField.operationArea]
+                            ? {
+                                children:
+                                  formDataErrors[SearchFormField.operationArea],
+                              }
+                            : undefined
+                        }
+                      />,
+                    ],
                   },
-                }}
-                hint={{
-                  children: "Select one option",
-                }}
-                items={[
-                  {
-                    children: "Operation name",
-                    conditional: {
-                      children: [
-                        <Input
-                          id="search-operation-name"
-                          data-testid="search-operation-name"
-                          className="govuk-input--width-20"
-                          label={{
-                            children: "Operation name",
-                          }}
-                          errorMessage={
-                            formDataErrors[SearchFormField.operationName]
-                              ? {
-                                  children:
-                                    formDataErrors[
-                                      SearchFormField.operationName
-                                    ],
-                                }
-                              : undefined
-                          }
-                          name="operation-name"
-                          type="text"
-                          value={formData[SearchFormField.operationName]}
-                          onChange={(value: string) =>
-                            handleFormChange(
-                              SearchFormField.operationName,
-                              value,
-                            )
-                          }
-                          disabled={false}
-                        />,
+                  value: "operation name",
+                },
+                {
+                  children: "Defendant name",
+                  conditional: {
+                    children: [
+                      <Input
+                        id="search-defendant-name"
+                        data-testid="search-defendant-name"
+                        className="govuk-input--width-20"
+                        label={{
+                          children: "Defendant name",
+                        }}
+                        errorMessage={
+                          formDataErrors[SearchFormField.defendantName]
+                            ? {
+                                children:
+                                  formDataErrors[SearchFormField.defendantName],
+                              }
+                            : undefined
+                        }
+                        name="defendant-name"
+                        type="text"
+                        value={formData[SearchFormField.defendantName]}
+                        onChange={(value: string) =>
+                          handleFormChange(SearchFormField.defendantName, value)
+                        }
+                        disabled={false}
+                      />,
 
-                        <Select
-                          label={{
-                            htmlFor: "search-operation-area",
-                            children: "Select Area",
-                            className: styles.areaSelectLabel,
-                          }}
-                          id="search-operation-area"
-                          data-testid="search-operation-area"
-                          value={formData.operationArea}
-                          items={[
-                            { children: "--Select Area--", value: 0 },
-                            { children: "option 1", value: 1 },
-                            { children: "option 2", value: 2 },
-                          ]}
-                          formGroup={{
-                            className: styles.select,
-                          }}
-                          onChange={(ev) =>
-                            handleFormChange(
-                              SearchFormField.operationArea,
-                              ev.target.value,
-                            )
-                          }
-                          errorMessage={
-                            formDataErrors[SearchFormField.operationArea]
-                              ? {
-                                  children:
-                                    formDataErrors[
-                                      SearchFormField.operationArea
-                                    ],
-                                }
-                              : undefined
-                          }
-                        />,
-                      ],
-                    },
-                    value: "operation name",
+                      <Select
+                        key="2"
+                        label={{
+                          htmlFor: "search-defendant-area",
+                          children: "Select Area",
+                          className: styles.areaSelectLabel,
+                        }}
+                        id="search-defendant-area"
+                        data-testid="search-defendant-area"
+                        items={[
+                          { children: "--Select Area--", value: 0 },
+                          { children: "option 1", value: 1 },
+                          { children: "option 2", value: 2 },
+                        ]}
+                        formGroup={{
+                          className: styles.select,
+                        }}
+                        onChange={(ev) =>
+                          handleFormChange(
+                            SearchFormField.defendantArea,
+                            ev.target.value,
+                          )
+                        }
+                        value={formData[SearchFormField.defendantArea]}
+                        errorMessage={
+                          formDataErrors[SearchFormField.defendantArea]
+                            ? {
+                                children:
+                                  formDataErrors[SearchFormField.defendantArea],
+                              }
+                            : undefined
+                        }
+                      />,
+                    ],
                   },
-                  {
-                    children: "Defendant name",
-                    conditional: {
-                      children: [
-                        <Input
-                          id="search-defendant-name"
-                          data-testid="search-defendant-name"
-                          className="govuk-input--width-20"
-                          label={{
-                            children: "Defendant name",
-                          }}
-                          errorMessage={
-                            formDataErrors[SearchFormField.defendantName]
-                              ? {
-                                  children:
-                                    formDataErrors[
-                                      SearchFormField.defendantName
-                                    ],
-                                }
-                              : undefined
-                          }
-                          name="defendant-name"
-                          type="text"
-                          value={formData[SearchFormField.defendantName]}
-                          onChange={(value: string) =>
-                            handleFormChange(
-                              SearchFormField.defendantName,
-                              value,
-                            )
-                          }
-                          disabled={false}
-                        />,
-
-                        <Select
-                          key="2"
-                          label={{
-                            htmlFor: "search-defendant-area",
-                            children: "Select Area",
-                            className: styles.areaSelectLabel,
-                          }}
-                          id="search-defendant-area"
-                          data-testid="search-defendant-area"
-                          items={[
-                            { children: "--Select Area--", value: 0 },
-                            { children: "option 1", value: 1 },
-                            { children: "option 2", value: 2 },
-                          ]}
-                          formGroup={{
-                            className: styles.select,
-                          }}
-                          onChange={(ev) =>
-                            handleFormChange(
-                              SearchFormField.defendantArea,
-                              ev.target.value,
-                            )
-                          }
-                          value={formData[SearchFormField.defendantArea]}
-                          errorMessage={
-                            formDataErrors[SearchFormField.defendantArea]
-                              ? {
-                                  children:
-                                    formDataErrors[
-                                      SearchFormField.defendantArea
-                                    ],
-                                }
-                              : undefined
-                          }
-                        />,
-                      ],
-                    },
-                    value: "defendant name",
+                  value: "defendant name",
+                },
+                {
+                  children: "URN",
+                  conditional: {
+                    children: [
+                      <Input
+                        id="search-urn"
+                        data-testid="search-urn"
+                        className="govuk-input--width-20"
+                        label={{
+                          children: "URN",
+                        }}
+                        errorMessage={
+                          formDataErrors[SearchFormField.urn]
+                            ? {
+                                children: formDataErrors[SearchFormField.urn],
+                              }
+                            : undefined
+                        }
+                        name="urn"
+                        type="text"
+                        value={formData[SearchFormField.urn]}
+                        onChange={(value: string) =>
+                          handleFormChange(SearchFormField.urn, value)
+                        }
+                        disabled={false}
+                      />,
+                    ],
                   },
-                  {
-                    children: "URN",
-                    conditional: {
-                      children: [
-                        <Input
-                          id="search-urn"
-                          data-testid="search-urn"
-                          className="govuk-input--width-20"
-                          label={{
-                            children: "URN",
-                          }}
-                          errorMessage={
-                            formDataErrors[SearchFormField.urn]
-                              ? {
-                                  children: formDataErrors[SearchFormField.urn],
-                                }
-                              : undefined
-                          }
-                          name="urn"
-                          type="text"
-                          value={formData[SearchFormField.urn]}
-                          onChange={(value: string) =>
-                            handleFormChange(SearchFormField.urn, value)
-                          }
-                          disabled={false}
-                        />,
-                      ],
-                    },
-                    value: "urn",
-                  },
-                ]}
-                name="case-search-types"
-                value={formData.searchType}
-                onChange={(value) => {
-                  if (value)
-                    handleFormChange(SearchFormField.searchType, value);
-                }}
-              />
-            </div>
-            <Button onClick={handleSearch}>Search</Button>
+                  value: "urn",
+                },
+              ]}
+              name="case-search-types"
+              value={formData.searchType}
+              onChange={(value) => {
+                if (value) handleFormChange(SearchFormField.searchType, value);
+              }}
+            />
           </div>
-        }
+          <Button onClick={handleSearch}>Search</Button>
+        </div>
       </div>
     </div>
   );
