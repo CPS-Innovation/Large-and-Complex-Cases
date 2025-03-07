@@ -16,7 +16,7 @@
 .inputWrapper {
   display: flex;
   flex-direction: row;
-  align-items: flex-end;
+  align-items: center;
   gap: 0.5rem;
   & button {
     margin: 0;
@@ -27,7 +27,6 @@
 
 .searchResultsCount {
   display: block;
-  margin-top: 1rem;
 }
 
 .resultHeading {

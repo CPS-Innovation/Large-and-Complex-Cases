@@ -32,7 +32,29 @@ const useSearchNavigation = () => {
     navigate(`/search-results?${queryString}`);
   };
 
-  return { updateSearchParams, navigateWithParams, searchParams };
+  const validateSearchParams = (params: URLSearchParams): SearchParamsType => {
+    const validKeys: (keyof SearchParamsType)[] = [
+      "urn",
+      "operation-name",
+      "defendant-name",
+      "area",
+    ];
+    const validParams: Partial<SearchParamsType> = {};
+    for (let [key, value] of params.entries()) {
+      if (validKeys.includes(key as keyof SearchParamsType)) {
+        validParams[key as keyof SearchParamsType] = value;
+      }
+    }
+
+    return validParams as SearchParamsType;
+  };
+  const filteredSearchParams = validateSearchParams(searchParams);
+  return {
+    updateSearchParams,
+    navigateWithParams,
+    searchParams: filteredSearchParams,
+    queryString: new URLSearchParams(filteredSearchParams).toString(),
+  };
 };
 
 export default useSearchNavigation;

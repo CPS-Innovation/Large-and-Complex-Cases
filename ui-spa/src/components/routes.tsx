@@ -6,7 +6,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route index element={<CaseSearchPage />} />
-      <Route path="cases" element={<CaseSearchResultPage />} />
+      <Route path="search-results" element={<CaseSearchResultPage />} />
     </Routes>
   );
 };

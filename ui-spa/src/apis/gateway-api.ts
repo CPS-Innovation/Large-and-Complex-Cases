@@ -21,10 +21,10 @@ export const getInitialMessage = async () => {
   }
 };
 
-export const getCaseSearchResults = async (searchKey: string) => {
+export const getCaseSearchResults = async (searchParams: string) => {
   console.log("calling api....");
   try {
-    const url = `${GATEWAY_BASE_URL}/api/cases?search=${searchKey}`;
+    const url = `${GATEWAY_BASE_URL}/api/cases?${searchParams}`;
 
     const response = await fetch(url, {
       method: "GET",

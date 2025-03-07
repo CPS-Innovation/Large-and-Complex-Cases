@@ -23,11 +23,7 @@ const CaseSearchPage = () => {
   }
 
   type SearchFromData = {
-    [SearchFormField.searchType]:
-      | "operation name"
-      | "defendant name"
-      | "urn"
-      | undefined;
+    [SearchFormField.searchType]: "operation name" | "defendant name" | "urn";
     [SearchFormField.operationName]: string;
     [SearchFormField.operationArea]: string;
     [SearchFormField.defendantName]: string;
