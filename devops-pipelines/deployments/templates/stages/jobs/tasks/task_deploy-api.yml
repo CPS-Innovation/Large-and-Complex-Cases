@@ -37,10 +37,10 @@ steps:
     inputs:
       azureSubscription: ${{ parameters.azureSubscription }}
       appType: functionAppLinux
-      appName: "cc${{ parameters.targetSuffix }}-api"
+      appName: "LaCC${{ parameters.targetSuffix }}-api"
       package: $(Pipeline.Workspace)/${{ parameters.targetBuild }}/complex-cases-api-drop
       deployToSlotOrASE: true
-      resourceGroupName: "rg-complex-cases${{ parameters.targetSuffix }}"
+      resourceGroupName: "rg-LaCC${{ parameters.targetSuffix }}"
       slotName: "staging"
 
   # send custom event to AppInsights

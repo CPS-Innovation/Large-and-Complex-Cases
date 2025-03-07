@@ -43,7 +43,7 @@ stages:
             parameters:
               taskDisplayName: 'Check Package Sources'
               
-          - template: ../deployments_v2/stages/jobs/tasks/task_get-credentials.yml
+          - template: ../deployments/templates/stages/jobs/tasks/task_get-credentials.yml
             parameters:
               azureSubscription: $(azure-subscription-pre-prod)
               
@@ -75,7 +75,7 @@ stages:
   #          parameters:
   #            taskDisplayName: 'Check Package Sources'
   #            
-  #        - template: ../deployments_v2/stages/jobs/tasks/task_get-credentials.yml
+  #        - template: ../deployments/templates/stages/jobs/tasks/task_get-credentials.yml
   #          parameters:
   #            azureSubscription: $(azure-subscription-prod)
   #            
@@ -107,7 +107,7 @@ stages:
             parameters:
               taskDisplayName: 'Re-Check Package Sources'
               
-          - template: ../deployments_v2/stages/jobs/tasks/task_get-credentials.yml
+          - template: ../deployments/templates/stages/jobs/tasks/task_get-credentials.yml
             parameters:
               azureSubscription: $(azure-subscription-pre-prod)
 
@@ -136,7 +136,7 @@ stages:
   #          parameters:
   #            taskDisplayName: 'Re-Check Package Sources'
   #            
-  #        - template: ../deployments_v2/stages/jobs/tasks/task_get-credentials.yml
+  #        - template: ../deployments/templates/stages/jobs/tasks/task_get-credentials.yml
   #          parameters:
   #            azureSubscription: $(azure-subscription-prod)
   #

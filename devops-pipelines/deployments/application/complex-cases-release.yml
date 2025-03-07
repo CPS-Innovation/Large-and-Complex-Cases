@@ -238,6 +238,9 @@ stages:
       targetLabel: "PROD"
       appInsightsKey: $(complex-cases-app-insights-instrumentation-key-prod)
       targetSuffix: ""
+      statusCheckRetries: $(status-check-retries)
+      statusCheckDelaySeconds: $(status-check-delay-seconds)
+      statusCheckTimeoutSeconds: $(status-check-timeout-seconds)
       azureSubscription: $(azure-subscription-prod)
 
   - template: ../templates/stages/stage_swap-slots.yml
