@@ -25,6 +25,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.Egress.Int
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.DDEI", "CPS.ComplexCases.DDEI\CPS.ComplexCases.DDEI.csproj", "{6FA7188C-2A25-42AF-A6AA-887EBE1444C9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.DDEI.Tests", "CPS.ComplexCases.DDEI.Tests\CPS.ComplexCases.DDEI.Tests.csproj", "{209FBD6E-9026-441B-B9BC-29F2B6E98E9A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -78,5 +80,9 @@ Global
 		{6FA7188C-2A25-42AF-A6AA-887EBE1444C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6FA7188C-2A25-42AF-A6AA-887EBE1444C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6FA7188C-2A25-42AF-A6AA-887EBE1444C9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{209FBD6E-9026-441B-B9BC-29F2B6E98E9A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{209FBD6E-9026-441B-B9BC-29F2B6E98E9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{209FBD6E-9026-441B-B9BC-29F2B6E98E9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{209FBD6E-9026-441B-B9BC-29F2B6E98E9A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
