@@ -1,4 +1,4 @@
-import { useRef, useState, useMemo, useCallback } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useApi } from "../../common/hooks/useApi";
 import { Button, Input, Select, ErrorSummary } from "../govuk";
 import { getCaseSearchResults } from "../../apis/gateway-api";
@@ -11,6 +11,7 @@ import {
 import styles from "./index.module.scss";
 
 const CaseSearchResultPage = () => {
+  const [triggerSearchApi, setTriggerSearchApi] = useState(false);
   const errorSummaryRef = useRef<HTMLInputElement>(null);
   const { updateSearchParams, searchParams, queryString } =
     useSearchNavigation();
@@ -24,11 +25,15 @@ const CaseSearchResultPage = () => {
       defendantArea: "",
       urn: "",
     };
+
+    console.log("searchParamKeys>>", searchParams);
     if (
       searchParamKeys.includes("defendant-name") &&
       searchParamKeys.includes("area")
     ) {
       initialData.searchType = "defendant name";
+      initialData.defendantName = searchParams["defendant-name"] ?? "";
+      initialData.defendantArea = searchParams["area"] ?? "";
       return initialData;
     }
     if (
@@ -36,8 +41,12 @@ const CaseSearchResultPage = () => {
       searchParamKeys.includes("area")
     ) {
       initialData.searchType = "operation name";
+      initialData.operationName = searchParams["operation-name"] ?? "";
+      initialData.operationArea = searchParams["area"] ?? "";
       return initialData;
     }
+
+    initialData.urn = searchParams["urn"] ?? "";
     return initialData;
   };
   const {
@@ -49,10 +58,17 @@ const CaseSearchResultPage = () => {
     getSearchParams,
   } = useCaseSearchForm(getInitialState());
 
-  const apiState = useApi(getCaseSearchResults, [queryString], !!queryString);
+  const apiState = useApi(
+    getCaseSearchResults,
+    [queryString],
+    triggerSearchApi,
+  );
+  useEffect(() => {
+    const isValid = validateFormData();
+    setTriggerSearchApi(isValid);
+  }, [queryString]);
   const handleSearch = () => {
     const isFromValid = validateFormData();
-    console.log("isFromValid>>", isFromValid);
     if (isFromValid) {
       const searchParams = getSearchParams();
       updateSearchParams(searchParams);
@@ -96,7 +112,7 @@ const CaseSearchResultPage = () => {
               data-testid="search-operation-area"
               value={formData.operationArea}
               items={[
-                { children: "--Select Area--", value: 0 },
+                { children: "--Select Area--", value: "" },
                 { children: "option 1", value: 1 },
                 { children: "option 2", value: 2 },
               ]}
@@ -153,7 +169,7 @@ const CaseSearchResultPage = () => {
               id="search-defendant-area"
               data-testid="search-defendant-area"
               items={[
-                { children: "--Select Area--", value: 0 },
+                { children: "--Select Area--", value: "" },
                 { children: "option 1", value: 1 },
                 { children: "option 2", value: 2 },
               ]}
@@ -205,6 +221,54 @@ const CaseSearchResultPage = () => {
       }
     }
   };
+
+  const getTitleText = () => {
+    switch (formData[SearchFormField.searchType]) {
+      case "operation name":
+        return "Search for Operation name search";
+      case "defendant name":
+        return "Search for defendant surname search";
+      default:
+        return "Search for urn search";
+    }
+  };
+
+  const getResultsCountText = () => {
+    if (apiState.status !== "succeeded") return <> </>;
+    const resultString =
+      apiState.status === "succeeded" && apiState?.data?.length < 2
+        ? "result"
+        : "results";
+
+    const resultHtml = (
+      <>
+        We've found {apiState?.data?.length} {resultString} for{" "}
+      </>
+    );
+    switch (formData[SearchFormField.searchType]) {
+      case "operation name":
+        return (
+          <>
+            {resultHtml}
+            <b>{searchParams["operation-name"]}</b> in {searchParams["area"]}.
+          </>
+        );
+      case "defendant name":
+        return (
+          <>
+            {resultHtml}
+            <b>{searchParams["defendant-name"]}</b> in {searchParams["area"]}.
+          </>
+        );
+      default:
+        return (
+          <>
+            {resultHtml}
+            <b>{searchParams["urn"]}</b>.
+          </>
+        );
+    }
+  };
   if (apiState.status === "loading") {
     return <div> Loading...</div>;
   }
@@ -227,15 +291,14 @@ const CaseSearchResultPage = () => {
                 />
               </div>
             )}
-            <h2>Update your Operation name search</h2>
+            <h2>{getTitleText()}</h2>
             <div className={styles.inputWrapper}>
               {renderSearchForm()}
               <Button onClick={handleSearch}>Search</Button>
             </div>
             {apiState.status === "succeeded" && (
               <span className={styles.searchResultsCount}>
-                We've found <b>{apiState.data.length}</b> case that matches{" "}
-                {/* <b>{search}</b>. */}
+                {getResultsCountText()}
               </span>
             )}
           </div>

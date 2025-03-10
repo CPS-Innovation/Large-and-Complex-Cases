@@ -115,7 +115,7 @@ const CaseSearchPage = () => {
                         data-testid="search-operation-area"
                         value={formData.operationArea}
                         items={[
-                          { children: "--Select Area--", value: 0 },
+                          { children: "--Select Area--", value: "" },
                           { children: "option 1", value: 1 },
                           { children: "option 2", value: 2 },
                         ]}
@@ -179,7 +179,7 @@ const CaseSearchPage = () => {
                         id="search-defendant-area"
                         data-testid="search-defendant-area"
                         items={[
-                          { children: "--Select Area--", value: 0 },
+                          { children: "--Select Area--", value: "" },
                           { children: "option 1", value: 1 },
                           { children: "option 2", value: 2 },
                         ]}
