@@ -11,18 +11,20 @@ export const handlers = [
   http.get(`${GATEWAY_BASE_URL}/api/cases`, () => {
     const caseSearchResults = [
       {
-        caseId: 222,
-        leadDefendantName: "abc2",
-        operationName: "Thunderstruck",
-        urn: "ABCDEF2",
+        operationName: "",
+        urn: "ABCDEF1",
+        leadDefendantName: "abc1",
+        egressStatus: "connected",
+        sharedDrive: "connected",
         dateCreated: "02/01/2000",
       },
       {
-        caseId: 333,
-        leadDefendantName: "abc3",
-        operationName: "Thunderstruck Traffic",
-        urn: "ABCDEF3",
-        dateCreated: "02/01/2000",
+        operationName: "Thunderstruck",
+        urn: "ABCDEF2",
+        leadDefendantName: "abc2",
+        egressStatus: "connected",
+        sharedDrive: "connected",
+        dateCreated: "03/01/2000",
       },
     ];
 

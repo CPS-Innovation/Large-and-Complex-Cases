@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { useApi } from "../../common/hooks/useApi";
-import { Button, Input, Select, ErrorSummary } from "../govuk";
+import { Button, Input, Select, ErrorSummary, Table } from "../govuk";
 import { getCaseSearchResults } from "../../apis/gateway-api";
 import useSearchNavigation from "../../common/hooks/useSearchNavigation";
 import {
@@ -8,6 +8,7 @@ import {
   SearchFormField,
   SearchFromData,
 } from "../../common/hooks/useCaseSearchForm";
+import { Link } from "react-router";
 import styles from "./index.module.scss";
 
 const CaseSearchResultPage = () => {
@@ -271,6 +272,48 @@ const CaseSearchResultPage = () => {
         );
     }
   };
+
+  const getTableRowData = () => {
+    if (apiState.status !== "succeeded") return [];
+    return apiState.data.map((data: any) => {
+      return {
+        cells: [
+          {
+            children: (
+              <Link to="/" className={styles.link}>
+                {data.operationName
+                  ? data.operationName
+                  : data.leadDefendantName}
+              </Link>
+            ),
+          },
+          {
+            children: data.urn,
+          },
+          {
+            children: data.leadDefendantName,
+          },
+          {
+            children: data.egressStatus,
+          },
+          {
+            children: data.sharedDrive,
+          },
+          {
+            children: data.dateCreated,
+          },
+          {
+            children: (
+              <Link to="/" className={styles.link}>
+                view{" "}
+              </Link>
+            ),
+          },
+        ],
+      };
+    });
+  };
+
   if (apiState.status === "loading") {
     return <div> Loading...</div>;
   }
@@ -308,30 +351,32 @@ const CaseSearchResultPage = () => {
       </div>
       <div className="govuk-width-container">
         {apiState.status === "succeeded" && !!apiState.data.length && (
-          <ul className={styles.searchResults}>
-            {apiState.data.map((result: any) => {
-              return (
-                <li>
-                  <div className={styles.resultHeading}>
-                    <h2
-                      className={`govuk-heading-l ${styles.resultHeadingHeader}`}
-                    >
-                      {result.operationName}
-                    </h2>
-                    <span>{result.urn}</span>
-                  </div>
-
-                  <dl className={styles.resultContent}>
-                    <dt className={styles.contentKey}>Defendants:</dt>
-                    <dd>{result.leadDefendantName}</dd>
-
-                    <dt className={styles.contentKey}>Date Created:</dt>
-                    <dd>{result.dateCreated}</dd>
-                  </dl>
-                </li>
-              );
-            })}
-          </ul>
+          <Table
+            head={[
+              {
+                children: "Defendant or Operation name",
+              },
+              {
+                children: "URN",
+              },
+              {
+                children: "Lead defendant",
+              },
+              {
+                children: "Egress",
+              },
+              {
+                children: "Shared Drive",
+              },
+              {
+                children: "Case created",
+              },
+              {
+                children: "",
+              },
+            ]}
+            rows={getTableRowData()}
+          ></Table>
         )}
         {apiState.status === "succeeded" && !apiState.data.length && (
           <div className={styles.noResultsContent}>

@@ -5,3 +5,4 @@ export { Input } from "./Input";
 export { Label } from "./Label";
 export { Radios } from "./Radios";
 export { Select } from "./Select";
+export { Table } from "./Table";

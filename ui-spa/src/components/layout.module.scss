@@ -1,3 +1,15 @@
+.username {
+  margin-bottom: 20px;
+}
 .mainContent {
   min-height: 70vh;
+  & :global(.govuk-width-container) {
+    max-width: 1400px;
+  }
+}
+
+.header {
+  & :global(.govuk-width-container) {
+    max-width: 1400px;
+  }
 }
