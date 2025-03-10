@@ -6,4 +6,5 @@ public class DdeiCaseSummaryDto
   public int Id { get; set; }
   public string? LeadDefendantFirstNames { get; set; }
   public string? LeadDefendantSurname { get; set; }
+  public string? Operation { get; set; }
 }

@@ -8,8 +8,8 @@ public class CaseDto
   public int CaseId { get; set; }
   [JsonPropertyName("urn")]
   public required string Urn { get; set; }
-  // [JsonPropertyName("operationName")]
-  // public required string OperationName { get; set; }
+  [JsonPropertyName("operationName")]
+  public string? OperationName { get; set; }
   [JsonPropertyName("leadDefendantName")]
   public required string LeadDefendantName { get; set; }
 }

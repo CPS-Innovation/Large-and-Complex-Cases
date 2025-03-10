@@ -29,7 +29,7 @@ public class DdeiClient(ILogger<DdeiClient> logger,
          await GetCaseInternalAsync(_ddeiArgFactory.CreateCaseArgFromUrnArg(arg, caseIdentifier.Id)));
 
     var cases = await Task.WhenAll(calls);
-    return cases.Select(caseDetail => _caseDetailsMapper.MapCaseDetails(caseDetail));
+    return cases.Select(_caseDetailsMapper.MapCaseDetails);
   }
 
   public async Task<IEnumerable<CaseDto>> ListCasesByOperationNameAsync(DdeiOperationNameArgDto arg)
