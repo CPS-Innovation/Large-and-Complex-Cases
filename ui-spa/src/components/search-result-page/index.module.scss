@@ -1,7 +1,5 @@
 .fullWidthContainer {
   width: 100%;
-  background-color: #f3f2f1;
-  border-bottom: 1px solid #b1b4b6;
 }
 
 .hint {
@@ -9,8 +7,7 @@
 }
 .contentTop {
   padding: 1rem 0 1.5rem 0;
-
-  background: #f3f2f1;
+  border-bottom: 1px solid #b1b4b6;
 }
 
 .inputWrapper {
@@ -78,4 +75,12 @@
 .errorSummaryWrapper {
   margin-top: 1rem;
   max-width: 30rem;
+}
+
+.noResultsContent {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  & :global(.govuk-list) {
+    margin-top: 1rem;
+  }
 }

@@ -240,10 +240,12 @@ const CaseSearchResultPage = () => {
         ? "result"
         : "results";
 
-    const resultHtml = (
+    const resultHtml = apiState.data.length ? (
       <>
         We've found {apiState?.data?.length} {resultString} for{" "}
       </>
+    ) : (
+      <>There are no matching results for </>
     );
     switch (formData[SearchFormField.searchType]) {
       case "operation name":
@@ -291,7 +293,7 @@ const CaseSearchResultPage = () => {
                 />
               </div>
             )}
-            <h2>{getTitleText()}</h2>
+            <h1>{getTitleText()}</h1>
             <div className={styles.inputWrapper}>
               {renderSearchForm()}
               <Button onClick={handleSearch}>Search</Button>
@@ -305,9 +307,9 @@ const CaseSearchResultPage = () => {
         </div>
       </div>
       <div className="govuk-width-container">
-        <ul className={styles.searchResults}>
-          {apiState.status === "succeeded" &&
-            apiState.data.map((result: any) => {
+        {apiState.status === "succeeded" && !!apiState.data.length && (
+          <ul className={styles.searchResults}>
+            {apiState.data.map((result: any) => {
               return (
                 <li>
                   <div className={styles.resultHeading}>
@@ -329,7 +331,23 @@ const CaseSearchResultPage = () => {
                 </li>
               );
             })}
-        </ul>
+          </ul>
+        )}
+        {apiState.status === "succeeded" && !apiState.data.length && (
+          <div className={styles.noResultsContent}>
+            <div>
+              <b>You can:</b>
+            </div>
+            <ul className="govuk-list govuk-list--bullet">
+              <li>check CMS to see if the case exists</li>
+              <li>check the spelling of your search</li>
+              <li>
+                check with your Unit Manager to see if the case is restricted
+              </li>
+              <li>contact the Service Desk</li>
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );
