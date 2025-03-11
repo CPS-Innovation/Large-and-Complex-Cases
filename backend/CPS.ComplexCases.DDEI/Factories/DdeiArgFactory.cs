@@ -33,4 +33,37 @@ public class DdeiArgFactory : IDdeiArgFactory
       CaseId = caseId
     };
   }
+
+  public DdeiUrnArgDto CreateUrnArg(string cmsAuthValues, Guid correlationId, string urn)
+  {
+    return new DdeiUrnArgDto
+    {
+      CmsAuthValues = cmsAuthValues,
+      CorrelationId = correlationId,
+      Urn = urn
+    };
+  }
+
+  public DdeiDefendantNameArgDto CreateDefendantArg(string cmsAuthValues, Guid correlationId, string leadDefendantLastName, string cmsAreaCode)
+  {
+    return new DdeiDefendantNameArgDto
+    {
+      CmsAuthValues = cmsAuthValues,
+      CorrelationId = correlationId,
+      LastName = leadDefendantLastName,
+      CmsAreaCode = cmsAreaCode
+    };
+  }
+
+  public DdeiOperationNameArgDto CreateOperationNameArg(string cmsAuthValues, Guid correlationId, string operationName, string cmsAreaCode)
+  {
+    return new DdeiOperationNameArgDto
+    {
+      CmsAuthValues = cmsAuthValues,
+      CorrelationId = correlationId,
+      OperationName = operationName,
+      CmsAreaCode = cmsAreaCode
+    };
+  }
+
 }
