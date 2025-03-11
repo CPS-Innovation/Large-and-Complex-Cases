@@ -20,7 +20,7 @@ jobs:
       matrix:
         API:
           Name: "API"
-          AppServiceName: "cc${{ parameters.targetSuffix }}-api"
+          AppServiceName: "LaCC${{ parameters.targetSuffix }}-api"
     displayName: Swap
     steps:
       - checkout: none
@@ -30,7 +30,7 @@ jobs:
           action: "Swap Slots"
           sourceSlot: "staging"
           azureSubscription: ${{ parameters.azureSubscription }}
-          resourceGroupName: "rg-complex-cases${{ parameters.targetSuffix }}"
+          resourceGroupName: "rg-LaCC${{ parameters.targetSuffix }}"
           webAppName: $(AppServiceName)
           PreserveVnet: true
 
@@ -41,7 +41,7 @@ jobs:
       matrix:
         SPA:
           Name: "UI"
-          AppServiceName: "cc${{ parameters.targetSuffix }}-ui"
+          AppServiceName: "LaCC${{ parameters.targetSuffix }}-ui"
     displayName: Swap
     steps:
       - checkout: none
@@ -51,7 +51,7 @@ jobs:
           action: "Swap Slots"
           sourceSlot: "staging"
           azureSubscription: ${{ parameters.azureSubscription }}
-          resourceGroupName: "rg-complex-cases${{ parameters.targetSuffix }}"
+          resourceGroupName: "rg-LaCC${{ parameters.targetSuffix }}"
           webAppName: $(AppServiceName)
           PreserveVnet: true
   

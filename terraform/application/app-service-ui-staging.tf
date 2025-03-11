@@ -24,12 +24,12 @@ resource "azurerm_linux_web_app_slot" "complex_cases_ui_staging" {
   }
 
   site_config {
-    ftps_state    = "FtpsOnly"
-    http2_enabled = true
+    ftps_state             = "FtpsOnly"
+    http2_enabled          = true
     app_command_line       = "node complex-cases-ui/subsititute-config.js; npx serve -s"
-    always_on = true
+    always_on              = true
     vnet_route_all_enabled = true
-    use_32_bit_worker = false
+    use_32_bit_worker      = false
 
     application_stack {
       node_version = "18-lts"
@@ -58,6 +58,13 @@ resource "azurerm_linux_web_app_slot" "complex_cases_ui_staging" {
   logs {
     detailed_error_messages = true
     failed_request_tracing  = true
+
+    http_logs {
+      file_system {
+        retention_in_days = 7
+        retention_in_mb   = 25
+      }
+    }
   }
 
   identity {

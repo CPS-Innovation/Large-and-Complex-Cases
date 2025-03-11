@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useRef } from "react";
 import { useApi } from "../../common/hooks/useApi";
 import { useQueryParamsState } from "../../common/hooks/useQueryParamsState";
 import { useCaseSearchInputLogic } from "../../common/hooks/useCaseSearchInputLogic";
 import { CaseSearchQueryParams } from "../../common/types/CaseSearchQueryParams";
 import { getCaseSearchResults } from "../../apis/gateway-api";
-import { H1, Input, Button, Label, LabelText, ErrorSummary } from "govuk-react";
+import { Input, Button, Label, LabelText, ErrorSummary } from "govuk-react";
 import styles from "./index.module.scss";
 
 const validationFailMessage = "Operation name should not be empty";

@@ -5,7 +5,7 @@ describe("useApi", () => {
   it("can initiate a call, set status to loading, then return a successful result", async () => {
     const mockResult = { id: 1 };
     const mockApiCall = vi.fn(
-      (id: string) =>
+      (_id: string) =>
         new Promise((resolve) => setTimeout(() => resolve(mockResult), 10)),
     );
 
@@ -20,7 +20,7 @@ describe("useApi", () => {
   it("can initiate a call, set status to loading, then return an error result", async () => {
     const mockError = new Error();
     const mockApiCall = vi.fn(
-      (id: string) =>
+      (_id: string) =>
         new Promise((_, reject) => setTimeout(() => reject(mockError))),
     );
 
@@ -35,7 +35,7 @@ describe("useApi", () => {
   it("can initiate a call with multiple parameters", async () => {
     const mockResult = { id: 1 };
     const mockApiCall = vi.fn(
-      (p1: string, p2: number, p3: string) =>
+      (_p1: string, _p2: number, _p3: string) =>
         new Promise((resolve) => setTimeout(() => resolve(mockResult), 10)),
     );
 
@@ -53,7 +53,7 @@ describe("useApi", () => {
   it("can not call the api again if parameters do not change", async () => {
     const mockResult = { id: 1 };
     const mockApiCall = vi.fn(
-      (p1: string) =>
+      (_p1: string) =>
         new Promise((resolve) => setTimeout(() => resolve(mockResult), 10)),
     );
 
@@ -67,7 +67,7 @@ describe("useApi", () => {
   it("can call the api a second time if parameters do change", async () => {
     const mockResult = { id: 1 };
     const mockApiCall = vi.fn(
-      (p1: string) =>
+      (_p1: string) =>
         new Promise((resolve) => setTimeout(() => resolve(mockResult), 10)),
     );
 
@@ -90,7 +90,7 @@ describe("useApi", () => {
 
   it("should make an api call, only if the 3rd parameter of the useAPi hook is not false", async () => {
     const mockApiCall = vi.fn(
-      (p: string) =>
+      (_p: string) =>
         new Promise((resolve) => setTimeout(() => resolve("mockResult"), 10)),
     );
 

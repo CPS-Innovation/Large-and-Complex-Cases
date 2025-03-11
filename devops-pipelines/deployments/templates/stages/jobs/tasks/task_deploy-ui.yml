@@ -37,10 +37,10 @@ steps:
     inputs:
       azureSubscription: ${{ parameters.azureSubscription }}
       appType: webAppLinux
-      WebAppName: "cc${{ parameters.targetSuffix }}-ui"
+      WebAppName: "LaCC${{ parameters.targetSuffix }}-ui"
       packageForLinux: $(Pipeline.Workspace)/${{ parameters.targetBuild }}/ui-spa-drop
       deployToSlotOrASE: true
-      resourceGroupName: "rg-complex-cases${{ parameters.targetSuffix }}"
+      resourceGroupName: "rg-LaCC${{ parameters.targetSuffix }}"
       slotName: "staging"
 
   # send custom event to AppInsights

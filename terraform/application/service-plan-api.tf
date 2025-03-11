@@ -1,9 +1,11 @@
 resource "azurerm_service_plan" "asp_complex_cases_api" {
-  name                = "${local.product_prefix}-api-asp"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.rg_complex_cases.name
-  os_type             = "Linux"
-  sku_name            = var.service_plans.ui_service_plan_sku
+  name                   = "${local.product_prefix}-api-asp"
+  location               = var.location
+  resource_group_name    = azurerm_resource_group.rg_complex_cases.name
+  os_type                = "Linux"
+  sku_name               = var.service_plans.ui_service_plan_sku
+  zone_balancing_enabled = true
+  worker_count           = var.service_plans.ui_worker_count
 
   tags = local.common_tags
 }
@@ -17,8 +19,8 @@ resource "azurerm_monitor_autoscale_setting" "amas_complex_cases_api" {
   profile {
     name = "Complex Cases API Performance Scaling Profile"
     capacity {
-      default = 1
-      minimum = 1
+      default = var.service_capacity.api_default_capacity
+      minimum = var.service_capacity.api_minimum_capacity
       maximum = var.service_capacity.api_max_capacity
     }
     rule {

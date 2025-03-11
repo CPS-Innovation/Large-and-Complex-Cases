@@ -7,6 +7,8 @@ resource "azurerm_key_vault" "kv_complex_cases" {
   enable_rbac_authorization       = true
   enabled_for_template_deployment = true
   public_network_access_enabled   = false
+  purge_protection_enabled        = true
+  soft_delete_retention_days      = 7 # default is 90
 
   sku_name = "standard"
 

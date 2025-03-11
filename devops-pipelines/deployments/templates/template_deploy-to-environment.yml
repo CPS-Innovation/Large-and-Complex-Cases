@@ -69,6 +69,9 @@ stages:
       targetLabel: ${{ parameters.targetLabel }}
       appInsightsKey: ${{ parameters.appInsightsKey }}
       targetSuffix: ${{ parameters.targetSuffix }}
+      statusCheckRetries: ${{ parameters.statusCheckRetries }}
+      statusCheckDelaySeconds: ${{ parameters.statusCheckDelaySeconds }}
+      statusCheckTimeoutSeconds: ${{ parameters.statusCheckTimeoutSeconds }}
       azureSubscription: ${{ parameters.azureSubscription }}
 
   - template: stages/stage_swap-slots.yml

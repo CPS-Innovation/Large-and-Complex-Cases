@@ -28,7 +28,7 @@ stages:
             inputs:
               command: publish
               publishWebProjects: false
-              projects: "backend/CPS.ComplexCases.API.csproj"
+              projects: "backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj"
               arguments: "--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory) /p:Version=$(Build.BuildNumber) /p:SourceRevisionId=$(Build.SourceVersion)"
               zipAfterPublish: false
             displayName: "Build API artifact"
@@ -50,7 +50,63 @@ stages:
               artifact: complex-cases-api-drop"
             displayName: "Publish API artifact"
 
-      - job: Build_UI_Artifacts
+      - job: Build_Egress_Mock
+        steps:
+          - task: DotNetCoreCLI@2
+            inputs:
+              command: publish
+              publishWebProjects: false
+              projects: "backend/CPS.ComplexCases.Egress.WireMock/CPS.ComplexCases.Egress.WireMock.csproj"
+              arguments: "--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory) /p:Version=$(Build.BuildNumber) /p:SourceRevisionId=$(Build.SourceVersion)"
+              zipAfterPublish: false
+            displayName: "Create Egress Mock Service package to publish"
+          
+          # Add build version
+          - task: PowerShell@2
+            inputs:
+              targetType: 'inline'
+              workingDirectory: '$(Build.ArtifactStagingDirectory)/CPS.ComplexCases.Egress.WireMock'
+              script: |
+                New-Item build-version.txt -force
+                $currentDate = Get-Date
+                Set-Content build-version.txt "{`"name`":`"Egress Mock`",`"buildVersion`":`"$(Build.BuildNumber)`",`"sourceVersion`":`"$(Build.SourceVersion)`",`"lastBuilt`":`"$currentDate`"}"
+            displayName: "Record Egress Mock version details"
+
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: "$(Build.ArtifactStagingDirectory)/CPS.ComplexCases.Egress.WireMock"
+              artifact: "egress-mock-service-drop"
+            displayName: "Publish Egress Mock Service codebase artifact"
+
+      - job: Build_NetApp_Mock
+        steps:
+          - task: DotNetCoreCLI@2
+            inputs:
+              command: publish
+              publishWebProjects: false
+              projects: "backend/CPS.ComplexCases.NetApp.WireMock/CPS.ComplexCases.NetApp.WireMock.csproj"
+              arguments: "--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory) /p:Version=$(Build.BuildNumber) /p:SourceRevisionId=$(Build.SourceVersion)"
+              zipAfterPublish: false
+            displayName: "Create NetApp Mock Service package to publish"
+          
+          # Add build version
+          - task: PowerShell@2
+            inputs:
+              targetType: 'inline'
+              workingDirectory: '$(Build.ArtifactStagingDirectory)/CPS.ComplexCases.NetApp.WireMock'
+              script: |
+                New-Item build-version.txt -force
+                $currentDate = Get-Date
+                Set-Content build-version.txt "{`"name`":`"NetApp Mock`",`"buildVersion`":`"$(Build.BuildNumber)`",`"sourceVersion`":`"$(Build.SourceVersion)`",`"lastBuilt`":`"$currentDate`"}"
+            displayName: "Record NetApp Mock version details"
+
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: "$(Build.ArtifactStagingDirectory)/CPS.ComplexCases.NetApp.WireMock"
+              artifact: "netapp-mock-service-drop"
+            displayName: "Publish NetApp Mock Service codebase artifact"
+
+      - job: Build_UI_Artifact
         steps:
           # We want to rely only on the .env.production file, anything in .env is still included
           #  if not overwritten by .env.production.  For safety, just delete .env

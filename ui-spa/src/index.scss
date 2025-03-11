@@ -1,7 +1,3 @@
-:root {
-  font-family: "NewTransport", "Arial", sans-serif;
-}
-
 @font-face {
   font-family: "NewTransport";
   font-style: normal;
@@ -23,6 +19,10 @@
 }
 
 $govuk-font-family: "NewTransport", "Arial", sans-serif;
+
+* {
+  font-family: "NewTransport", "Arial", sans-serif !important;
+}
 
 @import "../node_modules/govuk-frontend/dist/govuk/index";
 
