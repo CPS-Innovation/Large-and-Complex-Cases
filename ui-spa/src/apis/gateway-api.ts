@@ -42,3 +42,24 @@ export const getCaseSearchResults = async (searchParams: string) => {
     console.error("Error:", error);
   }
 };
+
+export const getAreas = async () => {
+  try {
+    const url = `${GATEWAY_BASE_URL}/api/areas`;
+
+    const response = await fetch(url, {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error:", error);
+  }
+};

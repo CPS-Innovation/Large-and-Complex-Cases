@@ -1,7 +1,7 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
 import { useApi } from "../../common/hooks/useApi";
 import { Button, Input, Select, ErrorSummary, Table } from "../govuk";
-import { getCaseSearchResults } from "../../apis/gateway-api";
+import { getCaseSearchResults, getAreas } from "../../apis/gateway-api";
 import useSearchNavigation from "../../common/hooks/useSearchNavigation";
 import {
   useCaseSearchForm,
@@ -9,6 +9,7 @@ import {
   SearchFromData,
 } from "../../common/hooks/useCaseSearchForm";
 import { Link } from "react-router";
+
 import styles from "./index.module.scss";
 
 const CaseSearchResultPage = () => {
@@ -64,6 +65,7 @@ const CaseSearchResultPage = () => {
     [queryString],
     triggerSearchApi,
   );
+  const areaResults = useApi(getAreas, []);
   useEffect(() => {
     const isValid = validateFormData();
     setTriggerSearchApi(isValid);
@@ -112,11 +114,7 @@ const CaseSearchResultPage = () => {
               id="search-operation-area"
               data-testid="search-operation-area"
               value={formData.operationArea}
-              items={[
-                { children: "--Select Area--", value: "" },
-                { children: "option 1", value: 1 },
-                { children: "option 2", value: 2 },
-              ]}
+              items={formattedAreaValues}
               formGroup={{
                 className: styles.select,
               }}
@@ -169,11 +167,7 @@ const CaseSearchResultPage = () => {
               }}
               id="search-defendant-area"
               data-testid="search-defendant-area"
-              items={[
-                { children: "--Select Area--", value: "" },
-                { children: "option 1", value: 1 },
-                { children: "option 2", value: 2 },
-              ]}
+              items={formattedAreaValues}
               formGroup={{
                 className: styles.select,
               }}
@@ -313,6 +307,30 @@ const CaseSearchResultPage = () => {
       };
     });
   };
+
+  const formattedAreaValues = useMemo(() => {
+    if (areaResults.status !== "succeeded") return [];
+    const defaultOption = {
+      value: "",
+      children: "-- Please select --",
+      disabled: true,
+    };
+    const optionGroup1 = areaResults.data
+      .filter((item: any) => item.type === "Large and Complex Case Divisions")
+      .map((item: any) => ({
+        value: item.code,
+        children: item.name,
+        disabled: false,
+      }));
+    const optionGroup2 = areaResults.data
+      .filter((item: any) => item.type === "CPS Areas")
+      .map((item: any) => ({
+        value: item.code,
+        children: item.name,
+        disabled: false,
+      }));
+    return [defaultOption, ...optionGroup1, ...optionGroup2];
+  }, [areaResults]);
 
   if (apiState.status === "loading") {
     return <div> Loading...</div>;

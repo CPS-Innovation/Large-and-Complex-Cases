@@ -1,7 +1,4 @@
 import { useRef, useState, useCallback, useMemo, useEffect } from "react";
-// import { useQueryParamsState } from "../../common/hooks/useQueryParamsState";
-// import { useCaseSearchInputLogic } from "../../common/hooks/useCaseSearchInputLogic";
-// import { CaseSearchQueryParams } from "../../common/types/CaseSearchQueryParams";
 import { Button, Radios, Input, Select, ErrorSummary } from "../govuk";
 import useSearchNavigation from "../../common/hooks/useSearchNavigation";
 import {
@@ -9,12 +6,15 @@ import {
   SearchFormField,
   SearchFromData,
 } from "../../common/hooks/useCaseSearchForm";
+import { useApi } from "../../common/hooks/useApi";
+import { getAreas } from "../../apis/gateway-api";
 import styles from "./index.module.scss";
 
 const CaseSearchPage = () => {
   const errorSummaryRef = useRef<HTMLInputElement>(null);
 
   const { navigateWithParams } = useSearchNavigation();
+  const areaResults = useApi(getAreas, []);
   const initialData: SearchFromData = {
     searchType: "urn",
     operationName: "",
@@ -44,6 +44,30 @@ const CaseSearchPage = () => {
       navigateWithParams(searchParams);
     }
   };
+
+  const formattedAreaValues = useMemo(() => {
+    if (areaResults.status !== "succeeded") return [];
+    const defaultOption = {
+      value: "",
+      children: "-- Please select --",
+      disabled: true,
+    };
+    const optionGroup1 = areaResults.data
+      .filter((item: any) => item.type === "Large and Complex Case Divisions")
+      .map((item: any) => ({
+        value: item.code,
+        children: item.name,
+        disabled: false,
+      }));
+    const optionGroup2 = areaResults.data
+      .filter((item: any) => item.type === "CPS Areas")
+      .map((item: any) => ({
+        value: item.code,
+        children: item.name,
+        disabled: false,
+      }));
+    return [defaultOption, ...optionGroup1, ...optionGroup2];
+  }, [areaResults]);
 
   return (
     <div className={`govuk-width-container ${styles.pageWrapper}`}>
@@ -114,11 +138,7 @@ const CaseSearchPage = () => {
                         id="search-operation-area"
                         data-testid="search-operation-area"
                         value={formData.operationArea}
-                        items={[
-                          { children: "--Select Area--", value: "" },
-                          { children: "option 1", value: 1 },
-                          { children: "option 2", value: 2 },
-                        ]}
+                        items={formattedAreaValues}
                         formGroup={{
                           className: styles.select,
                         }}
@@ -178,11 +198,7 @@ const CaseSearchPage = () => {
                         }}
                         id="search-defendant-area"
                         data-testid="search-defendant-area"
-                        items={[
-                          { children: "--Select Area--", value: "" },
-                          { children: "option 1", value: 1 },
-                          { children: "option 2", value: 2 },
-                        ]}
+                        items={formattedAreaValues}
                         formGroup={{
                           className: styles.select,
                         }}

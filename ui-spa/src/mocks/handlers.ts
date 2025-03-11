@@ -1,11 +1,37 @@
 import { http, HttpResponse } from "msw";
 import { GATEWAY_BASE_URL } from "../config";
 
+const areas = [
+  {
+    code: "1",
+    name: "SEOCID Int London and SE Div",
+    type: "Large and Complex Case Divisions",
+  },
+  {
+    code: "2",
+    name: "Special Crime Division",
+    type: "Large and Complex Case Divisions",
+  },
+  {
+    code: "3",
+    name: "Bedfordshire",
+    type: "CPS Areas",
+  },
+  {
+    code: "4",
+    name: "Cambridgeshire",
+    type: "CPS Areas",
+  },
+  {
+    code: "5",
+    name: "Cheshire",
+    type: "CPS Areas",
+  },
+];
+
 export const handlers = [
-  http.get(`${GATEWAY_BASE_URL}/api/initialmessage`, () => {
-    return HttpResponse.json({
-      message: "Hello World!",
-    });
+  http.get(`${GATEWAY_BASE_URL}/api/areas`, () => {
+    return HttpResponse.json(areas);
   }),
 
   http.get(`${GATEWAY_BASE_URL}/api/cases`, () => {
