@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;
 
-namespace CPS.ComplexCases.DDEI.Tests;
+namespace CPS.ComplexCases.DDEI.Tests.Client;
 
 public class DdeiClientTests
 {
