@@ -25,7 +25,8 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router": "^7.2.0",
-    "sass": "~1.77.6"
+    "sass": "~1.77.6",
+    "use-reducer-async": "^2.1.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",

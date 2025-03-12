@@ -43,7 +43,7 @@ export const getCaseSearchResults = async (searchParams: string) => {
   }
 };
 
-export const getAreas = async () => {
+export const getCaseDivisionsOrAreas = async () => {
   try {
     const url = `${GATEWAY_BASE_URL}/api/areas`;
 

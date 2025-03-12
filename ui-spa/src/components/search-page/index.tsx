@@ -6,15 +6,16 @@ import {
   SearchFormField,
   SearchFromData,
 } from "../../common/hooks/useCaseSearchForm";
-import { useApi } from "../../common/hooks/useApi";
-import { getAreas } from "../../apis/gateway-api";
+import { useFormattedAreaValues } from "../../common/hooks/useFormattedAreaValues";
+
 import styles from "./index.module.scss";
 
 const CaseSearchPage = () => {
   const errorSummaryRef = useRef<HTMLInputElement>(null);
 
   const { navigateWithParams } = useSearchNavigation();
-  const areaResults = useApi(getAreas, []);
+  const formattedAreaValues = useFormattedAreaValues();
+  // const areaResults = useApi(getAreas, []);
   const initialData: SearchFromData = {
     searchType: "urn",
     operationName: "",
@@ -44,30 +45,6 @@ const CaseSearchPage = () => {
       navigateWithParams(searchParams);
     }
   };
-
-  const formattedAreaValues = useMemo(() => {
-    if (areaResults.status !== "succeeded") return [];
-    const defaultOption = {
-      value: "",
-      children: "-- Please select --",
-      disabled: true,
-    };
-    const optionGroup1 = areaResults.data
-      .filter((item: any) => item.type === "Large and Complex Case Divisions")
-      .map((item: any) => ({
-        value: item.code,
-        children: item.name,
-        disabled: false,
-      }));
-    const optionGroup2 = areaResults.data
-      .filter((item: any) => item.type === "CPS Areas")
-      .map((item: any) => ({
-        value: item.code,
-        children: item.name,
-        disabled: false,
-      }));
-    return [defaultOption, ...optionGroup1, ...optionGroup2];
-  }, [areaResults]);
 
   return (
     <div className={`govuk-width-container ${styles.pageWrapper}`}>

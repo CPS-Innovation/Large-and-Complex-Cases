@@ -1,7 +1,10 @@
 import { useRef, useState, useEffect, useMemo } from "react";
 import { useApi } from "../../common/hooks/useApi";
 import { Button, Input, Select, ErrorSummary, Table } from "../govuk";
-import { getCaseSearchResults, getAreas } from "../../apis/gateway-api";
+import {
+  getCaseSearchResults,
+  getCaseDivisionsOrAreas,
+} from "../../apis/gateway-api";
 import useSearchNavigation from "../../common/hooks/useSearchNavigation";
 import {
   useCaseSearchForm,
@@ -9,7 +12,7 @@ import {
   SearchFromData,
 } from "../../common/hooks/useCaseSearchForm";
 import { Link } from "react-router";
-
+import { useFormattedAreaValues } from "../../common/hooks/useFormattedAreaValues";
 import styles from "./index.module.scss";
 
 const CaseSearchResultPage = () => {
@@ -17,6 +20,7 @@ const CaseSearchResultPage = () => {
   const errorSummaryRef = useRef<HTMLInputElement>(null);
   const { updateSearchParams, searchParams, queryString } =
     useSearchNavigation();
+  const formattedAreaValues = useFormattedAreaValues();
   const getInitialState = () => {
     const searchParamKeys = Object.keys(searchParams);
     const initialData: SearchFromData = {
@@ -65,11 +69,11 @@ const CaseSearchResultPage = () => {
     [queryString],
     triggerSearchApi,
   );
-  const areaResults = useApi(getAreas, []);
   useEffect(() => {
     const isValid = validateFormData();
     setTriggerSearchApi(isValid);
   }, [queryString]);
+
   const handleSearch = () => {
     const isFromValid = validateFormData();
     if (isFromValid) {
@@ -307,30 +311,6 @@ const CaseSearchResultPage = () => {
       };
     });
   };
-
-  const formattedAreaValues = useMemo(() => {
-    if (areaResults.status !== "succeeded") return [];
-    const defaultOption = {
-      value: "",
-      children: "-- Please select --",
-      disabled: true,
-    };
-    const optionGroup1 = areaResults.data
-      .filter((item: any) => item.type === "Large and Complex Case Divisions")
-      .map((item: any) => ({
-        value: item.code,
-        children: item.name,
-        disabled: false,
-      }));
-    const optionGroup2 = areaResults.data
-      .filter((item: any) => item.type === "CPS Areas")
-      .map((item: any) => ({
-        value: item.code,
-        children: item.name,
-        disabled: false,
-      }));
-    return [defaultOption, ...optionGroup1, ...optionGroup2];
-  }, [areaResults]);
 
   if (apiState.status === "loading") {
     return <div> Loading...</div>;
