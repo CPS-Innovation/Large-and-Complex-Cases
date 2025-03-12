@@ -337,7 +337,9 @@ const CaseSearchResultPage = () => {
             <h1>{getTitleText()}</h1>
             <div className={styles.inputWrapper}>
               {renderSearchForm()}
-              <Button onClick={handleSearch}>Search</Button>
+              <div className={styles.btnWrapper}>
+                <Button onClick={handleSearch}>Search</Button>
+              </div>
             </div>
             {apiState.status === "succeeded" && (
               <span className={styles.searchResultsCount}>
