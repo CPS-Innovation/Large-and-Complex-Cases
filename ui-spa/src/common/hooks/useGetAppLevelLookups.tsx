@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useApi } from "./useApi";
+// import { useApi } from "./useApi";
 import { getCaseDivisionsOrAreas } from "../../apis/gateway-api";
 import { DispatchType } from "../../reducers/mainStateReducer";
 import { AsyncResult } from "../types/AsyncResult";

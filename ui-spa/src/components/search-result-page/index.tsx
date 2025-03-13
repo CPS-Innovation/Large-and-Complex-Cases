@@ -1,10 +1,7 @@
-import { useRef, useState, useEffect, useMemo } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useApi } from "../../common/hooks/useApi";
 import { Button, Input, Select, ErrorSummary, Table } from "../govuk";
-import {
-  getCaseSearchResults,
-  getCaseDivisionsOrAreas,
-} from "../../apis/gateway-api";
+import { getCaseSearchResults } from "../../apis/gateway-api";
 import useSearchNavigation from "../../common/hooks/useSearchNavigation";
 import {
   useCaseSearchForm,

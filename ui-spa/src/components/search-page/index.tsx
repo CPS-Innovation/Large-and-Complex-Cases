@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useMemo, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import { Button, Radios, Input, Select, ErrorSummary } from "../govuk";
 import useSearchNavigation from "../../common/hooks/useSearchNavigation";
 import {
