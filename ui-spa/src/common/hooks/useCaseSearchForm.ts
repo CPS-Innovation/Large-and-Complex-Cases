@@ -112,7 +112,7 @@ export const useCaseSearchForm = (initialData: SearchFromData) => {
       case "defendant name": {
         if (!formData[SearchFormField.defendantName]) {
           errorTexts[SearchFormField.defendantName] = {
-            errorSummaryText: "Defendant name should not be empty",
+            errorSummaryText: "Defendant surname should not be empty",
           };
         }
         if (!formData[SearchFormField.defendantArea]) {

@@ -141,7 +141,7 @@ const CaseSearchPage = () => {
                   value: "operation name",
                 },
                 {
-                  children: "Defendant name",
+                  children: "Defendant surname",
                   conditional: {
                     children: [
                       <Input
@@ -149,7 +149,7 @@ const CaseSearchPage = () => {
                         data-testid="search-defendant-name"
                         className="govuk-input--width-20"
                         label={{
-                          children: "Defendant name",
+                          children: "Defendant surname",
                         }}
                         errorMessage={
                           formDataErrors[SearchFormField.defendantName]

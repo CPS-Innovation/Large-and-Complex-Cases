@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { useApi } from "../../common/hooks/useApi";
-import { Button, Input, Select, ErrorSummary, Table } from "../govuk";
+import { Button, Input, Select, ErrorSummary, Table, BackLink } from "../govuk";
 import { getCaseSearchResults } from "../../apis/gateway-api";
 import useSearchNavigation from "../../common/hooks/useSearchNavigation";
 import {
@@ -145,7 +145,7 @@ const CaseSearchResultPage = () => {
               data-testid="search-defendant-name"
               className="govuk-input--width-20"
               label={{
-                children: "Defendant name",
+                children: "Defendant surname",
               }}
               errorMessage={
                 formDataErrors[SearchFormField.defendantName]
@@ -233,7 +233,7 @@ const CaseSearchResultPage = () => {
       case "operation name":
         return "Search for Operation name search";
       case "defendant name":
-        return "Search for defendant surname search";
+        return "Search for Defendant surname search";
       default:
         return "Search for urn search";
     }
@@ -326,6 +326,7 @@ const CaseSearchResultPage = () => {
     <div>
       <div className={styles.fullWidthContainer}>
         <div className="govuk-width-container">
+          <BackLink href="/">Back</BackLink>
           <div className={styles.contentTop}>
             {!!errorList.length && (
               <div
