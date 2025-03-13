@@ -23,6 +23,9 @@
   .btnWrapper {
     min-height: 4.375rem;
   }
+  & :global(.govuk-error-message) {
+    max-width: 25rem;
+  }
 }
 
 .searchResultsCount {

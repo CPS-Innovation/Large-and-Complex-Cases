@@ -96,7 +96,9 @@ const CaseSearchResultPage = () => {
               errorMessage={
                 formDataErrors[SearchFormField.operationName]
                   ? {
-                      children: formDataErrors[SearchFormField.operationName],
+                      children:
+                        formDataErrors[SearchFormField.operationName]
+                          .errorSummaryText,
                     }
                   : undefined
               }
@@ -128,7 +130,9 @@ const CaseSearchResultPage = () => {
               errorMessage={
                 formDataErrors[SearchFormField.operationArea]
                   ? {
-                      children: formDataErrors[SearchFormField.operationArea],
+                      children:
+                        formDataErrors[SearchFormField.operationArea]
+                          .errorSummaryText,
                     }
                   : undefined
               }
@@ -149,7 +153,9 @@ const CaseSearchResultPage = () => {
               errorMessage={
                 formDataErrors[SearchFormField.defendantName]
                   ? {
-                      children: formDataErrors[SearchFormField.defendantName],
+                      children:
+                        formDataErrors[SearchFormField.defendantName]
+                          .errorSummaryText,
                     }
                   : undefined
               }
@@ -182,7 +188,9 @@ const CaseSearchResultPage = () => {
               errorMessage={
                 formDataErrors[SearchFormField.defendantArea]
                   ? {
-                      children: formDataErrors[SearchFormField.defendantArea],
+                      children:
+                        formDataErrors[SearchFormField.defendantArea]
+                          .errorSummaryText,
                     }
                   : undefined
               }
@@ -203,7 +211,9 @@ const CaseSearchResultPage = () => {
               errorMessage={
                 formDataErrors[SearchFormField.urn]
                   ? {
-                      children: formDataErrors[SearchFormField.urn],
+                      children:
+                        formDataErrors[SearchFormField.urn].inputErrorText ??
+                        formDataErrors[SearchFormField.urn].errorSummaryText,
                     }
                   : undefined
               }

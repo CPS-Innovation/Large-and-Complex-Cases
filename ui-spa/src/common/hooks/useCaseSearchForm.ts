@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { SearchParamsType } from "../../common/hooks/useSearchNavigation";
+import { validateUrn } from "../utils/validateUrn";
 
 export enum SearchFormField {
   searchType = "searchType",
@@ -18,23 +19,20 @@ export type SearchFromData = {
   [SearchFormField.defendantArea]: string;
   [SearchFormField.urn]: string;
 };
-
+type ErrorText = {
+  errorSummaryText: string;
+  inputErrorText?: string;
+};
 type SearchFormDataErrors = {
-  [SearchFormField.operationName]: string;
-  [SearchFormField.operationArea]: string;
-  [SearchFormField.defendantName]: string;
-  [SearchFormField.defendantArea]: string;
-  [SearchFormField.urn]: string;
+  [SearchFormField.operationName]?: ErrorText;
+  [SearchFormField.operationArea]?: ErrorText;
+  [SearchFormField.defendantName]?: ErrorText;
+  [SearchFormField.defendantArea]?: ErrorText;
+  [SearchFormField.urn]?: ErrorText;
 };
 
 export const useCaseSearchForm = (initialData: SearchFromData) => {
-  const initialErrorState: SearchFormDataErrors = {
-    operationName: "",
-    operationArea: "",
-    defendantName: "",
-    defendantArea: "",
-    urn: "",
-  };
+  const initialErrorState: SearchFormDataErrors = {};
 
   const [formData, setFormData] = useState<SearchFromData>(initialData);
 
@@ -46,31 +44,31 @@ export const useCaseSearchForm = (initialData: SearchFromData) => {
       switch (inputName) {
         case SearchFormField.defendantName:
           return {
-            children: formDataErrors[inputName],
+            children: formDataErrors[inputName]?.errorSummaryText,
             href: "#search-defendant-name",
             "data-testid": "search-defendant-name-link",
           };
         case SearchFormField.defendantArea:
           return {
-            children: formDataErrors[inputName],
+            children: formDataErrors[inputName]?.errorSummaryText,
             href: "#search-defendant-area",
             "data-testid": "search-operation-area-link",
           };
         case SearchFormField.operationName:
           return {
-            children: formDataErrors[inputName],
+            children: formDataErrors[inputName]?.errorSummaryText,
             href: "#search-operation-name",
             "data-testid": "search-operation-name-link",
           };
         case SearchFormField.operationArea:
           return {
-            children: formDataErrors[inputName],
+            children: formDataErrors[inputName]?.errorSummaryText,
             href: "#search-operation-area",
             "data-testid": "search-operation-area-link",
           };
         case SearchFormField.urn:
           return {
-            children: formDataErrors[inputName],
+            children: formDataErrors[inputName]?.errorSummaryText,
             href: "#search-urn",
             "data-testid": "search-urn-link",
           };
@@ -96,41 +94,50 @@ export const useCaseSearchForm = (initialData: SearchFromData) => {
   }, [formDataErrors]);
 
   const validateFormData = () => {
-    const errorTexts: SearchFormDataErrors = {
-      operationName: "",
-      operationArea: "",
-      defendantName: "",
-      defendantArea: "",
-      urn: "",
-    };
+    const errorTexts: SearchFormDataErrors = {};
     switch (formData[SearchFormField.searchType]) {
       case "operation name": {
         if (!formData[SearchFormField.operationName]) {
-          errorTexts[SearchFormField.operationName] =
-            "Operation name should not be empty";
+          errorTexts[SearchFormField.operationName] = {
+            errorSummaryText: "Operation name should not be empty",
+          };
         }
         if (!formData[SearchFormField.operationArea]) {
-          errorTexts[SearchFormField.operationArea] =
-            "Operation area should not be empty";
+          errorTexts[SearchFormField.operationArea] = {
+            errorSummaryText: "Operation area should not be empty",
+          };
         }
         break;
       }
       case "defendant name": {
         if (!formData[SearchFormField.defendantName]) {
-          errorTexts[SearchFormField.defendantName] =
-            "Defendant name should not be empty";
+          errorTexts[SearchFormField.defendantName] = {
+            errorSummaryText: "Defendant name should not be empty",
+          };
         }
         if (!formData[SearchFormField.defendantArea]) {
-          errorTexts[SearchFormField.defendantArea] =
-            "Defendant area should not be empty";
+          errorTexts[SearchFormField.defendantArea] = {
+            errorSummaryText: "Defendant area should not be empty",
+          };
         }
         break;
       }
       case "urn": {
+        const { isValid } = validateUrn(formData[SearchFormField.urn]);
         if (!formData[SearchFormField.urn]) {
-          errorTexts[SearchFormField.urn] = "urn should not be empty";
+          errorTexts[SearchFormField.urn] = {
+            errorSummaryText: "URN should not be empty",
+          };
+          break;
         }
-        break;
+        if (!isValid) {
+          errorTexts[SearchFormField.urn] = {
+            errorSummaryText: "Enter a valid unique reference number",
+            inputErrorText:
+              "The unique reference number must be 11 characters long and include only letters and numbers",
+          };
+          break;
+        }
       }
     }
 
@@ -156,7 +163,8 @@ export const useCaseSearchForm = (initialData: SearchFromData) => {
 
     switch (formData[SearchFormField.searchType]) {
       case "urn":
-        searchParams = { urn: formData[SearchFormField.urn] };
+        const { isValid, rootUrn } = validateUrn(formData[SearchFormField.urn]);
+        searchParams = { urn: isValid ? rootUrn : "" };
         break;
       case "defendant name":
         searchParams = {
