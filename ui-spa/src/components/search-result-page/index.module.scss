@@ -94,3 +94,10 @@
 .link {
   color: #1d70b8;
 }
+
+.resultsTable {
+  .statusTag {
+    text-transform: capitalize;
+    font-weight: normal;
+  }
+}

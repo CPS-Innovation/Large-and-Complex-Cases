@@ -41,7 +41,7 @@ export const handlers = [
         urn: "ABCDEF1",
         leadDefendantName: "abc1",
         egressStatus: "connected",
-        sharedDrive: "connected",
+        sharedDriveStatus: "inactive",
         dateCreated: "02/01/2000",
       },
       {
@@ -49,7 +49,7 @@ export const handlers = [
         urn: "ABCDEF2",
         leadDefendantName: "abc2",
         egressStatus: "connected",
-        sharedDrive: "connected",
+        sharedDriveStatus: "connected",
         dateCreated: "03/01/2000",
       },
     ];
