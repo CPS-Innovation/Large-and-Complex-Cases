@@ -8,4 +8,5 @@ public interface IDdeiRequestFactory
   HttpRequestMessage CreateListCasesByDefendantRequest(DdeiDefendantNameArgDto arg);
   HttpRequestMessage CreateListCasesByOperationNameRequest(DdeiOperationNameArgDto arg);
   HttpRequestMessage CreateGetCaseRequest(DdeiCaseIdArgDto arg);
+  HttpRequestMessage CreateUserFilteredDataRequest(DdeiBaseArgDto arg);
 }

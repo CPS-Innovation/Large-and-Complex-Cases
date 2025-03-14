@@ -10,4 +10,5 @@ public interface IDdeiArgFactory
   DdeiUrnArgDto CreateUrnArg(string cmsAuthValues, Guid correlationId, string urn);
   DdeiDefendantNameArgDto CreateDefendantArg(string cmsAuthValues, Guid correlationId, string leadDefendantLastName, string cmsAreaCode);
   DdeiOperationNameArgDto CreateOperationNameArg(string cmsAuthValues, Guid correlationId, string operationName, string cmsAreaCode);
+  DdeiBaseArgDto CreateBaseArg(string cmsAuthValues, Guid correlationId);
 }

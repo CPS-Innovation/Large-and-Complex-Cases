@@ -66,4 +66,13 @@ public class DdeiArgFactory : IDdeiArgFactory
     };
   }
 
+  public DdeiBaseArgDto CreateBaseArg(string cmsAuthValues, Guid correlationId)
+  {
+    return new DdeiBaseArgDto
+    {
+      CmsAuthValues = cmsAuthValues,
+      CorrelationId = correlationId
+    };
+  }
+
 }

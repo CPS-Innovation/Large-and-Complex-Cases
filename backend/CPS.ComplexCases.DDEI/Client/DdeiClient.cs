@@ -13,13 +13,15 @@ public class DdeiClient(ILogger<DdeiClient> logger,
  HttpClient httpClient,
  IDdeiRequestFactory ddeiRequestFactory,
  IDdeiArgFactory ddeiArgFactory,
- ICaseDetailsMapper caseDetailsMapper) : IDdeiClient
+ ICaseDetailsMapper caseDetailsMapper,
+ IUserDetailsMapper userDetailsMapper) : IDdeiClient
 {
   private readonly HttpClient _httpClient = httpClient;
   private readonly ILogger<DdeiClient> _logger = logger;
   private readonly IDdeiRequestFactory _ddeiRequestFactory = ddeiRequestFactory;
   private readonly IDdeiArgFactory _ddeiArgFactory = ddeiArgFactory;
   private readonly ICaseDetailsMapper _caseDetailsMapper = caseDetailsMapper;
+  private readonly IUserDetailsMapper _userDetailsMapper = userDetailsMapper;
 
   public async Task<IEnumerable<CaseDto>> ListCasesByUrnAsync(DdeiUrnArgDto arg)
   {
@@ -52,6 +54,13 @@ public class DdeiClient(ILogger<DdeiClient> logger,
 
     var cases = await Task.WhenAll(calls);
     return cases.Select(_caseDetailsMapper.MapCaseDetails);
+  }
+
+  public async Task<IEnumerable<AreaDto>> GetUserCmsAreasAsync(DdeiBaseArgDto arg)
+  {
+    var userFilteredData = await CallDdei<DdeiUserFilteredDataDto>(_ddeiRequestFactory.CreateUserFilteredDataRequest(arg));
+
+    return _userDetailsMapper.MapUserAreas(userFilteredData);
   }
 
   private async Task<DdeiCaseDetailsDto> GetCaseInternalAsync(DdeiCaseIdArgDto arg) =>

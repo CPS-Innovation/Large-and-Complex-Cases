@@ -34,6 +34,7 @@ public static class IServiceCollectionExtension
 
     services.AddTransient<IDdeiRequestFactory, DdeiRequestFactory>();
     services.AddTransient<ICaseDetailsMapper, CaseDetailsMapper>();
+    services.AddTransient<IUserDetailsMapper, UserDetailsMapper>();
   }
   private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
   {
