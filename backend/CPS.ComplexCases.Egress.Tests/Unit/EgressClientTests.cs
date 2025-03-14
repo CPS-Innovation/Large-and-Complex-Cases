@@ -7,14 +7,14 @@ using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
 using CPS.ComplexCases.Egress.Models.Args;
 using CPS.ComplexCases.Egress.Models.Response;
+using FluentAssertions;
+using FluentAssertions.Execution;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
-using FluentAssertions;
-using FluentAssertions.Execution;
 
-namespace CPS.ComplexCases.Egress.Tests;
+namespace CPS.ComplexCases.Egress.Tests.Unit;
 
 public class EgressClientTests
 {

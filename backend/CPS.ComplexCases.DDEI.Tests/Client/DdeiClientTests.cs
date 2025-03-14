@@ -8,6 +8,8 @@ using CPS.ComplexCases.DDEI.Mappers;
 using CPS.ComplexCases.DDEI.Models.Args;
 using CPS.ComplexCases.DDEI.Models.Dto;
 using CPS.ComplexCases.DDEI.Models.Response;
+using CPS.ComplexCases.DDEI.Tactical.Factories;
+using CPS.ComplexCases.DDEI.Tactical.Mappers;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;
@@ -22,11 +24,15 @@ public class DdeiClientTests
   private readonly Mock<IDdeiArgFactory> _ddeiArgFactoryMock;
   private readonly Mock<HttpMessageHandler> _httpMessageHandlerMock;
   private readonly Mock<ICaseDetailsMapper> _caseDetailsMapperMock;
+  private readonly Mock<IUserDetailsMapper> _userDetailsMapperMock;
   private readonly HttpClient _httpClient;
   private readonly DdeiClient _client;
   private readonly DdeiUrnArgDto _ddeiCaseIdentifiersArgDto;
   private readonly DdeiOperationNameArgDto _ddeiOperationNameArgDto;
   private readonly DdeiDefendantNameArgDto _ddeiDefendantNameArgDto;
+  private readonly Mock<IDdeiRequestFactoryTactical> _ddeiRequestFactoryTactical;
+  private readonly Mock<IAuthenticationResponseMapper> _authenticationResponseMapper;
+
   private const string TestUrl = "https://example.com";
 
   public DdeiClientTests()
@@ -39,6 +45,9 @@ public class DdeiClientTests
     _ddeiArgFactoryMock = new Mock<IDdeiArgFactory>();
     _caseDetailsMapperMock = new Mock<ICaseDetailsMapper>();
     _httpMessageHandlerMock = new Mock<HttpMessageHandler>();
+    _userDetailsMapperMock = new Mock<IUserDetailsMapper>();
+    _ddeiRequestFactoryTactical = new Mock<IDdeiRequestFactoryTactical>();
+    _authenticationResponseMapper = new Mock<IAuthenticationResponseMapper>();
 
     _httpClient = new HttpClient(_httpMessageHandlerMock.Object)
     {
@@ -54,7 +63,10 @@ public class DdeiClientTests
       _httpClient,
       _ddeiRequestFactoryMock.Object,
       _ddeiArgFactoryMock.Object,
-      _caseDetailsMapperMock.Object
+      _caseDetailsMapperMock.Object,
+      _userDetailsMapperMock.Object,
+      _ddeiRequestFactoryTactical.Object,
+      _authenticationResponseMapper.Object
     );
   }
 

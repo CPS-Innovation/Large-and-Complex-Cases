@@ -1,14 +1,15 @@
 
+using System.Net;
+using CPS.ComplexCases.API.Constants;
+using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Exceptions;
 using CPS.ComplexCases.API.Extensions;
 using Microsoft.ApplicationInsights;
-using CPS.ComplexCases.API.Constants;
-using Microsoft.Azure.Functions.Worker.Middleware;
-using Microsoft.Extensions.Logging;
-using System.Net;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
+using Microsoft.Azure.Functions.Worker.Middleware;
+using Microsoft.Extensions.Logging;
 
 namespace CPS.ComplexCases.API.Middleware;
 
@@ -51,7 +52,7 @@ public class ExceptionHandlingMiddleware : IFunctionsWorkerMiddleware
         var correlationId = Guid.NewGuid();
         try
         {
-          correlationId = httpRequestData.EstablishCorrelation();
+          correlationId = context.GetRequestContext().CorrelationId;
         }
         catch
         {

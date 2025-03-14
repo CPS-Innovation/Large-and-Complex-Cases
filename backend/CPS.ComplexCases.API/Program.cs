@@ -1,19 +1,20 @@
 using Amazon.S3;
+using CPS.ComplexCases.API.Middleware;
+using CPS.ComplexCases.API.Validators;
+using CPS.ComplexCases.DDEI.Extensions;
+using CPS.ComplexCases.DDEI.Tactical.Extensions;
+using CPS.ComplexCases.Egress.Extensions;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
-using Microsoft.Azure.Functions.Worker.Builder;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using CPS.ComplexCases.DDEI.Extensions;
-using CPS.ComplexCases.Egress.Extensions;
-using CPS.ComplexCases.API.Validators;
-using Microsoft.IdentityModel.Protocols;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Wrappers;
-using CPS.ComplexCases.API.Middleware;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Builder;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Protocols;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
@@ -27,10 +28,11 @@ builder.Services
     .AddApplicationInsightsTelemetryWorkerService()
     .ConfigureFunctionsApplicationInsights();
 
-
 builder.Services.AddSingleton<IAuthorizationValidator, AuthorizationValidator>();
 
 builder.Services.AddDdeiClient(builder.Configuration);
+builder.Services.AddDdeiClientTactical(builder.Configuration);
+
 builder.Services.AddEgressClient(builder.Configuration);
 
 builder.Services.AddDefaultAWSOptions(builder.Configuration.GetAWSOptions());

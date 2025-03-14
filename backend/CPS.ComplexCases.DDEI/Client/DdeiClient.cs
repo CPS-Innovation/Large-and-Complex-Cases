@@ -5,7 +5,12 @@ using CPS.ComplexCases.DDEI.Mappers;
 using CPS.ComplexCases.DDEI.Models.Args;
 using CPS.ComplexCases.DDEI.Models.Dto;
 using CPS.ComplexCases.DDEI.Models.Response;
+using CPS.ComplexCases.DDEI.Tactical.Client;
+using CPS.ComplexCases.DDEI.Tactical.Factories;
+using CPS.ComplexCases.DDEI.Tactical.Mappers;
+using CPS.ComplexCases.DDEI.Tactical.Models.Dto;
 using Microsoft.Extensions.Logging;
+using TacticalDomain = CPS.ComplexCases.DDEI.Tactical.Models.Response;
 
 namespace CPS.ComplexCases.DDEI.Client;
 
@@ -14,7 +19,9 @@ public class DdeiClient(ILogger<DdeiClient> logger,
  IDdeiRequestFactory ddeiRequestFactory,
  IDdeiArgFactory ddeiArgFactory,
  ICaseDetailsMapper caseDetailsMapper,
- IUserDetailsMapper userDetailsMapper) : IDdeiClient
+ IUserDetailsMapper userDetailsMapper,
+ IDdeiRequestFactoryTactical ddeiRequestFactoryTactical,
+ IAuthenticationResponseMapper authenticationResponseMapper) : IDdeiClient, IDdeiClientTactical
 {
   private readonly HttpClient _httpClient = httpClient;
   private readonly ILogger<DdeiClient> _logger = logger;
@@ -22,6 +29,14 @@ public class DdeiClient(ILogger<DdeiClient> logger,
   private readonly IDdeiArgFactory _ddeiArgFactory = ddeiArgFactory;
   private readonly ICaseDetailsMapper _caseDetailsMapper = caseDetailsMapper;
   private readonly IUserDetailsMapper _userDetailsMapper = userDetailsMapper;
+  private readonly IDdeiRequestFactoryTactical _ddeiRequestFactoryTactical = ddeiRequestFactoryTactical;
+  private readonly IAuthenticationResponseMapper _authenticationResponseMapper = authenticationResponseMapper;
+
+  public async Task<TacticalDomain.AuthenticationResponse> AuthenticateAsync(string username, string password)
+  {
+    var response = await CallDdei<AuthenticationResponse>(_ddeiRequestFactoryTactical.CreateAuthenticateRequest(username, password));
+    return _authenticationResponseMapper.Map(response);
+  }
 
   public async Task<IEnumerable<CaseDto>> ListCasesByUrnAsync(DdeiUrnArgDto arg)
   {
