@@ -1,40 +1,51 @@
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
+using CPS.ComplexCases.Egress.WireMock.Mappings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using WireMock.Server;
 
-namespace CPS.ComplexCases.Egress.Integration;
+namespace CPS.ComplexCases.Egress.Tests.Integration;
 
-public class EgressClientTests
+public class EgressClientTests : IDisposable
 {
+    private readonly WireMockServer _server;
     private readonly EgressClient _client;
     private readonly EgressArgFactory _egressArgFactory;
     public EgressClientTests()
     {
+        _server = WireMockServer.Start();
 
-        var configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-            .Build();
+        AppDomain.CurrentDomain.GetAssemblies()
+            .SelectMany(s => s.GetTypes())
+            .Where(p => typeof(IWireMockMapping).IsAssignableFrom(p) && !p.IsInterface)
+            .Select(p => (IWireMockMapping)Activator.CreateInstance(p))
+            .ToList()
+            .ForEach(m => m.Configure(_server));
 
-        var egressOptions = configuration.GetSection("EgressOptions").Get<EgressOptions>();
-
-        if (string.IsNullOrEmpty(egressOptions?.Url))
+        var egressOptions = new EgressOptions
         {
-            throw new ArgumentNullException(nameof(egressOptions.Url), "Egress URL cannot be null or empty.");
-        }
+            Url = _server.Urls[0],
+            Username = "username",
+            Password = "password"
+        };
 
         var httpClient = new HttpClient
         {
             BaseAddress = new Uri(egressOptions.Url)
         };
         var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<EgressClient>();
-        var egressRequestFactory = new EgressRequestFactory();
 
-        _client = new EgressClient(logger, new OptionsWrapper<EgressOptions>(egressOptions), httpClient, egressRequestFactory);
+        _client = new EgressClient(logger, new OptionsWrapper<EgressOptions>(egressOptions), httpClient, new EgressRequestFactory());
         _egressArgFactory = new EgressArgFactory();
+    }
+
+    public void Dispose()
+    {
+        _server.Stop();
+        GC.SuppressFinalize(this);
     }
 
     [Fact]

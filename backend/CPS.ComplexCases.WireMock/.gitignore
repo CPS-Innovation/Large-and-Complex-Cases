@@ -263,5 +263,3 @@ paket-files/
 __pycache__/
 *.pyc
 
-/obj
-/bin

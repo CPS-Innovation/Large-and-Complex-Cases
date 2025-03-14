@@ -1,6 +1,6 @@
-using WireMock.Server;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
+using WireMock.Server;
 
 namespace CPS.ComplexCases.Egress.WireMock.Mappings;
 
@@ -12,7 +12,7 @@ public class CaseMaterialMapping : IWireMockMapping
     ConfigureFolderFilesListing(server);
   }
 
-  private void ConfigureRootFilesListing(WireMockServer server)
+  private static void ConfigureRootFilesListing(WireMockServer server)
   {
     server
         .Given(Request.Create()
@@ -56,7 +56,7 @@ public class CaseMaterialMapping : IWireMockMapping
             }));
   }
 
-  private void ConfigureFolderFilesListing(WireMockServer server)
+  private static void ConfigureFolderFilesListing(WireMockServer server)
   {
     server
         .Given(Request.Create()

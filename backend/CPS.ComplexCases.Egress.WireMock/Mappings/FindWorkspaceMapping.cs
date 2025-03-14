@@ -1,6 +1,6 @@
-using WireMock.Server;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
+using WireMock.Server;
 
 namespace CPS.ComplexCases.Egress.WireMock.Mappings;
 
@@ -12,7 +12,7 @@ public class FindWorkspaceMapping : IWireMockMapping
     ConfigureFind(server);
   }
 
-  private void ConfigureFindByOperationName(WireMockServer server)
+  private static void ConfigureFindByOperationName(WireMockServer server)
   {
     server
     .Given(Request.Create()
@@ -42,7 +42,7 @@ public class FindWorkspaceMapping : IWireMockMapping
         }));
   }
 
-  private void ConfigureFind(WireMockServer server)
+  private static void ConfigureFind(WireMockServer server)
   {
     server
   .Given(Request.Create()
