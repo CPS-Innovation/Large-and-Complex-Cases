@@ -1,62 +1,32 @@
-import { http, HttpResponse } from "msw";
+import { http, delay, HttpResponse } from "msw";
 import { GATEWAY_BASE_URL } from "../config";
+import {
+  caseAreasDev,
+  caseAreasPlaywright,
+  casesSearchResultsDev,
+  casesSearchResultsPlaywright,
+} from "./data";
 
-const areas = [
-  {
-    code: "1",
-    name: "SEOCID Int London and SE Div",
-    type: "Large and Complex Case Divisions",
-  },
-  {
-    code: "2",
-    name: "Special Crime Division",
-    type: "Large and Complex Case Divisions",
-  },
-  {
-    code: "3",
-    name: "Bedfordshire",
-    type: "CPS Areas",
-  },
-  {
-    code: "4",
-    name: "Cambridgeshire",
-    type: "CPS Areas",
-  },
-  {
-    code: "5",
-    name: "Cheshire",
-    type: "CPS Areas",
-  },
-];
+import { MockApiConfig } from "../mocks/browser";
 
-export const handlers = [
-  http.get(`${GATEWAY_BASE_URL}/api/areas`, () => {
-    return HttpResponse.json(areas);
-  }),
+export const setupHandlers = ({ sourceName }: MockApiConfig) => {
+  return [
+    http.get(`${GATEWAY_BASE_URL}/api/areas`, async () => {
+      const results = sourceName === "dev" ? caseAreasDev : caseAreasPlaywright;
+      await delay();
+      return HttpResponse.json(results);
+    }),
 
-  http.get(`${GATEWAY_BASE_URL}/api/cases`, () => {
-    const caseSearchResults = [
-      {
-        operationName: "",
-        urn: "ABCDEF1",
-        leadDefendantName: "abc1",
-        egressStatus: "connected",
-        sharedDriveStatus: "inactive",
-        dateCreated: "02/01/2000",
-      },
-      {
-        operationName: "Thunderstruck",
-        urn: "ABCDEF2",
-        leadDefendantName: "abc2",
-        egressStatus: "connected",
-        sharedDriveStatus: "connected",
-        dateCreated: "03/01/2000",
-      },
-    ];
-
-    return HttpResponse.json(caseSearchResults);
-  }),
-];
+    http.get(`${GATEWAY_BASE_URL}/api/cases`, async () => {
+      const caseSearchResults =
+        sourceName === "dev"
+          ? casesSearchResultsDev
+          : casesSearchResultsPlaywright;
+      await delay();
+      return HttpResponse.json(caseSearchResults);
+    }),
+  ];
+};
 
 type caseSearchResult = {
   caseId: number;

@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test";
 
-test("Hello World Test", async ({ page }) => {
-  await page.goto("/");
+test("Search results page", async ({ page }) => {
+  await page.goto("/search-results?urn=11AA2222233");
 
-  await expect(page.locator("h1")).toHaveText("Find a case");
-  await expect(page.getByRole("button", { name: "Search" })).toBeVisible();
+  await expect(page.locator("h1")).toHaveText("Search for urn search");
+  await expect(page.locator("body")).toContainText("Thunderstruck1_pl");
 });
