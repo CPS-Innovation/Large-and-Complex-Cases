@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useMainStateContext } from "../../providers/mainStateProvider";
+import { useMainStateContext } from "../../providers/MainStateProvider";
 import { useGetCaseDivisionOrAreas } from "../../common/hooks/useGetAppLevelLookups";
 
 export const useFormattedAreaValues = () => {

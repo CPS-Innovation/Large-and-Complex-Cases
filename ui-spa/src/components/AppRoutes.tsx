@@ -1,6 +1,6 @@
 import { Routes, Route } from "react-router";
-import CaseSearchPage from "../components/search-page";
-import CaseSearchResultPage from "../components/search-result-page";
+import CaseSearchPage from "./search-page";
+import CaseSearchResultPage from "./search-result-page";
 
 const AppRoutes = () => {
   return (

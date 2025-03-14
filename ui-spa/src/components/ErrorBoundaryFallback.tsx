@@ -1,5 +1,5 @@
 import { FallbackProps } from "react-error-boundary";
-import Layout from "./layout";
+import Layout from "./Layout";
 
 export const ErrorBoundaryFallback = ({ error }: FallbackProps) => {
   return (
