@@ -18,14 +18,9 @@ public class DdeiRequestFactory : IDdeiRequestFactory
 
   public HttpRequestMessage CreateListCasesByDefendantRequest(DdeiDefendantNameArgDto arg)
   {
-    var relativeUrl = new StringBuilder("api/cases/search?");
-    if (!string.IsNullOrEmpty(arg.FirstName))
-    {
-      relativeUrl.Append($"defendantFirstName={Encode(arg.FirstName)}&");
-    }
-    relativeUrl.Append($"defendantLastName={Encode(arg.LastName)}&cmsAreaCode={Encode(arg.CmsAreaCode)}");
+    var url = $"api/cases/find?defendantName={Encode(arg.LastName)}&areaCode={Encode(arg.CmsAreaCode)}";
 
-    var request = new HttpRequestMessage(HttpMethod.Get, relativeUrl.ToString());
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
 
     AddAuthHeaders(request, arg);
     return request;
@@ -33,7 +28,7 @@ public class DdeiRequestFactory : IDdeiRequestFactory
 
   public HttpRequestMessage CreateListCasesByOperationNameRequest(DdeiOperationNameArgDto arg)
   {
-    var url = $"api/cases/search?operationName={Encode(arg.OperationName)}&cmsAreaCode={Encode(arg.CmsAreaCode)}";
+    var url = $"api/cases/find?operationName={Encode(arg.OperationName)}&areaCode={Encode(arg.CmsAreaCode)}";
 
     var request = new HttpRequestMessage(HttpMethod.Get, url);
 
