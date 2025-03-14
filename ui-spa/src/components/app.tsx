@@ -4,19 +4,21 @@ import { BrowserRouter } from "react-router";
 import AppRoutes from "../components/routes";
 
 import { MainStateProvider } from "../providers/mainStateProvider";
-
-console.log("hii app");
+import { ErrorBoundary } from "react-error-boundary";
+import { ErrorBoundaryFallback } from "./ErrorBoundaryFallback";
 
 function App() {
   return (
     <BrowserRouter>
-      <Auth>
-        <MainStateProvider>
-          <Layout>
-            <AppRoutes />
-          </Layout>
-        </MainStateProvider>
-      </Auth>
+      <ErrorBoundary fallbackRender={ErrorBoundaryFallback}>
+        <Auth>
+          <MainStateProvider>
+            <Layout>
+              <AppRoutes />
+            </Layout>
+          </MainStateProvider>
+        </Auth>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }
