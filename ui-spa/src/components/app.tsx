@@ -1,16 +1,24 @@
-import Layout from "./layout";
+import Layout from "./Layout";
 import { Auth } from "../auth";
 import { BrowserRouter } from "react-router";
-import AppRoutes from "../components/routes";
+import AppRoutes from "./AppRoutes";
+
+import { MainStateProvider } from "../providers/MainStateProvider";
+import { ErrorBoundary } from "react-error-boundary";
+import { ErrorBoundaryFallback } from "./ErrorBoundaryFallback";
 
 function App() {
   return (
     <BrowserRouter>
-      <Auth>
-        <Layout>
-          <AppRoutes />
-        </Layout>
-      </Auth>
+      <ErrorBoundary fallbackRender={ErrorBoundaryFallback}>
+        <Auth>
+          <MainStateProvider>
+            <Layout>
+              <AppRoutes />
+            </Layout>
+          </MainStateProvider>
+        </Auth>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }

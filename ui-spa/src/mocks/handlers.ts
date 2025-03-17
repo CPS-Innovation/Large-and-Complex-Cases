@@ -1,34 +1,32 @@
-import { http, HttpResponse } from "msw";
+import { http, delay, HttpResponse } from "msw";
 import { GATEWAY_BASE_URL } from "../config";
+import {
+  caseAreasDev,
+  caseAreasPlaywright,
+  casesSearchResultsDev,
+  casesSearchResultsPlaywright,
+} from "./data";
 
-export const handlers = [
-  http.get(`${GATEWAY_BASE_URL}/api/initialmessage`, () => {
-    return HttpResponse.json({
-      message: "Hello World!",
-    });
-  }),
+import { MockApiConfig } from "../mocks/browser";
 
-  http.get(`${GATEWAY_BASE_URL}/api/cases`, () => {
-    const caseSearchResults = [
-      {
-        caseId: 222,
-        leadDefendantName: "abc2",
-        operationName: "Thunderstruck",
-        urn: "ABCDEF2",
-        dateCreated: "02/01/2000",
-      },
-      {
-        caseId: 333,
-        leadDefendantName: "abc3",
-        operationName: "Thunderstruck Traffic",
-        urn: "ABCDEF3",
-        dateCreated: "02/01/2000",
-      },
-    ];
+export const setupHandlers = ({ sourceName }: MockApiConfig) => {
+  return [
+    http.get(`${GATEWAY_BASE_URL}/api/areas`, async () => {
+      const results = sourceName === "dev" ? caseAreasDev : caseAreasPlaywright;
+      await delay();
+      return HttpResponse.json(results);
+    }),
 
-    return HttpResponse.json(caseSearchResults);
-  }),
-];
+    http.get(`${GATEWAY_BASE_URL}/api/cases`, async () => {
+      const caseSearchResults =
+        sourceName === "dev"
+          ? casesSearchResultsDev
+          : casesSearchResultsPlaywright;
+      await delay();
+      return HttpResponse.json(caseSearchResults);
+    }),
+  ];
+};
 
 type caseSearchResult = {
   caseId: number;

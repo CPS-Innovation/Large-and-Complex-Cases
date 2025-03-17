@@ -12,7 +12,30 @@
   align-items: flex-start;
   gap: 1rem;
 }
-.errorSummary {
+.errorSummaryWrapper {
   margin-top: 1rem;
   max-width: 30rem;
+}
+.errorSummaryWrapper {
+  &:focus {
+    outline: 0.2rem solid #ffdd00;
+  }
+  :global(.govuk-error-summary) {
+    margin-bottom: 1.5rem;
+    padding: 0.625rem;
+  }
+}
+
+.areaSelectLabel {
+  margin-top: 1rem;
+}
+
+:global(.govuk-header__container .govuk-header__logo) {
+  width: 100%;
+}
+
+.inputWrapper {
+  :global(.govuk-form-group) {
+    margin-bottom: 20px;
+  }
 }

@@ -1,5 +1,5 @@
-import Footer from "../components/footer";
-import Header from "../components/header";
+import Footer from "./Footer";
+import Header from "./Header";
 import styles from "./layout.module.scss";
 
 export default function RootLayout({
@@ -7,6 +7,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  console.log("hii layout>>");
+
   return (
     <>
       <Header />

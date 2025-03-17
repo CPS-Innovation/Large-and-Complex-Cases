@@ -1,7 +1,8 @@
+import styles from "./layout.module.scss";
 export default function Header() {
   return (
     <header
-      className="govuk-header govuk-header--full-width-border"
+      className={`govuk-header govuk-header--full-width-border ${styles.header}`}
       role="banner"
       data-module="govuk-header"
     >
