@@ -243,7 +243,7 @@ const CaseSearchResultPage = () => {
       case "defendant name":
         return "Search for Defendant surname search";
       default:
-        return "Search for urn search";
+        return "Search for URN search";
     }
   };
 

@@ -10,19 +10,20 @@ import {
 import { MockApiConfig } from "../mocks/browser";
 
 export const setupHandlers = ({ sourceName }: MockApiConfig) => {
+  const RESPONSE_DELAY = sourceName === "dev" ? 10 : 0;
   return [
     http.get(`${GATEWAY_BASE_URL}/api/areas`, async () => {
       const results = sourceName === "dev" ? caseAreasDev : caseAreasPlaywright;
-      await delay();
+      await delay(RESPONSE_DELAY);
       return HttpResponse.json(results);
     }),
 
-    http.get(`${GATEWAY_BASE_URL}/api/cases`, async () => {
+    http.get(`${GATEWAY_BASE_URL}/api/search-results`, async () => {
       const caseSearchResults =
         sourceName === "dev"
           ? casesSearchResultsDev
           : casesSearchResultsPlaywright;
-      await delay();
+      await delay(RESPONSE_DELAY);
       return HttpResponse.json(caseSearchResults);
     }),
   ];
