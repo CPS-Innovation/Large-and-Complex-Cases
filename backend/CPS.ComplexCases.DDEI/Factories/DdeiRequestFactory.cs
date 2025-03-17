@@ -18,7 +18,7 @@ public class DdeiRequestFactory : IDdeiRequestFactory
 
   public HttpRequestMessage CreateListCasesByDefendantRequest(DdeiDefendantNameArgDto arg)
   {
-    var url = $"api/cases/find?defendantName={Encode(arg.LastName)}&areaCode={Encode(arg.CmsAreaCode)}";
+    var url = $"api/cases/find?defendant-name={Encode(arg.LastName)}&area-code={Encode(arg.CmsAreaCode)}";
 
     var request = new HttpRequestMessage(HttpMethod.Get, url);
 
@@ -28,7 +28,7 @@ public class DdeiRequestFactory : IDdeiRequestFactory
 
   public HttpRequestMessage CreateListCasesByOperationNameRequest(DdeiOperationNameArgDto arg)
   {
-    var url = $"api/cases/find?operationName={Encode(arg.OperationName)}&areaCode={Encode(arg.CmsAreaCode)}";
+    var url = $"api/cases/find?operation-name={Encode(arg.OperationName)}&area-code={Encode(arg.CmsAreaCode)}";
 
     var request = new HttpRequestMessage(HttpMethod.Get, url);
 
@@ -38,7 +38,7 @@ public class DdeiRequestFactory : IDdeiRequestFactory
 
   public HttpRequestMessage CreateGetCaseRequest(DdeiCaseIdArgDto arg)
   {
-    var request = new HttpRequestMessage(HttpMethod.Get, $"api/cases/{arg.CaseId}");
+    var request = new HttpRequestMessage(HttpMethod.Get, $"api/cases/{arg.CaseId}/summary");
     AddAuthHeaders(request, arg);
     return request;
   }

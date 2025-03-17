@@ -97,7 +97,7 @@ public class DdeiClientTests
     var caseIdentifiers = _fixture.CreateMany<DdeiCaseIdentifiersDto>(3).ToList();
     var mockCaseRequests = new List<HttpRequestMessage>();
     var mockCaseArgs = new List<DdeiCaseIdArgDto>();
-    var caseDetailsDtos = new List<DdeiCaseDetailsDto>();
+    var caseDetailsDtos = new List<DdeiCaseSummaryDto>();
     var expectedCaseDtos = new List<CaseDto>();
 
     var responseSetup = new List<(string type, object response, HttpStatusCode statusCode)>
@@ -121,15 +121,15 @@ public class DdeiClientTests
           .Setup(f => f.CreateGetCaseRequest(caseArg))
           .Returns(caseRequest);
 
-      var caseDetailsDto = _fixture.Create<DdeiCaseDetailsDto>();
+      var caseDetailsDto = _fixture.Create<DdeiCaseSummaryDto>();
       caseDetailsDtos.Add(caseDetailsDto);
 
       var caseDto = _fixture.Create<CaseDto>();
       expectedCaseDtos.Add(caseDto);
 
       _caseDetailsMapperMock
-          .Setup(m => m.MapCaseDetails(It.Is<DdeiCaseDetailsDto>(dto =>
-              dto.Summary.Id == caseDetailsDto.Summary.Id)))
+          .Setup(m => m.MapCaseDetails(It.Is<DdeiCaseSummaryDto>(dto =>
+              dto.Id == caseDetailsDto.Id)))
           .Returns(caseDto);
 
       responseSetup.Add(("caseDetails", caseDetailsDto, HttpStatusCode.OK));
@@ -179,7 +179,7 @@ public class DdeiClientTests
     var caseIdentifiers = _fixture.CreateMany<DdeiCaseIdentifiersDto>(3).ToList();
     var mockCaseRequests = new List<HttpRequestMessage>();
     var mockCaseArgs = new List<DdeiCaseIdArgDto>();
-    var caseDetailsDtos = new List<DdeiCaseDetailsDto>();
+    var caseDetailsDtos = new List<DdeiCaseSummaryDto>();
     var expectedCaseDtos = new List<CaseDto>();
 
     var responseSetup = new List<(string type, object response, HttpStatusCode statusCode)>
@@ -203,15 +203,15 @@ public class DdeiClientTests
           .Setup(f => f.CreateGetCaseRequest(caseArg))
           .Returns(caseRequest);
 
-      var caseDetailsDto = _fixture.Create<DdeiCaseDetailsDto>();
+      var caseDetailsDto = _fixture.Create<DdeiCaseSummaryDto>();
       caseDetailsDtos.Add(caseDetailsDto);
 
       var caseDto = _fixture.Create<CaseDto>();
       expectedCaseDtos.Add(caseDto);
 
       _caseDetailsMapperMock
-          .Setup(m => m.MapCaseDetails(It.Is<DdeiCaseDetailsDto>(dto =>
-              dto.Summary.Id == caseDetailsDto.Summary.Id)))
+          .Setup(m => m.MapCaseDetails(It.Is<DdeiCaseSummaryDto>(dto =>
+              dto.Id == caseDetailsDto.Id)))
           .Returns(caseDto);
 
       responseSetup.Add(("caseDetails", caseDetailsDto, HttpStatusCode.OK));
@@ -261,7 +261,7 @@ public class DdeiClientTests
     var caseIdentifiers = _fixture.CreateMany<DdeiCaseIdentifiersDto>(3).ToList();
     var mockCaseRequests = new List<HttpRequestMessage>();
     var mockCaseArgs = new List<DdeiCaseIdArgDto>();
-    var caseDetailsDtos = new List<DdeiCaseDetailsDto>();
+    var caseDetailsDtos = new List<DdeiCaseSummaryDto>();
     var expectedCaseDtos = new List<CaseDto>();
 
     var responseSetup = new List<(string type, object response, HttpStatusCode statusCode)>
@@ -285,15 +285,15 @@ public class DdeiClientTests
           .Setup(f => f.CreateGetCaseRequest(caseArg))
           .Returns(caseRequest);
 
-      var caseDetailsDto = _fixture.Create<DdeiCaseDetailsDto>();
+      var caseDetailsDto = _fixture.Create<DdeiCaseSummaryDto>();
       caseDetailsDtos.Add(caseDetailsDto);
 
       var caseDto = _fixture.Create<CaseDto>();
       expectedCaseDtos.Add(caseDto);
 
       _caseDetailsMapperMock
-          .Setup(m => m.MapCaseDetails(It.Is<DdeiCaseDetailsDto>(dto =>
-              dto.Summary.Id == caseDetailsDto.Summary.Id)))
+          .Setup(m => m.MapCaseDetails(It.Is<DdeiCaseSummaryDto>(dto =>
+              dto.Id == caseDetailsDto.Id)))
           .Returns(caseDto);
 
       responseSetup.Add(("caseDetails", caseDetailsDto, HttpStatusCode.OK));
