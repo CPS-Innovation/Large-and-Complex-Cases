@@ -16,6 +16,8 @@ public static class IServiceCollectionExtension
   private const string FunctionKey = "x-functions-key";
   private const string DdeiBaseUrlConfigKey = "DdeiBaseUrl";
   private const string DdeiAccessKeyConfigKey = "DdeiAccessKey";
+  private const string DdeiDevtunnelTokenKey = "X-Tunnel-Authorization";
+  private const string DdeiDevtunnelToken = "DdeiDevtunnelToken";
   private const int RetryAttempts = 1;
   private const int FirstRetryDelaySeconds = 1;
 
@@ -38,7 +40,11 @@ public static class IServiceCollectionExtension
     client.BaseAddress = new Uri(baseUrl);
     client.DefaultRequestHeaders.Add(FunctionKey, configuration[DdeiAccessKeyConfigKey]);
     client.DefaultRequestHeaders.CacheControl = new CacheControlHeaderValue { NoCache = true };
-    client.DefaultRequestHeaders.Add("X-Tunnel-Authorization", "tunnel eyJhbGciOiJFUzI1NiIsImtpZCI6IkM3NDYxNEM5OTE0NjUwNzI2REI1RUZBM0M1OTBDQzdGNjJFOUI4QzQiLCJ0eXAiOiJKV1QifQ.eyJjbHVzdGVySWQiOiJ1a3MxIiwidHVubmVsSWQiOiJzcGlmZnktZG9nLXpoOG4zdHAiLCJzY3AiOiJjb25uZWN0IiwiZXhwIjoxNzQyMDUwNjIzLCJpc3MiOiJodHRwczovL3R1bm5lbHMuYXBpLnZpc3VhbHN0dWRpby5jb20vIiwibmJmIjoxNzQxOTYzMzIzfQ.3CTLONO7u11lq701ersraYgz3t_TOEmgntAXkwB4fa77UnRB_fPZPJMSjgOcLzZdKadEavjXAWhy5_qqLA1NKA");
+
+    if (baseUrl.Contains("devtunnels.ms") && !string.IsNullOrWhiteSpace(configuration[DdeiDevtunnelToken]))
+    {
+      client.DefaultRequestHeaders.Add(DdeiDevtunnelTokenKey, $"tunnel {configuration[DdeiDevtunnelToken]}");
+    }
   }
 
   private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
