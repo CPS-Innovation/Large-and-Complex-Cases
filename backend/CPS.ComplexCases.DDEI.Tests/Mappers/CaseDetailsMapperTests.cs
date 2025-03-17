@@ -29,13 +29,9 @@ public class CaseDetailsMapperTests
       Operation = _fixture.Create<string>()
     };
 
-    var ddeiCaseDetailsDto = new DdeiCaseDetailsDto
-    {
-      Summary = summary
-    };
 
     // Act
-    var result = _mapper.MapCaseDetails(ddeiCaseDetailsDto);
+    var result = _mapper.MapCaseDetails(summary);
 
     // Assert
     Assert.Equal(summary.Id, result.CaseId);
