@@ -26,7 +26,8 @@ public class CaseDetailsMapperTests
       Urn = _fixture.Create<string>(),
       LeadDefendantFirstNames = _fixture.Create<string>(),
       LeadDefendantSurname = _fixture.Create<string>(),
-      Operation = _fixture.Create<string>()
+      Operation = _fixture.Create<string>(),
+      RegistrationDate = _fixture.Create<string>()
     };
 
 
@@ -38,5 +39,6 @@ public class CaseDetailsMapperTests
     Assert.Equal(summary.Urn, result.Urn);
     Assert.Equal($"{summary.LeadDefendantFirstNames} {summary.LeadDefendantSurname}", result.LeadDefendantName);
     Assert.Equal(summary.Operation, result.OperationName);
+    Assert.Equal(summary.RegistrationDate, result.RegistrationDate);
   }
 }
