@@ -19,7 +19,7 @@ public class DdeiClient(ILogger<DdeiClient> logger,
  IDdeiRequestFactory ddeiRequestFactory,
  IDdeiArgFactory ddeiArgFactory,
  ICaseDetailsMapper caseDetailsMapper,
- IUserDetailsMapper userDetailsMapper,
+ IAreasMapper areasMapper,
  IDdeiRequestFactoryTactical ddeiRequestFactoryTactical,
  IAuthenticationResponseMapper authenticationResponseMapper) : IDdeiClient, IDdeiClientTactical
 {
@@ -28,7 +28,7 @@ public class DdeiClient(ILogger<DdeiClient> logger,
   private readonly IDdeiRequestFactory _ddeiRequestFactory = ddeiRequestFactory;
   private readonly IDdeiArgFactory _ddeiArgFactory = ddeiArgFactory;
   private readonly ICaseDetailsMapper _caseDetailsMapper = caseDetailsMapper;
-  private readonly IUserDetailsMapper _userDetailsMapper = userDetailsMapper;
+  private readonly IAreasMapper _areasMapper = areasMapper;
   private readonly IDdeiRequestFactoryTactical _ddeiRequestFactoryTactical = ddeiRequestFactoryTactical;
   private readonly IAuthenticationResponseMapper _authenticationResponseMapper = authenticationResponseMapper;
 
@@ -71,11 +71,19 @@ public class DdeiClient(ILogger<DdeiClient> logger,
     return cases.Select(_caseDetailsMapper.MapCaseDetails);
   }
 
-  public async Task<IEnumerable<AreaDto>> GetUserCmsAreasAsync(DdeiBaseArgDto arg)
+  public async Task<AreasDto> GetAreasAsync(DdeiBaseArgDto arg)
   {
-    var userFilteredData = await CallDdei<DdeiUserFilteredDataDto>(_ddeiRequestFactory.CreateUserFilteredDataRequest(arg));
+    var userFilteredDataTask = CallDdei<DdeiUserFilteredDataDto>(_ddeiRequestFactory.CreateUserFilteredDataRequest(arg));
+    var allUnitsTask = CallDdei<IEnumerable<DdeiUnitDto>>(_ddeiRequestFactory.CreateListUnitsRequest(arg));
+    var userDataTask = CallDdei<DdeiUserDataDto>(_ddeiRequestFactory.CreateUserDataRequest(arg));
 
-    return _userDetailsMapper.MapUserAreas(userFilteredData);
+    await Task.WhenAll(userFilteredDataTask, allUnitsTask, userDataTask);
+
+    var userFilteredData = await userFilteredDataTask;
+    var allUnits = await allUnitsTask;
+    var userData = await userDataTask;
+
+    return _areasMapper.MapAreas(userFilteredData, userData, allUnits);
   }
 
   private async Task<DdeiCaseSummaryDto> GetCaseInternalAsync(DdeiCaseIdArgDto arg) =>
