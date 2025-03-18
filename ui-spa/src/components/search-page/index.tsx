@@ -12,10 +12,8 @@ import styles from "./index.module.scss";
 
 const CaseSearchPage = () => {
   const errorSummaryRef = useRef<HTMLInputElement>(null);
-
   const { navigateWithParams } = useSearchNavigation();
   const formattedAreaValues = useFormattedAreaValues();
-  // const areaResults = useApi(getAreas, []);
   const initialData: SearchFromData = {
     searchType: "urn",
     operationName: "",
