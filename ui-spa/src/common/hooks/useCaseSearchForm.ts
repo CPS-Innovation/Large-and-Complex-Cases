@@ -30,7 +30,7 @@ type SearchFormDataErrors = {
   [SearchFormField.defendantArea]?: ErrorText;
   [SearchFormField.urn]?: ErrorText;
 };
-
+const MAX_CHARACTERS = 50;
 export const useCaseSearchForm = (initialData: SearchFromData) => {
   const initialErrorState: SearchFormDataErrors = {};
 
@@ -94,27 +94,40 @@ export const useCaseSearchForm = (initialData: SearchFromData) => {
     const errorTexts: SearchFormDataErrors = {};
     switch (formData[SearchFormField.searchType]) {
       case "operation name": {
-        if (!formData[SearchFormField.operationName]) {
-          errorTexts[SearchFormField.operationName] = {
-            errorSummaryText: "Operation name should not be empty",
-          };
-        }
         if (!formData[SearchFormField.operationArea]) {
           errorTexts[SearchFormField.operationArea] = {
             errorSummaryText: "Operation area should not be empty",
           };
         }
+        if (!formData[SearchFormField.operationName]) {
+          errorTexts[SearchFormField.operationName] = {
+            errorSummaryText: "Operation name should not be empty",
+          };
+          break;
+        }
+        if (formData[SearchFormField.operationName].length > MAX_CHARACTERS) {
+          errorTexts[SearchFormField.operationName] = {
+            errorSummaryText: `Operation name should be less than ${MAX_CHARACTERS} characters`,
+          };
+        }
+
         break;
       }
       case "defendant name": {
+        if (!formData[SearchFormField.defendantArea]) {
+          errorTexts[SearchFormField.defendantArea] = {
+            errorSummaryText: "Defendant area should not be empty",
+          };
+        }
         if (!formData[SearchFormField.defendantName]) {
           errorTexts[SearchFormField.defendantName] = {
             errorSummaryText: "Defendant surname should not be empty",
           };
+          break;
         }
-        if (!formData[SearchFormField.defendantArea]) {
-          errorTexts[SearchFormField.defendantArea] = {
-            errorSummaryText: "Defendant area should not be empty",
+        if (formData[SearchFormField.defendantName].length > MAX_CHARACTERS) {
+          errorTexts[SearchFormField.defendantName] = {
+            errorSummaryText: `Defendant surname should be less than ${MAX_CHARACTERS} characters`,
           };
         }
         break;

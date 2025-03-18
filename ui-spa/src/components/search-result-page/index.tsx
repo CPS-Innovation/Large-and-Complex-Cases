@@ -352,86 +352,84 @@ const CaseSearchResultPage = () => {
   };
 
   if (apiState.status === "loading") {
-    return <div> Loading...</div>;
+    return <div className="govuk-width-container"> Loading...</div>;
   }
   return (
-    <div className={styles.fullWidthContainer}>
-      <div className="govuk-width-container">
-        <BackLink href="/">Back</BackLink>
-        <div className={styles.contentTop}>
-          {!!errorList.length && (
-            <div
-              ref={errorSummaryRef}
-              tabIndex={-1}
-              className={styles.errorSummaryWrapper}
-            >
-              <ErrorSummary
-                data-testid={"search-error-summary"}
-                className={styles.errorSummary}
-                errorList={errorList}
-                titleChildren="There is a problem"
-              />
-            </div>
-          )}
-          <h1>{getTitleText()}</h1>
-          <div className={styles.inputWrapper}>
-            {renderSearchForm()}
-            <div className={styles.btnWrapper}>
-              <Button onClick={handleSearch}>Search</Button>
-            </div>
+    <div className="govuk-width-container">
+      <BackLink href="/">Back</BackLink>
+      <div className={styles.contentTop}>
+        {!!errorList.length && (
+          <div
+            ref={errorSummaryRef}
+            tabIndex={-1}
+            className={styles.errorSummaryWrapper}
+          >
+            <ErrorSummary
+              data-testid={"search-error-summary"}
+              className={styles.errorSummary}
+              errorList={errorList}
+              titleChildren="There is a problem"
+            />
           </div>
-          {apiState.status === "succeeded" && (
-            <span className={styles.searchResultsCount}>
-              {getResultsCountText()}
-            </span>
-          )}
+        )}
+        <h1>{getTitleText()}</h1>
+        <div className={styles.inputWrapper}>
+          {renderSearchForm()}
+          <div className={styles.btnWrapper}>
+            <Button onClick={handleSearch}>Search</Button>
+          </div>
         </div>
+        {apiState.status === "succeeded" && (
+          <span className={styles.searchResultsCount}>
+            {getResultsCountText()}
+          </span>
+        )}
+      </div>
 
-        <div className={styles.resultsTable}>
-          {apiState.status === "succeeded" && !!apiState.data.length && (
-            <Table
-              head={[
-                {
-                  children: "Defendant or Operation name",
-                },
-                {
-                  children: "URN",
-                },
-                {
-                  children: "Lead defendant",
-                },
-                {
-                  children: "Egress",
-                },
-                {
-                  children: "Shared Drive",
-                },
-                {
-                  children: "Case created",
-                },
-                {
-                  children: "",
-                },
-              ]}
-              rows={getTableRowData()}
-            ></Table>
-          )}
-          {apiState.status === "succeeded" && !apiState.data.length && (
-            <div className={styles.noResultsContent}>
-              <div>
-                <b>You can:</b>
-              </div>
-              <ul className="govuk-list govuk-list--bullet">
-                <li>check CMS to see if the case exists</li>
-                <li>check the spelling of your search</li>
-                <li>
-                  check with your Unit Manager to see if the case is restricted
-                </li>
-                <li>contact the Service Desk</li>
-              </ul>
+      <div className={styles.resultsTable}>
+        {apiState.status === "succeeded" && !!apiState.data.length && (
+          <Table
+            head={[
+              {
+                children: "Defendant or Operation name",
+              },
+              {
+                children: "URN",
+              },
+              {
+                children: "Lead defendant",
+              },
+              {
+                children: "Egress",
+              },
+              {
+                children: "Shared Drive",
+              },
+              {
+                children: "Case created",
+              },
+              {
+                children: "",
+              },
+            ]}
+            rows={getTableRowData()}
+          ></Table>
+        )}
+        {apiState.status === "succeeded" && !apiState.data.length && (
+          <div className={styles.noResultsContent}>
+            <div>
+              <b>You can:</b>
             </div>
-          )}
-        </div>
+            <ul className="govuk-list govuk-list--bullet">
+              <li>check CMS to see if the case exists</li>
+              <li>check the spelling of your search</li>
+              <li>
+                check with your Unit Manager to see if the case is restricted
+              </li>
+              <li>contact the Service Desk</li>
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );
