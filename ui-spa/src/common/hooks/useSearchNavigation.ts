@@ -25,7 +25,6 @@ const useSearchNavigation = () => {
       Object.entries(params).filter(([_, value]) => value),
     ).toString();
 
-    console.log("queryString>>", queryString);
     queryString.replace("operationName", "operation-name");
     queryString.replace("defendantName", "defendant-name");
 

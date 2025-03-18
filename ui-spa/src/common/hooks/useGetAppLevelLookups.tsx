@@ -9,19 +9,6 @@ export const useGetCaseDivisionOrAreas = (
   caseDivisionsOrAreas: AsyncResult<CaseDivisionsOrArea[]>,
   dispatch: DispatchType,
 ) => {
-  // Load lookups
-  // const caseDivisionsOrAreasData = useApi(getCaseDivisionsOrAreas, [], true);
-  console.log("getCaseDivisionsOrAreas>>>", caseDivisionsOrAreas);
-  // useEffect(() => {
-  //   if (caseDivisionsOrAreasData.status !== "initial") {
-  //     console.log("hiiii>----");
-  //     // dispatch({
-  //     //   type: "UPDATE_CASE_DIVISIONS_OR_AREAS",
-  //     //   payload: caseDivisionsOrAreasData,
-  //     // });
-  //   }
-  // }, [caseDivisionsOrAreasData, dispatch]);
-
   useEffect(() => {
     const fetchData = async () => {
       dispatch({
@@ -29,7 +16,6 @@ export const useGetCaseDivisionOrAreas = (
         payload: { status: "loading" },
       });
       const result = await getCaseDivisionsOrAreas();
-      console.log("result>>", result);
       dispatch({
         type: "UPDATE_CASE_DIVISIONS_OR_AREAS",
         payload: { status: "succeeded", data: result },

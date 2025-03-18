@@ -82,14 +82,11 @@ export const useCaseSearchForm = (initialData: SearchFromData) => {
       (errorKey) => formDataErrors[errorKey as keyof SearchFormDataErrors],
     );
 
-    console.log("validErrorKeys>>", validErrorKeys);
-
     const errorSummary = validErrorKeys.map((errorKey, index) => ({
       reactListKey: `${index}`,
       ...errorSummaryProperties(errorKey as SearchFormField)!,
     }));
 
-    console.log("errorSummary>>", errorSummary);
     return errorSummary;
   }, [formDataErrors]);
 

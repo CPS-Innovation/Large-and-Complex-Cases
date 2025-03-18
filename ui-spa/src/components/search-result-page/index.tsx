@@ -37,7 +37,6 @@ const CaseSearchResultPage = () => {
       urn: "",
     };
 
-    console.log("searchParamKeys>>", searchParams);
     if (
       searchParamKeys.includes("defendant-name") &&
       searchParamKeys.includes("area")

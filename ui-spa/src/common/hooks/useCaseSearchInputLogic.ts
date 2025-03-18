@@ -11,7 +11,6 @@ export const useCaseSearchInputLogic = ({
   setParams: (params: Partial<CaseSearchQueryParams>) => void;
   search?: string;
 }) => {
-  console.log("searchKeyFromSearchParams>>", searchKeyFromSearchParams);
   const [searchKey, setSearchKey] = useState(searchKeyFromSearchParams || "");
   const [isError, setIsError] = useState(false);
 

@@ -23,7 +23,6 @@ export const mainStateReducer = (
 ): MainState => {
   switch (action.type) {
     case "UPDATE_CASE_DIVISIONS_OR_AREAS": {
-      console.log("hiiii", action.payload);
       if (action.payload.status === "failed") return state;
       return {
         ...state,
