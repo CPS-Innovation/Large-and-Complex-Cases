@@ -31,7 +31,7 @@ public static class IServiceCollectionExtension
 
     services.AddTransient<IDdeiRequestFactory, DdeiRequestFactory>();
     services.AddTransient<ICaseDetailsMapper, CaseDetailsMapper>();
-    services.AddTransient<IUserDetailsMapper, UserDetailsMapper>();
+    services.AddTransient<IAreasMapper, AreasMapper>();
   }
 
   internal static void AddDdeiClient(IConfiguration configuration, HttpClient client)

@@ -24,7 +24,7 @@ public class DdeiClientTests
   private readonly Mock<IDdeiArgFactory> _ddeiArgFactoryMock;
   private readonly Mock<HttpMessageHandler> _httpMessageHandlerMock;
   private readonly Mock<ICaseDetailsMapper> _caseDetailsMapperMock;
-  private readonly Mock<IUserDetailsMapper> _userDetailsMapperMock;
+  private readonly Mock<IAreasMapper> _areasMapperMock;
   private readonly HttpClient _httpClient;
   private readonly DdeiClient _client;
   private readonly DdeiUrnArgDto _ddeiCaseIdentifiersArgDto;
@@ -45,7 +45,7 @@ public class DdeiClientTests
     _ddeiArgFactoryMock = new Mock<IDdeiArgFactory>();
     _caseDetailsMapperMock = new Mock<ICaseDetailsMapper>();
     _httpMessageHandlerMock = new Mock<HttpMessageHandler>();
-    _userDetailsMapperMock = new Mock<IUserDetailsMapper>();
+    _areasMapperMock = new Mock<IAreasMapper>();
     _ddeiRequestFactoryTactical = new Mock<IDdeiRequestFactoryTactical>();
     _authenticationResponseMapper = new Mock<IAuthenticationResponseMapper>();
 
@@ -64,7 +64,7 @@ public class DdeiClientTests
       _ddeiRequestFactoryMock.Object,
       _ddeiArgFactoryMock.Object,
       _caseDetailsMapperMock.Object,
-      _userDetailsMapperMock.Object,
+      _areasMapperMock.Object,
       _ddeiRequestFactoryTactical.Object,
       _authenticationResponseMapper.Object
     );

@@ -14,4 +14,6 @@ public class DdeiCaseSummaryDto
   public string? LeadDefendantSurname { get; set; }
   [JsonPropertyName("operation")]
   public string? Operation { get; set; }
+  [JsonPropertyName("registrationDate")]
+  public string? RegistrationDate { get; set; }
 }

@@ -8,5 +8,5 @@ public interface IDdeiClient
   Task<IEnumerable<CaseDto>> ListCasesByUrnAsync(DdeiUrnArgDto arg);
   Task<IEnumerable<CaseDto>> ListCasesByOperationNameAsync(DdeiOperationNameArgDto arg);
   Task<IEnumerable<CaseDto>> ListCasesByDefendantNameAsync(DdeiDefendantNameArgDto arg);
-  Task<IEnumerable<AreaDto>> GetUserCmsAreasAsync(DdeiBaseArgDto arg);
+  Task<AreasDto> GetAreasAsync(DdeiBaseArgDto arg);
 }

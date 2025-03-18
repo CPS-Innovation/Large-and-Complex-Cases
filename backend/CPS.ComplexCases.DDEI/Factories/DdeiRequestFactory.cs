@@ -50,6 +50,19 @@ public class DdeiRequestFactory : IDdeiRequestFactory
     return request;
   }
 
+  public HttpRequestMessage CreateUserDataRequest(DdeiBaseArgDto arg)
+  {
+    var request = new HttpRequestMessage(HttpMethod.Get, "api/user-data");
+    AddAuthHeaders(request, arg);
+    return request;
+  }
+  public HttpRequestMessage CreateListUnitsRequest(DdeiBaseArgDto arg)
+  {
+    var request = new HttpRequestMessage(HttpMethod.Get, "api/units");
+    AddAuthHeaders(request, arg);
+    return request;
+  }
+
   private void AddAuthHeaders(HttpRequestMessage request, DdeiBaseArgDto arg)
   {
     request.Headers.Add(CmsAuthValues, arg.CmsAuthValues);
