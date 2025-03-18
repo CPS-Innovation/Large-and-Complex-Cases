@@ -3,7 +3,7 @@ import { Auth } from "../auth";
 import { BrowserRouter } from "react-router";
 import AppRoutes from "./AppRoutes";
 
-import { MainStateProvider } from "../providers/MainStateProvider";
+import { MainStateProvider } from "../providers/mainStateProvider";
 import { ErrorBoundary } from "react-error-boundary";
 import { ErrorBoundaryFallback } from "./ErrorBoundaryFallback";
 

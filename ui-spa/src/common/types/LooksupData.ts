@@ -1,5 +1,5 @@
 export type CaseDivisionsOrArea = {
-  code: string;
+  code: number;
   name: string;
-  type: "Large and Complex Case Divisions" | "CPS Areas";
+  type?: "Large and Complex Case Divisions" | "CPS Areas";
 };

@@ -57,7 +57,7 @@ builder.Services.AddSingleton(_ =>
 {
   // as per https://github.com/dotnet/aspnetcore/issues/43220, there is guidance to only have one instance of ConfigurationManager.
   return new ConfigurationManager<OpenIdConnectConfiguration>(
-              $"https://sts.windows.net/{builder.Configuration["TenantId"]}/.well-known/openid-configuration",
+              $"https://login.microsoftonline.com/{builder.Configuration["TenantId"]}/v2.0/.well-known/openid-configuration",
               new OpenIdConnectConfigurationRetriever(),
               new HttpDocumentRetriever());
 });

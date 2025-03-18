@@ -1,4 +1,16 @@
-import { GATEWAY_BASE_URL } from "../config";
+import { v4 as uuidv4 } from "uuid";
+import { GATEWAY_BASE_URL, GATEWAY_SCOPE } from "../config";
+import { getAccessToken } from "../auth";
+import { CaseDivisionsOrArea } from "../common/types/LooksupData";
+
+export const CORRELATION_ID = "Correlation-Id";
+
+const buildCommonHeaders = async (): Promise<Record<string, string>> => {
+  return {
+    [CORRELATION_ID]: uuidv4(),
+    Authorization: `Bearer ${await getAccessToken([GATEWAY_SCOPE])}`,
+  };
+};
 
 export const getInitialMessage = async () => {
   try {
@@ -8,6 +20,7 @@ export const getInitialMessage = async () => {
       method: "GET",
       credentials: "include",
       headers: {
+        ...(await buildCommonHeaders()),
         "Content-Type": "application/json",
       },
     });
@@ -18,18 +31,20 @@ export const getInitialMessage = async () => {
     return await response.json();
   } catch (error) {
     console.error("Error:", error);
+    throw error;
   }
 };
 
 export const getCaseSearchResults = async (searchParams: string) => {
   console.log("calling api....");
   try {
-    const url = `${GATEWAY_BASE_URL}/api/cases?${searchParams}`;
+    const url = `${GATEWAY_BASE_URL}/api/case-search?${searchParams}`;
 
     const response = await fetch(url, {
       method: "GET",
       credentials: "include",
       headers: {
+        ...(await buildCommonHeaders()),
         "Content-Type": "application/json",
       },
     });
@@ -40,6 +55,7 @@ export const getCaseSearchResults = async (searchParams: string) => {
     return await response.json();
   } catch (error) {
     console.error("Error:", error);
+    throw error;
   }
 };
 
@@ -51,6 +67,7 @@ export const getCaseDivisionsOrAreas = async () => {
       method: "GET",
       credentials: "include",
       headers: {
+        ...(await buildCommonHeaders()),
         "Content-Type": "application/json",
       },
     });
@@ -58,8 +75,10 @@ export const getCaseDivisionsOrAreas = async () => {
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
-    return await response.json();
+
+    return (await response.json()) as CaseDivisionsOrArea[];
   } catch (error) {
     console.error("Error:", error);
+    throw error;
   }
 };

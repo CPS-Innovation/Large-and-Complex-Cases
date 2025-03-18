@@ -74,6 +74,7 @@ const CaseSearchResultPage = () => {
     [queryString],
     triggerSearchApi,
   );
+
   useEffect(() => {
     const isValid = validateFormData();
     setTriggerSearchApi(isValid);
@@ -86,6 +87,7 @@ const CaseSearchResultPage = () => {
       updateSearchParams(searchParams);
     }
   };
+
   const renderSearchForm = () => {
     switch (formData[SearchFormField.searchType]) {
       case "operation name": {
@@ -239,9 +241,9 @@ const CaseSearchResultPage = () => {
   const getTitleText = () => {
     switch (formData[SearchFormField.searchType]) {
       case "operation name":
-        return "Search for Operation name search";
+        return "Search for Operation name";
       case "defendant name":
-        return "Search for Defendant surname search";
+        return "Search for Defendant surname";
       default:
         return "Search for urn search";
     }
@@ -261,7 +263,7 @@ const CaseSearchResultPage = () => {
 
     const resultHtml = apiState.data.length ? (
       <>
-        We've found {apiState?.data?.length} {resultString} for{" "}
+        We've found {apiState?.data?.length} {resultString} for {""}
       </>
     ) : (
       <>There are no matching results for </>
@@ -338,7 +340,7 @@ const CaseSearchResultPage = () => {
               ),
           },
           {
-            children: data.dateCreated,
+            children: data.registrationDate || "Unknown",
           },
           {
             children: (
