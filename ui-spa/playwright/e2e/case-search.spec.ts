@@ -1,4 +1,5 @@
-import { test, expect } from "@playwright/test";
+import { delay, HttpResponse, http } from "msw";
+import { expect, test } from "../utils/test";
 
 test.describe("Case Search", () => {
   test.beforeEach(async ({ page }) => {
@@ -317,6 +318,39 @@ test.describe("Case Search Results", () => {
       "Connected",
       "03/01/2000",
       "View ",
+    ]);
+  });
+
+  test("Should show no cases found result, if there are no matching result for given search criteria", async ({
+    page,
+    worker,
+  }) => {
+    await worker.use(
+      http.get("https://mocked-out-api/api/search-results", async () => {
+        await delay(10);
+        return HttpResponse.json([]);
+      }),
+    );
+    await page.goto("/search-results?urn=11AA2222233");
+
+    await page.waitForResponse(`https://mocked-out-api/api/areas`);
+    await page.waitForResponse(`https://mocked-out-api/api/search-results?*`);
+
+    await expect(page.locator("h1")).toHaveText("Search for URN search");
+    await expect(
+      page.getByText("There are no matching results for 11AA2222233."),
+    ).toBeVisible();
+    await expect(
+      page.getByText("There are no matching results for 11AA2222233."),
+    ).toBeVisible();
+
+    const listItems = page.locator("ul > li");
+    await expect(listItems).toHaveCount(4);
+    await expect(listItems).toHaveText([
+      "check CMS to see if the case exists",
+      "check the spelling of your search",
+      "check with your Unit Manager to see if the case is restricted",
+      "contact the Service Desk",
     ]);
   });
 });

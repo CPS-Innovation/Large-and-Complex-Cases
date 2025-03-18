@@ -12,7 +12,7 @@
     "prettier:format": "prettier --write ./src",
     "test": "vitest",
     "coverage": "vitest run --coverage",
-    "ui:e2e": "npx playwright test --ui",
+    "ui:e2e": "npx playwright   test --ui",
     "ui:e2e:ci": "vite build --mode playwright && CI=true npx playwright test",
     "ui:e2e:report": "npx playwright show-report ./playwright/playwright-report"
   },
@@ -47,6 +47,7 @@
     "globals": "^15.14.0",
     "jsdom": "^26.0.0",
     "msw": "^2.7.0",
+    "playwright-msw": "^3.0.1",
     "prettier": "^3.5.1",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.22.0",
