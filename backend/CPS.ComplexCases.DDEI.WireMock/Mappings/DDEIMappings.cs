@@ -18,8 +18,9 @@ public class DDEIMappings : IWireMockMapping
         Map(server, "/api/cases/find", "search-by-defendant-name.json", new Dictionary<string, string>
         {
             { "area-code", "1057708" },
-            { "defendant-name", "HUSBANDTWO" }
+            { "defendant-name", "Husband" }
         });
+
         Map(server, "/api/cases/find", "search-by-operation-name.json", new Dictionary<string, string>
         {
             { "area-code", "1057708" },
@@ -30,9 +31,8 @@ public class DDEIMappings : IWireMockMapping
         Map(server, "/api/cases/2149309/summary", "case-2149309.json");
         Map(server, "/api/cases/2149310/summary", "case-2149310.json");
         Map(server, "/api/cases/2156682/summary", "case-2156682.json");
-
-
     }
+
     private static void Map(WireMockServer server, string path, string fileName) => Map(server, path, fileName, new Dictionary<string, string>());
 
     private static void Map(WireMockServer server, string path, string fileName, IDictionary<string, string> queryParams)
@@ -47,7 +47,7 @@ public class DDEIMappings : IWireMockMapping
             Response.Create()
                 .WithStatusCode(200)
                 .WithHeader("Content-Type", "application/json")
-                .WithBody(GetFileContent(fileName))
+                .WithBody(GetFileContent(fileName)).WithDelay(750)
         );
     }
 
