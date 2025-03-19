@@ -5,7 +5,7 @@ export const casesSearchResultsPlaywright = [
     leadDefendantName: "abc1",
     egressStatus: "connected",
     sharedDriveStatus877uj: "inactive",
-    dateCreated: "02/01/2000",
+    registrationDate: "02/01/2000",
   },
   {
     operationName: "Thunderstruck2_pl",
@@ -13,6 +13,6 @@ export const casesSearchResultsPlaywright = [
     leadDefendantName: "abc2",
     egressStatus: "connected",
     sharedDriveStatus: "connected",
-    dateCreated: "03/01/2000",
+    registrationDate: "03/01/2000",
   },
 ];

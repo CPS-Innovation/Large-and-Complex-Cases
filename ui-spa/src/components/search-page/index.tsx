@@ -33,6 +33,27 @@ const CaseSearchPage = () => {
   } = useCaseSearchForm(initialData);
 
   useEffect(() => {
+    if (
+      !formData[SearchFormField.defendantArea] &&
+      formattedAreaValues.defaultValue
+    ) {
+      handleFormChange(
+        SearchFormField.defendantArea,
+        String(formattedAreaValues.defaultValue),
+      );
+    }
+    if (
+      !formData[SearchFormField.operationArea] &&
+      formattedAreaValues.defaultValue
+    ) {
+      handleFormChange(
+        SearchFormField.operationArea,
+        String(formattedAreaValues.defaultValue),
+      );
+    }
+  }, [formattedAreaValues]);
+
+  useEffect(() => {
     if (errorList.length) errorSummaryRef.current?.focus();
   }, [errorList]);
 
@@ -114,7 +135,8 @@ const CaseSearchPage = () => {
                         id="search-operation-area"
                         data-testid="search-operation-area"
                         value={formData.operationArea}
-                        items={formattedAreaValues}
+                        defaultValue={formattedAreaValues.defaultValue}
+                        items={formattedAreaValues.options}
                         formGroup={{
                           className: styles.select,
                         }}
@@ -176,7 +198,8 @@ const CaseSearchPage = () => {
                         }}
                         id="search-defendant-area"
                         data-testid="search-defendant-area"
-                        items={formattedAreaValues}
+                        defaultValue={formattedAreaValues.defaultValue}
+                        items={formattedAreaValues.options}
                         formGroup={{
                           className: styles.select,
                         }}

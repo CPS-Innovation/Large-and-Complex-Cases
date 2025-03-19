@@ -1,9 +1,10 @@
-import { CaseDivisionsOrArea } from "../common/types/LooksupData";
+import { CaseDivisionsOrAreaResponse } from "../common/types/LooksupData";
 import { ApiResult } from "../common/types/ApiResult";
 import { AsyncResult } from "../common/types/AsyncResult";
+import { mapAreaLookups } from "./utils/mapAreaLookups";
 
 export type MainState = {
-  caseDivisionsOrAreas: AsyncResult<CaseDivisionsOrArea[]>;
+  caseDivisionsOrAreas: AsyncResult<CaseDivisionsOrAreaResponse>;
 };
 
 export const initialState: MainState = {
@@ -12,7 +13,7 @@ export const initialState: MainState = {
 
 export type MainStateActions = {
   type: "UPDATE_CASE_DIVISIONS_OR_AREAS";
-  payload: ApiResult<CaseDivisionsOrArea[]>;
+  payload: ApiResult<CaseDivisionsOrAreaResponse>;
 };
 
 export type DispatchType = React.Dispatch<MainStateActions>;
@@ -23,11 +24,27 @@ export const mainStateReducer = (
 ): MainState => {
   switch (action.type) {
     case "UPDATE_CASE_DIVISIONS_OR_AREAS": {
-      if (action.payload.status === "failed") return state;
-      return {
-        ...state,
-        caseDivisionsOrAreas: action.payload,
-      };
+      switch (action.payload.status) {
+        case "failed":
+          return state;
+        case "loading":
+          return {
+            ...state,
+            caseDivisionsOrAreas: action.payload,
+          };
+        case "succeeded":
+          return {
+            ...state,
+            caseDivisionsOrAreas: {
+              ...action.payload,
+              data: mapAreaLookups(action.payload.data),
+            },
+          };
+        default:
+          throw new Error(
+            "Unexpected status in mainStateReducer UPDATE_CASE_DIVISIONS_OR_AREAS",
+          );
+      }
     }
 
     default:

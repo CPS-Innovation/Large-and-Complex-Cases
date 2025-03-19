@@ -1,5 +1,11 @@
 export type CaseDivisionsOrArea = {
-  code: string;
-  name: string;
-  type: "Large and Complex Case Divisions" | "CPS Areas";
+  id: number;
+  description: string;
+  default?: true;
+};
+
+export type CaseDivisionsOrAreaResponse = {
+  allAreas: CaseDivisionsOrArea[];
+  userAreas: CaseDivisionsOrArea[];
+  homeArea: CaseDivisionsOrArea;
 };

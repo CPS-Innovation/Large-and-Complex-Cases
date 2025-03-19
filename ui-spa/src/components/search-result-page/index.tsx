@@ -124,7 +124,7 @@ const CaseSearchResultPage = () => {
               id="search-operation-area"
               data-testid="search-operation-area"
               value={formData.operationArea}
-              items={formattedAreaValues}
+              items={formattedAreaValues.options}
               formGroup={{
                 className: styles.select,
               }}
@@ -181,7 +181,7 @@ const CaseSearchResultPage = () => {
               }}
               id="search-defendant-area"
               data-testid="search-defendant-area"
-              items={formattedAreaValues}
+              items={formattedAreaValues.options}
               formGroup={{
                 className: styles.select,
               }}
@@ -238,17 +238,23 @@ const CaseSearchResultPage = () => {
   const getTitleText = () => {
     switch (formData[SearchFormField.searchType]) {
       case "operation name":
-        return "Search for Operation name search";
+        return "Search for Operation name ";
       case "defendant name":
-        return "Search for Defendant surname search";
+        return "Search for Defendant surname";
       default:
-        return "Search for URN search";
+        return "Search for URN";
     }
   };
 
   const getAreaTextFromValue = (value: string | undefined) => {
     if (!value) return "";
-    return formattedAreaValues.find((area) => area.value === value)?.children;
+    console.log("formattedAreaValues>>>", value);
+    console.log("formattedAreaValues optiom>>>", formattedAreaValues.options);
+    const area = formattedAreaValues.options.find(
+      (area) => area.value === parseInt(value),
+    );
+    console.log("area>>", area?.children);
+    return area?.children;
   };
 
   const getResultsCountText = () => {
@@ -337,7 +343,7 @@ const CaseSearchResultPage = () => {
               ),
           },
           {
-            children: data.dateCreated,
+            children: data.registrationDate || "Unknown",
           },
           {
             children: (

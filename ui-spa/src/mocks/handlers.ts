@@ -16,7 +16,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       return HttpResponse.json(results);
     }),
 
-    http.get(`${baseUrl}/api/search-results`, async () => {
+    http.get(`${baseUrl}/api/case-search`, async () => {
       const caseSearchResults = isDevMock()
         ? casesSearchResultsDev
         : casesSearchResultsPlaywright;
