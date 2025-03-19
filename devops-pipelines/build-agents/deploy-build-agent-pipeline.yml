@@ -13,7 +13,7 @@ schedules:
 variables:
   - group: complex-cases-global
   - name: base-agent-image
-    value: "Canonical:0001-com-ubuntu-server-jammy:22_04-lts:linux"
+    value: "Canonical:ubuntu-24_04-lts:server-gen1:linux"
 
 pool:
   vmImage: ubuntu-latest
@@ -30,8 +30,8 @@ stages:
   - stage: image_builder_pre_prod
     displayName: PRE-PROD - Build VM Image
     dependsOn: create_version
-    pool:
-      vmImage: ubuntu-latest
+    #pool:
+    #  name: $(build-agent-pre-prod)
     variables:
       versionSha: $[format('{0}{1}',stageDependencies.create_version.determine_version.outputs['versioning.versionShortSha'], variables['Build.BuildId']) ]
     jobs:
