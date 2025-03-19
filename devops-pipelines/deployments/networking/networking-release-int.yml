@@ -5,7 +5,7 @@ pr: none
 resources:
   pipelines:
     - pipeline: ComplexCasesNetworkingBuild
-      source: Complex Cases Networking Build - Integration
+      source: LaCC Networking - Integration - Build
       trigger: true
             
 variables:
