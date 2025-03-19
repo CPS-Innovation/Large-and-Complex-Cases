@@ -90,35 +90,35 @@ stages:
                     armSubscriptionId: $(subscriptionId)
 
   # Apply to PROD              
-  - stage: Apply_PROD
-    displayName: PROD > Apply Terraform
-    dependsOn: Apply_DEV
-    condition: succeeded()
-    jobs:
-      - deployment: Apply_Networking_Terraform
-        environment: "Prod"
-        workspace:
-          clean: all
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - template: ../templates/stages/jobs/tasks/task_get-credentials.yml
-                  parameters:
-                    azureSubscription: $(azure-subscription-prod)
+  # - stage: Apply_PROD
+  #   displayName: PROD > Apply Terraform
+  #   dependsOn: Apply_DEV
+  #   condition: succeeded()
+  #   jobs:
+  #     - deployment: Apply_Networking_Terraform
+  #       environment: "Prod"
+  #       workspace:
+  #         clean: all
+  #       strategy:
+  #         runOnce:
+  #           deploy:
+  #             steps:
+  #               - template: ../templates/stages/jobs/tasks/task_get-credentials.yml
+  #                 parameters:
+  #                   azureSubscription: $(azure-subscription-prod)
                     
-                - template: ../templates/stages/jobs/tasks/task_apply-terraform.yml
-                  parameters:
-                    targetBuild: ComplexCasesNetworkingBuild
-                    targetTerraformArtifact: "terraform-files-networking"
-                    targetLabel: "PROD"
-                    targetName: "Networking Terraform CI Deployment"
-                    targetPlanName: "prod"
-                    terraformStorageAccount: $(terraform-storage-name-prod)
-                    terraformContainerName: $(terraform-container-name-networking-prod)
-                    terraformStateKey: $(terraform-state-file)
-                    terraformStateAccessKey: $(terraform-storage-shared-key-prod)
-                    armClientId: $(clientId)
-                    armClientSecret: $(clientSecret)
-                    armTenantId: $(tenantId)
-                    armSubscriptionId: $(subscriptionId)
+  #               - template: ../templates/stages/jobs/tasks/task_apply-terraform.yml
+  #                 parameters:
+  #                   targetBuild: ComplexCasesNetworkingBuild
+  #                   targetTerraformArtifact: "terraform-files-networking"
+  #                   targetLabel: "PROD"
+  #                   targetName: "Networking Terraform CI Deployment"
+  #                   targetPlanName: "prod"
+  #                   terraformStorageAccount: $(terraform-storage-name-prod)
+  #                   terraformContainerName: $(terraform-container-name-networking-prod)
+  #                   terraformStateKey: $(terraform-state-file)
+  #                   terraformStateAccessKey: $(terraform-storage-shared-key-prod)
+  #                   armClientId: $(clientId)
+  #                   armClientSecret: $(clientSecret)
+  #                   armTenantId: $(tenantId)
+  #                   armSubscriptionId: $(subscriptionId)
