@@ -17,9 +17,15 @@ public sealed partial class RequestValidationMiddleware(IAuthorizationValidator 
     var httpRequestData = await context.GetHttpRequestDataAsync() ?? throw new ArgumentNullException(nameof(context), "Context does not contains HttpRequestData");
 
     var correlationId = EstablishCorrelation(httpRequestData);
-    var username = await AuthenticateOrThrow(httpRequestData);
-    context.SetRequestContext(correlationId, username);
+    var cmsAuthValues = EstablishCmsAuthValues(httpRequestData);
+    var (isAuthenticated, username) = await Authenticate(httpRequestData);
 
+    context.SetRequestContext(correlationId, cmsAuthValues, username);
+
+    if (!isAuthenticated && !_unauthenticatedRoutes.Contains(httpRequestData.Url.AbsolutePath))
+    {
+      // throw new CpsAuthenticationException();
+    }
     await next(context);
   }
 
@@ -35,29 +41,29 @@ public sealed partial class RequestValidationMiddleware(IAuthorizationValidator 
     return Guid.Empty;
   }
 
-  private async Task<string?> AuthenticateOrThrow(HttpRequestData req)
+  private static string? EstablishCmsAuthValues(HttpRequestData httpRequestData)
   {
-    var shouldAuthenticate = !_unauthenticatedRoutes.Any(req.Url.LocalPath.TrimEnd('/').Equals);
-    if (!shouldAuthenticate)
-    {
-      return null;
-    }
+    var cmsAuthValues = httpRequestData.Cookies.FirstOrDefault(cookie => cookie.Name == HttpHeaderKeys.CmsAuthValues);
+    return cmsAuthValues?.Value;
+  }
 
-    if (!req.Headers.TryGetValues("Authorization", out var accessTokenValues) ||
+  private async Task<(bool, string?)> Authenticate(HttpRequestData req)
+  {
+    if (!req.Headers.TryGetValues(HttpHeaderKeys.Authorization, out var accessTokenValues) ||
         string.IsNullOrWhiteSpace(accessTokenValues.First()))
     {
-      throw new CpsAuthenticationException();
+      return (false, null);
     }
 
     var validateTokenResult = await authorizationValidator.ValidateTokenAsync(accessTokenValues.First(), "user_impersonation");
 
     if (validateTokenResult == null || validateTokenResult.Username == null)
     {
-      throw new CpsAuthenticationException();
+      return (false, null);
     }
 
-    return validateTokenResult.IsValid ?
-        validateTokenResult.Username :
-        throw new CpsAuthenticationException();
+    return validateTokenResult.IsValid
+        ? (true, validateTokenResult.Username)
+        : (false, null);
   }
 }

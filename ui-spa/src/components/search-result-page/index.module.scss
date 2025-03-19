@@ -1,16 +1,13 @@
 .fullWidthContainer {
   width: 100%;
-  background-color: #f3f2f1;
-  border-bottom: 1px solid #b1b4b6;
 }
 
 .hint {
   padding-top: 0.5rem;
 }
 .contentTop {
-  padding: 1rem 0 1.5rem 0;
-
-  background: #f3f2f1;
+  padding: 0 0 1.5rem 0;
+  border-bottom: 1px solid #b1b4b6;
 }
 
 .inputWrapper {
@@ -23,11 +20,16 @@
     height: 2.375rem;
     margin-bottom: 0.125rem;
   }
+  .btnWrapper {
+    min-height: 4.375rem;
+  }
+  & :global(.govuk-error-message) {
+    max-width: 25rem;
+  }
 }
 
 .searchResultsCount {
   display: block;
-  margin-top: 1rem;
 }
 
 .resultHeading {
@@ -76,7 +78,26 @@
   }
 }
 
-.errorSummary {
+.errorSummaryWrapper {
   margin-top: 1rem;
   max-width: 30rem;
+}
+
+.noResultsContent {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  & :global(.govuk-list) {
+    margin-top: 1rem;
+  }
+}
+
+.link {
+  color: #1d70b8;
+}
+
+.resultsTable {
+  .statusTag {
+    text-transform: capitalize;
+    font-weight: normal;
+  }
 }

@@ -131,9 +131,11 @@
         "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.API/bin/Debug/net8.0",
         "env": {
           "EgressOptions__Url": "http://localhost:7080"
+          // ,
+          //"DdeiDevtunnelToken": "${env:DEVTUNNEL_TOKEN}"
         }
       },
-      "command": "func start --password CPS.ComplexCases.API --verbose",
+      "command": "func start --no-build --verbose --password CPS.ComplexCases.API",
       "isBackground": true,
       "problemMatcher": "$func-dotnet-watch"
     },
