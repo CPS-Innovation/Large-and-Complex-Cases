@@ -9,8 +9,6 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Ardalis.SmartEnum" Version="8.2.0" />
-    <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.7.400" />
-    <PackageReference Include="AWSSDK.S3" Version="3.7.415.2" />
     <PackageReference Include="Azure.Identity" Version="1.13.2" />
     <PackageReference Include="Grpc" Version="2.46.6" />
     <PackageReference Include="Contrib.Grpc.Core.M1" Version="2.46.7" />

@@ -3,16 +3,17 @@ using Amazon.Runtime;
 using Amazon.S3;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
-using CPS.ComplexCases.NetApp.Models;
+using CPS.ComplexCases.NetApp.WireMock.Mappings;
 using CPS.ComplexCases.NetApp.Wrappers;
 using FluentAssertions;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using WireMock.Server;
 
-namespace CPS.ComplexCases.NetApp.Integration
+namespace CPS.ComplexCases.NetApp.Tests.Integration
 {
     public class NetAppClientTests
     {
+        private readonly WireMockServer _server;
         private readonly NetAppClient _client;
         private readonly NetAppArgFactory _netAppArgFactory;
         private readonly AmazonS3Client _s3Client;
@@ -20,16 +21,14 @@ namespace CPS.ComplexCases.NetApp.Integration
 
         public NetAppClientTests()
         {
-            var configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .Build();
+            _server = WireMockServer.Start();
 
-            var netAppOptions = configuration.GetSection("NetAppOptions").Get<NetAppOptions>() ?? throw new InvalidOperationException("NetAppOptions section is missing or invalid.");
+            new BucketMapping().Configure(_server);
+            new ObjectMapping().Configure(_server);
 
             var s3ClientConfig = new AmazonS3Config
             {
-                ServiceURL = netAppOptions.Url,
+                ServiceURL = _server.Urls[0],
                 ForcePathStyle = true
             };
 

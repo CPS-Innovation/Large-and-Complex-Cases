@@ -11,8 +11,9 @@
     <PackageReference Include="WireMock.Net" Version="1.7.4" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\CPS.ComplexCases.WireMock.Core\CPS.ComplexCases.WireMock.Core.csproj" />
-    <ProjectReference Include="..\CPS.ComplexCases.WireMock.Core\CPS.ComplexCases.DDEI.WireMock.csproj" />
-    <ProjectReference Include="..\CPS.ComplexCases.DDEI.WireMock\CPS.ComplexCases.DDEI.WireMock.csproj" />
+    <ProjectReference
+      Include="..\CPS.ComplexCases.WireMock.Core\CPS.ComplexCases.WireMock.Core.csproj" />
+    <ProjectReference
+      Include="..\CPS.ComplexCases.DDEI.WireMock\CPS.ComplexCases.DDEI.WireMock.csproj" />
   </ItemGroup>
 </Project>

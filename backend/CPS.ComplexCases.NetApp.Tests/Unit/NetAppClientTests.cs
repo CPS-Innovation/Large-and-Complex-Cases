@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 
-namespace CPS.ComplexCases.NetApp.Tests
+namespace CPS.ComplexCases.NetApp.Tests.Unit
 {
     public class NetAppClientTests
     {
