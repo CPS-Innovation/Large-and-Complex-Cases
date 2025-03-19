@@ -57,8 +57,7 @@ stages:
               storageAccount: $(build-agent-storage-account-pre-prod)
               versionSha: $(versionSha)
               baseImage: $(base-agent-image)
-              #additionalBuilderParams: '{"vm_size":"Standard_D4s_v5","virtual_network_resource_group_name":"RG-LaCC-connectivity","virtual_network_name":"VNET-LaCC-WANNET","virtual_network_subnet_name":"LaCC-scale-set-subnet"}'
-              additionalBuilderParams: '{"vm_size":"Standard_D4s_v3"}'
+              additionalBuilderParams: '{"vm_size":"Standard_D4s_v3","virtual_network_resource_group_name":"RG-LaCC-connectivity","virtual_network_name":"VNET-LaCC-WANNET","virtual_network_subnet_name":"LaCC-scale-set-subnet"}'
 
   #- stage: image_builder_prod
   #  displayName: PROD - Build VM Image
