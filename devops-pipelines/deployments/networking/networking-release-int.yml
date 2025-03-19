@@ -5,7 +5,7 @@ pr: none
 resources:
   pipelines:
     - pipeline: ComplexCasesNetworkingBuild
-      source: Complex Cases Networking Build - E2E
+      source: Complex Cases Networking Build - Integration
       trigger: true
             
 variables:
@@ -17,11 +17,11 @@ pool:
   vmImage: ubuntu-latest
 
 stages:
-  - stage: Apply_E2E
-    displayName: E2E > Apply Terraform
+  - stage: Apply_INT
+    displayName: INT > Apply Terraform
     jobs:
       - deployment: Apply_Networking_Terraform
-        environment: "Complex_Cases_E2E"
+        environment: "Complex_Cases_INT"
         workspace:
           clean: all
         strategy:
@@ -36,13 +36,13 @@ stages:
                   parameters:
                     targetBuild: ComplexCasesNetworkingBuild
                     targetTerraformArtifact: "terraform-files-networking"
-                    targetLabel: "E2E"
+                    targetLabel: "INT"
                     targetName: "Networking Terraform CI Deployment"
-                    targetPlanName: "e2e"
-                    terraformStorageAccount: $(terraform-storage-name-e2e)
-                    terraformContainerName: $(terraform-container-name-networking-e2e)
+                    targetPlanName: "int"
+                    terraformStorageAccount: $(terraform-storage-name-int)
+                    terraformContainerName: $(terraform-container-name-networking-int)
                     terraformStateKey: $(terraform-state-file)
-                    terraformStateAccessKey: $(terraform-storage-shared-key-e2e)
+                    terraformStateAccessKey: $(terraform-storage-shared-key-int)
                     armClientId: $(clientId)
                     armClientSecret: $(clientSecret)
                     armTenantId: $(tenantId)

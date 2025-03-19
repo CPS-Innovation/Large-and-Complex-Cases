@@ -1,9 +1,9 @@
 environment = {
-  name  = "e2e"
-  alias = "e2e"
+  name  = "int"
+  alias = "int"
 }
 
-terraform_service_principal_display_name = "Azure Pipeline: Complex-Cases-E2E"
+terraform_service_principal_display_name = "Azure Pipeline: Complex-Cases-INT"
 dns_server                               = "10.7.197.20"
 dns_alt_server                           = "168.63.129.16"
 

@@ -5,7 +5,7 @@ pr: none
 resources:
   pipelines:
     - pipeline: ComplexCasesBuild
-      source: Complex Cases Build - E2E
+      source: Complex Cases Build - Integration
       trigger:
         branches:
           include:
@@ -25,22 +25,22 @@ stages:
     parameters:
       buildAgentName: $(build-agent-pre-prod)
       initialStageDependsOn:
-      targetEnv: "Complex_Cases_E2E"
+      targetEnv: "Complex_Cases_INT"
       targetBuild: ComplexCasesBuild
-      targetLabel: "E2E"
+      targetLabel: "INT"
       appInsightsKey: $(complex-cases-app-insights-instrumentation-key-e2e)
       azureSubscription: $(azure-subscription-pre-prod)
-      targetPlanName: "e2e"
-      terraformStorageAccount: $(terraform-storage-name-e2e)
+      targetPlanName: "int"
+      terraformStorageAccount: $(terraform-storage-name-int)
       applicationTerraformContainerName: $(terraform-container-name-application)
       terraformStateKey: $(terraform-state-file)
-      terraformStateAccessKey: $(terraform-storage-shared-key-e2e)
-      targetSuffix: "-e2e"
+      terraformStateAccessKey: $(terraform-storage-shared-key-int)
+      targetSuffix: "-int"
       logRetentionTime: $(log-retention-time)
       totalLogRetentionTime: $(total-log-retention-time)
       statusCheckMethod: $(status-check-method)
       statusCheckRetries: $(status-check-retries)
       statusCheckDelaySeconds: $(status-check-delay-seconds)
       statusCheckTimeoutSeconds: $(status-check-timeout-seconds)
-      e2eTestsStageDependsOn: Update_GitHub_Tag_E2E
+      e2eTestsStageDependsOn: Update_GitHub_Tag_INT
       e2eTestsBuildDefinitionId: 588
