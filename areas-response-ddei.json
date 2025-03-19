@@ -1,202 +1,1049 @@
 {
-  "allAreas": [
+  "isSuperUser": false,
+  "areas": [
     {
-      "id": 2,
-      "description": "RMU area"
+      "id": 1057708,
+      "description": "Organised Crime Division",
+      "cpsAreaId": 40860261
+    }
+  ],
+  "courts": [
+    {
+      "id": 3608,
+      "description": "Aldersgate House CC NC",
+      "unitId": 1057725
     },
     {
-      "id": 5,
-      "description": "LogicaCMG Support Area"
+      "id": 3603,
+      "description": "Ashton Hall CC NC",
+      "unitId": 1057725
     },
     {
-      "id": 1001,
-      "description": "Surrey"
+      "id": 3602,
+      "description": "Ashton Hall MC NC",
+      "unitId": 1057725
     },
     {
-      "id": 1002,
-      "description": "Stafford"
+      "id": 3601,
+      "description": "Birmingham CC NC",
+      "unitId": 1057725
     },
     {
-      "id": 1003,
-      "description": "West Yorkshire"
+      "id": 3613,
+      "description": "Bolton Stadium CC NC",
+      "unitId": 1057725
     },
     {
-      "id": 1006,
-      "description": "Durham"
+      "id": 3005,
+      "description": "Central Criminal Court ",
+      "unitId": 1057725
     },
     {
-      "id": 1007,
-      "description": "Cheshire"
+      "id": 3596,
+      "description": "Chester CC NC",
+      "unitId": 1057725
     },
     {
-      "id": 1008,
-      "description": "CAMBRIDGESHIRE"
+      "id": 3615,
+      "description": "Chesterfield CC NC",
+      "unitId": 1057725
     },
     {
-      "id": 1009,
+      "id": 3607,
+      "description": "Chichester CC NC",
+      "unitId": 1057725
+    },
+    {
+      "id": 3599,
+      "description": "Cirencester CC NC",
+      "unitId": 1057725
+    },
+    {
+      "id": 3598,
+      "description": "Cirencester MC NC",
+      "unitId": 1057725
+    },
+    {
+      "id": 3610,
+      "description": "Croydon CC NC",
+      "unitId": 1057725
+    },
+    {
+      "id": 3609,
+      "description": "Hendon CC NC",
+      "unitId": 1057725
+    },
+    {
+      "id": 3616,
+      "description": "Leeds Cloth Hall CC NC",
+      "unitId": 1057725
+    },
+    {
+      "id": 3611,
+      "description": "Liverpool CC NC",
+      "unitId": 1057725
+    },
+    {
+      "id": 3600,
+      "description": "Liverpool NC",
+      "unitId": 1057725
+    },
+    {
+      "id": 3595,
+      "description": "Lowry Salford NC",
+      "unitId": 1057725
+    },
+    {
+      "id": 3605,
+      "description": "Manchester Hilton CC NC",
+      "unitId": 1057725
+    },
+    {
+      "id": 3604,
+      "description": "Mansfield CC NC",
+      "unitId": 1057725
+    },
+    {
+      "id": 3612,
+      "description": "Nottingham CC NC",
+      "unitId": 1057725
+    },
+    {
+      "id": 3597,
+      "description": "Peterborough NC",
+      "unitId": 1057725
+    },
+    {
+      "id": 3614,
+      "description": "Preston North End CC NC",
+      "unitId": 1057725
+    },
+    {
+      "id": 3593,
+      "description": "Prospero NC",
+      "unitId": 1057725
+    },
+    {
+      "id": 3606,
+      "description": "Stockport CC NC",
+      "unitId": 1057725
+    },
+    {
+      "id": 3594,
+      "description": "Swansea NC",
+      "unitId": 1057725
+    }
+  ],
+  "hearingTypes": [
+    {
+      "shortCode": "AOP",
+      "description": "Abuse of Process"
+    },
+    {
+      "shortCode": "AWS",
+      "description": "App for witness summons"
+    },
+    {
+      "shortCode": "CTL",
+      "description": "App to extend CTL's"
+    },
+    {
+      "shortCode": "ARD",
+      "description": "App to remove disqual"
+    },
+    {
+      "shortCode": "AVT",
+      "description": "App to vacate trial date"
+    },
+    {
+      "shortCode": "ACP",
+      "description": "Appeal against Confiscation Order (prosecution)"
+    },
+    {
+      "shortCode": "APC",
+      "description": "Appeal against conviction"
+    },
+    {
+      "shortCode": "APS",
+      "description": "Appeal against sentence"
+    },
+    {
+      "shortCode": "WAR",
+      "description": "Appearing on Warrant"
+    },
+    {
+      "shortCode": "ABC",
+      "description": "Application for Bad Character"
+    },
+    {
+      "shortCode": "ACO",
+      "description": "Application for Confiscation Order"
+    },
+    {
+      "shortCode": "AFH",
+      "description": "Application for Hearsay"
+    },
+    {
+      "shortCode": "APD",
+      "description": "Application for Production of Documents Order"
+    },
+    {
+      "shortCode": "ARV",
+      "description": "Application for Receivership Order"
+    },
+    {
+      "shortCode": "ARO",
+      "description": "Application for Restraint Order"
+    },
+    {
+      "shortCode": "ASM",
+      "description": "Application for Special Measures"
+    },
+    {
+      "shortCode": "ATA",
+      "description": "Application to Adjourn"
+    },
+    {
+      "shortCode": "ADX",
+      "description": "Application to discharge Receivership Order"
+    },
+    {
+      "shortCode": "ADR",
+      "description": "Application to discharge Restraint Order"
+    },
+    {
+      "shortCode": "AIC",
+      "description": "Application to intervene in County Court proceedings"
+    },
+    {
+      "shortCode": "AIH",
+      "description": "Application to intervene in High Court proceedings"
+    },
+    {
+      "shortCode": "VRV",
+      "description": "Application to Vary a Receivership Order"
+    },
+    {
+      "shortCode": "VRO",
+      "description": "Application to Vary a Restraint Order"
+    },
+    {
+      "shortCode": "VCO",
+      "description": "Application to Vary Confiscation Order / COI"
+    },
+    {
+      "shortCode": "BAL",
+      "description": "Bail Appeal"
+    },
+    {
+      "shortCode": "BAA",
+      "description": "Bail Application"
+    },
+    {
+      "shortCode": "BAM",
+      "description": "Bail Application - Murder"
+    },
+    {
+      "shortCode": "BAV",
+      "description": "Bail Variation"
+    },
+    {
+      "shortCode": "BON",
+      "description": "Breach of Bail"
+    },
+    {
+      "shortCode": "BOO",
+      "description": "Breach of Order"
+    },
+    {
+      "shortCode": "CMH",
+      "description": "Case Management"
+    },
+    {
+      "shortCode": "CPH",
+      "description": "Case Progression"
+    },
+    {
+      "shortCode": "CJC",
+      "description": "CJA Confiscation (non-POCA)"
+    },
+    {
+      "shortCode": "CFS",
+      "description": "Committal for Sentence"
+    },
+    {
+      "shortCode": "CFC",
+      "description": "Committal for Sentence & Confiscation"
+    },
+    {
+      "shortCode": "S61",
+      "description": "Committal for Trial"
+    },
+    {
+      "shortCode": "S62",
+      "description": "Committal for Trial"
+    },
+    {
+      "shortCode": "CTA",
+      "description": "CTL Appeal"
+    },
+    {
+      "shortCode": "DFS",
+      "description": "Deferred Sentence"
+    },
+    {
+      "shortCode": "DTC",
+      "description": "Drug Traffic Confiscation (non-POCA)"
+    },
+    {
+      "shortCode": "EGP",
+      "description": "EGP Hearing"
+    },
+    {
+      "shortCode": "ENF",
+      "description": "Enforcement Hearing"
+    },
+    {
+      "shortCode": "EXT",
+      "description": "Extradition Hearing"
+    },
+    {
+      "shortCode": "1HE",
+      "description": "First Hearing"
+    },
+    {
+      "shortCode": "FTP",
+      "description": "Fitness to Plead"
+    },
+    {
+      "shortCode": "FOR",
+      "description": "Forfeiture"
+    },
+    {
+      "shortCode": "GRH",
+      "description": "Ground Rules"
+    },
+    {
+      "shortCode": "HCA",
+      "description": "Higher Court Appeal"
+    },
+    {
+      "shortCode": "JUD",
+      "description": "Judgement"
+    },
+    {
+      "shortCode": "LRF",
+      "description": "Leave referred to Full Court"
+    },
+    {
+      "shortCode": "LIS",
+      "description": "Listing"
+    },
+    {
+      "shortCode": "MEN",
+      "description": "Mention"
+    },
+    {
+      "shortCode": "YCM",
+      "description": "MOT (YC)"
+    },
+    {
+      "shortCode": "NEW",
+      "description": "Newton"
+    },
+    {
+      "shortCode": "NCO",
+      "description": "Non-cooperation order"
+    },
+    {
+      "shortCode": "OTH",
+      "description": "Other"
+    },
+    {
+      "shortCode": "OPF",
+      "description": "Other (Post Finalisation)"
+    },
+    {
+      "shortCode": "PHT",
+      "description": "Part Heard Trial"
+    },
+    {
+      "shortCode": "PBV",
+      "description": "PBV"
+    },
+    {
+      "shortCode": "PCM",
+      "description": "PCM"
+    },
+    {
+      "shortCode": "PDH",
+      "description": "PDH"
+    },
+    {
+      "shortCode": "PLE",
+      "description": "Plea"
+    },
+    {
+      "shortCode": "PCA",
+      "description": "POCA Hearing A/C"
+    },
+    {
+      "shortCode": "PCC",
+      "description": "POCA Hearing CC"
+    },
+    {
+      "shortCode": "PRE",
+      "description": "Preliminary - CC"
+    },
+    {
+      "shortCode": "PPH",
+      "description": "Preparatory Hearing"
+    },
+    {
+      "shortCode": "POF",
+      "description": "Proof"
+    },
+    {
+      "shortCode": "PAH",
+      "description": "Prosecution Appeal Hearing"
+    },
+    {
+      "shortCode": "PTP",
+      "description": "PTPH"
+    },
+    {
+      "shortCode": "PTR",
+      "description": "PTR"
+    },
+    {
+      "shortCode": "RSB",
+      "description": "Re-sentence on breach"
+    },
+    {
+      "shortCode": "REM",
+      "description": "Remand"
+    },
+    {
+      "shortCode": "RAL",
+      "description": "Renewed application for leave"
+    },
+    {
+      "shortCode": "RFC",
+      "description": "Request for Consent"
+    },
+    {
+      "shortCode": "REV",
+      "description": "Review"
+    },
+    {
+      "shortCode": "S28",
+      "description": "Section 28"
+    },
+    {
+      "shortCode": "S51",
+      "description": "Sending s51"
+    },
+    {
+      "shortCode": "PSR",
+      "description": "Sentence"
+    },
+    {
+      "shortCode": "SWP",
+      "description": "Sentence"
+    },
+    {
+      "shortCode": "SOB",
+      "description": "Sex Offender breaches"
+    },
+    {
+      "shortCode": "SCA",
+      "description": "Show Cause"
+    },
+    {
+      "shortCode": "SPR",
+      "description": "Special Reasons"
+    },
+    {
+      "shortCode": "TRN",
+      "description": "Transfer"
+    },
+    {
+      "shortCode": "TRI",
+      "description": "Trial"
+    },
+    {
+      "shortCode": "TRD",
+      "description": "Trial Readiness Hearing"
+    },
+    {
+      "shortCode": "WWB",
+      "description": "Warrant with Bail"
+    }
+  ],
+  "tasksFor": [
+    {
+      "id": -1,
+      "description": "Admin Pool"
+    },
+    {
+      "id": -3,
+      "description": "All"
+    },
+    {
+      "id": -720,
+      "description": "Crown Court"
+    },
+    {
+      "id": -719,
+      "description": "MC Contested"
+    },
+    {
+      "id": -718,
+      "description": "MC General"
+    },
+    {
+      "id": 104007,
+      "description": "Stefan Stachow"
+    }
+  ],
+  "taskTypes": [
+    {
+      "id": 999,
+      "description": "All",
+      "isDeletable": null
+    },
+    {
+      "id": 137,
+      "description": "28 day PCD Review",
+      "isDeletable": false
+    },
+    {
+      "id": 136,
+      "description": "5 day PCD Review",
+      "isDeletable": false
+    },
+    {
+      "id": 101,
+      "description": "Bundle File Error",
+      "isDeletable": false
+    },
+    {
+      "id": 606,
+      "description": "Bundle Service Error",
+      "isDeletable": false
+    },
+    {
+      "id": 605,
+      "description": "Case Management Service Error",
+      "isDeletable": true
+    },
+    {
+      "id": 129,
+      "description": "Chase Outstanding PCD Case - 1 mth",
+      "isDeletable": false
+    },
+    {
+      "id": 130,
+      "description": "Chase Outstanding PCD Case - 2 mths",
+      "isDeletable": false
+    },
+    {
+      "id": 22,
+      "description": "Chase Upgrade File",
+      "isDeletable": false
+    },
+    {
+      "id": 88,
+      "description": "Check 3rd Party Comm",
+      "isDeletable": false
+    },
+    {
+      "id": 109,
+      "description": "Check Bundle Structure",
+      "isDeletable": true
+    },
+    {
+      "id": 131,
+      "description": "Check Case Awaiting Charge - 1 mth",
+      "isDeletable": false
+    },
+    {
+      "id": 132,
+      "description": "Check Case Awaiting Charge - 2 mths",
+      "isDeletable": false
+    },
+    {
+      "id": 107,
+      "description": "Check Case Ownership",
+      "isDeletable": true
+    },
+    {
+      "id": 114,
+      "description": "Check CTL Case",
+      "isDeletable": false
+    },
+    {
+      "id": 603,
+      "description": "Check Directions",
+      "isDeletable": true
+    },
+    {
+      "id": 115,
+      "description": "Check Electronic Upgrade File",
+      "isDeletable": false
+    },
+    {
+      "id": 42,
+      "description": "Check Merged Case",
+      "isDeletable": false
+    },
+    {
+      "id": 113,
+      "description": "Check New Case",
+      "isDeletable": false
+    },
+    {
+      "id": 104,
+      "description": "Check New Communication",
+      "isDeletable": false
+    },
+    {
+      "id": 105,
+      "description": "Check New Correspondence",
+      "isDeletable": false
+    },
+    {
+      "id": 601,
+      "description": "Check New CP Document",
+      "isDeletable": false
+    },
+    {
+      "id": 123,
+      "description": "Check New Crown Court Case",
+      "isDeletable": true
+    },
+    {
+      "id": 119,
+      "description": "Check New DCS Document",
+      "isDeletable": false
+    },
+    {
+      "id": 23,
+      "description": "Check New Information",
+      "isDeletable": false
+    },
+    {
+      "id": 124,
+      "description": "Check New PCD Case",
+      "isDeletable": false
+    },
+    {
+      "id": 103,
+      "description": "Check New Police Info",
+      "isDeletable": false
+    },
+    {
+      "id": 25,
+      "description": "Check Phone Call",
+      "isDeletable": false
+    },
+    {
+      "id": 30,
+      "description": "Check Pre-release Conditions",
+      "isDeletable": false
+    },
+    {
+      "id": 126,
+      "description": "Check Resubmitted PCD Case",
+      "isDeletable": false
+    },
+    {
+      "id": 43,
+      "description": "Check Split Case",
+      "isDeletable": false
+    },
+    {
+      "id": 96,
+      "description": "Check Unauthorised Charge(s)",
+      "isDeletable": false
+    },
+    {
+      "id": 35,
+      "description": "Check Video Returned",
+      "isDeletable": false
+    },
+    {
+      "id": 112,
+      "description": "Check WCU Comm",
+      "isDeletable": true
+    },
+    {
+      "id": 49,
+      "description": "Check/Re-warn Witnesses",
+      "isDeletable": false
+    },
+    {
+      "id": 143,
+      "description": "Common Platform Error",
+      "isDeletable": true
+    },
+    {
+      "id": 40,
+      "description": "Complete Review",
+      "isDeletable": false
+    },
+    {
+      "id": 58,
+      "description": "Confirm Discontinuance",
+      "isDeletable": false
+    },
+    {
+      "id": 118,
+      "description": "Confirm VPS/ISB",
+      "isDeletable": false
+    },
+    {
+      "id": 46,
+      "description": "Confirm Witness Selection",
+      "isDeletable": false
+    },
+    {
+      "id": 76,
+      "description": "Continuous Disclosure",
+      "isDeletable": false
+    },
+    {
+      "id": 95,
+      "description": "Copy Def PCD Consultation",
+      "isDeletable": false
+    },
+    {
+      "id": 134,
+      "description": "Court Store Dispatch Error",
+      "isDeletable": true
+    },
+    {
+      "id": 51,
+      "description": "CTL Expiry Imminent",
+      "isDeletable": true
+    },
+    {
+      "id": 53,
+      "description": "CTL Extension Hg Reqd",
+      "isDeletable": false
+    },
+    {
+      "id": 120,
+      "description": "DCS Dispatch Error",
+      "isDeletable": false
+    },
+    {
+      "id": 81,
+      "description": "De-warn Witnesses",
+      "isDeletable": false
+    },
+    {
+      "id": 99,
+      "description": "Dispatch Bundle",
+      "isDeletable": false
+    },
+    {
+      "id": 102,
+      "description": "Electronic Upgrade File Review",
+      "isDeletable": false
+    },
+    {
+      "id": 44,
+      "description": "Enter Witness Selection",
+      "isDeletable": false
+    },
+    {
+      "id": 84,
+      "description": "Error Message",
+      "isDeletable": false
+    },
+    {
+      "id": 33,
+      "description": "Finalise Case",
+      "isDeletable": false
+    },
+    {
+      "id": 133,
+      "description": "Finalise PCD",
+      "isDeletable": false
+    },
+    {
+      "id": 20,
+      "description": "Follow Up",
+      "isDeletable": false
+    },
+    {
+      "id": 139,
+      "description": "Follow up - Rejected Triage",
+      "isDeletable": false
+    },
+    {
+      "id": 125,
+      "description": "Follow-up - Case Action Plan Item",
+      "isDeletable": false
+    },
+    {
+      "id": 127,
+      "description": "Further PCD Review",
+      "isDeletable": false
+    },
+    {
+      "id": 111,
+      "description": "Generate Bundle",
+      "isDeletable": true
+    },
+    {
+      "id": 141,
+      "description": "Initial Disclosure",
+      "isDeletable": true
+    },
+    {
+      "id": 89,
+      "description": "Initiate Asset Recovery Enforcement",
+      "isDeletable": false
+    },
+    {
+      "id": 602,
+      "description": "Manage Directions",
+      "isDeletable": true
+    },
+    {
+      "id": 600,
+      "description": "Material Service Error",
+      "isDeletable": false
+    },
+    {
+      "id": 77,
+      "description": "Offer Bereaved Family Meeting",
+      "isDeletable": false
+    },
+    {
+      "id": 32,
+      "description": "Post Hg Actions Required",
+      "isDeletable": false
+    },
+    {
+      "id": 122,
+      "description": "Post Sending Review",
+      "isDeletable": true
+    },
+    {
+      "id": 56,
+      "description": "Prepare Appeal Brief",
+      "isDeletable": false
+    },
+    {
+      "id": 54,
+      "description": "Prepare CFS Brief",
+      "isDeletable": false
+    },
+    {
+      "id": 82,
+      "description": "Prepare DPP Consent Form",
+      "isDeletable": false
+    },
+    {
+      "id": 87,
+      "description": "Prepare Pre-charge DCV Letter",
+      "isDeletable": false
+    },
+    {
+      "id": 55,
+      "description": "Prepare Prosecution Advocate Brief",
+      "isDeletable": false
+    },
+    {
+      "id": 85,
+      "description": "Prepare Prosecution Advocate Brief",
+      "isDeletable": false
+    },
+    {
+      "id": 121,
+      "description": "Prepare PTPH",
+      "isDeletable": true
+    },
+    {
+      "id": 71,
+      "description": "Prepare Rape Monitoring Form",
+      "isDeletable": false
+    },
+    {
+      "id": 17,
+      "description": "Prepare s51/Allocation Documents",
+      "isDeletable": false
+    },
+    {
+      "id": 79,
+      "description": "Prepare s9 Notice",
+      "isDeletable": false
+    },
+    {
+      "id": 70,
+      "description": "Prepare Victim Letter",
+      "isDeletable": false
+    },
+    {
+      "id": 138,
+      "description": "Priority PCD Review",
+      "isDeletable": false
+    },
+    {
+      "id": 140,
+      "description": "Priority Resubmitted PCD Case",
+      "isDeletable": false
+    },
+    {
+      "id": 8,
+      "description": "Receive Transferred Case",
+      "isDeletable": false
+    },
+    {
+      "id": 52,
+      "description": "Record CTL Extension",
+      "isDeletable": false
+    },
+    {
+      "id": 31,
+      "description": "Record Hg Outcome",
+      "isDeletable": false
+    },
+    {
+      "id": 47,
+      "description": "Record PCM Witnesses",
+      "isDeletable": false
+    },
+    {
+      "id": 26,
+      "description": "Reminder",
+      "isDeletable": true
+    },
+    {
+      "id": 93,
+      "description": "Reminder (Asset Recovery)",
+      "isDeletable": true
+    },
+    {
+      "id": 21,
+      "description": "Request Upgrade File",
+      "isDeletable": false
+    },
+    {
+      "id": 28,
+      "description": "Retrieve Core Details",
+      "isDeletable": false
+    },
+    {
+      "id": 604,
+      "description": "Review BCM Information",
+      "isDeletable": true
+    },
+    {
+      "id": 39,
+      "description": "Review Case Against New Def.",
+      "isDeletable": false
+    },
+    {
+      "id": 142,
+      "description": "Review Defence Statement",
+      "isDeletable": true
+    },
+    {
+      "id": 69,
+      "description": "Serve Initial Pros Case",
+      "isDeletable": false
+    },
+    {
+      "id": 106,
+      "description": "Upgrade PCD Case",
+      "isDeletable": false
+    },
+    {
+      "id": 97,
+      "description": "Victim/Witness Deletion Request",
+      "isDeletable": true
+    },
+    {
+      "id": 78,
+      "description": "Warn Witnesses",
+      "isDeletable": false
+    }
+  ],
+  "units": [
+    {
+      "areaId": 1057708,
+      "areaDescription": "Organised Crime Division",
+      "unitGroupId": 0,
+      "unitGroupDescription": null,
+      "id": 1057725,
+      "description": "Organised Crime Division London"
+    }
+  ],
+  "unitGroups": [],
+  "areaGroups": [
+    {
+      "id": -1,
+      "description": "All"
+    },
+    {
+      "id": 40860253,
+      "description": "Cymru Wales"
+    },
+    {
+      "id": 40860254,
+      "description": "East Midlands"
+    },
+    {
+      "id": 40860255,
+      "description": "Eastern"
+    },
+    {
+      "id": 40860258,
+      "description": "Merseyside & Cheshire"
+    },
+    {
+      "id": 40860259,
+      "description": "North East"
+    },
+    {
+      "id": 40860260,
+      "description": "North West"
+    },
+    {
+      "id": 40860262,
+      "description": "South East"
+    },
+    {
+      "id": 40860263,
+      "description": "South West"
+    },
+    {
+      "id": 40860264,
+      "description": "Thames and Chiltern"
+    },
+    {
+      "id": 40860265,
+      "description": "Wessex"
+    },
+    {
+      "id": 40860266,
       "description": "West Midlands"
     },
     {
-      "id": 1010,
-      "description": "Suffolk"
+      "id": 40860267,
+      "description": "Yorkshire & Humberside"
     },
     {
-      "id": 1011,
-      "description": "Thames Valley"
+      "id": 104993082,
+      "description": "London North"
     },
     {
-      "id": 1012,
-      "description": "London"
-    },
-    {
-      "id": 1013,
-      "description": "Warwickshire"
-    },
-    {
-      "id": 1014,
-      "description": "Cumbria"
-    },
-    {
-      "id": 1015,
-      "description": "Sussex"
-    },
-    {
-      "id": 1016,
-      "description": "Devon and Cornwall"
-    },
-    {
-      "id": 1017,
-      "description": "Kent"
-    },
-    {
-      "id": 1018,
-      "description": "Derbyshire"
-    },
-    {
-      "id": 1019,
-      "description": "South Wales"
-    },
-    {
-      "id": 1020,
-      "description": "Hampshire & IOW"
-    },
-    {
-      "id": 1021,
-      "description": "North Yorkshire"
-    },
-    {
-      "id": 1022,
-      "description": "North Wales"
-    },
-    {
-      "id": 1023,
-      "description": "Lancashire"
-    },
-    {
-      "id": 1024,
-      "description": "Hertfordshire"
-    },
-    {
-      "id": 1025,
-      "description": "Dyfed Powys"
-    },
-    {
-      "id": 1026,
-      "description": "Merseyside"
-    },
-    {
-      "id": 1027,
-      "description": "Cleveland"
-    },
-    {
-      "id": 1028,
-      "description": "Northumbria"
-    },
-    {
-      "id": 1029,
-      "description": "Dorset"
-    },
-    {
-      "id": 1030,
-      "description": "Bedfordshire"
-    },
-    {
-      "id": 1031,
-      "description": "Greater Manchester"
-    },
-    {
-      "id": 1032,
-      "description": "Gloucestershire"
-    },
-    {
-      "id": 1033,
-      "description": "Northamptonshire"
-    },
-    {
-      "id": 1034,
-      "description": "Lincolnshire"
-    },
-    {
-      "id": 1035,
-      "description": "Avon & Somerset"
-    },
-    {
-      "id": 1036,
-      "description": "South Yorkshire"
-    },
-    {
-      "id": 1037,
-      "description": "Leicestershire"
-    },
-    {
-      "id": 1038,
-      "description": "West Mercia"
-    },
-    {
-      "id": 1039,
-      "description": "Essex"
-    },
-    {
-      "id": 1040,
-      "description": "Humberside"
-    },
-    {
-      "id": 1041,
-      "description": "Nottinghamshire"
-    },
-    {
-      "id": 1042,
-      "description": "Norfolk"
-    },
-    {
-      "id": 1043,
-      "description": "HMCPSI"
-    },
-    {
-      "id": 1057708,
-      "description": "Organised Crime Division"
-    },
-    {
-      "id": 2003775,
-      "description": "Leatherhead"
-    },
-    {
-      "id": 2060277,
-      "description": "Gwent"
-    },
-    {
-      "id": 2283238,
-      "description": "Wiltshire"
+      "id": 104993083,
+      "description": "London South"
     }
-  ],
-  "userAreas": [
-    {
-      "id": 1057708,
-      "description": "Organised Crime Division"
-    }
-  ],
-  "homeArea": {
-    "id": 1057708,
-    "description": "Organised Crime Division"
-  }
+  ]
 }

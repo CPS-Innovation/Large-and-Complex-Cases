@@ -131,8 +131,6 @@
         "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.API/bin/Debug/net8.0",
         "env": {
           "EgressOptions__Url": "http://localhost:7080"
-          // ,
-          //"DdeiDevtunnelToken": "${env:DEVTUNNEL_TOKEN}"
         }
       },
       "command": "func start --no-build --verbose --password CPS.ComplexCases.API",
@@ -146,7 +144,8 @@
         "run-azurite",
         "clean-backend",
         "build-backend",
-        "run-backend"
+        "run-backend",
+        "run-mock"
       ]
     },
     {
@@ -196,6 +195,31 @@
           "activeOnStart": true,
           "beginsPattern": "^.*Executing task.*$",
           "endsPattern": "^.*ready in.*$"
+        }
+      }
+    },
+    {
+      "label": "run-mock",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.WireMock"
+      },
+      "command": "dotnet bin/Debug/net8.0/CPS.ComplexCases.WireMock.dll",
+      "isBackground": true,
+      "problemMatcher": {
+        "fileLocation": "absolute",
+        "pattern": [
+          {
+            "regexp": ".",
+            "file": 1,
+            "location": 2,
+            "message": 3
+          }
+        ],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*Executing task*$",
+          "endsPattern": "^.*Hosting started*$"
         }
       }
     },

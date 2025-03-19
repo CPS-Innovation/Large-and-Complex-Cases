@@ -1,0 +1,25 @@
+[
+  {
+    "id": 2149310,
+    "urn": "45CV2911222",
+    "status": "Pending",
+    "appeal": false,
+    "deleted": false,
+    "finalised": false,
+    "firstNames": "Bad",
+    "nextHearingDate": "2022-11-03",
+    "nextHearingType": "Application for Hearsay",
+    "nextHearingTypeCode": "AFH",
+    "nextHearingVenue": "Guildford Magistrates' Court",
+    "nextHearingVenueCode": "GUILD MC",
+    "secure": false,
+    "surname": "HUSBANDTWO",
+    "isDCFCase": false,
+    "youthTotal": 0,
+    "defendantTotal": 1,
+    "custodyTotal": 0,
+    "caseCtlExpiryIndicator": null,
+    "earliestCaseCtlDays": null,
+    "earliestCaseCtlDate": null
+  }
+]

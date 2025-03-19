@@ -1,0 +1,31 @@
+{
+  "ctlActive": false,
+  "deleted": false,
+  "earliestCtlDate": null,
+  "finalised": false,
+  "id": 2156682,
+  "isDcfCase": false,
+  "isLocked": true,
+  "leadDefendantFirstNames": null,
+  "leadDefendantSurname": "CHEESE",
+  "leadDefendantType": "PERSON",
+  "locking": {
+    "application": "CMS",
+    "bySurname": "retrievalsc",
+    "byFirstNames": "Devcdd",
+    "locked": "true",
+    "since": "2025-01-06T13:00"
+  },
+  "nextHearingDate": null,
+  "nextHearingType": null,
+  "nextHearingTypeCode": null,
+  "nextHearingVenue": null,
+  "nextHearingVenueCode": null,
+  "numberOfDefendants": 1,
+  "operation": "Ottawa",
+  "registrationDate": null,
+  "secure": false,
+  "superseded": false,
+  "unitName": "Cheshire Magistrates Court Unit",
+  "urn": "07WZ1402524"
+}

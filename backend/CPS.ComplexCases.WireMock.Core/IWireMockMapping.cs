@@ -1,6 +1,6 @@
 using WireMock.Server;
 
-namespace CPS.ComplexCases.Egress.WireMock.Mappings;
+namespace CPS.ComplexCases.WireMock.Core;
 
 public interface IWireMockMapping
 {

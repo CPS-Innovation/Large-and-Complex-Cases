@@ -1,27 +1,23 @@
-using CPS.ComplexCases.NetApp.WireMock.Mappings;
+using CPS.ComplexCases.DDEI.WireMock.Mappings;
 using Microsoft.Extensions.Options;
 using WireMock.Server;
 using WireMock.Settings;
 
 namespace CPS.ComplexCases.NetApp.WireMock
 {
-    public class NetAppWireMock : INetAppWireMock, IAsyncDisposable
+    public class NetAppWireMock : IAsyncDisposable
     {
         private readonly WireMockServer _server;
-        private readonly IEnumerable<IWireMockMapping> _mappings;
 
-        public NetAppWireMock(IOptions<WireMockServerSettings> settings, IEnumerable<IWireMockMapping> mappings)
+
+        public NetAppWireMock(IOptions<WireMockServerSettings> settings)
         {
             _server = WireMockServer.Start(settings.Value);
-            _mappings = mappings;
         }
 
         public void ConfigureMappings()
         {
-            foreach (var mapping in _mappings)
-            {
-                mapping.Configure(_server);
-            }
+            new DDEIMappings().Configure(_server);
         }
 
         public void Dispose()

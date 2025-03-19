@@ -1,0 +1,31 @@
+{
+  "ctlActive": false,
+  "deleted": false,
+  "earliestCtlDate": null,
+  "finalised": false,
+  "id": 2149310,
+  "isDcfCase": false,
+  "isLocked": false,
+  "leadDefendantFirstNames": "Bad",
+  "leadDefendantSurname": "HUSBANDTWO",
+  "leadDefendantType": "PERSON",
+  "locking": {
+    "application": null,
+    "bySurname": null,
+    "byFirstNames": null,
+    "locked": "false",
+    "since": null
+  },
+  "nextHearingDate": null,
+  "nextHearingType": null,
+  "nextHearingTypeCode": null,
+  "nextHearingVenue": null,
+  "nextHearingVenueCode": null,
+  "numberOfDefendants": 1,
+  "operation": null,
+  "registrationDate": null,
+  "secure": false,
+  "superseded": false,
+  "unitName": "Guildford Mags",
+  "urn": "45CV2911222"
+}
