@@ -34,7 +34,7 @@ steps:
     
   - bash: |
       packer init -upgrade "packer-config.pkr.hcl"
-    workingDirectory: "$(Pipeline.Workspace)/s/pdevops-pipelines/build-agents/"
+    workingDirectory: "$(Pipeline.Workspace)/s/devops-pipelines/build-agents/"
       
   - task: PackerBuild@1
     displayName: Build Image with Packer
