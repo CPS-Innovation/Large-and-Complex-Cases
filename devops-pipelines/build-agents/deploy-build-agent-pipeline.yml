@@ -30,8 +30,8 @@ stages:
   - stage: image_builder_pre_prod
     displayName: PRE-PROD - Build VM Image
     dependsOn: create_version
-    #pool:
-    #  name: $(build-agent-pre-prod)
+    pool:
+      name: $(build-agent-pre-prod)
     variables:
       versionSha: $[format('{0}{1}',stageDependencies.create_version.determine_version.outputs['versioning.versionShortSha'], variables['Build.BuildId']) ]
     jobs:
@@ -57,7 +57,7 @@ stages:
               storageAccount: $(build-agent-storage-account-pre-prod)
               versionSha: $(versionSha)
               baseImage: $(base-agent-image)
-              additionalBuilderParams: '{"vm_size":"Standard_D4s_v3","virtual_network_resource_group_name":"RG-LaCC-connectivity","virtual_network_name":"VNET-LaCC-WANNET","virtual_network_subnet_name":"LaCC-scale-set-subnet"}'
+              additionalBuilderParams: '{"vm_size":"Standard_D2s_v3","virtual_network_resource_group_name":"RG-LaCC-connectivity","virtual_network_name":"VNET-LaCC-WANNET","virtual_network_subnet_name":"LaCC-scale-set-subnet"}'
 
   #- stage: image_builder_prod
   #  displayName: PROD - Build VM Image
@@ -89,7 +89,7 @@ stages:
   #            storageAccount: $(build-agent-storage-account-prod)
   #            versionSha: $(versionSha)
   #            baseImage: $(base-agent-image)
-  #            additionalBuilderParams: '{"vm_size":"Standard_D4s_v3","virtual_network_resource_group_name":"RG-LaCC-connectivity","virtual_network_name":"VNET-LaCC-WANNET","virtual_network_subnet_name":"LaCC-scale-set-subnet"}'
+  #            additionalBuilderParams: '{"vm_size":"Standard_D2s_v3","virtual_network_resource_group_name":"RG-LaCC-connectivity","virtual_network_name":"VNET-LaCC-WANNET","virtual_network_subnet_name":"LaCC-scale-set-subnet"}'
 
   - stage: update_scale_set_pre_prod
     displayName: Update PRE-PROD
