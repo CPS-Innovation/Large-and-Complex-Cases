@@ -3,10 +3,10 @@ import { useEffect } from "react";
 import { getCaseDivisionsOrAreas } from "../../apis/gateway-api";
 import { DispatchType } from "../../reducers/mainStateReducer";
 import { AsyncResult } from "../types/AsyncResult";
-import { CaseDivisionsOrArea } from "../types/LooksupData";
+import { CaseDivisionsOrAreaResponse } from "../types/LooksupData";
 
 export const useGetCaseDivisionOrAreas = (
-  caseDivisionsOrAreas: AsyncResult<CaseDivisionsOrArea[]>,
+  caseDivisionsOrAreas: AsyncResult<CaseDivisionsOrAreaResponse>,
   dispatch: DispatchType,
 ) => {
   // Load lookups

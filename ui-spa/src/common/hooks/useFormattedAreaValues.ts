@@ -1,6 +1,18 @@
 import { useMemo } from "react";
 import { useMainStateContext } from "../../providers/mainStateProvider";
 import { useGetCaseDivisionOrAreas } from "../../common/hooks/useGetAppLevelLookups";
+import { CaseDivisionsOrArea } from "../types/LooksupData";
+
+const mapGroupHeader = (text: string) => ({
+  value: -1,
+  children: text,
+  disabled: true,
+});
+
+const mapOption = (item: CaseDivisionsOrArea) => ({
+  value: item.id,
+  children: item.description,
+});
 
 export const useFormattedAreaValues = () => {
   const {
@@ -11,36 +23,22 @@ export const useFormattedAreaValues = () => {
   useGetCaseDivisionOrAreas(caseDivisionsOrAreas, dispatch);
 
   const formattedAreaValues = useMemo(() => {
-    if (caseDivisionsOrAreas.status !== "succeeded") return [];
-    const defaultOption = {
-      value: "",
-      children: "-- Please select --",
-      disabled: true,
+    if (caseDivisionsOrAreas.status !== "succeeded")
+      return { defaultValue: undefined, options: [] };
+
+    return {
+      defaultValue: caseDivisionsOrAreas.data.homeArea.id,
+      options: [
+        mapGroupHeader("-- Please select --"),
+        mapGroupHeader("Your units/areas"),
+        ...caseDivisionsOrAreas.data.userAreas.map(mapOption),
+        mapGroupHeader("All areas"),
+        ...caseDivisionsOrAreas.data.allAreas.map(mapOption),
+      ],
     };
-    const optionGroup1 = caseDivisionsOrAreas.data
-      .filter(
-        (item) =>
-          item.type === "Large and Complex Case Divisions" || !item.type,
-      )
-      .map((item) => ({
-        value: item.code,
-        children: item.name,
-        disabled: false,
-      }));
-    const optionGroup2 = caseDivisionsOrAreas.data
-      .filter((item) => item.type === "CPS Areas")
-      .map((item) => ({
-        value: item.code,
-        children: item.name,
-        disabled: false,
-      }));
-    return [
-      defaultOption,
-      ...optionGroup1,
-      ...optionGroup2,
-      { value: "1001", children: "Surrey", type: "CPS Areas" },
-    ];
   }, [caseDivisionsOrAreas]);
+
+  console.log(formattedAreaValues.defaultValue);
 
   return formattedAreaValues;
 };

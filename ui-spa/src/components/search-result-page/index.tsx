@@ -127,7 +127,7 @@ const CaseSearchResultPage = () => {
               id="search-operation-area"
               data-testid="search-operation-area"
               value={formData.operationArea}
-              items={formattedAreaValues}
+              items={formattedAreaValues.options}
               formGroup={{
                 className: styles.select,
               }}
@@ -184,7 +184,7 @@ const CaseSearchResultPage = () => {
               }}
               id="search-defendant-area"
               data-testid="search-defendant-area"
-              items={formattedAreaValues}
+              items={formattedAreaValues.options}
               formGroup={{
                 className: styles.select,
               }}

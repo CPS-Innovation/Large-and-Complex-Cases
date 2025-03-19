@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { GATEWAY_BASE_URL, GATEWAY_SCOPE } from "../config";
 import { getAccessToken } from "../auth";
-import { CaseDivisionsOrArea } from "../common/types/LooksupData";
+import { CaseDivisionsOrAreaResponse } from "../common/types/LooksupData";
 
 export const CORRELATION_ID = "Correlation-Id";
 
@@ -76,7 +76,7 @@ export const getCaseDivisionsOrAreas = async () => {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
-    return (await response.json()) as CaseDivisionsOrArea[];
+    return (await response.json()) as CaseDivisionsOrAreaResponse;
   } catch (error) {
     console.error("Error:", error);
     throw error;
