@@ -19,9 +19,9 @@ const CaseSearchPage = () => {
   const initialData: SearchFromData = {
     searchType: "urn",
     operationName: "",
-    operationArea: String(formattedAreaValues.defaultValue),
+    operationArea: "",
     defendantName: "",
-    defendantArea: String(formattedAreaValues.defaultValue),
+    defendantArea: "",
     urn: "",
   };
 
@@ -33,6 +33,27 @@ const CaseSearchPage = () => {
     handleFormChange,
     getSearchParams,
   } = useCaseSearchForm(initialData);
+
+  useEffect(() => {
+    if (
+      !formData[SearchFormField.defendantArea] &&
+      formattedAreaValues.defaultValue
+    ) {
+      handleFormChange(
+        SearchFormField.defendantArea,
+        String(formattedAreaValues.defaultValue),
+      );
+    }
+    if (
+      !formData[SearchFormField.operationArea] &&
+      formattedAreaValues.defaultValue
+    ) {
+      handleFormChange(
+        SearchFormField.operationArea,
+        String(formattedAreaValues.defaultValue),
+      );
+    }
+  }, [formattedAreaValues]);
 
   useEffect(() => {
     if (errorList.length) errorSummaryRef.current?.focus();

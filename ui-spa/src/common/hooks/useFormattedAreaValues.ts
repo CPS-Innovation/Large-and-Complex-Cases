@@ -4,7 +4,7 @@ import { useGetCaseDivisionOrAreas } from "../../common/hooks/useGetAppLevelLook
 import { CaseDivisionsOrArea } from "../types/LooksupData";
 
 const mapGroupHeader = (text: string) => ({
-  value: -1,
+  value: "",
   children: text,
   disabled: true,
 });
