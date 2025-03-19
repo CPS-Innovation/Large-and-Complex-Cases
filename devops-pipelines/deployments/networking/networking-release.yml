@@ -105,7 +105,7 @@ stages:
               steps:
                 - template: ../templates/stages/jobs/tasks/task_get-credentials.yml
                   parameters:
-                    azureSubscription: $(prod-azure-subscription-prod)
+                    azureSubscription: $(azure-subscription-prod)
                     
                 - template: ../templates/stages/jobs/tasks/task_apply-terraform.yml
                   parameters:
