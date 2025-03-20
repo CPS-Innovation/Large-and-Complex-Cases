@@ -11,51 +11,17 @@ data "azurerm_resource_group" "networking_resource_group" {
 #}
 # end: ddei lookup
 
-#begin: vNET lookup
+#begin: vNET and route table lookups
 data "azurerm_virtual_network" "complex_cases_vnet" {
   name                = "vnet-${local.product_name}-WANNET"
   resource_group_name = data.azurerm_resource_group.networking_resource_group.name
 }
+
+data "azurerm_route_table" "complex_cases_rt" {
+  name                = "RT-${local.product_name}"
+  resource_group_name = data.azurerm_resource_group.networking_resource_group.name
+}
 #end: vNET lookup
-
-#begin: vnet subnet lookups
-data "azurerm_subnet" "complex_cases_storage_subnet" {
-  name                 = "${local.product_prefix}-storage-subnet"
-  virtual_network_name = data.azurerm_virtual_network.complex_cases_vnet.name
-  resource_group_name  = data.azurerm_resource_group.networking_resource_group.name
-}
-
-data "azurerm_subnet" "complex_cases_ui_subnet" {
-  name                 = "${local.product_prefix}-ui-subnet"
-  virtual_network_name = data.azurerm_virtual_network.complex_cases_vnet.name
-  resource_group_name  = data.azurerm_resource_group.networking_resource_group.name
-}
-
-data "azurerm_subnet" "complex_cases_api_subnet" {
-  name                 = "${local.product_prefix}-api-subnet"
-  virtual_network_name = data.azurerm_virtual_network.complex_cases_vnet.name
-  resource_group_name  = data.azurerm_resource_group.networking_resource_group.name
-}
-
-data "azurerm_subnet" "complex_cases_endpoints_subnet" {
-  name                 = "${local.product_prefix}-endpoints-subnet"
-  virtual_network_name = data.azurerm_virtual_network.complex_cases_vnet.name
-  resource_group_name  = data.azurerm_resource_group.networking_resource_group.name
-}
-
-data "azurerm_subnet" "complex_cases_egressMock_subnet" {
-  name                 = "${local.product_prefix}-egressMock-subnet"
-  virtual_network_name = data.azurerm_virtual_network.complex_cases_vnet.name
-  resource_group_name  = data.azurerm_resource_group.networking_resource_group.name
-}
-
-data "azurerm_subnet" "complex_cases_netAppMock_subnet" {
-  name                 = "${local.product_prefix}-netAppMock-subnet"
-  virtual_network_name = data.azurerm_virtual_network.complex_cases_vnet.name
-  resource_group_name  = data.azurerm_resource_group.networking_resource_group.name
-}
-
-#end: vnet subnet lookups
 
 # begin: vnet dns zone lookups
 data "azurerm_private_dns_zone" "dns_zone_blob_storage" {

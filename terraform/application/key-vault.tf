@@ -26,7 +26,7 @@ resource "azurerm_private_endpoint" "kv_complex_cases_pe" {
   name                = "${azurerm_key_vault.kv_complex_cases.name}-pe"
   resource_group_name = azurerm_resource_group.rg_complex_cases.name
   location            = azurerm_resource_group.rg_complex_cases.location
-  subnet_id           = data.azurerm_subnet.complex_cases_endpoints_subnet.id
+  subnet_id           = azurerm_subnet.sn_complex_cases_endpoints_subnet.id
   tags                = local.common_tags
 
   private_dns_zone_group {

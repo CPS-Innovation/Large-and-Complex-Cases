@@ -23,9 +23,9 @@ resource "azurerm_storage_account" "sacpsccui" {
     default_action = "Deny"
     bypass         = ["Metrics", "Logging", "AzureServices"]
     virtual_network_subnet_ids = [
-      data.azurerm_subnet.complex_cases_ui_subnet,
-      data.azurerm_subnet.complex_cases_egressMock_subnet,
-      data.azurerm_subnet.complex_cases_netAppMock_subnet
+      azurerm_subnet.sn_complex_cases_ui_subnet,
+      azurerm_subnet.sn_complex_cases_egressMock_subnet,
+      azurerm_subnet.sn_complex_cases_netAppMock_subnet
     ]
   }
 
@@ -44,6 +44,8 @@ resource "azurerm_storage_account" "sacpsccui" {
   }
 
   tags = local.common_tags
+
+  depends_on = [azurerm_subnet.sn_complex_cases_storage_subnet]
 }
 
 resource "azurerm_storage_account_queue_properties" "sacpsccui_queue_properties" {
@@ -73,7 +75,7 @@ resource "azurerm_private_endpoint" "sacpsccui_blob_pe" {
   name                = "sacps${var.environment.alias != "prod" ? var.environment.alias : ""}ccui-blob-pe"
   resource_group_name = azurerm_resource_group.rg_complex_cases.name
   location            = azurerm_resource_group.rg_complex_cases.location
-  subnet_id           = data.azurerm_subnet.complex_cases_storage_subnet.id
+  subnet_id           = azurerm_subnet.sn_complex_cases_storage_subnet.id
   tags                = local.common_tags
 
   private_dns_zone_group {
@@ -93,7 +95,7 @@ resource "azurerm_private_endpoint" "sacpsccui_table_pe" {
   name                = "sacps${var.environment.alias != "prod" ? var.environment.alias : ""}ccui-table-pe"
   resource_group_name = azurerm_resource_group.rg_complex_cases.name
   location            = azurerm_resource_group.rg_complex_cases.location
-  subnet_id           = data.azurerm_subnet.complex_cases_storage_subnet.id
+  subnet_id           = azurerm_subnet.sn_complex_cases_storage_subnet.id
   tags                = local.common_tags
 
   private_dns_zone_group {
@@ -113,7 +115,7 @@ resource "azurerm_private_endpoint" "sacpsccui_file_pe" {
   name                = "sacps${var.environment.alias != "prod" ? var.environment.alias : ""}ccui-file-pe"
   resource_group_name = azurerm_resource_group.rg_complex_cases.name
   location            = azurerm_resource_group.rg_complex_cases.location
-  subnet_id           = data.azurerm_subnet.complex_cases_storage_subnet.id
+  subnet_id           = azurerm_subnet.sn_complex_cases_storage_subnet.id
   tags                = local.common_tags
 
   private_dns_zone_group {

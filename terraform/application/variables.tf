@@ -50,3 +50,14 @@ variable "dns_server" {
 variable "dns_alt_server" {
   type = string
 }
+
+variable "subnets" {
+  type = object({
+    storage    = list(string)
+    ui         = list(string)
+    api        = list(string)
+    endpoints  = list(string)
+    egressMock = list(string)
+    netAppMock = list(string)
+  })
+}

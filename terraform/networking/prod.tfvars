@@ -16,11 +16,5 @@ appinsights_configuration = {
 
 
 subnets = {
-  ampls      = []
-  storage    = []
-  ui         = []
-  api        = []
-  endpoints  = []
-  egressMock = []
-  netAppMock = []
+  ampls      = ["10.7.184.32/28"]
 }

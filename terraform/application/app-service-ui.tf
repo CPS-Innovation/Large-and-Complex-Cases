@@ -9,7 +9,7 @@ resource "azurerm_linux_web_app" "complex_cases_ui" {
   resource_group_name           = azurerm_resource_group.rg_complex_cases.name
   service_plan_id               = azurerm_service_plan.asp_complex_cases_ui.id
   https_only                    = true
-  virtual_network_subnet_id     = data.azurerm_subnet.complex_cases_ui_subnet.id
+  virtual_network_subnet_id     = azurerm_subnet.sn_complex_cases_ui_subnet.id
   public_network_access_enabled = false
   client_certificate_enabled    = false
 
@@ -276,7 +276,7 @@ resource "azurerm_private_endpoint" "complex_cases_ui_pe" {
   name                = "${azurerm_linux_web_app.complex_cases_ui.name}-pe"
   resource_group_name = azurerm_resource_group.rg_complex_cases.name
   location            = azurerm_resource_group.rg_complex_cases.location
-  subnet_id           = data.azurerm_subnet.complex_cases_endpoints_subnet.id
+  subnet_id           = azurerm_subnet.sn_complex_cases_endpoints_subnet.id
   tags                = local.common_tags
 
   private_dns_zone_group {

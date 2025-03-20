@@ -32,3 +32,12 @@ service_capacity = {
   netAppMock_minimum_capacity = 1
   netAppMock_max_capacity     = 2
 }
+
+subnets = {
+  storage    = ["10.7.184.48/28"]
+  ui         = ["10.7.184.64/27"]
+  api        = ["10.7.184.96/27"]
+  endpoints  = ["10.7.184.128/27"]
+  egressMock = ["10.7.184.160/28"]
+  netAppMock = ["10.7.184.176/28"]
+}
