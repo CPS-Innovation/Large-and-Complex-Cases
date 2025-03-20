@@ -26,7 +26,7 @@ stages:
   - stage: Apply_DEV
     displayName: DEV > Apply Terraform
     jobs:
-      - deployment: Apply_Networking_Terraform
+      - deployment: Apply_DEV_Networking_Terraform
         environment: "Dev"
         workspace:
           clean: all
@@ -60,7 +60,7 @@ stages:
   #   dependsOn: Apply_DEV
   #   condition: succeeded()
   #   jobs:
-  #     - deployment: Apply_Networking_Terraform
+  #     - deployment: Apply_QA_Networking_Terraform
   #       environment: "QA"
   #       workspace:
   #         clean: all
@@ -94,7 +94,7 @@ stages:
   #   dependsOn: Apply_DEV
   #   condition: succeeded()
   #   jobs:
-  #     - deployment: Apply_Networking_Terraform
+  #     - deployment: Apply_PROD_Networking_Terraform
   #       environment: "Prod"
   #       workspace:
   #         clean: all
