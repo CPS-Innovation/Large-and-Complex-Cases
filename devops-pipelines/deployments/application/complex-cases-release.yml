@@ -17,7 +17,6 @@ variables:
   - group: complex-cases-secure-pre-prod
   - group: complex-cases-secure-prod
   - group: complex-cases-global
-  - group: complex-cases-status-check-endpoints
   - group: complex-cases-terraform
 
 stages:
