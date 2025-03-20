@@ -118,7 +118,7 @@ const CaseSearchResultPage = () => {
             <Select
               label={{
                 htmlFor: "search-operation-area",
-                children: "Select Area",
+                children: "Select area",
                 className: styles.areaSelectLabel,
               }}
               id="search-operation-area"
@@ -238,11 +238,25 @@ const CaseSearchResultPage = () => {
   const getTitleText = () => {
     switch (formData[SearchFormField.searchType]) {
       case "operation name":
-        return "Search for Operation name ";
+        return (
+          <>
+            Search results for operation{" "}
+            <b>{`"${searchParams["operation-name"]}"`}</b>
+          </>
+        );
       case "defendant name":
-        return "Search for Defendant surname";
+        return (
+          <>
+            Search results for defendant surname{" "}
+            <b>{`"${searchParams["defendant-name"]}"`}</b>
+          </>
+        );
       default:
-        return "Search for URN";
+        return (
+          <>
+            Search results for URN <b>{`"${searchParams["urn"]}"`}</b>
+          </>
+        );
     }
   };
 
@@ -261,41 +275,70 @@ const CaseSearchResultPage = () => {
     if (apiState.status !== "succeeded") return <> </>;
     const resultString =
       apiState.status === "succeeded" && apiState?.data?.length < 2
-        ? "result"
-        : "results";
+        ? "case"
+        : "cases";
 
-    const resultHtml = apiState.data.length ? (
-      <>
-        We've found {apiState?.data?.length} {resultString} for{" "}
-      </>
-    ) : (
-      <>There are no matching results for </>
-    );
+    if (apiState.data.length) {
+      const resultHtml = (
+        <>
+          <b>{apiState?.data?.length}</b> {resultString}{" "}
+        </>
+      );
+      switch (formData[SearchFormField.searchType]) {
+        case "operation name":
+          return (
+            <>
+              {resultHtml}
+              found in <b>{getAreaTextFromValue(searchParams["area"])}</b>.
+              Select a case to view more details.
+            </>
+          );
+        case "defendant name":
+          return (
+            <>
+              {resultHtml}
+              found in <b>{getAreaTextFromValue(searchParams["area"])}</b>.
+              Select a case to view more details.
+            </>
+          );
+        default:
+          return (
+            <>
+              {resultHtml}
+              found. Select a case to view more details.
+            </>
+          );
+      }
+    }
+
     switch (formData[SearchFormField.searchType]) {
       case "operation name":
         return (
           <>
-            {resultHtml}
-            <b>{searchParams["operation-name"]}</b> in{" "}
-            {getAreaTextFromValue(searchParams["area"])}.
+            There are <b>no cases</b> matching the operation name in{" "}
+            <b>{getAreaTextFromValue(searchParams["area"])}</b>.
           </>
         );
       case "defendant name":
         return (
           <>
-            {resultHtml}
-            <b>{searchParams["defendant-name"]}</b> in{" "}
-            {getAreaTextFromValue(searchParams["area"])}.
+            There are <b>no cases</b> matching the defendant surname in{" "}
+            <b>{getAreaTextFromValue(searchParams["area"])}</b>.
           </>
         );
-      default:
+      case "urn":
         return (
           <>
-            {resultHtml}
-            <b>{searchParams["urn"]}</b>.
+            There are <b>no cases</b> matching the urn.
           </>
         );
     }
+  };
+
+  const getSearchTypeText = () => {
+    if (formData[SearchFormField.searchType] === "defendant name")
+      return "defendant surname";
+    return formData[SearchFormField.searchType];
   };
 
   const getTableRowData = () => {
@@ -392,7 +435,7 @@ const CaseSearchResultPage = () => {
         )}
       </div>
 
-      <div className={styles.resultsTable}>
+      <div className={styles.results}>
         {apiState.status === "succeeded" && !!apiState.data.length && (
           <Table
             head={[
@@ -424,15 +467,15 @@ const CaseSearchResultPage = () => {
         {apiState.status === "succeeded" && !apiState.data.length && (
           <div className={styles.noResultsContent}>
             <div>
-              <b>You can:</b>
+              <span>You can:</span>
             </div>
             <ul className="govuk-list govuk-list--bullet">
-              <li>check CMS to see if the case exists</li>
-              <li>check the spelling of your search</li>
+              <li>check for spelling mistakes in the {getSearchTypeText()}.</li>
               <li>
-                check with your Unit Manager to see if the case is restricted
+                check the Case Management System to make sure the case exists
+                and that you have access.
               </li>
-              <li>contact the Service Desk</li>
+              <li>contact the product team if you need further help.</li>
             </ul>
           </div>
         )}

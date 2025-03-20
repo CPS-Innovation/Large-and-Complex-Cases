@@ -88,11 +88,7 @@ const CaseSearchPage = () => {
         <div>
           <div className={styles.inputWrapper}>
             <Radios
-              fieldset={{
-                legend: {
-                  children: <b>Search Large and Complex Cases</b>,
-                },
-              }}
+              aria-label="choose search type"
               hint={{
                 children: "Select one option",
               }}

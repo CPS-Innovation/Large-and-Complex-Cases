@@ -22,10 +22,12 @@ test.describe("Case Search", () => {
     await expect(page).toHaveURL(
       /\/search-results\?operation-name=thunder&area=1057708/,
     );
-    await expect(page.locator("h1")).toHaveText("Search for Operation name");
+    await expect(page.locator("h1")).toHaveText(
+      `Search results for operation "thunder"`,
+    );
     await expect(
       page.getByText(
-        "We've found 2 results for thunder in Organised Crime Division.",
+        "2 cases found in Organised Crime Division. Select a case to view more details.",
       ),
     ).toBeVisible();
 
@@ -80,10 +82,12 @@ test.describe("Case Search", () => {
     await expect(page).toHaveURL(
       /\/search-results\?defendant-name=thunder&area=1057708/,
     );
-    await expect(page.locator("h1")).toHaveText("Search for Defendant surname");
+    await expect(page.locator("h1")).toHaveText(
+      `Search results for defendant surname "thunder"`,
+    );
     await expect(
       page.getByText(
-        "We've found 2 results for thunder in Organised Crime Division.",
+        "2 cases found in Organised Crime Division. Select a case to view more details.",
       ),
     ).toBeVisible();
 
@@ -131,9 +135,11 @@ test.describe("Case Search", () => {
 
     await page.locator('button:text("search")').click();
     await expect(page).toHaveURL(/\/search-results\?urn=11AA2222233/);
-    await expect(page.locator("h1")).toHaveText("Search for URN");
+    await expect(page.locator("h1")).toHaveText(
+      `Search results for URN "11AA2222233"`,
+    );
     await expect(
-      page.getByText("We've found 2 results for 11AA2222233."),
+      page.getByText("2 cases found. Select a case to view more details."),
     ).toBeVisible();
 
     await expect(page.getByTestId("search-urn")).toHaveValue("11AA2222233");
@@ -175,9 +181,13 @@ test.describe("Case Search Results", () => {
     const areaSelect = await page.getByTestId("search-operation-area");
     const options = await areaSelect.locator("option").allTextContents();
     expect(options).toHaveLength(51);
-    await expect(page.locator("h1")).toHaveText("Search for Operation name");
+    await expect(page.locator("h1")).toHaveText(
+      `Search results for operation "thunder"`,
+    );
     await expect(
-      page.getByText("We've found 2 results for thunder in Sussex."),
+      page.getByText(
+        "2 cases found in Sussex. Select a case to view more details.",
+      ),
     ).toBeVisible();
 
     await expect(page.getByTestId("search-operation-name")).toHaveValue(
@@ -219,10 +229,12 @@ test.describe("Case Search Results", () => {
     const areaSelect = await page.getByTestId("search-defendant-area");
     const options = await areaSelect.locator("option").allTextContents();
     expect(options).toHaveLength(51);
-    await expect(page.locator("h1")).toHaveText("Search for Defendant surname");
+    await expect(page.locator("h1")).toHaveText(
+      `Search results for defendant surname "thunder"`,
+    );
     await expect(
       page.getByText(
-        "We've found 2 results for thunder in Organised Crime Division.",
+        "2 cases found in Organised Crime Division. Select a case to view more details.",
       ),
     ).toBeVisible();
 
@@ -264,9 +276,11 @@ test.describe("Case Search Results", () => {
     await page.goto("/search-results?urn=11AA2222233");
     await page.waitForResponse(`https://mocked-out-api/api/areas`);
     await page.waitForResponse(`https://mocked-out-api/api/case-search?*`);
-    await expect(page.locator("h1")).toHaveText("Search for URN");
+    await expect(page.locator("h1")).toHaveText(
+      `Search results for URN "11AA2222233"`,
+    );
     await expect(
-      page.getByText("We've found 2 results for 11AA2222233."),
+      page.getByText("2 cases found. Select a case to view more details."),
     ).toBeVisible();
 
     await expect(page.getByTestId("search-urn")).toHaveValue("11AA2222233");
@@ -312,21 +326,19 @@ test.describe("Case Search Results", () => {
     await page.waitForResponse(`https://mocked-out-api/api/areas`);
     await page.waitForResponse(`https://mocked-out-api/api/case-search?*`);
 
-    await expect(page.locator("h1")).toHaveText("Search for URN");
+    await expect(page.locator("h1")).toHaveText(
+      `Search results for URN "11AA2222233"`,
+    );
     await expect(
-      page.getByText("There are no matching results for 11AA2222233."),
-    ).toBeVisible();
-    await expect(
-      page.getByText("There are no matching results for 11AA2222233."),
+      page.getByText("There are no cases matching the urn."),
     ).toBeVisible();
 
     const listItems = page.locator("ul > li");
-    await expect(listItems).toHaveCount(4);
+    await expect(listItems).toHaveCount(3);
     await expect(listItems).toHaveText([
-      "check CMS to see if the case exists",
-      "check the spelling of your search",
-      "check with your Unit Manager to see if the case is restricted",
-      "contact the Service Desk",
+      "check for spelling mistakes in the urn.",
+      "check the Case Management System to make sure the case exists and that you have access.",
+      "contact the product team if you need further help.",
     ]);
   });
 });
