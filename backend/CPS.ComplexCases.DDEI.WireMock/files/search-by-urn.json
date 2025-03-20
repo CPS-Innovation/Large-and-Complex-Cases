@@ -1,7 +1,7 @@
 [
   {
     "id": 2149310,
-    "urn": "45CV2911222",
+    "urn": "{{request.PathSegments.[2]}}",
     "status": "Pending",
     "appeal": false,
     "deleted": false,

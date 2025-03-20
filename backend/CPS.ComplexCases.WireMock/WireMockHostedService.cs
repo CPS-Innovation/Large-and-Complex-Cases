@@ -5,10 +5,10 @@ namespace CPS.ComplexCases.NetApp.WireMock
 {
     public class WireMockHostedService : IHostedService
     {
-        private readonly NetAppWireMock _wireMock;
+        private readonly ComplexCasesWireMock _wireMock;
         private readonly ILogger<WireMockHostedService> _logger;
 
-        public WireMockHostedService(NetAppWireMock wireMock, ILogger<WireMockHostedService> logger)
+        public WireMockHostedService(ComplexCasesWireMock wireMock, ILogger<WireMockHostedService> logger)
         {
             _wireMock = wireMock;
             _logger = logger;

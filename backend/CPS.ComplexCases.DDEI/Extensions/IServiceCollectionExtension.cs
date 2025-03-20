@@ -6,48 +6,46 @@ using CPS.ComplexCases.DDEI.Factories;
 using CPS.ComplexCases.DDEI.Mappers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
+using Polly.Retry;
 
 namespace CPS.ComplexCases.DDEI.Extensions;
 
 public static class IServiceCollectionExtension
 {
-  private const string FunctionKey = "x-functions-key";
-  private const string DdeiBaseUrlConfigKey = "DdeiBaseUrl";
-  private const string DdeiAccessKeyConfigKey = "DdeiAccessKey";
-  private const string DdeiDevtunnelTokenKey = "X-Tunnel-Authorization";
-  private const string DdeiDevtunnelToken = "DdeiDevtunnelToken";
   private const int RetryAttempts = 1;
   private const int FirstRetryDelaySeconds = 1;
 
   public static void AddDdeiClient(this IServiceCollection services, IConfiguration configuration)
   {
+    services.Configure<DDEIOptions>(configuration.GetSection(nameof(DDEIOptions)));
     services.AddTransient<IDdeiArgFactory, DdeiArgFactory>();
-
-    services.AddHttpClient<IDdeiClient, DdeiClient>((service, client) => AddDdeiClient(configuration, client))
+    services.AddHttpClient<IDdeiClient, DdeiClient>(AddDdeiClient)
       .SetHandlerLifetime(TimeSpan.FromMinutes(5))
       .AddPolicyHandler(GetRetryPolicy());
-
     services.AddTransient<IDdeiRequestFactory, DdeiRequestFactory>();
     services.AddTransient<ICaseDetailsMapper, CaseDetailsMapper>();
     services.AddTransient<IAreasMapper, AreasMapper>();
+    services.AddTransient<IMockSwitch, MockSwitch>();
   }
 
-  internal static void AddDdeiClient(IConfiguration configuration, HttpClient client)
+  internal static void AddDdeiClient(IServiceProvider configuration, HttpClient client)
   {
-    var baseUrl = configuration[DdeiBaseUrlConfigKey] ?? throw new ArgumentNullException(DdeiBaseUrlConfigKey);
-    client.BaseAddress = new Uri(baseUrl);
-    client.DefaultRequestHeaders.Add(FunctionKey, configuration[DdeiAccessKeyConfigKey]);
+    var opts = configuration.GetService<IOptions<DDEIOptions>>()?.Value ?? throw new ArgumentNullException(nameof(DDEIOptions));
+
+    client.BaseAddress = new Uri(opts.BaseUrl);
+    client.DefaultRequestHeaders.Add(DDEIOptions.FunctionKey, opts.AccessKey);
     client.DefaultRequestHeaders.CacheControl = new CacheControlHeaderValue { NoCache = true };
 
-    if (baseUrl.Contains("devtunnels.ms") && !string.IsNullOrWhiteSpace(configuration[DdeiDevtunnelToken]))
+    if (opts.BaseUrl.Contains(DDEIOptions.DevtunnelUrlFragment) && !string.IsNullOrWhiteSpace(DDEIOptions.DevtunnelTokenKey))
     {
-      client.DefaultRequestHeaders.Add(DdeiDevtunnelTokenKey, $"tunnel {configuration[DdeiDevtunnelToken]}");
+      client.DefaultRequestHeaders.Add(DDEIOptions.DevtunnelTokenKey, opts.DevtunnelToken);
     }
   }
 
-  private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
+  private static AsyncRetryPolicy<HttpResponseMessage> GetRetryPolicy()
   {
     // https://learn.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/implement-http-call-retries-exponential-backoff-polly#add-a-jitter-strategy-to-the-retry-policy
     var delay = Backoff.DecorrelatedJitterBackoffV2(

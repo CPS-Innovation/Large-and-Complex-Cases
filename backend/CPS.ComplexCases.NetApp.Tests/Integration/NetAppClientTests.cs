@@ -5,6 +5,7 @@ using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.WireMock.Mappings;
 using CPS.ComplexCases.NetApp.Wrappers;
+using CPS.ComplexCases.WireMock.Core;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using WireMock.Server;
@@ -21,10 +22,12 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
 
         public NetAppClientTests()
         {
-            _server = WireMockServer.Start();
-
-            new BucketMapping().Configure(_server);
-            new ObjectMapping().Configure(_server);
+            _server = WireMockServer
+                .Start()
+                .LoadMappings(
+                    new BucketMapping(),
+                    new ObjectMapping()
+                );
 
             var s3ClientConfig = new AmazonS3Config
             {

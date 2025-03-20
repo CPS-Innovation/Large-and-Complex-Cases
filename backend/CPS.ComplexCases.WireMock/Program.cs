@@ -9,7 +9,7 @@ var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services.AddLogging(logging => logging.AddConsole().AddDebug());
 
-builder.Services.AddSingleton<NetAppWireMock>();
+builder.Services.AddSingleton<ComplexCasesWireMock>();
 
 #if DEBUG
 builder.Services.Configure<WireMockServerSettings>(
