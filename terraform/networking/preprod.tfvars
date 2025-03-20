@@ -4,6 +4,8 @@ environment = {
 }
 
 terraform_service_principal_display_name = "Azure Pipeline: LaCC-PreProd"
+subscription_id                          = "7f67e716-03c5-4675-bad2-cc5e28652759"
+nsg_name                                 = "basicNsgVNET-LaCC-WANNET-nic01"
 
 appinsights_configuration = {
   log_retention_days                   = 90
@@ -16,5 +18,5 @@ appinsights_configuration = {
 
 
 subnets = {
-  ampls      = ["10.7.184.32/28"]
+  ampls = ["10.7.184.32/28"]
 }

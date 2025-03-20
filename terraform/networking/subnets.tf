@@ -13,3 +13,9 @@ resource "azurerm_subnet_route_table_association" "rt_assocation_complex_cases_a
   subnet_id      = azurerm_subnet.sn_complex_cases_ampls_subnet.id
   depends_on     = [azurerm_subnet.sn_complex_cases_ampls_subnet]
 }
+
+resource "azurerm_subnet_network_security_group_association" "nsg_association_complex_cases_ampls_subnet" {
+  network_security_group_id = data.azurerm_network_security_group.complex_cases_nsg.id
+  subnet_id                 = azurerm_subnet.sn_complex_cases_ampls_subnet.id
+  depends_on                = [azurerm_subnet.sn_complex_cases_ampls_subnet]
+}
