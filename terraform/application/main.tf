@@ -68,7 +68,7 @@ resource "random_uuid" "random_id" {
 }
 
 locals {
-  product_name       = "LaCC"
+  product_name       = "lacc"
   resource_suffix    = var.environment.alias != "prod" ? "-${var.environment.alias}" : ""
   shared_suffix      = var.environment.alias != "prod" ? "preprod" : ""
   shared_prefix      = var.environment.alias != "prod" ? "-preprod" : ""

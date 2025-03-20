@@ -14,5 +14,5 @@ data "azurerm_route_table" "complex_cases_rt" {
 
 data "azurerm_key_vault" "terraform_key_vault" {
   name                = "${local.product_name}kv${local.shared_suffix}terraform"
-  resource_group_name = "rg-${local.product_name}terraform"
+  resource_group_name = "rg-${local.product_name}-terraform"
 }
