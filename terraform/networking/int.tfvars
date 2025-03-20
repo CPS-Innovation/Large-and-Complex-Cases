@@ -3,7 +3,7 @@ environment = {
   alias = "int"
 }
 
-terraform_service_principal_display_name = "Azure Pipeline: Complex-Cases-INT"
+terraform_service_principal_display_name = "Azure Pipeline: LaCC-PreProd"
 
 appinsights_configuration = {
   log_retention_days                   = 90
