@@ -23,7 +23,7 @@ pool:
   vmImage: ubuntu-latest
 
 stages:
-  - stage: Apply_PRE-PROD
+  - stage: Apply_PREPROD
     displayName: PRE-PROD > Apply Terraform
     jobs:
       - deployment: Apply_PRE-PROD_Networking_Terraform
@@ -57,7 +57,7 @@ stages:
   # Apply to PROD              
   # - stage: Apply_PROD
   #   displayName: PROD > Apply Terraform
-  #   dependsOn: Apply_PRE-PROD
+  #   dependsOn: Apply_PREPROD
   #   condition: succeeded()
   #   jobs:
   #     - deployment: Apply_PROD_Networking_Terraform
