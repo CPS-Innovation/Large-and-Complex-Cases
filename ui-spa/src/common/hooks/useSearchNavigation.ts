@@ -12,21 +12,11 @@ const useSearchNavigation = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const updateSearchParams = (params: SearchParamsType) => {
-    // Remove undefined values to avoid unnecessary empty params
-    const filteredParams = Object.fromEntries(
-      Object.entries(params).filter(([_, value]) => value),
-    );
-
-    setSearchParams(filteredParams);
+    setSearchParams(params);
   };
 
   const navigateWithParams = (params: SearchParamsType) => {
-    const queryString = new URLSearchParams(
-      Object.entries(params).filter(([_, value]) => value),
-    ).toString();
-
-    queryString.replace("operationName", "operation-name");
-    queryString.replace("defendantName", "defendant-name");
+    const queryString = new URLSearchParams(Object.entries(params)).toString();
 
     navigate(`/search-results?${queryString}`);
   };
