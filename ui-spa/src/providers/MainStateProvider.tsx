@@ -26,10 +26,6 @@ export const MainStateProvider: React.FC<MainStateProviderProps> = (props) => {
     return state;
   }, [state]);
 
-  // const memoisedDispatch = useCallback(() => {
-  //   return dispatch;
-  // }, [dispatch]);
-
   return (
     <MainStateContext.Provider value={{ state: memoisedState, dispatch }}>
       {props.children}
