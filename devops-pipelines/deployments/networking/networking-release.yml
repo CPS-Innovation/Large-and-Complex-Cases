@@ -26,8 +26,8 @@ stages:
   - stage: Apply_PREPROD
     displayName: PREPROD > Apply Terraform
     jobs:
-      - deployment: Apply_PRE-PROD_Networking_Terraform
-        environment: "LaCC_PRE-PROD"
+      - deployment: Apply_PREPROD_Networking_Terraform
+        environment: "LaCC_PREPROD"
         workspace:
           clean: all
         strategy:
