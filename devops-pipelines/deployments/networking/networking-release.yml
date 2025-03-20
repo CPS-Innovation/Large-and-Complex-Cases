@@ -61,7 +61,7 @@ stages:
   #   condition: succeeded()
   #   jobs:
   #     - deployment: Apply_PROD_Networking_Terraform
-  #       environment: "Prod"
+  #       environment: "LaCC_PROD"
   #       workspace:
   #         clean: all
   #       strategy:
