@@ -15,7 +15,7 @@ appinsights_configuration = {
 }
 
 
-subnets {
+subnets = {
   ampls      = ["10.7.184.32/28"]
   storage    = ["10.7.184.48/28"]
   ui         = ["10.7.184.64/27"]

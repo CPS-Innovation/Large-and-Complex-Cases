@@ -1,9 +1,9 @@
 environment = {
-  name  = "e2e"
-  alias = "e2e"
+  name  = "int"
+  alias = "int"
 }
 
-terraform_service_principal_display_name = "Azure Pipeline: Complex-Cases-E2E"
+terraform_service_principal_display_name = "Azure Pipeline: Complex-Cases-INT"
 
 appinsights_configuration = {
   log_retention_days                   = 90
@@ -15,7 +15,7 @@ appinsights_configuration = {
 }
 
 
-subnets {
+subnets = {
   ampls      = []
   storage    = []
   ui         = []
