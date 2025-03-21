@@ -15,7 +15,17 @@ export default defineConfig({
       reporter: ["text", "json", "html"],
       provider: "v8",
       include: ["src/*"],
-      exclude: ["src/mocks"],
+      exclude: [
+        "src/mocks",
+        "src/common/types",
+        "src/components",
+        "src/auth/mock",
+        "src/auth/no-auth",
+        "src/config.ts",
+        "src/types.d.ts",
+        "src/vite-env.d.ts",
+        "src/main.tsx",
+      ],
     },
   },
   server: {

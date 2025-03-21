@@ -4,7 +4,11 @@ import {
 } from "../../common/types/LooksupData";
 
 const areaSortFn = (a: CaseDivisionsOrArea, b: CaseDivisionsOrArea) =>
-  a.description < b.description ? -1 : a.description > b.description ? 1 : 0;
+  a.description.toLowerCase() < b.description.toLowerCase()
+    ? -1
+    : a.description.toLowerCase() > b.description.toLowerCase()
+      ? 1
+      : 0;
 
 export const mapAreaLookups = ({
   allAreas,
