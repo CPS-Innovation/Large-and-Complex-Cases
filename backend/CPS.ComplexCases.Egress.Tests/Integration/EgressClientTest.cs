@@ -2,7 +2,7 @@ using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
 using CPS.ComplexCases.Egress.WireMock.Mappings;
-using Microsoft.Extensions.Configuration;
+using CPS.ComplexCases.WireMock.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using WireMock.Server;
@@ -16,14 +16,15 @@ public class EgressClientTests : IDisposable
     private readonly EgressArgFactory _egressArgFactory;
     public EgressClientTests()
     {
-        _server = WireMockServer.Start();
-
-        AppDomain.CurrentDomain.GetAssemblies()
-            .SelectMany(s => s.GetTypes())
-            .Where(p => typeof(IWireMockMapping).IsAssignableFrom(p) && !p.IsInterface)
-            .Select(p => (IWireMockMapping)Activator.CreateInstance(p))
-            .ToList()
-            .ForEach(m => m.Configure(_server));
+        _server = WireMockServer
+            .Start()
+            .LoadMappings(
+                new CaseDocumentMapping(),
+                new CaseMaterialMapping(),
+                new FindWorkspaceMapping(),
+                new WorkspacePermissionsMapping(),
+                new WorkspaceTokenMapping()
+            );
 
         var egressOptions = new EgressOptions
         {

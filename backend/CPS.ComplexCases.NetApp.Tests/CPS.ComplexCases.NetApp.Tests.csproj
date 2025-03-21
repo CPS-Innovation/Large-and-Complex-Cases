@@ -11,6 +11,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CPS.ComplexCases.NetApp\CPS.ComplexCases.NetApp.csproj" />
+    <ProjectReference
+      Include="..\CPS.ComplexCases.NetApp.WireMock\CPS.ComplexCases.NetApp.WireMock.csproj" />
+    <ProjectReference
+      Include="..\CPS.ComplexCases.WireMock.Core\CPS.ComplexCases.WireMock.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

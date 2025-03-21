@@ -1,0 +1,2266 @@
+[
+  {
+    "areaId": 2,
+    "areaDescription": "RMU area",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 3,
+    "description": "RMU unit"
+  },
+  {
+    "areaId": 5,
+    "areaDescription": "LogicaCMG Support Area",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 6,
+    "description": "LogicaCMG Support Unit"
+  },
+  {
+    "areaId": 1001,
+    "areaDescription": "Surrey",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2001,
+    "description": "Surrey Trials Unit"
+  },
+  {
+    "areaId": 1001,
+    "areaDescription": "Surrey",
+    "unitGroupId": 81,
+    "unitGroupDescription": "South East Magistrates Court Unit",
+    "id": 2002,
+    "description": "Guildford Mags"
+  },
+  {
+    "areaId": 1001,
+    "areaDescription": "Surrey",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2003,
+    "description": "Reigate Criminal Justice Unit"
+  },
+  {
+    "areaId": 1001,
+    "areaDescription": "Surrey",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2004,
+    "description": "Staines Criminal Justice Unit"
+  },
+  {
+    "areaId": 1002,
+    "areaDescription": "Stafford",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2005,
+    "description": "Stafford CJU"
+  },
+  {
+    "areaId": 1002,
+    "areaDescription": "Stafford",
+    "unitGroupId": 98,
+    "unitGroupDescription": "Crown Court Unit Group",
+    "id": 2006,
+    "description": "Stafford TU"
+  },
+  {
+    "areaId": 1003,
+    "areaDescription": "West Yorkshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2007,
+    "description": "Leeds TU"
+  },
+  {
+    "areaId": 1003,
+    "areaDescription": "West Yorkshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2008,
+    "description": "Leeds CJU - TEAM ONE - ORANGE TEAM"
+  },
+  {
+    "areaId": 1003,
+    "areaDescription": "West Yorkshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2009,
+    "description": "City and Holbeck Combined Unit"
+  },
+  {
+    "areaId": 1003,
+    "areaDescription": "West Yorkshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2010,
+    "description": "Leeds CJU - TEAM THREE - GREEN TEAM"
+  },
+  {
+    "areaId": 1006,
+    "areaDescription": "Durham",
+    "unitGroupId": 76,
+    "unitGroupDescription": "Durham Tees MC",
+    "id": 2019,
+    "description": "Durham Criminal Justice Unit"
+  },
+  {
+    "areaId": 1006,
+    "areaDescription": "Durham",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2020,
+    "description": "Durham Trials Unit"
+  },
+  {
+    "areaId": 1003,
+    "areaDescription": "West Yorkshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2021,
+    "description": "BRADFORD CJU"
+  },
+  {
+    "areaId": 1003,
+    "areaDescription": "West Yorkshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2022,
+    "description": "BRADFORD TU"
+  },
+  {
+    "areaId": 1003,
+    "areaDescription": "West Yorkshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2023,
+    "description": "CALDER CJU"
+  },
+  {
+    "areaId": 1003,
+    "areaDescription": "West Yorkshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2024,
+    "description": "KIRKLEES CJU"
+  },
+  {
+    "areaId": 1003,
+    "areaDescription": "West Yorkshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2025,
+    "description": "WAKEFIELD CJU"
+  },
+  {
+    "areaId": 1007,
+    "areaDescription": "Cheshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2026,
+    "description": "Warrington MCU"
+  },
+  {
+    "areaId": 1007,
+    "areaDescription": "Cheshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2027,
+    "description": "Warrington CCU"
+  },
+  {
+    "areaId": 1007,
+    "areaDescription": "Cheshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2028,
+    "description": "Chester MCU"
+  },
+  {
+    "areaId": 1007,
+    "areaDescription": "Cheshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2029,
+    "description": "Chester CCU"
+  },
+  {
+    "areaId": 1007,
+    "areaDescription": "Cheshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2030,
+    "description": "Crewe MCU"
+  },
+  {
+    "areaId": 1007,
+    "areaDescription": "Cheshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2031,
+    "description": "Area Secretariat"
+  },
+  {
+    "areaId": 1008,
+    "areaDescription": "CAMBRIDGESHIRE",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2032,
+    "description": "NORTHERN CJU (Peterborough)"
+  },
+  {
+    "areaId": 1008,
+    "areaDescription": "CAMBRIDGESHIRE",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2033,
+    "description": "SOUTHERN CJU (Cambridge)"
+  },
+  {
+    "areaId": 1008,
+    "areaDescription": "CAMBRIDGESHIRE",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2034,
+    "description": "SOUTHERN CJU (Huntingon)"
+  },
+  {
+    "areaId": 1008,
+    "areaDescription": "CAMBRIDGESHIRE",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2035,
+    "description": "CAMBRIDGESHIRE TRIALS UNIT"
+  },
+  {
+    "areaId": 1009,
+    "areaDescription": "West Midlands",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2036,
+    "description": "Birmingham Trials Unit"
+  },
+  {
+    "areaId": 1009,
+    "areaDescription": "West Midlands",
+    "unitGroupId": 99,
+    "unitGroupDescription": "Magistrates Court Unit Group",
+    "id": 2037,
+    "description": "Magistrates Court Dept(Bham and Sutton Coldfield)"
+  },
+  {
+    "areaId": 1009,
+    "areaDescription": "West Midlands",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2038,
+    "description": "West Midlands BTP Magistrates Unit"
+  },
+  {
+    "areaId": 1009,
+    "areaDescription": "West Midlands",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2039,
+    "description": "Sutton Coldfield CJU"
+  },
+  {
+    "areaId": 1009,
+    "areaDescription": "West Midlands",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2040,
+    "description": "Birmingham E Div Co- Located CJU Bournville"
+  },
+  {
+    "areaId": 1009,
+    "areaDescription": "West Midlands",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2041,
+    "description": "Birmingham (North) D1 + D3 CJU"
+  },
+  {
+    "areaId": 1009,
+    "areaDescription": "West Midlands",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2042,
+    "description": "Birmingham Youth Team"
+  },
+  {
+    "areaId": 1009,
+    "areaDescription": "West Midlands",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2043,
+    "description": "Coventry Criminal Justice Unit"
+  },
+  {
+    "areaId": 1009,
+    "areaDescription": "West Midlands",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2044,
+    "description": "Coventry and Solihull Trials Unit"
+  },
+  {
+    "areaId": 1009,
+    "areaDescription": "West Midlands",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2045,
+    "description": "Solihull Criminal Justice Unit"
+  },
+  {
+    "areaId": 1009,
+    "areaDescription": "West Midlands",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2046,
+    "description": "Wolverhampton Trial Unit"
+  },
+  {
+    "areaId": 1009,
+    "areaDescription": "West Midlands",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2047,
+    "description": "Wolverhampton CJU"
+  },
+  {
+    "areaId": 1009,
+    "areaDescription": "West Midlands",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2048,
+    "description": "Brierley Hill CJU"
+  },
+  {
+    "areaId": 1009,
+    "areaDescription": "West Midlands",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2049,
+    "description": "West Bromwich CJU"
+  },
+  {
+    "areaId": 1009,
+    "areaDescription": "West Midlands",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2050,
+    "description": "Warley CJU"
+  },
+  {
+    "areaId": 1009,
+    "areaDescription": "West Midlands",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2051,
+    "description": "Halesowen CJU"
+  },
+  {
+    "areaId": 1009,
+    "areaDescription": "West Midlands",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2052,
+    "description": "Walsall CJU"
+  },
+  {
+    "areaId": 1010,
+    "areaDescription": "Suffolk",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2053,
+    "description": "Suffolk Trials Unit"
+  },
+  {
+    "areaId": 1010,
+    "areaDescription": "Suffolk",
+    "unitGroupId": 60,
+    "unitGroupDescription": "East of England Magistrates",
+    "id": 2054,
+    "description": "Suffolk CJU"
+  },
+  {
+    "areaId": 1011,
+    "areaDescription": "Thames Valley",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2055,
+    "description": "Bucks MC"
+  },
+  {
+    "areaId": 1011,
+    "areaDescription": "Thames Valley",
+    "unitGroupId": 90,
+    "unitGroupDescription": "Thames Valley CC",
+    "id": 2056,
+    "description": "Buckinghamshire TU"
+  },
+  {
+    "areaId": 1011,
+    "areaDescription": "Thames Valley",
+    "unitGroupId": 88,
+    "unitGroupDescription": "T&C MC Non-Contested",
+    "id": 2057,
+    "description": "Oxon MC"
+  },
+  {
+    "areaId": 1011,
+    "areaDescription": "Thames Valley",
+    "unitGroupId": 90,
+    "unitGroupDescription": "Thames Valley CC",
+    "id": 2058,
+    "description": "Oxon CC"
+  },
+  {
+    "areaId": 1011,
+    "areaDescription": "Thames Valley",
+    "unitGroupId": 87,
+    "unitGroupDescription": "T&C MC Contested",
+    "id": 2059,
+    "description": "Berks MC"
+  },
+  {
+    "areaId": 1011,
+    "areaDescription": "Thames Valley",
+    "unitGroupId": 90,
+    "unitGroupDescription": "Thames Valley CC",
+    "id": 2060,
+    "description": "Berkshire TU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2061,
+    "description": "Havering/Redbridge/Waltham Forest CJU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2062,
+    "description": "Barking/Newham CJU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2063,
+    "description": "Snaresbrook TU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2064,
+    "description": "Holborn CJU"
+  },
+  {
+    "areaId": 1013,
+    "areaDescription": "Warwickshire",
+    "unitGroupId": 99,
+    "unitGroupDescription": "Magistrates Court Unit Group",
+    "id": 2065,
+    "description": "Warwickshire Magistrates Court Unit"
+  },
+  {
+    "areaId": 1013,
+    "areaDescription": "Warwickshire",
+    "unitGroupId": 98,
+    "unitGroupDescription": "Crown Court Unit Group",
+    "id": 2066,
+    "description": "Warwickshire Crown Court Unit"
+  },
+  {
+    "areaId": 1014,
+    "areaDescription": "Cumbria",
+    "unitGroupId": 78,
+    "unitGroupDescription": "Lancs/Cumbria Magistrates Unit",
+    "id": 2067,
+    "description": "Barrow CJU"
+  },
+  {
+    "areaId": 1014,
+    "areaDescription": "Cumbria",
+    "unitGroupId": 79,
+    "unitGroupDescription": "Lancs/Cumbria Crown Court Unit",
+    "id": 2068,
+    "description": "Carlisle Combined"
+  },
+  {
+    "areaId": 1014,
+    "areaDescription": "Cumbria",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2069,
+    "description": "Kendal CJU"
+  },
+  {
+    "areaId": 1014,
+    "areaDescription": "Cumbria",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2070,
+    "description": "Southern Trials Unit Kendal"
+  },
+  {
+    "areaId": 1014,
+    "areaDescription": "Cumbria",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2071,
+    "description": "Workington Combined"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2072,
+    "description": "Barnet CJU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2073,
+    "description": "Harrow TU"
+  },
+  {
+    "areaId": 1015,
+    "areaDescription": "Sussex",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2074,
+    "description": "Eastbourne CJU"
+  },
+  {
+    "areaId": 1015,
+    "areaDescription": "Sussex",
+    "unitGroupId": 82,
+    "unitGroupDescription": "South East Crown Court Unit",
+    "id": 2075,
+    "description": "Brighton TU"
+  },
+  {
+    "areaId": 1015,
+    "areaDescription": "Sussex",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2076,
+    "description": "Crawley CJU"
+  },
+  {
+    "areaId": 1015,
+    "areaDescription": "Sussex",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2077,
+    "description": "Chichester CJU"
+  },
+  {
+    "areaId": 1015,
+    "areaDescription": "Sussex",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2078,
+    "description": "Chichester TU"
+  },
+  {
+    "areaId": 1015,
+    "areaDescription": "Sussex",
+    "unitGroupId": 81,
+    "unitGroupDescription": "South East Magistrates Court Unit",
+    "id": 2079,
+    "description": "Sussex CJU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2080,
+    "description": "Brent/Harrow CJU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2081,
+    "description": "Ealing/Hounslow CJU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2082,
+    "description": "Hillingdon/Heathrow BU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2084,
+    "description": "Isleworth TU"
+  },
+  {
+    "areaId": 1016,
+    "areaDescription": "Devon and Cornwall",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2085,
+    "description": "Truro Magistrates Court Unit"
+  },
+  {
+    "areaId": 1016,
+    "areaDescription": "Devon and Cornwall",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2086,
+    "description": "Truro Crown Court Unit"
+  },
+  {
+    "areaId": 1016,
+    "areaDescription": "Devon and Cornwall",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2087,
+    "description": "Exeter Crown Court Unit"
+  },
+  {
+    "areaId": 1016,
+    "areaDescription": "Devon and Cornwall",
+    "unitGroupId": 84,
+    "unitGroupDescription": "South West MC",
+    "id": 2088,
+    "description": "Exeter Magistrates Court Unit"
+  },
+  {
+    "areaId": 1016,
+    "areaDescription": "Devon and Cornwall",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2089,
+    "description": "Exeter Business Managers Unit"
+  },
+  {
+    "areaId": 1016,
+    "areaDescription": "Devon and Cornwall",
+    "unitGroupId": 84,
+    "unitGroupDescription": "South West MC",
+    "id": 2090,
+    "description": "Area Secretariat"
+  },
+  {
+    "areaId": 1016,
+    "areaDescription": "Devon and Cornwall",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2091,
+    "description": "Plymouth Magistrates Court Unit"
+  },
+  {
+    "areaId": 1016,
+    "areaDescription": "Devon and Cornwall",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2092,
+    "description": "Plymouth Crown Court Unit"
+  },
+  {
+    "areaId": 1016,
+    "areaDescription": "Devon and Cornwall",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2093,
+    "description": "Plymouth Business Managers Unit"
+  },
+  {
+    "areaId": 1017,
+    "areaDescription": "Kent",
+    "unitGroupId": 82,
+    "unitGroupDescription": "South East Crown Court Unit",
+    "id": 2094,
+    "description": "Maidstone Trials Unit"
+  },
+  {
+    "areaId": 1017,
+    "areaDescription": "Kent",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2095,
+    "description": "Canterbury Trials Unit"
+  },
+  {
+    "areaId": 1017,
+    "areaDescription": "Kent",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2096,
+    "description": "Medway Criminal Justice Unit"
+  },
+  {
+    "areaId": 1017,
+    "areaDescription": "Kent",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2097,
+    "description": "Maidstone Criminal Justice Unit"
+  },
+  {
+    "areaId": 1017,
+    "areaDescription": "Kent",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2098,
+    "description": "Gravesend Criminal Justice Unit"
+  },
+  {
+    "areaId": 1017,
+    "areaDescription": "Kent",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2099,
+    "description": "Folkestone Criminal Justice Unit"
+  },
+  {
+    "areaId": 1017,
+    "areaDescription": "Kent",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2100,
+    "description": "Canterbury Criminal Justice Unit"
+  },
+  {
+    "areaId": 1018,
+    "areaDescription": "Derbyshire",
+    "unitGroupId": 63,
+    "unitGroupDescription": "East Midlands North Magistrates",
+    "id": 2101,
+    "description": "Derbyshire South CJU"
+  },
+  {
+    "areaId": 1018,
+    "areaDescription": "Derbyshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2102,
+    "description": "Derbyshire North CJU"
+  },
+  {
+    "areaId": 1018,
+    "areaDescription": "Derbyshire",
+    "unitGroupId": 65,
+    "unitGroupDescription": "East Midlands North Crown",
+    "id": 2103,
+    "description": "Derbyshire Trials Unit"
+  },
+  {
+    "areaId": 1019,
+    "areaDescription": "South Wales",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2104,
+    "description": "Merthyr CJU"
+  },
+  {
+    "areaId": 1019,
+    "areaDescription": "South Wales",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2105,
+    "description": "Merthyr TU"
+  },
+  {
+    "areaId": 1019,
+    "areaDescription": "South Wales",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2106,
+    "description": "Bridgend CJU"
+  },
+  {
+    "areaId": 1019,
+    "areaDescription": "South Wales",
+    "unitGroupId": 91,
+    "unitGroupDescription": "Cymru-Wales MC",
+    "id": 2107,
+    "description": "Cardiff CJU"
+  },
+  {
+    "areaId": 1019,
+    "areaDescription": "South Wales",
+    "unitGroupId": 92,
+    "unitGroupDescription": "Cymru-Wales CC",
+    "id": 2108,
+    "description": "Cardiff TU"
+  },
+  {
+    "areaId": 1019,
+    "areaDescription": "South Wales",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2109,
+    "description": "Barry CJU"
+  },
+  {
+    "areaId": 1019,
+    "areaDescription": "South Wales",
+    "unitGroupId": 91,
+    "unitGroupDescription": "Cymru-Wales MC",
+    "id": 2110,
+    "description": "Swansea CJU"
+  },
+  {
+    "areaId": 1019,
+    "areaDescription": "South Wales",
+    "unitGroupId": 92,
+    "unitGroupDescription": "Cymru-Wales CC",
+    "id": 2111,
+    "description": "Swansea TU"
+  },
+  {
+    "areaId": 1019,
+    "areaDescription": "South Wales",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2112,
+    "description": "S Wales Area Secretariat"
+  },
+  {
+    "areaId": 1020,
+    "areaDescription": "Hampshire & IOW",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2113,
+    "description": "Special Casework Unit"
+  },
+  {
+    "areaId": 1020,
+    "areaDescription": "Hampshire & IOW",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2114,
+    "description": "Aldershot CJU"
+  },
+  {
+    "areaId": 1020,
+    "areaDescription": "Hampshire & IOW",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2115,
+    "description": "Basingstoke CJU"
+  },
+  {
+    "areaId": 1020,
+    "areaDescription": "Hampshire & IOW",
+    "unitGroupId": 97,
+    "unitGroupDescription": "Wessex Magistrates Court Unit",
+    "id": 2116,
+    "description": "Portsmouth CJU"
+  },
+  {
+    "areaId": 1020,
+    "areaDescription": "Hampshire & IOW",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2117,
+    "description": "Portsmouth TU"
+  },
+  {
+    "areaId": 1020,
+    "areaDescription": "Hampshire & IOW",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2118,
+    "description": "Southampton & New Forest CJU"
+  },
+  {
+    "areaId": 1020,
+    "areaDescription": "Hampshire & IOW",
+    "unitGroupId": 95,
+    "unitGroupDescription": "Wessex CC Allocated Unit",
+    "id": 2119,
+    "description": "Southampton TU"
+  },
+  {
+    "areaId": 1020,
+    "areaDescription": "Hampshire & IOW",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2120,
+    "description": "Newport (IOW) CJU & TU"
+  },
+  {
+    "areaId": 1021,
+    "areaDescription": "North Yorkshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2121,
+    "description": "York CJU"
+  },
+  {
+    "areaId": 1021,
+    "areaDescription": "North Yorkshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2122,
+    "description": "Harrogate CJU"
+  },
+  {
+    "areaId": 1021,
+    "areaDescription": "North Yorkshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2123,
+    "description": "York TU"
+  },
+  {
+    "areaId": 1021,
+    "areaDescription": "North Yorkshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2124,
+    "description": "North Yorkshire Magistrates Unit"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 72,
+    "unitGroupDescription": "London Complex Casework Unit",
+    "id": 2125,
+    "description": "Central Criminal Court Trial Unit"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 72,
+    "unitGroupDescription": "London Complex Casework Unit",
+    "id": 2126,
+    "description": "Special Casework Unit"
+  },
+  {
+    "areaId": 1022,
+    "areaDescription": "North Wales",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2127,
+    "description": "North Wales Area CJU"
+  },
+  {
+    "areaId": 1022,
+    "areaDescription": "North Wales",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2128,
+    "description": "Wrexham TU"
+  },
+  {
+    "areaId": 1022,
+    "areaDescription": "North Wales",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2129,
+    "description": "Eryri TU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2130,
+    "description": "Blackfriars TU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2131,
+    "description": "Hammersmith & Kensington CJU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2132,
+    "description": "Bexley/Bromley/Croydon CJU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2133,
+    "description": "Croydon TU"
+  },
+  {
+    "areaId": 1023,
+    "areaDescription": "Lancashire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2134,
+    "description": "Preston TU"
+  },
+  {
+    "areaId": 1023,
+    "areaDescription": "Lancashire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2135,
+    "description": "Western Magistrates Unit"
+  },
+  {
+    "areaId": 1023,
+    "areaDescription": "Lancashire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2136,
+    "description": "South West Lancs CJU"
+  },
+  {
+    "areaId": 1023,
+    "areaDescription": "Lancashire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2137,
+    "description": "Fylde TU"
+  },
+  {
+    "areaId": 1023,
+    "areaDescription": "Lancashire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2138,
+    "description": "Blackpool CJU"
+  },
+  {
+    "areaId": 1023,
+    "areaDescription": "Lancashire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2139,
+    "description": "Eastern Magistrates Unit"
+  },
+  {
+    "areaId": 1023,
+    "areaDescription": "Lancashire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2140,
+    "description": "Burnley TU"
+  },
+  {
+    "areaId": 1023,
+    "areaDescription": "Lancashire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2141,
+    "description": "Burnley CJU"
+  },
+  {
+    "areaId": 1023,
+    "areaDescription": "Lancashire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2142,
+    "description": "Southern Magistrates Unit"
+  },
+  {
+    "areaId": 1024,
+    "areaDescription": "Hertfordshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2143,
+    "description": "Herts CJU Central"
+  },
+  {
+    "areaId": 1024,
+    "areaDescription": "Hertfordshire",
+    "unitGroupId": 87,
+    "unitGroupDescription": "T&C MC Contested",
+    "id": 2144,
+    "description": "Herts CJU East"
+  },
+  {
+    "areaId": 1024,
+    "areaDescription": "Hertfordshire",
+    "unitGroupId": 88,
+    "unitGroupDescription": "T&C MC Non-Contested",
+    "id": 2145,
+    "description": "Herts CJU West"
+  },
+  {
+    "areaId": 1024,
+    "areaDescription": "Hertfordshire",
+    "unitGroupId": 89,
+    "unitGroupDescription": "Herts & Beds CC",
+    "id": 2146,
+    "description": "Herts TU"
+  },
+  {
+    "areaId": 1025,
+    "areaDescription": "Dyfed Powys",
+    "unitGroupId": 91,
+    "unitGroupDescription": "Cymru-Wales MC",
+    "id": 2147,
+    "description": "Carmarthenshire CJU"
+  },
+  {
+    "areaId": 1025,
+    "areaDescription": "Dyfed Powys",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2148,
+    "description": "Ceredigion CJU"
+  },
+  {
+    "areaId": 1025,
+    "areaDescription": "Dyfed Powys",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2149,
+    "description": "Pembrokeshire CJU"
+  },
+  {
+    "areaId": 1025,
+    "areaDescription": "Dyfed Powys",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2150,
+    "description": "Powys CJU"
+  },
+  {
+    "areaId": 1025,
+    "areaDescription": "Dyfed Powys",
+    "unitGroupId": 92,
+    "unitGroupDescription": "Cymru-Wales CC",
+    "id": 2151,
+    "description": "Carmarthen TU"
+  },
+  {
+    "areaId": 1025,
+    "areaDescription": "Dyfed Powys",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2152,
+    "description": "Powys TU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2153,
+    "description": "Kingston BU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2154,
+    "description": "Kingston CJU"
+  },
+  {
+    "areaId": 1026,
+    "areaDescription": "Merseyside",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2155,
+    "description": "Liverpool Trial Unit"
+  },
+  {
+    "areaId": 1026,
+    "areaDescription": "Merseyside",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2156,
+    "description": "Merseyside Magistrates Court Unit"
+  },
+  {
+    "areaId": 1026,
+    "areaDescription": "Merseyside",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2157,
+    "description": "Mersey North Trial Unit"
+  },
+  {
+    "areaId": 1026,
+    "areaDescription": "Merseyside",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2158,
+    "description": "Mersey North CJU"
+  },
+  {
+    "areaId": 1026,
+    "areaDescription": "Merseyside",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2159,
+    "description": "Merseyside Robbery Unit"
+  },
+  {
+    "areaId": 1026,
+    "areaDescription": "Merseyside",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2160,
+    "description": "Wirral CJU"
+  },
+  {
+    "areaId": 1027,
+    "areaDescription": "Cleveland",
+    "unitGroupId": 76,
+    "unitGroupDescription": "Durham Tees MC",
+    "id": 2161,
+    "description": "Cleveland Unit"
+  },
+  {
+    "areaId": 1027,
+    "areaDescription": "Cleveland",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2162,
+    "description": "Hartlepool CJU"
+  },
+  {
+    "areaId": 1027,
+    "areaDescription": "Cleveland",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2163,
+    "description": "Teesside TU"
+  },
+  {
+    "areaId": 1028,
+    "areaDescription": "Northumbria",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2164,
+    "description": "CJU North Newcastle"
+  },
+  {
+    "areaId": 1028,
+    "areaDescription": "Northumbria",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2165,
+    "description": "CJU North Cramlington"
+  },
+  {
+    "areaId": 1028,
+    "areaDescription": "Northumbria",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2166,
+    "description": "CJU South"
+  },
+  {
+    "areaId": 1028,
+    "areaDescription": "Northumbria",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2167,
+    "description": "Northumbria TU"
+  },
+  {
+    "areaId": 1029,
+    "areaDescription": "Dorset",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2168,
+    "description": "Bournemouth MCU"
+  },
+  {
+    "areaId": 1029,
+    "areaDescription": "Dorset",
+    "unitGroupId": 95,
+    "unitGroupDescription": "Wessex CC Allocated Unit",
+    "id": 2169,
+    "description": "Bournemouth CCU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2170,
+    "description": "Greenwich/Lewisham CJU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2171,
+    "description": "Woolwich TU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2172,
+    "description": "Southwark TU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2173,
+    "description": "Hackney/Tower Hamlets CJU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2174,
+    "description": "Westminster CJU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2175,
+    "description": "City CJU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2176,
+    "description": "Middlesex TU"
+  },
+  {
+    "areaId": 1030,
+    "areaDescription": "Bedfordshire",
+    "unitGroupId": 88,
+    "unitGroupDescription": "T&C MC Non-Contested",
+    "id": 2177,
+    "description": "Bedfordshire CJU"
+  },
+  {
+    "areaId": 1030,
+    "areaDescription": "Bedfordshire",
+    "unitGroupId": 89,
+    "unitGroupDescription": "Herts & Beds CC",
+    "id": 2178,
+    "description": "Bedfordshire TU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2179,
+    "description": "ILCC/Youth TU - Youth North"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2180,
+    "description": "ILCC/Youth TU - Youth South"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 68,
+    "unitGroupDescription": "London Crown Court South Unit",
+    "id": 2181,
+    "description": "ILCC/Youth TU - Youth CC"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2182,
+    "description": "ILCC/Youth TU - Adult"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2183,
+    "description": "Lambeth and Southwark CJU"
+  },
+  {
+    "areaId": 1031,
+    "areaDescription": "Greater Manchester",
+    "unitGroupId": 80,
+    "unitGroupDescription": "Greater Manchester",
+    "id": 2184,
+    "description": "Manchester E Division"
+  },
+  {
+    "areaId": 1031,
+    "areaDescription": "Greater Manchester",
+    "unitGroupId": 80,
+    "unitGroupDescription": "Greater Manchester",
+    "id": 2185,
+    "description": "Manchester - C3/C4 Comb. Unit"
+  },
+  {
+    "areaId": 1031,
+    "areaDescription": "Greater Manchester",
+    "unitGroupId": 80,
+    "unitGroupDescription": "Greater Manchester",
+    "id": 2186,
+    "description": "Manchester - A1 Comb. Unit"
+  },
+  {
+    "areaId": 1031,
+    "areaDescription": "Greater Manchester",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2187,
+    "description": "Manchester - A3 Comb. Unit"
+  },
+  {
+    "areaId": 1031,
+    "areaDescription": "Greater Manchester",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2188,
+    "description": "Manchester - A2 Comb. Unit"
+  },
+  {
+    "areaId": 1031,
+    "areaDescription": "Greater Manchester",
+    "unitGroupId": 80,
+    "unitGroupDescription": "Greater Manchester",
+    "id": 2189,
+    "description": "Stockport CJU"
+  },
+  {
+    "areaId": 1031,
+    "areaDescription": "Greater Manchester",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2190,
+    "description": "Stockport TU"
+  },
+  {
+    "areaId": 1031,
+    "areaDescription": "Greater Manchester",
+    "unitGroupId": 80,
+    "unitGroupDescription": "Greater Manchester",
+    "id": 2191,
+    "description": "Salford CJU"
+  },
+  {
+    "areaId": 1031,
+    "areaDescription": "Greater Manchester",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2192,
+    "description": "Salford TU"
+  },
+  {
+    "areaId": 1031,
+    "areaDescription": "Greater Manchester",
+    "unitGroupId": 80,
+    "unitGroupDescription": "Greater Manchester",
+    "id": 2193,
+    "description": "Sale CJU"
+  },
+  {
+    "areaId": 1031,
+    "areaDescription": "Greater Manchester",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2194,
+    "description": "Sale TU"
+  },
+  {
+    "areaId": 1031,
+    "areaDescription": "Greater Manchester",
+    "unitGroupId": 80,
+    "unitGroupDescription": "Greater Manchester",
+    "id": 2195,
+    "description": "Wigan CU"
+  },
+  {
+    "areaId": 1031,
+    "areaDescription": "Greater Manchester",
+    "unitGroupId": 80,
+    "unitGroupDescription": "Greater Manchester",
+    "id": 2196,
+    "description": "Bolton CJU"
+  },
+  {
+    "areaId": 1031,
+    "areaDescription": "Greater Manchester",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2197,
+    "description": "Bolton CU"
+  },
+  {
+    "areaId": 1031,
+    "areaDescription": "Greater Manchester",
+    "unitGroupId": 80,
+    "unitGroupDescription": "Greater Manchester",
+    "id": 2198,
+    "description": "Rochdale/Bury CJU"
+  },
+  {
+    "areaId": 1031,
+    "areaDescription": "Greater Manchester",
+    "unitGroupId": 80,
+    "unitGroupDescription": "Greater Manchester",
+    "id": 2199,
+    "description": "Rochdale/Bury TU"
+  },
+  {
+    "areaId": 1031,
+    "areaDescription": "Greater Manchester",
+    "unitGroupId": 80,
+    "unitGroupDescription": "Greater Manchester",
+    "id": 2200,
+    "description": "Oldham CJU"
+  },
+  {
+    "areaId": 1031,
+    "areaDescription": "Greater Manchester",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2201,
+    "description": "Oldham TU"
+  },
+  {
+    "areaId": 1031,
+    "areaDescription": "Greater Manchester",
+    "unitGroupId": 80,
+    "unitGroupDescription": "Greater Manchester",
+    "id": 2202,
+    "description": "Hyde CJU"
+  },
+  {
+    "areaId": 1031,
+    "areaDescription": "Greater Manchester",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2203,
+    "description": "Hyde TU"
+  },
+  {
+    "areaId": 1032,
+    "areaDescription": "Gloucestershire",
+    "unitGroupId": 84,
+    "unitGroupDescription": "South West MC",
+    "id": 2204,
+    "description": "Gloucs CJU"
+  },
+  {
+    "areaId": 1032,
+    "areaDescription": "Gloucestershire",
+    "unitGroupId": 85,
+    "unitGroupDescription": "South West CC",
+    "id": 2205,
+    "description": "Gloucs TU"
+  },
+  {
+    "areaId": 1033,
+    "areaDescription": "Northamptonshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2206,
+    "description": "Northamptonshire CJU"
+  },
+  {
+    "areaId": 1033,
+    "areaDescription": "Northamptonshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2207,
+    "description": "Northamptonshire TU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2208,
+    "description": "Wood Green TU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2209,
+    "description": "Enfield/Haringey CJU"
+  },
+  {
+    "areaId": 1034,
+    "areaDescription": "Lincolnshire",
+    "unitGroupId": 65,
+    "unitGroupDescription": "East Midlands North Crown",
+    "id": 2210,
+    "description": "Lincolnshire CU"
+  },
+  {
+    "areaId": 1034,
+    "areaDescription": "Lincolnshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2211,
+    "description": "Lincoln MC"
+  },
+  {
+    "areaId": 1034,
+    "areaDescription": "Lincolnshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2212,
+    "description": "Grantham CJU"
+  },
+  {
+    "areaId": 1035,
+    "areaDescription": "Avon & Somerset",
+    "unitGroupId": 84,
+    "unitGroupDescription": "South West MC",
+    "id": 2213,
+    "description": "Northern CJU (Bristol)"
+  },
+  {
+    "areaId": 1035,
+    "areaDescription": "Avon & Somerset",
+    "unitGroupId": 85,
+    "unitGroupDescription": "South West CC",
+    "id": 2214,
+    "description": "Bristol CCTU"
+  },
+  {
+    "areaId": 1035,
+    "areaDescription": "Avon & Somerset",
+    "unitGroupId": 84,
+    "unitGroupDescription": "South West MC",
+    "id": 2215,
+    "description": "Southern CJU (Taunton)"
+  },
+  {
+    "areaId": 1035,
+    "areaDescription": "Avon & Somerset",
+    "unitGroupId": 85,
+    "unitGroupDescription": "South West CC",
+    "id": 2216,
+    "description": "Taunton TU"
+  },
+  {
+    "areaId": 1036,
+    "areaDescription": "South Yorkshire",
+    "unitGroupId": 100,
+    "unitGroupDescription": "Yorkshire and Humberside Magistrates",
+    "id": 2217,
+    "description": "Sheffield"
+  },
+  {
+    "areaId": 1036,
+    "areaDescription": "South Yorkshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2218,
+    "description": "Barnsley CJU"
+  },
+  {
+    "areaId": 1036,
+    "areaDescription": "South Yorkshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2219,
+    "description": "Doncaster CJU"
+  },
+  {
+    "areaId": 1036,
+    "areaDescription": "South Yorkshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2220,
+    "description": "Rotherham CJU"
+  },
+  {
+    "areaId": 1036,
+    "areaDescription": "South Yorkshire",
+    "unitGroupId": 101,
+    "unitGroupDescription": "Yorkshire and Humberside Crown Court",
+    "id": 2221,
+    "description": "South Yorkshire TU"
+  },
+  {
+    "areaId": 1037,
+    "areaDescription": "Leicestershire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2222,
+    "description": "Leics City CJU"
+  },
+  {
+    "areaId": 1037,
+    "areaDescription": "Leicestershire",
+    "unitGroupId": 64,
+    "unitGroupDescription": "East Midlands South Magistrates",
+    "id": 2223,
+    "description": "Leics County CJU"
+  },
+  {
+    "areaId": 1037,
+    "areaDescription": "Leicestershire",
+    "unitGroupId": 66,
+    "unitGroupDescription": "East Midlands South Crown",
+    "id": 2224,
+    "description": "Leics TU"
+  },
+  {
+    "areaId": 1038,
+    "areaDescription": "West Mercia",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2225,
+    "description": "Droitwich CJU"
+  },
+  {
+    "areaId": 1038,
+    "areaDescription": "West Mercia",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2226,
+    "description": "Droitwich TU"
+  },
+  {
+    "areaId": 1038,
+    "areaDescription": "West Mercia",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2227,
+    "description": "Shrewsbury CJU/TU"
+  },
+  {
+    "areaId": 1039,
+    "areaDescription": "Essex",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2228,
+    "description": "Essex TU"
+  },
+  {
+    "areaId": 1039,
+    "areaDescription": "Essex",
+    "unitGroupId": 60,
+    "unitGroupDescription": "East of England Magistrates",
+    "id": 2229,
+    "description": "Colchester CJU"
+  },
+  {
+    "areaId": 1039,
+    "areaDescription": "Essex",
+    "unitGroupId": 61,
+    "unitGroupDescription": "Essex Crown",
+    "id": 2230,
+    "description": "Harlow CJU"
+  },
+  {
+    "areaId": 1039,
+    "areaDescription": "Essex",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2231,
+    "description": "Laindon CJU"
+  },
+  {
+    "areaId": 1039,
+    "areaDescription": "Essex",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2232,
+    "description": "Southend CJU"
+  },
+  {
+    "areaId": 1040,
+    "areaDescription": "Humberside",
+    "unitGroupId": 100,
+    "unitGroupDescription": "Yorkshire and Humberside Magistrates",
+    "id": 2233,
+    "description": "Hull CJU"
+  },
+  {
+    "areaId": 1040,
+    "areaDescription": "Humberside",
+    "unitGroupId": 101,
+    "unitGroupDescription": "Yorkshire and Humberside Crown Court",
+    "id": 2234,
+    "description": "Hull TU"
+  },
+  {
+    "areaId": 1040,
+    "areaDescription": "Humberside",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2235,
+    "description": "Grimsby CJU"
+  },
+  {
+    "areaId": 1040,
+    "areaDescription": "Humberside",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2236,
+    "description": "Grimsby TU"
+  },
+  {
+    "areaId": 1041,
+    "areaDescription": "Nottinghamshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2237,
+    "description": "Nottinghamshire MC Unit"
+  },
+  {
+    "areaId": 1041,
+    "areaDescription": "Nottinghamshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2238,
+    "description": "Nottinghamshire City 2 CJU"
+  },
+  {
+    "areaId": 1041,
+    "areaDescription": "Nottinghamshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2239,
+    "description": "Nottinghamshire County CJU"
+  },
+  {
+    "areaId": 1041,
+    "areaDescription": "Nottinghamshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2240,
+    "description": "Nottinghamshire Youth CJU"
+  },
+  {
+    "areaId": 1041,
+    "areaDescription": "Nottinghamshire",
+    "unitGroupId": 65,
+    "unitGroupDescription": "East Midlands North Crown",
+    "id": 2241,
+    "description": "Nottinghamshire Crown Court Unit"
+  },
+  {
+    "areaId": 1041,
+    "areaDescription": "Nottinghamshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2242,
+    "description": "Nottinghamshire SCIU"
+  },
+  {
+    "areaId": 1042,
+    "areaDescription": "Norfolk",
+    "unitGroupId": 62,
+    "unitGroupDescription": "Norfolk/Suffolk/Cambridgeshire Crown",
+    "id": 2243,
+    "description": "Norfolk Trials Unit"
+  },
+  {
+    "areaId": 1042,
+    "areaDescription": "Norfolk",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2244,
+    "description": "Norfolk Eastern CJU"
+  },
+  {
+    "areaId": 1042,
+    "areaDescription": "Norfolk",
+    "unitGroupId": 60,
+    "unitGroupDescription": "East of England Magistrates",
+    "id": 2245,
+    "description": "Norfolk Western CJU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2246,
+    "description": "Lon Secretariat"
+  },
+  {
+    "areaId": 1043,
+    "areaDescription": "HMCPSI",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2247,
+    "description": "HMcpsi"
+  },
+  {
+    "areaId": 1057708,
+    "areaDescription": "Organised Crime Division",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 1057725,
+    "description": "Organised Crime Division London"
+  },
+  {
+    "areaId": 2003775,
+    "areaDescription": "Leatherhead",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2003776,
+    "description": "Chaucer"
+  },
+  {
+    "areaId": 2003775,
+    "areaDescription": "Leatherhead",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2003778,
+    "description": "Milton"
+  },
+  {
+    "areaId": 2003775,
+    "areaDescription": "Leatherhead",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2003780,
+    "description": "Keats"
+  },
+  {
+    "areaId": 1013,
+    "areaDescription": "Warwickshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2012350,
+    "description": "Rugby CJU"
+  },
+  {
+    "areaId": 1013,
+    "areaDescription": "Warwickshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2012354,
+    "description": "Rugby TU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2028041,
+    "description": "Newham BU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2028043,
+    "description": "Waltham Forest BU"
+  },
+  {
+    "areaId": 1039,
+    "areaDescription": "Essex",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2028334,
+    "description": "North-East Essex"
+  },
+  {
+    "areaId": 1039,
+    "areaDescription": "Essex",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2028336,
+    "description": "North-West Essex"
+  },
+  {
+    "areaId": 1039,
+    "areaDescription": "Essex",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2028338,
+    "description": "South-East Essex"
+  },
+  {
+    "areaId": 1039,
+    "areaDescription": "Essex",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2028340,
+    "description": "South-West Essex"
+  },
+  {
+    "areaId": 1022,
+    "areaDescription": "North Wales",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2028952,
+    "description": "Central Unit North Wales"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2028958,
+    "description": "Dummy"
+  },
+  {
+    "areaId": 1023,
+    "areaDescription": "Lancashire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2028966,
+    "description": "old  Preston CU"
+  },
+  {
+    "areaId": 1023,
+    "areaDescription": "Lancashire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2028968,
+    "description": "Preston CU"
+  },
+  {
+    "areaId": 1030,
+    "areaDescription": "Bedfordshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2032078,
+    "description": "Luton CJU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2032217,
+    "description": "Barking BU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2032219,
+    "description": "Greenwich BU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2032221,
+    "description": "Hackney BU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2032223,
+    "description": "Havering BU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2032225,
+    "description": "Lewisham BU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2032227,
+    "description": "Redbridge BU"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2032229,
+    "description": "Tower Hamlets BU"
+  },
+  {
+    "areaId": 1007,
+    "areaDescription": "Cheshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2038673,
+    "description": "Chester Business Unit"
+  },
+  {
+    "areaId": 1028,
+    "areaDescription": "Northumbria",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2038714,
+    "description": "Northumberland"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2039509,
+    "description": "City BU"
+  },
+  {
+    "areaId": 1040,
+    "areaDescription": "Humberside",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2043089,
+    "description": "Stockport Combined Unit"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2044525,
+    "description": "Central London Prosecution Service"
+  },
+  {
+    "areaId": 1007,
+    "areaDescription": "Cheshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2044620,
+    "description": "Crewe Business Unit"
+  },
+  {
+    "areaId": 1007,
+    "areaDescription": "Cheshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2044622,
+    "description": "Cheshire Magistrates Court Unit"
+  },
+  {
+    "areaId": 1012,
+    "areaDescription": "London",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2047031,
+    "description": "CPS London BTP"
+  },
+  {
+    "areaId": 1022,
+    "areaDescription": "North Wales",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2048288,
+    "description": "Central and Western Magistrates Court"
+  },
+  {
+    "areaId": 1037,
+    "areaDescription": "Leicestershire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2057398,
+    "description": "Leicester Traffic Unit"
+  },
+  {
+    "areaId": 1037,
+    "areaDescription": "Leicestershire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2057400,
+    "description": "Leicester Youth Unit"
+  },
+  {
+    "areaId": 1029,
+    "areaDescription": "Dorset",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2058139,
+    "description": "Dorset Crown Court Unit"
+  },
+  {
+    "areaId": 1029,
+    "areaDescription": "Dorset",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2058141,
+    "description": "Dorset Magistrates Court Unit"
+  },
+  {
+    "areaId": 1029,
+    "areaDescription": "Dorset",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2058143,
+    "description": "Wessex RASSO Unit Dorset"
+  },
+  {
+    "areaId": 1029,
+    "areaDescription": "Dorset",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2058145,
+    "description": "zCPSD Dorset"
+  },
+  {
+    "areaId": 2060277,
+    "areaDescription": "Gwent",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2060304,
+    "description": "Gwent MC"
+  },
+  {
+    "areaId": 2060277,
+    "areaDescription": "Gwent",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2060306,
+    "description": "Gwent CC"
+  },
+  {
+    "areaId": 1003,
+    "areaDescription": "West Yorkshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2097050,
+    "description": "Bradford South CJU"
+  },
+  {
+    "areaId": 2283238,
+    "areaDescription": "Wiltshire",
+    "unitGroupId": 0,
+    "unitGroupDescription": null,
+    "id": 2283240,
+    "description": "Swindon CJU"
+  }
+]

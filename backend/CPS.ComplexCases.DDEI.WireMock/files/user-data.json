@@ -1,0 +1,21 @@
+{
+  "hasMultiTaskSelectRight": false,
+  "hasViewNationalChargingTasksRight": false,
+  "isSuperUser": false,
+  "userId": 104007,
+  "selectedCpsAreaId": 0,
+  "userFullName": "Stefan Stachow",
+  "viewState": "/wEPDwUKLTcwNzIwOTYxNmRktre+IwgRArLsPeHCLfwlMj20oIg=",
+  "viewStateGenerator": "11A0F292",
+  "homeUnit": {
+    "unitId": 1057725,
+    "unit": "Organised Crime Division London"
+  },
+  "allocatedUnits": [
+    {
+      "unitId": 1057725,
+      "unit": "Organised Crime Division London"
+    }
+  ],
+  "manageableDirectionUnits": []
+}

@@ -1,10 +1,10 @@
 using System.Text.Json;
-using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
-using CPS.ComplexCases.Egress.Models.Response;
-using CPS.ComplexCases.Egress.Models.Dto;
 using CPS.ComplexCases.Egress.Models.Args;
+using CPS.ComplexCases.Egress.Models.Dto;
+using CPS.ComplexCases.Egress.Models.Response;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace CPS.ComplexCases.Egress.Client;

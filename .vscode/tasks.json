@@ -27,82 +27,6 @@
       "isBackground": true
     },
     {
-      "label": "clean (functions)",
-      "command": "dotnet",
-      "args": [
-        "clean",
-        "/property:GenerateFullPaths=true",
-        "/consoleloggerparameters:NoSummary"
-      ],
-      "type": "process",
-      "problemMatcher": "$msCompile",
-      "options": {
-        "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.API"
-      }
-    },
-    {
-      "label": "build (functions)",
-      "command": "dotnet",
-      "args": [
-        "build",
-        "/property:GenerateFullPaths=true",
-        "/consoleloggerparameters:NoSummary"
-      ],
-      "type": "process",
-      "dependsOn": "clean (functions)",
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
-      "problemMatcher": "$msCompile",
-      "options": {
-        "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.API"
-      }
-    },
-    {
-      "label": "clean release (functions)",
-      "command": "dotnet",
-      "args": [
-        "clean",
-        "--configuration",
-        "Release",
-        "/property:GenerateFullPaths=true",
-        "/consoleloggerparameters:NoSummary"
-      ],
-      "type": "process",
-      "problemMatcher": "$msCompile",
-      "options": {
-        "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.API"
-      }
-    },
-    {
-      "label": "publish (functions)",
-      "command": "dotnet",
-      "args": [
-        "publish",
-        "--configuration",
-        "Release",
-        "/property:GenerateFullPaths=true",
-        "/consoleloggerparameters:NoSummary"
-      ],
-      "type": "process",
-      "dependsOn": "clean release (functions)",
-      "problemMatcher": "$msCompile",
-      "options": {
-        "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.API"
-      }
-    },
-    {
-      "type": "func",
-      "dependsOn": "build (functions)",
-      "options": {
-        "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.API/bin/Debug/net8.0"
-      },
-      "command": "host start",
-      "isBackground": true,
-      "problemMatcher": "$func-dotnet-watch"
-    },
-    {
       "label": "clean-backend",
       "command": "dotnet",
       "type": "process",
@@ -136,16 +60,6 @@
       "command": "func start --no-build --verbose --password CPS.ComplexCases.API",
       "isBackground": true,
       "problemMatcher": "$func-dotnet-watch"
-    },
-    {
-      "label": "build-and-run-backend",
-      "dependsOrder": "sequence",
-      "dependsOn": [
-        "run-azurite",
-        "clean-backend",
-        "build-backend",
-        "run-backend"
-      ]
     },
     {
       "label": "build-ui",
@@ -198,13 +112,44 @@
       }
     },
     {
-      "label": "build-and-run-ui",
-      "dependsOrder": "sequence",
-      "dependsOn": ["build-ui", "run-ui"]
+      "label": "run-mock",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.WireMock"
+      },
+      "command": "dotnet bin/Debug/net8.0/CPS.ComplexCases.WireMock.dll",
+      "isBackground": true,
+      "problemMatcher": {
+        "fileLocation": "absolute",
+        "pattern": [
+          {
+            "regexp": ".",
+            "file": 1,
+            "location": 2,
+            "message": 3
+          }
+        ],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*Executing task*$",
+          "endsPattern": "^.*Hosting started*$"
+        }
+      }
+    },
+    {
+      "label": "prepare-all",
+      "dependsOrder": "parallel",
+      "dependsOn": ["build-ui", "build-backend", "run-azurite"]
+    },
+    {
+      "label": "run-backend-and-mock",
+      "dependsOrder": "parallel",
+      "dependsOn": ["run-mock", "run-backend"]
     },
     {
       "label": "build-and-run-all",
-      "dependsOn": ["build-and-run-backend", "build-and-run-ui"],
+      "dependsOrder": "sequence",
+      "dependsOn": ["prepare-all", "run-backend-and-mock", "run-ui"],
       "problemMatcher": []
     }
   ]
