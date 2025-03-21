@@ -170,11 +170,10 @@ export const useCaseSearchForm = (initialData: SearchFromData) => {
 
   const getSearchParams = () => {
     let searchParams: SearchParamsType = {};
-
     switch (formData[SearchFormField.searchType]) {
       case "urn":
-        const { isValid, rootUrn } = validateUrn(formData[SearchFormField.urn]);
-        searchParams = { urn: isValid ? rootUrn : "" };
+        const { rootUrn } = validateUrn(formData[SearchFormField.urn]);
+        searchParams = { urn: rootUrn ?? "" };
         break;
       case "defendant name":
         searchParams = {
