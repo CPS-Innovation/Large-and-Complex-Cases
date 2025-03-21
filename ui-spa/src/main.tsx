@@ -1,11 +1,11 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import App from "./components/app.tsx";
+import App from "./components/App.tsx";
 import { MOCK_API_SOURCE } from "./config.ts";
 import "./index.scss";
 
 async function enableMocking() {
-  if (!MOCK_API_SOURCE) {
+  if (MOCK_API_SOURCE !== "dev") {
     return;
   }
 
@@ -19,7 +19,7 @@ async function enableMocking() {
 enableMocking().then(() => {
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
-      <App />
+      <App />,
     </StrictMode>,
   );
 });

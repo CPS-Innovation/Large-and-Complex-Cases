@@ -1,4 +1,12 @@
 import { setupWorker } from "msw/browser";
-import { handlers } from "./handlers";
+import { setupHandlers } from "./handlers";
+import { GATEWAY_BASE_URL, MOCK_API_SOURCE } from "../config";
 
-export const worker = setupWorker(...handlers);
+export type MockApiConfig = {
+  baseUrl: string;
+  sourceName: "playwright" | "dev";
+};
+
+export const worker = setupWorker(
+  ...setupHandlers(GATEWAY_BASE_URL, MOCK_API_SOURCE),
+);

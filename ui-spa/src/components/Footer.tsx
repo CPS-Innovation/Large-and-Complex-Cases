@@ -1,11 +1,11 @@
 import LicenceLogo from "./svgs/footerlicencelogo.svg?react";
 import { useUserDetails } from "../auth";
-import styles from "./footer.module.scss";
+import styles from "./layout.module.scss";
 
 export default function Footer() {
   const { username } = useUserDetails();
   return (
-    <footer className="govuk-footer">
+    <footer className={`govuk-footer ${styles.footer}`}>
       <div className="govuk-width-container">
         <div className="govuk-footer__meta">
           <div className="govuk-footer__meta-item govuk-footer__meta-item--grow">
