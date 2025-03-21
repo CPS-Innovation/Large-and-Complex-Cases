@@ -21,7 +21,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.NetApp.Int
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.Egress.WireMock", "CPS.ComplexCases.Egress.WireMock\CPS.ComplexCases.Egress.WireMock.csproj", "{C2113049-9717-4854-B3F8-065B0EFC58EB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.Egress.Integration", "CPS.ComplexCases.Egress.Integration\CPS.ComplexCases.Egress.Integration.csproj", "{69F184ED-ED81-4713-BEE8-F7C292EB8449}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.WireMock", "CPS.ComplexCases.WireMock\CPS.ComplexCases.WireMock.csproj", "{049640DE-3D49-4310-8572-8A6FBBA56B94}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.DDEI", "CPS.ComplexCases.DDEI\CPS.ComplexCases.DDEI.csproj", "{6FA7188C-2A25-42AF-A6AA-887EBE1444C9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.DDEI.Tests", "CPS.ComplexCases.DDEI.Tests\CPS.ComplexCases.DDEI.Tests.csproj", "{209FBD6E-9026-441B-B9BC-29F2B6E98E9A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -68,9 +72,17 @@ Global
 		{C2113049-9717-4854-B3F8-065B0EFC58EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C2113049-9717-4854-B3F8-065B0EFC58EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C2113049-9717-4854-B3F8-065B0EFC58EB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{69F184ED-ED81-4713-BEE8-F7C292EB8449}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{69F184ED-ED81-4713-BEE8-F7C292EB8449}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{69F184ED-ED81-4713-BEE8-F7C292EB8449}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{69F184ED-ED81-4713-BEE8-F7C292EB8449}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6FA7188C-2A25-42AF-A6AA-887EBE1444C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6FA7188C-2A25-42AF-A6AA-887EBE1444C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6FA7188C-2A25-42AF-A6AA-887EBE1444C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6FA7188C-2A25-42AF-A6AA-887EBE1444C9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{209FBD6E-9026-441B-B9BC-29F2B6E98E9A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{209FBD6E-9026-441B-B9BC-29F2B6E98E9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{209FBD6E-9026-441B-B9BC-29F2B6E98E9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{209FBD6E-9026-441B-B9BC-29F2B6E98E9A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{049640DE-3D49-4310-8572-8A6FBBA56B94}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{049640DE-3D49-4310-8572-8A6FBBA56B94}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{049640DE-3D49-4310-8572-8A6FBBA56B94}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{049640DE-3D49-4310-8572-8A6FBBA56B94}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -41,6 +41,7 @@ provider "azurerm" {
       recover_soft_deleted_secrets          = true
     }
   }
+  subscription_id = var.subscription_id
 }
 
 data "azurerm_client_config" "current" {}
@@ -68,7 +69,7 @@ resource "random_uuid" "random_id" {
 }
 
 locals {
-  product_name       = "LaCC"
+  product_name       = "lacc"
   resource_suffix    = var.environment.alias != "prod" ? "-${var.environment.alias}" : ""
   shared_suffix      = var.environment.alias != "prod" ? "preprod" : ""
   shared_prefix      = var.environment.alias != "prod" ? "-preprod" : ""

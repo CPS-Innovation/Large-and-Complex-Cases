@@ -3,7 +3,9 @@ environment = {
   alias = "prod"
 }
 
-terraform_service_principal_display_name = "Azure Pipeline: Complex-Cases-Production"
+terraform_service_principal_display_name = "Azure Pipeline: LaCC-Prod"
+subscription_id                          = "[placeholder]"
+nsg_name                                 = "[Placeholder]"
 
 appinsights_configuration = {
   log_retention_days                   = 90
@@ -15,12 +17,6 @@ appinsights_configuration = {
 }
 
 
-subnets {
-  ampls      = []
-  storage    = []
-  ui         = []
-  api        = []
-  endpoints  = []
-  egressMock = []
-  netAppMock = []
+subnets = {
+  ampls = ["10.7.184.32/28"]
 }

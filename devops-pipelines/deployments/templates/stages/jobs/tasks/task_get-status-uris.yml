@@ -28,6 +28,6 @@ steps:
       clientSecret: ${{ parameters.armClientSecret }}
       tenantId: ${{ parameters.armTenantId }}
       subscriptionId: ${{ parameters.armSubscriptionId }}
-      apiAppName: "cc${{ parameters.targetSuffix }}-api"
-      uiAppName: "cc${{ parameters.targetSuffix }}-ui"
-      resourceGroup: "rg-complex-cases${{ parameters.targetSuffix }}"
+      apiAppName: "LaCC${{ parameters.targetSuffix }}-api"
+      uiAppName: "LaCC${{ parameters.targetSuffix }}-ui"
+      resourceGroup: "rg-LaCC${{ parameters.targetSuffix }}"

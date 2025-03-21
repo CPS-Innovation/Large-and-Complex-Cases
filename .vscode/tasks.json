@@ -2,6 +2,31 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "run-azurite",
+      "type": "shell",
+      "command": "azurite --inMemoryPersistence",
+      "options": {
+        "cwd": "${workspaceFolder}/.vscode"
+      },
+      "problemMatcher": {
+        "fileLocation": "absolute",
+        "pattern": [
+          {
+            "regexp": ".",
+            "file": 1,
+            "location": 2,
+            "message": 3
+          }
+        ],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*Executing task.*$",
+          "endsPattern": "^.*successfully listening at http://127.0.0.1:10002.*$"
+        }
+      },
+      "isBackground": true
+    },
+    {
       "label": "clean (functions)",
       "command": "dotnet",
       "args": [
@@ -12,7 +37,7 @@
       "type": "process",
       "problemMatcher": "$msCompile",
       "options": {
-        "cwd": "${workspaceFolder}/backend\\CPS.ComplexCases.API"
+        "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.API"
       }
     },
     {
@@ -31,7 +56,7 @@
       },
       "problemMatcher": "$msCompile",
       "options": {
-        "cwd": "${workspaceFolder}/backend\\CPS.ComplexCases.API"
+        "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.API"
       }
     },
     {
@@ -47,7 +72,7 @@
       "type": "process",
       "problemMatcher": "$msCompile",
       "options": {
-        "cwd": "${workspaceFolder}/backend\\CPS.ComplexCases.API"
+        "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.API"
       }
     },
     {
@@ -64,14 +89,14 @@
       "dependsOn": "clean release (functions)",
       "problemMatcher": "$msCompile",
       "options": {
-        "cwd": "${workspaceFolder}/backend\\CPS.ComplexCases.API"
+        "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.API"
       }
     },
     {
       "type": "func",
       "dependsOn": "build (functions)",
       "options": {
-        "cwd": "${workspaceFolder}/backend\\CPS.ComplexCases.API/bin/Debug/net8.0"
+        "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.API/bin/Debug/net8.0"
       },
       "command": "host start",
       "isBackground": true,
@@ -81,10 +106,7 @@
       "label": "clean-backend",
       "command": "dotnet",
       "type": "process",
-      "args": [
-        "clean",
-        "${workspaceFolder}/backend"
-      ],
+      "args": ["clean", "${workspaceFolder}/backend"],
       "problemMatcher": "$msCompile",
       "presentation": {
         "revealProblems": "onProblem",
@@ -95,10 +117,7 @@
       "label": "build-backend",
       "command": "dotnet",
       "type": "process",
-      "args": [
-        "build",
-        "${workspaceFolder}/backend"
-      ],
+      "args": ["build", "${workspaceFolder}/backend"],
       "problemMatcher": "$msCompile",
       "presentation": {
         "revealProblems": "onProblem",
@@ -106,35 +125,54 @@
       }
     },
     {
-      "label": "run-CPS.ComplexCases.Egress.WireMock",
-      "type": "shell",
-      "options": {
-        "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.Egress.WireMock"
-      },
-      "command": "dotnet run",
-      "isBackground": true
-    },
-    {
-      "label": "run-CPS.ComplexCases.NetApp.WireMock",
-      "type": "shell",
-      "options": {
-        "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.NetApp.WireMock"
-      },
-      "command": "dotnet run",
-      "isBackground": true
-    },
-    {
-      "label": "run-CPS.ComplexCases.API",
+      "label": "run-backend",
       "type": "shell",
       "options": {
         "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.API/bin/Debug/net8.0",
         "env": {
-          "EgressOptions__Url": "http://localhost:7080",
+          "EgressOptions__Url": "http://localhost:7080"
         }
       },
-      "command": "func host start --no-build --password CPS.ComplexCases.API --verbose",
+      "command": "func start --no-build --verbose --password CPS.ComplexCases.API",
       "isBackground": true,
       "problemMatcher": "$func-dotnet-watch"
+    },
+    {
+      "label": "build-and-run-backend",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "run-azurite",
+        "clean-backend",
+        "build-backend",
+        "run-backend"
+      ]
+    },
+    {
+      "label": "build-ui",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}/ui-spa"
+      },
+      "command": "npm install",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "custom",
+        "pattern": {
+          "regexp": "^.*$",
+          "file": 1,
+          "location": 2,
+          "message": 3
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*$",
+          "endsPattern": "^.*$"
+        }
+      },
+      "presentation": {
+        "revealProblems": "onProblem",
+        "close": true
+      }
     },
     {
       "label": "run-ui",
@@ -154,28 +192,19 @@
         },
         "background": {
           "activeOnStart": true,
-          "beginsPattern": "^.*$",
-          "endsPattern": "^.*$"
+          "beginsPattern": "^.*Executing task.*$",
+          "endsPattern": "^.*ready in.*$"
         }
       }
     },
     {
-      "label": "run-all",
-      "dependsOn": [
-        "run-CPS.ComplexCases.Egress.WireMock",
-        "run-CPS.ComplexCases.NetApp.WireMock",
-        "run-CPS.ComplexCases.API",
-        "run-ui"
-      ]
+      "label": "build-and-run-ui",
+      "dependsOrder": "sequence",
+      "dependsOn": ["build-ui", "run-ui"]
     },
     {
       "label": "build-and-run-all",
-      "dependsOn": [
-        "clean-backend",
-        "build-backend",
-        "run-all"
-      ],
-      "dependsOrder": "sequence",
+      "dependsOn": ["build-and-run-backend", "build-and-run-ui"],
       "problemMatcher": []
     }
   ]

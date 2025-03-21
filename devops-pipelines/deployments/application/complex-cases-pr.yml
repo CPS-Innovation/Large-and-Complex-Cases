@@ -23,13 +23,14 @@ variables:
   - name: terraformWorkingDir
     value: "$(System.DefaultWorkingDirectory)/terraform/application"
 
+pool:
+  name: $(build-agent-pre-prod)
+
 stages:
   - stage: Wait_For_Running_PRs
     displayName: Wait for running PRs
     jobs:
       - job:
-        pool:
-          name: $(build-agent-pre-prod)
         steps:
           - template: ../templates/stages/jobs/tasks/task_wait-for-running-releases.yml
             parameters:
@@ -40,8 +41,6 @@ stages:
     dependsOn: Wait_For_Running_PRs
     jobs:
       - job: Generate_Diff
-        pool:
-          name: $(build-agent-pre-prod)
         steps:
           - task: PowerShell@2
             inputs:
@@ -87,8 +86,6 @@ stages:
       - job: Validate_Application_Terraform
         condition: eq(variables.runApplicationTerraform, 'true')
         displayName: Validate Application Terraform
-        pool:
-          name: $(build-agent-pre-prod)
         steps:
           - task: JasonBJohnson.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@1
             displayName: Terraform > Install
@@ -117,8 +114,6 @@ stages:
             workingDirectory: $(terraformWorkingDir)
 
       - job: Check_Application_Plan
-        pool:
-          name: $(build-agent-pre-prod)
         dependsOn: Validate_Application_Terraform
         condition: and(succeeded(), eq(variables.runApplicationTerraform, 'true'))
         displayName: Check Application Terraform
@@ -163,8 +158,6 @@ stages:
       - job: Validate_Application_Codebase
         condition: eq(variables.runBackend, 'true')
         displayName: Test - Backend
-        pool:
-          name: $(dev-build-agent)
         steps:
           - task: DotNetCoreCLI@2
             inputs:

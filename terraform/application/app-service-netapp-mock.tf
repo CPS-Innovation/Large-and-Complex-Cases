@@ -9,7 +9,7 @@ resource "azurerm_linux_web_app" "complex_cases_netAppMock" {
   resource_group_name           = azurerm_resource_group.rg_complex_cases.name
   location                      = azurerm_resource_group.rg_complex_cases.location
   service_plan_id               = azurerm_service_plan.asp_complex_cases_netAppMock.id
-  virtual_network_subnet_id     = data.azurerm_subnet.complex_cases_netAppMock_subnet.id
+  virtual_network_subnet_id     = azurerm_subnet.sn_complex_cases_netAppMock_subnet.id
   public_network_access_enabled = false
   https_only                    = true
 
@@ -87,5 +87,25 @@ resource "azuread_application" "complex_cases_netAppMock" {
       id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["User.Read"]
       type = "Scope"
     }
+  }
+}
+
+resource "azurerm_private_endpoint" "complex_cases_netAppMock_pe" {
+  name                = "${azurerm_linux_web_app.complex_cases_netAppMock.name}-pe"
+  resource_group_name = azurerm_resource_group.rg_complex_cases.name
+  location            = azurerm_resource_group.rg_complex_cases.location
+  subnet_id           = azurerm_subnet.sn_complex_cases_endpoints_subnet.id
+  tags                = local.common_tags
+
+  private_dns_zone_group {
+    name                 = data.azurerm_private_dns_zone.dns_zone_apps.name
+    private_dns_zone_ids = [data.azurerm_private_dns_zone.dns_zone_apps.id]
+  }
+
+  private_service_connection {
+    name                           = "${azurerm_linux_web_app.complex_cases_netAppMock.name}-psc"
+    private_connection_resource_id = azurerm_linux_web_app.complex_cases_netAppMock.id
+    is_manual_connection           = false
+    subresource_names              = ["sites"]
   }
 }
