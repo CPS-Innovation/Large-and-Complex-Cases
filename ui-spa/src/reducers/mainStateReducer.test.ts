@@ -2,10 +2,14 @@ import { mainStateReducer } from "./mainStateReducer";
 import * as areaLookups from "./utils/mapAreaLookups";
 
 describe("mainStateReducer", () => {
+  const initialState = {
+    caseDivisionsOrAreas: { status: "loading" as const },
+  };
+  it("Should return the state, if there are no matching action types found", () => {
+    const newState = mainStateReducer(initialState, {} as any);
+    expect(newState).toStrictEqual(initialState);
+  });
   describe("UPDATE_CASE_DIVISIONS_OR_AREAS action", () => {
-    const initialState = {
-      caseDivisionsOrAreas: { status: "loading" as const },
-    };
     it("Should update the state correctly when the payload status is failed", () => {
       const newState = mainStateReducer(initialState, {
         type: "UPDATE_CASE_DIVISIONS_OR_AREAS",

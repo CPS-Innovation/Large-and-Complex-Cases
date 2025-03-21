@@ -21,6 +21,8 @@ export default defineConfig({
         "src/components",
         "src/auth/mock",
         "src/auth/no-auth",
+        "src/auth/index.ts",
+        "src/auth/userDetails.ts",
         "src/config.ts",
         "src/types.d.ts",
         "src/vite-env.d.ts",
