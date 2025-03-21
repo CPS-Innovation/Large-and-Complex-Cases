@@ -35,7 +35,7 @@ public static class IServiceCollectionExtension
   {
     var opts = configuration.GetService<IOptions<DDEIOptions>>()?.Value ?? throw new ArgumentNullException(nameof(DDEIOptions));
 
-    client.BaseAddress = new Uri(opts.BaseUrl);
+    // client.BaseAddress = new Uri(opts.BaseUrl);
     client.DefaultRequestHeaders.Add(DDEIOptions.FunctionKey, opts.AccessKey);
     client.DefaultRequestHeaders.CacheControl = new CacheControlHeaderValue { NoCache = true };
 

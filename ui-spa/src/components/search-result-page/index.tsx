@@ -251,7 +251,9 @@ const CaseSearchResultPage = () => {
 
   const getAreaTextFromValue = (value: string | undefined) => {
     if (!value) return "";
-    return formattedAreaValues.find((area) => area.value === value)?.children;
+    return formattedAreaValues.options.find(
+      (area) => String(area.value) === value,
+    )?.children;
   };
 
   const getResultsCountText = () => {

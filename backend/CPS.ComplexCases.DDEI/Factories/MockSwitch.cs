@@ -6,9 +6,9 @@ namespace CPS.ComplexCases.DDEI.Factories
     {
         private readonly DDEIOptions _ddeiOptions = ddeiOptions.Value;
 
-        public string SwitchPathIfMockUser(string subject, string path) =>
-            subject.Contains("mock.user")
-                ? new Uri(new Uri(_ddeiOptions.MockBaseUrl), path).AbsolutePath
-                : path;
+        public Uri BuildUri(string subject, string path) =>
+            new(new Uri(subject.Contains("mock.user")
+                ? _ddeiOptions.MockBaseUrl
+                : _ddeiOptions.BaseUrl), path);
     }
 }

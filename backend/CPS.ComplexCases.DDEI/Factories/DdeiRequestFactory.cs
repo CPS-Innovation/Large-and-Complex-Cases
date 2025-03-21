@@ -32,7 +32,7 @@ public class DdeiRequestFactory(IMockSwitch mockSwitch) : IDdeiRequestFactory
 
   private HttpRequestMessage BuildRequest(HttpMethod httpMethod, string path, DdeiBaseArgDto arg)
   {
-    var request = new HttpRequestMessage(httpMethod, _mockSwitch.SwitchPathIfMockUser(arg.CmsAuthValues, path));
+    var request = new HttpRequestMessage(httpMethod, _mockSwitch.BuildUri(arg.CmsAuthValues, path));
     request.Headers.Add(CmsAuthValues, arg.CmsAuthValues);
     request.Headers.Add(CorrelationId, arg.CorrelationId.ToString());
     return request;
