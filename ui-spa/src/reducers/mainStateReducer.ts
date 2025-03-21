@@ -25,8 +25,6 @@ export const mainStateReducer = (
   switch (action.type) {
     case "UPDATE_CASE_DIVISIONS_OR_AREAS": {
       switch (action.payload.status) {
-        case "failed":
-          return state;
         case "loading":
           return {
             ...state,
@@ -41,9 +39,7 @@ export const mainStateReducer = (
             },
           };
         default:
-          throw new Error(
-            "Unexpected status in mainStateReducer UPDATE_CASE_DIVISIONS_OR_AREAS",
-          );
+          return state;
       }
     }
 
