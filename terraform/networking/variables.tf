@@ -13,6 +13,10 @@ variable "terraform_service_principal_display_name" {
   type = string
 }
 
+variable "subscription_id" {
+  type = string
+}
+
 variable "appinsights_configuration" {
   type = object({
     log_retention_days                   = number
@@ -26,12 +30,10 @@ variable "appinsights_configuration" {
 
 variable "subnets" {
   type = object({
-    ampls      = list(string)
-    storage    = list(string)
-    ui         = list(string)
-    api        = list(string)
-    endpoints  = list(string)
-    egressMock = list(string)
-    netAppMock = list(string)
+    ampls = list(string)
   })
+}
+
+variable "nsg_name" {
+  type = string
 }

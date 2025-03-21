@@ -5,7 +5,7 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
   service_plan_id               = azurerm_service_plan.asp_complex_cases_api.id
   storage_account_name          = azurerm_storage_account.sacpsccapi.name
   storage_account_access_key    = azurerm_storage_account.sacpsccapi.primary_access_key
-  virtual_network_subnet_id     = data.azurerm_subnet.complex_cases_api_subnet.id
+  virtual_network_subnet_id     = azurerm_subnet.sn_complex_cases_api_subnet.id
   tags                          = local.common_tags
   functions_extension_version   = "~4"
   https_only                    = true
@@ -227,7 +227,7 @@ resource "azurerm_private_endpoint" "complex_cases_api_pe" {
   name                = "${azurerm_linux_function_app.complex_cases_api.name}-pe"
   resource_group_name = azurerm_resource_group.rg_complex_cases.name
   location            = azurerm_resource_group.rg_complex_cases.location
-  subnet_id           = data.azurerm_subnet.complex_cases_api_subnet.id
+  subnet_id           = azurerm_subnet.sn_complex_cases_api_subnet.id
   tags                = local.common_tags
 
   private_dns_zone_group {

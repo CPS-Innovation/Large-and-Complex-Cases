@@ -13,6 +13,10 @@ variable "terraform_service_principal_display_name" {
   type = string
 }
 
+variable "subscription_id" {
+  type = string
+}
+
 variable "service_plans" {
   type = object({
     ui_service_plan_sku         = string
@@ -48,5 +52,20 @@ variable "dns_server" {
 }
 
 variable "dns_alt_server" {
+  type = string
+}
+
+variable "subnets" {
+  type = object({
+    storage    = list(string)
+    ui         = list(string)
+    api        = list(string)
+    endpoints  = list(string)
+    egressMock = list(string)
+    netAppMock = list(string)
+  })
+}
+
+variable "nsg_name" {
   type = string
 }

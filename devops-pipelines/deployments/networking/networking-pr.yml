@@ -42,11 +42,11 @@ stages:
             displayName: Terraform > Init
             workingDirectory: $(terraformWorkingDir)
             env:
-              TF_STATE_ACCOUNT_NAME: $(terraform-storage-name-dev)
-              TF_STATE_CONTAINER_NAME: $(terraform-container-name-networking-dev)
+              TF_STATE_ACCOUNT_NAME: $(terraform-storage-name-preprod)
+              TF_STATE_CONTAINER_NAME: $(terraform-container-name-networking-preprod)
               TF_STATE_KEY: $(terraform-state-file)
-              TF_STATE_ACCESS_KEY: $(terraform-storage-shared-key-dev)
-              TF_LOG: $(log-level-dev)
+              TF_STATE_ACCESS_KEY: $(terraform-storage-shared-key-preprod)
+              TF_LOG: $(log-level-preprod)
     
           # Validate
           - bash: terraform validate
@@ -77,15 +77,15 @@ stages:
             displayName: Terraform > Init
             workingDirectory: $(terraformWorkingDir)
             env:
-              TF_STATE_ACCOUNT_NAME: $(terraform-storage-name-dev)
-              TF_STATE_CONTAINER_NAME: $(terraform-container-name-networking-dev)
+              TF_STATE_ACCOUNT_NAME: $(terraform-storage-name-preprod)
+              TF_STATE_CONTAINER_NAME: $(terraform-container-name-networking-preprod)
               TF_STATE_KEY: $(terraform-state-file)
-              TF_STATE_ACCESS_KEY: $(terraform-storage-shared-key-dev)
-              TF_LOG: $(log-level-dev)
+              TF_STATE_ACCESS_KEY: $(terraform-storage-shared-key-preprod)
+              TF_LOG: $(log-level-preprod)
     
           # Terraform Plan
           - bash: |
-              terraform plan -input=false -out=dev.tfplan -var-file="dev.tfvars"
+              terraform plan -input=false -out=preprod.tfplan -var-file="preprod.tfvars"
             displayName: 'Terraform > Write Networking Plan'
             workingDirectory: $(terraformWorkingDir)
             env:
@@ -93,4 +93,4 @@ stages:
               ARM_CLIENT_SECRET: $(clientSecret)
               ARM_TENANT_ID: $(tenantId)
               ARM_SUBSCRIPTION_ID: $(subscriptionId)
-              TF_LOG: $(log-level-dev)
+              TF_LOG: $(log-level-preprod)
