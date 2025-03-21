@@ -1,9 +1,24 @@
 .pageWrapper {
   margin-top: 1.5rem;
 }
+.errorSummaryWrapper {
+  margin-top: 1rem;
+  max-width: 30rem;
+  &:focus {
+    outline: 0.2rem solid #ffdd00;
+  }
+  :global(.govuk-error-summary) {
+    margin-bottom: 1.5rem;
+    padding: 0.625rem;
+  }
+}
 
-.hint {
-  padding-top: 0.5rem;
+.areaSelectLabel {
+  margin-top: 1rem;
+}
+
+:global(.govuk-header__container .govuk-header__logo) {
+  width: 100%;
 }
 
 .inputWrapper {
@@ -11,10 +26,10 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 1rem;
-}
-.errorSummaryWrapper {
-  margin-top: 1rem;
-  max-width: 30rem;
+  :global(.govuk-form-group) {
+    margin-bottom: 1.25rem;
+    width: 100%;
+  }
 }
 .errorSummaryWrapper {
   &:focus {

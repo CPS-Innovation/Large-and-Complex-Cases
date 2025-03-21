@@ -1,5 +1,4 @@
 import { http, delay, HttpResponse } from "msw";
-import { GATEWAY_BASE_URL } from "../config";
 import {
   caseAreasDev,
   caseAreasPlaywright,
@@ -7,22 +6,21 @@ import {
   casesSearchResultsPlaywright,
 } from "./data";
 
-import { MockApiConfig } from "../mocks/browser";
-
-export const setupHandlers = ({ sourceName }: MockApiConfig) => {
+export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
+  const isDevMock = () => apiMockSource === "dev";
+  const RESPONSE_DELAY = isDevMock() ? 10 : 0;
   return [
-    http.get(`${GATEWAY_BASE_URL}/api/areas`, async () => {
-      const results = sourceName === "dev" ? caseAreasDev : caseAreasPlaywright;
-      await delay();
+    http.get(`${baseUrl}/api/areas`, async () => {
+      const results = isDevMock() ? caseAreasDev : caseAreasPlaywright;
+      await delay(RESPONSE_DELAY);
       return HttpResponse.json(results);
     }),
 
-    http.get(`${GATEWAY_BASE_URL}/api/cases`, async () => {
-      const caseSearchResults =
-        sourceName === "dev"
-          ? casesSearchResultsDev
-          : casesSearchResultsPlaywright;
-      await delay();
+    http.get(`${baseUrl}/api/case-search`, async () => {
+      const caseSearchResults = isDevMock()
+        ? casesSearchResultsDev
+        : casesSearchResultsPlaywright;
+      await delay(RESPONSE_DELAY);
       return HttpResponse.json(caseSearchResults);
     }),
   ];

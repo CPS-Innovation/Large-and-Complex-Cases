@@ -1,10 +1,11 @@
 import { useMemo } from "react";
-import { useMainStateContext } from "../../providers/mainStateProvider";
+import { useMainStateContext } from "../../providers/MainStateProvider";
 import { useGetCaseDivisionOrAreas } from "../../common/hooks/useGetAppLevelLookups";
+
 import { CaseDivisionsOrArea } from "../types/LooksupData";
 
 const mapGroupHeader = (text: string) => ({
-  value: -1,
+  value: "",
   children: text,
   disabled: true,
 });
@@ -19,7 +20,6 @@ export const useFormattedAreaValues = () => {
     state: { caseDivisionsOrAreas },
     dispatch,
   } = useMainStateContext()!;
-
   useGetCaseDivisionOrAreas(caseDivisionsOrAreas, dispatch);
 
   const formattedAreaValues = useMemo(() => {
@@ -37,8 +37,6 @@ export const useFormattedAreaValues = () => {
       ],
     };
   }, [caseDivisionsOrAreas]);
-
-  console.log(formattedAreaValues.defaultValue);
 
   return formattedAreaValues;
 };

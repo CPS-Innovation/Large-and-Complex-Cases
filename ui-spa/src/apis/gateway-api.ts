@@ -12,31 +12,7 @@ const buildCommonHeaders = async (): Promise<Record<string, string>> => {
   };
 };
 
-export const getInitialMessage = async () => {
-  try {
-    const url = `${GATEWAY_BASE_URL}/api/initialmessage`;
-
-    const response = await fetch(url, {
-      method: "GET",
-      credentials: "include",
-      headers: {
-        ...(await buildCommonHeaders()),
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    return await response.json();
-  } catch (error) {
-    console.error("Error:", error);
-    throw error;
-  }
-};
-
 export const getCaseSearchResults = async (searchParams: string) => {
-  console.log("calling api....");
   try {
     const url = `${GATEWAY_BASE_URL}/api/case-search?${searchParams}`;
 
@@ -75,7 +51,6 @@ export const getCaseDivisionsOrAreas = async () => {
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
-
     return (await response.json()) as CaseDivisionsOrAreaResponse;
   } catch (error) {
     console.error("Error:", error);

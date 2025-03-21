@@ -37,7 +37,6 @@ const CaseSearchResultPage = () => {
       urn: "",
     };
 
-    console.log("searchParamKeys>>", searchParams);
     if (
       searchParamKeys.includes("defendant-name") &&
       searchParamKeys.includes("area")
@@ -74,7 +73,6 @@ const CaseSearchResultPage = () => {
     [queryString],
     triggerSearchApi,
   );
-
   useEffect(() => {
     const isValid = validateFormData();
     setTriggerSearchApi(isValid);
@@ -87,7 +85,6 @@ const CaseSearchResultPage = () => {
       updateSearchParams(searchParams);
     }
   };
-
   const renderSearchForm = () => {
     switch (formData[SearchFormField.searchType]) {
       case "operation name": {
@@ -121,7 +118,7 @@ const CaseSearchResultPage = () => {
             <Select
               label={{
                 htmlFor: "search-operation-area",
-                children: "Select Area",
+                children: "Select area",
                 className: styles.areaSelectLabel,
               }}
               id="search-operation-area"
@@ -241,60 +238,107 @@ const CaseSearchResultPage = () => {
   const getTitleText = () => {
     switch (formData[SearchFormField.searchType]) {
       case "operation name":
-        return "Search for Operation name";
+        return (
+          <>
+            Search results for operation{" "}
+            <b>{`"${searchParams["operation-name"]}"`}</b>
+          </>
+        );
       case "defendant name":
-        return "Search for Defendant surname";
+        return (
+          <>
+            Search results for defendant surname{" "}
+            <b>{`"${searchParams["defendant-name"]}"`}</b>
+          </>
+        );
       default:
-        return "Search for urn search";
+        return (
+          <>
+            Search results for URN <b>{`"${searchParams["urn"]}"`}</b>
+          </>
+        );
     }
   };
 
   const getAreaTextFromValue = (value: string | undefined) => {
     if (!value) return "";
-    return formattedAreaValues.options.find(
-      (area) => String(area.value) === value,
-    )?.children;
+    console.log("formattedAreaValues>>>", value);
+    console.log("formattedAreaValues optiom>>>", formattedAreaValues.options);
+    const area = formattedAreaValues.options.find(
+      (area) => area.value === parseInt(value),
+    );
+    console.log("area>>", area?.children);
+    return area?.children;
   };
 
   const getResultsCountText = () => {
     if (apiState.status !== "succeeded") return <> </>;
     const resultString =
       apiState.status === "succeeded" && apiState?.data?.length < 2
-        ? "result"
-        : "results";
+        ? "case"
+        : "cases";
 
-    const resultHtml = apiState.data.length ? (
-      <>
-        We've found {apiState?.data?.length} {resultString} for {""}
-      </>
-    ) : (
-      <>There are no matching results for </>
-    );
+    if (apiState.data.length) {
+      const resultHtml = (
+        <>
+          <b>{apiState?.data?.length}</b> {resultString}{" "}
+        </>
+      );
+      switch (formData[SearchFormField.searchType]) {
+        case "operation name":
+          return (
+            <>
+              {resultHtml}
+              found in <b>{getAreaTextFromValue(searchParams["area"])}</b>.
+              Select a case to view more details.
+            </>
+          );
+        case "defendant name":
+          return (
+            <>
+              {resultHtml}
+              found in <b>{getAreaTextFromValue(searchParams["area"])}</b>.
+              Select a case to view more details.
+            </>
+          );
+        default:
+          return (
+            <>
+              {resultHtml}
+              found. Select a case to view more details.
+            </>
+          );
+      }
+    }
+
     switch (formData[SearchFormField.searchType]) {
       case "operation name":
         return (
           <>
-            {resultHtml}
-            <b>{searchParams["operation-name"]}</b> in{" "}
-            {getAreaTextFromValue(searchParams["area"])}.
+            There are <b>no cases</b> matching the operation name in{" "}
+            <b>{getAreaTextFromValue(searchParams["area"])}</b>.
           </>
         );
       case "defendant name":
         return (
           <>
-            {resultHtml}
-            <b>{searchParams["defendant-name"]}</b> in{" "}
-            {getAreaTextFromValue(searchParams["area"])}.
+            There are <b>no cases</b> matching the defendant surname in{" "}
+            <b>{getAreaTextFromValue(searchParams["area"])}</b>.
           </>
         );
-      default:
+      case "urn":
         return (
           <>
-            {resultHtml}
-            <b>{searchParams["urn"]}</b>.
+            There are <b>no cases</b> matching the urn.
           </>
         );
     }
+  };
+
+  const getSearchTypeText = () => {
+    if (formData[SearchFormField.searchType] === "defendant name")
+      return "defendant surname";
+    return formData[SearchFormField.searchType];
   };
 
   const getTableRowData = () => {
@@ -357,33 +401,31 @@ const CaseSearchResultPage = () => {
   };
 
   if (apiState.status === "loading") {
-    return <div> Loading...</div>;
+    return <div className="govuk-width-container"> Loading...</div>;
   }
   return (
-    <div className={styles.fullWidthContainer}>
-      <div className="govuk-width-container">
-        <BackLink href="/">Back</BackLink>
-        <div className={styles.contentTop}>
-          {!!errorList.length && (
-            <div
-              ref={errorSummaryRef}
-              tabIndex={-1}
-              className={styles.errorSummaryWrapper}
-            >
-              <ErrorSummary
-                data-testid={"search-error-summary"}
-                className={styles.errorSummary}
-                errorList={errorList}
-                titleChildren="There is a problem"
-              />
-            </div>
-          )}
-          <h1>{getTitleText()}</h1>
-          <div className={styles.inputWrapper}>
-            {renderSearchForm()}
-            <div className={styles.btnWrapper}>
-              <Button onClick={handleSearch}>Search</Button>
-            </div>
+    <div className="govuk-width-container">
+      <BackLink href="/">Back</BackLink>
+      <div className={styles.contentTop}>
+        {!!errorList.length && (
+          <div
+            ref={errorSummaryRef}
+            tabIndex={-1}
+            className={styles.errorSummaryWrapper}
+          >
+            <ErrorSummary
+              data-testid={"search-error-summary"}
+              className={styles.errorSummary}
+              errorList={errorList}
+              titleChildren="There is a problem"
+            />
+          </div>
+        )}
+        <h1>{getTitleText()}</h1>
+        <div className={styles.inputWrapper}>
+          {renderSearchForm()}
+          <div className={styles.btnWrapper}>
+            <Button onClick={handleSearch}>Search</Button>
           </div>
           {apiState.status === "succeeded" && (
             <span className={styles.searchResultsCount}>
@@ -391,52 +433,57 @@ const CaseSearchResultPage = () => {
             </span>
           )}
         </div>
+        {apiState.status === "succeeded" && (
+          <span className={styles.searchResultsCount}>
+            {getResultsCountText()}
+          </span>
+        )}
+      </div>
 
-        <div className={styles.resultsTable}>
-          {apiState.status === "succeeded" && !!apiState.data.length && (
-            <Table
-              head={[
-                {
-                  children: "Defendant or Operation name",
-                },
-                {
-                  children: "URN",
-                },
-                {
-                  children: "Lead defendant",
-                },
-                {
-                  children: "Egress",
-                },
-                {
-                  children: "Shared Drive",
-                },
-                {
-                  children: "Case created",
-                },
-                {
-                  children: "",
-                },
-              ]}
-              rows={getTableRowData()}
-            ></Table>
-          )}
-          {apiState.status === "succeeded" && !apiState.data.length && (
-            <div className={styles.noResultsContent}>
-              <div>
-                <b>You can:</b>
-              </div>
-              <ul className="govuk-list govuk-list--bullet">
-                <li>check CMS to see if the case exists</li>
-                <li>check the spelling of your search</li>
-                <li>
-                  check with your Unit Manager to see if the case is restricted
-                </li>
-                <li>contact the Service Desk</li>
-              </ul>
+      <div className={styles.results}>
+        {apiState.status === "succeeded" && !!apiState.data.length && (
+          <Table
+            head={[
+              {
+                children: "Defendant or Operation name",
+              },
+              {
+                children: "URN",
+              },
+              {
+                children: "Lead defendant",
+              },
+              {
+                children: "Egress",
+              },
+              {
+                children: "Shared Drive",
+              },
+              {
+                children: "Case created",
+              },
+              {
+                children: "",
+              },
+            ]}
+            rows={getTableRowData()}
+          ></Table>
+        )}
+        {apiState.status === "succeeded" && !apiState.data.length && (
+          <div className={styles.noResultsContent}>
+            <div>
+              <span>You can:</span>
             </div>
-          )}
-        </div>
+            <ul className="govuk-list govuk-list--bullet">
+              <li>check for spelling mistakes in the {getSearchTypeText()}.</li>
+              <li>
+                check the Case Management System to make sure the case exists
+                and that you have access.
+              </li>
+              <li>contact the product team if you need further help.</li>
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );

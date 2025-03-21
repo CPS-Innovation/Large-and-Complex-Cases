@@ -12,16 +12,14 @@ import styles from "./index.module.scss";
 
 const CaseSearchPage = () => {
   const errorSummaryRef = useRef<HTMLInputElement>(null);
-
   const { navigateWithParams } = useSearchNavigation();
   const formattedAreaValues = useFormattedAreaValues();
-  // const areaResults = useApi(getAreas, []);
   const initialData: SearchFromData = {
     searchType: "urn",
     operationName: "",
-    operationArea: String(formattedAreaValues.defaultValue),
+    operationArea: "",
     defendantName: "",
-    defendantArea: String(formattedAreaValues.defaultValue),
+    defendantArea: "",
     urn: "",
   };
 
@@ -33,6 +31,27 @@ const CaseSearchPage = () => {
     handleFormChange,
     getSearchParams,
   } = useCaseSearchForm(initialData);
+
+  useEffect(() => {
+    if (
+      !formData[SearchFormField.defendantArea] &&
+      formattedAreaValues.defaultValue
+    ) {
+      handleFormChange(
+        SearchFormField.defendantArea,
+        String(formattedAreaValues.defaultValue),
+      );
+    }
+    if (
+      !formData[SearchFormField.operationArea] &&
+      formattedAreaValues.defaultValue
+    ) {
+      handleFormChange(
+        SearchFormField.operationArea,
+        String(formattedAreaValues.defaultValue),
+      );
+    }
+  }, [formattedAreaValues]);
 
   useEffect(() => {
     if (errorList.length) errorSummaryRef.current?.focus();
@@ -69,11 +88,7 @@ const CaseSearchPage = () => {
         <div>
           <div className={styles.inputWrapper}>
             <Radios
-              fieldset={{
-                legend: {
-                  children: <b>Search Large and Complex Cases</b>,
-                },
-              }}
+              aria-label="choose search type"
               hint={{
                 children: "Select one option",
               }}
@@ -116,7 +131,6 @@ const CaseSearchPage = () => {
                         id="search-operation-area"
                         data-testid="search-operation-area"
                         value={formData.operationArea}
-                        defaultValue={formattedAreaValues.defaultValue}
                         items={formattedAreaValues.options}
                         formGroup={{
                           className: styles.select,
@@ -179,7 +193,6 @@ const CaseSearchPage = () => {
                         }}
                         id="search-defendant-area"
                         data-testid="search-defendant-area"
-                        defaultValue={formattedAreaValues.defaultValue}
                         items={formattedAreaValues.options}
                         formGroup={{
                           className: styles.select,

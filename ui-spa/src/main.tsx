@@ -1,11 +1,11 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./components/App.tsx";
-import { MOCK_API_SOURCE, GATEWAY_BASE_URL } from "./config.ts";
+import { MOCK_API_SOURCE } from "./config.ts";
 import "./index.scss";
 
 async function enableMocking() {
-  if (MOCK_API_SOURCE !== "dev" && MOCK_API_SOURCE !== "playwright") {
+  if (MOCK_API_SOURCE !== "dev") {
     return;
   }
 

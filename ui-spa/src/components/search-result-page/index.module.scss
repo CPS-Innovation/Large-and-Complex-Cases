@@ -1,10 +1,3 @@
-.fullWidthContainer {
-  width: 100%;
-}
-
-.hint {
-  padding-top: 0.5rem;
-}
 .contentTop {
   padding: 0 0 1.5rem 0;
   border-bottom: 1px solid #b1b4b6;
@@ -26,56 +19,13 @@
   & :global(.govuk-error-message) {
     max-width: 25rem;
   }
+  & :global(.govuk-form-group):first-of-type {
+    width: 25rem;
+  }
 }
 
 .searchResultsCount {
   display: block;
-}
-
-.resultHeading {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 1rem;
-}
-.resultHeadingHeader {
-  text-decoration: underline;
-  font-weight: bold;
-
-  text-transform: capitalize;
-  &:global(.govuk-heading-l) {
-    color: #1d70b8;
-    margin-bottom: 0;
-  }
-}
-
-.searchResults {
-  list-style: none;
-  padding: 0;
-  margin-top: 1.875rem;
-  & li {
-    padding: 0 0 2.5rem 0;
-    margin: 0 0 2.5rem 0;
-    border-bottom: 1px solid #b1b4b6;
-  }
-  & li:last-child {
-    border-bottom: none;
-  }
-}
-.resultContent {
-  display: grid;
-  grid-template-columns: 9.375rem auto;
-  gap: 0.625rem;
-  font-size: 1.1875rem;
-
-  dt {
-    font-weight: bold;
-    text-align: left;
-    padding-right: 0.625rem;
-  }
-  dd {
-    margin: 0;
-    text-align: left;
-  }
 }
 
 .errorSummaryWrapper {
@@ -95,7 +45,8 @@
   color: #1d70b8;
 }
 
-.resultsTable {
+.results {
+  margin-top: 2.5rem;
   .statusTag {
     text-transform: capitalize;
     font-weight: normal;

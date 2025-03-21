@@ -1,5 +1,4 @@
 using System.Net;
-using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Models.Args;
 
 namespace CPS.ComplexCases.DDEI.Factories;

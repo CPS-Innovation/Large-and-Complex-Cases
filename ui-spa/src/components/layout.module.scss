@@ -1,19 +1,27 @@
 .username {
-  margin-bottom: 20px;
+  margin-bottom: 1.25rem;
 }
 .mainContent {
   min-height: 70vh;
   & :global(.govuk-width-container) {
-    max-width: 1400px;
-    padding-right: 25px;
-    padding-left: 25px;
+    max-width: 87.5rem;
+    padding-right: 1.5625rem;
+    padding-left: 1.5625rem;
   }
 }
 
 .header {
   & :global(.govuk-width-container) {
-    max-width: 1400px;
-    padding-right: 25px;
-    padding-left: 25px;
+    max-width: 87.5rem;
+    padding-right: 1.5625rem;
+    padding-left: 1.5625rem;
+  }
+}
+
+.footer {
+  & :global(.govuk-width-container) {
+    max-width: 87.5rem;
+    padding-right: 1.5625rem;
+    padding-left: 1.5625rem;
   }
 }

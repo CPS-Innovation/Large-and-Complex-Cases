@@ -27,11 +27,11 @@ builder.Services.AddSingleton<IAuthorizationValidator, AuthorizationValidator>()
 
 builder.Services.AddSingleton(_ =>
 {
-    // as per https://github.com/dotnet/aspnetcore/issues/43220, there is guidance to only have one instance of ConfigurationManager.
-    return new ConfigurationManager<OpenIdConnectConfiguration>(
-                $"https://login.microsoftonline.com/{builder.Configuration["TenantId"]}/v2.0/.well-known/openid-configuration",
-                new OpenIdConnectConfigurationRetriever(),
-                new HttpDocumentRetriever());
+  // as per https://github.com/dotnet/aspnetcore/issues/43220, there is guidance to only have one instance of ConfigurationManager.
+  return new ConfigurationManager<OpenIdConnectConfiguration>(
+              $"https://login.microsoftonline.com/{builder.Configuration["TenantId"]}/v2.0/.well-known/openid-configuration",
+              new OpenIdConnectConfigurationRetriever(),
+              new HttpDocumentRetriever());
 });
 
 builder.Services.AddDdeiClient(builder.Configuration);

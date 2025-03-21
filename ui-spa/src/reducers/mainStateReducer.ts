@@ -1,7 +1,7 @@
 import { CaseDivisionsOrAreaResponse } from "../common/types/LooksupData";
 import { ApiResult } from "../common/types/ApiResult";
 import { AsyncResult } from "../common/types/AsyncResult";
-import { mapAreaLookups } from "./mapAreaLookups";
+import { mapAreaLookups } from "./utils/mapAreaLookups";
 
 export type MainState = {
   caseDivisionsOrAreas: AsyncResult<CaseDivisionsOrAreaResponse>;
@@ -24,10 +24,7 @@ export const mainStateReducer = (
 ): MainState => {
   switch (action.type) {
     case "UPDATE_CASE_DIVISIONS_OR_AREAS": {
-      console.log("hiiii", action.payload);
       switch (action.payload.status) {
-        case "failed":
-          return state;
         case "loading":
           return {
             ...state,
@@ -42,9 +39,7 @@ export const mainStateReducer = (
             },
           };
         default:
-          throw new Error(
-            "Unexpected status in mainStateReducer UPDATE_CASE_DIVISIONS_OR_AREAS",
-          );
+          return state;
       }
     }
 
