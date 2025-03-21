@@ -225,7 +225,7 @@ const CaseSearchPage = () => {
                       <Input
                         id="search-urn"
                         data-testid="search-urn"
-                        className="govuk-input--width-20"
+                        className={`govuk-input--width-20 ${styles.urnInput}`}
                         label={{
                           children: "URN",
                         }}

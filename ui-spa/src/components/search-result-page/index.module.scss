@@ -22,6 +22,9 @@
   & :global(.govuk-form-group):first-of-type {
     width: 25rem;
   }
+  .urnInput {
+    text-transform: uppercase;
+  }
 }
 
 .searchResultsCount {

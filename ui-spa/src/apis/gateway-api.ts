@@ -21,7 +21,6 @@ export const getCaseSearchResults = async (searchParams: string) => {
       credentials: "include",
       headers: {
         ...(await buildCommonHeaders()),
-        "Content-Type": "application/json",
       },
     });
 
@@ -44,7 +43,6 @@ export const getCaseDivisionsOrAreas = async () => {
       credentials: "include",
       headers: {
         ...(await buildCommonHeaders()),
-        "Content-Type": "application/json",
       },
     });
 

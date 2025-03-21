@@ -19,6 +19,8 @@ import {
 import { Link } from "react-router";
 import { useFormattedAreaValues } from "../../common/hooks/useFormattedAreaValues";
 import styles from "./index.module.scss";
+import { RawApiResult } from "../../common/types/ApiResult";
+import { SearchResultData } from "../../common/types/SearchResultResponse";
 
 const CaseSearchResultPage = () => {
   const [triggerSearchApi, setTriggerSearchApi] = useState(false);
@@ -68,7 +70,7 @@ const CaseSearchResultPage = () => {
     getSearchParams,
   } = useCaseSearchForm(getInitialState());
 
-  const apiState = useApi(
+  const apiState: RawApiResult<SearchResultData> = useApi(
     getCaseSearchResults,
     [queryString],
     triggerSearchApi,
@@ -208,7 +210,7 @@ const CaseSearchResultPage = () => {
             <Input
               id="search-urn"
               data-testid="search-urn"
-              className="govuk-input--width-20"
+              className={`govuk-input--width-20 ${styles.urnInput}`}
               label={{
                 children: "URN",
               }}
@@ -343,7 +345,7 @@ const CaseSearchResultPage = () => {
 
   const getTableRowData = () => {
     if (apiState.status !== "succeeded") return [];
-    return apiState.data.map((data: any) => {
+    return apiState.data.map((data) => {
       return {
         cells: [
           {
