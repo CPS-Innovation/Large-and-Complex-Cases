@@ -49,7 +49,7 @@ public static class LoggingExtensions
   public static void LogMethodError(this ILogger logger, Guid correlationId, string methodName,
       string errorMessage, Exception ex)
   {
-    var messages = ex.FromHierarchy(ex => ex.InnerException)
+    var messages = ex.FromHierarchy(static ex => ex.InnerException)
         .Select(ex => ex.Message);
 
     var exceptionMessages = string.Join(Environment.NewLine, messages);

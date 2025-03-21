@@ -133,7 +133,7 @@
           "EgressOptions__Url": "http://localhost:7080"
         }
       },
-      "command": "func start --password CPS.ComplexCases.API --verbose",
+      "command": "func start --no-build --verbose --password CPS.ComplexCases.API",
       "isBackground": true,
       "problemMatcher": "$func-dotnet-watch"
     },
