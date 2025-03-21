@@ -1,11 +1,13 @@
 environment = {
-  name  = "e2e"
-  alias = "e2e"
+  name  = "int"
+  alias = "int"
 }
 
-terraform_service_principal_display_name = "Azure Pipeline: Complex-Cases-E2E"
+terraform_service_principal_display_name = "Azure Pipeline: Complex-Cases-INT"
 dns_server                               = "10.7.197.20"
 dns_alt_server                           = "168.63.129.16"
+subscription_id                          = "7f67e716-03c5-4675-bad2-cc5e28652759"
+nsg_name                                 = "basicNsgVNET-LaCC-WANNET-nic01"
 
 service_plans = {
   ui_service_plan_sku         = "B2"
@@ -31,4 +33,13 @@ service_capacity = {
   netAppMock_default_capacity = 1
   netAppMock_minimum_capacity = 1
   netAppMock_max_capacity     = 2
+}
+
+subnets = {
+  storage    = []
+  ui         = []
+  api        = []
+  endpoints  = []
+  egressMock = []
+  netAppMock = []
 }

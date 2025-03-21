@@ -6,6 +6,8 @@ environment = {
 terraform_service_principal_display_name = "Azure Pipeline: Complex-Cases-Production"
 dns_server                               = "10.7.204.164"
 dns_alt_server                           = "168.63.129.16"
+subscription_id                          = "[Placeholder]"
+nsg_name                                 = "[Placeholder]"
 
 service_plans = {
   ui_service_plan_sku         = "P1mv3"
@@ -31,4 +33,13 @@ service_capacity = {
   netAppMock_default_capacity = 1
   netAppMock_minimum_capacity = 1
   netAppMock_max_capacity     = 2
+}
+
+subnets = {
+  storage    = []
+  ui         = []
+  api        = []
+  endpoints  = []
+  egressMock = []
+  netAppMock = []
 }

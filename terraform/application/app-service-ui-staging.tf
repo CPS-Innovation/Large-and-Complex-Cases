@@ -82,7 +82,7 @@ resource "azurerm_private_endpoint" "complex_cases_ui_staging_pe" {
   name                = "${azurerm_linux_web_app.complex_cases_ui.name}-staging-pe"
   resource_group_name = azurerm_resource_group.rg_complex_cases.name
   location            = azurerm_resource_group.rg_complex_cases.location
-  subnet_id           = data.azurerm_subnet.complex_cases_endpoints_subnet.id
+  subnet_id           = azurerm_subnet.sn_complex_cases_endpoints_subnet.id
   tags                = local.common_tags
 
   private_dns_zone_group {

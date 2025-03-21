@@ -2,3 +2,5 @@
 __azurite*
 __blobstorage__
 __queuestorage__
+**/bin/
+**/obj/
