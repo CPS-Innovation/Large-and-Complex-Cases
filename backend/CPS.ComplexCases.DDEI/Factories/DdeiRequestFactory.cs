@@ -10,13 +10,14 @@ public class DdeiRequestFactory(IMockSwitch mockSwitch) : IDdeiRequestFactory
   private readonly IMockSwitch _mockSwitch = mockSwitch;
 
   public HttpRequestMessage CreateListCasesByUrnRequest(DdeiUrnArgDto arg) =>
-  BuildRequest(HttpMethod.Get, $"api/urns/{Encode(arg.Urn)}/cases", arg);
+    BuildRequest(HttpMethod.Get, $"api/urns/{Encode(arg.Urn)}/cases", arg);
 
   public HttpRequestMessage CreateListCasesByDefendantRequest(DdeiDefendantNameArgDto arg) =>
     BuildRequest(HttpMethod.Get, $"api/cases/find?defendant-name={Encode(arg.LastName)}&area-code={Encode(arg.CmsAreaCode)}", arg);
 
   public HttpRequestMessage CreateListCasesByOperationNameRequest(DdeiOperationNameArgDto arg) =>
     BuildRequest(HttpMethod.Get, $"api/cases/find?operation-name={Encode(arg.OperationName)}&area-code={Encode(arg.CmsAreaCode)}", arg);
+
   public HttpRequestMessage CreateGetCaseRequest(DdeiCaseIdArgDto arg) =>
     BuildRequest(HttpMethod.Get, $"api/cases/{arg.CaseId}/summary", arg);
 

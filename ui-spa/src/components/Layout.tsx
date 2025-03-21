@@ -7,8 +7,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  console.log("hii layout>>");
-
   return (
     <>
       <Header />

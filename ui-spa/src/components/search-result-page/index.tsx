@@ -427,11 +427,6 @@ const CaseSearchResultPage = () => {
           <div className={styles.btnWrapper}>
             <Button onClick={handleSearch}>Search</Button>
           </div>
-          {apiState.status === "succeeded" && (
-            <span className={styles.searchResultsCount}>
-              {getResultsCountText()}
-            </span>
-          )}
         </div>
         {apiState.status === "succeeded" && (
           <span className={styles.searchResultsCount}>

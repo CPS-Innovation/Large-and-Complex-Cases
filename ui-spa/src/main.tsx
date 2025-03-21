@@ -9,14 +9,11 @@ async function enableMocking() {
     return;
   }
 
-  const { setupMockApi } = await import("./mocks/browser");
+  const { worker } = await import("./mocks/browser");
 
   // `worker.start()` returns a Promise that resolves
   // once the Service Worker is up and ready to intercept requests.
-  return setupMockApi({
-    baseUrl: GATEWAY_BASE_URL,
-    sourceName: MOCK_API_SOURCE,
-  });
+  return worker.start();
 }
 
 enableMocking().then(() => {
