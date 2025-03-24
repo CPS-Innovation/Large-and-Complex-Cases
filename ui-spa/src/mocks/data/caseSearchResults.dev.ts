@@ -5,7 +5,7 @@ export const casesSearchResultsDev = [
     leadDefendantName: "abc1",
     egressStatus: "connected",
     sharedDriveStatus877uj: "inactive",
-    registrationDate: "02/01/2000",
+    registrationDate: "2000-01-02",
   },
   {
     operationName: "Thunderstruck",
@@ -13,6 +13,6 @@ export const casesSearchResultsDev = [
     leadDefendantName: "abc2",
     egressStatus: "connected",
     sharedDriveStatus: "connected",
-    registrationDate: "03/01/2000",
+    registrationDate: "2000-01-03",
   },
 ];

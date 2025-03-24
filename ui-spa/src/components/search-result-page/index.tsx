@@ -21,6 +21,7 @@ import { useFormattedAreaValues } from "../../common/hooks/useFormattedAreaValue
 import styles from "./index.module.scss";
 import { RawApiResult } from "../../common/types/ApiResult";
 import { SearchResultData } from "../../common/types/SearchResultResponse";
+import { formatDate } from "../../common/utils/formatDate";
 
 const CaseSearchResultPage = () => {
   const [triggerSearchApi, setTriggerSearchApi] = useState(false);
@@ -388,7 +389,7 @@ const CaseSearchResultPage = () => {
               ),
           },
           {
-            children: data.registrationDate || "Unknown",
+            children: formatDate(data.registrationDate),
           },
           {
             children: (
