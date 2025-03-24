@@ -1,5 +1,4 @@
-﻿using CPS.ComplexCases.NetApp.WireMock;
-
+﻿using CPS.ComplexCases.WireMock;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -9,17 +8,10 @@ var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services.AddLogging(logging => logging.AddConsole().AddDebug());
 
-builder.Services.AddSingleton<ComplexCasesWireMock>();
-
-#if DEBUG
-builder.Services.Configure<WireMockServerSettings>(
-    builder.Configuration.GetSection("WireMockServerSettingsLocal"));
-#else
 builder.Services.Configure<WireMockServerSettings>(
     builder.Configuration.GetSection("WireMockServerSettings"));
-#endif
 
-builder.Services.AddHostedService<WireMockHostedService>();
+builder.Services.AddHostedService<HostedService>();
 
 var host = builder.Build();
 host.Run();
