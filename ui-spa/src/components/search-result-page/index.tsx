@@ -265,12 +265,9 @@ const CaseSearchResultPage = () => {
 
   const getAreaTextFromValue = (value: string | undefined) => {
     if (!value) return "";
-    console.log("formattedAreaValues>>>", value);
-    console.log("formattedAreaValues optiom>>>", formattedAreaValues.options);
     const area = formattedAreaValues.options.find(
       (area) => area.value === parseInt(value),
     );
-    console.log("area>>", area?.children);
     return area?.children;
   };
 

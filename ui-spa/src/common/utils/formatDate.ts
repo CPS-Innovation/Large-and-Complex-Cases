@@ -1,4 +1,4 @@
-const { format, parseISO, isValid } = require("date-fns");
+import { format, parseISO, isValid } from "date-fns";
 
 export const formatDate = (dateString: string) => {
   const date = parseISO(dateString);

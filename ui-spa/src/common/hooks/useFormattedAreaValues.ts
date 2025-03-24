@@ -1,7 +1,6 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useMainStateContext } from "../../providers/MainStateProvider";
-import { useGetCaseDivisionOrAreas } from "../../common/hooks/useGetAppLevelLookups";
-
+import { useAsyncActionHandlers } from "../hooks/useAsyncActionHandlers";
 import { CaseDivisionsOrArea } from "../types/LooksupData";
 
 const mapGroupHeader = (text: string) => ({
@@ -18,10 +17,13 @@ const mapOption = (item: CaseDivisionsOrArea) => ({
 export const useFormattedAreaValues = () => {
   const {
     state: { caseDivisionsOrAreas },
-    dispatch,
   } = useMainStateContext()!;
-  useGetCaseDivisionOrAreas(caseDivisionsOrAreas, dispatch);
+  const { handleGetCaseDivisionsOrAreas } = useAsyncActionHandlers();
 
+  useEffect(() => {
+    if (caseDivisionsOrAreas.status !== "succeeded")
+      handleGetCaseDivisionsOrAreas();
+  }, []);
   const formattedAreaValues = useMemo(() => {
     if (caseDivisionsOrAreas.status !== "succeeded")
       return { defaultValue: undefined, options: [] };

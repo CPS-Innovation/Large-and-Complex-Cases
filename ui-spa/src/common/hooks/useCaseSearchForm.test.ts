@@ -1,5 +1,5 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { vi, Mock } from "vitest";
+import { vi } from "vitest";
 import {
   useCaseSearchForm,
   SearchFromData,
