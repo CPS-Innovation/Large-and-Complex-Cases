@@ -81,7 +81,8 @@ const CaseSearchResultPage = () => {
     setTriggerSearchApi(isValid);
   }, [queryString]);
 
-  const handleSearch = () => {
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     const isFromValid = validateFormData();
     if (isFromValid) {
       const searchParams = getSearchParams();
@@ -422,12 +423,14 @@ const CaseSearchResultPage = () => {
           </div>
         )}
         <h1>{getTitleText()}</h1>
-        <div className={styles.inputWrapper}>
-          {renderSearchForm()}
-          <div className={styles.btnWrapper}>
-            <Button onClick={handleSearch}>Search</Button>
+        <form onSubmit={handleSearch}>
+          <div className={styles.inputWrapper}>
+            {renderSearchForm()}
+            <div className={styles.btnWrapper}>
+              <Button type="submit">Search</Button>
+            </div>
           </div>
-        </div>
+        </form>
         {apiState.status === "succeeded" && (
           <span className={styles.searchResultsCount}>
             {getResultsCountText()}
