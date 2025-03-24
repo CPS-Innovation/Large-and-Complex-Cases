@@ -5,7 +5,7 @@ pr: none
 resources:
   pipelines:
     - pipeline: ComplexCasesBuild
-      source: LaCC Application - Integration - Build
+      source: LaCC Application - Test - Build
       trigger:
         branches:
           include:
@@ -24,17 +24,17 @@ stages:
     parameters:
       buildAgentName: $(build-agent-pre-prod)
       initialStageDependsOn:
-      targetEnv: "Complex_Cases_INT"
+      targetEnv: "LaCC_TEST"
       targetBuild: ComplexCasesBuild
-      targetLabel: "INT"
+      targetLabel: "TEST"
       appInsightsKey: $(complex-cases-app-insights-instrumentation-key-e2e)
       azureSubscription: $(azure-subscription-pre-prod)
-      targetPlanName: "int"
+      targetPlanName: "test"
       terraformStorageAccount: $(terraform-storage-name-int)
       applicationTerraformContainerName: $(terraform-container-name-application)
       terraformStateKey: $(terraform-state-file)
       terraformStateAccessKey: $(terraform-storage-shared-key-int)
-      targetSuffix: "-int"
+      targetSuffix: "-test"
       logRetentionTime: $(log-retention-time)
       totalLogRetentionTime: $(total-log-retention-time)
       statusCheckMethod: $(status-check-method)

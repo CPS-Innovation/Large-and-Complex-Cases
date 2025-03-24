@@ -52,11 +52,11 @@ stages:
               appInsightsKey: ${{ parameters.appInsightsKey }}
               azureSubscription: ${{ parameters.azureSubscription }}
 
-      - job: Deploy_EgressMock
+      - job: Deploy_Mock
         dependsOn: Log_Start_Codebase
         condition: succeeded()
         steps:
-          - template: jobs/tasks/task_deploy-egress-mock.yml
+          - template: jobs/tasks/task_deploy-mock.yml
             parameters:
               targetBuild: ${{ parameters.targetBuild }}
               azureSubscription: ${{ parameters.azureSubscription }}
@@ -64,19 +64,6 @@ stages:
               statusCheckRetries: ${{ parameters.statusCheckRetries }}
               statusCheckDelaySeconds: ${{ parameters.statusCheckDelaySeconds }}
               statusCheckTimeoutSeconds: ${{ parameters.statusCheckTimeoutSeconds }}
-
-      - job: Deploy_NetAppMock
-        dependsOn: Log_Start_Codebase
-        condition: succeeded()
-        steps:
-          - template: jobs/tasks/task_deploy-netapp-mock.yml
-            parameters:
-              targetBuild: ${{ parameters.targetBuild }}
-              azureSubscription: ${{ parameters.azureSubscription }}
-              targetSuffix: ${{ parameters.targetSuffix }}
-              statusCheckRetries: ${{ parameters.statusCheckRetries }}
-              statusCheckDelaySeconds: ${{ parameters.statusCheckDelaySeconds }}
-              statusCheckTimeoutSeconds: ${{ parameters.statusCheckTimeoutSeconds }}      
 
       - job: Deploy_UI
         dependsOn: Log_Start_Codebase

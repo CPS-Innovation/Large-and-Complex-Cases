@@ -18,8 +18,7 @@ steps:
         $applicationTerraformCount=0
         $networkingTerraformCount=0
         $apiCount=0
-        $egressCount=0
-        $netAppCount=0
+        $mockCount=0
         $uiCount=0
         $e2eCount=0
         
@@ -42,15 +41,10 @@ steps:
             echo "API changes detected..."
             $apiCount++
           }
-          if ($name -like 'CPS.ComplexCases.Egress/*')
+          if ($name -like 'CPS.ComplexCases.WireMock/*')
           {
-            echo "Egress Client changes detected..."
-            $egressCount++
-          }
-          if ($name -like 'CPS.ComplexCases.NetApp/*')
-          {
-            echo "NetApp Client changes detected..."
-            $netAppCount++
+            echo "Wire Mock changes detected..."
+            mockCount++
           }
           if ($name -like 'ui/*')
           {
@@ -67,8 +61,7 @@ steps:
         Write-Host "##vso[task.setvariable variable=APPLICATION_TERRAFORM_COUNT;isOutput=true]$applicationTerraformCount"
         Write-Host "##vso[task.setvariable variable=NETWORKING_TERRAFORM_COUNT;isOutput=true]$networkingTerraformCount"
         Write-Host "##vso[task.setvariable variable=API_COUNT;isOutput=true]$apiCount"
-        Write-Host "##vso[task.setvariable variable=EGRESS_COUNT;isOutput=true]$egressCount"
-        Write-Host "##vso[task.setvariable variable=NETAPP_COUNT;isOutput=true]$netAppCount"
+        Write-Host "##vso[task.setvariable variable=MOCK_COUNT;isOutput=true]$mockCount"
         Write-Host "##vso[task.setvariable variable=UI_COUNT;isOutput=true]$uiCount"
         Write-Host "##vso[task.setvariable variable=E2E_TESTS_COUNT;isOutput=true]$e2eCount"
     name: Change_Results
