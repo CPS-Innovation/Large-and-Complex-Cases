@@ -1,14 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { useApi } from "../../common/hooks/useApi";
-import {
-  Button,
-  Input,
-  Select,
-  ErrorSummary,
-  Table,
-  BackLink,
-  Tag,
-} from "../govuk";
+import { Button, Input, Select, ErrorSummary, BackLink } from "../govuk";
 import { getCaseSearchResults } from "../../apis/gateway-api";
 import useSearchNavigation from "../../common/hooks/useSearchNavigation";
 import {
@@ -16,12 +8,11 @@ import {
   SearchFormField,
   SearchFromData,
 } from "../../common/hooks/useCaseSearchForm";
-import { Link } from "react-router";
+import SearchResults from "./SearchResults";
 import { useFormattedAreaValues } from "../../common/hooks/useFormattedAreaValues";
-import styles from "./index.module.scss";
 import { RawApiResult } from "../../common/types/ApiResult";
 import { SearchResultData } from "../../common/types/SearchResultResponse";
-import { formatDate } from "../../common/utils/formatDate";
+import styles from "./index.module.scss";
 
 const CaseSearchResultPage = () => {
   const [triggerSearchApi, setTriggerSearchApi] = useState(false);
@@ -340,71 +331,6 @@ const CaseSearchResultPage = () => {
     }
   };
 
-  const getSearchTypeText = () => {
-    if (formData[SearchFormField.searchType] === "defendant name")
-      return "defendant surname";
-    return formData[SearchFormField.searchType];
-  };
-
-  const getTableRowData = () => {
-    if (apiState.status !== "succeeded") return [];
-    return apiState.data.map((data) => {
-      return {
-        cells: [
-          {
-            children: (
-              <Link to="/" className={styles.link}>
-                {data.operationName
-                  ? data.operationName
-                  : data.leadDefendantName}
-              </Link>
-            ),
-          },
-          {
-            children: data.urn,
-          },
-          {
-            children: data.leadDefendantName,
-          },
-          {
-            children:
-              data.egressStatus === "connected" ? (
-                <Tag gdsTagColour="green" className={styles.statusTag}>
-                  Connected
-                </Tag>
-              ) : (
-                <Tag gdsTagColour="grey" className={styles.statusTag}>
-                  Inactive
-                </Tag>
-              ),
-          },
-          {
-            children:
-              data.sharedDriveStatus === "connected" ? (
-                <Tag gdsTagColour="green" className={styles.statusTag}>
-                  Connected
-                </Tag>
-              ) : (
-                <Tag gdsTagColour="grey" className={styles.statusTag}>
-                  Inactive
-                </Tag>
-              ),
-          },
-          {
-            children: formatDate(data.registrationDate),
-          },
-          {
-            children: (
-              <Link to="/" className={styles.link}>
-                View{" "}
-              </Link>
-            ),
-          },
-        ],
-      };
-    });
-  };
-
   if (apiState.status === "loading") {
     return <div className="govuk-width-container"> Loading...</div>;
   }
@@ -442,51 +368,10 @@ const CaseSearchResultPage = () => {
         )}
       </div>
 
-      <div className={styles.results}>
-        {apiState.status === "succeeded" && !!apiState.data.length && (
-          <Table
-            head={[
-              {
-                children: "Defendant or Operation name",
-              },
-              {
-                children: "URN",
-              },
-              {
-                children: "Lead defendant",
-              },
-              {
-                children: "Egress",
-              },
-              {
-                children: "Shared Drive",
-              },
-              {
-                children: "Case created",
-              },
-              {
-                children: "",
-              },
-            ]}
-            rows={getTableRowData()}
-          ></Table>
-        )}
-        {apiState.status === "succeeded" && !apiState.data.length && (
-          <div className={styles.noResultsContent}>
-            <div>
-              <span>You can:</span>
-            </div>
-            <ul className="govuk-list govuk-list--bullet">
-              <li>check for spelling mistakes in the {getSearchTypeText()}.</li>
-              <li>
-                check the Case Management System to make sure the case exists
-                and that you have access.
-              </li>
-              <li>contact the product team if you need further help.</li>
-            </ul>
-          </div>
-        )}
-      </div>
+      <SearchResults
+        searchApiResults={apiState}
+        searchType={formData[SearchFormField.searchType]}
+      />
     </div>
   );
 };
