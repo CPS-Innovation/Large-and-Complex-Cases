@@ -214,7 +214,7 @@ describe("useCaseSearchForm", () => {
     const expectedErrorList = [
       {
         children: "Defendant area should not be empty",
-        "data-testid": "search-operation-area-link",
+        "data-testid": "search-defendant-area-link",
         href: "#search-defendant-area",
         reactListKey: "0",
       },
@@ -256,7 +256,7 @@ describe("useCaseSearchForm", () => {
     const expectedErrorList = [
       {
         children: "Defendant area should not be empty",
-        "data-testid": "search-operation-area-link",
+        "data-testid": "search-defendant-area-link",
         href: "#search-defendant-area",
         reactListKey: "0",
       },
