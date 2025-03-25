@@ -16,6 +16,7 @@ import styles from "./index.module.scss";
 
 const CaseSearchResultPage = () => {
   const [triggerSearchApi, setTriggerSearchApi] = useState(false);
+  const [validatedAreaValues, setValidatedAreaValues] = useState(false);
   const errorSummaryRef = useRef<HTMLInputElement>(null);
   const { updateSearchParams, searchParams, queryString } =
     useSearchNavigation();
@@ -37,7 +38,6 @@ const CaseSearchResultPage = () => {
     ) {
       initialData.searchType = "defendant name";
       initialData.defendantName = searchParams["defendant-name"] ?? "";
-      initialData.defendantArea = searchParams["area"] ?? "";
       return initialData;
     }
     if (
@@ -46,7 +46,6 @@ const CaseSearchResultPage = () => {
     ) {
       initialData.searchType = "operation name";
       initialData.operationName = searchParams["operation-name"] ?? "";
-      initialData.operationArea = searchParams["area"] ?? "";
       return initialData;
     }
 
@@ -68,13 +67,35 @@ const CaseSearchResultPage = () => {
     triggerSearchApi,
   );
   useEffect(() => {
-    const isValid = validateFormData();
-    setTriggerSearchApi(isValid);
-  }, [queryString]);
+    if (formData[SearchFormField.searchType] === "urn" || validatedAreaValues) {
+      const isValid = validateFormData();
+      if (!triggerSearchApi && isValid) setTriggerSearchApi(true);
+    }
+  }, [queryString, validatedAreaValues]);
 
   useEffect(() => {
     if (errorList.length) errorSummaryRef.current?.focus();
   }, [errorList]);
+
+  useEffect(() => {
+    const isAreaValid = formattedAreaValues.options.find(
+      (option) => `${option.value}` === searchParams["area"],
+    );
+
+    if (!formData[SearchFormField.defendantArea] && isAreaValid) {
+      handleFormChange(
+        SearchFormField.defendantArea,
+        String(searchParams["area"]),
+      );
+    }
+    if (!formData[SearchFormField.operationArea] && isAreaValid) {
+      handleFormChange(
+        SearchFormField.operationArea,
+        String(searchParams["area"]),
+      );
+    }
+    if (formattedAreaValues.options.length) setValidatedAreaValues(true);
+  }, [formattedAreaValues]);
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -331,8 +352,12 @@ const CaseSearchResultPage = () => {
     }
   };
 
-  if (apiState.status === "loading") {
-    return <div className="govuk-width-container"> Loading...</div>;
+  if (
+    ((apiState.status === "loading" || apiState.status === "initial") &&
+      !errorList.length) ||
+    !formattedAreaValues.options.length
+  ) {
+    return <div className="govuk-width-container">Loading...</div>;
   }
   return (
     <div className="govuk-width-container">
