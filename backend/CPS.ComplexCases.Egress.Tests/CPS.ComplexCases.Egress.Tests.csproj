@@ -11,8 +11,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CPS.ComplexCases.Egress\CPS.ComplexCases.Egress.csproj" />
-    <ProjectReference
-      Include="..\CPS.ComplexCases.Egress.WireMock\CPS.ComplexCases.Egress.WireMock.csproj" />
+    <ProjectReference Include="..\CPS.ComplexCases.Egress.WireMock\CPS.ComplexCases.Egress.WireMock.csproj" />
+    <ProjectReference Include="..\CPS.ComplexCases.WireMock.Core\CPS.ComplexCases.WireMock.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

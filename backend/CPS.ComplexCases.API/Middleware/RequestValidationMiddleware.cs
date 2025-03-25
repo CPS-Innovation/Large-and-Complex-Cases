@@ -24,7 +24,7 @@ public sealed partial class RequestValidationMiddleware(IAuthorizationValidator 
 
     if (!isAuthenticated && !_unauthenticatedRoutes.Contains(httpRequestData.Url.AbsolutePath))
     {
-      // throw new CpsAuthenticationException();
+      throw new CpsAuthenticationException();
     }
     await next(context);
   }

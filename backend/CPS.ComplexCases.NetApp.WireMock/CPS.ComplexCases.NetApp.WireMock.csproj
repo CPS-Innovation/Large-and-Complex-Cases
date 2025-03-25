@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -20,6 +20,11 @@
 
   <ItemGroup>
     <None Include="files/test-document.pdf" CopyToOutputDirectory="Always" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference
+      Include="..\CPS.ComplexCases.WireMock.Core\CPS.ComplexCases.WireMock.Core.csproj" />
   </ItemGroup>
 
 </Project>

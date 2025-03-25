@@ -1,3 +1,4 @@
+using CPS.ComplexCases.WireMock.Core;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
