@@ -16,6 +16,8 @@ resources:
 variables:
   - group: complex-cases-global
   - group: complex-cases-terraform
+  - group: complex-cases-secure-pre-prod
+  - group: complex-cases-secure-prod
 
 stages:
   #release to DEV
