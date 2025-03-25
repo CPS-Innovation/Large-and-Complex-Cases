@@ -15,7 +15,6 @@ pr:
       - e2e/*
         
 variables:
-  - group: complex-cases-secure-pre-prod
   - group: complex-cases-global
   - group: complex-cases-terraform
   - name: buildConfiguration
@@ -105,7 +104,7 @@ stages:
               TF_STATE_ACCOUNT_NAME: $(terraform-storage-name-dev)
               TF_STATE_CONTAINER_NAME: $(terraform-container-name-application)
               TF_STATE_KEY: $(terraform-state-file)
-              TF_STATE_ACCESS_KEY: $(terraform-storage-shared-key-dev)
+              TF_STATE_ACCESS_KEY: $(terraform-storage-shared-key-pre-prod)
               TF_LOG: $(log-level-dev)
 
           # Validate
@@ -140,7 +139,7 @@ stages:
               TF_STATE_ACCOUNT_NAME: $(terraform-storage-name-dev)
               TF_STATE_CONTAINER_NAME: $(terraform-container-name-application)
               TF_STATE_KEY: $(terraform-state-file)
-              TF_STATE_ACCESS_KEY: $(terraform-storage-shared-key-dev)
+              TF_STATE_ACCESS_KEY: $(terraform-storage-shared-key-pre-prod)
               TF_LOG: $(log-level-dev)
 
           # Terraform Plan

@@ -179,15 +179,3 @@ resource "azurerm_private_dns_a_record" "complex_cases_ampls_dns_a_agentsvc_ai" 
   records             = [cidrhost(azurerm_subnet.sn_complex_cases_ampls_subnet.address_prefixes[0], 15)]
   tags                = local.common_tags
 }
-
-#store the app insights key in terraform's key vault for use within ADO
-resource "azurerm_key_vault_secret" "kvs_app_insights_key" {
-  #checkov:skip=CKV_AZURE_41:Ensure that the expiration date is set on all secrets
-  #checkov:skip=CKV_AZURE_114:Ensure that key vault secrets have "content_type" set
-  name         = "app-insights-instrumentation-key-${local.shared_suffix}"
-  value        = azurerm_application_insights.complex_cases_ai.instrumentation_key
-  key_vault_id = data.azurerm_key_vault.terraform_key_vault.id
-  depends_on = [
-    azurerm_application_insights.complex_cases_ai
-  ]
-}

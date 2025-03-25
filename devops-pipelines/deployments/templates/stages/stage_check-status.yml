@@ -6,8 +6,6 @@ parameters:
     type: string
   - name: targetLabel
     type: string
-  - name: appInsightsKey
-    type: string
   - name: targetSuffix
     type: string
   - name: azureSubscription
@@ -29,20 +27,7 @@ stages:
     dependsOn: Swap_${{ parameters.targetLabel }}
     condition: succeeded()
     jobs:
-      - job: Log_Start
-        displayName: Log Start
-        condition: succeeded()
-        steps:
-          - template: jobs/tasks/task_log-start.yml
-            parameters:
-              targetBuild: ${{ parameters.targetBuild }}
-              targetLabel: ${{ parameters.targetLabel }}
-              targetName: "Status Checks"
-              appInsightsKey: ${{ parameters.appInsightsKey }}
-
       - job: Get_Status_URIs
-        dependsOn: Log_Start
-        condition: succeeded()
         displayName: Get Status URIs
         steps:
           - template: jobs/tasks/task_get-credentials.yml
@@ -96,20 +81,3 @@ stages:
               statusCheckDelaySeconds: ${{ parameters.statusCheckDelaySeconds }}
               statusCheckTimeoutSeconds: ${{ parameters.statusCheckTimeoutSeconds }}
               successTextContent: $(resources.pipeline.PolarisBuild.runName)
-
-      - job: Log_Result
-        condition: succeeded()
-        displayName: Log End
-        dependsOn:
-          - Log_Start
-          - Get_Status_URIs
-          - Check_API
-          - Check_UI
-        steps:
-          - template: jobs/tasks/task_log-result.yml
-            parameters:
-              targetBuild: ${{ parameters.targetBuild }}
-              targetLabel: ${{ parameters.targetLabel }}
-              targetName: "Status Checks"
-              appInsightsKey: ${{ parameters.appInsightsKey }}
-              devOpsPatToken: $(System.AccessToken)
