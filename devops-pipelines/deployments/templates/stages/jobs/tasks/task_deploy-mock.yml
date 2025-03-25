@@ -16,8 +16,8 @@ parameters:
 steps:
   # download Mock Service codebase build artifact
   - download: ${{ parameters.targetBuild }}
-    displayName: Download Egress Mock Service Codebase Build
-    artifact: "egress-mock-service-drop"
+    displayName: Download Mock Service Codebase Build
+    artifact: "mock-service-drop"
   
   # download scripts artifact
   - download: ${{ parameters.targetBuild }}
@@ -37,20 +37,20 @@ steps:
       
       echo "##vso[task.setvariable variable=mockUri;]$mockLocation"
       echo "##vso[task.setvariable variable=firstTimeDeployment;]$firstTimeDeployment"
-    displayName: Get URI of Egress Mock
+    displayName: Get URI of Mock
     env:
       clientId: $(clientId)
       clientSecret: $(clientSecret)
       tenantId: $(tenantId)
       subscriptionId: $(subscriptionId)
-      mockAppName: "LaCC${{ parameters.targetSuffix }}-egress-mock"
+      mockAppName: "LaCC${{ parameters.targetSuffix }}-mock"
       resourceGroup: "rg-LaCC${{ parameters.targetSuffix }}"
   
   # ======= deploy original version of the app
   # delete mock service mappings
   - task: PowerShell@2
     condition: and(succeeded(), eq(variables['firstTimeDeployment'], '0'))
-    displayName: "Deleting Egress Mock Service Mappings"
+    displayName: "Deleting Mock Service Mappings"
     inputs:
       failOnStderr: true
       targetType: "filePath"
@@ -65,12 +65,12 @@ steps:
   
   # Deploy Mock Service Codebase to Env
   - task: AzureRmWebAppDeployment@4
-    displayName: "Deploy Egress Mock App Service"
+    displayName: "Deploy Mock App Service"
     inputs:
       azureSubscription: ${{ parameters.azureSubscription }}
       appType: webAppLinux
-      WebAppName: "LaCC${{ parameters.targetSuffix }}-egress-mock"
-      packageForLinux: $(Pipeline.Workspace)/${{ parameters.targetBuild }}/egress-mock-service-drop
+      WebAppName: "LaCC${{ parameters.targetSuffix }}-mock"
+      packageForLinux: $(Pipeline.Workspace)/${{ parameters.targetBuild }}/mock-service-drop
       enableCustomDeployment: true
       RemoveAdditionalFilesFlag: true
       
@@ -86,13 +86,13 @@ steps:
       clientSecret: $(clientSecret)
       tenantId: $(tenantId)
       subscriptionId: $(subscriptionId)
-      mockAppName: "LaCC${{ parameters.targetSuffix }}-egress-mock"
+      mockAppName: "LaCC${{ parameters.targetSuffix }}-mock"
       resourceGroup: "rg-LaCC${{ parameters.targetSuffix }}"
   
   # Restart app service    
   - task: AzureAppServiceManage@0
-    displayName: "Restart Egress Mock Service Azure Service"
+    displayName: "Restart Mock Service Azure Service"
     inputs:
       azureSubscription: ${{ parameters.azureSubscription }}
       Action: "Restart Azure App Service"
-      WebAppName: "LaCC${{ parameters.targetSuffix }}-egress-mock"
+      WebAppName: "LaCC${{ parameters.targetSuffix }}-mock"

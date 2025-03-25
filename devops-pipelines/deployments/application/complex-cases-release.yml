@@ -25,7 +25,7 @@ stages:
     parameters:
       buildAgentName: $(build-agent-pre-prod)
       initialStageDependsOn:
-      targetEnv: "Complex_Cases_DEV"
+      targetEnv: "LaCC_DEV"
       targetBuild: ComplexCasesBuild
       targetLabel: "DEV"
       appInsightsKey: $(complex-cases-app-insights-instrumentation-key-dev)
@@ -50,7 +50,7 @@ stages:
     parameters:
       buildAgentName: $(build-agent-pre-prod)
       initialStageDependsOn: Run_e2e_Tests_DEV
-      targetEnv: "Complex_Cases_QA"
+      targetEnv: "LaCC_QA"
       targetBuild: ComplexCasesBuild
       targetLabel: "QA"
       appInsightsKey: $(complex-cases-app-insights-instrumentation-key-qa)
@@ -96,14 +96,13 @@ stages:
   #     applicationTerraformCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.APPLICATION_TERRAFORM_COUNT']]
   #     networkingTerraformCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.NETWORKING_TERRAFORM_COUNT']]
   #     apiCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.API_COUNT']]
-  #     egressCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.EGRESS_COUNT']]
-  #     netAppCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.NETAPP_COUNT']]
+  #     mockCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.MOCK_COUNT']]
   #     uiCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.UI_COUNT']]
   #     e2eCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.E2E_TESTS_COUNT']]
   #   dependsOn: Determine_Changes_PROD
   #   jobs:
   #     - deployment: Wait_For_Running_Builds
-  #       environment: "Complex_Cases_PROD"
+  #       environment: "LaCC_PROD"
   #       strategy:
   #         runOnce:
   #           deploy:
@@ -144,8 +143,7 @@ stages:
   #             applicationTerraformCount: $(applicationTerraformCount)
   #             networkingTerraformCount: $(networkingTerraformCount)
   #             apiCount: $(apiCount)
-  #             egressCount: $(egressCount)
-  #             netAppCount: $(netAppCount)
+  #             mockCount: $(mockCount)
   #             uiCount: $(uiCount)
   #             e2eCount: $(e2eCount)
   #             messageTitle: "Complex Cases Release to PROD started"
@@ -299,8 +297,7 @@ stages:
   #     applicationTerraformCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.APPLICATION_TERRAFORM_COUNT']]
   #     networkingTerraformCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.NETWORKING_TERRAFORM_COUNT']]
   #     apiCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.API_COUNT']]
-  #     egressCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.EGRESS_COUNT']]
-  #     netAppCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.NETAPP_COUNT']]
+  #     mockCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.MOCK_COUNT']]
   #     uiCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.UI_COUNT']]
   #     e2eCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.E2E_TESTS_COUNT']]
   #   condition: succeeded()
@@ -318,8 +315,7 @@ stages:
   #             applicationTerraformCount: $(applicationTerraformCount)
   #             networkingTerraformCount: $(networkingTerraformCount)
   #             apiCount: $(apiCount)
-  #             egressCount: $(egressCount)
-  #             netAppCount: $(netAppCount)
+  #             mockCount: $(mockCount)
   #             uiCount: $(uiCount)
   #             e2eCount: $(e2eCount)
   #             messageTitle: "✔ Complex Cases Release to PROD Completed!"
@@ -337,8 +333,7 @@ stages:
   #     applicationTerraformCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.APPLICATION_TERRAFORM_COUNT']]
   #     networkingTerraformCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.NETWORKING_TERRAFORM_COUNT']]
   #     apiCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.API_COUNT']]
-  #     egressCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.EGRESS_COUNT']]
-  #     netAppCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.NETAPP_COUNT']]
+  #     mockCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.MOCK_COUNT']]
   #     uiCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.UI_COUNT']]
   #     e2eCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.E2E_TESTS_COUNT']]
   #   condition: or(failed(), canceled())
@@ -356,8 +351,7 @@ stages:
   #             applicationTerraformCount: $(applicationTerraformCount)
   #             networkingTerraformCount: $(networkingTerraformCount)
   #             apiCount: $(apiCount)
-  #             egressCount: $(egressCount)
-  #             netAppCount: $(netAppCount)
+  #             mockCount: $(mockCount)
   #             uiCount: $(uiCount)
   #             e2eCount: $(e2eCount)
   #             messageTitle: "❗ Complex Cases Release to PROD failed!"
