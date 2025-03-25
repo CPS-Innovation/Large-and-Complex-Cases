@@ -13,6 +13,7 @@ export const getAccessToken = async (scopes: string[]) => {
   } as SilentRequest;
 
   try {
+    await msalInstance.handleRedirectPromise();
     const { accessToken } = await msalInstance.acquireTokenSilent(request);
     return accessToken;
   } catch (error) {

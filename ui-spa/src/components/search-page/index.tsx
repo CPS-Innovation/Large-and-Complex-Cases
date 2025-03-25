@@ -154,6 +154,7 @@ const CaseSearchPage = () => {
                     ],
                   },
                   value: "operation name",
+                  "data-testid": "radio-search-operation-name",
                 },
                 {
                   children: "Defendant surname",
@@ -217,6 +218,7 @@ const CaseSearchPage = () => {
                     ],
                   },
                   value: "defendant name",
+                  "data-testid": "radio-search-defendant-name",
                 },
                 {
                   children: "URN",
@@ -251,6 +253,7 @@ const CaseSearchPage = () => {
                     ],
                   },
                   value: "urn",
+                  "data-testid": "radio-search-urn",
                 },
               ]}
               name="case-search-types"
