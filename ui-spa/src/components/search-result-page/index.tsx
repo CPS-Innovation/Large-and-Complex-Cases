@@ -81,6 +81,10 @@ const CaseSearchResultPage = () => {
     setTriggerSearchApi(isValid);
   }, [queryString]);
 
+  useEffect(() => {
+    if (errorList.length) errorSummaryRef.current?.focus();
+  }, [errorList]);
+
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const isFromValid = validateFormData();
