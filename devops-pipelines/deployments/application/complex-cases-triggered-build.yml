@@ -18,7 +18,6 @@ trigger:
 pr: none
 
 variables:
-  - group: complex-cases-secure-pre-prod
   - group: complex-cases-global
   - name: buildConfiguration
     value: "Release"

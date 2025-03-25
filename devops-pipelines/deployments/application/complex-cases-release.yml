@@ -14,8 +14,6 @@ resources:
           - Publish_Artifacts
 
 variables:
-  - group: complex-cases-secure-pre-prod
-  - group: complex-cases-secure-prod
   - group: complex-cases-global
   - group: complex-cases-terraform
 
@@ -34,7 +32,7 @@ stages:
       terraformStorageAccount: $(terraform-storage-name-dev)
       applicationTerraformContainerName: $(terraform-container-name-application)
       terraformStateKey: $(terraform-state-file)
-      terraformStateAccessKey: $(terraform-storage-shared-key-dev)
+      terraformStateAccessKey: $(terraform-storage-shared-key-pre-prod)
       targetSuffix: "-dev"
       logRetentionTime: $(log-retention-time)
       totalLogRetentionTime: $(total-log-retention-time)
@@ -59,7 +57,7 @@ stages:
       terraformStorageAccount: $(terraform-storage-name-qa)
       applicationTerraformContainerName: $(terraform-container-name-application)
       terraformStateKey: $(terraform-state-file)
-      terraformStateAccessKey: $(terraform-storage-shared-key-qa)
+      terraformStateAccessKey: $(terraform-storage-shared-key-pre-prod)
       targetSuffix: "-qa"
       logRetentionTime: $(log-retention-time)
       totalLogRetentionTime: $(total-log-retention-time)
