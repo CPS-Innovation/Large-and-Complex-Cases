@@ -6,8 +6,6 @@ parameters:
     type: string
   - name: targetLabel
     type: string
-  - name: appInsightsKey
-    type: string
   - name: targetSuffix
     type: string
   - name: statusCheckRetries
@@ -25,23 +23,10 @@ stages:
       name: ${{ parameters.buildAgentName }}
     displayName: Deploy
     condition: succeeded()
-    dependsOn: Apply_${{ parameters.targetLabel }}
+    dependsOn: Apply_Application_Terraform
     jobs:
-      - job: Log_Start_Codebase
-        condition: succeeded()
-        displayName: Log Start
-        steps:
-          - template: jobs/tasks/task_log-start-deployment.yml
-            parameters:
-              targetBuild: ${{ parameters.targetBuild }}
-              targetLabel: ${{ parameters.targetLabel }}
-              targetName: "Codebase CI Deployment"
-              appInsightsKey: ${{ parameters.appInsightsKey }}
-
       - job: Deploy_API
-        dependsOn: Log_Start_Codebase
         displayName: Deploy API
-        condition: succeeded()
         steps:
           - template: jobs/tasks/task_deploy-api.yml
             parameters:
@@ -49,12 +34,9 @@ stages:
               targetLabel: ${{ parameters.targetLabel }}
               targetName: "API Deployment"
               targetSuffix: ${{ parameters.targetSuffix }}
-              appInsightsKey: ${{ parameters.appInsightsKey }}
               azureSubscription: ${{ parameters.azureSubscription }}
 
       - job: Deploy_Mock
-        dependsOn: Log_Start_Codebase
-        condition: succeeded()
         steps:
           - template: jobs/tasks/task_deploy-mock.yml
             parameters:
@@ -66,9 +48,7 @@ stages:
               statusCheckTimeoutSeconds: ${{ parameters.statusCheckTimeoutSeconds }}
 
       - job: Deploy_UI
-        dependsOn: Log_Start_Codebase
         displayName: Deploy UI
-        condition: succeeded()
         steps:
           - template: jobs/tasks/task_deploy-ui.yml
             parameters:
@@ -76,20 +56,4 @@ stages:
               targetLabel: ${{ parameters.targetLabel }}
               targetName: "SPA Deployment"
               targetSuffix: ${{ parameters.targetSuffix }}
-              appInsightsKey: ${{ parameters.appInsightsKey }}
               azureSubscription: ${{ parameters.azureSubscription }}
-
-      - job: Log_Result_Codebase_Ended
-        condition: succeeded()
-        displayName: Log End
-        dependsOn:
-          - Deploy_API
-          - Deploy_UI
-        steps:
-          - template: jobs/tasks/task_log-result-deployment.yml
-            parameters:
-              targetBuild: ${{ parameters.targetBuild }}
-              targetLabel: ${{ parameters.targetLabel }}
-              targetName: "Codebase CI Deployment"
-              appInsightsKey: ${{ parameters.appInsightsKey }}
-              devOpsPatToken: $(System.AccessToken)

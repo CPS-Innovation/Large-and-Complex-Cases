@@ -43,8 +43,8 @@ steps:
       clientSecret: $(clientSecret)
       tenantId: $(tenantId)
       subscriptionId: $(subscriptionId)
-      mockAppName: "LaCC${{ parameters.targetSuffix }}-mock"
-      resourceGroup: "rg-LaCC${{ parameters.targetSuffix }}"
+      mockAppName: "lacc${{ parameters.targetSuffix }}-mock"
+      resourceGroup: "rg-LaCC-application${{ parameters.targetSuffix }}"
   
   # ======= deploy original version of the app
   # delete mock service mappings
@@ -69,7 +69,7 @@ steps:
     inputs:
       azureSubscription: ${{ parameters.azureSubscription }}
       appType: webAppLinux
-      WebAppName: "LaCC${{ parameters.targetSuffix }}-mock"
+      WebAppName: "lacc${{ parameters.targetSuffix }}-mock"
       packageForLinux: $(Pipeline.Workspace)/${{ parameters.targetBuild }}/mock-service-drop
       enableCustomDeployment: true
       RemoveAdditionalFilesFlag: true
@@ -86,8 +86,8 @@ steps:
       clientSecret: $(clientSecret)
       tenantId: $(tenantId)
       subscriptionId: $(subscriptionId)
-      mockAppName: "LaCC${{ parameters.targetSuffix }}-mock"
-      resourceGroup: "rg-LaCC${{ parameters.targetSuffix }}"
+      mockAppName: "lacc${{ parameters.targetSuffix }}-mock"
+      resourceGroup: "rg-LaCC-application${{ parameters.targetSuffix }}"
   
   # Restart app service    
   - task: AzureAppServiceManage@0
@@ -95,4 +95,4 @@ steps:
     inputs:
       azureSubscription: ${{ parameters.azureSubscription }}
       Action: "Restart Azure App Service"
-      WebAppName: "LaCC${{ parameters.targetSuffix }}-mock"
+      WebAppName: "lacc${{ parameters.targetSuffix }}-mock"

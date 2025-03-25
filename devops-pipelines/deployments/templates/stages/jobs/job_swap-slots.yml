@@ -7,8 +7,6 @@ parameters:
 
 jobs:
   - job: Pause_Pipeline
-    dependsOn: Log_Start
-    condition: succeeded()
     displayName: Pause for 2 mins
     steps:
       - template: tasks/task_pause-pipeline.yml
@@ -20,7 +18,7 @@ jobs:
       matrix:
         API:
           Name: "API"
-          AppServiceName: "LaCC${{ parameters.targetSuffix }}-api"
+          AppServiceName: "lacc{{ parameters.targetSuffix }}-api"
     displayName: Swap
     steps:
       - checkout: none
@@ -30,7 +28,7 @@ jobs:
           action: "Swap Slots"
           sourceSlot: "staging"
           azureSubscription: ${{ parameters.azureSubscription }}
-          resourceGroupName: "rg-LaCC${{ parameters.targetSuffix }}"
+          resourceGroupName: "rg-LaCC-application${{ parameters.targetSuffix }}"
           webAppName: $(AppServiceName)
           PreserveVnet: true
 
@@ -41,7 +39,7 @@ jobs:
       matrix:
         SPA:
           Name: "UI"
-          AppServiceName: "LaCC${{ parameters.targetSuffix }}-ui"
+          AppServiceName: "lacc${{ parameters.targetSuffix }}-ui"
     displayName: Swap
     steps:
       - checkout: none
@@ -51,7 +49,7 @@ jobs:
           action: "Swap Slots"
           sourceSlot: "staging"
           azureSubscription: ${{ parameters.azureSubscription }}
-          resourceGroupName: "rg-LaCC${{ parameters.targetSuffix }}"
+          resourceGroupName: "rg-LaCC-application${{ parameters.targetSuffix }}"
           webAppName: $(AppServiceName)
           PreserveVnet: true
   

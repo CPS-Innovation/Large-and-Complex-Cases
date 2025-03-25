@@ -89,14 +89,3 @@ data "azurerm_application_insights" "complex_cases_ai" {
   name                = "${local.product_prefix}-ai"
   resource_group_name = data.azurerm_resource_group.analytics_resource_group.name
 }
-
-data "azurerm_log_analytics_workspace" "complex_cases_la" {
-  name                = "${local.product_prefix}-la"
-  resource_group_name = data.azurerm_resource_group.analytics_resource_group.name
-}
-# end: app insights lookups
-
-data "azurerm_key_vault" "terraform_key_vault" {
-  name                = "${local.product_name}kv${local.shared_suffix}terraform"
-  resource_group_name = data.azurerm_resource_group.terraform_resource_group.name
-}

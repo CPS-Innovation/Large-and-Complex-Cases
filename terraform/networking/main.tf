@@ -52,8 +52,8 @@ resource "azuread_service_principal" "msgraph" {
 }
 
 locals {
-  product_name  = "lacc"
-  shared_suffix = var.environment.alias != "prod" ? "preprod" : ""
+  product_name       = "lacc"
+  group_product_name = "LaCC"
 
   common_tags = {
     environment = var.environment.name

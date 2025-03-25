@@ -24,8 +24,3 @@ data "azurerm_network_security_group" "complex_cases_nsg" {
   name                = var.nsg_name
   resource_group_name = data.azurerm_resource_group.build_agent_resource_group.name
 }
-
-data "azurerm_key_vault" "terraform_key_vault" {
-  name                = "${local.product_name}kv${local.shared_suffix}terraform"
-  resource_group_name = data.azurerm_resource_group.terraform_resource_group.name
-}
