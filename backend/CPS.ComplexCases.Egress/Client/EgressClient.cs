@@ -16,19 +16,19 @@ public class EgressClient(ILogger<EgressClient> logger, IOptions<EgressOptions> 
   private readonly HttpClient _httpClient = httpClient;
   private readonly IEgressRequestFactory _egressRequestFactory = egressRequestFactory;
 
-  public async Task<IEnumerable<FindWorkspaceDto>> FindWorkspace(FindWorkspaceArg workspace, string email)
+  public async Task<ListWorkspacesDto> ListWorkspacesAsync(ListEgressWorkspacesArg workspace, string email)
   {
     var token = await GetWorkspaceToken();
-    var response = await SendRequestAsync<FindWorkspaceResponse>(_egressRequestFactory.FindWorkspaceRequest(workspace, token));
+    var response = await SendRequestAsync<ListWorkspacesResponse>(_egressRequestFactory.ListWorkspacesRequest(workspace, token));
 
     var workspaces = response.Data
-        .Select(data => new FindWorkspaceDto
+        .Select(data => new ListWorkspaceDataDto
         {
           Id = data.Id,
-          EgressLink = $"{_egressOptions.Url}w/edit/{data.Id}",
-          Name = data.Name
+          Name = data.Name,
+          DateCreated = data.DateCreated
         })
-        .ToList();
+        .ToArray();
 
     var permissionTasks = workspaces.Select(async workspaceDto =>
     {
@@ -45,10 +45,21 @@ public class EgressClient(ILogger<EgressClient> logger, IOptions<EgressOptions> 
     var permissionResults = await Task.WhenAll(permissionTasks);
 
     var filteredWorkspaces = permissionResults
-        .Where(result => result.permissionsResponse.Data.Any(user => user.Email == email))
-        .Select(result => result.workspaceDto);
+        .Where(result => result.permissionsResponse.Data.Any(user => user.Email.Equals(email, StringComparison.CurrentCultureIgnoreCase)))
+        .Select(result => result.workspaceDto)
+        .ToArray();
 
-    return filteredWorkspaces;
+    return new ListWorkspacesDto
+    {
+      Data = filteredWorkspaces,
+      Pagination = new PaginationDto
+      {
+        Count = filteredWorkspaces.Length,
+        Take = response.DataInfo.Limit,
+        Skip = response.DataInfo.Skip,
+        TotalResults = response.DataInfo.TotalResults
+      }
+    };
   }
 
   public async Task<GetCaseMaterialDto> GetCaseMaterial(GetWorkspaceMaterialArg arg)
@@ -68,11 +79,14 @@ public class EgressClient(ILogger<EgressClient> logger, IOptions<EgressOptions> 
 
     return new GetCaseMaterialDto
     {
-      PerPage = response.Pagination.PerPage,
-      TotalPages = response.Pagination.TotalPages,
-      TotalResults = response.Pagination.TotalResults,
-      CurrentPage = response.Pagination.CurrentPage,
-      Data = materialsData
+      Data = materialsData,
+      Pagination = new PaginationDto
+      {
+        Count = response.DataInfo.NumReturned,
+        Take = response.DataInfo.Limit,
+        Skip = response.DataInfo.Skip,
+        TotalResults = response.DataInfo.TotalResults
+      }
     };
   }
 
