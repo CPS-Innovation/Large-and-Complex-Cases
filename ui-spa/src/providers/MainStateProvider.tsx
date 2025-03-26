@@ -6,6 +6,10 @@ import {
   MainState,
 } from "../reducers/mainStateReducer";
 import { useReducerAsync } from "use-reducer-async";
+import {
+  AsyncActions,
+  asyncActionHandlers,
+} from "../reducers/asyncActionHandlers";
 
 interface MainStateProviderProps {
   children: ReactNode;
@@ -13,7 +17,7 @@ interface MainStateProviderProps {
 
 interface MainStateContextProps {
   state: MainState;
-  dispatch: React.Dispatch<MainStateActions>;
+  dispatch: React.Dispatch<MainStateActions | AsyncActions>;
 }
 
 const MainStateContext = createContext<MainStateContextProps | undefined>(
@@ -21,7 +25,10 @@ const MainStateContext = createContext<MainStateContextProps | undefined>(
 );
 
 export const MainStateProvider: React.FC<MainStateProviderProps> = (props) => {
-  const [state, dispatch] = useReducerAsync(mainStateReducer, initialState, {});
+  const [state, dispatch]: [
+    MainState,
+    React.Dispatch<MainStateActions | AsyncActions>,
+  ] = useReducerAsync(mainStateReducer, initialState, asyncActionHandlers);
   const memoisedState = useMemo(() => {
     return state;
   }, [state]);
