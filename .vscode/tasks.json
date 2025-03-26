@@ -137,6 +137,16 @@
       }
     },
     {
+      "label": "e2e",
+      "type": "shell",
+      "command": "./scripts/local.ci.sh",
+      "options": {
+        "cwd": "${workspaceFolder}/e2e"
+      },
+      "problemMatcher": [],
+      "isBackground": true
+    },
+    {
       "label": "prepare-all",
       "dependsOrder": "parallel",
       "dependsOn": ["build-ui", "build-backend", "run-azurite"]
@@ -150,6 +160,12 @@
       "label": "build-and-run-all",
       "dependsOrder": "sequence",
       "dependsOn": ["prepare-all", "run-backend-and-mock", "run-ui"],
+      "problemMatcher": []
+    },
+    {
+      "label": "build-and-run-all-and-e2e",
+      "dependsOrder": "sequence",
+      "dependsOn": ["build-and-run-all", "e2e"],
       "problemMatcher": []
     }
   ]

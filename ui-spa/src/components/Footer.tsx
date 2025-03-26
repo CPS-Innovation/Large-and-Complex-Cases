@@ -9,7 +9,9 @@ export default function Footer() {
       <div className="govuk-width-container">
         <div className="govuk-footer__meta">
           <div className="govuk-footer__meta-item govuk-footer__meta-item--grow">
-            <div className={styles.username}>{username}</div>
+            <div className={styles.username} data-testid="div-ad-username">
+              {username}
+            </div>
             <div>
               <LicenceLogo className="govuk-footer__licence-logo" />
               <span className="govuk-footer__licence-description">
