@@ -288,46 +288,42 @@ const CaseSearchResultPage = () => {
     return area?.children;
   };
 
-  const getResultsCountText = () => {
-    if (apiState.status !== "succeeded") return <> </>;
-    const resultString =
-      apiState.status === "succeeded" && apiState?.data?.length < 2
-        ? "case"
-        : "cases";
+  const getResultsCountText = (resultsCount: number) => {
+    const resultString = resultsCount < 2 ? "case" : "cases";
 
-    if (apiState.data.length) {
-      const resultHtml = (
-        <>
-          <b>{apiState?.data?.length}</b> {resultString}{" "}
-        </>
-      );
-      switch (formData[SearchFormField.searchType]) {
-        case "operation name":
-          return (
-            <>
-              {resultHtml}
-              found in <b>{getAreaTextFromValue(searchParams["area"])}</b>.
-              Select a case to view more details.
-            </>
-          );
-        case "defendant name":
-          return (
-            <>
-              {resultHtml}
-              found in <b>{getAreaTextFromValue(searchParams["area"])}</b>.
-              Select a case to view more details.
-            </>
-          );
-        default:
-          return (
-            <>
-              {resultHtml}
-              found. Select a case to view more details.
-            </>
-          );
-      }
+    const resultHtml = (
+      <>
+        <b>{resultsCount}</b> {resultString}{" "}
+      </>
+    );
+    switch (formData[SearchFormField.searchType]) {
+      case "operation name":
+        return (
+          <>
+            {resultHtml}
+            found in <b>{getAreaTextFromValue(searchParams["area"])}</b>. Select
+            a case to view more details.
+          </>
+        );
+      case "defendant name":
+        return (
+          <>
+            {resultHtml}
+            found in <b>{getAreaTextFromValue(searchParams["area"])}</b>. Select
+            a case to view more details.
+          </>
+        );
+      default:
+        return (
+          <>
+            {resultHtml}
+            found. Select a case to view more details.
+          </>
+        );
     }
+  };
 
+  const getNoResultsText = () => {
     switch (formData[SearchFormField.searchType]) {
       case "operation name":
         return (
@@ -386,10 +382,13 @@ const CaseSearchResultPage = () => {
             </div>
           </div>
         </form>
-        {apiState.status === "succeeded" && (
-          <span className={styles.searchResultsCount}>
-            {getResultsCountText()}
-          </span>
+        {apiState.status === "succeeded" && !!apiState.data.length && (
+          <div className={styles.searchResultsCount}>
+            {getResultsCountText(apiState.data.length)}
+          </div>
+        )}
+        {apiState.status === "succeeded" && !apiState.data.length && (
+          <div>{getNoResultsText()}</div>
         )}
       </div>
 
