@@ -6,7 +6,7 @@ export type RawApiResult<T> =
       status: "loading";
     }
   | {
-      error: any;
+      error: string;
       status: "failed";
     }
   | {

@@ -13,6 +13,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
     http.get(`${baseUrl}/api/areas`, async () => {
       const results = isDevMock() ? caseAreasDev : caseAreasPlaywright;
       await delay(RESPONSE_DELAY);
+      // return new HttpResponse(null, { status: 500 });
       return HttpResponse.json(results);
     }),
 
@@ -22,6 +23,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
         : casesSearchResultsPlaywright;
       await delay(RESPONSE_DELAY);
       return HttpResponse.json(caseSearchResults);
+      // return new HttpResponse(null, { status: 500 });
     }),
   ];
 };

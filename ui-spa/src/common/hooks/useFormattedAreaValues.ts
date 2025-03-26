@@ -14,17 +14,20 @@ const mapOption = (item: CaseDivisionsOrArea) => ({
   children: item.description,
 });
 
-export const useFormattedAreaValues = () => {
+export const useFormattedAreaValues = (makeCall: boolean = true) => {
   const {
     state: { caseDivisionsOrAreas },
   } = useMainStateContext()!;
   const { handleGetCaseDivisionsOrAreas } = useAsyncActionHandlers();
 
   useEffect(() => {
-    if (caseDivisionsOrAreas.status !== "succeeded")
+    if (caseDivisionsOrAreas.status !== "succeeded" && makeCall)
       handleGetCaseDivisionsOrAreas();
   }, []);
   const formattedAreaValues = useMemo(() => {
+    if (caseDivisionsOrAreas.status === "failed")
+      throw new Error(`${caseDivisionsOrAreas.error}`);
+
     if (caseDivisionsOrAreas.status !== "succeeded")
       return { defaultValue: undefined, options: [] };
 

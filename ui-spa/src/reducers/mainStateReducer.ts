@@ -38,6 +38,15 @@ export const mainStateReducer = (
               data: mapAreaLookups(action.payload.data),
             },
           };
+        case "failed": {
+          console.log("action.payload.status", action.payload.status);
+          return {
+            ...state,
+            caseDivisionsOrAreas: {
+              ...action.payload,
+            },
+          };
+        }
         default:
           return state;
       }

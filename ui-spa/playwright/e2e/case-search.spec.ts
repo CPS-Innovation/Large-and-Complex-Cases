@@ -390,7 +390,6 @@ test.describe("Case Search Results", () => {
     page,
   }) => {
     await page.goto("/search-results?urn=11AA2222233");
-    await page.waitForResponse(`https://mocked-out-api/api/areas`);
     await page.waitForResponse(`https://mocked-out-api/api/case-search?*`);
     await expect(page.locator("h1")).toHaveText(
       `Search results for URN "11AA2222233"`,
@@ -438,8 +437,6 @@ test.describe("Case Search Results", () => {
       }),
     );
     await page.goto("/search-results?urn=11AA2222233");
-
-    await page.waitForResponse(`https://mocked-out-api/api/areas`);
     await page.waitForResponse(`https://mocked-out-api/api/case-search?*`);
 
     await expect(page.locator("h1")).toHaveText(
@@ -462,7 +459,6 @@ test.describe("Case Search Results", () => {
     page,
   }) => {
     await page.goto("/search-results?urn=11AA222223312");
-    await page.waitForResponse(`https://mocked-out-api/api/areas`);
     await expect(page.getByTestId("search-error-summary")).toBeVisible();
     await expect(
       page.getByTestId("search-error-summary").getByText("There is a problem"),

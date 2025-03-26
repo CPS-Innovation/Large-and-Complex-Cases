@@ -13,9 +13,15 @@ describe("mainStateReducer", () => {
     it("Should update the state correctly when the payload status is failed", () => {
       const newState = mainStateReducer(initialState, {
         type: "UPDATE_CASE_DIVISIONS_OR_AREAS",
-        payload: { status: "failed", error: {} },
+        payload: { status: "failed", error: "" },
       });
-      expect(newState).toStrictEqual(initialState);
+      expect(newState).toStrictEqual({
+        ...initialState,
+        caseDivisionsOrAreas: {
+          status: "failed",
+          error: "",
+        },
+      });
     });
     it("Should update the state correctly when the payload status is loading", () => {
       const newState = mainStateReducer(initialState, {

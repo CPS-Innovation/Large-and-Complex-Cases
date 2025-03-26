@@ -20,7 +20,7 @@ const CaseSearchResultPage = () => {
   const errorSummaryRef = useRef<HTMLInputElement>(null);
   const { updateSearchParams, searchParams, queryString } =
     useSearchNavigation();
-  const formattedAreaValues = useFormattedAreaValues();
+
   const getInitialState = () => {
     const searchParamKeys = Object.keys(searchParams);
     const initialData: SearchFromData = {
@@ -52,6 +52,7 @@ const CaseSearchResultPage = () => {
     initialData.urn = searchParams["urn"] ?? "";
     return initialData;
   };
+
   const {
     formData,
     formDataErrors,
@@ -61,11 +62,20 @@ const CaseSearchResultPage = () => {
     getSearchParams,
   } = useCaseSearchForm(getInitialState());
 
+  const formattedAreaValues = useFormattedAreaValues(
+    formData[SearchFormField.searchType] !== "urn",
+  );
+
   const apiState: RawApiResult<SearchResultData> = useApi(
     getCaseSearchResults,
     [queryString],
     triggerSearchApi,
   );
+
+  useEffect(() => {
+    if (apiState.status === "failed") throw new Error(`${apiState.error}`);
+  }, [apiState]);
+
   useEffect(() => {
     if (formData[SearchFormField.searchType] === "urn" || validatedAreaValues) {
       const isValid = validateFormData();
@@ -351,7 +361,8 @@ const CaseSearchResultPage = () => {
   if (
     ((apiState.status === "loading" || apiState.status === "initial") &&
       !errorList.length) ||
-    !formattedAreaValues.options.length
+    (formData[SearchFormField.searchType] !== "urn" &&
+      !formattedAreaValues.options.length)
   ) {
     return <div className="govuk-width-container">Loading...</div>;
   }

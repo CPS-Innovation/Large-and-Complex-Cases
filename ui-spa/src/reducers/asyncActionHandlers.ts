@@ -18,10 +18,17 @@ export const asyncActionHandlers: AsyncActionHandlers<
         type: "UPDATE_CASE_DIVISIONS_OR_AREAS",
         payload: { status: "loading" },
       });
-      const result = await getCaseDivisionsOrAreas();
-      dispatch({
-        type: "UPDATE_CASE_DIVISIONS_OR_AREAS",
-        payload: { status: "succeeded", data: result },
-      });
+      try {
+        const result = await getCaseDivisionsOrAreas();
+        dispatch({
+          type: "UPDATE_CASE_DIVISIONS_OR_AREAS",
+          payload: { status: "succeeded", data: result },
+        });
+      } catch (error) {
+        dispatch({
+          type: "UPDATE_CASE_DIVISIONS_OR_AREAS",
+          payload: { status: "failed", error: error },
+        });
+      }
     },
 };

@@ -156,7 +156,9 @@ const CaseSearchPage = () => {
                   },
                   value: "operation name",
                   "data-testid": "radio-search-operation-name",
+                  disabled: !formattedAreaValues.options.length,
                 },
+
                 {
                   children: "Defendant surname",
                   conditional: {
@@ -220,6 +222,7 @@ const CaseSearchPage = () => {
                   },
                   value: "defendant name",
                   "data-testid": "radio-search-defendant-name",
+                  disabled: !formattedAreaValues.options.length,
                 },
                 {
                   children: "URN",
