@@ -85,7 +85,7 @@ test.describe("Case Search", async () => {
     await expect(areaSelect).toHaveValue("1057708");
     await page.locator('button:text("search")').click();
     await expect(page).toHaveURL(
-      /\/search-results\?defendant-name=thunder&area=1057708/,
+      "search-results?defendant-name=thunder&area=1057708",
     );
     await expect(page.locator("h1")).toHaveText(
       `Search results for defendant surname "thunder"`,
@@ -141,7 +141,7 @@ test.describe("Case Search", async () => {
     expect(await page.getByTestId("search-defendant-area")).not.toBeVisible();
 
     await page.locator('button:text("search")').click();
-    await expect(page).toHaveURL(/\/search-results\?urn=11AA2222233/);
+    await expect(page).toHaveURL("search-results?urn=11AA2222233");
     await expect(page.locator("h1")).toHaveText(
       `Search results for URN "11AA2222233"`,
     );
@@ -283,7 +283,7 @@ test.describe("Case Search", async () => {
   }) => {
     await page.getByTestId("search-urn").fill("11AA2222233");
     await page.getByTestId("search-urn").press("Enter");
-    await expect(page).toHaveURL(/\/search-results\?urn=11AA2222233/);
+    await expect(page).toHaveURL("search-results?urn=11AA2222233");
   });
 });
 
@@ -499,7 +499,7 @@ test.describe("Case Search Results", () => {
         return HttpResponse.json(emptyHomeAreaResponse);
       }),
     );
-    await page.goto("/search-results?operation-name=&area=");
+    await page.goto("/search-results?operation-name=&area=123");
     await page.waitForResponse(`https://mocked-out-api/api/areas`);
     await expect(page.getByTestId("search-error-summary")).toBeVisible();
     await expect(
@@ -519,6 +519,18 @@ test.describe("Case Search Results", () => {
     await expect(page.getByTestId("search-operation-name")).toBeFocused();
     page.getByTestId("search-operation-area-link").click();
     await expect(page.getByTestId("search-operation-area")).toBeFocused();
+    await page.getByTestId("search-operation-area").selectOption("Surrey");
+    await page.getByTestId("search-operation-name").fill("abc");
+    await page.locator('button:text("search")').click();
+    await expect(page).toHaveURL("search-results?operation-name=abc&area=1001");
+    await expect(page.locator("h1")).toHaveText(
+      `Search results for operation  "abc"`,
+    );
+    await expect(
+      page.getByText(
+        "2 cases found in Surrey. Select a case to view more details.",
+      ),
+    ).toBeVisible();
   });
 
   test("should show validation error for search by defendant surname in the search result page", async ({
@@ -532,7 +544,7 @@ test.describe("Case Search Results", () => {
         return HttpResponse.json(emptyHomeAreaResponse);
       }),
     );
-    await page.goto("/search-results?defendant-name=&area=");
+    await page.goto("/search-results?defendant-name=&area=234");
     await page.waitForResponse(`https://mocked-out-api/api/areas`);
     await expect(page.getByTestId("search-error-summary")).toBeVisible();
     await expect(
@@ -552,6 +564,18 @@ test.describe("Case Search Results", () => {
     await expect(page.getByTestId("search-defendant-name")).toBeFocused();
     page.getByTestId("search-defendant-area-link").click();
     await expect(page.getByTestId("search-defendant-area")).toBeFocused();
+    await page.getByTestId("search-defendant-area").selectOption("Surrey");
+    await page.getByTestId("search-defendant-name").fill("abc");
+    await page.locator('button:text("search")').click();
+    await expect(page).toHaveURL("search-results?defendant-name=abc&area=1001");
+    await expect(page.locator("h1")).toHaveText(
+      `Search results for defendant surname  "abc"`,
+    );
+    await expect(
+      page.getByText(
+        "2 cases found in Surrey. Select a case to view more details.",
+      ),
+    ).toBeVisible();
   });
 
   test("Should be able to submit the form using enter button", async ({
@@ -560,6 +584,6 @@ test.describe("Case Search Results", () => {
     await page.goto("/search-results?urn=11AA222223312");
     await page.getByTestId("search-urn").fill("11AA2222231");
     await page.getByTestId("search-urn").press("Enter");
-    await expect(page).toHaveURL(/\/search-results\?urn=11AA2222231/);
+    await expect(page).toHaveURL("search-results?urn=11AA2222231");
   });
 });
