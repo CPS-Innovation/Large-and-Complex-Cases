@@ -14,8 +14,6 @@ resources:
           - Publish_Artifacts
             
 variables:
-  - group: complex-cases-secure-pre-prod
-  - group: complex-cases-secure-prod
   - group: complex-cases-global
   - group: complex-cases-terraform
     

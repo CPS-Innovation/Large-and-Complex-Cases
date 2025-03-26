@@ -8,8 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.S3" Version="3.3.110.19" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.2" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.7.400" />
+    <PackageReference Include="AWSSDK.S3" Version="3.7.415.2" />
+    <PackageReference Include="Microsoft.Extensions.Azure" Version="1.7.3" />
   </ItemGroup>
 
 </Project>

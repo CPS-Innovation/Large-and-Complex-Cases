@@ -16,9 +16,7 @@ parameters:
     type: string
   - name: apiCount
     type: string
-  - name: egressCount
-    type: string
-  - name: netAppCount
+  - name: mockCount
     type: string
   - name: uiCount
     type: string
@@ -137,12 +135,8 @@ steps:
                                 "value": "${{ parameters.apiCount }}"
                               },
                               {
-                                "title": "Egress Client Changes",
-                                "value": "${{ parameters.egressCount }}"
-                              },
-                              {
-                                "title": "NetApp Client Changes",
-                                "value": "${{ parameters.netAppCount }}"
+                                "title": "Mock Service Changes",
+                                "value": "${{ parameters.mockCount }}"
                               },
                               {
                                 "title": "UI Changes",

@@ -1,67 +1,17 @@
-﻿using System.Text.Json;
-using WireMock.RequestBuilders;
-using WireMock.ResponseBuilders;
-using WireMock.Server;
+﻿using CPS.ComplexCases.WireMock;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using WireMock.Settings;
 
-namespace CPS.ComplexCases.WireMock;
+var builder = Host.CreateApplicationBuilder(args);
 
-class Program
-{
-    static void Main(string[] args)
-    {
+builder.Services.AddLogging(logging => logging.AddConsole().AddDebug());
 
-        if (args.Length == 0 || !int.TryParse(args[0], out int port))
-            port = 8080;
+builder.Services.Configure<WireMockServerSettings>(
+    builder.Configuration.GetSection("WireMockServerSettings"));
 
-        var server = WireMockServer.Start(port);
-        Console.WriteLine("WireMockServer running at {0}", string.Join(",", server.Ports));
+builder.Services.AddHostedService<HostedService>();
 
-        // Order of rules matters. First matching is taken.
-
-        server
-            .Given(Request.Create().WithPath("/*").UsingGet())
-            .RespondWith(Response.Create()
-                .WithStatusCode(200)
-                .WithHeader("Content-Type", "application/json")
-                .WithBody(@"{ ""msg"": ""Hello world!""}")
-            );
-
-        server
-            .Given(Request.Create().WithPath(u => u.Contains("x")).UsingGet())
-            .RespondWith(Response.Create()
-                .WithStatusCode(200)
-                .WithHeader("Content-Type", "application/json")
-                .WithBody(@"{ ""result"": ""/x with FUNC 200""}"));
-
-        server
-            .Given(Request.Create().WithPath("/data").UsingPost().WithBody(b => b.Contains("e")))
-            .RespondWith(Response.Create()
-                .WithStatusCode(201)
-                .WithHeader("Content-Type", "application/json")
-                .WithBody(@"{ ""result"": ""data posted with FUNC 201""}"));
-
-        server
-            .Given(Request.Create().WithPath("/data").UsingPost())
-            .RespondWith(Response.Create()
-                .WithStatusCode(201)
-                .WithHeader("Content-Type", "application/json")
-                .WithBody(@"{ ""result"": ""data posted with 201""}"));
-
-        server
-            .Given(Request.Create().WithPath("/data").UsingDelete())
-            .RespondWith(Response.Create()
-                .WithStatusCode(200)
-                .WithHeader("Content-Type", "application/json")
-                .WithBody(@"{ ""result"": ""data deleted with 200""}"));
-
-        Console.WriteLine("Press any key to stop the server");
-        Console.ReadKey();
-
-        Console.WriteLine("Displaying all requests");
-        var allRequests = server.LogEntries;
-        Console.WriteLine(JsonSerializer.Serialize(allRequests));
-
-        Console.WriteLine("Press any key to quit");
-        Console.ReadKey();
-    }
-}
+var host = builder.Build();
+host.Run();

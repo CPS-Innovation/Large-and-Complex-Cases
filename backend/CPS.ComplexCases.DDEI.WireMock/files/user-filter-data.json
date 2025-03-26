@@ -1,0 +1,17 @@
+{
+  "isSuperUser": false,
+  "areas": [
+    {
+      "id": 1057708,
+      "description": "Organised Crime Division",
+      "cpsAreaId": 40860261
+    }
+  ],
+  "courts": [],
+  "hearingTypes": [],
+  "tasksFor": [],
+  "taskTypes": [],
+  "units": [],
+  "unitGroups": [],
+  "areaGroups": []
+}

@@ -5,6 +5,7 @@ trigger: none
 pr: none
 
 variables:
+  - group: complex-cases-global
   - name: buildConfiguration
     value: "Release"
   - name: majorMinorVersion

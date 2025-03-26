@@ -236,18 +236,6 @@ resource "azuread_application_password" "pwd_e2e_test_secret" {
   }
 }
 
-#store SPA ClientId and ClientSecret in terraform key vault so that they can be pulled in securely by the e2e tests, per environment
-resource "azurerm_key_vault_secret" "kvs_ui_client_id" {
-  #checkov:skip=CKV_AZURE_41:Ensure that the expiration date is set on all secrets
-  #checkov:skip=CKV_AZURE_114:Ensure that key vault secrets have "content_type" set
-  name         = "ui-client-id${local.resource_suffix}"
-  value        = azuread_application.complex_cases_ui.client_id
-  key_vault_id = data.azurerm_key_vault.terraform_key_vault.id
-  depends_on = [
-    azurerm_role_assignment.kv_role_terraform_sp
-  ]
-}
-
 resource "azurerm_key_vault_secret" "kvs_complex_cases_ui_client_secret" {
   #checkov:skip=CKV_AZURE_41:Ensure that the expiration date is set on all secrets
   #checkov:skip=CKV_AZURE_114:Ensure that key vault secrets have "content_type" set
@@ -257,18 +245,6 @@ resource "azurerm_key_vault_secret" "kvs_complex_cases_ui_client_secret" {
   depends_on = [
     azurerm_role_assignment.kv_role_terraform_sp,
     azuread_application_password.pwd_complex_cases_ui
-  ]
-}
-
-resource "azurerm_key_vault_secret" "kvs_ui_client_secret" {
-  #checkov:skip=CKV_AZURE_41:Ensure that the expiration date is set on all secrets
-  #checkov:skip=CKV_AZURE_114:Ensure that key vault secrets have "content_type" set
-  name         = "ui-e2e-client-secret${local.resource_suffix}"
-  value        = azuread_application_password.pwd_e2e_test_secret.value
-  key_vault_id = data.azurerm_key_vault.terraform_key_vault.id
-  depends_on = [
-    azurerm_role_assignment.kv_role_terraform_sp,
-    azuread_application_password.pwd_e2e_test_secret
   ]
 }
 
