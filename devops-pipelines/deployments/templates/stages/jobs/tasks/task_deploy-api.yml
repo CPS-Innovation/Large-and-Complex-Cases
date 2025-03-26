@@ -8,6 +8,8 @@ parameters:
     type: string
   - name: targetSuffix
     type: string
+  - name: appInsightsKey
+    type: string
   - name: azureSubscription
     type: string
 
@@ -16,6 +18,13 @@ steps:
   - download: ${{ parameters.targetBuild }}
     displayName: Download Scripts
     artifact: 'complex-cases-script-files'
+
+  # send custom event to AppInsights
+  - template: task_send-to-app-insights.yml
+    parameters:
+      appInsightsKey: ${{ parameters.appInsightsKey }}
+      targetBuild: ${{ parameters.targetBuild }}
+      message: "${{ parameters.targetLabel }} ${{ parameters.targetName }}: Publish API - Started"
 
   # download text-extractor build artifact
   - download: ${{ parameters.targetBuild }}
@@ -28,8 +37,15 @@ steps:
     inputs:
       azureSubscription: ${{ parameters.azureSubscription }}
       appType: functionAppLinux
-      appName: "lacc${{ parameters.targetSuffix }}-api"
+      appName: "LaCC${{ parameters.targetSuffix }}-api"
       package: $(Pipeline.Workspace)/${{ parameters.targetBuild }}/complex-cases-api-drop
       deployToSlotOrASE: true
-      resourceGroupName: "rg-LaCC-application${{ parameters.targetSuffix }}"
+      resourceGroupName: "rg-LaCC${{ parameters.targetSuffix }}"
       slotName: "staging"
+
+  # send custom event to AppInsights
+  - template: task_send-to-app-insights.yml
+    parameters:
+      appInsightsKey: ${{ parameters.appInsightsKey }}
+      targetBuild: ${{ parameters.targetBuild }}
+      message: "${{ parameters.targetLabel }} ${{ parameters.targetName }}: Publish API - Completed"
