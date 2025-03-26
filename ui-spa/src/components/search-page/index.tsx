@@ -57,7 +57,8 @@ const CaseSearchPage = () => {
     if (errorList.length) errorSummaryRef.current?.focus();
   }, [errorList]);
 
-  const handleSearch = () => {
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     const isFromValid = validateFormData();
     if (isFromValid) {
       const searchParams = getSearchParams();
@@ -85,7 +86,7 @@ const CaseSearchPage = () => {
             />
           </div>
         )}
-        <div>
+        <form onSubmit={handleSearch}>
           <div className={styles.inputWrapper}>
             <Radios
               aria-label="choose search type"
@@ -227,7 +228,7 @@ const CaseSearchPage = () => {
                       <Input
                         id="search-urn"
                         data-testid="search-urn"
-                        className="govuk-input--width-20"
+                        className={`govuk-input--width-20 ${styles.urnInput}`}
                         label={{
                           children: "URN",
                         }}
@@ -263,8 +264,8 @@ const CaseSearchPage = () => {
               }}
             />
           </div>
-          <Button onClick={handleSearch}>Search</Button>
-        </div>
+          <Button type={"submit"}>Search</Button>
+        </form>
       </div>
     </div>
   );

@@ -52,7 +52,7 @@ export const useCaseSearchForm = (initialData: SearchFromData) => {
           return {
             children: formDataErrors[inputName]?.errorSummaryText,
             href: "#search-defendant-area",
-            "data-testid": "search-operation-area-link",
+            "data-testid": "search-defendant-area-link",
           };
         case SearchFormField.operationName:
           return {
