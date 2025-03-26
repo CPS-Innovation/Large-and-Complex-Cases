@@ -1,21 +1,29 @@
 {
   "IsEncrypted": false,
   "Values": {
-    "APPINSIGHTS_INSTRUMENTATIONKEY": "GUID of the app insights instance",
+    "APPINSIGHTS_INSTRUMENTATIONKEY": "1fb6c0ed-d8c7-4ae3-a8a0-d4191f8616cc",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "Storage": "UseDevelopmentStorage=true",
+
+    "TenantId": "00dd0d1d-d7e6-4338-ac51-565339c7088c",
     "CallingAppValidAudience": "57c88580-01d4-477d-9b1d-ebb22c8d05af",
     "CallingAppValidRoles": "",
     "CallingAppValidScopes": "user_impersonation",
+
     "DDEIOptions__BaseUrl": "Your DDEI endpoint e.g. https://b45gxx5t-7079.uks1.devtunnels.ms",
     "DDEIOptions__MockBaseUrl": "http://localhost:7081",
-    "DDEIOptions__AccessKey": "Your DDEI endpoint access code ",
+    "DDEIOptions__AccessKey": "Your DDEI endpoint access code",
     "DDEIOptions__DevtunnelToken": "If using dev tunnels, the word 'tunnel' followed by a space, followed by your devtunnel token e.g. tunnel eyXjd...",
-    "Storage": "UseDevelopmentStorage=true",
-    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+
     "EgressOptions__Url": "http://localhost:7080/",
     "EgressOptions__Username": "Your egress username",
     "EgressOptions__Password": "Your egress password",
-    "TenantId": "00dd0d1d-d7e6-4338-ac51-565339c7088c"
+
+    "NetAppOptions__Url": "",
+    "NetAppOptions__AccessKey": "",
+    "NetAppOptions__SecretKey": "",
+    "NetAppOptions__RegionName": ""
   },
   "Host": {
     "LocalHttpPort": 7071,
