@@ -16,6 +16,8 @@ resources:
 variables:
   - group: complex-cases-global
   - group: complex-cases-terraform
+  - group: complex-cases-secure-pre-prod
+  - group: complex-cases-secure-prod
 
 stages:
   #release to DEV
@@ -26,6 +28,7 @@ stages:
       targetEnv: "LaCC_DEV"
       targetBuild: ComplexCasesBuild
       targetLabel: "DEV"
+      appInsightsKey: $(app-insights-instrumentation-key-preprod)
       azureSubscription: $(azure-subscription-pre-prod)
       targetPlanName: "dev"
       terraformStorageAccount: $(terraform-storage-name-dev)
@@ -50,6 +53,7 @@ stages:
       targetEnv: "LaCC_QA"
       targetBuild: ComplexCasesBuild
       targetLabel: "QA"
+      appInsightsKey: $(app-insights-instrumentation-key-preprod)
       azureSubscription: $(azure-subscription-pre-prod)
       targetPlanName: "qa"
       terraformStorageAccount: $(terraform-storage-name-qa)
@@ -106,6 +110,22 @@ stages:
   #               - template: ../templates/stages/jobs/tasks/task_wait-for-running-releases.yml
   #                 parameters:
   #                   devOpsPatToken: $(System.AccessToken)
+        
+  #     - deployment: Log_Start_Terraform
+  #       condition: succeeded()
+  #       dependsOn: Wait_For_Running_Builds
+  #       displayName: Log Start
+  #       environment: "Complex_Cases_PROD"
+  #       strategy:
+  #         runOnce:
+  #           deploy:
+  #             steps:
+  #               - template: ../templates/stages/jobs/tasks/task_log-start-deployment.yml
+  #                 parameters:
+  #                   targetBuild: ComplexCasesBuild
+  #                   targetLabel: "PROD"
+  #                   targetName: "Terraform CI Deployment"
+  #                   appInsightsKey: $(app-insights-instrumentation-key-prod)
 
   #     - job: Send_Start_Message
   #       displayName: Send Message to Teams
@@ -132,7 +152,7 @@ stages:
 
   #     - deployment: Apply_Application_Terraform
   #       condition: succeeded()
-  #       dependsOn: Wait_For_Running_Builds
+  #       dependsOn: Log_Start_Terraform
   #       displayName: Apply Application Terraform
   #       environment: "Complex_Cases_PROD"
   #       workspace:
@@ -144,14 +164,15 @@ stages:
   #               - template: ../templates/stages/jobs/tasks/task_get-credentials.yml
   #                 parameters:
   #                   azureSubscription: $(azure-subscription-prod)
-
-  #               - template: ../templates/stages/jobs/tasks/task_apply-terraform.yml
+        
+  #               - template: ../templates/stages/jobs/tasks/task_apply-and-record-terraform.yml
   #                 parameters:
   #                   targetBuild: ComplexCasesBuild
   #                   targetTerraformArtifact: "application-terraform-files"
   #                   targetLabel: "PROD"
   #                   targetName: "Application Terraform CI Deployment"
   #                   targetPlanName: "prod"
+  #                   appInsightsKey: $(app-insights-instrumentation-key-prod)
   #                   terraformStorageAccount: $(terraform-storage-name-prod)
   #                   terraformContainerName: $(terraform-container-name-application)
   #                   terraformStateKey: $(terraform-state-file)
@@ -176,19 +197,43 @@ stages:
 
   #               - template: ../templates/stages/jobs/tasks/task_set-log-analytics-archival-periods.yml
   #                 parameters:
+  #                   targetBuild: ComplexCasesBuild
+  #                   targetLabel: "PROD"
+  #                   targetName: "Set Log Analytics Archival Periods"
   #                   targetSuffix: ""
+  #                   appInsightsKey: $(app-insights-instrumentation-key-prod)
   #                   armClientId: $(clientId)
   #                   armClientSecret: $(clientSecret)
   #                   armTenantId: $(tenantId)
   #                   armSubscriptionId: $(subscriptionId)
   #                   logRetentionTime: $(log-retention-time)
   #                   totalLogRetentionTime: $(total-log-retention-time)
+        
+  #     - deployment: Log_Result_Terraform_Ended
+  #       condition: succeeded()
+  #       displayName: Log End
+  #       dependsOn:
+  #         - Apply_Application_Terraform
+  #         - Set_Log_Analytics_Archival_Periods
+  #       environment: "Complex_Cases_PROD"
+  #       strategy:
+  #         runOnce:
+  #           deploy:
+  #             steps:
+  #               - template: ../templates/stages/jobs/tasks/task_log-result-deployment.yml
+  #                 parameters:
+  #                   targetBuild: ComplexCasesBuild
+  #                   targetLabel: "PROD"
+  #                   targetName: "Terraform CI Deployment"
+  #                   appInsightsKey: $(app-insights-instrumentation-key-prod)
+  #                   devOpsPatToken: $(System.AccessToken)
                     
   # - template: ../templates/stages/stage_deploy-codebase.yml
   #   parameters:
   #     buildAgentName: $(build-agent-prod)
   #     targetBuild: ComplexCasesBuild
   #     targetLabel: "PROD"
+  #     appInsightsKey: $(app-insights-instrumentation-key-prod)
   #     targetSuffix: ""
   #     statusCheckRetries: $(status-check-retries)
   #     statusCheckDelaySeconds: $(status-check-delay-seconds)
@@ -200,6 +245,7 @@ stages:
   #     buildAgentName: $(build-agent-prod)
   #     targetBuild: ComplexCasesBuild
   #     targetLabel: "PROD"
+  #     appInsightsKey: $(app-insights-instrumentation-key-prod)
   #     targetSuffix: ""
   #     azureSubscription: $(azure-subscription-prod)
 
@@ -208,6 +254,7 @@ stages:
   #     buildAgentName: $(build-agent-prod)
   #     targetBuild: ComplexCasesBuild
   #     targetLabel: "PROD"
+  #     appInsightsKey: $(app-insights-instrumentation-key-prod)
   #     targetSuffix: ""
   #     azureSubscription: $(azure-subscription-prod)
   #     statusCheckMethod: $(status-check-method)
@@ -221,12 +268,14 @@ stages:
   #     targetBuild: ComplexCasesBuild
   #     targetLabel: "PROD"
   #     targetLabelLower: "prod"
+  #     appInsightsKey: $(app-insights-instrumentation-key-prod)
 
   # - template: ../templates/stages/stage_update-git-hub-tag.yml
   #   parameters:
   #     buildAgentName: $(build-agent-prod)
   #     targetBuild: ComplexCasesBuild
   #     targetLabel: "PROD"
+  #     appInsightsKey: $(app-insights-instrumentation-key-prod)
 
   # - template: ../templates/stages/stage_run-e2e-tests.yml
   #   parameters:
