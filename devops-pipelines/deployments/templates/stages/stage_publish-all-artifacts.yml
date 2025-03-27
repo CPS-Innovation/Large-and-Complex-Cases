@@ -33,6 +33,8 @@ stages:
               performMultiLevelLookup: true
               includePreviewVersions: false
               
+          - template: jobs/tasks/dependencies/task_install-mono.yml
+              
           - task: NuGetCommand@2
             inputs:
               restoreSolution: "backend/CPS.ComplexCases.sln"
