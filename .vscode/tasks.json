@@ -54,7 +54,7 @@
       "options": {
         "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.API/bin/Debug/net8.0",
         "env": {
-          "EgressOptions__Url": "http://localhost:7080"
+          "DDEIOptions__MockBaseUrl": "http://localhost:7081"
         }
       },
       "command": "func start --no-build --verbose --password CPS.ComplexCases.API",
@@ -92,7 +92,12 @@
       "label": "run-ui",
       "type": "shell",
       "options": {
-        "cwd": "${workspaceFolder}/ui-spa"
+        "cwd": "${workspaceFolder}/ui-spa",
+        "env": {
+          "VITE_GATEWAY_BASE_URL": "http://localhost:7071",
+          "VITE_MOCK_API_SOURCE": "",
+          "VITE_MOCK_AUTH": ""
+        }
       },
       "command": "npm run dev",
       "isBackground": true,
@@ -137,6 +142,16 @@
       }
     },
     {
+      "label": "e2e",
+      "type": "shell",
+      "command": "./scripts/local.ci.sh",
+      "options": {
+        "cwd": "${workspaceFolder}/e2e"
+      },
+      "problemMatcher": [],
+      "isBackground": true
+    },
+    {
       "label": "prepare-all",
       "dependsOrder": "parallel",
       "dependsOn": ["build-ui", "build-backend", "run-azurite"]
@@ -150,6 +165,12 @@
       "label": "build-and-run-all",
       "dependsOrder": "sequence",
       "dependsOn": ["prepare-all", "run-backend-and-mock", "run-ui"],
+      "problemMatcher": []
+    },
+    {
+      "label": "build-and-run-all-and-e2e",
+      "dependsOrder": "sequence",
+      "dependsOn": ["build-and-run-all", "e2e"],
       "problemMatcher": []
     }
   ]

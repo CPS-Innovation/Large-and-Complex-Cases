@@ -1,0 +1,15 @@
+.results {
+  margin-top: 2.5rem;
+  .statusTag {
+    text-transform: capitalize;
+    font-weight: normal;
+  }
+}
+
+.noResultsContent {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  & :global(.govuk-list) {
+    margin-top: 1rem;
+  }
+}

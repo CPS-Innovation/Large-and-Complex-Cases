@@ -1,5 +1,5 @@
 resource "azurerm_log_analytics_workspace" "complex_cases_la" {
-  name                       = "${local.product_name}-la"
+  name                       = "${local.product_name}-${local.shared_prefix}-la"
   location                   = azurerm_resource_group.rg_complex_cases_analytics.location
   resource_group_name        = azurerm_resource_group.rg_complex_cases_analytics.name
   sku                        = "PerGB2018"
@@ -9,7 +9,7 @@ resource "azurerm_log_analytics_workspace" "complex_cases_la" {
 }
 
 resource "azurerm_application_insights" "complex_cases_ai" {
-  name                       = "${local.product_name}-ai"
+  name                       = "${local.product_name}-${local.shared_prefix}-ai"
   location                   = azurerm_resource_group.rg_complex_cases_analytics.location
   resource_group_name        = azurerm_resource_group.rg_complex_cases_analytics.name
   workspace_id               = azurerm_log_analytics_workspace.complex_cases_la.id
@@ -21,13 +21,13 @@ resource "azurerm_application_insights" "complex_cases_ai" {
 }
 
 resource "azurerm_monitor_private_link_scope" "pls_ai_insights" {
-  name                = "pls-${local.product_name}-ai-insights"
+  name                = "pls-${local.product_name}-${local.shared_prefix}-ai-insights"
   resource_group_name = azurerm_resource_group.rg_complex_cases_analytics.name
   tags                = local.common_tags
 }
 
 resource "azurerm_monitor_private_link_scoped_service" "pls_ai_scoped_service" {
-  name                = "pls-${local.product_name}-ai-scoped-service"
+  name                = "pls-${local.product_name}-${local.shared_prefix}-ai-scoped-service"
   resource_group_name = azurerm_resource_group.rg_complex_cases_analytics.name
   scope_name          = azurerm_monitor_private_link_scope.pls_ai_insights.name
   linked_resource_id  = azurerm_application_insights.complex_cases_ai.id
@@ -36,7 +36,7 @@ resource "azurerm_monitor_private_link_scoped_service" "pls_ai_scoped_service" {
 }
 
 resource "azurerm_monitor_private_link_scoped_service" "pls_la_scoped_service" {
-  name                = "pls-${local.product_name}-la-scoped-service"
+  name                = "pls-${local.product_name}-${local.shared_prefix}-la-scoped-service"
   resource_group_name = azurerm_resource_group.rg_complex_cases_analytics.name
   scope_name          = azurerm_monitor_private_link_scope.pls_ai_insights.name
   linked_resource_id  = azurerm_log_analytics_workspace.complex_cases_la.id
@@ -178,4 +178,16 @@ resource "azurerm_private_dns_a_record" "complex_cases_ampls_dns_a_agentsvc_ai" 
   ttl                 = 3600
   records             = [cidrhost(azurerm_subnet.sn_complex_cases_ampls_subnet.address_prefixes[0], 15)]
   tags                = local.common_tags
+}
+
+#store the app insights key in terraform key vault for use within ADO
+resource "azurerm_key_vault_secret" "kvs_app_insights_key" {
+  #checkov:skip=CKV_AZURE_41:Ensure that the expiration date is set on all secrets
+  #checkov:skip=CKV_AZURE_114:Ensure that key vault secrets have "content_type" set
+  name         = "app-insights-instrumentation-key-${local.shared_prefix}"
+  value        = azurerm_application_insights.complex_cases_ai.instrumentation_key
+  key_vault_id = data.azurerm_key_vault.terraform_key_vault.id
+  depends_on = [
+    azurerm_application_insights.complex_cases_ai
+  ]
 }

@@ -1,21 +1,23 @@
-import { renderHook } from "@testing-library/react";
+import { renderHook, waitFor } from "@testing-library/react";
 import { useFormattedAreaValues } from "./useFormattedAreaValues";
 import { vi, Mock } from "vitest";
 import { useMainStateContext } from "../../providers/MainStateProvider";
-import { useGetCaseDivisionOrAreas } from "../../common/hooks/useGetAppLevelLookups";
+import { useAsyncActionHandlers } from "../hooks/useAsyncActionHandlers";
 
 vi.mock("../../providers/MainStateProvider", () => {
   return { useMainStateContext: vi.fn() };
 });
-vi.mock("../../common/hooks/useGetAppLevelLookups", () => {
-  return { useGetCaseDivisionOrAreas: vi.fn().mockImplementation(() => {}) };
+vi.mock("../hooks/useAsyncActionHandlers", () => {
+  return {
+    useAsyncActionHandlers: vi.fn(),
+  };
 });
 
 describe("useFormattedAreaValues", () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
-  it("should return value correctly when the caseDivisionsOrAreas status not equal to `succeeded`", () => {
+  it("should return value correctly when the caseDivisionsOrAreas status not equal to `succeeded`", async () => {
     const mockState = {
       caseDivisionsOrAreas: {
         status: "loading",
@@ -34,12 +36,18 @@ describe("useFormattedAreaValues", () => {
         },
       },
     };
+    const handleGetCaseDivisionsOrAreasMock = vi.fn();
+    (useAsyncActionHandlers as Mock).mockImplementation(() => ({
+      handleGetCaseDivisionsOrAreas: handleGetCaseDivisionsOrAreasMock,
+    }));
     (useMainStateContext as Mock).mockReturnValue({
       state: mockState,
       dispatch: () => {},
     });
     const { result, rerender } = renderHook(() => useFormattedAreaValues());
-    expect(useGetCaseDivisionOrAreas).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(handleGetCaseDivisionsOrAreasMock).toHaveBeenCalledTimes(1);
+    });
     expect(result.current).toStrictEqual({
       defaultValue: undefined,
       options: [],
@@ -104,10 +112,14 @@ describe("useFormattedAreaValues", () => {
         },
       ],
     };
-    expect(useGetCaseDivisionOrAreas).toHaveBeenCalledTimes(2);
+    expect(handleGetCaseDivisionsOrAreasMock).toHaveBeenCalledTimes(1);
     expect(result.current).toStrictEqual(expectedResult);
   });
   it("should return value correctly when the caseDivisionsOrAreas status is equal to `succeeded`", () => {
+    const handleGetCaseDivisionsOrAreasMock = vi.fn();
+    (useAsyncActionHandlers as Mock).mockImplementation(() => ({
+      handleGetCaseDivisionsOrAreas: handleGetCaseDivisionsOrAreasMock,
+    }));
     const mockState = {
       caseDivisionsOrAreas: {
         status: "succeeded",
@@ -131,7 +143,7 @@ describe("useFormattedAreaValues", () => {
       dispatch: () => {},
     });
     const { result } = renderHook(() => useFormattedAreaValues());
-    expect(useGetCaseDivisionOrAreas).toHaveBeenCalledTimes(1);
+    expect(handleGetCaseDivisionsOrAreasMock).toHaveBeenCalledTimes(0);
 
     const expectedResult = {
       defaultValue: 3,

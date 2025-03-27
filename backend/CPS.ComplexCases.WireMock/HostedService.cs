@@ -22,7 +22,7 @@ namespace CPS.ComplexCases.WireMock
             _settings.Logger = new WireMockConsoleLogger();
             // If we have no URLs, then we cannot see appsettings.json.  We are probably deployed to azure in 
             //  this case, and so we need to be running on the default port
-            _settings.Urls = _settings.Urls ?? ["http://localhost"];
+            _settings.Urls ??= ["http://localhost"];
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
