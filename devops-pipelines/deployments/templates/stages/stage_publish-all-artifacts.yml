@@ -24,16 +24,38 @@ stages:
               
       - job: Build_API_Artifact
         steps:
-          - template: jobs/tasks/dependencies/task_install-dotnet8.yml
-          - template: jobs/tasks/dependencies/task_install-powershell.yml
-          - template: jobs/tasks/dependencies/task_install-nuget.yml
-            
+          #- template: jobs/tasks/dependencies/task_install-dotnet8.yml
+          #- template: jobs/tasks/dependencies/task_install-powershell.yml
+          #- template: jobs/tasks/dependencies/task_install-nuget.yml
+
+          - task: UseDotNet@2
+            displayName: 'Install .NET Core SDK'
+            inputs:
+              version: 8.x
+              performMultiLevelLookup: true
+              includePreviewVersions: false
+          
           - task: DotNetCoreCLI@2
             inputs:
-              command: publish
+              command: "restore"
+              projects: "backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj"
+              feedsToUse: "select"
+              includeNuGetOrg: true
+            displayName: "Restore API dependencies"
+
+          - task: DotNetCoreCLI@2
+            inputs:
+              command: "build"
+              projects: "backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj"
+              arguments: "--configuration $(BuildConfiguration) /p:Version=$(Build.BuildNumber) /p:SourceRevisionId=$(Build.SourceVersion)"
+            displayName: "Build API"
+          
+          - task: DotNetCoreCLI@2
+            inputs:
+              command: "publish"
               publishWebProjects: false
               projects: "backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj"
-              arguments: "--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory) /p:Version=$(Build.BuildNumber) /p:SourceRevisionId=$(Build.SourceVersion)"
+              arguments: "--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory)"
               zipAfterPublish: false
             displayName: "Build API artifact"
           
@@ -51,40 +73,40 @@ stages:
           - task: PublishPipelineArtifact@1
             inputs:
               targetPath: "$(Build.ArtifactStagingDirectory)/CPS.ComplexCases.API"
-              artifact: complex-cases-api-drop"
+              artifactName: complex-cases-api-drop"
             displayName: "Publish API artifact"
 
-      - job: Build_Mock_Artifact
-        steps:
-          - template: jobs/tasks/dependencies/task_install-dotnet8.yml
-          - template: jobs/tasks/dependencies/task_install-powershell.yml
-          - template: jobs/tasks/dependencies/task_install-nuget.yml
+#      - job: Build_Mock_Artifact
+#        steps:
+#          - template: jobs/tasks/dependencies/task_install-dotnet8.yml
+#          - template: jobs/tasks/dependencies/task_install-powershell.yml
+#          - template: jobs/tasks/dependencies/task_install-nuget.yml
             
-          - task: DotNetCoreCLI@2
-            inputs:
-              command: publish
-              publishWebProjects: false
-              projects: "backend/CPS.ComplexCases.WireMock/CPS.ComplexCases.WireMock.csproj"
-              arguments: "--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory) /p:Version=$(Build.BuildNumber) /p:SourceRevisionId=$(Build.SourceVersion)"
-              zipAfterPublish: false
-            displayName: "Create Mock Service package to publish"
+#          - task: DotNetCoreCLI@2
+#            inputs:
+#              command: publish
+#              publishWebProjects: false
+#              projects: "backend/CPS.ComplexCases.WireMock/CPS.ComplexCases.WireMock.csproj"
+#              arguments: "--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory) /p:Version=$(Build.BuildNumber) /p:SourceRevisionId=$(Build.SourceVersion)"
+#              zipAfterPublish: false
+#            displayName: "Create Mock Service package to publish"
           
           # Add build version
-          - task: PowerShell@2
-            inputs:
-              targetType: 'inline'
-              workingDirectory: '$(Build.ArtifactStagingDirectory)/CPS.ComplexCases.WireMock'
-              script: |
-                New-Item build-version.txt -force
-                $currentDate = Get-Date
-                Set-Content build-version.txt "{`"name`":`"Egress Mock`",`"buildVersion`":`"$(Build.BuildNumber)`",`"sourceVersion`":`"$(Build.SourceVersion)`",`"lastBuilt`":`"$currentDate`"}"
-            displayName: "Record Mock version details"
+#          - task: PowerShell@2
+#            inputs:
+#              targetType: 'inline'
+#              workingDirectory: '$(Build.ArtifactStagingDirectory)/CPS.ComplexCases.WireMock'
+#              script: |
+#                New-Item build-version.txt -force
+#                $currentDate = Get-Date
+#                Set-Content build-version.txt "{`"name`":`"Egress Mock`",`"buildVersion`":`"$(Build.BuildNumber)`",`"sourceVersion`":`"$(Build.SourceVersion)`",`"lastBuilt`":`"$currentDate`"}"
+#            displayName: "Record Mock version details"
 
-          - task: PublishPipelineArtifact@1
-            inputs:
-              targetPath: "$(Build.ArtifactStagingDirectory)/CPS.ComplexCases.WireMock"
-              artifact: "mock-service-drop"
-            displayName: "Publish Mock Service codebase artifact"
+#          - task: PublishPipelineArtifact@1
+#            inputs:
+#              targetPath: "$(Build.ArtifactStagingDirectory)/CPS.ComplexCases.WireMock"
+#              artifact: "mock-service-drop"
+#            displayName: "Publish Mock Service codebase artifact"
 
 #      - job: Build_UI_Artifact
 #        steps:
