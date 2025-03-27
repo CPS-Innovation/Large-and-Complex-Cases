@@ -285,6 +285,36 @@ test.describe("Case Search", async () => {
     await page.getByTestId("search-urn").press("Enter");
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
   });
+
+  test("Should disable the search by operation name and search by defendant surname options if areas api failed but users should be able to do the URN search", async ({
+    page,
+    worker,
+  }) => {
+    await worker.use(
+      http.get("https://mocked-out-api/api/areas", async () => {
+        await delay(10);
+        return new HttpResponse(null, { status: 500 });
+      }),
+    );
+    await page.goto("/");
+    await expect(
+      page.getByRole("radio", { name: "Operation name" }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("radio", { name: "Defendant surname" }),
+    ).toBeDisabled();
+    await expect(page.locator("#case-search-types-3")).toBeChecked();
+    await page.getByTestId("search-urn").fill("11AA2222233");
+    await page.getByTestId("search-urn").press("Enter");
+    await expect(page).toHaveURL("search-results?urn=11AA2222233");
+    await expect(page).toHaveURL("search-results?urn=11AA2222233");
+    await expect(page.locator("h1")).toHaveText(
+      `Search results for URN "11AA2222233"`,
+    );
+    await expect(
+      page.getByText("2 cases found. Select a case to view more details."),
+    ).toBeVisible();
+  });
 });
 
 test.describe("Case Search Results", () => {
@@ -581,5 +611,81 @@ test.describe("Case Search Results", () => {
     await page.getByTestId("search-urn").fill("11AA2222231");
     await page.getByTestId("search-urn").press("Enter");
     await expect(page).toHaveURL("search-results?urn=11AA2222231");
+  });
+
+  test("Should show the error if the user lands on the search results page for defendant surname search and the area api failed", async ({
+    page,
+    worker,
+  }) => {
+    await worker.use(
+      http.get("https://mocked-out-api/api/areas", async () => {
+        await delay(10);
+        return new HttpResponse(null, { status: 500 });
+      }),
+    );
+    await page.goto("/search-results?defendant-name=ww&area=234");
+    await page.waitForResponse(`https://mocked-out-api/api/areas`);
+    await expect(page.locator("h1")).toHaveText(`Something went wrong!`);
+    await expect(
+      page.getByText("Error: areas api failed with status: 500, method:GET"),
+    ).toBeVisible();
+  });
+
+  test("Should show the error if the user lands on the search results page for operation name search and the area api failed", async ({
+    page,
+    worker,
+  }) => {
+    await worker.use(
+      http.get("https://mocked-out-api/api/areas", async () => {
+        await delay(10);
+        return new HttpResponse(null, { status: 500 });
+      }),
+    );
+    await page.goto("/search-results?operation-name=ww&area=234");
+    await page.waitForResponse(`https://mocked-out-api/api/areas`);
+    await expect(page.locator("h1")).toHaveText(`Something went wrong!`);
+    await expect(
+      page.getByText("Error: areas api failed with status: 500, method:GET"),
+    ).toBeVisible();
+  });
+
+  test("Should show the error if the user lands on the search results page and search api failed", async ({
+    page,
+    worker,
+  }) => {
+    await worker.use(
+      http.get("https://mocked-out-api/api/case-search", async () => {
+        await delay(10);
+        return new HttpResponse(null, { status: 500 });
+      }),
+    );
+    await page.goto("/search-results?operation-name=ww&area=1001");
+    await page.waitForResponse(`https://mocked-out-api/api/areas`);
+    await page.waitForResponse(`https://mocked-out-api/api/case-search?*`);
+    await expect(page.locator("h1")).toHaveText(`Something went wrong!`);
+    await expect(
+      page.getByText(
+        "Error: case-search api failed with status: 500, method:GET",
+      ),
+    ).toBeVisible();
+
+    await page.goto("/search-results?defendant-name=ww&area=1001");
+    await page.waitForResponse(`https://mocked-out-api/api/areas`);
+    await page.waitForResponse(`https://mocked-out-api/api/case-search?*`);
+    await expect(page.locator("h1")).toHaveText(`Something went wrong!`);
+    await expect(
+      page.getByText(
+        "Error: case-search api failed with status: 500, method:GET",
+      ),
+    ).toBeVisible();
+
+    await page.goto("/search-results?urn=11AA2222233");
+    await page.waitForResponse(`https://mocked-out-api/api/case-search?*`);
+    await expect(page.locator("h1")).toHaveText(`Something went wrong!`);
+    await expect(
+      page.getByText(
+        "Error: case-search api failed with status: 500, method:GET",
+      ),
+    ).toBeVisible();
   });
 });

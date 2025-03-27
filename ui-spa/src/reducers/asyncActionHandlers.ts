@@ -27,7 +27,7 @@ export const asyncActionHandlers: AsyncActionHandlers<
       } catch (error) {
         dispatch({
           type: "UPDATE_CASE_DIVISIONS_OR_AREAS",
-          payload: { status: "failed", error: error },
+          payload: { status: "failed", error: `${error}` },
         });
       }
     },

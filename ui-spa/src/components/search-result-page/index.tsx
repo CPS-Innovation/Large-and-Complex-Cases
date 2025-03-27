@@ -63,7 +63,7 @@ const CaseSearchResultPage = () => {
   } = useCaseSearchForm(getInitialState());
 
   const formattedAreaValues = useFormattedAreaValues(
-    formData[SearchFormField.searchType] !== "urn",
+    formData[SearchFormField.searchType] === "urn",
   );
 
   const apiState: RawApiResult<SearchResultData> = useApi(
