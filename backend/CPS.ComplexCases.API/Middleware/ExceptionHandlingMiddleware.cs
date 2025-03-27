@@ -1,11 +1,8 @@
 
 using System.Net;
-using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Exceptions;
 using CPS.ComplexCases.API.Extensions;
-using Microsoft.ApplicationInsights;
-using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Azure.Functions.Worker.Middleware;
@@ -16,19 +13,14 @@ namespace CPS.ComplexCases.API.Middleware;
 public class ExceptionHandlingMiddleware : IFunctionsWorkerMiddleware
 {
   private readonly ILogger<ExceptionHandlingMiddleware> _logger;
-  private readonly TelemetryClient _telemetryClient;
 
-  public ExceptionHandlingMiddleware(ILogger<ExceptionHandlingMiddleware> logger, TelemetryClient telemetryClient)
+  public ExceptionHandlingMiddleware(ILogger<ExceptionHandlingMiddleware> logger)
   {
     _logger = logger;
-    _telemetryClient = telemetryClient;
   }
 
   public async Task Invoke(FunctionContext context, FunctionExecutionDelegate next)
   {
-    var requestTelemetry = new RequestTelemetry();
-    requestTelemetry.Start();
-
     try
     {
       await next(context);
@@ -59,7 +51,6 @@ public class ExceptionHandlingMiddleware : IFunctionsWorkerMiddleware
         }
 
         _logger.LogMethodError(correlationId, httpRequestData.Url.ToString(), message, exception);
-        requestTelemetry.Properties[TelemetryConstants.CorrelationIdCustomDimensionName] = correlationId.ToString();
 
         var newHttpResponse = httpRequestData.CreateResponse(statusCode);
 
@@ -76,20 +67,6 @@ public class ExceptionHandlingMiddleware : IFunctionsWorkerMiddleware
         {
           invocationResult.Value = newHttpResponse;
         }
-
-        requestTelemetry.Context.Cloud.RoleName = Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME");
-        requestTelemetry.Context.Operation.Name = context.FunctionDefinition.Name;
-        requestTelemetry.Name = context.FunctionDefinition.Name;
-#pragma warning disable CS0618 // Type or member is obsolete
-        requestTelemetry.HttpMethod = httpRequestData.Method;
-#pragma warning restore CS0618 // Type or member is obsolete
-        requestTelemetry.ResponseCode = ((int)statusCode).ToString();
-        requestTelemetry.Success = false;
-        requestTelemetry.Url = httpRequestData.Url;
-        requestTelemetry.Properties[TelemetryConstants.ErrorMessageCustomDimensionName] = exception.ToStringFullResponse();
-        requestTelemetry.Stop();
-
-        _telemetryClient.TrackRequest(requestTelemetry);
       }
     }
   }
