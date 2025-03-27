@@ -32,6 +32,13 @@ stages:
               version: 8.x
               performMultiLevelLookup: true
               includePreviewVersions: false
+              
+          - task: NuGetCommand@2
+            inputs:
+              restoreSolution: "backend/CPS.ComplexCases.sln"
+              feedsToUse: "select"
+              includeNuGetOrg: false
+            displayName: "Restore Packages"
           
           - task: DotNetCoreCLI@2
             inputs:
