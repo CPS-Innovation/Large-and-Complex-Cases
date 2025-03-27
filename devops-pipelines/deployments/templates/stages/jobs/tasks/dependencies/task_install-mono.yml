@@ -9,6 +9,6 @@ steps:
       sleep 2
       done
       
-      echo '==== PowerShell ===='
-      sudo snap install powershell --classic
-    displayName: Install PowerShell
+      echo '==== Install Mono ===='
+      sudo apt-get install -y mono-complete
+    displayName: Install Mono
