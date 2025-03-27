@@ -28,7 +28,7 @@ stages:
       targetEnv: "LaCC_DEV"
       targetBuild: ComplexCasesBuild
       targetLabel: "DEV"
-      appInsightsKey: $(app-insights-instrumentation-key-pre-prod)
+      appInsightsKey: $(app-insights-instrumentation-key-preprod)
       azureSubscription: $(azure-subscription-pre-prod)
       targetPlanName: "dev"
       terraformStorageAccount: $(terraform-storage-name-dev)
@@ -53,7 +53,7 @@ stages:
       targetEnv: "LaCC_QA"
       targetBuild: ComplexCasesBuild
       targetLabel: "QA"
-      appInsightsKey: $(app-insights-instrumentation-key-pre-prod)
+      appInsightsKey: $(app-insights-instrumentation-key-preprod)
       azureSubscription: $(azure-subscription-pre-prod)
       targetPlanName: "qa"
       terraformStorageAccount: $(terraform-storage-name-qa)
