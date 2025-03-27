@@ -231,7 +231,7 @@ const CaseSearchPage = () => {
                       <Input
                         id="search-urn"
                         data-testid="search-urn"
-                        className={`govuk-input--width-20 ${styles.urnInput}`}
+                        className="govuk-input--width-20"
                         label={{
                           children: "URN",
                         }}
@@ -250,7 +250,10 @@ const CaseSearchPage = () => {
                         type="text"
                         value={formData[SearchFormField.urn]}
                         onChange={(value: string) =>
-                          handleFormChange(SearchFormField.urn, value)
+                          handleFormChange(
+                            SearchFormField.urn,
+                            value.toUpperCase(),
+                          )
                         }
                         disabled={false}
                       />,
