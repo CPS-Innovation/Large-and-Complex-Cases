@@ -15,10 +15,18 @@ export const Auth: FC<{ children: React.ReactNode }> = ({ children }) => {
       const [account] = msalInstance.getAllAccounts();
 
       if (!account) {
-        await msalInstance.loginRedirect({
-          scopes: ["User.Read"],
-        });
-        return;
+        try {
+          await msalInstance.loginRedirect({
+            scopes: ["User.Read"],
+          });
+          return;
+        } catch (err: any) {
+          if (err?.errorCode !== "interaction_in_progress") {
+            // When we redirect an "interaction_in_progress" error is thrown.
+            //  Let's suppress this error, but not any other types
+            throw err;
+          }
+        }
       }
 
       setIsLoggedIn(true);
