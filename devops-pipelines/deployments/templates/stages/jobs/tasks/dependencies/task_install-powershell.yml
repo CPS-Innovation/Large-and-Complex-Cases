@@ -11,6 +11,6 @@ steps:
       
       DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install tzdata
       
-      echo '==== dotnet 8 ===='
-      sudo apt-get install -y dotnet-sdk-8.0
-    displayName: Install DotNet 8 SDK
+      echo '==== PowerShell ===='
+      sudo snap install powershell --classic
+    displayName: Install PowerShell
