@@ -52,7 +52,7 @@ stages:
               artifact: complex-cases-api-drop"
             displayName: "Publish API artifact"
 
-      - job: Build_Mock
+      - job: Build_Mock_Artifact
         steps:
           - task: DotNetCoreCLI@2
             inputs:
