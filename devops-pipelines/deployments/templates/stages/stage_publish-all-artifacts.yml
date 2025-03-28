@@ -97,6 +97,8 @@ stages:
               projects: "backend/CPS.ComplexCases.WireMock/CPS.ComplexCases.WireMock.csproj"
               arguments: "--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory) /p:Version=$(Build.BuildNumber) /p:SourceRevisionId=$(Build.SourceVersion)"
               zipAfterPublish: false
+              feedsToUse: config
+              nugetConfigPath: "backend/nuget.config"
             displayName: "Create Mock Service package to publish"
           
           # Add build version
