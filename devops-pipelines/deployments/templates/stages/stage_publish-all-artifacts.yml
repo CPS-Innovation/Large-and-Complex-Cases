@@ -33,9 +33,8 @@ stages:
             inputs:
               command: restore
               projects: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-              feedsToUse: select
-              #nugetConfigPath: "backend/nuget.config"
-              vstsFeed: "LaCC_Feed"
+              feedsToUse: config
+              nugetConfigPath: "backend/nuget.config"
               
           - task: DotNetCoreCLI@2
             displayName: "Build API project"
@@ -81,9 +80,8 @@ stages:
             inputs:
               command: restore
               projects: "backend/CPS.ComplexCases.WireMock/CPS.ComplexCases.WireMock.csproj"
-              feedsToUse: select
-              #nugetConfigPath: "backend/nuget.config"
-              vstsFeed: "LaCC_Feed"
+              feedsToUse: config
+              nugetConfigPath: "backend/nuget.config"
               
           - task: DotNetCoreCLI@2
             displayName: "Build Mock project"
