@@ -68,7 +68,7 @@ stages:
             displayName: "Publish API artifact"
             inputs:
               targetPath: "$(Build.ArtifactStagingDirectory)/CPS.ComplexCases.API"
-              artifact: complex-cases-api-drop"
+              artifact: "complex-cases-api-drop"
 
       - job: Build_Mock_Artifact
         steps:
