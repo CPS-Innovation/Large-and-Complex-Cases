@@ -8,6 +8,8 @@ parameters:
     type: string
   - name: targetLabel
     type: string
+  - name: appInsightsKey
+    type: string
   - name: azureSubscription
     type: string
   - name: targetPlanName
@@ -47,9 +49,25 @@ stages:
                   parameters:
                     devOpsPatToken: $(System.AccessToken)
 
-      - deployment: Apply_Application_Terraform
+      - deployment: Log_Start_Terraform
         condition: succeeded()
         dependsOn: Wait_For_Running_Builds
+        displayName: Log Start
+        environment: ${{ parameters.targetEnv }}
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: jobs/tasks/task_log-start-deployment.yml
+                  parameters:
+                    targetBuild: ${{ parameters.targetBuild }}
+                    targetLabel: ${{ parameters.targetLabel }}
+                    targetName: "Terraform CI Deployment"
+                    appInsightsKey: ${{ parameters.appInsightsKey }}
+
+      - deployment: Apply_Application_Terraform
+        condition: succeeded()
+        dependsOn: Log_Start_Terraform
         displayName: Apply Application Terraform
         environment: ${{ parameters.targetEnv }}
         workspace:
@@ -61,14 +79,15 @@ stages:
                 - template: jobs/tasks/task_get-credentials.yml
                   parameters:
                     azureSubscription: ${{ parameters.azureSubscription }}
-                    
-                - template: jobs/tasks/task_apply-terraform.yml
+
+                - template: jobs/tasks/task_apply-and-record-terraform.yml
                   parameters:
                     targetBuild: ${{ parameters.targetBuild }}
                     targetTerraformArtifact: "application-terraform-files"
                     targetLabel: ${{ parameters.targetLabel }}
                     targetName: "Application Terraform CI Deployment"
                     targetPlanName: ${{ parameters.targetPlanName }}
+                    appInsightsKey: ${{ parameters.appInsightsKey }}
                     terraformStorageAccount: ${{ parameters.terraformStorageAccount }}
                     terraformContainerName: ${{ parameters.mainTerraformContainerName }}
                     terraformStateKey: ${{ parameters.terraformStateKey }}
@@ -90,13 +109,36 @@ stages:
                 - template: jobs/tasks/task_get-credentials.yml
                   parameters:
                     azureSubscription: ${{ parameters.azureSubscription }}
-                    
+
                 - template: jobs/tasks/task_set-log-analytics-archival-periods.yml
                   parameters:
+                    targetBuild: ${{ parameters.targetBuild }}
+                    targetLabel: ${{ parameters.targetLabel }}
+                    targetName: "Set Log Analytics Archival Periods"
                     targetSuffix: ${{ parameters.targetSuffix }}
+                    appInsightsKey: ${{ parameters.appInsightsKey }}
                     armClientId: $(clientId)
                     armClientSecret: $(clientSecret)
                     armTenantId: $(tenantId)
                     armSubscriptionId: $(subscriptionId)
                     logRetentionTime: ${{ parameters.logRetentionTime }}
                     totalLogRetentionTime: ${{ parameters.totalLogRetentionTime }}
+
+      - deployment: Log_Result_Terraform_Ended
+        condition: succeeded()
+        displayName: Log End
+        dependsOn:
+          - Apply_Application_Terraform
+          - Set_Log_Analytics_Archival_Periods
+        environment: ${{ parameters.targetEnv }}
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: jobs/tasks/task_log-result-deployment.yml
+                  parameters:
+                    targetBuild: ${{ parameters.targetBuild }}
+                    targetLabel: ${{ parameters.targetLabel }}
+                    targetName: "Terraform CI Deployment"
+                    appInsightsKey: ${{ parameters.appInsightsKey }}
+                    devOpsPatToken: $(System.AccessToken)

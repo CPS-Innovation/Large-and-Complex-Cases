@@ -8,6 +8,8 @@ parameters:
     type: string
   - name: targetSuffix
     type: string
+  - name: appInsightsKey
+    type: string
   - name: azureSubscription
     type: string
 
@@ -16,6 +18,13 @@ steps:
   - download: ${{ parameters.targetBuild }}
     displayName: Download Scripts
     artifact: 'complex-cases-script-files'
+
+  # send custom event to AppInsights
+  - template: task_send-to-app-insights.yml
+    parameters:
+      appInsightsKey: ${{ parameters.appInsightsKey }}
+      targetBuild: ${{ parameters.targetBuild }}
+      message: "${{ parameters.targetLabel }} ${{ parameters.targetName }}: Publish UI - Started"
 
   # download UI build artifact
   - download: ${{ parameters.targetBuild }}
@@ -28,8 +37,15 @@ steps:
     inputs:
       azureSubscription: ${{ parameters.azureSubscription }}
       appType: webAppLinux
-      WebAppName: "lacc${{ parameters.targetSuffix }}-ui"
+      WebAppName: "LaCC${{ parameters.targetSuffix }}-ui"
       packageForLinux: $(Pipeline.Workspace)/${{ parameters.targetBuild }}/ui-spa-drop
       deployToSlotOrASE: true
-      resourceGroupName: "rg-LaCC-application${{ parameters.targetSuffix }}"
+      resourceGroupName: "rg-LaCC${{ parameters.targetSuffix }}-application"
       slotName: "staging"
+
+  # send custom event to AppInsights
+  - template: task_send-to-app-insights.yml
+    parameters:
+      appInsightsKey: ${{ parameters.appInsightsKey }}
+      targetBuild: ${{ parameters.targetBuild }}
+      message: "${{ parameters.targetLabel }} ${{ parameters.targetName }}: Publish UI - Completed"

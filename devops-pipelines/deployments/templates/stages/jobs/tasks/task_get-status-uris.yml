@@ -30,4 +30,4 @@ steps:
       subscriptionId: ${{ parameters.armSubscriptionId }}
       apiAppName: "lacc${{ parameters.targetSuffix }}-api"
       uiAppName: "lacc${{ parameters.targetSuffix }}-ui"
-      resourceGroup: "rg-LaCC-application${{ parameters.targetSuffix }}"
+      resourceGroup: "rg-LaCC{{ parameters.targetSuffix }}-application"

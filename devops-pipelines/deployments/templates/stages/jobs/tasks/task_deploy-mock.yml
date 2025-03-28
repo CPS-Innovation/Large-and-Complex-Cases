@@ -44,7 +44,7 @@ steps:
       tenantId: $(tenantId)
       subscriptionId: $(subscriptionId)
       mockAppName: "lacc${{ parameters.targetSuffix }}-mock"
-      resourceGroup: "rg-LaCC-application${{ parameters.targetSuffix }}"
+      resourceGroup: "rg-LaCC{{ parameters.targetSuffix }}-application"
   
   # ======= deploy original version of the app
   # delete mock service mappings
@@ -87,7 +87,7 @@ steps:
       tenantId: $(tenantId)
       subscriptionId: $(subscriptionId)
       mockAppName: "lacc${{ parameters.targetSuffix }}-mock"
-      resourceGroup: "rg-LaCC-application${{ parameters.targetSuffix }}"
+      resourceGroup: "rg-LaCC${{ parameters.targetSuffix }}-application"
   
   # Restart app service    
   - task: AzureAppServiceManage@0
