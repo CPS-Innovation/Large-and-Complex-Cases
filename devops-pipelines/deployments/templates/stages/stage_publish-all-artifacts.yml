@@ -35,6 +35,7 @@ stages:
               projects: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
               feedsToUse: select
               includeNuGetOrg: true
+              verbosityRestore: "Diagnostic"
               
           - task: DotNetCoreCLI@2
             displayName: "Build API project"
@@ -82,6 +83,7 @@ stages:
               projects: "backend/CPS.ComplexCases.WireMock/CPS.ComplexCases.WireMock.csproj"
               feedsToUse: select
               includeNuGetOrg: true
+              verbosityRestore: "Diagnostic"
               
           - task: DotNetCoreCLI@2
             displayName: "Build Mock project"
