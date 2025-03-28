@@ -4,7 +4,7 @@ stages:
   - stage: Publish_Artifacts
     displayName: Publish Pipeline Scripts
     jobs:
-      - job: Build_Pipeline_Scripts
+      - job: Build_Pipeline_Scripts_Artifact
         steps:
           - task: PublishPipelineArtifact@1
             displayName: "Publish pipeline scripts"
@@ -27,37 +27,45 @@ stages:
           #- template: jobs/tasks/dependencies/task_install-powershell.yml
           
           - task: UseDotNet@2
-            displayName: 'Install .NET Core SDK'
+            displayName: "Install .NET Core SDK"
             inputs:
               version: 8.x
               performMultiLevelLookup: true
               includePreviewVersions: false
-
+              
           - task: DotNetCoreCLI@2
+            displayName: "Restore API"
             inputs:
-              command: publish
-              publishWebProjects: false
-              projects: "backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj"
-              arguments: "--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory) /p:Version=$(Build.BuildNumber) /p:SourceRevisionId=$(Build.SourceVersion)"
-              zipAfterPublish: false
-            displayName: "Build API artifact"
+              command: restore
+              projects: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+              feedsToUse: config
+              nugetConfigPath: "backend/nuget.config"
+
+          #- task: DotNetCoreCLI@2
+          #  inputs:
+          #    command: publish
+          #    publishWebProjects: false
+          #    projects: "backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj"
+          #    arguments: "--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory) /p:Version=$(Build.BuildNumber) /p:SourceRevisionId=$(Build.SourceVersion)"
+          #    zipAfterPublish: false
+          #  displayName: "Build API artifact"
           
           # Add build version
-          - task: PowerShell@2
-            inputs:
-              targetType: 'inline'
-              workingDirectory: '$(Build.ArtifactStagingDirectory)/CPS.ComplexCases.API'
-              script: |
-                New-Item build-version.txt -force
-                $currentDate = Get-Date
-                Set-Content build-version.txt "{`"name`":`"API`",`"buildVersion`":`"$(Build.BuildNumber)`",`"sourceVersion`":`"$(Build.SourceVersion)`",`"lastBuilt`":`"$currentDate`"}"
-            displayName: "Record version details"
+          #- task: PowerShell@2
+          #  inputs:
+          #    targetType: 'inline'
+          #    workingDirectory: '$(Build.ArtifactStagingDirectory)/CPS.ComplexCases.API'
+          #    script: |
+          #      New-Item build-version.txt -force
+          #      $currentDate = Get-Date
+          #      Set-Content build-version.txt "{`"name`":`"API`",`"buildVersion`":`"$(Build.BuildNumber)`",`"sourceVersion`":`"$(Build.SourceVersion)`",`"lastBuilt`":`"$currentDate`"}"
+          #  displayName: "Record version details"
 
-          - task: PublishPipelineArtifact@1
-            inputs:
-              targetPath: "$(Build.ArtifactStagingDirectory)/CPS.ComplexCases.API"
-              artifact: complex-cases-api-drop"
-            displayName: "Publish API artifact"
+          #- task: PublishPipelineArtifact@1
+          #  inputs:
+          #    targetPath: "$(Build.ArtifactStagingDirectory)/CPS.ComplexCases.API"
+          #    artifact: complex-cases-api-drop"
+          #  displayName: "Publish API artifact"
 
 #      - job: Build_Mock_Artifact
 #        steps:
