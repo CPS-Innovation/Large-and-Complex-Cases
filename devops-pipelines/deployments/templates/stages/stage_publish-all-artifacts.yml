@@ -45,7 +45,7 @@ stages:
             displayName: "Restore API"
             inputs:
               command: restore
-              projects: 'backend/CPS.ComplexCases.Wiremock/CPS.ComplexCases.WireMock.csproj'
+              projects: 'backend/CPS.ComplexCases.WireMock/CPS.ComplexCases.WireMock.csproj'
               feedsToUse: config
               nugetConfigPath: "backend/nuget.config"
 
