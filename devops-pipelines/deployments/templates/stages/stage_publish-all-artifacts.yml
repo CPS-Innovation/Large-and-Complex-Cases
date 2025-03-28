@@ -79,17 +79,10 @@ stages:
 
       - job: Build_Mock_Artifact
         steps:
-#          - template: jobs/tasks/dependencies/task_install-dotnet8.yml
-#          - template: jobs/tasks/dependencies/task_install-powershell.yml
-#          - template: jobs/tasks/dependencies/task_install-nuget.yml
-
-          - task: UseDotNet@2
-            displayName: "Install .NET Core SDK"
-            inputs:
-              version: 8.x
-              performMultiLevelLookup: true
-              includePreviewVersions: false
+          - template: jobs/tasks/dependencies/task_install-dotnet-core-8.yml
               
+          - template: jobs/tasks/dependencies/task_install-powershell.yml
+            
           - task: DotNetCoreCLI@2
             displayName: "Restore WireMock project"
             inputs:
