@@ -4,23 +4,23 @@ stages:
   - stage: Publish_Artifacts
     displayName: Publish Pipeline Scripts
     jobs:
-      - job: Build_Pipeline_Scripts_Artifact
-        steps:
-          - task: PublishPipelineArtifact@1
-            displayName: "Publish pipeline scripts"
-            inputs:
-              targetPath: "$(Pipeline.Workspace)/s/devops-pipelines/deployments/scripts"
-              artifact: "complex-cases-script-files"
-              publishLocation: "pipeline"
+      #- job: Build_Pipeline_Scripts_Artifact
+      #  steps:
+      #    - task: PublishPipelineArtifact@1
+      #      displayName: "Publish pipeline scripts"
+      #      inputs:
+      #        targetPath: "$(Pipeline.Workspace)/s/devops-pipelines/deployments/scripts"
+      #        artifact: "complex-cases-script-files"
+      #        publishLocation: "pipeline"
 
-      - job: Build_Application_Terraform_Artifact
-        steps:
-          - task: PublishPipelineArtifact@1
-            displayName: "Publish application terraform artifact"
-            inputs:
-              targetPath: "$(Pipeline.Workspace)/s/terraform/application/"
-              artifact: "application-terraform-files"
-              publishLocation: "pipeline"
+      #- job: Build_Application_Terraform_Artifact
+      #  steps:
+      #    - task: PublishPipelineArtifact@1
+      #      displayName: "Publish application terraform artifact"
+      #      inputs:
+      #        targetPath: "$(Pipeline.Workspace)/s/terraform/application/"
+      #        artifact: "application-terraform-files"
+      #        publishLocation: "pipeline"
               
       - job: Build_API_Artifact
         steps:
@@ -33,11 +33,19 @@ stages:
               performMultiLevelLookup: true
               includePreviewVersions: false
               
+          #- task: DotNetCoreCLI@2
+          #  displayName: "Restore API"
+          #  inputs:
+          #    command: restore
+          #    projects: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+          #    feedsToUse: config
+          #    nugetConfigPath: "backend/nuget.config"
+            
           - task: DotNetCoreCLI@2
             displayName: "Restore API"
             inputs:
               command: restore
-              projects: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+              projects: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.WireMock.csproj'
               feedsToUse: config
               nugetConfigPath: "backend/nuget.config"
 
