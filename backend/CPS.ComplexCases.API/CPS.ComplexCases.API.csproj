@@ -33,6 +33,8 @@
     <ProjectReference Include="..\CPS.ComplexCases.NetApp\CPS.ComplexCases.NetApp.csproj" />
     <ProjectReference Include="..\CPS.ComplexCases.Egress\CPS.ComplexCases.Egress.csproj" />
     <ProjectReference Include="..\CPS.ComplexCases.DDEI\CPS.ComplexCases.DDEI.csproj" />
+    <ProjectReference
+      Include="..\CPS.ComplexCases.API.HttpTelemetry\CPS.ComplexCases.API.HttpTelemetry.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json">
