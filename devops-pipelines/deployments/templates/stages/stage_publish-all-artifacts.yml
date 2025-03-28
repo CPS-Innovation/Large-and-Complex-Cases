@@ -33,22 +33,21 @@ stages:
               performMultiLevelLookup: true
               includePreviewVersions: false
               
-          #- task: DotNetCoreCLI@2
-          #  displayName: "Restore API"
-          #  inputs:
-          #    command: restore
-          #    projects: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-          #    feedsToUse: config
-          #    nugetConfigPath: "backend/nuget.config"
+          - task: DotNetCoreCLI@2
+            displayName: "Restore API"
+            inputs:
+              command: restore
+              projects: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+              feedsToUse: config
+              nugetConfigPath: "backend/nuget.config"
             
           - task: DotNetCoreCLI@2
-            displayName: "Restore WireMock Project"
+            displayName: "Restore WireMock"
             inputs:
               command: restore
               projects: 'backend/CPS.ComplexCases.WireMock/CPS.ComplexCases.WireMock.csproj'
               feedsToUse: config
               nugetConfigPath: "backend/nuget.config"
-              verbosityRestore: "Diagnostic"
 
           #- task: DotNetCoreCLI@2
           #  inputs:
