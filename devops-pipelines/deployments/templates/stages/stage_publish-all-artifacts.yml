@@ -42,7 +42,7 @@ stages:
           #    nugetConfigPath: "backend/nuget.config"
             
           - task: DotNetCoreCLI@2
-            displayName: "Restore DDEI Project"
+            displayName: "Restore WireMock Project"
             inputs:
               command: restore
               projects: 'backend/CPS.ComplexCases.WireMock/CPS.ComplexCases.WireMock.csproj'
