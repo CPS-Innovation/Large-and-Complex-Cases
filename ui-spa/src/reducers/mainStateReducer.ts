@@ -39,7 +39,6 @@ export const mainStateReducer = (
             },
           };
         case "failed": {
-          console.log("action.payload.status", action.payload.status);
           return {
             ...state,
             caseDivisionsOrAreas: {

@@ -66,15 +66,16 @@ const CaseSearchResultPage = () => {
     formData[SearchFormField.searchType] === "urn",
   );
 
-  const apiState: RawApiResult<SearchResultData> = useApi(
+  const searchApiState: RawApiResult<SearchResultData> = useApi(
     getCaseSearchResults,
     [queryString],
     triggerSearchApi,
   );
 
   useEffect(() => {
-    if (apiState.status === "failed") throw new Error(`${apiState.error}`);
-  }, [apiState]);
+    if (searchApiState.status === "failed")
+      throw new Error(`${searchApiState.error}`);
+  }, [searchApiState]);
 
   useEffect(() => {
     if (formData[SearchFormField.searchType] === "urn" || validatedAreaValues) {
@@ -359,7 +360,8 @@ const CaseSearchResultPage = () => {
   };
 
   if (
-    ((apiState.status === "loading" || apiState.status === "initial") &&
+    ((searchApiState.status === "loading" ||
+      searchApiState.status === "initial") &&
       !errorList.length) ||
     (formData[SearchFormField.searchType] !== "urn" &&
       !formattedAreaValues.options.length)
@@ -393,18 +395,18 @@ const CaseSearchResultPage = () => {
             </div>
           </div>
         </form>
-        {apiState.status === "succeeded" && !!apiState.data.length && (
-          <div className={styles.searchResultsCount}>
-            {getResultsCountText(apiState.data.length)}
-          </div>
-        )}
-        {apiState.status === "succeeded" && !apiState.data.length && (
-          <div>{getNoResultsText()}</div>
-        )}
+        {searchApiState.status === "succeeded" &&
+          !!searchApiState.data.length && (
+            <div className={styles.searchResultsCount}>
+              {getResultsCountText(searchApiState.data.length)}
+            </div>
+          )}
+        {searchApiState.status === "succeeded" &&
+          !searchApiState.data.length && <div>{getNoResultsText()}</div>}
       </div>
 
       <SearchResults
-        searchApiResults={apiState}
+        searchApiResults={searchApiState}
         searchType={formData[SearchFormField.searchType]}
       />
     </div>
