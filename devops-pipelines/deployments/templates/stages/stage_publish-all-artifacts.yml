@@ -89,6 +89,21 @@ stages:
               version: 8.x
               performMultiLevelLookup: true
               includePreviewVersions: false
+              
+          - task: DotNetCoreCLI@2
+            displayName: "Restore WireMock project"
+            inputs:
+              command: restore
+              projects: "backend/CPS.ComplexCases.WireMock/CPS.ComplexCases.WireMock.csproj"
+              feedsToUse: config
+              nugetConfigPath: "backend/nuget.config"
+              
+          - task: DotNetCoreCLI@2
+            displayName: "Build WireMock project"
+            inputs:
+              command: 'build'
+              projects: "backend/CPS.ComplexCases.WireMock/CPS.ComplexCases.WireMock.csproj"
+              arguments: "--configuration $(BuildConfiguration)"
             
           - task: DotNetCoreCLI@2
             inputs:
@@ -97,8 +112,6 @@ stages:
               projects: "backend/CPS.ComplexCases.WireMock/CPS.ComplexCases.WireMock.csproj"
               arguments: "--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory) /p:Version=$(Build.BuildNumber) /p:SourceRevisionId=$(Build.SourceVersion)"
               zipAfterPublish: false
-              feedsToUse: config
-              nugetConfigPath: "backend/nuget.config"
             displayName: "Create Mock Service package to publish"
           
           # Add build version
