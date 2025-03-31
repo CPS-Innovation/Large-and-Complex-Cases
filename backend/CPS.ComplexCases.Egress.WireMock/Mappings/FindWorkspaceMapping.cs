@@ -19,7 +19,10 @@ public class FindWorkspaceMapping : IWireMockMapping
     .Given(Request.Create()
         .WithPath("/api/v1/workspaces")
         .UsingGet()
-        .WithParam("name", "test-workspace"))
+        .WithParam("name", "test-workspace")
+        .WithParam("skip", "0")
+        .WithParam("limit", "100")
+        .WithParam("view", "full"))
     .RespondWith(Response.Create()
         .WithStatusCode(200)
         .WithBodyAsJson(new
@@ -30,14 +33,14 @@ public class FindWorkspaceMapping : IWireMockMapping
               {
                 id = "workspace-id",
                 name = "test-workspace",
-                _links = new { properties = "http://egress.wiremock.com/w/edit/workspace-id" }
+                date_created = "2021-01-01T00:00:00Z",
               }
             },
-          pagination = new
+          data_info = new
           {
-            current_page_num = 1,
-            per_page = 10,
-            total_pages = 1,
+            num_returned = 1,
+            skip = 0,
+            limit = 100,
             total_results = 1
           }
         }));
@@ -48,6 +51,9 @@ public class FindWorkspaceMapping : IWireMockMapping
     server
   .Given(Request.Create()
       .WithPath("/api/v1/workspaces")
+      .WithParam("skip", "0")
+      .WithParam("limit", "100")
+      .WithParam("view", "full")
       .UsingGet())
   .RespondWith(Response.Create()
       .WithStatusCode(200)
@@ -59,14 +65,14 @@ public class FindWorkspaceMapping : IWireMockMapping
               {
                 id = "workspace-id",
                 name = "test-workspace",
-                _links = new { properties = "http://egress.wiremock.com/w/edit/workspace-id" }
+                date_created = "2021-01-01T00:00:00Z",
               }
           },
-        pagination = new
+        data_info = new
         {
-          current_page_num = 1,
-          per_page = 10,
-          total_pages = 1,
+          num_returned = 1,
+          skip = 0,
+          limit = 100,
           total_results = 1
         }
       }));

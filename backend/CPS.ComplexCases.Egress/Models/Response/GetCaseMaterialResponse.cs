@@ -7,8 +7,8 @@ public class GetCaseMaterialResponse
 {
   [JsonPropertyName("data")]
   public required IEnumerable<GetCaseMaterialResponseData> Data { get; set; }
-  [JsonPropertyName("pagination")]
-  public required PaginationResponse Pagination { get; set; }
+  [JsonPropertyName("data_info")]
+  public required DataInfoResponse DataInfo { get; set; }
 }
 
 public class GetCaseMaterialResponseData

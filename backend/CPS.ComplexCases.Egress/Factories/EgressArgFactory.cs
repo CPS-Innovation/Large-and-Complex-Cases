@@ -4,21 +4,23 @@ namespace CPS.ComplexCases.Egress.Factories;
 
 public class EgressArgFactory : IEgressArgFactory
 {
-  public FindWorkspaceArg CreateFindWorkspaceArg(string? name)
+  public ListEgressWorkspacesArg CreateListEgressWorkspacesArg(string? name, int skip, int take)
   {
-    return new FindWorkspaceArg
+    return new ListEgressWorkspacesArg
     {
-      Name = name
+      Name = name,
+      Skip = skip,
+      Take = take
     };
   }
 
-  public GetWorkspaceMaterialArg CreateGetWorkspaceMaterialArg(string workspaceId, int page, int count, string? folderId)
+  public GetWorkspaceMaterialArg CreateGetWorkspaceMaterialArg(string workspaceId, int skip, int take, string? folderId)
   {
     return new GetWorkspaceMaterialArg
     {
       WorkspaceId = workspaceId,
-      Page = page,
-      Count = count,
+      Skip = skip,
+      Take = take,
       FolderId = folderId
     };
   }
