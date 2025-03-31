@@ -1,5 +1,5 @@
 resource "azuread_application" "sharepoint_embedded" {
-  display_name            = "${local.product_name}${local.shared_prefix}-sharepoint-embedded-appreg"
+  display_name            = "${local.product_name}-${local.shared_prefix}-sharepoint-embedded-appreg"
   prevent_duplicate_names = true
 
   api {

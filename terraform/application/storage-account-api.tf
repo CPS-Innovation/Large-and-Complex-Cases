@@ -23,7 +23,7 @@ resource "azurerm_storage_account" "sacpsccapi" {
     default_action = "Deny"
     bypass         = ["Metrics", "Logging", "AzureServices"]
     virtual_network_subnet_ids = [
-      azurerm_subnet.sn_complex_cases_api_subnet
+      azurerm_subnet.sn_complex_cases_api_subnet.id
     ]
   }
 

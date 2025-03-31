@@ -3,7 +3,7 @@ environment = {
   alias = "qa"
 }
 
-terraform_service_principal_display_name = "Azure Pipeline: Complex-Cases-QA"
+terraform_service_principal_display_name = "Azure Pipeline: LaCC-PreProd"
 dns_server                               = "10.7.197.20"
 dns_alt_server                           = "168.63.129.16"
 subscription_id                          = "7f67e716-03c5-4675-bad2-cc5e28652759"
