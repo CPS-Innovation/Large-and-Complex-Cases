@@ -10,11 +10,11 @@ subscription_id                          = "7f67e716-03c5-4675-bad2-cc5e28652759
 nsg_name                                 = "basicNsgVNET-LaCC-WANNET-nic01"
 
 service_plans = {
-  ui_service_plan_sku   = "B2"
+  ui_service_plan_sku   = "P1v3"
   ui_worker_count       = 2
-  api_service_plan_sku  = "B3"
+  api_service_plan_sku  = "P1v3"
   api_worker_count      = 2
-  mock_service_plan_sku = "B1"
+  mock_service_plan_sku = "P0v3"
   mock_worker_count     = 2
 }
 

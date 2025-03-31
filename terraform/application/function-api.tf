@@ -145,11 +145,6 @@ resource "azuread_application" "complex_cases_api" {
     }
 
     resource_access {
-      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["FileStorageContainer.Manage"]
-      type = "Scope"
-    }
-
-    resource_access {
       id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["FileStorageContainer.Selected"]
       type = "Scope"
     }
@@ -194,7 +189,7 @@ resource "azuread_application" "complex_cases_api" {
     resource_app_id = data.azuread_application_published_app_ids.well_known.result["Office365SharePointOnline"]
 
     resource_access {
-      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["Container.Manager"]
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["Container.Manage"]
       type = "Scope"
     }
   }

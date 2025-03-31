@@ -14,7 +14,7 @@ service_plans = {
   ui_worker_count       = 2
   api_service_plan_sku  = "P1mv3"
   api_worker_count      = 2
-  mock_service_plan_sku = "B1"
+  mock_service_plan_sku = "P0v3"
   mock_worker_count     = 2
 }
 
