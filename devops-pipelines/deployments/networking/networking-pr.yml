@@ -18,7 +18,7 @@ variables:
     value: "$(System.DefaultWorkingDirectory)/terraform/networking"
     
 pool:
-  vmImage: $(build-agent-pre-prod)
+  name: $(build-agent-pre-prod)
     
 stages:
   - stage: Validate

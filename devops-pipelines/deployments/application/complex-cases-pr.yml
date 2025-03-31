@@ -219,7 +219,7 @@ stages:
         condition: eq(variables.runUI, 'true')
         displayName: Test - UI
         pool:
-          vmImage: ubuntu-22.04
+          vmImage: ubuntu-latest
         steps:
           # Begin UI testing
           # We want to rely only on the .env.production file, anything in .env is still included
@@ -350,7 +350,7 @@ stages:
         displayName: Compiling report
         condition: or(eq(variables.backendTestsAvailable, 'true'),eq(variables.uiTestsAvailable, 'true'))
         pool:
-          vmImage: ubuntu-22.04
+          vmImage: ubuntu-latest
         steps:
           - task: DotNetCoreCLI@2
             displayName: "Install ReportGenerator"

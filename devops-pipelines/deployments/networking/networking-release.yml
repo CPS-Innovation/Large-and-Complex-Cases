@@ -18,7 +18,7 @@ variables:
   - group: complex-cases-terraform
     
 pool:
-  vmImage: $(build-agent-pre-prod)
+  name: $(build-agent-pre-prod)
 
 stages:
   - stage: Apply_PREPROD
