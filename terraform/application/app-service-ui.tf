@@ -189,7 +189,7 @@ resource "azuread_application" "complex_cases_ui" {
   }
 
   single_page_application {
-    redirect_uris = var.environment.alias != "prod" ? ["http://localhost:3000"] : ["https://${local.product_prefix}-ui.azurewebsites.net"]
+    redirect_uris = var.environment.alias != "prod" ? ["http://localhost:3000/"] : ["https://${local.product_prefix}-ui.azurewebsites.net/"]
   }
 
   api {

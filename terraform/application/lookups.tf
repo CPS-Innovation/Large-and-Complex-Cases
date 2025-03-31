@@ -77,6 +77,6 @@ data "azurerm_private_dns_zone" "dns_zone_keyvault" {
 
 # begin: app insights lookups
 data "azurerm_application_insights" "complex_cases_ai" {
-  name                = "${local.product_name}-ai"
+  name                = "${local.product_name}-${local.shared_prefix}-ai"
   resource_group_name = data.azurerm_resource_group.analytics_resource_group.name
 }
