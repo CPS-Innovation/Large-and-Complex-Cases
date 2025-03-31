@@ -23,6 +23,11 @@ resource "azurerm_key_vault" "kv_complex_cases" {
     ]
   }
 
+  # Disable certificate lifecycle contact checks
+  lifecycle {
+    ignore_changes = [contact]
+  }
+
   tags = local.common_tags
 }
 
