@@ -9,6 +9,6 @@ steps:
       sleep 2
       done
       
-      echo '==== Install Mono ===='
-      sudo apt-get install -y mono-complete
+      echo '==== Azure CLI ===='
+      curl -sL https://aka.ms/InstallAzureCLIDeb | bash
     displayName: Install Mono
