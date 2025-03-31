@@ -16,6 +16,9 @@ resource "azurerm_key_vault" "kv_complex_cases" {
     default_action = "Deny"
     bypass         = "AzureServices"
     virtual_network_subnet_ids = [
+      azurerm_subnet.sn_complex_cases_api_subnet.id,
+      azurerm_subnet.sn_complex_cases_endpoints_subnet.id,
+      azurerm_subnet.sn_complex_cases_ui_subnet.id
     ]
   }
 
