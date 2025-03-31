@@ -5,4 +5,8 @@ export type AsyncResult<T> =
   | {
       status: "succeeded";
       data: T;
+    }
+  | {
+      status: "failed";
+      error: string;
     };

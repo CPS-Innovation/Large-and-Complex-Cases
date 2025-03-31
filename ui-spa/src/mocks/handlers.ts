@@ -22,6 +22,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
         : casesSearchResultsPlaywright;
       await delay(RESPONSE_DELAY);
       return HttpResponse.json(caseSearchResults);
+      // return new HttpResponse(null, { status: 500 });
     }),
   ];
 };
