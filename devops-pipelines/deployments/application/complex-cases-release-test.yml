@@ -29,7 +29,7 @@ stages:
       azureSubscription: $(azure-subscription-pre-prod)
       targetPlanName: "test"
       terraformStorageAccount: $(terraform-storage-name-test)
-      applicationTerraformContainerName: $(terraform-container-name-application)
+      applicationTerraformContainerName: $(terraform-container-name-application-test)
       terraformStateKey: $(terraform-state-file)
       terraformStateAccessKey: $(terraform-storage-shared-key-preprod)
       targetSuffix: "-test"

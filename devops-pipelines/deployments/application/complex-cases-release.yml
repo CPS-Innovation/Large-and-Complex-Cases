@@ -30,7 +30,7 @@ stages:
       azureSubscription: $(azure-subscription-pre-prod)
       targetPlanName: "dev"
       terraformStorageAccount: $(terraform-storage-name-dev)
-      applicationTerraformContainerName: $(terraform-container-name-application)
+      applicationTerraformContainerName: $(terraform-container-name-application-dev)
       terraformStateKey: $(terraform-state-file)
       terraformStateAccessKey: $(terraform-storage-shared-key-preprod)
       targetSuffix: "-dev"
@@ -56,7 +56,7 @@ stages:
       azureSubscription: $(azure-subscription-pre-prod)
       targetPlanName: "qa"
       terraformStorageAccount: $(terraform-storage-name-qa)
-      applicationTerraformContainerName: $(terraform-container-name-application)
+      applicationTerraformContainerName: $(terraform-container-name-application-qa)
       terraformStateKey: $(terraform-state-file)
       terraformStateAccessKey: $(terraform-storage-shared-key-preprod)
       targetSuffix: "-qa"
@@ -156,7 +156,7 @@ stages:
   #                   targetName: "Application Terraform CI Deployment"
   #                   targetPlanName: "prod"
   #                   terraformStorageAccount: $(terraform-storage-name-prod)
-  #                   terraformContainerName: $(terraform-container-name-application)
+  #                   terraformContainerName: $(terraform-container-name-application-prod)
   #                   terraformStateKey: $(terraform-state-file)
   #                   terraformStateAccessKey: $(terraform-storage-shared-key-prod)
   #                   armClientId: $(clientId)
