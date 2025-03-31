@@ -31,9 +31,10 @@ service_capacity = {
 }
 
 subnets = {
-  storage   = []
-  ui        = []
-  api       = []
-  endpoints = []
-  mock      = []
+  storage     = []
+  ui          = []
+  api         = []
+  endpoints   = []
+  mock        = []
+  buildAgents = []
 }
