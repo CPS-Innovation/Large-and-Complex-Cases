@@ -23,7 +23,7 @@ stages:
   - stage: Deploy_${{ parameters.targetLabel }}
     pool:
       name: ${{ parameters.buildAgentName }}
-    displayName: Deploy
+    displayName: ${{ parameters.targetLabel }} > Deploy
     condition: succeeded()
     dependsOn: Apply_${{ parameters.targetLabel }}
     jobs:

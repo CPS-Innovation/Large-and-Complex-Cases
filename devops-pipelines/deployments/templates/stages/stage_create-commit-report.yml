@@ -15,7 +15,7 @@ stages:
   - stage: Create_Commit_Report_${{ parameters.targetLabel }}
     pool:
       name: ${{ parameters.buildAgentName }}
-    displayName: Save Report
+    displayName: ${{ parameters.targetLabel }} > Save Report
     dependsOn: Check_Status_${{ parameters.targetLabel }}
     condition: succeeded()
     jobs:

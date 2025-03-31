@@ -16,7 +16,7 @@ stages:
   - stage: Run_e2e_Tests_${{ parameters.targetLabel }}
     pool:
       name: ${{ parameters.buildAgentName }}
-    displayName: e2e tests
+    displayName: ${{ parameters.targetLabel }} > Run e2e Tests
     dependsOn: ${{ parameters.stageDependsOn }}
     condition: succeeded()
     jobs:

@@ -35,7 +35,7 @@ stages:
   - stage: Apply_${{ parameters.targetLabel }}
     pool:
       name: ${{ parameters.buildAgentName }}
-    displayName: Apply Terraform
+    displayName: ${{ parameters.targetLabel }} > Apply Terraform
     ${{ if parameters.stageDependsOn }}:
       dependsOn: ${{ parameters.stageDependsOn }}
     jobs:
