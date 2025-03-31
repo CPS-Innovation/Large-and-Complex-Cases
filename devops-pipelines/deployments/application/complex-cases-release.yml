@@ -36,6 +36,7 @@ stages:
       targetSuffix: "-dev"
       logRetentionTime: $(log-retention-time)
       totalLogRetentionTime: $(total-log-retention-time)
+      sharedSuffix: "preprod"
       statusCheckMethod: $(status-check-method)
       statusCheckRetries: $(status-check-retries)
       statusCheckDelaySeconds: $(status-check-delay-seconds)
@@ -62,6 +63,7 @@ stages:
       targetSuffix: "-qa"
       logRetentionTime: $(log-retention-time)
       totalLogRetentionTime: $(total-log-retention-time)
+      sharedSuffix: "preprod"
       statusCheckMethod: $(status-check-method)
       statusCheckRetries: $(status-check-retries)
       statusCheckDelaySeconds: $(status-check-delay-seconds)
@@ -182,13 +184,13 @@ stages:
   #                   targetBuild: ComplexCasesBuild
   #                   targetLabel: "PROD"
   #                   targetName: "Set Log Analytics Archival Periods"
-  #                   targetSuffix: ""
   #                   armClientId: $(clientId)
   #                   armClientSecret: $(clientSecret)
   #                   armTenantId: $(tenantId)
   #                   armSubscriptionId: $(subscriptionId)
   #                   logRetentionTime: $(log-retention-time)
   #                   totalLogRetentionTime: $(total-log-retention-time)
+  #                   sharedSuffix: "prod"
         
   # - template: ../templates/stages/stage_deploy-codebase.yml
   #   parameters:

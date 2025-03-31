@@ -30,6 +30,8 @@ parameters:
     type: string
   - name: totalLogRetentionTime
     type: string
+  - name: sharedSuffix
+    type: string
   - name: statusCheckMethod
     type: string
   - name: statusCheckRetries
@@ -56,9 +58,9 @@ stages:
       applicationTerraformContainerName: ${{ parameters.applicationTerraformContainerName }}
       terraformStateKey: ${{ parameters.terraformStateKey }}
       terraformStateAccessKey: ${{ parameters.terraformStateAccessKey }}
-      targetSuffix: ${{ parameters.targetSuffix }}
       logRetentionTime: ${{ parameters.logRetentionTime }}
       totalLogRetentionTime: ${{ parameters.totalLogRetentionTime }}
+      sharedSuffix: ${{ parameters.sharedSuffix }}
       stageDependsOn: ${{ parameters.initialStageDependsOn }}
 
   - template: stages/stage_deploy-codebase.yml
