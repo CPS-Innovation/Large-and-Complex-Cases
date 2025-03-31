@@ -87,49 +87,49 @@ stages:
               artifact: "mock-service-drop"
 
 #      - job: Build_UI_Artifact
-#        steps:
-#          # We want to rely only on the .env.production file, anything in .env is still included
-#          #  if not overwritten by .env.production.  For safety, just delete .env
-#          - task: DeleteFiles@1
-#            displayName: "Remove .env file"
-#            inputs:
-#              contents: |
-#                ui-spa/.env
-#
-#          # Add build version
-#          - task: PowerShell@2
-#            displayName: "Record build version"
-#            inputs:
-#              targetType: 'inline'
-#              workingDirectory: ui-spa/public
-#              script: |
-#                New-Item build-version.txt -force
-#                $currentDate = Get-Date
-#                Set-Content build-version.txt "{`"name`":`"ui`",`"buildVersion`":`"$(Build.BuildNumber)`",`"sourceVersion`":`"$(Build.SourceVersion)`",`"lastBuilt`":`"$currentDate`"}"
-#
-#          - task: Npm@1
-#            inputs:
-#              command: "install"
-#              workingDir: "ui-spa"
-#            displayName: "npm install"
-#
-#          - task: Npm@1
-#            inputs:
-#              command: "custom"
-#              workingDir: "ui-spa"
-#              customCommand: "run prettier"
-#            displayName: "npm prettier"
-#
-#          - task: Npm@1
-#            inputs:
-#              command: "custom"
-#              workingDir: "ui-spa"
-#              customCommand: "run build"
-#            displayName: "npm build"
-#
-#          - task: PublishBuildArtifacts@1
-#            inputs:
-#              PathtoPublish: "ui-spa/build"
-#              ArtifactName: "ui-spa-drop"
-#              publishLocation: "Container"
-#            displayName: Publish UI artifact
+        steps:
+          # We want to rely only on the .env.production file, anything in .env is still included
+          #  if not overwritten by .env.production.  For safety, just delete .env
+          - task: DeleteFiles@1
+            displayName: "Remove .env file"
+            inputs:
+              contents: |
+                ui-spa/.env
+
+          # Add build version
+          - task: PowerShell@2
+            displayName: "Record build version"
+            inputs:
+              targetType: 'inline'
+              workingDirectory: ui-spa/public
+              script: |
+                New-Item build-version.txt -force
+                $currentDate = Get-Date
+                Set-Content build-version.txt "{`"name`":`"ui`",`"buildVersion`":`"$(Build.BuildNumber)`",`"sourceVersion`":`"$(Build.SourceVersion)`",`"lastBuilt`":`"$currentDate`"}"
+
+          - task: Npm@1
+            inputs:
+              command: "install"
+              workingDir: "ui-spa"
+            displayName: "npm install"
+
+          - task: Npm@1
+            inputs:
+              command: "custom"
+              workingDir: "ui-spa"
+              customCommand: "run prettier"
+            displayName: "npm prettier"
+
+          - task: Npm@1
+            inputs:
+              command: "custom"
+              workingDir: "ui-spa"
+              customCommand: "run build"
+            displayName: "npm build"
+
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: "ui-spa/build"
+              ArtifactName: "ui-spa-drop"
+              publishLocation: "Container"
+            displayName: Publish UI artifact
