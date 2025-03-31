@@ -12,6 +12,8 @@ public class WorkspacePermissionsMapping : IWireMockMapping
     server
         .Given(Request.Create()
             .WithPath("/api/v1/workspaces/workspace-id/users")
+            .WithParam("skip", "0")
+            .WithParam("limit", "100")
             .UsingGet()
             )
         .RespondWith(Response.Create()
@@ -26,11 +28,11 @@ public class WorkspacePermissionsMapping : IWireMockMapping
                     role_id = "582a00a0510c5679d41c085c"
                   }
                 },
-              pagination = new
+              data_info = new
               {
-                current_page_num = 1,
-                per_page = 10,
-                total_pages = 1,
+                num_returned = 1,
+                skip = 0,
+                limit = 1,
                 total_results = 1
               }
             }));

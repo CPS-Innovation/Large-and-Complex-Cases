@@ -53,16 +53,16 @@ public class EgressClientTests : IDisposable
     public async Task FindWorkspace_ShouldReturnMatchingAuthorisedWorkspaces()
     {
         // Arrange
-        var arg = _egressArgFactory.CreateFindWorkspaceArg("test-workspace");
+        var arg = _egressArgFactory.CreateListEgressWorkspacesArg("test-workspace", 0, 100);
 
         // Act
-        var result = await _client.FindWorkspace(arg, "integration@cps.gov.uk");
+        var result = await _client.ListWorkspacesAsync(arg, "integration@cps.gov.uk");
 
         // Assert
         Assert.NotNull(result);
-        Assert.Single(result);
+        Assert.Single(result.Data);
 
-        var workspace = result.First();
+        var workspace = result.Data.First();
         Assert.Equal("test-workspace", workspace.Name);
         Assert.Equal("workspace-id", workspace.Id);
     }
@@ -71,31 +71,34 @@ public class EgressClientTests : IDisposable
     public async Task FindWorkspace_ShouldNotReturnUnauthorisedWorkspaces()
     {
         // Arrange
-        var arg = _egressArgFactory.CreateFindWorkspaceArg("test-workspace");
+        var arg = _egressArgFactory.CreateListEgressWorkspacesArg("test-workspace", 0, 100);
 
         // Act
-        var result = await _client.FindWorkspace(arg, "notauthorised@cps.gov.uk");
+        var result = await _client.ListWorkspacesAsync(arg, "notauthorised@cps.gov.uk");
 
         // Assert
         Assert.NotNull(result);
-        Assert.Empty(result);
+        Assert.Empty(result.Data);
+        Assert.Equal(0, result.Pagination.Count);
+        Assert.Equal(0, result.Pagination.Skip);
+        Assert.Equal(100, result.Pagination.Take);
+        Assert.Equal(1, result.Pagination.TotalResults);
     }
 
     [Fact]
     public async Task GetCaseMaterial_ShouldReturnPaginatedCaseMaterial()
     {
         // Arrange
-        var arg = _egressArgFactory.CreateGetWorkspaceMaterialArg("workspace-id", 1, 10, null);
+        var arg = _egressArgFactory.CreateGetWorkspaceMaterialArg("workspace-id", 0, 10, null);
 
         // Act
         var result = await _client.GetCaseMaterial(arg);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(10, result.PerPage);
-        Assert.Equal(1, result.CurrentPage);
-        Assert.Equal(1, result.TotalPages);
-        Assert.Equal(2, result.TotalResults);
+        Assert.Equal(10, result.Pagination.Take);
+        Assert.Equal(0, result.Pagination.Skip);
+        Assert.Equal(2, result.Pagination.TotalResults);
         Assert.Equal(2, result.Data.Count());
 
         var material = result.Data.First();
@@ -110,17 +113,16 @@ public class EgressClientTests : IDisposable
     public async Task GetCaseMaterial_ShouldReturnTraversedFolderMaterial()
     {
         // Arrange
-        var arg = _egressArgFactory.CreateGetWorkspaceMaterialArg("workspace-id", 1, 10, "folder-id");
+        var arg = _egressArgFactory.CreateGetWorkspaceMaterialArg("workspace-id", 0, 10, "folder-id");
 
         // Act
         var result = await _client.GetCaseMaterial(arg);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(10, result.PerPage);
-        Assert.Equal(1, result.CurrentPage);
-        Assert.Equal(1, result.TotalPages);
-        Assert.Equal(1, result.TotalResults);
+        Assert.Equal(10, result.Pagination.Take);
+        Assert.Equal(0, result.Pagination.Skip);
+        Assert.Equal(1, result.Pagination.TotalResults);
         Assert.Single(result.Data);
 
         var material = result.Data.First();

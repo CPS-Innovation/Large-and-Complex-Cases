@@ -15,13 +15,13 @@ public class EgressRequestFactory : IEgressRequestFactory
     return request;
   }
 
-  public HttpRequestMessage FindWorkspaceRequest(FindWorkspaceArg workspace, string token)
+  public HttpRequestMessage ListWorkspacesRequest(ListEgressWorkspacesArg arg, string token)
   {
-    var relativeUrl = new StringBuilder($"/api/v1/workspaces");
+    var relativeUrl = new StringBuilder($"/api/v1/workspaces?view=full&skip={arg.Skip}&limit={arg.Take}");
 
-    if (!string.IsNullOrEmpty(workspace.Name))
+    if (!string.IsNullOrEmpty(arg.Name))
     {
-      relativeUrl.Append($"?name={workspace.Name}");
+      relativeUrl.Append($"&name={arg.Name}");
     }
 
     var request = new HttpRequestMessage(HttpMethod.Get, relativeUrl.ToString());
@@ -33,15 +33,12 @@ public class EgressRequestFactory : IEgressRequestFactory
 
   public HttpRequestMessage GetWorkspaceMaterialRequest(GetWorkspaceMaterialArg arg, string token)
   {
-    var relativeUrl = new StringBuilder($"/api/v1/workspaces/{arg.WorkspaceId}/files");
-    var query = $"?view=full&page={arg.Page}&count={arg.Count}";
+    var relativeUrl = new StringBuilder($"/api/v1/workspaces/{arg.WorkspaceId}/files?view=full&skip={arg.Skip}&limit={arg.Take}");
 
     if (!string.IsNullOrEmpty(arg.FolderId))
     {
-      query += $"&folder={arg.FolderId}";
+      relativeUrl.Append($"&folder={arg.FolderId}");
     }
-
-    relativeUrl.Append(query);
 
     var request = new HttpRequestMessage(HttpMethod.Get, relativeUrl.ToString());
 
@@ -52,11 +49,12 @@ public class EgressRequestFactory : IEgressRequestFactory
 
   public HttpRequestMessage GetWorkspacePermissionsRequest(GetWorkSpacePermissionArg arg, string token)
   {
-    var relativeUrl = new StringBuilder($"/api/v1/workspaces/{arg.WorkspaceId}/users");
+    // pagination is not being used internally here because we always filter on the users email (switch_id in Egress)
+    var relativeUrl = new StringBuilder($"/api/v1/workspaces/{arg.WorkspaceId}/users?skip=0&limit=100");
 
     if (!string.IsNullOrEmpty(arg.Email))
     {
-      relativeUrl.Append($"?switch_id={arg.Email}");
+      relativeUrl.Append($"&switch_id={arg.Email}");
     }
 
     var request = new HttpRequestMessage(HttpMethod.Get, relativeUrl.ToString());

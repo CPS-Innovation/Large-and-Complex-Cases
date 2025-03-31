@@ -6,7 +6,7 @@ namespace CPS.ComplexCases.Egress.Client;
 
 public interface IEgressClient
 {
-  Task<IEnumerable<FindWorkspaceDto>> FindWorkspace(FindWorkspaceArg workspace, string email);
+  Task<ListWorkspacesDto> ListWorkspacesAsync(ListEgressWorkspacesArg arg, string email);
   Task<GetCaseMaterialDto> GetCaseMaterial(GetWorkspaceMaterialArg arg);
   Task<Stream> GetCaseDocument(GetWorkspaceDocumentArg arg);
 }

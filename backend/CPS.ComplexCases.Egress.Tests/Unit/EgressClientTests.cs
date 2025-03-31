@@ -67,20 +67,19 @@ public class EgressClientTests
         var workspaceId = _fixture.Create<string>();
         var token = _fixture.Create<string>();
         var email = _fixture.Create<string>();
-        var findWorkspaceArg = new FindWorkspaceArg { Name = workspaceName };
+        var findWorkspaceArg = new ListEgressWorkspacesArg { Name = workspaceName };
 
         var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
-        var workspaceResponse = new FindWorkspaceResponse
+        var workspaceResponse = new ListWorkspacesResponse
         {
             Data = [
-                new FindWorkspaceResponseData
+                new ListWorkspacesResponseData
                 {
                     Id = workspaceId,
                     Name = workspaceName,
-                    Links = _fixture.Create<WorkspaceLinks>()
                 }
             ],
-            Pagination = _fixture.Create<PaginationResponse>()
+            DataInfo = _fixture.Create<DataInfoResponse>()
         };
         var permissionsResponse = new GetWorkspacePermissionsResponse
         {
@@ -91,7 +90,7 @@ public class EgressClientTests
                     RoleId = _fixture.Create<string>()
                 }
             ],
-            Pagination = _fixture.Create<PaginationResponse>()
+            DataInfo = _fixture.Create<DataInfoResponse>()
         };
 
         SetupRequestFactory(workspaceId, token, findWorkspaceArg);
@@ -102,16 +101,15 @@ public class EgressClientTests
         );
 
         // Act
-        var result = await _client.FindWorkspace(findWorkspaceArg, email);
+        var result = await _client.ListWorkspacesAsync(findWorkspaceArg, email);
 
         // Assert
-        var workspace = Assert.Single(result);
+        var workspace = Assert.Single(result.Data);
         using (new AssertionScope())
         {
             workspace.Should().NotBeNull();
             workspace.Id.Should().Be(workspaceId);
             workspace.Name.Should().Be(workspaceName);
-            workspace.EgressLink.Should().Be($"{TestUrl}w/edit/{workspaceId}");
         }
 
         VerifyRequestFactoryCalls(findWorkspaceArg, workspaceId, token);
@@ -125,20 +123,19 @@ public class EgressClientTests
         var workspaceId = _fixture.Create<string>();
         var token = _fixture.Create<string>();
         var email = _fixture.Create<string>();
-        var findWorkspaceArg = new FindWorkspaceArg { Name = workspaceName };
+        var arg = new ListEgressWorkspacesArg { Name = workspaceName };
 
         var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
-        var workspaceResponse = new FindWorkspaceResponse
+        var workspaceResponse = new ListWorkspacesResponse
         {
             Data = [
-                new FindWorkspaceResponseData
+                new ListWorkspacesResponseData
                 {
                     Id = workspaceId,
                     Name = workspaceName,
-                    Links = _fixture.Create<WorkspaceLinks>()
                 }
             ],
-            Pagination = _fixture.Create<PaginationResponse>()
+            DataInfo = _fixture.Create<DataInfoResponse>()
         };
         var permissionsResponse = new GetWorkspacePermissionsResponse
         {
@@ -149,10 +146,10 @@ public class EgressClientTests
                     RoleId = _fixture.Create<string>()
                 }
             ],
-            Pagination = _fixture.Create<PaginationResponse>()
+            DataInfo = _fixture.Create<DataInfoResponse>()
         };
 
-        SetupRequestFactory(workspaceId, token, findWorkspaceArg);
+        SetupRequestFactory(workspaceId, token, arg);
         SetupHttpMockResponses(
             ("token", tokenResponse),
             ("workspace", workspaceResponse),
@@ -160,21 +157,21 @@ public class EgressClientTests
         );
 
         // Act
-        var result = await _client.FindWorkspace(findWorkspaceArg, email);
+        var result = await _client.ListWorkspacesAsync(arg, email);
 
         // Assert
-        result.Should().BeEmpty();
-        VerifyRequestFactoryCalls(findWorkspaceArg, workspaceId, token);
+        result.Data.Should().BeEmpty();
+        VerifyRequestFactoryCalls(arg, workspaceId, token);
     }
 
-    private void SetupRequestFactory(string workspaceId, string token, FindWorkspaceArg findWorkspaceArg)
+    private void SetupRequestFactory(string workspaceId, string token, ListEgressWorkspacesArg arg)
     {
         _requestFactoryMock
             .Setup(f => f.GetWorkspaceTokenRequest(It.IsAny<string>(), It.IsAny<string>()))
             .Returns(new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/auth"));
 
         _requestFactoryMock
-            .Setup(f => f.FindWorkspaceRequest(findWorkspaceArg, token))
+            .Setup(f => f.ListWorkspacesRequest(arg, token))
             .Returns(new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/workspaces"));
 
         _requestFactoryMock
@@ -184,13 +181,13 @@ public class EgressClientTests
             .Returns(new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/workspaces/{workspaceId}/users"));
     }
 
-    private void VerifyRequestFactoryCalls(FindWorkspaceArg findWorkspaceArg, string workspaceId, string token)
+    private void VerifyRequestFactoryCalls(ListEgressWorkspacesArg arg, string workspaceId, string token)
     {
         _requestFactoryMock.Verify(
             f => f.GetWorkspaceTokenRequest(It.IsAny<string>(), It.IsAny<string>()),
             Times.Once);
         _requestFactoryMock.Verify(
-            f => f.FindWorkspaceRequest(findWorkspaceArg, token),
+            f => f.ListWorkspacesRequest(arg, token),
             Times.Once);
         _requestFactoryMock.Verify(
             f => f.GetWorkspacePermissionsRequest(
