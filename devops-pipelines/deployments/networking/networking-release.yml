@@ -32,10 +32,6 @@ stages:
           runOnce:
             deploy:
               steps:
-                - template: ../templates/stages/jobs/tasks/dependencies/task_install-common-utilities.yml
-                  
-                - template: ../templates/stages/jobs/tasks/dependencies/task_install-az-cli.yml
-                  
                 - template: ../templates/stages/jobs/tasks/task_get-credentials.yml
                   parameters:
                     azureSubscription: $(azure-subscription-pre-prod)
@@ -70,8 +66,6 @@ stages:
   #         runOnce:
   #           deploy:
   #             steps:
-  #               - template: ../templates/stages/jobs/tasks/dependencies/task_install-az-cli.yml
-                      
   #               - template: ../templates/stages/jobs/tasks/task_get-credentials.yml
   #                 parameters:
   #                   azureSubscription: $(azure-subscription-prod)

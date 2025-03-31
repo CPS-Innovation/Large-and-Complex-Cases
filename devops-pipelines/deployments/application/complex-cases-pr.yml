@@ -86,7 +86,9 @@ stages:
         condition: eq(variables.runApplicationTerraform, 'true')
         displayName: Validate Application Terraform
         steps:
-          - template: ../templates/stages/jobs/tasks/dependencies/task_install-common-utilities.yml
+          - template: ../templates/stages/jobs/tasks/task_get-credentials.yml
+            parameters:
+              azureSubscription: $(azure-subscription-pre-prod)
             
           - task: JasonBJohnson.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@1
             displayName: Terraform > Install
@@ -119,10 +121,6 @@ stages:
         condition: and(succeeded(), eq(variables.runApplicationTerraform, 'true'))
         displayName: Check Application Terraform
         steps:
-          - template: ../templates/stages/jobs/tasks/dependencies/task_install-common-utilities.yml
-
-          - template: ../templates/stages/jobs/tasks/dependencies/task_install-az-cli.yml
-            
           - template: ../templates/stages/jobs/tasks/task_get-credentials.yml
             parameters:
               azureSubscription: $(azure-subscription-pre-prod)
@@ -164,9 +162,9 @@ stages:
         condition: eq(variables.runBackend, 'true')
         displayName: Test - Backend
         steps:
-          - template: ../templates/stages/jobs/tasks/dependencies/task_install-common-utilities.yml
-
-          - template: ../templates/stages/jobs/tasks/dependencies/task_install-az-cli.yml
+          - template: ../templates/stages/jobs/tasks/task_get-credentials.yml
+            parameters:
+              azureSubscription: $(azure-subscription-pre-prod)
             
           - task: DotNetCoreCLI@2
             inputs:
