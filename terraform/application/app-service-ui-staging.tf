@@ -4,9 +4,9 @@ resource "azurerm_linux_web_app_slot" "complex_cases_ui_staging" {
   https_only     = true
 
   app_settings = {
-    "APPINSIGHTS_INSTRUMENTATIONKEY"                  = data.azurerm_application_insights.complex_cases_ai.instrumentation_key
-    "HostType"                                        = "Staging"
-    "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"        = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.kvs_complex_cases_ui_client_secret.id})"
+    "APPINSIGHTS_INSTRUMENTATIONKEY" = data.azurerm_application_insights.complex_cases_ai.instrumentation_key
+    "HostType"                       = "Staging"
+    #"MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"        = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.kvs_complex_cases_ui_client_secret.id})"
     "WEBSITE_ADD_SITENAME_BINDINGS_IN_APPHOST_CONFIG" = "1"
     "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING"        = azurerm_storage_account.sacpsccui.primary_connection_string
     "WEBSITE_CONTENTOVERVNET"                         = "1"
