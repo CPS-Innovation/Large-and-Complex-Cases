@@ -54,20 +54,20 @@ resource "azurerm_role_assignment" "kv_role_terraform_sp" {
   principal_id         = data.azuread_service_principal.terraform_service_principal.object_id
 }
 
-resource "azurerm_role_assignment" "kv_role_complex_cases_ui_crypto_user" {
+resource "azurerm_role_assignment" "kv_role_complex_cases_ui_secrets_user" {
   scope                = azurerm_key_vault.kv_complex_cases.id
-  role_definition_name = "Key Vault Crypto User"
+  role_definition_name = "Key Vault Secrets Officer"
   principal_id         = azurerm_linux_web_app.complex_cases_ui.identity[0].principal_id
 
   depends_on = [azurerm_linux_web_app.complex_cases_ui]
 }
 
-resource "azurerm_role_assignment" "kv_role_complex_cases_ui_secrets_user" {
+resource "azurerm_role_assignment" "kv_role_complex_cases_api_secrets_user" {
   scope                = azurerm_key_vault.kv_complex_cases.id
-  role_definition_name = "Key Vault Secrets User"
-  principal_id         = azurerm_linux_web_app.complex_cases_ui.identity[0].principal_id
+  role_definition_name = "Key Vault Secrets Officer"
+  principal_id         = azurerm_linux_function_app.complex_cases_api.identity[0].principal_id
 
-  depends_on = [azurerm_linux_web_app.complex_cases_ui]
+  depends_on = [azurerm_linux_function_app.complex_cases_api]
 }
 
 #end: assign roles
