@@ -20,7 +20,7 @@ const CaseSearchResultPage = () => {
   const errorSummaryRef = useRef<HTMLInputElement>(null);
   const { updateSearchParams, searchParams, queryString } =
     useSearchNavigation();
-  const formattedAreaValues = useFormattedAreaValues();
+
   const getInitialState = () => {
     const searchParamKeys = Object.keys(searchParams);
     const initialData: SearchFromData = {
@@ -52,6 +52,7 @@ const CaseSearchResultPage = () => {
     initialData.urn = searchParams["urn"] ?? "";
     return initialData;
   };
+
   const {
     formData,
     formDataErrors,
@@ -61,11 +62,21 @@ const CaseSearchResultPage = () => {
     getSearchParams,
   } = useCaseSearchForm(getInitialState());
 
-  const apiState: RawApiResult<SearchResultData> = useApi(
+  const formattedAreaValues = useFormattedAreaValues(
+    formData[SearchFormField.searchType] === "urn",
+  );
+
+  const searchApiState: RawApiResult<SearchResultData> = useApi(
     getCaseSearchResults,
     [queryString],
     triggerSearchApi,
   );
+
+  useEffect(() => {
+    if (searchApiState.status === "failed")
+      throw new Error(`${searchApiState.error}`);
+  }, [searchApiState]);
+
   useEffect(() => {
     if (formData[SearchFormField.searchType] === "urn" || validatedAreaValues) {
       const isValid = validateFormData();
@@ -228,7 +239,7 @@ const CaseSearchResultPage = () => {
             <Input
               id="search-urn"
               data-testid="search-urn"
-              className={`govuk-input--width-20 ${styles.urnInput}`}
+              className="govuk-input--width-20"
               label={{
                 children: "URN",
               }}
@@ -245,7 +256,7 @@ const CaseSearchResultPage = () => {
               type="text"
               value={formData[SearchFormField.urn]}
               onChange={(value: string) =>
-                handleFormChange(SearchFormField.urn, value)
+                handleFormChange(SearchFormField.urn, value.toUpperCase())
               }
               disabled={false}
             />
@@ -288,46 +299,42 @@ const CaseSearchResultPage = () => {
     return area?.children;
   };
 
-  const getResultsCountText = () => {
-    if (apiState.status !== "succeeded") return <> </>;
-    const resultString =
-      apiState.status === "succeeded" && apiState?.data?.length < 2
-        ? "case"
-        : "cases";
+  const getResultsCountText = (resultsCount: number) => {
+    const resultString = resultsCount < 2 ? "case" : "cases";
 
-    if (apiState.data.length) {
-      const resultHtml = (
-        <>
-          <b>{apiState?.data?.length}</b> {resultString}{" "}
-        </>
-      );
-      switch (formData[SearchFormField.searchType]) {
-        case "operation name":
-          return (
-            <>
-              {resultHtml}
-              found in <b>{getAreaTextFromValue(searchParams["area"])}</b>.
-              Select a case to view more details.
-            </>
-          );
-        case "defendant name":
-          return (
-            <>
-              {resultHtml}
-              found in <b>{getAreaTextFromValue(searchParams["area"])}</b>.
-              Select a case to view more details.
-            </>
-          );
-        default:
-          return (
-            <>
-              {resultHtml}
-              found. Select a case to view more details.
-            </>
-          );
-      }
+    const resultHtml = (
+      <>
+        <b>{resultsCount}</b> {resultString}{" "}
+      </>
+    );
+    switch (formData[SearchFormField.searchType]) {
+      case "operation name":
+        return (
+          <>
+            {resultHtml}
+            found in <b>{getAreaTextFromValue(searchParams["area"])}</b>. Select
+            a case to view more details.
+          </>
+        );
+      case "defendant name":
+        return (
+          <>
+            {resultHtml}
+            found in <b>{getAreaTextFromValue(searchParams["area"])}</b>. Select
+            a case to view more details.
+          </>
+        );
+      default:
+        return (
+          <>
+            {resultHtml}
+            found. Select a case to view more details.
+          </>
+        );
     }
+  };
 
+  const getNoResultsText = () => {
     switch (formData[SearchFormField.searchType]) {
       case "operation name":
         return (
@@ -353,9 +360,11 @@ const CaseSearchResultPage = () => {
   };
 
   if (
-    ((apiState.status === "loading" || apiState.status === "initial") &&
+    ((searchApiState.status === "loading" ||
+      searchApiState.status === "initial") &&
       !errorList.length) ||
-    !formattedAreaValues.options.length
+    (formData[SearchFormField.searchType] !== "urn" &&
+      !formattedAreaValues.options.length)
   ) {
     return <div className="govuk-width-container">Loading...</div>;
   }
@@ -386,15 +395,18 @@ const CaseSearchResultPage = () => {
             </div>
           </div>
         </form>
-        {apiState.status === "succeeded" && (
-          <span className={styles.searchResultsCount}>
-            {getResultsCountText()}
-          </span>
-        )}
+        {searchApiState.status === "succeeded" &&
+          !!searchApiState.data.length && (
+            <div className={styles.searchResultsCount}>
+              {getResultsCountText(searchApiState.data.length)}
+            </div>
+          )}
+        {searchApiState.status === "succeeded" &&
+          !searchApiState.data.length && <div>{getNoResultsText()}</div>}
       </div>
 
       <SearchResults
-        searchApiResults={apiState}
+        searchApiResults={searchApiState}
         searchType={formData[SearchFormField.searchType]}
       />
     </div>

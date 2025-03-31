@@ -3,6 +3,7 @@ import { useFormattedAreaValues } from "./useFormattedAreaValues";
 import { vi, Mock } from "vitest";
 import { useMainStateContext } from "../../providers/MainStateProvider";
 import { useAsyncActionHandlers } from "../hooks/useAsyncActionHandlers";
+import { useLocation } from "react-router";
 
 vi.mock("../../providers/MainStateProvider", () => {
   return { useMainStateContext: vi.fn() };
@@ -10,6 +11,14 @@ vi.mock("../../providers/MainStateProvider", () => {
 vi.mock("../hooks/useAsyncActionHandlers", () => {
   return {
     useAsyncActionHandlers: vi.fn(),
+  };
+});
+
+vi.mock("react-router", () => {
+  return {
+    useLocation: vi.fn().mockImplementation(() => ({
+      pathname: "",
+    })),
   };
 });
 
@@ -183,5 +192,66 @@ describe("useFormattedAreaValues", () => {
     };
 
     expect(result.current).toStrictEqual(expectedResult);
+  });
+
+  it("Should not make the area api call if isUrnSearch param is true", async () => {
+    const mockState = {
+      caseDivisionsOrAreas: {
+        status: "loading",
+        data: {
+          allAreas: [
+            { id: 1, description: "allAreas_1" },
+            { id: 2, description: "allAreas_2" },
+          ],
+
+          userAreas: [
+            { id: 3, description: "allAreas_3" },
+            { id: 4, description: "allAreas_4" },
+          ],
+
+          homeArea: { id: 3, description: "allAreas_3" },
+        },
+      },
+    };
+    const handleGetCaseDivisionsOrAreasMock = vi.fn();
+    (useAsyncActionHandlers as Mock).mockImplementation(() => ({
+      handleGetCaseDivisionsOrAreas: handleGetCaseDivisionsOrAreasMock,
+    }));
+    (useMainStateContext as Mock).mockReturnValue({
+      state: mockState,
+      dispatch: () => {},
+    });
+    const { result } = renderHook(() => useFormattedAreaValues(true));
+    await waitFor(() => {
+      expect(handleGetCaseDivisionsOrAreasMock).toHaveBeenCalledTimes(0);
+    });
+    expect(result.current).toStrictEqual({
+      defaultValue: undefined,
+      options: [],
+    });
+  });
+
+  it("Should throw error if the area data failed and its a search result page and is not a urn search ", async () => {
+    const mockState = {
+      caseDivisionsOrAreas: {
+        status: "failed",
+        error: "error text",
+      },
+    };
+    const handleGetCaseDivisionsOrAreasMock = vi.fn();
+    (useAsyncActionHandlers as Mock).mockImplementation(() => ({
+      handleGetCaseDivisionsOrAreas: handleGetCaseDivisionsOrAreasMock,
+    }));
+    (useMainStateContext as Mock).mockReturnValue({
+      state: mockState,
+      dispatch: () => {},
+    });
+    (useLocation as Mock).mockReturnValue({
+      pathname: "/search-results",
+    });
+
+    expect(() => renderHook(() => useFormattedAreaValues(false))).toThrow(
+      new Error("error text"),
+    );
   });
 });
