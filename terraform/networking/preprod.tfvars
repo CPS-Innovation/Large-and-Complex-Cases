@@ -18,5 +18,7 @@ appinsights_configuration = {
 
 
 subnets = {
-  ampls = ["10.7.184.32/27"]
+  ampls            = ["10.7.184.32/27"]
+  resolverInbound  = ["10.7.184.192/28"]
+  resolverOutbound = ["10.7.184.208/28"]
 }
