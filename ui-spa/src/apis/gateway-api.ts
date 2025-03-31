@@ -25,7 +25,9 @@ export const getCaseSearchResults = async (searchParams: string) => {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+      throw new Error(
+        `case-search api failed with status: ${response.status}, method:GET`,
+      );
     }
     return await response.json();
   } catch (error) {
@@ -47,7 +49,9 @@ export const getCaseDivisionsOrAreas = async () => {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+      throw new Error(
+        `areas api failed with status: ${response.status}, method:GET`,
+      );
     }
     return (await response.json()) as CaseDivisionsOrAreaResponse;
   } catch (error) {
