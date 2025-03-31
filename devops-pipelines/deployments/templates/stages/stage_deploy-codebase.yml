@@ -6,8 +6,6 @@ parameters:
     type: string
   - name: targetLabel
     type: string
-  - name: appInsightsKey
-    type: string
   - name: targetSuffix
     type: string
   - name: statusCheckRetries
@@ -36,8 +34,7 @@ stages:
               targetBuild: ${{ parameters.targetBuild }}
               targetLabel: ${{ parameters.targetLabel }}
               targetName: "Codebase CI Deployment"
-              appInsightsKey: ${{ parameters.appInsightsKey }}
-
+              
       - job: Deploy_API
         dependsOn: Log_Start_Codebase
         displayName: Deploy API
@@ -49,7 +46,6 @@ stages:
               targetLabel: ${{ parameters.targetLabel }}
               targetName: "API Deployment"
               targetSuffix: ${{ parameters.targetSuffix }}
-              appInsightsKey: ${{ parameters.appInsightsKey }}
               azureSubscription: ${{ parameters.azureSubscription }}
 
       - job: Deploy_Mock
@@ -76,7 +72,6 @@ stages:
       #        targetLabel: ${{ parameters.targetLabel }}
       #        targetName: "SPA Deployment"
       #        targetSuffix: ${{ parameters.targetSuffix }}
-      #        appInsightsKey: ${{ parameters.appInsightsKey }}
       #        azureSubscription: ${{ parameters.azureSubscription }}
 
       - job: Log_Result_Codebase_Ended
@@ -92,5 +87,4 @@ stages:
               targetBuild: ${{ parameters.targetBuild }}
               targetLabel: ${{ parameters.targetLabel }}
               targetName: "Codebase CI Deployment"
-              appInsightsKey: ${{ parameters.appInsightsKey }}
               devOpsPatToken: $(System.AccessToken)

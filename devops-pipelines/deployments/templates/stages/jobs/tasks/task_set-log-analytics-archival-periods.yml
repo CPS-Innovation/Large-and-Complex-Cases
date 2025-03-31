@@ -8,8 +8,6 @@ parameters:
     type: string
   - name: targetSuffix
     type: string
-  - name: appInsightsKey
-    type: string
   - name: armClientId
     type: string
   - name: armClientSecret
@@ -29,13 +27,6 @@ steps:
     displayName: Download Scripts
     artifact: 'polaris-script-files'
 
-  # send custom event to AppInsights
-  - template: task_send-to-app-insights.yml
-    parameters:
-      appInsightsKey: ${{ parameters.appInsightsKey }}
-      targetBuild: ${{ parameters.targetBuild }}
-      message: "${{ parameters.targetLabel }} ${{ parameters.targetName }}: Set Log Analytics Archival Periods - Started"
-
   # Set Log Analytics Archival Period - remove when supported natively by Terraform
   - bash: |
       az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET --tenant $ARM_TENANT_ID
@@ -52,10 +43,3 @@ steps:
       LOG_RETENTION_TIME: ${{ parameters.logRetentionTime }}
       TOTAL_LOG_RETENTION_TIME: ${{ parameters.totalLogRetentionTime }}
       ARM_SUFFIX: ${{ parameters.targetSuffix }}
-
-  # send custom event to AppInsights
-  - template: task_send-to-app-insights.yml
-    parameters:
-      appInsightsKey: ${{ parameters.appInsightsKey }}
-      targetBuild: ${{ parameters.targetBuild }}
-      message: "${{ parameters.targetLabel }} ${{ parameters.targetName }}: Set Log Analytics Archival Periods - Completed"
