@@ -89,7 +89,7 @@ stages:
                     targetPlanName: ${{ parameters.targetPlanName }}
                     appInsightsKey: ${{ parameters.appInsightsKey }}
                     terraformStorageAccount: ${{ parameters.terraformStorageAccount }}
-                    terraformContainerName: ${{ parameters.mainTerraformContainerName }}
+                    terraformContainerName: ${{ parameters.applicationTerraformContainerName }}
                     terraformStateKey: ${{ parameters.terraformStateKey }}
                     terraformStateAccessKey: ${{ parameters.terraformStateAccessKey }}
                     armClientId: $(clientId)

@@ -10,6 +10,8 @@ parameters:
     type: string
   - name: targetLabel
     type: string
+  - name: targetLabelLower
+    type: string
   - name: appInsightsKey
     type: string
   - name: azureSubscription
