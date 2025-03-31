@@ -10,6 +10,5 @@ steps:
       done
       
       echo '==== Azure CLI ===='
-      sudo apt-get install -y unzip
       curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
     displayName: Install AZ CLI

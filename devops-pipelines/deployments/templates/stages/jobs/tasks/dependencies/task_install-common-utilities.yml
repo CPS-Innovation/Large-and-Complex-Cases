@@ -1,0 +1,27 @@
+﻿---
+
+steps:
+  - bash: |
+      echo '==== Update package sources ===='
+      until sudo apt-get -yq update
+      do
+      echo "Try again"
+      sleep 2
+      done
+      
+      echo '==== Install Common Utilities ===='
+      sudo apt-get update -yq
+      sudo apt-get install -y wget
+      sudo apt-get install -y apt-utils
+      sudo apt-get install -y apt-transport-https
+      sudo apt-get install -y git
+      sudo apt-get install -y ca-certificates
+      sudo apt-get install -y curl
+      sudo apt-get install -y iputils-ping
+      sudo apt-get install -y jq
+      sudo apt-get install -y lsb-release
+      sudo apt-get install -y software-properties-common
+      sudo apt-get install -y zip
+      sudo apt-get install -y unzip
+      sudo apt-get clean
+    displayName: Install AZ CLI
