@@ -10,5 +10,5 @@ steps:
       done
       
       echo '==== Azure CLI ===='
-      curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+      curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
     displayName: Install Mono
