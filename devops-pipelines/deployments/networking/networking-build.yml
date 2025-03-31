@@ -13,7 +13,7 @@ trigger:
 pr: none
 
 variables:
-  - group: polaris-global
+  - group: complex-cases-global
   - name: buildConfiguration
     value: "Release"
   - name: majorMinorVersion

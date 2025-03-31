@@ -25,7 +25,7 @@ steps:
   # download scripts artifact
   - download: ${{ parameters.targetBuild }}
     displayName: Download Scripts
-    artifact: 'polaris-script-files'
+    artifact: 'complex-cases-script-files'
 
   # Set Log Analytics Archival Period - remove when supported natively by Terraform
   - bash: |

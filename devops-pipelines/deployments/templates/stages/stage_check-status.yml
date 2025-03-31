@@ -61,7 +61,7 @@ stages:
               statusCheckRetries: ${{ parameters.statusCheckRetries }}
               statusCheckDelaySeconds: ${{ parameters.statusCheckDelaySeconds }}
               statusCheckTimeoutSeconds: ${{ parameters.statusCheckTimeoutSeconds }}
-              successTextContent: $(resources.pipeline.PolarisBuild.runName)
+              successTextContent: $(resources.pipeline.ComplexCasesBuild.runName)
               
       - job: Check_Mock
         dependsOn: Get_Status_URIs
@@ -96,9 +96,9 @@ stages:
       #        targetLabel: ${{ parameters.targetLabel }}
       #        targetAppName: "UI"
       #        targetScript: "InvokeRequestWithRetry.ps1"
-      #        endpointUri: "$(uri)/polaris-ui/build-version.txt"
+      #        endpointUri: "$(uri)/ui-spa/build-version.txt"
       #        statusCheckMethod: ${{ parameters.statusCheckMethod }}
       #        statusCheckRetries: ${{ parameters.statusCheckRetries }}
       #        statusCheckDelaySeconds: ${{ parameters.statusCheckDelaySeconds }}
       #        statusCheckTimeoutSeconds: ${{ parameters.statusCheckTimeoutSeconds }}
-      #        successTextContent: $(resources.pipeline.PolarisBuild.runName)
+      #        successTextContent: $(resources.pipeline.ComplexCasesBuild.runName)
