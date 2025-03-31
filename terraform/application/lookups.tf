@@ -45,7 +45,7 @@ data "azurerm_network_security_group" "complex_cases_nsg" {
 # begin: build agent subnet lookup
 
 data "azurerm_subnet" "build_agent_subnet" {
-  name                 = "LaCC-scale-set-subnet"
+  name                 = "${local.group_product_name}-scale-set-subnet"
   resource_group_name  = data.azurerm_resource_group.networking_resource_group.name
   virtual_network_name = data.azurerm_virtual_network.complex_cases_vnet.name
 }

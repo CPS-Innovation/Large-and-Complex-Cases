@@ -26,25 +26,25 @@ resource "azurerm_key_vault" "kv_complex_cases" {
   tags = local.common_tags
 }
 
-resource "azurerm_private_endpoint" "kv_complex_cases_pe" {
-  name                = "${azurerm_key_vault.kv_complex_cases.name}-pe"
-  resource_group_name = azurerm_resource_group.rg_complex_cases.name
-  location            = azurerm_resource_group.rg_complex_cases.location
-  subnet_id           = azurerm_subnet.sn_complex_cases_endpoints_subnet.id
-  tags                = local.common_tags
+#resource "azurerm_private_endpoint" "kv_complex_cases_pe" {
+#  name                = "${azurerm_key_vault.kv_complex_cases.name}-pe"
+#  resource_group_name = azurerm_resource_group.rg_complex_cases.name
+#  location            = azurerm_resource_group.rg_complex_cases.location
+#  subnet_id           = azurerm_subnet.sn_complex_cases_endpoints_subnet.id
+#  tags                = local.common_tags
+#
+#  private_dns_zone_group {
+#    name                 = data.azurerm_private_dns_zone.dns_zone_keyvault.name
+#    private_dns_zone_ids = [data.azurerm_private_dns_zone.dns_zone_keyvault.id]
+#  }
 
-  private_dns_zone_group {
-    name                 = data.azurerm_private_dns_zone.dns_zone_keyvault.name
-    private_dns_zone_ids = [data.azurerm_private_dns_zone.dns_zone_keyvault.id]
-  }
-
-  private_service_connection {
-    name                           = "${azurerm_key_vault.kv_complex_cases.name}-psc"
-    private_connection_resource_id = azurerm_key_vault.kv_complex_cases.id
-    is_manual_connection           = false
-    subresource_names              = ["vault"]
-  }
-}
+#  private_service_connection {
+#    name                           = "${azurerm_key_vault.kv_complex_cases.name}-psc"
+#    private_connection_resource_id = azurerm_key_vault.kv_complex_cases.id
+#    is_manual_connection           = false
+#    subresource_names              = ["vault"]
+#  }
+#}
 
 #begin: assign roles
 
