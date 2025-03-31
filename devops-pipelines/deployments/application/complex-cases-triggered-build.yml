@@ -27,8 +27,11 @@ variables:
   - name: semanticVersion
     value: "$[counter(variables['majorMinorVersion'], 1)]"
 
+#pool:
+#  name: "LaCC Pre-Prod Build Agents"
+
 pool:
-  name: "LaCC Pre-Prod Build Agents"
+  vmImage: ubuntu-latest
 
 stages:
   - template: ../templates/stages/stage_publish-all-artifacts.yml

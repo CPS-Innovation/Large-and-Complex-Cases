@@ -24,9 +24,9 @@ stages:
               
       - job: Build_API_Artifact
         steps:
-          - template: jobs/tasks/dependencies/task_install-dotnet-core-8.yml
+          #- template: jobs/tasks/dependencies/task_install-dotnet-core-8.yml
             
-          - template: jobs/tasks/dependencies/task_install-powershell.yml
+          #- template: jobs/tasks/dependencies/task_install-powershell.yml
           
           - task: DotNetCoreCLI@2
             displayName: "Publish API project"
@@ -56,9 +56,9 @@ stages:
 
       - job: Build_Mock_Artifact
         steps:
-          - template: jobs/tasks/dependencies/task_install-dotnet-core-8.yml
+          #- template: jobs/tasks/dependencies/task_install-dotnet-core-8.yml
               
-          - template: jobs/tasks/dependencies/task_install-powershell.yml
+          #- template: jobs/tasks/dependencies/task_install-powershell.yml
             
           - task: DotNetCoreCLI@2
             displayName: "Publish Mock project"
