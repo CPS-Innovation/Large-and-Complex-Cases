@@ -17,7 +17,6 @@ pr:
 variables:
   - group: complex-cases-global
   - group: complex-cases-terraform
-  - group: complex-cases-secure-pre-prod
   - name: buildConfiguration
     value: "Release"
   - name: terraformWorkingDir

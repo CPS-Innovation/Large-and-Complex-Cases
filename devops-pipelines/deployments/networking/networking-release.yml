@@ -16,10 +16,9 @@ resources:
 variables:
   - group: complex-cases-global
   - group: complex-cases-terraform
-  - group: complex-cases-secure-pre-prod
     
 pool:
-  vmImage: ubuntu-22.04
+  vmImage: $(build-agent-pre-prod)
 
 stages:
   - stage: Apply_PREPROD
