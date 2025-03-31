@@ -32,7 +32,7 @@ stages:
       terraformStorageAccount: $(terraform-storage-name-dev)
       applicationTerraformContainerName: $(terraform-container-name-application)
       terraformStateKey: $(terraform-state-file)
-      terraformStateAccessKey: $(terraform-storage-shared-key-pre-prod)
+      terraformStateAccessKey: $(terraform-storage-shared-key-preprod)
       targetSuffix: "-dev"
       logRetentionTime: $(log-retention-time)
       totalLogRetentionTime: $(total-log-retention-time)
@@ -58,7 +58,7 @@ stages:
       terraformStorageAccount: $(terraform-storage-name-qa)
       applicationTerraformContainerName: $(terraform-container-name-application)
       terraformStateKey: $(terraform-state-file)
-      terraformStateAccessKey: $(terraform-storage-shared-key-pre-prod)
+      terraformStateAccessKey: $(terraform-storage-shared-key-preprod)
       targetSuffix: "-qa"
       logRetentionTime: $(log-retention-time)
       totalLogRetentionTime: $(total-log-retention-time)

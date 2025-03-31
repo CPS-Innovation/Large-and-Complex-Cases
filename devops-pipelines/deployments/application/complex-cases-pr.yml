@@ -108,7 +108,7 @@ stages:
               TF_STATE_ACCOUNT_NAME: $(terraform-storage-name-dev)
               TF_STATE_CONTAINER_NAME: $(terraform-container-name-application)
               TF_STATE_KEY: $(terraform-state-file)
-              TF_STATE_ACCESS_KEY: $(terraform-storage-shared-key-pre-prod)
+              TF_STATE_ACCESS_KEY: $(terraform-storage-shared-key-preprod)
               TF_LOG: $(log-level-dev)
 
           # Validate
@@ -143,7 +143,7 @@ stages:
               TF_STATE_ACCOUNT_NAME: $(terraform-storage-name-dev)
               TF_STATE_CONTAINER_NAME: $(terraform-container-name-application)
               TF_STATE_KEY: $(terraform-state-file)
-              TF_STATE_ACCESS_KEY: $(terraform-storage-shared-key-pre-prod)
+              TF_STATE_ACCESS_KEY: $(terraform-storage-shared-key-preprod)
               TF_LOG: $(log-level-dev)
 
           # Terraform Plan

@@ -31,7 +31,7 @@ stages:
       terraformStorageAccount: $(terraform-storage-name-test)
       applicationTerraformContainerName: $(terraform-container-name-application)
       terraformStateKey: $(terraform-state-file)
-      terraformStateAccessKey: $(terraform-storage-shared-key-pre-prod)
+      terraformStateAccessKey: $(terraform-storage-shared-key-preprod)
       targetSuffix: "-test"
       logRetentionTime: $(log-retention-time)
       totalLogRetentionTime: $(total-log-retention-time)
