@@ -199,7 +199,7 @@ resource "azurerm_private_endpoint" "complex_cases_api_pe" {
   name                = "${azurerm_linux_function_app.complex_cases_api.name}-pe"
   resource_group_name = azurerm_resource_group.rg_complex_cases.name
   location            = azurerm_resource_group.rg_complex_cases.location
-  subnet_id           = azurerm_subnet.sn_complex_cases_api_subnet.id
+  subnet_id           = azurerm_subnet.sn_complex_cases_endpoints_subnet.id
   tags                = local.common_tags
 
   private_dns_zone_group {
