@@ -27,12 +27,12 @@ data "azurerm_resource_group" "analytics_resource_group" {
 
 #begin: vNET and route table lookups
 data "azurerm_virtual_network" "complex_cases_vnet" {
-  name                = "vnet-${local.product_name}-WANNET"
+  name                = "vnet-${local.group_product_name}-WANNET"
   resource_group_name = data.azurerm_resource_group.networking_resource_group.name
 }
 
 data "azurerm_route_table" "complex_cases_rt" {
-  name                = "RT-${local.product_name}"
+  name                = "RT-${local.group_product_name}"
   resource_group_name = data.azurerm_resource_group.networking_resource_group.name
 }
 
