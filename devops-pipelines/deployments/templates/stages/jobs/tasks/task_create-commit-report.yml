@@ -22,6 +22,6 @@ steps:
 
   - task: PublishPipelineArtifact@1
     inputs:
-      targetPath: "$(Build.Repository.LocalPath)/commit-report-${{ parameters.targetLabelLower }}.csv"
-      artifact: "Commit Report - ${{ parameters.targetLabel }} ($(System.JobAttempt))"
+      targetPath: "$(Build.Repository.LocalPath)/lacc-commit-report-${{ parameters.targetLabelLower }}.csv"
+      artifact: "LaCC Commit Report - ${{ parameters.targetLabel }} ($(System.JobAttempt))"
     displayName: "Publish Commit report for ${{ parameters.targetLabel }}"
