@@ -65,26 +65,27 @@ stages:
               statusCheckDelaySeconds: ${{ parameters.statusCheckDelaySeconds }}
               statusCheckTimeoutSeconds: ${{ parameters.statusCheckTimeoutSeconds }}
 
-      - job: Deploy_UI
-        dependsOn: Log_Start_Codebase
-        displayName: Deploy UI
-        condition: succeeded()
-        steps:
-          - template: jobs/tasks/task_deploy-ui.yml
-            parameters:
-              targetBuild: ${{ parameters.targetBuild }}
-              targetLabel: ${{ parameters.targetLabel }}
-              targetName: "SPA Deployment"
-              targetSuffix: ${{ parameters.targetSuffix }}
-              appInsightsKey: ${{ parameters.appInsightsKey }}
-              azureSubscription: ${{ parameters.azureSubscription }}
+      #- job: Deploy_UI
+      #  dependsOn: Log_Start_Codebase
+      #  displayName: Deploy UI
+      #  condition: succeeded()
+      #  steps:
+      #    - template: jobs/tasks/task_deploy-ui.yml
+      #      parameters:
+      #        targetBuild: ${{ parameters.targetBuild }}
+      #        targetLabel: ${{ parameters.targetLabel }}
+      #        targetName: "SPA Deployment"
+      #        targetSuffix: ${{ parameters.targetSuffix }}
+      #        appInsightsKey: ${{ parameters.appInsightsKey }}
+      #        azureSubscription: ${{ parameters.azureSubscription }}
 
       - job: Log_Result_Codebase_Ended
         condition: succeeded()
         displayName: Log End
         dependsOn:
           - Deploy_API
-          - Deploy_UI
+          - Deploy_Mock
+          #- Deploy_UI
         steps:
           - template: jobs/tasks/task_log-result-deployment.yml
             parameters:

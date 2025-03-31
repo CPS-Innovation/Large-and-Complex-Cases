@@ -44,7 +44,7 @@ stages:
         displayName: Log End
         dependsOn:
           - Swap_API_Slot
-          - Swap_UI_Slot
+        #  - Swap_UI_Slot
         steps:
           - template: jobs/tasks/task_log-result.yml
             parameters:
