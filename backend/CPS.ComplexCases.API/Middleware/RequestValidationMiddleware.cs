@@ -10,7 +10,7 @@ namespace CPS.ComplexCases.API.Middleware;
 
 public sealed partial class RequestValidationMiddleware(IAuthorizationValidator authorizationValidator) : IFunctionsWorkerMiddleware
 {
-  private readonly string[] _unauthenticatedRoutes = ["/api/status", "/api/tactical/login"];
+  private readonly string[] _unauthenticatedRoutes = ["/api/status", "/api/tactical/login", "/api/swagger/ui", "/api/swagger.json"];
 
   public async Task Invoke(FunctionContext context, FunctionExecutionDelegate next)
   {
