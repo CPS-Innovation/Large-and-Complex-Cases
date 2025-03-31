@@ -4,6 +4,8 @@ parameters:
     type: string
 
 steps:
+  - template: dependencies/task_install-powershell.yml
+    
   - task: PowerShell@2
     displayName: Query Status
     inputs:

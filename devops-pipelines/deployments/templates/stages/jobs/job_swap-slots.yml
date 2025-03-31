@@ -8,7 +8,7 @@ parameters:
 jobs:
   - job: Pause_Pipeline
     condition: succeeded()
-    displayName: Pause for 2 mins
+    displayName: Pause for 2 minutes
     steps:
       - template: tasks/task_pause-pipeline.yml
 
