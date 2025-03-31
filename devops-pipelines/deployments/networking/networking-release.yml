@@ -32,6 +32,8 @@ stages:
           runOnce:
             deploy:
               steps:
+                - template: jobs/tasks/dependencies/task_install-dotnet-core-8.yml
+                  
                 - template: ../templates/stages/jobs/tasks/task_get-credentials.yml
                   parameters:
                     azureSubscription: $(azure-subscription-pre-prod)
