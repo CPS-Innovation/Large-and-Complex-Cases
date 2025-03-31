@@ -20,32 +20,32 @@ resource "azuread_application" "sharepoint_embedded" {
     resource_app_id = data.azuread_application_published_app_ids.well_known.result["MicrosoftGraph"]
 
     resource_access {
-      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["Files.ReadWrite.All"]
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["Files.ReadWrite.All"].id
       type = "Scope"
     }
 
     resource_access {
-      id   = azuread_service_principal.msgraph.app_role_ids["Files.ReadWrite.All"]
+      id   = azuread_service_principal.msgraph.app_role_ids["Files.ReadWrite.All"].id
       type = "Role"
     }
 
     resource_access {
-      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["FileStorageContainer.Selected"]
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["FileStorageContainer.Selected"].id
       type = "Scope"
     }
 
     resource_access {
-      id   = azuread_service_principal.msgraph.app_role_ids["FileStorageContainer.Selected"]
+      id   = azuread_service_principal.msgraph.app_role_ids["FileStorageContainer.Selected"].id
       type = "Role"
     }
 
     resource_access {
-      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["Sites.Read.All"]
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["Sites.Read.All"].id
       type = "Scope"
     }
 
     resource_access {
-      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["User.Read"]
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["User.Read"].id
       type = "Scope"
     }
   }
@@ -54,17 +54,17 @@ resource "azuread_application" "sharepoint_embedded" {
     resource_app_id = data.azuread_application_published_app_ids.well_known.result["Office365SharePointOnline"]
 
     resource_access {
-      id   = azuread_service_principal.sharepointonline.oauth2_permission_scope_ids["AllSites.Read"]
+      id   = azuread_service_principal.sharepointonline.oauth2_permission_scope_ids["AllSites.Read"].id
       type = "Scope"
     }
 
     resource_access {
-      id   = azuread_service_principal.sharepointonline.oauth2_permission_scope_ids["AllSites.Write"]
+      id   = azuread_service_principal.sharepointonline.oauth2_permission_scope_ids["AllSites.Write"].id
       type = "Scope"
     }
 
     resource_access {
-      id   = azuread_service_principal.sharepointonline.oauth2_permission_scope_ids["Sites.ReadWrite.All"]
+      id   = azuread_service_principal.sharepointonline.oauth2_permission_scope_ids["Sites.ReadWrite.All"].id
       type = "Role"
     }
   }

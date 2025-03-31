@@ -135,52 +135,52 @@ resource "azuread_application" "complex_cases_api" {
     resource_app_id = data.azuread_application_published_app_ids.well_known.result["MicrosoftGraph"]
 
     resource_access {
-      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["Files.ReadWrite.All"]
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["Files.ReadWrite.All"].id
       type = "Scope"
     }
 
     resource_access {
-      id   = azuread_service_principal.msgraph.app_role_ids["Files.ReadWrite.All"]
+      id   = azuread_service_principal.msgraph.app_role_ids["Files.ReadWrite.All"].id
       type = "Role"
     }
 
     resource_access {
-      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["FileStorageContainer.Selected"]
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["FileStorageContainer.Selected"].id
       type = "Scope"
     }
 
     resource_access {
-      id   = azuread_service_principal.msgraph.app_role_ids["FileStorageContainer.Selected"]
+      id   = azuread_service_principal.msgraph.app_role_ids["FileStorageContainer.Selected"].id
       type = "Role"
     }
 
     resource_access {
-      id   = azuread_service_principal.msgraph.app_role_ids["Mail.ReadWrite"]
+      id   = azuread_service_principal.msgraph.app_role_ids["Mail.ReadWrite"].id
       type = "Role"
     }
 
     resource_access {
-      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["Mail.ReadWrite.Shared"]
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["Mail.ReadWrite.Shared"].id
       type = "Scope"
     }
 
     resource_access {
-      id   = azuread_service_principal.msgraph.app_role_ids["Mail.Send"]
+      id   = azuread_service_principal.msgraph.app_role_ids["Mail.Send"].id
       type = "Role"
     }
 
     resource_access {
-      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["Sites.Read.All"]
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["Sites.Read.All"].id
       type = "Scope"
     }
 
     resource_access {
-      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["User.Read"]
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["User.Read"].id
       type = "Scope"
     }
 
     resource_access {
-      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["User.Read.All"]
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["User.Read.All"].id
       type = "Scope"
     }
   }
@@ -189,7 +189,7 @@ resource "azuread_application" "complex_cases_api" {
     resource_app_id = data.azuread_application_published_app_ids.well_known.result["Office365SharePointOnline"]
 
     resource_access {
-      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["Container.Manage"]
+      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["Container.Manage"].id
       type = "Scope"
     }
   }
