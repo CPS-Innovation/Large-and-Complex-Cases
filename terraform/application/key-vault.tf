@@ -16,6 +16,7 @@ resource "azurerm_key_vault" "kv_complex_cases" {
     default_action = "Deny"
     bypass         = "AzureServices"
     virtual_network_subnet_ids = [
+      data.azurerm_subnet.build_agent_subnet.id,
       azurerm_subnet.sn_complex_cases_api_subnet.id,
       azurerm_subnet.sn_complex_cases_endpoints_subnet.id,
       azurerm_subnet.sn_complex_cases_ui_subnet.id
@@ -49,7 +50,7 @@ resource "azurerm_private_endpoint" "kv_complex_cases_pe" {
 
 resource "azurerm_role_assignment" "kv_role_terraform_sp" {
   scope                = azurerm_key_vault.kv_complex_cases.id
-  role_definition_name = "Key Vault Administrator"
+  role_definition_name = "Key Vault Secrets Officer"
   principal_id         = data.azuread_service_principal.terraform_service_principal.object_id
 }
 

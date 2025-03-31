@@ -11,11 +11,11 @@ nsg_name                                 = "basicNsgVNET-LaCC-WANNET-nic01"
 
 service_plans = {
   ui_service_plan_sku   = "P1v3"
-  ui_worker_count       = 2
+  ui_worker_count       = 3
   api_service_plan_sku  = "P1v3"
-  api_worker_count      = 2
+  api_worker_count      = 3
   mock_service_plan_sku = "P0v3"
-  mock_worker_count     = 2
+  mock_worker_count     = 3
 }
 
 service_capacity = {

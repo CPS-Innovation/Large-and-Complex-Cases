@@ -42,6 +42,16 @@ data "azurerm_network_security_group" "complex_cases_nsg" {
 }
 #end: vNET lookup
 
+# begin: build agent subnet lookup
+
+data "azurerm_subnet" "build_agent_subnet" {
+  name                 = "LaCC-scale-set-subnet"
+  resource_group_name  = data.azurerm_resource_group.build_agent_resource_group.name
+  virtual_network_name = data.azurerm_virtual_network.complex_cases_vnet.name
+}
+
+# end: build agent subnet lookup
+
 # begin: vnet dns zone lookups
 data "azurerm_private_dns_zone" "dns_zone_blob_storage" {
   name                = "privatelink.blob.core.windows.net"
