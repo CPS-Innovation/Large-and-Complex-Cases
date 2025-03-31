@@ -2,19 +2,19 @@ data "azuread_client_config" "current" {}
 
 #begin: resource groups
 data "azurerm_resource_group" "networking_resource_group" {
-  name = "RG-${local.product_name}-connectivity"
+  name = "RG-${local.group_product_name}-connectivity"
 }
 
 data "azurerm_resource_group" "terraform_resource_group" {
-  name = "rg-${local.product_name}-terraform"
+  name = "rg-${local.group_product_name}-terraform"
 }
 
 data "azurerm_resource_group" "build_agent_resource_group" {
-  name = "rg-${local.product_name}-build-agents"
+  name = "rg-${local.group_product_name}-build-agents"
 }
 
 data "azurerm_resource_group" "analytics_resource_group" {
-  name = "rg-${local.product_name}-analytics"
+  name = "rg-${local.group_product_name}-analytics"
 }
 #end: resource groups
 
@@ -46,7 +46,7 @@ data "azurerm_network_security_group" "complex_cases_nsg" {
 
 data "azurerm_subnet" "build_agent_subnet" {
   name                 = "LaCC-scale-set-subnet"
-  resource_group_name  = data.azurerm_resource_group.build_agent_resource_group.name
+  resource_group_name  = data.azurerm_resource_group.networking_resource_group.name
   virtual_network_name = data.azurerm_virtual_network.complex_cases_vnet.name
 }
 
