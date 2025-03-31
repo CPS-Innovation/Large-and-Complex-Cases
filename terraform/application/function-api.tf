@@ -185,15 +185,6 @@ resource "azuread_application" "complex_cases_api" {
     }
   }
 
-  required_resource_access {
-    resource_app_id = data.azuread_application_published_app_ids.well_known.result["Office365SharePointOnline"]
-
-    resource_access {
-      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["Container.Manage"]
-      type = "Scope"
-    }
-  }
-
   web {
     redirect_uris = ["https://${local.product_prefix}-ui.azurewebsites.net/.auth/login/aad/callback"]
 
