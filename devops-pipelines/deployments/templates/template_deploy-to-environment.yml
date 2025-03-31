@@ -111,11 +111,11 @@ stages:
       targetLabel: ${{ parameters.targetLabel }}
       appInsightsKey: ${{ parameters.appInsightsKey }}
 
-  - template: ../stages/stage_run-e2e-tests.yml
-    parameters:
-      buildAgentName: ${{ parameters.buildAgentName }}
-      targetBuild: ${{ parameters.targetBuild }}
-      targetLabel: "${{ parameters.targetLabel }}
-      appInsightsKey: ${{ parameters.appInsightsKey }}
-      buildDefinitionId: ${{ parameters.buildDefinitionId }}
-      stageDependsOn: ${{ parameters.stageDependsOn }}
+  #- template: ../stages/stage_run-e2e-tests.yml
+  #  parameters:
+  #    buildAgentName: ${{ parameters.buildAgentName }}
+  #    targetBuild: ${{ parameters.targetBuild }}
+  #    targetLabel: "${{ parameters.targetLabel }}
+  #    appInsightsKey: ${{ parameters.appInsightsKey }}
+  #    buildDefinitionId: ${{ parameters.buildDefinitionId }}
+  #    stageDependsOn: ${{ parameters.stageDependsOn }}

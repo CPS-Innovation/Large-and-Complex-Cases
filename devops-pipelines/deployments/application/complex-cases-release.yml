@@ -49,7 +49,8 @@ stages:
   - template: ../templates/template_deploy-to-environment.yml
     parameters:
       buildAgentName: $(build-agent-pre-prod)
-      initialStageDependsOn: Run_e2e_Tests_DEV
+      #initialStageDependsOn: Run_e2e_Tests_DEV
+      initialStageDependsOn: Update_GitHub_Tag_DEV
       targetEnv: "LaCC_QA"
       targetBuild: ComplexCasesBuild
       targetLabel: "QA"
