@@ -30,7 +30,9 @@ variable "appinsights_configuration" {
 
 variable "subnets" {
   type = object({
-    ampls = list(string)
+    ampls            = list(string)
+    resolverInbound  = list(string)
+    resolverOutbound = list(string)
   })
 }
 
