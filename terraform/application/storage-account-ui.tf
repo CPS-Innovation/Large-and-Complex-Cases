@@ -23,8 +23,8 @@ resource "azurerm_storage_account" "sacpsccui" {
     default_action = "Deny"
     bypass         = ["Metrics", "Logging", "AzureServices"]
     virtual_network_subnet_ids = [
-      azurerm_subnet.sn_complex_cases_ui_subnet,
-      azurerm_subnet.sn_complex_cases_mock_subnet
+      azurerm_subnet.sn_complex_cases_ui_subnet.id,
+      azurerm_subnet.sn_complex_cases_mock_subnet.id
     ]
   }
 

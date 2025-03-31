@@ -6,46 +6,17 @@ parameters:
     type: string
   - name: targetLabel
     type: string
-  - name: appInsightsKey
-    type: string
 
 stages:
   - stage: Update_GitHub_Tag_${{ parameters.targetLabel }}
     pool:
       name: ${{ parameters.buildAgentName }}
-    displayName: Update Tag
+    displayName: ${{ parameters.targetLabel }} > Update Repo Tag
     dependsOn: Create_Commit_Report_${{ parameters.targetLabel }}
     condition: succeeded()
     jobs:
-      - job: Log_Start
-        displayName: Log Start
-        condition: succeeded()
-        steps:
-          - template: jobs/tasks/task_log-start.yml
-            parameters:
-              targetBuild: ${{ parameters.targetBuild }}
-              targetLabel: ${{ parameters.targetLabel }}
-              targetName: "Update GitHub Tag"
-              appInsightsKey: ${{ parameters.appInsightsKey }}
-
       - job: Update_Github_Tag
-        dependsOn: Log_Start
         steps:
           - template: jobs/tasks/task_update-github-tag.yml
             parameters:
               targetLabel: ${{ parameters.targetLabel }}
-
-      - job: Log_Result
-        condition: succeeded()
-        displayName: Log End
-        dependsOn:
-          - Log_Start
-          - Update_GitHub_Tag
-        steps:
-          - template: jobs/tasks/task_log-result.yml
-            parameters:
-              targetBuild: ${{ parameters.targetBuild }}
-              targetLabel: ${{ parameters.targetLabel }}
-              targetName: "Update GitHub Tag"
-              appInsightsKey: ${{ parameters.appInsightsKey }}
-              devOpsPatToken: $(System.AccessToken)

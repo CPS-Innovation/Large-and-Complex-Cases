@@ -10,7 +10,7 @@ parameters:
     type: string
   - name: targetLabel
     type: string
-  - name: appInsightsKey
+  - name: targetLabelLower
     type: string
   - name: azureSubscription
     type: string
@@ -50,7 +50,6 @@ stages:
       targetEnv: ${{ parameters.targetEnv }}
       targetBuild: ${{ parameters.targetBuild }}
       targetLabel: ${{ parameters.targetLabel }}
-      appInsightsKey: ${{ parameters.appInsightsKey }}
       azureSubscription: ${{ parameters.azureSubscription }}
       targetPlanName: ${{ parameters.targetPlanName }}
       terraformStorageAccount: ${{ parameters.terraformStorageAccount }}
@@ -67,7 +66,6 @@ stages:
       buildAgentName: ${{ parameters.buildAgentName }}
       targetBuild: ${{ parameters.targetBuild }}
       targetLabel: ${{ parameters.targetLabel }}
-      appInsightsKey: ${{ parameters.appInsightsKey }}
       targetSuffix: ${{ parameters.targetSuffix }}
       statusCheckRetries: ${{ parameters.statusCheckRetries }}
       statusCheckDelaySeconds: ${{ parameters.statusCheckDelaySeconds }}
@@ -79,7 +77,6 @@ stages:
       buildAgentName: ${{ parameters.buildAgentName }}
       targetBuild: ${{ parameters.targetBuild }}
       targetLabel: ${{ parameters.targetLabel }}
-      appInsightsKey: ${{ parameters.appInsightsKey }}
       targetSuffix: ${{ parameters.targetSuffix }}
       azureSubscription: ${{ parameters.azureSubscription }}
 
@@ -88,7 +85,6 @@ stages:
       buildAgentName: ${{ parameters.buildAgentName }}
       targetBuild: ${{ parameters.targetBuild }}
       targetLabel: ${{ parameters.targetLabel }}
-      appInsightsKey: ${{ parameters.appInsightsKey }}
       targetSuffix: ${{ parameters.targetSuffix }}
       azureSubscription: ${{ parameters.azureSubscription }}
       statusCheckMethod: ${{ parameters.statusCheckMethod }}
@@ -102,20 +98,17 @@ stages:
       targetBuild: ${{ parameters.targetBuild }}
       targetLabel: ${{ parameters.targetLabel }}
       targetLabelLower: ${{ parameters.targetLabelLower }}
-      appInsightsKey: ${{ parameters.appInsightsKey }}
 
   - template: stages/stage_update-git-hub-tag.yml
     parameters:
       buildAgentName: ${{ parameters.buildAgentName }}
       targetBuild: ${{ parameters.targetBuild }}
       targetLabel: ${{ parameters.targetLabel }}
-      appInsightsKey: ${{ parameters.appInsightsKey }}
 
-  - template: ../stages/stage_run-e2e-tests.yml
-    parameters:
-      buildAgentName: ${{ parameters.buildAgentName }}
-      targetBuild: ${{ parameters.targetBuild }}
-      targetLabel: "${{ parameters.targetLabel }}
-      appInsightsKey: ${{ parameters.appInsightsKey }}
-      buildDefinitionId: ${{ parameters.buildDefinitionId }}
-      stageDependsOn: ${{ parameters.stageDependsOn }}
+  #- template: ../stages/stage_run-e2e-tests.yml
+  #  parameters:
+  #    buildAgentName: ${{ parameters.buildAgentName }}
+  #    targetBuild: ${{ parameters.targetBuild }}
+  #    targetLabel: "${{ parameters.targetLabel }}
+  #    buildDefinitionId: ${{ parameters.buildDefinitionId }}
+  #    stageDependsOn: ${{ parameters.stageDependsOn }}

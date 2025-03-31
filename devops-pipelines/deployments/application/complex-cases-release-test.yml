@@ -16,7 +16,6 @@ resources:
 variables:
   - group: complex-cases-global
   - group: complex-cases-terraform
-  - group: complex-cases-secure-pre-prod
 
 stages:
   #release to E2E
@@ -27,13 +26,12 @@ stages:
       targetEnv: "LaCC_TEST"
       targetBuild: ComplexCasesBuild
       targetLabel: "TEST"
-      appInsightsKey: $(app-insights-instrumentation-pre-prod)
       azureSubscription: $(azure-subscription-pre-prod)
       targetPlanName: "test"
       terraformStorageAccount: $(terraform-storage-name-test)
-      applicationTerraformContainerName: $(terraform-container-name-application)
+      applicationTerraformContainerName: $(terraform-container-name-application-test)
       terraformStateKey: $(terraform-state-file)
-      terraformStateAccessKey: $(terraform-storage-shared-key-pre-prod)
+      terraformStateAccessKey: $(terraform-storage-shared-key-preprod)
       targetSuffix: "-test"
       logRetentionTime: $(log-retention-time)
       totalLogRetentionTime: $(total-log-retention-time)

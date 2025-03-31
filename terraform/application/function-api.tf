@@ -199,20 +199,6 @@ resource "azuread_application" "complex_cases_api" {
     }
   }
 
-  required_resource_access {
-    resource_app_id = azuread_application.sharepoint_embedded.client_id
-
-    dynamic "resource_access" {
-      for_each = azuread_application.complex_cases_api.api.0.oauth2_permission_scope
-      iterator = scope
-
-      content {
-        id   = scope.value.id
-        type = "Scope"
-      }
-    }
-  }
-
   web {
     redirect_uris = ["https://${local.product_prefix}-ui.azurewebsites.net/.auth/login/aad/callback"]
 
