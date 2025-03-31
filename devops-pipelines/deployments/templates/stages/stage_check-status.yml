@@ -18,16 +18,17 @@ parameters:
     type: string
   - name: statusCheckTimeoutSeconds
     type: string
-  
+
 stages:
   - stage: Check_Status_${{ parameters.targetLabel }}
     pool:
       name: ${{ parameters.buildAgentName }}
-    displayName: Status Checks
+    displayName: ${{ parameters.targetLabel }} > Status Checks
     dependsOn: Swap_${{ parameters.targetLabel }}
     condition: succeeded()
     jobs:
       - job: Get_Status_URIs
+        condition: succeeded()
         displayName: Get Status URIs
         steps:
           - template: jobs/tasks/task_get-credentials.yml
@@ -61,23 +62,43 @@ stages:
               statusCheckDelaySeconds: ${{ parameters.statusCheckDelaySeconds }}
               statusCheckTimeoutSeconds: ${{ parameters.statusCheckTimeoutSeconds }}
               successTextContent: $(resources.pipeline.PolarisBuild.runName)
-
-      - job: Check_UI
+              
+      - job: Check_Mock
         dependsOn: Get_Status_URIs
         condition: succeeded()
-        displayName: Check UI
+        displayName: Check Mock
         variables:
-          uri: $[dependencies.Get_Status_URIs.outputs['uris.uiUri']]
+          uri: $[dependencies.Get_Status_URIs.outputs['uris.mockUri']]
         steps:
           - template: jobs/tasks/task_call-status-endpoint.yml
             parameters:
               targetBuild: ${{ parameters.targetBuild }}
               targetLabel: ${{ parameters.targetLabel }}
-              targetAppName: "UI"
-              targetScript: "InvokeRequestWithRetry.ps1"
-              endpointUri: "$(uri)/polaris-ui/build-version.txt"
+              targetAppName: "API"
+              targetScript: "InvokeRequestWithRetryNonNumeric.ps1"
+              endpointUri: "$(uri)/__admin/mappings"
               statusCheckMethod: ${{ parameters.statusCheckMethod }}
               statusCheckRetries: ${{ parameters.statusCheckRetries }}
               statusCheckDelaySeconds: ${{ parameters.statusCheckDelaySeconds }}
               statusCheckTimeoutSeconds: ${{ parameters.statusCheckTimeoutSeconds }}
-              successTextContent: $(resources.pipeline.PolarisBuild.runName)
+              successTextContent: "lacc"
+              
+      #- job: Check_UI
+      #  dependsOn: Get_Status_URIs
+      #  condition: succeeded()
+      #  displayName: Check UI
+      #  variables:
+      #    uri: $[dependencies.Get_Status_URIs.outputs['uris.uiUri']]
+      #  steps:
+      #    - template: jobs/tasks/task_call-status-endpoint.yml
+      #      parameters:
+      #        targetBuild: ${{ parameters.targetBuild }}
+      #        targetLabel: ${{ parameters.targetLabel }}
+      #        targetAppName: "UI"
+      #        targetScript: "InvokeRequestWithRetry.ps1"
+      #        endpointUri: "$(uri)/polaris-ui/build-version.txt"
+      #        statusCheckMethod: ${{ parameters.statusCheckMethod }}
+      #        statusCheckRetries: ${{ parameters.statusCheckRetries }}
+      #        statusCheckDelaySeconds: ${{ parameters.statusCheckDelaySeconds }}
+      #        statusCheckTimeoutSeconds: ${{ parameters.statusCheckTimeoutSeconds }}
+      #        successTextContent: $(resources.pipeline.PolarisBuild.runName)

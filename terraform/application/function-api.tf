@@ -199,20 +199,6 @@ resource "azuread_application" "complex_cases_api" {
     }
   }
 
-  required_resource_access {
-    resource_app_id = azuread_application.sharepoint_embedded.client_id
-
-    dynamic "resource_access" {
-      for_each = azuread_application.complex_cases_api.api.0.oauth2_permission_scope
-      iterator = scope
-
-      content {
-        id   = scope.value.id
-        type = "Scope"
-      }
-    }
-  }
-
   web {
     redirect_uris = ["https://${local.product_prefix}-ui.azurewebsites.net/.auth/login/aad/callback"]
 
@@ -257,7 +243,7 @@ resource "time_rotating" "schedule_api" {
 resource "azurerm_key_vault_secret" "kvs_complex_cases_api_client_secret" {
   #checkov:skip=CKV_AZURE_41:Ensure that the expiration date is set on all secrets
   #checkov:skip=CKV_AZURE_114:Ensure that key vault secrets have "content_type" set
-  name         = "api-client-secret${local.resource_suffix}"
+  name         = "api-client-secret${local.resource_prefix}"
   value        = azuread_application_password.pwd_complex_cases_api.value
   key_vault_id = azurerm_key_vault.kv_complex_cases.id
   depends_on = [

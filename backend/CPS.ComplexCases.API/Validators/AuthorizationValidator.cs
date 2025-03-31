@@ -33,7 +33,8 @@ public class AuthorizationValidator(ILogger<AuthorizationValidator> logger, Conf
         IssuerSigningKeys = discoveryDocument.SigningKeys,
         ValidateLifetime = true,
         ClockSkew = TimeSpan.FromMinutes(2),
-        NameClaimType = "name"
+        NameClaimType = "preferred_username",
+
       };
 
       var tokenValidator = new JwtSecurityTokenHandler();

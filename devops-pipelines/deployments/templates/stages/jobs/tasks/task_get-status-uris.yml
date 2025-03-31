@@ -17,9 +17,11 @@ steps:
       az login --service-principal -u $clientId -p $clientSecret --tenant $tenantId
       az account set --subscription $subscriptionId
       apiLocation=https://$(az webapp config hostname list --webapp-name $apiAppName --resource-group $resourceGroup --query '[0].name' -o tsv)
+      mockLocation=https://$(az webapp config hostname list --webapp-name $mockAppName --resource-group $resourceGroup --query '[0].name' -o tsv)
       uiLocation=https://$(az webapp config hostname list --webapp-name $uiAppName --resource-group $resourceGroup --query '[0].name' -o tsv)
       
       echo "##vso[task.setvariable variable=apiUri;isOutput=true]$apiLocation"
+      echo "##vso[task.setvariable variable=mockUri;]$mockLocation"
       echo "##vso[task.setvariable variable=uiUri;isOutput=true]$uiLocation"
     displayName: Get URIs of Deployed Components
     name: uris
@@ -29,5 +31,6 @@ steps:
       tenantId: ${{ parameters.armTenantId }}
       subscriptionId: ${{ parameters.armSubscriptionId }}
       apiAppName: "lacc${{ parameters.targetSuffix }}-api"
+      mockAppName: "lacc${{ parameters.targetSuffix }}-mock"
       uiAppName: "lacc${{ parameters.targetSuffix }}-ui"
-      resourceGroup: "rg-LaCC-application${{ parameters.targetSuffix }}"
+      resourceGroup: "rg-LaCC{{ parameters.targetSuffix }}-application"

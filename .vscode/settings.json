@@ -12,5 +12,9 @@
   "azureFunctions.projectSubpath": "backend\\CPS.ComplexCases.API",
   "[terraform]": {
     "editor.defaultFormatter": "hashicorp.terraform"
-  }
+  },
+  "appService.zipIgnorePattern": [
+    "node_modules{,/**}",
+    ".vscode{,/**}"
+  ]
 }

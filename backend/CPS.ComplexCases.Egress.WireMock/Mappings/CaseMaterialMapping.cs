@@ -20,8 +20,8 @@ public class CaseMaterialMapping : IWireMockMapping
             .WithPath("/api/v1/workspaces/workspace-id/files")
             .UsingGet()
             .WithParam("view", "full")
-            .WithParam("page", "1")
-            .WithParam("count", "10"))
+            .WithParam("skip", "0")
+            .WithParam("limit", "10"))
         .RespondWith(Response.Create()
             .WithStatusCode(200)
             .WithBodyAsJson(new
@@ -47,11 +47,11 @@ public class CaseMaterialMapping : IWireMockMapping
                     version = 1
                   }
             },
-              pagination = new
+              data_info = new
               {
-                current_page_num = 1,
-                per_page = 10,
-                total_pages = 1,
+                num_returned = 2,
+                skip = 0,
+                limit = 10,
                 total_results = 2
               }
             }));
@@ -65,8 +65,8 @@ public class CaseMaterialMapping : IWireMockMapping
             .UsingGet()
             .WithParam("view", "full")
             .WithParam("folder", "folder-id")
-            .WithParam("page", "1")
-            .WithParam("count", "10"))
+            .WithParam("skip", "0")
+            .WithParam("limit", "10"))
         .RespondWith(Response.Create()
             .WithStatusCode(200)
             .WithBodyAsJson(new
@@ -83,11 +83,11 @@ public class CaseMaterialMapping : IWireMockMapping
                     version = 1
                   },
                 },
-              pagination = new
+              data_info = new
               {
-                current_page_num = 1,
-                per_page = 10,
-                total_pages = 1,
+                num_returned = 1,
+                skip = 0,
+                limit = 10,
                 total_results = 1
               }
             }));

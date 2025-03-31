@@ -4,6 +4,7 @@ using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Exceptions;
 using CPS.ComplexCases.API.Extensions;
+using CPS.ComplexCases.DDEI.Exceptions;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Azure.Functions.Worker;
@@ -40,6 +41,7 @@ public class ExceptionHandlingMiddleware : IFunctionsWorkerMiddleware
         BadRequestException _ => HttpStatusCode.BadRequest,
         ArgumentNullException or BadRequestException _ => HttpStatusCode.BadRequest,
         CpsAuthenticationException _ => HttpStatusCode.ProxyAuthenticationRequired,
+        CmsUnauthorizedException _ => HttpStatusCode.Unauthorized,
         _ => HttpStatusCode.InternalServerError,
       };
 

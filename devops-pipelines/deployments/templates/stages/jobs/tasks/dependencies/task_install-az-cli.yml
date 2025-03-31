@@ -1,0 +1,14 @@
+﻿---
+
+steps:
+  - bash: |
+      echo '==== Update package sources ===='
+      until sudo apt-get -yq update
+      do
+      echo "Try again"
+      sleep 2
+      done
+      
+      echo '==== Azure CLI ===='
+      curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+    displayName: Install AZ CLI

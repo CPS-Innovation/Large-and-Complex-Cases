@@ -33,7 +33,7 @@ stages:
   - stage: Apply_${{ parameters.targetLabel }}
     pool:
       name: ${{ parameters.buildAgentName }}
-    displayName: Apply Terraform
+    displayName: ${{ parameters.targetLabel }} > Apply Terraform
     ${{ if parameters.stageDependsOn }}:
       dependsOn: ${{ parameters.stageDependsOn }}
     jobs:
@@ -61,7 +61,7 @@ stages:
                 - template: jobs/tasks/task_get-credentials.yml
                   parameters:
                     azureSubscription: ${{ parameters.azureSubscription }}
-                    
+
                 - template: jobs/tasks/task_apply-terraform.yml
                   parameters:
                     targetBuild: ${{ parameters.targetBuild }}
@@ -70,7 +70,7 @@ stages:
                     targetName: "Application Terraform CI Deployment"
                     targetPlanName: ${{ parameters.targetPlanName }}
                     terraformStorageAccount: ${{ parameters.terraformStorageAccount }}
-                    terraformContainerName: ${{ parameters.mainTerraformContainerName }}
+                    terraformContainerName: ${{ parameters.applicationTerraformContainerName }}
                     terraformStateKey: ${{ parameters.terraformStateKey }}
                     terraformStateAccessKey: ${{ parameters.terraformStateAccessKey }}
                     armClientId: $(clientId)
@@ -80,7 +80,7 @@ stages:
 
       - deployment: Set_Log_Analytics_Archival_Periods
         condition: succeeded()
-        dependsOn: Apply_Main_Terraform
+        dependsOn: Apply_Application_Terraform
         displayName: Update Analytics Archival Periods
         environment: ${{ parameters.targetEnv }}
         strategy:
@@ -90,9 +90,12 @@ stages:
                 - template: jobs/tasks/task_get-credentials.yml
                   parameters:
                     azureSubscription: ${{ parameters.azureSubscription }}
-                    
+
                 - template: jobs/tasks/task_set-log-analytics-archival-periods.yml
                   parameters:
+                    targetBuild: ${{ parameters.targetBuild }}
+                    targetLabel: ${{ parameters.targetLabel }}
+                    targetName: "Set Log Analytics Archival Periods"
                     targetSuffix: ${{ parameters.targetSuffix }}
                     armClientId: $(clientId)
                     armClientSecret: $(clientSecret)

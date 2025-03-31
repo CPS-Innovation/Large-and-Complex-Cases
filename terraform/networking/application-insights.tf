@@ -1,5 +1,5 @@
 resource "azurerm_log_analytics_workspace" "complex_cases_la" {
-  name                       = "${local.product_name}-la"
+  name                       = "${local.product_name}-${local.shared_prefix}-la"
   location                   = azurerm_resource_group.rg_complex_cases_analytics.location
   resource_group_name        = azurerm_resource_group.rg_complex_cases_analytics.name
   sku                        = "PerGB2018"
@@ -9,7 +9,7 @@ resource "azurerm_log_analytics_workspace" "complex_cases_la" {
 }
 
 resource "azurerm_application_insights" "complex_cases_ai" {
-  name                       = "${local.product_name}-ai"
+  name                       = "${local.product_name}-${local.shared_prefix}-ai"
   location                   = azurerm_resource_group.rg_complex_cases_analytics.location
   resource_group_name        = azurerm_resource_group.rg_complex_cases_analytics.name
   workspace_id               = azurerm_log_analytics_workspace.complex_cases_la.id
@@ -21,13 +21,13 @@ resource "azurerm_application_insights" "complex_cases_ai" {
 }
 
 resource "azurerm_monitor_private_link_scope" "pls_ai_insights" {
-  name                = "pls-${local.product_name}-ai-insights"
+  name                = "pls-${local.product_name}-${local.shared_prefix}-ai-insights"
   resource_group_name = azurerm_resource_group.rg_complex_cases_analytics.name
   tags                = local.common_tags
 }
 
 resource "azurerm_monitor_private_link_scoped_service" "pls_ai_scoped_service" {
-  name                = "pls-${local.product_name}-ai-scoped-service"
+  name                = "pls-${local.product_name}-${local.shared_prefix}-ai-scoped-service"
   resource_group_name = azurerm_resource_group.rg_complex_cases_analytics.name
   scope_name          = azurerm_monitor_private_link_scope.pls_ai_insights.name
   linked_resource_id  = azurerm_application_insights.complex_cases_ai.id
@@ -36,7 +36,7 @@ resource "azurerm_monitor_private_link_scoped_service" "pls_ai_scoped_service" {
 }
 
 resource "azurerm_monitor_private_link_scoped_service" "pls_la_scoped_service" {
-  name                = "pls-${local.product_name}-la-scoped-service"
+  name                = "pls-${local.product_name}-${local.shared_prefix}-la-scoped-service"
   resource_group_name = azurerm_resource_group.rg_complex_cases_analytics.name
   scope_name          = azurerm_monitor_private_link_scope.pls_ai_insights.name
   linked_resource_id  = azurerm_log_analytics_workspace.complex_cases_la.id

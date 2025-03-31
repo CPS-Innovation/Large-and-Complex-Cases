@@ -73,19 +73,10 @@ data "azurerm_private_dns_zone" "dns_zone_keyvault" {
   resource_group_name = data.azurerm_resource_group.networking_resource_group.name
 }
 
-data "azurerm_private_dns_zone" "dns_zone_cognitive_account" {
-  name                = "privatelink.cognitiveservices.azure.com"
-  resource_group_name = data.azurerm_resource_group.networking_resource_group.name
-}
-
-data "azurerm_private_dns_zone" "dns_zone_search_service" {
-  name                = "privatelink.search.windows.net"
-  resource_group_name = data.azurerm_resource_group.networking_resource_group.name
-}
 # end: vnet dns zone lookups
 
 # begin: app insights lookups
 data "azurerm_application_insights" "complex_cases_ai" {
-  name                = "${local.product_prefix}-ai"
+  name                = "${local.product_name}-${local.shared_prefix}-ai"
   resource_group_name = data.azurerm_resource_group.analytics_resource_group.name
 }

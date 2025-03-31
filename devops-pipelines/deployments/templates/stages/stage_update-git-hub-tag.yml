@@ -6,12 +6,12 @@ parameters:
     type: string
   - name: targetLabel
     type: string
-    
+
 stages:
   - stage: Update_GitHub_Tag_${{ parameters.targetLabel }}
     pool:
       name: ${{ parameters.buildAgentName }}
-    displayName: Update Tag
+    displayName: ${{ parameters.targetLabel }} > Update Repo Tag
     dependsOn: Create_Commit_Report_${{ parameters.targetLabel }}
     condition: succeeded()
     jobs:

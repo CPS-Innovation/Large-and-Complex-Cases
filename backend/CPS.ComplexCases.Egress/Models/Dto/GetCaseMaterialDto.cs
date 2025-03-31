@@ -1,8 +1,9 @@
 namespace CPS.ComplexCases.Egress.Models.Dto;
 
-public class GetCaseMaterialDto : PaginationDto
+public class GetCaseMaterialDto
 {
   public required IEnumerable<GetCaseMaterialDataDto> Data { get; set; }
+  public required PaginationDto Pagination { get; set; }
 }
 public class GetCaseMaterialDataDto
 {

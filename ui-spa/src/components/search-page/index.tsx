@@ -156,7 +156,9 @@ const CaseSearchPage = () => {
                   },
                   value: "operation name",
                   "data-testid": "radio-search-operation-name",
+                  disabled: !formattedAreaValues.options.length,
                 },
+
                 {
                   children: "Defendant surname",
                   conditional: {
@@ -220,6 +222,7 @@ const CaseSearchPage = () => {
                   },
                   value: "defendant name",
                   "data-testid": "radio-search-defendant-name",
+                  disabled: !formattedAreaValues.options.length,
                 },
                 {
                   children: "URN",
@@ -228,7 +231,7 @@ const CaseSearchPage = () => {
                       <Input
                         id="search-urn"
                         data-testid="search-urn"
-                        className={`govuk-input--width-20 ${styles.urnInput}`}
+                        className="govuk-input--width-20"
                         label={{
                           children: "URN",
                         }}
@@ -247,7 +250,10 @@ const CaseSearchPage = () => {
                         type="text"
                         value={formData[SearchFormField.urn]}
                         onChange={(value: string) =>
-                          handleFormChange(SearchFormField.urn, value)
+                          handleFormChange(
+                            SearchFormField.urn,
+                            value.toUpperCase(),
+                          )
                         }
                         disabled={false}
                       />,

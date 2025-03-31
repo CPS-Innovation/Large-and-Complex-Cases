@@ -1,20 +1,21 @@
 ---
 name: '$(majorMinorVersion).$(Year:yy)$(DayOfYear).$(semanticVersion)-ci'
 
-trigger:
-  batch: true
-  branches:
-    include:
-      - main
-  paths:
-    include:
-      - terraform/application/*
-      - backend/CPS.ComplexCases.API/*
-      - backend/CPS.ComplexCases.Egress/*
-      - backend/CPS.ComplexCases.NetApp/*
-      - ui/*
-      - e2e/*
+#trigger:
+#  batch: true
+#  branches:
+#    include:
+#      - main
+#  paths:
+#    include:
+#      - terraform/application/*
+#      - backend/CPS.ComplexCases.API/*
+#      - backend/CPS.ComplexCases.Egress/*
+#      - backend/CPS.ComplexCases.NetApp/*
+#      - ui/*
+#      - e2e/*
 
+trigger: none
 pr: none
 
 variables:
@@ -26,8 +27,11 @@ variables:
   - name: semanticVersion
     value: "$[counter(variables['majorMinorVersion'], 1)]"
 
+#pool:
+#  name: "LaCC Pre-Prod Build Agents"
+
 pool:
-  name: $(build-agent-pre-prod)
+  vmImage: ubuntu-latest
 
 stages:
   - template: ../templates/stages/stage_publish-all-artifacts.yml

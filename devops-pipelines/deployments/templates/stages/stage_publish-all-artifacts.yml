@@ -4,7 +4,7 @@ stages:
   - stage: Publish_Artifacts
     displayName: Publish Pipeline Scripts
     jobs:
-      - job: Build_Pipeline_Scripts
+      - job: Build_Pipeline_Scripts_Artifact
         steps:
           - task: PublishPipelineArtifact@1
             displayName: "Publish pipeline scripts"
@@ -24,17 +24,22 @@ stages:
               
       - job: Build_API_Artifact
         steps:
+          - template: jobs/tasks/dependencies/task_install-dotnet-core-8.yml
+            
+          - template: jobs/tasks/dependencies/task_install-powershell.yml
+          
           - task: DotNetCoreCLI@2
+            displayName: "Publish API project"
             inputs:
               command: publish
               publishWebProjects: false
               projects: "backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj"
               arguments: "--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory) /p:Version=$(Build.BuildNumber) /p:SourceRevisionId=$(Build.SourceVersion)"
               zipAfterPublish: false
-            displayName: "Build API artifact"
           
-          # Add build version
+           #Add build version
           - task: PowerShell@2
+            displayName: "Record API version details"
             inputs:
               targetType: 'inline'
               workingDirectory: '$(Build.ArtifactStagingDirectory)/CPS.ComplexCases.API'
@@ -42,27 +47,31 @@ stages:
                 New-Item build-version.txt -force
                 $currentDate = Get-Date
                 Set-Content build-version.txt "{`"name`":`"API`",`"buildVersion`":`"$(Build.BuildNumber)`",`"sourceVersion`":`"$(Build.SourceVersion)`",`"lastBuilt`":`"$currentDate`"}"
-            displayName: "Record version details"
 
           - task: PublishPipelineArtifact@1
+            displayName: "Publish API artifact"
             inputs:
               targetPath: "$(Build.ArtifactStagingDirectory)/CPS.ComplexCases.API"
-              artifact: complex-cases-api-drop"
-            displayName: "Publish API artifact"
+              artifact: "complex-cases-api-drop"
 
-      - job: Build_Mock
+      - job: Build_Mock_Artifact
         steps:
+          - template: jobs/tasks/dependencies/task_install-dotnet-core-8.yml
+              
+          - template: jobs/tasks/dependencies/task_install-powershell.yml
+            
           - task: DotNetCoreCLI@2
+            displayName: "Publish Mock project"
             inputs:
               command: publish
               publishWebProjects: false
               projects: "backend/CPS.ComplexCases.WireMock/CPS.ComplexCases.WireMock.csproj"
               arguments: "--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory) /p:Version=$(Build.BuildNumber) /p:SourceRevisionId=$(Build.SourceVersion)"
               zipAfterPublish: false
-            displayName: "Create Mock Service package to publish"
           
           # Add build version
           - task: PowerShell@2
+            displayName: "Record Mock version details"
             inputs:
               targetType: 'inline'
               workingDirectory: '$(Build.ArtifactStagingDirectory)/CPS.ComplexCases.WireMock'
@@ -70,58 +79,57 @@ stages:
                 New-Item build-version.txt -force
                 $currentDate = Get-Date
                 Set-Content build-version.txt "{`"name`":`"Egress Mock`",`"buildVersion`":`"$(Build.BuildNumber)`",`"sourceVersion`":`"$(Build.SourceVersion)`",`"lastBuilt`":`"$currentDate`"}"
-            displayName: "Record Mock version details"
 
           - task: PublishPipelineArtifact@1
+            displayName: "Publish Mock artifact"
             inputs:
               targetPath: "$(Build.ArtifactStagingDirectory)/CPS.ComplexCases.WireMock"
               artifact: "mock-service-drop"
-            displayName: "Publish Mock Service codebase artifact"
 
-      - job: Build_UI_Artifact
-        steps:
-          # We want to rely only on the .env.production file, anything in .env is still included
-          #  if not overwritten by .env.production.  For safety, just delete .env
-          - task: DeleteFiles@1
-            displayName: "Remove .env file"
-            inputs:
-              contents: |
-                ui-spa/.env
+#      - job: Build_UI_Artifact
+#        steps:
+#          # We want to rely only on the .env.production file, anything in .env is still included
+#          #  if not overwritten by .env.production.  For safety, just delete .env
+#          - task: DeleteFiles@1
+#            displayName: "Remove .env file"
+#            inputs:
+#              contents: |
+#                ui-spa/.env
 
-          # Add build version
-          - task: PowerShell@2
-            displayName: "Record build version"
-            inputs:
-              targetType: 'inline'
-              workingDirectory: ui-spa/public
-              script: |
-                New-Item build-version.txt -force
-                $currentDate = Get-Date
-                Set-Content build-version.txt "{`"name`":`"ui`",`"buildVersion`":`"$(Build.BuildNumber)`",`"sourceVersion`":`"$(Build.SourceVersion)`",`"lastBuilt`":`"$currentDate`"}"
+#          # Add build version
+#          - task: PowerShell@2
+#            displayName: "Record build version"
+#            inputs:
+#              targetType: 'inline'
+#              workingDirectory: ui-spa/public
+#              script: |
+#                New-Item build-version.txt -force
+#                $currentDate = Get-Date
+#                Set-Content build-version.txt "{`"name`":`"ui`",`"buildVersion`":`"$(Build.BuildNumber)`",`"sourceVersion`":`"$(Build.SourceVersion)`",`"lastBuilt`":`"$currentDate`"}"
 
-          - task: Npm@1
-            inputs:
-              command: "install"
-              workingDir: "ui-spa"
-            displayName: "npm install"
+#          - task: Npm@1
+#            inputs:
+#              command: "install"
+#              workingDir: "ui-spa"
+#            displayName: "npm install"
 
-          - task: Npm@1
-            inputs:
-              command: "custom"
-              workingDir: "ui-spa"
-              customCommand: "run prettier"
-            displayName: "npm prettier"
+#          - task: Npm@1
+#            inputs:
+#              command: "custom"
+#              workingDir: "ui-spa"
+#              customCommand: "run prettier"
+#            displayName: "npm prettier"
 
-          - task: Npm@1
-            inputs:
-              command: "custom"
-              workingDir: "ui-spa"
-              customCommand: "run build"
-            displayName: "npm build"
+#          - task: Npm@1
+#            inputs:
+#              command: "custom"
+#              workingDir: "ui-spa"
+#              customCommand: "run build"
+#            displayName: "npm build"
 
-          - task: PublishBuildArtifacts@1
-            inputs:
-              PathtoPublish: "ui-spa/build"
-              ArtifactName: "ui-spa-drop"
-              publishLocation: "Container"
-            displayName: Publish UI artifact
+#          - task: PublishBuildArtifacts@1
+#            inputs:
+#              PathtoPublish: "ui-spa/build"
+#              ArtifactName: "ui-spa-drop"
+#              publishLocation: "Container"
+#            displayName: Publish UI artifact

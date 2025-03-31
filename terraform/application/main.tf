@@ -71,11 +71,10 @@ resource "random_uuid" "random_id" {
 locals {
   product_name       = "lacc"
   group_product_name = "LaCC"
-  resource_suffix    = var.environment.alias != "prod" ? "-${var.environment.alias}" : ""
-  shared_suffix      = var.environment.alias != "prod" ? "preprod" : "prod"
-  shared_prefix      = var.environment.alias != "prod" ? "-preprod" : "-prod"
-  product_prefix     = "${local.product_name}${local.resource_suffix}"
-  ddei_resource_name = "${local.product_name}${local.resource_suffix}-ddei"
+  resource_prefix    = var.environment.alias != "prod" ? "-${var.environment.alias}" : ""
+  shared_prefix      = var.environment.alias != "prod" ? "preprod" : "prod"
+  product_prefix     = "${local.product_name}${local.resource_prefix}"
+  ddei_resource_name = "${local.product_name}${local.resource_prefix}-ddei"
   common_tags = {
     environment = var.environment.name
     project     = ""

@@ -18,7 +18,7 @@ variables:
     value: "$(System.DefaultWorkingDirectory)/terraform/networking"
     
 pool:
-  vmImage: ubuntu-latest
+  name: $(build-agent-pre-prod)
     
 stages:
   - stage: Validate
@@ -26,6 +26,10 @@ stages:
     jobs:
       - job: Validate_Networking_Terraform
         steps:
+          - template: ../templates/stages/jobs/tasks/task_get-credentials.yml
+            parameters:
+              azureSubscription: $(azure-subscription-pre-prod)
+            
           - task: JasonBJohnson.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@1
             displayName: Terraform > Install
             inputs:

@@ -7,8 +7,8 @@ public class GetWorkspacePermissionsResponse
 {
   [JsonPropertyName("data")]
   public required IEnumerable<GetWorkspacePersmissionsResponseData> Data { get; set; }
-  [JsonPropertyName("pagination")]
-  public required PaginationResponse Pagination { get; set; }
+  [JsonPropertyName("data_info")]
+  public required DataInfoResponse DataInfo { get; set; }
 }
 
 public class GetWorkspacePersmissionsResponseData

@@ -10,12 +10,12 @@ parameters:
     type: string
   - name: azureSubscription
     type: string
-  
+
 stages:
   - stage: Swap_${{ parameters.targetLabel }}
     pool:
       name: ${{ parameters.buildAgentName }}
-    displayName: Swap Slots
+    displayName: ${{ parameters.targetLabel }} > Swap Slots
     dependsOn:
       - Apply_${{ parameters.targetLabel }}
       - Deploy_${{ parameters.targetLabel }}

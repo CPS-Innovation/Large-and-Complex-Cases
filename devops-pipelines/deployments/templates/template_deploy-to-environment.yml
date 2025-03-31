@@ -10,6 +10,8 @@ parameters:
     type: string
   - name: targetLabel
     type: string
+  - name: targetLabelLower
+    type: string
   - name: azureSubscription
     type: string
   - name: targetPlanName
@@ -40,7 +42,7 @@ parameters:
     type: object
   - name: e2eTestsBuildDefinitionId
     type: string
-  
+
 stages:
   - template: stages/stage_apply-terraform.yml
     parameters:
@@ -96,17 +98,17 @@ stages:
       targetBuild: ${{ parameters.targetBuild }}
       targetLabel: ${{ parameters.targetLabel }}
       targetLabelLower: ${{ parameters.targetLabelLower }}
-      
+
   - template: stages/stage_update-git-hub-tag.yml
     parameters:
       buildAgentName: ${{ parameters.buildAgentName }}
       targetBuild: ${{ parameters.targetBuild }}
       targetLabel: ${{ parameters.targetLabel }}
-      
-  - template: ../stages/stage_run-e2e-tests.yml
-    parameters:
-      buildAgentName: ${{ parameters.buildAgentName }}
-      targetBuild: ${{ parameters.targetBuild }}
-      targetLabel: "${{ parameters.targetLabel }}
-      buildDefinitionId: ${{ parameters.buildDefinitionId }}
-      stageDependsOn: ${{ parameters.stageDependsOn }}
+
+  #- template: ../stages/stage_run-e2e-tests.yml
+  #  parameters:
+  #    buildAgentName: ${{ parameters.buildAgentName }}
+  #    targetBuild: ${{ parameters.targetBuild }}
+  #    targetLabel: "${{ parameters.targetLabel }}
+  #    buildDefinitionId: ${{ parameters.buildDefinitionId }}
+  #    stageDependsOn: ${{ parameters.stageDependsOn }}

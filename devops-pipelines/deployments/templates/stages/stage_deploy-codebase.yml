@@ -16,17 +16,18 @@ parameters:
     type: string
   - name: azureSubscription
     type: string
-  
+
 stages:
   - stage: Deploy_${{ parameters.targetLabel }}
     pool:
       name: ${{ parameters.buildAgentName }}
-    displayName: Deploy
+    displayName: ${{ parameters.targetLabel }} > Deploy
     condition: succeeded()
-    dependsOn: Apply_Application_Terraform
+    dependsOn: Apply_${{ parameters.targetLabel }}
     jobs:
       - job: Deploy_API
         displayName: Deploy API
+        condition: succeeded()
         steps:
           - template: jobs/tasks/task_deploy-api.yml
             parameters:
@@ -37,6 +38,7 @@ stages:
               azureSubscription: ${{ parameters.azureSubscription }}
 
       - job: Deploy_Mock
+        condition: succeeded()
         steps:
           - template: jobs/tasks/task_deploy-mock.yml
             parameters:
@@ -47,13 +49,14 @@ stages:
               statusCheckDelaySeconds: ${{ parameters.statusCheckDelaySeconds }}
               statusCheckTimeoutSeconds: ${{ parameters.statusCheckTimeoutSeconds }}
 
-      - job: Deploy_UI
-        displayName: Deploy UI
-        steps:
-          - template: jobs/tasks/task_deploy-ui.yml
-            parameters:
-              targetBuild: ${{ parameters.targetBuild }}
-              targetLabel: ${{ parameters.targetLabel }}
-              targetName: "SPA Deployment"
-              targetSuffix: ${{ parameters.targetSuffix }}
-              azureSubscription: ${{ parameters.azureSubscription }}
+      #- job: Deploy_UI
+      #  displayName: Deploy UI
+      #  condition: succeeded()
+      #  steps:
+      #    - template: jobs/tasks/task_deploy-ui.yml
+      #      parameters:
+      #        targetBuild: ${{ parameters.targetBuild }}
+      #        targetLabel: ${{ parameters.targetLabel }}
+      #        targetName: "SPA Deployment"
+      #        targetSuffix: ${{ parameters.targetSuffix }}
+      #        azureSubscription: ${{ parameters.azureSubscription }}
