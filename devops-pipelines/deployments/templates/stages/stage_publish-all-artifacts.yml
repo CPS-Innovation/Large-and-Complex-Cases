@@ -86,7 +86,7 @@ stages:
               targetPath: "$(Build.ArtifactStagingDirectory)/CPS.ComplexCases.WireMock"
               artifact: "mock-service-drop"
 
-#      - job: Build_UI_Artifact
+      - job: Build_UI_Artifact
         steps:
           # We want to rely only on the .env.production file, anything in .env is still included
           #  if not overwritten by .env.production.  For safety, just delete .env
