@@ -31,7 +31,7 @@ variables:
 #  name: "LaCC Pre-Prod Build Agents"
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: ubuntu-22.04
 
 stages:
   - template: ../templates/stages/stage_publish-all-artifacts.yml

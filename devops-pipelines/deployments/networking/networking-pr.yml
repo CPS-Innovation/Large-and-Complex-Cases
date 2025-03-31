@@ -19,7 +19,7 @@ variables:
     value: "$(System.DefaultWorkingDirectory)/terraform/networking"
     
 pool:
-  vmImage: ubuntu-latest
+  vmImage: ubuntu-22.04
     
 stages:
   - stage: Validate

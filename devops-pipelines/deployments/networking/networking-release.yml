@@ -19,7 +19,7 @@ variables:
   - group: complex-cases-secure-pre-prod
     
 pool:
-  vmImage: ubuntu-latest
+  vmImage: ubuntu-22.04
 
 stages:
   - stage: Apply_PREPROD
