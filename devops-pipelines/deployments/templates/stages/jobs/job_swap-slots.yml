@@ -19,7 +19,7 @@ jobs:
       matrix:
         API:
           Name: "API"
-          AppServiceName: "LaCC${{ parameters.targetSuffix }}-api"
+          AppServiceName: "lacc{{ parameters.targetSuffix }}-api"
     displayName: Swap
     steps:
       - checkout: none
@@ -40,7 +40,7 @@ jobs:
   #    matrix:
   #      SPA:
   #        Name: "UI"
-  #        AppServiceName: "LaCC${{ parameters.targetSuffix }}-ui"
+  #        AppServiceName: "lacc{{ parameters.targetSuffix }}-ui"
   #  displayName: Swap
   #  steps:
   #    - checkout: none
