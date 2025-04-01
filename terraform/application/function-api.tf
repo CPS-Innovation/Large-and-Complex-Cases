@@ -18,7 +18,7 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
     "FUNCTIONS_EXTENSION_VERSION" = "~4"
     "FUNCTIONS_WORKER_RUNTIME"    = "dotnet-isolated"
     "ApiTaskHub"                  = "lacc${var.environment.alias != "prod" ? var.environment.alias : ""}api"
-    #"MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"        = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.kvs_complex_cases_api_client_secret.id})"
+    "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"        = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.kvs_complex_cases_api_client_secret.id})"
     "WEBSITE_ADD_SITENAME_BINDINGS_IN_APPHOST_CONFIG" = "1"
     "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING"        = azurerm_storage_account.sacpsccapi.primary_connection_string
     "WEBSITE_CONTENTOVERVNET"                         = "1"
@@ -216,14 +216,14 @@ resource "time_rotating" "schedule_api" {
   rotation_days = 90
 }
 
-# resource "azurerm_key_vault_secret" "kvs_complex_cases_api_client_secret" {
-#   #checkov:skip=CKV_AZURE_41:Ensure that the expiration date is set on all secrets
-#   #checkov:skip=CKV_AZURE_114:Ensure that key vault secrets have "content_type" set
-#   name         = "api-client-secret${local.resource_prefix}"
-#   value        = azuread_application_password.pwd_complex_cases_api.value
-#   key_vault_id = azurerm_key_vault.kv_complex_cases.id
-#   depends_on = [
-#     azurerm_role_assignment.kv_role_terraform_sp,
-#     azuread_application_password.pwd_complex_cases_api
-#   ]
-# }
+ resource "azurerm_key_vault_secret" "kvs_complex_cases_api_client_secret" {
+   #checkov:skip=CKV_AZURE_41:Ensure that the expiration date is set on all secrets
+   #checkov:skip=CKV_AZURE_114:Ensure that key vault secrets have "content_type" set
+   name         = "api-client-secret${local.resource_prefix}"
+   value        = azuread_application_password.pwd_complex_cases_api.value
+   key_vault_id = azurerm_key_vault.kv_complex_cases.id
+   depends_on = [
+     azurerm_role_assignment.kv_role_terraform_sp,
+     azuread_application_password.pwd_complex_cases_api
+   ]
+ }

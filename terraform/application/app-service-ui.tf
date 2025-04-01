@@ -15,7 +15,7 @@ resource "azurerm_linux_web_app" "complex_cases_ui" {
 
   app_settings = {
     "APPINSIGHTS_INSTRUMENTATIONKEY" = data.azurerm_application_insights.complex_cases_ai.instrumentation_key
-    #"MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"        = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.kvs_complex_cases_ui_client_secret.id})"
+    "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"        = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.kvs_complex_cases_ui_client_secret.id})"
     "WEBSITE_ADD_SITENAME_BINDINGS_IN_APPHOST_CONFIG" = "1"
     "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING"        = azurerm_storage_account.sacpsccui.primary_connection_string
     "WEBSITE_CONTENTOVERVNET"                         = "1"
@@ -225,17 +225,17 @@ resource "azuread_application_password" "pwd_e2e_test_secret" {
   }
 }
 
-# resource "azurerm_key_vault_secret" "kvs_complex_cases_ui_client_secret" {
-#   #checkov:skip=CKV_AZURE_41:Ensure that the expiration date is set on all secrets
-#   #checkov:skip=CKV_AZURE_114:Ensure that key vault secrets have "content_type" set
-#   name         = "ui-client-secret${local.resource_prefix}"
-#   value        = azuread_application_password.pwd_complex_cases_ui.value
-#   key_vault_id = azurerm_key_vault.kv_complex_cases.id
-#   depends_on = [
-#     azurerm_role_assignment.kv_role_terraform_sp,
-#     azuread_application_password.pwd_complex_cases_ui
-#   ]
-# }
+ resource "azurerm_key_vault_secret" "kvs_complex_cases_ui_client_secret" {
+   #checkov:skip=CKV_AZURE_41:Ensure that the expiration date is set on all secrets
+   #checkov:skip=CKV_AZURE_114:Ensure that key vault secrets have "content_type" set
+   name         = "ui-client-secret${local.resource_prefix}"
+   value        = azuread_application_password.pwd_complex_cases_ui.value
+   key_vault_id = azurerm_key_vault.kv_complex_cases.id
+   depends_on = [
+     azurerm_role_assignment.kv_role_terraform_sp,
+     azuread_application_password.pwd_complex_cases_ui
+   ]
+ }
 
 resource "azurerm_private_endpoint" "complex_cases_ui_pe" {
   name                = "${azurerm_linux_web_app.complex_cases_ui.name}-pe"
