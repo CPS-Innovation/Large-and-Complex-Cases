@@ -1,4 +1,6 @@
 using CPS.ComplexCases.DDEI.WireMock.Mappings;
+using CPS.ComplexCases.Egress.WireMock.Mappings;
+using CPS.ComplexCases.NetApp.WireMock.Mappings;
 using CPS.ComplexCases.WireMock.Core;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -29,7 +31,16 @@ namespace CPS.ComplexCases.WireMock
         {
             _logger.LogInformation("Starting WireMock server");
             _server = WireMockServer.Start(_settings);
-            _server.LoadMappings(new DDEIMappings());
+            _server.LoadMappings(
+                new DDEIMappings(),
+                new CaseDocumentMapping(),
+                new CaseMaterialMapping(),
+                new FindWorkspaceMapping(),
+                new WorkspacePermissionsMapping(),
+                new WorkspaceTokenMapping(),
+                new BucketMapping(),
+                new ObjectMapping()
+                );
             return Task.CompletedTask;
         }
 
