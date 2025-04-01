@@ -13,12 +13,13 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
   builtin_logging_enabled       = false
 
   app_settings = {
-    "AzureWebJobsStorage"                             = azurerm_storage_account.sacpsccapi.primary_connection_string
-    "Storage"                                         = azurerm_storage_account.sacpsccapi.primary_connection_string
-    "FUNCTIONS_EXTENSION_VERSION"                     = "~4"
-    "FUNCTIONS_WORKER_RUNTIME"                        = "dotnet-isolated"
-    "HostType"                                        = "Production"
-    "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"        = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.kvs_complex_cases_api_client_secret.id})"
+    "AzureWebJobsStorage"         = azurerm_storage_account.sacpsccapi.primary_connection_string
+    "Storage"                     = azurerm_storage_account.sacpsccapi.primary_connection_string
+    "FUNCTIONS_EXTENSION_VERSION" = "~4"
+    "FUNCTIONS_WORKER_RUNTIME"    = "dotnet-isolated"
+    "HostType"                    = "Production"
+    "ApiTaskHub"                              = "lacc${var.environment.alias != "prod" ? var.environment.alias : ""}api"
+    #"MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"        = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.kvs_complex_cases_api_client_secret.id})"
     "WEBSITE_ADD_SITENAME_BINDINGS_IN_APPHOST_CONFIG" = "1"
     "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING"        = azurerm_storage_account.sacpsccapi.primary_connection_string
     "WEBSITE_CONTENTOVERVNET"                         = "1"
@@ -37,7 +38,7 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
   }
 
   sticky_settings {
-    app_setting_names = ["HostType"]
+    app_setting_names = ["HostType", "ApiTaskHub"]
   }
 
   site_config {
@@ -145,11 +146,6 @@ resource "azuread_application" "complex_cases_api" {
     }
 
     resource_access {
-      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["FileStorageContainer.Manage"]
-      type = "Scope"
-    }
-
-    resource_access {
       id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["FileStorageContainer.Selected"]
       type = "Scope"
     }
@@ -190,15 +186,6 @@ resource "azuread_application" "complex_cases_api" {
     }
   }
 
-  required_resource_access {
-    resource_app_id = data.azuread_application_published_app_ids.well_known.result["Office365SharePointOnline"]
-
-    resource_access {
-      id   = azuread_service_principal.msgraph.oauth2_permission_scope_ids["Container.Manager"]
-      type = "Scope"
-    }
-  }
-
   web {
     redirect_uris = ["https://${local.product_prefix}-ui.azurewebsites.net/.auth/login/aad/callback"]
 
@@ -213,7 +200,7 @@ resource "azurerm_private_endpoint" "complex_cases_api_pe" {
   name                = "${azurerm_linux_function_app.complex_cases_api.name}-pe"
   resource_group_name = azurerm_resource_group.rg_complex_cases.name
   location            = azurerm_resource_group.rg_complex_cases.location
-  subnet_id           = azurerm_subnet.sn_complex_cases_api_subnet.id
+  subnet_id           = azurerm_subnet.sn_complex_cases_endpoints_subnet.id
   tags                = local.common_tags
 
   private_dns_zone_group {
@@ -240,14 +227,14 @@ resource "time_rotating" "schedule_api" {
   rotation_days = 90
 }
 
-resource "azurerm_key_vault_secret" "kvs_complex_cases_api_client_secret" {
-  #checkov:skip=CKV_AZURE_41:Ensure that the expiration date is set on all secrets
-  #checkov:skip=CKV_AZURE_114:Ensure that key vault secrets have "content_type" set
-  name         = "api-client-secret${local.resource_prefix}"
-  value        = azuread_application_password.pwd_complex_cases_api.value
-  key_vault_id = azurerm_key_vault.kv_complex_cases.id
-  depends_on = [
-    azurerm_role_assignment.kv_role_terraform_sp,
-    azuread_application_password.pwd_complex_cases_api
-  ]
-}
+# resource "azurerm_key_vault_secret" "kvs_complex_cases_api_client_secret" {
+#   #checkov:skip=CKV_AZURE_41:Ensure that the expiration date is set on all secrets
+#   #checkov:skip=CKV_AZURE_114:Ensure that key vault secrets have "content_type" set
+#   name         = "api-client-secret${local.resource_prefix}"
+#   value        = azuread_application_password.pwd_complex_cases_api.value
+#   key_vault_id = azurerm_key_vault.kv_complex_cases.id
+#   depends_on = [
+#     azurerm_role_assignment.kv_role_terraform_sp,
+#     azuread_application_password.pwd_complex_cases_api
+#   ]
+# }

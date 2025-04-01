@@ -44,7 +44,7 @@ steps:
       tenantId: $(tenantId)
       subscriptionId: $(subscriptionId)
       mockAppName: "lacc${{ parameters.targetSuffix }}-mock"
-      resourceGroup: "rg-LaCC{{ parameters.targetSuffix }}-application"
+      resourceGroup: "rg-LaCC${{ parameters.targetSuffix }}-application"
   
   # ======= deploy original version of the app
   # delete mock service mappings

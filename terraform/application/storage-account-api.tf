@@ -67,6 +67,8 @@ resource "azurerm_storage_account_queue_properties" "sacpsccapi_queue_properties
     version               = "1.0"
     retention_policy_days = 7
   }
+  
+  depends_on = [azurerm_storage_account.sacpsccapi]
 }
 
 resource "azurerm_private_endpoint" "sacpsccapi_blob_pe" {
