@@ -14,8 +14,9 @@ resource "azurerm_linux_function_app_slot" "complex_cases_api_staging" {
     "AzureWebJobsStorage"         = azurerm_storage_account.sacpsccapi.primary_connection_string
     "FUNCTIONS_EXTENSION_VERSION" = "~4"
     "FUNCTIONS_WORKER_RUNTIME"    = "dotnet-isolated"
-    "HostType"                    = "Production"
+    "HostType"                    = "Staging"
     #"MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"        = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.kvs_complex_cases_api_client_secret.id})"
+    "ApiTaskHub"                              = "lacc${var.environment.alias != "prod" ? var.environment.alias : ""}apistaging"
     "WEBSITE_ADD_SITENAME_BINDINGS_IN_APPHOST_CONFIG" = "1"
     "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING"        = azurerm_storage_account.sacpsccapi.primary_connection_string
     "WEBSITE_CONTENTOVERVNET"                         = "1"
@@ -33,7 +34,7 @@ resource "azurerm_linux_function_app_slot" "complex_cases_api_staging" {
     "WEBSITES_ENABLE_APP_SERVICE_STORAGE"             = "true"
     "WEBSITE_USE_PLACEHOLDER_DOTNETISOLATED"          = "1"
   }
-
+  
   site_config {
     ftps_state                             = "FtpsOnly"
     http2_enabled                          = true

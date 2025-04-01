@@ -18,6 +18,7 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
     "FUNCTIONS_EXTENSION_VERSION" = "~4"
     "FUNCTIONS_WORKER_RUNTIME"    = "dotnet-isolated"
     "HostType"                    = "Production"
+    "ApiTaskHub"                              = "lacc${var.environment.alias != "prod" ? var.environment.alias : ""}api"
     #"MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"        = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.kvs_complex_cases_api_client_secret.id})"
     "WEBSITE_ADD_SITENAME_BINDINGS_IN_APPHOST_CONFIG" = "1"
     "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING"        = azurerm_storage_account.sacpsccapi.primary_connection_string
@@ -37,7 +38,7 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
   }
 
   sticky_settings {
-    app_setting_names = ["HostType"]
+    app_setting_names = ["HostType", "ApiTaskHub"]
   }
 
   site_config {
