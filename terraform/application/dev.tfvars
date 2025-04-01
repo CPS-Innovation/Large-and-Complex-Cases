@@ -13,7 +13,7 @@ service_plans = {
   ui_service_plan_sku   = "P1v3"
   ui_worker_count       = 3
   api_service_plan_sku  = "P1v3"
-  api_worker_count      = 3
+  api_worker_count      = 1
   mock_service_plan_sku = "P0v3"
   mock_worker_count     = 3
 }
@@ -27,7 +27,7 @@ service_capacity = {
   api_max_capacity      = 1
   mock_default_capacity = 1
   mock_minimum_capacity = 1
-  mock_max_capacity     = 2
+  mock_max_capacity     = 3
 }
 
 subnets = {

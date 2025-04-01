@@ -27,7 +27,7 @@ service_capacity = {
   api_max_capacity      = 1
   mock_default_capacity = 1
   mock_minimum_capacity = 1
-  mock_max_capacity     = 2
+  mock_max_capacity     = 3
 }
 
 subnets = {

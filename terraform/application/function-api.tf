@@ -17,7 +17,6 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
     "Storage"                     = azurerm_storage_account.sacpsccapi.primary_connection_string
     "FUNCTIONS_EXTENSION_VERSION" = "~4"
     "FUNCTIONS_WORKER_RUNTIME"    = "dotnet-isolated"
-    "HostType"                    = "Production"
     "ApiTaskHub"                              = "lacc${var.environment.alias != "prod" ? var.environment.alias : ""}api"
     #"MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"        = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.kvs_complex_cases_api_client_secret.id})"
     "WEBSITE_ADD_SITENAME_BINDINGS_IN_APPHOST_CONFIG" = "1"
@@ -27,18 +26,8 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
     "WEBSITE_DNS_ALT_SERVER"                          = var.dns_alt_server
     "WEBSITE_DNS_SERVER"                              = var.dns_server
     "WEBSITE_ENABLE_SYNC_UPDATE_SITE"                 = "1"
-    "WEBSITE_OVERRIDE_STICKY_DIAGNOSTICS_SETTINGS"    = "0"
-    "WEBSITE_OVERRIDE_STICKY_EXTENSION_VERSIONS"      = "0"
     "WEBSITE_RUN_FROM_PACKAGE"                        = "1"
-    "WEBSITE_SLOT_MAX_NUMBER_OF_TIMEOUTS"             = "10"
-    "WEBSITE_SWAP_WARMUP_PING_PATH"                   = "/api/status"
-    "WEBSITE_SWAP_WARMUP_PING_STATUSES"               = "200,202"
-    "WEBSITE_WARMUP_PATH"                             = "/api/status"
     "WEBSITES_ENABLE_APP_SERVICE_STORAGE"             = "true"
-  }
-
-  sticky_settings {
-    app_setting_names = ["HostType", "ApiTaskHub"]
   }
 
   site_config {

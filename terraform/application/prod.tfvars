@@ -21,13 +21,13 @@ service_plans = {
 service_capacity = {
   ui_default_capacity   = 1
   ui_minimum_capacity   = 1
-  ui_max_capacity       = 10
+  ui_max_capacity       = 3
   api_default_capacity  = 1
   api_minimum_capacity  = 1
   api_max_capacity      = 1
   mock_default_capacity = 1
   mock_minimum_capacity = 1
-  mock_max_capacity     = 2
+  mock_max_capacity     = 3
 }
 
 subnets = {
