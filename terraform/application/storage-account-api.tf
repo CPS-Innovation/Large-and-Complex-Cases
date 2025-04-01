@@ -15,7 +15,7 @@ resource "azurerm_storage_account" "sacpsccapi" {
   account_replication_type        = "RAGRS"
   account_tier                    = "Standard"
   min_tls_version                 = "TLS1_2"
-  public_network_access_enabled   = false
+  public_network_access_enabled   = true
   allow_nested_items_to_be_public = false
   shared_access_key_enabled       = true
 
@@ -23,7 +23,10 @@ resource "azurerm_storage_account" "sacpsccapi" {
     default_action = "Deny"
     bypass         = ["Metrics", "Logging", "AzureServices"]
     virtual_network_subnet_ids = [
-      azurerm_subnet.sn_complex_cases_api_subnet.id
+      azurerm_subnet.sn_complex_cases_api_subnet.id,
+      azurerm_subnet.sn_complex_cases_mock_subnet.id,
+      azurerm_subnet.sn_complex_cases_endpoints_subnet.id,
+      data.azurerm_subnet.build_agent_subnet.id
     ]
   }
 

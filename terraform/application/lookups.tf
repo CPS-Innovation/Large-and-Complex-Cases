@@ -35,11 +35,6 @@ data "azurerm_route_table" "complex_cases_rt" {
   name                = "RT-${local.group_product_name}"
   resource_group_name = data.azurerm_resource_group.networking_resource_group.name
 }
-
-data "azurerm_network_security_group" "complex_cases_nsg" {
-  name                = var.nsg_name
-  resource_group_name = data.azurerm_resource_group.build_agent_resource_group.name
-}
 #end: vNET lookup
 
 # begin: build agent subnet lookup

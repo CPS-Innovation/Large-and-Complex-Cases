@@ -7,7 +7,6 @@ terraform_service_principal_display_name = "Azure Pipeline: LaCC-PreProd"
 dns_server                               = "10.7.184.196"
 dns_alt_server                           = "168.63.129.16"
 subscription_id                          = "7f67e716-03c5-4675-bad2-cc5e28652759"
-nsg_name                                 = "basicNsgVNET-LaCC-WANNET-nic01"
 
 service_plans = {
   ui_service_plan_sku   = "P1v3"
