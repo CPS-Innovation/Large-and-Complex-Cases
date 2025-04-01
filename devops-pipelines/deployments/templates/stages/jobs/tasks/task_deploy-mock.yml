@@ -27,6 +27,8 @@ steps:
   - template: task_get-credentials.yml
     parameters:
       azureSubscription: ${{ parameters.azureSubscription }}
+      
+  - template: dependencies/task_install-powershell.yml
   
   # get uri of the mock and a status value indicating first-time deployment
   - bash: |
