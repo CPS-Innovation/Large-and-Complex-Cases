@@ -32,4 +32,4 @@ steps:
       package: $(Pipeline.Workspace)/${{ parameters.targetBuild }}/complex-cases-api-drop
       runtimeStack: "DOTNET-ISOLATED|8.0"
       resourceGroupName: "rg-LaCC${{ parameters.targetSuffix }}-application"
-      deploymentMethod: "auto"
+      deploymentMethod: "runFromPackage"
