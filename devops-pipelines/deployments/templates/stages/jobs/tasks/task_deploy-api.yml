@@ -30,6 +30,4 @@ steps:
       appType: functionAppLinux
       appName: "LaCC${{ parameters.targetSuffix }}-api"
       package: $(Pipeline.Workspace)/${{ parameters.targetBuild }}/complex-cases-api-drop
-      deployToSlotOrASE: true
       resourceGroupName: "rg-LaCC${{ parameters.targetSuffix }}-application"
-      slotName: "staging"
