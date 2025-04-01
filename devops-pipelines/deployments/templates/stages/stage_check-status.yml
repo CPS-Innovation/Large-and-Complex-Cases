@@ -24,7 +24,7 @@ stages:
     pool:
       name: ${{ parameters.buildAgentName }}
     displayName: ${{ parameters.targetLabel }} > Status Checks
-    dependsOn: Swap_${{ parameters.targetLabel }}
+    dependsOn: Deploy_${{ parameters.targetLabel }}
     condition: succeeded()
     jobs:
       - job: Get_Status_URIs
