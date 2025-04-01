@@ -4,6 +4,8 @@ import {
   caseAreasPlaywright,
   casesSearchResultsDev,
   casesSearchResultsPlaywright,
+  egressSearchResultsDev,
+  egressSearchResultsPlaywright,
 } from "./data";
 
 export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
@@ -22,6 +24,15 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
         : casesSearchResultsPlaywright;
       await delay(RESPONSE_DELAY);
       return HttpResponse.json(caseSearchResults);
+      // return new HttpResponse(null, { status: 500 });
+    }),
+
+    http.get(`${baseUrl}/api/egress/workspace-name`, async () => {
+      const egressSearchResults = isDevMock()
+        ? egressSearchResultsDev
+        : egressSearchResultsPlaywright;
+      await delay(RESPONSE_DELAY);
+      return HttpResponse.json(egressSearchResults);
       // return new HttpResponse(null, { status: 500 });
     }),
   ];

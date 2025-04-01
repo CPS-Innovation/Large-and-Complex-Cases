@@ -1,0 +1,22 @@
+.results {
+  margin-top: 2.5rem;
+  .statusTag {
+    text-transform: capitalize;
+    font-weight: normal;
+  }
+  & :global(.govuk-button--secondary) {
+    margin-bottom: 0;
+    font-size: 1rem;
+  }
+  & :global(.govuk-table__cell) {
+    vertical-align: middle;
+  }
+}
+
+.noResultsContent {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  & :global(.govuk-list) {
+    margin-top: 1rem;
+  }
+}

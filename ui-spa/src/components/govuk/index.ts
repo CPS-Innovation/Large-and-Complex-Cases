@@ -7,3 +7,4 @@ export { Radios } from "./Radios";
 export { Select } from "./Select";
 export { Table } from "./Table";
 export { Tag } from "./Tag";
+export { InsetText } from "./InsetText";

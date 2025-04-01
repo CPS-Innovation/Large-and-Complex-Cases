@@ -21,14 +21,15 @@ const SearchResults: React.FC<SearchResultsProps> = ({
   const getTableRowData = () => {
     if (searchApiResults.status !== "succeeded") return [];
     return searchApiResults.data.map((data) => {
+      const operationName = data.operationName
+        ? data.operationName
+        : data.leadDefendantName;
       return {
         cells: [
           {
             children: (
               <Link to="/" className={styles.link}>
-                {data.operationName
-                  ? data.operationName
-                  : data.leadDefendantName}
+                {operationName}
               </Link>
             ),
           },
@@ -67,7 +68,10 @@ const SearchResults: React.FC<SearchResultsProps> = ({
           },
           {
             children: (
-              <Link to="/" className={styles.link}>
+              <Link
+                to={`/egress-connect?workspace-name=${operationName}`}
+                className={styles.link}
+              >
                 View{" "}
               </Link>
             ),

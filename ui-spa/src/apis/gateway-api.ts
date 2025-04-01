@@ -59,3 +59,27 @@ export const getCaseDivisionsOrAreas = async () => {
     throw error;
   }
 };
+
+export const getEgressSearchResults = async (searchParams: string) => {
+  try {
+    const url = `${GATEWAY_BASE_URL}/api/egress/workspace-name?${searchParams}`;
+
+    const response = await fetch(url, {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        ...(await buildCommonHeaders()),
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `egress search api failed with status: ${response.status}, method:GET`,
+      );
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error:", error);
+    throw error;
+  }
+};
