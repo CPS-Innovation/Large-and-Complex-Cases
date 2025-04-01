@@ -30,41 +30,6 @@ steps:
       
   - template: dependencies/task_install-powershell.yml
   
-  # get uri of the mock and a status value indicating first-time deployment
-  - bash: |
-      az login --service-principal -u $clientId -p $clientSecret --tenant $tenantId
-      az account set --subscription $subscriptionId
-      mockLocation=https://$(az webapp config hostname list --webapp-name $mockAppName --resource-group $resourceGroup --query "[0].name" -o tsv)
-      firstTimeDeployment=$(az webapp config appsettings list --name $mockAppName --resource-group $resourceGroup --query "[?name=='FirstTimeDeployment'].value" -o tsv)
-      
-      echo "##vso[task.setvariable variable=mockUri;]$mockLocation"
-      echo "##vso[task.setvariable variable=firstTimeDeployment;]$firstTimeDeployment"
-    displayName: Get URI of Mock
-    env:
-      clientId: $(clientId)
-      clientSecret: $(clientSecret)
-      tenantId: $(tenantId)
-      subscriptionId: $(subscriptionId)
-      mockAppName: "lacc${{ parameters.targetSuffix }}-mock"
-      resourceGroup: "rg-LaCC${{ parameters.targetSuffix }}-application"
-  
-  # ======= deploy original version of the app
-  # delete mock service mappings
-  - task: PowerShell@2
-    condition: and(succeeded(), eq(variables['firstTimeDeployment'], '0'))
-    displayName: "Deleting Mock Service Mappings"
-    inputs:
-      failOnStderr: true
-      targetType: "filePath"
-      filePath: $(Pipeline.Workspace)/${{ parameters.targetBuild }}/complex-cases-script-files/InvokeRequestWithRetryNonNumeric.ps1
-      arguments: > # Use this to avoid newline characters in multi-line string
-        -URI "$(mockUri)/__admin/mappings"
-        -Method "DELETE"
-        -SuccessTextContent "Mappings deleted"
-        -Retries ${{ parameters.statusCheckRetries }}
-        -SecondsDelay ${{ parameters.statusCheckDelaySeconds }}
-        -TimeoutSec ${{ parameters.statusCheckTimeoutSeconds }}
-  
   # Deploy Mock Service Codebase to Env
   - task: AzureRmWebAppDeployment@4
     displayName: "Deploy Mock App Service"
@@ -75,26 +40,3 @@ steps:
       packageForLinux: $(Pipeline.Workspace)/${{ parameters.targetBuild }}/mock-service-drop
       enableCustomDeployment: true
       RemoveAdditionalFilesFlag: true
-      
-  # get uri of the mock and update the 'FirstTimeDeployment' app setting allowing the mappings to be deleted on subsequent deployments
-  - bash: |
-      az login --service-principal -u $clientId -p $clientSecret --tenant $tenantId
-      az account set --subscription $subscriptionId
-      az webapp config appsettings set --name $mockAppName --resource-group $resourceGroup --settings FirstTimeDeployment=0
-    displayName: Update FirstTimeDeployment Value
-    condition: and(succeeded(), eq(variables['firstTimeDeployment'], '1'))
-    env:
-      clientId: $(clientId)
-      clientSecret: $(clientSecret)
-      tenantId: $(tenantId)
-      subscriptionId: $(subscriptionId)
-      mockAppName: "lacc${{ parameters.targetSuffix }}-mock"
-      resourceGroup: "rg-LaCC${{ parameters.targetSuffix }}-application"
-  
-  # Restart app service    
-  - task: AzureAppServiceManage@0
-    displayName: "Restart Mock Service Azure Service"
-    inputs:
-      azureSubscription: ${{ parameters.azureSubscription }}
-      Action: "Restart Azure App Service"
-      WebAppName: "lacc${{ parameters.targetSuffix }}-mock"
