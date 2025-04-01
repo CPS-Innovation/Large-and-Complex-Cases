@@ -27,6 +27,30 @@ resource "azurerm_storage_account" "sacpsccapi" {
     ]
   }
 
+  queue_properties {
+    logging {
+      delete                = true
+      read                  = true
+      write                 = true
+      version               = "1.0"
+      retention_policy_days = 10
+    }
+
+    hour_metrics {
+      enabled               = true
+      include_apis          = true
+      version               = "1.0"
+      retention_policy_days = 10
+    }
+
+    minute_metrics {
+      enabled               = true
+      include_apis          = true
+      version               = "1.0"
+      retention_policy_days = 10
+    }
+  }
+
   sas_policy {
     expiration_period = "0.0:05:00"
   }
@@ -44,31 +68,6 @@ resource "azurerm_storage_account" "sacpsccapi" {
   tags = local.common_tags
 
   depends_on = [azurerm_subnet.sn_complex_cases_storage_subnet]
-}
-
-resource "azurerm_storage_account_queue_properties" "sacpsccapi_queue_properties" {
-  storage_account_id = azurerm_storage_account.sacpsccapi.id
-  logging {
-    delete                = true
-    read                  = true
-    write                 = true
-    version               = "1.0"
-    retention_policy_days = 7
-  }
-
-  hour_metrics {
-    include_apis          = true
-    version               = "1.0"
-    retention_policy_days = 7
-  }
-
-  minute_metrics {
-    include_apis          = true
-    version               = "1.0"
-    retention_policy_days = 7
-  }
-  
-  depends_on = [azurerm_storage_account.sacpsccapi]
 }
 
 resource "azurerm_private_endpoint" "sacpsccapi_blob_pe" {
