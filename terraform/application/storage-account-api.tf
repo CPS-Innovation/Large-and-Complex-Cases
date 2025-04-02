@@ -134,6 +134,26 @@ resource "azurerm_private_endpoint" "sacpsccapi_file_pe" {
   }
 }
 
+resource "azurerm_private_endpoint" "sacpsccapi_queue_pe" {
+  name                = "sacps${var.environment.alias != "prod" ? var.environment.alias : ""}ccapi-queue-pe"
+  resource_group_name = azurerm_resource_group.rg_complex_cases.name
+  location            = azurerm_resource_group.rg_complex_cases.location
+  subnet_id           = azurerm_subnet.sn_complex_cases_storage_subnet.id
+  tags                = local.common_tags
+
+  private_dns_zone_group {
+    name                 = "polaris-dns-zone-group"
+    private_dns_zone_ids = [data.azurerm_private_dns_zone.dns_zone_queue_storage.id]
+  }
+
+  private_service_connection {
+    name                           = "sacps${var.environment.alias != "prod" ? var.environment.alias : ""}ccapi-queue-psc"
+    private_connection_resource_id = azurerm_storage_account.sacpsccapi.id
+    is_manual_connection           = false
+    subresource_names              = ["queue"]
+  }
+}
+
 resource "azapi_resource" "sacpsccapi_file_share" {
   type      = "Microsoft.Storage/storageAccounts/fileServices/shares@2022-09-01"
   name      = "api-content-share"
