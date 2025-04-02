@@ -88,13 +88,7 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
       app_settings["WEBSITE_DNS_ALT_SERVER"],
       app_settings["WEBSITE_DNS_SERVER"],
       app_settings["WEBSITE_ENABLE_SYNC_UPDATE_SITE"],
-      app_settings["WEBSITE_OVERRIDE_STICKY_DIAGNOSTICS_SETTINGS"],
-      app_settings["WEBSITE_OVERRIDE_STICKY_EXTENSION_VERSIONS"],
       app_settings["WEBSITE_RUN_FROM_PACKAGE"],
-      app_settings["WEBSITE_SLOT_MAX_NUMBER_OF_TIMEOUTS"],
-      app_settings["WEBSITE_SWAP_WARMUP_PING_PATH"],
-      app_settings["WEBSITE_SWAP_WARMUP_PING_STATUSES"],
-      app_settings["WEBSITE_WARMUP_PATH"],
       app_settings["WEBSITES_ENABLE_APP_SERVICE_STORAGE"]
     ]
   }
