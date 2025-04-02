@@ -1,5 +1,6 @@
 using CPS.ComplexCases.API.Middleware;
 using CPS.ComplexCases.API.Validators;
+using CPS.ComplexCases.Data.Extensions;
 using CPS.ComplexCases.DDEI.Extensions;
 using CPS.ComplexCases.DDEI.Tactical.Extensions;
 using CPS.ComplexCases.Egress.Extensions;
@@ -27,16 +28,17 @@ builder.Services.AddSingleton<IAuthorizationValidator, AuthorizationValidator>()
 
 builder.Services.AddSingleton(_ =>
 {
-  // as per https://github.com/dotnet/aspnetcore/issues/43220, there is guidance to only have one instance of ConfigurationManager.
-  return new ConfigurationManager<OpenIdConnectConfiguration>(
-              $"https://login.microsoftonline.com/{builder.Configuration["TenantId"]}/v2.0/.well-known/openid-configuration",
-              new OpenIdConnectConfigurationRetriever(),
-              new HttpDocumentRetriever());
+    // as per https://github.com/dotnet/aspnetcore/issues/43220, there is guidance to only have one instance of ConfigurationManager.
+    return new ConfigurationManager<OpenIdConnectConfiguration>(
+                $"https://login.microsoftonline.com/{builder.Configuration["TenantId"]}/v2.0/.well-known/openid-configuration",
+                new OpenIdConnectConfigurationRetriever(),
+                new HttpDocumentRetriever());
 });
 
 builder.Services.AddDdeiClient(builder.Configuration);
 builder.Services.AddDdeiClientTactical();
 builder.Services.AddEgressClient(builder.Configuration);
 builder.Services.AddNetAppClient(builder.Configuration);
+builder.Services.AddDataClient(builder.Configuration);
 
 builder.Build().Run();
