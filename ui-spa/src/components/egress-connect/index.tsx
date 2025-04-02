@@ -1,6 +1,4 @@
 import { useEffect, useState, useMemo } from "react";
-import { Button, Input, InsetText, ErrorSummary, BackLink } from "../govuk";
-
 import { useApi } from "../../common/hooks/useApi";
 import { RawApiResult } from "../../common/types/ApiResult";
 import { EgressSearchResultData } from "../../common/types/EgressSearchResponse";
@@ -8,7 +6,8 @@ import { getEgressSearchResults } from "../../apis/gateway-api";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import EgressSearchPage from "./EgressSearchPage";
 import EgressConnectConfirmationPage from "./EgressConnectConfirmationPage";
-import styles from "./index.module.scss";
+import EgressConnectFailurePage from "./EgressConnectFailurePage";
+
 const EgressPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -65,6 +64,10 @@ const EgressPage = () => {
           // handleBack={handleBack}
         />
       )}
+
+      {/* <EgressConnectFailurePage
+        backLinkUrl={`/egress-connect?workspace-name=${workspaceName}`}
+      /> */}
     </div>
   );
 };
