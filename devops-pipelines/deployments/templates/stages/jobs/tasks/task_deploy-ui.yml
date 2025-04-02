@@ -30,6 +30,4 @@ steps:
       appType: webAppLinux
       WebAppName: "LaCC${{ parameters.targetSuffix }}-ui"
       packageForLinux: $(Pipeline.Workspace)/${{ parameters.targetBuild }}/ui-spa-drop
-      deployToSlotOrASE: true
       resourceGroupName: "rg-LaCC${{ parameters.targetSuffix }}-application"
-      slotName: "staging"

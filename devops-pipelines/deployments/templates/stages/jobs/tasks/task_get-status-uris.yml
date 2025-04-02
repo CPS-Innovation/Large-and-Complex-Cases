@@ -33,4 +33,4 @@ steps:
       apiAppName: "lacc${{ parameters.targetSuffix }}-api"
       mockAppName: "lacc${{ parameters.targetSuffix }}-mock"
       uiAppName: "lacc${{ parameters.targetSuffix }}-ui"
-      resourceGroup: "rg-LaCC{{ parameters.targetSuffix }}-application"
+      resourceGroup: "rg-LaCC${{ parameters.targetSuffix }}-application"

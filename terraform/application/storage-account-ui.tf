@@ -15,7 +15,7 @@ resource "azurerm_storage_account" "sacpsccui" {
   account_replication_type        = "RAGRS"
   account_tier                    = "Standard"
   min_tls_version                 = "TLS1_2"
-  public_network_access_enabled   = false
+  public_network_access_enabled   = true
   allow_nested_items_to_be_public = false
   shared_access_key_enabled       = true
 
@@ -24,7 +24,8 @@ resource "azurerm_storage_account" "sacpsccui" {
     bypass         = ["Metrics", "Logging", "AzureServices"]
     virtual_network_subnet_ids = [
       azurerm_subnet.sn_complex_cases_ui_subnet.id,
-      azurerm_subnet.sn_complex_cases_mock_subnet.id
+      azurerm_subnet.sn_complex_cases_endpoints_subnet.id,
+      data.azurerm_subnet.build_agent_subnet.id
     ]
   }
 
@@ -135,14 +136,6 @@ resource "azurerm_private_endpoint" "sacpsccui_file_pe" {
 resource "azapi_resource" "sacpsccui_file_share" {
   type      = "Microsoft.Storage/storageAccounts/fileServices/shares@2022-09-01"
   name      = "ui-content-share"
-  parent_id = "${data.azurerm_subscription.current.id}/resourceGroups/${azurerm_resource_group.rg_complex_cases.name}/providers/Microsoft.Storage/storageAccounts/${azurerm_storage_account.sacpsccui.name}/fileServices/default"
-
-  depends_on = [azurerm_storage_account.sacpsccui]
-}
-
-resource "azapi_resource" "sacpsccui_staging_file_share" {
-  type      = "Microsoft.Storage/storageAccounts/fileServices/shares@2022-09-01"
-  name      = "ui-content-share-1"
   parent_id = "${data.azurerm_subscription.current.id}/resourceGroups/${azurerm_resource_group.rg_complex_cases.name}/providers/Microsoft.Storage/storageAccounts/${azurerm_storage_account.sacpsccui.name}/fileServices/default"
 
   depends_on = [azurerm_storage_account.sacpsccui]
