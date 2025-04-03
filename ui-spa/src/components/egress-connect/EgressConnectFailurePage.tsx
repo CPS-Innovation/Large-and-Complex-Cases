@@ -9,7 +9,7 @@ const EgressConnectFailurePage: React.FC<EgressConnectFailurePageProps> = ({
 }) => {
   return (
     <div>
-      <BackLink href={backLinkUrl}>Back</BackLink>
+      <BackLink to={backLinkUrl}>Back</BackLink>
 
       <div className={styles.contentWrapper}>
         <h1 className="govuk-heading-xl">

@@ -35,6 +35,11 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       return HttpResponse.json(egressSearchResults);
       // return new HttpResponse(null, { status: 500 });
     }),
+
+    http.post(`${baseUrl}/api/egress/connections`, async () => {
+      // return HttpResponse.json({});
+      return new HttpResponse(null, { status: 500 });
+    }),
   ];
 };
 

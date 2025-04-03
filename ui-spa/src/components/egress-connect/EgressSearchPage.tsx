@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button, Input, InsetText, ErrorSummary, BackLink } from "../govuk";
+// import { BackLink as NewBackLink } from "../common/BackLink";
 import EgressSearchResults from "./EgressSearchResults";
 import { RawApiResult } from "../../common/types/ApiResult";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -37,7 +38,8 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
   };
   return (
     <div className="govuk-width-container">
-      <BackLink href="/">Back</BackLink>
+      <BackLink to="/">Back</BackLink>
+
       <div>
         <h1>Select an Egress folder to link to the case</h1>
         <InsetText>
