@@ -1,4 +1,5 @@
 using CPS.ComplexCases.Data.Repositories;
+using CPS.ComplexCases.Data.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,5 +14,6 @@ public static class IServiceCollectionExtension
         options.UseNpgsql(configuration.GetConnectionString("CaseManagementDatastoreConnection")));
 
     services.AddScoped<ICaseMetadataRepository, CaseMetadataRepository>();
+    services.AddScoped<ICaseMetadataService, CaseMetadataService>();
   }
 }

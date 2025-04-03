@@ -21,8 +21,8 @@ public static class CaseMetadataConfiguration
       entity.HasKey(x => x.CaseId);
 
       entity.Property(x => x.CaseId).HasColumnName("case_id").IsRequired();
-      entity.Property(x => x.EgressWorkspaceId).HasColumnName("egress_workspace_id").IsRequired().HasMaxLength(200);
-      entity.Property(x => x.NetappFolderPath).HasColumnName("netapp_folder_path").IsRequired().HasMaxLength(260);
+      entity.Property(x => x.EgressWorkspaceId).HasColumnName("egress_workspace_id").HasMaxLength(200);
+      entity.Property(x => x.NetappFolderPath).HasColumnName("netapp_folder_path").HasMaxLength(260);
     });
   }
 }

@@ -11,7 +11,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CPS.ComplexCases.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250402082908_CaseMetadataTable")]
+    [Migration("20250403101551_CaseMetadataTable")]
     partial class CaseMetadataTable
     {
         /// <inheritdoc />
@@ -34,13 +34,11 @@ namespace CPS.ComplexCases.Data.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CaseId"));
 
                     b.Property<string>("EgressWorkspaceId")
-                        .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
                         .HasColumnName("egress_workspace_id");
 
                     b.Property<string>("NetappFolderPath")
-                        .IsRequired()
                         .HasMaxLength(260)
                         .HasColumnType("character varying(260)")
                         .HasColumnName("netapp_folder_path");

@@ -31,13 +31,11 @@ namespace CPS.ComplexCases.Data.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CaseId"));
 
                     b.Property<string>("EgressWorkspaceId")
-                        .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
                         .HasColumnName("egress_workspace_id");
 
                     b.Property<string>("NetappFolderPath")
-                        .IsRequired()
                         .HasMaxLength(260)
                         .HasColumnType("character varying(260)")
                         .HasColumnName("netapp_folder_path");

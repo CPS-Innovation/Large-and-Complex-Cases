@@ -6,4 +6,5 @@ public interface IEgressArgFactory
 {
   ListEgressWorkspacesArg CreateListEgressWorkspacesArg(string? name, int skip, int take);
   GetWorkspaceMaterialArg CreateGetWorkspaceMaterialArg(string caseId, int page, int count, string? folderId);
+  GetWorkspacePermissionArg CreateGetWorkspacePermissionArg(string workspaceId, string? email);
 }

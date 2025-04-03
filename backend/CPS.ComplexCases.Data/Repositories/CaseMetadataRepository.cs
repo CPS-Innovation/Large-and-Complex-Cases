@@ -20,7 +20,7 @@ namespace CPS.ComplexCases.Data.Repositories
 
     public async Task<CaseMetadata> AddAsync(CaseMetadata metadata)
     {
-      _dbContext.CaseMetadata.Add(metadata);
+      await _dbContext.CaseMetadata.AddAsync(metadata);
       await _dbContext.SaveChangesAsync();
       return metadata;
     }

@@ -21,8 +21,8 @@ namespace CPS.ComplexCases.Data.Migrations
                 {
                     case_id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    egress_workspace_id = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    netapp_folder_path = table.Column<string>(type: "character varying(260)", maxLength: 260, nullable: false)
+                    egress_workspace_id = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    netapp_folder_path = table.Column<string>(type: "character varying(260)", maxLength: 260, nullable: true)
                 },
                 constraints: table =>
                 {
