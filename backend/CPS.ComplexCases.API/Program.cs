@@ -5,8 +5,10 @@ using CPS.ComplexCases.DDEI.Extensions;
 using CPS.ComplexCases.DDEI.Tactical.Extensions;
 using CPS.ComplexCases.Egress.Extensions;
 using CPS.ComplexCases.NetApp.Extensions;
+using CPS.ComplexCases.OpenApi;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Builder;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Protocols;
@@ -40,5 +42,6 @@ builder.Services.AddDdeiClientTactical();
 builder.Services.AddEgressClient(builder.Configuration);
 builder.Services.AddNetAppClient(builder.Configuration);
 builder.Services.AddDataClient(builder.Configuration);
+builder.Services.AddSingleton<IOpenApiConfigurationOptions, OpenApiConfigurationOptions>();
 
 builder.Build().Run();

@@ -4,7 +4,7 @@ resource "azurerm_service_plan" "asp_complex_cases_api" {
   resource_group_name    = azurerm_resource_group.rg_complex_cases.name
   os_type                = "Linux"
   sku_name               = var.service_plans.ui_service_plan_sku
-  zone_balancing_enabled = true
+  zone_balancing_enabled = false
   worker_count           = var.service_plans.ui_worker_count
 
   tags = local.common_tags

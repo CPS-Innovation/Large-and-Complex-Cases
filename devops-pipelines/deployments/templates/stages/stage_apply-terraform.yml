@@ -20,11 +20,11 @@ parameters:
     type: string
   - name: terraformStateAccessKey
     type: string
-  - name: targetSuffix
-    type: string
   - name: logRetentionTime
     type: string
   - name: totalLogRetentionTime
+    type: string
+  - name: sharedSuffix
     type: string
   - name: stageDependsOn
     type: object
@@ -96,10 +96,10 @@ stages:
                     targetBuild: ${{ parameters.targetBuild }}
                     targetLabel: ${{ parameters.targetLabel }}
                     targetName: "Set Log Analytics Archival Periods"
-                    targetSuffix: ${{ parameters.targetSuffix }}
                     armClientId: $(clientId)
                     armClientSecret: $(clientSecret)
                     armTenantId: $(tenantId)
                     armSubscriptionId: $(subscriptionId)
                     logRetentionTime: ${{ parameters.logRetentionTime }}
                     totalLogRetentionTime: ${{ parameters.totalLogRetentionTime }}
+                    sharedSuffix: ${{ parameters.sharedSuffix }}

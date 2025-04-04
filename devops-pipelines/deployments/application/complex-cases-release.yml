@@ -36,11 +36,12 @@ stages:
       targetSuffix: "-dev"
       logRetentionTime: $(log-retention-time)
       totalLogRetentionTime: $(total-log-retention-time)
+      sharedSuffix: "preprod"
       statusCheckMethod: $(status-check-method)
       statusCheckRetries: $(status-check-retries)
       statusCheckDelaySeconds: $(status-check-delay-seconds)
       statusCheckTimeoutSeconds: $(status-check-timeout-seconds)
-      e2eTestsStageDependsOn: Update_GitHub_Tag_DEV
+      e2eTestsStageDependsOn: Check_Status_DEV
       e2eTestsBuildDefinitionId: 588
 
   #conditional and gates release to QA
@@ -48,7 +49,7 @@ stages:
     parameters:
       buildAgentName: $(build-agent-pre-prod)
       #initialStageDependsOn: Run_e2e_Tests_DEV
-      initialStageDependsOn: Update_GitHub_Tag_DEV
+      initialStageDependsOn: Check_Status_DEV
       targetEnv: "LaCC_QA"
       targetBuild: ComplexCasesBuild
       targetLabel: "QA"
@@ -62,254 +63,10 @@ stages:
       targetSuffix: "-qa"
       logRetentionTime: $(log-retention-time)
       totalLogRetentionTime: $(total-log-retention-time)
+      sharedSuffix: "preprod"
       statusCheckMethod: $(status-check-method)
       statusCheckRetries: $(status-check-retries)
       statusCheckDelaySeconds: $(status-check-delay-seconds)
       statusCheckTimeoutSeconds: $(status-check-timeout-seconds)
-      e2eTestsStageDependsOn: Update_GitHub_Tag_QA
+      e2eTestsStageDependsOn: Check_Status_QA
       e2eTestsBuildDefinitionId: 588
-
-  #conditional and gates release to PROD - not called via template as stage-level derived values are not obtainable during template expansion
-  # DETERMINE CHANGES FOR PROD
-  # - stage: Determine_Changes_PROD
-  #   pool:
-  #     name: $(build-agent-prod)
-  #   displayName: Determine Changes
-  #   dependsOn: Run_e2e_Tests_DEV
-  #   jobs:
-  #     - job: Generate_Diff
-  #       workspace:
-  #         clean: all
-  #       steps:
-  #         - template: ../templates/stages/jobs/tasks/task_determine-changes.yml
-  #           parameters:
-  #             targetLabel: "PROD"
-
-  # PROD: BEGIN DEPLOYMENT, TERRAFORM AND THEN CODEBASE, IF CHANGES FOUND  
-  # - stage: Apply_PROD
-  #   pool:
-  #     name: $(build-agent-prod)
-  #   displayName: Apply Terraform
-  #   condition: succeeded()
-  #   variables:
-  #     applicationTerraformCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.APPLICATION_TERRAFORM_COUNT']]
-  #     networkingTerraformCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.NETWORKING_TERRAFORM_COUNT']]
-  #     apiCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.API_COUNT']]
-  #     mockCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.MOCK_COUNT']]
-  #     uiCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.UI_COUNT']]
-  #     e2eCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.E2E_TESTS_COUNT']]
-  #   dependsOn: Determine_Changes_PROD
-  #   jobs:
-  #     - deployment: Wait_For_Running_Builds
-  #       environment: "LaCC_PROD"
-  #       strategy:
-  #         runOnce:
-  #           deploy:
-  #             steps:
-  #               - template: ../templates/stages/jobs/tasks/task_wait-for-running-releases.yml
-  #                 parameters:
-  #                   devOpsPatToken: $(System.AccessToken)
-        
-  #     - job: Send_Start_Message
-  #       displayName: Send Message to Teams
-  #       condition: succeeded()
-  #       dependsOn: Wait_For_Running_Builds
-  #       continueOnError: false
-  #       steps:
-  #         - template: ../templates/stages/jobs/tasks/task_send-progress-message-to-teams.yml
-  #           parameters:
-  #             webhookUrl: $(complex-cases-webhook-url)
-  #             devOpsPatToken: $(System.AccessToken)
-  #             stageName: "Deploy"
-  #             commitId: $(resources.pipeline.ComplexCasesBuild.sourceCommit)
-  #             buildVersion: $(resources.pipeline.ComplexCasesBuild.runName)
-  #             applicationTerraformCount: $(applicationTerraformCount)
-  #             networkingTerraformCount: $(networkingTerraformCount)
-  #             apiCount: $(apiCount)
-  #             mockCount: $(mockCount)
-  #             uiCount: $(uiCount)
-  #             e2eCount: $(e2eCount)
-  #             messageTitle: "Complex Cases Release to PROD started"
-  #             buildResultsTitle: "View Progress"
-  #             buildResultsUrl: "https://dev.azure.com/CPSDTS/Information%20Management/_build/results?buildId=$(Build.BuildId)&view=artifacts&pathAsName=false&type=publishedArtifacts"
-
-  #     - deployment: Apply_Application_Terraform
-  #       condition: succeeded()
-  #       dependsOn: Wait_For_Running_Builds
-  #       displayName: Apply Application Terraform
-  #       environment: "Complex_Cases_PROD"
-  #       workspace:
-  #         clean: all
-  #       strategy:
-  #         runOnce:
-  #           deploy:
-  #             steps:
-  #               - template: ../templates/stages/jobs/tasks/task_get-credentials.yml
-  #                 parameters:
-  #                   azureSubscription: $(azure-subscription-prod)
-        
-  #               - template: ../templates/stages/jobs/tasks/task_apply-terraform.yml
-  #                 parameters:
-  #                   targetBuild: ComplexCasesBuild
-  #                   targetTerraformArtifact: "application-terraform-files"
-  #                   targetLabel: "PROD"
-  #                   targetName: "Application Terraform CI Deployment"
-  #                   targetPlanName: "prod"
-  #                   terraformStorageAccount: $(terraform-storage-name-prod)
-  #                   terraformContainerName: $(terraform-container-name-application-prod)
-  #                   terraformStateKey: $(terraform-state-file)
-  #                   terraformStateAccessKey: $(terraform-storage-shared-key-prod)
-  #                   armClientId: $(clientId)
-  #                   armClientSecret: $(clientSecret)
-  #                   armTenantId: $(tenantId)
-  #                   armSubscriptionId: $(subscriptionId)
-
-  #     - deployment: Set_Log_Analytics_Archival_Periods
-  #       condition: succeeded()
-  #       dependsOn: Apply_Application_Terraform
-  #       displayName: Update Analytics Archival Periods
-  #       environment: "Complex_Cases_PROD"
-  #       strategy:
-  #         runOnce:
-  #           deploy:
-  #             steps:
-  #               - template: ../templates/stages/jobs/tasks/task_get-credentials.yml
-  #                 parameters:
-  #                   azureSubscription: $(azure-subscription-prod)
-
-  #               - template: ../templates/stages/jobs/tasks/task_set-log-analytics-archival-periods.yml
-  #                 parameters:
-  #                   targetBuild: ComplexCasesBuild
-  #                   targetLabel: "PROD"
-  #                   targetName: "Set Log Analytics Archival Periods"
-  #                   targetSuffix: ""
-  #                   armClientId: $(clientId)
-  #                   armClientSecret: $(clientSecret)
-  #                   armTenantId: $(tenantId)
-  #                   armSubscriptionId: $(subscriptionId)
-  #                   logRetentionTime: $(log-retention-time)
-  #                   totalLogRetentionTime: $(total-log-retention-time)
-        
-  # - template: ../templates/stages/stage_deploy-codebase.yml
-  #   parameters:
-  #     buildAgentName: $(build-agent-prod)
-  #     targetBuild: ComplexCasesBuild
-  #     targetLabel: "PROD"
-  #     targetSuffix: ""
-  #     statusCheckRetries: $(status-check-retries)
-  #     statusCheckDelaySeconds: $(status-check-delay-seconds)
-  #     statusCheckTimeoutSeconds: $(status-check-timeout-seconds)
-  #     azureSubscription: $(azure-subscription-prod)
-
-  # - template: ../templates/stages/stage_swap-slots.yml
-  #   parameters:
-  #     buildAgentName: $(build-agent-prod)
-  #     targetBuild: ComplexCasesBuild
-  #     targetLabel: "PROD"
-  #     targetSuffix: ""
-  #     azureSubscription: $(azure-subscription-prod)
-
-  # - template: ../templates/stages/stage_check-status.yml
-  #   parameters:
-  #     buildAgentName: $(build-agent-prod)
-  #     targetBuild: ComplexCasesBuild
-  #     targetLabel: "PROD"
-  #     targetSuffix: ""
-  #     azureSubscription: $(azure-subscription-prod)
-  #     statusCheckMethod: $(status-check-method)
-  #     statusCheckRetries: $(status-check-retries)
-  #     statusCheckDelaySeconds: $(status-check-delay-seconds)
-  #     statusCheckTimeoutSeconds: $(status-check-timeout-seconds)
-
-  # - template: ../templates/stages/stage_create-commit-report.yml
-  #   parameters:
-  #     buildAgentName: $(build-agent-prod)
-  #     targetBuild: ComplexCasesBuild
-  #     targetLabel: "PROD"
-  #     targetLabelLower: "prod"
-
-  # - template: ../templates/stages/stage_update-git-hub-tag.yml
-  #   parameters:
-  #     buildAgentName: $(build-agent-prod)
-  #     targetBuild: ComplexCasesBuild
-  #     targetLabel: "PROD"
-
-  # - template: ../templates/stages/stage_run-e2e-tests.yml
-  #   parameters:
-  #     buildAgentName: $(build-agent-prod)
-  #     targetBuild: ComplexCasesBuild
-  #     targetLabel: "PROD"
-  #     buildDefinitionId: 590
-  #     stageDependsOn: Update_GitHub_Tag_PROD
-
-  # - stage: Send_Success_Report
-  #   pool:
-  #     name: $(build-agent-prod)
-  #   displayName: Send Success Report
-  #   dependsOn:
-  #     - Determine_Changes_PROD
-  #     - Run_e2e_Tests_PROD
-  #   variables:
-  #     applicationTerraformCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.APPLICATION_TERRAFORM_COUNT']]
-  #     networkingTerraformCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.NETWORKING_TERRAFORM_COUNT']]
-  #     apiCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.API_COUNT']]
-  #     mockCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.MOCK_COUNT']]
-  #     uiCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.UI_COUNT']]
-  #     e2eCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.E2E_TESTS_COUNT']]
-  #   condition: succeeded()
-  #   jobs:
-  #     - job: Send_Success_Report
-  #       displayName: Send Success Report
-  #       steps:
-  #         - template: stages/jobs/tasks/task_send-progress-message-to-teams.yml
-  #           parameters:
-  #             webhookUrl: $(complex-cases-webhook-url)
-  #             devOpsPatToken: $(System.AccessToken)
-  #             stageName: "Deploy"
-  #             commitId: $(resources.pipeline.ComplexCasesBuild.sourceCommit)
-  #             buildVersion: $(resources.pipeline.ComplexCasesBuild.runName)
-  #             applicationTerraformCount: $(applicationTerraformCount)
-  #             networkingTerraformCount: $(networkingTerraformCount)
-  #             apiCount: $(apiCount)
-  #             mockCount: $(mockCount)
-  #             uiCount: $(uiCount)
-  #             e2eCount: $(e2eCount)
-  #             messageTitle: "✔ Complex Cases Release to PROD Completed!"
-  #             buildResultsTitle: "View Release Commits"
-  #             buildResultsUrl: "https://dev.azure.com/CPSDTS/Information%20Management/_build/results?buildId=$(Build.BuildId)&view=artifacts&pathAsName=false&type=publishedArtifacts"
-
-  # - stage: Send_Failure_Report
-  #   pool:
-  #     name: $(build-agent-prod)
-  #   displayName: Send Failure Report
-  #   dependsOn:
-  #     - Determine_Changes_PROD
-  #     - Run_e2e_Tests_PROD
-  #   variables:
-  #     applicationTerraformCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.APPLICATION_TERRAFORM_COUNT']]
-  #     networkingTerraformCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.NETWORKING_TERRAFORM_COUNT']]
-  #     apiCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.API_COUNT']]
-  #     mockCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.MOCK_COUNT']]
-  #     uiCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.UI_COUNT']]
-  #     e2eCount: $[stageDependencies.Determine_Changes_PROD.Generate_Diff.outputs['Change_Results.E2E_TESTS_COUNT']]
-  #   condition: or(failed(), canceled())
-  #   jobs:
-  #     - job: Send_Failure_Report
-  #       displayName: Send Failure Report
-  #       steps:
-  #         - template: stages/jobs/tasks/task_send-progress-message-to-teams.yml
-  #           parameters:
-  #             webhookUrl: $(complex-cases-webhook-url)
-  #             devOpsPatToken: $(System.AccessToken)
-  #             stageName: "Deploy"
-  #             commitId: $(resources.pipeline.ComplexCasesBuild.sourceCommit)
-  #             buildVersion: $(resources.pipeline.ComplexCasesBuild.runName)
-  #             applicationTerraformCount: $(applicationTerraformCount)
-  #             networkingTerraformCount: $(networkingTerraformCount)
-  #             apiCount: $(apiCount)
-  #             mockCount: $(mockCount)
-  #             uiCount: $(uiCount)
-  #             e2eCount: $(e2eCount)
-  #             messageTitle: "❗ Complex Cases Release to PROD failed!"
-  #             buildResultsTitle: "View Failure Details"
-  #             buildResultsUrl: "https://dev.azure.com/CPSDTS/Information%20Management/_build/results?buildId=$(Build.BuildId)&view=results"
