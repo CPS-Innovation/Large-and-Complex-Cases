@@ -22,7 +22,7 @@ public class FindCmsCase(ILogger<FindCmsCase> logger,
   private readonly IDdeiArgFactory _ddeiArgFactory = ddeiArgFactory;
 
   [Function(nameof(FindCmsCase))]
-  [OpenApiOperation(operationId: nameof(FindCmsCase), tags: ["CMS", "Search"], Description = "Finds a case in CMS based on operation name, URN, defendant name, and area.")]
+  [OpenApiOperation(operationId: nameof(FindCmsCase), tags: ["CMS"], Description = "Finds a case in CMS based on operation name, URN, defendant name, and area.")]
   [OpenApiParameter(name: InputParameters.OperationName, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The operation name to search for.")]
   [OpenApiParameter(name: InputParameters.Urn, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The URN to search for.")]
   [OpenApiParameter(name: InputParameters.DefendantName, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The defendant name to search for.")]

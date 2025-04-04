@@ -20,7 +20,7 @@ public class FindNetAppFolder(ILogger<FindNetAppFolder> logger,
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
 
     [Function(nameof(FindNetAppFolder))]
-    [OpenApiOperation(operationId: nameof(FindNetAppFolder), tags: ["NetApp", "Search"], Description = "Finds a case in NetApp based on operation name.")]
+    [OpenApiOperation(operationId: nameof(FindNetAppFolder), tags: ["NetApp"], Description = "Finds a case in NetApp based on operation name.")]
     // TODO: move the operation name to be a query string parameter.
     // [OpenApiParameter(name: QueryStringParameters.OperationName, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The operation name to search for.")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]

@@ -21,7 +21,7 @@ public class ListEgressWorkspaces(ILogger<ListEgressWorkspaces> logger,
   private readonly IEgressArgFactory _egressArgFactory = egressArgFactory;
 
   [Function(nameof(ListEgressWorkspaces))]
-  [OpenApiOperation(operationId: nameof(ListEgressWorkspaces), tags: ["Egress", "Search"], Description = "Lists workspaces in Egress based on name.")]
+  [OpenApiOperation(operationId: nameof(ListEgressWorkspaces), tags: ["Egress"], Description = "Lists workspaces in Egress based on name.")]
   [OpenApiParameter(name: InputParameters.WorkspaceName, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The workspace name to search for.")]
   [OpenApiParameter(name: InputParameters.Skip, In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The number of items to skip.")]
   [OpenApiParameter(name: InputParameters.Take, In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The number of items to take.")]
