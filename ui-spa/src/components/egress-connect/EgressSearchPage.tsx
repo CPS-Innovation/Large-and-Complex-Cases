@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button, Input, InsetText, ErrorSummary, BackLink } from "../govuk";
 import EgressSearchResults from "./EgressSearchResults";
 import { UseApiResult } from "../../common/hooks/useApiNew";
@@ -8,6 +8,7 @@ import styles from "./EgressSearchPage.module.scss";
 
 type EgressSearchPageProps = {
   searchValue: string;
+  formDataErrorText: string;
   egressSearchApi: UseApiResult<EgressSearchResultData>;
   handleFormChange: (value: string) => void;
   handleSearch: () => void;
@@ -15,6 +16,7 @@ type EgressSearchPageProps = {
 };
 const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
   searchValue,
+  formDataErrorText,
   egressSearchApi,
   handleFormChange,
   handleSearch,
@@ -22,19 +24,14 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  //   const handleFormChange = (value: string) => {
-  //     setFormValue(value);
-  //   };
-
-  //   const handleConnectFolder = (id: string) => {
-  //     setSelectedFolder(id);
-  //     // navigate(`/egress-connect?id=${id}`);
-  //   };
+  const errorSummaryRef = useRef<HTMLInputElement>(null);
 
   const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
     handleSearch();
   };
+
   if (egressSearchApi.status === "loading")
     return <div className="govuk-width-container">Loading...</div>;
 
@@ -43,6 +40,28 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
       <BackLink to="/">Back</BackLink>
 
       <div>
+        {!!formDataErrorText && (
+          <div
+            ref={errorSummaryRef}
+            tabIndex={-1}
+            className={styles.errorSummaryWrapper}
+          >
+            <ErrorSummary
+              data-testid={"search-error-summary"}
+              // className={styles.errorSummary}
+              errorList={[
+                {
+                  reactListKey: "1",
+                  children: formDataErrorText,
+                  href: "#search-folder-name",
+                  "data-testid": "search-folder-name-link",
+                },
+              ]}
+              titleChildren="There is a problem"
+            />
+          </div>
+        )}
+
         <h1>Select an Egress folder to link to the case</h1>
         <InsetText>
           <p>Select a folder from the list to link it to this case.</p>
@@ -56,21 +75,19 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
       <form onSubmit={handleFormSubmit}>
         <div className={styles.inputWrapper}>
           <Input
-            id="search-urn"
-            data-testid="search-urn"
+            id="search-folder-name"
+            data-testid="search-folder-name"
             className="govuk-input--width-20"
             label={{
               children: "Egress folder name",
             }}
-            // errorMessage={
-            //   //   formDataErrors[SearchFormField.urn]
-            //   //     ? {
-            //   //         children:
-            //   //           formDataErrors[SearchFormField.urn].inputErrorText ??
-            //   //           formDataErrors[SearchFormField.urn].errorSummaryText,
-            //   //       }
-            //   //     : undefined
-            // }
+            errorMessage={
+              formDataErrorText
+                ? {
+                    children: formDataErrorText,
+                  }
+                : undefined
+            }
             name="Egress folder name"
             type="text"
             value={searchValue}
@@ -84,10 +101,7 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
           </div>
         </div>
       </form>
-      <div className={styles.searchResultsCount}>
-        There are <b>4 folders</b>matching the case <b>Thunderstruck</b> on
-        egress.
-      </div>
+
       <EgressSearchResults
         egressSearchApi={egressSearchApi}
         handleConnectFolder={handleConnectFolder}

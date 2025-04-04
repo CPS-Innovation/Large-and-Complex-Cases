@@ -53,8 +53,16 @@ const EgressSearchResults: React.FC<SearchResultsProps> = ({
     });
   };
 
+  if (egressSearchApi.status !== "succeeded") {
+    return <></>;
+  }
+
   return (
     <div className={styles.results}>
+      <div className={styles.searchResultsCount}>
+        There are <b>4 folders</b>matching the case <b>Thunderstruck</b> on
+        egress.
+      </div>
       {!!egressSearchResultsData.length && (
         <Table
           head={[

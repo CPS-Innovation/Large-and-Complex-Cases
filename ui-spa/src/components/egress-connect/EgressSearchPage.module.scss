@@ -11,10 +11,19 @@
   .btnWrapper {
     min-height: 4.375rem;
   }
-  & :global(.govuk-error-message) {
-    max-width: 25rem;
-  }
+
   & :global(.govuk-form-group):first-of-type {
     width: 25rem;
+  }
+}
+
+.errorSummaryWrapper {
+  margin-top: 1rem;
+  max-width: 30rem;
+  &:focus {
+    outline: 0.2rem solid #ffdd00;
+  }
+  & :global(.govuk-error-message) {
+    max-width: 25rem;
   }
 }
