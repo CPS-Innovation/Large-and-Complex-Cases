@@ -29,6 +29,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.DDEI.WireM
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.Data", "CPS.ComplexCases.Data\CPS.ComplexCases.Data.csproj", "{0840D01B-9FD4-449D-978E-D2D2A20F6B43}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cps.ComplexCases.Data.Tests", "Cps.ComplexCases.Data.Tests\Cps.ComplexCases.Data.Tests.csproj", "{C7C18A33-63E6-4328-A797-A63E1E8AC4AE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -94,5 +96,9 @@ Global
 		{0840D01B-9FD4-449D-978E-D2D2A20F6B43}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0840D01B-9FD4-449D-978E-D2D2A20F6B43}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0840D01B-9FD4-449D-978E-D2D2A20F6B43}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C7C18A33-63E6-4328-A797-A63E1E8AC4AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C7C18A33-63E6-4328-A797-A63E1E8AC4AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C7C18A33-63E6-4328-A797-A63E1E8AC4AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C7C18A33-63E6-4328-A797-A63E1E8AC4AE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
