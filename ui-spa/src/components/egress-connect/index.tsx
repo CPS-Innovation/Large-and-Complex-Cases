@@ -30,9 +30,10 @@ const EgressPage = () => {
   }, [searchParams]);
 
   const [selectedFolderId, setSelectedFolderId] = useState("");
-  const egressSearchApiResults: RawApiResult<EgressSearchResultData> = useApi(
+  const egressSearchApi = useApiNew(
     getEgressSearchResults,
     [`workspace-name=${workspaceName}`],
+    !!workspaceName,
   );
 
   const egressConnectApi = useApiNew(
@@ -100,7 +101,7 @@ const EgressPage = () => {
     <div className="govuk-width-container">
       <EgressSearchPage
         searchValue={formValue}
-        egressSearchApiResults={egressSearchApiResults}
+        egressSearchApi={egressSearchApi}
         handleFormChange={handleFormChange}
         handleSearch={handleSearch}
         handleConnectFolder={handleConnectFolder}

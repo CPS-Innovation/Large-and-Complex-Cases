@@ -1,28 +1,28 @@
-import { useMemo, useState } from "react";
-import { RawApiResult } from "../../common/types/ApiResult";
+import { useMemo } from "react";
+
 import { EgressSearchResultData } from "../../common/types/EgressSearchResponse";
 import { Button, Table, Tag } from "../govuk";
 import { formatDate } from "../../common/utils/formatDate";
+import { UseApiResult } from "../../common/hooks/useApiNew";
 import styles from "./egressSearchResults.module.scss";
 
 type SearchResultsProps = {
-  egressSearchApiResults: RawApiResult<EgressSearchResultData>;
+  egressSearchApi: UseApiResult<EgressSearchResultData>;
   handleConnectFolder: (id: string) => void;
 };
 const EgressSearchResults: React.FC<SearchResultsProps> = ({
-  egressSearchApiResults,
+  egressSearchApi,
   handleConnectFolder,
 }) => {
+  console.log("egressSearchApi>>", egressSearchApi);
   const egressSearchResultsData = useMemo(() => {
-    if (egressSearchApiResults.status !== "succeeded") return [];
-    return egressSearchApiResults.data.data;
-  }, [egressSearchApiResults]);
+    if (!egressSearchApi?.data) return [];
+    return egressSearchApi.data;
+  }, [egressSearchApi]);
   const handleConnect = (id: string) => {
     handleConnectFolder(id);
   };
   const getTableRowData = () => {
-    if (egressSearchApiResults.status !== "succeeded") return [];
-
     return egressSearchResultsData.map((data) => {
       return {
         cells: [

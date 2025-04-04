@@ -8,7 +8,7 @@ interface UseApiState<T> {
   error?: any;
 }
 
-interface UseApiResult<T> extends UseApiState<T> {
+export interface UseApiResult<T> extends UseApiState<T> {
   refetch: () => void;
 }
 

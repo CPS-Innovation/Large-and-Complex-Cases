@@ -1,5 +1,5 @@
-import { EgressSearchResultData } from "../../common/types/EgressSearchResponse";
-export const egressSearchResultsDev: EgressSearchResultData = {
+import { EgressSearchResultResponse } from "../../common/types/EgressSearchResponse";
+export const egressSearchResultsDev: EgressSearchResultResponse = {
   data: [
     {
       id: "1",

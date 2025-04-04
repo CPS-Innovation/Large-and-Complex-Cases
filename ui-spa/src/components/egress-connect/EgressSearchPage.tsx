@@ -1,22 +1,21 @@
 import { useEffect, useState } from "react";
 import { Button, Input, InsetText, ErrorSummary, BackLink } from "../govuk";
-// import { BackLink as NewBackLink } from "../common/BackLink";
 import EgressSearchResults from "./EgressSearchResults";
-import { RawApiResult } from "../../common/types/ApiResult";
+import { UseApiResult } from "../../common/hooks/useApiNew";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { EgressSearchResultData } from "../../common/types/EgressSearchResponse";
 import styles from "./EgressSearchPage.module.scss";
 
 type EgressSearchPageProps = {
   searchValue: string;
-  egressSearchApiResults: RawApiResult<EgressSearchResultData>;
+  egressSearchApi: UseApiResult<EgressSearchResultData>;
   handleFormChange: (value: string) => void;
   handleSearch: () => void;
   handleConnectFolder: (id: string) => void;
 };
 const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
   searchValue,
-  egressSearchApiResults,
+  egressSearchApi,
   handleFormChange,
   handleSearch,
   handleConnectFolder,
@@ -36,6 +35,9 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
     e.preventDefault();
     handleSearch();
   };
+  if (egressSearchApi.status === "loading")
+    return <div className="govuk-width-container">Loading...</div>;
+
   return (
     <div className="govuk-width-container">
       <BackLink to="/">Back</BackLink>
@@ -87,7 +89,7 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
         egress.
       </div>
       <EgressSearchResults
-        egressSearchApiResults={egressSearchApiResults}
+        egressSearchApi={egressSearchApi}
         handleConnectFolder={handleConnectFolder}
       />
     </div>

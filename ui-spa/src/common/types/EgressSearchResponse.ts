@@ -4,7 +4,9 @@ export type EgressSearchResult = {
   name: string;
 };
 
-export type EgressSearchResultData = {
+export type EgressSearchResultData = EgressSearchResult[];
+
+export type EgressSearchResultResponse = {
   data: EgressSearchResult[];
   pagination: {
     totalResults: number;
