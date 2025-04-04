@@ -18,7 +18,7 @@ const EgressConnectConfirmationPage: React.FC<
   };
   return (
     <div className={styles.confirmationWrapper}>
-      <BackLink href={backLinkUrl}>Back</BackLink>
+      <BackLink to={backLinkUrl}>Back</BackLink>
       <h1>Confirm folder link</h1>
       <p>
         Are you sure you want to link "Thunderstruck Traffic" Egress folder to

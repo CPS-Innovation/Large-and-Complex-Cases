@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useApi } from "../../common/hooks/useApi";
 import { useApiNew } from "../../common/hooks/useApiNew";
 import { RawApiResult } from "../../common/types/ApiResult";
@@ -17,12 +17,18 @@ const EgressPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
 
-  const workspaceName = useMemo(
-    () => searchParams.get("workspace-name") ?? "",
-    [searchParams],
-  );
+  const [workspaceName, setWorkspaceName] = useState("");
+  const [formValue, setFormValue] = useState("");
 
-  const [formValue, setFormValue] = useState(workspaceName);
+  useEffect(() => {
+    console.log("mounting component>>>>");
+    if (location.pathname === "/egress-connect") {
+      const name = searchParams.get("workspace-name") ?? "";
+      setWorkspaceName(name);
+      setFormValue(name);
+    }
+  }, [searchParams]);
+
   const [selectedFolderId, setSelectedFolderId] = useState("");
   const egressSearchApiResults: RawApiResult<EgressSearchResultData> = useApi(
     getEgressSearchResults,
@@ -72,39 +78,35 @@ const EgressPage = () => {
     if (!validRoute) navigate("/");
   };
 
-  function PageContent() {
-    if (location.pathname.includes("/error"))
-      return (
-        <div className="govuk-width-container">
-          <EgressConnectFailurePage
-            backLinkUrl={`/egress-connect?workspace-name=${workspaceName}`}
-          />
-        </div>
-      );
-    if (location.pathname.includes("/confirmation"))
-      return (
-        <div className="govuk-width-container">
-          <EgressConnectConfirmationPage
-            backLinkUrl={`/egress-connect?workspace-name=${workspaceName}`}
-            handleContinue={handleContinue}
-            // handleBack={handleBack}
-          />
-        </div>
-      );
+  if (location.pathname.includes("/error"))
     return (
       <div className="govuk-width-container">
-        <EgressSearchPage
-          searchValue={formValue}
-          egressSearchApiResults={egressSearchApiResults}
-          handleFormChange={handleFormChange}
-          handleSearch={handleSearch}
-          handleConnectFolder={handleConnectFolder}
+        <EgressConnectFailurePage
+          backLinkUrl={`/egress-connect?workspace-name=${workspaceName}`}
         />
       </div>
     );
-  }
-
-  return <PageContent />;
+  if (location.pathname.includes("/confirmation"))
+    return (
+      <div className="govuk-width-container">
+        <EgressConnectConfirmationPage
+          backLinkUrl={`/egress-connect?workspace-name=${workspaceName}`}
+          handleContinue={handleContinue}
+          // handleBack={handleBack}
+        />
+      </div>
+    );
+  return (
+    <div className="govuk-width-container">
+      <EgressSearchPage
+        searchValue={formValue}
+        egressSearchApiResults={egressSearchApiResults}
+        handleFormChange={handleFormChange}
+        handleSearch={handleSearch}
+        handleConnectFolder={handleConnectFolder}
+      />
+    </div>
+  );
 };
 
 export default EgressPage;
