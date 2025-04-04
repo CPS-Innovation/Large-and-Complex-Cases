@@ -52,14 +52,11 @@ variable "dns_alt_server" {
 
 variable "subnets" {
   type = object({
-    storage   = list(string)
-    ui        = list(string)
-    api       = list(string)
-    endpoints = list(string)
-    mock      = list(string)
+    storage     = list(string)
+    ui          = list(string)
+    api         = list(string)
+    endpoints   = list(string)
+    mock        = list(string)
+    buildAgents = list(string)
   })
-}
-
-variable "nsg_name" {
-  type = string
 }

@@ -9,6 +9,6 @@ steps:
       sleep 2
       done
       
-      echo '==== Install Mono ===='
-      sudo apt-get install -y mono-complete
-    displayName: Install Mono
+      sudo apt-get install -y zip
+      sudo apt-get install -y unzip
+    displayName: Install Zip and Unzip Utilities

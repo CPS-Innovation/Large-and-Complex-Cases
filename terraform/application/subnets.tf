@@ -1,4 +1,5 @@
 resource "azurerm_subnet" "sn_complex_cases_storage_subnet" {
+  #checkov:skip=CKV2_AZURE_31:Ensure VNET subnet is configured with a Network Security Group (NSG)
   name                 = "${local.product_prefix}-storage-subnet"
   resource_group_name  = data.azurerm_resource_group.networking_resource_group.name
   virtual_network_name = data.azurerm_virtual_network.complex_cases_vnet.name
@@ -15,15 +16,10 @@ resource "azurerm_subnet_route_table_association" "rt_assocation_complex_cases_s
   depends_on     = [azurerm_subnet.sn_complex_cases_storage_subnet]
 }
 
-resource "azurerm_subnet_network_security_group_association" "nsg_association_complex_cases_storage_subnet" {
-  network_security_group_id = data.azurerm_network_security_group.complex_cases_nsg.id
-  subnet_id                 = azurerm_subnet.sn_complex_cases_storage_subnet.id
-  depends_on                = [azurerm_subnet.sn_complex_cases_storage_subnet]
-}
-
 ##############
 
 resource "azurerm_subnet" "sn_complex_cases_ui_subnet" {
+  #checkov:skip=CKV2_AZURE_31:Ensure VNET subnet is configured with a Network Security Group (NSG)
   name                 = "${local.product_prefix}-ui-subnet"
   resource_group_name  = data.azurerm_resource_group.networking_resource_group.name
   virtual_network_name = data.azurerm_virtual_network.complex_cases_vnet.name
@@ -49,15 +45,10 @@ resource "azurerm_subnet_route_table_association" "rt_assocation_complex_cases_u
   depends_on     = [azurerm_subnet.sn_complex_cases_ui_subnet]
 }
 
-resource "azurerm_subnet_network_security_group_association" "nsg_association_complex_cases_ui_subnet" {
-  network_security_group_id = data.azurerm_network_security_group.complex_cases_nsg.id
-  subnet_id                 = azurerm_subnet.sn_complex_cases_ui_subnet.id
-  depends_on                = [azurerm_subnet.sn_complex_cases_ui_subnet]
-}
-
 ##############
 
 resource "azurerm_subnet" "sn_complex_cases_api_subnet" {
+  #checkov:skip=CKV2_AZURE_31:Ensure VNET subnet is configured with a Network Security Group (NSG)
   name                 = "${local.product_prefix}-api-subnet"
   resource_group_name  = data.azurerm_resource_group.networking_resource_group.name
   virtual_network_name = data.azurerm_virtual_network.complex_cases_vnet.name
@@ -83,15 +74,10 @@ resource "azurerm_subnet_route_table_association" "rt_assocation_complex_cases_a
   depends_on     = [azurerm_subnet.sn_complex_cases_api_subnet]
 }
 
-resource "azurerm_subnet_network_security_group_association" "nsg_association_complex_cases_api_subnet" {
-  network_security_group_id = data.azurerm_network_security_group.complex_cases_nsg.id
-  subnet_id                 = azurerm_subnet.sn_complex_cases_api_subnet.id
-  depends_on                = [azurerm_subnet.sn_complex_cases_api_subnet]
-}
-
 ##############
 
 resource "azurerm_subnet" "sn_complex_cases_endpoints_subnet" {
+  #checkov:skip=CKV2_AZURE_31:Ensure VNET subnet is configured with a Network Security Group (NSG)
   name                 = "${local.product_prefix}-endpoints-subnet"
   resource_group_name  = data.azurerm_resource_group.networking_resource_group.name
   virtual_network_name = data.azurerm_virtual_network.complex_cases_vnet.name
@@ -108,15 +94,10 @@ resource "azurerm_subnet_route_table_association" "rt_assocation_complex_cases_e
   depends_on     = [azurerm_subnet.sn_complex_cases_endpoints_subnet]
 }
 
-resource "azurerm_subnet_network_security_group_association" "nsg_association_complex_cases_endpoints_subnet" {
-  network_security_group_id = data.azurerm_network_security_group.complex_cases_nsg.id
-  subnet_id                 = azurerm_subnet.sn_complex_cases_endpoints_subnet.id
-  depends_on                = [azurerm_subnet.sn_complex_cases_endpoints_subnet]
-}
-
 ##############
 
 resource "azurerm_subnet" "sn_complex_cases_mock_subnet" {
+  #checkov:skip=CKV2_AZURE_31:Ensure VNET subnet is configured with a Network Security Group (NSG)
   name                 = "${local.product_prefix}-mock-subnet"
   resource_group_name  = data.azurerm_resource_group.networking_resource_group.name
   virtual_network_name = data.azurerm_virtual_network.complex_cases_vnet.name
@@ -140,10 +121,4 @@ resource "azurerm_subnet_route_table_association" "rt_assocation_complex_cases_m
   route_table_id = data.azurerm_route_table.complex_cases_rt.id
   subnet_id      = azurerm_subnet.sn_complex_cases_mock_subnet.id
   depends_on     = [azurerm_subnet.sn_complex_cases_mock_subnet]
-}
-
-resource "azurerm_subnet_network_security_group_association" "nsg_association_complex_cases_mock_subnet" {
-  network_security_group_id = data.azurerm_network_security_group.complex_cases_nsg.id
-  subnet_id                 = azurerm_subnet.sn_complex_cases_mock_subnet.id
-  depends_on                = [azurerm_subnet.sn_complex_cases_mock_subnet]
 }

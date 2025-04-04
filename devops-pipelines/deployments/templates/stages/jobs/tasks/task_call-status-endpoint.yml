@@ -26,6 +26,8 @@ steps:
   - download: ${{ parameters.targetBuild }}
     displayName: Download Scripts
     artifact: 'complex-cases-script-files'
+    
+  - template: dependencies/task_install-powershell.yml
 
   # query coordinator status endpoint
   - task: PowerShell@2
