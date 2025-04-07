@@ -8,8 +8,6 @@ parameters:
     type: string
   - name: targetLabel
     type: string
-  - name: appInsightsKey
-    type: string
   - name: azureSubscription
     type: string
   - name: targetPlanName
@@ -22,11 +20,11 @@ parameters:
     type: string
   - name: terraformStateAccessKey
     type: string
-  - name: targetSuffix
-    type: string
   - name: logRetentionTime
     type: string
   - name: totalLogRetentionTime
+    type: string
+  - name: sharedSuffix
     type: string
   - name: stageDependsOn
     type: object
@@ -35,7 +33,7 @@ stages:
   - stage: Apply_${{ parameters.targetLabel }}
     pool:
       name: ${{ parameters.buildAgentName }}
-    displayName: Apply Terraform
+    displayName: ${{ parameters.targetLabel }} > Apply Terraform
     ${{ if parameters.stageDependsOn }}:
       dependsOn: ${{ parameters.stageDependsOn }}
     jobs:
@@ -49,25 +47,9 @@ stages:
                   parameters:
                     devOpsPatToken: $(System.AccessToken)
 
-      - deployment: Log_Start_Terraform
-        condition: succeeded()
-        dependsOn: Wait_For_Running_Builds
-        displayName: Log Start
-        environment: ${{ parameters.targetEnv }}
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - template: jobs/tasks/task_log-start-deployment.yml
-                  parameters:
-                    targetBuild: ${{ parameters.targetBuild }}
-                    targetLabel: ${{ parameters.targetLabel }}
-                    targetName: "Terraform CI Deployment"
-                    appInsightsKey: ${{ parameters.appInsightsKey }}
-
       - deployment: Apply_Application_Terraform
         condition: succeeded()
-        dependsOn: Log_Start_Terraform
+        dependsOn: Wait_For_Running_Builds
         displayName: Apply Application Terraform
         environment: ${{ parameters.targetEnv }}
         workspace:
@@ -80,16 +62,15 @@ stages:
                   parameters:
                     azureSubscription: ${{ parameters.azureSubscription }}
 
-                - template: jobs/tasks/task_apply-and-record-terraform.yml
+                - template: jobs/tasks/task_apply-terraform.yml
                   parameters:
                     targetBuild: ${{ parameters.targetBuild }}
                     targetTerraformArtifact: "application-terraform-files"
                     targetLabel: ${{ parameters.targetLabel }}
                     targetName: "Application Terraform CI Deployment"
                     targetPlanName: ${{ parameters.targetPlanName }}
-                    appInsightsKey: ${{ parameters.appInsightsKey }}
                     terraformStorageAccount: ${{ parameters.terraformStorageAccount }}
-                    terraformContainerName: ${{ parameters.mainTerraformContainerName }}
+                    terraformContainerName: ${{ parameters.applicationTerraformContainerName }}
                     terraformStateKey: ${{ parameters.terraformStateKey }}
                     terraformStateAccessKey: ${{ parameters.terraformStateAccessKey }}
                     armClientId: $(clientId)
@@ -99,7 +80,7 @@ stages:
 
       - deployment: Set_Log_Analytics_Archival_Periods
         condition: succeeded()
-        dependsOn: Apply_Main_Terraform
+        dependsOn: Apply_Application_Terraform
         displayName: Update Analytics Archival Periods
         environment: ${{ parameters.targetEnv }}
         strategy:
@@ -115,30 +96,10 @@ stages:
                     targetBuild: ${{ parameters.targetBuild }}
                     targetLabel: ${{ parameters.targetLabel }}
                     targetName: "Set Log Analytics Archival Periods"
-                    targetSuffix: ${{ parameters.targetSuffix }}
-                    appInsightsKey: ${{ parameters.appInsightsKey }}
                     armClientId: $(clientId)
                     armClientSecret: $(clientSecret)
                     armTenantId: $(tenantId)
                     armSubscriptionId: $(subscriptionId)
                     logRetentionTime: ${{ parameters.logRetentionTime }}
                     totalLogRetentionTime: ${{ parameters.totalLogRetentionTime }}
-
-      - deployment: Log_Result_Terraform_Ended
-        condition: succeeded()
-        displayName: Log End
-        dependsOn:
-          - Apply_Application_Terraform
-          - Set_Log_Analytics_Archival_Periods
-        environment: ${{ parameters.targetEnv }}
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - template: jobs/tasks/task_log-result-deployment.yml
-                  parameters:
-                    targetBuild: ${{ parameters.targetBuild }}
-                    targetLabel: ${{ parameters.targetLabel }}
-                    targetName: "Terraform CI Deployment"
-                    appInsightsKey: ${{ parameters.appInsightsKey }}
-                    devOpsPatToken: $(System.AccessToken)
+                    sharedSuffix: ${{ parameters.sharedSuffix }}

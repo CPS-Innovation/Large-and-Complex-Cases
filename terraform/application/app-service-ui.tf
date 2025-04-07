@@ -14,9 +14,8 @@ resource "azurerm_linux_web_app" "complex_cases_ui" {
   client_certificate_enabled    = false
 
   app_settings = {
-    "APPINSIGHTS_INSTRUMENTATIONKEY"                  = data.azurerm_application_insights.complex_cases_ai.instrumentation_key
-    "HostType"                                        = "Production"
-    "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"        = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.kvs_complex_cases_ui_client_secret.id})"
+    "APPINSIGHTS_INSTRUMENTATIONKEY" = data.azurerm_application_insights.complex_cases_ai.instrumentation_key
+    #"MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"        = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.kvs_complex_cases_ui_client_secret.id})"
     "WEBSITE_ADD_SITENAME_BINDINGS_IN_APPHOST_CONFIG" = "1"
     "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING"        = azurerm_storage_account.sacpsccui.primary_connection_string
     "WEBSITE_CONTENTOVERVNET"                         = "1"
@@ -24,17 +23,7 @@ resource "azurerm_linux_web_app" "complex_cases_ui" {
     "WEBSITE_DNS_ALT_SERVER"                          = var.dns_alt_server
     "WEBSITE_DNS_SERVER"                              = var.dns_server
     "WEBSITE_ENABLE_SYNC_UPDATE_SITE"                 = "1"
-    "WEBSITE_OVERRIDE_STICKY_DIAGNOSTICS_SETTINGS"    = "0"
-    "WEBSITE_OVERRIDE_STICKY_EXTENSION_VERSIONS"      = "0"
-    "WEBSITE_SLOT_MAX_NUMBER_OF_TIMEOUTS"             = "10"
-    "WEBSITE_SWAP_WARMUP_PING_PATH"                   = "" #fill in
-    "WEBSITE_SWAP_WARMUP_PING_STATUSES"               = "200,202"
-    "WEBSITE_WARMUP_PATH"                             = "" #fill in
     "WEBSITES_ENABLE_APP_CACHE"                       = "true"
-  }
-
-  sticky_settings {
-    app_setting_names = ["HostType"]
   }
 
   site_config {
@@ -189,7 +178,7 @@ resource "azuread_application" "complex_cases_ui" {
   }
 
   single_page_application {
-    redirect_uris = var.environment.alias != "prod" ? ["http://localhost:3000"] : ["https://${local.product_prefix}-ui.azurewebsites.net"]
+    redirect_uris = var.environment.alias != "prod" ? ["http://localhost:3000/"] : ["https://${local.product_prefix}-ui.azurewebsites.net/"]
   }
 
   api {
@@ -236,17 +225,17 @@ resource "azuread_application_password" "pwd_e2e_test_secret" {
   }
 }
 
-resource "azurerm_key_vault_secret" "kvs_complex_cases_ui_client_secret" {
-  #checkov:skip=CKV_AZURE_41:Ensure that the expiration date is set on all secrets
-  #checkov:skip=CKV_AZURE_114:Ensure that key vault secrets have "content_type" set
-  name         = "ui-client-secret${local.resource_prefix}"
-  value        = azuread_application_password.pwd_complex_cases_ui.value
-  key_vault_id = azurerm_key_vault.kv_complex_cases.id
-  depends_on = [
-    azurerm_role_assignment.kv_role_terraform_sp,
-    azuread_application_password.pwd_complex_cases_ui
-  ]
-}
+# resource "azurerm_key_vault_secret" "kvs_complex_cases_ui_client_secret" {
+#   #checkov:skip=CKV_AZURE_41:Ensure that the expiration date is set on all secrets
+#   #checkov:skip=CKV_AZURE_114:Ensure that key vault secrets have "content_type" set
+#   name         = "ui-client-secret${local.resource_prefix}"
+#   value        = azuread_application_password.pwd_complex_cases_ui.value
+#   key_vault_id = azurerm_key_vault.kv_complex_cases.id
+#   depends_on = [
+#     azurerm_role_assignment.kv_role_terraform_sp,
+#     azuread_application_password.pwd_complex_cases_ui
+#   ]
+# }
 
 resource "azurerm_private_endpoint" "complex_cases_ui_pe" {
   name                = "${azurerm_linux_web_app.complex_cases_ui.name}-pe"

@@ -1,0 +1,14 @@
+﻿---
+
+steps:
+  - bash: |
+      echo '==== Update package sources ===='
+      until sudo apt-get -yq update
+      do
+      echo "Try again"
+      sleep 2
+      done
+      
+      sudo apt-get install -y zip
+      sudo apt-get install -y unzip
+    displayName: Install Zip and Unzip Utilities

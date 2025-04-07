@@ -15,7 +15,7 @@ resource "azurerm_storage_account" "sacpsccapi" {
   account_replication_type        = "RAGRS"
   account_tier                    = "Standard"
   min_tls_version                 = "TLS1_2"
-  public_network_access_enabled   = false
+  public_network_access_enabled   = true
   allow_nested_items_to_be_public = false
   shared_access_key_enabled       = true
 
@@ -23,7 +23,10 @@ resource "azurerm_storage_account" "sacpsccapi" {
     default_action = "Deny"
     bypass         = ["Metrics", "Logging", "AzureServices"]
     virtual_network_subnet_ids = [
-      azurerm_subnet.sn_complex_cases_api_subnet
+      azurerm_subnet.sn_complex_cases_api_subnet.id,
+      azurerm_subnet.sn_complex_cases_mock_subnet.id,
+      azurerm_subnet.sn_complex_cases_endpoints_subnet.id,
+      data.azurerm_subnet.build_agent_subnet.id
     ]
   }
 
@@ -67,6 +70,8 @@ resource "azurerm_storage_account_queue_properties" "sacpsccapi_queue_properties
     version               = "1.0"
     retention_policy_days = 7
   }
+
+  depends_on = [azurerm_storage_account.sacpsccapi]
 }
 
 resource "azurerm_private_endpoint" "sacpsccapi_blob_pe" {
@@ -129,17 +134,29 @@ resource "azurerm_private_endpoint" "sacpsccapi_file_pe" {
   }
 }
 
+resource "azurerm_private_endpoint" "sacpsccapi_queue_pe" {
+  name                = "sacps${var.environment.alias != "prod" ? var.environment.alias : ""}ccapi-queue-pe"
+  resource_group_name = azurerm_resource_group.rg_complex_cases.name
+  location            = azurerm_resource_group.rg_complex_cases.location
+  subnet_id           = azurerm_subnet.sn_complex_cases_storage_subnet.id
+  tags                = local.common_tags
+
+  private_dns_zone_group {
+    name                 = "polaris-dns-zone-group"
+    private_dns_zone_ids = [data.azurerm_private_dns_zone.dns_zone_queue_storage.id]
+  }
+
+  private_service_connection {
+    name                           = "sacps${var.environment.alias != "prod" ? var.environment.alias : ""}ccapi-queue-psc"
+    private_connection_resource_id = azurerm_storage_account.sacpsccapi.id
+    is_manual_connection           = false
+    subresource_names              = ["queue"]
+  }
+}
+
 resource "azapi_resource" "sacpsccapi_file_share" {
   type      = "Microsoft.Storage/storageAccounts/fileServices/shares@2022-09-01"
   name      = "api-content-share"
-  parent_id = "${data.azurerm_subscription.current.id}/resourceGroups/${azurerm_resource_group.rg_complex_cases.name}/providers/Microsoft.Storage/storageAccounts/${azurerm_storage_account.sacpsccapi.name}/fileServices/default"
-
-  depends_on = [azurerm_storage_account.sacpsccapi]
-}
-
-resource "azapi_resource" "sacpsccapi_staging_file_share" {
-  type      = "Microsoft.Storage/storageAccounts/fileServices/shares@2022-09-01"
-  name      = "api-content-share-1"
   parent_id = "${data.azurerm_subscription.current.id}/resourceGroups/${azurerm_resource_group.rg_complex_cases.name}/providers/Microsoft.Storage/storageAccounts/${azurerm_storage_account.sacpsccapi.name}/fileServices/default"
 
   depends_on = [azurerm_storage_account.sacpsccapi]

@@ -6,8 +6,6 @@ parameters:
     type: string
   - name: targetLabel
     type: string
-  - name: appInsightsKey
-    type: string
   - name: targetSuffix
     type: string
   - name: azureSubscription
@@ -25,23 +23,11 @@ stages:
   - stage: Check_Status_${{ parameters.targetLabel }}
     pool:
       name: ${{ parameters.buildAgentName }}
-    displayName: Status Checks
-    dependsOn: Swap_${{ parameters.targetLabel }}
+    displayName: ${{ parameters.targetLabel }} > Status Checks
+    dependsOn: Deploy_${{ parameters.targetLabel }}
     condition: succeeded()
     jobs:
-      - job: Log_Start
-        displayName: Log Start
-        condition: succeeded()
-        steps:
-          - template: jobs/tasks/task_log-start.yml
-            parameters:
-              targetBuild: ${{ parameters.targetBuild }}
-              targetLabel: ${{ parameters.targetLabel }}
-              targetName: "Status Checks"
-              appInsightsKey: ${{ parameters.appInsightsKey }}
-
       - job: Get_Status_URIs
-        dependsOn: Log_Start
         condition: succeeded()
         displayName: Get Status URIs
         steps:
@@ -75,41 +61,45 @@ stages:
               statusCheckRetries: ${{ parameters.statusCheckRetries }}
               statusCheckDelaySeconds: ${{ parameters.statusCheckDelaySeconds }}
               statusCheckTimeoutSeconds: ${{ parameters.statusCheckTimeoutSeconds }}
-              successTextContent: $(resources.pipeline.PolarisBuild.runName)
-
-      - job: Check_UI
-        dependsOn: Get_Status_URIs
-        condition: succeeded()
-        displayName: Check UI
-        variables:
-          uri: $[dependencies.Get_Status_URIs.outputs['uris.uiUri']]
-        steps:
-          - template: jobs/tasks/task_call-status-endpoint.yml
-            parameters:
-              targetBuild: ${{ parameters.targetBuild }}
-              targetLabel: ${{ parameters.targetLabel }}
-              targetAppName: "UI"
-              targetScript: "InvokeRequestWithRetry.ps1"
-              endpointUri: "$(uri)/polaris-ui/build-version.txt"
-              statusCheckMethod: ${{ parameters.statusCheckMethod }}
-              statusCheckRetries: ${{ parameters.statusCheckRetries }}
-              statusCheckDelaySeconds: ${{ parameters.statusCheckDelaySeconds }}
-              statusCheckTimeoutSeconds: ${{ parameters.statusCheckTimeoutSeconds }}
-              successTextContent: $(resources.pipeline.PolarisBuild.runName)
-
-      - job: Log_Result
-        condition: succeeded()
-        displayName: Log End
-        dependsOn:
-          - Log_Start
-          - Get_Status_URIs
-          - Check_API
-          - Check_UI
-        steps:
-          - template: jobs/tasks/task_log-result.yml
-            parameters:
-              targetBuild: ${{ parameters.targetBuild }}
-              targetLabel: ${{ parameters.targetLabel }}
-              targetName: "Status Checks"
-              appInsightsKey: ${{ parameters.appInsightsKey }}
-              devOpsPatToken: $(System.AccessToken)
+              successTextContent: $(resources.pipeline.ComplexCasesBuild.runName)
+      
+      ### Commented out the checking of the mock - query with the developers for the correct endpoint for health checks and add that here and to the health check definition in terraform        
+      #- job: Check_Mock
+      #  dependsOn: Get_Status_URIs
+      #  condition: succeeded()
+      #  displayName: Check Mock
+      #  variables:
+      #    uri: $[dependencies.Get_Status_URIs.outputs['uris.mockUri']]
+      #  steps:
+      #    - template: jobs/tasks/task_call-status-endpoint.yml
+      #      parameters:
+      #        targetBuild: ${{ parameters.targetBuild }}
+      #        targetLabel: ${{ parameters.targetLabel }}
+      #        targetAppName: "API"
+      #        targetScript: "InvokeRequestWithRetryNonNumeric.ps1"
+      #        endpointUri: "$(uri)/__admin/mappings"
+      #        statusCheckMethod: ${{ parameters.statusCheckMethod }}
+      #        statusCheckRetries: ${{ parameters.statusCheckRetries }}
+      #        statusCheckDelaySeconds: ${{ parameters.statusCheckDelaySeconds }}
+      #        statusCheckTimeoutSeconds: ${{ parameters.statusCheckTimeoutSeconds }}
+      #        successTextContent: "lacc"
+              
+      #- job: Check_UI
+      #  dependsOn: Get_Status_URIs
+      #  condition: succeeded()
+      #  displayName: Check UI
+      #  variables:
+      #    uri: $[dependencies.Get_Status_URIs.outputs['uris.uiUri']]
+      #  steps:
+      #    - template: jobs/tasks/task_call-status-endpoint.yml
+      #      parameters:
+      #        targetBuild: ${{ parameters.targetBuild }}
+      #        targetLabel: ${{ parameters.targetLabel }}
+      #        targetAppName: "UI"
+      #        targetScript: "InvokeRequestWithRetry.ps1"
+      #        endpointUri: "$(uri)/ui-spa/build-version.txt"
+      #        statusCheckMethod: ${{ parameters.statusCheckMethod }}
+      #        statusCheckRetries: ${{ parameters.statusCheckRetries }}
+      #        statusCheckDelaySeconds: ${{ parameters.statusCheckDelaySeconds }}
+      #        statusCheckTimeoutSeconds: ${{ parameters.statusCheckTimeoutSeconds }}
+      #        successTextContent: $(resources.pipeline.ComplexCasesBuild.runName)

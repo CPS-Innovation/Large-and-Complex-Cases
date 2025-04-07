@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using CPS.ComplexCases.DDEI.Exceptions;
 using CPS.ComplexCases.DDEI.Factories;
 using CPS.ComplexCases.DDEI.Mappers;
 using CPS.ComplexCases.DDEI.Models.Args;
@@ -107,13 +108,17 @@ public class DdeiClient(ILogger<DdeiClient> logger,
         return response;
       }
 
+      if (response.StatusCode == HttpStatusCode.Unauthorized)
+      {
+        throw new CmsUnauthorizedException();
+      }
+
       var content = await response.Content.ReadAsStringAsync();
       throw new HttpRequestException(content);
     }
     catch (HttpRequestException exception)
     {
-      _logger.LogError(exception, "Error sending request to DDEI service");
-      throw;
+      throw new DdeiClientException(response.StatusCode, exception);
     }
   }
 }

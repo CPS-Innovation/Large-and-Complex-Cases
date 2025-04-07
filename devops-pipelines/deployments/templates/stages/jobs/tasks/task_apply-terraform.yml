@@ -29,7 +29,7 @@ parameters:
 
 
 steps:
-  # download pipeline terraform build artifact
+  # download terraform build artifact
   - download: ${{ parameters.targetBuild }}
     displayName: Terraform > Download Terraform build
     artifact: ${{ parameters.targetTerraformArtifact }}

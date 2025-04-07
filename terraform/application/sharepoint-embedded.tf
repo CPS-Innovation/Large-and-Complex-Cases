@@ -1,5 +1,5 @@
 resource "azuread_application" "sharepoint_embedded" {
-  display_name            = "${local.product_name}${local.shared_prefix}-sharepoint-embedded-appreg"
+  display_name            = "${local.product_name}-${local.shared_prefix}-sharepoint-embedded-appreg"
   prevent_duplicate_names = true
 
   api {
@@ -61,11 +61,6 @@ resource "azuread_application" "sharepoint_embedded" {
     resource_access {
       id   = azuread_service_principal.sharepointonline.oauth2_permission_scope_ids["AllSites.Write"]
       type = "Scope"
-    }
-
-    resource_access {
-      id   = azuread_service_principal.sharepointonline.oauth2_permission_scope_ids["Sites.ReadWrite.All"]
-      type = "Role"
     }
   }
 
