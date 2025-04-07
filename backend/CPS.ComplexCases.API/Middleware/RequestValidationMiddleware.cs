@@ -26,6 +26,7 @@ public sealed partial class RequestValidationMiddleware(IAuthorizationValidator 
     {
       throw new CpsAuthenticationException();
     }
+
     await next(context);
   }
 
