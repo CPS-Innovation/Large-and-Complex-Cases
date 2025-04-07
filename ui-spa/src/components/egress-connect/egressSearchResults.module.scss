@@ -1,5 +1,4 @@
 .results {
-  margin-top: 2.5rem;
   .statusTag {
     text-transform: capitalize;
     font-weight: normal;
@@ -24,4 +23,10 @@
   & :global(.govuk-list) {
     margin-top: 1rem;
   }
+}
+
+.searchResultsCount {
+  padding-bottom: 2rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #b1b4b6;
 }

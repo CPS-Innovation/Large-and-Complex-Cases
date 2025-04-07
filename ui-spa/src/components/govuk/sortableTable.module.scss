@@ -7,6 +7,7 @@
   cursor: pointer;
   display: flex;
   align-items: center;
+  padding: 0;
   &:focus {
     border-color: #ffdd00;
     outline: 3px solid transparent;
