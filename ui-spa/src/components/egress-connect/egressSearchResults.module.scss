@@ -11,6 +11,11 @@
   & :global(.govuk-table__cell) {
     vertical-align: middle;
   }
+  & :global(.govuk-table) {
+    & th {
+      min-width: 350px;
+    }
+  }
 }
 
 .noResultsContent {

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 
 import { EgressSearchResultData } from "../../common/types/EgressSearchResponse";
-import { Button, Table, Tag } from "../govuk";
+import { Button, SortableTable } from "../govuk";
 import { formatDate } from "../../common/utils/formatDate";
 import { UseApiResult } from "../../common/hooks/useApiNew";
 import styles from "./egressSearchResults.module.scss";
@@ -53,6 +53,14 @@ const EgressSearchResults: React.FC<SearchResultsProps> = ({
     });
   };
 
+  const handleTableSort = (
+    sortName: string,
+    sortType: "ascending" | "descending",
+  ) => {
+    console.log("handleTableSort>>>sortName>>", sortName);
+    console.log("handleTableSort>>>sortType>>", sortType);
+  };
+
   if (egressSearchApi.status !== "succeeded") {
     return <></>;
   }
@@ -64,26 +72,27 @@ const EgressSearchResults: React.FC<SearchResultsProps> = ({
         egress.
       </div>
       {!!egressSearchResultsData.length && (
-        <Table
+        <SortableTable
           head={[
             {
-              children: (
-                <div>
-                  <span> Operation or defendant surname</span>
-                  <button>sort</button>
-                </div>
-              ),
+              children: "Operation or defendant surname",
+              sortable: true,
+              sortName: "workspace-name",
             },
 
             {
               children: "Date created",
+              sortable: true,
+              sortName: "date-created",
             },
             {
               children: "",
+              sortable: false,
             },
           ]}
           rows={getTableRowData()}
-        ></Table>
+          handleTableSort={handleTableSort}
+        />
       )}
       {!egressSearchResultsData.length && (
         <div className={styles.noResultsContent}>
