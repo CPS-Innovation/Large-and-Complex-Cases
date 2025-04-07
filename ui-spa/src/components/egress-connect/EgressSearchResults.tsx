@@ -1,9 +1,13 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { EgressSearchResultData } from "../../common/types/EgressSearchResponse";
 import { Button, SortableTable } from "../govuk";
 import { formatDate } from "../../common/utils/formatDate";
 import { UseApiResult } from "../../common/hooks/useApiNew";
+import {
+  sortByStringProperty,
+  sortByDateProperty,
+} from "../../common/utils/sortUtils";
 import styles from "./egressSearchResults.module.scss";
 
 type SearchResultsProps = {
@@ -14,11 +18,26 @@ const EgressSearchResults: React.FC<SearchResultsProps> = ({
   egressSearchApi,
   handleConnectFolder,
 }) => {
-  console.log("egressSearchApi>>", egressSearchApi);
+  const [sortValues, setSortValues] = useState<{
+    name: string;
+    type: "ascending" | "descending";
+  }>();
   const egressSearchResultsData = useMemo(() => {
     if (!egressSearchApi?.data) return [];
+    if (sortValues?.name === "workspace-name")
+      return sortByStringProperty(
+        egressSearchApi.data,
+        "name",
+        sortValues.type,
+      );
+    if (sortValues?.name === "date-created")
+      return sortByDateProperty(
+        egressSearchApi.data,
+        "dateCreated",
+        sortValues.type,
+      );
     return egressSearchApi.data;
-  }, [egressSearchApi]);
+  }, [egressSearchApi, sortValues]);
   const handleConnect = (id: string) => {
     handleConnectFolder(id);
   };
@@ -57,8 +76,7 @@ const EgressSearchResults: React.FC<SearchResultsProps> = ({
     sortName: string,
     sortType: "ascending" | "descending",
   ) => {
-    console.log("handleTableSort>>>sortName>>", sortName);
-    console.log("handleTableSort>>>sortType>>", sortType);
+    setSortValues({ name: sortName, type: sortType });
   };
 
   if (egressSearchApi.status !== "succeeded") {

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Table } from "./Table";
-import ArrowDown from "../../components/svgs/arrowDown.svg?react";
+import ArrowDownIcon from "../../components/svgs/arrowDown.svg?react";
+import TableSortIcon from "../../components/svgs/table-sort.svg?react";
 import styles from "./sortableTable.module.scss";
 
 export type SortableTableProps = {
@@ -68,7 +69,7 @@ export const SortableTable: React.FC<SortableTableProps> = ({
             >
               <span> {item.children}</span>
               {sortState?.sortName === item.sortName && (
-                <ArrowDown
+                <ArrowDownIcon
                   className={
                     sortState?.sortType === "descending"
                       ? styles.descending
@@ -76,6 +77,7 @@ export const SortableTable: React.FC<SortableTableProps> = ({
                   }
                 />
               )}
+              {sortState?.sortName !== item.sortName && <TableSortIcon />}
             </button>
           ),
         };
