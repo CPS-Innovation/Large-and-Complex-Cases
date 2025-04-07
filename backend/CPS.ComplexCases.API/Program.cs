@@ -1,4 +1,5 @@
 using CPS.ComplexCases.API.Middleware;
+using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Validators;
 using CPS.ComplexCases.Data.Extensions;
 using CPS.ComplexCases.DDEI.Extensions;
@@ -42,6 +43,8 @@ builder.Services.AddDdeiClientTactical();
 builder.Services.AddEgressClient(builder.Configuration);
 builder.Services.AddNetAppClient(builder.Configuration);
 builder.Services.AddDataClient(builder.Configuration);
+
+builder.Services.AddScoped<ICaseEnrichmentService, CaseEnrichmentService>();
 builder.Services.AddSingleton<IOpenApiConfigurationOptions, OpenApiConfigurationOptions>();
 
 builder.Build().Run();

@@ -1,4 +1,5 @@
 using CPS.ComplexCases.Data.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace CPS.ComplexCases.Data.Repositories
 {
@@ -37,6 +38,13 @@ namespace CPS.ComplexCases.Data.Repositories
       _dbContext.Entry(existingMetadata).CurrentValues.SetValues(metadata);
       await _dbContext.SaveChangesAsync();
       return existingMetadata;
+    }
+
+    public async Task<IEnumerable<CaseMetadata>> GetByCaseIdsAsync(IEnumerable<int> caseIds)
+    {
+      return await _dbContext.CaseMetadata
+          .Where(m => caseIds.Contains(m.CaseId))
+          .ToListAsync();
     }
   }
 }

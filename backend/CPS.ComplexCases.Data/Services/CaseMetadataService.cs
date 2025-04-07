@@ -47,4 +47,17 @@ public class CaseMetadataService : ICaseMetadataService
       throw;
     }
   }
+  public async Task<IEnumerable<CaseMetadata>> GetCaseMetadataForCaseIdsAsync(IEnumerable<int> caseIds)
+  {
+    _logger.LogInformation("Retrieving metadata for {Count} cases", caseIds.Count());
+    try
+    {
+      return await _caseMetadataRepository.GetByCaseIdsAsync(caseIds);
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error retrieving metadata for multiple cases");
+      throw;
+    }
+  }
 }
