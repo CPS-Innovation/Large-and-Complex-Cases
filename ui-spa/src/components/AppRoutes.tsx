@@ -8,9 +8,15 @@ const AppRoutes = () => {
     <Routes>
       <Route index element={<CaseSearchPage />} />
       <Route path="search-results" element={<CaseSearchResultPage />} />
-      <Route path="/egress-connect" element={<EgressPage />} />
-      <Route path="/egress-connect/confirmation" element={<EgressPage />} />
-      <Route path="/egress-connect/error" element={<EgressPage />} />
+      <Route path="/case/:caseId/egress-connect" element={<EgressPage />} />
+      <Route
+        path="/case/:caseId/egress-connect/confirmation"
+        element={<EgressPage />}
+      />
+      <Route
+        path="/case/:caseId/egress-connect/error"
+        element={<EgressPage />}
+      />
     </Routes>
   );
 };

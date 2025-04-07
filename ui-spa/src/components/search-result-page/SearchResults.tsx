@@ -1,5 +1,8 @@
 import { RawApiResult } from "../../common/types/ApiResult";
-import { SearchResultData } from "../../common/types/SearchResultResponse";
+import {
+  SearchResultData,
+  SearchResult,
+} from "../../common/types/SearchResultResponse";
 import { Table, Tag } from "../govuk";
 import { Link } from "react-router";
 import { SearchFromData } from "../../common/hooks/useCaseSearchForm";
@@ -17,6 +20,13 @@ const SearchResults: React.FC<SearchResultsProps> = ({
   const getSearchTypeText = () => {
     if (searchType === "defendant name") return "defendant surname";
     return searchType;
+  };
+  const getConnectOrViewUrl = (data: SearchResult, operationName: string) => {
+    if (data.egressStatus === "inactive")
+      return `/case/${data.caseId}/egress-connect?workspace-name=${operationName}`;
+    if (data.sharedDriveStatus === "inactive")
+      return `/case/${data.caseId}/shared-drive-connect?workspace-name=${operationName}`;
+    return `/case/${data.caseId}/case-overview/transfer-material`;
   };
   const getTableRowData = () => {
     if (searchApiResults.status !== "succeeded") return [];
@@ -69,10 +79,13 @@ const SearchResults: React.FC<SearchResultsProps> = ({
           {
             children: (
               <Link
-                to={`/egress-connect?workspace-name=${operationName}`}
+                to={getConnectOrViewUrl(data, operationName)}
                 className={styles.link}
               >
-                View{" "}
+                {data.egressStatus === "inactive" ||
+                data.sharedDriveStatus == "inactive"
+                  ? "Connect"
+                  : "View"}
               </Link>
             ),
           },
