@@ -6,8 +6,8 @@ export const casesSearchResultsDev: SearchResultData = [
     urn: "ABCDEF1",
     caseId: 12,
     leadDefendantName: "abc1",
-    egressStatus: "inactive",
-    sharedDriveStatus: "inactive",
+    egressWorkspaceId: null,
+    netappFolderPath: null,
     registrationDate: "2000-01-02",
   },
   {
@@ -15,8 +15,8 @@ export const casesSearchResultsDev: SearchResultData = [
     urn: "ABCDEF2",
     caseId: 13,
     leadDefendantName: "abc2",
-    egressStatus: "inactive",
-    sharedDriveStatus: "connected",
+    egressWorkspaceId: null,
+    netappFolderPath: "abc/def",
     registrationDate: "2000-01-03",
   },
 ];

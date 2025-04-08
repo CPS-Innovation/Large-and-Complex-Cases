@@ -24,9 +24,9 @@ const SearchResults: React.FC<SearchResultsProps> = ({
     return searchType;
   };
   const getConnectOrViewUrl = (data: SearchResult, operationName: string) => {
-    if (data.egressStatus === "inactive")
+    if (!data.egressWorkspaceId)
       return `/case/${data.caseId}/egress-connect?workspace-name=${operationName}`;
-    if (data.sharedDriveStatus === "inactive")
+    if (!data.netappFolderPath)
       return `/case/${data.caseId}/shared-drive-connect?workspace-name=${operationName}`;
     return `/case/${data.caseId}/case-overview/transfer-material`;
   };
@@ -48,28 +48,26 @@ const SearchResults: React.FC<SearchResultsProps> = ({
             children: data.leadDefendantName,
           },
           {
-            children:
-              data.egressStatus === "connected" ? (
-                <Tag gdsTagColour="green" className={styles.statusTag}>
-                  Connected
-                </Tag>
-              ) : (
-                <Tag gdsTagColour="grey" className={styles.statusTag}>
-                  Inactive
-                </Tag>
-              ),
+            children: data.egressWorkspaceId ? (
+              <Tag gdsTagColour="green" className={styles.statusTag}>
+                Connected
+              </Tag>
+            ) : (
+              <Tag gdsTagColour="grey" className={styles.statusTag}>
+                Inactive
+              </Tag>
+            ),
           },
           {
-            children:
-              data.sharedDriveStatus === "connected" ? (
-                <Tag gdsTagColour="green" className={styles.statusTag}>
-                  Connected
-                </Tag>
-              ) : (
-                <Tag gdsTagColour="grey" className={styles.statusTag}>
-                  Inactive
-                </Tag>
-              ),
+            children: data.netappFolderPath ? (
+              <Tag gdsTagColour="green" className={styles.statusTag}>
+                Connected
+              </Tag>
+            ) : (
+              <Tag gdsTagColour="grey" className={styles.statusTag}>
+                Inactive
+              </Tag>
+            ),
           },
           {
             children: formatDate(data.registrationDate),
@@ -81,8 +79,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                 state={{ searchQueryString: searchQueryString }}
                 className={styles.link}
               >
-                {data.egressStatus === "inactive" ||
-                data.sharedDriveStatus == "inactive"
+                {!data.egressWorkspaceId || !data.netappFolderPath
                   ? "Connect"
                   : "View"}
               </Link>

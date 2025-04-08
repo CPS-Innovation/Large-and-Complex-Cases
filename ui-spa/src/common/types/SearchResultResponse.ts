@@ -3,8 +3,8 @@ export type SearchResult = {
   urn: string;
   caseId: number;
   leadDefendantName: string;
-  egressStatus: "connected" | "inactive";
-  sharedDriveStatus: "connected" | "inactive";
+  egressWorkspaceId: string | null;
+  netappFolderPath: string | null;
   registrationDate: string;
 };
 

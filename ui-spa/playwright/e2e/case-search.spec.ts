@@ -50,7 +50,7 @@ test.describe("Case Search", async () => {
       "Connected",
       "Inactive",
       "02/01/2000",
-      "View ",
+      "Connect",
     ]);
     const row2Values = await page
       .locator("table tbody tr:nth-child(2) td")
@@ -62,7 +62,7 @@ test.describe("Case Search", async () => {
       "Connected",
       "Connected",
       "03/01/2000",
-      "View ",
+      "View",
     ]);
   });
 
@@ -112,7 +112,7 @@ test.describe("Case Search", async () => {
       "Connected",
       "Inactive",
       "02/01/2000",
-      "View ",
+      "Connect",
     ]);
     const row2Values = await page
       .locator("table tbody tr:nth-child(2) td")
@@ -124,7 +124,7 @@ test.describe("Case Search", async () => {
       "Connected",
       "Connected",
       "03/01/2000",
-      "View ",
+      "View",
     ]);
   });
 
@@ -161,7 +161,7 @@ test.describe("Case Search", async () => {
       "Connected",
       "Inactive",
       "02/01/2000",
-      "View ",
+      "Connect",
     ]);
     const row2Values = await page
       .locator("table tbody tr:nth-child(2) td")
@@ -173,7 +173,7 @@ test.describe("Case Search", async () => {
       "Connected",
       "Connected",
       "03/01/2000",
-      "View ",
+      "View",
     ]);
   });
 
@@ -350,7 +350,7 @@ test.describe("Case Search Results", () => {
       "Connected",
       "Inactive",
       "02/01/2000",
-      "View ",
+      "Connect",
     ]);
     const row2Values = await page
       .locator("table tbody tr:nth-child(2) td")
@@ -362,7 +362,7 @@ test.describe("Case Search Results", () => {
       "Connected",
       "Connected",
       "03/01/2000",
-      "View ",
+      "View",
     ]);
   });
 
@@ -400,7 +400,7 @@ test.describe("Case Search Results", () => {
       "Connected",
       "Inactive",
       "02/01/2000",
-      "View ",
+      "Connect",
     ]);
     const row2Values = await page
       .locator("table tbody tr:nth-child(2) td")
@@ -412,7 +412,7 @@ test.describe("Case Search Results", () => {
       "Connected",
       "Connected",
       "03/01/2000",
-      "View ",
+      "View",
     ]);
   });
 
@@ -440,7 +440,7 @@ test.describe("Case Search Results", () => {
       "Connected",
       "Inactive",
       "02/01/2000",
-      "View ",
+      "Connect",
     ]);
     const row2Values = await page
       .locator("table tbody tr:nth-child(2) td")
@@ -452,7 +452,7 @@ test.describe("Case Search Results", () => {
       "Connected",
       "Connected",
       "03/01/2000",
-      "View ",
+      "View",
     ]);
   });
 
