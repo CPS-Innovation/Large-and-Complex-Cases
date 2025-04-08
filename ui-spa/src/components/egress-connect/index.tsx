@@ -126,7 +126,11 @@ const EgressPage = () => {
   return (
     <div className="govuk-width-container">
       <EgressSearchPage
-        backLinkUrl={`/search-results?${location.state.searchQueryString}`}
+        backLinkUrl={
+          location.state?.searchQueryString
+            ? `/search-results?${location.state?.searchQueryString}`
+            : "/"
+        }
         searchValue={formValue}
         formDataErrorText={formDataErrorText}
         egressSearchApi={egressSearchApi}
