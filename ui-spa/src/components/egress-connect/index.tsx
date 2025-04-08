@@ -21,6 +21,7 @@ const EgressPage = () => {
   const location = useLocation();
 
   const [workspaceName, setWorkspaceName] = useState("");
+  const [caseSearchQueryString, setCaseSearchQueryString] = useState("");
   const [selectedFolderId, setSelectedFolderId] = useState("");
   const [formDataErrorText, setFormDataErrorText] = useState("");
   const [formValue, setFormValue] = useState("");
@@ -50,6 +51,11 @@ const EgressPage = () => {
       egressSearchApi.refetch();
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (location.state?.searchQueryString)
+      setCaseSearchQueryString(location.state?.searchQueryString);
+  }, [location]);
 
   const handleSearch = () => {
     if (!formValue) {
@@ -127,9 +133,9 @@ const EgressPage = () => {
     <div className="govuk-width-container">
       <EgressSearchPage
         backLinkUrl={
-          location.state?.searchQueryString
-            ? `/search-results?${location.state?.searchQueryString}`
-            : "/"
+          caseSearchQueryString
+            ? `/search-results?${caseSearchQueryString}`
+            : "/search-results"
         }
         searchValue={formValue}
         formDataErrorText={formDataErrorText}

@@ -1,8 +1,8 @@
-import { useEffect, useState, useRef } from "react";
+import { useRef } from "react";
 import { Button, Input, InsetText, ErrorSummary, BackLink } from "../govuk";
 import EgressSearchResults from "./EgressSearchResults";
 import { UseApiResult } from "../../common/hooks/useApiNew";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { EgressSearchResultData } from "../../common/types/EgressSearchResponse";
 import styles from "./EgressSearchPage.module.scss";
 
