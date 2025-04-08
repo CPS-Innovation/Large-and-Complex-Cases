@@ -8,5 +8,6 @@ namespace CPS.ComplexCases.Data.Repositories
     Task<CaseMetadata> AddAsync(CaseMetadata metadata);
     Task<CaseMetadata?> UpdateAsync(CaseMetadata metadata);
     Task<IEnumerable<CaseMetadata>> GetByCaseIdsAsync(IEnumerable<int> caseIds);
+    Task<IEnumerable<CaseMetadata>> GetByEgressWorkspaceIdsAsync(IEnumerable<string> egressWorkspaceIds);
   }
 }

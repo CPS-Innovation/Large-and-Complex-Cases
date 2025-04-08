@@ -60,4 +60,17 @@ public class CaseMetadataService : ICaseMetadataService
       throw;
     }
   }
+  public async Task<IEnumerable<CaseMetadata>> GetCaseMetadataForEgressWorkspaceIdsAsync(IEnumerable<string> egressWorkspaceIds)
+  {
+    _logger.LogInformation("Retrieving metadata for {Count} egress workspaces", egressWorkspaceIds.Count());
+    try
+    {
+      return await _caseMetadataRepository.GetByEgressWorkspaceIdsAsync(egressWorkspaceIds);
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error retrieving metadata for multiple egress workspaces");
+      throw;
+    }
+  }
 }

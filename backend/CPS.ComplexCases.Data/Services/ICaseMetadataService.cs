@@ -8,4 +8,5 @@ public interface ICaseMetadataService
 {
   Task CreateEgressConnectionAsync(CreateEgressConnectionDto createEgressConnectionDto);
   Task<IEnumerable<CaseMetadata>> GetCaseMetadataForCaseIdsAsync(IEnumerable<int> caseIds);
+  Task<IEnumerable<CaseMetadata>> GetCaseMetadataForEgressWorkspaceIdsAsync(IEnumerable<string> egressWorkspaceIds);
 }

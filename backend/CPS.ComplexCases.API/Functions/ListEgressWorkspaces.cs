@@ -1,6 +1,7 @@
 using System.Net;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
+using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
 using Microsoft.AspNetCore.Http;
@@ -14,11 +15,13 @@ namespace CPS.ComplexCases.API.Functions;
 
 public class ListEgressWorkspaces(ILogger<ListEgressWorkspaces> logger,
   IEgressClient egressClient,
-  IEgressArgFactory egressArgFactory)
+  IEgressArgFactory egressArgFactory,
+  ICaseEnrichmentService caseEnrichmentService)
 {
   private readonly ILogger<ListEgressWorkspaces> _logger = logger;
   private readonly IEgressClient _egressClient = egressClient;
   private readonly IEgressArgFactory _egressArgFactory = egressArgFactory;
+  private readonly ICaseEnrichmentService _caseEnrichmentService = caseEnrichmentService;
 
   [Function(nameof(ListEgressWorkspaces))]
   [OpenApiOperation(operationId: nameof(ListEgressWorkspaces), tags: ["Egress"], Description = "Lists workspaces in Egress based on name.")]
@@ -41,6 +44,8 @@ public class ListEgressWorkspaces(ILogger<ListEgressWorkspaces> logger,
 
     var response = await _egressClient.ListWorkspacesAsync(egressArg, context.GetRequestContext().Username);
 
-    return new OkObjectResult(response);
+    var enrichedResponse = await _caseEnrichmentService.EnrichEgressWorkspacesWithMetadataAsync(response);
+
+    return new OkObjectResult(enrichedResponse);
   }
 }
