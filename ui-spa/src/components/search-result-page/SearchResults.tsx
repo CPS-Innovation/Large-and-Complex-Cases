@@ -10,10 +10,12 @@ import { formatDate } from "../../common/utils/formatDate";
 import styles from "./searchResults.module.scss";
 
 type SearchResultsProps = {
+  searchQueryString: string;
   searchApiResults: RawApiResult<SearchResultData>;
   searchType: SearchFromData["searchType"];
 };
 const SearchResults: React.FC<SearchResultsProps> = ({
+  searchQueryString,
   searchApiResults,
   searchType,
 }) => {
@@ -37,11 +39,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
       return {
         cells: [
           {
-            children: (
-              <Link to="/" className={styles.link}>
-                {operationName}
-              </Link>
-            ),
+            children: <span>{operationName}</span>,
           },
           {
             children: data.urn,
@@ -80,6 +78,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
             children: (
               <Link
                 to={getConnectOrViewUrl(data, operationName)}
+                state={{ searchQueryString: searchQueryString }}
                 className={styles.link}
               >
                 {data.egressStatus === "inactive" ||

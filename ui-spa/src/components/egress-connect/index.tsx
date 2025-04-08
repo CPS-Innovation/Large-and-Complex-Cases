@@ -25,8 +25,20 @@ const EgressPage = () => {
   const [formDataErrorText, setFormDataErrorText] = useState("");
   const [formValue, setFormValue] = useState("");
 
+  const egressSearchApi = useApiNew(
+    getEgressSearchResults,
+    [`workspace-name=${workspaceName}`],
+    false,
+  );
+
+  const egressConnectApi = useApiNew(
+    connectEgressWorkspace,
+    [{ workspaceId: selectedFolderId, caseId: caseId }],
+    false,
+  );
+
+  console.log("location.state>>>>>", location.state);
   useEffect(() => {
-    console.log("mounting component>>>>");
     if (location.pathname.endsWith("/egress-connect")) {
       const name = searchParams.get("workspace-name");
       if (!name) {
@@ -35,20 +47,9 @@ const EgressPage = () => {
       }
       setWorkspaceName(name);
       setFormValue(name);
+      egressSearchApi.refetch();
     }
   }, [searchParams]);
-
-  const egressSearchApi = useApiNew(
-    getEgressSearchResults,
-    [`workspace-name=${workspaceName}`],
-    !!workspaceName,
-  );
-
-  const egressConnectApi = useApiNew(
-    connectEgressWorkspace,
-    [{ workspaceId: selectedFolderId, caseId: caseId }],
-    false,
-  );
 
   const handleSearch = () => {
     if (!formValue) {
@@ -125,6 +126,7 @@ const EgressPage = () => {
   return (
     <div className="govuk-width-container">
       <EgressSearchPage
+        backLinkUrl={`/search-results?${location.state.searchQueryString}`}
         searchValue={formValue}
         formDataErrorText={formDataErrorText}
         egressSearchApi={egressSearchApi}

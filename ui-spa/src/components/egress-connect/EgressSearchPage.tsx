@@ -7,6 +7,7 @@ import { EgressSearchResultData } from "../../common/types/EgressSearchResponse"
 import styles from "./EgressSearchPage.module.scss";
 
 type EgressSearchPageProps = {
+  backLinkUrl: string;
   searchValue: string;
   formDataErrorText: string;
   egressSearchApi: UseApiResult<EgressSearchResultData>;
@@ -15,6 +16,7 @@ type EgressSearchPageProps = {
   handleConnectFolder: (id: string) => void;
 };
 const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
+  backLinkUrl,
   searchValue,
   formDataErrorText,
   egressSearchApi,
@@ -37,7 +39,7 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
 
   return (
     <div className="govuk-width-container">
-      <BackLink to="/">Back</BackLink>
+      <BackLink to={backLinkUrl}>Back</BackLink>
 
       <div>
         {!!formDataErrorText && (

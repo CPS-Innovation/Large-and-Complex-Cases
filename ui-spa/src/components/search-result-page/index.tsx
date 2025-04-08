@@ -406,6 +406,7 @@ const CaseSearchResultPage = () => {
       </div>
 
       <SearchResults
+        searchQueryString={queryString}
         searchApiResults={searchApiState}
         searchType={formData[SearchFormField.searchType]}
       />

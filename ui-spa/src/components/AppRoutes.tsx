@@ -7,7 +7,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route index element={<CaseSearchPage />} />
-      <Route path="search-results" element={<CaseSearchResultPage />} />
+      <Route path="/search-results" element={<CaseSearchResultPage />} />
       <Route path="/case/:caseId/egress-connect" element={<EgressPage />} />
       <Route
         path="/case/:caseId/egress-connect/confirmation"
