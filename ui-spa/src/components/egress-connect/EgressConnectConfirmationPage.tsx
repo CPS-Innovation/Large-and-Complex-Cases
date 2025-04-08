@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Button, Radios, BackLink } from "../govuk";
 import styles from "./EgressConnectConfirmationPage.module.scss";
 type EgressConnectConfirmationPageProps = {
+  selectedWorkspaceName: string;
   backLinkUrl: string;
   handleContinue: (value: boolean) => void;
   // handleBack: () => void;
 };
 const EgressConnectConfirmationPage: React.FC<
   EgressConnectConfirmationPageProps
-> = ({ backLinkUrl, handleContinue }) => {
+> = ({ selectedWorkspaceName, backLinkUrl, handleContinue }) => {
   const [formValue, setFormValue] = useState("yes");
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -21,9 +22,9 @@ const EgressConnectConfirmationPage: React.FC<
       <BackLink to={backLinkUrl}>Back</BackLink>
       <h1>Confirm folder link</h1>
       <p>
-        Are you sure you want to link "Thunderstruck Traffic" Egress folder to
+        {`Are you sure you want to link "${selectedWorkspaceName}" Egress folder to
         the case? Once linked, this folder will be used for transferring files
-        related to the case. You can update the linked folder later if needed.
+        related to the case. You can update the linked folder later if needed.`}
       </p>
       <form onSubmit={handleSubmit}>
         <Radios

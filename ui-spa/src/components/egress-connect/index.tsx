@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useApiNew } from "../../common/hooks/useApiNew";
 import {
   getEgressSearchResults,
@@ -46,7 +46,7 @@ const EgressPage = () => {
 
   const egressConnectApi = useApiNew(
     connectEgressWorkspace,
-    [{ workspaceId: selectedFolderId, caseId: "1" }],
+    [{ workspaceId: selectedFolderId, caseId: caseId }],
     false,
   );
 
@@ -96,6 +96,14 @@ const EgressPage = () => {
       );
   };
 
+  const selectedWorkSpaceName = useMemo(() => {
+    if (egressSearchApi.status !== "succeeded") return "";
+    return (
+      egressSearchApi.data?.find((data) => data.id === selectedFolderId)
+        ?.name ?? ""
+    );
+  }, [egressSearchApi, selectedFolderId]);
+
   if (location.pathname.includes("/error"))
     return (
       <div className="govuk-width-container">
@@ -108,6 +116,7 @@ const EgressPage = () => {
     return (
       <div className="govuk-width-container">
         <EgressConnectConfirmationPage
+          selectedWorkspaceName={selectedWorkSpaceName}
           backLinkUrl={`/case/${caseId}/egress-connect?workspace-name=${workspaceName}`}
           handleContinue={handleContinue}
         />
