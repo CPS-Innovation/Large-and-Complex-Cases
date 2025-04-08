@@ -5,6 +5,7 @@ import { Link } from "react-router";
 export type BackLinkProps = {
   href?: string;
   to?: string;
+  state?: any;
   children: ReactNode;
 };
 

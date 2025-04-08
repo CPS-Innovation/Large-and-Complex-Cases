@@ -370,7 +370,9 @@ const CaseSearchResultPage = () => {
   }
   return (
     <div className="govuk-width-container">
-      <BackLink href="/">Back</BackLink>
+      <BackLink to="/" state={{ ...formData }}>
+        Back
+      </BackLink>
       <div className={styles.contentTop}>
         {!!errorList.length && (
           <div
