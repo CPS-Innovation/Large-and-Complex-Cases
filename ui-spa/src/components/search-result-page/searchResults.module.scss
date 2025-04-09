@@ -3,6 +3,11 @@
   .statusTag {
     text-transform: capitalize;
     font-weight: normal;
+    font-size: 19px;
+    letter-spacing: normal;
+  }
+  & :global(.govuk-table__cell:last-child) {
+    text-align: right;
   }
 }
 

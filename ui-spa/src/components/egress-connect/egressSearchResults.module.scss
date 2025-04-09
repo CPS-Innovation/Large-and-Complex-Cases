@@ -2,6 +2,8 @@
   .statusTag {
     text-transform: capitalize;
     font-weight: normal;
+    letter-spacing: normal;
+    font-size: 19px;
   }
   & :global(.govuk-button--secondary) {
     margin-bottom: 0;
@@ -9,6 +11,9 @@
   }
   & :global(.govuk-table__cell) {
     vertical-align: middle;
+  }
+  & :global(.govuk-table__cell:last-child) {
+    text-align: right;
   }
 }
 

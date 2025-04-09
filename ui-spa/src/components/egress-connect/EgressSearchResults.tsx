@@ -90,7 +90,7 @@ const EgressSearchResults: React.FC<SearchResultsProps> = ({
                 onClick={() => handleConnect(data.id)}
                 disabled={!!data.caseId}
               >
-                connect folder
+                Connect folder
               </Button>
             ),
           },
