@@ -9,6 +9,7 @@ type EgressSearchPageProps = {
   backLinkUrl: string;
   searchValue: string;
   formDataErrorText: string;
+  workspaceName: string;
   egressSearchApi: UseApiResult<EgressSearchResultData>;
   handleFormChange: (value: string) => void;
   handleSearch: () => void;
@@ -19,6 +20,7 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
   searchValue,
   formDataErrorText,
   egressSearchApi,
+  workspaceName,
   handleFormChange,
   handleSearch,
   handleConnectFolder,
@@ -106,6 +108,7 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
       </form>
 
       <EgressSearchResults
+        workspaceName={workspaceName}
         egressSearchApi={egressSearchApi}
         handleConnectFolder={handleConnectFolder}
       />

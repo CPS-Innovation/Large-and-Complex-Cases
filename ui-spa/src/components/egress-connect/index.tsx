@@ -160,6 +160,7 @@ const EgressPage = () => {
             ? `/search-results?${initialLocationState?.searchQueryString}`
             : "/search-results"
         }
+        workspaceName={workspaceName}
         searchValue={formValue}
         formDataErrorText={formDataErrorText}
         egressSearchApi={egressSearchApi}

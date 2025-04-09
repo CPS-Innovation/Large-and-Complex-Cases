@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 
 import { EgressSearchResultData } from "../../common/types/EgressSearchResponse";
-import { Button, SortableTable } from "../govuk";
+import { Button, SortableTable, Tag } from "../govuk";
 import { formatDate } from "../../common/utils/formatDate";
 import { UseApiResult } from "../../common/hooks/useApiNew";
 import {
@@ -11,10 +11,12 @@ import {
 import styles from "./egressSearchResults.module.scss";
 
 type SearchResultsProps = {
+  workspaceName: string;
   egressSearchApi: UseApiResult<EgressSearchResultData>;
   handleConnectFolder: (id: string) => void;
 };
 const EgressSearchResults: React.FC<SearchResultsProps> = ({
+  workspaceName,
   egressSearchApi,
   handleConnectFolder,
 }) => {
@@ -22,6 +24,17 @@ const EgressSearchResults: React.FC<SearchResultsProps> = ({
     name: string;
     type: "ascending" | "descending";
   }>();
+
+  const sortByStatus = (
+    data: EgressSearchResultData,
+    order: "ascending" | "descending",
+  ): EgressSearchResultData => {
+    const included = data.filter((item) => item.caseId);
+    const excluded = data.filter((item) => !item.caseId);
+    if (order === "ascending") return [...included, ...excluded];
+    return [...excluded, ...included];
+  };
+
   const egressSearchResultsData = useMemo(() => {
     if (!egressSearchApi?.data) return [];
     if (sortValues?.name === "workspace-name")
@@ -36,11 +49,14 @@ const EgressSearchResults: React.FC<SearchResultsProps> = ({
         "dateCreated",
         sortValues.type,
       );
+    if (sortValues?.name === "status")
+      return sortByStatus(egressSearchApi.data, sortValues.type);
     return egressSearchApi.data;
   }, [egressSearchApi, sortValues]);
   const handleConnect = (id: string) => {
     handleConnectFolder(id);
   };
+
   const getTableRowData = () => {
     return egressSearchResultsData.map((data) => {
       return {
@@ -52,7 +68,17 @@ const EgressSearchResults: React.FC<SearchResultsProps> = ({
               </div>
             ),
           },
-
+          {
+            children: data.caseId ? (
+              <Tag gdsTagColour="green" className={styles.statusTag}>
+                Connected
+              </Tag>
+            ) : (
+              <Tag gdsTagColour="grey" className={styles.statusTag}>
+                Inactive
+              </Tag>
+            ),
+          },
           {
             children: formatDate(data.dateCreated),
           },
@@ -90,7 +116,7 @@ const EgressSearchResults: React.FC<SearchResultsProps> = ({
         <>
           <div className={styles.searchResultsCount}>
             There are <b>{egressSearchResultsData.length} folders </b>matching
-            the case <b>Thunderstruck</b> on egress.
+            the case <b>{workspaceName}</b> on egress.
           </div>
           <SortableTable
             head={[
@@ -98,6 +124,11 @@ const EgressSearchResults: React.FC<SearchResultsProps> = ({
                 children: "Operation or defendant surname",
                 sortable: true,
                 sortName: "workspace-name",
+              },
+              {
+                children: "Status",
+                sortable: true,
+                sortName: "status",
               },
 
               {
