@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { Button, Input, InsetText, ErrorSummary, BackLink } from "../govuk";
 import EgressSearchResults from "./EgressSearchResults";
 import { UseApiResult } from "../../common/hooks/useApiNew";
@@ -30,6 +30,10 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
 
     handleSearch();
   };
+
+  useEffect(() => {
+    if (formDataErrorText) errorSummaryRef.current?.focus();
+  }, [formDataErrorText]);
 
   if (egressSearchApi.status === "loading")
     return <div className="govuk-width-container">Loading...</div>;

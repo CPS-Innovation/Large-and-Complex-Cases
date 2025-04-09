@@ -56,7 +56,7 @@ const EgressPage = () => {
   }, [location]);
 
   useEffect(() => {
-    egressSearchApi.refetch();
+    if (workspaceName) egressSearchApi.refetch();
   }, [workspaceName]);
 
   useEffect(() => {
