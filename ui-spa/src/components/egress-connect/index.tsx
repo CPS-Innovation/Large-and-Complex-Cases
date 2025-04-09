@@ -21,7 +21,10 @@ const EgressPage = () => {
   const location = useLocation();
 
   const [workspaceName, setWorkspaceName] = useState("");
-  const [caseSearchQueryString, setCaseSearchQueryString] = useState("");
+  const [initialLocationState, setInitialLocationState] = useState<{
+    searchQueryString: string;
+    connectNetapp: boolean;
+  }>();
   const [selectedFolderId, setSelectedFolderId] = useState("");
   const [formDataErrorText, setFormDataErrorText] = useState("");
   const [formValue, setFormValue] = useState("");
@@ -32,13 +35,6 @@ const EgressPage = () => {
     false,
   );
 
-  const egressConnectApi = useApiNew(
-    connectEgressWorkspace,
-    [{ workspaceId: selectedFolderId, caseId: caseId }],
-    false,
-  );
-
-  console.log("location.state>>>>>", location.state);
   useEffect(() => {
     if (location.pathname.endsWith("/egress-connect")) {
       const name = searchParams.get("workspace-name");
@@ -48,15 +44,26 @@ const EgressPage = () => {
       }
       setWorkspaceName(name);
       setFormValue(name);
-      egressSearchApi.refetch();
     }
   }, [searchParams]);
 
   useEffect(() => {
-    if (location.state?.searchQueryString)
-      setCaseSearchQueryString(location.state?.searchQueryString);
+    if (location.state?.searchQueryString && location.state?.connectNetapp)
+      setInitialLocationState({
+        searchQueryString: location.state?.searchQueryString,
+        connectNetapp: location.state?.connectNetapp,
+      });
   }, [location]);
 
+  useEffect(() => {
+    egressSearchApi.refetch();
+  }, [workspaceName]);
+
+  useEffect(() => {
+    return () => {
+      window.history.replaceState({}, "");
+    };
+  }, []);
   const handleSearch = () => {
     if (!formValue) {
       setFormDataErrorText("egress folder name should not be empty");
@@ -76,31 +83,41 @@ const EgressPage = () => {
   };
   const handleContinue = async (connect: boolean) => {
     if (!connect) {
-      setSelectedFolderId("");
-      return;
-    }
-    egressConnectApi.refetch();
-  };
-
-  useEffect(() => {
-    if (egressConnectApi.error)
-      navigate(`/case/${caseId}/egress-connect/error`);
-  }, [egressConnectApi.error]);
-
-  useEffect(() => {
-    validateRoute();
-  });
-
-  const validateRoute = () => {
-    let validRoute = true;
-    if (location.pathname.includes("/error") && !egressConnectApi.error)
-      validRoute = false;
-    if (location.pathname.includes("/confirmation") && !selectedFolderId)
-      validRoute = false;
-    if (!validRoute)
       navigate(
         `/case/${caseId}/egress-connect?workspace-name=${workspaceName}`,
       );
+      return;
+    }
+    try {
+      await connectEgressWorkspace({
+        workspaceId: selectedFolderId,
+        caseId: caseId!,
+      });
+
+      if (initialLocationState?.connectNetapp)
+        navigate(`case/${caseId}/netapp-connect/`);
+      else navigate(`case/${caseId}/case-overview/transfer-material`);
+    } catch (e) {
+      navigate(`/case/${caseId}/egress-connect/error`);
+    }
+  };
+
+  useEffect(() => {
+    validateRoute();
+  }, [location]);
+
+  const validateRoute = () => {
+    let validRoute = true;
+    if (
+      location.pathname.endsWith("/egress-connect") &&
+      initialLocationState?.connectNetapp === undefined &&
+      location.state?.connectNetapp === undefined
+    ) {
+      validRoute = false;
+    }
+    if (location.pathname.endsWith("/confirmation") && !selectedFolderId)
+      validRoute = false;
+    if (!validRoute) navigate(`/`);
   };
 
   const selectedWorkSpaceName = useMemo(() => {
@@ -111,7 +128,7 @@ const EgressPage = () => {
     );
   }, [egressSearchApi, selectedFolderId]);
 
-  if (location.pathname.includes("/error"))
+  if (location.pathname.endsWith("/error"))
     return (
       <div className="govuk-width-container">
         <EgressConnectFailurePage
@@ -119,7 +136,7 @@ const EgressPage = () => {
         />
       </div>
     );
-  if (location.pathname.includes("/confirmation"))
+  if (location.pathname.endsWith("/confirmation"))
     return (
       <div className="govuk-width-container">
         <EgressConnectConfirmationPage
@@ -133,8 +150,8 @@ const EgressPage = () => {
     <div className="govuk-width-container">
       <EgressSearchPage
         backLinkUrl={
-          caseSearchQueryString
-            ? `/search-results?${caseSearchQueryString}`
+          initialLocationState?.searchQueryString
+            ? `/search-results?${initialLocationState?.searchQueryString}`
             : "/search-results"
         }
         searchValue={formValue}

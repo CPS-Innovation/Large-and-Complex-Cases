@@ -2,7 +2,6 @@ import { useRef } from "react";
 import { Button, Input, InsetText, ErrorSummary, BackLink } from "../govuk";
 import EgressSearchResults from "./EgressSearchResults";
 import { UseApiResult } from "../../common/hooks/useApiNew";
-import { useNavigate } from "react-router-dom";
 import { EgressSearchResultData } from "../../common/types/EgressSearchResponse";
 import styles from "./EgressSearchPage.module.scss";
 
@@ -24,8 +23,6 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
   handleSearch,
   handleConnectFolder,
 }) => {
-  const navigate = useNavigate();
-
   const errorSummaryRef = useRef<HTMLInputElement>(null);
 
   const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
