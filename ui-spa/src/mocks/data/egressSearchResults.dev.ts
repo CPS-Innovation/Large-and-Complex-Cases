@@ -11,7 +11,7 @@ export const egressSearchResultsDev: EgressSearchResultResponse = {
       id: "2",
       dateCreated: "2000-01-26",
       name: "thunderstrikeab",
-      caseId: null,
+      caseId: 123,
     },
     {
       id: "3",

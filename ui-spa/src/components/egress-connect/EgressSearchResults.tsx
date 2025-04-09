@@ -62,6 +62,7 @@ const EgressSearchResults: React.FC<SearchResultsProps> = ({
                 className="govuk-button--secondary"
                 name="secondary"
                 onClick={() => handleConnect(data.id)}
+                disabled={!!data.caseId}
               >
                 connect folder
               </Button>
