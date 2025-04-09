@@ -63,7 +63,7 @@ export const connectEgressWorkspace = async ({
     headers: {
       ...(await buildCommonHeaders()),
     },
-    body: JSON.stringify({ workspaceId, caseId }),
+    body: JSON.stringify({ egressWorkspaceId: workspaceId, caseId: parseInt(caseId) }),
   });
 
   if (!response.ok) {
@@ -78,7 +78,7 @@ export const getEgressSearchResults = async (
   take: number = 50,
   collected: EgressSearchResultData = [],
 ): Promise<EgressSearchResultData> => {
-  const url = `${GATEWAY_BASE_URL}/api/egress/workspace-name`;
+  const url = `${GATEWAY_BASE_URL}/api/egress/workspaces`;
   const response = await fetch(
     `${url}?${searchParams}&skip=${skip}&take=${take}`,
     {
