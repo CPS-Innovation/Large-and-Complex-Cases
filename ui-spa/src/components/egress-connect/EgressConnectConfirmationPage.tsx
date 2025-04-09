@@ -20,18 +20,29 @@ const EgressConnectConfirmationPage: React.FC<
   return (
     <div className={styles.confirmationWrapper}>
       <BackLink to={backLinkUrl}>Back</BackLink>
-      <h1>Confirm folder link</h1>
-      <p>
-        {`Are you sure you want to link "${selectedWorkspaceName}" Egress folder to
-        the case? Once linked, this folder will be used for transferring files
-        related to the case. You can update the linked folder later if needed.`}
-      </p>
+
       <form onSubmit={handleSubmit}>
         <Radios
-          aria-label="confirm folder link"
+          className="govuk-radios--inline"
+          fieldset={{
+            legend: {
+              children: (
+                <>
+                  <h1 className="govuk-fieldset__legend--xl">
+                    Confirm folder link
+                  </h1>{" "}
+                  <span>
+                    {`Are you sure you want to link "${selectedWorkspaceName}" Egress folder to
+              the case?`}
+                  </span>
+                </>
+              ),
+            },
+          }}
           name="confirm folder link"
           hint={{
-            children: "Select one option",
+            children:
+              "Once linked, this folder will be used for transferring files related to the case. You can update the linked folder later if needed.",
           }}
           items={[
             {

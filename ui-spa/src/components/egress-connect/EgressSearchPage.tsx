@@ -67,7 +67,9 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
           </div>
         )}
 
-        <h1>Select an Egress folder to link to the case</h1>
+        <h1 className="govuk-heading-xl govuk-!-margin-bottom-0">
+          Select an Egress folder to link to the case
+        </h1>
         <InsetText>
           <p>Select a folder from the list to link it to this case.</p>
           <p>

@@ -28,7 +28,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       // return new HttpResponse(null, { status: 500 });
     }),
 
-    http.get(`${baseUrl}/api/egress/workspace-name`, async () => {
+    http.get(`${baseUrl}/api/egress/workspaces`, async () => {
       const egressSearchResults = isDevMock()
         ? egressSearchResultsDev
         : egressSearchResultsPlaywright;
