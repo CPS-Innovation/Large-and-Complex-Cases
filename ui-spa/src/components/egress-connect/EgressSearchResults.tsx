@@ -85,47 +85,55 @@ const EgressSearchResults: React.FC<SearchResultsProps> = ({
 
   return (
     <div className={styles.results}>
-      <div className={styles.searchResultsCount}>
-        There are <b>4 folders</b>matching the case <b>Thunderstruck</b> on
-        egress.
-      </div>
       {!!egressSearchResultsData.length && (
-        <SortableTable
-          head={[
-            {
-              children: "Operation or defendant surname",
-              sortable: true,
-              sortName: "workspace-name",
-            },
+        <>
+          <div className={styles.searchResultsCount}>
+            There are <b>{egressSearchResultsData.length} folders </b>matching
+            the case <b>Thunderstruck</b> on egress.
+          </div>
+          <SortableTable
+            head={[
+              {
+                children: "Operation or defendant surname",
+                sortable: true,
+                sortName: "workspace-name",
+              },
 
-            {
-              children: "Date created",
-              sortable: true,
-              sortName: "date-created",
-            },
-            {
-              children: "",
-              sortable: false,
-            },
-          ]}
-          rows={getTableRowData()}
-          handleTableSort={handleTableSort}
-        />
+              {
+                children: "Date created",
+                sortable: true,
+                sortName: "date-created",
+              },
+              {
+                children: "",
+                sortable: false,
+              },
+            ]}
+            rows={getTableRowData()}
+            handleTableSort={handleTableSort}
+          />
+        </>
       )}
       {!egressSearchResultsData.length && (
-        <div className={styles.noResultsContent}>
-          <div>
-            <span>You can:</span>
+        <>
+          <div className={styles.searchResultsCount}>
+            There are <b>no folders </b>matching the case <b>Thunderstruck</b>{" "}
+            on egress.
           </div>
-          <ul className="govuk-list govuk-list--bullet">
-            <li>check for spelling mistakes in the {}.</li>
-            <li>
-              check the Case Management System to make sure the case exists and
-              that you have access.
-            </li>
-            <li>contact the product team if you need further help.</li>
-          </ul>
-        </div>
+          <div className={styles.noResultsContent}>
+            <div>
+              <span>You can:</span>
+            </div>
+            <ul className="govuk-list govuk-list--bullet">
+              <li>check for spelling mistakes in the {}.</li>
+              <li>
+                check the Case Management System to make sure the case exists
+                and that you have access.
+              </li>
+              <li>contact the product team if you need further help.</li>
+            </ul>
+          </div>
+        </>
       )}
     </div>
   );

@@ -64,6 +64,12 @@ const EgressPage = () => {
       window.history.replaceState({}, "");
     };
   }, []);
+
+  useEffect(() => {
+    if (egressSearchApi.status === "failed")
+      throw new Error(`${egressSearchApi.error}`);
+  }, [egressSearchApi]);
+
   const handleSearch = () => {
     if (!formValue) {
       setFormDataErrorText("egress folder name should not be empty");

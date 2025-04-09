@@ -625,9 +625,18 @@ test.describe("Case Search Results", () => {
     );
     await page.goto("/search-results?defendant-name=ww&area=234");
     await page.waitForResponse(`https://mocked-out-api/api/areas`);
-    await expect(page.locator("h1")).toHaveText(`Something went wrong!`);
+    await expect(page.locator("h1")).toHaveText(
+      "Sorry, there is a problem with the service",
+    );
     await expect(
-      page.getByText("Error: areas api failed with status: 500, method:GET"),
+      page.getByText(
+        "Please try this case again later. If the problem continues, contact the product team.",
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/areas: Getting case areas failed; status - Internal Server Error (500)",
+      ),
     ).toBeVisible();
   });
 
@@ -643,9 +652,18 @@ test.describe("Case Search Results", () => {
     );
     await page.goto("/search-results?operation-name=ww&area=234");
     await page.waitForResponse(`https://mocked-out-api/api/areas`);
-    await expect(page.locator("h1")).toHaveText(`Something went wrong!`);
+    await expect(page.locator("h1")).toHaveText(
+      "Sorry, there is a problem with the service",
+    );
     await expect(
-      page.getByText("Error: areas api failed with status: 500, method:GET"),
+      page.getByText(
+        "Please try this case again later. If the problem continues, contact the product team.",
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/areas: Getting case areas failed; status - Internal Server Error (500)",
+      ),
     ).toBeVisible();
   });
 
@@ -662,29 +680,50 @@ test.describe("Case Search Results", () => {
     await page.goto("/search-results?operation-name=ww&area=1001");
     await page.waitForResponse(`https://mocked-out-api/api/areas`);
     await page.waitForResponse(`https://mocked-out-api/api/case-search?*`);
-    await expect(page.locator("h1")).toHaveText(`Something went wrong!`);
+    await expect(page.locator("h1")).toHaveText(
+      "Sorry, there is a problem with the service",
+    );
     await expect(
       page.getByText(
-        "Error: case-search api failed with status: 500, method:GET",
+        "Please try this case again later. If the problem continues, contact the product team.",
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/case-search?operation-name=ww&area=1001: Searching for cases failed; status - Internal Server Error (500)",
       ),
     ).toBeVisible();
 
     await page.goto("/search-results?defendant-name=ww&area=1001");
     await page.waitForResponse(`https://mocked-out-api/api/areas`);
     await page.waitForResponse(`https://mocked-out-api/api/case-search?*`);
-    await expect(page.locator("h1")).toHaveText(`Something went wrong!`);
+    await expect(page.locator("h1")).toHaveText(
+      "Sorry, there is a problem with the service",
+    );
     await expect(
       page.getByText(
-        "Error: case-search api failed with status: 500, method:GET",
+        "Please try this case again later. If the problem continues, contact the product team.",
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/case-search?defendant-name=ww&area=1001: Searching for cases failed; status - Internal Server Error (500)",
       ),
     ).toBeVisible();
 
     await page.goto("/search-results?urn=11AA2222233");
     await page.waitForResponse(`https://mocked-out-api/api/case-search?*`);
-    await expect(page.locator("h1")).toHaveText(`Something went wrong!`);
+    await expect(page.locator("h1")).toHaveText(
+      "Sorry, there is a problem with the service",
+    );
     await expect(
       page.getByText(
-        "Error: case-search api failed with status: 500, method:GET",
+        "Please try this case again later. If the problem continues, contact the product team.",
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/case-search?urn=11AA2222233: Searching for cases failed; status - Internal Server Error (500)",
       ),
     ).toBeVisible();
   });

@@ -26,9 +26,7 @@ export const getCaseSearchResults = async (searchParams: string) => {
   });
 
   if (!response.ok) {
-    throw new Error(
-      `case-search api failed with status: ${response.status}, method:GET`,
-    );
+    throw new ApiError(`Searching for cases failed`, url, response);
   }
   return await response.json();
 };
@@ -45,9 +43,7 @@ export const getCaseDivisionsOrAreas = async () => {
   });
 
   if (!response.ok) {
-    throw new Error(
-      `areas api failed with status: ${response.status}, method:GET`,
-    );
+    throw new ApiError(`Getting case areas failed`, url, response);
   }
   return (await response.json()) as CaseDivisionsOrAreaResponse;
 };
@@ -71,7 +67,7 @@ export const connectEgressWorkspace = async ({
   });
 
   if (!response.ok) {
-    throw new ApiError(`Connecting to Egress workspace failed.`, url, response);
+    throw new ApiError(`Connecting to Egress workspace failed`, url, response);
   }
   return response;
 };
@@ -82,25 +78,21 @@ export const getEgressSearchResults = async (
   take: number = 50,
   collected: EgressSearchResultData = [],
 ): Promise<EgressSearchResultData> => {
-  try {
-    const url = `${GATEWAY_BASE_URL}/api/egress/workspace-name`;
-    const response = await fetch(
-      `${url}?${searchParams}&skip=${skip}&take=${take}`,
-      {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          ...(await buildCommonHeaders()),
-        },
+  const url = `${GATEWAY_BASE_URL}/api/egress/workspace-name`;
+  const response = await fetch(
+    `${url}?${searchParams}&skip=${skip}&take=${take}`,
+    {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        ...(await buildCommonHeaders()),
       },
-    );
-    if (!response.ok) {
-      throw new ApiError(
-        `Connecting to Egress workspace failed.`,
-        url,
-        response,
-      );
-    }
+    },
+  );
+  if (!response.ok) {
+    throw new ApiError(`Searching for Egress workspaces failed`, url, response);
+  }
+  try {
     const result = await response.json();
 
     const { data, pagination } = result;
@@ -112,7 +104,7 @@ export const getEgressSearchResults = async (
   } catch (error) {
     console.error("Fetch failed:", error);
     throw new Error(
-      `Invalid API response format for Egress workspace, ${error}`,
+      `Invalid API response format for Egress workspace search results, ${error}`,
     );
   }
 };
