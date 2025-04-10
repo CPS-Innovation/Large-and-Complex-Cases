@@ -165,4 +165,130 @@ public class CaseMetadataServiceTests
           Times.Once);
     }
   }
+
+  [Fact]
+  public async Task GetCaseMetadataForCaseIdsAsync_WhenCaseIdsProvided_ReturnsMatchingRecords()
+  {
+      // Arrange
+      var caseIds = _fixture.CreateMany<int>(3).ToList();
+      var expectedMetadata = _fixture.CreateMany<CaseMetadata>(3).ToList();
+      
+      for (int i = 0; i < 3; i++)
+      {
+          expectedMetadata[i].CaseId = caseIds[i];
+      }
+      
+      _repositoryMock
+          .Setup(r => r.GetByCaseIdsAsync(It.Is<IEnumerable<int>>(ids => 
+              ids.Count() == caseIds.Count && 
+              ids.All(id => caseIds.Contains(id)))))
+          .ReturnsAsync(expectedMetadata);
+      
+      // Act
+      var result = await _service.GetCaseMetadataForCaseIdsAsync(caseIds);
+      
+      // Assert
+      using (new AssertionScope())
+      {
+          result.Should().BeEquivalentTo(expectedMetadata);
+          
+          _repositoryMock.Verify(
+              r => r.GetByCaseIdsAsync(It.Is<IEnumerable<int>>(ids => 
+                  ids.Count() == caseIds.Count && 
+                  ids.All(id => caseIds.Contains(id)))),
+              Times.Once);
+      }
+  }
+
+  [Fact]
+  public async Task GetCaseMetadataForCaseIdsAsync_WhenRepositoryThrowsException_LogsAndRethrows()
+  {
+      // Arrange
+      var caseIds = _fixture.CreateMany<int>(3).ToList();
+      var expectedException = new Exception("Repository error");
+      
+      _repositoryMock
+          .Setup(r => r.GetByCaseIdsAsync(It.IsAny<IEnumerable<int>>()))
+          .ThrowsAsync(expectedException);
+      
+      // Act & Assert
+      var exception = await Assert.ThrowsAsync<Exception>(
+          () => _service.GetCaseMetadataForCaseIdsAsync(caseIds));
+      
+      using (new AssertionScope())
+      {
+          exception.Should().BeSameAs(expectedException);
+          _loggerMock.Verify(
+              x => x.Log(
+                  LogLevel.Error,
+                  It.IsAny<EventId>(),
+                  It.IsAny<It.IsAnyType>(),
+                  It.Is<Exception>(ex => ex == expectedException),
+                  It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+              Times.Once);
+      }
+  }
+
+  [Fact]
+  public async Task GetCaseMetadataForEgressWorkspaceIdsAsync_WhenWorkspaceIdsProvided_ReturnsMatchingRecords()
+  {
+      // Arrange
+      var workspaceIds = _fixture.CreateMany<string>(3).ToList();
+      var expectedMetadata = _fixture.CreateMany<CaseMetadata>(3).ToList();
+      
+      for (int i = 0; i < 3; i++)
+      {
+          expectedMetadata[i].EgressWorkspaceId = workspaceIds[i];
+      }
+      
+      _repositoryMock
+          .Setup(r => r.GetByEgressWorkspaceIdsAsync(It.Is<IEnumerable<string>>(ids => 
+              ids.Count() == workspaceIds.Count && 
+              ids.All(id => workspaceIds.Contains(id)))))
+          .ReturnsAsync(expectedMetadata);
+      
+      // Act
+      var result = await _service.GetCaseMetadataForEgressWorkspaceIdsAsync(workspaceIds);
+      
+      // Assert
+      using (new AssertionScope())
+      {
+          result.Should().BeEquivalentTo(expectedMetadata);
+          
+          _repositoryMock.Verify(
+              r => r.GetByEgressWorkspaceIdsAsync(It.Is<IEnumerable<string>>(ids => 
+                  ids.Count() == workspaceIds.Count && 
+                  ids.All(id => workspaceIds.Contains(id)))),
+              Times.Once);
+      }
+  }
+
+  [Fact]
+  public async Task GetCaseMetadataForEgressWorkspaceIdsAsync_WhenRepositoryThrowsException_LogsAndRethrows()
+  {
+      // Arrange
+      var workspaceIds = _fixture.CreateMany<string>(3).ToList();
+      var expectedException = new Exception("Repository error");
+      
+      _repositoryMock
+          .Setup(r => r.GetByEgressWorkspaceIdsAsync(It.IsAny<IEnumerable<string>>()))
+          .ThrowsAsync(expectedException);
+      
+      // Act & Assert
+      var exception = await Assert.ThrowsAsync<Exception>(
+          () => _service.GetCaseMetadataForEgressWorkspaceIdsAsync(workspaceIds));
+      
+      using (new AssertionScope())
+      {
+          exception.Should().BeSameAs(expectedException);
+          _loggerMock.Verify(
+              x => x.Log(
+                  LogLevel.Error,
+                  It.IsAny<EventId>(),
+                  It.IsAny<It.IsAnyType>(),
+                  It.Is<Exception>(ex => ex == expectedException),
+                  It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+              Times.Once);
+      }
+  }
 }
