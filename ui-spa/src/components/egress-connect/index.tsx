@@ -48,11 +48,12 @@ const EgressPage = () => {
   }, [searchParams]);
 
   useEffect(() => {
-    if (location.state?.searchQueryString && location.state?.connectNetapp)
+    if (location.state?.searchQueryString) {
       setInitialLocationState({
         searchQueryString: location.state?.searchQueryString,
         connectNetapp: location.state?.connectNetapp,
       });
+    }
   }, [location]);
 
   useEffect(() => {

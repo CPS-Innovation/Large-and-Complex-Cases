@@ -5,8 +5,8 @@ export const casesSearchResultsPlaywright: SearchResultData = [
     urn: "ABCDEF1",
     caseId: 12,
     leadDefendantName: "abc1",
-    egressWorkspaceId: "123abcdef",
-    netappFolderPath: null,
+    egressWorkspaceId: null,
+    netappFolderPath: "abc/def",
     registrationDate: "2000-01-02",
   },
   {

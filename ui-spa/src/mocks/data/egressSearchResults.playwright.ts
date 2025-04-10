@@ -11,7 +11,7 @@ export const egressSearchResultsPlaywright: EgressSearchResultResponse = {
       id: "2",
       dateCreated: "2000-01-02",
       name: "thunderstrike1",
-      caseId: null,
+      caseId: 123,
     },
   ],
 
