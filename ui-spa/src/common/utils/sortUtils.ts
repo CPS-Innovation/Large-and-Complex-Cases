@@ -1,11 +1,11 @@
 export const sortByStringProperty = <T>(
   data: T[],
-  property: keyof T,
+  stringProperty: keyof T,
   order: "ascending" | "descending",
 ): T[] => {
   return [...data].sort((a, b) => {
-    const valA = String(a[property]).toLowerCase();
-    const valB = String(b[property]).toLowerCase();
+    const valA = String(a[stringProperty]).toLowerCase();
+    const valB = String(b[stringProperty]).toLowerCase();
 
     return order === "ascending"
       ? valA.localeCompare(valB)
@@ -15,12 +15,12 @@ export const sortByStringProperty = <T>(
 
 export const sortByDateProperty = <T>(
   data: T[],
-  property: keyof T,
+  dateProperty: keyof T, //expected in  ISO 8601 format (YYYY-MM-DD)
   order: "ascending" | "descending",
 ): T[] => {
   return [...data].sort((a, b) => {
-    const dateA = new Date(a[property] as string).getTime();
-    const dateB = new Date(b[property] as string).getTime();
+    const dateA = new Date(a[dateProperty] as string).getTime();
+    const dateB = new Date(b[dateProperty] as string).getTime();
 
     if (order === "ascending") {
       return dateA - dateB;
