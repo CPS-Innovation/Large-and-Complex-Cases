@@ -5,7 +5,7 @@ export type SearchResult = {
   leadDefendantName: string;
   egressWorkspaceId: string | null;
   netappFolderPath: string | null;
-  registrationDate: string;
+  registrationDate: string | null;
 };
 
 export type SearchResultData = SearchResult[];
