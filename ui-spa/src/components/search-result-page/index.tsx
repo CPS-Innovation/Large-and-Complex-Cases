@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { useApi } from "../../common/hooks/useApi";
+import { useApiNew } from "../../common/hooks/useApiNew";
 import { Button, Input, Select, ErrorSummary, BackLink } from "../govuk";
 import { getCaseSearchResults } from "../../apis/gateway-api";
 import useSearchNavigation from "../../common/hooks/useSearchNavigation";
@@ -10,8 +10,6 @@ import {
 } from "../../common/hooks/useCaseSearchForm";
 import SearchResults from "./SearchResults";
 import { useFormattedAreaValues } from "../../common/hooks/useFormattedAreaValues";
-import { RawApiResult } from "../../common/types/ApiResult";
-import { SearchResultData } from "../../common/types/SearchResultResponse";
 import styles from "./index.module.scss";
 
 const CaseSearchResultPage = () => {
@@ -66,16 +64,16 @@ const CaseSearchResultPage = () => {
     formData[SearchFormField.searchType] === "urn",
   );
 
-  const searchApiState: RawApiResult<SearchResultData> = useApi(
+  const caseSearchApi = useApiNew(
     getCaseSearchResults,
     [queryString],
     triggerSearchApi,
   );
 
   useEffect(() => {
-    if (searchApiState.status === "failed")
-      throw new Error(`${searchApiState.error}`);
-  }, [searchApiState]);
+    if (caseSearchApi.status === "failed")
+      throw new Error(`${caseSearchApi.error}`);
+  }, [caseSearchApi]);
 
   useEffect(() => {
     if (formData[SearchFormField.searchType] === "urn" || validatedAreaValues) {
@@ -360,8 +358,8 @@ const CaseSearchResultPage = () => {
   };
 
   if (
-    ((searchApiState.status === "loading" ||
-      searchApiState.status === "initial") &&
+    ((caseSearchApi.status === "loading" ||
+      caseSearchApi.status === "initial") &&
       !errorList.length) ||
     (formData[SearchFormField.searchType] !== "urn" &&
       !formattedAreaValues.options.length)
@@ -397,19 +395,17 @@ const CaseSearchResultPage = () => {
             </div>
           </div>
         </form>
-        {searchApiState.status === "succeeded" &&
-          !!searchApiState.data.length && (
-            <div className={styles.searchResultsCount}>
-              {getResultsCountText(searchApiState.data.length)}
-            </div>
-          )}
-        {searchApiState.status === "succeeded" &&
-          !searchApiState.data.length && <div>{getNoResultsText()}</div>}
+        {!!caseSearchApi.data?.length && (
+          <div className={styles.searchResultsCount}>
+            {getResultsCountText(caseSearchApi.data.length)}
+          </div>
+        )}
+        {!caseSearchApi.data?.length && <div>{getNoResultsText()}</div>}
       </div>
 
       <SearchResults
         searchQueryString={queryString}
-        searchApiResults={searchApiState}
+        searchApiResults={caseSearchApi}
         searchType={formData[SearchFormField.searchType]}
       />
     </div>

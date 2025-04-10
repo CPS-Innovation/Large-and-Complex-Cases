@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import { GATEWAY_BASE_URL, GATEWAY_SCOPE } from "../config";
 import { getAccessToken } from "../auth";
 import { CaseDivisionsOrAreaResponse } from "../common/types/LooksupData";
+import { SearchResultData } from "../common/types/SearchResultResponse";
 import { EgressSearchResultData } from "../common/types/EgressSearchResponse";
 import { ApiError } from "../common/errors/ApiError";
 
@@ -14,7 +15,9 @@ const buildCommonHeaders = async (): Promise<Record<string, string>> => {
   };
 };
 
-export const getCaseSearchResults = async (searchParams: string) => {
+export const getCaseSearchResults = async (
+  searchParams: string,
+): Promise<SearchResultData> => {
   const url = `${GATEWAY_BASE_URL}/api/case-search?${searchParams}`;
 
   const response = await fetch(url, {
@@ -63,7 +66,10 @@ export const connectEgressWorkspace = async ({
     headers: {
       ...(await buildCommonHeaders()),
     },
-    body: JSON.stringify({ egressWorkspaceId: workspaceId, caseId: parseInt(caseId) }),
+    body: JSON.stringify({
+      egressWorkspaceId: workspaceId,
+      caseId: parseInt(caseId),
+    }),
   });
 
   if (!response.ok) {

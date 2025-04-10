@@ -1,4 +1,4 @@
-import { RawApiResult } from "../../common/types/ApiResult";
+import { UseApiResult } from "../../common/hooks/useApiNew";
 import {
   SearchResultData,
   SearchResult,
@@ -11,7 +11,7 @@ import styles from "./searchResults.module.scss";
 
 type SearchResultsProps = {
   searchQueryString: string;
-  searchApiResults: RawApiResult<SearchResultData>;
+  searchApiResults: UseApiResult<SearchResultData>;
   searchType: SearchFromData["searchType"];
 };
 const SearchResults: React.FC<SearchResultsProps> = ({
@@ -31,7 +31,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
     return `/case/${data.caseId}/case-overview/transfer-material`;
   };
   const getTableRowData = () => {
-    if (searchApiResults.status !== "succeeded") return [];
+    if (!searchApiResults.data) return [];
     return searchApiResults.data.map((data) => {
       const operationName = data.operationName
         ? data.operationName
@@ -95,7 +95,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
   return (
     <div className={styles.results}>
       {searchApiResults.status === "succeeded" &&
-        !!searchApiResults.data.length && (
+        !!searchApiResults.data?.length && (
           <Table
             head={[
               {
@@ -124,7 +124,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
           ></Table>
         )}
       {searchApiResults.status === "succeeded" &&
-        !searchApiResults.data.length && (
+        !searchApiResults.data?.length && (
           <div className={styles.noResultsContent}>
             <div>
               <span>You can:</span>
