@@ -84,7 +84,9 @@ test.describe("egress connect", () => {
     page.getByTestId("radio-egress-connect-yes").click();
     await page.locator('button:text("Continue")').click();
     // await expect(page).toHaveURL("/case/12/case-overview/transfer-material");
-    await expect(page).toHaveURL("/");
-    await expect(page.locator("h1")).toHaveText(`Find a case`);
+    await expect(page).toHaveURL("/search-results?urn=11AA2222233");
+    await expect(page.locator("h1")).toHaveText(
+      `Search results for URN "11AA2222233"`,
+    );
   });
 });

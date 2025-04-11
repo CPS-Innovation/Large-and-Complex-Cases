@@ -101,9 +101,10 @@ const EgressPage = () => {
         caseId: caseId!,
       });
 
-      if (initialLocationState?.connectNetapp)
-        navigate(`case/${caseId}/netapp-connect/`);
-      else navigate(`case/${caseId}/case-overview/transfer-material`);
+      navigate(`/search-results?${initialLocationState?.searchQueryString}`);
+      // if (initialLocationState?.connectNetapp)
+      //   navigate(`case/${caseId}/netapp-connect/`);
+      // else navigate(`case/${caseId}/case-overview/transfer-material`);
     } catch (e) {
       navigate(`/case/${caseId}/egress-connect/error`);
     }
