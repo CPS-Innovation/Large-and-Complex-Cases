@@ -157,7 +157,7 @@ const EgressSearchResults: React.FC<SearchResultsProps> = ({
               <span>You can:</span>
             </div>
             <ul className="govuk-list govuk-list--bullet">
-              <li>check for spelling mistakes in the {}.</li>
+              <li>check for spelling mistakes in the egress folder name.</li>
               <li>
                 check the Case Management System to make sure the case exists
                 and that you have access.

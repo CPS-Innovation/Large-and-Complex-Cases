@@ -17,12 +17,11 @@ const EgressConnectFailurePage: React.FC<EgressConnectFailurePageProps> = ({
         </h1>
         <p>You can:</p>
         <ul className="govuk-list govuk-list--bullet">
-          <li>check for spelling mistakes in the operation name</li>
           <li>
             check the Case Management System to make sure the case exists and
-            that you have access
+            that you have access.
           </li>
-          <li>contact the product team if you need further help</li>
+          <li>contact the product team if you need further help.</li>
         </ul>
 
         <Link className={styles.link} to="/">

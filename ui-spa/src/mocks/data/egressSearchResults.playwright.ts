@@ -3,7 +3,7 @@ export const egressSearchResultsPlaywright: EgressSearchResultResponse = {
   data: [
     {
       id: "1",
-      dateCreated: "2000-01-02",
+      dateCreated: "2000-01-03",
       name: "thunderstrike",
       caseId: null,
     },
@@ -16,7 +16,7 @@ export const egressSearchResultsPlaywright: EgressSearchResultResponse = {
   ],
 
   pagination: {
-    totalResults: 100,
+    totalResults: 50,
     skip: 0,
     take: 50,
     count: 25,
