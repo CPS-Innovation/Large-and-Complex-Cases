@@ -25,7 +25,9 @@ const EgressConnectFailurePage: React.FC<EgressConnectFailurePageProps> = ({
           <li>contact the product team if you need further help</li>
         </ul>
 
-        <Link to="/">Search for another case.</Link>
+        <Link className={styles.link} to="/">
+          Search for another case.
+        </Link>
       </div>
     </div>
   );
