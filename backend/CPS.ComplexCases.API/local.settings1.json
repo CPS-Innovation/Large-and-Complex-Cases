@@ -1,0 +1,23 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "Storage": "UseDevelopmentStorage=true",
+    "TenantId": "00dd0d1d-d7e6-4338-ac51-565339c7088c",
+    "CallingAppValidAudience": "57c88580-01d4-477d-9b1d-ebb22c8d05af",
+    "CallingAppValidRoles": "",
+    "EgressOptions__Url": "http://localhost:7080/",
+    "EgressOptions__Username": "esi@switch.egress.com",
+    "EgressOptions__Password": "sa.offsystemalpha@cps.gov.uk:V1C9N+xb(Gy%DZ5_S*LM3xpgq",
+    "AWS__Profile": "default",
+    "AWS__Region": "eu-west-2",
+    "AWS__ServerUrl": "http://localhost:7081/",
+    "NetAppOptions__Url": "http://localhost:7081/",
+    "NetAppOptions__AccessKey": "fakeAccessKey",
+    "NetAppOptions__SecretKey": "fakeSecretKey",
+    "NetAppOptions__RegionName": "eu-west-2",
+    "DdeiBaseUrl": "http://localhost:7079",
+    "DdeiAccessKey": "xxx"
+  }
+}
