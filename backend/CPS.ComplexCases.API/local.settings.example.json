@@ -5,25 +5,23 @@
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "Storage": "UseDevelopmentStorage=true",
-
     "TenantId": "00dd0d1d-d7e6-4338-ac51-565339c7088c",
     "CallingAppValidAudience": "57c88580-01d4-477d-9b1d-ebb22c8d05af",
     "CallingAppValidRoles": "",
     "CallingAppValidScopes": "user_impersonation",
-
     "DDEIOptions__BaseUrl": "Your DDEI endpoint e.g. https://b45gxx5t-7079.uks1.devtunnels.ms",
     "DDEIOptions__MockBaseUrl": "http://localhost:7081",
     "DDEIOptions__AccessKey": "Your DDEI endpoint access code",
     "DDEIOptions__DevtunnelToken": "If using dev tunnels, the word 'tunnel' followed by a space, followed by your devtunnel token e.g. tunnel eyXjd...",
-
     "EgressOptions__Url": "http://localhost:7080/",
     "EgressOptions__Username": "Your egress username",
     "EgressOptions__Password": "Your egress password",
-
     "NetAppOptions__Url": "",
     "NetAppOptions__AccessKey": "",
     "NetAppOptions__SecretKey": "",
-    "NetAppOptions__RegionName": ""
+    "NetAppOptions__RegionName": "",
+    "ConnectionStrings__CaseManagementDatastoreConnection": "Your postgres connection string",
+    "ApiTaskHub": "mytaskhub"
   },
   "Host": {
     "LocalHttpPort": 7071,

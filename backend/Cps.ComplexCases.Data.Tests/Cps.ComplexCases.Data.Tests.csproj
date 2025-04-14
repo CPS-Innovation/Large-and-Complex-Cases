@@ -26,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CPS.ComplexCases.API\CPS.ComplexCases.API.csproj" />
+    <ProjectReference Include="..\CPS.ComplexCases.Data\CPS.ComplexCases.Data.csproj" />
   </ItemGroup>
+
 </Project>

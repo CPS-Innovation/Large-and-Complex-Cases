@@ -176,7 +176,7 @@ public class EgressClientTests
 
         _requestFactoryMock
             .Setup(f => f.GetWorkspacePermissionsRequest(
-                It.Is<GetWorkSpacePermissionArg>(arg => arg.WorkspaceId == workspaceId),
+                It.Is<GetWorkspacePermissionArg>(arg => arg.WorkspaceId == workspaceId),
                 token))
             .Returns(new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/workspaces/{workspaceId}/users"));
     }
@@ -191,7 +191,7 @@ public class EgressClientTests
             Times.Once);
         _requestFactoryMock.Verify(
             f => f.GetWorkspacePermissionsRequest(
-                It.Is<GetWorkSpacePermissionArg>(arg => arg.WorkspaceId == workspaceId),
+                It.Is<GetWorkspacePermissionArg>(arg => arg.WorkspaceId == workspaceId),
                 token),
             Times.Once);
     }

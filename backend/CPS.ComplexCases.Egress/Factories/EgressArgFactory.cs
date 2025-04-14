@@ -24,4 +24,13 @@ public class EgressArgFactory : IEgressArgFactory
       FolderId = folderId
     };
   }
+
+  public GetWorkspacePermissionArg CreateGetWorkspacePermissionArg(string workspaceId, string? email)
+  {
+    return new GetWorkspacePermissionArg
+    {
+      WorkspaceId = workspaceId,
+      Email = email
+    };
+  }
 }

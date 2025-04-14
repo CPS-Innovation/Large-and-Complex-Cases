@@ -32,7 +32,7 @@ public class EgressClient(ILogger<EgressClient> logger, IOptions<EgressOptions> 
 
     var permissionTasks = workspaces.Select(async workspaceDto =>
     {
-      var permissionsArg = new GetWorkSpacePermissionArg
+      var permissionsArg = new GetWorkspacePermissionArg
       {
         WorkspaceId = workspaceDto.Id,
         Email = email
@@ -95,6 +95,13 @@ public class EgressClient(ILogger<EgressClient> logger, IOptions<EgressOptions> 
     var token = await GetWorkspaceToken();
     var response = await SendRequestAsync(_egressRequestFactory.GetWorkspaceDocumentRequest(arg, token));
     return await response.Content.ReadAsStreamAsync();
+  }
+
+  public async Task<bool> GetWorkspacePermission(GetWorkspacePermissionArg arg)
+  {
+    var token = await GetWorkspaceToken();
+    var response = await SendRequestAsync<GetWorkspacePermissionsResponse>(_egressRequestFactory.GetWorkspacePermissionsRequest(arg, token));
+    return response.Data.Any(user => user.Email.Equals(arg.Email, StringComparison.CurrentCultureIgnoreCase));
   }
 
   private async Task<string> GetWorkspaceToken()
