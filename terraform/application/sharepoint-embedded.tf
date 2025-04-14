@@ -62,11 +62,6 @@ resource "azuread_application" "sharepoint_embedded" {
       id   = azuread_service_principal.sharepointonline.oauth2_permission_scope_ids["AllSites.Write"]
       type = "Scope"
     }
-
-    resource_access {
-      id   = azuread_service_principal.sharepointonline.oauth2_permission_scope_ids["Sites.ReadWrite.All"]
-      type = "Role"
-    }
   }
 
   single_page_application {

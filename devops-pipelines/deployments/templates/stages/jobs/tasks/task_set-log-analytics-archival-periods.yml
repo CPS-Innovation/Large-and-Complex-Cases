@@ -6,8 +6,6 @@ parameters:
     type: string
   - name: targetName
     type: string
-  - name: targetSuffix
-    type: string
   - name: armClientId
     type: string
   - name: armClientSecret
@@ -20,20 +18,22 @@ parameters:
     type: string
   - name: totalLogRetentionTime
     type: string
+  - name: sharedSuffix
+    type: string
 
 steps:
   # download scripts artifact
   - download: ${{ parameters.targetBuild }}
     displayName: Download Scripts
-    artifact: 'polaris-script-files'
+    artifact: 'complex-cases-script-files'
 
   # Set Log Analytics Archival Period - remove when supported natively by Terraform
   - bash: |
       az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET --tenant $ARM_TENANT_ID
       az account set --subscription $ARM_SUBSCRIPTION_ID
-      az monitor log-analytics workspace table update --resource-group rg-LaCC-analytics --workspace-name lacc-la --name AppEvents --retention-time $LOG_RETENTION_TIME --total-retention-time $TOTAL_LOG_RETENTION_TIME --subscription $ARM_SUBSCRIPTION_ID
-      az monitor log-analytics workspace table update --resource-group rg-LaCC-analytics --workspace-name lacc-la --name AppRequests --retention-time $LOG_RETENTION_TIME --total-retention-time $TOTAL_LOG_RETENTION_TIME --subscription $ARM_SUBSCRIPTION_ID
-      az monitor log-analytics workspace table update --resource-group rg-LaCC-analytics --workspace-name lacc-la --name AppServiceConsoleLogs --retention-time $LOG_RETENTION_TIME --total-retention-time $TOTAL_LOG_RETENTION_TIME --subscription $ARM_SUBSCRIPTION_ID
+      az monitor log-analytics workspace table update --resource-group rg-LaCC-analytics --workspace-name lacc-$SHARED_SUFFIX-la --name AppEvents --retention-time $LOG_RETENTION_TIME --total-retention-time $TOTAL_LOG_RETENTION_TIME --subscription $ARM_SUBSCRIPTION_ID
+      az monitor log-analytics workspace table update --resource-group rg-LaCC-analytics --workspace-name lacc-$SHARED_SUFFIX-la --name AppRequests --retention-time $LOG_RETENTION_TIME --total-retention-time $TOTAL_LOG_RETENTION_TIME --subscription $ARM_SUBSCRIPTION_ID
+      az monitor log-analytics workspace table update --resource-group rg-LaCC-analytics --workspace-name lacc-$SHARED_SUFFIX-la --name AppServiceConsoleLogs --retention-time $LOG_RETENTION_TIME --total-retention-time $TOTAL_LOG_RETENTION_TIME --subscription $ARM_SUBSCRIPTION_ID
     displayName: Script > Set Log Analytics Archival Periods
     env:
       ARM_CLIENT_ID: ${{ parameters.armClientId }}
@@ -42,4 +42,4 @@ steps:
       ARM_SUBSCRIPTION_ID: ${{ parameters.armSubscriptionId }}
       LOG_RETENTION_TIME: ${{ parameters.logRetentionTime }}
       TOTAL_LOG_RETENTION_TIME: ${{ parameters.totalLogRetentionTime }}
-      ARM_SUFFIX: ${{ parameters.targetSuffix }}
+      SHARED_SUFFIX: ${{ parameters.sharedSuffix }}
