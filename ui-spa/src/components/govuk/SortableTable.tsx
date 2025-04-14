@@ -70,6 +70,11 @@ export const SortableTable: React.FC<SortableTableProps> = ({
               <span> {item.children}</span>
               {sortState?.sortName === item.sortName && (
                 <ArrowDownIcon
+                  data-testid={
+                    sortState?.sortType === "descending"
+                      ? "arrow-down-icon"
+                      : "arrow-up-icon"
+                  }
                   className={
                     sortState?.sortType === "descending"
                       ? styles.descending
@@ -77,7 +82,9 @@ export const SortableTable: React.FC<SortableTableProps> = ({
                   }
                 />
               )}
-              {sortState?.sortName !== item.sortName && <TableSortIcon />}
+              {sortState?.sortName !== item.sortName && (
+                <TableSortIcon data-testid="sort-icon" />
+              )}
             </button>
           ),
         };

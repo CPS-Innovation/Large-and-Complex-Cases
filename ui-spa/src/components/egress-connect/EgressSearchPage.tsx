@@ -53,7 +53,6 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
           >
             <ErrorSummary
               data-testid={"search-error-summary"}
-              // className={styles.errorSummary}
               errorList={[
                 {
                   reactListKey: "1",

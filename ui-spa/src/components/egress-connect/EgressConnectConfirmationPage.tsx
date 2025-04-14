@@ -5,7 +5,6 @@ type EgressConnectConfirmationPageProps = {
   selectedWorkspaceName: string;
   backLinkUrl: string;
   handleContinue: (value: boolean) => void;
-  // handleBack: () => void;
 };
 const EgressConnectConfirmationPage: React.FC<
   EgressConnectConfirmationPageProps

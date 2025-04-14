@@ -380,7 +380,6 @@ const CaseSearchResultPage = () => {
           >
             <ErrorSummary
               data-testid={"search-error-summary"}
-              className={styles.errorSummary}
               errorList={errorList}
               titleChildren="There is a problem"
             />

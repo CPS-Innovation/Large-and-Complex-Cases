@@ -53,6 +53,7 @@ const EgressSearchResults: React.FC<SearchResultsProps> = ({
       return sortByStatus(egressSearchApi.data, sortValues.type);
     return egressSearchApi.data;
   }, [egressSearchApi, sortValues]);
+
   const handleConnect = (id: string) => {
     handleConnectFolder(id);
   };
