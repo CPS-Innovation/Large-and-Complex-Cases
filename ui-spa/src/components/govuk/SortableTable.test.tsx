@@ -2,7 +2,7 @@ import { render, screen, within, fireEvent } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import { SortableTable } from "./SortableTable";
 
-describe("TableComponent", () => {
+describe("Sortable Table Component", () => {
   const handleTableSortMock = vi.fn();
   beforeEach(() => {
     const rowData = [

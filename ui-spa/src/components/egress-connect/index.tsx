@@ -102,6 +102,7 @@ const EgressPage = () => {
       });
 
       navigate(`/search-results?${initialLocationState?.searchQueryString}`);
+      //TODO: uncomment this when netapp connection is complete
       // if (initialLocationState?.connectNetapp)
       //   navigate(`case/${caseId}/netapp-connect/`);
       // else navigate(`case/${caseId}/case-overview/transfer-material`);

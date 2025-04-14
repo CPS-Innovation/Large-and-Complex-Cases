@@ -10,12 +10,12 @@ import {
 } from "../../common/utils/sortUtils";
 import styles from "./egressSearchResults.module.scss";
 
-type SearchResultsProps = {
+type EgressSearchResultsProps = {
   workspaceName: string;
   egressSearchApi: UseApiResult<EgressSearchResultData>;
   handleConnectFolder: (id: string) => void;
 };
-const EgressSearchResults: React.FC<SearchResultsProps> = ({
+const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
   workspaceName,
   egressSearchApi,
   handleConnectFolder,
@@ -115,9 +115,21 @@ const EgressSearchResults: React.FC<SearchResultsProps> = ({
     <div className={styles.results}>
       {!!egressSearchResultsData.length && (
         <>
-          <div className={styles.searchResultsCount}>
-            There are <b>{egressSearchResultsData.length} folders </b>matching
-            the case <b>{workspaceName}</b> on egress.
+          <div
+            className={styles.searchResultsCount}
+            data-testid="egress-results-count"
+          >
+            {egressSearchResultsData.length > 1 ? (
+              <>
+                There are <b>{egressSearchResultsData.length} folders </b>
+                matching the case <b>{workspaceName}</b> on egress.
+              </>
+            ) : (
+              <>
+                There is <b>{egressSearchResultsData.length} folder </b>
+                matching the case <b>{workspaceName}</b> on egress.
+              </>
+            )}
           </div>
           <SortableTable
             head={[
