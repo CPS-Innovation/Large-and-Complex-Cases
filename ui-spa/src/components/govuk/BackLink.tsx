@@ -10,7 +10,7 @@ export type BackLinkProps = {
 };
 
 export const BackLink: React.FC<BackLinkProps> = (props) => {
-  //This is overwrite the original Link component implementation based on older version of react-router which throws error
+  //This is to overwrite the original Link component implementation based on older version of react-router which throws error
   if (props.to)
     return (
       <Link
