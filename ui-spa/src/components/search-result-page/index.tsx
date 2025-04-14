@@ -283,7 +283,8 @@ const CaseSearchResultPage = () => {
       default:
         return (
           <>
-            Search results for URN <b>{`"${searchParams["urn"]}"`}</b>
+            Search results for URN{" "}
+            <b>{searchParams["urn"] ? `"${searchParams["urn"]}"` : ""}</b>
           </>
         );
     }
