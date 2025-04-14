@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { EgressSearchResultData } from "../../common/types/EgressSearchResponse";
 import { Button, SortableTable, Tag } from "../govuk";
 import { formatDate } from "../../common/utils/formatDate";
-import { UseApiResult } from "../../common/hooks/useApiNew";
+import { UseApiResult } from "../../common/hooks/useApi";
 import {
   sortByStringProperty,
   sortByDateProperty,

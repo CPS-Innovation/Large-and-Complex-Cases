@@ -12,7 +12,7 @@ export interface UseApiResult<T> extends UseApiState<T> {
   refetch: () => void;
 }
 
-export const useApiNew = <T>(
+export const useApi = <T>(
   apiFunction: (...args: any[]) => Promise<T>,
   params: any[] = [],
   makeCall = true,

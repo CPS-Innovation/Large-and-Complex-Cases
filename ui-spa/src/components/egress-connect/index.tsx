@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { useApiNew } from "../../common/hooks/useApiNew";
+import { useApi } from "../../common/hooks/useApi";
 import {
   getEgressSearchResults,
   connectEgressWorkspace,
@@ -29,7 +29,7 @@ const EgressPage = () => {
   const [formDataErrorText, setFormDataErrorText] = useState("");
   const [formValue, setFormValue] = useState("");
 
-  const egressSearchApi = useApiNew(
+  const egressSearchApi = useApi(
     getEgressSearchResults,
     [`workspace-name=${workspaceName}`],
     false,

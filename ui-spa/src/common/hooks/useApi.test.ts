@@ -1,5 +1,5 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { useApiNew } from "./useApiNew";
+import { useApi } from "./useApi";
 
 describe("useApi", () => {
   it("can initiate a call, set status to loading, then return a successful result", async () => {
@@ -9,7 +9,7 @@ describe("useApi", () => {
         new Promise((resolve) => setTimeout(() => resolve(mockResult), 10)),
     );
 
-    const { result } = renderHook(() => useApiNew(mockApiCall, ["1"]));
+    const { result } = renderHook(() => useApi(mockApiCall, ["1"]));
 
     expect(result.current).toEqual({
       status: "loading",
@@ -31,7 +31,7 @@ describe("useApi", () => {
         new Promise((_, reject) => setTimeout(() => reject(mockError))),
     );
 
-    const { result } = renderHook(() => useApiNew(mockApiCall, ["1"]));
+    const { result } = renderHook(() => useApi(mockApiCall, ["1"]));
 
     expect(result.current).toEqual({
       status: "loading",
@@ -53,7 +53,7 @@ describe("useApi", () => {
         new Promise((resolve) => setTimeout(() => resolve(mockResult), 10)),
     );
 
-    const { result } = renderHook(() => useApiNew(mockApiCall, ["1", 2, "3"]));
+    const { result } = renderHook(() => useApi(mockApiCall, ["1", 2, "3"]));
 
     expect(result.current).toEqual({
       status: "loading",
@@ -75,7 +75,7 @@ describe("useApi", () => {
         new Promise((resolve) => setTimeout(() => resolve(mockResult), 10)),
     );
 
-    const { rerender } = renderHook(() => useApiNew(mockApiCall, ["1"]));
+    const { rerender } = renderHook(() => useApi(mockApiCall, ["1"]));
 
     expect(mockApiCall.mock.calls.length).toEqual(1);
     rerender();
@@ -89,7 +89,7 @@ describe("useApi", () => {
         new Promise((resolve) => setTimeout(() => resolve(mockResult), 10)),
     );
 
-    const { rerender } = renderHook(({ del, p1 }) => useApiNew(del, [p1]), {
+    const { rerender } = renderHook(({ del, p1 }) => useApi(del, [p1]), {
       initialProps: {
         del: mockApiCall,
         p1: "1",
@@ -113,7 +113,7 @@ describe("useApi", () => {
     );
 
     const { result, rerender } = renderHook(
-      ({ makeCall }) => useApiNew(mockApiCall, ["1"], makeCall),
+      ({ makeCall }) => useApi(mockApiCall, ["1"], makeCall),
       { initialProps: { makeCall: false } },
     );
     expect(mockApiCall).not.toHaveBeenCalled();
@@ -141,7 +141,7 @@ describe("useApi", () => {
     );
 
     const { result, rerender } = renderHook(() =>
-      useApiNew(mockApiCall, ["1"], false),
+      useApi(mockApiCall, ["1"], false),
     );
     expect(mockApiCall).not.toHaveBeenCalled();
     expect(result.current).toEqual({
@@ -175,7 +175,7 @@ describe("useApi", () => {
     );
 
     const { result, rerender } = renderHook(() =>
-      useApiNew(mockApiCall, ["1"], true),
+      useApi(mockApiCall, ["1"], true),
     );
     expect(mockApiCall).toHaveBeenCalledTimes(1);
     expect(result.current).toEqual({

@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { useApiNew } from "../../common/hooks/useApiNew";
+import { useApi } from "../../common/hooks/useApi";
 import { Button, Input, Select, ErrorSummary, BackLink } from "../govuk";
 import { getCaseSearchResults } from "../../apis/gateway-api";
 import useSearchNavigation from "../../common/hooks/useSearchNavigation";
@@ -64,7 +64,7 @@ const CaseSearchResultPage = () => {
     formData[SearchFormField.searchType] === "urn",
   );
 
-  const caseSearchApi = useApiNew(
+  const caseSearchApi = useApi(
     getCaseSearchResults,
     [queryString],
     triggerSearchApi,

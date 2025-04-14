@@ -1,4 +1,4 @@
-import { UseApiResult } from "../../common/hooks/useApiNew";
+import { UseApiResult } from "../../common/hooks/useApi";
 import {
   SearchResultData,
   SearchResult,
