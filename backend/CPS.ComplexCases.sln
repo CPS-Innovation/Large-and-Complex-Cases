@@ -24,9 +24,12 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.DDEI", "CPS.ComplexCases.DDEI\CPS.ComplexCases.DDEI.csproj", "{6FA7188C-2A25-42AF-A6AA-887EBE1444C9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.DDEI.Tests", "CPS.ComplexCases.DDEI.Tests\CPS.ComplexCases.DDEI.Tests.csproj", "{209FBD6E-9026-441B-B9BC-29F2B6E98E9A}"
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.WireMock.Core", "CPS.ComplexCases.WireMock.Core\CPS.ComplexCases.WireMock.Core.csproj", "{D582A8FF-5787-43EA-BF77-2422761FDFEA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.DDEI.WireMock", "CPS.ComplexCases.DDEI.WireMock\CPS.ComplexCases.DDEI.WireMock.csproj", "{5F1255D8-4BBC-45E9-8F98-25FE645F783F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.Data", "CPS.ComplexCases.Data\CPS.ComplexCases.Data.csproj", "{0840D01B-9FD4-449D-978E-D2D2A20F6B43}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cps.ComplexCases.Data.Tests", "Cps.ComplexCases.Data.Tests\Cps.ComplexCases.Data.Tests.csproj", "{C7C18A33-63E6-4328-A797-A63E1E8AC4AE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -89,5 +92,13 @@ Global
 		{5F1255D8-4BBC-45E9-8F98-25FE645F783F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5F1255D8-4BBC-45E9-8F98-25FE645F783F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5F1255D8-4BBC-45E9-8F98-25FE645F783F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0840D01B-9FD4-449D-978E-D2D2A20F6B43}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0840D01B-9FD4-449D-978E-D2D2A20F6B43}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0840D01B-9FD4-449D-978E-D2D2A20F6B43}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0840D01B-9FD4-449D-978E-D2D2A20F6B43}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C7C18A33-63E6-4328-A797-A63E1E8AC4AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C7C18A33-63E6-4328-A797-A63E1E8AC4AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C7C18A33-63E6-4328-A797-A63E1E8AC4AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C7C18A33-63E6-4328-A797-A63E1E8AC4AE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

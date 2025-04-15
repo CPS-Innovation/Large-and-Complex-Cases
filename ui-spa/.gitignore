@@ -28,3 +28,6 @@ coverage
 /playwright/playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Vite
+.vite/deps/
