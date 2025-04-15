@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useMemo } from "react";
 import { Button, Radios, Input, Select, ErrorSummary } from "../govuk";
 import useSearchNavigation from "../../common/hooks/useSearchNavigation";
 import {
@@ -6,6 +6,7 @@ import {
   SearchFormField,
   SearchFromData,
 } from "../../common/hooks/useCaseSearchForm";
+import { useLocation } from "react-router";
 import { useFormattedAreaValues } from "../../common/hooks/useFormattedAreaValues";
 
 import styles from "./index.module.scss";
@@ -14,14 +15,19 @@ const CaseSearchPage = () => {
   const errorSummaryRef = useRef<HTMLInputElement>(null);
   const { navigateWithParams } = useSearchNavigation();
   const formattedAreaValues = useFormattedAreaValues();
-  const initialData: SearchFromData = {
-    searchType: "urn",
-    operationName: "",
-    operationArea: "",
-    defendantName: "",
-    defendantArea: "",
-    urn: "",
-  };
+  const location = useLocation();
+
+  const initialData: SearchFromData = useMemo(
+    () => ({
+      searchType: location.state?.searchType ?? "urn",
+      operationName: location.state?.operationName ?? "",
+      operationArea: location.state?.operationArea ?? "",
+      defendantName: location.state?.defendantName ?? "",
+      defendantArea: location.state?.defendantArea ?? "",
+      urn: location.state?.urn ?? "",
+    }),
+    [location],
+  );
 
   const {
     formData,
@@ -80,7 +86,6 @@ const CaseSearchPage = () => {
           >
             <ErrorSummary
               data-testid={"search-error-summary"}
-              className={styles.errorSummary}
               errorList={errorList}
               titleChildren="There is a problem"
             />

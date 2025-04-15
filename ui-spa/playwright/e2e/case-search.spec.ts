@@ -13,9 +13,9 @@ test.describe("Case Search", async () => {
     await page.getByRole("radio", { name: "Operation name" }).check();
     const input = await page.getByTestId("search-operation-name");
     await expect(input).toBeVisible();
-    expect(await page.getByTestId("search-defendant-name")).not.toBeVisible();
-    expect(await page.getByTestId("search-defendant-area")).not.toBeVisible();
-    expect(await page.getByTestId("search-urn")).not.toBeVisible();
+    await expect(page.getByTestId("search-defendant-name")).not.toBeVisible();
+    await expect(page.getByTestId("search-defendant-area")).not.toBeVisible();
+    await expect(page.getByTestId("search-urn")).not.toBeVisible();
     await input.fill("thunder");
     const areaSelect = await page.getByTestId("search-operation-area");
     const options = await areaSelect.locator("option").allTextContents();
@@ -47,10 +47,10 @@ test.describe("Case Search", async () => {
       "Thunderstruck1_pl",
       "ABCDEF1",
       "abc1",
-      "Connected",
       "Inactive",
+      "Connected",
       "02/01/2000",
-      "View ",
+      "Connect",
     ]);
     const row2Values = await page
       .locator("table tbody tr:nth-child(2) td")
@@ -62,7 +62,7 @@ test.describe("Case Search", async () => {
       "Connected",
       "Connected",
       "03/01/2000",
-      "View ",
+      "View",
     ]);
   });
 
@@ -75,9 +75,9 @@ test.describe("Case Search", async () => {
     ).toBeChecked();
     const input = await page.getByTestId("search-defendant-name");
     await expect(input).toBeVisible();
-    expect(await page.getByTestId("search-operation-name")).not.toBeVisible();
-    expect(await page.getByTestId("search-operation-area")).not.toBeVisible();
-    expect(await page.getByTestId("search-urn")).not.toBeVisible();
+    await expect(page.getByTestId("search-operation-name")).not.toBeVisible();
+    await expect(page.getByTestId("search-operation-area")).not.toBeVisible();
+    await expect(page.getByTestId("search-urn")).not.toBeVisible();
     await input.fill("thunder");
     const areaSelect = await page.getByTestId("search-defendant-area");
     const options = await areaSelect.locator("option").allTextContents();
@@ -109,10 +109,10 @@ test.describe("Case Search", async () => {
       "Thunderstruck1_pl",
       "ABCDEF1",
       "abc1",
-      "Connected",
       "Inactive",
+      "Connected",
       "02/01/2000",
-      "View ",
+      "Connect",
     ]);
     const row2Values = await page
       .locator("table tbody tr:nth-child(2) td")
@@ -124,7 +124,7 @@ test.describe("Case Search", async () => {
       "Connected",
       "Connected",
       "03/01/2000",
-      "View ",
+      "View",
     ]);
   });
 
@@ -135,10 +135,10 @@ test.describe("Case Search", async () => {
     const input = await page.getByTestId("search-urn");
     await expect(input).toBeVisible();
     await input.fill("11AA2222233");
-    expect(await page.getByTestId("search-operation-name")).not.toBeVisible();
-    expect(await page.getByTestId("search-operation-area")).not.toBeVisible();
-    expect(await page.getByTestId("search-defendant-name")).not.toBeVisible();
-    expect(await page.getByTestId("search-defendant-area")).not.toBeVisible();
+    await expect(page.getByTestId("search-operation-name")).not.toBeVisible();
+    await expect(page.getByTestId("search-operation-area")).not.toBeVisible();
+    await expect(page.getByTestId("search-defendant-name")).not.toBeVisible();
+    await expect(page.getByTestId("search-defendant-area")).not.toBeVisible();
 
     await page.locator('button:text("search")').click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
@@ -158,10 +158,10 @@ test.describe("Case Search", async () => {
       "Thunderstruck1_pl",
       "ABCDEF1",
       "abc1",
-      "Connected",
       "Inactive",
+      "Connected",
       "02/01/2000",
-      "View ",
+      "Connect",
     ]);
     const row2Values = await page
       .locator("table tbody tr:nth-child(2) td")
@@ -173,7 +173,7 @@ test.describe("Case Search", async () => {
       "Connected",
       "Connected",
       "03/01/2000",
-      "View ",
+      "View",
     ]);
   });
 
@@ -347,10 +347,10 @@ test.describe("Case Search Results", () => {
       "Thunderstruck1_pl",
       "ABCDEF1",
       "abc1",
-      "Connected",
       "Inactive",
+      "Connected",
       "02/01/2000",
-      "View ",
+      "Connect",
     ]);
     const row2Values = await page
       .locator("table tbody tr:nth-child(2) td")
@@ -362,7 +362,7 @@ test.describe("Case Search Results", () => {
       "Connected",
       "Connected",
       "03/01/2000",
-      "View ",
+      "View",
     ]);
   });
 
@@ -397,10 +397,10 @@ test.describe("Case Search Results", () => {
       "Thunderstruck1_pl",
       "ABCDEF1",
       "abc1",
-      "Connected",
       "Inactive",
+      "Connected",
       "02/01/2000",
-      "View ",
+      "Connect",
     ]);
     const row2Values = await page
       .locator("table tbody tr:nth-child(2) td")
@@ -412,7 +412,7 @@ test.describe("Case Search Results", () => {
       "Connected",
       "Connected",
       "03/01/2000",
-      "View ",
+      "View",
     ]);
   });
 
@@ -429,7 +429,18 @@ test.describe("Case Search Results", () => {
     ).toBeVisible();
 
     await expect(page.getByTestId("search-urn")).toHaveValue("11AA2222233");
-
+    const tableHeadValues = await page
+      .locator("table thead tr:nth-child(1) th")
+      .allTextContents();
+    expect(tableHeadValues).toEqual([
+      "Defendant or Operation name",
+      "URN",
+      "Lead defendant",
+      "Egress",
+      "Shared Drive",
+      "Case created",
+      "",
+    ]);
     const row1Values = await page
       .locator("table tbody tr:nth-child(1) td")
       .allTextContents();
@@ -437,10 +448,10 @@ test.describe("Case Search Results", () => {
       "Thunderstruck1_pl",
       "ABCDEF1",
       "abc1",
-      "Connected",
       "Inactive",
+      "Connected",
       "02/01/2000",
-      "View ",
+      "Connect",
     ]);
     const row2Values = await page
       .locator("table tbody tr:nth-child(2) td")
@@ -452,7 +463,7 @@ test.describe("Case Search Results", () => {
       "Connected",
       "Connected",
       "03/01/2000",
-      "View ",
+      "View",
     ]);
   });
 
@@ -625,9 +636,18 @@ test.describe("Case Search Results", () => {
     );
     await page.goto("/search-results?defendant-name=ww&area=234");
     await page.waitForResponse(`https://mocked-out-api/api/areas`);
-    await expect(page.locator("h1")).toHaveText(`Something went wrong!`);
+    await expect(page.locator("h1")).toHaveText(
+      "Sorry, there is a problem with the service",
+    );
     await expect(
-      page.getByText("Error: areas api failed with status: 500, method:GET"),
+      page.getByText(
+        "Please try this case again later. If the problem continues, contact the product team.",
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/areas: Getting case areas failed; status - Internal Server Error (500)",
+      ),
     ).toBeVisible();
   });
 
@@ -643,9 +663,18 @@ test.describe("Case Search Results", () => {
     );
     await page.goto("/search-results?operation-name=ww&area=234");
     await page.waitForResponse(`https://mocked-out-api/api/areas`);
-    await expect(page.locator("h1")).toHaveText(`Something went wrong!`);
+    await expect(page.locator("h1")).toHaveText(
+      "Sorry, there is a problem with the service",
+    );
     await expect(
-      page.getByText("Error: areas api failed with status: 500, method:GET"),
+      page.getByText(
+        "Please try this case again later. If the problem continues, contact the product team.",
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/areas: Getting case areas failed; status - Internal Server Error (500)",
+      ),
     ).toBeVisible();
   });
 
@@ -662,29 +691,50 @@ test.describe("Case Search Results", () => {
     await page.goto("/search-results?operation-name=ww&area=1001");
     await page.waitForResponse(`https://mocked-out-api/api/areas`);
     await page.waitForResponse(`https://mocked-out-api/api/case-search?*`);
-    await expect(page.locator("h1")).toHaveText(`Something went wrong!`);
+    await expect(page.locator("h1")).toHaveText(
+      "Sorry, there is a problem with the service",
+    );
     await expect(
       page.getByText(
-        "Error: case-search api failed with status: 500, method:GET",
+        "Please try this case again later. If the problem continues, contact the product team.",
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/case-search?operation-name=ww&area=1001: Searching for cases failed; status - Internal Server Error (500)",
       ),
     ).toBeVisible();
 
     await page.goto("/search-results?defendant-name=ww&area=1001");
     await page.waitForResponse(`https://mocked-out-api/api/areas`);
     await page.waitForResponse(`https://mocked-out-api/api/case-search?*`);
-    await expect(page.locator("h1")).toHaveText(`Something went wrong!`);
+    await expect(page.locator("h1")).toHaveText(
+      "Sorry, there is a problem with the service",
+    );
     await expect(
       page.getByText(
-        "Error: case-search api failed with status: 500, method:GET",
+        "Please try this case again later. If the problem continues, contact the product team.",
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/case-search?defendant-name=ww&area=1001: Searching for cases failed; status - Internal Server Error (500)",
       ),
     ).toBeVisible();
 
     await page.goto("/search-results?urn=11AA2222233");
     await page.waitForResponse(`https://mocked-out-api/api/case-search?*`);
-    await expect(page.locator("h1")).toHaveText(`Something went wrong!`);
+    await expect(page.locator("h1")).toHaveText(
+      "Sorry, there is a problem with the service",
+    );
     await expect(
       page.getByText(
-        "Error: case-search api failed with status: 500, method:GET",
+        "Please try this case again later. If the problem continues, contact the product team.",
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/case-search?urn=11AA2222233: Searching for cases failed; status - Internal Server Error (500)",
       ),
     ).toBeVisible();
   });

@@ -1,10 +1,16 @@
 .results {
-  margin-top: 2.5rem;
   .statusTag {
     text-transform: capitalize;
     font-weight: normal;
-    font-size: 19px;
     letter-spacing: normal;
+    font-size: 19px;
+  }
+  & :global(.govuk-button--secondary) {
+    margin-bottom: 0;
+    font-size: 1rem;
+  }
+  & :global(.govuk-table__cell) {
+    vertical-align: middle;
   }
   & :global(.govuk-table__cell:last-child) {
     text-align: right;
@@ -19,6 +25,8 @@
   }
 }
 
-.link {
-  color: #1d70b8;
+.searchResultsCount {
+  padding-bottom: 2rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #b1b4b6;
 }

@@ -1,52 +1,41 @@
-import { useEffect, useState } from "react";
-import { RawApiResult } from "../types/ApiResult";
+import { useState, useEffect, useCallback } from "react";
 
-type UseApiParams = <T extends (...args: any[]) => Promise<any>>(
-  del: T,
-  params: Parameters<T>,
-  makeCall?: boolean,
-) => RawApiResult<Awaited<ReturnType<typeof del>>>;
+type ApiStatus = "initial" | "loading" | "succeeded" | "failed";
 
-/*
-  If there is an api method `getFoo(id: number, name: string) => Promise<Model>` then `useApi` is called thus:
-    `const state = useApi(getFoo, 1, "bar")`
+interface UseApiState<T> {
+  status: ApiStatus;
+  data?: T;
+  error?: any;
+}
 
-  The `UseApiParams` type ensures that the second (third.. etc) parameters passed to useApi are
-  strongly-typed to the argument types of the function passed as the first param e.g. `getFoo`.
+export interface UseApiResult<T> extends UseApiState<T> {
+  refetch: () => void;
+}
 
-  This approach is borrowed from redux-sagas and avoids the use of anonymous lambdas being passed e.g.
+export const useApi = <T>(
+  apiFunction: (...args: any[]) => Promise<T>,
+  params: any[] = [],
+  makeCall = true,
+): UseApiResult<T> => {
+  const [result, setResult] = useState<UseApiState<T>>({ status: "initial" });
 
-    `const state = useApi(() => getFoo(1, "bar"))`
+  const fetchData = useCallback(() => {
+    setResult({ status: "loading" });
 
-  meaning that on the inside of `useApi` the function is always seen as being different on every execution
-  leading to constant refiring of the `useEffect`.
-*/
-export const useApi: UseApiParams = (del, params, makeCall = true) => {
-  const [result, setResult] = useState<ReturnType<UseApiParams>>({
-    status: "initial",
-  });
+    apiFunction(...params)
+      .then((data) => {
+        setResult({ status: "succeeded", data });
+      })
+      .catch((error) => {
+        setResult({ status: "failed", error });
+      });
+  }, [apiFunction, JSON.stringify(params)]);
 
   useEffect(() => {
     if (makeCall) {
-      setResult({ status: "loading" });
-
-      del
-        .apply(del, params)
-        .then((data) => {
-          setResult({
-            status: "succeeded",
-            data,
-          });
-        })
-        .catch((error) =>
-          setResult({
-            status: "failed",
-            error,
-          }),
-        );
+      fetchData();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [del, JSON.stringify(params), makeCall]);
+  }, [fetchData, makeCall]);
 
-  return result;
+  return { ...result, refetch: fetchData };
 };

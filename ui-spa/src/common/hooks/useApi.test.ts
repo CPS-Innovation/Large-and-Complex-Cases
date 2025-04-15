@@ -11,9 +11,16 @@ describe("useApi", () => {
 
     const { result } = renderHook(() => useApi(mockApiCall, ["1"]));
 
-    expect(result.current).toEqual({ status: "loading" });
+    expect(result.current).toEqual({
+      status: "loading",
+      refetch: expect.any(Function),
+    });
     await waitFor(() => {
-      expect(result.current).toEqual({ status: "succeeded", data: mockResult });
+      expect(result.current).toEqual({
+        status: "succeeded",
+        data: mockResult,
+        refetch: expect.any(Function),
+      });
     });
   });
 
@@ -26,9 +33,16 @@ describe("useApi", () => {
 
     const { result } = renderHook(() => useApi(mockApiCall, ["1"]));
 
-    expect(result.current).toEqual({ status: "loading" });
+    expect(result.current).toEqual({
+      status: "loading",
+      refetch: expect.any(Function),
+    });
     await waitFor(() => {
-      expect(result.current).toEqual({ status: "failed", error: mockError });
+      expect(result.current).toEqual({
+        status: "failed",
+        error: mockError,
+        refetch: expect.any(Function),
+      });
     });
   });
 
@@ -41,11 +55,15 @@ describe("useApi", () => {
 
     const { result } = renderHook(() => useApi(mockApiCall, ["1", 2, "3"]));
 
-    expect(result.current).toEqual({ status: "loading" });
+    expect(result.current).toEqual({
+      status: "loading",
+      refetch: expect.any(Function),
+    });
     await waitFor(() => {
       expect(result.current).toEqual({
         status: "succeeded",
         data: mockResult,
+        refetch: expect.any(Function),
       });
     });
   });
@@ -99,13 +117,94 @@ describe("useApi", () => {
       { initialProps: { makeCall: false } },
     );
     expect(mockApiCall).not.toHaveBeenCalled();
-    expect(result.current).toEqual({ status: "initial" });
+    expect(result.current).toEqual({
+      status: "initial",
+      refetch: expect.any(Function),
+    });
 
     //just another assertion to specifically prove the reverse, third parameter by default is true
     rerender({
       makeCall: true,
     });
     expect(mockApiCall).toHaveBeenCalledTimes(1);
-    expect(result.current).toEqual({ status: "loading" });
+    expect(result.current).toEqual({
+      status: "loading",
+      refetch: expect.any(Function),
+    });
+  });
+
+  it("should make an api call even if it has not made the api call initially, if we call the refetch", async () => {
+    const mockResult = { id: 1 };
+    const mockApiCall = vi.fn(
+      (_id: string) =>
+        new Promise((resolve) => setTimeout(() => resolve(mockResult), 10)),
+    );
+
+    const { result, rerender } = renderHook(() =>
+      useApi(mockApiCall, ["1"], false),
+    );
+    expect(mockApiCall).not.toHaveBeenCalled();
+    expect(result.current).toEqual({
+      status: "initial",
+      refetch: expect.any(Function),
+    });
+
+    //call api through refetch
+    result.current.refetch();
+    rerender();
+    expect(mockApiCall).toHaveBeenCalledTimes(1);
+
+    expect(result.current).toEqual({
+      status: "loading",
+      refetch: expect.any(Function),
+    });
+    await waitFor(() => {
+      expect(result.current).toEqual({
+        status: "succeeded",
+        data: mockResult,
+        refetch: expect.any(Function),
+      });
+    });
+  });
+
+  it("should make an api call even if it has made the api call initially, if we call the refetch", async () => {
+    const mockResult = { id: 1 };
+    const mockApiCall = vi.fn(
+      (_id: string) =>
+        new Promise((resolve) => setTimeout(() => resolve(mockResult), 10)),
+    );
+
+    const { result, rerender } = renderHook(() =>
+      useApi(mockApiCall, ["1"], true),
+    );
+    expect(mockApiCall).toHaveBeenCalledTimes(1);
+    expect(result.current).toEqual({
+      status: "loading",
+      refetch: expect.any(Function),
+    });
+    await waitFor(() => {
+      expect(result.current).toEqual({
+        status: "succeeded",
+        data: mockResult,
+        refetch: expect.any(Function),
+      });
+    });
+
+    //call api through refetch
+    result.current.refetch();
+    rerender();
+    expect(mockApiCall).toHaveBeenCalledTimes(2);
+
+    expect(result.current).toEqual({
+      status: "loading",
+      refetch: expect.any(Function),
+    });
+    await waitFor(() => {
+      expect(result.current).toEqual({
+        status: "succeeded",
+        data: mockResult,
+        refetch: expect.any(Function),
+      });
+    });
   });
 });

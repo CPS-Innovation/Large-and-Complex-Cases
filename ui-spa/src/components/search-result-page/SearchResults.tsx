@@ -1,5 +1,8 @@
-import { RawApiResult } from "../../common/types/ApiResult";
-import { SearchResultData } from "../../common/types/SearchResultResponse";
+import { UseApiResult } from "../../common/hooks/useApi";
+import {
+  SearchResultData,
+  SearchResult,
+} from "../../common/types/SearchResultResponse";
 import { Table, Tag } from "../govuk";
 import { Link } from "react-router";
 import { SearchFromData } from "../../common/hooks/useCaseSearchForm";
@@ -7,10 +10,12 @@ import { formatDate } from "../../common/utils/formatDate";
 import styles from "./searchResults.module.scss";
 
 type SearchResultsProps = {
-  searchApiResults: RawApiResult<SearchResultData>;
+  searchQueryString: string;
+  searchApiResults: UseApiResult<SearchResultData>;
   searchType: SearchFromData["searchType"];
 };
 const SearchResults: React.FC<SearchResultsProps> = ({
+  searchQueryString,
   searchApiResults,
   searchType,
 }) => {
@@ -18,19 +23,23 @@ const SearchResults: React.FC<SearchResultsProps> = ({
     if (searchType === "defendant name") return "defendant surname";
     return searchType;
   };
+  const getConnectOrViewUrl = (data: SearchResult, operationName: string) => {
+    if (!data.egressWorkspaceId)
+      return `/case/${data.caseId}/egress-connect?workspace-name=${operationName}`;
+    if (!data.netappFolderPath)
+      return `/case/${data.caseId}/netapp-connect?workspace-name=${operationName}`;
+    return `/case/${data.caseId}/case-overview/transfer-material`;
+  };
   const getTableRowData = () => {
-    if (searchApiResults.status !== "succeeded") return [];
+    if (!searchApiResults.data) return [];
     return searchApiResults.data.map((data) => {
+      const operationName = data.operationName
+        ? data.operationName
+        : data.leadDefendantName;
       return {
         cells: [
           {
-            children: (
-              <Link to="/" className={styles.link}>
-                {data.operationName
-                  ? data.operationName
-                  : data.leadDefendantName}
-              </Link>
-            ),
+            children: <span>{operationName}</span>,
           },
           {
             children: data.urn,
@@ -39,36 +48,43 @@ const SearchResults: React.FC<SearchResultsProps> = ({
             children: data.leadDefendantName,
           },
           {
-            children:
-              data.egressStatus === "connected" ? (
-                <Tag gdsTagColour="green" className={styles.statusTag}>
-                  Connected
-                </Tag>
-              ) : (
-                <Tag gdsTagColour="grey" className={styles.statusTag}>
-                  Inactive
-                </Tag>
-              ),
+            children: data.egressWorkspaceId ? (
+              <Tag gdsTagColour="green" className={styles.statusTag}>
+                Connected
+              </Tag>
+            ) : (
+              <Tag gdsTagColour="grey" className={styles.statusTag}>
+                Inactive
+              </Tag>
+            ),
           },
           {
-            children:
-              data.sharedDriveStatus === "connected" ? (
-                <Tag gdsTagColour="green" className={styles.statusTag}>
-                  Connected
-                </Tag>
-              ) : (
-                <Tag gdsTagColour="grey" className={styles.statusTag}>
-                  Inactive
-                </Tag>
-              ),
+            children: data.netappFolderPath ? (
+              <Tag gdsTagColour="green" className={styles.statusTag}>
+                Connected
+              </Tag>
+            ) : (
+              <Tag gdsTagColour="grey" className={styles.statusTag}>
+                Inactive
+              </Tag>
+            ),
           },
           {
             children: formatDate(data.registrationDate),
           },
           {
             children: (
-              <Link to="/" className={styles.link}>
-                View{" "}
+              <Link
+                to={getConnectOrViewUrl(data, operationName)}
+                state={{
+                  searchQueryString: searchQueryString,
+                  connectNetapp: !data.netappFolderPath,
+                }}
+                className={styles.link}
+              >
+                {!data.egressWorkspaceId || !data.netappFolderPath
+                  ? "Connect"
+                  : "View"}
               </Link>
             ),
           },
@@ -79,7 +95,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
   return (
     <div className={styles.results}>
       {searchApiResults.status === "succeeded" &&
-        !!searchApiResults.data.length && (
+        !!searchApiResults.data?.length && (
           <Table
             head={[
               {
@@ -108,7 +124,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
           ></Table>
         )}
       {searchApiResults.status === "succeeded" &&
-        !searchApiResults.data.length && (
+        !searchApiResults.data?.length && (
           <div className={styles.noResultsContent}>
             <div>
               <span>You can:</span>
