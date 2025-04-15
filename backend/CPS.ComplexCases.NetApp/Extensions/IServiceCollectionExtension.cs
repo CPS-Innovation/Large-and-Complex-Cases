@@ -51,7 +51,6 @@ public static class IServiceCollectionExtension
 
         var credentials = new Amazon.Runtime.BasicAWSCredentials(configuration["NetAppOptions:AccessKey"], configuration["NetAppOptions:SecretKey"]);
         return new AmazonS3Client(credentials, s3ClientConfig);
-        //return new AmazonS3Client(configuration["NetAppOptions:AccessKey"], configuration["NetAppOptions:SecretKey"], "SessionKey", s3ClientConfig);
       });
     }
   }

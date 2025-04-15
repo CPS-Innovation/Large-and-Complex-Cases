@@ -34,13 +34,6 @@ public class NetAppClient : INetAppClient
     {
         try
         {
-            // _client = new AmazonS3Client(await GetTemporaryCredentialsAsync(_options.AccessKey, _options.SecretKey), new AmazonS3Config
-            // {
-            //     ServiceURL = _options.Url,
-            //     ForcePathStyle = true,
-            //     RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(_options.RegionName)
-            // });
-
             var bucketExists = await _amazonS3UtilsWrapper.DoesS3BucketExistV2Async(_client, arg.BucketName);
             if (bucketExists)
             {
