@@ -12,6 +12,16 @@ namespace CPS.ComplexCases.NetApp.Factories
             };
         }
 
+        public ListBucketsArg CreateListBucketsArg(string? continuationToken = null, int? maxBuckets = null, string? prefix = null)
+        {
+            return new ListBucketsArg
+            {
+                ContinuationToken = continuationToken,
+                MaxBuckets = maxBuckets,
+                Prefix = prefix
+            };
+        }
+
         public FindBucketArg CreateFindBucketArg(string bucketName)
         {
             return new FindBucketArg
@@ -25,7 +35,7 @@ namespace CPS.ComplexCases.NetApp.Factories
             return new GetObjectArg
             {
                 BucketName = bucketName,
-                ObjectName = objectName
+                ObjectKey = objectName
             };
         }
 
@@ -34,7 +44,7 @@ namespace CPS.ComplexCases.NetApp.Factories
             return new UploadObjectArg
             {
                 BucketName = bucketName,
-                ObjectName = objectName,
+                ObjectKey = objectName,
                 Stream = stream
             };
         }

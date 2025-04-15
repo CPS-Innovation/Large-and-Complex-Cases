@@ -20,6 +20,7 @@
     "NetAppOptions__AccessKey": "",
     "NetAppOptions__SecretKey": "",
     "NetAppOptions__RegionName": "",
+    "NetAppOptions__EnableMock": "true",
     "ConnectionStrings__CaseManagementDatastoreConnection": "Your postgres connection string",
     "ApiTaskHub": "mytaskhub"
   },
