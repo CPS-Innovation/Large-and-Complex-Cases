@@ -10,19 +10,22 @@ using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
 using CPS.ComplexCases.DDEI.Models.Dto;
+using CPS.ComplexCases.API.Services;
 
 namespace CPS.ComplexCases.API.Functions;
 
 public class FindCmsCase(ILogger<FindCmsCase> logger,
   IDdeiClient ddeiClient,
-  IDdeiArgFactory ddeiArgFactory)
+  IDdeiArgFactory ddeiArgFactory,
+  ICaseEnrichmentService caseEnrichmentService)
 {
   private readonly ILogger<FindCmsCase> _logger = logger;
   private readonly IDdeiClient _ddeiClient = ddeiClient;
   private readonly IDdeiArgFactory _ddeiArgFactory = ddeiArgFactory;
+  private readonly ICaseEnrichmentService _caseEnrichmentService = caseEnrichmentService;
 
   [Function(nameof(FindCmsCase))]
-  [OpenApiOperation(operationId: nameof(FindCmsCase), tags: ["CMS", "Search"], Description = "Finds a case in CMS based on operation name, URN, defendant name, and area.")]
+  [OpenApiOperation(operationId: nameof(FindCmsCase), tags: ["CMS"], Description = "Finds a case in CMS based on operation name, URN, defendant name, and area.")]
   [OpenApiParameter(name: InputParameters.OperationName, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The operation name to search for.")]
   [OpenApiParameter(name: InputParameters.Urn, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The URN to search for.")]
   [OpenApiParameter(name: InputParameters.DefendantName, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The defendant name to search for.")]
@@ -62,6 +65,8 @@ public class FindCmsCase(ILogger<FindCmsCase> logger,
       return new BadRequestObjectResult("Search Parameters Invalid");
     }
 
-    return new OkObjectResult(result);
+    var enrichedResult = await _caseEnrichmentService.EnrichCasesWithMetadataAsync(result);
+
+    return new OkObjectResult(enrichedResult);
   }
 }

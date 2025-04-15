@@ -47,7 +47,7 @@ public class EgressRequestFactory : IEgressRequestFactory
     return request;
   }
 
-  public HttpRequestMessage GetWorkspacePermissionsRequest(GetWorkSpacePermissionArg arg, string token)
+  public HttpRequestMessage GetWorkspacePermissionsRequest(GetWorkspacePermissionArg arg, string token)
   {
     // pagination is not being used internally here because we always filter on the users email (switch_id in Egress)
     var relativeUrl = new StringBuilder($"/api/v1/workspaces/{arg.WorkspaceId}/users?skip=0&limit=100");
