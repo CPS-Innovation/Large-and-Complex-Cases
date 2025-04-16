@@ -4,6 +4,7 @@ import { getAccessToken } from "../auth";
 import { CaseDivisionsOrAreaResponse } from "../common/types/LooksupData";
 import { SearchResultData } from "../common/types/SearchResultResponse";
 import { EgressSearchResultData } from "../common/types/EgressSearchResponse";
+import { NetAppFolderData } from "../common/types/NetAppFolderData";
 import { ApiError } from "../common/errors/ApiError";
 
 export const CORRELATION_ID = "Correlation-Id";
@@ -111,6 +112,43 @@ export const getEgressSearchResults = async (
     console.error("Fetch failed:", error);
     throw new Error(
       `Invalid API response format for Egress workspace search results, ${error}`,
+    );
+  }
+};
+
+export const getNetAppFolders = async (
+  folderPath: string,
+  skip: number = 0,
+  take: number = 50,
+  collected: NetAppFolderData = [],
+): Promise<NetAppFolderData> => {
+  const url = `${GATEWAY_BASE_URL}/api/egress/workspaces`;
+  const response = await fetch(
+    `${url}?${folderPath}&skip=${skip}&take=${take}`,
+    {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        ...(await buildCommonHeaders()),
+      },
+    },
+  );
+  if (!response.ok) {
+    throw new ApiError(`getting netapp folders failed`, url, response);
+  }
+  try {
+    const result = await response.json();
+
+    const { data, pagination } = result;
+    const updated = collected.concat(data);
+    if (skip + take >= pagination.totalResults) {
+      return updated;
+    }
+    return getNetAppFolders(folderPath, skip + take, take, updated);
+  } catch (error) {
+    console.error("Fetch failed:", error);
+    throw new Error(
+      `Invalid API response format for netapp folders results, ${error}`,
     );
   }
 };

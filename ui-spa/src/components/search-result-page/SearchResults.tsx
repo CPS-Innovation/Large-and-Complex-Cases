@@ -78,7 +78,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                 to={getConnectOrViewUrl(data, operationName)}
                 state={{
                   searchQueryString: searchQueryString,
-                  connectNetapp: !data.netappFolderPath,
+                  netappFolderPath: data.netappFolderPath,
                 }}
                 className={styles.link}
               >

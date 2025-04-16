@@ -35,6 +35,15 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       return HttpResponse.json(egressSearchResults);
     }),
 
+    http.get(`${baseUrl}/api/netapp/folders`, async () => {
+      const egressSearchResults = isDevMock()
+        ? egressSearchResultsDev
+        : egressSearchResultsPlaywright;
+      await delay(RESPONSE_DELAY);
+
+      return HttpResponse.json(egressSearchResults);
+    }),
+
     http.post(`${baseUrl}/api/egress/connections`, async () => {
       return HttpResponse.json({});
     }),

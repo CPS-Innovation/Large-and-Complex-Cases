@@ -23,7 +23,7 @@ const EgressPage = () => {
   const [workspaceName, setWorkspaceName] = useState("");
   const [initialLocationState, setInitialLocationState] = useState<{
     searchQueryString: string;
-    connectNetapp: boolean;
+    netappFolderPath: boolean;
   }>();
   const [selectedFolderId, setSelectedFolderId] = useState("");
   const [formDataErrorText, setFormDataErrorText] = useState("");
@@ -51,7 +51,7 @@ const EgressPage = () => {
     if (location.state?.searchQueryString) {
       setInitialLocationState({
         searchQueryString: location.state?.searchQueryString,
-        connectNetapp: location.state?.connectNetapp,
+        netappFolderPath: location.state?.netappFolderPath,
       });
     }
   }, [location]);
@@ -101,11 +101,16 @@ const EgressPage = () => {
         caseId: caseId!,
       });
 
-      navigate(`/search-results?${initialLocationState?.searchQueryString}`);
+      console.log(
+        "netappFolderPath>>>",
+        initialLocationState?.netappFolderPath,
+      );
+
+      // navigate(`/search-results?${initialLocationState?.searchQueryString}`);
       //TODO: uncomment this when netapp connection is complete
-      // if (initialLocationState?.connectNetapp)
-      //   navigate(`case/${caseId}/netapp-connect/`);
-      // else navigate(`case/${caseId}/case-overview/transfer-material`);
+      if (!initialLocationState?.netappFolderPath)
+        navigate(`/case/${caseId}/netapp-connect/?operation-name=abc`);
+      else navigate(`/case/${caseId}/case-overview/transfer-material`);
     } catch (e) {
       navigate(`/case/${caseId}/egress-connect/error`);
     }
@@ -119,8 +124,8 @@ const EgressPage = () => {
     let validRoute = true;
     if (
       location.pathname.endsWith("/egress-connect") &&
-      initialLocationState?.connectNetapp === undefined &&
-      location.state?.connectNetapp === undefined
+      initialLocationState?.netappFolderPath === undefined &&
+      location.state?.netappFolderPath === undefined
     ) {
       validRoute = false;
     }

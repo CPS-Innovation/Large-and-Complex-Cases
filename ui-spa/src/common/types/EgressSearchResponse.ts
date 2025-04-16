@@ -8,7 +8,7 @@ export type EgressSearchResult = {
 export type EgressSearchResultData = EgressSearchResult[];
 
 export type EgressSearchResultResponse = {
-  data: EgressSearchResult[];
+  data: EgressSearchResultData;
   pagination: {
     totalResults: number;
     skip: number;

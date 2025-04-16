@@ -6,7 +6,7 @@ export const casesSearchResultsPlaywright: SearchResultData = [
     caseId: 12,
     leadDefendantName: "abc1",
     egressWorkspaceId: null,
-    netappFolderPath: "abc/def",
+    netappFolderPath: null,
     registrationDate: "2000-01-02",
   },
   {
@@ -15,7 +15,7 @@ export const casesSearchResultsPlaywright: SearchResultData = [
     caseId: 13,
     leadDefendantName: "abc2",
     egressWorkspaceId: "1234dfb",
-    netappFolderPath: "abc/def",
+    netappFolderPath: null,
     registrationDate: "2000-01-03",
   },
 ];
