@@ -15,22 +15,23 @@ const NetAppPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
 
-  const [folderPath, setFolderPath] = useState("");
+  const [operationName, setOperationName] = useState("");
   const [initialLocationState, setInitialLocationState] = useState<{
     searchQueryString: string;
     netappFolderPath: boolean;
   }>();
-  const [selectedFolderId, setSelectedFolderId] = useState("");
+  const [selectedFolderPath, setSelectedFolderPath] = useState("");
+  const [rootFolderPath, setRootFolderPath] = useState("");
 
   const netAppFolderApiResults = useApi(
     getNetAppFolders,
-    [`folderPath=${folderPath}`],
+    [operationName, rootFolderPath],
     false,
   );
 
   useEffect(() => {
     netAppFolderApiResults.refetch();
-  }, [folderPath]);
+  }, [rootFolderPath]);
 
   useEffect(() => {
     if (location.pathname.endsWith("/netapp-connect")) {
@@ -38,7 +39,7 @@ const NetAppPage = () => {
       if (!operationName) {
         return;
       }
-      setFolderPath("");
+      setOperationName("");
     }
     return () => {
       window.history.replaceState({}, "");
@@ -50,12 +51,13 @@ const NetAppPage = () => {
       throw new Error(`${netAppFolderApiResults.error}`);
   }, [netAppFolderApiResults]);
 
-  const handleConnectFolder = (id: string) => {
-    setSelectedFolderId(id);
-    navigate(`/case/${caseId}/netapp-connect/confirmation`);
+  const handleGetFolderContent = (path: string) => {
+    setRootFolderPath(path);
   };
-  const handleGetFolderContent = (folderPath: string) => {
-    console.log("get netapp folders", folderPath);
+
+  const handleConnectFolder = (path: string) => {
+    setSelectedFolderPath(path);
+    navigate(`/case/${caseId}/netapp-connect/confirmation`);
   };
 
   return (

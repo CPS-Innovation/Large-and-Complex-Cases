@@ -117,14 +117,15 @@ export const getEgressSearchResults = async (
 };
 
 export const getNetAppFolders = async (
+  operationName: string,
   folderPath: string,
   skip: number = 0,
   take: number = 50,
   collected: NetAppFolderData = [],
 ): Promise<NetAppFolderData> => {
-  const url = `${GATEWAY_BASE_URL}/api/egress/workspaces`;
+  const url = `${GATEWAY_BASE_URL}/api/netapp/folders`;
   const response = await fetch(
-    `${url}?${folderPath}&skip=${skip}&take=${take}`,
+    `${url}?operation-name=${operationName}&path=${folderPath}&skip=${skip}&take=${take}`,
     {
       method: "GET",
       credentials: "include",
@@ -144,7 +145,13 @@ export const getNetAppFolders = async (
     if (skip + take >= pagination.totalResults) {
       return updated;
     }
-    return getNetAppFolders(folderPath, skip + take, take, updated);
+    return getNetAppFolders(
+      operationName,
+      folderPath,
+      skip + take,
+      take,
+      updated,
+    );
   } catch (error) {
     console.error("Fetch failed:", error);
     throw new Error(

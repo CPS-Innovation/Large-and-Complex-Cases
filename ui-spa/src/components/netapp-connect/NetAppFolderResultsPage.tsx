@@ -1,8 +1,16 @@
 import { useMemo, useState } from "react";
-import { Button, SortableTable, InsetText, BackLink } from "../govuk";
+import {
+  Button,
+  SortableTable,
+  InsetText,
+  BackLink,
+  LinkButton,
+} from "../govuk";
 import { UseApiResult } from "../../common/hooks/useApi";
 import { NetAppFolderData } from "../../common/types/NetAppFolderData";
 import { sortByStringProperty } from "../../common/utils/sortUtils";
+import FolderIcon from "../../components/svgs/folder.svg?react";
+import styles from "./netAppFolderResultsPage.module.scss";
 
 type NetAppFolderResultsPageProps = {
   backLinkUrl: string;
@@ -15,6 +23,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
   backLinkUrl,
   netAppFolderApiResults,
   handleConnectFolder,
+  handleGetFolderContent,
 }) => {
   const [sortValues, setSortValues] = useState<{
     name: string;
@@ -22,15 +31,15 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
   }>();
   const netappFolderData = useMemo(() => {
     if (!netAppFolderApiResults?.data) return [];
-    if (sortValues?.name === "workspace-name")
+    if (sortValues?.name === "folder-name")
       return sortByStringProperty(
         netAppFolderApiResults.data,
-        "name",
+        "folderPath",
         sortValues.type,
       );
 
     return netAppFolderApiResults.data;
-  }, [netAppFolderApiResults]);
+  }, [netAppFolderApiResults, sortValues]);
 
   console.log("netappFolderData>>>", netappFolderData);
   const getTableRowData = () => {
@@ -39,8 +48,16 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
         cells: [
           {
             children: (
-              <div>
-                <b>{data.name}</b>
+              <div className={styles.folderWrapper}>
+                <FolderIcon />
+                <LinkButton
+                  type="button"
+                  onClick={() => {
+                    handleGetFolderContent(data.folderPath);
+                  }}
+                >
+                  {data.folderPath}
+                </LinkButton>
               </div>
             ),
           },
@@ -50,7 +67,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
               <Button
                 className="govuk-button--secondary"
                 name="secondary"
-                onClick={() => handleConnect(data.id)}
+                onClick={() => handleConnect(data.folderPath)}
                 disabled={!!data.caseId}
               >
                 Connect folder
@@ -84,22 +101,24 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
           permissions or contact the product team for support.
         </p>
       </InsetText>
-      <SortableTable
-        head={[
-          {
-            children: "Folder name",
-            sortable: true,
-            sortName: "workspace-name",
-          },
+      <div className={styles.results}>
+        <SortableTable
+          head={[
+            {
+              children: "Folder name",
+              sortable: true,
+              sortName: "folder-name",
+            },
 
-          {
-            children: "",
-            sortable: false,
-          },
-        ]}
-        rows={getTableRowData()}
-        handleTableSort={handleTableSort}
-      />
+            {
+              children: "",
+              sortable: false,
+            },
+          ]}
+          rows={getTableRowData()}
+          handleTableSort={handleTableSort}
+        />
+      </div>
     </div>
   );
 };

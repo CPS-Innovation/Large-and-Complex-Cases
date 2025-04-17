@@ -1,0 +1,12 @@
+.results {
+  & :global(.govuk-button--secondary) {
+    margin-bottom: 0;
+    font-size: 1rem;
+  }
+  .folderWrapper {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+  }
+}

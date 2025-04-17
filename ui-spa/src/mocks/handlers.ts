@@ -6,6 +6,8 @@ import {
   casesSearchResultsPlaywright,
   egressSearchResultsDev,
   egressSearchResultsPlaywright,
+  netAppFolderResultsDev,
+  netAppFolderResultsPlaywright,
 } from "./data";
 
 export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
@@ -36,12 +38,12 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
     }),
 
     http.get(`${baseUrl}/api/netapp/folders`, async () => {
-      const egressSearchResults = isDevMock()
-        ? egressSearchResultsDev
-        : egressSearchResultsPlaywright;
+      const netAppFolderResults = isDevMock()
+        ? netAppFolderResultsDev
+        : netAppFolderResultsPlaywright;
       await delay(RESPONSE_DELAY);
 
-      return HttpResponse.json(egressSearchResults);
+      return HttpResponse.json(netAppFolderResults);
     }),
 
     http.post(`${baseUrl}/api/egress/connections`, async () => {
