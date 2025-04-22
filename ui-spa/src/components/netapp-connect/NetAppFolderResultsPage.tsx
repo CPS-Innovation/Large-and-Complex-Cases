@@ -6,6 +6,7 @@ import {
   BackLink,
   LinkButton,
 } from "../govuk";
+import { Spinner } from "../common/Spinner";
 import { UseApiResult } from "../../common/hooks/useApi";
 import { NetAppFolderData } from "../../common/types/NetAppFolderData";
 import { sortByStringProperty } from "../../common/utils/sortUtils";
@@ -103,22 +104,35 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
         </p>
       </InsetText>
       <div className={styles.results}>
-        <SortableTable
-          head={[
-            {
-              children: "Folder name",
-              sortable: true,
-              sortName: "folder-name",
-            },
+        {netAppFolderApiResults.status === "loading" && (
+          <div className={styles.spinnerWrapper}>
+            <Spinner
+              diameterPx={50}
+              ariaLabel="Loading folders from Network Shared Drive"
+            />
+            <div className={styles.spinnerText}>
+              Loading folders from Network Shared Drive
+            </div>
+          </div>
+        )}
+        {netAppFolderApiResults.status === "succeeded" && (
+          <SortableTable
+            head={[
+              {
+                children: "Folder name",
+                sortable: true,
+                sortName: "folder-name",
+              },
 
-            {
-              children: "",
-              sortable: false,
-            },
-          ]}
-          rows={getTableRowData()}
-          handleTableSort={handleTableSort}
-        />
+              {
+                children: "",
+                sortable: false,
+              },
+            ]}
+            rows={getTableRowData()}
+            handleTableSort={handleTableSort}
+          />
+        )}
       </div>
     </div>
   );
