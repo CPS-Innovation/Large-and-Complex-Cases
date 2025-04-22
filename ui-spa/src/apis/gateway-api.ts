@@ -3,8 +3,14 @@ import { GATEWAY_BASE_URL, GATEWAY_SCOPE } from "../config";
 import { getAccessToken } from "../auth";
 import { CaseDivisionsOrAreaResponse } from "../common/types/LooksupData";
 import { SearchResultData } from "../common/types/SearchResultResponse";
-import { EgressSearchResultData } from "../common/types/EgressSearchResponse";
-import { NetAppFolderData } from "../common/types/NetAppFolderData";
+import {
+  EgressSearchResultData,
+  EgressSearchResultResponse,
+} from "../common/types/EgressSearchResponse";
+import {
+  NetAppFolderData,
+  NetAppFolderResponse,
+} from "../common/types/NetAppFolderData";
 import { ApiError } from "../common/errors/ApiError";
 
 export const CORRELATION_ID = "Correlation-Id";
@@ -100,7 +106,7 @@ export const getEgressSearchResults = async (
     throw new ApiError(`Searching for Egress workspaces failed`, url, response);
   }
   try {
-    const result = await response.json();
+    const result = (await response.json()) as EgressSearchResultResponse;
 
     const { data, pagination } = result;
     const updated = collected.concat(data);
@@ -119,13 +125,13 @@ export const getEgressSearchResults = async (
 export const getNetAppFolders = async (
   operationName: string,
   folderPath: string,
-  skip: number = 0,
   take: number = 50,
+  continuationToken = "",
   collected: NetAppFolderData = [],
 ): Promise<NetAppFolderData> => {
   const url = `${GATEWAY_BASE_URL}/api/netapp/folders`;
   const response = await fetch(
-    `${url}?operation-name=${operationName}&path=${folderPath}&skip=${skip}&take=${take}`,
+    `${url}?operation-name=${operationName}&path=${folderPath}&take=${take}&continuation-token=${continuationToken}`,
     {
       method: "GET",
       credentials: "include",
@@ -138,18 +144,18 @@ export const getNetAppFolders = async (
     throw new ApiError(`getting netapp folders failed`, url, response);
   }
   try {
-    const result = await response.json();
+    const result = (await response.json()) as NetAppFolderResponse;
 
     const { data, pagination } = result;
     const updated = collected.concat(data);
-    if (skip + take >= pagination.totalResults) {
+    if (!pagination.nextContinuationToken) {
       return updated;
     }
     return getNetAppFolders(
       operationName,
       folderPath,
-      skip + take,
       take,
+      pagination.nextContinuationToken,
       updated,
     );
   } catch (error) {

@@ -1,28 +1,36 @@
 import { NetAppFolderResponse } from "../../common/types/NetAppFolderData";
-export const netAppFolderResultsDev: NetAppFolderResponse = {
+export const netAppRootFolderResultsDev: NetAppFolderResponse = {
   data: [
-    {
-      folderPath: "/abc/thunderstrike",
-      caseId: null,
-    },
     {
       folderPath: "/abc/thunderstrikeab",
       caseId: 123,
     },
     {
-      folderPath: "/abc/thunderstrikeabc",
+      folderPath: "/abc/thunderstrike",
       caseId: null,
     },
+
     {
-      folderPath: "/abc/ahunderstrikeabcd",
+      folderPath: "/abc/thunderstrikeabc",
       caseId: null,
     },
   ],
 
   pagination: {
-    totalResults: 50,
-    skip: 0,
-    take: 50,
-    count: 25,
+    maxKeys: 100,
+    nextContinuationToken: null,
   },
+};
+
+export const getNetAppFolderResultsDev = (path: string) => {
+  if (!path) return netAppRootFolderResultsDev;
+  const newData = netAppRootFolderResultsDev.data.map((item, index) => {
+    item.folderPath = `${path}/folder_${index}`;
+    return item;
+  });
+
+  return {
+    ...netAppRootFolderResultsDev,
+    data: newData,
+  };
 };
