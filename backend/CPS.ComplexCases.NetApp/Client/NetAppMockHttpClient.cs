@@ -3,7 +3,8 @@ using Microsoft.Extensions.Logging;
 using Amazon.S3.Model;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
-using CPS.ComplexCases.NetApp.Models.Responses;
+using CPS.ComplexCases.NetApp.Models.S3.Result;
+using CPS.ComplexCases.NetApp.Models.Dto;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
@@ -91,10 +92,29 @@ public class NetAppMockHttpClient : INetAppClient
         return list;
     }
 
-    public async Task<IEnumerable<string>> ListFoldersInBucketAsync(ListFoldersInBucketArg arg)
+    public async Task<ListNetAppFoldersDto?> ListFoldersInBucketAsync(ListFoldersInBucketArg arg)
     {
-        var response = await SendRequestAsync<ListObjectsV2Response>(_netAppMockRequestFactory.ListFoldersInBucketRequest(arg));
-        return response.CommonPrefixes;
+        var response = await SendRequestAsync<ListBucketResult>(_netAppMockRequestFactory.ListFoldersInBucketRequest(arg));
+
+        var folders = response.CommonPrefixes?.Select(data => new ListNetAppFoldersDataDto
+        {
+            Path = data.Prefix
+        });
+
+        var result = new ListNetAppFoldersDto
+        {
+            BucketName = arg.BucketName,
+            Data = folders,
+            DataInfo = new DataInfoDto
+            {
+                ContinuationToken = response.ContinuationToken,
+                NextContinuationToken = response.NextContinuationToken,
+                MaxKeys = response.MaxKeys,
+                KeyCount = response.KeyCount,
+            }
+        };
+
+        return result;
     }
 
     public async Task<ListObjectsV2Response?> ListObjectsInBucketAsync(ListObjectsInBucketArg arg)

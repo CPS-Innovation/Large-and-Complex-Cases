@@ -1,8 +1,9 @@
+using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.API.Domain.Response;
 using CPS.ComplexCases.Data.Services;
 using CPS.ComplexCases.DDEI.Models.Dto;
 using CPS.ComplexCases.Egress.Models.Dto;
-using Microsoft.Extensions.Logging;
+using CPS.ComplexCases.NetApp.Models.Dto;
 
 namespace CPS.ComplexCases.API.Services;
 
@@ -93,7 +94,43 @@ public class CaseEnrichmentService : ICaseEnrichmentService
     }
   }
 
+  public async Task<ListNetAppFoldersResponse> EnrichNetAppFoldersWithMetadataAsync(ListNetAppFoldersDto folders)
+  {
+    var response = CreateNetAppFoldersResponseBase(folders);
 
+    if (!folders.Data.Any())
+    {
+      return response;
+    }
+
+    _logger.LogInformation("Enriching {NetAppFolderCount} workspaces with metadata", folders.Data.Count());
+
+    try
+    {
+      var folderPaths = folders.Data.Where(d => d.Path != null)
+                      .Select(d => $"{folders.BucketName}:{d.Path}")
+                      .ToList();
+
+      var metadata = await _caseMetadataService.GetCaseMetadataForNetAppFolderPathsAsync(folderPaths);
+      var metadataLookup = metadata
+          .Where(m => m.NetappFolderPath != null)
+          .ToDictionary(m => m.NetappFolderPath!);
+
+      // Enrich data with metadata
+      response.Data = folderPaths.Select(folder => new ListNetAppFolderDataResponse
+      {
+        FolderPath = folder[(folder.LastIndexOf(':') + 1)..] ?? string.Empty,
+        CaseId = metadataLookup.TryGetValue(folder, out var caseMetadata) ? caseMetadata.CaseId : null
+      }).ToList();
+
+      return response;
+    }
+    catch (Exception ex)
+    {
+      _logger.LogWarning(ex, "Failed to retrieve or apply metadata for NetApp folders");
+      return response;
+    }
+  }
 
   private static CaseWithMetadataResponse MapCaseToResponse(CaseDto caseDto)
   {
@@ -124,6 +161,23 @@ public class CaseEnrichmentService : ICaseEnrichmentService
         Name = workspace.Name,
         DateCreated = workspace.DateCreated,
       }).ToList()
+    };
+  }
+
+  private static ListNetAppFoldersResponse CreateNetAppFoldersResponseBase(ListNetAppFoldersDto foldersDto)
+  {
+    return new ListNetAppFoldersResponse
+    {
+      BucketName = foldersDto.BucketName,
+      Pagination = new NetAppPaginationResponse
+      {
+        NextContinuationToken = foldersDto.DataInfo.NextContinuationToken,
+        MaxKeys = foldersDto.DataInfo.MaxKeys,
+      },
+      Data = foldersDto.Data?.Where(folder => folder != null).Select(folder => new ListNetAppFolderDataResponse
+      {
+        FolderPath = folder.Path ?? string.Empty,
+      }).ToList() ?? []
     };
   }
 }

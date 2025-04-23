@@ -1,8 +1,8 @@
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
-using Namespace.CPS.ComplexCases.NetApp.Constants;
+using CPS.ComplexCases.NetApp.Constants;
 
-namespace Namespace.CPS.ComplexCases.NetApp.Factories;
+namespace CPS.ComplexCases.NetApp.Factories;
 
 public class NetAppMockRequestFactory : INetAppMockRequestFactory
 {
@@ -92,8 +92,8 @@ public class NetAppMockRequestFactory : INetAppMockRequestFactory
             new(S3Constants.PrefixQueryName, prefix)
         ]);
 
-        var request = new HttpRequestMessage(HttpMethod.Get, $"?{query.ReadAsStringAsync().Result}");
-        request.Headers.Add(S3Constants.HostHeaderName, arg.BucketName);
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/{arg.BucketName}/?{query.ReadAsStringAsync().Result}");
+        //request.Headers.Add(S3Constants.HostHeaderName, $"{arg.BucketName}.s3.amazonaws.com");
 
         return request;
     }

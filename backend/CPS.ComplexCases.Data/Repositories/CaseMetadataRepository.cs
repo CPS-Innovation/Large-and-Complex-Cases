@@ -53,5 +53,12 @@ namespace CPS.ComplexCases.Data.Repositories
           .Where(m => egressWorkspaceIds.Contains(m.EgressWorkspaceId))
           .ToListAsync();
     }
+
+    public async Task<IEnumerable<CaseMetadata>> GetByNetAppFolderPathsAsync(IEnumerable<string> netAppFolderPaths)
+    {
+      return await _dbContext.CaseMetadata
+          .Where(m => netAppFolderPaths.Contains(m.NetappFolderPath))
+          .ToListAsync();
+    }
   }
 }
