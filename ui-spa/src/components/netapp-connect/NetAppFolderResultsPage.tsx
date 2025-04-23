@@ -11,6 +11,7 @@ import { UseApiResult } from "../../common/hooks/useApi";
 import { NetAppFolderData } from "../../common/types/NetAppFolderData";
 import { sortByStringProperty } from "../../common/utils/sortUtils";
 import { getFolderNameFromPath } from "../../common/utils/getFolderNameFromPath";
+import { FolderPath } from "../common/FolderPath";
 import FolderIcon from "../../components/svgs/folder.svg?react";
 import styles from "./netAppFolderResultsPage.module.scss";
 
@@ -43,7 +44,11 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
     return netAppFolderApiResults.data;
   }, [netAppFolderApiResults, sortValues]);
 
-  console.log("netappFolderData>>>", netappFolderData);
+  const currentPath = useMemo(() => {
+    if (!netappFolderData.length) return "";
+    return netappFolderData[0].folderPath.replace(/\/[^\/]+$/, "");
+  }, [netappFolderData]);
+
   const getTableRowData = () => {
     return netappFolderData.map((data) => {
       return {
@@ -116,22 +121,30 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
           </div>
         )}
         {netAppFolderApiResults.status === "succeeded" && (
-          <SortableTable
-            head={[
-              {
-                children: "Folder name",
-                sortable: true,
-                sortName: "folder-name",
-              },
+          <div>
+            {currentPath && (
+              <FolderPath
+                path={currentPath}
+                folderClickHandler={handleGetFolderContent}
+              />
+            )}
+            <SortableTable
+              head={[
+                {
+                  children: "Folder name",
+                  sortable: true,
+                  sortName: "folder-name",
+                },
 
-              {
-                children: "",
-                sortable: false,
-              },
-            ]}
-            rows={getTableRowData()}
-            handleTableSort={handleTableSort}
-          />
+                {
+                  children: "",
+                  sortable: false,
+                },
+              ]}
+              rows={getTableRowData()}
+              handleTableSort={handleTableSort}
+            />
+          </div>
         )}
       </div>
     </div>
