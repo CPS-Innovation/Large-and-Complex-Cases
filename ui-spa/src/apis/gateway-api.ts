@@ -58,33 +58,6 @@ export const getCaseDivisionsOrAreas = async () => {
   return (await response.json()) as CaseDivisionsOrAreaResponse;
 };
 
-export const connectEgressWorkspace = async ({
-  workspaceId,
-  caseId,
-}: {
-  workspaceId: string;
-  caseId: string;
-}) => {
-  const url = `${GATEWAY_BASE_URL}/api/egress/connections`;
-
-  const response = await fetch(url, {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      ...(await buildCommonHeaders()),
-    },
-    body: JSON.stringify({
-      egressWorkspaceId: workspaceId,
-      caseId: parseInt(caseId),
-    }),
-  });
-
-  if (!response.ok) {
-    throw new ApiError(`Connecting to Egress workspace failed`, url, response);
-  }
-  return response;
-};
-
 export const getEgressSearchResults = async (
   searchParams: string,
   skip: number = 0,
@@ -120,6 +93,33 @@ export const getEgressSearchResults = async (
       `Invalid API response format for Egress workspace search results, ${error}`,
     );
   }
+};
+
+export const connectEgressWorkspace = async ({
+  workspaceId,
+  caseId,
+}: {
+  workspaceId: string;
+  caseId: string;
+}) => {
+  const url = `${GATEWAY_BASE_URL}/api/egress/connections`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      ...(await buildCommonHeaders()),
+    },
+    body: JSON.stringify({
+      egressWorkspaceId: workspaceId,
+      caseId: parseInt(caseId),
+    }),
+  });
+
+  if (!response.ok) {
+    throw new ApiError(`Connecting to Egress workspace failed`, url, response);
+  }
+  return response;
 };
 
 export const getNetAppFolders = async (
@@ -164,4 +164,34 @@ export const getNetAppFolders = async (
       `Invalid API response format for netapp folders results, ${error}`,
     );
   }
+};
+
+export const connectNetAppFolder = async ({
+  operationName,
+  folderPath,
+  caseId,
+}: {
+  operationName: string;
+  folderPath: string;
+  caseId: string;
+}) => {
+  const url = `${GATEWAY_BASE_URL}/api/netapp/connections`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      ...(await buildCommonHeaders()),
+    },
+    body: JSON.stringify({
+      operationName: operationName,
+      folderPath: folderPath,
+      caseId: parseInt(caseId),
+    }),
+  });
+
+  if (!response.ok) {
+    throw new ApiError(`Connecting to NetApp folder failed`, url, response);
+  }
+  return response;
 };

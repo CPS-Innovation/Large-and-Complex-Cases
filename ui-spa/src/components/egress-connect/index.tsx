@@ -106,10 +106,12 @@ const EgressPage = () => {
         initialLocationState?.netappFolderPath,
       );
 
-      // navigate(`/search-results?${initialLocationState?.searchQueryString}`);
-      //TODO: uncomment this when netapp connection is complete
       if (!initialLocationState?.netappFolderPath)
-        navigate(`/case/${caseId}/netapp-connect/?operation-name=abc`);
+        navigate(`/case/${caseId}/netapp-connect/?operation-name=abc`, {
+          state: {
+            searchQueryString: initialLocationState?.searchQueryString,
+          },
+        });
       else navigate(`/case/${caseId}/case-overview/transfer-material`);
     } catch (e) {
       navigate(`/case/${caseId}/egress-connect/error`);

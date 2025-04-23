@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import NetAppFolderResultsPage from "./NetAppFolderResultsPage";
+import NetAppConnectConfirmationPage from "./NetAppConnectConfirmationPage";
+import NetAppConnectFailurePage from "./NetAppConnectFailurePage";
 import { useApi } from "../../common/hooks/useApi";
-import { getNetAppFolders } from "../../apis/gateway-api";
+import { getNetAppFolders, connectNetAppFolder } from "../../apis/gateway-api";
+import { getFolderNameFromPath } from "../../common/utils/getFolderNameFromPath";
 import {
   useNavigate,
   useSearchParams,
@@ -12,13 +15,12 @@ import {
 const NetAppPage = () => {
   const navigate = useNavigate();
   const { caseId } = useParams();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const location = useLocation();
 
   const [operationName, setOperationName] = useState("");
   const [initialLocationState, setInitialLocationState] = useState<{
     searchQueryString: string;
-    netappFolderPath: boolean;
   }>();
   const [selectedFolderPath, setSelectedFolderPath] = useState("");
   const [rootFolderPath, setRootFolderPath] = useState("");
@@ -59,6 +61,71 @@ const NetAppPage = () => {
     setSelectedFolderPath(path);
     navigate(`/case/${caseId}/netapp-connect/confirmation`);
   };
+
+  const handleContinue = async (connect: boolean) => {
+    if (!connect) {
+      navigate(
+        `/case/${caseId}/netapp-connect?operation-name=${operationName}`,
+      );
+      return;
+    }
+    try {
+      await connectNetAppFolder({
+        operationName,
+        folderPath: selectedFolderPath,
+        caseId: caseId!,
+      });
+      navigate(`/case/${caseId}/case-overview/transfer-material`);
+    } catch (e) {
+      navigate(`/case/${caseId}/netapp-connect/error`);
+    }
+  };
+  useEffect(() => {
+    if (location.state?.searchQueryString) {
+      setInitialLocationState({
+        searchQueryString: location.state?.searchQueryString,
+      });
+    }
+  }, [location]);
+
+  useEffect(() => {
+    validateRoute();
+  }, [location]);
+
+  const validateRoute = () => {
+    let validRoute = true;
+    if (
+      location.pathname.endsWith("/netapp-connect") &&
+      initialLocationState?.searchQueryString === undefined &&
+      location.state?.searchQueryString === undefined
+    ) {
+      validRoute = false;
+    }
+    if (location.pathname.endsWith("/confirmation") && !selectedFolderPath)
+      validRoute = false;
+    if (!validRoute) navigate(`/`);
+  };
+
+  console.log("location.pathname>>", location.pathname);
+
+  if (location.pathname.endsWith("/error"))
+    return (
+      <div className="govuk-width-container">
+        <NetAppConnectFailurePage
+          backLinkUrl={`/case/${caseId}/netapp-connect?operation-name=${operationName}`}
+        />
+      </div>
+    );
+  if (location.pathname.endsWith("/confirmation"))
+    return (
+      <div className="govuk-width-container">
+        <NetAppConnectConfirmationPage
+          selectedFolderName={getFolderNameFromPath(selectedFolderPath)}
+          backLinkUrl={`/case/${caseId}/netapp-connect?operation-name=${operationName}}`}
+          handleContinue={handleContinue}
+        />
+      </div>
+    );
 
   return (
     <NetAppFolderResultsPage

@@ -19,6 +19,14 @@ const AppRoutes = () => {
         path="/case/:caseId/egress-connect/error"
         element={<EgressPage />}
       />
+      <Route
+        path="/case/:caseId/netapp-connect/confirmation"
+        element={<NetAppPage />}
+      />
+      <Route
+        path="/case/:caseId/netapp-connect/error"
+        element={<NetAppPage />}
+      />
       {/* <Route path="*" element={<Navigate to="/" replace />} /> */}
     </Routes>
   );
