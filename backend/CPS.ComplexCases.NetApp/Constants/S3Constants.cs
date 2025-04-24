@@ -1,4 +1,4 @@
-namespace Namespace.CPS.ComplexCases.NetApp.Constants;
+namespace CPS.ComplexCases.NetApp.Constants;
 
 public static class S3Constants
 {
