@@ -20,6 +20,7 @@ export const Auth: FC<{ children: React.ReactNode }> = ({ children }) => {
             scopes: ["User.Read"],
           });
           return;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
           if (err?.errorCode !== "interaction_in_progress") {
             // When we redirect an "interaction_in_progress" error is thrown.

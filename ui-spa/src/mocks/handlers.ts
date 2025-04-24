@@ -37,7 +37,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       return HttpResponse.json(egressSearchResults);
     }),
 
-    http.get(`${baseUrl}/api/netapp/folders`, async (req: any) => {
+    http.get(`${baseUrl}/api/netapp/folders`, async (req) => {
       const url = new URL(req.request.url);
 
       const path = url.searchParams.get("path");

@@ -40,6 +40,7 @@ export const MainStateProvider: React.FC<MainStateProviderProps> = (props) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useMainStateContext = () => {
   return useContext(MainStateContext);
 };

@@ -46,7 +46,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
 
   const currentPath = useMemo(() => {
     if (!netappFolderData.length) return "";
-    return netappFolderData[0].folderPath.replace(/\/[^\/]+$/, "");
+    return netappFolderData[0].folderPath.replace(/\/[^/]+$/, "");
   }, [netappFolderData]);
 
   const getTableRowData = () => {

@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router";
+import { Routes, Route } from "react-router";
 import CaseSearchPage from "./search-page";
 import CaseSearchResultPage from "./search-result-page";
 import EgressPage from "./egress-connect";

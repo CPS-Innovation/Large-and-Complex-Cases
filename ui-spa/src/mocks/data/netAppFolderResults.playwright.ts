@@ -23,11 +23,11 @@ export const netAppRootFolderResultsPlaywright: NetAppFolderResponse = {
 };
 
 export const getNetAppFolderResultsPlaywright = (path: string) => {
-  if (!path) return netAppRootFolderResultsPlaywright;
+  if (!path || path === "abc") return netAppRootFolderResultsPlaywright;
   const newData = netAppRootFolderResultsPlaywright.data.map((item, index) => {
-    item.folderPath === `${path}/folder_${index}`;
-    return item;
+    return { ...item, folderPath: `${path}/folder_${index}` };
   });
+
   return {
     ...netAppRootFolderResultsPlaywright,
     data: newData,

@@ -11,8 +11,7 @@ afterEach(() => {
   cleanup();
 });
 
-process.on("unhandledRejection", (_reason) => {
-  // eslint-disable-next-line no-console
-  // console.log("FAILED TO HANDLE PROMISE REJECTION");
+process.on("unhandledRejection", (reason) => {
+  console.log("FAILED TO HANDLE PROMISE REJECTION", reason);
   // throw reason;
 });

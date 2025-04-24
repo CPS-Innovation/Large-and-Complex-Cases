@@ -26,6 +26,7 @@ export const useFormattedAreaValues = (isUrnSearch: boolean = false) => {
   useEffect(() => {
     if (caseDivisionsOrAreas.status !== "succeeded" && !isUrnSearch)
       handleGetCaseDivisionsOrAreas();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const formattedAreaValues = useMemo(() => {
     if (
@@ -48,7 +49,7 @@ export const useFormattedAreaValues = (isUrnSearch: boolean = false) => {
         ...caseDivisionsOrAreas.data.allAreas.map(mapOption),
       ],
     };
-  }, [caseDivisionsOrAreas]);
+  }, [caseDivisionsOrAreas, isUrnSearch, pathname]);
 
   return formattedAreaValues;
 };

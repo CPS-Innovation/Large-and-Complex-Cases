@@ -118,7 +118,13 @@ const NetAppPage = () => {
     if (location.pathname.endsWith("/error") && !selectedFolderPath)
       validRoute = false;
     if (!validRoute) navigate(`/`);
-  }, [location, initialLocationState, navigate, selectedFolderPath]);
+  }, [
+    location,
+    initialLocationState,
+    navigate,
+    selectedFolderPath,
+    operationName,
+  ]);
 
   useEffect(() => {
     if (location.pathname) validateRoute();
