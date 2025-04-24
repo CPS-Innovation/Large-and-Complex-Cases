@@ -23,13 +23,10 @@ export const netAppRootFolderResultsDev: NetAppFolderResponse = {
 };
 
 export const getNetAppFolderResultsDev = (path: string) => {
-  console.log("path>>>>", path);
   if (!path || path === "abc") return netAppRootFolderResultsDev;
   const newData = netAppRootFolderResultsDev.data.map((item, index) => {
     return { ...item, folderPath: `${path}/folder_${index}` };
   });
-
-  console.log("netAppRootFolderResultsDev>>", netAppRootFolderResultsDev);
   return {
     ...netAppRootFolderResultsDev,
     data: newData,

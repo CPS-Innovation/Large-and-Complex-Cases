@@ -37,6 +37,10 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       return HttpResponse.json(egressSearchResults);
     }),
 
+    http.post(`${baseUrl}/api/egress/connections`, async () => {
+      return HttpResponse.json({});
+    }),
+
     http.get(`${baseUrl}/api/netapp/folders`, async (req) => {
       const url = new URL(req.request.url);
 
@@ -49,7 +53,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       return HttpResponse.json(netAppRootFolderResults);
     }),
 
-    http.post(`${baseUrl}/api/egress/connections`, async () => {
+    http.post(`${baseUrl}/api/netapp/connections`, async () => {
       return HttpResponse.json({});
     }),
   ];

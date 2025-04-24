@@ -88,14 +88,6 @@ const NetAppPage = () => {
   }, [location]);
 
   const validateRoute = useCallback(() => {
-    console.log(
-      "initialLocationState?.searchQueryString >>",
-      initialLocationState?.searchQueryString,
-    );
-    console.log(
-      " location.state?.searchQueryString >>",
-      location.state?.searchQueryString,
-    );
     let validRoute = true;
     if (operationName === null) validRoute = false;
     if (
@@ -135,8 +127,6 @@ const NetAppPage = () => {
       window.history.replaceState({}, "");
     };
   }, []);
-
-  console.log("location.pathname>>", location.pathname);
 
   if (location.pathname.endsWith("/error"))
     return (
