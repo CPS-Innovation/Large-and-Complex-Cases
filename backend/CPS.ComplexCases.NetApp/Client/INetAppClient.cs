@@ -1,5 +1,6 @@
 using Amazon.S3.Model;
 using CPS.ComplexCases.NetApp.Models.Args;
+using CPS.ComplexCases.NetApp.Models.Dto;
 
 namespace CPS.ComplexCases.NetApp.Client
 {
@@ -12,6 +13,6 @@ namespace CPS.ComplexCases.NetApp.Client
         Task<bool> UploadObjectAsync(UploadObjectArg arg);
         Task<GetObjectResponse?> GetObjectAsync(GetObjectArg arg);
         Task<ListObjectsV2Response?> ListObjectsInBucketAsync(ListObjectsInBucketArg arg);
-        Task<IEnumerable<string>> ListFoldersInBucketAsync(ListFoldersInBucketArg arg);
+        Task<ListNetAppFoldersDto?> ListFoldersInBucketAsync(ListFoldersInBucketArg arg);
     }
 }

@@ -132,7 +132,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 Buckets = [bucket]
             };
 
-            _amazonS3Mock.Setup(x => x.ListBucketsAsync(default))
+            _amazonS3Mock.Setup(x => x.ListBucketsAsync(It.IsAny<ListBucketsRequest>(), default))
                 .ReturnsAsync(listBucketsResponse);
 
             // Act
@@ -170,7 +170,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             var arg = _fixture.Create<FindBucketArg>();
             var expectedExceptionMessage = "Error";
 
-            _amazonS3Mock.Setup(x => x.ListBucketsAsync(default))
+            _amazonS3Mock.Setup(x => x.ListBucketsAsync(It.IsAny<ListBucketsRequest>(), default))
                 .ThrowsAsync(new AmazonS3Exception(expectedExceptionMessage));
 
             // Act
@@ -403,12 +403,13 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
 
             // Act
             var result = await _client.ListFoldersInBucketAsync(arg);
+            var data = result.Data?.ToList();
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(2, result.Count());
-            Assert.Contains("folder1/", result);
-            Assert.Contains("folder2/", result);
+            Assert.Equal(2, data?.Count());
+            Assert.Contains("folder1/", data[0].Path);
+            Assert.Contains("folder2/", data[1].Path);
         }
 
         [Fact]
@@ -429,11 +430,10 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
 
             // Assert
             Assert.NotNull(result);
-            Assert.Empty(result);
         }
 
         [Fact]
-        public async Task ListFoldersInBucketAsync_WhenExceptionThrown_LogsErrorAndReturnsEmptyList()
+        public async Task ListFoldersInBucketAsync_WhenExceptionThrown_LogsErrorAndReturnsNull()
         {
             // Arrange
             var arg = _fixture.Create<ListFoldersInBucketArg>();
@@ -446,8 +446,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             var result = await _client.ListFoldersInBucketAsync(arg);
 
             // Assert
-            Assert.NotNull(result);
-            Assert.Empty(result);
+            Assert.Null(result);
             _loggerMock.Verify(x => x.Log(
                 It.Is<LogLevel>(logLevel => logLevel == LogLevel.Error),
                 It.IsAny<EventId>(),

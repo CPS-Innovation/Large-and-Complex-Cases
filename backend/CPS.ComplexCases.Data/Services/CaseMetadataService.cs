@@ -86,4 +86,18 @@ public class CaseMetadataService : ICaseMetadataService
       throw;
     }
   }
+
+  public Task<IEnumerable<CaseMetadata>> GetCaseMetadataForNetAppFolderPathsAsync(IEnumerable<string> netAppFolderPaths)
+  {
+    _logger.LogInformation("Retrieving metadata for {Count} NetApp folder paths", netAppFolderPaths.Count());
+    try
+    {
+      return _caseMetadataRepository.GetByNetAppFolderPathsAsync(netAppFolderPaths);
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error retrieving metadata for multiple NetApp folder paths");
+      throw;
+    }
+  }
 }
