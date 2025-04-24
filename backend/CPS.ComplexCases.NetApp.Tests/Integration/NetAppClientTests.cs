@@ -154,10 +154,10 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
 
             // Assert
             result.Should().NotBeNull();
-            result.Should().HaveCount(3);
-            result.Should().Contain("counsel/");
-            result.Should().Contain("counsel/statements/");
-            result.Should().Contain("multimedia/");
+            result.Data.Should().HaveCount(3);
+            result.Data.Should().Contain(x => x.Path == "counsel/");
+            result.Data.Should().Contain(x => x.Path == "counsel/statements/");
+            result.Data.Should().Contain(x => x.Path == "multimedia/");
         }
     }
 }
