@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback } from "react";
 
 type ApiStatus = "initial" | "loading" | "succeeded" | "failed";
@@ -5,7 +6,7 @@ type ApiStatus = "initial" | "loading" | "succeeded" | "failed";
 interface UseApiState<T> {
   status: ApiStatus;
   data?: T;
-  error?: any;
+  error?: Error;
 }
 
 export interface UseApiResult<T> extends UseApiState<T> {
@@ -26,9 +27,10 @@ export const useApi = <T>(
       .then((data) => {
         setResult({ status: "succeeded", data });
       })
-      .catch((error) => {
+      .catch((error: Error) => {
         setResult({ status: "failed", error });
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiFunction, JSON.stringify(params)]);
 
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import NetAppFolderResultsPage from "./NetAppFolderResultsPage";
 import NetAppConnectConfirmationPage from "./NetAppConnectConfirmationPage";
 import NetAppConnectFailurePage from "./NetAppConnectFailurePage";
@@ -18,7 +18,7 @@ const NetAppPage = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
 
-  const [operationName, setOperationName] = useState("");
+  const [operationName, setOperationName] = useState<string | null>("");
   const [initialLocationState, setInitialLocationState] = useState<{
     searchQueryString: string;
   }>();
@@ -32,21 +32,20 @@ const NetAppPage = () => {
   );
 
   useEffect(() => {
-    netAppFolderApiResults.refetch();
-  }, [rootFolderPath]);
+    if (operationName) netAppFolderApiResults.refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rootFolderPath, operationName]);
 
   useEffect(() => {
     if (location.pathname.endsWith("/netapp-connect")) {
-      const operationName = searchParams.get("operation-name");
-      if (!operationName) {
+      const opName = searchParams.get("operation-name");
+      if (!opName) {
+        setOperationName(null);
         return;
       }
-      setOperationName("");
+      setOperationName(opName);
     }
-    return () => {
-      window.history.replaceState({}, "");
-    };
-  }, []);
+  }, [location, setOperationName, searchParams]);
 
   useEffect(() => {
     if (netAppFolderApiResults.status === "failed")
@@ -71,13 +70,13 @@ const NetAppPage = () => {
     }
     try {
       await connectNetAppFolder({
-        operationName,
+        operationName: operationName!,
         folderPath: selectedFolderPath,
         caseId: caseId!,
       });
       navigate(`/case/${caseId}/case-overview/transfer-material`);
-    } catch (e) {
-      navigate(`/case/${caseId}/netapp-connect/error`);
+    } catch (error) {
+      if (error) navigate(`/case/${caseId}/netapp-connect/error`);
     }
   };
   useEffect(() => {
@@ -88,12 +87,24 @@ const NetAppPage = () => {
     }
   }, [location]);
 
-  useEffect(() => {
-    validateRoute();
-  }, [location]);
-
-  const validateRoute = () => {
+  const validateRoute = useCallback(() => {
+    console.log(
+      "initialLocationState?.searchQueryString >>",
+      initialLocationState?.searchQueryString,
+    );
+    console.log(
+      " location.state?.searchQueryString >>",
+      location.state?.searchQueryString,
+    );
     let validRoute = true;
+    if (operationName === null) validRoute = false;
+    if (
+      location.pathname.endsWith("/netapp-connect") &&
+      initialLocationState?.searchQueryString === undefined &&
+      location.state?.searchQueryString === undefined
+    ) {
+      validRoute = false;
+    }
     if (
       location.pathname.endsWith("/netapp-connect") &&
       initialLocationState?.searchQueryString === undefined &&
@@ -103,8 +114,21 @@ const NetAppPage = () => {
     }
     if (location.pathname.endsWith("/confirmation") && !selectedFolderPath)
       validRoute = false;
+
+    if (location.pathname.endsWith("/error") && !selectedFolderPath)
+      validRoute = false;
     if (!validRoute) navigate(`/`);
-  };
+  }, [location, initialLocationState, navigate, selectedFolderPath]);
+
+  useEffect(() => {
+    if (location.pathname) validateRoute();
+  }, [location, validateRoute]);
+
+  useEffect(() => {
+    return () => {
+      window.history.replaceState({}, "");
+    };
+  }, []);
 
   console.log("location.pathname>>", location.pathname);
 

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useApi } from "../../common/hooks/useApi";
 import {
   getEgressSearchResults,
@@ -45,7 +45,7 @@ const EgressPage = () => {
       setWorkspaceName(name);
       setFormValue(name);
     }
-  }, [searchParams]);
+  }, [searchParams, location.pathname]);
 
   useEffect(() => {
     if (location.state?.searchQueryString) {
@@ -58,6 +58,7 @@ const EgressPage = () => {
 
   useEffect(() => {
     if (workspaceName) egressSearchApi.refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceName]);
 
   useEffect(() => {
@@ -107,22 +108,22 @@ const EgressPage = () => {
       );
 
       if (!initialLocationState?.netappFolderPath)
-        navigate(`/case/${caseId}/netapp-connect/?operation-name=abc`, {
-          state: {
-            searchQueryString: initialLocationState?.searchQueryString,
+        navigate(
+          `/case/${caseId}/netapp-connect?operation-name=${workspaceName}`,
+          {
+            state: {
+              searchQueryString: initialLocationState?.searchQueryString,
+            },
           },
-        });
+        );
       else navigate(`/case/${caseId}/case-overview/transfer-material`);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       navigate(`/case/${caseId}/egress-connect/error`);
     }
   };
 
-  useEffect(() => {
-    validateRoute();
-  }, [location]);
-
-  const validateRoute = () => {
+  const validateRoute = useCallback(() => {
     let validRoute = true;
     if (
       location.pathname.endsWith("/egress-connect") &&
@@ -134,7 +135,11 @@ const EgressPage = () => {
     if (location.pathname.endsWith("/confirmation") && !selectedFolderId)
       validRoute = false;
     if (!validRoute) navigate(`/`);
-  };
+  }, [location, initialLocationState, navigate, selectedFolderId]);
+
+  useEffect(() => {
+    validateRoute();
+  }, [location, validateRoute]);
 
   const selectedWorkSpaceName = useMemo(() => {
     if (egressSearchApi.status !== "succeeded") return "";
