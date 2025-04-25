@@ -169,6 +169,7 @@ public class CaseEnrichmentService : ICaseEnrichmentService
     return new ListNetAppFoldersResponse
     {
       BucketName = foldersDto.BucketName,
+      RootPath = foldersDto.RootPath,
       Pagination = new NetAppPaginationResponse
       {
         NextContinuationToken = foldersDto.DataInfo.NextContinuationToken,
