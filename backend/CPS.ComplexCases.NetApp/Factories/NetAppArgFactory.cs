@@ -8,7 +8,7 @@ namespace CPS.ComplexCases.NetApp.Factories
         {
             return new CreateBucketArg
             {
-                BucketName = bucketName
+                BucketName = bucketName.ToLowerInvariant()
             };
         }
 
@@ -26,7 +26,7 @@ namespace CPS.ComplexCases.NetApp.Factories
         {
             return new FindBucketArg
             {
-                BucketName = bucketName
+                BucketName = bucketName.ToLowerInvariant()
             };
         }
 
@@ -34,7 +34,7 @@ namespace CPS.ComplexCases.NetApp.Factories
         {
             return new GetObjectArg
             {
-                BucketName = bucketName,
+                BucketName = bucketName.ToLowerInvariant(),
                 ObjectKey = objectName
             };
         }
@@ -43,7 +43,7 @@ namespace CPS.ComplexCases.NetApp.Factories
         {
             return new UploadObjectArg
             {
-                BucketName = bucketName,
+                BucketName = bucketName.ToLowerInvariant(),
                 ObjectKey = objectName,
                 Stream = stream
             };
@@ -53,7 +53,7 @@ namespace CPS.ComplexCases.NetApp.Factories
         {
             return new ListObjectsInBucketArg
             {
-                BucketName = bucketName,
+                BucketName = bucketName.ToLowerInvariant(),
                 ContinuationToken = continuationToken
             };
         }
@@ -62,7 +62,7 @@ namespace CPS.ComplexCases.NetApp.Factories
         {
             return new ListFoldersInBucketArg
             {
-                BucketName = bucketName,
+                BucketName = bucketName.ToLowerInvariant(),
                 ContinuationToken = continuationToken,
                 MaxKeys = maxKeys.ToString(),
                 Prefix = prefix
