@@ -4,18 +4,17 @@ trigger:
     include:
       - 'main'
 
-resources:
-  repositories:
-    - repository: PipelineTemplates           
-      type: git
-      name: "CPS-Innovation/large-and-complex-cases-pipeline-templates"
-      ref: refs/heads/main
-      endpoint:  "Azure Pipeline: Large and Complex Cases - Pre-Prod" #service connection
+# resources:
+#   repositories:
+#     - repository: PipelineTemplates           
+#       type: git
+#       name: "CPS-Innovation/large-and-complex-cases-pipeline-templates"
+#       ref: refs/heads/main
+#       endpoint:  "Azure Pipeline: Large and Complex Cases - Pre-Prod" #service connection
 
 # deploy to Dev
 extends:
-  template: CPS-Innovation/large-and-complex-cases-pipeline-templates@PipelineTemplates
-  parameters:
+  template: templates/ui_spa_pipeline_template.yml
     buildAgent: 'LaCC Pre-Prod Build Agents' 
     nodeVersion: 22
     webAppName: 'lacc-app-ui-spa-dev'

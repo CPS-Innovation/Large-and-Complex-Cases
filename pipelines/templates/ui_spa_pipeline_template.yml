@@ -1,0 +1,89 @@
+
+#  ----------------------------------------------------------------
+#  FLOW
+#    PR to main    --> Build stage   (validation)
+#    Merge to main --> Deploy stage (build‑artefact, deploy)
+# -----------------------------------------------------------------
+
+parameters:
+  - name: buildAgent
+    type: string
+  - name: nodeVersion
+    type: string
+  - name: webAppName 
+    type: string
+  - name: serviceConnectionName
+    type: string
+
+trigger:
+  branches:
+    include: [ main ]
+
+pr:
+  branches:
+    include: [ main ]
+
+variables:
+  NODE_VERSION: '22'
+
+# ---------- BUILD & TEST (runs on PR validation) ----------
+- stage: Build
+  displayName: Build & Test
+  condition: |
+    eq(variables['Build.Reason'], 'PullRequest')
+ 
+  jobs:
+  - job: build and test
+    pool:
+      name: ${{ parameters.buildAgent }}
+
+    steps:
+      - task: NodeTool@0
+        inputs:
+          versionSpec: ${{ parameters.nodeVersion}} 
+          targetPath: '$(System.DefaultWorkingDirectory)/ui-spa'
+      
+      - checkout: self
+      
+      - script: |
+          npm run prettier
+          npm test 
+          npm run build 
+          npm run ui:e2e:ci
+
+      - task: PublishPipelineArtifact@1
+        inputs:
+          targetPath: '$(System.DefaultWorkingDirectory)'
+          artifact: drop
+        displayName: 'Publish build artefact'
+
+# ---------- DEPLOY (only after merge & from main) ----------
+- stage: Deploy
+  displayName: Release / Deploy to App Service
+  dependsOn: Build
+  condition: |
+    and(
+      succeeded(),
+      eq(variables['Build.SourceBranch'], 'refs/heads/main')
+    )
+  jobs:
+  - deployment: deployWebApp
+    environment: dev
+    pool:
+      name: ${{ parameters.buildAgent }}
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - download: current
+              artifact: drop
+              
+            - task: AzureWebApp@1
+              displayName: Deploy to ${{ parameters.webAppName }}
+              inputs:
+                azureSubscription: ${{ parameters.serviceConnectionName }}
+                appType: 'webAppLinux'  
+                appName:  ${{ parameters.webAppName }}
+                package: '$(Pipeline.Workspace)/drop'
+                runtimeStack: 'NODE|22'
+                startUpCommand: 'npm start'
