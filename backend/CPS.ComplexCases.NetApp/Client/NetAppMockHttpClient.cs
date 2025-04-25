@@ -105,6 +105,7 @@ public class NetAppMockHttpClient : INetAppClient
         var result = new ListNetAppFoldersDto
         {
             BucketName = arg.BucketName,
+            RootPath = arg.Prefix,
             Data = folders,
             DataInfo = new DataInfoDto
             {
