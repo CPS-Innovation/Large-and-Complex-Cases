@@ -41,8 +41,8 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger, ICas
             return new BadRequestObjectResult(netAppConnectionRequest.ValidationErrors);
         }
 
-        var netAppArg = _netAppArgFactory.CreateListObjectsInBucketArg(netAppConnectionRequest.Value.NetAppFolderPath, context.Username);
-        var hasNetAppPermission = await _netAppClient.ListObjectsInBucketAsync(netAppArg);
+        var netAppArg = _netAppArgFactory.CreateListFoldersInBucketArg(netAppConnectionRequest.Value.BucketName);
+        var hasNetAppPermission = await _netAppClient.ListFoldersInBucketAsync(netAppArg);
 
         if (hasNetAppPermission == null)
         {
