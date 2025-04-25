@@ -13,9 +13,10 @@ trigger:
 #       endpoint:  "Azure Pipeline: Large and Complex Cases - Pre-Prod" #service connection
 
 # deploy to Dev
-extends:
-  template: templates/ui_spa_pipeline_template.yml
-    buildAgent: 'LaCC Pre-Prod Build Agents' 
-    nodeVersion: 22
-    webAppName: 'lacc-app-ui-spa-dev'
-    serviceConnectionName: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
+jobs:
+  - template: templates/ui_spa_pipeline_template.yml
+    parameters:
+      buildAgent: 'LaCC Pre-Prod Build Agents' 
+      nodeVersion: 22
+      webAppName: 'lacc-app-ui-spa-dev'
+      serviceConnectionName: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
