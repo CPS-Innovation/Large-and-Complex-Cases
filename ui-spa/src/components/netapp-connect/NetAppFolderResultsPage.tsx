@@ -11,7 +11,7 @@ import { UseApiResult } from "../../common/hooks/useApi";
 import { NetAppFolderData } from "../../common/types/NetAppFolderData";
 import { sortByStringProperty } from "../../common/utils/sortUtils";
 import { getFolderNameFromPath } from "../../common/utils/getFolderNameFromPath";
-import { FolderPath } from "../common/FolderPath";
+import FolderPath from "../common/FolderPath";
 import FolderIcon from "../../components/svgs/folder.svg?react";
 import styles from "./netAppFolderResultsPage.module.scss";
 

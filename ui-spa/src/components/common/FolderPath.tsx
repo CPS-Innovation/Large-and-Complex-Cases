@@ -12,7 +12,7 @@ type Folder = {
   folderPath: string;
 };
 
-export const FolderPath: React.FC<FolderPathProps> = ({
+const FolderPath: React.FC<FolderPathProps> = ({
   path,
   folderClickHandler,
 }) => {
@@ -50,3 +50,5 @@ export const FolderPath: React.FC<FolderPathProps> = ({
     </div>
   );
 };
+
+export default FolderPath;
