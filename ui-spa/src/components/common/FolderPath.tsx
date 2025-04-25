@@ -29,12 +29,20 @@ export const FolderPath: React.FC<FolderPathProps> = ({
   return (
     <div>
       <ol className={styles.orderedList}>
-        {folders.map((folder) => {
+        {folders.map((folder, index) => {
           return (
             <li className={styles.listItem}>
-              <LinkButton onClick={() => folderClickHandler(folder.folderPath)}>
-                {folder.folderName}
-              </LinkButton>
+              {index !== folders.length - 1 ? (
+                <LinkButton
+                  onClick={() => folderClickHandler(folder.folderPath)}
+                >
+                  {folder.folderName}
+                </LinkButton>
+              ) : (
+                <span className={styles.currentFolderName}>
+                  {folder.folderName}
+                </span>
+              )}
             </li>
           );
         })}

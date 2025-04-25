@@ -26,4 +26,10 @@
 .listItem {
   position: relative;
   padding: 0 0.4rem;
+  display: flex;
+  align-items: center;
+  .currentFolderName {
+    margin-left: 0.5rem;
+    color: #505a5f;
+  }
 }

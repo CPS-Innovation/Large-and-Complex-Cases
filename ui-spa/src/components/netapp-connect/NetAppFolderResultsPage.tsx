@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   Button,
   SortableTable,
@@ -32,22 +32,26 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
     name: string;
     type: "ascending" | "descending";
   }>();
+
+  const [currentPath, setCurrentPath] = useState("");
   const netappFolderData = useMemo(() => {
-    if (!netAppFolderApiResults?.data) return [];
+    if (!netAppFolderApiResults?.data?.folders) return [];
     if (sortValues?.name === "folder-name")
       return sortByStringProperty(
-        netAppFolderApiResults.data,
+        netAppFolderApiResults.data.folders,
         "folderPath",
         sortValues.type,
       );
 
-    return netAppFolderApiResults.data;
+    return netAppFolderApiResults.data.folders;
   }, [netAppFolderApiResults, sortValues]);
 
-  const currentPath = useMemo(() => {
-    if (!netappFolderData.length) return "";
-    return netappFolderData[0].folderPath.replace(/\/[^/]+$/, "");
-  }, [netappFolderData]);
+  useEffect(() => {
+    if (!currentPath && netAppFolderApiResults?.data?.rootPath)
+      setCurrentPath(
+        netAppFolderApiResults?.data?.rootPath.replace(/\/[^/]+$/, ""),
+      );
+  }, [netAppFolderApiResults?.data?.rootPath, currentPath]);
 
   const getTableRowData = () => {
     return netappFolderData.map((data) => {
@@ -60,7 +64,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
                 <LinkButton
                   type="button"
                   onClick={() => {
-                    handleGetFolderContent(data.folderPath);
+                    handleFolderClickHandler(data.folderPath);
                   }}
                 >
                   {getFolderNameFromPath(data.folderPath)}
@@ -95,6 +99,10 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
   const handleConnect = (id: string) => {
     handleConnectFolder(id);
   };
+  const handleFolderClickHandler = (path: string) => {
+    setCurrentPath(path);
+    handleGetFolderContent(path);
+  };
   return (
     <div className="govuk-width-container">
       <BackLink to={backLinkUrl}>Back</BackLink>
@@ -108,7 +116,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
           permissions or contact the product team for support.
         </p>
       </InsetText>
-      <div className={styles.results}>
+      <div className={`govuk-grid-column-two-thirds ${styles.results}`}>
         {netAppFolderApiResults.status === "loading" && (
           <div className={styles.spinnerWrapper}>
             <Spinner
@@ -120,32 +128,37 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
             </div>
           </div>
         )}
-        {netAppFolderApiResults.status === "succeeded" && (
-          <div>
-            {currentPath && (
-              <FolderPath
-                path={currentPath}
-                folderClickHandler={handleGetFolderContent}
-              />
-            )}
-            <SortableTable
-              head={[
-                {
-                  children: "Folder name",
-                  sortable: true,
-                  sortName: "folder-name",
-                },
-
-                {
-                  children: "",
-                  sortable: false,
-                },
-              ]}
-              rows={getTableRowData()}
-              handleTableSort={handleTableSort}
+        <div>
+          {currentPath && (
+            <FolderPath
+              path={currentPath}
+              folderClickHandler={handleFolderClickHandler}
             />
-          </div>
-        )}
+          )}
+          {netAppFolderApiResults.status === "succeeded" && (
+            <>
+              <SortableTable
+                head={[
+                  {
+                    children: "Folder name",
+                    sortable: true,
+                    sortName: "folder-name",
+                  },
+
+                  {
+                    children: "",
+                    sortable: false,
+                  },
+                ]}
+                rows={getTableRowData()}
+                handleTableSort={handleTableSort}
+              />
+              {!netappFolderData.length && (
+                <p>There are no documents currenlty in this folder</p>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

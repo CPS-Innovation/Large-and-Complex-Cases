@@ -8,6 +8,7 @@ import {
   EgressSearchResultResponse,
 } from "../common/types/EgressSearchResponse";
 import {
+  NetAppFolder,
   NetAppFolderData,
   NetAppFolderResponse,
 } from "../common/types/NetAppFolderData";
@@ -127,7 +128,7 @@ export const getNetAppFolders = async (
   folderPath: string,
   take: number = 50,
   continuationToken = "",
-  collected: NetAppFolderData = [],
+  collectedFolders: NetAppFolder[] = [],
 ): Promise<NetAppFolderData> => {
   const url = `${GATEWAY_BASE_URL}/api/netapp/folders`;
   const response = await fetch(
@@ -147,16 +148,19 @@ export const getNetAppFolders = async (
     const result = (await response.json()) as NetAppFolderResponse;
 
     const { data, pagination } = result;
-    const updated = collected.concat(data);
+    const updatedFolders = collectedFolders.concat(data.folders);
     if (!pagination.nextContinuationToken) {
-      return updated;
+      return {
+        rootPath: data.rootPath,
+        folders: updatedFolders,
+      };
     }
     return getNetAppFolders(
       operationName,
       folderPath,
       take,
       pagination.nextContinuationToken,
-      updated,
+      updatedFolders,
     );
   } catch (error) {
     console.error("Fetch failed:", error);

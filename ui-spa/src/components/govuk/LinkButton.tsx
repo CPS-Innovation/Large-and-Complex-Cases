@@ -28,7 +28,7 @@ export const LinkButton = forwardRef<HTMLButtonElement | null, LinkButtonProps>(
       disabled = false,
       type,
     },
-    ref
+    ref,
   ) => {
     const resolvedClassName = `${classes.linkButton} ${className}`;
     return (
@@ -47,5 +47,5 @@ export const LinkButton = forwardRef<HTMLButtonElement | null, LinkButtonProps>(
         {children}
       </button>
     );
-  }
+  },
 );

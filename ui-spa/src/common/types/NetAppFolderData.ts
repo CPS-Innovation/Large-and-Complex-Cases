@@ -3,7 +3,10 @@ export type NetAppFolder = {
   caseId: number | null;
 };
 
-export type NetAppFolderData = NetAppFolder[];
+export type NetAppFolderData = {
+  rootPath: string;
+  folders: NetAppFolder[];
+};
 
 export type NetAppFolderResponse = {
   data: NetAppFolderData;
