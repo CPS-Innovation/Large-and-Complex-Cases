@@ -1,15 +1,16 @@
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.SecurityToken;
 using Amazon.SecurityToken.Model;
+using CPS.ComplexCases.NetApp.Constants;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
+using CPS.ComplexCases.NetApp.Models.Dto;
 using CPS.ComplexCases.NetApp.Wrappers;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Namespace.CPS.ComplexCases.NetApp.Constants;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
@@ -176,7 +177,7 @@ public class NetAppClient : INetAppClient
         }
     }
 
-    public async Task<IEnumerable<string>> ListFoldersInBucketAsync(ListFoldersInBucketArg arg)
+    public async Task<ListNetAppFoldersDto?> ListFoldersInBucketAsync(ListFoldersInBucketArg arg)
     {
         string? prefix = null;
         if (!string.IsNullOrEmpty(arg.Prefix))
@@ -195,12 +196,30 @@ public class NetAppClient : INetAppClient
             };
 
             var response = await _client.ListObjectsV2Async(request);
-            return response.CommonPrefixes;
+            var folders = response.CommonPrefixes.Select(data => new ListNetAppFoldersDataDto
+            {
+                Path = data
+            });
+
+            var result = new ListNetAppFoldersDto
+            {
+                BucketName = arg.BucketName,
+                Data = folders,
+                DataInfo = new DataInfoDto
+                {
+                    ContinuationToken = response.ContinuationToken,
+                    NextContinuationToken = response.NextContinuationToken,
+                    MaxKeys = response.MaxKeys,
+                    KeyCount = response.KeyCount
+                }
+            };
+
+            return result;
         }
         catch (AmazonS3Exception ex)
         {
             _logger.LogError(ex.Message, $"Failed to list objects in bucket {arg.BucketName}.");
-            return [];
+            return null;
         }
     }
 

@@ -5,7 +5,6 @@ using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Wrappers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Namespace.CPS.ComplexCases.NetApp.Factories;
 
 namespace CPS.ComplexCases.NetApp.Extensions;
 

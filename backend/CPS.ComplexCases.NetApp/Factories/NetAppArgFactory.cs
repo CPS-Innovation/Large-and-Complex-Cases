@@ -58,12 +58,13 @@ namespace CPS.ComplexCases.NetApp.Factories
             };
         }
 
-        public ListFoldersInBucketArg CreateListFoldersInBucketArg(string bucketName, string? continuationToken = null, string? prefix = null)
+        public ListFoldersInBucketArg CreateListFoldersInBucketArg(string bucketName, string? continuationToken = null, int? maxKeys = null, string? prefix = null)
         {
             return new ListFoldersInBucketArg
             {
                 BucketName = bucketName,
                 ContinuationToken = continuationToken,
+                MaxKeys = maxKeys.ToString(),
                 Prefix = prefix
             };
         }

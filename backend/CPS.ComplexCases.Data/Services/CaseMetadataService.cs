@@ -60,6 +60,19 @@ public class CaseMetadataService : ICaseMetadataService
       throw;
     }
   }
+  public async Task<CaseMetadata?> GetCaseMetadataForCaseIdAsync(int caseId)
+  {
+    _logger.LogInformation("Retrieving metadata for case {CaseId}", caseId);
+    try
+    {
+      return await _caseMetadataRepository.GetByCaseIdAsync(caseId);
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error retrieving metadata for case {CaseId}", caseId);
+      throw;
+    }
+  }
   public async Task<IEnumerable<CaseMetadata>> GetCaseMetadataForEgressWorkspaceIdsAsync(IEnumerable<string> egressWorkspaceIds)
   {
     _logger.LogInformation("Retrieving metadata for {Count} egress workspaces", egressWorkspaceIds.Count());
@@ -70,6 +83,20 @@ public class CaseMetadataService : ICaseMetadataService
     catch (Exception ex)
     {
       _logger.LogError(ex, "Error retrieving metadata for multiple egress workspaces");
+      throw;
+    }
+  }
+
+  public Task<IEnumerable<CaseMetadata>> GetCaseMetadataForNetAppFolderPathsAsync(IEnumerable<string> netAppFolderPaths)
+  {
+    _logger.LogInformation("Retrieving metadata for {Count} NetApp folder paths", netAppFolderPaths.Count());
+    try
+    {
+      return _caseMetadataRepository.GetByNetAppFolderPathsAsync(netAppFolderPaths);
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error retrieving metadata for multiple NetApp folder paths");
       throw;
     }
   }
