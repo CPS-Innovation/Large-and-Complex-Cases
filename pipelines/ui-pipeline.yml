@@ -1,6 +1,9 @@
-trigger: 
-  branches: [ main ]
-
+---
+trigger:
+  branches:
+    include:
+      - 'main'
+      
 resources:
   repositories:
     - repository: templates                
