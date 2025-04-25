@@ -40,7 +40,7 @@ export const getNetAppFolderResultsDev = (path: string) => {
   }
   const newFolders = netAppRootFolderResultsDev.data.folders.map(
     (item, index) => {
-      return { ...item, folderPath: `${path}/folder_${index}` };
+      return { ...item, folderPath: `${path}/folder-${index}` };
     },
   );
 

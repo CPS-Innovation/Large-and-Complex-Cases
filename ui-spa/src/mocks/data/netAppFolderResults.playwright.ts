@@ -30,17 +30,23 @@ export const getNetAppFolderResultsPlaywright = (path: string) => {
   if (levels.length > 3) {
     return {
       ...netAppRootFolderResultsPlaywright,
-      data: [],
+      data: {
+        roothPath: path,
+        folders: [],
+      },
     };
   }
-  const newData = netAppRootFolderResultsPlaywright.data.folders.map(
+  const newFolders = netAppRootFolderResultsPlaywright.data.folders.map(
     (item, index) => {
-      return { ...item, folderPath: `${path}/folder_${index}` };
+      return { ...item, folderPath: `${path}/folder-${index}` };
     },
   );
 
   return {
     ...netAppRootFolderResultsPlaywright,
-    data: newData,
+    data: {
+      roothPath: path,
+      folders: newFolders,
+    },
   };
 };
