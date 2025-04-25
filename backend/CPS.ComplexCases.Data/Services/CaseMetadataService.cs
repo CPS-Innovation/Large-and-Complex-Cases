@@ -47,6 +47,39 @@ public class CaseMetadataService : ICaseMetadataService
       throw;
     }
   }
+
+  public async Task CreateNetAppConnectionAsync(CreateNetAppConnectionDto createNetAppConnectionDto)
+  {
+    _logger.LogInformation("Creating egress connection for case {CaseId}", createNetAppConnectionDto.CaseId);
+    try
+    {
+      var netAppFolderPath = $"{createNetAppConnectionDto.BucketName}:{createNetAppConnectionDto.NetAppFolderPath}";
+      var existingMetadata = await _caseMetadataRepository.GetByCaseIdAsync(createNetAppConnectionDto.CaseId);
+
+      if (existingMetadata != null)
+      {
+        existingMetadata.NetappFolderPath = netAppFolderPath;
+        await _caseMetadataRepository.UpdateAsync(existingMetadata);
+        return;
+      }
+      else
+      {
+        var newMetadata = new CaseMetadata
+        {
+          CaseId = createNetAppConnectionDto.CaseId,
+          NetappFolderPath = netAppFolderPath
+        };
+        await _caseMetadataRepository.AddAsync(newMetadata);
+        return;
+      }
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error creating NetApp connection for case {CaseId}", createNetAppConnectionDto.CaseId);
+      throw;
+    }
+  }
+
   public async Task<IEnumerable<CaseMetadata>> GetCaseMetadataForCaseIdsAsync(IEnumerable<int> caseIds)
   {
     _logger.LogInformation("Retrieving metadata for {Count} cases", caseIds.Count());
