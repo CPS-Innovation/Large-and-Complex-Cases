@@ -8,6 +8,7 @@ describe("FolderPath", () => {
   it("It renders the folder path for a given path and fires the clickHandler with correct params", async () => {
     render(
       <FolderPath
+        disabled={false}
         path="home/folder1/folder2"
         folderClickHandler={folderClickHandlerMock}
       />,
@@ -36,7 +37,11 @@ describe("FolderPath", () => {
 
   it("It renders the folder path for a given path ", async () => {
     render(
-      <FolderPath path="home" folderClickHandler={folderClickHandlerMock} />,
+      <FolderPath
+        disabled={false}
+        path="home"
+        folderClickHandler={folderClickHandlerMock}
+      />,
     );
     const list = screen.getByRole("list");
     const items = within(list).getAllByRole("listitem");
@@ -49,7 +54,13 @@ describe("FolderPath", () => {
   });
 
   it("It should render correctly for empty path", async () => {
-    render(<FolderPath path="" folderClickHandler={folderClickHandlerMock} />);
+    render(
+      <FolderPath
+        disabled={false}
+        path=""
+        folderClickHandler={folderClickHandlerMock}
+      />,
+    );
     const list = screen.getByRole("list");
     const items = within(list).queryAllByRole("listitem");
     expect(items).toHaveLength(0);

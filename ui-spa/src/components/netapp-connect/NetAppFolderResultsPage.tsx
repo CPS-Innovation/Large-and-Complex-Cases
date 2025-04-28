@@ -33,7 +33,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
     type: "ascending" | "descending";
   }>();
 
-  const [currentPath, setCurrentPath] = useState(null);
+  const [currentPath, setCurrentPath] = useState<string | null>(null);
   const netappFolderData = useMemo(() => {
     if (!netAppFolderApiResults?.data?.folders) return [];
     if (sortValues?.name === "folder-name")
