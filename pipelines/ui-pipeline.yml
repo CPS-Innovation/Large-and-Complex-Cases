@@ -87,10 +87,10 @@ stages:
               targetPath: 'ui-spa/'
               artifact: 'drop'
 
-          - task: CmdLine@2
-            inputs:
-              script: 'ls -la'
-              workingDirectory: '$(Pipeline.Workspace)/drop'
+          # - task: CmdLine@2
+          #   inputs:
+          #     script: 'ls -la'
+          #     workingDirectory: '$(Pipeline.Workspace)/drop'
 
 
   - stage: Deploy
