@@ -58,8 +58,5 @@ jobs:
           CI: 'true'
         inputs:
           command: 'custom'
-          customCommand: |
-            'npm run prettier'
-            'npm run test'
-            'npm run ui:e2e:ci'
+          customCommand: test
           workingDir: 'ui-spa/'
