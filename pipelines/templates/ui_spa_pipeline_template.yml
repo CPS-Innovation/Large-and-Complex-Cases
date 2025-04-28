@@ -15,16 +15,16 @@ parameters:
   - name: serviceConnectionName
     type: string
 
-trigger:
-  branches:
-    include: [ main ]
+# trigger:
+#   branches:
+#     include: [ main ]
 
-pr:
-  branches:
-    include: [ main ]
+# pr:
+#   branches:
+#     include: [ main ]
 
-variables:
-  NODE_VERSION: '22'
+# variables:
+#   NODE_VERSION: '22'
 
 # ---------- BUILD & TEST (runs on PR validation) ----------
 - stage: Build
