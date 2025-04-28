@@ -44,7 +44,7 @@ jobs:
         displayName: NPM Install
         inputs:
           command: 'install'
-          workingDir: '$(System.DefaultWorkingDirectory)/ui-spa'
+          workingDir: 'ui-spa/'
 
       - script: npm --version
         displayName: 'Check npm Version' 
