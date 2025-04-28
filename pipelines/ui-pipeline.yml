@@ -39,12 +39,11 @@ jobs:
       #   inputs:
       #     versionSpec: 22
   
-
       - task: Npm@1
         displayName: NPM Install
         inputs:
           command: 'install'
-          workingDir: 'ui-spa/src'
+          workingDir: 'ui-spa/'
 
       - script: npm --version
         displayName: 'Check npm Version' 
