@@ -39,6 +39,11 @@ jobs:
       #   inputs:
       #     versionSpec: 22
   
+      - script: echo "Checking PATH variable..." && echo $PATH
+        displayName: 'Check PATH Variable'
+      - script: which npm || where npm
+        displayName: 'Check npm Location'
+
       - task: Npm@1
         displayName: NPM Install
         inputs:
