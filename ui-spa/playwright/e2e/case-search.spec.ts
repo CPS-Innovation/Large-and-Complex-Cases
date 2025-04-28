@@ -103,7 +103,7 @@ test.describe("Case Search/Results", async () => {
       await expect(page.getByTestId("search-operation-area")).toHaveValue(
         "1057708",
       );
-      verifyTableValues(page);
+      await verifyTableValues(page);
     });
 
     test("Should successfully complete the case search case search by defendant surname and area and see the results", async ({
@@ -142,7 +142,7 @@ test.describe("Case Search/Results", async () => {
       await expect(page.getByTestId("search-defendant-area")).toHaveValue(
         "1057708",
       );
-      verifyTableValues(page);
+      await verifyTableValues(page);
     });
 
     test("Should successfully complete the case search case search by urn and see the results", async ({
@@ -179,7 +179,7 @@ test.describe("Case Search/Results", async () => {
         "Case created",
         "",
       ]);
-      verifyTableValues(page);
+      await verifyTableValues(page);
     });
 
     test("should show validation error for search by urn in the case search page", async ({
@@ -357,7 +357,7 @@ test.describe("Case Search/Results", async () => {
       await expect(page.getByTestId("search-operation-area")).toHaveValue(
         "1015",
       );
-      verifyTableValues(page);
+      await verifyTableValues(page);
     });
 
     test("should show the search results if user lands directly on the search results page with valid search by defendant surname params", async ({
@@ -384,7 +384,7 @@ test.describe("Case Search/Results", async () => {
       await expect(page.getByTestId("search-defendant-area")).toHaveValue(
         "1057708",
       );
-      verifyTableValues(page);
+      await verifyTableValues(page);
     });
 
     test("should show the search results if user lands directly on the search results page with valid search by URN param", async ({
@@ -400,7 +400,7 @@ test.describe("Case Search/Results", async () => {
       ).toBeVisible();
 
       await expect(page.getByTestId("search-urn")).toHaveValue("11AA2222233");
-      verifyTableValues(page);
+      await verifyTableValues(page);
     });
 
     test("Should show no cases found result, if there are no matching result for given search criteria", async ({

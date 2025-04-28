@@ -134,6 +134,8 @@ const EgressPage = () => {
     }
     if (location.pathname.endsWith("/confirmation") && !selectedFolderId)
       validRoute = false;
+    if (location.pathname.endsWith("/error") && !selectedFolderId)
+      validRoute = false;
     if (!validRoute) navigate(`/`);
   }, [location, initialLocationState, navigate, selectedFolderId]);
 

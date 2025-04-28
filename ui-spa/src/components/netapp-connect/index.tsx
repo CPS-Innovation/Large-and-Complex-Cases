@@ -141,7 +141,7 @@ const NetAppPage = () => {
       <div className="govuk-width-container">
         <NetAppConnectConfirmationPage
           selectedFolderName={getFolderNameFromPath(selectedFolderPath)}
-          backLinkUrl={`/case/${caseId}/netapp-connect?operation-name=${operationName}}`}
+          backLinkUrl={`/case/${caseId}/netapp-connect?operation-name=${operationName}`}
           handleContinue={handleContinue}
         />
       </div>

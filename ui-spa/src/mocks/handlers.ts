@@ -48,7 +48,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       const netAppRootFolderResults = isDevMock()
         ? getNetAppFolderResultsDev(path as string)
         : getNetAppFolderResultsPlaywright(path as string);
-      await delay(3000);
+      await delay(500);
 
       // {
       //   data: [],
