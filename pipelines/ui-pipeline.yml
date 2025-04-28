@@ -31,36 +31,24 @@ jobs:
   - job: build_and_test
     pool:
       # name: ${{ parameters.buildAgent }}
-      name: 'LaCC Pre-Prod Build Agents' 
+      vmImage: ubuntu-latest
 
     steps:  
-      # # - checkout: self
-      # - task: NodeTool@0
-      #   inputs:
-      #     versionSpec: 22
-  
-      - task: CmdLine@2
+      - task: Npm@1
+        displayName: Install npm dependencies
         inputs:
-          script: |
-            cd ui-spa/
-            curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash
-            source ~/.bashrc
-            nvm install 22
+          command: 'install'  
 
-      - script: npm --version
-        displayName: 'Check npm Version' 
-
-      - task: CmdLine@2
+      - task: Npm@1
+        displayName: Build web app package
         inputs:
-          script: |
+          command: 'custom'
+          customCommand: 'run build'
 
-            npm run prettier
-                      npm test 
-                      npm run build 
-                      npm run ui:e2e:ci 
-
-      - task: PublishPipelineArtifact@1
+      - task: Npm@1
+        displayName: Run tests
+        env:
+          CI: 'true'
         inputs:
-          targetPath: '$(System.DefaultWorkingDirectory)/ui-spa'
-          artifact: drop
-        displayName: 'Publish build artefact'
+          command: 'custom'
+          customCommand: 'test'
