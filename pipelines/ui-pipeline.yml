@@ -84,7 +84,7 @@ stages:
           - task: PublishPipelineArtifact@1
             displayName: Publish artifact
             inputs:
-              targetPath: $(System.DefaultWorkingDirectory)/ui-spa
+              targetPath: 'ui-spa/'
               artifact: 'lacc-ui-dev-drop'
 
 
@@ -108,7 +108,7 @@ stages:
                     resourceGroupName: 'rg-lacc-dev'
                     appType: "webAppLinux"
                     WebAppName: 'lacc-app-ui-spa-dev'
-                    packageForLinux: "$(Pipeline.Workspace)/lacc-ui-prod-drop"
+                    packageForLinux: "ui-spa/lacc-ui-prod-drop"
                     RuntimeStack: "NODE|22-lts"
                     StartupCommand: "npm run start"
                   displayName: "Deploy LACC UI React App to Dev"
