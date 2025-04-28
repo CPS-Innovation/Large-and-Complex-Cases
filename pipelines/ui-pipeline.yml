@@ -49,7 +49,7 @@ jobs:
 
       - task: CmdLine@2
         inputs:
-          script: 'find / -iname "npm-debug.log"'
+          script: 'sudo find / -iname "npm-debug.log"'
           workingDirectory: '/home/vsts/work/1/s/'
           
       - task: Npm@1
