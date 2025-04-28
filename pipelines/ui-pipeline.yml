@@ -106,7 +106,7 @@ stages:
                     azureSubscription: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
                     resourceGroupName: 'rg-lacc-dev'
                     appType: "webAppLinux"
-                    WebAppName: 'asp-lacc-ui-dev'
+                    WebAppName: 'lacc-app-ui-spa-dev'
                     packageForLinux: "$(Pipeline.Workspace)/$(build-pipeline)/lacc-ui-prod-drop"
                     RuntimeStack: "NODE|22-lts"
                     StartupCommand: "npm run start"
