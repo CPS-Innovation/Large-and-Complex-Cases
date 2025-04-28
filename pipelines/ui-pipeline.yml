@@ -107,7 +107,7 @@ stages:
                     resourceGroupName: 'rg-lacc-dev'
                     appType: "webAppLinux"
                     WebAppName: 'lacc-app-ui-spa-dev'
-                    packageForLinux: "$(Pipeline.Workspace)/$(build-pipeline)/lacc-ui-prod-drop"
+                    packageForLinux: "$(Pipeline.Workspace)/LACCUIDEVBuild/lacc-ui-prod-drop"
                     RuntimeStack: "NODE|22-lts"
                     StartupCommand: "npm run start"
                   displayName: "Deploy LACC UI React App to Dev"
