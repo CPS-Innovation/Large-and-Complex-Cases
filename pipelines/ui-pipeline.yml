@@ -47,6 +47,11 @@ jobs:
           customCommand: 'run build'
           workingDir: 'ui-spa/'
 
+      - task: CmdLine@2
+        inputs:
+          script: 'find / -iname "npm-debug.log"'
+          workingDirectory: '/home/vsts/work/1/s/'
+          
       - task: Npm@1
         displayName: Run tests
         env:
