@@ -44,7 +44,7 @@ jobs:
         displayName: NPM Install
         inputs:
           command: 'install'
-          workingDir: 'ui-spa/'
+          workingDir: 'ui-spa/src'
 
       - script: npm --version
         displayName: 'Check npm Version' 
