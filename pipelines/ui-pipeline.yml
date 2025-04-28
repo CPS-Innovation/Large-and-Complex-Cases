@@ -12,11 +12,50 @@ trigger:
 #       ref: refs/heads/main
 #       endpoint:  "Azure Pipeline: Large and Complex Cases - Pre-Prod" #service connection
 
+
 # deploy to Dev
+# jobs:
+#   - template: templates/ui_spa_pipeline_template.yml
+#     parameters:
+#       buildAgent: 'LaCC Pre-Prod Build Agents' 
+#       nodeVersion: 22
+#       webAppName: 'lacc-app-ui-spa-dev'
+#       serviceConnectionName: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
+
+# - stage: Build
+#   displayName: Build & Test
+#   condition: |
+#     eq(variables['Build.Reason'], 'PullRequest')
+ 
 jobs:
-  - template: templates/ui_spa_pipeline_template.yml
-    parameters:
-      buildAgent: 'LaCC Pre-Prod Build Agents' 
-      nodeVersion: 22
-      webAppName: 'lacc-app-ui-spa-dev'
-      serviceConnectionName: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
+  - job: build_and_test
+    pool:
+      # name: ${{ parameters.buildAgent }}
+      name: 'LaCC Pre-Prod Build Agents' 
+
+    steps:  
+      # - checkout: self
+      - task: NodeTool@0
+        inputs:
+          # versionSpec: ${{ parameters.nodeVersion}} 
+          versionSpec: 22
+    
+      - task: Npm@1
+        displayName: NPM Install
+        inputs:
+          command: 'install'
+          workingDir: '$(System.DefaultWorkingDirectory)/ui-spa'
+
+      - task: CmdLine@2
+        inputs:
+          script: |
+            npm run prettier
+                      npm test 
+                      npm run build 
+                      npm run ui:e2e:ci 
+
+      - task: PublishPipelineArtifact@1
+        inputs:
+          targetPath: '$(System.DefaultWorkingDirectory)'
+          artifact: drop
+        displayName: 'Publish build artefact'
