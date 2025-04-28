@@ -21,4 +21,8 @@
     box-shadow: 0 0.125rem 0 #0b0c0c;
     outline: 0.1875rem solid transparent;
   }
+  &:disabled {
+    cursor: not-allowed;
+    color: #b1b4b6;
+  }
 }

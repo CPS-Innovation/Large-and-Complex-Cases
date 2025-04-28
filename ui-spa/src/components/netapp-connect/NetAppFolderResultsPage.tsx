@@ -138,6 +138,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
           {currentPath !== null && (
             <FolderPath
               path={currentPath}
+              disabled={netAppFolderApiResults.status === "loading"}
               folderClickHandler={handleFolderClickHandler}
             />
           )}

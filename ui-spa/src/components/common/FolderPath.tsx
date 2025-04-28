@@ -4,6 +4,7 @@ import styles from "./FolderPath.module.scss";
 
 type FolderPathProps = {
   path: string;
+  disabled: boolean;
   folderClickHandler: (folderPath: string) => void;
 };
 
@@ -14,17 +15,16 @@ type Folder = {
 
 const FolderPath: React.FC<FolderPathProps> = ({
   path,
+  disabled,
   folderClickHandler,
 }) => {
   const folders: Folder[] = useMemo(() => {
-    // const includedHomePath = `Home/${path}`;
     const parts = path.split("/").filter(Boolean);
 
     const result = parts.map((folderName, index) => ({
       folderName,
       folderPath: `${parts.slice(0, index + 1).join("/")}/`,
     }));
-    console.log("result>>>", result);
     const withHome = [{ folderName: "Home", folderPath: "" }, ...result];
     return withHome;
   }, [path]);
@@ -38,6 +38,7 @@ const FolderPath: React.FC<FolderPathProps> = ({
               {index !== folders.length - 1 ? (
                 <LinkButton
                   onClick={() => folderClickHandler(folder.folderPath)}
+                  disabled={disabled}
                 >
                   {folder.folderName}
                 </LinkButton>
