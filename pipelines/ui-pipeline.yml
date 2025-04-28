@@ -41,7 +41,7 @@ jobs:
   
       - script: echo "Checking PATH variable..." && echo $PATH
         displayName: 'Check PATH Variable'
-      - script: which npm || where npm
+      - script: which npm
         displayName: 'Check npm Location'
 
       - task: Npm@1
