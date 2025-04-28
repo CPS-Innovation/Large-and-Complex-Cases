@@ -85,7 +85,7 @@ stages:
             displayName: Publish artifact
             inputs:
               targetPath: 'ui-spa/'
-              artifact: 'lacc-ui-dev-drop'
+              artifact: 'drop'
 
           - task: CmdLine@2
             inputs:
@@ -93,30 +93,31 @@ stages:
               workingDirectory: '$(Pipeline.Workspace)/drop'
 
 
-  # - stage: Deploy
-  #   displayName: Deploy to PROD
-  #   pool:
-  #     'LaCC Pre-Prod Build Agents'
+  - stage: Deploy
+    displayName: Deploy to PROD
+    pool:
+      'LaCC Pre-Prod Build Agents'
           
-  #   jobs:
-  #     - deployment: CI_Deploy_LACCUI_DEV
-  #       environment: 'LACC_DEVELOPMENT'
-  #       strategy:
-  #         runOnce:
-  #           deploy:
-  #             steps:
-  #               - task: AzureRmWebAppDeployment@4
-  #                 inputs:
-  #                   ConnectionType: "AzureRM"
-  #                   azureSubscription: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
-  #                   resourceGroupName: 'rg-lacc-dev'
-  #                   appType: "webAppLinux"
-  #                   WebAppName: 'lacc-app-ui-spa-dev'
-  #                   packageForLinux: "$(Pipeline.Workspace)/drop/lacc-ui-prod-drop"
-  #                   RuntimeStack: "NODE|22-lts"
-  #                   StartupCommand: "npm run start"
-  #                 displayName: "Deploy LACC UI React App to Dev"
-  #                 retryCountOnTaskFailure: 1
+    jobs:
+      - deployment: CI_Deploy_LACCUI_DEV
+        environment: 'LACC_DEVELOPMENT'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureRmWebAppDeployment@4
+                  inputs:
+                    ConnectionType: "AzureRM"
+                    azureSubscription: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
+                    resourceGroupName: 'rg-lacc-dev'
+                    appType: "webAppLinux"
+                    WebAppName: 'lacc-app-ui-spa-dev'
+                  
+                    RuntimeStack: "NODE|22-lts"
+                    StartupCommand: "npm run start"
+                    packageForLinux: '$(Pipeline.Workspace)/drop'
+                  displayName: "Deploy LACC UI React App to Dev"
+                  retryCountOnTaskFailure: 1
 
 
 
