@@ -20,7 +20,7 @@ public class CreateNetAppConnectionValidatorTests
         var request = new CreateNetAppConnectionDto
         {
             CaseId = 0,
-            BucketName = "TestBucket",
+            OperationName = "TestBucket",
             NetAppFolderPath = "/path/to/folder"
         };
 
@@ -39,7 +39,7 @@ public class CreateNetAppConnectionValidatorTests
         var request = new CreateNetAppConnectionDto
         {
             CaseId = 1,
-            BucketName = string.Empty,
+            OperationName = string.Empty,
             NetAppFolderPath = "/path/to/folder"
         };
 
@@ -48,7 +48,7 @@ public class CreateNetAppConnectionValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.PropertyName == nameof(request.BucketName) && e.ErrorMessage == "BucketName is required.");
+        result.Errors.Should().ContainSingle(e => e.PropertyName == nameof(request.OperationName) && e.ErrorMessage == "BucketName is required.");
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public class CreateNetAppConnectionValidatorTests
         var request = new CreateNetAppConnectionDto
         {
             CaseId = 1,
-            BucketName = "TestBucket",
+            OperationName = "TestBucket",
             NetAppFolderPath = string.Empty
         };
 
@@ -78,7 +78,7 @@ public class CreateNetAppConnectionValidatorTests
         var request = new CreateNetAppConnectionDto
         {
             CaseId = 1,
-            BucketName = "TestBucket",
+            OperationName = "TestBucket",
             NetAppFolderPath = "/path/to/folder"
         };
 

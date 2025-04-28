@@ -27,6 +27,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         private const string _accessKey = "accessKey";
         private const string _secretKey = "secretKey";
         private const string _regionName = "eu-west-2";
+        private const string _bucketName = "test-bucket";
 
         public NetAppClientTests()
         {
@@ -39,7 +40,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 Url = _testUrl,
                 AccessKey = _accessKey,
                 SecretKey = _secretKey,
-                RegionName = _regionName
+                RegionName = _regionName,
+                BucketName = _bucketName
             };
             _optionsMock = new Mock<IOptions<NetAppOptions>>();
             _optionsMock.Setup(x => x.Value).Returns(options);

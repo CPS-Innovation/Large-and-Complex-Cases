@@ -1,3 +1,4 @@
+using CPS.ComplexCases.NetApp.Constants;
 using CPS.ComplexCases.NetApp.Models.Args;
 
 namespace CPS.ComplexCases.NetApp.Factories
@@ -58,15 +59,26 @@ namespace CPS.ComplexCases.NetApp.Factories
             };
         }
 
-        public ListFoldersInBucketArg CreateListFoldersInBucketArg(string bucketName, string? continuationToken = null, int? maxKeys = null, string? prefix = null)
+        public ListFoldersInBucketArg CreateListFoldersInBucketArg(string bucketName, string? operationName = null, string? continuationToken = null, int? maxKeys = null, string? prefix = null)
         {
             return new ListFoldersInBucketArg
             {
                 BucketName = bucketName.ToLowerInvariant(),
+                OperationName = operationName?.ToLowerInvariant(),
                 ContinuationToken = continuationToken,
                 MaxKeys = maxKeys.ToString(),
-                Prefix = prefix
+                Prefix = SetPrefix(prefix)
             };
+        }
+
+        private static string SetPrefix(string? prefix)
+        {
+            if (!string.IsNullOrEmpty(prefix))
+            {
+                prefix = !prefix.EndsWith(S3Constants.Delimiter) ? $"{prefix}{S3Constants.Delimiter}" : prefix;
+            }
+
+            return prefix?.ToLowerInvariant() ?? string.Empty;
         }
     }
 }

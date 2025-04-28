@@ -97,10 +97,24 @@ public class NetAppMockHttpClient : INetAppClient
     {
         var response = await SendRequestAsync<ListBucketResult>(_netAppMockRequestFactory.ListFoldersInBucketRequest(arg));
 
-        var folders = response.CommonPrefixes?.Select(data => new ListNetAppFoldersDataDto
+        var folders = new List<ListNetAppFoldersDataDto>();
+
+        if (!string.IsNullOrEmpty(arg.OperationName) && string.IsNullOrEmpty(arg.Prefix))
         {
-            Path = data.Prefix
-        });
+            folders = response.CommonPrefixes?
+                .Where(x => x.Prefix.Contains(arg.OperationName) && x.Prefix.Count(p => p == '/') == 1)
+                .Select(data => new ListNetAppFoldersDataDto
+                {
+                    Path = data.Prefix
+                }).ToList() ?? [];
+        }
+        else
+        {
+            folders = response.CommonPrefixes?.Select(data => new ListNetAppFoldersDataDto
+            {
+                Path = data.Prefix
+            }).ToList() ?? [];
+        }
 
         var result = new ListNetAppFoldersDto
         {

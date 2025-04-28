@@ -6,5 +6,6 @@ namespace CPS.ComplexCases.NetApp.Models
         public required string AccessKey { get; set; }
         public required string SecretKey { get; set; }
         public required string RegionName { get; set; }
+        public required string BucketName { get; set; }
     }
 }

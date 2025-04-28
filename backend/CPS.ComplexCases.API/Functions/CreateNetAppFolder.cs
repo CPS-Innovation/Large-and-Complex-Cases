@@ -4,7 +4,6 @@ using Microsoft.Azure.Functions.Worker;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using Microsoft.Extensions.Logging;
-using Amazon.Runtime;
 
 namespace CPS.ComplexCases.API.Functions;
 
