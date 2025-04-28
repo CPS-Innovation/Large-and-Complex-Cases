@@ -37,14 +37,16 @@ jobs:
       # - checkout: self
       - task: NodeTool@0
         inputs:
-          # versionSpec: ${{ parameters.nodeVersion}} 
           versionSpec: 22
-    
+  
+
       - task: Npm@1
         displayName: NPM Install
         inputs:
           command: 'install'
           workingDir: '$(System.DefaultWorkingDirectory)/ui-spa'
+
+
 
       - task: CmdLine@2
         inputs:
