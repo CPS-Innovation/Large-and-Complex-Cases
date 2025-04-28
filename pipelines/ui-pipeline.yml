@@ -21,11 +21,6 @@ trigger:
 #       nodeVersion: 22
 #       webAppName: 'lacc-app-ui-spa-dev'
 #       serviceConnectionName: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
-
-# - stage: Build
-#   displayName: Build & Test
-#   condition: |
-#     eq(variables['Build.Reason'], 'PullRequest')
  
 jobs:
   - job: build_and_test
@@ -47,11 +42,6 @@ jobs:
           command: 'custom'
           customCommand: 'run build'
           workingDir: 'ui-spa/'
-
-      # - task: CmdLine@2
-      #   inputs:
-      #     script: 'sudo find / -iname "npm-debug.log"'
-      #     workingDirectory: '/home/vsts/work/1/s/'
           
       - task: Npm@1
         displayName: Run tests
