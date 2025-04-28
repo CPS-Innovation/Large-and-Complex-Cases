@@ -5,6 +5,7 @@ using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Models.S3.Result;
 using CPS.ComplexCases.NetApp.Models.Dto;
+using CPS.ComplexCases.NetApp.Exceptions;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
@@ -104,6 +105,7 @@ public class NetAppMockHttpClient : INetAppClient
         var result = new ListNetAppFoldersDto
         {
             BucketName = arg.BucketName,
+            RootPath = arg.Prefix,
             Data = folders,
             DataInfo = new DataInfoDto
             {
@@ -131,6 +133,16 @@ public class NetAppMockHttpClient : INetAppClient
     private async Task<T> SendRequestAsync<T>(HttpRequestMessage request)
     {
         using var response = await SendRequestAsync(request);
+        if (response.StatusCode != System.Net.HttpStatusCode.OK)
+        {
+            _logger.LogError($"Request failed with status code: {response.StatusCode}");
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                throw new NetAppUnauthorizedException();
+            }
+
+            throw new HttpRequestException($"Request failed with status code: {response.StatusCode}");
+        }
         var responseContent = await response.Content.ReadAsStringAsync();
         var result = DeserializeResponse<T>(responseContent) ?? throw new InvalidOperationException("Deserialization returned null.");
         return result;

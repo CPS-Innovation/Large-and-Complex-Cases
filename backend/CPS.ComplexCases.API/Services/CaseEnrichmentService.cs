@@ -94,7 +94,7 @@ public class CaseEnrichmentService : ICaseEnrichmentService
     }
   }
 
-  public async Task<ListNetAppFoldersResponse> EnrichNetAppFoldersWithMetadataAsync(ListNetAppFoldersDto folders)
+  public async Task<ListNetAppObjectsResponse> EnrichNetAppFoldersWithMetadataAsync(ListNetAppFoldersDto folders)
   {
     var response = CreateNetAppFoldersResponseBase(folders);
 
@@ -117,11 +117,16 @@ public class CaseEnrichmentService : ICaseEnrichmentService
           .ToDictionary(m => m.NetappFolderPath!);
 
       // Enrich data with metadata
-      response.Data = folderPaths.Select(folder => new ListNetAppFolderDataResponse
+      response.Data = new ListNetAppObjectsDataResponse
       {
-        FolderPath = folder[(folder.LastIndexOf(':') + 1)..] ?? string.Empty,
-        CaseId = metadataLookup.TryGetValue(folder, out var caseMetadata) ? caseMetadata.CaseId : null
-      }).ToList();
+        Folders = folderPaths.Select(folder => new ListNetAppFoldersDataResponse
+        {
+          FolderPath = folder[(folder.LastIndexOf(':') + 1)..] ?? string.Empty,
+          CaseId = metadataLookup.TryGetValue(folder, out var caseMetadata) ? caseMetadata.CaseId : null
+        }).ToList(),
+        Files = new List<ListNetAppFilesDataResponse>(),
+        RootPath = folders.RootPath
+      };
 
       return response;
     }
@@ -164,20 +169,26 @@ public class CaseEnrichmentService : ICaseEnrichmentService
     };
   }
 
-  private static ListNetAppFoldersResponse CreateNetAppFoldersResponseBase(ListNetAppFoldersDto foldersDto)
+  private static ListNetAppObjectsResponse CreateNetAppFoldersResponseBase(ListNetAppFoldersDto foldersDto)
   {
-    return new ListNetAppFoldersResponse
+    return new ListNetAppObjectsResponse
     {
-      BucketName = foldersDto.BucketName,
+
       Pagination = new NetAppPaginationResponse
       {
         NextContinuationToken = foldersDto.DataInfo.NextContinuationToken,
         MaxKeys = foldersDto.DataInfo.MaxKeys,
       },
-      Data = foldersDto.Data?.Where(folder => folder != null).Select(folder => new ListNetAppFolderDataResponse
+      Data = new ListNetAppObjectsDataResponse
       {
-        FolderPath = folder.Path ?? string.Empty,
-      }).ToList() ?? []
+        Folders = foldersDto.Data.Select(folder => new ListNetAppFoldersDataResponse
+        {
+          FolderPath = folder.Path ?? string.Empty,
+          CaseId = null
+        }).ToList(),
+        Files = new List<ListNetAppFilesDataResponse>(),
+        RootPath = foldersDto.RootPath ?? string.Empty
+      }
     };
   }
 }
