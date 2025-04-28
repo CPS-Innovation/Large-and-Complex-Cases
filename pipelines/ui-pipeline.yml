@@ -68,6 +68,7 @@ stages:
             displayName: Install npm dependencies
             inputs:
               command: 'install'
+              workingDir: 'ui-spa/'
 
           - task: Npm@1
             displayName: Build web app package
@@ -78,11 +79,13 @@ stages:
             inputs:
               command: 'custom'
               customCommand: 'run build'
+              workingDir: 'ui-spa/'
 
           - task: PublishPipelineArtifact@1
             displayName: Publish artifact
             inputs:
               targetPath: 'build'
               artifact: 'lacc-ui-dev-drop'
+
 
 
