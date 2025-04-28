@@ -1,19 +1,19 @@
 import { NetAppFolderResponse } from "../../common/types/NetAppFolderData";
 export const netAppRootFolderResultsDev: NetAppFolderResponse = {
   data: {
-    rootPath: "abc",
+    rootPath: "",
     folders: [
       {
-        folderPath: "abc/thunderstrikeab",
+        folderPath: "thunderstrikeab/",
         caseId: 123,
       },
       {
-        folderPath: "abc/thunderstrike",
+        folderPath: "thunderstrike/",
         caseId: null,
       },
 
       {
-        folderPath: "abc/thunderstrikeabc",
+        folderPath: "thunderstrikeabc/",
         caseId: null,
       },
     ],
@@ -40,7 +40,7 @@ export const getNetAppFolderResultsDev = (path: string) => {
   }
   const newFolders = netAppRootFolderResultsDev.data.folders.map(
     (item, index) => {
-      return { ...item, folderPath: `${path}/folder-${index}` };
+      return { ...item, folderPath: `${path}folder-${index}/` };
     },
   );
 

@@ -17,13 +17,16 @@ const FolderPath: React.FC<FolderPathProps> = ({
   folderClickHandler,
 }) => {
   const folders: Folder[] = useMemo(() => {
+    // const includedHomePath = `Home/${path}`;
     const parts = path.split("/").filter(Boolean);
 
     const result = parts.map((folderName, index) => ({
       folderName,
-      folderPath: parts.slice(0, index + 1).join("/"),
+      folderPath: `${parts.slice(0, index + 1).join("/")}/`,
     }));
-    return result;
+    console.log("result>>>", result);
+    const withHome = [{ folderName: "Home", folderPath: "" }, ...result];
+    return withHome;
   }, [path]);
 
   return (

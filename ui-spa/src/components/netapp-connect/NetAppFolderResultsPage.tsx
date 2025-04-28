@@ -33,7 +33,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
     type: "ascending" | "descending";
   }>();
 
-  const [currentPath, setCurrentPath] = useState("");
+  const [currentPath, setCurrentPath] = useState(null);
   const netappFolderData = useMemo(() => {
     if (!netAppFolderApiResults?.data?.folders) return [];
     if (sortValues?.name === "folder-name")
@@ -47,10 +47,16 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
   }, [netAppFolderApiResults, sortValues]);
 
   useEffect(() => {
-    if (!currentPath && netAppFolderApiResults?.data?.rootPath)
-      setCurrentPath(
-        netAppFolderApiResults?.data?.rootPath.replace(/\/[^/]+$/, ""),
-      );
+    if (!currentPath) {
+      if (netAppFolderApiResults?.data?.rootPath === "") setCurrentPath("");
+      if (netAppFolderApiResults?.data?.rootPath) {
+        const path = netAppFolderApiResults?.data?.rootPath.replace(
+          /\/[^/]+$/,
+          "",
+        );
+        setCurrentPath(path);
+      }
+    }
   }, [netAppFolderApiResults?.data?.rootPath, currentPath]);
 
   const getTableRowData = () => {
@@ -129,7 +135,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
           </div>
         )}
         <div>
-          {currentPath && (
+          {currentPath !== null && (
             <FolderPath
               path={currentPath}
               folderClickHandler={handleFolderClickHandler}
