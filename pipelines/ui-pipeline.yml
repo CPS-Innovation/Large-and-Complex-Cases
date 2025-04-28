@@ -34,10 +34,10 @@ jobs:
       name: 'LaCC Pre-Prod Build Agents' 
 
     steps:  
-      # - checkout: self
-      - task: NodeTool@0
-        inputs:
-          versionSpec: 22
+      # # - checkout: self
+      # - task: NodeTool@0
+      #   inputs:
+      #     versionSpec: 22
   
 
       - task: Npm@1
@@ -46,11 +46,13 @@ jobs:
           command: 'install'
           workingDir: '$(System.DefaultWorkingDirectory)/ui-spa'
 
-
+      - script: npm --version
+        displayName: 'Check npm Version' 
 
       - task: CmdLine@2
         inputs:
           script: |
+
             npm run prettier
                       npm test 
                       npm run build 
