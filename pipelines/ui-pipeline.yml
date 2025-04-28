@@ -37,13 +37,15 @@ jobs:
       - task: Npm@1
         displayName: Install npm dependencies
         inputs:
-          command: 'install'  
+          command: 'install'
+          workingDir: 'ui-spa/'
 
       - task: Npm@1
         displayName: Build web app package
         inputs:
           command: 'custom'
           customCommand: 'run build'
+          workingDir: 'ui-spa/'
 
       - task: Npm@1
         displayName: Run tests
@@ -52,3 +54,4 @@ jobs:
         inputs:
           command: 'custom'
           customCommand: 'test'
+          workingDir: 'ui-spa/'
