@@ -84,8 +84,9 @@ stages:
           - task: PublishPipelineArtifact@1
             displayName: Publish artifact
             inputs:
-              targetPath: 'build'
+              targetPath: $(System.DefaultWorkingDirectory)/ui-spa
               artifact: 'lacc-ui-dev-drop'
+
 
 
 
