@@ -56,5 +56,5 @@ trigger:
                 displayName: Publish artifact
                 inputs:
                   targetPath: 'build'
-                  artifact: 'drop'
+                  artifact: 'lacc-ui-dev-drop'
 
