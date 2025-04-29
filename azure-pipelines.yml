@@ -2,8 +2,8 @@ trigger: none
 
 resources:
   pipelines:
-    - pipeline: LACCUIProdBuild
-      source: LACC-UI-prod-build
+    - pipeline: LACCUIDevBuild
+      source: LACC-UI-dev-build
       trigger:
         branches:
           include:
@@ -11,14 +11,14 @@ resources:
 
 variables:
   web-app-name: "lacc-app-ui-spa-dev"
-  build-agent: "HSK Production Pool"
-  azure-subscription: "HSK Prod (via service principal)"
-  resource-group: "rg-hsk-uma-prod"
-  environmentName: "HSK-prod"
-  build-pipeline: "HSKUIProdBuild"
+  build-agent: "LaCC Pre-Prod Build Agents"
+  azure-subscription: "Azure Pipeline: Large and Complex Cases - Pre-Prod"
+  resource-group: "rg-lacc-dev"
+  environmentName: "LACC_DEVELOPMENT"
+  build-pipeline: "LACCUIDevBuild"
 stages:
   - stage: Deploy
-    displayName: Deploy to PROD
+    displayName: Deploy to Dev
     pool:
       'LaCC Pre-Prod Build Agents'
           
@@ -33,7 +33,7 @@ stages:
                   inputs:
                     ConnectionType: "AzureRM"
                     azureSubscription: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
-                    resourceGroupName: 'rg-lacc-dev'
+                    resourceGroupName: $(resource-group)
                     appType: "webAppLinux"
                     WebAppName: "$(web-app-name)"
                     packageForLinux: "$(Pipeline.Workspace)/$(build-pipeline)/lacc-ui-dev-drop"
@@ -41,6 +41,3 @@ stages:
                     StartupCommand: "pm2 serve /home/site/wwwroot/ --no-daemon --spa" 
                   displayName: "Deploy LACC UI React App to Dev"
                   retryCountOnTaskFailure: 1
-
-
-
