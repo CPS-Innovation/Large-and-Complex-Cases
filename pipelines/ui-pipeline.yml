@@ -84,40 +84,11 @@ stages:
           - task: PublishPipelineArtifact@1
             displayName: Publish artifact
             inputs:
-              targetPath: '$(Pipeline.Workspace)'
+              targetPath: 'build'
               artifact: 'drop'
 
           # - task: CmdLine@2
           #   inputs:
           #     script: 'ls -la'
           #     workingDirectory: '$(Pipeline.Workspace)/drop'
-
-
-  - stage: Deploy
-    displayName: Deploy to PROD
-    pool:
-      'LaCC Pre-Prod Build Agents'
-          
-    jobs:
-      - deployment: CI_Deploy_LACCUI_DEV
-        environment: 'LACC_DEVELOPMENT'
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - task: AzureRmWebAppDeployment@4
-                  inputs:
-                    ConnectionType: "AzureRM"
-                    azureSubscription: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
-                    resourceGroupName: 'rg-lacc-dev'
-                    appType: "webAppLinux"
-                    WebAppName: 'lacc-app-ui-spa-dev'
-                  
-                    RuntimeStack: "NODE|22-lts"
-                    StartupCommand: "npm run start"
-                    packageForLinux: '$(Pipeline.Workspace)/drop'
-                  displayName: "Deploy LACC UI React App to Dev"
-                  retryCountOnTaskFailure: 1
-
-
 
