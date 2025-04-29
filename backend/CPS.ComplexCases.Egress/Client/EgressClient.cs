@@ -1,9 +1,11 @@
+using System.Net;
 using System.Text.Json;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
 using CPS.ComplexCases.Egress.Models.Args;
 using CPS.ComplexCases.Egress.Models.Dto;
 using CPS.ComplexCases.Egress.Models.Response;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -62,12 +64,12 @@ public class EgressClient(ILogger<EgressClient> logger, IOptions<EgressOptions> 
     };
   }
 
-  public async Task<GetCaseMaterialDto> GetCaseMaterial(GetWorkspaceMaterialArg arg)
+  public async Task<ListCaseMaterialDto> ListCaseMaterialAsync(ListWorkspaceMaterialArg arg)
   {
     var token = await GetWorkspaceToken();
-    var response = await SendRequestAsync<GetCaseMaterialResponse>(_egressRequestFactory.GetWorkspaceMaterialRequest(arg, token));
+    var response = await SendRequestAsync<ListCaseMaterialResponse>(_egressRequestFactory.ListEgressMaterialRequest(arg, token));
 
-    var materialsData = response.Data.Select(data => new GetCaseMaterialDataDto
+    var materialsData = response.Data.Select(data => new ListCaseMaterialDataDto
     {
       Id = data.Id,
       FileName = data.FileName,
@@ -77,7 +79,7 @@ public class EgressClient(ILogger<EgressClient> logger, IOptions<EgressOptions> 
       Version = data.Version
     });
 
-    return new GetCaseMaterialDto
+    return new ListCaseMaterialDto
     {
       Data = materialsData,
       Pagination = new PaginationDto
@@ -125,6 +127,12 @@ public class EgressClient(ILogger<EgressClient> logger, IOptions<EgressOptions> 
     {
       response.EnsureSuccessStatusCode();
       return response;
+    }
+    catch (HttpRequestException ex) when (response.StatusCode == HttpStatusCode.NotFound)
+    {
+      _logger.LogWarning(ex, "Workspace not found. Check the workspace ID.");
+      throw;
+      
     }
     catch (HttpRequestException ex)
     {
