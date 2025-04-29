@@ -70,7 +70,6 @@ public class NetAppMockRequestFactory : INetAppMockRequestFactory
         ]);
 
         var request = new HttpRequestMessage(HttpMethod.Get, $"?{query.ReadAsStringAsync().Result}");
-        request.Headers.Add(S3Constants.HostHeaderName, arg.BucketName);
 
         return request;
     }
@@ -93,7 +92,6 @@ public class NetAppMockRequestFactory : INetAppMockRequestFactory
         ]);
 
         var request = new HttpRequestMessage(HttpMethod.Get, $"/{arg.BucketName}/?{query.ReadAsStringAsync().Result}");
-        //request.Headers.Add(S3Constants.HostHeaderName, $"{arg.BucketName}.s3.amazonaws.com");
 
         return request;
     }
