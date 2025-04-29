@@ -85,10 +85,4 @@ stages:
             displayName: Publish artifact
             inputs:
               targetPath: 'build'
-              artifact: 'drop'
-
-          # - task: CmdLine@2
-          #   inputs:
-          #     script: 'ls -la'
-          #     workingDirectory: '$(Pipeline.Workspace)/drop'
-
+              artifact: 'lacc-ui-dev-drop'
