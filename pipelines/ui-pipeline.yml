@@ -64,4 +64,4 @@ stages:
 
           - task: CmdLine@2
             inputs:
-              script: 'echo "$(Pipeline.Workspace)"'
+              script: 'ls -la "$(Pipeline.Workspace)"'
