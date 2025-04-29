@@ -22,12 +22,12 @@ trigger:
   batch: true
   branches:
     include:
-      - main
+      - 'lcc-166-uipipeline'
 
     stages:
       - stage: Build_and_Publish_Artifact
         displayName: 'Build Artifact'
-        condition:  eq(variables['Build.Reason'], 'PullRequest')
+        # condition:  eq(variables['Build.Reason'], 'PullRequest')
         dependsOn: 'build_And_Test'
         jobs:
           - job: Build_and_Publish_Artifact
