@@ -84,7 +84,7 @@ stages:
           - task: PublishPipelineArtifact@1
             displayName: Publish artifact
             inputs:
-              targetPath: 'ui-spa/'
+              targetPath: '$(Pipeline.Workspace)'
               artifact: 'drop'
 
           # - task: CmdLine@2
