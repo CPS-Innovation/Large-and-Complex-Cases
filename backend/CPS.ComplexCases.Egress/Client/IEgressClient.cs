@@ -8,6 +8,6 @@ public interface IEgressClient
 {
   Task<ListWorkspacesDto> ListWorkspacesAsync(ListEgressWorkspacesArg arg, string email);
   Task<bool> GetWorkspacePermission(GetWorkspacePermissionArg arg);
-  Task<GetCaseMaterialDto> GetCaseMaterial(GetWorkspaceMaterialArg arg);
+  Task<ListCaseMaterialDto> ListCaseMaterialAsync(ListWorkspaceMaterialArg arg);
   Task<Stream> GetCaseDocument(GetWorkspaceDocumentArg arg);
 }

@@ -1,11 +1,11 @@
 namespace CPS.ComplexCases.Egress.Models.Dto;
 
-public class GetCaseMaterialDto
+public class ListCaseMaterialDto
 {
-  public required IEnumerable<GetCaseMaterialDataDto> Data { get; set; }
+  public required IEnumerable<ListCaseMaterialDataDto> Data { get; set; }
   public required PaginationDto Pagination { get; set; }
 }
-public class GetCaseMaterialDataDto
+public class ListCaseMaterialDataDto
 {
   public required string Id { get; set; }
   public required string FileName { get; set; }

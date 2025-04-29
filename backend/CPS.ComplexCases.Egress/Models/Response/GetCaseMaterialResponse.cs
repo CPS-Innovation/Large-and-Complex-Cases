@@ -3,15 +3,15 @@ using System.Text.Json.Serialization;
 namespace CPS.ComplexCases.Egress.Models.Response;
 
 
-public class GetCaseMaterialResponse
+public class ListCaseMaterialResponse
 {
   [JsonPropertyName("data")]
-  public required IEnumerable<GetCaseMaterialResponseData> Data { get; set; }
+  public required IEnumerable<ListCaseMaterialDataResponse> Data { get; set; }
   [JsonPropertyName("data_info")]
   public required DataInfoResponse DataInfo { get; set; }
 }
 
-public class GetCaseMaterialResponseData
+public class ListCaseMaterialDataResponse
 {
   [JsonPropertyName("id")]
   public required string Id { get; set; }

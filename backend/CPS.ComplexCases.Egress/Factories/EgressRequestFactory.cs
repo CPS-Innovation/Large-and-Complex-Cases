@@ -31,7 +31,7 @@ public class EgressRequestFactory : IEgressRequestFactory
     return request;
   }
 
-  public HttpRequestMessage GetWorkspaceMaterialRequest(GetWorkspaceMaterialArg arg, string token)
+  public HttpRequestMessage ListEgressMaterialRequest(ListWorkspaceMaterialArg arg, string token)
   {
     var relativeUrl = new StringBuilder($"/api/v1/workspaces/{arg.WorkspaceId}/files?view=full&skip={arg.Skip}&limit={arg.Take}");
 
