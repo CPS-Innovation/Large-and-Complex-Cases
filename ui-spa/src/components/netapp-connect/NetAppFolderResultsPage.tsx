@@ -47,14 +47,15 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
   }, [netAppFolderApiResults, sortValues]);
 
   useEffect(() => {
-    if (
-      currentPath === "null" &&
-      netAppFolderApiResults.status === "succeeded"
-    ) {
+    if (currentPath === null && netAppFolderApiResults.status === "succeeded") {
       const rootPath = netAppFolderApiResults?.data?.rootPath ?? "";
       setCurrentPath(rootPath);
     }
-  }, [netAppFolderApiResults, currentPath]);
+  }, [
+    netAppFolderApiResults.status,
+    netAppFolderApiResults?.data?.rootPath,
+    currentPath,
+  ]);
 
   const getTableRowData = () => {
     return netappFolderData.map((data) => {
