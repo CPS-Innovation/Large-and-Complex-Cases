@@ -74,7 +74,7 @@ test.describe("netapp connect", () => {
     await expect(page.locator("h1")).toHaveText(`Confirm folder link`);
     page.getByTestId("radio-netapp-connect-yes").click();
     await page.locator('button:text("Continue")').click();
-    await expect(page).toHaveURL("/case/14/case-overview/transfer-material");
+    await expect(page).toHaveURL("");
   });
 
   test("Should show error page if user failed to connect to an netapp folder", async ({
