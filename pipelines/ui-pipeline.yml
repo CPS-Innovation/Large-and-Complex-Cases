@@ -60,5 +60,8 @@ stages:
           
           - task: CmdLine@2
             inputs:
-              script: 'echo " $(Pipeline.Workspace)"'
+              script: 'echo "$(Pipeline.Workspace)"'
 
+          - task: CmdLine@2
+            inputs:
+              script: 'echo "$(Pipeline.Workspace)"'
