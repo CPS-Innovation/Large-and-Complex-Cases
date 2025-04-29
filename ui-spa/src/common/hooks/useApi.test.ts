@@ -5,8 +5,7 @@ describe("useApi", () => {
   it("can initiate a call, set status to loading, then return a successful result", async () => {
     const mockResult = { id: 1 };
     const mockApiCall = vi.fn(
-      (_id: string) =>
-        new Promise((resolve) => setTimeout(() => resolve(mockResult), 10)),
+      () => new Promise((resolve) => setTimeout(() => resolve(mockResult), 10)),
     );
 
     const { result } = renderHook(() => useApi(mockApiCall, ["1"]));
@@ -27,8 +26,7 @@ describe("useApi", () => {
   it("can initiate a call, set status to loading, then return an error result", async () => {
     const mockError = new Error();
     const mockApiCall = vi.fn(
-      (_id: string) =>
-        new Promise((_, reject) => setTimeout(() => reject(mockError))),
+      () => new Promise((_, reject) => setTimeout(() => reject(mockError))),
     );
 
     const { result } = renderHook(() => useApi(mockApiCall, ["1"]));
@@ -49,8 +47,7 @@ describe("useApi", () => {
   it("can initiate a call with multiple parameters", async () => {
     const mockResult = { id: 1 };
     const mockApiCall = vi.fn(
-      (_p1: string, _p2: number, _p3: string) =>
-        new Promise((resolve) => setTimeout(() => resolve(mockResult), 10)),
+      () => new Promise((resolve) => setTimeout(() => resolve(mockResult), 10)),
     );
 
     const { result } = renderHook(() => useApi(mockApiCall, ["1", 2, "3"]));
@@ -71,8 +68,7 @@ describe("useApi", () => {
   it("can not call the api again if parameters do not change", async () => {
     const mockResult = { id: 1 };
     const mockApiCall = vi.fn(
-      (_p1: string) =>
-        new Promise((resolve) => setTimeout(() => resolve(mockResult), 10)),
+      () => new Promise((resolve) => setTimeout(() => resolve(mockResult), 10)),
     );
 
     const { rerender } = renderHook(() => useApi(mockApiCall, ["1"]));
@@ -85,8 +81,7 @@ describe("useApi", () => {
   it("can call the api a second time if parameters do change", async () => {
     const mockResult = { id: 1 };
     const mockApiCall = vi.fn(
-      (_p1: string) =>
-        new Promise((resolve) => setTimeout(() => resolve(mockResult), 10)),
+      () => new Promise((resolve) => setTimeout(() => resolve(mockResult), 10)),
     );
 
     const { rerender } = renderHook(({ del, p1 }) => useApi(del, [p1]), {
@@ -108,7 +103,7 @@ describe("useApi", () => {
 
   it("should make an api call, only if the 3rd parameter of the useAPi hook is not false", async () => {
     const mockApiCall = vi.fn(
-      (_p: string) =>
+      () =>
         new Promise((resolve) => setTimeout(() => resolve("mockResult"), 10)),
     );
 
@@ -136,8 +131,7 @@ describe("useApi", () => {
   it("should make an api call even if it has not made the api call initially, if we call the refetch", async () => {
     const mockResult = { id: 1 };
     const mockApiCall = vi.fn(
-      (_id: string) =>
-        new Promise((resolve) => setTimeout(() => resolve(mockResult), 10)),
+      () => new Promise((resolve) => setTimeout(() => resolve(mockResult), 10)),
     );
 
     const { result, rerender } = renderHook(() =>
@@ -170,8 +164,7 @@ describe("useApi", () => {
   it("should make an api call even if it has made the api call initially, if we call the refetch", async () => {
     const mockResult = { id: 1 };
     const mockApiCall = vi.fn(
-      (_id: string) =>
-        new Promise((resolve) => setTimeout(() => resolve(mockResult), 10)),
+      () => new Promise((resolve) => setTimeout(() => resolve(mockResult), 10)),
     );
 
     const { result, rerender } = renderHook(() =>

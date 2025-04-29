@@ -1,4 +1,3 @@
-using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Constants;
 
@@ -76,19 +75,13 @@ public class NetAppMockRequestFactory : INetAppMockRequestFactory
 
     public HttpRequestMessage ListFoldersInBucketRequest(ListFoldersInBucketArg arg)
     {
-        string? prefix = null;
-        if (!string.IsNullOrEmpty(arg.Prefix))
-        {
-            prefix = !arg.Prefix.EndsWith(S3Constants.Delimiter) ? $"{arg.Prefix}{S3Constants.Delimiter}" : arg.Prefix;
-        }
-
         var query = new FormUrlEncodedContent(
         [
             new(S3Constants.ListTypeQueryName, "2"),
             new(S3Constants.ContinuationTokenQueryName, arg.ContinuationToken ?? string.Empty),
             new(S3Constants.DelimiterQueryValue, S3Constants.Delimiter),
             new(S3Constants.MaxKeysQueryName, arg.MaxKeys ?? string.Empty),
-            new(S3Constants.PrefixQueryName, prefix)
+            new(S3Constants.PrefixQueryName, arg.Prefix ?? string.Empty)
         ]);
 
         var request = new HttpRequestMessage(HttpMethod.Get, $"/{arg.BucketName}/?{query.ReadAsStringAsync().Result}");

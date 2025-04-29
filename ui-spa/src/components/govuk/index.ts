@@ -9,3 +9,4 @@ export { Table } from "./Table";
 export { Tag } from "./Tag";
 export { InsetText } from "./InsetText";
 export { SortableTable } from "./SortableTable";
+export { LinkButton } from "./LinkButton";

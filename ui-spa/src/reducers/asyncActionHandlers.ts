@@ -13,7 +13,7 @@ export const asyncActionHandlers: AsyncActionHandlers<
 > = {
   GET_CASE_DIVISIONS_OR_AREAS:
     ({ dispatch }) =>
-    async (_action) => {
+    async () => {
       dispatch({
         type: "UPDATE_CASE_DIVISIONS_OR_AREAS",
         payload: { status: "loading" },

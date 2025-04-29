@@ -29,7 +29,7 @@ const useSearchNavigation = () => {
       "area",
     ];
     const validParams: Partial<SearchParamsType> = {};
-    for (let [key, value] of params.entries()) {
+    for (const [key, value] of params.entries()) {
       if (validKeys.includes(key as keyof SearchParamsType)) {
         validParams[key as keyof SearchParamsType] = value;
       }

@@ -57,6 +57,7 @@ const CaseSearchPage = () => {
         String(formattedAreaValues.defaultValue),
       );
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formattedAreaValues]);
 
   useEffect(() => {

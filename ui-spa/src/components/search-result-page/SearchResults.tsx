@@ -27,7 +27,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
     if (!data.egressWorkspaceId)
       return `/case/${data.caseId}/egress-connect?workspace-name=${operationName}`;
     if (!data.netappFolderPath)
-      return `/case/${data.caseId}/netapp-connect?workspace-name=${operationName}`;
+      return `/case/${data.caseId}/netapp-connect?operation-name=${operationName}`;
     return `/case/${data.caseId}/case-overview/transfer-material`;
   };
   const getTableRowData = () => {
@@ -78,7 +78,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                 to={getConnectOrViewUrl(data, operationName)}
                 state={{
                   searchQueryString: searchQueryString,
-                  connectNetapp: !data.netappFolderPath,
+                  netappFolderPath: data.netappFolderPath,
                 }}
                 className={styles.link}
               >

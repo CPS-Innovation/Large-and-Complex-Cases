@@ -80,6 +80,7 @@ const CaseSearchResultPage = () => {
       const isValid = validateFormData();
       if (!triggerSearchApi && isValid) setTriggerSearchApi(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryString, validatedAreaValues]);
 
   useEffect(() => {
@@ -104,6 +105,7 @@ const CaseSearchResultPage = () => {
       );
     }
     if (formattedAreaValues.options.length) setValidatedAreaValues(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formattedAreaValues]);
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {

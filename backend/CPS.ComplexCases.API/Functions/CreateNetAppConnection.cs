@@ -12,15 +12,22 @@ using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Validators;
 using CPS.ComplexCases.API.Validators.Requests;
+using Microsoft.Extensions.Options;
+using CPS.ComplexCases.NetApp.Models;
 
 namespace CPS.ComplexCases.API.Functions;
 
-public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger, ICaseMetadataService caseMetadataService, INetAppClient netAppClient, INetAppArgFactory netAppArgFactory)
+public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
+    ICaseMetadataService caseMetadataService,
+    INetAppClient netAppClient,
+    INetAppArgFactory netAppArgFactory,
+    IOptions<NetAppOptions> options)
 {
     private readonly ILogger<CreateNetAppConnection> _logger = logger;
     private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
     private readonly INetAppClient _netAppClient = netAppClient;
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
+    private readonly NetAppOptions _netAppOptions = options.Value;
 
     [Function(nameof(CreateNetAppConnection))]
     [OpenApiOperation(operationId: nameof(CreateEgressConnection), tags: ["NetApp"], Description = "Connect an NetApp folder to a case.")]
@@ -41,7 +48,7 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger, ICas
             return new BadRequestObjectResult(netAppConnectionRequest.ValidationErrors);
         }
 
-        var netAppArg = _netAppArgFactory.CreateListFoldersInBucketArg(netAppConnectionRequest.Value.BucketName);
+        var netAppArg = _netAppArgFactory.CreateListFoldersInBucketArg(_netAppOptions.BucketName, netAppConnectionRequest.Value.OperationName, null, 1, null);
         var hasNetAppPermission = await _netAppClient.ListFoldersInBucketAsync(netAppArg);
 
         if (hasNetAppPermission == null)

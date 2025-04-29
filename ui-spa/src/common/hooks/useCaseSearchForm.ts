@@ -88,7 +88,7 @@ export const useCaseSearchForm = (initialData: SearchFromData) => {
     }));
 
     return errorSummary;
-  }, [formDataErrors]);
+  }, [formDataErrors, errorSummaryProperties]);
 
   const validateFormData = () => {
     const errorTexts: SearchFormDataErrors = {};
@@ -151,6 +151,7 @@ export const useCaseSearchForm = (initialData: SearchFromData) => {
       }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const isValid = !Object.entries(errorTexts).filter(([_, value]) => value)
       .length;
 
@@ -171,10 +172,11 @@ export const useCaseSearchForm = (initialData: SearchFromData) => {
   const getSearchParams = () => {
     let searchParams: SearchParamsType = {};
     switch (formData[SearchFormField.searchType]) {
-      case "urn":
+      case "urn": {
         const { rootUrn } = validateUrn(formData[SearchFormField.urn]);
         searchParams = { urn: rootUrn ?? "" };
         break;
+      }
       case "defendant name":
         searchParams = {
           "defendant-name": formData[SearchFormField.defendantName],

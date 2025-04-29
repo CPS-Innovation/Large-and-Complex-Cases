@@ -53,7 +53,7 @@ public class CaseMetadataService : ICaseMetadataService
     _logger.LogInformation("Creating egress connection for case {CaseId}", createNetAppConnectionDto.CaseId);
     try
     {
-      var netAppFolderPath = $"{createNetAppConnectionDto.BucketName}:{createNetAppConnectionDto.NetAppFolderPath}";
+      var netAppFolderPath = $"{createNetAppConnectionDto.OperationName}:{createNetAppConnectionDto.NetAppFolderPath}";
       var existingMetadata = await _caseMetadataRepository.GetByCaseIdAsync(createNetAppConnectionDto.CaseId);
 
       if (existingMetadata != null)

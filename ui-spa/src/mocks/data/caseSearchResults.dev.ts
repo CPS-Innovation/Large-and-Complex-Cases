@@ -6,7 +6,7 @@ export const casesSearchResultsDev: SearchResultData = [
     urn: "ABCDEF1",
     caseId: 12,
     leadDefendantName: "abc1",
-    egressWorkspaceId: null,
+    egressWorkspaceId: "123",
     netappFolderPath: null,
     registrationDate: "2000-01-02",
   },

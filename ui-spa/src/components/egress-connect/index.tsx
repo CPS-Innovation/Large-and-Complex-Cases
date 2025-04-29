@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useApi } from "../../common/hooks/useApi";
 import {
   getEgressSearchResults,
@@ -23,7 +23,7 @@ const EgressPage = () => {
   const [workspaceName, setWorkspaceName] = useState("");
   const [initialLocationState, setInitialLocationState] = useState<{
     searchQueryString: string;
-    connectNetapp: boolean;
+    netappFolderPath: boolean;
   }>();
   const [selectedFolderId, setSelectedFolderId] = useState("");
   const [formDataErrorText, setFormDataErrorText] = useState("");
@@ -45,19 +45,20 @@ const EgressPage = () => {
       setWorkspaceName(name);
       setFormValue(name);
     }
-  }, [searchParams]);
+  }, [searchParams, location.pathname]);
 
   useEffect(() => {
     if (location.state?.searchQueryString) {
       setInitialLocationState({
         searchQueryString: location.state?.searchQueryString,
-        connectNetapp: location.state?.connectNetapp,
+        netappFolderPath: location.state?.netappFolderPath,
       });
     }
   }, [location]);
 
   useEffect(() => {
     if (workspaceName) egressSearchApi.refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceName]);
 
   useEffect(() => {
@@ -101,33 +102,41 @@ const EgressPage = () => {
         caseId: caseId!,
       });
 
-      navigate(`/search-results?${initialLocationState?.searchQueryString}`);
-      //TODO: uncomment this when netapp connection is complete
-      // if (initialLocationState?.connectNetapp)
-      //   navigate(`case/${caseId}/netapp-connect/`);
-      // else navigate(`case/${caseId}/case-overview/transfer-material`);
+      if (!initialLocationState?.netappFolderPath)
+        navigate(
+          `/case/${caseId}/netapp-connect?operation-name=${workspaceName}`,
+          {
+            state: {
+              searchQueryString: initialLocationState?.searchQueryString,
+            },
+          },
+        );
+      else navigate(`/case/${caseId}/case-overview/transfer-material`);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       navigate(`/case/${caseId}/egress-connect/error`);
     }
   };
 
-  useEffect(() => {
-    validateRoute();
-  }, [location]);
-
-  const validateRoute = () => {
+  const validateRoute = useCallback(() => {
     let validRoute = true;
     if (
       location.pathname.endsWith("/egress-connect") &&
-      initialLocationState?.connectNetapp === undefined &&
-      location.state?.connectNetapp === undefined
+      initialLocationState?.netappFolderPath === undefined &&
+      location.state?.netappFolderPath === undefined
     ) {
       validRoute = false;
     }
     if (location.pathname.endsWith("/confirmation") && !selectedFolderId)
       validRoute = false;
+    if (location.pathname.endsWith("/error") && !selectedFolderId)
+      validRoute = false;
     if (!validRoute) navigate(`/`);
-  };
+  }, [location, initialLocationState, navigate, selectedFolderId]);
+
+  useEffect(() => {
+    validateRoute();
+  }, [location, validateRoute]);
 
   const selectedWorkSpaceName = useMemo(() => {
     if (egressSearchApi.status !== "succeeded") return "";
