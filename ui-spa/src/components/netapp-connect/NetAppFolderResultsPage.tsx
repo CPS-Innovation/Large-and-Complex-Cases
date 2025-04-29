@@ -126,6 +126,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
         {netAppFolderApiResults.status === "loading" && (
           <div className={styles.spinnerWrapper}>
             <Spinner
+              data-testid="netapp-folder-loader"
               diameterPx={50}
               ariaLabel="Loading folders from Network Shared Drive"
             />
