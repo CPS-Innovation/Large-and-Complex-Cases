@@ -18,7 +18,6 @@ const FolderPath: React.FC<FolderPathProps> = ({
   disabled,
   folderClickHandler,
 }) => {
-  console.log("path>>received", path);
   const folders: Folder[] = useMemo(() => {
     const parts = path.split("/").filter(Boolean);
 
@@ -27,7 +26,6 @@ const FolderPath: React.FC<FolderPathProps> = ({
       folderPath: `${parts.slice(0, index + 1).join("/")}/`,
     }));
     const withHome = [{ folderName: "Home", folderPath: "" }, ...result];
-    console.log("withHome >>path>>received", withHome);
     return withHome;
   }, [path]);
 
