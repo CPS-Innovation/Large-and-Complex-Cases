@@ -102,11 +102,6 @@ const EgressPage = () => {
         caseId: caseId!,
       });
 
-      console.log(
-        "netappFolderPath>>>",
-        initialLocationState?.netappFolderPath,
-      );
-
       if (!initialLocationState?.netappFolderPath)
         navigate(
           `/case/${caseId}/netapp-connect?operation-name=${workspaceName}`,

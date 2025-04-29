@@ -50,14 +50,6 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
         : getNetAppFolderResultsPlaywright(path as string);
       await delay(500);
 
-      // {
-      //   data: [],
-      //   pagination: {
-      //     maxKeys: 100,
-      //     nextContinuationToken: null,
-      //   },
-      // }
-
       return HttpResponse.json(netAppRootFolderResults);
     }),
 
