@@ -18,6 +18,7 @@ const FolderPath: React.FC<FolderPathProps> = ({
   disabled,
   folderClickHandler,
 }) => {
+  console.log("path>>received", path);
   const folders: Folder[] = useMemo(() => {
     const parts = path.split("/").filter(Boolean);
 
@@ -26,6 +27,7 @@ const FolderPath: React.FC<FolderPathProps> = ({
       folderPath: `${parts.slice(0, index + 1).join("/")}/`,
     }));
     const withHome = [{ folderName: "Home", folderPath: "" }, ...result];
+    console.log("withHome >>path>>received", withHome);
     return withHome;
   }, [path]);
 
@@ -34,7 +36,7 @@ const FolderPath: React.FC<FolderPathProps> = ({
       <ol className={styles.orderedList}>
         {folders.map((folder, index) => {
           return (
-            <li className={styles.listItem}>
+            <li key={folder.folderName} className={styles.listItem}>
               {index !== folders.length - 1 ? (
                 <LinkButton
                   onClick={() => folderClickHandler(folder.folderPath)}

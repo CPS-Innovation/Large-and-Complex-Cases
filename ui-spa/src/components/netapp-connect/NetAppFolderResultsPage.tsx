@@ -109,6 +109,8 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
     setCurrentPath(path);
     handleGetFolderContent(path);
   };
+
+  console.log("currentPath>>>", currentPath);
   return (
     <div className="govuk-width-container">
       <BackLink to={backLinkUrl}>Back</BackLink>
