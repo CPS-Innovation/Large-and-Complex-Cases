@@ -58,8 +58,3 @@ trigger:
                   targetPath: 'build'
                   artifact: 'drop'
 
-              # - task: CmdLine@2
-              #   inputs:
-              #     script: 'ls -la'
-              #     workingDirectory: '$(Pipeline.Workspace)/drop'
-
