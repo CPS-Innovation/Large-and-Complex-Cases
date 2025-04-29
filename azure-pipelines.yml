@@ -2,7 +2,7 @@ trigger: none
 
 resources:
   pipelines:
-    - pipeline: LACSUIProdBuild
+    - pipeline: LACCUIProdBuild
       source: LACC-UI-prod-build
       trigger:
         branches:
