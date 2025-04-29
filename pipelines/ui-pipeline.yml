@@ -55,6 +55,10 @@ stages:
           - task: PublishPipelineArtifact@1
             displayName: Publish artifact
             inputs:
-              targetPath: 'ui-spa/'
+              targetPath: '$(Pipeline.Workspace)'
               artifact: 'lacc-ui-dev-drop'
+          
+          - task: CmdLine@2
+            inputs:
+              script: 'echo " $(Pipeline.Workspace)"'
 
