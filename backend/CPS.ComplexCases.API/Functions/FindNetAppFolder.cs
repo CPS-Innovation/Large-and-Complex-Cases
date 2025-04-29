@@ -18,13 +18,13 @@ public class FindNetAppFolder(ILogger<FindNetAppFolder> logger,
     INetAppClient netAppClient,
     INetAppArgFactory netAppArgFactory,
     ICaseEnrichmentService caseEnrichmentService,
-    IOptions<NetAppOptions> netAppOptions)
+    IOptions<NetAppOptions> options)
 {
     private readonly ILogger<FindNetAppFolder> _logger = logger;
     private readonly INetAppClient _netAppClient = netAppClient;
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
     private readonly ICaseEnrichmentService _caseEnrichmentService = caseEnrichmentService;
-    private readonly NetAppOptions _netAppOptions = netAppOptions.Value;
+    private readonly NetAppOptions _netAppOptions = options.Value;
 
     [Function(nameof(FindNetAppFolder))]
     [OpenApiOperation(operationId: nameof(FindNetAppFolder), tags: ["NetApp"], Description = "Finds a case in NetApp based on operation name.")]
