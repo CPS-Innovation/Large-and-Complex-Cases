@@ -167,10 +167,10 @@ stages:
           - task: PublishPipelineArtifact@1
             inputs:
               # targetPath: '$(Pipeline.Workspace)/ui-spa/build'
-              targetPath: 'build'
+              targetPath: 'ui-spa'
               artifact: 'lacc-ui-dev-drop'
               publishLocation: 'pipeline'
-              fileSharePath: 'ui-spa'
+            
 
 
           - task: CmdLine@2
