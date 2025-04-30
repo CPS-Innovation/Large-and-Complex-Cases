@@ -32,6 +32,7 @@ stages:
                 - task: AzureRmWebAppDeployment@5
                   inputs:
                     ConnectionType: 'AzureRM'
+                    ScriptPath: "ui-spa"
                     azureSubscription: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
                     appType: 'webAppLinux'
                     WebAppName: 'lacc-app-ui-spa-dev'
@@ -40,6 +41,8 @@ stages:
                     RuntimeStack: 'NODE|22-lts'
                     StartupCommand: 'node complex-cases-ui/subsititute-config.js; npx serve -s'
                     DeploymentTypeLinux: 'oneDeploy'
+                    
+                    
                 # - task: AzureRmWebAppDeployment@4
                 #   inputs:
                 #     ConnectionType: "AzureRM"
