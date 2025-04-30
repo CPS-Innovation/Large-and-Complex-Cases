@@ -10,7 +10,7 @@ resources:
             - 'lcc-166-uipipeline'
 
 variables:
-  web-app-name: "lacc-dev"
+  web-app-name: "lacc-app-ui-spa-dev"
   build-agent: "LaCC Pre-Prod Build Agents"
   azure-subscription: "Azure Pipeline: Large and Complex Cases - Pre-Prod"
   resource-group: "rg-lacc-dev"
