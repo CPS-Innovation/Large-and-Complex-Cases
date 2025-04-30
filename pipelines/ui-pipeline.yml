@@ -1,4 +1,80 @@
+trigger:
+  paths:
+    include:
+      - ui-spa/**
 
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  appName: 'lacc-app-ui-spa-dev'     
+  appDirectory: 'ui-spa'
+  VITE_GATEWAY_BASE_URL: 'api://57c88580-01d4-477d-9b1d-ebb22c8d05af/user_impersonation'
+  VITE_CLIENT_ID: 'd0ed05d6-2d0a-43dd-a4f2-56cb56afe6f4'
+  VITE_TENANT_ID: '00dd0d1d-d7e6-4338-ac51-565339c7088c'
+  serviceConnectionName: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
+
+steps:
+- task: UseNode@1
+  inputs:
+    version: '22'
+
+- script: |
+    cd $(appDirectory)
+    npm install
+    npm run build
+  displayName: 'Install and Build UI'
+
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: '$(appDirectory)'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/ui-spa.zip'
+    replaceExistingArchive: true
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathToPublish: '$(Build.ArtifactStagingDirectory)/ui-spa.zip'
+    artifactName: 'ui-spa'
+
+- task: AzureAppServiceSettings@1
+  inputs:
+    azureSubscription: '$(serviceConnectionName)' 
+    appName: '$(appName)'
+    appSettings: |
+      [
+        {
+          "name": "VITE_GATEWAY_BASE_URL",
+          "value": "$(VITE_GATEWAY_BASE_URL)",
+          "slotSetting": false
+        },
+        {
+          "name": "VITE_CLIENT_ID",
+          "value": "$(VITE_CLIENT_ID",
+          "slotSetting": false
+        },
+        {
+          "name": "VITE_TENANT_ID",
+          "value": "$(VITE_TENANT_ID)",
+          "slotSetting": false
+        }
+      ]
+
+- task: AzureWebApp@1
+  inputs:
+    azureSubscription: '$(serviceConnectionName)' 
+    appType: 'webApp'
+    appName: '$(appName)'
+    package: '$(Build.ArtifactStagingDirectory)/ui-spa.zip'
+
+
+
+
+
+
+
+########################################################################################################################
 # resources:
 #   repositories:
 #     - repository: PipelineTemplates           
@@ -18,43 +94,43 @@
 #       serviceConnectionName: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
 
 
-trigger:
-  batch: true
-  branches:
-    include:
-      - 'lcc-166-uipipeline'
+# trigger:
+#   batch: true
+#   branches:
+#     include:
+#       - 'lcc-166-uipipeline'
 
-stages:
-  - stage: Build_and_Publish_Artifact
-    displayName: 'Build Artifact'
-    # condition:  eq(variables['Build.Reason'], 'PullRequest')
-    # dependsOn: 'build_And_Test'
-    jobs:
-      - job: Build_and_Publish_Artifact
-        pool:
-          vmImage: ubuntu-latest
+# stages:
+#   - stage: Build_and_Publish_Artifact
+#     displayName: 'Build Artifact'
+#     # condition:  eq(variables['Build.Reason'], 'PullRequest')
+#     # dependsOn: 'build_And_Test'
+#     jobs:
+#       - job: Build_and_Publish_Artifact
+#         pool:
+#           vmImage: ubuntu-latest
 
-        steps:
-          - task: Npm@1
-            displayName: Install npm dependencies
-            inputs:
-              command: 'install'
-              workingDir: 'ui-spa/'
+#         steps:
+#           - task: Npm@1
+#             displayName: Install npm dependencies
+#             inputs:
+#               command: 'install'
+#               workingDir: 'ui-spa/'
 
-          - task: Npm@1
-            displayName: Build web app package
-            env:
-              VITE_GATEWAY_BASE_URL: 'api://57c88580-01d4-477d-9b1d-ebb22c8d05af/user_impersonation'
-              VITE_CLIENT_ID: 'd0ed05d6-2d0a-43dd-a4f2-56cb56afe6f4'
-              VITE_TENANT_ID: '00dd0d1d-d7e6-4338-ac51-565339c7088c'
-            inputs:
-              command: 'custom'
-              customCommand: 'run build'
-              workingDir: 'ui-spa/'
+#           - task: Npm@1
+#             displayName: Build web app package
+#             env:
+#               VITE_GATEWAY_BASE_URL: 'api://57c88580-01d4-477d-9b1d-ebb22c8d05af/user_impersonation'
+#               VITE_CLIENT_ID: 'd0ed05d6-2d0a-43dd-a4f2-56cb56afe6f4'
+#               VITE_TENANT_ID: '00dd0d1d-d7e6-4338-ac51-565339c7088c'
+#             inputs:
+#               command: 'custom'
+#               customCommand: 'run build'
+#               workingDir: 'ui-spa/'
 
-          - task: PublishPipelineArtifact@1
-            displayName: Publish artifact
-            inputs:
-              targetPath: 'ui-spa/'
-              artifact: 'lacc-ui-dev-drop'
+#           - task: PublishPipelineArtifact@1
+#             displayName: Publish artifact
+#             inputs:
+#               targetPath: 'ui-spa/'
+#               artifact: 'lacc-ui-dev-drop'
 
