@@ -164,12 +164,15 @@ stages:
               customCommand: 'run build'
               workingDir: 'ui-spa'
 
-          # - task: PublishPipelineArtifact@1
-          #   inputs:
-          #     # targetPath: '$(Pipeline.Workspace)/ui-spa/build'
-          #     targetPath: 'ui-spa/build'
-          #     artifact: 'lacc-ui-dev-drop'
-          #     # publishLocation: 'pipeline'
+          - task: PublishPipelineArtifact@1
+            inputs:
+              # targetPath: '$(Pipeline.Workspace)/ui-spa/build'
+              targetPath: 'build'
+              artifact: 'lacc-ui-dev-drop'
+              publishLocation: 'pipeline'
+              fileSharePath: 'ui-spa'
+
+
           - task: CmdLine@2
             inputs:
               script: 'ls -la'
