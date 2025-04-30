@@ -31,7 +31,7 @@ stages:
               steps:
                 - task: AzureWebApp@1
                   inputs:
-                    azureSubscription: '$(serviceConnectionName)' 
+                    azureSubscription: '$(azure-subscription)' 
                     appType: 'webApp'
                     appName: '$(appName)'
                     package: '$(Build.ArtifactStagingDirectory)/ui-spa.zip'
