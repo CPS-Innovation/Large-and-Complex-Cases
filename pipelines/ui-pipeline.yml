@@ -4,7 +4,8 @@ trigger:
       - ui-spa/**
 
 pool:
-  'LaCC Pre-Prod Build Agents'
+  # 'LaCC Pre-Prod Build Agents'
+  vmImage: ubuntu-latest
 
 variables:
   appName: 'lacc-app-ui-spa-dev'     
@@ -15,9 +16,9 @@ variables:
   serviceConnectionName: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
 
 steps:
-# - task: UseNode@1
-#   inputs:
-#     version: '22'
+- task: UseNode@1
+  inputs:
+    version: '22'
 # - script: |
 #     curl -fsSL https://nodejs.org/dist/v22.0.0/node-v22.0.0-linux-x64.tar.xz -o node.tar.xz
 #     mkdir -p $HOME/node22
@@ -34,7 +35,6 @@ steps:
     # sudo apt-get install -y nodejs
     # node -v
     # npm -v
-
 
 - script: |
     cd $(appDirectory)
@@ -78,12 +78,12 @@ steps:
         }
       ]
 
-- task: AzureWebApp@1
-  inputs:
-    azureSubscription: '$(serviceConnectionName)' 
-    appType: 'webApp'
-    appName: '$(appName)'
-    package: '$(Build.ArtifactStagingDirectory)/ui-spa.zip'
+# - task: AzureWebApp@1
+#   inputs:
+#     azureSubscription: '$(serviceConnectionName)' 
+#     appType: 'webApp'
+#     appName: '$(appName)'
+#     package: '$(Build.ArtifactStagingDirectory)/ui-spa.zip'
 
 
 
