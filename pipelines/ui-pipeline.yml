@@ -134,3 +134,6 @@ steps:
 #               targetPath: 'ui-spa/'
 #               artifact: 'lacc-ui-dev-drop'
 
+          # - task: CmdLine@2
+          #   inputs:
+          #     script: 'ls -la "$(Pipeline.Workspace)"'
