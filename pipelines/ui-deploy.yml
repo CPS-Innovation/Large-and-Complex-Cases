@@ -34,7 +34,8 @@ stages:
                     azureSubscription: '$(azure-subscription)' 
                     appType: 'webApp'
                     appName: '$(appName)'
-                    package: '$(Build.ArtifactStagingDirectory)/ui-spa.zip'
+                    # package: '$(Build.ArtifactStagingDirectory)/ui-spa.zip' 
+                    package: '/agent/_work/1/LACCUIDevBuild/ui-spa/ui-spa.zip'
                     RuntimeStack: "NODE|22-lts"
                     WebAppName: "$(web-app-name)"
                     resourceGroupName: $(resource-group)
