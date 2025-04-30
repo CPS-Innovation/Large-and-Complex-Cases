@@ -1,82 +1,82 @@
-trigger:
-  paths:
-    include:
-      - ui-spa/**
+# trigger:
+#   paths:
+#     include:
+#       - ui-spa/**
 
-pool:
-  # 'LaCC Pre-Prod Build Agents'
-  vmImage: ubuntu-latest
+# pool:
+#   # 'LaCC Pre-Prod Build Agents'
+#   vmImage: ubuntu-latest
 
-variables:
-  appName: 'lacc-app-ui-spa-dev'     
-  appDirectory: 'ui-spa'
-  VITE_GATEWAY_BASE_URL: 'api://57c88580-01d4-477d-9b1d-ebb22c8d05af/user_impersonation'
-  VITE_CLIENT_ID: 'd0ed05d6-2d0a-43dd-a4f2-56cb56afe6f4'
-  VITE_TENANT_ID: '00dd0d1d-d7e6-4338-ac51-565339c7088c'
-  serviceConnectionName: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
+# variables:
+#   appName: 'lacc-app-ui-spa-dev'     
+#   appDirectory: 'ui-spa'
+#   VITE_GATEWAY_BASE_URL: 'api://57c88580-01d4-477d-9b1d-ebb22c8d05af/user_impersonation'
+#   VITE_CLIENT_ID: 'd0ed05d6-2d0a-43dd-a4f2-56cb56afe6f4'
+#   VITE_TENANT_ID: '00dd0d1d-d7e6-4338-ac51-565339c7088c'
+#   serviceConnectionName: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
 
-steps:
-- task: UseNode@1
-  inputs:
-    version: '22'
+# steps:
+# - task: UseNode@1
+#   inputs:
+#     version: '22'
+# # - script: |
+# #     curl -fsSL https://nodejs.org/dist/v22.0.0/node-v22.0.0-linux-x64.tar.xz -o node.tar.xz
+# #     mkdir -p $HOME/node22
+# #     tar -xf node.tar.xz -C $HOME/node22 --strip-components=1
+# #     echo "##vso[task.prependpath]$HOME/node22/bin"
+# #     node -v
+# #     npm -v
+# #   displayName: 'Install Node.js 22'
+
+#     # echo "Installing Node.js v22 .."
+#     # # curl -fsSL https://deb.nodesource.com/setup_22.0.0 | sudo -E bash -
+#     # curl -fsSL https://nodejs.org/dist/v22.0.0/node-v22.0.0-linux-x64.tar.xz -o node.tar.xz
+#     # sudo DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs
+#     # sudo apt-get install -y nodejs
+#     # node -v
+#     # npm -v
+
 # - script: |
-#     curl -fsSL https://nodejs.org/dist/v22.0.0/node-v22.0.0-linux-x64.tar.xz -o node.tar.xz
-#     mkdir -p $HOME/node22
-#     tar -xf node.tar.xz -C $HOME/node22 --strip-components=1
-#     echo "##vso[task.prependpath]$HOME/node22/bin"
-#     node -v
-#     npm -v
-#   displayName: 'Install Node.js 22'
+#     cd $(appDirectory)
+#     npm install
+#     npm run build
+#   displayName: 'Install and Build UI'
 
-    # echo "Installing Node.js v22 .."
-    # # curl -fsSL https://deb.nodesource.com/setup_22.0.0 | sudo -E bash -
-    # curl -fsSL https://nodejs.org/dist/v22.0.0/node-v22.0.0-linux-x64.tar.xz -o node.tar.xz
-    # sudo DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs
-    # sudo apt-get install -y nodejs
-    # node -v
-    # npm -v
+# - task: ArchiveFiles@2
+#   inputs:
+#     rootFolderOrFile: '$(appDirectory)'
+#     includeRootFolder: false
+#     archiveType: 'zip'
+#     archiveFile: '$(Build.ArtifactStagingDirectory)/ui-spa.zip'
+#     replaceExistingArchive: true
 
-- script: |
-    cd $(appDirectory)
-    npm install
-    npm run build
-  displayName: 'Install and Build UI'
+# - task: PublishBuildArtifacts@1
+#   inputs:
+#     pathToPublish: '$(Build.ArtifactStagingDirectory)/ui-spa.zip'
+#     artifactName: 'ui-spa'
 
-- task: ArchiveFiles@2
-  inputs:
-    rootFolderOrFile: '$(appDirectory)'
-    includeRootFolder: false
-    archiveType: 'zip'
-    archiveFile: '$(Build.ArtifactStagingDirectory)/ui-spa.zip'
-    replaceExistingArchive: true
-
-- task: PublishBuildArtifacts@1
-  inputs:
-    pathToPublish: '$(Build.ArtifactStagingDirectory)/ui-spa.zip'
-    artifactName: 'ui-spa'
-
-- task: AzureAppServiceSettings@1
-  inputs:
-    azureSubscription: '$(serviceConnectionName)' 
-    appName: '$(appName)'
-    appSettings: |
-      [
-        {
-          "name": "VITE_GATEWAY_BASE_URL",
-          "value": "$(VITE_GATEWAY_BASE_URL)",
-          "slotSetting": false
-        },
-        {
-          "name": "VITE_CLIENT_ID",
-          "value": "$(VITE_CLIENT_ID",
-          "slotSetting": false
-        },
-        {
-          "name": "VITE_TENANT_ID",
-          "value": "$(VITE_TENANT_ID)",
-          "slotSetting": false
-        }
-      ]
+# - task: AzureAppServiceSettings@1
+#   inputs:
+#     azureSubscription: '$(serviceConnectionName)' 
+#     appName: '$(appName)'
+#     appSettings: |
+#       [
+#         {
+#           "name": "VITE_GATEWAY_BASE_URL",
+#           "value": "$(VITE_GATEWAY_BASE_URL)",
+#           "slotSetting": false
+#         },
+#         {
+#           "name": "VITE_CLIENT_ID",
+#           "value": "$(VITE_CLIENT_ID",
+#           "slotSetting": false
+#         },
+#         {
+#           "name": "VITE_TENANT_ID",
+#           "value": "$(VITE_TENANT_ID)",
+#           "slotSetting": false
+#         }
+#       ]
 
 # - task: AzureWebApp@1
 #   inputs:
@@ -111,45 +111,45 @@ steps:
 #       serviceConnectionName: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
 
 
-# trigger:
-#   batch: true
-#   branches:
-#     include:
-#       - 'lcc-166-uipipeline'
+trigger:
+  batch: true
+  branches:
+    include:
+      - 'lcc-166-uipipeline'
 
-# stages:
-#   - stage: Build_and_Publish_Artifact
-#     displayName: 'Build Artifact'
-#     # condition:  eq(variables['Build.Reason'], 'PullRequest')
-#     # dependsOn: 'build_And_Test'
-#     jobs:
-#       - job: Build_and_Publish_Artifact
-#         pool:
-#           vmImage: ubuntu-latest
+stages:
+  - stage: Build_and_Publish_Artifact
+    displayName: 'Build Artifact'
+    # condition:  eq(variables['Build.Reason'], 'PullRequest')
+    # dependsOn: 'build_And_Test'
+    jobs:
+      - job: Build_and_Publish_Artifact
+        pool:
+          vmImage: ubuntu-latest
 
-#         steps:
-#           - task: Npm@1
-#             displayName: Install npm dependencies
-#             inputs:
-#               command: 'install'
-#               workingDir: 'ui-spa/'
+        steps:
+          - task: Npm@1
+            displayName: Install npm dependencies
+            inputs:
+              command: 'install'
+              workingDir: 'ui-spa/'
 
-#           - task: Npm@1
-#             displayName: Build web app package
-#             env:
-#               VITE_GATEWAY_BASE_URL: 'api://57c88580-01d4-477d-9b1d-ebb22c8d05af/user_impersonation'
-#               VITE_CLIENT_ID: 'd0ed05d6-2d0a-43dd-a4f2-56cb56afe6f4'
-#               VITE_TENANT_ID: '00dd0d1d-d7e6-4338-ac51-565339c7088c'
-#             inputs:
-#               command: 'custom'
-#               customCommand: 'run build'
-#               workingDir: 'ui-spa/'
+          - task: Npm@1
+            displayName: Build web app package
+            env:
+              VITE_GATEWAY_BASE_URL: 'api://57c88580-01d4-477d-9b1d-ebb22c8d05af/user_impersonation'
+              VITE_CLIENT_ID: 'd0ed05d6-2d0a-43dd-a4f2-56cb56afe6f4'
+              VITE_TENANT_ID: '00dd0d1d-d7e6-4338-ac51-565339c7088c'
+            inputs:
+              command: 'custom'
+              customCommand: 'run build'
+              workingDir: 'ui-spa/'
 
-#           - task: PublishPipelineArtifact@1
-#             displayName: Publish artifact
-#             inputs:
-#               targetPath: 'ui-spa/'
-#               artifact: 'lacc-ui-dev-drop'
+          - task: PublishPipelineArtifact@1
+            displayName: Publish artifact
+            inputs:
+              targetPath: 'ui-spa/'
+              artifact: 'lacc-ui-dev-drop'
 
           # - task: CmdLine@2
           #   inputs:

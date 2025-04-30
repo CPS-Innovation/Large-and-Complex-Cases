@@ -10,7 +10,7 @@ resources:
             - 'lcc-166-uipipeline'
 
 variables:
-  web-app-name: "lacc-app-ui-spa-dev"
+  web-app-name: "lacc-dev"
   build-agent: "LaCC Pre-Prod Build Agents"
   azure-subscription: "Azure Pipeline: Large and Complex Cases - Pre-Prod"
   resource-group: "rg-lacc-dev"
@@ -29,30 +29,18 @@ stages:
           runOnce:
             deploy:
               steps:
-                - task: AzureWebApp@1
+                - task: AzureRmWebAppDeployment@4
                   inputs:
-                    azureSubscription: '$(azure-subscription)' 
-                    appType: 'webApp'
-                    appName: "$(web-app-name)"
-                    # package: '$(Build.ArtifactStagingDirectory)/ui-spa.zip' 
-                    package: '/agent/_work/1/LACCUIDevBuild/ui-spa/ui-spa.zip'
-                    RuntimeStack: "NODE|22-lts"
-                    # WebAppName: "$(web-app-name)"
+                    ConnectionType: "AzureRM"
+                    azureSubscription: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
                     resourceGroupName: $(resource-group)
-                    # ConnectionType: "AzureRM"
-
-                # - task: AzureRmWebAppDeployment@4
-                #   inputs:
-                #     ConnectionType: "AzureRM"
-                #     azureSubscription: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
-                #     resourceGroupName: $(resource-group)
-                #     appType: "webAppLinux"
-                #     WebAppName: "$(web-app-name)"
-                #     packageForLinux: "$(Pipeline.Workspace)/$(build-pipeline)/lacc-ui-dev-drop"
-                #     RuntimeStack: "NODE|22-lts"
-                #     StartupCommand: "pm2 serve /home/site/wwwroot/ --no-daemon --spa" 
-                #   displayName: "Deploy LACC UI React App to Dev"
-                #   retryCountOnTaskFailure: 1
+                    appType: "webAppLinux"
+                    WebAppName: "$(web-app-name)"
+                    packageForLinux: "$(Pipeline.Workspace)/$(build-pipeline)/lacc-ui-dev-drop"
+                    RuntimeStack: "NODE|22-lts"
+                    StartupCommand: "pm2 serve /home/site/wwwroot/ --no-daemon --spa" 
+                  displayName: "Deploy LACC UI React App to Dev"
+                  retryCountOnTaskFailure: 1
 
 
 
