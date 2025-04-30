@@ -116,6 +116,10 @@ trigger:
   branches:
     include:
       - 'lcc-166-uipipeline'
+  # paths:
+  #   include:
+  #   - 'src/*'
+  #   - 'test/*'
 
 stages:
   - stage: Build_and_Publish_Artifact
@@ -129,10 +133,23 @@ stages:
 
         steps:
           - task: Npm@1
+            
+            inputs:
+              command: 'install'
+              workingDir: 'ui-spa'
+          - task: Npm@1
             displayName: Install npm dependencies
             inputs:
               command: 'install'
-              workingDir: 'ui-spa/'
+              workingDir: 'ui-spa'
+              verbose: false
+            
+          - task: Npm@1
+            inputs:
+              command: "custom"
+              workingDir: "ui-spa"
+              customCommand: "run prettier"
+            displayName: "npm prettier"
 
           - task: Npm@1
             displayName: Build web app package
@@ -145,10 +162,10 @@ stages:
             inputs:
               command: 'custom'
               customCommand: 'run build'
-              workingDir: 'ui-spa/'
+              workingDir: 'ui-spa'
 
-          - task: PublishPipelineArtifact@1
-            displayName: Publish artifact
+          - task: PublishBuildArtifacts@1
             inputs:
-              targetPath: 'ui-spa/'
-              artifact: 'lacc-ui-dev-drop'
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)/ui-spa/build'
+              ArtifactName: 'lacc-ui-dev-drop'
+              publishLocation: 'Container'
