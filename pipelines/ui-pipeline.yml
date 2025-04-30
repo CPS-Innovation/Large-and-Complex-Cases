@@ -164,8 +164,8 @@ stages:
               customCommand: 'run build'
               workingDir: 'ui-spa'
 
-          - task: PublishBuildArtifacts@1
+          - task: PublishPipelineArtifact@1
             inputs:
-              PathtoPublish: '$(Build.ArtifactStagingDirectory)/ui-spa/build'
-              ArtifactName: 'lacc-ui-dev-drop'
-              publishLocation: 'Container'
+              targetPath: '$(Pipeline.Workspace)/ui-spa/build'
+              artifact: 'lacc-ui-dev-drop'
+              publishLocation: 'pipeline'
