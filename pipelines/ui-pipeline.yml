@@ -15,9 +15,13 @@ variables:
   serviceConnectionName: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
 
 steps:
-- task: UseNode@1
-  inputs:
-    version: '22'
+# - task: UseNode@1
+#   inputs:
+#     version: '22'
+- script: |
+    curl -sL https://deb.nodesource.com/setup_22 -o nodesource_setup.sh
+    sudo bash nodesource_setup.sh
+    sudo apt install nodejs
 
 - script: |
     cd $(appDirectory)
