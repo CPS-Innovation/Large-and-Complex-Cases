@@ -154,6 +154,7 @@ const NetAppPage = () => {
           ? `/search-results?${initialLocationState?.searchQueryString}`
           : "/search-results"
       }
+      rootFolderPath={rootFolderPath}
       netAppFolderApiResults={netAppFolderApiResults}
       handleConnectFolder={handleConnectFolder}
       handleGetFolderContent={handleGetFolderContent}
