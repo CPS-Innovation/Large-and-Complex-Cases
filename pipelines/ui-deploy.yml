@@ -35,7 +35,7 @@ stages:
                     azureSubscription: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
                     appType: 'webAppLinux'
                     WebAppName: 'lacc-app-ui-spa-dev'
-                    packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'
+                    packageForLinux: '$(System.DefaultWorkingDirectory)/**/LACCUIDevBuild'
                     RuntimeStack: 'NODE|22-lts'
                     StartupCommand: 'npm start'
                     DeploymentTypeLinux: 'oneDeploy'
