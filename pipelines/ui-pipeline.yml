@@ -144,12 +144,12 @@ stages:
               workingDir: 'ui-spa'
               verbose: false
             
-          - task: Npm@1
-            inputs:
-              command: "custom"
-              workingDir: "ui-spa"
-              customCommand: "run prettier"
-            displayName: "npm prettier"
+          # - task: Npm@1
+          #   inputs:
+          #     command: "custom"
+          #     workingDir: "ui-spa"
+          #     customCommand: "run prettier"
+          #   displayName: "npm prettier"
 
           - task: Npm@1
             displayName: Build web app package
