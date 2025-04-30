@@ -19,13 +19,22 @@ steps:
 #   inputs:
 #     version: '22'
 - script: |
-    echo "Installing Node.js v22 .."
-    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs
-    sudo apt-get install -y nodejs
+    curl -fsSL https://nodejs.org/dist/v22.0.0/node-v22.0.0-linux-x64.tar.xz -o node.tar.xz
+    mkdir -p $HOME/node22
+    tar -xf node.tar.xz -C $HOME/node22 --strip-components=1
+    echo "##vso[task.prependpath]$HOME/node22/bin"
     node -v
     npm -v
-  displayName: 'Install Node.js v22'
+  displayName: 'Install Node.js 22'
+
+    # echo "Installing Node.js v22 .."
+    # # curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+    # curl -fsSL https://nodejs.org/dist/v22.0.0/node-v22.0.0-linux-x64.tar.xz -o node.tar.xz
+    # sudo DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs
+    # sudo apt-get install -y nodejs
+    # node -v
+    # npm -v
+
 
 - script: |
     cd $(appDirectory)
