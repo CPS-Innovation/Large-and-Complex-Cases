@@ -4,7 +4,7 @@ trigger:
       - ui-spa/**
 
 pool:
-  vmImage: 'ubuntu-latest'
+  'LaCC Pre-Prod Build Agents'
 
 variables:
   appName: 'lacc-app-ui-spa-dev'     
