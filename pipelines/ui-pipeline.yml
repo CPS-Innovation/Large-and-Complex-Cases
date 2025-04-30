@@ -172,4 +172,5 @@ stages:
           #     # publishLocation: 'pipeline'
           - task: CmdLine@2
             inputs:
-              script: 'ls -la $(Pipeline.Workspace)'
+              script: 'ls -la'
+              workingDirectory: "ui-spa"
