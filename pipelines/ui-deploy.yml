@@ -33,13 +33,13 @@ stages:
                   inputs:
                     azureSubscription: '$(azure-subscription)' 
                     appType: 'webApp'
-                    appName: '$(appName)'
+                    appName: "$(web-app-name)"
                     # package: '$(Build.ArtifactStagingDirectory)/ui-spa.zip' 
                     package: '/agent/_work/1/LACCUIDevBuild/ui-spa/ui-spa.zip'
                     RuntimeStack: "NODE|22-lts"
-                    WebAppName: "$(web-app-name)"
+                    # WebAppName: "$(web-app-name)"
                     resourceGroupName: $(resource-group)
-                    ConnectionType: "AzureRM"
+                    # ConnectionType: "AzureRM"
 
                 # - task: AzureRmWebAppDeployment@4
                 #   inputs:
