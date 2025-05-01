@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "start": "vite preview",
+    "start": "vite preview && PORT=5173 node your-startup-file.js",
     "lint": "eslint .",
     "prettier": "prettier --check ./src",
     "prettier:format": "prettier --write ./src",
@@ -66,5 +66,5 @@
     "@azure/msal-react": {
       "react": "^16.8.0 || ^17 || ^18 || ^19"
     }
-  }
+  },
 }
