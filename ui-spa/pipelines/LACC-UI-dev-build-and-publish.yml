@@ -50,4 +50,4 @@ stages:
               
           - task: CmdLine@2
             inputs:
-              script: 'ls -la build'
+              script: 'ls -la ui-spa'
