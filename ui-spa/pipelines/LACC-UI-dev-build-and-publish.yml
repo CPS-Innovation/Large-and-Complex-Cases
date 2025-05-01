@@ -44,10 +44,10 @@ stages:
           - task: PublishPipelineArtifact@1
             displayName: Publish artifact
             inputs:
-              targetPath: 'ui-spa'
+              targetPath: 'build'
               artifact: 'lacc-ui-dev-drop'
               # publishLocation: 'pipeline'
               
           - task: CmdLine@2
             inputs:
-              script: 'ls -la 'ui-spa'
+              script: 'ls -la build'
