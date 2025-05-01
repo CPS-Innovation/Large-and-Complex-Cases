@@ -44,7 +44,7 @@ stages:
           - task: PublishPipelineArtifact@1
             displayName: Publish artifact
             inputs:
-              targetPath: 'build'
+              targetPath: 'ui-spa/build'
               artifact: 'lacc-ui-dev-drop'
               # publishLocation: 'pipeline'
               
