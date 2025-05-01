@@ -2,6 +2,22 @@ import { render, screen, within, fireEvent } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import EgressSearchResults from "./EgressSearchResults";
 
+//mocking the button component as the original compoenent is using webpackPrefetch  when trying to load the button from govukfrontend which which vitest cant handle and throws an unhandled error while running the test.
+// So far this prefetch code is seen only in button component, hence mocking only that component in the test. To see the actual error command the mock code and run test.
+vi.mock("../govuk", async () => {
+  const actual = await vi.importActual("../govuk");
+  return {
+    ...actual,
+    Button: ({
+      children,
+      disabled,
+    }: {
+      children: React.ReactNode;
+      disabled: boolean;
+    }) => <button disabled={disabled}>{children}</button>,
+  };
+});
+
 describe("EgressSearchResults", () => {
   const handleConnectFolderMock = vi.fn();
   const egressSearchApiResults = {
