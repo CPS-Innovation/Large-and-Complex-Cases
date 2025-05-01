@@ -44,9 +44,9 @@ stages:
           - task: PublishPipelineArtifact@1
             displayName: Publish artifact
             inputs:
-              targetPath: '/home/vsts/work/1/s/ui-spa'
+              targetPath: '/home/vsts/work/1/s/ui-spa/build'
               artifact: 'lacc-ui-dev-drop'
               # publishLocation: 'pipeline'
           - task: CmdLine@2
             inputs:
-              script: 'ls -la ''/home/vsts/work/1/s/ui-spa'''
+              script: 'ls -la ''/home/vsts/work/1/s/ui-spa/build'
