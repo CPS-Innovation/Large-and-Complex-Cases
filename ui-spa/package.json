@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "start": "vite preview && PORT=5173 node your-startup-file.js",
+    "start": "vite preview",
     "lint": "eslint .",
     "prettier": "prettier --check ./src",
     "prettier:format": "prettier --write ./src",
