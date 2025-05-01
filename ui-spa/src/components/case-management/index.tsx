@@ -1,7 +1,12 @@
+import { useState } from "react";
 import { Tabs } from "../common/tabs/Tabs";
+import { TabId } from "../../common/types/CaseManagement";
 
 const CaseManagementPage = () => {
-  const handleTabSelection = () => {};
+  const [activeTabId, setActiveId] = useState<TabId>("transfer-materials");
+  const handleTabSelection = <T extends TabId>(tabId: T) => {
+    setActiveId(tabId);
+  };
 
   const items = [
     { id: "transfer-materials", label: "Transfer materials" },
@@ -24,7 +29,7 @@ const CaseManagementPage = () => {
           },
         }))}
         title="Contents"
-        activeTabId={"manage-materials"}
+        activeTabId={activeTabId}
         handleTabSelection={handleTabSelection}
       />
     </div>

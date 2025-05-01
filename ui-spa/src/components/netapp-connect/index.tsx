@@ -74,7 +74,7 @@ const NetAppPage = () => {
         folderPath: selectedFolderPath,
         caseId: caseId!,
       });
-      navigate(`/case/${caseId}/case-overview/transfer-material`);
+      navigate(`/case/${caseId}/case-management`);
     } catch (error) {
       if (error) navigate(`/case/${caseId}/netapp-connect/error`);
     }

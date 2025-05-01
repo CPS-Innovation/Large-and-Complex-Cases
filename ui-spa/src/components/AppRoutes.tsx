@@ -29,10 +29,11 @@ const AppRoutes = () => {
         element={<NetAppPage />}
       />
       <Route
-        path="/case/:caseId/case-overview/transfer-material"
+        path="/case/:caseId/case-management"
         element={<CaseManagementPage />}
       />
-      {/* <Route path="*" element={<Navigate to="/" replace />} /> */}
+
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };

@@ -1,10 +1,11 @@
 import { useEffect, useRef } from "react";
+import { TabId } from "../../../common/types/CaseManagement";
 import classes from "./Tabs.module.scss";
 
 export type TabButtonProps = {
-  items: { id: string; label: string; ariaLabel: string }[];
+  items: { id: TabId; label: string; ariaLabel: string }[];
   activeTabIndex: number;
-  handleTabSelection: (documentId: string) => void;
+  handleTabSelection: (tabId: TabId) => void;
 };
 
 const ARROW_KEY_SHIFTS = {

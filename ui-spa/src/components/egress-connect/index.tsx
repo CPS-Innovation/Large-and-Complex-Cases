@@ -111,7 +111,7 @@ const EgressPage = () => {
             },
           },
         );
-      else navigate(`/case/${caseId}/case-overview/transfer-material`);
+      else navigate(`/case/${caseId}/case-management`);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       navigate(`/case/${caseId}/egress-connect/error`);

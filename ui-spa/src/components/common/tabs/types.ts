@@ -1,10 +1,12 @@
+import { TabId } from "../../../common/types/CaseManagement";
+
 type PanelProps = React.DetailedHTMLProps<
   React.LabelHTMLAttributes<HTMLDivElement>,
   HTMLDivElement
 >;
 
 type ItemProps = {
-  id: string;
+  id: TabId;
   label: string;
   panel: PanelProps;
 };
