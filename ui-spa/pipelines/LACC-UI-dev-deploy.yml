@@ -42,7 +42,7 @@ stages:
                     WebAppName: '$(web-app-name)'
                     packageForLinux: '$(Pipeline.Workspace)/$(build-pipeline)/lacc-ui-dev-drop'
                     RuntimeStack: 'NODE|22-lts'
-                    StartupCommand: 'pm2 serve /home/site/wwwroot/ --no-daemon --spa'
+                    StartupCommand: 'npm run start'
                     
                   displayName: 'Deploy LACC UI React App to Dev'
                   retryCountOnTaskFailure: 1
