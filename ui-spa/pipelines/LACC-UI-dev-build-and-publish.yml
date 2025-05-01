@@ -46,3 +46,7 @@ stages:
             inputs:
               targetPath: '/home/vsts/work/1/s/ui-spa'
               artifact: 'lacc-ui-dev-drop'
+              # publishLocation: 'pipeline'
+          - task: CmdLine@2
+            inputs:
+              script: 'ls -la ''/home/vsts/work/1/s/ui-spa'''
