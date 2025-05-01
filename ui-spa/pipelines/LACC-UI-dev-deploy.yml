@@ -5,12 +5,12 @@ trigger: none
 
 resources:
   pipelines:
-    - pipeline: LACCUIDevBuild
+    - pipeline: 'LACCUIDevBuild'
       source: LACC-UI-Dev-build
       trigger:
         branches:
           include:
-            - pipeline
+            - feature/pipeline
 
 variables:
   buildConfiguration: 'Release'
