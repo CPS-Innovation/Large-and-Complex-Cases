@@ -48,6 +48,6 @@ stages:
               artifact: 'lacc-ui-dev-drop'
               # publishLocation: 'pipeline'
               
-          - task: CmdLine@2
-            inputs:
-              script: 'ls -la ui-spa'
+          # - task: CmdLine@2
+          #   inputs:
+          #     script: 'ls -la ui-spa'
