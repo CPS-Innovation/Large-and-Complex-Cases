@@ -1,0 +1,94 @@
+# Build and test code on PR against main for HSK UI React web app.
+# NB triggered through build policy on the 'main' branch in Azure DevOps
+trigger: none
+
+stages:
+  - stage: Build_and_Test_on_PR
+    displayName: 'Build and test on PR'
+    jobs:
+      - job: Build_and_Test
+        pool:
+          vmImage: ubuntu-latest
+
+        steps:
+          - task: Npm@1
+            displayName: Install npm dependencies
+            inputs:
+              command: 'install'
+
+          - task: Npm@1
+            displayName: Build web app package
+            inputs:
+              command: 'custom'
+              customCommand: 'run build'
+
+          - task: Npm@1
+            displayName: Run tests
+            env:
+              CI: 'true'
+            inputs:
+              command: 'custom'
+              customCommand: 'test'
+
+
+
+
+
+
+# trigger: none
+
+# stages:
+#   - stage: Build_and_Publish_Artifact
+#     displayName: 'Build Artifact'
+
+#     jobs:
+#       - job: Build_and_Publish_Artifact
+#         pool:
+#           vmImage: ubuntu-latest
+
+#         steps:
+#           - task: Npm@1
+            
+#             inputs:
+#               command: 'install'
+#               workingDir: 'ui-spa'
+#           - task: Npm@1
+#             displayName: Install npm dependencies
+#             inputs:
+#               command: 'install'
+#               workingDir: 'ui-spa'
+#               verbose: false
+            
+#           # - task: Npm@1
+#           #   inputs:
+#           #     command: "custom"
+#           #     workingDir: "ui-spa"
+#           #     customCommand: "run prettier"
+#           #   displayName: "npm prettier"
+
+#           - task: Npm@1
+#             displayName: Build web app package
+#             env:
+#               VITE_GATEWAY_BASE_URL: 'https://mocked-out-api'
+#               VITE_GATEWAY_SCOPE: 'api://57c88580-01d4-477d-9b1d-ebb22c8d05af/user_impersonation'
+#               VITE_CLIENT_ID: 'd0ed05d6-2d0a-43dd-a4f2-56cb56afe6f4'
+#               VITE_TENANT_ID: '00dd0d1d-d7e6-4338-ac51-565339c7088c'
+
+#             inputs:
+#               command: 'custom'
+#               customCommand: 'run build'
+#               workingDir: 'ui-spa'
+
+#           - task: PublishPipelineArtifact@1
+#             inputs:
+#               # targetPath: '$(Pipeline.Workspace)/ui-spa/build'
+#               targetPath: 'ui-spa'
+#               artifact: 'lacc-ui-dev-drop'
+#               publishLocation: 'pipeline'
+            
+
+
+#           - task: CmdLine@2
+#             inputs:
+#               script: 'ls -la'
+#               workingDirectory: "ui-spa"
