@@ -14,24 +14,27 @@ stages:
           - script: ls -la /home/vsts/work/1/s/
             displayName: 'List directory contents'
 
-          # - task: Npm@1
-          #   displayName: Install npm dependencies
-          #   inputs:
-          #     command: 'install'
+          - task: Npm@1
+            displayName: Install npm dependencies
+            inputs:
+              command: 'install'
+              workingDir: '/home/vsts/work/1/s/ui-spa'
 
-          # - task: Npm@1
-          #   displayName: Build web app package
-          #   inputs:
-          #     command: 'custom'
-          #     customCommand: 'run build'
+          - task: Npm@1
+            displayName: Build web app package
+            inputs:
+              command: 'custom'
+              customCommand: 'run build'
+              workingDir: '/home/vsts/work/1/s/ui-spa'
 
-          # - task: Npm@1
-          #   displayName: Run tests
-          #   env:
-          #     CI: 'true'
-          #   inputs:
-          #     command: 'custom'
-          #     customCommand: 'test'
+          - task: Npm@1
+            displayName: Run tests
+            env:
+              CI: 'true'
+            inputs:
+              command: 'custom'
+              customCommand: 'test'
+              workingDir: '/home/vsts/work/1/s/ui-spa'
 
 
 
