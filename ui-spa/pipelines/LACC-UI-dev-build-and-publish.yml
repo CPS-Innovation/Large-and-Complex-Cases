@@ -25,7 +25,7 @@ stages:
             displayName: Install npm dependencies
             inputs:
               command: 'install'
-              workingDir: '/home/vsts/work/1/s/ui-spa'
+              workingDir: 'ui-spa'
 
           - task: Npm@1
             displayName: Build web app package
@@ -38,15 +38,16 @@ stages:
             inputs:
               command: 'custom'
               customCommand: 'run build'
-              workingDir: '/home/vsts/work/1/s/ui-spa'
+              workingDir: 'ui-spa'
               
 
           - task: PublishPipelineArtifact@1
             displayName: Publish artifact
             inputs:
-              targetPath: '/home/vsts/work/1/s/ui-spa/build'
+              targetPath: 'ui-spa'
               artifact: 'lacc-ui-dev-drop'
               # publishLocation: 'pipeline'
+              
           - task: CmdLine@2
             inputs:
-              script: 'ls -la ''/home/vsts/work/1/s/ui-spa/build'
+              script: 'ls -la 'ui-spa'
