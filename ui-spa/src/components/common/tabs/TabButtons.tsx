@@ -1,11 +1,10 @@
 import { useEffect, useRef } from "react";
-import { TabId } from "../../../common/types/CaseManagement";
 import classes from "./Tabs.module.scss";
 
-export type TabButtonProps = {
-  items: { id: TabId; label: string; ariaLabel: string }[];
+export type TabButtonProps<T extends string> = {
+  items: { id: T; label: string; ariaLabel: string }[];
   activeTabIndex: number;
-  handleTabSelection: (tabId: TabId) => void;
+  handleTabSelection: (tabId: T) => void;
 };
 
 const ARROW_KEY_SHIFTS = {
@@ -13,11 +12,11 @@ const ARROW_KEY_SHIFTS = {
   ArrowRight: 1,
 };
 
-const TabButtons: React.FC<TabButtonProps> = ({
+const TabButtons = <T extends string>({
   items,
   activeTabIndex,
   handleTabSelection,
-}) => {
+}: TabButtonProps<T>) => {
   const activeTabRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {

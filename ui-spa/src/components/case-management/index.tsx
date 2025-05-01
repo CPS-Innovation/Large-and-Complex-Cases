@@ -4,11 +4,11 @@ import { TabId } from "../../common/types/CaseManagement";
 
 const CaseManagementPage = () => {
   const [activeTabId, setActiveId] = useState<TabId>("transfer-materials");
-  const handleTabSelection = <T extends TabId>(tabId: T) => {
+  const handleTabSelection = (tabId: TabId) => {
     setActiveId(tabId);
   };
 
-  const items = [
+  const items: { id: TabId; label: string }[] = [
     { id: "transfer-materials", label: "Transfer materials" },
     { id: "manage-materials", label: "Manage materials" },
   ];

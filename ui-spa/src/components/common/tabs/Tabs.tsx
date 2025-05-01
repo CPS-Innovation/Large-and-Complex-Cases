@@ -1,20 +1,19 @@
 import { CommonTabsProps } from "./types";
 import TabButtons from "./TabButtons";
-import { TabId } from "../../../common/types/CaseManagement";
 import classes from "./Tabs.module.scss";
 
-export type TabsProps = CommonTabsProps & {
-  activeTabId: string | undefined;
-  handleTabSelection: (tabId: TabId) => void;
+export type TabsProps<T extends string> = CommonTabsProps<T> & {
+  activeTabId: T;
+  handleTabSelection: (tabId: T) => void;
 };
 
-export const Tabs: React.FC<TabsProps> = ({
+export const Tabs = <T extends string>({
   className,
   items,
   activeTabId,
   handleTabSelection,
   ...attributes
-}) => {
+}: TabsProps<T>) => {
   const activeTabArrayPos = items.findIndex((item) => item.id === activeTabId);
   const activeTabIndex = activeTabArrayPos === -1 ? 0 : activeTabArrayPos;
 

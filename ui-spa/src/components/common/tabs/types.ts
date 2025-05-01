@@ -1,20 +1,18 @@
-import { TabId } from "../../../common/types/CaseManagement";
-
 type PanelProps = React.DetailedHTMLProps<
   React.LabelHTMLAttributes<HTMLDivElement>,
   HTMLDivElement
 >;
 
-type ItemProps = {
-  id: TabId;
+type ItemProps<T> = {
+  id: T;
   label: string;
   panel: PanelProps;
 };
 
-export type CommonTabsProps = React.DetailedHTMLProps<
+export type CommonTabsProps<T> = React.DetailedHTMLProps<
   React.LabelHTMLAttributes<HTMLDivElement>,
   HTMLDivElement
 > & {
   title: string;
-  items: ItemProps[];
+  items: ItemProps<T>[];
 };
