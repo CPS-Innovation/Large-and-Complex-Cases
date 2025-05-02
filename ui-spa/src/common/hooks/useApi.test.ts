@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { renderHook, waitFor, act } from "@testing-library/react";
 import { useApi } from "./useApi";
 
 describe("useApi", () => {
@@ -142,9 +142,11 @@ describe("useApi", () => {
       status: "initial",
       refetch: expect.any(Function),
     });
+    act(() => {
+      //call api through refetch
+      result.current.refetch();
+    });
 
-    //call api through refetch
-    result.current.refetch();
     rerender();
     expect(mockApiCall).toHaveBeenCalledTimes(1);
 
@@ -184,7 +186,10 @@ describe("useApi", () => {
     });
 
     //call api through refetch
-    result.current.refetch();
+    act(() => {
+      result.current.refetch();
+    });
+
     rerender();
     expect(mockApiCall).toHaveBeenCalledTimes(2);
 

@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { renderHook, waitFor, act } from "@testing-library/react";
 import { vi } from "vitest";
 import {
   useCaseSearchForm,
@@ -47,7 +47,10 @@ describe("useCaseSearchForm", () => {
     };
     const { result } = renderHook(() => useCaseSearchForm(initialFormData));
 
-    const isValid = result.current.validateFormData();
+    let isValid = true;
+    act(() => {
+      isValid = result.current.validateFormData();
+    });
 
     expect(isValid).toEqual(false);
     const expectedFormDataErrors = {
@@ -81,7 +84,10 @@ describe("useCaseSearchForm", () => {
     };
     const { result } = renderHook(() => useCaseSearchForm(initialFormData));
 
-    const isValid = result.current.validateFormData();
+    let isValid = true;
+    act(() => {
+      isValid = result.current.validateFormData();
+    });
 
     expect(isValid).toEqual(false);
     const expectedFormDataErrors = {
@@ -117,7 +123,10 @@ describe("useCaseSearchForm", () => {
     };
     const { result } = renderHook(() => useCaseSearchForm(initialFormData));
 
-    const isValid = result.current.validateFormData();
+    let isValid = true;
+    act(() => {
+      isValid = result.current.validateFormData();
+    });
 
     expect(isValid).toEqual(false);
     const expectedFormDataErrors = {
@@ -158,7 +167,10 @@ describe("useCaseSearchForm", () => {
     };
     const { result } = renderHook(() => useCaseSearchForm(initialFormData));
 
-    const isValid = result.current.validateFormData();
+    let isValid = true;
+    act(() => {
+      isValid = result.current.validateFormData();
+    });
 
     expect(isValid).toEqual(false);
     const expectedFormDataErrors = {
@@ -199,7 +211,10 @@ describe("useCaseSearchForm", () => {
     };
     const { result } = renderHook(() => useCaseSearchForm(initialFormData));
 
-    const isValid = result.current.validateFormData();
+    let isValid = true;
+    act(() => {
+      isValid = result.current.validateFormData();
+    });
 
     expect(isValid).toEqual(false);
     const expectedFormDataErrors = {
@@ -241,7 +256,10 @@ describe("useCaseSearchForm", () => {
     };
     const { result } = renderHook(() => useCaseSearchForm(initialFormData));
 
-    const isValid = result.current.validateFormData();
+    let isValid = true;
+    act(() => {
+      isValid = result.current.validateFormData();
+    });
 
     expect(isValid).toEqual(false);
     const expectedFormDataErrors = {
@@ -285,12 +303,17 @@ describe("useCaseSearchForm", () => {
     const { result } = renderHook(() => useCaseSearchForm(initialFormData));
     expect(result.current.formData).toEqual(initialFormData);
 
-    result.current.handleFormChange(
-      SearchFormField.searchType,
-      "operation name",
-    );
-    result.current.handleFormChange(SearchFormField.operationName, "op1");
-    result.current.handleFormChange(SearchFormField.operationArea, "op area1");
+    act(() => {
+      result.current.handleFormChange(
+        SearchFormField.searchType,
+        "operation name",
+      );
+      result.current.handleFormChange(SearchFormField.operationName, "op1");
+      result.current.handleFormChange(
+        SearchFormField.operationArea,
+        "op area1",
+      );
+    });
 
     await waitFor(() => {
       expect(result.current.formData).toEqual({
@@ -302,14 +325,20 @@ describe("useCaseSearchForm", () => {
         urn: "",
       });
     });
-
-    result.current.handleFormChange(
-      SearchFormField.searchType,
-      "defendant name",
-    );
-    result.current.handleFormChange(SearchFormField.defendantName, "def name1");
-    result.current.handleFormChange(SearchFormField.defendantArea, "def area1");
-
+    act(() => {
+      result.current.handleFormChange(
+        SearchFormField.searchType,
+        "defendant name",
+      );
+      result.current.handleFormChange(
+        SearchFormField.defendantName,
+        "def name1",
+      );
+      result.current.handleFormChange(
+        SearchFormField.defendantArea,
+        "def area1",
+      );
+    });
     await waitFor(() => {
       expect(result.current.formData).toEqual({
         searchType: "defendant name",
@@ -320,9 +349,10 @@ describe("useCaseSearchForm", () => {
         urn: "",
       });
     });
-    result.current.handleFormChange(SearchFormField.searchType, "urn");
-    result.current.handleFormChange(SearchFormField.urn, "abc");
-
+    act(() => {
+      result.current.handleFormChange(SearchFormField.searchType, "urn");
+      result.current.handleFormChange(SearchFormField.urn, "abc");
+    });
     await waitFor(() => {
       expect(result.current.formData).toEqual({
         searchType: "urn",
@@ -352,12 +382,20 @@ describe("useCaseSearchForm", () => {
       expect(searchParams).toEqual({ urn: "11AA2222233" });
     });
 
-    result.current.handleFormChange(
-      SearchFormField.searchType,
-      "defendant name",
-    );
-    result.current.handleFormChange(SearchFormField.defendantName, "def name1");
-    result.current.handleFormChange(SearchFormField.defendantArea, "def area1");
+    act(() => {
+      result.current.handleFormChange(
+        SearchFormField.searchType,
+        "defendant name",
+      );
+      result.current.handleFormChange(
+        SearchFormField.defendantName,
+        "def name1",
+      );
+      result.current.handleFormChange(
+        SearchFormField.defendantArea,
+        "def area1",
+      );
+    });
     rerender();
     await waitFor(() => {
       expect(result.current.getSearchParams()).toEqual({
@@ -365,13 +403,17 @@ describe("useCaseSearchForm", () => {
         "defendant-name": "def name1",
       });
     });
-
-    result.current.handleFormChange(
-      SearchFormField.searchType,
-      "operation name",
-    );
-    result.current.handleFormChange(SearchFormField.operationName, "op1");
-    result.current.handleFormChange(SearchFormField.operationArea, "op area1");
+    act(() => {
+      result.current.handleFormChange(
+        SearchFormField.searchType,
+        "operation name",
+      );
+      result.current.handleFormChange(SearchFormField.operationName, "op1");
+      result.current.handleFormChange(
+        SearchFormField.operationArea,
+        "op area1",
+      );
+    });
     rerender();
     await waitFor(() => {
       expect(result.current.getSearchParams()).toEqual({

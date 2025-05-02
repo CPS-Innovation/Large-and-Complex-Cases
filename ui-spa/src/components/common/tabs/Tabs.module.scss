@@ -1,0 +1,95 @@
+.tabs {
+  & :global(.govuk-tabs__panel) {
+    padding: 0 !important;
+    border: none !important;
+    &:focus {
+      outline: 0.2rem solid #ffdd00;
+    }
+  }
+}
+
+.tabsWrapper {
+  display: flex;
+  position: relative;
+  padding-top: 0.3125rem;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 0.0625rem solid #b1b4b6;
+}
+.tabsList {
+  display: flex;
+  justify-content: flex-start;
+  align-items: baseline;
+  padding: 0;
+  width: 100%;
+  margin: 0;
+  overflow-y: hidden;
+  overflow-x: auto;
+  margin-bottom: -2px;
+}
+
+.tabListItem.activeTab {
+  background-color: white;
+  border: 0.0625rem solid #b1b4b6;
+  border-bottom: none;
+  padding: 1rem;
+}
+.inactiveTab {
+  border: none;
+  background-color: #f3f2f1;
+  text-decoration: underline;
+}
+
+.tabListItem {
+  display: flex;
+  position: relative;
+  max-width: 15.625rem;
+  margin-right: 0.3125rem;
+  padding: 0.75rem;
+}
+.tabButton {
+  font-family: "NewTransport", "Arial", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  display: flex;
+  width: 100%;
+  white-space: nowrap;
+  font-size: 1.1875rem;
+  padding: 0.25rem;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  margin: 0;
+
+  &:focus {
+    outline: 0.1875rem solid rgba(0, 0, 0, 0);
+    color: #0b0c0c;
+    background-color: #fd0;
+    box-shadow:
+      0 -0.125rem #fd0,
+      0 0.25rem #0b0c0c;
+  }
+}
+.tabLabel {
+  max-width: 11.25rem;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.inactiveTab:hover {
+  text-decoration: underline;
+  text-decoration-thickness: max(0.1875rem, 0.1875rem, 0.12em);
+}
+
+.contentArea {
+  &:focus {
+    outline: 0.2rem solid #ffdd00;
+  }
+}
+
+.tabsRegionLabel,
+.tabPanelRegionLabel {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}

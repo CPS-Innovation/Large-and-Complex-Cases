@@ -3,6 +3,7 @@ import CaseSearchPage from "./search-page";
 import CaseSearchResultPage from "./search-result-page";
 import EgressPage from "./egress-connect";
 import NetAppPage from "./netapp-connect";
+import CaseManagementPage from "./case-management";
 
 const AppRoutes = () => {
   return (
@@ -27,6 +28,11 @@ const AppRoutes = () => {
         path="/case/:caseId/netapp-connect/error"
         element={<NetAppPage />}
       />
+      <Route
+        path="/case/:caseId/case-management"
+        element={<CaseManagementPage />}
+      />
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
