@@ -1,0 +1,48 @@
+# Build the React app and publish the build directory as a pipeline artifact
+
+trigger:
+  batch: true
+  branches:
+    include:
+      - main
+
+variables:
+  VITE_GATEWAY_BASE_URL: 'https://mocked-out-api'
+  VITE_GATEWAY_SCOPE: 'api://57c88580-01d4-477d-9b1d-ebb22c8d05af/user_impersonation'
+  VITE_CLIENT_ID: 'd0ed05d6-2d0a-43dd-a4f2-56cb56afe6f4'
+  VITE_TENANT_ID: '00dd0d1d-d7e6-4338-ac51-565339c7088c'
+
+stages:
+  - stage: Build_and_Publish_Artifact
+    displayName: 'Build Artifact'
+    jobs:
+      - job: Build_and_Publish_Artifact
+        pool:
+          vmImage: ubuntu-latest
+
+        steps:
+          - task: Npm@1
+            displayName: Install npm dependencies
+            inputs:
+              command: 'install'
+              workingDir: 'ui-spa'
+
+          - task: Npm@1
+            displayName: Build web app package
+            env:
+              VITE_GATEWAY_BASE_URL: $(VITE_GATEWAY_BASE_URL)
+              VITE_GATEWAY_SCOPE: $(VITE_GATEWAY_SCOPE)
+              VITE_CLIENT_ID: $(VITE_CLIENT_ID)
+              VITE_TENANT_ID: $(VITE_TENANT_ID)
+
+            inputs:
+              command: 'custom'
+              customCommand: 'run build'
+              workingDir: 'ui-spa'
+              
+
+          - task: PublishPipelineArtifact@1
+            displayName: Publish artifact
+            inputs:
+              targetPath: 'ui-spa/dist'
+              artifact: 'lacc-ui-dev-drop'
