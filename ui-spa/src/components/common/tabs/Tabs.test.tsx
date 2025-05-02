@@ -18,7 +18,7 @@ describe("Tabs", () => {
   });
 
   it("can render empty tabs", async () => {
-    const props: TabsProps = {
+    const props: TabsProps<string> = {
       title: "Tabs-title",
       items: [],
       activeTabId: "",
@@ -32,7 +32,7 @@ describe("Tabs", () => {
   });
 
   it("can render tabs", async () => {
-    const props: TabsProps = {
+    const props: TabsProps<string> = {
       title: "Tabs-title",
       activeTabId: "",
       items: [
@@ -65,25 +65,22 @@ describe("Tabs", () => {
   });
 
   it("can highlight the active tab", async () => {
-    const props: TabsProps = {
+    const props: TabsProps<string> = {
       title: "Tabs-title",
       activeTabId: "",
       items: [
         {
           id: "t1",
-
           label: "tab-1",
           panel: <>content-1</>,
         },
         {
           id: "t2",
-
           label: "tab-2",
           panel: <>content-2</>,
         },
         {
           id: "t3",
-
           label: "tab-3",
           panel: <>content-3</>,
         },
@@ -94,7 +91,6 @@ describe("Tabs", () => {
 
     const { rerender } = render(<Tabs {...props} />);
     await screen.findByTestId("tabs");
-    // first tab is active if no hash passed
     expect(screen.getByTestId("tab-active")).toHaveTextContent("tab-1");
     expect(screen.getByTestId("tab-content-t1")).not.toHaveClass(
       "govuk-tabs__panel--hidden",
@@ -104,7 +100,6 @@ describe("Tabs", () => {
     );
     rerender(<Tabs {...props} activeTabId="t2" />);
 
-    // otherwise active tab driven by hash
     expect(screen.getByTestId("tab-active")).toHaveTextContent("tab-2");
     expect(screen.getByTestId("tab-content-t1")).toHaveClass(
       "govuk-tabs__panel--hidden",
@@ -117,25 +112,22 @@ describe("Tabs", () => {
   it("can navigate using keyboard", async () => {
     const TestComponent = () => {
       const [activeTabId, setActiveTabId] = useState("");
-      const props: TabsProps = {
+      const props: TabsProps<string> = {
         activeTabId,
         title: "Tabs-title",
         items: [
           {
             id: "t1",
-
             label: "tab-1",
             panel: <></>,
           },
           {
             id: "t2",
-
             label: "tab-2",
             panel: <></>,
           },
           {
             id: "t3",
-
             label: "tab-3",
             panel: <></>,
           },
@@ -188,12 +180,8 @@ describe("Tabs", () => {
     expect(screen.getByTestId("tab-active")).toHaveTextContent("tab-1");
   });
 
-  // // Not strictly a testable feature as the tab code just renders what it gets given in terms of items.
-  // //  However, (one of) the reasons we writing our own tabs is that adding new tabs dynamically
-  // //  breaks standard GDS tabs (the keyboard navigation doesn't work for the newly added tabs).
-  // //  So lets just check that we are achieving our goal.
   it("can add a tab", async () => {
-    const props: TabsProps = {
+    const props: TabsProps<string> = {
       title: "Tabs-title",
       activeTabId: "",
       handleTabSelection: () => {},

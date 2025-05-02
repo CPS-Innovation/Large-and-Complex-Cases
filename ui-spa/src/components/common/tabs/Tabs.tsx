@@ -19,10 +19,8 @@ export const Tabs = <T extends string>({
 
   const panels = items.map((item, index) => {
     const { id: itemId, panel } = item;
-    const panelId = itemId;
 
     const coreProps = {
-      key: panelId,
       role: "tabpanel",
       tabIndex: 0,
       "data-testid": `tab-content-${itemId}`,
@@ -30,6 +28,7 @@ export const Tabs = <T extends string>({
 
     return (
       <div
+        key={itemId}
         id={index === activeTabIndex ? "active-tab-panel" : `panel-${index}`}
         {...coreProps}
         className={`govuk-tabs__panel ${
