@@ -34,7 +34,10 @@ const FolderPath: React.FC<FolderPathProps> = ({
       <ol className={styles.orderedList}>
         {folders.map((folder, index) => {
           return (
-            <li key={folder.folderName} className={styles.listItem}>
+            <li
+              key={`${folder.folderName}-${index}`}
+              className={styles.listItem}
+            >
               {index !== folders.length - 1 ? (
                 <LinkButton
                   onClick={() => folderClickHandler(folder.folderPath)}

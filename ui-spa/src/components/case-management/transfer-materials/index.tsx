@@ -1,5 +1,9 @@
 const TransferMaterialsPage = () => {
-  return <div>transfer materials</div>;
+  return (
+    <div>
+      <h2>transfer materials</h2>
+    </div>
+  );
 };
 
 export default TransferMaterialsPage;

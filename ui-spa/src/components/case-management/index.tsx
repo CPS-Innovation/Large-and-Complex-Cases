@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Tabs } from "../common/tabs/Tabs";
 import { TabId } from "../../common/types/CaseManagement";
+import { ItemProps } from "../common/tabs/types";
+import TransferMaterialsPage from "./transfer-materials";
 
 const CaseManagementPage = () => {
   const [activeTabId, setActiveId] = useState<TabId>("transfer-materials");
@@ -8,9 +10,17 @@ const CaseManagementPage = () => {
     setActiveId(tabId);
   };
 
-  const items: { id: TabId; label: string }[] = [
-    { id: "transfer-materials", label: "Transfer materials" },
-    { id: "manage-materials", label: "Manage materials" },
+  const items: ItemProps<TabId>[] = [
+    {
+      id: "transfer-materials",
+      label: "Transfer materials",
+      panel: { children: <TransferMaterialsPage /> },
+    },
+    {
+      id: "manage-materials",
+      label: "Manage materials",
+      panel: { children: <div>manage materials</div> },
+    },
   ];
   return (
     <div className="govuk-width-container">
@@ -20,13 +30,7 @@ const CaseManagementPage = () => {
         items={items.map((item) => ({
           id: item.id,
           label: item.label,
-          panel: {
-            children: (
-              <div>
-                <h2>Transfer Material</h2>
-              </div>
-            ),
-          },
+          panel: item.panel,
         }))}
         title="Contents"
         activeTabId={activeTabId}

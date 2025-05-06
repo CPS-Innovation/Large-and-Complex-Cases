@@ -1,17 +1,10 @@
 import { useMemo, useState } from "react";
-import {
-  Button,
-  SortableTable,
-  InsetText,
-  BackLink,
-  LinkButton,
-} from "../govuk";
-import { Spinner } from "../common/Spinner";
+import { Button, InsetText, BackLink, LinkButton } from "../govuk";
 import { UseApiResult } from "../../common/hooks/useApi";
 import { NetAppFolderData } from "../../common/types/NetAppFolderData";
 import { sortByStringProperty } from "../../common/utils/sortUtils";
 import { getFolderNameFromPath } from "../../common/utils/getFolderNameFromPath";
-import FolderPath from "../common/FolderPath";
+import FolderNavigationTable from "../common/FolderNavigationTable";
 import FolderIcon from "../../components/svgs/folder.svg?react";
 import styles from "./netAppFolderResultsPage.module.scss";
 
@@ -58,7 +51,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
                 <LinkButton
                   type="button"
                   onClick={() => {
-                    handleFolderClickHandler(data.folderPath);
+                    handleFolderClick(data.folderPath);
                   }}
                 >
                   {getFolderNameFromPath(data.folderPath)}
@@ -83,6 +76,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
       };
     });
   };
+
   const handleTableSort = (
     sortName: string,
     sortType: "ascending" | "descending",
@@ -93,7 +87,8 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
   const handleConnect = (id: string) => {
     handleConnectFolder(id);
   };
-  const handleFolderClickHandler = (path: string) => {
+
+  const handleFolderClick = (path: string) => {
     handleGetFolderContent(path);
   };
 
@@ -110,51 +105,17 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
           permissions or contact the product team for support.
         </p>
       </InsetText>
-      <div className={`govuk-grid-column-two-thirds ${styles.results}`}>
-        {netAppFolderApiResults.status === "loading" && (
-          <div className={styles.spinnerWrapper}>
-            <Spinner
-              data-testid="netapp-folder-loader"
-              diameterPx={50}
-              ariaLabel="Loading folders from Network Shared Drive"
-            />
-            <div className={styles.spinnerText}>
-              Loading folders from Network Shared Drive
-            </div>
-          </div>
-        )}
-        <div>
-          {
-            <FolderPath
-              path={rootFolderPath}
-              disabled={netAppFolderApiResults.status === "loading"}
-              folderClickHandler={handleFolderClickHandler}
-            />
-          }
-          {netAppFolderApiResults.status === "succeeded" && (
-            <>
-              <SortableTable
-                head={[
-                  {
-                    children: "Folder name",
-                    sortable: true,
-                    sortName: "folder-name",
-                  },
 
-                  {
-                    children: "",
-                    sortable: false,
-                  },
-                ]}
-                rows={getTableRowData()}
-                handleTableSort={handleTableSort}
-              />
-              {!netappFolderData.length && (
-                <p>There are no documents currenlty in this folder</p>
-              )}
-            </>
-          )}
-        </div>
+      <div className={"govuk-grid-column-two-thirds"}>
+        <FolderNavigationTable
+          rootFolderPath={rootFolderPath}
+          loaderText="There are no documents currenlty in this folder"
+          folderResultsStatus={netAppFolderApiResults.status}
+          folderResultsLength={netappFolderData.length}
+          handleFolderClick={handleFolderClick}
+          getTableRowData={getTableRowData}
+          handleTableSort={handleTableSort}
+        />
       </div>
     </div>
   );

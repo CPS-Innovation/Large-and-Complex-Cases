@@ -1,0 +1,28 @@
+.results {
+  position: relative;
+  padding: 0;
+  & :global(.govuk-button--secondary) {
+    margin-bottom: 0;
+    font-size: 1rem;
+  }
+  .folderWrapper {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+  }
+  .spinnerWrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: absolute;
+    top: 5rem;
+    & .spinnerText {
+      margin-top: 1rem;
+    }
+  }
+  & :global(.govuk-table__cell:last-child) {
+    text-align: right;
+  }
+}
