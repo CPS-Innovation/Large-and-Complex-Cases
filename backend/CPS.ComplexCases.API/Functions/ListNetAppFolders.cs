@@ -14,24 +14,24 @@ using CPS.ComplexCases.NetApp.Models;
 
 namespace CPS.ComplexCases.API.Functions;
 
-public class FindNetAppFolder(ILogger<FindNetAppFolder> logger,
+public class ListNetAppFolders(ILogger<ListNetAppFolders> logger,
     INetAppClient netAppClient,
     INetAppArgFactory netAppArgFactory,
     ICaseEnrichmentService caseEnrichmentService,
     IOptions<NetAppOptions> options)
 {
-    private readonly ILogger<FindNetAppFolder> _logger = logger;
+    private readonly ILogger<ListNetAppFolders> _logger = logger;
     private readonly INetAppClient _netAppClient = netAppClient;
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
     private readonly ICaseEnrichmentService _caseEnrichmentService = caseEnrichmentService;
     private readonly NetAppOptions _netAppOptions = options.Value;
 
-    [Function(nameof(FindNetAppFolder))]
-    [OpenApiOperation(operationId: nameof(FindNetAppFolder), tags: ["NetApp"], Description = "Finds a case in NetApp based on operation name.")]
+    [Function(nameof(ListNetAppFolders))]
+    [OpenApiOperation(operationId: nameof(ListNetAppFolders), tags: ["NetApp"], Description = "Lists folders in NetApp, initially based on operation name.")]
     [OpenApiParameter(name: InputParameters.OperationName, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The operation name to search for.")]
-    [OpenApiParameter(name: InputParameters.Path, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "")]
-    [OpenApiParameter(name: InputParameters.Take, In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "")]
-    [OpenApiParameter(name: InputParameters.ContinuationToken, In = ParameterLocation.Query, Type = typeof(string), Description = "")]
+    [OpenApiParameter(name: InputParameters.Path, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The path to the destination folder.")]
+    [OpenApiParameter(name: InputParameters.Take, In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The number of items to take.")]
+    [OpenApiParameter(name: InputParameters.ContinuationToken, In = ParameterLocation.Query, Type = typeof(string), Description = "The continuation token for pagination.")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]

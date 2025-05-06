@@ -1,26 +1,19 @@
 using System.Xml.Serialization;
 using Microsoft.Extensions.Logging;
 using Amazon.S3.Model;
+using CPS.ComplexCases.NetApp.Exceptions;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
-using CPS.ComplexCases.NetApp.Models.S3.Result;
 using CPS.ComplexCases.NetApp.Models.Dto;
-using CPS.ComplexCases.NetApp.Exceptions;
+using CPS.ComplexCases.NetApp.Models.S3.Result;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
-public class NetAppMockHttpClient : INetAppClient
+public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClient httpClient, INetAppMockHttpRequestFactory netAppMockHttpRequestFactory) : INetAppClient
 {
-    private readonly ILogger<NetAppMockHttpClient> _logger;
-    private readonly HttpClient _httpClient;
-    private readonly INetAppMockRequestFactory _netAppMockRequestFactory;
-
-    public NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClient httpClient, INetAppMockRequestFactory netAppMockRequestFactory)
-    {
-        _logger = logger;
-        _httpClient = httpClient;
-        _netAppMockRequestFactory = netAppMockRequestFactory;
-    }
+    private readonly ILogger<NetAppMockHttpClient> _logger = logger;
+    private readonly HttpClient _httpClient = httpClient;
+    private readonly INetAppMockHttpRequestFactory _netAppMockHttpRequestFactory = netAppMockHttpRequestFactory;
 
     public async Task<bool> CreateBucketAsync(CreateBucketArg arg)
     {
@@ -35,7 +28,7 @@ public class NetAppMockHttpClient : INetAppClient
                 return false;
             }
 
-            var response = await SendRequestAsync(_netAppMockRequestFactory.CreateBucketRequest(arg));
+            var response = await SendRequestAsync(_netAppMockHttpRequestFactory.CreateBucketRequest(arg));
             if (response.IsSuccessStatusCode)
             {
                 _logger.LogInformation($"Bucket '{arg.BucketName}' created successfully.");
@@ -64,20 +57,20 @@ public class NetAppMockHttpClient : INetAppClient
 
     public async Task<S3AccessControlList?> GetACLForBucketAsync(string bucketName)
     {
-        var response = await SendRequestAsync<S3AccessControlList>(_netAppMockRequestFactory.GetACLForBucketRequest(bucketName));
+        var response = await SendRequestAsync<S3AccessControlList>(_netAppMockHttpRequestFactory.GetACLForBucketRequest(bucketName));
         return response;
     }
 
     public async Task<GetObjectResponse?> GetObjectAsync(GetObjectArg arg)
     {
-        var response = await SendRequestAsync<GetObjectResponse>(_netAppMockRequestFactory.GetObjectRequest(arg));
+        var response = await SendRequestAsync<GetObjectResponse>(_netAppMockHttpRequestFactory.GetObjectRequest(arg));
         return response;
     }
 
     public async Task<IEnumerable<S3Bucket>> ListBucketsAsync(ListBucketsArg arg)
     {
         var list = new List<S3Bucket>();
-        var response = await SendRequestAsync<ListAllMyBucketsResult>(_netAppMockRequestFactory.ListBucketsRequest(arg));
+        var response = await SendRequestAsync<ListAllMyBucketsResult>(_netAppMockHttpRequestFactory.ListBucketsRequest(arg));
         if (response.Buckets.Any())
         {
             foreach (var bucket in response.Buckets)
@@ -93,34 +86,35 @@ public class NetAppMockHttpClient : INetAppClient
         return list;
     }
 
-    public async Task<ListNetAppFoldersDto?> ListFoldersInBucketAsync(ListFoldersInBucketArg arg)
+    public async Task<ListNetAppObjectsDto?> ListFoldersInBucketAsync(ListFoldersInBucketArg arg)
     {
-        var response = await SendRequestAsync<ListBucketResult>(_netAppMockRequestFactory.ListFoldersInBucketRequest(arg));
+        var response = await SendRequestAsync<ListBucketResult>(_netAppMockHttpRequestFactory.ListFoldersInBucketRequest(arg));
 
-        var folders = new List<ListNetAppFoldersDataDto>();
+        var folders = new List<ListNetAppFolderDataDto>();
 
         if (!string.IsNullOrEmpty(arg.OperationName) && string.IsNullOrEmpty(arg.Prefix))
         {
             folders = response.CommonPrefixes?
                 .Where(x => x.Prefix.Contains(arg.OperationName) && x.Prefix.Count(p => p == '/') == 1)
-                .Select(data => new ListNetAppFoldersDataDto
+                .Select(data => new ListNetAppFolderDataDto
                 {
                     Path = data.Prefix
                 }).ToList() ?? [];
         }
         else
         {
-            folders = response.CommonPrefixes?.Select(data => new ListNetAppFoldersDataDto
+            folders = response.CommonPrefixes?.Select(data => new ListNetAppFolderDataDto
             {
                 Path = data.Prefix
             }).ToList() ?? [];
         }
 
-        var result = new ListNetAppFoldersDto
+        var result = new ListNetAppObjectsDto
         {
             BucketName = arg.BucketName,
             RootPath = arg.Prefix,
-            Data = folders,
+            FolderData = folders,
+            FileData = [],
             DataInfo = new DataInfoDto
             {
                 ContinuationToken = response.ContinuationToken,
@@ -133,10 +127,38 @@ public class NetAppMockHttpClient : INetAppClient
         return result;
     }
 
-    public async Task<ListObjectsV2Response?> ListObjectsInBucketAsync(ListObjectsInBucketArg arg)
+    public async Task<ListNetAppObjectsDto?> ListObjectsInBucketAsync(ListObjectsInBucketArg arg)
     {
-        var response = await SendRequestAsync<ListObjectsV2Response>(_netAppMockRequestFactory.ListObjectsInBucketRequest(arg));
-        return response;
+        var response = await SendRequestAsync<ListBucketResult>(_netAppMockHttpRequestFactory.ListObjectsInBucketRequest(arg));
+
+        var folders = response.CommonPrefixes?.Select(data => new ListNetAppFolderDataDto
+        {
+            Path = data.Prefix
+        }).ToList() ?? [];
+
+        var files = response.Contents?.Select(data => new ListNetAppFileDataDto
+        {
+            Key = data.Key,
+            Etag = data.ETag,
+            LastModified = data.LastModified
+        }).ToList() ?? [];
+
+        var result = new ListNetAppObjectsDto
+        {
+            BucketName = arg.BucketName,
+            RootPath = arg.Prefix,
+            FolderData = folders,
+            FileData = files,
+            DataInfo = new DataInfoDto
+            {
+                ContinuationToken = response.ContinuationToken,
+                NextContinuationToken = response.NextContinuationToken,
+                MaxKeys = response.MaxKeys,
+                KeyCount = response.KeyCount,
+            }
+        };
+
+        return result;
     }
 
     public Task<bool> UploadObjectAsync(UploadObjectArg arg)

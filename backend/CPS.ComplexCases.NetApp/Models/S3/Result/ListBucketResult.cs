@@ -8,7 +8,7 @@ public class ListBucketResult
     [XmlElement(ElementName = "IsTruncated")]
     public bool IsTruncated { get; set; }
     [XmlElement(ElementName = "Contents")]
-    public Contents? Contents { get; set; }
+    public List<Contents>? Contents { get; set; }
     [XmlElement(ElementName = "Name")]
     public string? Name { get; set; }
     [XmlElement(ElementName = "Prefix")]

@@ -12,7 +12,7 @@ namespace CPS.ComplexCases.NetApp.Client
         Task<S3AccessControlList?> GetACLForBucketAsync(string bucketName);
         Task<bool> UploadObjectAsync(UploadObjectArg arg);
         Task<GetObjectResponse?> GetObjectAsync(GetObjectArg arg);
-        Task<ListObjectsV2Response?> ListObjectsInBucketAsync(ListObjectsInBucketArg arg);
-        Task<ListNetAppFoldersDto?> ListFoldersInBucketAsync(ListFoldersInBucketArg arg);
+        Task<ListNetAppObjectsDto?> ListObjectsInBucketAsync(ListObjectsInBucketArg arg);
+        Task<ListNetAppObjectsDto?> ListFoldersInBucketAsync(ListFoldersInBucketArg arg);
     }
 }
