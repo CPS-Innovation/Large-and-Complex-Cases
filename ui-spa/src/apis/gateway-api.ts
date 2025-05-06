@@ -199,3 +199,20 @@ export const connectNetAppFolder = async ({
   }
   return response;
 };
+
+export const getCaseMetadata = async (caseId: string) => {
+  const url = `${GATEWAY_BASE_URL}/api/cases/${caseId}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      ...(await buildCommonHeaders()),
+    },
+  });
+
+  if (!response.ok) {
+    throw new ApiError(`Getting case metadata failed`, url, response);
+  }
+  return (await response.json()) as CaseDivisionsOrAreaResponse;
+};

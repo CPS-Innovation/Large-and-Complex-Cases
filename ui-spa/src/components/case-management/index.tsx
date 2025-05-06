@@ -3,8 +3,15 @@ import { Tabs } from "../common/tabs/Tabs";
 import { TabId } from "../../common/types/CaseManagement";
 import { ItemProps } from "../common/tabs/types";
 import TransferMaterialsPage from "./transfer-materials";
+import { useParams } from "react-router-dom";
+import { useApi } from "../../common/hooks/useApi";
+import { getCaseMetadata } from "../../apis/gateway-api";
 
 const CaseManagementPage = () => {
+  const { caseId } = useParams();
+  const caseMetaData = useApi(getCaseMetadata, [caseId], true);
+
+  console.log("caseMetaData>>>", caseMetaData);
   const [activeTabId, setActiveId] = useState<TabId>("transfer-materials");
   const handleTabSelection = (tabId: TabId) => {
     setActiveId(tabId);

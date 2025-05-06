@@ -8,6 +8,8 @@ import {
   egressSearchResultsPlaywright,
   getNetAppFolderResultsDev,
   getNetAppFolderResultsPlaywright,
+  caseMetaDataDev,
+  caseMetaDataPlaywright,
 } from "./data";
 
 export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
@@ -55,6 +57,17 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
 
     http.post(`${baseUrl}/api/netapp/connections`, async () => {
       return HttpResponse.json({});
+    }),
+
+    http.get(`${baseUrl}/api/cases/12`, async () => {
+      // const url = new URL(req.request.url);
+
+      const caseMetaDataResults = isDevMock()
+        ? caseMetaDataDev
+        : caseMetaDataPlaywright;
+      await delay(100);
+
+      return HttpResponse.json(caseMetaDataResults);
     }),
   ];
 };
