@@ -1,35 +1,22 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.SecurityToken;
 using Amazon.SecurityToken.Model;
-using CPS.ComplexCases.NetApp.Constants;
 using CPS.ComplexCases.NetApp.Factories;
-using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Models.Dto;
 using CPS.ComplexCases.NetApp.Wrappers;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
-public class NetAppClient : INetAppClient
+public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazonS3UtilsWrapper amazonS3UtilsWrapper, INetAppRequestFactory netAppRequestFactory) : INetAppClient
 {
-    private readonly ILogger<NetAppClient> _logger;
-    private readonly NetAppOptions _options;
-    private IAmazonS3 _client;
-    private readonly IAmazonS3UtilsWrapper _amazonS3UtilsWrapper;
-    private readonly INetAppArgFactory _netAppArgFactory;
-
-    public NetAppClient(ILogger<NetAppClient> logger, IOptions<NetAppOptions> options, IAmazonS3 client, IAmazonS3UtilsWrapper amazonS3UtilsWrapper, INetAppArgFactory netAppArgFactory)
-    {
-        _logger = logger;
-        _options = options.Value;
-        _client = client;
-        _amazonS3UtilsWrapper = amazonS3UtilsWrapper;
-        _netAppArgFactory = netAppArgFactory;
-    }
+    private readonly ILogger<NetAppClient> _logger = logger;
+    private IAmazonS3 _client = client;
+    private readonly IAmazonS3UtilsWrapper _amazonS3UtilsWrapper = amazonS3UtilsWrapper;
+    private readonly INetAppRequestFactory _netAppRequestFactory = netAppRequestFactory;
 
     public async Task<bool> CreateBucketAsync(CreateBucketArg arg)
     {
@@ -42,13 +29,7 @@ public class NetAppClient : INetAppClient
                 return false;
             }
 
-            var request = new PutBucketRequest
-            {
-                BucketName = arg.BucketName,
-                UseClientRegion = true
-            };
-
-            var response = await _client.PutBucketAsync(request);
+            var response = await _client.PutBucketAsync(_netAppRequestFactory.CreateBucketRequest(arg));
             return response.HttpStatusCode == System.Net.HttpStatusCode.OK;
         }
         catch (AmazonS3Exception ex)
@@ -62,12 +43,7 @@ public class NetAppClient : INetAppClient
     {
         try
         {
-            var response = await _client.ListBucketsAsync(new ListBucketsRequest
-            {
-                ContinuationToken = arg.ContinuationToken,
-                MaxBuckets = arg.MaxBuckets ?? 10000,
-                Prefix = arg.Prefix
-            });
+            var response = await _client.ListBucketsAsync(_netAppRequestFactory.ListBucketsRequest(arg));
             return response.Buckets;
         }
         catch (AmazonS3Exception ex)
@@ -81,7 +57,7 @@ public class NetAppClient : INetAppClient
     {
         try
         {
-            var buckets = await ListBucketsAsync(_netAppArgFactory.CreateListBucketsArg());
+            var buckets = await ListBucketsAsync(new ListBucketsArg());
 
             return buckets?.SingleOrDefault(x => x.BucketName == arg.BucketName);
         }
@@ -114,13 +90,7 @@ public class NetAppClient : INetAppClient
     {
         try
         {
-            var request = new GetObjectRequest
-            {
-                BucketName = arg.BucketName,
-                Key = arg.ObjectKey,
-            };
-
-            var response = await _client.GetObjectAsync(request);
+            var response = await _client.GetObjectAsync(_netAppRequestFactory.GetObjectRequest(arg));
 
             var stream = response.ResponseStream;
 
@@ -141,14 +111,7 @@ public class NetAppClient : INetAppClient
     {
         try
         {
-            var request = new PutObjectRequest
-            {
-                BucketName = arg.BucketName,
-                Key = arg.ObjectKey,
-                InputStream = arg.Stream,
-            };
-
-            var response = await _client.PutObjectAsync(request);
+            var response = await _client.PutObjectAsync(_netAppRequestFactory.UploadObjectRequest(arg));
             return response.HttpStatusCode == System.Net.HttpStatusCode.OK;
         }
         catch (AmazonS3Exception ex)
@@ -158,17 +121,40 @@ public class NetAppClient : INetAppClient
         }
     }
 
-    public async Task<ListObjectsV2Response?> ListObjectsInBucketAsync(ListObjectsInBucketArg arg)
+    public async Task<ListNetAppObjectsDto?> ListObjectsInBucketAsync(ListObjectsInBucketArg arg)
     {
         try
         {
-            var request = new ListObjectsV2Request
+            var response = await _client.ListObjectsV2Async(_netAppRequestFactory.ListObjectsInBucketRequest(arg));
+
+            var folders = response.CommonPrefixes.Select(data => new ListNetAppFolderDataDto
+            {
+                Path = data
+            });
+
+            var files = response.S3Objects.Select(data => new ListNetAppFileDataDto
+            {
+                Key = data.Key,
+                Etag = data.ETag,
+                LastModified = data.LastModified
+            });
+
+            var result = new ListNetAppObjectsDto
             {
                 BucketName = arg.BucketName,
-                ContinuationToken = arg.ContinuationToken
+                RootPath = arg.Prefix,
+                FileData = files,
+                FolderData = folders,
+                DataInfo = new DataInfoDto
+                {
+                    ContinuationToken = response.ContinuationToken,
+                    NextContinuationToken = response.NextContinuationToken,
+                    MaxKeys = response.MaxKeys,
+                    KeyCount = response.KeyCount
+                }
             };
 
-            return await _client.ListObjectsV2Async(request);
+            return result;
         }
         catch (AmazonS3Exception ex)
         {
@@ -177,35 +163,22 @@ public class NetAppClient : INetAppClient
         }
     }
 
-    public async Task<ListNetAppFoldersDto?> ListFoldersInBucketAsync(ListFoldersInBucketArg arg)
+    public async Task<ListNetAppObjectsDto?> ListFoldersInBucketAsync(ListFoldersInBucketArg arg)
     {
-        string? prefix = null;
-        if (!string.IsNullOrEmpty(arg.Prefix))
-        {
-            prefix = !arg.Prefix.EndsWith(S3Constants.Delimiter) ? $"{arg.Prefix}{S3Constants.Delimiter}" : arg.Prefix;
-        }
-
         try
         {
-            var request = new ListObjectsV2Request
-            {
-                BucketName = arg.BucketName,
-                ContinuationToken = arg.ContinuationToken,
-                Delimiter = S3Constants.Delimiter,
-                Prefix = prefix
-            };
-
-            var response = await _client.ListObjectsV2Async(request);
-            var folders = response.CommonPrefixes.Select(data => new ListNetAppFoldersDataDto
+            var response = await _client.ListObjectsV2Async(_netAppRequestFactory.ListFoldersInBucketRequest(arg));
+            var folders = response.CommonPrefixes.Select(data => new ListNetAppFolderDataDto
             {
                 Path = data
             });
 
-            var result = new ListNetAppFoldersDto
+            var result = new ListNetAppObjectsDto
             {
                 BucketName = arg.BucketName,
                 RootPath = arg.Prefix,
-                Data = folders,
+                FileData = [],
+                FolderData = folders,
                 DataInfo = new DataInfoDto
                 {
                     ContinuationToken = response.ContinuationToken,

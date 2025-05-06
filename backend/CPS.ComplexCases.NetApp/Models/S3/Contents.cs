@@ -9,9 +9,9 @@ public class Contents
     [XmlElement(ElementName = "ChecksumType")]
     public string? ChecksumType { get; set; }
     [XmlElement(ElementName = "ETag")]
-    public string? ETag { get; set; }
+    public required string ETag { get; set; }
     [XmlElement(ElementName = "Key")]
-    public string? Key { get; set; }
+    public required string Key { get; set; }
     [XmlElement(ElementName = "LastModified")]
     public DateTime LastModified { get; set; }
     [XmlElement(ElementName = "Owner")]

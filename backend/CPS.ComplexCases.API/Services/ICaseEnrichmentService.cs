@@ -9,5 +9,5 @@ public interface ICaseEnrichmentService
 {
   Task<IEnumerable<CaseWithMetadataResponse>> EnrichCasesWithMetadataAsync(IEnumerable<CaseDto> cases);
   Task<ListWorkspacesResponse> EnrichEgressWorkspacesWithMetadataAsync(ListWorkspacesDto workspaces);
-  Task<ListNetAppObjectsResponse> EnrichNetAppFoldersWithMetadataAsync(ListNetAppFoldersDto folders);
+  Task<ListNetAppObjectsResponse> EnrichNetAppFoldersWithMetadataAsync(ListNetAppObjectsDto folders);
 }

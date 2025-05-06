@@ -22,7 +22,7 @@ public static class IServiceCollectionExtension
     services.AddTransient<INetAppArgFactory, NetAppArgFactory>();
     if (enableMock)
     {
-      services.AddSingleton<INetAppMockRequestFactory, NetAppMockRequestFactory>();
+      services.AddSingleton<INetAppMockHttpRequestFactory, NetAppMockHttpRequestFactory>();
       services.AddHttpClient<INetAppClient, NetAppMockHttpClient>(client =>
     {
       var netAppServiceUrl = configuration["NetAppOptions:Url"];

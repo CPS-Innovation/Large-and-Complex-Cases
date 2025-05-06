@@ -94,20 +94,20 @@ public class CaseEnrichmentService : ICaseEnrichmentService
     }
   }
 
-  public async Task<ListNetAppObjectsResponse> EnrichNetAppFoldersWithMetadataAsync(ListNetAppFoldersDto folders)
+  public async Task<ListNetAppObjectsResponse> EnrichNetAppFoldersWithMetadataAsync(ListNetAppObjectsDto folders)
   {
     var response = CreateNetAppFoldersResponseBase(folders);
 
-    if (!folders.Data.Any())
+    if (!folders.FolderData.Any())
     {
       return response;
     }
 
-    _logger.LogInformation("Enriching {NetAppFolderCount} workspaces with metadata", folders.Data.Count());
+    _logger.LogInformation("Enriching {NetAppFolderCount} workspaces with metadata", folders.FolderData.Count());
 
     try
     {
-      var folderPaths = folders.Data.Where(d => d.Path != null)
+      var folderPaths = folders.FolderData.Where(d => d.Path != null)
                       .Select(d => $"{folders.BucketName}:{d.Path}")
                       .ToList();
 
@@ -169,7 +169,7 @@ public class CaseEnrichmentService : ICaseEnrichmentService
     };
   }
 
-  private static ListNetAppObjectsResponse CreateNetAppFoldersResponseBase(ListNetAppFoldersDto foldersDto)
+  private static ListNetAppObjectsResponse CreateNetAppFoldersResponseBase(ListNetAppObjectsDto foldersDto)
   {
     return new ListNetAppObjectsResponse
     {
@@ -181,7 +181,7 @@ public class CaseEnrichmentService : ICaseEnrichmentService
       },
       Data = new ListNetAppObjectsDataResponse
       {
-        Folders = foldersDto.Data.Select(folder => new ListNetAppFoldersDataResponse
+        Folders = foldersDto.FolderData.Select(folder => new ListNetAppFoldersDataResponse
         {
           FolderPath = folder.Path ?? string.Empty,
           CaseId = null
