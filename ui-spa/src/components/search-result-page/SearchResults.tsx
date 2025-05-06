@@ -28,7 +28,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
       return `/case/${data.caseId}/egress-connect?workspace-name=${operationName}`;
     if (!data.netappFolderPath)
       return `/case/${data.caseId}/netapp-connect?operation-name=${operationName}`;
-    return `/case/${data.caseId}/case-overview/transfer-material`;
+    return `/case/${data.caseId}/case-management`;
   };
   const getTableRowData = () => {
     if (!searchApiResults.data) return [];

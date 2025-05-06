@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import {
   Button,
   SortableTable,
@@ -17,6 +17,7 @@ import styles from "./netAppFolderResultsPage.module.scss";
 
 type NetAppFolderResultsPageProps = {
   backLinkUrl: string;
+  rootFolderPath: string;
   netAppFolderApiResults: UseApiResult<NetAppFolderData>;
   handleGetFolderContent: (folderId: string) => void;
   handleConnectFolder: (id: string) => void;
@@ -24,6 +25,7 @@ type NetAppFolderResultsPageProps = {
 
 const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
   backLinkUrl,
+  rootFolderPath,
   netAppFolderApiResults,
   handleConnectFolder,
   handleGetFolderContent,
@@ -33,7 +35,6 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
     type: "ascending" | "descending";
   }>();
 
-  const [currentPath, setCurrentPath] = useState<string | null>(null);
   const netappFolderData = useMemo(() => {
     if (!netAppFolderApiResults?.data?.folders) return [];
     if (sortValues?.name === "folder-name")
@@ -45,17 +46,6 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
 
     return netAppFolderApiResults.data.folders;
   }, [netAppFolderApiResults, sortValues]);
-
-  useEffect(() => {
-    if (currentPath === null && netAppFolderApiResults.status === "succeeded") {
-      const rootPath = netAppFolderApiResults?.data?.rootPath ?? "";
-      setCurrentPath(rootPath);
-    }
-  }, [
-    netAppFolderApiResults.status,
-    netAppFolderApiResults?.data?.rootPath,
-    currentPath,
-  ]);
 
   const getTableRowData = () => {
     return netappFolderData.map((data) => {
@@ -104,12 +94,11 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
     handleConnectFolder(id);
   };
   const handleFolderClickHandler = (path: string) => {
-    setCurrentPath(path);
     handleGetFolderContent(path);
   };
 
   return (
-    <div className="govuk-width-container">
+    <div className={`govuk-width-container ${styles.mainContainer}`}>
       <BackLink to={backLinkUrl}>Back</BackLink>
       <h1 className="govuk-heading-xl govuk-!-margin-bottom-0">
         Select a network shared drive folder to link to the case
@@ -135,13 +124,13 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
           </div>
         )}
         <div>
-          {currentPath !== null && (
+          {
             <FolderPath
-              path={currentPath}
+              path={rootFolderPath}
               disabled={netAppFolderApiResults.status === "loading"}
               folderClickHandler={handleFolderClickHandler}
             />
-          )}
+          }
           {netAppFolderApiResults.status === "succeeded" && (
             <>
               <SortableTable
