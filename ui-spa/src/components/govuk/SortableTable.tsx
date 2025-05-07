@@ -6,17 +6,11 @@ import styles from "./sortableTable.module.scss";
 
 export type SortableTableProps = {
   className?: string;
-  head: (
-    | {
-        children: React.ReactNode;
-        sortable: false;
-      }
-    | {
-        children: React.ReactNode;
-        sortable: true;
-        sortName: string;
-      }
-  )[];
+  head: {
+    children: React.ReactNode;
+    sortable: boolean;
+    sortName?: string;
+  }[];
   rows: {
     cells: {
       children: React.ReactNode;
@@ -59,12 +53,12 @@ export const SortableTable: React.FC<SortableTableProps> = ({
   const getTableHeads = () => {
     if (!head) return;
     return head.map((item) => {
-      if (item.sortable) {
+      if (item.sortName) {
         return {
           children: (
             <button
               className={`${styles.sortColumnBtn}`}
-              onClick={() => handleTableSortBtnClick(item.sortName)}
+              onClick={() => handleTableSortBtnClick(item.sortName!)}
               aria-sort={getAriaSort(item.sortName)}
             >
               <span> {item.children}</span>

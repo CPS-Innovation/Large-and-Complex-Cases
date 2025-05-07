@@ -5,11 +5,11 @@ import { ItemProps } from "../common/tabs/types";
 import TransferMaterialsPage from "./transfer-materials";
 import { useParams } from "react-router-dom";
 import { useApi } from "../../common/hooks/useApi";
-import { getCaseMetadata } from "../../apis/gateway-api";
+import { getCaseMetaData } from "../../apis/gateway-api";
 
 const CaseManagementPage = () => {
   const { caseId } = useParams();
-  const caseMetaData = useApi(getCaseMetadata, [caseId], true);
+  const caseMetaData = useApi(getCaseMetaData, [caseId], true);
 
   console.log("caseMetaData>>>", caseMetaData);
   const [activeTabId, setActiveId] = useState<TabId>("transfer-materials");
@@ -21,7 +21,14 @@ const CaseManagementPage = () => {
     {
       id: "transfer-materials",
       label: "Transfer materials",
-      panel: { children: <TransferMaterialsPage /> },
+      panel: {
+        children: (
+          <TransferMaterialsPage
+            egressWorkspaceId={caseMetaData?.data?.egressWorkspaceId}
+            netappFolderPath={caseMetaData?.data?.netappFolderPath}
+          />
+        ),
+      },
     },
     {
       id: "manage-materials",

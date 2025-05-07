@@ -1,3 +1,7 @@
 .mainContainer {
   margin-top: 0.5rem;
+
+  & :global(.govuk-table__cell:last-child) {
+    text-align: right;
+  }
 }

@@ -1,18 +1,23 @@
 import { SortableTable } from "../govuk";
 import { Spinner } from "../common/Spinner";
-import FolderPath from "../common/FolderPath";
+import FolderPath, { Folder } from "../common/FolderPath";
 import styles from "./FolderNavigationTable.module.scss";
 
 type FolderNavigationTableProps = {
-  rootFolderPath: string;
+  folders: Folder[];
   folderResultsStatus: "loading" | "succeeded" | "failed" | "initial";
   folderResultsLength: number;
   loaderText: string;
-  handleFolderClick: (folderPath: string) => void;
+  handleFolderPathClick: (folderPath: string) => void;
   getTableRowData: () => {
     cells: {
       children: React.ReactElement;
     }[];
+  }[];
+  getTableHeadData: () => {
+    children: string;
+    sortable: boolean;
+    sortName?: string;
   }[];
   handleTableSort: (
     sortName: string,
@@ -21,12 +26,13 @@ type FolderNavigationTableProps = {
 };
 
 const FolderNavigationTable: React.FC<FolderNavigationTableProps> = ({
-  rootFolderPath,
+  folders,
   loaderText,
   folderResultsStatus,
   folderResultsLength,
-  handleFolderClick,
+  handleFolderPathClick,
   getTableRowData,
+  getTableHeadData,
   handleTableSort,
 }) => {
   return (
@@ -34,26 +40,15 @@ const FolderNavigationTable: React.FC<FolderNavigationTableProps> = ({
       <div>
         {
           <FolderPath
-            path={rootFolderPath}
+            folders={folders}
             disabled={folderResultsStatus === "loading"}
-            folderClickHandler={handleFolderClick}
+            handleFolderPathClick={handleFolderPathClick}
           />
         }
         {folderResultsStatus === "succeeded" && (
           <>
             <SortableTable
-              head={[
-                {
-                  children: "Folder name",
-                  sortable: true,
-                  sortName: "folder-name",
-                },
-
-                {
-                  children: "",
-                  sortable: false,
-                },
-              ]}
+              head={getTableHeadData()}
               rows={getTableRowData()}
               handleTableSort={handleTableSort}
             />

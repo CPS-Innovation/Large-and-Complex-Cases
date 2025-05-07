@@ -40,6 +40,17 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
     return netAppFolderApiResults.data.folders;
   }, [netAppFolderApiResults, sortValues]);
 
+  const folders = useMemo(() => {
+    const parts = rootFolderPath.split("/").filter(Boolean);
+
+    const result = parts.map((folderName, index) => ({
+      folderName,
+      folderPath: `${parts.slice(0, index + 1).join("/")}/`,
+    }));
+    const withHome = [{ folderName: "Home", folderPath: "" }, ...result];
+    return withHome;
+  }, [rootFolderPath]);
+
   const getTableRowData = () => {
     return netappFolderData.map((data) => {
       return {
@@ -51,7 +62,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
                 <LinkButton
                   type="button"
                   onClick={() => {
-                    handleFolderClick(data.folderPath);
+                    handleGetFolderContent(data.folderPath);
                   }}
                 >
                   {getFolderNameFromPath(data.folderPath)}
@@ -77,6 +88,21 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
     });
   };
 
+  const getTableHeadData = () => {
+    return [
+      {
+        children: "Folder name",
+        sortable: true,
+        sortName: "folder-name",
+      },
+
+      {
+        children: "",
+        sortable: false,
+      },
+    ];
+  };
+
   const handleTableSort = (
     sortName: string,
     sortType: "ascending" | "descending",
@@ -88,7 +114,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
     handleConnectFolder(id);
   };
 
-  const handleFolderClick = (path: string) => {
+  const handleFolderPathClick = (path: string) => {
     handleGetFolderContent(path);
   };
 
@@ -108,12 +134,13 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
 
       <div className={"govuk-grid-column-two-thirds"}>
         <FolderNavigationTable
-          rootFolderPath={rootFolderPath}
-          loaderText="There are no documents currenlty in this folder"
+          folders={folders}
+          loaderText="Loading folders from Network Shared Drive"
           folderResultsStatus={netAppFolderApiResults.status}
           folderResultsLength={netappFolderData.length}
-          handleFolderClick={handleFolderClick}
+          handleFolderPathClick={handleFolderPathClick}
           getTableRowData={getTableRowData}
+          getTableHeadData={getTableHeadData}
           handleTableSort={handleTableSort}
         />
       </div>
