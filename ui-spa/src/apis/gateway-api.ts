@@ -231,7 +231,7 @@ export const getEgressFolders = async (
   take: number = 50,
   collected: EgressFolderData = [],
 ): Promise<EgressFolderData> => {
-  const url = `${GATEWAY_BASE_URL}/api/egress/${workspaceId}/files?folderId=${folderId}&skip=${skip}&take=${take}`;
+  const url = `${GATEWAY_BASE_URL}/api/egress/workspaces/${workspaceId}/files?folder-id=${folderId}&skip=${skip}&take=${take}`;
   const response = await fetch(url, {
     method: "GET",
     credentials: "include",

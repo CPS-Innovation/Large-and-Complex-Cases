@@ -103,7 +103,7 @@ public class EgressClientTests : IDisposable
 
         var material = result.Data.First();
         Assert.Equal("file-id", material.Id);
-        Assert.Equal("file-name", material.FileName);
+        Assert.Equal("file-name", material.Name);
         Assert.Equal("file-path", material.Path);
         Assert.False(material.IsFolder);
         Assert.Equal(1, material.Version);
@@ -127,7 +127,7 @@ public class EgressClientTests : IDisposable
 
         var material = result.Data.First();
         Assert.Equal("nested-file-id", material.Id);
-        Assert.Equal("nested-file-name", material.FileName);
+        Assert.Equal("nested-file-name", material.Name);
         Assert.Equal("folder-id/file-path", material.Path);
         Assert.False(material.IsFolder);
         Assert.Equal(1, material.Version);
