@@ -15,6 +15,13 @@ export const egressRootFolderResultsDev: EgressFolderResponse = {
       dateUpdated: "2000-01-03",
       path: "",
     },
+    {
+      id: "1-2",
+      name: "file-1-2.pdf",
+      isFolder: false,
+      dateUpdated: "2000-01-03",
+      path: "",
+    },
   ],
 
   pagination: {

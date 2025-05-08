@@ -7,6 +7,7 @@ import {
   sortByDateProperty,
 } from "../../../common/utils/sortUtils";
 import FolderIcon from "../../../components/svgs/folder.svg?react";
+import FileIcon from "../../../components/svgs/file.svg?react";
 import { formatDate } from "../../../common/utils/formatDate";
 import { getEgressFolders } from "../../../apis/gateway-api";
 import styles from "./index.module.scss";
@@ -30,6 +31,8 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       folderId?: string;
     }[]
   >([{ folderName: "Home", folderPath: "", folderId: "" }]);
+
+  const [switchSource, setSwitchSource] = useState(false);
 
   const currentFolder = useMemo(() => {
     return egressPathFolders[egressPathFolders.length - 1];
@@ -109,8 +112,8 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         cells: [
           {
             children: (
-              <div>
-                <FolderIcon />
+              <div className={styles.iconButtonWrapper}>
+                {data.isFolder ? <FolderIcon /> : <FileIcon />}
                 <LinkButton
                   type="button"
                   onClick={() => {
@@ -137,7 +140,42 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     }
   }, [egressWorkspaceId, refetch]);
 
-  const handleSwitchSource = () => {};
+  const handleSwitchSource = () => {
+    setSwitchSource(!switchSource);
+  };
+
+  const renderEgressContainer = () => {
+    return (
+      <div className={styles.egressContainer}>
+        <div className={styles.titleWrapper}>
+          <h3>Egress Inbound documents</h3>
+        </div>
+        <div className={styles.tableContainer}>
+          <FolderNavigationTable
+            folders={egressPathFolders}
+            loaderText="Loading folders from Egress"
+            folderResultsStatus={status}
+            folderResultsLength={egressFolderData.length}
+            handleFolderPathClick={handleFolderPathClick}
+            getTableRowData={getTableRowData}
+            getTableHeadData={getTableHeadData}
+            handleTableSort={handleTableSort}
+          />
+        </div>
+      </div>
+    );
+  };
+
+  const renderNetappContainer = () => {
+    return (
+      <div className={styles.netappContainer}>
+        <div className={styles.titleWrapper}>
+          <h3>Shared drive</h3>
+        </div>
+        <div className={styles.tableContainer}>netapp data</div>
+      </div>
+    );
+  };
 
   return (
     <div>
@@ -148,29 +186,17 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         <LinkButton onClick={handleSwitchSource}> Switch source</LinkButton>
       </InsetText>
       <div className={styles.mainContainer}>
-        <div className={styles.egressContainer}>
-          <div className={styles.titleWrapper}>
-            <h3>Egress Inbound documents</h3>
-          </div>
-          <div className={styles.tableContainer}>
-            <FolderNavigationTable
-              folders={egressPathFolders}
-              loaderText="Loading folders from Egress"
-              folderResultsStatus={status}
-              folderResultsLength={egressFolderData.length}
-              handleFolderPathClick={handleFolderPathClick}
-              getTableRowData={getTableRowData}
-              getTableHeadData={getTableHeadData}
-              handleTableSort={handleTableSort}
-            />
-          </div>
-        </div>
-        <div className={styles.netappContainer}>
-          <div className={styles.titleWrapper}>
-            <h3>Shared drive</h3>
-          </div>
-          <div className={styles.tableContainer}>netapp data</div>
-        </div>
+        {switchSource ? (
+          <>
+            {renderNetappContainer()}
+            {renderEgressContainer()}
+          </>
+        ) : (
+          <>
+            {renderEgressContainer()}
+            {renderNetappContainer()}
+          </>
+        )}
       </div>
     </div>
   );

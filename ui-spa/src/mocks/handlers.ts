@@ -71,11 +71,11 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       return HttpResponse.json(caseMetaDataResults);
     }),
 
-    http.get(`${baseUrl}/api/egress/egress_1/files`, async (req) => {
+    http.get(`${baseUrl}/api/egress/workspaces/egress_1/files`, async (req) => {
       console.log("hii>00000000");
       const url = new URL(req.request.url);
 
-      const folderId = url.searchParams.get("folderId");
+      const folderId = url.searchParams.get("folder-id");
       const netAppRootFolderResults = isDevMock()
         ? getEgressFolderResultsDev(folderId as string)
         : getEgressFolderResultsDev(folderId as string);
