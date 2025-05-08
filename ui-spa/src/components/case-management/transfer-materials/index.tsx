@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useApi } from "../../../common/hooks/useApi";
-import { LinkButton } from "../../govuk";
+import { LinkButton, InsetText } from "../../govuk";
 import FolderNavigationTable from "../../common/FolderNavigationTable";
 import {
   sortByStringProperty,
@@ -137,30 +137,39 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     }
   }, [egressWorkspaceId, refetch]);
 
+  const handleSwitchSource = () => {};
+
   return (
     <div>
-      <h2>transfer materials</h2>
+      <h2>Transfer folders and files between egress and the shared drive</h2>
+      <InsetText>
+        Select the folders and files you want to transfer, then choose a
+        destination. You can switch the source and destination if needed.{" "}
+        <LinkButton onClick={handleSwitchSource}> Switch source</LinkButton>
+      </InsetText>
       <div className={styles.mainContainer}>
         <div className={styles.egressContainer}>
           <div className={styles.titleWrapper}>
             <h3>Egress Inbound documents</h3>
           </div>
-          <FolderNavigationTable
-            folders={egressPathFolders}
-            loaderText="Loading folders from Egress"
-            folderResultsStatus={status}
-            folderResultsLength={egressFolderData.length}
-            handleFolderPathClick={handleFolderPathClick}
-            getTableRowData={getTableRowData}
-            getTableHeadData={getTableHeadData}
-            handleTableSort={handleTableSort}
-          />
+          <div className={styles.tableContainer}>
+            <FolderNavigationTable
+              folders={egressPathFolders}
+              loaderText="Loading folders from Egress"
+              folderResultsStatus={status}
+              folderResultsLength={egressFolderData.length}
+              handleFolderPathClick={handleFolderPathClick}
+              getTableRowData={getTableRowData}
+              getTableHeadData={getTableHeadData}
+              handleTableSort={handleTableSort}
+            />
+          </div>
         </div>
         <div className={styles.netappContainer}>
           <div className={styles.titleWrapper}>
             <h3>Shared drive</h3>
           </div>
-          netapp data
+          <div className={styles.tableContainer}>netapp data</div>
         </div>
       </div>
     </div>

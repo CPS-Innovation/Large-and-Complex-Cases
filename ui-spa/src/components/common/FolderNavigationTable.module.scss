@@ -5,6 +5,9 @@
     margin-bottom: 0;
     font-size: 1rem;
   }
+  & :global(.govuk-table__row:last-child .govuk-table__cell) {
+    border-bottom: none;
+  }
   .folderWrapper {
     display: flex;
     flex-direction: row;
