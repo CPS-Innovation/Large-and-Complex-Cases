@@ -20,6 +20,24 @@
   .egressContainer {
     width: 50%;
     border: 1px solid #b1b4b6;
+    & :global(.govuk-checkboxes__input) {
+      width: 30px;
+      height: 30px;
+    }
+    & :global(.govuk-checkboxes__label::before) {
+      width: 30px;
+      height: 30px;
+    }
+    & :global(.govuk-checkboxes__label::after) {
+      top: 9px;
+      left: 7px;
+      width: 15px;
+      height: 8px;
+      border-width: 0 0 3px 3px;
+    }
+    & :global(.govuk-table__header:first-child) {
+      width: 20px;
+    }
   }
   .netappContainer {
     width: 50%;

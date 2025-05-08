@@ -15,7 +15,7 @@ type FolderNavigationTableProps = {
     }[];
   }[];
   getTableHeadData: () => {
-    children: string;
+    children: React.ReactElement;
     sortable: boolean;
     sortName?: string;
   }[];

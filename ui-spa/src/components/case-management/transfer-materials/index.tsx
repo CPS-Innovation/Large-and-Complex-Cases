@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useApi } from "../../../common/hooks/useApi";
 import { LinkButton, InsetText } from "../../govuk";
+import Checkbox from "../../common/Checkbox";
 import FolderNavigationTable from "../../common/FolderNavigationTable";
 import {
   sortByStringProperty,
@@ -33,6 +34,10 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   >([{ folderName: "Home", folderPath: "", folderId: "" }]);
 
   const [switchSource, setSwitchSource] = useState(false);
+
+  const [selectedEgressFolders, setSelectedEgressFolders] = useState<string[]>(
+    [],
+  );
 
   const currentFolder = useMemo(() => {
     return egressPathFolders[egressPathFolders.length - 1];
@@ -71,8 +76,6 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       index !== -1
         ? egressPathFolders.slice(0, index + 1)
         : [...egressPathFolders];
-    console.log("path>>", path);
-    console.log("newData>>", newData);
     setEgressPathFolders(newData);
   };
 
@@ -87,19 +90,56 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           folderName: folderData.name,
         },
       ]);
-    // handleGetFolderContent(path);
+  };
+
+  const handleCheckboxChange = (id: string, checked: boolean) => {
+    let updatedFolders: string[] = [];
+
+    if (id === "all-folders") {
+      if (checked) {
+        updatedFolders = [
+          "all-folders",
+          ...egressFolderData.map((data) => data.id),
+        ];
+      } else {
+        updatedFolders = [];
+      }
+    } else if (!checked) {
+      updatedFolders = selectedEgressFolders.filter((item) => item !== id);
+    } else {
+      updatedFolders = [...selectedEgressFolders, id];
+    }
+
+    setSelectedEgressFolders(updatedFolders);
+  };
+
+  const isEgressFolderChecked = (id: string) => {
+    return selectedEgressFolders.includes(id);
   };
 
   const getTableHeadData = () => {
     return [
       {
-        children: "Folder name",
+        children: (
+          <>
+            <Checkbox
+              id={"all-folders"}
+              checked={isEgressFolderChecked("all-folders")}
+              onChange={handleCheckboxChange}
+              ariaLabel="Select all folders"
+            />
+          </>
+        ),
+        sortable: false,
+      },
+      {
+        children: <>Folder name</>,
         sortable: true,
         sortName: "folder-name",
       },
 
       {
-        children: "Date",
+        children: <>Date</>,
         sortable: true,
         sortName: "date-updated",
       },
@@ -110,6 +150,18 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     return egressFolderData.map((data) => {
       return {
         cells: [
+          {
+            children: (
+              <>
+                <Checkbox
+                  id={data.id}
+                  checked={isEgressFolderChecked(data.id)}
+                  onChange={handleCheckboxChange}
+                  ariaLabel="select folder"
+                />
+              </>
+            ),
+          },
           {
             children: (
               <div className={styles.iconButtonWrapper}>
