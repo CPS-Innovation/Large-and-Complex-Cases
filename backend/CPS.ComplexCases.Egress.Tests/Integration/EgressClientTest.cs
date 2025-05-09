@@ -86,13 +86,13 @@ public class EgressClientTests : IDisposable
     }
 
     [Fact]
-    public async Task GetCaseMaterial_ShouldReturnPaginatedCaseMaterial()
+    public async Task ListCaseMaterialAsync_ShouldReturnPaginatedCaseMaterial()
     {
         // Arrange
-        var arg = _egressArgFactory.CreateGetWorkspaceMaterialArg("workspace-id", 0, 10, null);
+        var arg = _egressArgFactory.CreateListWorkspaceMaterialArg("workspace-id", 0, 10, null);
 
         // Act
-        var result = await _client.GetCaseMaterial(arg);
+        var result = await _client.ListCaseMaterialAsync(arg);
 
         // Assert
         Assert.NotNull(result);
@@ -110,13 +110,13 @@ public class EgressClientTests : IDisposable
     }
 
     [Fact]
-    public async Task GetCaseMaterial_ShouldReturnTraversedFolderMaterial()
+    public async Task ListCaseMaterialAsync_ShouldReturnTraversedFolderMaterial()
     {
         // Arrange
-        var arg = _egressArgFactory.CreateGetWorkspaceMaterialArg("workspace-id", 0, 10, "folder-id");
+        var arg = _egressArgFactory.CreateListWorkspaceMaterialArg("workspace-id", 0, 10, "folder-id");
 
         // Act
-        var result = await _client.GetCaseMaterial(arg);
+        var result = await _client.ListCaseMaterialAsync(arg);
 
         // Assert
         Assert.NotNull(result);

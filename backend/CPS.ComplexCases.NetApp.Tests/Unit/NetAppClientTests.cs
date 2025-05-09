@@ -3,6 +3,7 @@ using Amazon.S3.Model;
 using AutoFixture;
 using AutoFixture.AutoMoq;
 using CPS.ComplexCases.NetApp.Client;
+using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Wrappers;
@@ -19,11 +20,13 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         private readonly Mock<IOptions<NetAppOptions>> _optionsMock;
         private readonly Mock<IAmazonS3UtilsWrapper> _amazonS3UtilsWrapperMock;
         private readonly Mock<IAmazonS3> _amazonS3Mock;
+        private readonly Mock<INetAppRequestFactory> _netAppRequestFactoryMock;
         private readonly NetAppClient _client;
         private const string _testUrl = "https://netapp.com";
         private const string _accessKey = "accessKey";
         private const string _secretKey = "secretKey";
         private const string _regionName = "eu-west-2";
+        private const string _bucketName = "test-bucket";
 
         public NetAppClientTests()
         {
@@ -36,14 +39,16 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 Url = _testUrl,
                 AccessKey = _accessKey,
                 SecretKey = _secretKey,
-                RegionName = _regionName
+                RegionName = _regionName,
+                BucketName = _bucketName
             };
             _optionsMock = new Mock<IOptions<NetAppOptions>>();
             _optionsMock.Setup(x => x.Value).Returns(options);
             _amazonS3UtilsWrapperMock = _fixture.Freeze<Mock<IAmazonS3UtilsWrapper>>();
             _amazonS3Mock = _fixture.Freeze<Mock<IAmazonS3>>();
+            _netAppRequestFactoryMock = _fixture.Freeze<Mock<INetAppRequestFactory>>();
 
-            _client = new NetAppClient(_loggerMock.Object, _amazonS3Mock.Object, _amazonS3UtilsWrapperMock.Object);
+            _client = new NetAppClient(_loggerMock.Object, _amazonS3Mock.Object, _amazonS3UtilsWrapperMock.Object, _netAppRequestFactoryMock.Object);
         }
 
         [Fact]
@@ -127,7 +132,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 Buckets = [bucket]
             };
 
-            _amazonS3Mock.Setup(x => x.ListBucketsAsync(default))
+            _amazonS3Mock.Setup(x => x.ListBucketsAsync(It.IsAny<ListBucketsRequest>(), default))
                 .ReturnsAsync(listBucketsResponse);
 
             // Act
@@ -165,7 +170,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             var arg = _fixture.Create<FindBucketArg>();
             var expectedExceptionMessage = "Error";
 
-            _amazonS3Mock.Setup(x => x.ListBucketsAsync(default))
+            _amazonS3Mock.Setup(x => x.ListBucketsAsync(It.IsAny<ListBucketsRequest>(), default))
                 .ThrowsAsync(new AmazonS3Exception(expectedExceptionMessage));
 
             // Act
@@ -189,7 +194,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             var getObjectResponse = new GetObjectResponse
             {
                 BucketName = arg.BucketName,
-                Key = arg.ObjectName,
+                Key = arg.ObjectKey,
                 ResponseStream = new MemoryStream()
             };
 
@@ -202,7 +207,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             // Assert
             Assert.NotNull(result);
             Assert.Equal(arg.BucketName, result?.BucketName);
-            Assert.Equal(arg.ObjectName, result?.Key);
+            Assert.Equal(arg.ObjectKey, result?.Key);
         }
 
         [Fact]
@@ -210,7 +215,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         {
             // Arrange
             var arg = _fixture.Create<GetObjectArg>();
-            var expectedExceptionMessage = $"Failed to get file {arg.ObjectName} from bucket {arg.BucketName}.";
+            var expectedExceptionMessage = $"Failed to get file {arg.ObjectKey} from bucket {arg.BucketName}.";
 
             _amazonS3Mock.Setup(x => x.GetObjectAsync(It.IsAny<GetObjectRequest>(), default))
                 .ThrowsAsync(new AmazonS3Exception(expectedExceptionMessage));
@@ -296,7 +301,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         {
             // Arrange
             var arg = _fixture.Create<UploadObjectArg>();
-            var expectedExceptionMessage = $"Failed to upload file {arg.ObjectName} to bucket {arg.BucketName}.";
+            var expectedExceptionMessage = $"Failed to upload file {arg.ObjectKey} to bucket {arg.BucketName}.";
 
             _amazonS3Mock.Setup(x => x.PutObjectAsync(It.IsAny<PutObjectRequest>(), default))
                 .ThrowsAsync(new AmazonS3Exception(expectedExceptionMessage));
@@ -336,7 +341,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(2, result?.S3Objects.Count);
+            Assert.Equal(2, result?.FileData.Count());
         }
 
         [Fact]
@@ -357,7 +362,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
 
             // Assert
             Assert.NotNull(result);
-            Assert.Empty(result?.S3Objects);
+            Assert.Empty(result?.FileData);
         }
 
         [Fact]
@@ -398,12 +403,13 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
 
             // Act
             var result = await _client.ListFoldersInBucketAsync(arg);
+            var data = result.FolderData?.ToList();
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(2, result.Count());
-            Assert.Contains("folder1/", result);
-            Assert.Contains("folder2/", result);
+            Assert.Equal(2, data?.Count());
+            Assert.Contains("folder1/", data[0].Path);
+            Assert.Contains("folder2/", data[1].Path);
         }
 
         [Fact]
@@ -413,7 +419,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             var arg = _fixture.Create<ListFoldersInBucketArg>();
             var listObjectsResponse = new ListObjectsV2Response
             {
-                CommonPrefixes = new List<string>()
+                CommonPrefixes = []
             };
 
             _amazonS3Mock.Setup(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
@@ -424,11 +430,10 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
 
             // Assert
             Assert.NotNull(result);
-            Assert.Empty(result);
         }
 
         [Fact]
-        public async Task ListFoldersInBucketAsync_WhenExceptionThrown_LogsErrorAndReturnsEmptyList()
+        public async Task ListFoldersInBucketAsync_WhenExceptionThrown_LogsErrorAndReturnsNull()
         {
             // Arrange
             var arg = _fixture.Create<ListFoldersInBucketArg>();
@@ -441,8 +446,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             var result = await _client.ListFoldersInBucketAsync(arg);
 
             // Assert
-            Assert.NotNull(result);
-            Assert.Empty(result);
+            Assert.Null(result);
             _loggerMock.Verify(x => x.Log(
                 It.Is<LogLevel>(logLevel => logLevel == LogLevel.Error),
                 It.IsAny<EventId>(),

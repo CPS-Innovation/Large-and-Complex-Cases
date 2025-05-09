@@ -7,8 +7,10 @@ describe("formatDate", () => {
   });
 
   it("Should handle invalid input date", () => {
-    expect(formatDate("2004-33-28")).toEqual("invalid date");
-    expect(formatDate("2004-3")).toEqual("invalid date");
-    expect(formatDate("")).toEqual("invalid date");
+    expect(formatDate("2004-33-28")).toEqual("--");
+    expect(formatDate("2004-3")).toEqual("--");
+    expect(formatDate("")).toEqual("--");
+    expect(formatDate(undefined)).toEqual("--");
+    expect(formatDate(null)).toEqual("--");
   });
 });

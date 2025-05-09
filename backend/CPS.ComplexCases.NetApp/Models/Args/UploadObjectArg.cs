@@ -8,7 +8,7 @@ namespace CPS.ComplexCases.NetApp.Models.Args
         public required string BucketName { get; set; }
 
         [JsonPropertyName("objectName")]
-        public required string ObjectName { get; set; }
+        public required string ObjectKey { get; set; }
 
         [JsonPropertyName("stream")]
         public required Stream Stream { get; set; }

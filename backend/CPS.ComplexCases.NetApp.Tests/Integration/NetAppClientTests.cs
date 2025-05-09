@@ -3,11 +3,14 @@ using Amazon.Runtime;
 using Amazon.S3;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
+using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.WireMock.Mappings;
 using CPS.ComplexCases.NetApp.Wrappers;
 using CPS.ComplexCases.WireMock.Core;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Moq;
 using WireMock.Server;
 
 namespace CPS.ComplexCases.NetApp.Tests.Integration
@@ -17,6 +20,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
         private readonly WireMockServer _server;
         private readonly NetAppClient _client;
         private readonly NetAppArgFactory _netAppArgFactory;
+        private readonly INetAppRequestFactory _netAppRequestFactory;
         private readonly AmazonS3Client _s3Client;
         private readonly IAmazonS3UtilsWrapper _amazonS3UtilsWrapper;
 
@@ -38,10 +42,12 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             var credentials = new BasicAWSCredentials("fakeAccessKey", "fakeSecretKey");
             _s3Client = new AmazonS3Client(credentials, s3ClientConfig);
             _amazonS3UtilsWrapper = new AmazonS3UtilsWrapper();
+            _netAppArgFactory = new NetAppArgFactory();
+            _netAppRequestFactory = new NetAppRequestFactory();
 
             var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<NetAppClient>();
 
-            _client = new NetAppClient(logger, _s3Client, _amazonS3UtilsWrapper);
+            _client = new NetAppClient(logger, _s3Client, _amazonS3UtilsWrapper, _netAppRequestFactory);
             _netAppArgFactory = new NetAppArgFactory();
         }
 
@@ -78,7 +84,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
         public async Task ListBuckets_WhenBucketsExist_ReturnsBuckets()
         {
             // Act
-            var result = await _client.ListBucketsAsync();
+            var result = await _client.ListBucketsAsync(_netAppArgFactory.CreateListBucketsArg());
 
             // Assert
             result.Should().NotBeNullOrEmpty();
@@ -114,9 +120,9 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
 
             // Assert
             result.Should().NotBeNull();
-            result.Name.Should().Be(bucketName);
-            result.S3Objects.Should().HaveCount(2);
-            result.S3Objects[0].Key.Should().Be(objectName);
+            result.BucketName.Should().Be(bucketName);
+            result.FileData.Should().HaveCount(2);
+            result.FileData.ToList()[0].Key.Should().Be(objectName);
         }
 
         [Fact]
@@ -148,10 +154,10 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
 
             // Assert
             result.Should().NotBeNull();
-            result.Should().HaveCount(3);
-            result.Should().Contain("counsel/");
-            result.Should().Contain("counsel/statements/");
-            result.Should().Contain("multimedia/");
+            result.FolderData.Should().HaveCount(3);
+            result.FolderData.Should().Contain(x => x.Path == "counsel/");
+            result.FolderData.Should().Contain(x => x.Path == "counsel/statements/");
+            result.FolderData.Should().Contain(x => x.Path == "multimedia/");
         }
     }
 }

@@ -1,3 +1,4 @@
+using CPS.ComplexCases.NetApp.Constants;
 using CPS.ComplexCases.NetApp.Models.Args;
 
 namespace CPS.ComplexCases.NetApp.Factories
@@ -8,7 +9,17 @@ namespace CPS.ComplexCases.NetApp.Factories
         {
             return new CreateBucketArg
             {
-                BucketName = bucketName
+                BucketName = bucketName.ToLowerInvariant()
+            };
+        }
+
+        public ListBucketsArg CreateListBucketsArg(string? continuationToken = null, int? maxBuckets = null, string? prefix = null)
+        {
+            return new ListBucketsArg
+            {
+                ContinuationToken = continuationToken,
+                MaxBuckets = maxBuckets,
+                Prefix = prefix
             };
         }
 
@@ -16,7 +27,7 @@ namespace CPS.ComplexCases.NetApp.Factories
         {
             return new FindBucketArg
             {
-                BucketName = bucketName
+                BucketName = bucketName.ToLowerInvariant()
             };
         }
 
@@ -24,8 +35,8 @@ namespace CPS.ComplexCases.NetApp.Factories
         {
             return new GetObjectArg
             {
-                BucketName = bucketName,
-                ObjectName = objectName
+                BucketName = bucketName.ToLowerInvariant(),
+                ObjectKey = objectName
             };
         }
 
@@ -33,29 +44,43 @@ namespace CPS.ComplexCases.NetApp.Factories
         {
             return new UploadObjectArg
             {
-                BucketName = bucketName,
-                ObjectName = objectName,
+                BucketName = bucketName.ToLowerInvariant(),
+                ObjectKey = objectName,
                 Stream = stream
             };
         }
 
-        public ListObjectsInBucketArg CreateListObjectsInBucketArg(string bucketName, string? continuationToken = null)
+        public ListObjectsInBucketArg CreateListObjectsInBucketArg(string bucketName, string? continuationToken = null, int? maxKeys = null, string? prefix = null)
         {
             return new ListObjectsInBucketArg
             {
-                BucketName = bucketName,
-                ContinuationToken = continuationToken
+                BucketName = bucketName.ToLowerInvariant(),
+                ContinuationToken = continuationToken,
+                MaxKeys = maxKeys.ToString(),
+                Prefix = SetPrefix(prefix)
             };
         }
 
-        public ListFoldersInBucketArg CreateListFoldersInBucketArg(string bucketName, string? continuationToken = null, string? prefix = null)
+        public ListFoldersInBucketArg CreateListFoldersInBucketArg(string bucketName, string? operationName = null, string? continuationToken = null, int? maxKeys = null, string? prefix = null)
         {
             return new ListFoldersInBucketArg
             {
-                BucketName = bucketName,
+                BucketName = bucketName.ToLowerInvariant(),
+                OperationName = operationName?.ToLowerInvariant(),
                 ContinuationToken = continuationToken,
-                Prefix = prefix
+                MaxKeys = maxKeys.ToString(),
+                Prefix = SetPrefix(prefix)
             };
+        }
+
+        private static string SetPrefix(string? prefix)
+        {
+            if (!string.IsNullOrEmpty(prefix))
+            {
+                prefix = !prefix.EndsWith(S3Constants.Delimiter) ? $"{prefix}{S3Constants.Delimiter}" : prefix;
+            }
+
+            return prefix?.ToLowerInvariant() ?? string.Empty;
         }
     }
 }

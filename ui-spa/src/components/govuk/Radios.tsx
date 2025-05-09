@@ -9,7 +9,7 @@ export type RadiosProps = {
     };
   };
   hint?: {
-    children: any;
+    children: React.ReactNode;
   };
   className?: string;
   value: string | undefined;
@@ -18,7 +18,7 @@ export type RadiosProps = {
     reactListKey?: string;
     value: string | undefined;
     children: React.ReactNode;
-    conditional?: any;
+    conditional?: { children: React.ReactNode[] };
     disabled?: boolean; // disabling only children not parent takes effect
     "data-testid"?: string;
   }[];

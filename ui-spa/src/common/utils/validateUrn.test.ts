@@ -1,6 +1,6 @@
 import { validateUrn } from "./validateUrn";
 
-describe.only("urnRegex", () => {
+describe("urnRegex", () => {
   it.each([
     // dd/aa/ddddddd - traditional
     ["11AA2222233", "11AA2222233"],

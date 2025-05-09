@@ -1,10 +1,11 @@
 export type SearchResult = {
   operationName: string;
   urn: string;
+  caseId: number;
   leadDefendantName: string;
-  egressStatus: "connected" | "pending";
-  sharedDriveStatus: "connected" | "pending";
-  registrationDate: string;
+  egressWorkspaceId: string | null;
+  netappFolderPath: string | null;
+  registrationDate: string | null;
 };
 
 export type SearchResultData = SearchResult[];

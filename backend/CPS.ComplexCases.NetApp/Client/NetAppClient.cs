@@ -1,192 +1,221 @@
+using Microsoft.Extensions.Logging;
+using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
+using Amazon.SecurityToken;
+using Amazon.SecurityToken.Model;
+using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
+using CPS.ComplexCases.NetApp.Models.Dto;
 using CPS.ComplexCases.NetApp.Wrappers;
-using Microsoft.Extensions.Logging;
 
-namespace CPS.ComplexCases.NetApp.Client
+namespace CPS.ComplexCases.NetApp.Client;
+
+public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazonS3UtilsWrapper amazonS3UtilsWrapper, INetAppRequestFactory netAppRequestFactory) : INetAppClient
 {
-    public class NetAppClient : INetAppClient
+    private readonly ILogger<NetAppClient> _logger = logger;
+    private IAmazonS3 _client = client;
+    private readonly IAmazonS3UtilsWrapper _amazonS3UtilsWrapper = amazonS3UtilsWrapper;
+    private readonly INetAppRequestFactory _netAppRequestFactory = netAppRequestFactory;
+
+    public async Task<bool> CreateBucketAsync(CreateBucketArg arg)
     {
-        private readonly ILogger<NetAppClient> _logger;
-        private readonly IAmazonS3UtilsWrapper _amazonS3UtilsWrapper;
-        private readonly IAmazonS3 _client;
-        private const string delimiter = "/";
-
-        public NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazonS3UtilsWrapper amazonS3UtilsWrapper)
+        try
         {
-            _logger = logger;
-            _amazonS3UtilsWrapper = amazonS3UtilsWrapper;
-            _client = client;
-        }
-
-        public async Task<bool> CreateBucketAsync(CreateBucketArg arg)
-        {
-            try
+            var bucketExists = await _amazonS3UtilsWrapper.DoesS3BucketExistV2Async(_client, arg.BucketName);
+            if (bucketExists)
             {
-                var bucketExists = await _amazonS3UtilsWrapper.DoesS3BucketExistV2Async(_client, arg.BucketName);
-                if (bucketExists)
+                _logger.LogInformation($"Bucket with name {arg.BucketName} already exists.");
+                return false;
+            }
+
+            var response = await _client.PutBucketAsync(_netAppRequestFactory.CreateBucketRequest(arg));
+            return response.HttpStatusCode == System.Net.HttpStatusCode.OK;
+        }
+        catch (AmazonS3Exception ex)
+        {
+            _logger.LogError(ex.Message, $"Failed to create bucket with name {arg.BucketName}");
+            return false;
+        }
+    }
+
+    public async Task<IEnumerable<S3Bucket>> ListBucketsAsync(ListBucketsArg arg)
+    {
+        try
+        {
+            var response = await _client.ListBucketsAsync(_netAppRequestFactory.ListBucketsRequest(arg));
+            return response.Buckets;
+        }
+        catch (AmazonS3Exception ex)
+        {
+            _logger.LogError(ex.Message, $"Failed to list buckets.");
+            return [];
+        }
+    }
+
+    public async Task<S3Bucket?> FindBucketAsync(FindBucketArg arg)
+    {
+        try
+        {
+            var buckets = await ListBucketsAsync(new ListBucketsArg());
+
+            return buckets?.SingleOrDefault(x => x.BucketName == arg.BucketName);
+        }
+        catch (AmazonS3Exception ex)
+        {
+            _logger.LogError(ex.Message, $"Failed to find bucket {arg.BucketName}.");
+            return null;
+        }
+    }
+
+    public async Task<S3AccessControlList?> GetACLForBucketAsync(string bucketName)
+    {
+        try
+        {
+            var response = await _client.GetACLAsync(new GetACLRequest
+            {
+                BucketName = bucketName
+            });
+
+            return response.AccessControlList;
+        }
+        catch (AmazonS3Exception ex)
+        {
+            _logger.LogError(ex.Message, $"Failed to get ACL for bucket {bucketName}");
+            return null;
+        }
+    }
+
+    public async Task<GetObjectResponse?> GetObjectAsync(GetObjectArg arg)
+    {
+        try
+        {
+            var response = await _client.GetObjectAsync(_netAppRequestFactory.GetObjectRequest(arg));
+
+            var stream = response.ResponseStream;
+
+            return new GetObjectResponse
+            {
+                BucketName = arg.BucketName,
+                Key = arg.ObjectKey,
+            };
+        }
+        catch (AmazonS3Exception ex)
+        {
+            _logger.LogError(ex.Message, $"Failed to get file {arg.ObjectKey} from bucket {arg.BucketName}.");
+            return null;
+        }
+    }
+
+    public async Task<bool> UploadObjectAsync(UploadObjectArg arg)
+    {
+        try
+        {
+            var response = await _client.PutObjectAsync(_netAppRequestFactory.UploadObjectRequest(arg));
+            return response.HttpStatusCode == System.Net.HttpStatusCode.OK;
+        }
+        catch (AmazonS3Exception ex)
+        {
+            _logger.LogError(ex.Message, $"Failed to upload file {arg.ObjectKey} to bucket {arg.BucketName}.");
+            return false;
+        }
+    }
+
+    public async Task<ListNetAppObjectsDto?> ListObjectsInBucketAsync(ListObjectsInBucketArg arg)
+    {
+        try
+        {
+            var response = await _client.ListObjectsV2Async(_netAppRequestFactory.ListObjectsInBucketRequest(arg));
+
+            var folders = response.CommonPrefixes.Select(data => new ListNetAppFolderDataDto
+            {
+                Path = data
+            });
+
+            var files = response.S3Objects.Select(data => new ListNetAppFileDataDto
+            {
+                Key = data.Key,
+                Etag = data.ETag,
+                LastModified = data.LastModified
+            });
+
+            var result = new ListNetAppObjectsDto
+            {
+                BucketName = arg.BucketName,
+                RootPath = arg.Prefix,
+                FileData = files,
+                FolderData = folders,
+                DataInfo = new DataInfoDto
                 {
-                    _logger.LogInformation($"Bucket with name {arg.BucketName} already exists.");
-                    return false;
+                    ContinuationToken = response.ContinuationToken,
+                    NextContinuationToken = response.NextContinuationToken,
+                    MaxKeys = response.MaxKeys,
+                    KeyCount = response.KeyCount
                 }
+            };
 
-                var request = new PutBucketRequest
-                {
-                    BucketName = arg.BucketName,
-                    UseClientRegion = true
-                };
-
-                var response = await _client.PutBucketAsync(request);
-                return response.HttpStatusCode == System.Net.HttpStatusCode.OK;
-            }
-            catch (AmazonS3Exception ex)
-            {
-                _logger.LogError(ex.Message, $"Failed to create bucket with name {arg.BucketName}");
-                return false;
-            }
+            return result;
         }
-
-        public async Task<IEnumerable<S3Bucket>> ListBucketsAsync()
+        catch (AmazonS3Exception ex)
         {
-            try
-            {
-                var response = await _client.ListBucketsAsync();
-                return response.Buckets;
-            }
-            catch (AmazonS3Exception ex)
-            {
-                _logger.LogError(ex.Message, $"Failed to list buckets.");
-                return [];
-            }
+            _logger.LogError(ex.Message, $"Failed to list objects in bucket {arg.BucketName}.");
+            return null;
         }
+    }
 
-        public async Task<S3Bucket?> FindBucketAsync(FindBucketArg arg)
+    public async Task<ListNetAppObjectsDto?> ListFoldersInBucketAsync(ListFoldersInBucketArg arg)
+    {
+        try
         {
-            try
+            var response = await _client.ListObjectsV2Async(_netAppRequestFactory.ListFoldersInBucketRequest(arg));
+            var folders = response.CommonPrefixes.Select(data => new ListNetAppFolderDataDto
             {
-                var buckets = await ListBucketsAsync();
+                Path = data
+            });
 
-                return buckets?.SingleOrDefault(x => x.BucketName == arg.BucketName);
-            }
-            catch (AmazonS3Exception ex)
+            var result = new ListNetAppObjectsDto
             {
-                _logger.LogError(ex.Message, $"Failed to find bucket {arg.BucketName}.");
-                return null;
-            }
+                BucketName = arg.BucketName,
+                RootPath = arg.Prefix,
+                FileData = [],
+                FolderData = folders,
+                DataInfo = new DataInfoDto
+                {
+                    ContinuationToken = response.ContinuationToken,
+                    NextContinuationToken = response.NextContinuationToken,
+                    MaxKeys = response.MaxKeys,
+                    KeyCount = response.KeyCount
+                }
+            };
+
+            return result;
         }
-
-        public async Task<S3AccessControlList?> GetACLForBucketAsync(string bucketName)
+        catch (AmazonS3Exception ex)
         {
-            try
-            {
-                var response = await _client.GetACLAsync(new GetACLRequest
-                {
-                    BucketName = bucketName
-                });
-
-                return response.AccessControlList;
-            }
-            catch (AmazonS3Exception ex)
-            {
-                _logger.LogError(ex.Message, $"Failed to get ACL for bucket {bucketName}");
-                return null;
-            }
+            _logger.LogError(ex.Message, $"Failed to list objects in bucket {arg.BucketName}.");
+            return null;
         }
+    }
 
-        public async Task<GetObjectResponse?> GetObjectAsync(GetObjectArg arg)
+    private static async Task<SessionAWSCredentials> GetTemporaryCredentialsAsync(string accessKey, string secretKey)
+    {
+        using (var stsClient = new AmazonSecurityTokenServiceClient(accessKey, secretKey))
         {
-            try
+            var getSessionTokenRequest = new GetSessionTokenRequest
             {
-                var request = new GetObjectRequest
-                {
-                    BucketName = arg.BucketName,
-                    Key = arg.ObjectName,
-                };
+                DurationSeconds = 7200
+            };
 
-                var response = await _client.GetObjectAsync(request);
+            GetSessionTokenResponse sessionTokenResponse =
+                          await stsClient.GetSessionTokenAsync(getSessionTokenRequest);
 
-                var stream = response.ResponseStream;
+            Credentials credentials = sessionTokenResponse.Credentials;
 
-                return new GetObjectResponse
-                {
-                    BucketName = arg.BucketName,
-                    Key = arg.ObjectName,
-                };
-            }
-            catch (AmazonS3Exception ex)
-            {
-                _logger.LogError(ex.Message, $"Failed to get file {arg.ObjectName} from bucket {arg.BucketName}.");
-                return null;
-            }
-        }
-
-        public async Task<bool> UploadObjectAsync(UploadObjectArg arg)
-        {
-            try
-            {
-                var request = new PutObjectRequest
-                {
-                    BucketName = arg.BucketName,
-                    Key = arg.ObjectName,
-                    InputStream = arg.Stream,
-                };
-
-                var response = await _client.PutObjectAsync(request);
-                return response.HttpStatusCode == System.Net.HttpStatusCode.OK;
-            }
-            catch (AmazonS3Exception ex)
-            {
-                _logger.LogError(ex.Message, $"Failed to upload file {arg.ObjectName} to bucket {arg.BucketName}.");
-                return false;
-            }
-        }
-
-        public async Task<ListObjectsV2Response?> ListObjectsInBucketAsync(ListObjectsInBucketArg arg)
-        {
-            try
-            {
-                var request = new ListObjectsV2Request
-                {
-                    BucketName = arg.BucketName,
-                    ContinuationToken = arg.ContinuationToken
-                };
-
-                return await _client.ListObjectsV2Async(request);
-            }
-            catch (AmazonS3Exception ex)
-            {
-                _logger.LogError(ex.Message, $"Failed to list objects in bucket {arg.BucketName}.");
-                return null;
-            }
-        }
-
-        public async Task<IEnumerable<string>> ListFoldersInBucketAsync(ListFoldersInBucketArg arg)
-        {
-            string? prefix = null;
-            if (!string.IsNullOrEmpty(arg.Prefix))
-            {
-                prefix = !arg.Prefix.EndsWith(delimiter) ? $"{arg.Prefix}{delimiter}" : arg.Prefix;
-            }
-
-            try
-            {
-                var request = new ListObjectsV2Request
-                {
-                    BucketName = arg.BucketName,
-                    ContinuationToken = arg.ContinuationToken,
-                    Delimiter = delimiter,
-                    Prefix = prefix
-                };
-
-                var response = await _client.ListObjectsV2Async(request);
-                return response.CommonPrefixes;
-            }
-            catch (AmazonS3Exception ex)
-            {
-                _logger.LogError(ex.Message, $"Failed to list objects in bucket {arg.BucketName}.");
-                return [];
-            }
+            var sessionCredentials =
+                new SessionAWSCredentials(credentials.AccessKeyId,
+                                          credentials.SecretAccessKey,
+                                          credentials.SessionToken);
+            return sessionCredentials;
         }
     }
 }

@@ -4,6 +4,10 @@ import {
   caseAreasPlaywright,
   casesSearchResultsDev,
   casesSearchResultsPlaywright,
+  egressSearchResultsDev,
+  egressSearchResultsPlaywright,
+  getNetAppFolderResultsDev,
+  getNetAppFolderResultsPlaywright,
 } from "./data";
 
 export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
@@ -22,7 +26,35 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
         : casesSearchResultsPlaywright;
       await delay(RESPONSE_DELAY);
       return HttpResponse.json(caseSearchResults);
-      // return new HttpResponse(null, { status: 500 });
+    }),
+
+    http.get(`${baseUrl}/api/egress/workspaces`, async () => {
+      const egressSearchResults = isDevMock()
+        ? egressSearchResultsDev
+        : egressSearchResultsPlaywright;
+      await delay(RESPONSE_DELAY);
+
+      return HttpResponse.json(egressSearchResults);
+    }),
+
+    http.post(`${baseUrl}/api/egress/connections`, async () => {
+      return HttpResponse.json({});
+    }),
+
+    http.get(`${baseUrl}/api/netapp/folders`, async (req) => {
+      const url = new URL(req.request.url);
+
+      const path = url.searchParams.get("path");
+      const netAppRootFolderResults = isDevMock()
+        ? getNetAppFolderResultsDev(path as string)
+        : getNetAppFolderResultsPlaywright(path as string);
+      await delay(500);
+
+      return HttpResponse.json(netAppRootFolderResults);
+    }),
+
+    http.post(`${baseUrl}/api/netapp/connections`, async () => {
+      return HttpResponse.json({});
     }),
   ];
 };

@@ -10,8 +10,6 @@ import {
 } from "../../common/hooks/useCaseSearchForm";
 import SearchResults from "./SearchResults";
 import { useFormattedAreaValues } from "../../common/hooks/useFormattedAreaValues";
-import { RawApiResult } from "../../common/types/ApiResult";
-import { SearchResultData } from "../../common/types/SearchResultResponse";
 import styles from "./index.module.scss";
 
 const CaseSearchResultPage = () => {
@@ -66,22 +64,23 @@ const CaseSearchResultPage = () => {
     formData[SearchFormField.searchType] === "urn",
   );
 
-  const searchApiState: RawApiResult<SearchResultData> = useApi(
+  const caseSearchApi = useApi(
     getCaseSearchResults,
     [queryString],
     triggerSearchApi,
   );
 
   useEffect(() => {
-    if (searchApiState.status === "failed")
-      throw new Error(`${searchApiState.error}`);
-  }, [searchApiState]);
+    if (caseSearchApi.status === "failed")
+      throw new Error(`${caseSearchApi.error}`);
+  }, [caseSearchApi]);
 
   useEffect(() => {
     if (formData[SearchFormField.searchType] === "urn" || validatedAreaValues) {
       const isValid = validateFormData();
       if (!triggerSearchApi && isValid) setTriggerSearchApi(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryString, validatedAreaValues]);
 
   useEffect(() => {
@@ -106,6 +105,7 @@ const CaseSearchResultPage = () => {
       );
     }
     if (formattedAreaValues.options.length) setValidatedAreaValues(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formattedAreaValues]);
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
@@ -285,7 +285,8 @@ const CaseSearchResultPage = () => {
       default:
         return (
           <>
-            Search results for URN <b>{`"${searchParams["urn"]}"`}</b>
+            Search results for URN{" "}
+            <b>{searchParams["urn"] ? `"${searchParams["urn"]}"` : ""}</b>
           </>
         );
     }
@@ -360,8 +361,8 @@ const CaseSearchResultPage = () => {
   };
 
   if (
-    ((searchApiState.status === "loading" ||
-      searchApiState.status === "initial") &&
+    ((caseSearchApi.status === "loading" ||
+      caseSearchApi.status === "initial") &&
       !errorList.length) ||
     (formData[SearchFormField.searchType] !== "urn" &&
       !formattedAreaValues.options.length)
@@ -370,7 +371,9 @@ const CaseSearchResultPage = () => {
   }
   return (
     <div className="govuk-width-container">
-      <BackLink href="/">Back</BackLink>
+      <BackLink to="/" state={{ ...formData }}>
+        Back
+      </BackLink>
       <div className={styles.contentTop}>
         {!!errorList.length && (
           <div
@@ -380,7 +383,6 @@ const CaseSearchResultPage = () => {
           >
             <ErrorSummary
               data-testid={"search-error-summary"}
-              className={styles.errorSummary}
               errorList={errorList}
               titleChildren="There is a problem"
             />
@@ -395,18 +397,17 @@ const CaseSearchResultPage = () => {
             </div>
           </div>
         </form>
-        {searchApiState.status === "succeeded" &&
-          !!searchApiState.data.length && (
-            <div className={styles.searchResultsCount}>
-              {getResultsCountText(searchApiState.data.length)}
-            </div>
-          )}
-        {searchApiState.status === "succeeded" &&
-          !searchApiState.data.length && <div>{getNoResultsText()}</div>}
+        {!!caseSearchApi.data?.length && (
+          <div className={styles.searchResultsCount}>
+            {getResultsCountText(caseSearchApi.data.length)}
+          </div>
+        )}
+        {!caseSearchApi.data?.length && <div>{getNoResultsText()}</div>}
       </div>
 
       <SearchResults
-        searchApiResults={searchApiState}
+        searchQueryString={queryString}
+        searchApiResults={caseSearchApi}
         searchType={formData[SearchFormField.searchType]}
       />
     </div>

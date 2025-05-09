@@ -1,9 +1,9 @@
-
 using System.Net;
 using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Exceptions;
 using CPS.ComplexCases.API.Extensions;
 using CPS.ComplexCases.DDEI.Exceptions;
+using CPS.ComplexCases.NetApp.Exceptions;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Azure.Functions.Worker.Middleware;
@@ -34,6 +34,7 @@ public class ExceptionHandlingMiddleware : IFunctionsWorkerMiddleware
         ArgumentNullException or BadRequestException _ => HttpStatusCode.BadRequest,
         CpsAuthenticationException _ => HttpStatusCode.ProxyAuthenticationRequired,
         CmsUnauthorizedException _ => HttpStatusCode.Unauthorized,
+        NetAppUnauthorizedException _ => HttpStatusCode.Unauthorized,
         _ => HttpStatusCode.InternalServerError,
       };
 

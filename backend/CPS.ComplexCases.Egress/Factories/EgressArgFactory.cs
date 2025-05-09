@@ -14,14 +14,23 @@ public class EgressArgFactory : IEgressArgFactory
     };
   }
 
-  public GetWorkspaceMaterialArg CreateGetWorkspaceMaterialArg(string workspaceId, int skip, int take, string? folderId)
+  public ListWorkspaceMaterialArg CreateListWorkspaceMaterialArg(string workspaceId, int skip, int take, string? folderId)
   {
-    return new GetWorkspaceMaterialArg
+    return new ListWorkspaceMaterialArg
     {
       WorkspaceId = workspaceId,
       Skip = skip,
       Take = take,
       FolderId = folderId
+    };
+  }
+
+  public GetWorkspacePermissionArg CreateGetWorkspacePermissionArg(string workspaceId, string? email)
+  {
+    return new GetWorkspacePermissionArg
+    {
+      WorkspaceId = workspaceId,
+      Email = email
     };
   }
 }
