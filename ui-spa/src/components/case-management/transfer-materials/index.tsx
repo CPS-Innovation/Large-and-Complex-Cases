@@ -165,15 +165,24 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           {
             children: (
               <div className={styles.iconButtonWrapper}>
-                {data.isFolder ? <FolderIcon /> : <FileIcon />}
-                <LinkButton
-                  type="button"
-                  onClick={() => {
-                    handleFolderClick(data.id);
-                  }}
-                >
-                  {data.name}
-                </LinkButton>
+                {data.isFolder ? (
+                  <>
+                    <FolderIcon />
+                    <LinkButton
+                      type="button"
+                      onClick={() => {
+                        handleFolderClick(data.id);
+                      }}
+                    >
+                      {data.name}
+                    </LinkButton>
+                  </>
+                ) : (
+                  <>
+                    <FileIcon />
+                    <span className={styles.fileName}>{data.name}</span>
+                  </>
+                )}
               </div>
             ),
           },
