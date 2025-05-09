@@ -1,43 +1,35 @@
-import { useMemo } from "react";
 import { LinkButton } from "../govuk";
 import styles from "./FolderPath.module.scss";
 
 type FolderPathProps = {
-  path: string;
   disabled: boolean;
-  folderClickHandler: (folderPath: string) => void;
+  folders: Folder[];
+  handleFolderPathClick: (folderPath: string) => void;
 };
 
-type Folder = {
+export type Folder = {
   folderName: string;
   folderPath: string;
+  folderId?: string;
 };
 
 const FolderPath: React.FC<FolderPathProps> = ({
-  path,
+  folders,
   disabled,
-  folderClickHandler,
+  handleFolderPathClick,
 }) => {
-  const folders: Folder[] = useMemo(() => {
-    const parts = path.split("/").filter(Boolean);
-
-    const result = parts.map((folderName, index) => ({
-      folderName,
-      folderPath: `${parts.slice(0, index + 1).join("/")}/`,
-    }));
-    const withHome = [{ folderName: "Home", folderPath: "" }, ...result];
-    return withHome;
-  }, [path]);
-
   return (
     <div>
       <ol className={styles.orderedList}>
         {folders.map((folder, index) => {
           return (
-            <li key={folder.folderName} className={styles.listItem}>
+            <li
+              key={`${folder.folderName}-${index}`}
+              className={styles.listItem}
+            >
               {index !== folders.length - 1 ? (
                 <LinkButton
-                  onClick={() => folderClickHandler(folder.folderPath)}
+                  onClick={() => handleFolderPathClick(folder.folderPath)}
                   disabled={disabled}
                 >
                   {folder.folderName}

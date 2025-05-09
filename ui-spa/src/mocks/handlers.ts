@@ -8,6 +8,9 @@ import {
   egressSearchResultsPlaywright,
   getNetAppFolderResultsDev,
   getNetAppFolderResultsPlaywright,
+  caseMetaDataDev,
+  caseMetaDataPlaywright,
+  getEgressFolderResultsDev,
 } from "./data";
 
 export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
@@ -55,6 +58,30 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
 
     http.post(`${baseUrl}/api/netapp/connections`, async () => {
       return HttpResponse.json({});
+    }),
+
+    http.get(`${baseUrl}/api/cases/12`, async () => {
+      // const url = new URL(req.request.url);
+
+      const caseMetaDataResults = isDevMock()
+        ? caseMetaDataDev
+        : caseMetaDataPlaywright;
+      await delay(100);
+
+      return HttpResponse.json(caseMetaDataResults);
+    }),
+
+    http.get(`${baseUrl}/api/egress/workspaces/egress_1/files`, async (req) => {
+      console.log("hii>00000000");
+      const url = new URL(req.request.url);
+
+      const folderId = url.searchParams.get("folder-id");
+      const netAppRootFolderResults = isDevMock()
+        ? getEgressFolderResultsDev(folderId as string)
+        : getEgressFolderResultsDev(folderId as string);
+      await delay(500);
+
+      return HttpResponse.json(netAppRootFolderResults);
     }),
   ];
 };

@@ -1,16 +1,40 @@
 import { useState } from "react";
 import { Tabs } from "../common/tabs/Tabs";
 import { TabId } from "../../common/types/CaseManagement";
+import { ItemProps } from "../common/tabs/types";
+import TransferMaterialsPage from "./transfer-materials";
+import { useParams } from "react-router-dom";
+import { useApi } from "../../common/hooks/useApi";
+import { getCaseMetaData } from "../../apis/gateway-api";
 
 const CaseManagementPage = () => {
+  const { caseId } = useParams();
+  const caseMetaData = useApi(getCaseMetaData, [caseId], true);
+
+  console.log("caseMetaData>>>", caseMetaData);
   const [activeTabId, setActiveId] = useState<TabId>("transfer-materials");
   const handleTabSelection = (tabId: TabId) => {
     setActiveId(tabId);
   };
 
-  const items: { id: TabId; label: string }[] = [
-    { id: "transfer-materials", label: "Transfer materials" },
-    { id: "manage-materials", label: "Manage materials" },
+  const items: ItemProps<TabId>[] = [
+    {
+      id: "transfer-materials",
+      label: "Transfer materials",
+      panel: {
+        children: (
+          <TransferMaterialsPage
+            egressWorkspaceId={caseMetaData?.data?.egressWorkspaceId}
+            netappFolderPath={caseMetaData?.data?.netappFolderPath}
+          />
+        ),
+      },
+    },
+    {
+      id: "manage-materials",
+      label: "Manage materials",
+      panel: { children: <div>manage materials</div> },
+    },
   ];
   return (
     <div className="govuk-width-container">
@@ -20,13 +44,7 @@ const CaseManagementPage = () => {
         items={items.map((item) => ({
           id: item.id,
           label: item.label,
-          panel: {
-            children: (
-              <div>
-                <h2>Transfer Material</h2>
-              </div>
-            ),
-          },
+          panel: item.panel,
         }))}
         title="Contents"
         activeTabId={activeTabId}

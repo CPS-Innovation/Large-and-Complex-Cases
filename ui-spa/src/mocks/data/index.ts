@@ -6,3 +6,6 @@ export { egressSearchResultsDev } from "./egressSearchResults.dev";
 export { egressSearchResultsPlaywright } from "./egressSearchResults.playwright";
 export { getNetAppFolderResultsDev } from "./netAppFolderResults.dev";
 export { getNetAppFolderResultsPlaywright } from "./netAppFolderResults.playwright";
+export { caseMetaDataDev } from "./caseMetaData.dev";
+export { caseMetaDataPlaywright } from "./caseMetaData.playwright";
+export { getEgressFolderResultsDev } from "./egressFolderResults.dev";
