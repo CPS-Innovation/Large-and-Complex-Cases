@@ -9,4 +9,5 @@ public interface IDdeiClient
   Task<IEnumerable<CaseDto>> ListCasesByOperationNameAsync(DdeiOperationNameArgDto arg);
   Task<IEnumerable<CaseDto>> ListCasesByDefendantNameAsync(DdeiDefendantNameArgDto arg);
   Task<AreasDto> GetAreasAsync(DdeiBaseArgDto arg);
+  Task<CaseDto> GetCaseAsync(DdeiCaseIdArgDto arg);
 }

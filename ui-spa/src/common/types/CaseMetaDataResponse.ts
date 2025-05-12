@@ -2,6 +2,6 @@ export type CaseMetaDataResponse = {
   caseId: string;
   egressWorkspaceId: string;
   netappFolderPath: string;
-  workspaceName: string;
-  caseUrn: string;
+  operationName: string;
+  urn: string;
 };

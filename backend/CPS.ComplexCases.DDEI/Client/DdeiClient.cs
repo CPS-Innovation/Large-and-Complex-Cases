@@ -87,6 +87,12 @@ public class DdeiClient(ILogger<DdeiClient> logger,
     return _areasMapper.MapAreas(userFilteredData, userData, allUnits);
   }
 
+  public async Task<CaseDto> GetCaseAsync(DdeiCaseIdArgDto arg)
+  {
+    var caseSummary = await GetCaseInternalAsync(arg);
+    return _caseDetailsMapper.MapCaseDetails(caseSummary);
+  }
+
   private async Task<DdeiCaseSummaryDto> GetCaseInternalAsync(DdeiCaseIdArgDto arg) =>
       await CallDdei<DdeiCaseSummaryDto>(_ddeiRequestFactory.CreateGetCaseRequest(arg));
 

@@ -39,10 +39,10 @@ const CaseManagementPage = () => {
   return (
     <div className="govuk-width-container">
       <h1 className={styles.workspaceName}>
-        {caseMetaData?.data?.workspaceName}
+        {caseMetaData?.data?.operationName}
       </h1>
       <div className={styles.urnText}>
-        <span>{caseMetaData?.data?.caseUrn}</span>
+        <span>{caseMetaData?.data?.urn}</span>
       </div>
 
       <Tabs

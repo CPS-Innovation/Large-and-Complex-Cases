@@ -75,4 +75,14 @@ public class DdeiArgFactory : IDdeiArgFactory
     };
   }
 
+  public DdeiCaseIdArgDto CreateCaseArg(string cmsAuthValues, Guid correlationId, int caseId)
+  {
+    return new DdeiCaseIdArgDto
+    {
+      CmsAuthValues = cmsAuthValues,
+      CorrelationId = correlationId,
+      CaseId = caseId
+    };
+  }
+
 }
