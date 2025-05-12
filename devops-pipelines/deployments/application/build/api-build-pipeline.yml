@@ -1,0 +1,60 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - backend/*
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - task: DotNetCoreCLI@2
+    inputs:
+      command: restore
+      projects: |
+        **/CPS.ComplexCases.API.HttpTelemetry.csproj
+    displayName: "Restore"
+
+  - task: DotNetCoreCLI@2
+    inputs:
+      command: build
+      projects: |
+        **/CPS.ComplexCases.API.HttpTelemetry.csproj
+      arguments: "--configuration Release"
+    displayName: "Build"
+
+  - task: DotNetCoreCLI@2
+    inputs:
+      command: restore
+    displayName: "Restore"
+
+  - task: DotNetCoreCLI@2
+    inputs:
+      command: build
+      projects: |
+        **/*.csproj
+      arguments: "--configuration Release"
+    displayName: "Build"
+
+  - task: DotNetCoreCLI@2
+    inputs:
+      command: publish
+      projects: "**/*CPS.ComplexCases.API.csproj"
+      publishWebProjects: false
+      arguments: "--configuration Release --output $(Build.ArtifactStagingDirectory)/CPS.ComplexCases.API /p:SourceRevisionId=$(Build.SourceVersion)"
+    displayName: "Publish"
+
+  - task: ArchiveFiles@2
+    inputs:
+      rootFolderOrFile: "$(Build.ArtifactStagingDirectory)/CPS.ComplexCases.API"
+      includeRootFolder: false
+      archiveType: "zip"
+      archiveFile: "$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip"
+      replaceExistingArchive: true
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: "$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip"
+      ArtifactName: "cps-complex-cases-fa-drop"
