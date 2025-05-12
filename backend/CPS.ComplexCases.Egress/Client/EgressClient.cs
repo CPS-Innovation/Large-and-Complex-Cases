@@ -77,7 +77,7 @@ public class EgressClient(ILogger<EgressClient> logger, IOptions<EgressOptions> 
       DateUpdated = data.DateUpdated,
       IsFolder = data.IsFolder,
       Version = data.Version,
-      FileSize = data.FileSize
+      Filesize = data.FileSize
     });
 
     return new ListCaseMaterialDto
