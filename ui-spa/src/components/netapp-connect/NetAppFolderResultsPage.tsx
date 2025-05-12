@@ -91,13 +91,13 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
   const getTableHeadData = () => {
     return [
       {
-        children: "Folder name",
+        children: <>Folder name</>,
         sortable: true,
         sortName: "folder-name",
       },
 
       {
-        children: "",
+        children: <></>,
         sortable: false,
       },
     ];

@@ -7,13 +7,13 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "start": "vite preview",
-    "lint": "eslint .",
+    "lint": "tsc -b && eslint .",
     "prettier": "prettier --check ./src",
     "prettier:format": "prettier --write ./src",
     "test": "vitest",
     "coverage": "vitest run --coverage",
     "ui:e2e": "npx playwright   test --ui",
-    "ui:e2e:ci": "vite build --mode playwright && CI=true npx playwright test",
+    "ui:e2e:ci": "tsc -b && vite build --mode playwright && CI=true npx playwright test",
     "ui:e2e:report": "npx playwright show-report ./playwright/playwright-report"
   },
   "dependencies": {
