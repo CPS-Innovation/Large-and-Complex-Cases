@@ -13,4 +13,5 @@ public class ListCaseMaterialDataDto
   public DateTime? DateUpdated { get; set; }
   public bool IsFolder { get; set; }
   public int Version { get; set; }
+  public long? FileSize { get; set; }
 }
