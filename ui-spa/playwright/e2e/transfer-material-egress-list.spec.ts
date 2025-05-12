@@ -14,6 +14,7 @@ test.describe("transfer material egress list", () => {
     page,
   }) => {
     await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
+    await expect(page.getByText("45AA2098221")).toBeVisible();
     await expect(page.getByTestId("tab-active")).toHaveText(
       "Transfer materials",
     );
@@ -62,7 +63,12 @@ test.describe("transfer material egress list", () => {
     const tableHeadValues = await page
       .locator("table thead tr:nth-child(1) th")
       .allTextContents();
-    expect(tableHeadValues).toEqual(["", " Folder name", " Date", " Size"]);
+    expect(tableHeadValues).toEqual([
+      "",
+      " Folder/file name",
+      " Last modified date",
+      " Size",
+    ]);
     const row1Values = await page
       .locator("table tbody tr:nth-child(1) td")
       .allTextContents();
@@ -148,7 +154,7 @@ test.describe("transfer material egress list", () => {
       http.get(
         "https://mocked-out-api/api/egress/workspaces/egress_1/files",
         async () => {
-          await delay(100);
+          await delay(500);
           return HttpResponse.json({
             data: [],
             pagination: {
@@ -161,6 +167,7 @@ test.describe("transfer material egress list", () => {
         },
       ),
     );
+    await page.goto("/case/12/case-management");
     await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
     await expect(page.getByTestId("tab-active")).toHaveText(
       "Transfer materials",

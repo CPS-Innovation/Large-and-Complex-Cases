@@ -137,13 +137,13 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         sortable: false,
       },
       {
-        children: <>Folder name</>,
+        children: <>Folder/file name</>,
         sortable: true,
         sortName: "folder-name",
       },
 
       {
-        children: <>Date</>,
+        children: <>Last modified date</>,
         sortable: true,
         sortName: "date-updated",
       },

@@ -6,6 +6,7 @@ import TransferMaterialsPage from "./transfer-materials";
 import { useParams } from "react-router-dom";
 import { useApi } from "../../common/hooks/useApi";
 import { getCaseMetaData } from "../../apis/gateway-api";
+import styles from "./index.module.scss";
 
 const CaseManagementPage = () => {
   const { caseId } = useParams();
@@ -37,7 +38,12 @@ const CaseManagementPage = () => {
   ];
   return (
     <div className="govuk-width-container">
-      <h1>Thunderstruck</h1>
+      <h1 className={styles.workspaceName}>
+        {caseMetaData?.data?.workspaceName}
+      </h1>
+      <div className={styles.urnText}>
+        <span>{caseMetaData?.data?.caseUrn}</span>
+      </div>
 
       <Tabs
         items={items.map((item) => ({
