@@ -10,6 +10,7 @@ import {
 import FolderIcon from "../../../components/svgs/folder.svg?react";
 import FileIcon from "../../../components/svgs/file.svg?react";
 import { formatDate } from "../../../common/utils/formatDate";
+import { formatFileSize } from "../../../common/utils/formatFileSize";
 import { getEgressFolders } from "../../../apis/gateway-api";
 import styles from "./index.module.scss";
 
@@ -57,6 +58,9 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
 
     if (sortValues?.name === "date-updated")
       return sortByDateProperty(egressData, "dateUpdated", sortValues.type);
+
+    if (sortValues?.name === "file-size")
+      return sortByStringProperty(egressData, "filesize", sortValues.type);
 
     return egressData;
   }, [egressData, sortValues]);
@@ -143,6 +147,11 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         sortable: true,
         sortName: "date-updated",
       },
+      {
+        children: <>Size</>,
+        sortable: true,
+        sortName: "file-size",
+      },
     ];
   };
 
@@ -189,6 +198,11 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
 
           {
             children: <span>{formatDate(data.dateUpdated)}</span>,
+          },
+          {
+            children: (
+              <span>{data.filesize ? formatFileSize(data.filesize) : ""}</span>
+            ),
           },
         ],
       };

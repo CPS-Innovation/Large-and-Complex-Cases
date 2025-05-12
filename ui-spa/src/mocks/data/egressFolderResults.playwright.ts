@@ -6,6 +6,7 @@ export const egressRootFolderResultsPlaywright: EgressFolderResponse = {
       name: "folder-1-0",
       isFolder: true,
       dateUpdated: "2000-01-02",
+      filesize: 0,
       path: "",
     },
     {
@@ -13,6 +14,7 @@ export const egressRootFolderResultsPlaywright: EgressFolderResponse = {
       name: "folder-1-1",
       isFolder: true,
       dateUpdated: "2000-01-03",
+      filesize: 0,
       path: "",
     },
     {
@@ -20,6 +22,7 @@ export const egressRootFolderResultsPlaywright: EgressFolderResponse = {
       name: "file-1-2.pdf",
       isFolder: false,
       dateUpdated: "2000-01-03",
+      filesize: 1234,
       path: "",
     },
   ],

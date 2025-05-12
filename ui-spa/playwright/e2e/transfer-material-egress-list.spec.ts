@@ -62,20 +62,20 @@ test.describe("transfer material egress list", () => {
     const tableHeadValues = await page
       .locator("table thead tr:nth-child(1) th")
       .allTextContents();
-    expect(tableHeadValues).toEqual(["", " Folder name", " Date"]);
+    expect(tableHeadValues).toEqual(["", " Folder name", " Date", " Size"]);
     const row1Values = await page
       .locator("table tbody tr:nth-child(1) td")
       .allTextContents();
-    expect(row1Values).toEqual(["", "folder-1-0", "02/01/2000"]);
+    expect(row1Values).toEqual(["", "folder-1-0", "02/01/2000", ""]);
     const row2Values = await page
       .locator("table tbody tr:nth-child(2) td")
       .allTextContents();
-    expect(row2Values).toEqual(["", "folder-1-1", "03/01/2000"]);
+    expect(row2Values).toEqual(["", "folder-1-1", "03/01/2000", ""]);
 
     const row3Values = await page
       .locator("table tbody tr:nth-child(3) td")
       .allTextContents();
-    expect(row3Values).toEqual(["", "file-1-2.pdf", "03/01/2000"]);
+    expect(row3Values).toEqual(["", "file-1-2.pdf", "03/01/2000", "1.23 KB"]);
   });
 
   test("Should correctly navigate through the egress folders", async ({

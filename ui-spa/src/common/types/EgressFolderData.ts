@@ -3,6 +3,7 @@ export type EgressFolder = {
   name: string;
   isFolder: boolean;
   dateUpdated: string;
+  filesize: number;
   path: string;
 };
 
