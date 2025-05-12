@@ -18,6 +18,7 @@ namespace CPS.ComplexCases.API.Context
             {
                 throw new InvalidCastException($"Value for {RequestContextKey} is not of type {nameof(RequestContext)}");
             }
+
             return rc;
         }
 
