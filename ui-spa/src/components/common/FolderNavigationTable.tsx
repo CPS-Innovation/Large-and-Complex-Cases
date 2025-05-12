@@ -53,7 +53,7 @@ const FolderNavigationTable: React.FC<FolderNavigationTableProps> = ({
               handleTableSort={handleTableSort}
             />
             {!folderResultsLength && (
-              <p>There are no documents currenlty in this folder</p>
+              <p>There are no documents currently in this folder</p>
             )}
           </>
         )}

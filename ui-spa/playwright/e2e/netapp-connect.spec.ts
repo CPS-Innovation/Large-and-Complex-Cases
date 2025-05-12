@@ -196,7 +196,7 @@ test.describe("netapp connect", () => {
     );
     await expect(page.getByTestId("netapp-folder-loader")).not.toBeVisible();
     await expect(
-      page.getByText("There are no documents currenlty in this folder"),
+      page.getByText("There are no documents currently in this folder"),
     ).toBeVisible();
   });
 
