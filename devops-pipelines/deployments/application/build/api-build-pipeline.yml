@@ -15,7 +15,7 @@ steps:
       command: restore
       projects: |
         **/CPS.ComplexCases.API.HttpTelemetry.csproj
-    displayName: "Restore"
+    displayName: "Restore HttpTelemetry project"
 
   - task: DotNetCoreCLI@2
     inputs:
@@ -23,20 +23,22 @@ steps:
       projects: |
         **/CPS.ComplexCases.API.HttpTelemetry.csproj
       arguments: "--configuration Release"
-    displayName: "Build"
+    displayName: "Build HttpTelemetry project"
 
   - task: DotNetCoreCLI@2
     inputs:
       command: restore
-    displayName: "Restore"
+      projects: |
+        **/CPS.ComplexCases.API.csproj
+    displayName: "Restore API project"
 
   - task: DotNetCoreCLI@2
     inputs:
       command: build
       projects: |
-        **/*.csproj
+        **/CPS.ComplexCases.API.csproj
       arguments: "--configuration Release"
-    displayName: "Build"
+    displayName: "Build API project"
 
   - task: DotNetCoreCLI@2
     inputs:
