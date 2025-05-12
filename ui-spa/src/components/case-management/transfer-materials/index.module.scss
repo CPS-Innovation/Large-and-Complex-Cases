@@ -23,9 +23,7 @@
     & .fileName {
       margin-left: 0.25rem;
     }
-    & :global(.govuk-table) {
-      table-layout: fixed;
-    }
+
     & :global(.govuk-checkboxes__input) {
       width: 30px;
       height: 30px;
@@ -41,10 +39,31 @@
       height: 8px;
       border-width: 0 0 3px 3px;
     }
-    & :global(.govuk-table__header:first-child) {
-      width: 20px;
+    & :global(.govuk-table) {
+      table-layout: fixed;
+    }
+    & :global(.govuk-table__header:nth-of-type(1)) {
+      width: 1.25rem;
       & :global(.govuk-checkboxes__item) {
         padding: 0;
+      }
+    }
+    & :global(.govuk-table__header:nth-of-type(2)) {
+      width: 15.625rem;
+    }
+    & :global(.govuk-table__header:nth-of-type(3)) {
+      width: 9.375rem;
+    }
+    & :global(.govuk-table__header:nth-of-type(4)) {
+      width: 6.25rem;
+    }
+    & :global(.govuk-table__cell:nth-of-type(2)) {
+      button {
+        width: 15.625rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: left;
       }
     }
   }
