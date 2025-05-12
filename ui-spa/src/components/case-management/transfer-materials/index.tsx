@@ -207,7 +207,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
 
   const renderEgressContainer = () => {
     return (
-      <div className={styles.egressContainer}>
+      <div className={styles.egressContainer} data-testId="egress-container">
         <div className={styles.titleWrapper}>
           <h3>Egress Inbound documents</h3>
         </div>
@@ -229,7 +229,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
 
   const renderNetappContainer = () => {
     return (
-      <div className={styles.netappContainer}>
+      <div className={styles.netappContainer} data-testId="netapp-container">
         <div className={styles.titleWrapper}>
           <h3>Shared drive</h3>
         </div>
@@ -246,7 +246,10 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         destination. You can switch the source and destination if needed.{" "}
         <LinkButton onClick={handleSwitchSource}> Switch source</LinkButton>
       </InsetText>
-      <div className={styles.mainContainer}>
+      <div
+        className={styles.mainContainer}
+        data-testId="transfer-main-container"
+      >
         {switchSource ? (
           <>
             {renderNetappContainer()}

@@ -11,6 +11,7 @@ import {
   caseMetaDataDev,
   caseMetaDataPlaywright,
   getEgressFolderResultsDev,
+  getEgressFolderResultsPlaywright,
 } from "./data";
 
 export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
@@ -72,13 +73,21 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
     }),
 
     http.get(`${baseUrl}/api/egress/workspaces/egress_1/files`, async (req) => {
-      console.log("hii>00000000");
       const url = new URL(req.request.url);
+      const results = {
+        data: [],
+        pagination: {
+          totalResults: 50,
+          skip: 0,
+          take: 50,
+          count: 25,
+        },
+      };
 
       const folderId = url.searchParams.get("folder-id");
       const netAppRootFolderResults = isDevMock()
         ? getEgressFolderResultsDev(folderId as string)
-        : getEgressFolderResultsDev(folderId as string);
+        : getEgressFolderResultsPlaywright(folderId as string);
       await delay(500);
 
       return HttpResponse.json(netAppRootFolderResults);

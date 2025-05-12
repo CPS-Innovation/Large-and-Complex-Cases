@@ -60,7 +60,7 @@ const FolderNavigationTable: React.FC<FolderNavigationTableProps> = ({
         {folderResultsStatus === "loading" && (
           <div className={styles.spinnerWrapper}>
             <Spinner
-              data-testid="netapp-folder-loader"
+              data-testid="folder-table-loader"
               diameterPx={50}
               ariaLabel={loaderText}
             />

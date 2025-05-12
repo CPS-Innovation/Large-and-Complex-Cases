@@ -9,3 +9,4 @@ export { getNetAppFolderResultsPlaywright } from "./netAppFolderResults.playwrig
 export { caseMetaDataDev } from "./caseMetaData.dev";
 export { caseMetaDataPlaywright } from "./caseMetaData.playwright";
 export { getEgressFolderResultsDev } from "./egressFolderResults.dev";
+export { getEgressFolderResultsPlaywright } from "./egressFolderResults.playwright";

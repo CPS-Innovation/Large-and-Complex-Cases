@@ -11,7 +11,6 @@ const CaseManagementPage = () => {
   const { caseId } = useParams();
   const caseMetaData = useApi(getCaseMetaData, [caseId], true);
 
-  console.log("caseMetaData>>>", caseMetaData);
   const [activeTabId, setActiveId] = useState<TabId>("transfer-materials");
   const handleTabSelection = (tabId: TabId) => {
     setActiveId(tabId);
