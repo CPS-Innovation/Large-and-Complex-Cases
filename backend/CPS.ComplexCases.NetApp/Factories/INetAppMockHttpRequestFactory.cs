@@ -2,7 +2,7 @@ using CPS.ComplexCases.NetApp.Models.Args;
 
 namespace CPS.ComplexCases.NetApp.Factories
 {
-    public interface INetAppMockRequestFactory
+    public interface INetAppMockHttpRequestFactory
     {
         HttpRequestMessage CreateBucketRequest(CreateBucketArg arg);
         HttpRequestMessage ListBucketsRequest(ListBucketsArg arg);

@@ -7,8 +7,7 @@ trigger:
       - main
 
 variables:
-  group:
-    - lacc-ui-spa
+  - group: lacc-ui-spa
 
 stages:
   - stage: Build_and_Publish_Artifact
