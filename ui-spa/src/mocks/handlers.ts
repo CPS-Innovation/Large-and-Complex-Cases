@@ -62,8 +62,6 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
     }),
 
     http.get(`${baseUrl}/api/cases/12`, async () => {
-      // const url = new URL(req.request.url);
-
       const caseMetaDataResults = isDevMock()
         ? caseMetaDataDev
         : caseMetaDataPlaywright;
