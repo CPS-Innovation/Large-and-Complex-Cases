@@ -25,4 +25,6 @@ public class ListCaseMaterialDataResponse
   public int Version { get; set; }
   [JsonPropertyName("path")]
   public required string Path { get; set; }
+  [JsonPropertyName("filesize")]
+  public long? FileSize { get; set; }
 }

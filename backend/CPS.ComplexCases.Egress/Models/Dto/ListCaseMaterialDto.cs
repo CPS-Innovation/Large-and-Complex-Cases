@@ -8,9 +8,10 @@ public class ListCaseMaterialDto
 public class ListCaseMaterialDataDto
 {
   public required string Id { get; set; }
-  public required string FileName { get; set; }
+  public required string Name { get; set; }
   public required string Path { get; set; }
   public DateTime? DateUpdated { get; set; }
   public bool IsFolder { get; set; }
   public int Version { get; set; }
+  public long? Filesize { get; set; }
 }

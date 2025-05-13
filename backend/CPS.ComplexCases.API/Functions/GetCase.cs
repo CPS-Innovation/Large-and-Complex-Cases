@@ -1,7 +1,11 @@
 
 using System.Net;
 using CPS.ComplexCases.API.Constants;
+using CPS.ComplexCases.API.Context;
+using CPS.ComplexCases.API.Domain.Response;
 using CPS.ComplexCases.Data.Services;
+using CPS.ComplexCases.DDEI.Client;
+using CPS.ComplexCases.DDEI.Factories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
@@ -12,10 +16,14 @@ using Microsoft.OpenApi.Models;
 namespace CPS.ComplexCases.API.Functions;
 
 public class GetCase(ILogger<GetCase> logger,
-  ICaseMetadataService caseClient)
+  ICaseMetadataService caseClient,
+  IDdeiClient ddeiClient,
+  IDdeiArgFactory ddeiArgFactory)
 {
     private readonly ILogger<GetCase> _logger = logger;
     private readonly ICaseMetadataService _caseClient = caseClient;
+    private readonly IDdeiClient _ddeiClient = ddeiClient;
+    private readonly IDdeiArgFactory _ddeiArgFactory = ddeiArgFactory;
 
     [Function(nameof(GetCase))]
     [OpenApiOperation(operationId: nameof(GetCase), tags: ["Cases"], Description = "Gets a case by ID from metadata service.")]
@@ -35,6 +43,18 @@ public class GetCase(ILogger<GetCase> logger,
             return new NotFoundObjectResult($"Case with ID {caseId} not found.");
         }
 
-        return new OkObjectResult(caseResponse);
+        var cmsArg = _ddeiArgFactory.CreateCaseArg(context.GetRequestContext().CmsAuthValues, context.GetRequestContext().CorrelationId, caseId);
+        var cmsResponse = await _ddeiClient.GetCaseAsync(cmsArg);
+
+        var response = new CaseWithMetadataResponse
+        {
+            CaseId = caseResponse.CaseId,
+            EgressWorkspaceId = caseResponse.EgressWorkspaceId,
+            NetappFolderPath = caseResponse.NetappFolderPath,
+            Urn = cmsResponse.Urn,
+            OperationName = cmsResponse.OperationName,
+        };
+
+        return new OkObjectResult(response);
     }
 }

@@ -72,11 +72,12 @@ public class EgressClient(ILogger<EgressClient> logger, IOptions<EgressOptions> 
     var materialsData = response.Data.Select(data => new ListCaseMaterialDataDto
     {
       Id = data.Id,
-      FileName = data.FileName,
+      Name = data.FileName,
       Path = data.Path,
       DateUpdated = data.DateUpdated,
       IsFolder = data.IsFolder,
-      Version = data.Version
+      Version = data.Version,
+      Filesize = data.FileSize
     });
 
     return new ListCaseMaterialDto
@@ -132,7 +133,7 @@ public class EgressClient(ILogger<EgressClient> logger, IOptions<EgressOptions> 
     {
       _logger.LogWarning(ex, "Workspace not found. Check the workspace ID.");
       throw;
-      
+
     }
     catch (HttpRequestException ex)
     {

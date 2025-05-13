@@ -12,6 +12,13 @@ import {
   NetAppFolderData,
   NetAppFolderResponse,
 } from "../common/types/NetAppFolderData";
+import { CaseMetaDataResponse } from "../common/types/CaseMetaDataResponse";
+
+import {
+  EgressFolderData,
+  EgressFolderResponse,
+} from "../common/types/EgressFolderData";
+
 import { ApiError } from "../common/errors/ApiError";
 
 export const CORRELATION_ID = "Correlation-Id";
@@ -198,4 +205,54 @@ export const connectNetAppFolder = async ({
     throw new ApiError(`Connecting to NetApp folder failed`, url, response);
   }
   return response;
+};
+
+export const getCaseMetaData = async (caseId: string) => {
+  const url = `${GATEWAY_BASE_URL}/api/cases/${caseId}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      ...(await buildCommonHeaders()),
+    },
+  });
+
+  if (!response.ok) {
+    throw new ApiError(`Getting case metadata failed`, url, response);
+  }
+  return (await response.json()) as CaseMetaDataResponse;
+};
+
+export const getEgressFolders = async (
+  workspaceId: string,
+  folderId: string,
+  skip: number = 0,
+  take: number = 50,
+  collected: EgressFolderData = [],
+): Promise<EgressFolderData> => {
+  const url = `${GATEWAY_BASE_URL}/api/egress/workspaces/${workspaceId}/files?folder-id=${folderId}&skip=${skip}&take=${take}`;
+  const response = await fetch(url, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      ...(await buildCommonHeaders()),
+    },
+  });
+  if (!response.ok) {
+    throw new ApiError(`Getting egress folders failed`, url, response);
+  }
+  try {
+    const result = (await response.json()) as EgressFolderResponse;
+
+    const { data, pagination } = result;
+    const updated = collected.concat(data);
+    if (skip + take >= pagination.totalResults) {
+      return updated;
+    }
+    return getEgressFolders(workspaceId, folderId, skip + take, take, updated);
+  } catch (error) {
+    console.error("Fetch failed:", error);
+    throw new Error(`Invalid API response format for Egress folders, ${error}`);
+  }
 };

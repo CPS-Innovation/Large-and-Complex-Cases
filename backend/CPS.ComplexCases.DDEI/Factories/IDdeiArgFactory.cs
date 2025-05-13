@@ -11,4 +11,5 @@ public interface IDdeiArgFactory
   DdeiDefendantNameArgDto CreateDefendantArg(string cmsAuthValues, Guid correlationId, string leadDefendantLastName, string cmsAreaCode);
   DdeiOperationNameArgDto CreateOperationNameArg(string cmsAuthValues, Guid correlationId, string operationName, string cmsAreaCode);
   DdeiBaseArgDto CreateBaseArg(string cmsAuthValues, Guid correlationId);
+  DdeiCaseIdArgDto CreateCaseArg(string cmsAuthValues, Guid correlationId, int caseId);
 }
