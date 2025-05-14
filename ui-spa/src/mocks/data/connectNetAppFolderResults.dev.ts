@@ -25,7 +25,7 @@ export const netAppRootFolderResultsDev: ConnectNetAppFolderResponse = {
   },
 };
 
-export const getNetAppFolderResultsDev = (path: string) => {
+export const getConnectNetAppFolderResultsDev = (path: string) => {
   if (!path || path === "abc") return netAppRootFolderResultsDev;
 
   const levels = path.split("/").filter((part) => part.length > 0);
@@ -41,7 +41,7 @@ export const getNetAppFolderResultsDev = (path: string) => {
   const newFolders = netAppRootFolderResultsDev.data.folders.map(
     (item, index) => {
       return { ...item, folderPath: `${path}folder-${index}/` };
-    }
+    },
   );
 
   return {

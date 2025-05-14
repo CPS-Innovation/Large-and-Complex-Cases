@@ -19,7 +19,7 @@ export const netAppRootFolderResultsPlaywright: ConnectNetAppFolderResponse = {
   },
 };
 
-export const getNetAppFolderResultsPlaywright = (path: string) => {
+export const getConnectNetAppFolderResultsPlaywright = (path: string) => {
   if (!path || path === "abc") return netAppRootFolderResultsPlaywright;
   const levels = path.split("/").filter((part) => part.length > 0);
   if (levels.length > 3) {

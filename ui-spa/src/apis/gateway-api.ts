@@ -13,11 +13,16 @@ import {
   ConnectNetAppFolderResponse,
 } from "../common/types/ConnectNetAppFolderData";
 import { CaseMetaDataResponse } from "../common/types/CaseMetaDataResponse";
-
 import {
   EgressFolderData,
   EgressFolderResponse,
 } from "../common/types/EgressFolderData";
+import {
+  NetAppFolder,
+  NetAppFile,
+  NetAppFolderData,
+  NetAppFolderResponse,
+} from "../common/types/NetAppFolderData";
 
 import { ApiError } from "../common/errors/ApiError";
 
@@ -130,7 +135,7 @@ export const connectEgressWorkspace = async ({
   return response;
 };
 
-export const getNetAppFolders = async (
+export const getConnectNetAppFolders = async (
   operationName: string,
   folderPath: string,
   take: number = 50,
@@ -162,7 +167,7 @@ export const getNetAppFolders = async (
         folders: updatedFolders,
       };
     }
-    return getNetAppFolders(
+    return getConnectNetAppFolders(
       operationName,
       folderPath,
       take,
@@ -254,5 +259,53 @@ export const getEgressFolders = async (
   } catch (error) {
     console.error("Fetch failed:", error);
     throw new Error(`Invalid API response format for Egress folders, ${error}`);
+  }
+};
+
+export const getNetAppFolders = async (
+  folderPath: string,
+  take: number = 50,
+  continuationToken = "",
+  collectedFolders: NetAppFolder[] = [],
+  collectedFiles: NetAppFile[] = [],
+): Promise<NetAppFolderData> => {
+  const url = `${GATEWAY_BASE_URL}/api/netapp/files`;
+  const response = await fetch(
+    `${url}?path=${folderPath}&take=${take}&continuation-token=${continuationToken}`,
+    {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        ...(await buildCommonHeaders()),
+      },
+    },
+  );
+  if (!response.ok) {
+    throw new ApiError(`getting netapp files/folders failed`, url, response);
+  }
+  try {
+    const result = (await response.json()) as NetAppFolderResponse;
+
+    const { data, pagination } = result;
+    const updatedFolders = collectedFolders.concat(data.folders);
+    const updatedFiles = collectedFiles.concat(data.files);
+    if (!pagination.nextContinuationToken) {
+      return {
+        folders: updatedFolders,
+        files: updatedFiles,
+      };
+    }
+    return getNetAppFolders(
+      folderPath,
+      take,
+      pagination.nextContinuationToken,
+      updatedFolders,
+      updatedFiles,
+    );
+  } catch (error) {
+    console.error("Fetch failed:", error);
+    throw new Error(
+      `Invalid API response format for netapp files/folders results, ${error}`,
+    );
   }
 };

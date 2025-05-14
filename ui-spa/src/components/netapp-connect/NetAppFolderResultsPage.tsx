@@ -134,6 +134,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
 
       <div className={"govuk-grid-column-two-thirds"}>
         <FolderNavigationTable
+          tableName={"netapp"}
           folders={folders}
           loaderText="Loading folders from Network Shared Drive"
           folderResultsStatus={netAppFolderApiResults.status}

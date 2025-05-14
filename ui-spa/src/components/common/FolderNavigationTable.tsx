@@ -4,6 +4,7 @@ import FolderPath, { Folder } from "../common/FolderPath";
 import styles from "./FolderNavigationTable.module.scss";
 
 type FolderNavigationTableProps = {
+  tableName: string;
   folders: Folder[];
   folderResultsStatus: "loading" | "succeeded" | "failed" | "initial";
   folderResultsLength: number;
@@ -26,6 +27,7 @@ type FolderNavigationTableProps = {
 };
 
 const FolderNavigationTable: React.FC<FolderNavigationTableProps> = ({
+  tableName,
   folders,
   loaderText,
   folderResultsStatus,
@@ -36,7 +38,7 @@ const FolderNavigationTable: React.FC<FolderNavigationTableProps> = ({
   handleTableSort,
 }) => {
   return (
-    <div className={styles.results}>
+    <div className={styles.results} data-testId={`${tableName}-table-wrapper`}>
       <div>
         {
           <FolderPath
@@ -60,7 +62,7 @@ const FolderNavigationTable: React.FC<FolderNavigationTableProps> = ({
         {folderResultsStatus === "loading" && (
           <div className={styles.spinnerWrapper}>
             <Spinner
-              data-testid="folder-table-loader"
+              data-testid={`${tableName}-folder-table-loader`}
               diameterPx={50}
               ariaLabel={loaderText}
             />

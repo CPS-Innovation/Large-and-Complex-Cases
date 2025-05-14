@@ -9,9 +9,10 @@ import {
 } from "../../../common/utils/sortUtils";
 import FolderIcon from "../../../components/svgs/folder.svg?react";
 import FileIcon from "../../../components/svgs/file.svg?react";
+import NetAppFolderContainer from "./NetAppFolderContainer";
 import { formatDate } from "../../../common/utils/formatDate";
 import { formatFileSize } from "../../../common/utils/formatFileSize";
-import { getEgressFolders } from "../../../apis/gateway-api";
+import { getEgressFolders, getNetAppFolders } from "../../../apis/gateway-api";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
@@ -35,21 +36,31 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   >([{ folderName: "Home", folderPath: "", folderId: "" }]);
 
   const [switchSource, setSwitchSource] = useState(false);
+  const [netAppFolderPath, setNetAppFolderPath] = useState("");
 
   const [selectedEgressFolders, setSelectedEgressFolders] = useState<string[]>(
     [],
   );
 
-  const currentFolder = useMemo(() => {
+  const currentEgressFolder = useMemo(() => {
     return egressPathFolders[egressPathFolders.length - 1];
   }, [egressPathFolders]);
-  const egressFolderApiResults = useApi(
+
+  const {
+    refetch: egressRefetch,
+    status: egressStatus,
+    data: egressData,
+  } = useApi(
     getEgressFolders,
-    [egressWorkspaceId, currentFolder.folderId],
+    [egressWorkspaceId, currentEgressFolder.folderId],
     false,
   );
 
-  const { refetch, status, data: egressData } = egressFolderApiResults;
+  const {
+    refetch: netAppRefetch,
+    status: netAppStatus,
+    data: netAppData,
+  } = useApi(getNetAppFolders, [netAppFolderPath], false);
 
   const egressFolderData = useMemo(() => {
     if (!egressData) return [];
@@ -119,6 +130,10 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
 
   const isEgressFolderChecked = (id: string) => {
     return selectedEgressFolders.includes(id);
+  };
+
+  const handleGetFolderContent = (path: string) => {
+    setNetAppFolderPath(path);
   };
 
   const getTableHeadData = () => {
@@ -211,9 +226,15 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
 
   useEffect(() => {
     if (egressWorkspaceId !== undefined) {
-      refetch();
+      egressRefetch();
     }
-  }, [egressWorkspaceId, refetch]);
+  }, [egressWorkspaceId, egressRefetch]);
+
+  useEffect(() => {
+    if (netAppFolderPath !== undefined) {
+      netAppRefetch();
+    }
+  }, [netAppFolderPath, netAppRefetch]);
 
   const handleSwitchSource = () => {
     setSwitchSource(!switchSource);
@@ -227,9 +248,10 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         </div>
         <div className={styles.tableContainer}>
           <FolderNavigationTable
+            tableName={"egress"}
             folders={egressPathFolders}
             loaderText="Loading folders from Egress"
-            folderResultsStatus={status}
+            folderResultsStatus={egressStatus}
             folderResultsLength={egressFolderData.length}
             handleFolderPathClick={handleFolderPathClick}
             getTableRowData={getTableRowData}
@@ -247,7 +269,14 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         <div className={styles.titleWrapper}>
           <h3>Shared drive</h3>
         </div>
-        <div className={styles.tableContainer}>netapp data</div>
+        <div className={styles.tableContainer}>
+          <NetAppFolderContainer
+            rootFolderPath={netAppFolderPath}
+            netAppFolderDataStatus={netAppStatus}
+            netAppFolderData={netAppData}
+            handleGetFolderContent={handleGetFolderContent}
+          />
+        </div>
       </div>
     );
   };
