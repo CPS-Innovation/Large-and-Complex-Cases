@@ -18,5 +18,6 @@ public class ListNetAppFileDataDto
 {
     public required string Key { get; set; }
     public required string Etag { get; set; }
+    public required long Size { get; set; }
     public required DateTime LastModified { get; set; }
 }

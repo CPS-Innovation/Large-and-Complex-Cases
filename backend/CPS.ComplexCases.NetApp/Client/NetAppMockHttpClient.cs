@@ -140,6 +140,7 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
         {
             Key = data.Key,
             Etag = data.ETag,
+            Size = data.Size,
             LastModified = data.LastModified
         }).ToList() ?? [];
 
