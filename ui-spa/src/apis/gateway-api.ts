@@ -8,10 +8,10 @@ import {
   EgressSearchResultResponse,
 } from "../common/types/EgressSearchResponse";
 import {
-  NetAppFolder,
-  NetAppFolderData,
-  NetAppFolderResponse,
-} from "../common/types/NetAppFolderData";
+  ConnectNetAppFolder,
+  ConnectNetAppFolderData,
+  ConnectNetAppFolderResponse,
+} from "../common/types/ConnectNetAppFolderData";
 import { CaseMetaDataResponse } from "../common/types/CaseMetaDataResponse";
 
 import {
@@ -135,8 +135,8 @@ export const getNetAppFolders = async (
   folderPath: string,
   take: number = 50,
   continuationToken = "",
-  collectedFolders: NetAppFolder[] = [],
-): Promise<NetAppFolderData> => {
+  collectedFolders: ConnectNetAppFolder[] = [],
+): Promise<ConnectNetAppFolderData> => {
   const url = `${GATEWAY_BASE_URL}/api/netapp/folders`;
   const response = await fetch(
     `${url}?operation-name=${operationName}&path=${folderPath}&take=${take}&continuation-token=${continuationToken}`,
@@ -152,7 +152,7 @@ export const getNetAppFolders = async (
     throw new ApiError(`getting netapp folders failed`, url, response);
   }
   try {
-    const result = (await response.json()) as NetAppFolderResponse;
+    const result = (await response.json()) as ConnectNetAppFolderResponse;
 
     const { data, pagination } = result;
     const updatedFolders = collectedFolders.concat(data.folders);

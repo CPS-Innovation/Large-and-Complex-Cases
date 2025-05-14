@@ -1,5 +1,5 @@
-import { NetAppFolderResponse } from "../../common/types/NetAppFolderData";
-export const netAppRootFolderResultsPlaywright: NetAppFolderResponse = {
+import { ConnectNetAppFolderResponse } from "../../common/types/ConnectNetAppFolderData";
+export const netAppRootFolderResultsPlaywright: ConnectNetAppFolderResponse = {
   data: {
     rootPath: "",
     folders: [

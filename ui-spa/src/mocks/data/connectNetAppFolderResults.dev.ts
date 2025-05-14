@@ -1,5 +1,5 @@
-import { NetAppFolderResponse } from "../../common/types/NetAppFolderData";
-export const netAppRootFolderResultsDev: NetAppFolderResponse = {
+import { ConnectNetAppFolderResponse } from "../../common/types/ConnectNetAppFolderData";
+export const netAppRootFolderResultsDev: ConnectNetAppFolderResponse = {
   data: {
     rootPath: "",
     folders: [
@@ -41,7 +41,7 @@ export const getNetAppFolderResultsDev = (path: string) => {
   const newFolders = netAppRootFolderResultsDev.data.folders.map(
     (item, index) => {
       return { ...item, folderPath: `${path}folder-${index}/` };
-    },
+    }
   );
 
   return {
