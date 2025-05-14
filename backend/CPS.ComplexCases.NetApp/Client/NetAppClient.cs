@@ -136,6 +136,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
             {
                 Key = data.Key,
                 Etag = data.ETag,
+                Size = data.Size,
                 LastModified = data.LastModified
             });
 
