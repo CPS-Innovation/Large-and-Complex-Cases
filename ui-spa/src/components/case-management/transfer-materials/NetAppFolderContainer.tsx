@@ -1,22 +1,25 @@
 import { useMemo, useState } from "react";
 import { LinkButton } from "../../govuk";
-import { NetAppFolderData } from "../../../common/types/NetAppFolderData";
+import { NetAppFolderDataResponse } from "../../../common/types/NetAppFolderData";
 import { sortByStringProperty } from "../../../common/utils/sortUtils";
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
 import FolderNavigationTable from "../../common/FolderNavigationTable";
+import { formatFileSize } from "../../../common/utils/formatFileSize";
 import FolderIcon from "../../../components/svgs/folder.svg?react";
-// import styles from "./netAppFolderResultsPage.module.scss";
+import FileIcon from "../../../components/svgs/file.svg?react";
+import { mapToNetAppFolderData } from "../../../common/utils/mapToNetAppFolderData";
+import styles from "./netAppFolderContainer.module.scss";
 
 type NetAppFolderContainerProps = {
   rootFolderPath: string;
-  netAppFolderData?: NetAppFolderData;
+  netAppFolderDataResponse?: NetAppFolderDataResponse;
   netAppFolderDataStatus: "loading" | "succeeded" | "failed" | "initial";
   handleGetFolderContent: (folderId: string) => void;
 };
 
 const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
   rootFolderPath,
-  netAppFolderData,
+  netAppFolderDataResponse,
   netAppFolderDataStatus,
   handleGetFolderContent,
 }) => {
@@ -25,16 +28,25 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
     type: "ascending" | "descending";
   }>();
 
-  const netAppFolderDataSorted = useMemo(() => {
-    if (!netAppFolderData?.folders) return [];
+  const netAppFolderData = useMemo(
+    () =>
+      netAppFolderDataResponse
+        ? mapToNetAppFolderData(netAppFolderDataResponse)
+        : [],
+    [netAppFolderDataResponse],
+  );
+
+  const netAppDataSorted = useMemo(() => {
     if (sortValues?.name === "folder-name")
+      return sortByStringProperty(netAppFolderData, "path", sortValues.type);
+    if (sortValues?.name === "file-size")
       return sortByStringProperty(
-        netAppFolderData.folders,
-        "folderPath",
+        netAppFolderData,
+        "filesize",
         sortValues.type,
       );
 
-    return netAppFolderData.folders;
+    return netAppFolderData;
   }, [netAppFolderData, sortValues]);
 
   const folders = useMemo(() => {
@@ -49,22 +61,38 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
   }, [rootFolderPath]);
 
   const getTableRowData = () => {
-    return netAppFolderDataSorted.map((data) => {
+    return netAppDataSorted.map((data) => {
       return {
         cells: [
           {
             children: (
-              <div>
-                <FolderIcon />
-                <LinkButton
-                  type="button"
-                  onClick={() => {
-                    handleGetFolderContent(data.folderPath);
-                  }}
-                >
-                  {getFolderNameFromPath(data.folderPath)}
-                </LinkButton>
+              <div className={styles.iconButtonWrapper}>
+                {data.isFolder ? (
+                  <>
+                    <FolderIcon />
+                    <LinkButton
+                      type="button"
+                      onClick={() => {
+                        handleGetFolderContent(data.path);
+                      }}
+                    >
+                      {getFolderNameFromPath(data.path)}
+                    </LinkButton>
+                  </>
+                ) : (
+                  <>
+                    <FileIcon />
+                    <span className={styles.fileName}>
+                      {getFolderNameFromPath(data.path)}
+                    </span>
+                  </>
+                )}
               </div>
+            ),
+          },
+          {
+            children: (
+              <span>{data.filesize ? formatFileSize(data.filesize) : ""}</span>
             ),
           },
         ],
@@ -81,8 +109,9 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
       },
 
       {
-        children: <></>,
-        sortable: false,
+        children: <>Size</>,
+        sortable: true,
+        sortName: "file-size",
       },
     ];
   };
@@ -99,14 +128,14 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
   };
 
   return (
-    <div className={`govuk-width-container `}>
-      <div className={"govuk-grid-column-two-thirds"}>
+    <div>
+      <div>
         <FolderNavigationTable
           tableName={"netapp"}
           folders={folders}
           loaderText="Loading folders from Network Shared Drive"
           folderResultsStatus={netAppFolderDataStatus}
-          folderResultsLength={netAppFolderDataSorted.length}
+          folderResultsLength={netAppDataSorted.length}
           handleFolderPathClick={handleFolderPathClick}
           getTableRowData={getTableRowData}
           getTableHeadData={getTableHeadData}

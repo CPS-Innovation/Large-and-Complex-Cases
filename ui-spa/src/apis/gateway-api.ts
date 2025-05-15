@@ -20,8 +20,8 @@ import {
 import {
   NetAppFolder,
   NetAppFile,
-  NetAppFolderData,
   NetAppFolderResponse,
+  NetAppFolderDataResponse,
 } from "../common/types/NetAppFolderData";
 
 import { ApiError } from "../common/errors/ApiError";
@@ -268,7 +268,7 @@ export const getNetAppFolders = async (
   continuationToken = "",
   collectedFolders: NetAppFolder[] = [],
   collectedFiles: NetAppFile[] = [],
-): Promise<NetAppFolderData> => {
+): Promise<NetAppFolderDataResponse> => {
   const url = `${GATEWAY_BASE_URL}/api/netapp/files`;
   const response = await fetch(
     `${url}?path=${folderPath}&take=${take}&continuation-token=${continuationToken}`,

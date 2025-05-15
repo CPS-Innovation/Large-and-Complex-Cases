@@ -1,22 +1,29 @@
 export type NetAppFolder = {
-  folderPath: string;
+  path: string;
 };
 
 export type NetAppFile = {
-  filePath: string;
+  path: string;
   lastModified: string;
-  size: number;
-};
-
-export type NetAppFolderData = {
-  folders: NetAppFolder[];
-  files: NetAppFile[];
+  filesize: number;
 };
 
 export type NetAppFolderResponse = {
-  data: NetAppFolderData;
+  data: NetAppFolderDataResponse;
   pagination: {
     maxKeys: number;
     nextContinuationToken: string | null;
   };
 };
+
+export type NetAppFolderDataResponse = {
+  files: NetAppFile[];
+  folders: NetAppFolder[];
+};
+
+export type NetAppFolderData = {
+  path: string;
+  lastModified: string;
+  filesize: number;
+  isFolder: boolean;
+}[];

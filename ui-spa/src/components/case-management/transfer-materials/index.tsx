@@ -248,7 +248,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         </div>
         <div className={styles.tableContainer}>
           <FolderNavigationTable
-            tableName={"egress"}
+            tableName="egress"
             folders={egressPathFolders}
             loaderText="Loading folders from Egress"
             folderResultsStatus={egressStatus}
@@ -273,7 +273,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           <NetAppFolderContainer
             rootFolderPath={netAppFolderPath}
             netAppFolderDataStatus={netAppStatus}
-            netAppFolderData={netAppData}
+            netAppFolderDataResponse={netAppData}
             handleGetFolderContent={handleGetFolderContent}
           />
         </div>
