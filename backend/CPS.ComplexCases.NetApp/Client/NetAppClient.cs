@@ -134,8 +134,9 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
 
             var files = response.S3Objects.Select(data => new ListNetAppFileDataDto
             {
-                Key = data.Key,
+                Path = data.Key,
                 Etag = data.ETag,
+                Filesize = data.Size,
                 LastModified = data.LastModified
             });
 

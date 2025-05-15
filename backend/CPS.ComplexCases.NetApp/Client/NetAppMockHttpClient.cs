@@ -138,8 +138,9 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
 
         var files = response.Contents?.Select(data => new ListNetAppFileDataDto
         {
-            Key = data.Key,
+            Path = data.Key,
             Etag = data.ETag,
+            Filesize = data.Size,
             LastModified = data.LastModified
         }).ToList() ?? [];
 

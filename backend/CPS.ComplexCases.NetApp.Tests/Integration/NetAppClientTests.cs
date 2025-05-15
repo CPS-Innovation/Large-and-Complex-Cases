@@ -122,7 +122,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             result.Should().NotBeNull();
             result.BucketName.Should().Be(bucketName);
             result.FileData.Should().HaveCount(2);
-            result.FileData.ToList()[0].Key.Should().Be(objectName);
+            result.FileData.ToList()[0].Path.Should().Be(objectName);
         }
 
         [Fact]

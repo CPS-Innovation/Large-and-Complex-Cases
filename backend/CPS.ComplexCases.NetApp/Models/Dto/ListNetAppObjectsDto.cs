@@ -16,7 +16,8 @@ public class ListNetAppFolderDataDto
 
 public class ListNetAppFileDataDto
 {
-    public required string Key { get; set; }
+    public required string Path { get; set; }
     public required string Etag { get; set; }
+    public required long Filesize { get; set; }
     public required DateTime LastModified { get; set; }
 }
