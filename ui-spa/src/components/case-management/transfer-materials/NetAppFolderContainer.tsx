@@ -11,14 +11,16 @@ import { mapToNetAppFolderData } from "../../../common/utils/mapToNetAppFolderDa
 import styles from "./netAppFolderContainer.module.scss";
 
 type NetAppFolderContainerProps = {
-  rootFolderPath: string;
+  connectedFolderPath: string;
+  currentFolderPath: string;
   netAppFolderDataResponse?: NetAppFolderDataResponse;
   netAppFolderDataStatus: "loading" | "succeeded" | "failed" | "initial";
   handleGetFolderContent: (folderId: string) => void;
 };
 
 const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
-  rootFolderPath,
+  connectedFolderPath,
+  currentFolderPath,
   netAppFolderDataResponse,
   netAppFolderDataStatus,
   handleGetFolderContent,
@@ -50,15 +52,19 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
   }, [netAppFolderData, sortValues]);
 
   const folders = useMemo(() => {
-    const parts = rootFolderPath.split("/").filter(Boolean);
+    const replacedString = currentFolderPath.replace(connectedFolderPath, "");
+    const parts = replacedString.split("/").filter(Boolean);
 
     const result = parts.map((folderName, index) => ({
       folderName,
-      folderPath: `${parts.slice(0, index + 1).join("/")}/`,
+      folderPath: `${connectedFolderPath}${parts.slice(0, index + 1).join("/")}/`,
     }));
-    const withHome = [{ folderName: "Home", folderPath: "" }, ...result];
+    const withHome = [
+      { folderName: "Home", folderPath: connectedFolderPath },
+      ...result,
+    ];
     return withHome;
-  }, [rootFolderPath]);
+  }, [currentFolderPath, connectedFolderPath]);
 
   const getTableRowData = () => {
     return netAppDataSorted.map((data) => {

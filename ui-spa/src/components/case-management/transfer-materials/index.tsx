@@ -275,12 +275,15 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           <h3>Shared drive</h3>
         </div>
         <div className={styles.tableContainer}>
-          <NetAppFolderContainer
-            rootFolderPath={netAppFolderPath}
-            netAppFolderDataStatus={netAppStatus}
-            netAppFolderDataResponse={netAppData}
-            handleGetFolderContent={handleGetFolderContent}
-          />
+          {netAppPath && (
+            <NetAppFolderContainer
+              connectedFolderPath={netAppPath}
+              currentFolderPath={netAppFolderPath}
+              netAppFolderDataStatus={netAppStatus}
+              netAppFolderDataResponse={netAppData}
+              handleGetFolderContent={handleGetFolderContent}
+            />
+          )}
         </div>
       </div>
     );

@@ -116,29 +116,29 @@ test.describe("transfer material egress list", () => {
       page.getByTestId("egress-folder-table-loader"),
     ).not.toBeVisible();
     await validateFolderPath(page, ["Home", "folder-1-0"]);
-    await page.locator('role=button[name="folder-2-0"]').click();
+    await egressTableWrapper.locator('role=button[name="folder-2-0"]').click();
     await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
     await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
     await expect(
       page.getByTestId("egress-folder-table-loader"),
     ).not.toBeVisible();
     await validateFolderPath(page, ["Home", "folder-1-0", "folder-2-0"]);
-    await page.locator('role=button[name="folder-3-0"]').click();
+    await egressTableWrapper.locator('role=button[name="folder-3-0"]').click();
     await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
     await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
     await expect(
       page.getByTestId("egress-folder-table-loader"),
     ).not.toBeVisible();
-    await page.locator('role=button[name="folder-1-0"]').click();
+    await egressTableWrapper.locator('role=button[name="folder-1-0"]').click();
     await validateFolderPath(page, ["Home", "folder-1-0"]);
-    await page.locator('role=button[name="folder-2-1"]').click();
+    await egressTableWrapper.locator('role=button[name="folder-2-1"]').click();
     await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
     await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
     await expect(
       page.getByTestId("egress-folder-table-loader"),
     ).not.toBeVisible();
     await validateFolderPath(page, ["Home", "folder-1-0", "folder-2-1"]);
-    await page.locator('role=button[name="folder-3-1"]').click();
+    await egressTableWrapper.locator('role=button[name="folder-3-1"]').click();
     await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
     await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
     await expect(
@@ -150,7 +150,7 @@ test.describe("transfer material egress list", () => {
       "folder-2-1",
       "folder-3-1",
     ]);
-    await page.locator('role=button[name="folder-2-1"]').click();
+    await egressTableWrapper.locator('role=button[name="folder-2-1"]').click();
     await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
     await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
     await expect(
@@ -159,7 +159,7 @@ test.describe("transfer material egress list", () => {
     await validateFolderPath(page, ["Home", "folder-1-0", "folder-2-1"]);
     await expect(page.locator('role=button[name="folder-3-0"]')).toBeVisible();
     await expect(page.locator('role=button[name="folder-3-1"]')).toBeVisible();
-    await page.locator('role=button[name="Home"]').click();
+    await egressTableWrapper.locator('role=button[name="Home"]').click();
     await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
     await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
     await validateFolderPath(page, ["Home"]);

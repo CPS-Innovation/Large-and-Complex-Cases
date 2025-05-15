@@ -42,7 +42,7 @@ export const getNetAppFolderResultsDev = (path: string) => {
       ...netAppRootFolderResultsDev,
       data: {
         folderData: [],
-        filesData: [],
+        fileData: [],
       },
     };
   }
