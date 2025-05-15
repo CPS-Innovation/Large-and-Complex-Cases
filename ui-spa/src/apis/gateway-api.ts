@@ -287,12 +287,12 @@ export const getNetAppFolders = async (
     const result = (await response.json()) as NetAppFolderResponse;
 
     const { data, pagination } = result;
-    const updatedFolders = collectedFolders.concat(data.folders);
-    const updatedFiles = collectedFiles.concat(data.files);
+    const updatedFolders = collectedFolders.concat(data.folderData);
+    const updatedFiles = collectedFiles.concat(data.fileData);
     if (!pagination.nextContinuationToken) {
       return {
-        folders: updatedFolders,
-        files: updatedFiles,
+        folderData: updatedFolders,
+        fileData: updatedFiles,
       };
     }
     return getNetAppFolders(

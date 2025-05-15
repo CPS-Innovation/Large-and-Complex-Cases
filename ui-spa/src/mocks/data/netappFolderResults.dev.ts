@@ -1,7 +1,7 @@
 import { NetAppFolderResponse } from "../../common/types/NetAppFolderData";
 export const netAppRootFolderResultsDev: NetAppFolderResponse = {
   data: {
-    files: [
+    fileData: [
       {
         path: "file-0-0.pdf/",
         lastModified: "2000-01-02",
@@ -13,7 +13,7 @@ export const netAppRootFolderResultsDev: NetAppFolderResponse = {
         filesize: 2268979,
       },
     ],
-    folders: [
+    folderData: [
       {
         path: "folder-0-0/",
       },
@@ -41,12 +41,12 @@ export const getNetAppFolderResultsDev = (path: string) => {
     return {
       ...netAppRootFolderResultsDev,
       data: {
-        folders: [],
-        files: [],
+        folderData: [],
+        filesData: [],
       },
     };
   }
-  const newFolders = netAppRootFolderResultsDev.data.folders.map(
+  const newFolders = netAppRootFolderResultsDev.data.folderData.map(
     (item, index) => {
       return {
         ...item,
@@ -54,15 +54,17 @@ export const getNetAppFolderResultsDev = (path: string) => {
       };
     },
   );
-  const newFiles = netAppRootFolderResultsDev.data.files.map((item, index) => {
-    return { ...item, path: `${path}files-${levels.length}-${index}.pdf/` };
-  });
+  const newFiles = netAppRootFolderResultsDev.data.fileData.map(
+    (item, index) => {
+      return { ...item, path: `${path}files-${levels.length}-${index}.pdf/` };
+    },
+  );
 
   return {
     ...netAppRootFolderResultsDev,
     data: {
-      folders: newFolders,
-      files: newFiles,
+      folderData: newFolders,
+      fileData: newFiles,
     },
   };
 };

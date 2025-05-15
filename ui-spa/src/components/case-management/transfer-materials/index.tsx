@@ -17,11 +17,12 @@ import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
   egressWorkspaceId: string | undefined;
-  netappFolderPath: string | undefined;
+  netAppPath: string | undefined;
 };
 
 const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   egressWorkspaceId,
+  netAppPath,
 }) => {
   const [sortValues, setSortValues] = useState<{
     name: string;
@@ -41,7 +42,11 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   const [selectedEgressFolders, setSelectedEgressFolders] = useState<string[]>(
     [],
   );
-
+  useEffect(() => {
+    if (netAppPath) setNetAppFolderPath(netAppPath);
+  }, [netAppPath]);
+  console.log("netAppFolderPath>>", netAppFolderPath);
+  console.log("netAppPath>>", netAppPath);
   const currentEgressFolder = useMemo(() => {
     return egressPathFolders[egressPathFolders.length - 1];
   }, [egressPathFolders]);
@@ -231,7 +236,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   }, [egressWorkspaceId, egressRefetch]);
 
   useEffect(() => {
-    if (netAppFolderPath !== undefined) {
+    if (netAppFolderPath) {
       netAppRefetch();
     }
   }, [netAppFolderPath, netAppRefetch]);

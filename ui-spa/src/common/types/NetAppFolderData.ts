@@ -17,8 +17,8 @@ export type NetAppFolderResponse = {
 };
 
 export type NetAppFolderDataResponse = {
-  files: NetAppFile[];
-  folders: NetAppFolder[];
+  fileData: NetAppFile[];
+  folderData: NetAppFolder[];
 };
 
 export type NetAppFolderData = {

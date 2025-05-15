@@ -25,7 +25,7 @@ const CaseManagementPage = () => {
         children: (
           <TransferMaterialsPage
             egressWorkspaceId={caseMetaData?.data?.egressWorkspaceId}
-            netappFolderPath={caseMetaData?.data?.netappFolderPath}
+            netAppPath={caseMetaData?.data?.netappFolderPath ?? ""}
           />
         ),
       },
