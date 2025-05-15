@@ -1,5 +1,5 @@
 export type ConnectNetAppFolder = {
-  folderPath: string;
+  path: string;
   caseId: number | null;
 };
 
