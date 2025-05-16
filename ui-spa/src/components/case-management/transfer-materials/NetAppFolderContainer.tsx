@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { LinkButton } from "../../govuk";
+import Checkbox from "../../common/Checkbox";
 import { NetAppFolderDataResponse } from "../../../common/types/NetAppFolderData";
 import { sortByStringProperty } from "../../../common/utils/sortUtils";
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
@@ -11,19 +12,25 @@ import { mapToNetAppFolderData } from "../../../common/utils/mapToNetAppFolderDa
 import styles from "./netAppFolderContainer.module.scss";
 
 type NetAppFolderContainerProps = {
+  transferSource: "egress" | "netapp";
   connectedFolderPath: string;
   currentFolderPath: string;
   netAppFolderDataResponse?: NetAppFolderDataResponse;
   netAppFolderDataStatus: "loading" | "succeeded" | "failed" | "initial";
   handleGetFolderContent: (folderId: string) => void;
+  handleCheckboxChange: (id: string, checked: boolean) => void;
+  isEgressFolderChecked: (id: string) => boolean;
 };
 
 const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
+  transferSource,
   connectedFolderPath,
   currentFolderPath,
   netAppFolderDataResponse,
   netAppFolderDataStatus,
   handleGetFolderContent,
+  handleCheckboxChange,
+  isEgressFolderChecked,
 }) => {
   const [sortValues, setSortValues] = useState<{
     name: string;
@@ -67,9 +74,21 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
   }, [currentFolderPath, connectedFolderPath]);
 
   const getTableRowData = () => {
-    return netAppDataSorted.map((data) => {
+    const rowData = netAppDataSorted.map((data) => {
       return {
         cells: [
+          {
+            children: (
+              <>
+                <Checkbox
+                  id={data.path}
+                  checked={isEgressFolderChecked(data.path)}
+                  onChange={handleCheckboxChange}
+                  ariaLabel="select folder"
+                />
+              </>
+            ),
+          },
           {
             children: (
               <div className={styles.iconButtonWrapper}>
@@ -104,10 +123,32 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
         ],
       };
     });
+    if (transferSource !== "netapp") {
+      const filteredRowData = rowData.map((data) => {
+        return {
+          cells: data.cells.slice(1),
+        };
+      });
+      return filteredRowData;
+    }
+    return rowData;
   };
 
   const getTableHeadData = () => {
-    return [
+    const tableHeadData = [
+      {
+        children: (
+          <>
+            <Checkbox
+              id={"all-folders"}
+              checked={isEgressFolderChecked("all-folders")}
+              onChange={handleCheckboxChange}
+              ariaLabel="Select all folders"
+            />
+          </>
+        ),
+        sortable: false,
+      },
       {
         children: <>Folder name</>,
         sortable: true,
@@ -120,6 +161,8 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
         sortName: "file-size",
       },
     ];
+    if (transferSource !== "netapp") return tableHeadData.slice(1);
+    return tableHeadData;
   };
 
   const handleTableSort = (

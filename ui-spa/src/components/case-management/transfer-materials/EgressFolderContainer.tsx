@@ -14,6 +14,7 @@ import { EgressFolderData } from "../../../common/types/EgressFolderData";
 import styles from "./egressFolderContainer.module.scss";
 
 type EgressFolderContainerProps = {
+  transferSource: "egress" | "netapp";
   egressData?: EgressFolderData;
   egressDataStatus: "loading" | "succeeded" | "failed" | "initial";
   egressPathFolders: {
@@ -28,6 +29,7 @@ type EgressFolderContainerProps = {
 };
 
 const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
+  transferSource,
   egressData,
   egressDataStatus,
   egressPathFolders,
@@ -54,6 +56,7 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
 
     return egressData;
   }, [egressData, sortValues]);
+
   const handleTableSort = (
     sortName: string,
     sortType: "ascending" | "descending",
@@ -61,7 +64,7 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
     setSortValues({ name: sortName, type: sortType });
   };
   const getTableHeadData = () => {
-    return [
+    const tableHeadData = [
       {
         children: (
           <>
@@ -92,10 +95,12 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
         sortName: "file-size",
       },
     ];
+    if (transferSource !== "egress") return tableHeadData.slice(1);
+    return tableHeadData;
   };
 
   const getTableRowData = () => {
-    return egressFolderData.map((data) => {
+    const rowData = egressFolderData.map((data) => {
       return {
         cells: [
           {
@@ -134,7 +139,6 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
               </div>
             ),
           },
-
           {
             children: <span>{formatDate(data.dateUpdated)}</span>,
           },
@@ -146,7 +150,17 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
         ],
       };
     });
+    if (transferSource !== "egress") {
+      const filteredRowData = rowData.map((data) => {
+        return {
+          cells: data.cells.slice(1),
+        };
+      });
+      return filteredRowData;
+    }
+    return rowData;
   };
+
   return (
     <div>
       <FolderNavigationTable

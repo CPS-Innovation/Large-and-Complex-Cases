@@ -23,7 +23,9 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     }[]
   >([{ folderName: "Home", folderPath: "", folderId: "" }]);
 
-  const [switchSource, setSwitchSource] = useState(false);
+  const [transferSource, setTransferSource] = useState<"egress" | "netapp">(
+    "egress",
+  );
   const [netAppFolderPath, setNetAppFolderPath] = useState("");
 
   const [selectedEgressFolders, setSelectedEgressFolders] = useState<string[]>(
@@ -116,18 +118,30 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   }, [netAppFolderPath, netAppRefetch]);
 
   const handleSwitchSource = () => {
-    setSwitchSource(!switchSource);
+    if (transferSource === "egress") {
+      setTransferSource("netapp");
+      return;
+    }
+    setTransferSource("egress");
   };
 
   const renderEgressContainer = () => {
     return (
-      <div className={styles.egressContainer} data-testId="egress-container">
+      <div
+        className={
+          transferSource === "egress"
+            ? styles.sourceContainer
+            : styles.destinationContainer
+        }
+        data-testId="egress-container"
+      >
         <div className={styles.titleWrapper}>
           <h3>Egress Inbound documents</h3>
         </div>
         <div className={styles.tableContainer}>
           {
             <EgressFolderContainer
+              transferSource={transferSource}
               egressData={egressData}
               egressDataStatus={egressStatus}
               egressPathFolders={egressPathFolders}
@@ -144,18 +158,28 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
 
   const renderNetappContainer = () => {
     return (
-      <div className={styles.netappContainer} data-testId="netapp-container">
+      <div
+        className={
+          transferSource === "netapp"
+            ? styles.sourceContainer
+            : styles.destinationContainer
+        }
+        data-testId="netapp-container"
+      >
         <div className={styles.titleWrapper}>
           <h3>Shared drive</h3>
         </div>
         <div className={styles.tableContainer}>
           {netAppPath && (
             <NetAppFolderContainer
+              transferSource={transferSource}
               connectedFolderPath={netAppPath}
               currentFolderPath={netAppFolderPath}
               netAppFolderDataStatus={netAppStatus}
               netAppFolderDataResponse={netAppData}
               handleGetFolderContent={handleGetFolderContent}
+              handleCheckboxChange={handleCheckboxChange}
+              isEgressFolderChecked={isEgressFolderChecked}
             />
           )}
         </div>
@@ -175,15 +199,15 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         className={styles.mainContainer}
         data-testId="transfer-main-container"
       >
-        {switchSource ? (
+        {transferSource === "egress" ? (
           <>
-            {renderNetappContainer()}
             {renderEgressContainer()}
+            {renderNetappContainer()}
           </>
         ) : (
           <>
-            {renderEgressContainer()}
             {renderNetappContainer()}
+            {renderEgressContainer()}
           </>
         )}
       </div>
