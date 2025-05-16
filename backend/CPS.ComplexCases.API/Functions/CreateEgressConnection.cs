@@ -1,8 +1,8 @@
 using System.Net;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
-using CPS.ComplexCases.API.Validators;
 using CPS.ComplexCases.API.Validators.Requests;
+using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.Data.Services;
 using CPS.ComplexCases.Egress.Client;

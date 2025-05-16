@@ -1,0 +1,18 @@
+using CPS.ComplexCases.Common.Models.Domain.Enums;
+
+namespace CPS.ComplexCases.Common.Models.Requests;
+
+public class TransferRequest
+{
+    public TransferType TransferType { get; set; }
+    public required List<string> SourcePaths { get; set; }
+    public required string DestinationPath { get; set; }
+    public required TransferMetadata Metadata { get; set; }
+
+}
+
+public class TransferMetadata
+{
+    public int CaseId { get; set; }
+    public required string UserName { get; set; }
+}

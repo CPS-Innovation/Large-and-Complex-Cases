@@ -1,8 +1,9 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using System.Text.Json;
+using CPS.ComplexCases.Common.Models;
 
-namespace CPS.ComplexCases.API.Validators;
+namespace CPS.ComplexCases.Common.Helpers;
 
 public static class ValidatorHelper
 {

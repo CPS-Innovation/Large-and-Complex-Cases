@@ -35,6 +35,7 @@
     <ProjectReference Include="..\CPS.ComplexCases.DDEI\CPS.ComplexCases.DDEI.csproj" />
     <ProjectReference Include="..\CPS.ComplexCases.API.HttpTelemetry\CPS.ComplexCases.API.HttpTelemetry.csproj" />
     <ProjectReference Include="..\CPS.ComplexCases.Data\CPS.ComplexCases.Data.csproj" />
+    <ProjectReference Include="..\CPS.ComplexCases.Common\CPS.ComplexCases.Common.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json">
