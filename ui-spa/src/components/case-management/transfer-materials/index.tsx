@@ -15,6 +15,9 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   egressWorkspaceId,
   netAppPath,
 }) => {
+  const [transferSource, setTransferSource] = useState<"egress" | "netapp">(
+    "egress",
+  );
   const [egressPathFolders, setEgressPathFolders] = useState<
     {
       folderName: string;
@@ -22,15 +25,10 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       folderId?: string;
     }[]
   >([{ folderName: "Home", folderPath: "", folderId: "" }]);
-
-  const [transferSource, setTransferSource] = useState<"egress" | "netapp">(
-    "egress",
-  );
   const [netAppFolderPath, setNetAppFolderPath] = useState("");
 
-  const [selectedEgressFolders, setSelectedEgressFolders] = useState<string[]>(
-    [],
-  );
+  const [selectedSourceFoldersOrFiles, setSelectedSourceFoldersOrFiles] =
+    useState<string[]>([]);
   useEffect(() => {
     if (netAppPath) setNetAppFolderPath(netAppPath);
   }, [netAppPath]);
@@ -55,7 +53,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     data: netAppData,
   } = useApi(getNetAppFolders, [netAppFolderPath], false);
 
-  const handleFolderPathClick = (path: string) => {
+  const handleEgressFolderPathClick = (path: string) => {
     const index = egressPathFolders.findIndex(
       (item) => item.folderPath === path,
     );
@@ -64,9 +62,10 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         ? egressPathFolders.slice(0, index + 1)
         : [...egressPathFolders];
     setEgressPathFolders(newData);
+    setSelectedSourceFoldersOrFiles([]);
   };
 
-  const handleFolderClick = (id: string) => {
+  const handleEgressFolderClick = (id: string) => {
     const folderData = egressData!.find((item) => item.id === id);
     if (folderData)
       setEgressPathFolders((prevItems) => [
@@ -77,47 +76,51 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           folderName: folderData.name,
         },
       ]);
+    if (transferSource === "egress") setSelectedSourceFoldersOrFiles([]);
   };
 
-  const handleCheckboxChange = (id: string, checked: boolean) => {
+  const handleNetAppFolderClick = (path: string) => {
+    setNetAppFolderPath(path);
+    if (transferSource === "netapp") setSelectedSourceFoldersOrFiles([]);
+  };
+
+  const handleCheckboxChange = (checkboxId: string, checked: boolean) => {
     let updatedFolders: string[] = [];
 
-    if (id === "all-folders") {
+    if (checkboxId === "all-folders") {
       if (checked) {
-        updatedFolders = ["all-folders", ...egressData!.map((data) => data.id)];
+        if (transferSource === "egress")
+          updatedFolders = [
+            "all-folders",
+            ...egressData!.map((data) => data.id),
+          ];
+        if (transferSource === "netapp")
+          updatedFolders = [
+            "all-folders",
+            ...[...netAppData!.folderData, ...netAppData!.fileData].map(
+              (data) => data.path,
+            ),
+          ];
       } else {
         updatedFolders = [];
       }
     } else if (!checked) {
-      updatedFolders = selectedEgressFolders.filter((item) => item !== id);
+      updatedFolders = selectedSourceFoldersOrFiles.filter(
+        (item) => item !== checkboxId,
+      );
     } else {
-      updatedFolders = [...selectedEgressFolders, id];
+      updatedFolders = [...selectedSourceFoldersOrFiles, checkboxId];
     }
 
-    setSelectedEgressFolders(updatedFolders);
+    setSelectedSourceFoldersOrFiles(updatedFolders);
   };
 
-  const isEgressFolderChecked = (id: string) => {
-    return selectedEgressFolders.includes(id);
+  const isSourceFolderChecked = (id: string) => {
+    return selectedSourceFoldersOrFiles.includes(id);
   };
-
-  const handleGetFolderContent = (path: string) => {
-    setNetAppFolderPath(path);
-  };
-
-  useEffect(() => {
-    if (egressWorkspaceId !== undefined) {
-      egressRefetch();
-    }
-  }, [egressWorkspaceId, egressRefetch]);
-
-  useEffect(() => {
-    if (netAppFolderPath) {
-      netAppRefetch();
-    }
-  }, [netAppFolderPath, netAppRefetch]);
 
   const handleSwitchSource = () => {
+    setSelectedSourceFoldersOrFiles([]);
     if (transferSource === "egress") {
       setTransferSource("netapp");
       return;
@@ -145,10 +148,10 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
               egressData={egressData}
               egressDataStatus={egressStatus}
               egressPathFolders={egressPathFolders}
-              handleFolderPathClick={handleFolderPathClick}
-              handleFolderClick={handleFolderClick}
+              handleFolderPathClick={handleEgressFolderPathClick}
+              handleFolderClick={handleEgressFolderClick}
               handleCheckboxChange={handleCheckboxChange}
-              isEgressFolderChecked={isEgressFolderChecked}
+              isSourceFolderChecked={isSourceFolderChecked}
             />
           }
         </div>
@@ -177,15 +180,27 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
               currentFolderPath={netAppFolderPath}
               netAppFolderDataStatus={netAppStatus}
               netAppFolderDataResponse={netAppData}
-              handleGetFolderContent={handleGetFolderContent}
+              handleGetFolderContent={handleNetAppFolderClick}
               handleCheckboxChange={handleCheckboxChange}
-              isEgressFolderChecked={isEgressFolderChecked}
+              isSourceFolderChecked={isSourceFolderChecked}
             />
           )}
         </div>
       </div>
     );
   };
+
+  useEffect(() => {
+    if (egressWorkspaceId !== undefined) {
+      egressRefetch();
+    }
+  }, [egressWorkspaceId, egressRefetch]);
+
+  useEffect(() => {
+    if (netAppFolderPath) {
+      netAppRefetch();
+    }
+  }, [netAppFolderPath, netAppRefetch]);
 
   return (
     <div>

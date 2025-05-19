@@ -25,7 +25,7 @@ type EgressFolderContainerProps = {
   handleFolderPathClick: (path: string) => void;
   handleFolderClick: (id: string) => void;
   handleCheckboxChange: (id: string, checked: boolean) => void;
-  isEgressFolderChecked: (id: string) => boolean;
+  isSourceFolderChecked: (checkboxId: string) => boolean;
 };
 
 const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
@@ -36,7 +36,7 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
   handleFolderPathClick,
   handleFolderClick,
   handleCheckboxChange,
-  isEgressFolderChecked,
+  isSourceFolderChecked,
 }) => {
   const [sortValues, setSortValues] = useState<{
     name: string;
@@ -71,7 +71,7 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
           <>
             <Checkbox
               id={"all-folders"}
-              checked={isEgressFolderChecked("all-folders")}
+              checked={isSourceFolderChecked("all-folders")}
               onChange={handleCheckboxChange}
               ariaLabel="Select all folders"
             />
@@ -129,7 +129,7 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
               <>
                 <Checkbox
                   id={data.id}
-                  checked={isEgressFolderChecked(data.id)}
+                  checked={isSourceFolderChecked(data.id)}
                   onChange={handleCheckboxChange}
                   ariaLabel="select folder"
                 />

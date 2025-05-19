@@ -20,7 +20,7 @@ type NetAppFolderContainerProps = {
   netAppFolderDataStatus: "loading" | "succeeded" | "failed" | "initial";
   handleGetFolderContent: (folderId: string) => void;
   handleCheckboxChange: (id: string, checked: boolean) => void;
-  isEgressFolderChecked: (id: string) => boolean;
+  isSourceFolderChecked: (checkboxId: string) => boolean;
 };
 
 const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
@@ -31,7 +31,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
   netAppFolderDataStatus,
   handleGetFolderContent,
   handleCheckboxChange,
-  isEgressFolderChecked,
+  isSourceFolderChecked,
 }) => {
   const [sortValues, setSortValues] = useState<{
     name: string;
@@ -81,7 +81,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
           <>
             <Checkbox
               id={"all-folders"}
-              checked={isEgressFolderChecked("all-folders")}
+              checked={isSourceFolderChecked("all-folders")}
               onChange={handleCheckboxChange}
               ariaLabel="Select all folders"
             />
@@ -139,7 +139,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
               <>
                 <Checkbox
                   id={data.path}
-                  checked={isEgressFolderChecked(data.path)}
+                  checked={isSourceFolderChecked(data.path)}
                   onChange={handleCheckboxChange}
                   ariaLabel="select folder"
                 />
