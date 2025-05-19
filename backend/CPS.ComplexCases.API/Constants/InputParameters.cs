@@ -14,5 +14,6 @@ namespace CPS.ComplexCases.API.Constants
         public const string Username = "username";
         public const string Password = "password";
         public const string FolderId = "folder-id";
+        public const string CaseId = "case-id";
     }
 }

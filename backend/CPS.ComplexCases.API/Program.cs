@@ -1,3 +1,5 @@
+using CPS.ComplexCases.API.Clients.FileTransfer;
+using CPS.ComplexCases.API.Extensions;
 using CPS.ComplexCases.API.Middleware;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Validators;
@@ -43,6 +45,7 @@ builder.Services.AddDdeiClientTactical();
 builder.Services.AddEgressClient(builder.Configuration);
 builder.Services.AddNetAppClient(builder.Configuration);
 builder.Services.AddDataClient(builder.Configuration);
+builder.Services.AddFileTransferClient(builder.Configuration);
 
 builder.Services.AddScoped<ICaseEnrichmentService, CaseEnrichmentService>();
 builder.Services.AddSingleton<IOpenApiConfigurationOptions, OpenApiConfigurationOptions>();
