@@ -2,5 +2,6 @@ namespace CPS.ComplexCases.Data.Entities;
 
 public interface IAuditableUpdated
 {
-    DateTime UpdatedAt { get; set; }
+    Guid Id { get; }
+    DateTime? UpdatedAt { get; set; }
 }

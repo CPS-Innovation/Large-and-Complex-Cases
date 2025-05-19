@@ -4,7 +4,8 @@ namespace CPS.ComplexCases.Data.Entities;
 
 public class AuditLog : IAuditableCreated, IAuditableUpdated
 {
-    public Guid Id { get; set; }
+    public Guid Id { get; }
+    public int CaseId { get; set; }
     public string? ActionType { get; set; }
     public string? UserId { get; set; }
     public string? UserName { get; set; }
@@ -14,5 +15,5 @@ public class AuditLog : IAuditableCreated, IAuditableUpdated
     public DateTime Timestamp { get; set; }
     public JsonDocument? Details { get; set; }
     public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }

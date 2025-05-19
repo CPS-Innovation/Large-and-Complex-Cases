@@ -38,11 +38,11 @@ builder.Services.AddSingleton(_ =>
                 new HttpDocumentRetriever());
 });
 
+builder.Services.AddDataClient(builder.Configuration);
 builder.Services.AddDdeiClient(builder.Configuration);
 builder.Services.AddDdeiClientTactical();
 builder.Services.AddEgressClient(builder.Configuration);
 builder.Services.AddNetAppClient(builder.Configuration);
-builder.Services.AddDataClient(builder.Configuration);
 
 builder.Services.AddScoped<ICaseEnrichmentService, CaseEnrichmentService>();
 builder.Services.AddSingleton<IOpenApiConfigurationOptions, OpenApiConfigurationOptions>();
