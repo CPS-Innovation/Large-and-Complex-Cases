@@ -63,7 +63,8 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
   ) => {
     setSortValues({ name: sortName, type: sortType });
   };
-  const getTableHeadData = () => {
+
+  const getTableSourceHeadData = () => {
     const tableHeadData = [
       {
         children: (
@@ -83,7 +84,6 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
         sortable: true,
         sortName: "folder-name",
       },
-
       {
         children: <>Last modified date</>,
         sortable: true,
@@ -95,11 +95,32 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
         sortName: "file-size",
       },
     ];
-    if (transferSource !== "egress") return tableHeadData.slice(1);
     return tableHeadData;
   };
 
-  const getTableRowData = () => {
+  const getTableDestinationHeadData = () => {
+    const tableHeadData = [
+      {
+        children: <>Folder/file name</>,
+        sortable: true,
+        sortName: "folder-name",
+      },
+
+      {
+        children: <>Size</>,
+        sortable: true,
+        sortName: "file-size",
+      },
+    ];
+    return tableHeadData;
+  };
+
+  const getTableHeadData = () => {
+    if (transferSource === "egress") return getTableSourceHeadData();
+    return getTableDestinationHeadData();
+  };
+
+  const getTableSourceRowData = () => {
     const rowData = egressFolderData.map((data) => {
       return {
         cells: [
@@ -150,15 +171,52 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
         ],
       };
     });
-    if (transferSource !== "egress") {
-      const filteredRowData = rowData.map((data) => {
-        return {
-          cells: data.cells.slice(1),
-        };
-      });
-      return filteredRowData;
-    }
     return rowData;
+  };
+
+  const getTableDestinationRowData = () => {
+    const rowData = egressFolderData.map((data) => {
+      return {
+        cells: [
+          {
+            children: (
+              <div className={styles.iconButtonWrapper}>
+                {data.isFolder ? (
+                  <>
+                    <FolderIcon />
+                    <LinkButton
+                      type="button"
+                      onClick={() => {
+                        handleFolderClick(data.id);
+                      }}
+                    >
+                      {data.name}
+                    </LinkButton>
+                  </>
+                ) : (
+                  <>
+                    <FileIcon />
+                    <span className={styles.fileName}>{data.name}</span>
+                  </>
+                )}
+              </div>
+            ),
+          },
+
+          {
+            children: (
+              <span>{data.filesize ? formatFileSize(data.filesize) : ""}</span>
+            ),
+          },
+        ],
+      };
+    });
+    return rowData;
+  };
+  const getTableRowData = () => {
+    if (transferSource === "egress") return getTableSourceRowData();
+
+    return getTableDestinationRowData();
   };
 
   return (

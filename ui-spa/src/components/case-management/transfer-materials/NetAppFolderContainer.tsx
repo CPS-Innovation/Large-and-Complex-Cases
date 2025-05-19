@@ -9,6 +9,7 @@ import { formatFileSize } from "../../../common/utils/formatFileSize";
 import FolderIcon from "../../../components/svgs/folder.svg?react";
 import FileIcon from "../../../components/svgs/file.svg?react";
 import { mapToNetAppFolderData } from "../../../common/utils/mapToNetAppFolderData";
+import { formatDate } from "../../../common/utils/formatDate";
 import styles from "./netAppFolderContainer.module.scss";
 
 type NetAppFolderContainerProps = {
@@ -73,7 +74,63 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
     return withHome;
   }, [currentFolderPath, connectedFolderPath]);
 
-  const getTableRowData = () => {
+  const getTableSourceHeadData = () => {
+    const tableHeadData = [
+      {
+        children: (
+          <>
+            <Checkbox
+              id={"all-folders"}
+              checked={isEgressFolderChecked("all-folders")}
+              onChange={handleCheckboxChange}
+              ariaLabel="Select all folders"
+            />
+          </>
+        ),
+        sortable: false,
+      },
+      {
+        children: <>Folder name</>,
+        sortable: true,
+        sortName: "folder-name",
+      },
+      {
+        children: <>Last modified date</>,
+        sortable: true,
+        sortName: "date-updated",
+      },
+      {
+        children: <>Size</>,
+        sortable: true,
+        sortName: "file-size",
+      },
+    ];
+    return tableHeadData;
+  };
+
+  const getTableDestinationHeadData = () => {
+    const tableHeadData = [
+      {
+        children: <>Folder name</>,
+        sortable: true,
+        sortName: "folder-name",
+      },
+
+      {
+        children: <>Size</>,
+        sortable: true,
+        sortName: "file-size",
+      },
+    ];
+    return tableHeadData;
+  };
+
+  const getTableHeadData = () => {
+    if (transferSource === "netapp") return getTableSourceHeadData();
+    return getTableDestinationHeadData();
+  };
+
+  const getTableSourceRowData = () => {
     const rowData = netAppDataSorted.map((data) => {
       return {
         cells: [
@@ -115,6 +172,10 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
               </div>
             ),
           },
+
+          {
+            children: <span>{formatDate(data.lastModified)}</span>,
+          },
           {
             children: (
               <span>{data.filesize ? formatFileSize(data.filesize) : ""}</span>
@@ -123,46 +184,53 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
         ],
       };
     });
-    if (transferSource !== "netapp") {
-      const filteredRowData = rowData.map((data) => {
-        return {
-          cells: data.cells.slice(1),
-        };
-      });
-      return filteredRowData;
-    }
     return rowData;
   };
 
-  const getTableHeadData = () => {
-    const tableHeadData = [
-      {
-        children: (
-          <>
-            <Checkbox
-              id={"all-folders"}
-              checked={isEgressFolderChecked("all-folders")}
-              onChange={handleCheckboxChange}
-              ariaLabel="Select all folders"
-            />
-          </>
-        ),
-        sortable: false,
-      },
-      {
-        children: <>Folder name</>,
-        sortable: true,
-        sortName: "folder-name",
-      },
+  const getTableDestinationRowData = () => {
+    const rowData = netAppDataSorted.map((data) => {
+      return {
+        cells: [
+          {
+            children: (
+              <div className={styles.iconButtonWrapper}>
+                {data.isFolder ? (
+                  <>
+                    <FolderIcon />
+                    <LinkButton
+                      type="button"
+                      onClick={() => {
+                        handleGetFolderContent(data.path);
+                      }}
+                    >
+                      {getFolderNameFromPath(data.path)}
+                    </LinkButton>
+                  </>
+                ) : (
+                  <>
+                    <FileIcon />
+                    <span className={styles.fileName}>
+                      {getFolderNameFromPath(data.path)}
+                    </span>
+                  </>
+                )}
+              </div>
+            ),
+          },
+          {
+            children: (
+              <span>{data.filesize ? formatFileSize(data.filesize) : ""}</span>
+            ),
+          },
+        ],
+      };
+    });
+    return rowData;
+  };
 
-      {
-        children: <>Size</>,
-        sortable: true,
-        sortName: "file-size",
-      },
-    ];
-    if (transferSource !== "netapp") return tableHeadData.slice(1);
-    return tableHeadData;
+  const getTableRowData = () => {
+    if (transferSource === "netapp") return getTableSourceRowData();
+    return getTableDestinationRowData();
   };
 
   const handleTableSort = (
