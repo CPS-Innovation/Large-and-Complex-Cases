@@ -3,7 +3,7 @@ namespace CPS.ComplexCases.NetApp.Models.Dto;
 public class ListNetAppObjectsDto
 {
     public required ListNetAppDataDto Data { get; set; }
-    public required DataInfoDto DataInfo { get; set; }
+    public required PaginationDto Pagination { get; set; }
 }
 
 public class ListNetAppDataDto
