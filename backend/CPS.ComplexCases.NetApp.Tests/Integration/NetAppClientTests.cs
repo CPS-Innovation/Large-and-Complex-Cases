@@ -1,4 +1,6 @@
 using System.Text;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Amazon.Runtime;
 using Amazon.S3;
 using CPS.ComplexCases.NetApp.Client;
@@ -8,8 +10,6 @@ using CPS.ComplexCases.NetApp.WireMock.Mappings;
 using CPS.ComplexCases.NetApp.Wrappers;
 using CPS.ComplexCases.WireMock.Core;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
 using WireMock.Server;
 
@@ -120,9 +120,9 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
 
             // Assert
             result.Should().NotBeNull();
-            result.BucketName.Should().Be(bucketName);
-            result.FileData.Should().HaveCount(2);
-            result.FileData.ToList()[0].Path.Should().Be(objectName);
+            result.Data.BucketName.Should().Be(bucketName);
+            result.Data.FileData.Should().HaveCount(2);
+            result.Data.FileData.ToList()[0].Path.Should().Be(objectName);
         }
 
         [Fact]
@@ -154,10 +154,10 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
 
             // Assert
             result.Should().NotBeNull();
-            result.FolderData.Should().HaveCount(3);
-            result.FolderData.Should().Contain(x => x.Path == "counsel/");
-            result.FolderData.Should().Contain(x => x.Path == "counsel/statements/");
-            result.FolderData.Should().Contain(x => x.Path == "multimedia/");
+            result.Data.FolderData.Should().HaveCount(3);
+            result.Data.FolderData.Should().Contain(x => x.Path == "counsel/");
+            result.Data.FolderData.Should().Contain(x => x.Path == "counsel/statements/");
+            result.Data.FolderData.Should().Contain(x => x.Path == "multimedia/");
         }
     }
 }

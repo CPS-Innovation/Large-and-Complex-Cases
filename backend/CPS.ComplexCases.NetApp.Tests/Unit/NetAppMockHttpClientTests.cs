@@ -100,8 +100,8 @@ public class NetAppMockHttpClientTests
 
         // Assert
         result.Should().NotBeNull();
-        result.BucketName.Should().Be(bucketName);
-        result.FolderData.Should().ContainSingle(x => x.Path == "folder1/");
+        result.Data.BucketName.Should().Be(bucketName);
+        result.Data.FolderData.Should().ContainSingle(x => x.Path == "folder1/");
     }
 
     [Fact]

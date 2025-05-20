@@ -2,11 +2,16 @@ namespace CPS.ComplexCases.NetApp.Models.Dto;
 
 public class ListNetAppObjectsDto
 {
+    public required ListNetAppDataDto Data { get; set; }
+    public required DataInfoDto DataInfo { get; set; }
+}
+
+public class ListNetAppDataDto
+{
     public required string BucketName { get; set; }
     public string? RootPath { get; set; }
     public required IEnumerable<ListNetAppFolderDataDto> FolderData { get; set; }
     public required IEnumerable<ListNetAppFileDataDto> FileData { get; set; }
-    public required DataInfoDto DataInfo { get; set; }
 }
 
 public class ListNetAppFolderDataDto

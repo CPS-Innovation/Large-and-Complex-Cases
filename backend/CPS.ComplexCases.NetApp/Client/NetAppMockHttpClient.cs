@@ -111,10 +111,13 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
 
         var result = new ListNetAppObjectsDto
         {
-            BucketName = arg.BucketName,
-            RootPath = arg.Prefix,
-            FolderData = folders,
-            FileData = [],
+            Data = new ListNetAppDataDto
+            {
+                BucketName = arg.BucketName,
+                RootPath = arg.Prefix,
+                FolderData = folders,
+                FileData = [],
+            },
             DataInfo = new DataInfoDto
             {
                 ContinuationToken = response.ContinuationToken,
@@ -146,10 +149,13 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
 
         var result = new ListNetAppObjectsDto
         {
-            BucketName = arg.BucketName,
-            RootPath = arg.Prefix,
-            FolderData = folders,
-            FileData = files,
+            Data = new ListNetAppDataDto
+            {
+                BucketName = arg.BucketName,
+                RootPath = arg.Prefix,
+                FolderData = folders,
+                FileData = files
+            },
             DataInfo = new DataInfoDto
             {
                 ContinuationToken = response.ContinuationToken,
