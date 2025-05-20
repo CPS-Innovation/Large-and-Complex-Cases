@@ -10,6 +10,7 @@ using CPS.ComplexCases.FileTransfer.API.Validators;
 using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.FileTransfer.API.Services;
 using CPS.ComplexCases.FileTransfer.API.Durable.Orchestration;
+using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 
 namespace CPS.ComplexCases.FileTransfer.API.Functions;
 
@@ -41,10 +42,17 @@ public class InitiateTransfer
 
         var transferResponse = await _transferService.InitiateTransferAsync(transferId, transferRequest.Value, currentCorrelationId);
 
-        await orchestrationClient.ScheduleNewOrchestrationInstanceAsync(nameof(TransferOrchestrator), transferRequest.Value, new StartOrchestrationOptions
-        {
-            InstanceId = transferId.ToString(),
-        });
+        await orchestrationClient.ScheduleNewOrchestrationInstanceAsync(
+            nameof(TransferOrchestrator),
+            new TransferPayload
+            {
+                TransferId = transferId,
+            },
+            new StartOrchestrationOptions
+            {
+                InstanceId = transferId.ToString(),
+            }
+        );
 
         return new AcceptedResult($"/api/filetransfer/{transferId}/status", transferResponse);
     }

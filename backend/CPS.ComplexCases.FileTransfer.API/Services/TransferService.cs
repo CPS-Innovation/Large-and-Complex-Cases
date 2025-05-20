@@ -23,10 +23,8 @@ public class TransferService : ITransferService
             {
                 Id = transferId,
                 Status = TransferStatus.Initiated,
-                CreatedAt = DateTime.UtcNow,
                 DestinationPath = transferRequest.DestinationPath,
-                // todo: how do we get overall sourcePath ? 
-                SourcePath = transferRequest.SourcePaths[0],
+                SourcePaths = transferRequest.SourcePaths,
                 CaseId = transferRequest.Metadata.CaseId,
             };
 
