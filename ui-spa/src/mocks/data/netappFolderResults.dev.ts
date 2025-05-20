@@ -3,26 +3,26 @@ export const netAppRootFolderResultsDev: NetAppFolderResponse = {
   data: {
     fileData: [
       {
-        path: "file-0-0.pdf/",
+        path: "netapp/file-0-0.pdf",
         lastModified: "2000-01-02",
         filesize: 1234,
       },
       {
-        path: "file-1-0.pdf/",
+        path: "netapp/file-1-0.pdf",
         lastModified: "2000-01-03",
         filesize: 2268979,
       },
     ],
     folderData: [
       {
-        path: "folder-0-0/",
+        path: "netapp/folder-0-0/",
       },
       {
-        path: "folder-0-1/",
+        path: "netapp/folder-0-1/",
       },
 
       {
-        path: "folder-0-2/",
+        path: "netapp/folder-0-2/",
       },
     ],
   },
@@ -34,7 +34,8 @@ export const netAppRootFolderResultsDev: NetAppFolderResponse = {
 };
 
 export const getNetAppFolderResultsDev = (path: string) => {
-  if (!path || path === "abc") return netAppRootFolderResultsDev;
+  console.log("path>>", path);
+  if (!path || path === "netapp/") return netAppRootFolderResultsDev;
 
   const levels = path.split("/").filter((part) => part.length > 0);
   if (levels.length > 3) {
@@ -56,7 +57,7 @@ export const getNetAppFolderResultsDev = (path: string) => {
   );
   const newFiles = netAppRootFolderResultsDev.data.fileData.map(
     (item, index) => {
-      return { ...item, path: `${path}files-${levels.length}-${index}.pdf/` };
+      return { ...item, path: `${path}files-${levels.length}-${index}.pdf` };
     },
   );
 

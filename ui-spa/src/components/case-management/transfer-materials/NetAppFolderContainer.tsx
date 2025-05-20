@@ -4,6 +4,7 @@ import Checkbox from "../../common/Checkbox";
 import { NetAppFolderDataResponse } from "../../../common/types/NetAppFolderData";
 import { sortByStringProperty } from "../../../common/utils/sortUtils";
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
+import { getFileNameFromPath } from "../../../common/utils/getFileNameFromPath";
 import FolderNavigationTable from "../../common/FolderNavigationTable";
 import { formatFileSize } from "../../../common/utils/formatFileSize";
 import FolderIcon from "../../../components/svgs/folder.svg?react";
@@ -165,7 +166,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
                   <>
                     <FileIcon />
                     <span className={styles.fileName}>
-                      {getFolderNameFromPath(data.path)}
+                      {getFileNameFromPath(data.path)}
                     </span>
                   </>
                 )}
@@ -178,7 +179,9 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
           },
           {
             children: (
-              <span>{data.filesize ? formatFileSize(data.filesize) : ""}</span>
+              <span>
+                {data.filesize ? formatFileSize(data.filesize) : "--"}
+              </span>
             ),
           },
         ],
@@ -210,7 +213,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
                   <>
                     <FileIcon />
                     <span className={styles.fileName}>
-                      {getFolderNameFromPath(data.path)}
+                      {getFileNameFromPath(data.path)}
                     </span>
                   </>
                 )}
@@ -219,7 +222,9 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
           },
           {
             children: (
-              <span>{data.filesize ? formatFileSize(data.filesize) : ""}</span>
+              <span>
+                {data.filesize ? formatFileSize(data.filesize) : "--"}
+              </span>
             ),
           },
         ],

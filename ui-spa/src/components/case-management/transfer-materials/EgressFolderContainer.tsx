@@ -165,7 +165,9 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
           },
           {
             children: (
-              <span>{data.filesize ? formatFileSize(data.filesize) : ""}</span>
+              <span>
+                {data.filesize ? formatFileSize(data.filesize) : "--"}
+              </span>
             ),
           },
         ],
@@ -205,7 +207,9 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
 
           {
             children: (
-              <span>{data.filesize ? formatFileSize(data.filesize) : ""}</span>
+              <span>
+                {data.filesize ? formatFileSize(data.filesize) : "--"}
+              </span>
             ),
           },
         ],
