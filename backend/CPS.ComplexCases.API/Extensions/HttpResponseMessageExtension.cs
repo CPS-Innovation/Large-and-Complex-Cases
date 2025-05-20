@@ -8,7 +8,7 @@ public static class HttpResponseMessageExtensions
     {
         if (message.Content.IsMimeMultipartContent())
         {
-            return new FileStreamResult(await message.Content.ReadAsStreamAsync(), message.Content.Headers.ContentType?.MediaType);
+            return new FileStreamResult(await message.Content.ReadAsStreamAsync(), message.Content.Headers.ContentType?.MediaType ?? string.Empty);
         }
 
         if (message.Content.Headers.ContentType?.MediaType?.Equals("application/json") == true)

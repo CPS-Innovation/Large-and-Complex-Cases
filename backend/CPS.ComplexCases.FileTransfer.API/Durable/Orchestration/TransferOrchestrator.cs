@@ -1,7 +1,6 @@
 using CPS.ComplexCases.Common.Models.Requests;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask;
-using Microsoft.DurableTask.Client;
 using Microsoft.Extensions.Logging;
 
 namespace CPS.ComplexCases.FileTransfer.API;
