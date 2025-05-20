@@ -176,8 +176,8 @@ public class CaseEnrichmentService : ICaseEnrichmentService
 
       Pagination = new NetAppPaginationResponse
       {
-        NextContinuationToken = foldersDto.DataInfo.NextContinuationToken,
-        MaxKeys = foldersDto.DataInfo.MaxKeys,
+        NextContinuationToken = foldersDto.Pagination.NextContinuationToken,
+        MaxKeys = foldersDto.Pagination.MaxKeys,
       },
       Data = new ListNetAppObjectsDataResponse
       {
