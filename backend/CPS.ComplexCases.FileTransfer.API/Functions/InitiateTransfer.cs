@@ -3,11 +3,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask.Client;
 using Microsoft.Extensions.Logging;
+using Microsoft.DurableTask;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.FileTransfer.API.Validators;
 using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.FileTransfer.API.Services;
+using CPS.ComplexCases.FileTransfer.API.Durable.Orchestration;
 
 namespace CPS.ComplexCases.FileTransfer.API.Functions;
 
@@ -33,12 +35,17 @@ public class InitiateTransfer
         {
             return new BadRequestObjectResult(transferRequest.ValidationErrors);
         }
+
         var currentCorrelationId = req.Headers.GetCorrelationId();
+        var transferId = Guid.NewGuid();
 
-        var instanceId = await orchestrationClient.ScheduleNewOrchestrationInstanceAsync(nameof(TransferOrchestrator), transferRequest.Value);
+        var transferResponse = await _transferService.InitiateTransferAsync(transferId, transferRequest.Value, currentCorrelationId);
 
-        var response = await _transferService.InitiateTransferAsync(instanceId, transferRequest.Value, currentCorrelationId);
+        await orchestrationClient.ScheduleNewOrchestrationInstanceAsync(nameof(TransferOrchestrator), transferRequest.Value, new StartOrchestrationOptions
+        {
+            InstanceId = transferId.ToString(),
+        });
 
-        return new AcceptedResult($"/api/filetransfer/{instanceId}/status", response);
+        return new AcceptedResult($"/api/filetransfer/{transferId}/status", transferResponse);
     }
 }

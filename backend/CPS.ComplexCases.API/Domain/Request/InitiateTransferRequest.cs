@@ -7,6 +7,8 @@ public class InitiateTransferRequest
 {
     [JsonPropertyName("transferType")]
     public TransferType TransferType { get; set; }
+    [JsonPropertyName("transferDirection")]
+    public TransferDirection TransferDirection { get; set; }
     [JsonPropertyName("sourcePaths")]
     public required List<string> SourcePaths { get; set; }
     [JsonPropertyName("destinationPath")]

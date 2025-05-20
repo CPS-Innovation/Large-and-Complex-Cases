@@ -5,5 +5,5 @@ namespace CPS.ComplexCases.FileTransfer.API.Services;
 
 public interface ITransferService
 {
-    Task<TransferResponse> InitiateTransferAsync(string instanceId, TransferRequest transferRequest, Guid correlationId);
+    Task<TransferResponse> InitiateTransferAsync(Guid transferId, TransferRequest transferRequest, Guid correlationId);
 }

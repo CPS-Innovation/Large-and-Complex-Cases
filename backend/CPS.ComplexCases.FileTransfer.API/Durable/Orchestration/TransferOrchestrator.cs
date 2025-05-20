@@ -3,7 +3,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask;
 using Microsoft.Extensions.Logging;
 
-namespace CPS.ComplexCases.FileTransfer.API;
+namespace CPS.ComplexCases.FileTransfer.API.Durable.Orchestration;
 
 public class TransferOrchestrator
 {

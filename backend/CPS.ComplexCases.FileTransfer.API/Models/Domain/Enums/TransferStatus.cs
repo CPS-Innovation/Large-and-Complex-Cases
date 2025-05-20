@@ -2,9 +2,8 @@ namespace CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums
 {
     public enum TransferStatus
     {
-        Created,
-        Completed,
-        Failed,
-        Validating
+        Initiated, Queued, ListingFiles, InProgress,
+        InProgressChunking, UploadingChunk, CompletingMultipart, // Granular for items
+        Completed, PartiallyCompleted, Failed, Cancelled, Pending // Pending for items
     }
 }

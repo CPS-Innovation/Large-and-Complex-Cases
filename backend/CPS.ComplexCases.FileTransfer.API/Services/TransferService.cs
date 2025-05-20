@@ -14,17 +14,19 @@ public class TransferService : ITransferService
     {
         _logger = logger;
     }
-    public async Task<TransferResponse> InitiateTransferAsync(string instanceId, TransferRequest transferRequest, Guid correlationId)
+    public async Task<TransferResponse> InitiateTransferAsync(Guid transferId, TransferRequest transferRequest, Guid correlationId)
     {
         try
         {
             // create new transfer record in db
             var transfer = new Transfer
             {
-                TransferId = instanceId,
-                Status = TransferStatus.Created,
+                Id = transferId,
+                Status = TransferStatus.Initiated,
                 CreatedAt = DateTime.UtcNow,
                 DestinationPath = transferRequest.DestinationPath,
+                // todo: how do we get overall sourcePath ? 
+                SourcePath = transferRequest.SourcePaths[0],
                 CaseId = transferRequest.Metadata.CaseId,
             };
 
@@ -32,7 +34,7 @@ public class TransferService : ITransferService
 
             return new TransferResponse
             {
-                TransferId = transfer.TransferId,
+                Id = transfer.Id,
                 Status = transfer.Status,
                 CreatedAt = transfer.CreatedAt,
             };
