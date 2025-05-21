@@ -1,5 +1,5 @@
 import { NetAppFolderResponse } from "../../common/types/NetAppFolderData";
-export const netAppRootFolderResultsDev: NetAppFolderResponse = {
+export const netAppRootFolderResultsPlaywright: NetAppFolderResponse = {
   data: {
     fileData: [
       {
@@ -8,7 +8,7 @@ export const netAppRootFolderResultsDev: NetAppFolderResponse = {
         filesize: 1234,
       },
       {
-        path: "netapp/file-1-0.pdf",
+        path: "netapp/file-1-1.pdf",
         lastModified: "2000-01-03",
         filesize: 2268979,
       },
@@ -20,10 +20,6 @@ export const netAppRootFolderResultsDev: NetAppFolderResponse = {
       {
         path: "netapp/folder-1-1/",
       },
-
-      {
-        path: "netapp/folder-1-2/",
-      },
     ],
   },
 
@@ -33,20 +29,20 @@ export const netAppRootFolderResultsDev: NetAppFolderResponse = {
   },
 };
 
-export const getNetAppFolderResultsDev = (path: string) => {
-  if (!path || path === "netapp/") return netAppRootFolderResultsDev;
+export const getNetAppFolderResultsPlaywright = (path: string) => {
+  if (!path || path === "netapp/") return netAppRootFolderResultsPlaywright;
 
   const levels = path.split("/").filter((part) => part.length > 0);
   if (levels.length > 3) {
     return {
-      ...netAppRootFolderResultsDev,
+      ...netAppRootFolderResultsPlaywright,
       data: {
         folderData: [],
         fileData: [],
       },
     };
   }
-  const newFolders = netAppRootFolderResultsDev.data.folderData.map(
+  const newFolders = netAppRootFolderResultsPlaywright.data.folderData.map(
     (item, index) => {
       return {
         ...item,
@@ -54,14 +50,14 @@ export const getNetAppFolderResultsDev = (path: string) => {
       };
     },
   );
-  const newFiles = netAppRootFolderResultsDev.data.fileData.map(
+  const newFiles = netAppRootFolderResultsPlaywright.data.fileData.map(
     (item, index) => {
       return { ...item, path: `${path}files-${levels.length}-${index}.pdf` };
     },
   );
 
   return {
-    ...netAppRootFolderResultsDev,
+    ...netAppRootFolderResultsPlaywright,
     data: {
       folderData: newFolders,
       fileData: newFiles,

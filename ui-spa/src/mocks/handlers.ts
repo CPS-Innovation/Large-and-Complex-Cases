@@ -13,6 +13,7 @@ import {
   getEgressFolderResultsDev,
   getEgressFolderResultsPlaywright,
   getNetAppFolderResultsDev,
+  getNetAppFolderResultsPlaywright,
 } from "./data";
 
 export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
@@ -89,7 +90,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       const path = url.searchParams.get("path");
       const netAppRootFolderResults = isDevMock()
         ? getNetAppFolderResultsDev(path as string)
-        : getNetAppFolderResultsDev(path as string);
+        : getNetAppFolderResultsPlaywright(path as string);
       await delay(500);
 
       return HttpResponse.json(netAppRootFolderResults);

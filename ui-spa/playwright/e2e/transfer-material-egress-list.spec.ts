@@ -49,7 +49,9 @@ test.describe("transfer material egress list", () => {
     ).toBeVisible();
   });
 
-  test("Should show the egress folders results correctly", async ({ page }) => {
+  test("Should show the egress folders results correctly when egress is the source table", async ({
+    page,
+  }) => {
     await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
     await expect(page.getByTestId("tab-active")).toHaveText(
       "Transfer materials",
@@ -78,16 +80,55 @@ test.describe("transfer material egress list", () => {
     const row1Values = await egressTableWrapper
       .locator("table tbody tr:nth-child(1) td")
       .allTextContents();
-    expect(row1Values).toEqual(["", "folder-1-0", "02/01/2000", ""]);
+    expect(row1Values).toEqual(["", "folder-1-0", "02/01/2000", "--"]);
     const row2Values = await egressTableWrapper
       .locator("table tbody tr:nth-child(2) td")
       .allTextContents();
-    expect(row2Values).toEqual(["", "folder-1-1", "03/01/2000", ""]);
+    expect(row2Values).toEqual(["", "folder-1-1", "03/01/2000", "--"]);
 
     const row3Values = await egressTableWrapper
       .locator("table tbody tr:nth-child(3) td")
       .allTextContents();
     expect(row3Values).toEqual(["", "file-1-2.pdf", "03/01/2000", "1.23 KB"]);
+  });
+
+  test("Should show the egress folders results correctly when egress is the destination table", async ({
+    page,
+  }) => {
+    await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
+    await expect(page.getByTestId("tab-active")).toHaveText(
+      "Transfer materials",
+    );
+    await expect(
+      page.getByTestId("tab-content-transfer-materials").locator("h2"),
+    ).toHaveText(
+      "Transfer folders and files between egress and the shared drive",
+    );
+    await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
+    await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
+    await expect(
+      page.getByTestId("egress-folder-table-loader"),
+    ).not.toBeVisible();
+    await page.getByRole("button", { name: "Switch source" }).click();
+    const egressTableWrapper = page.getByTestId("egress-table-wrapper");
+    await validateFolderPath(page, ["Home"]);
+    const tableHeadValues = await egressTableWrapper
+      .locator("table thead tr:nth-child(1) th")
+      .allTextContents();
+    expect(tableHeadValues).toEqual([" Folder/file name", " Size"]);
+    const row1Values = await egressTableWrapper
+      .locator("table tbody tr:nth-child(1) td")
+      .allTextContents();
+    expect(row1Values).toEqual(["folder-1-0", "--"]);
+    const row2Values = await egressTableWrapper
+      .locator("table tbody tr:nth-child(2) td")
+      .allTextContents();
+    expect(row2Values).toEqual(["folder-1-1", "--"]);
+
+    const row3Values = await egressTableWrapper
+      .locator("table tbody tr:nth-child(3) td")
+      .allTextContents();
+    expect(row3Values).toEqual(["file-1-2.pdf", "1.23 KB"]);
   });
 
   test("Should correctly navigate through the egress folders", async ({

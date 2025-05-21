@@ -11,3 +11,4 @@ export { caseMetaDataPlaywright } from "./caseMetaData.playwright";
 export { getEgressFolderResultsDev } from "./egressFolderResults.dev";
 export { getEgressFolderResultsPlaywright } from "./egressFolderResults.playwright";
 export { getNetAppFolderResultsDev } from "./netappFolderResults.dev";
+export { getNetAppFolderResultsPlaywright } from "./netappFolderResults.playwright";

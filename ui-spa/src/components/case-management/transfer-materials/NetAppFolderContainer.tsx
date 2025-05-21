@@ -91,7 +91,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
         sortable: false,
       },
       {
-        children: <>Folder name</>,
+        children: <>Folder/file name</>,
         sortable: true,
         sortName: "folder-name",
       },
@@ -112,7 +112,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
   const getTableDestinationHeadData = () => {
     const tableHeadData = [
       {
-        children: <>Folder name</>,
+        children: <>Folder/file name</>,
         sortable: true,
         sortName: "folder-name",
       },
@@ -255,7 +255,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
         <FolderNavigationTable
           tableName={"netapp"}
           folders={folders}
-          loaderText="Loading folders from Network Shared Drive"
+          loaderText="Loading folders from Shared drive"
           folderResultsStatus={netAppFolderDataStatus}
           folderResultsLength={netAppDataSorted.length}
           handleFolderPathClick={handleFolderPathClick}
