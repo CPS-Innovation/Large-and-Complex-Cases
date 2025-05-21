@@ -6,6 +6,9 @@ import {
   getEgressSearchResults,
   getConnectNetAppFolders,
   connectNetAppFolder,
+  getCaseMetaData,
+  getEgressFolders,
+  getNetAppFolders,
 } from "./gateway-api";
 import { ApiError } from "../common/errors/ApiError";
 import { v4 } from "uuid";
@@ -457,7 +460,6 @@ describe("gateway apis", () => {
         }),
       );
     });
-
     it("should throw an ApiError when fetch fails", async () => {
       (v4 as any).mockReturnValue("id_123");
       (getAccessToken as any).mockResolvedValue("access_token");
@@ -492,7 +494,6 @@ describe("gateway apis", () => {
         }),
       );
     });
-
     it("should throw Error if the response data is not in correct format", async () => {
       const mockData = {
         data: [],
@@ -597,6 +598,374 @@ describe("gateway apis", () => {
             folderPath: "netapp",
             caseId: 123,
           }),
+        }),
+      );
+    });
+  });
+  describe("getCaseMetaData", () => {
+    it("should return case meta data when fetch is successful", async () => {
+      const mockData = {
+        caseId: "12",
+        egressWorkspaceId: "egress_1",
+        netappFolderPath: "netapp/",
+        operationName: "Thunderstruck",
+        urn: "45AA2098221",
+      };
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        json: async () => mockData,
+      });
+
+      const result = await getCaseMetaData("12");
+      expect(result).toEqual(mockData);
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/cases/12`,
+        expect.objectContaining({
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+
+    it("should throw an ApiError when fetch fails", async () => {
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+      });
+
+      await expect(getCaseMetaData("12")).rejects.toThrow(
+        new ApiError(
+          `Getting case metadata failed`,
+          "gateway_url/api/cases/12",
+          {
+            status: 500,
+            statusText: "Internal Server Error",
+          },
+        ),
+      );
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/cases/12`,
+        expect.objectContaining({
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+  });
+  describe("getEgressFolders", () => {
+    it("should return egress folders when fetch is successful", async () => {
+      const mockData = {
+        data: [],
+        pagination: {
+          totalResults: 50,
+          skip: 0,
+          take: 50,
+          count: 25,
+        },
+      };
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        json: async () => mockData,
+      });
+
+      const result = await getEgressFolders("thunder", "folder-1", 0, 50, []);
+      expect(result).toEqual(mockData.data);
+      expect(fetch).toHaveBeenCalledWith(
+        "gateway_url/api/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50",
+        expect.objectContaining({
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+
+    it("should make multiple calls to get the paginated data and then successfully return the data", async () => {
+      const mockData = {
+        data: [],
+        pagination: {
+          totalResults: 100,
+          skip: 0,
+          take: 50,
+          count: 25,
+        },
+      };
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        json: async () => mockData,
+      });
+
+      const result = await getEgressFolders("thunder", "folder-1", 0, 50, []);
+      expect(result).toEqual(mockData.data);
+      expect(fetch).toHaveBeenCalledTimes(2);
+      expect(fetch).toHaveBeenNthCalledWith(
+        1,
+        "gateway_url/api/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50",
+        expect.objectContaining({
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+      expect(fetch).toHaveBeenNthCalledWith(
+        2,
+        "gateway_url/api/egress/workspaces/thunder/files?folder-id=folder-1&skip=50&take=50",
+        expect.objectContaining({
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+
+    it("should throw an ApiError when fetch fails", async () => {
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+      });
+
+      await expect(
+        getEgressFolders("thunder", "folder-1", 0, 50, []),
+      ).rejects.toThrow(
+        new ApiError(
+          `Getting egress folders failed`,
+          "gateway_url/api/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50",
+          {
+            status: 500,
+            statusText: "Internal Server Error",
+          },
+        ),
+      );
+
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50`,
+        expect.objectContaining({
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+
+    it("should throw Error if the response data is not in correct format", async () => {
+      const mockData = {
+        data: [],
+        pagination1: {
+          totalResults: 100,
+          skip: 0,
+          take: 50,
+          count: 25,
+        },
+      };
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        json: async () => mockData,
+      });
+
+      await expect(
+        getEgressFolders("thunder", "folder-1", 0, 50, []),
+      ).rejects.toThrow("Invalid API response format for Egress folders");
+
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50`,
+        expect.objectContaining({
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+  });
+  describe("getNetAppFolders", () => {
+    it("should return netapp folders when fetch is successful", async () => {
+      const mockData = {
+        data: {
+          fileData: [],
+          folderData: [],
+        },
+        pagination: {
+          nextContinuationToken: "",
+        },
+      };
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        json: async () => mockData,
+      });
+
+      const result = await getNetAppFolders("/netapp", 50, "", []);
+      expect(result).toEqual(mockData.data);
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/netapp/files?path=/netapp&take=50&continuation-token=`,
+        expect.objectContaining({
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+    it("should make multiple calls to get the paginated data and then successfully return the data", async () => {
+      const mockData1 = {
+        data: {
+          fileData: [{ id: 1 }],
+          folderData: [{ id: 1 }],
+        },
+        pagination: {
+          nextContinuationToken: "abc",
+        },
+      };
+      const mockData2 = {
+        data: {
+          fileData: [{ id: 2 }, { id: 3 }],
+          folderData: [{ id: 2 }, { id: 3 }],
+        },
+        pagination: {
+          nextContinuationToken: "",
+        },
+      };
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockData1,
+        })
+        .mockResolvedValue({ ok: true, json: async () => mockData2 });
+
+      const result = await getNetAppFolders("/netapp", 50, "", []);
+      expect(result).toEqual({
+        fileData: [{ id: 1 }, { id: 2 }, { id: 3 }],
+        folderData: [{ id: 1 }, { id: 2 }, { id: 3 }],
+      });
+      expect(fetch).toHaveBeenCalledTimes(2);
+      expect(fetch).toHaveBeenNthCalledWith(
+        1,
+        `gateway_url/api/netapp/files?path=/netapp&take=50&continuation-token=`,
+        expect.objectContaining({
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+      expect(fetch).toHaveBeenNthCalledWith(
+        2,
+        `gateway_url/api/netapp/files?path=/netapp&take=50&continuation-token=abc`,
+        expect.objectContaining({
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+    it("should throw an ApiError when fetch fails", async () => {
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+      });
+
+      await expect(getNetAppFolders("/netapp", 50, "", [])).rejects.toThrow(
+        new ApiError(
+          `getting netapp files/folders failed`,
+          "gateway_url/api/netapp/files",
+          {
+            status: 500,
+            statusText: "Internal Server Error",
+          },
+        ),
+      );
+
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/netapp/files?path=/netapp&take=50&continuation-token=`,
+        expect.objectContaining({
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+    it("should throw Error if the response data is not in correct format", async () => {
+      const mockData = {
+        data: {
+          fileData: [],
+          folderData: [],
+        },
+        pagination1: {
+          nextContinuationToken: "",
+        },
+      };
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        json: async () => mockData,
+      });
+
+      await expect(getNetAppFolders("/netapp", 50, "", [])).rejects.toThrow(
+        "Invalid API response format for netapp files/folders results",
+      );
+
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/netapp/files?path=/netapp&take=50&continuation-token=`,
+        expect.objectContaining({
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
         }),
       );
     });
