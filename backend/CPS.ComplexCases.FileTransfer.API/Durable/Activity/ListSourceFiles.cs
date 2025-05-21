@@ -5,7 +5,7 @@ namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 
 public class ListSourceFiles
 {
-    [Function(nameof(UpdateTransferStatus))]
+    [Function(nameof(ListSourceFiles))]
     public async Task<List<Guid>> Run([ActivityTrigger] ListSourceFilesPayload sourceFilesPayload, FunctionContext context)
     {
         // list files from egress/netapp

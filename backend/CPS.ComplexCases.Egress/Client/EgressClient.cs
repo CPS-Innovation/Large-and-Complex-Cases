@@ -67,30 +67,54 @@ public class EgressClient(ILogger<EgressClient> logger, IOptions<EgressOptions> 
   public async Task<ListCaseMaterialDto> ListCaseMaterialAsync(ListWorkspaceMaterialArg arg)
   {
     var token = await GetWorkspaceToken();
-    var response = await SendRequestAsync<ListCaseMaterialResponse>(_egressRequestFactory.ListEgressMaterialRequest(arg, token));
 
-    var materialsData = response.Data.Select(data => new ListCaseMaterialDataDto
+    if (arg.RecurseSubFolders == true)
     {
-      Id = data.Id,
-      Name = data.FileName,
-      Path = data.Path,
-      DateUpdated = data.DateUpdated,
-      IsFolder = data.IsFolder,
-      Version = data.Version,
-      Filesize = data.FileSize
-    });
+      var allFiles = await GetWorkspaceMaterials(arg, token);
 
-    return new ListCaseMaterialDto
-    {
-      Data = materialsData,
-      Pagination = new PaginationDto
+      var pagedFiles = allFiles
+          .Skip(arg.Skip)
+          .Take(arg.Take)
+          .ToList();
+
+      return new ListCaseMaterialDto
       {
-        Count = response.DataInfo.NumReturned,
-        Take = response.DataInfo.Limit,
-        Skip = response.DataInfo.Skip,
-        TotalResults = response.DataInfo.TotalResults
-      }
-    };
+        Data = pagedFiles,
+        Pagination = new PaginationDto
+        {
+          Count = pagedFiles.Count,
+          Take = arg.Take,
+          Skip = arg.Skip,
+          TotalResults = allFiles.Count
+        }
+      };
+    }
+    else
+    {
+      var response = await SendRequestAsync<ListCaseMaterialResponse>(_egressRequestFactory.ListEgressMaterialRequest(arg, token));
+      var materialsData = response.Data.Select(data => new ListCaseMaterialDataDto
+      {
+        Id = data.Id,
+        Name = data.FileName,
+        Path = data.Path,
+        DateUpdated = data.DateUpdated,
+        IsFolder = data.IsFolder,
+        Version = data.Version,
+        Filesize = data.FileSize
+      });
+
+      return new ListCaseMaterialDto
+      {
+        Data = materialsData,
+        Pagination = new PaginationDto
+        {
+          Count = response.DataInfo.NumReturned,
+          Take = response.DataInfo.Limit,
+          Skip = response.DataInfo.Skip,
+          TotalResults = response.DataInfo.TotalResults
+        }
+      };
+    }
   }
 
   public async Task<Stream> GetCaseDocument(GetWorkspaceDocumentArg arg)
@@ -106,6 +130,43 @@ public class EgressClient(ILogger<EgressClient> logger, IOptions<EgressOptions> 
     var response = await SendRequestAsync<GetWorkspacePermissionsResponse>(_egressRequestFactory.GetWorkspacePermissionsRequest(arg, token));
     return response.Data.Any(user => user.Email.Equals(arg.Email, StringComparison.CurrentCultureIgnoreCase));
   }
+
+  private async Task<List<ListCaseMaterialDataDto>> GetWorkspaceMaterials(ListWorkspaceMaterialArg currentArg, string token)
+  {
+    var response = await SendRequestAsync<ListCaseMaterialResponse>(_egressRequestFactory.ListEgressMaterialRequest(currentArg, token));
+    var files = response.Data
+        .Where(d => !d.IsFolder)
+        .Select(d => new ListCaseMaterialDataDto
+        {
+          Id = d.Id,
+          Name = d.FileName,
+          Path = d.Path,
+          DateUpdated = d.DateUpdated,
+          IsFolder = d.IsFolder,
+          Version = d.Version,
+          Filesize = d.FileSize
+        })
+        .ToList();
+
+    var folders = response.Data.Where(d => d.IsFolder).ToList();
+    var subTasks = folders.Select(folder =>
+    {
+      var subArg = new ListWorkspaceMaterialArg
+      {
+        WorkspaceId = currentArg.WorkspaceId,
+        FolderId = folder.Id,
+        Take = currentArg.Take,
+        Skip = 0,
+        RecurseSubFolders = true
+      };
+      return GetWorkspaceMaterials(subArg, token);
+    }).ToList();
+
+    var subResults = await Task.WhenAll(subTasks);
+    files.AddRange(subResults.SelectMany(x => x));
+    return files;
+  }
+
 
   private async Task<string> GetWorkspaceToken()
   {
