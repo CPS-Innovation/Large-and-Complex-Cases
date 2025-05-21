@@ -1,5 +1,8 @@
 using CPS.ComplexCases.Common.Models.Requests;
+using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
+using CPS.ComplexCases.FileTransfer.API.Models.Domain;
+using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask;
 using Microsoft.Extensions.Logging;
@@ -24,8 +27,32 @@ public class TransferOrchestrator
         var transferId = input.TransferId;
 
         // 1. get transfer details from db
+        var transfer = await context.CallActivityAsync<Transfer>(
+            nameof(GetTransferDetails),
+            transferId);
+
+        List<Guid> itemIdsToProcess;
 
         // 2. Initial run: LISTING_FILES
+        await context.CallActivityAsync<Transfer>(
+            nameof(UpdateTransferStatus),
+            new UpdateTransferStatusPayload
+            {
+                TransferId = transferId,
+                Status = TransferStatus.ListingFiles,
+            });
+
+        // todo: audit record activity
+
+        itemIdsToProcess = await context.CallActivityAsync<List<Guid>>(
+            nameof(ListSourceFiles),
+            new ListSourceFilesPayload
+            {
+                TransferId = transferId,
+                SourcePaths = transfer.SourcePaths,
+                Direction = transfer.Direction,
+            });
+
 
         // 3. List files and create TransferItems
 
