@@ -1,9 +1,9 @@
 using AutoFixture;
 using AutoFixture.AutoMoq;
+using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.Data.Repositories;
-using CPS.ComplexCases.Data.Services;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.Extensions.Logging;

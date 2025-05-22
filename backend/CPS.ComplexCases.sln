@@ -35,6 +35,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.Data", "CP
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cps.ComplexCases.Data.Tests", "Cps.ComplexCases.Data.Tests\Cps.ComplexCases.Data.Tests.csproj", "{C7C18A33-63E6-4328-A797-A63E1E8AC4AE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.ActivityLog", "CPS.ComplexCases.ActivityLog\CPS.ComplexCases.ActivityLog.csproj", "{D9F393F3-E67C-4FBA-878C-F8C22F2DE748}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.ActivityLog.Tests", "CPS.ComplexCases.ActivityLog.Tests\CPS.ComplexCases.ActivityLog.Tests.csproj", "{3D0740F7-46C4-4330-B4B0-58A41EE1401C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -108,5 +112,13 @@ Global
 		{C7C18A33-63E6-4328-A797-A63E1E8AC4AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C7C18A33-63E6-4328-A797-A63E1E8AC4AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C7C18A33-63E6-4328-A797-A63E1E8AC4AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9F393F3-E67C-4FBA-878C-F8C22F2DE748}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9F393F3-E67C-4FBA-878C-F8C22F2DE748}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9F393F3-E67C-4FBA-878C-F8C22F2DE748}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9F393F3-E67C-4FBA-878C-F8C22F2DE748}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D0740F7-46C4-4330-B4B0-58A41EE1401C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D0740F7-46C4-4330-B4B0-58A41EE1401C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D0740F7-46C4-4330-B4B0-58A41EE1401C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D0740F7-46C4-4330-B4B0-58A41EE1401C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

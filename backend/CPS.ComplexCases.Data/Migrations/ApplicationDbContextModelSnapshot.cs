@@ -18,12 +18,12 @@ namespace CPS.ComplexCases.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.4")
+                .HasAnnotation("ProductVersion", "9.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("CPS.ComplexCases.Data.Entities.AuditLog", b =>
+            modelBuilder.Entity("CPS.ComplexCases.Data.Entities.ActivityLog", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -34,10 +34,6 @@ namespace CPS.ComplexCases.Data.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
                         .HasColumnName("action_type");
-
-                    b.Property<int>("CaseId")
-                        .HasColumnType("integer")
-                        .HasColumnName("case_id");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -82,7 +78,7 @@ namespace CPS.ComplexCases.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("audit_log", "lcc");
+                    b.ToTable("activity_log", "lcc");
                 });
 
             modelBuilder.Entity("CPS.ComplexCases.Data.Entities.CaseMetadata", b =>

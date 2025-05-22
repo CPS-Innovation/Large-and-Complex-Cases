@@ -1,17 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using CPS.ComplexCases.Data.Entities;
-using CPS.ComplexCases.Data.Configurations;
 
 namespace CPS.ComplexCases.Data;
 
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
 {
   public DbSet<CaseMetadata> CaseMetadata { get; set; }
-  public DbSet<AuditLog> AuditLogs { get; set; }
+  public DbSet<ActivityLog> ActivityLogs { get; set; }
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
-    modelBuilder.ApplyConfigurationsFromAssembly(typeof(AuditLogConfiguration).Assembly);
+    modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
   }
 
   public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

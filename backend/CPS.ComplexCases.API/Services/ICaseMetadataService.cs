@@ -2,7 +2,7 @@
 using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.Data.Models.Requests;
 
-namespace CPS.ComplexCases.Data.Services;
+namespace CPS.ComplexCases.API.Services;
 
 public interface ICaseMetadataService
 {

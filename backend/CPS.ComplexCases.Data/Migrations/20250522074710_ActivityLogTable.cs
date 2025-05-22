@@ -7,18 +7,17 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace CPS.ComplexCases.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class AuditLogAdded : Migration
+    public partial class ActivityLogTable : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "audit_log",
+                name: "activity_log",
                 schema: "lcc",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
-                    case_id = table.Column<int>(type: "integer", nullable: false),
                     action_type = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     user_id = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     user_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
@@ -32,7 +31,7 @@ namespace CPS.ComplexCases.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_audit_log", x => x.id);
+                    table.PrimaryKey("PK_activity_log", x => x.id);
                 });
         }
 
@@ -40,7 +39,7 @@ namespace CPS.ComplexCases.Data.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "audit_log",
+                name: "activity_log",
                 schema: "lcc");
         }
     }

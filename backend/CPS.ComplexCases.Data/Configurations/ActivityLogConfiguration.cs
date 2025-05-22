@@ -2,18 +2,18 @@ using CPS.ComplexCases.Data.Constants;
 using CPS.ComplexCases.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Npgsql.EntityFrameworkCore.PostgreSQL.ValueGeneration;
 
 namespace CPS.ComplexCases.Data.Configurations;
 
-public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
+public class ActivityLogConfiguration : IEntityTypeConfiguration<ActivityLog>
 {
-    public void Configure(EntityTypeBuilder<AuditLog> builder)
+    public void Configure(EntityTypeBuilder<ActivityLog> builder)
     {
-        builder.ToTable("audit_log", SchemaNames.Lcc);
+        builder.ToTable("activity_log", SchemaNames.Lcc);
         builder.HasKey(x => x.Id);
 
-        builder.Property(x => x.Id).HasColumnName("id").IsRequired();
-        builder.Property(x => x.CaseId).HasColumnName("case_id").IsRequired();
+        builder.Property(x => x.Id).HasColumnName("id").HasValueGenerator<NpgsqlSequentialGuidValueGenerator>();
         builder.Property(x => x.ActionType).HasColumnName("action_type").HasMaxLength(50);
         builder.Property(x => x.UserId).HasColumnName("user_id").HasMaxLength(50);
         builder.Property(x => x.UserName).HasColumnName("user_name").HasMaxLength(100);
