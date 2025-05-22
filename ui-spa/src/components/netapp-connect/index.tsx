@@ -3,7 +3,10 @@ import NetAppFolderResultsPage from "./NetAppFolderResultsPage";
 import NetAppConnectConfirmationPage from "./NetAppConnectConfirmationPage";
 import NetAppConnectFailurePage from "./NetAppConnectFailurePage";
 import { useApi } from "../../common/hooks/useApi";
-import { getNetAppFolders, connectNetAppFolder } from "../../apis/gateway-api";
+import {
+  getConnectNetAppFolders,
+  connectNetAppFolder,
+} from "../../apis/gateway-api";
 import { getFolderNameFromPath } from "../../common/utils/getFolderNameFromPath";
 import {
   useNavigate,
@@ -26,7 +29,7 @@ const NetAppPage = () => {
   const [rootFolderPath, setRootFolderPath] = useState("");
 
   const netAppFolderApiResults = useApi(
-    getNetAppFolders,
+    getConnectNetAppFolders,
     [operationName, rootFolderPath],
     false,
   );

@@ -6,12 +6,14 @@ import {
   casesSearchResultsPlaywright,
   egressSearchResultsDev,
   egressSearchResultsPlaywright,
-  getNetAppFolderResultsDev,
-  getNetAppFolderResultsPlaywright,
+  getConnectNetAppFolderResultsDev,
+  getConnectNetAppFolderResultsPlaywright,
   caseMetaDataDev,
   caseMetaDataPlaywright,
   getEgressFolderResultsDev,
   getEgressFolderResultsPlaywright,
+  getNetAppFolderResultsDev,
+  getNetAppFolderResultsPlaywright,
 } from "./data";
 
 export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
@@ -50,8 +52,8 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
 
       const path = url.searchParams.get("path");
       const netAppRootFolderResults = isDevMock()
-        ? getNetAppFolderResultsDev(path as string)
-        : getNetAppFolderResultsPlaywright(path as string);
+        ? getConnectNetAppFolderResultsDev(path as string)
+        : getConnectNetAppFolderResultsPlaywright(path as string);
       await delay(500);
 
       return HttpResponse.json(netAppRootFolderResults);
@@ -77,6 +79,18 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       const netAppRootFolderResults = isDevMock()
         ? getEgressFolderResultsDev(folderId as string)
         : getEgressFolderResultsPlaywright(folderId as string);
+      await delay(500);
+
+      return HttpResponse.json(netAppRootFolderResults);
+    }),
+
+    http.get(`${baseUrl}/api/netapp/files`, async (req) => {
+      const url = new URL(req.request.url);
+
+      const path = url.searchParams.get("path");
+      const netAppRootFolderResults = isDevMock()
+        ? getNetAppFolderResultsDev(path as string)
+        : getNetAppFolderResultsPlaywright(path as string);
       await delay(500);
 
       return HttpResponse.json(netAppRootFolderResults);

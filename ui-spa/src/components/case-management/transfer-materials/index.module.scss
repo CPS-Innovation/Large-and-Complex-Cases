@@ -2,10 +2,7 @@
   display: flex;
   width: 100%;
   gap: 10px;
-  .iconButtonWrapper {
-    display: flex;
-    align-items: center;
-  }
+
   .titleWrapper {
     background: #f3f2f1;
     padding: 0.25rem 0.5rem;
@@ -17,12 +14,10 @@
   .tableContainer {
     padding: 0 1rem;
   }
-  .egressContainer {
-    width: 50%;
+  .sourceContainer {
+    width: 60%;
     border: 1px solid #b1b4b6;
-    & .fileName {
-      margin-left: 0.25rem;
-    }
+    min-height: 21.875rem;
 
     & :global(.govuk-checkboxes__input) {
       width: 30px;
@@ -67,8 +62,9 @@
       }
     }
   }
-  .netappContainer {
-    width: 50%;
+  .destinationContainer {
+    width: 40%;
     border: 1px solid #b1b4b6;
+    min-height: 21.875rem;
   }
 }

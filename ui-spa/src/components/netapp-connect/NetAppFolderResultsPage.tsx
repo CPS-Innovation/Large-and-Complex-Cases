@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Button, InsetText, BackLink, LinkButton } from "../govuk";
 import { UseApiResult } from "../../common/hooks/useApi";
-import { NetAppFolderData } from "../../common/types/NetAppFolderData";
+import { ConnectNetAppFolderData } from "../../common/types/ConnectNetAppFolderData";
 import { sortByStringProperty } from "../../common/utils/sortUtils";
 import { getFolderNameFromPath } from "../../common/utils/getFolderNameFromPath";
 import FolderNavigationTable from "../common/FolderNavigationTable";
@@ -11,7 +11,7 @@ import styles from "./netAppFolderResultsPage.module.scss";
 type NetAppFolderResultsPageProps = {
   backLinkUrl: string;
   rootFolderPath: string;
-  netAppFolderApiResults: UseApiResult<NetAppFolderData>;
+  netAppFolderApiResults: UseApiResult<ConnectNetAppFolderData>;
   handleGetFolderContent: (folderId: string) => void;
   handleConnectFolder: (id: string) => void;
 };
@@ -33,7 +33,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
     if (sortValues?.name === "folder-name")
       return sortByStringProperty(
         netAppFolderApiResults.data.folders,
-        "folderPath",
+        "path",
         sortValues.type,
       );
 
@@ -62,10 +62,10 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
                 <LinkButton
                   type="button"
                   onClick={() => {
-                    handleGetFolderContent(data.folderPath);
+                    handleGetFolderContent(data.path);
                   }}
                 >
-                  {getFolderNameFromPath(data.folderPath)}
+                  {getFolderNameFromPath(data.path)}
                 </LinkButton>
               </div>
             ),
@@ -76,7 +76,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
               <Button
                 className="govuk-button--secondary"
                 name="secondary"
-                onClick={() => handleConnect(data.folderPath)}
+                onClick={() => handleConnect(data.path)}
                 disabled={!!data.caseId}
               >
                 Connect folder
@@ -134,6 +134,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
 
       <div className={"govuk-grid-column-two-thirds"}>
         <FolderNavigationTable
+          tableName={"netapp"}
           folders={folders}
           loaderText="Loading folders from Network Shared Drive"
           folderResultsStatus={netAppFolderApiResults.status}

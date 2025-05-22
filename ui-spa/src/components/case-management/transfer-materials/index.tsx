@@ -1,31 +1,23 @@
 import { useEffect, useState, useMemo } from "react";
 import { useApi } from "../../../common/hooks/useApi";
 import { LinkButton, InsetText } from "../../govuk";
-import Checkbox from "../../common/Checkbox";
-import FolderNavigationTable from "../../common/FolderNavigationTable";
-import {
-  sortByStringProperty,
-  sortByDateProperty,
-} from "../../../common/utils/sortUtils";
-import FolderIcon from "../../../components/svgs/folder.svg?react";
-import FileIcon from "../../../components/svgs/file.svg?react";
-import { formatDate } from "../../../common/utils/formatDate";
-import { formatFileSize } from "../../../common/utils/formatFileSize";
-import { getEgressFolders } from "../../../apis/gateway-api";
+import NetAppFolderContainer from "./NetAppFolderContainer";
+import { getEgressFolders, getNetAppFolders } from "../../../apis/gateway-api";
+import EgressFolderContainer from "./EgressFolderContainer";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
   egressWorkspaceId: string | undefined;
-  netappFolderPath: string | undefined;
+  netAppPath: string | undefined;
 };
 
 const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   egressWorkspaceId,
+  netAppPath,
 }) => {
-  const [sortValues, setSortValues] = useState<{
-    name: string;
-    type: "ascending" | "descending";
-  }>();
+  const [transferSource, setTransferSource] = useState<"egress" | "netapp">(
+    "egress",
+  );
   const [egressPathFolders, setEgressPathFolders] = useState<
     {
       folderName: string;
@@ -33,46 +25,35 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       folderId?: string;
     }[]
   >([{ folderName: "Home", folderPath: "", folderId: "" }]);
+  const [netAppFolderPath, setNetAppFolderPath] = useState("");
 
-  const [switchSource, setSwitchSource] = useState(false);
+  const [selectedSourceFoldersOrFiles, setSelectedSourceFoldersOrFiles] =
+    useState<string[]>([]);
+  useEffect(() => {
+    if (netAppPath) setNetAppFolderPath(netAppPath);
+  }, [netAppPath]);
 
-  const [selectedEgressFolders, setSelectedEgressFolders] = useState<string[]>(
-    [],
-  );
-
-  const currentFolder = useMemo(() => {
+  const currentEgressFolder = useMemo(() => {
     return egressPathFolders[egressPathFolders.length - 1];
   }, [egressPathFolders]);
-  const egressFolderApiResults = useApi(
+
+  const {
+    refetch: egressRefetch,
+    status: egressStatus,
+    data: egressData,
+  } = useApi(
     getEgressFolders,
-    [egressWorkspaceId, currentFolder.folderId],
+    [egressWorkspaceId, currentEgressFolder.folderId],
     false,
   );
 
-  const { refetch, status, data: egressData } = egressFolderApiResults;
+  const {
+    refetch: netAppRefetch,
+    status: netAppStatus,
+    data: netAppData,
+  } = useApi(getNetAppFolders, [netAppFolderPath], false);
 
-  const egressFolderData = useMemo(() => {
-    if (!egressData) return [];
-    if (sortValues?.name === "folder-name")
-      return sortByStringProperty(egressData, "name", sortValues.type);
-
-    if (sortValues?.name === "date-updated")
-      return sortByDateProperty(egressData, "dateUpdated", sortValues.type);
-
-    if (sortValues?.name === "file-size")
-      return sortByStringProperty(egressData, "filesize", sortValues.type);
-
-    return egressData;
-  }, [egressData, sortValues]);
-
-  const handleTableSort = (
-    sortName: string,
-    sortType: "ascending" | "descending",
-  ) => {
-    setSortValues({ name: sortName, type: sortType });
-  };
-
-  const handleFolderPathClick = (path: string) => {
+  const handleEgressFolderPathClick = (path: string) => {
     const index = egressPathFolders.findIndex(
       (item) => item.folderPath === path,
     );
@@ -81,10 +62,11 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         ? egressPathFolders.slice(0, index + 1)
         : [...egressPathFolders];
     setEgressPathFolders(newData);
+    setSelectedSourceFoldersOrFiles([]);
   };
 
-  const handleFolderClick = (id: string) => {
-    const folderData = egressFolderData.find((item) => item.id === id);
+  const handleEgressFolderClick = (id: string) => {
+    const folderData = egressData!.find((item) => item.id === id);
     if (folderData)
       setEgressPathFolders((prevItems) => [
         ...prevItems,
@@ -94,148 +76,84 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           folderName: folderData.name,
         },
       ]);
+    if (transferSource === "egress") setSelectedSourceFoldersOrFiles([]);
   };
 
-  const handleCheckboxChange = (id: string, checked: boolean) => {
+  const handleNetAppFolderClick = (path: string) => {
+    setNetAppFolderPath(path);
+    if (transferSource === "netapp") setSelectedSourceFoldersOrFiles([]);
+  };
+
+  const handleCheckboxChange = (checkboxId: string, checked: boolean) => {
     let updatedFolders: string[] = [];
 
-    if (id === "all-folders") {
+    if (checkboxId === "all-folders") {
       if (checked) {
-        updatedFolders = [
-          "all-folders",
-          ...egressFolderData.map((data) => data.id),
-        ];
+        if (transferSource === "egress")
+          updatedFolders = [
+            "all-folders",
+            ...egressData!.map((data) => data.id),
+          ];
+        if (transferSource === "netapp")
+          updatedFolders = [
+            "all-folders",
+            ...[...netAppData!.folderData, ...netAppData!.fileData].map(
+              (data) => data.path,
+            ),
+          ];
       } else {
         updatedFolders = [];
       }
     } else if (!checked) {
-      updatedFolders = selectedEgressFolders.filter((item) => item !== id);
+      updatedFolders = selectedSourceFoldersOrFiles.filter(
+        (item) => item !== checkboxId,
+      );
     } else {
-      updatedFolders = [...selectedEgressFolders, id];
+      updatedFolders = [...selectedSourceFoldersOrFiles, checkboxId];
     }
 
-    setSelectedEgressFolders(updatedFolders);
+    setSelectedSourceFoldersOrFiles(updatedFolders);
   };
 
-  const isEgressFolderChecked = (id: string) => {
-    return selectedEgressFolders.includes(id);
+  const isSourceFolderChecked = (id: string) => {
+    return selectedSourceFoldersOrFiles.includes(id);
   };
-
-  const getTableHeadData = () => {
-    return [
-      {
-        children: (
-          <>
-            <Checkbox
-              id={"all-folders"}
-              checked={isEgressFolderChecked("all-folders")}
-              onChange={handleCheckboxChange}
-              ariaLabel="Select all folders"
-            />
-          </>
-        ),
-        sortable: false,
-      },
-      {
-        children: <>Folder/file name</>,
-        sortable: true,
-        sortName: "folder-name",
-      },
-
-      {
-        children: <>Last modified date</>,
-        sortable: true,
-        sortName: "date-updated",
-      },
-      {
-        children: <>Size</>,
-        sortable: true,
-        sortName: "file-size",
-      },
-    ];
-  };
-
-  const getTableRowData = () => {
-    return egressFolderData.map((data) => {
-      return {
-        cells: [
-          {
-            children: (
-              <>
-                <Checkbox
-                  id={data.id}
-                  checked={isEgressFolderChecked(data.id)}
-                  onChange={handleCheckboxChange}
-                  ariaLabel="select folder"
-                />
-              </>
-            ),
-          },
-          {
-            children: (
-              <div className={styles.iconButtonWrapper}>
-                {data.isFolder ? (
-                  <>
-                    <FolderIcon />
-                    <LinkButton
-                      type="button"
-                      onClick={() => {
-                        handleFolderClick(data.id);
-                      }}
-                    >
-                      {data.name}
-                    </LinkButton>
-                  </>
-                ) : (
-                  <>
-                    <FileIcon />
-                    <span className={styles.fileName}>{data.name}</span>
-                  </>
-                )}
-              </div>
-            ),
-          },
-
-          {
-            children: <span>{formatDate(data.dateUpdated)}</span>,
-          },
-          {
-            children: (
-              <span>{data.filesize ? formatFileSize(data.filesize) : ""}</span>
-            ),
-          },
-        ],
-      };
-    });
-  };
-
-  useEffect(() => {
-    if (egressWorkspaceId !== undefined) {
-      refetch();
-    }
-  }, [egressWorkspaceId, refetch]);
 
   const handleSwitchSource = () => {
-    setSwitchSource(!switchSource);
+    setSelectedSourceFoldersOrFiles([]);
+    if (transferSource === "egress") {
+      setTransferSource("netapp");
+      return;
+    }
+    setTransferSource("egress");
   };
 
   const renderEgressContainer = () => {
     return (
-      <div className={styles.egressContainer} data-testId="egress-container">
+      <div
+        className={
+          transferSource === "egress"
+            ? styles.sourceContainer
+            : styles.destinationContainer
+        }
+        data-testId="egress-container"
+      >
         <div className={styles.titleWrapper}>
           <h3>Egress Inbound documents</h3>
         </div>
         <div className={styles.tableContainer}>
-          <FolderNavigationTable
-            folders={egressPathFolders}
-            loaderText="Loading folders from Egress"
-            folderResultsStatus={status}
-            folderResultsLength={egressFolderData.length}
-            handleFolderPathClick={handleFolderPathClick}
-            getTableRowData={getTableRowData}
-            getTableHeadData={getTableHeadData}
-            handleTableSort={handleTableSort}
-          />
+          {
+            <EgressFolderContainer
+              transferSource={transferSource}
+              egressData={egressData}
+              egressDataStatus={egressStatus}
+              egressPathFolders={egressPathFolders}
+              handleFolderPathClick={handleEgressFolderPathClick}
+              handleFolderClick={handleEgressFolderClick}
+              handleCheckboxChange={handleCheckboxChange}
+              isSourceFolderChecked={isSourceFolderChecked}
+            />
+          }
         </div>
       </div>
     );
@@ -243,14 +161,46 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
 
   const renderNetappContainer = () => {
     return (
-      <div className={styles.netappContainer} data-testId="netapp-container">
+      <div
+        className={
+          transferSource === "netapp"
+            ? styles.sourceContainer
+            : styles.destinationContainer
+        }
+        data-testId="netapp-container"
+      >
         <div className={styles.titleWrapper}>
           <h3>Shared drive</h3>
         </div>
-        <div className={styles.tableContainer}>netapp data</div>
+        <div className={styles.tableContainer}>
+          {netAppPath && (
+            <NetAppFolderContainer
+              transferSource={transferSource}
+              connectedFolderPath={netAppPath}
+              currentFolderPath={netAppFolderPath}
+              netAppFolderDataStatus={netAppStatus}
+              netAppFolderDataResponse={netAppData}
+              handleGetFolderContent={handleNetAppFolderClick}
+              handleCheckboxChange={handleCheckboxChange}
+              isSourceFolderChecked={isSourceFolderChecked}
+            />
+          )}
+        </div>
       </div>
     );
   };
+
+  useEffect(() => {
+    if (egressWorkspaceId !== undefined) {
+      egressRefetch();
+    }
+  }, [egressWorkspaceId, egressRefetch]);
+
+  useEffect(() => {
+    if (netAppFolderPath) {
+      netAppRefetch();
+    }
+  }, [netAppFolderPath, netAppRefetch]);
 
   return (
     <div>
@@ -264,15 +214,15 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         className={styles.mainContainer}
         data-testId="transfer-main-container"
       >
-        {switchSource ? (
+        {transferSource === "egress" ? (
           <>
-            {renderNetappContainer()}
             {renderEgressContainer()}
+            {renderNetappContainer()}
           </>
         ) : (
           <>
-            {renderEgressContainer()}
             {renderNetappContainer()}
+            {renderEgressContainer()}
           </>
         )}
       </div>
