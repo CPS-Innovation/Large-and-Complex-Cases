@@ -1,5 +1,6 @@
 using CPS.ComplexCases.API.Clients.FileTransfer;
 using CPS.ComplexCases.API.Extensions;
+using CPS.ComplexCases.ActivityLog.Extensions;
 using CPS.ComplexCases.API.Middleware;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Validators;
@@ -40,6 +41,8 @@ builder.Services.AddSingleton(_ =>
                 new HttpDocumentRetriever());
 });
 
+builder.Services.AddActivityLog();
+builder.Services.AddDataClient(builder.Configuration);
 builder.Services.AddDdeiClient(builder.Configuration);
 builder.Services.AddDdeiClientTactical();
 builder.Services.AddEgressClient(builder.Configuration);
@@ -47,6 +50,7 @@ builder.Services.AddNetAppClient(builder.Configuration);
 builder.Services.AddDataClient(builder.Configuration);
 builder.Services.AddFileTransferClient(builder.Configuration);
 
+builder.Services.AddScoped<ICaseMetadataService, CaseMetadataService>();
 builder.Services.AddScoped<ICaseEnrichmentService, CaseEnrichmentService>();
 builder.Services.AddSingleton<IOpenApiConfigurationOptions, OpenApiConfigurationOptions>();
 

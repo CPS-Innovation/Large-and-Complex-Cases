@@ -1,12 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-
-    <IsPackable>false</IsPackable>
-    <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,7 +12,6 @@
     <PackageReference Include="AutoFixture.Xunit2" Version="4.18.1" />
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
     <PackageReference Include="FluentAssertions" Version="8.1.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.5" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
     <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="xunit" Version="2.5.3" />
@@ -27,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CPS.ComplexCases.Data\CPS.ComplexCases.Data.csproj" />
+    <ProjectReference Include="..\CPS.ComplexCases.ActivityLog\CPS.ComplexCases.ActivityLog.csproj" />
   </ItemGroup>
 
 </Project>

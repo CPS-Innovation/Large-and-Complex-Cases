@@ -4,7 +4,7 @@ using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.Data.Repositories;
 using Microsoft.Extensions.Logging;
 
-namespace CPS.ComplexCases.Data.Services;
+namespace CPS.ComplexCases.API.Services;
 
 public class CaseMetadataService : ICaseMetadataService
 {

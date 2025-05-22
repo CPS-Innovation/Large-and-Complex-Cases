@@ -4,13 +4,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using CPS.ComplexCases.API.Constants;
-using CPS.ComplexCases.Data.Services;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.Data.Models.Requests;
+using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Validators.Requests;
-using Microsoft.Extensions.Options;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.Common.Helpers;
 

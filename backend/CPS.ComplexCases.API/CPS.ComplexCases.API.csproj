@@ -25,11 +25,12 @@
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.DurableTask" Version="1.1.7" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore" Version="2.0.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" Version="2.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.3" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.5" />
     <PackageReference Include="Microsoft.Extensions.Azure" Version="1.10.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.5" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\CPS.ComplexCases.ActivityLog\CPS.ComplexCases.ActivityLog.csproj" />
     <ProjectReference Include="..\CPS.ComplexCases.NetApp\CPS.ComplexCases.NetApp.csproj" />
     <ProjectReference Include="..\CPS.ComplexCases.Egress\CPS.ComplexCases.Egress.csproj" />
     <ProjectReference Include="..\CPS.ComplexCases.DDEI\CPS.ComplexCases.DDEI.csproj" />

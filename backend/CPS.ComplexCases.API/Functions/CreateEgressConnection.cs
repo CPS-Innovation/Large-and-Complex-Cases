@@ -4,7 +4,7 @@ using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Data.Models.Requests;
-using CPS.ComplexCases.Data.Services;
+using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
 using Microsoft.AspNetCore.Http;
