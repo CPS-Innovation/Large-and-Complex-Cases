@@ -11,6 +11,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.5" />
     </ItemGroup>
     <ItemGroup>
+      <ProjectReference Include="..\CPS.ComplexCases.Common\CPS.ComplexCases.Common.csproj" />
       <ProjectReference Include="..\CPS.ComplexCases.Data\CPS.ComplexCases.Data.csproj" />
     </ItemGroup>
 </Project>
