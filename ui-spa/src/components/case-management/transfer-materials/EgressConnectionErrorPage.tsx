@@ -31,7 +31,7 @@ const EgressConnectionErrorPage = () => {
         </h1>
         <p>
           The connection to egress folder for <b>{operationName}</b> case has
-          stopped working
+          stopped working.
         </p>
         <div className={styles.btnWrapper}>
           <Button onClick={() => handleReconnect()}>Reconnect</Button>

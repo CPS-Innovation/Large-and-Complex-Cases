@@ -56,6 +56,8 @@ const CaseManagementPage = () => {
       panel: {
         children: (
           <TransferMaterialsPage
+            caseId={caseId}
+            operationName={caseMetaData?.data?.operationName}
             egressWorkspaceId={caseMetaData?.data?.egressWorkspaceId}
             netAppPath={caseMetaData?.data?.netappFolderPath ?? ""}
           />

@@ -1,9 +1,12 @@
-:global(.govuk-heading-xl) {
-  margin-bottom: 1rem;
-}
-.btnWrapper {
-  margin-top: 3rem;
-  display: flex;
-  gap: 0.75rem;
-  align-items: baseline;
+.contentWrapper {
+  & :global(.govuk-heading-xl) {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+  }
+  .btnWrapper {
+    margin-top: 3rem;
+    display: flex;
+    gap: 0.75rem;
+    align-items: baseline;
+  }
 }
