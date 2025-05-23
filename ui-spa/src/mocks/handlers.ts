@@ -69,6 +69,8 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
         : caseMetaDataPlaywright;
       await delay(100);
 
+      // return new HttpResponse(null, { status: 500 });
+
       return HttpResponse.json(caseMetaDataResults);
     }),
 
