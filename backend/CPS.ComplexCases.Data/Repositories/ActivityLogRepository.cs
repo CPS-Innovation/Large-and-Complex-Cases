@@ -1,3 +1,4 @@
+using CPS.ComplexCases.Data.Dtos;
 using CPS.ComplexCases.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -38,5 +39,37 @@ public class ActivityLogRepository(ApplicationDbContext dbContext) : IActivityLo
         _dbContext.Entry(existingAuditLog).CurrentValues.SetValues(activityLog);
         await _dbContext.SaveChangesAsync();
         return existingAuditLog;
+    }
+
+    public async Task<IEnumerable<ActivityLog>> GetByFilterAsync(ActivityLogFilterDto filter)
+    {
+        IQueryable<ActivityLog> query = _dbContext.ActivityLogs;
+
+        if (filter.FromDate.HasValue)
+        {
+            query = query.Where(a => a.Timestamp >= filter.FromDate.Value.ToUniversalTime());
+        }
+        if (filter.ToDate.HasValue)
+        {
+            query = query.Where(a => a.Timestamp <= filter.ToDate.Value.ToUniversalTime());
+        }
+        if (!string.IsNullOrEmpty(filter.UserId))
+        {
+            query = query.Where(a => a.UserId == filter.UserId);
+        }
+        if (!string.IsNullOrEmpty(filter.ActionType))
+        {
+            query = query.Where(a => a.ActionType == filter.ActionType);
+        }
+        if (!string.IsNullOrEmpty(filter.ResourceType))
+        {
+            query = query.Where(a => a.ResourceType == filter.ResourceType);
+        }
+        if (!string.IsNullOrEmpty(filter.ResourceId))
+        {
+            query = query.Where(a => a.ResourceId == filter.ResourceId);
+        }
+
+        return await query.Skip(filter.Skip).Take(filter.Take).ToListAsync();
     }
 }

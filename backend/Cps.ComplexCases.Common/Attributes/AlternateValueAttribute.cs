@@ -1,4 +1,4 @@
-namespace CPS.ComplexCases.ActivityLog.Attributes;
+namespace CPS.ComplexCases.Common.Attributes;
 
 public class AlternateValueAttribute(string value) : Attribute
 {

@@ -1,6 +1,7 @@
 using System.Text.Json;
-using CPS.ComplexCases.ActivityLog.Attributes;
+using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.ActivityLog.Enums;
+using CPS.ComplexCases.Data.Dtos;
 using CPS.ComplexCases.Data.Repositories;
 using Microsoft.Extensions.Logging;
 
@@ -46,6 +47,20 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting audit log by ID {Id}", id);
+            throw;
+        }
+    }
+
+    public Task<IEnumerable<Data.Entities.ActivityLog>> GetActivityLogsAsync(ActivityLogFilterDto filter)
+    {
+        _logger.LogInformation("Getting audit logs with filter {@Filter}", filter);
+        try
+        {
+            return _activityLogRepository.GetByFilterAsync(filter);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting audit logs with filter {@Filter}", filter);
             throw;
         }
     }
