@@ -30,8 +30,8 @@ const EgressConnectionErrorPage = () => {
           stopped working.
         </p>
         <div className={styles.btnWrapper}>
-          <Button onClick={() => handleReconnect()}>Reconnect</Button>
-          <LinkButton onClick={() => handleCancel()}>Cancel</LinkButton>
+          <Button onClick={handleReconnect}>Reconnect</Button>
+          <LinkButton onClick={handleCancel}>Cancel</LinkButton>
         </div>
       </div>
     </div>
