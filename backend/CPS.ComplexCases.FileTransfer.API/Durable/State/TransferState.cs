@@ -2,6 +2,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask.Entities;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
+using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.State;
 
@@ -23,4 +24,23 @@ public class TransferEntityState : TaskEntity<TransferEntity>
         State.Status = status;
         State.UpdatedAt = DateTime.UtcNow;
     }
+
+    public void Finalize(FinalizeTransferPayload payload)
+    {
+        State.Status = State.FailedItems.Count > 0 ? TransferStatus.PartiallyCompleted : TransferStatus.Completed;
+        State.CompletedAt = DateTime.UtcNow;
+        State.FailedFiles = State.FailedItems.Count;
+        State.ProcessedFiles = State.TotalFiles;
+        State.SuccessfulFiles = State.TotalFiles - State.FailedFiles;
+        State.UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void AddFailedItem(TransferFailedItem failedItem)
+    {
+        State.FailedItems.Add(failedItem);
+        State.FailedFiles++;
+        State.ProcessedFiles++;
+        State.UpdatedAt = DateTime.UtcNow;
+    }
+
 }

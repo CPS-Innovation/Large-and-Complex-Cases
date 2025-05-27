@@ -1,4 +1,5 @@
 using CPS.ComplexCases.Common.Models.Domain.Enums;
+using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
@@ -10,7 +11,7 @@ public class TransferEntity
     public TransferStatus Status { get; set; }
     public TransferType TransferType { get; set; }
     public TransferDirection Direction { get; set; }
-    public List<string> SourcePaths { get; set; } = new List<string>();
+    public List<TransferSourcePath> SourcePaths { get; set; } = new List<TransferSourcePath>();
     public required string DestinationPath { get; set; }
     public int TotalFiles { get; set; }
     public int ProcessedFiles { get; set; }

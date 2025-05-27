@@ -49,6 +49,7 @@ public class InitiateTransfer
                 SourcePaths = transferRequest.Value.SourcePaths,
                 CaseId = transferRequest.Value.Metadata.CaseId,
                 UserName = transferRequest.Value.Metadata.UserName,
+                WorkspaceId = transferRequest.Value.Metadata.WorkspaceId,
             },
             new StartOrchestrationOptions
             {

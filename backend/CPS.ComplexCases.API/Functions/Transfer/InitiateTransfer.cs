@@ -40,20 +40,20 @@ public class InitiateTransfer(ILogger<InitiateTransfer> logger, IFileTransferCli
             return new BadRequestObjectResult(transferRequest.ValidationErrors);
         }
 
-        if (!int.TryParse(req.Query[InputParameters.CaseId].FirstOrDefault(), out var parsedCaseId))
-        {
-            return new BadRequestObjectResult($"Invalid {InputParameters.CaseId} provided.");
-        }
-
         var request = new TransferRequest
         {
             TransferType = transferRequest.Value.TransferType,
             DestinationPath = transferRequest.Value.DestinationPath,
-            SourcePaths = transferRequest.Value.SourcePaths,
+            SourcePaths = transferRequest.Value.SourcePaths.Select((path) => new TransferSourcePath
+            {
+                Path = path.Path,
+                FileId = path.FileId
+            }).ToList(),
             Metadata = new TransferMetadata
             {
                 UserName = context.Username,
-                CaseId = parsedCaseId,
+                CaseId = transferRequest.Value.CaseId,
+                WorkspaceId = transferRequest.Value.WorkspaceId,
             }
         };
 

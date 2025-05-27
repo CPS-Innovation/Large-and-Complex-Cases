@@ -63,6 +63,7 @@ public class TransferOrchestrator
                 TransferId = transferEntity.Id,
                 TransferType = transferEntity.TransferType,
                 TransferDirection = transferEntity.Direction,
+                WorkspaceId = input.WorkspaceId,
             };
 
             tasks.Add(context.CallActivityAsync(
@@ -72,8 +73,11 @@ public class TransferOrchestrator
         await Task.WhenAll(tasks);
 
         // 3. Finalize
-
-
-
+        await context.CallActivityAsync(
+            nameof(FinalizeTransfer),
+            new FinalizeTransferPayload
+            {
+                TransferId = input.TransferId,
+            });
     }
 }
