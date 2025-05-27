@@ -1,24 +1,19 @@
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
+using CPS.ComplexCases.FileTransfer.API.Durable.State;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.DurableTask.Client;
+using Microsoft.DurableTask.Entities;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 
 public class UpdateTransferStatus
 {
     [Function(nameof(UpdateTransferStatus))]
-    public async Task<Transfer> Run([ActivityTrigger] UpdateTransferStatusPayload updateStatusPayload, FunctionContext context)
+    public async Task Run([ActivityTrigger] UpdateTransferStatusPayload updateStatusPayload, [DurableClient] DurableTaskClient client)
     {
-        // update transfer record in db with status
-        await Task.Delay(1000);
+        var entityId = new EntityInstanceId(nameof(TransferEntityState), updateStatusPayload.TransferId.ToString());
 
-        return new Transfer
-        {
-            Id = updateStatusPayload.TransferId,
-            Status = updateStatusPayload.Status,
-            DestinationPath = "destination/path",
-            SourcePaths = new List<string> { "source/path1", "source/path2" },
-            CaseId = 12,
-        };
+        await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.UpdateStatus), updateStatusPayload.Status);
     }
 }

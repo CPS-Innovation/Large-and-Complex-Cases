@@ -8,20 +8,18 @@ using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.FileTransfer.API.Validators;
 using CPS.ComplexCases.Common.Extensions;
-using CPS.ComplexCases.FileTransfer.API.Services;
 using CPS.ComplexCases.FileTransfer.API.Durable.Orchestration;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
+using CPS.ComplexCases.FileTransfer.API.Models.Responses;
+using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 
 namespace CPS.ComplexCases.FileTransfer.API.Functions;
 
 public class InitiateTransfer
 {
     private readonly ILogger<InitiateTransfer> _logger;
-    private readonly ITransferService _transferService;
-
-    public InitiateTransfer(ILogger<InitiateTransfer> logger, ITransferService transferService)
+    public InitiateTransfer(ILogger<InitiateTransfer> logger)
     {
-        _transferService = transferService;
         _logger = logger;
     }
 
@@ -40,13 +38,17 @@ public class InitiateTransfer
         var currentCorrelationId = req.Headers.GetCorrelationId();
         var transferId = Guid.NewGuid();
 
-        var transferResponse = await _transferService.InitiateTransferAsync(transferId, transferRequest.Value, currentCorrelationId);
 
         await orchestrationClient.ScheduleNewOrchestrationInstanceAsync(
             nameof(TransferOrchestrator),
             new TransferPayload
             {
                 TransferId = transferId,
+                TransferType = transferRequest.Value.TransferType,
+                DestinationPath = transferRequest.Value.DestinationPath,
+                SourcePaths = transferRequest.Value.SourcePaths,
+                CaseId = transferRequest.Value.Metadata.CaseId,
+                UserName = transferRequest.Value.Metadata.UserName,
             },
             new StartOrchestrationOptions
             {
@@ -54,6 +56,11 @@ public class InitiateTransfer
             }
         );
 
-        return new AcceptedResult($"/api/filetransfer/{transferId}/status", transferResponse);
+        return new AcceptedResult($"/api/filetransfer/{transferId}/status", new TransferResponse
+        {
+            Id = transferId,
+            Status = TransferStatus.Initiated,
+            CreatedAt = DateTime.UtcNow,
+        });
     }
 }

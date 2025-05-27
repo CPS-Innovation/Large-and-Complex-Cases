@@ -1,7 +1,6 @@
-using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
-using CPS.ComplexCases.FileTransfer.API.Models.Domain;
+using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask;
@@ -24,45 +23,55 @@ public class TransferOrchestrator
             logger.LogError("TransferOrchestrator input is null.");
             throw new ArgumentNullException(nameof(input));
         }
-        var transferId = input.TransferId;
 
-        // 1. get transfer details from db
-        var transfer = await context.CallActivityAsync<Transfer>(
-            nameof(GetTransferDetails),
-            transferId);
+        // 1.  initalize transfer entity
+        var transferEntity = new TransferEntity
+        {
+            Id = input.TransferId,
+            Status = TransferStatus.Initiated,
+            DestinationPath = input.DestinationPath,
+            SourcePaths = input.SourcePaths,
+            CaseId = input.CaseId,
+            TransferType = input.TransferType,
+            Direction = input.TransferDirection,
+            TotalFiles = input.SourcePaths.Count,
+        };
 
-        List<Guid> itemIdsToProcess;
-
-        // 2. Initial run: LISTING_FILES
-        await context.CallActivityAsync<Transfer>(
-            nameof(UpdateTransferStatus),
-            new UpdateTransferStatusPayload
-            {
-                TransferId = transferId,
-                Status = TransferStatus.ListingFiles,
-            });
+        await context.CallActivityAsync(
+            nameof(IntializeTransfer),
+            transferEntity);
 
         // todo: audit record activity
 
-        itemIdsToProcess = await context.CallActivityAsync<List<Guid>>(
-            nameof(ListSourceFiles),
-            new ListSourceFilesPayload
+        // 2. Fan-out: TransferFileActivity for each item
+        await context.CallActivityAsync(
+            nameof(UpdateTransferStatus),
+            new UpdateTransferStatusPayload
             {
-                TransferId = transferId,
-                SourcePaths = transfer.SourcePaths,
-                Direction = transfer.Direction,
+                TransferId = input.TransferId,
+                Status = TransferStatus.InProgress,
             });
 
+        var tasks = new List<Task>();
 
-        // 3. List files and create TransferItems
+        foreach (var sourcePath in input.SourcePaths)
+        {
+            var transferFilePayload = new TransferFilePayload
+            {
+                SourcePath = sourcePath,
+                DestinationPath = transferEntity.DestinationPath,
+                TransferId = transferEntity.Id,
+                TransferType = transferEntity.TransferType,
+                TransferDirection = transferEntity.Direction,
+            };
 
-        // 4. Retry run: get failed/specified items, apply pathModifications/overwritePolicy
+            tasks.Add(context.CallActivityAsync(
+                nameof(TransferFile),
+                transferFilePayload));
+        }
+        await Task.WhenAll(tasks);
 
-        // 5. IN_PROGRESS
-
-        // 6. Fan-out: TransferFileActivity for each item
-
-        // 7. Finalize
+        // 3. Finalize
 
 
 
