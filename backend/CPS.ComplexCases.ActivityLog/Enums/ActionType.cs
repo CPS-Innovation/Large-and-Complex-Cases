@@ -1,4 +1,4 @@
-using CPS.ComplexCases.ActivityLog.Attributes;
+using CPS.ComplexCases.Common.Attributes;
 
 namespace CPS.ComplexCases.ActivityLog.Enums
 {

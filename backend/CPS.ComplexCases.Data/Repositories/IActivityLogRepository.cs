@@ -1,3 +1,4 @@
+using CPS.ComplexCases.Data.Dtos;
 using CPS.ComplexCases.Data.Entities;
 
 namespace CPS.ComplexCases.Data.Repositories;
@@ -8,4 +9,5 @@ public interface IActivityLogRepository
     Task<IEnumerable<ActivityLog>> GetByResourceIdAsync(string resourceId);
     Task<ActivityLog> AddAsync(ActivityLog activityLog);
     Task<ActivityLog?> UpdateAsync(ActivityLog activityLog);
+    Task<IEnumerable<ActivityLog>> GetByFilterAsync(ActivityLogFilterDto filter);
 }

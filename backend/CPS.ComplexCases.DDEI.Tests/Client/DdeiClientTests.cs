@@ -3,6 +3,7 @@ using System.Text.Json;
 using AutoFixture;
 using AutoFixture.AutoMoq;
 using CPS.ComplexCases.DDEI.Client;
+using CPS.ComplexCases.DDEI.Exceptions;
 using CPS.ComplexCases.DDEI.Factories;
 using CPS.ComplexCases.DDEI.Mappers;
 using CPS.ComplexCases.DDEI.Models.Args;
@@ -82,7 +83,8 @@ public class DdeiClientTests
     SetupHttpMockResponses(
         ("urn", urnListResponse, HttpStatusCode.BadRequest)
     );
-    await Assert.ThrowsAsync<HttpRequestException>(() => _client.ListCasesByUrnAsync(_ddeiCaseIdentifiersArgDto));
+
+    await Assert.ThrowsAsync<DdeiClientException>(() => _client.ListCasesByUrnAsync(_ddeiCaseIdentifiersArgDto));
   }
 
   [Fact]
@@ -164,7 +166,7 @@ public class DdeiClientTests
     );
 
     // Act & Assert
-    await Assert.ThrowsAsync<HttpRequestException>(() => _client.ListCasesByOperationNameAsync(_ddeiOperationNameArgDto));
+    await Assert.ThrowsAsync<DdeiClientException>(() => _client.ListCasesByOperationNameAsync(_ddeiOperationNameArgDto));
   }
 
   [Fact]
@@ -246,7 +248,7 @@ public class DdeiClientTests
     );
 
     // Act & Assert
-    await Assert.ThrowsAsync<HttpRequestException>(() => _client.ListCasesByDefendantNameAsync(_ddeiDefendantNameArgDto));
+    await Assert.ThrowsAsync<DdeiClientException>(() => _client.ListCasesByDefendantNameAsync(_ddeiDefendantNameArgDto));
   }
 
   [Fact]

@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace CPS.ComplexCases.ActivityLog.Attributes
+namespace CPS.ComplexCases.Common.Attributes
 {
     public static class EnumExtensions
     {
