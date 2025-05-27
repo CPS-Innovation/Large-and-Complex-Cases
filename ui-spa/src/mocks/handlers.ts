@@ -82,7 +82,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
         ? getEgressFolderResultsDev(folderId as string)
         : getEgressFolderResultsPlaywright(folderId as string);
       await delay(500);
-
+      // return new HttpResponse(null, { status: 404 });
       return HttpResponse.json(netAppRootFolderResults);
     }),
 

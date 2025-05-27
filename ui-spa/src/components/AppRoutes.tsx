@@ -5,6 +5,7 @@ import EgressPage from "./egress-connect";
 import NetAppPage from "./netapp-connect";
 import CaseManagementPage from "./case-management";
 import EgressConnectionErrorPage from "./case-management/transfer-materials/EgressConnectionErrorPage";
+import FolderAccessErrorPage from "./case-management/transfer-materials/FolderAccessErrorPage";
 
 const AppRoutes = () => {
   return (
@@ -34,8 +35,12 @@ const AppRoutes = () => {
         element={<CaseManagementPage />}
       />
       <Route
-        path="/case/:caseId/egress-connection-error"
+        path="/case/:caseId/case-management/egress-connection-error"
         element={<EgressConnectionErrorPage />}
+      />
+      <Route
+        path="/case/:caseId/case-management/connection-error"
+        element={<FolderAccessErrorPage />}
       />
 
       <Route path="*" element={<Navigate to="/" replace />} />

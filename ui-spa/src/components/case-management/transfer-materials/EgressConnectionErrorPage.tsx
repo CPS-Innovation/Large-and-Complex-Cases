@@ -12,10 +12,6 @@ const EgressConnectionErrorPage = () => {
     navigate("/");
   };
   const handleReconnect = () => {
-    console.log(
-      " location.state.netappFolderPath>>",
-      location.state.netappFolderPath,
-    );
     navigate(`/case/${caseId}/egress-connect?workspace-name=${operationName}`, {
       state: {
         netappFolderPath: location.state.netappFolderPath,

@@ -38,7 +38,7 @@ const CaseManagementPage = () => {
         caseMetaData.data?.netappFolderPath
       ) {
         navigate(
-          `/case/${caseId}/egress-connection-error?operation-name=${caseMetaData.data?.operationName}`,
+          `/case/${caseId}/case-management/egress-connection-error?operation-name=${caseMetaData.data?.operationName}`,
           {
             state: {
               netappFolderPath: true,

@@ -201,13 +201,20 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     if (egressStatus === "failed" && egressError) {
       if (egressError.code === 404) {
         navigate(
-          `/case/${caseId}/egress-connection-error?operation-name=${operationName}`,
+          `/case/${caseId}/case-management/egress-connection-error?operation-name=${operationName}`,
           {
             state: {
               netappFolderPath: true,
             },
           },
         );
+        return;
+      }
+      if (egressError.code === 401) {
+        navigate(
+          `/case/${caseId}/case-management/connection-error?type=egress`,
+        );
+        return;
       } else {
         throw new Error(`${egressError}`);
       }
