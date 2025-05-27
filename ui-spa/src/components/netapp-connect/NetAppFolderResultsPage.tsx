@@ -33,7 +33,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
     if (sortValues?.name === "folder-name")
       return sortByStringProperty(
         netAppFolderApiResults.data.folders,
-        "path",
+        "folderPath",
         sortValues.type,
       );
 
