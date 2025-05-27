@@ -118,7 +118,7 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
                 FolderData = folders,
                 FileData = [],
             },
-            DataInfo = new DataInfoDto
+            Pagination = new PaginationDto
             {
                 ContinuationToken = response.ContinuationToken,
                 NextContinuationToken = response.NextContinuationToken,
@@ -156,7 +156,7 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
                 FolderData = folders,
                 FileData = files
             },
-            DataInfo = new DataInfoDto
+            Pagination = new PaginationDto
             {
                 ContinuationToken = response.ContinuationToken,
                 NextContinuationToken = response.NextContinuationToken,
