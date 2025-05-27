@@ -62,10 +62,10 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
                 <LinkButton
                   type="button"
                   onClick={() => {
-                    handleGetFolderContent(data.path);
+                    handleGetFolderContent(data.folderPath);
                   }}
                 >
-                  {getFolderNameFromPath(data.path)}
+                  {getFolderNameFromPath(data.folderPath)}
                 </LinkButton>
               </div>
             ),
@@ -76,7 +76,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
               <Button
                 className="govuk-button--secondary"
                 name="secondary"
-                onClick={() => handleConnect(data.path)}
+                onClick={() => handleConnect(data.folderPath)}
                 disabled={!!data.caseId}
               >
                 Connect folder

@@ -4,16 +4,16 @@ export const netAppRootFolderResultsDev: ConnectNetAppFolderResponse = {
     rootPath: "",
     folders: [
       {
-        path: "thunderstrikeab/",
+        folderPath: "thunderstrikeab/",
         caseId: 123,
       },
       {
-        path: "thunderstrike/",
+        folderPath: "thunderstrike/",
         caseId: null,
       },
 
       {
-        path: "thunderstrikeabc/",
+        folderPath: "thunderstrikeabc/",
         caseId: null,
       },
     ],
