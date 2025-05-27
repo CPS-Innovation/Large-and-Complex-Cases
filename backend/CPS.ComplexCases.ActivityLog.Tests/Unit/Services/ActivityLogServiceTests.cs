@@ -1,8 +1,9 @@
 using AutoFixture;
 using AutoFixture.AutoMoq;
-using CPS.ComplexCases.ActivityLog.Attributes;
 using CPS.ComplexCases.ActivityLog.Enums;
 using CPS.ComplexCases.ActivityLog.Services;
+using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.Data.Dtos;
 using CPS.ComplexCases.Data.Repositories;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -174,5 +175,44 @@ public class ActivityLogServiceTests
                 a.ResourceId == activityLog.ResourceId &&
                 a.UserName == activityLog.UserName)), Times.Once);
         }
+    }
+
+    [Fact]
+    public async Task GetActivityLogsAsync_ShouldReturnLogs_WhenRepositoryReturnsLogs()
+    {
+        // Arrange
+        var filter = new ActivityLogFilterDto();
+        var logs = new List<Data.Entities.ActivityLog>
+        {
+            new Data.Entities.ActivityLog { ResourceId = "1", ResourceType = "Case" },
+            new Data.Entities.ActivityLog { ResourceId = "2", ResourceType = "Document" }
+        };
+        _repositoryMock
+            .Setup(r => r.GetByFilterAsync(filter))
+            .ReturnsAsync(logs);
+
+        // Act
+        var result = await _service.GetActivityLogsAsync(filter);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Collection(result,
+            log => Assert.Equal("1", log.ResourceId),
+            log => Assert.Equal("2", log.ResourceId));
+        _repositoryMock.Verify(r => r.GetByFilterAsync(filter), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetActivityLogsAsync_ShouldThrow_WhenRepositoryThrows()
+    {
+        // Arrange
+        var filter = new ActivityLogFilterDto();
+        _repositoryMock
+            .Setup(r => r.GetByFilterAsync(filter))
+            .ThrowsAsync(new System.Exception("Repository error"));
+
+        // Act & Assert
+        await Assert.ThrowsAsync<System.Exception>(() => _service.GetActivityLogsAsync(filter));
+        _repositoryMock.Verify(r => r.GetByFilterAsync(filter), Times.Once);
     }
 }
