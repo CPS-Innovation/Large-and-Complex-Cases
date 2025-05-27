@@ -69,8 +69,6 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
         : caseMetaDataPlaywright;
       await delay(100);
 
-      // return new HttpResponse(null, { status: 500 });
-
       return HttpResponse.json(caseMetaDataResults);
     }),
 
@@ -82,7 +80,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
         ? getEgressFolderResultsDev(folderId as string)
         : getEgressFolderResultsPlaywright(folderId as string);
       await delay(500);
-      // return new HttpResponse(null, { status: 404 });
+
       return HttpResponse.json(netAppRootFolderResults);
     }),
 

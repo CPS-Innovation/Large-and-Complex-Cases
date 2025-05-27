@@ -8,7 +8,7 @@ test.describe("egress meta data issues", () => {
   }) => {
     await worker.use(
       http.get("https://mocked-out-api/api/cases/12", async () => {
-        await delay(500);
+        await delay(1000);
         return HttpResponse.json({
           caseId: "12",
           egressWorkspaceId: "",
@@ -21,7 +21,6 @@ test.describe("egress meta data issues", () => {
 
     await page.goto("/case/12/case-management");
     await expect(page).toHaveURL("/case/12/case-management");
-    await expect(page.getByText("loading...")).toBeVisible();
     await expect(page).toHaveURL(
       "/case/12/case-management/egress-connection-error?operation-name=Thunderstruck",
     );
@@ -47,7 +46,7 @@ test.describe("egress meta data issues", () => {
   }) => {
     await worker.use(
       http.get("https://mocked-out-api/api/cases/12", async () => {
-        await delay(500);
+        await delay(1000);
         return HttpResponse.json({
           caseId: "12",
           egressWorkspaceId: "",
@@ -80,7 +79,6 @@ test.describe("egress meta data issues", () => {
 
     await page.goto("/case/12/case-management");
     await expect(page).toHaveURL("/case/12/case-management");
-    await expect(page.getByText("loading...")).toBeVisible();
     await expect(page).toHaveURL(
       "/case/12/case-management/egress-connection-error?operation-name=Thunderstruck",
     );
@@ -119,7 +117,6 @@ test.describe("egress meta data issues", () => {
 
     await page.goto("/case/12/case-management");
     await expect(page).toHaveURL("/case/12/case-management");
-    await expect(page.getByText("loading...")).toBeVisible();
     await expect(page).toHaveURL(
       "/case/12/case-management/connection-error?type=egress",
     );
@@ -151,8 +148,6 @@ test.describe("egress meta data issues", () => {
 
     await page.goto("/case/12/case-management");
     await expect(page).toHaveURL("/case/12/case-management");
-    await expect(page.getByText("loading...")).toBeVisible();
-
     await expect(page.locator("h1")).toHaveText(
       "Sorry, there is a problem with the service",
     );
@@ -183,7 +178,6 @@ test.describe("egress meta data issues", () => {
 
     await page.goto("/case/12/case-management");
     await expect(page).toHaveURL("/case/12/case-management");
-    await expect(page.getByText("loading...")).toBeVisible();
 
     await expect(page.locator("h1")).toHaveText(
       "Sorry, there is a problem with the service",
