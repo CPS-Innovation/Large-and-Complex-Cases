@@ -70,6 +70,9 @@ const CaseManagementPage = () => {
       panel: { children: <div>manage materials</div> },
     },
   ];
+  if (caseMetaData.status === "loading" || caseMetaData.status === "initial") {
+    return <div className="govuk-width-container">loading...</div>;
+  }
   return (
     <div className="govuk-width-container">
       <h1 className={styles.workspaceName}>
