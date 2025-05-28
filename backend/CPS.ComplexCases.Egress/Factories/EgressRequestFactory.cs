@@ -1,4 +1,3 @@
-
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -84,7 +83,7 @@ public class EgressRequestFactory : IEgressRequestFactory
       folder_path = arg.FolderPath,
     };
 
-    var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/workspaces/{arg.WorkspaceId}/files/uploads")
+    var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/workspaces/{arg.WorkspaceId}/uploads")
     {
       Content = new StringContent(JsonSerializer.Serialize(uploadData), Encoding.UTF8, "application/json")
     };
@@ -105,7 +104,7 @@ public class EgressRequestFactory : IEgressRequestFactory
 
     if (!string.IsNullOrEmpty(arg.ContentRange))
     {
-      request.Headers.Add("Content-Range", arg.ContentRange);
+      fileContent.Headers.Add("Content-Range", arg.ContentRange);
     }
 
     AppendToken(request, token);
