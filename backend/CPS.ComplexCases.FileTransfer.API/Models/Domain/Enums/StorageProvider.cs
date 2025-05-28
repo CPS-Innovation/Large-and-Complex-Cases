@@ -1,8 +1,7 @@
 namespace CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 
-public enum PartStatus
+public enum StorageProvider
 {
-    Pending,
-    Uploaded,
-    Failed
+    Egress,
+    NetApp
 }

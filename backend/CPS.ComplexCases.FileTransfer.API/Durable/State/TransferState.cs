@@ -29,9 +29,13 @@ public class TransferEntityState : TaskEntity<TransferEntity>
     {
         State.Status = State.FailedItems.Count > 0 ? TransferStatus.PartiallyCompleted : TransferStatus.Completed;
         State.CompletedAt = DateTime.UtcNow;
-        State.FailedFiles = State.FailedItems.Count;
-        State.ProcessedFiles = State.TotalFiles;
-        State.SuccessfulFiles = State.TotalFiles - State.FailedFiles;
+        State.UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void AddSuccessfulItem()
+    {
+        State.SuccessfulFiles++;
+        State.ProcessedFiles++;
         State.UpdatedAt = DateTime.UtcNow;
     }
 

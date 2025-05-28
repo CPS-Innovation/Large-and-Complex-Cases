@@ -3,6 +3,7 @@ using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
 using CPS.ComplexCases.Egress.Models.Args;
+using CPS.ComplexCases.Egress.Models.Response;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -27,17 +28,54 @@ public class EgressStorageClient(
         var response = await SendRequestAsync(_egressRequestFactory.GetWorkspaceDocumentRequest(arg, token));
         return await response.Content.ReadAsStreamAsync();
     }
-    public Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string? workspaceId = null, string? fileId = null)
+    public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string? workspaceId = null, string? fileId = null)
     {
-        throw new NotImplementedException();
+        var token = await GetWorkspaceToken();
+
+        var fileName = Path.GetFileName(destinationPath);
+        var arg = new CreateUploadArg
+        {
+            FolderPath = destinationPath,
+            FileSize = fileSize,
+            WorkspaceId = workspaceId ?? throw new ArgumentNullException(nameof(workspaceId), "Workspace ID cannot be null."),
+            FileName = fileName
+        };
+
+        var response = await SendRequestAsync<CreateUploadResponse>(_egressRequestFactory.CreateUploadRequest(arg, token));
+
+        return new UploadSession
+        {
+            UploadId = response.Id,
+            WorkspaceId = workspaceId,
+            Md5Hash = response.Md5Hash,
+        };
     }
 
-    public Task UploadChunkAsync(UploadSession session, int chunkNumber, byte[] chunkData, string? contentRange = null)
+    public async Task UploadChunkAsync(UploadSession session, int chunkNumber, byte[] chunkData, string? contentRange = null)
     {
-        throw new NotImplementedException();
+        var token = await GetWorkspaceToken();
+
+        var uploadArg = new UploadChunkArg
+        {
+            UploadId = session.UploadId ?? throw new ArgumentNullException(nameof(session.UploadId), "Upload ID cannot be null."),
+            WorkspaceId = session.WorkspaceId ?? throw new ArgumentNullException(nameof(session.WorkspaceId), "Workspace ID cannot be null."),
+            ContentRange = contentRange,
+            ChunkData = chunkData,
+        };
+
+        await SendRequestAsync(_egressRequestFactory.UploadChunkRequest(uploadArg, token));
     }
-    public Task CompleteUploadAsync(UploadSession session, string? md5hash = null, List<string>? etags = null)
+    public async Task CompleteUploadAsync(UploadSession session, string? md5hash = null, List<string>? etags = null)
     {
-        throw new NotImplementedException();
+        var token = await GetWorkspaceToken();
+
+        var completeArg = new CompleteUploadArg
+        {
+            UploadId = session.UploadId ?? throw new ArgumentNullException(nameof(session.UploadId), "Upload ID cannot be null."),
+            WorkspaceId = session.WorkspaceId ?? throw new ArgumentNullException(nameof(session.WorkspaceId), "Workspace ID cannot be null."),
+            Md5Hash = md5hash,
+        };
+
+        await SendRequestAsync(_egressRequestFactory.CompleteUploadRequest(completeArg, token));
     }
 }
