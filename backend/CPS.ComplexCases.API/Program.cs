@@ -1,4 +1,3 @@
-using CPS.ComplexCases.API.Clients.FileTransfer;
 using CPS.ComplexCases.API.Extensions;
 using CPS.ComplexCases.ActivityLog.Extensions;
 using CPS.ComplexCases.API.Middleware;

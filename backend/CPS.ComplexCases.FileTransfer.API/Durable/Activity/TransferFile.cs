@@ -9,14 +9,16 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask.Client;
 using Microsoft.DurableTask.Entities;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 
-public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<TransferFile> logger, SizeConfig sizeConfig)
+public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<TransferFile> logger, IOptions<SizeConfig> sizeConfig)
 {
     private readonly IStorageClientFactory _storageClientFactory = storageClientFactory;
     private readonly ILogger<TransferFile> _logger = logger;
-    private readonly SizeConfig _sizeConfig = sizeConfig;
+    private readonly SizeConfig _sizeConfig = sizeConfig.Value;
+
     [Function(nameof(TransferFile))]
     public async Task Run([ActivityTrigger] TransferFilePayload payload, [DurableClient] DurableTaskClient client, CancellationToken cancellationToken = default)
     {
