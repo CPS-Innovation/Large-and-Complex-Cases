@@ -84,7 +84,7 @@ public class EgressRequestFactory : IEgressRequestFactory
       folder_path = arg.FolderPath,
     };
 
-    var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/workspaces/{arg.WorkspaceId}/files/upload")
+    var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/workspaces/{arg.WorkspaceId}/files/uploads")
     {
       Content = new StringContent(JsonSerializer.Serialize(uploadData), Encoding.UTF8, "application/json")
     };
