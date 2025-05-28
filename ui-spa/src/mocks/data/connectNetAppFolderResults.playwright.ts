@@ -4,11 +4,11 @@ export const netAppRootFolderResultsPlaywright: ConnectNetAppFolderResponse = {
     rootPath: "",
     folders: [
       {
-        path: "thunderstrike/",
+        folderPath: "thunderstrike/",
         caseId: null,
       },
       {
-        path: "thunderstrikeab/",
+        folderPath: "thunderstrikeab/",
         caseId: 123,
       },
     ],
@@ -33,7 +33,7 @@ export const getConnectNetAppFolderResultsPlaywright = (path: string) => {
   }
   const newFolders = netAppRootFolderResultsPlaywright.data.folders.map(
     (item, index) => {
-      return { ...item, path: `${path}folder-${index}/` };
+      return { ...item, folderPath: `${path}folder-${index}/` };
     },
   );
 
