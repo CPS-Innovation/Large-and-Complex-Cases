@@ -205,7 +205,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           `/case/${caseId}/case-management/egress-connection-error?operation-name=${operationName}`,
           {
             state: {
-              netappFolderPath: true,
+              isValid: true,
             },
           },
         );
@@ -223,6 +223,11 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       if (netAppError.code === 404) {
         navigate(
           `/case/${caseId}/case-management/netapp-connection-error?operation-name=${operationName}`,
+          {
+            state: {
+              isValid: true,
+            },
+          },
         );
         return;
       }

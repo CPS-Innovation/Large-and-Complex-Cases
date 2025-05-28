@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useCallback } from "react";
 import { Button, LinkButton, BackLink } from "../../govuk";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import styles from "./metaDataErrorPage.module.scss";
@@ -38,6 +38,17 @@ const MetaDataErrorPage = () => {
       },
     );
   };
+
+  const validateRoute = useCallback(() => {
+    if (location?.state?.isValid === undefined) {
+      navigate(`/`);
+    }
+  }, [location, navigate]);
+
+  useEffect(() => {
+    validateRoute();
+  }, [location, validateRoute]);
+
   return (
     <div className="govuk-width-container">
       <BackLink to={"/"}>Back</BackLink>

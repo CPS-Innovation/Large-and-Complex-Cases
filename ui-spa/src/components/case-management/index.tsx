@@ -36,6 +36,11 @@ const CaseManagementPage = () => {
       ) {
         navigate(
           `/case/${caseId}/case-management/egress-connection-error?operation-name=${caseMetaData.data?.operationName}`,
+          {
+            state: {
+              isValid: true,
+            },
+          },
         );
       }
       if (
@@ -44,6 +49,11 @@ const CaseManagementPage = () => {
       ) {
         navigate(
           `/case/${caseId}/case-management/netapp-connection-error?operation-name=${caseMetaData.data?.operationName}`,
+          {
+            state: {
+              isValid: true,
+            },
+          },
         );
       }
     }
