@@ -1,0 +1,10 @@
+.contentWrapper {
+  margin-top: 1rem;
+  width: 66%;
+  & :global(.govuk-list) {
+    margin-top: 1rem;
+  }
+  & :global(.govuk-heading-xl) {
+    margin-bottom: 1.875rem;
+  }
+}

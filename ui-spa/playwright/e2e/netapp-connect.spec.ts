@@ -35,11 +35,13 @@ test.describe("netapp connect", () => {
       `Select a network shared drive folder to link to the case`,
     );
 
-    await expect(page.getByTestId("folder-table-loader")).toBeVisible();
+    await expect(page.getByTestId("netapp-folder-table-loader")).toBeVisible();
     await expect(
       page.getByText(`Loading folders from Network Shared Drive`),
     ).toBeVisible();
-    await expect(page.getByTestId("folder-table-loader")).not.toBeVisible();
+    await expect(
+      page.getByTestId("netapp-folder-table-loader"),
+    ).not.toBeVisible();
 
     await page.getByRole("button", { name: "Connect folder" }).first().click();
     await expect(page).toHaveURL("/case/14/netapp-connect/confirmation");
@@ -116,11 +118,13 @@ test.describe("netapp connect", () => {
     await expect(page.locator("h1")).toHaveText(
       `Select a network shared drive folder to link to the case`,
     );
-    await expect(page.getByTestId("folder-table-loader")).toBeVisible();
+    await expect(page.getByTestId("netapp-folder-table-loader")).toBeVisible();
     await expect(
       page.getByText(`Loading folders from Network Shared Drive`),
     ).toBeVisible();
-    await expect(page.getByTestId("folder-table-loader")).not.toBeVisible();
+    await expect(
+      page.getByTestId("netapp-folder-table-loader"),
+    ).not.toBeVisible();
     await page.getByRole("button", { name: "Connect folder" }).first().click();
     await expect(page).toHaveURL("/case/14/netapp-connect/confirmation");
     await expect(page.locator("h1")).toHaveText(`Confirm folder link`);
@@ -194,7 +198,9 @@ test.describe("netapp connect", () => {
     await expect(page.locator("h1")).toHaveText(
       "Select a network shared drive folder to link to the case",
     );
-    await expect(page.getByTestId("folder-table-loader")).not.toBeVisible();
+    await expect(
+      page.getByTestId("netapp-folder-table-loader"),
+    ).not.toBeVisible();
     await expect(
       page.getByText("There are no documents currently in this folder"),
     ).toBeVisible();
@@ -274,11 +280,13 @@ test.describe("netapp connect", () => {
         "If the folder you need is not listed, check that you have the correct permissions or contact the product team for support.",
       ),
     ).toBeVisible();
-    await expect(page.getByTestId("folder-table-loader")).toBeVisible();
+    await expect(page.getByTestId("netapp-folder-table-loader")).toBeVisible();
     await expect(
       page.getByText(`Loading folders from Network Shared Drive`),
     ).toBeVisible();
-    await expect(page.getByTestId("folder-table-loader")).not.toBeVisible();
+    await expect(
+      page.getByTestId("netapp-folder-table-loader"),
+    ).not.toBeVisible();
     await validateFolderPath(page, ["Home"]);
     const tableHeadValues = await page
       .locator("table thead tr:nth-child(1) th")
@@ -413,25 +421,31 @@ test.describe("netapp connect", () => {
     );
     await validateFolderPath(page, ["Home"]);
     await page.locator('role=button[name="thunderstrike"]').click();
-    await expect(page.getByTestId("folder-table-loader")).toBeVisible();
+    await expect(page.getByTestId("netapp-folder-table-loader")).toBeVisible();
     await expect(
       page.getByText(`Loading folders from Network Shared Drive`),
     ).toBeVisible();
-    await expect(page.getByTestId("folder-table-loader")).not.toBeVisible();
+    await expect(
+      page.getByTestId("netapp-folder-table-loader"),
+    ).not.toBeVisible();
     await validateFolderPath(page, ["Home", "thunderstrike"]);
     await page.locator('role=button[name="folder-0"]').click();
-    await expect(page.getByTestId("folder-table-loader")).toBeVisible();
+    await expect(page.getByTestId("netapp-folder-table-loader")).toBeVisible();
     await expect(
       page.getByText(`Loading folders from Network Shared Drive`),
     ).toBeVisible();
-    await expect(page.getByTestId("folder-table-loader")).not.toBeVisible();
+    await expect(
+      page.getByTestId("netapp-folder-table-loader"),
+    ).not.toBeVisible();
     await validateFolderPath(page, ["Home", "thunderstrike", "folder-0"]);
     await page.locator('role=button[name="thunderstrike"]').click();
-    await expect(page.getByTestId("folder-table-loader")).toBeVisible();
+    await expect(page.getByTestId("netapp-folder-table-loader")).toBeVisible();
     await expect(
       page.getByText(`Loading folders from Network Shared Drive`),
     ).toBeVisible();
-    await expect(page.getByTestId("folder-table-loader")).not.toBeVisible();
+    await expect(
+      page.getByTestId("netapp-folder-table-loader"),
+    ).not.toBeVisible();
     await validateFolderPath(page, ["Home", "thunderstrike"]);
     await page.locator('role=button[name="Connect folder"]').nth(0).click();
     await expect(page).toHaveURL("/case/14/netapp-connect/confirmation");
@@ -441,27 +455,35 @@ test.describe("netapp connect", () => {
     await expect(page).toHaveURL(
       "/case/14/netapp-connect?operation-name=Thunderstruck3_pl",
     );
-    await expect(page.getByTestId("folder-table-loader")).not.toBeVisible();
+    await expect(
+      page.getByTestId("netapp-folder-table-loader"),
+    ).not.toBeVisible();
     await validateFolderPath(page, ["Home", "thunderstrike"]);
     await page.locator('role=button[name="Connect folder"]').nth(0).click();
     await expect(page).toHaveURL("/case/14/netapp-connect/confirmation");
     await expect(page.locator("h1")).toHaveText(`Confirm folder link`);
     await page.getByRole("link", { name: "Back" }).click();
-    await expect(page.getByTestId("folder-table-loader")).not.toBeVisible();
+    await expect(
+      page.getByTestId("netapp-folder-table-loader"),
+    ).not.toBeVisible();
     await validateFolderPath(page, ["Home", "thunderstrike"]);
     await page.locator('role=button[name="folder-0"]').click();
-    await expect(page.getByTestId("folder-table-loader")).toBeVisible();
+    await expect(page.getByTestId("netapp-folder-table-loader")).toBeVisible();
     await expect(
       page.getByText(`Loading folders from Network Shared Drive`),
     ).toBeVisible();
-    await expect(page.getByTestId("folder-table-loader")).not.toBeVisible();
+    await expect(
+      page.getByTestId("netapp-folder-table-loader"),
+    ).not.toBeVisible();
     await validateFolderPath(page, ["Home", "thunderstrike", "folder-0"]);
     await page.locator('role=button[name="Home"]').click();
-    await expect(page.getByTestId("folder-table-loader")).toBeVisible();
+    await expect(page.getByTestId("netapp-folder-table-loader")).toBeVisible();
     await expect(
       page.getByText(`Loading folders from Network Shared Drive`),
     ).toBeVisible();
-    await expect(page.getByTestId("folder-table-loader")).not.toBeVisible();
+    await expect(
+      page.getByTestId("netapp-folder-table-loader"),
+    ).not.toBeVisible();
     await validateFolderPath(page, ["Home"]);
     await expect(
       page.locator('role=button[name="thunderstrike"]'),

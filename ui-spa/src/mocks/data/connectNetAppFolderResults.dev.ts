@@ -1,5 +1,5 @@
-import { NetAppFolderResponse } from "../../common/types/NetAppFolderData";
-export const netAppRootFolderResultsDev: NetAppFolderResponse = {
+import { ConnectNetAppFolderResponse } from "../../common/types/ConnectNetAppFolderData";
+export const netAppRootFolderResultsDev: ConnectNetAppFolderResponse = {
   data: {
     rootPath: "",
     folders: [
@@ -25,7 +25,7 @@ export const netAppRootFolderResultsDev: NetAppFolderResponse = {
   },
 };
 
-export const getNetAppFolderResultsDev = (path: string) => {
+export const getConnectNetAppFolderResultsDev = (path: string) => {
   if (!path || path === "abc") return netAppRootFolderResultsDev;
 
   const levels = path.split("/").filter((part) => part.length > 0);

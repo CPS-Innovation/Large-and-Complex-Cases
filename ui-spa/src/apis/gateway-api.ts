@@ -8,16 +8,21 @@ import {
   EgressSearchResultResponse,
 } from "../common/types/EgressSearchResponse";
 import {
-  NetAppFolder,
-  NetAppFolderData,
-  NetAppFolderResponse,
-} from "../common/types/NetAppFolderData";
+  ConnectNetAppFolder,
+  ConnectNetAppFolderData,
+  ConnectNetAppFolderResponse,
+} from "../common/types/ConnectNetAppFolderData";
 import { CaseMetaDataResponse } from "../common/types/CaseMetaDataResponse";
-
 import {
   EgressFolderData,
   EgressFolderResponse,
 } from "../common/types/EgressFolderData";
+import {
+  NetAppFolder,
+  NetAppFile,
+  NetAppFolderResponse,
+  NetAppFolderDataResponse,
+} from "../common/types/NetAppFolderData";
 
 import { ApiError } from "../common/errors/ApiError";
 
@@ -130,13 +135,13 @@ export const connectEgressWorkspace = async ({
   return response;
 };
 
-export const getNetAppFolders = async (
+export const getConnectNetAppFolders = async (
   operationName: string,
   folderPath: string,
   take: number = 50,
   continuationToken = "",
-  collectedFolders: NetAppFolder[] = [],
-): Promise<NetAppFolderData> => {
+  collectedFolders: ConnectNetAppFolder[] = [],
+): Promise<ConnectNetAppFolderData> => {
   const url = `${GATEWAY_BASE_URL}/api/netapp/folders`;
   const response = await fetch(
     `${url}?operation-name=${operationName}&path=${folderPath}&take=${take}&continuation-token=${continuationToken}`,
@@ -152,7 +157,7 @@ export const getNetAppFolders = async (
     throw new ApiError(`getting netapp folders failed`, url, response);
   }
   try {
-    const result = (await response.json()) as NetAppFolderResponse;
+    const result = (await response.json()) as ConnectNetAppFolderResponse;
 
     const { data, pagination } = result;
     const updatedFolders = collectedFolders.concat(data.folders);
@@ -162,7 +167,7 @@ export const getNetAppFolders = async (
         folders: updatedFolders,
       };
     }
-    return getNetAppFolders(
+    return getConnectNetAppFolders(
       operationName,
       folderPath,
       take,
@@ -254,5 +259,53 @@ export const getEgressFolders = async (
   } catch (error) {
     console.error("Fetch failed:", error);
     throw new Error(`Invalid API response format for Egress folders, ${error}`);
+  }
+};
+
+export const getNetAppFolders = async (
+  folderPath: string,
+  take: number = 50,
+  continuationToken = "",
+  collectedFolders: NetAppFolder[] = [],
+  collectedFiles: NetAppFile[] = [],
+): Promise<NetAppFolderDataResponse> => {
+  const url = `${GATEWAY_BASE_URL}/api/netapp/files`;
+  const response = await fetch(
+    `${url}?path=${folderPath}&take=${take}&continuation-token=${continuationToken}`,
+    {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        ...(await buildCommonHeaders()),
+      },
+    },
+  );
+  if (!response.ok) {
+    throw new ApiError(`getting netapp files/folders failed`, url, response);
+  }
+  try {
+    const result = (await response.json()) as NetAppFolderResponse;
+
+    const { data, pagination } = result;
+    const updatedFolders = collectedFolders.concat(data.folderData);
+    const updatedFiles = collectedFiles.concat(data.fileData);
+    if (!pagination.nextContinuationToken) {
+      return {
+        folderData: updatedFolders,
+        fileData: updatedFiles,
+      };
+    }
+    return getNetAppFolders(
+      folderPath,
+      take,
+      pagination.nextContinuationToken,
+      updatedFolders,
+      updatedFiles,
+    );
+  } catch (error) {
+    console.error("Fetch failed:", error);
+    throw new Error(
+      `Invalid API response format for netapp files/folders results, ${error}`,
+    );
   }
 };

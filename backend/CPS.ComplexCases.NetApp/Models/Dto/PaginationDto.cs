@@ -1,6 +1,6 @@
 namespace CPS.ComplexCases.NetApp.Models.Dto;
 
-public class DataInfoDto
+public class PaginationDto
 {
     public string? ContinuationToken { get; set; }
     public string? NextContinuationToken { get; set; }

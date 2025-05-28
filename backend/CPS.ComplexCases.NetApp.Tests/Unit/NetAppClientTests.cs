@@ -341,7 +341,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(2, result?.FileData.Count());
+            Assert.Equal(2, result?.Data.FileData.Count());
         }
 
         [Fact]
@@ -362,7 +362,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
 
             // Assert
             Assert.NotNull(result);
-            Assert.Empty(result?.FileData);
+            Assert.Empty(result?.Data.FileData);
         }
 
         [Fact]
@@ -403,7 +403,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
 
             // Act
             var result = await _client.ListFoldersInBucketAsync(arg);
-            var data = result.FolderData?.ToList();
+            var data = result?.Data.FolderData?.ToList();
 
             // Assert
             Assert.NotNull(result);

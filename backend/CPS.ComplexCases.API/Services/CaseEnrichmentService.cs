@@ -98,17 +98,17 @@ public class CaseEnrichmentService : ICaseEnrichmentService
   {
     var response = CreateNetAppFoldersResponseBase(folders);
 
-    if (!folders.FolderData.Any())
+    if (!folders.Data.FolderData.Any())
     {
       return response;
     }
 
-    _logger.LogInformation("Enriching {NetAppFolderCount} workspaces with metadata", folders.FolderData.Count());
+    _logger.LogInformation("Enriching {NetAppFolderCount} workspaces with metadata", folders.Data.FolderData.Count());
 
     try
     {
-      var folderPaths = folders.FolderData.Where(d => d.Path != null)
-                      .Select(d => $"{folders.BucketName}:{d.Path}")
+      var folderPaths = folders.Data.FolderData.Where(d => d.Path != null)
+                      .Select(d => $"{folders.Data.BucketName}:{d.Path}")
                       .ToList();
 
       var metadata = await _caseMetadataService.GetCaseMetadataForNetAppFolderPathsAsync(folderPaths);
@@ -125,7 +125,7 @@ public class CaseEnrichmentService : ICaseEnrichmentService
           CaseId = metadataLookup.TryGetValue(folder, out var caseMetadata) ? caseMetadata.CaseId : null
         }).ToList(),
         Files = new List<ListNetAppFilesDataResponse>(),
-        RootPath = folders.RootPath
+        RootPath = folders.Data.RootPath
       };
 
       return response;
@@ -176,18 +176,18 @@ public class CaseEnrichmentService : ICaseEnrichmentService
 
       Pagination = new NetAppPaginationResponse
       {
-        NextContinuationToken = foldersDto.DataInfo.NextContinuationToken,
-        MaxKeys = foldersDto.DataInfo.MaxKeys,
+        NextContinuationToken = foldersDto.Pagination.NextContinuationToken,
+        MaxKeys = foldersDto.Pagination.MaxKeys,
       },
       Data = new ListNetAppObjectsDataResponse
       {
-        Folders = foldersDto.FolderData.Select(folder => new ListNetAppFoldersDataResponse
+        Folders = foldersDto.Data.FolderData.Select(folder => new ListNetAppFoldersDataResponse
         {
           FolderPath = folder.Path ?? string.Empty,
           CaseId = null
         }).ToList(),
         Files = new List<ListNetAppFilesDataResponse>(),
-        RootPath = foldersDto.RootPath ?? string.Empty
+        RootPath = foldersDto.Data.RootPath ?? string.Empty
       }
     };
   }

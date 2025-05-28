@@ -142,11 +142,14 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
 
             var result = new ListNetAppObjectsDto
             {
-                BucketName = arg.BucketName,
-                RootPath = arg.Prefix,
-                FileData = files,
-                FolderData = folders,
-                DataInfo = new DataInfoDto
+                Data = new ListNetAppDataDto
+                {
+                    BucketName = arg.BucketName,
+                    RootPath = arg.Prefix,
+                    FolderData = folders,
+                    FileData = files
+                },
+                Pagination = new PaginationDto
                 {
                     ContinuationToken = response.ContinuationToken,
                     NextContinuationToken = response.NextContinuationToken,
@@ -176,11 +179,14 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
 
             var result = new ListNetAppObjectsDto
             {
-                BucketName = arg.BucketName,
-                RootPath = arg.Prefix,
-                FileData = [],
-                FolderData = folders,
-                DataInfo = new DataInfoDto
+                Data = new ListNetAppDataDto
+                {
+                    BucketName = arg.BucketName,
+                    RootPath = arg.Prefix,
+                    FolderData = folders,
+                    FileData = []
+                },
+                Pagination = new PaginationDto
                 {
                     ContinuationToken = response.ContinuationToken,
                     NextContinuationToken = response.NextContinuationToken,
