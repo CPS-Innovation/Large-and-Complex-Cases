@@ -1,33 +1,52 @@
+import { useMemo } from "react";
 import { Button, LinkButton, BackLink } from "../../govuk";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import styles from "./egressConnectionErrorPage.module.scss";
+import styles from "./metaDataErrorPage.module.scss";
 
-const EgressConnectionErrorPage = () => {
+const MetaDataErrorPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { caseId } = useParams();
   const searchParams = new URLSearchParams(location.search);
   const operationName = searchParams.get("operation-name");
+  const errorType = useMemo(() => {
+    return location.pathname.includes("egress-connection-error")
+      ? "egress"
+      : "shared drive";
+  }, [location]);
   const handleCancel = () => {
     navigate("/");
   };
   const handleReconnect = () => {
-    navigate(`/case/${caseId}/egress-connect?workspace-name=${operationName}`, {
-      state: {
-        netappFolderPath: location.state.netappFolderPath,
+    if (errorType === "egress")
+      return navigate(
+        `/case/${caseId}/egress-connect?workspace-name=${operationName}`,
+        {
+          state: {
+            netappFolderPath: true,
+          },
+        },
+      );
+
+    return navigate(
+      `/case/${caseId}/netapp-connect?operation-name=${operationName}`,
+      {
+        state: {
+          searchQueryString: "",
+        },
       },
-    });
+    );
   };
   return (
     <div className="govuk-width-container">
       <BackLink to={"/"}>Back</BackLink>
       <div className={styles.contentWrapper}>
         <h1 className="govuk-heading-xl">
-          There was a problem connecting to egress
+          There was a problem connecting to {errorType}
         </h1>
         <p>
-          The connection to egress folder for <b>{operationName}</b> case has
-          stopped working.
+          The connection to {errorType} folder for <b>{operationName}</b> case
+          has stopped working.
         </p>
         <div className={styles.btnWrapper}>
           <Button onClick={handleReconnect}>Reconnect</Button>
@@ -38,4 +57,4 @@ const EgressConnectionErrorPage = () => {
   );
 };
 
-export default EgressConnectionErrorPage;
+export default MetaDataErrorPage;

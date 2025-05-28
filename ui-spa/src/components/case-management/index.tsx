@@ -24,9 +24,6 @@ const CaseManagementPage = () => {
     if (caseMetaData.status === "failed")
       throw new Error(`${caseMetaData.error}`);
     if (caseMetaData.status === "succeeded") {
-      if (!caseMetaData.data?.operationName) {
-        navigate(`/`);
-      }
       if (
         !caseMetaData.data?.egressWorkspaceId &&
         !caseMetaData.data?.netappFolderPath
@@ -39,11 +36,14 @@ const CaseManagementPage = () => {
       ) {
         navigate(
           `/case/${caseId}/case-management/egress-connection-error?operation-name=${caseMetaData.data?.operationName}`,
-          {
-            state: {
-              netappFolderPath: true,
-            },
-          },
+        );
+      }
+      if (
+        caseMetaData.data?.egressWorkspaceId &&
+        !caseMetaData.data?.netappFolderPath
+      ) {
+        navigate(
+          `/case/${caseId}/case-management/netapp-connection-error?operation-name=${caseMetaData.data?.operationName}`,
         );
       }
     }

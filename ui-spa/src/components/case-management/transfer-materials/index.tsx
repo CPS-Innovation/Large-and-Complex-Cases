@@ -58,6 +58,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     refetch: netAppRefetch,
     status: netAppStatus,
     data: netAppData,
+    error: netAppError,
   } = useApi(getNetAppFolders, [netAppFolderPath], false);
 
   const handleEgressFolderPathClick = (path: string) => {
@@ -218,8 +219,31 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       } else {
         throw new Error(`${egressError}`);
       }
+    } else if (netAppStatus === "failed" && netAppError) {
+      if (netAppError.code === 404) {
+        navigate(
+          `/case/${caseId}/case-management/netapp-connection-error?operation-name=${operationName}`,
+        );
+        return;
+      }
+      if (netAppError.code === 401) {
+        navigate(
+          `/case/${caseId}/case-management/connection-error?type=shared drive`,
+        );
+        return;
+      } else {
+        throw new Error(`${netAppError}`);
+      }
     }
-  }, [egressStatus, egressError, caseId, operationName, navigate]);
+  }, [
+    egressStatus,
+    egressError,
+    netAppStatus,
+    netAppError,
+    caseId,
+    operationName,
+    navigate,
+  ]);
 
   useEffect(() => {
     if (egressWorkspaceId !== undefined) {

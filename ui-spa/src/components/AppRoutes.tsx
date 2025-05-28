@@ -4,7 +4,7 @@ import CaseSearchResultPage from "./search-result-page";
 import EgressPage from "./egress-connect";
 import NetAppPage from "./netapp-connect";
 import CaseManagementPage from "./case-management";
-import EgressConnectionErrorPage from "./case-management/transfer-materials/EgressConnectionErrorPage";
+import MetaDataErrorPage from "./case-management/transfer-materials/MetaDataErrorPage";
 import FolderAccessErrorPage from "./case-management/transfer-materials/FolderAccessErrorPage";
 
 const AppRoutes = () => {
@@ -36,7 +36,11 @@ const AppRoutes = () => {
       />
       <Route
         path="/case/:caseId/case-management/egress-connection-error"
-        element={<EgressConnectionErrorPage />}
+        element={<MetaDataErrorPage />}
+      />
+      <Route
+        path="/case/:caseId/case-management/netapp-connection-error"
+        element={<MetaDataErrorPage />}
       />
       <Route
         path="/case/:caseId/case-management/connection-error"
