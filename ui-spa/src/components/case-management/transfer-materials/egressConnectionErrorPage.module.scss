@@ -1,0 +1,13 @@
+.contentWrapper {
+  width: 66%;
+  & :global(.govuk-heading-xl) {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+  }
+  .btnWrapper {
+    margin-top: 2.5rem;
+    display: flex;
+    gap: 0.75rem;
+    align-items: baseline;
+  }
+}

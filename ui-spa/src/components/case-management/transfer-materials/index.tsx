@@ -4,17 +4,23 @@ import { LinkButton, InsetText } from "../../govuk";
 import NetAppFolderContainer from "./NetAppFolderContainer";
 import { getEgressFolders, getNetAppFolders } from "../../../apis/gateway-api";
 import EgressFolderContainer from "./EgressFolderContainer";
+import { useNavigate } from "react-router-dom";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
+  caseId: string | undefined;
+  operationName: string | undefined;
   egressWorkspaceId: string | undefined;
   netAppPath: string | undefined;
 };
 
 const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
+  caseId,
+  operationName,
   egressWorkspaceId,
   netAppPath,
 }) => {
+  const navigate = useNavigate();
   const [transferSource, setTransferSource] = useState<"egress" | "netapp">(
     "egress",
   );
@@ -41,6 +47,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     refetch: egressRefetch,
     status: egressStatus,
     data: egressData,
+    error: egressError,
   } = useApi(
     getEgressFolders,
     [egressWorkspaceId, currentEgressFolder.folderId],
@@ -189,6 +196,30 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       </div>
     );
   };
+
+  useEffect(() => {
+    if (egressStatus === "failed" && egressError) {
+      if (egressError.code === 404) {
+        navigate(
+          `/case/${caseId}/case-management/egress-connection-error?operation-name=${operationName}`,
+          {
+            state: {
+              netappFolderPath: true,
+            },
+          },
+        );
+        return;
+      }
+      if (egressError.code === 401) {
+        navigate(
+          `/case/${caseId}/case-management/connection-error?type=egress`,
+        );
+        return;
+      } else {
+        throw new Error(`${egressError}`);
+      }
+    }
+  }, [egressStatus, egressError, caseId, operationName, navigate]);
 
   useEffect(() => {
     if (egressWorkspaceId !== undefined) {

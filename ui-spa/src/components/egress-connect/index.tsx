@@ -48,7 +48,7 @@ const EgressPage = () => {
   }, [searchParams, location.pathname]);
 
   useEffect(() => {
-    if (location.state?.searchQueryString) {
+    if (location.state?.searchQueryString || location.state?.netappFolderPath) {
       setInitialLocationState({
         searchQueryString: location.state?.searchQueryString,
         netappFolderPath: location.state?.netappFolderPath,
