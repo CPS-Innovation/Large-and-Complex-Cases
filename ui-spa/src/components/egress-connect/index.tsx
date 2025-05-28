@@ -23,7 +23,7 @@ const EgressPage = () => {
   const [workspaceName, setWorkspaceName] = useState("");
   const [initialLocationState, setInitialLocationState] = useState<{
     searchQueryString: string;
-    netappFolderPath: boolean;
+    isNetAppConnected: boolean;
   }>();
   const [selectedFolderId, setSelectedFolderId] = useState("");
   const [formDataErrorText, setFormDataErrorText] = useState("");
@@ -48,10 +48,13 @@ const EgressPage = () => {
   }, [searchParams, location.pathname]);
 
   useEffect(() => {
-    if (location.state?.searchQueryString || location.state?.netappFolderPath) {
+    if (
+      location.state?.searchQueryString !== undefined ||
+      location.state?.isNetAppConnected !== undefined
+    ) {
       setInitialLocationState({
         searchQueryString: location.state?.searchQueryString,
-        netappFolderPath: location.state?.netappFolderPath,
+        isNetAppConnected: location.state?.isNetAppConnected,
       });
     }
   }, [location]);
@@ -102,7 +105,7 @@ const EgressPage = () => {
         caseId: caseId!,
       });
 
-      if (!initialLocationState?.netappFolderPath)
+      if (!initialLocationState?.isNetAppConnected)
         navigate(
           `/case/${caseId}/netapp-connect?operation-name=${workspaceName}`,
           {
@@ -122,8 +125,8 @@ const EgressPage = () => {
     let validRoute = true;
     if (
       location.pathname.endsWith("/egress-connect") &&
-      initialLocationState?.netappFolderPath === undefined &&
-      location.state?.netappFolderPath === undefined
+      initialLocationState?.isNetAppConnected === undefined &&
+      location.state?.isNetAppConnected === undefined
     ) {
       validRoute = false;
     }

@@ -23,7 +23,8 @@ const MetaDataErrorPage = () => {
         `/case/${caseId}/egress-connect?workspace-name=${operationName}`,
         {
           state: {
-            netappFolderPath: true,
+            searchQueryString: "",
+            isNetAppConnected: true,
           },
         },
       );
