@@ -22,9 +22,7 @@ test.describe("transfer material netapp list", () => {
     );
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2"),
-    ).toHaveText(
-      "Transfer folders and files between egress and the shared drive",
-    );
+    ).toHaveText("Transfer folders and files between egress and shared drive");
     await expect(page.getByTestId("netapp-folder-table-loader")).toBeVisible();
     await expect(
       page.getByText(`Loading folders from Shared drive`),
@@ -33,6 +31,9 @@ test.describe("transfer material netapp list", () => {
       page.getByTestId("netapp-folder-table-loader"),
     ).not.toBeVisible();
     await page.getByRole("button", { name: "Switch source" }).click();
+    await expect(
+      page.getByTestId("tab-content-transfer-materials").locator("h2"),
+    ).toHaveText("Transfer folders and files between shared drive and egress");
     const netappTableWrapper = page.getByTestId("netapp-table-wrapper");
     await validateFolderPath(page, ["Home"]);
     const tableHeadValues = await netappTableWrapper
@@ -73,9 +74,7 @@ test.describe("transfer material netapp list", () => {
     );
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2"),
-    ).toHaveText(
-      "Transfer folders and files between egress and the shared drive",
-    );
+    ).toHaveText("Transfer folders and files between egress and shared drive");
     await expect(page.getByTestId("netapp-folder-table-loader")).toBeVisible();
     await expect(
       page.getByText(`Loading folders from Shared drive`),
@@ -118,9 +117,7 @@ test.describe("transfer material netapp list", () => {
     );
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2"),
-    ).toHaveText(
-      "Transfer folders and files between egress and the shared drive",
-    );
+    ).toHaveText("Transfer folders and files between egress and shared drive");
     await expect(page.getByTestId("netapp-folder-table-loader")).toBeVisible();
     await expect(
       page.getByText(`Loading folders from Shared drive`),
@@ -225,9 +222,7 @@ test.describe("transfer material netapp list", () => {
     );
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2"),
-    ).toHaveText(
-      "Transfer folders and files between egress and the shared drive",
-    );
+    ).toHaveText("Transfer folders and files between egress and shared drive");
     await expect(page.getByTestId("netapp-folder-table-loader")).toBeVisible();
     await expect(
       page.getByText(`Loading folders from Shared drive`),

@@ -264,12 +264,14 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
 
   return (
     <div>
-      <h2>Transfer folders and files between egress and the shared drive</h2>
-      <InsetText>
-        Select the folders and files you want to transfer, then choose a
-        destination. You can switch the source and destination if needed.{" "}
-        <LinkButton onClick={handleSwitchSource}> Switch source</LinkButton>
-      </InsetText>
+      <div className={styles.headerText}>
+        <h2>{`${transferSource === "egress" ? "Transfer folders and files between egress and shared drive" : "Transfer folders and files between shared drive and egress"}`}</h2>
+        <InsetText>
+          Select the folders and files you want to transfer, then choose a
+          destination. You can switch the source and destination if needed.{" "}
+          <LinkButton onClick={handleSwitchSource}> Switch source</LinkButton>
+        </InsetText>
+      </div>
       <div
         className={styles.mainContainer}
         data-testId="transfer-main-container"

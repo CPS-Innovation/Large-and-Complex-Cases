@@ -26,9 +26,7 @@ test.describe("transfer material egress list", () => {
     ).toBeVisible();
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2"),
-    ).toHaveText(
-      "Transfer folders and files between egress and the shared drive",
-    );
+    ).toHaveText("Transfer folders and files between egress and shared drive");
     await expect(
       page.getByTestId("tab-content-transfer-materials"),
     ).toContainText(
@@ -58,9 +56,7 @@ test.describe("transfer material egress list", () => {
     );
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2"),
-    ).toHaveText(
-      "Transfer folders and files between egress and the shared drive",
-    );
+    ).toHaveText("Transfer folders and files between egress and shared drive");
     await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
     await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
     await expect(
@@ -101,15 +97,16 @@ test.describe("transfer material egress list", () => {
     );
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2"),
-    ).toHaveText(
-      "Transfer folders and files between egress and the shared drive",
-    );
+    ).toHaveText("Transfer folders and files between egress and shared drive");
     await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
     await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
     await expect(
       page.getByTestId("egress-folder-table-loader"),
     ).not.toBeVisible();
     await page.getByRole("button", { name: "Switch source" }).click();
+    await expect(
+      page.getByTestId("tab-content-transfer-materials").locator("h2"),
+    ).toHaveText("Transfer folders and files between shared drive and egress");
     const egressTableWrapper = page.getByTestId("egress-table-wrapper");
     await validateFolderPath(page, ["Home"]);
     const tableHeadValues = await egressTableWrapper
@@ -140,9 +137,7 @@ test.describe("transfer material egress list", () => {
     );
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2"),
-    ).toHaveText(
-      "Transfer folders and files between egress and the shared drive",
-    );
+    ).toHaveText("Transfer folders and files between egress and shared drive");
     await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
     await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
     await expect(
@@ -236,9 +231,7 @@ test.describe("transfer material egress list", () => {
     );
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2"),
-    ).toHaveText(
-      "Transfer folders and files between egress and the shared drive",
-    );
+    ).toHaveText("Transfer folders and files between egress and shared drive");
     await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
     await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
     await expect(
