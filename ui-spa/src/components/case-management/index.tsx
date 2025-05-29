@@ -48,7 +48,7 @@ const CaseManagementPage = () => {
         !caseMetaData.data?.netappFolderPath
       ) {
         navigate(
-          `/case/${caseId}/case-management/netapp-connection-error?operation-name=${caseMetaData.data?.operationName}`,
+          `/case/${caseId}/case-management/shared-drive-connection-error?operation-name=${caseMetaData.data?.operationName}`,
           {
             state: {
               isValid: true,

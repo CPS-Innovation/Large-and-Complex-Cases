@@ -39,7 +39,7 @@ const AppRoutes = () => {
         element={<MetaDataErrorPage />}
       />
       <Route
-        path="/case/:caseId/case-management/netapp-connection-error"
+        path="/case/:caseId/case-management/shared-drive-connection-error"
         element={<MetaDataErrorPage />}
       />
       <Route

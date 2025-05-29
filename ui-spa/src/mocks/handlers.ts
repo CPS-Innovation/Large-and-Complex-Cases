@@ -92,7 +92,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
         ? getNetAppFolderResultsDev(path as string)
         : getNetAppFolderResultsPlaywright(path as string);
       await delay(500);
-      // return new HttpResponse(null, { status: 401 });
+      // return new HttpResponse(null, { status: 404 });
       return HttpResponse.json(netAppRootFolderResults);
     }),
   ];

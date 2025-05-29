@@ -222,7 +222,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     } else if (netAppStatus === "failed" && netAppError) {
       if (netAppError.code === 404) {
         navigate(
-          `/case/${caseId}/case-management/netapp-connection-error?operation-name=${operationName}`,
+          `/case/${caseId}/case-management/shared-drive-connection-error?operation-name=${operationName}`,
           {
             state: {
               isValid: true,
