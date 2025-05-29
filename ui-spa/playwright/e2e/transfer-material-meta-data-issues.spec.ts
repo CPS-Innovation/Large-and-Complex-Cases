@@ -328,4 +328,22 @@ test.describe("netapp meta data issues", () => {
       ),
     ).toBeVisible();
   });
+
+  test("User should not be able to land directly on the egress connection error page,it should be redirected to search case page", async ({
+    page,
+  }) => {
+    await page.goto(
+      "/case/12/case-management/egress-connection-error?operation-name=Thunderstruck",
+    );
+    await expect(page).toHaveURL("/");
+  });
+
+  test("User should not be able to land directly on the shared drive connection error page,it should be redirected to search case page", async ({
+    page,
+  }) => {
+    await page.goto(
+      "/case/12/case-management/shared-drive-connection-error?operation-name=Thunderstruck",
+    );
+    await expect(page).toHaveURL("/");
+  });
 });
