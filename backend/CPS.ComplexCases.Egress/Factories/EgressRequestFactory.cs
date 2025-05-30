@@ -104,7 +104,8 @@ public class EgressRequestFactory : IEgressRequestFactory
 
     if (!string.IsNullOrEmpty(arg.ContentRange))
     {
-      fileContent.Headers.Add("Content-Range", arg.ContentRange);
+      // NOTE: Egress API expects Content-Range header in the format "bytes start-end/total"
+      request.Headers.TryAddWithoutValidation("Content-Range", arg.ContentRange);
     }
 
     AppendToken(request, token);
@@ -117,7 +118,7 @@ public class EgressRequestFactory : IEgressRequestFactory
     var completeData = new
     {
       md5_hash = arg.Md5Hash,
-      done = arg.Done
+      done = true
     };
 
     var request = new HttpRequestMessage(HttpMethod.Put, $"/api/v1/workspaces/{arg.WorkspaceId}/uploads/{arg.UploadId}/")

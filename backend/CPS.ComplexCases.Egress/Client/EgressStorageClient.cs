@@ -29,17 +29,17 @@ public class EgressStorageClient(
         var response = await SendRequestAsync(_egressRequestFactory.GetWorkspaceDocumentRequest(arg, token));
         return await response.Content.ReadAsStreamAsync();
     }
-    public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string? workspaceId = null, string? fileId = null)
+    public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string? workspaceId = null, string? sourcePath = null)
     {
         var token = await GetWorkspaceToken();
 
-        var fileName = Path.GetFileName(destinationPath);
+        var fileName = Path.GetFileName(sourcePath);
         var arg = new CreateUploadArg
         {
             FolderPath = destinationPath,
             FileSize = fileSize,
             WorkspaceId = workspaceId ?? throw new ArgumentNullException(nameof(workspaceId), "Workspace ID cannot be null."),
-            FileName = fileName
+            FileName = fileName ?? throw new ArgumentNullException(nameof(sourcePath), "FileName path cannot be null."),
         };
 
         var response = await SendRequestAsync<CreateUploadResponse>(_egressRequestFactory.CreateUploadRequest(arg, token));
