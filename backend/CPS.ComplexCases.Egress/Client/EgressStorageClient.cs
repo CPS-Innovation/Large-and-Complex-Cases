@@ -1,4 +1,4 @@
-using CPS.ComplexCases.Common.Interfaces;
+using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
@@ -6,6 +6,7 @@ using CPS.ComplexCases.Egress.Models.Args;
 using CPS.ComplexCases.Egress.Models.Response;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using CPS.ComplexCases.Common.Models.Domain.Enums;
 
 namespace CPS.ComplexCases.Egress.Client;
 
@@ -51,7 +52,7 @@ public class EgressStorageClient(
         };
     }
 
-    public async Task UploadChunkAsync(UploadSession session, int chunkNumber, byte[] chunkData, string? contentRange = null)
+    public async Task<UploadChunkResult> UploadChunkAsync(UploadSession session, int chunkNumber, byte[] chunkData, string? contentRange = null)
     {
         var token = await GetWorkspaceToken();
 
@@ -64,8 +65,10 @@ public class EgressStorageClient(
         };
 
         await SendRequestAsync(_egressRequestFactory.UploadChunkRequest(uploadArg, token));
+
+        return new UploadChunkResult(TransferDirection.NetAppToEgress);
     }
-    public async Task CompleteUploadAsync(UploadSession session, string? md5hash = null, List<string>? etags = null)
+    public async Task CompleteUploadAsync(UploadSession session, string? md5hash = null, Dictionary<int, string>? etags = null)
     {
         var token = await GetWorkspaceToken();
 

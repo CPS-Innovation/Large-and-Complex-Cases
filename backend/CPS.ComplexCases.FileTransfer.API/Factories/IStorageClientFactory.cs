@@ -1,4 +1,4 @@
-using CPS.ComplexCases.Common.Interfaces;
+using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 

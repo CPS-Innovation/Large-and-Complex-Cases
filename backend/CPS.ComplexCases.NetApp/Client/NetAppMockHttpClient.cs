@@ -173,6 +173,21 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
         throw new NotImplementedException();
     }
 
+    public async Task<InitiateMultipartUploadResponse?> InitiateMultipartUploadAsync(InitiateMultipartUploadArg arg)
+    {
+        return await SendRequestAsync<InitiateMultipartUploadResponse>(_netAppMockHttpRequestFactory.CreateMultipartUploadRequest(arg));
+    }
+
+    public async Task<UploadPartResponse?> UploadPartAsync(UploadPartArg arg)
+    {
+        return await SendRequestAsync<UploadPartResponse>(_netAppMockHttpRequestFactory.UploadPartRequest(arg));
+    }
+
+    public Task<CompleteMultipartUploadResponse?> CompleteMultipartUploadAsync(CompleteMultipartUploadArg arg)
+    {
+        throw new NotImplementedException();
+    }
+
     private async Task<T> SendRequestAsync<T>(HttpRequestMessage request)
     {
         using var response = await SendRequestAsync(request);

@@ -1,3 +1,4 @@
+using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
@@ -34,6 +35,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             long position = 0;
             int chunkSize = _sizeConfig.ChunkSizeBytes;
             int chunkNumber = 1;
+            Dictionary<int, string> uploadedChunks = [];
 
             using var md5 = System.Security.Cryptography.MD5.Create();
 
@@ -54,7 +56,12 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
 
                 md5.TransformBlock(buffer, 0, bytesRead, null, 0);
 
-                await destinationClient.UploadChunkAsync(session, chunkNumber, buffer[..bytesRead], contentRange);
+                var result = await destinationClient.UploadChunkAsync(session, chunkNumber, buffer[..bytesRead], contentRange);
+
+                if (result.TransferDirection == TransferDirection.EgressToNetApp && result.PartNumber.HasValue && result.ETag != null)
+                {
+                    uploadedChunks.Add(result.PartNumber.Value, result.ETag);
+                }
 
                 _logger.LogDebug("Uploaded chunk {ChunkNumber} ({Start}-{End})", chunkNumber, start, end);
 
@@ -71,7 +78,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             }
             else
             {
-                await destinationClient.CompleteUploadAsync(session);
+                await destinationClient.CompleteUploadAsync(session, etags: uploadedChunks);
             }
 
             _logger.LogInformation("File transfer completed: {SourcePath} -> {DestinationPath}", payload.SourcePath.Path, payload.DestinationPath);

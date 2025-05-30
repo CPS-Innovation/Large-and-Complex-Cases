@@ -1,5 +1,5 @@
 using System.Net;
-using CPS.ComplexCases.Common.Interfaces;
+using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;

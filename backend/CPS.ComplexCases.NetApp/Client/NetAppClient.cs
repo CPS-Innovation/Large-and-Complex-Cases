@@ -204,6 +204,45 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
         }
     }
 
+    public async Task<InitiateMultipartUploadResponse?> InitiateMultipartUploadAsync(InitiateMultipartUploadArg arg)
+    {
+        try
+        {
+            return await _client.InitiateMultipartUploadAsync(_netAppRequestFactory.CreateMultipartUploadRequest(arg));
+        }
+        catch (AmazonS3Exception ex)
+        {
+            _logger.LogError(ex.Message, $"Failed to initiate multipart upload for file {arg.ObjectKey}.");
+            return null;
+        }
+    }
+
+    public async Task<UploadPartResponse?> UploadPartAsync(UploadPartArg arg)
+    {
+        try
+        {
+            return await _client.UploadPartAsync(_netAppRequestFactory.UploadPartRequest(arg));
+        }
+        catch (AmazonS3Exception ex)
+        {
+            _logger.LogError(ex.Message, $"Failed to upload part {arg.PartNumber} for file {arg.ObjectKey}.");
+            return null;
+        }
+    }
+
+    public async Task<CompleteMultipartUploadResponse?> CompleteMultipartUploadAsync(CompleteMultipartUploadArg arg)
+    {
+        try
+        {
+            return await _client.CompleteMultipartUploadAsync(_netAppRequestFactory.CompleteMultipartUploadRequest(arg));
+        }
+        catch (AmazonS3Exception ex)
+        {
+            _logger.LogError(ex.Message, $"Failed to complete multipart upload {arg.UploadId} for file {arg.ObjectKey}.");
+            return null;
+        }
+    }
+
     private static async Task<SessionAWSCredentials> GetTemporaryCredentialsAsync(string accessKey, string secretKey)
     {
         using (var stsClient = new AmazonSecurityTokenServiceClient(accessKey, secretKey))

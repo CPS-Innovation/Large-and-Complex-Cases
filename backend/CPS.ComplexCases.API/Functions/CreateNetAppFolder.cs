@@ -16,14 +16,14 @@ public class CreateNetAppFolder(ILogger<CreateNetAppFolder> logger,
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
 
     [Function(nameof(CreateNetAppFolder))]
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "netapp/{operationName}")] HttpRequest req, string operationName)
+    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "cases/{operationName}/netapp")] HttpRequest req, string operationName)
     {
-        var arg = _netAppArgFactory.CreateCreateBucketArg(operationName!);
-        var result = await _netAppClient.CreateBucketAsync(arg);
+        var arg = _netAppArgFactory.CreateFindBucketArg(operationName!);
+        var result = await _netAppClient.FindBucketAsync(arg);
 
-        if (!result)
+        if (result == null)
         {
-            return new BadRequestObjectResult($"Bucket {operationName} could not be created.");
+            return new NotFoundObjectResult($"Bucket {operationName} not found");
         }
 
         return new OkObjectResult(result);
