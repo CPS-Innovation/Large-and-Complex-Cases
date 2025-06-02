@@ -202,12 +202,14 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
 
     public async Task<CompleteMultipartUploadResponse?> CompleteMultipartUploadAsync(CompleteMultipartUploadArg arg)
     {
-        var response = await SendRequestAsync<CompleteMultipartUploadResponse>(_netAppMockHttpRequestFactory.CompleteMultipartUploadRequest(arg));
+        var response = await SendRequestAsync<CompleteMultipartUploadResult>(_netAppMockHttpRequestFactory.CompleteMultipartUploadRequest(arg));
 
         return new CompleteMultipartUploadResponse
         {
-            //ETag = response.Headers.ETag?.ToString() ?? string.Empty,
-            BucketName = arg.BucketName
+            ETag = response.ETag,
+            BucketName = response.Bucket,
+            Key = response.Key,
+            Location = response.Location
         };
     }
 
