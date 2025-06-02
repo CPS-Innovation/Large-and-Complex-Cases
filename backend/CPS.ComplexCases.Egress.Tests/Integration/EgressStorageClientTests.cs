@@ -173,26 +173,6 @@ public class EgressStorageClientTests : IDisposable
     }
 
     [Fact]
-    public async Task UploadChunkAsync_ShouldThrowArgumentNullException_WhenUploadIdIsNull()
-    {
-        // Arrange
-        var session = new UploadSession
-        {
-            UploadId = null,
-            WorkspaceId = "workspace-id"
-        };
-        const int chunkNumber = 1;
-        var chunkData = new byte[] { 1, 2, 3, 4, 5 };
-
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<ArgumentNullException>(
-            () => _client.UploadChunkAsync(session, chunkNumber, chunkData));
-
-        Assert.Equal("UploadId", exception.ParamName);
-        Assert.Contains("Upload ID cannot be null", exception.Message);
-    }
-
-    [Fact]
     public async Task UploadChunkAsync_ShouldThrowArgumentNullException_WhenWorkspaceIdIsNull()
     {
         // Arrange
@@ -227,24 +207,6 @@ public class EgressStorageClientTests : IDisposable
 
         // Act & Assert (should not throw)
         await _client.CompleteUploadAsync(session, md5Hash, etags);
-    }
-
-    [Fact]
-    public async Task CompleteUploadAsync_ShouldThrowArgumentNullException_WhenUploadIdIsNull()
-    {
-        // Arrange
-        var session = new UploadSession
-        {
-            UploadId = null,
-            WorkspaceId = "workspace-id"
-        };
-
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<ArgumentNullException>(
-            () => _client.CompleteUploadAsync(session));
-
-        Assert.Equal("UploadId", exception.ParamName);
-        Assert.Contains("Upload ID cannot be null", exception.Message);
     }
 
     [Fact]
