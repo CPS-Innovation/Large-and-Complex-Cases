@@ -11,6 +11,7 @@ import FolderIcon from "../../../components/svgs/folder.svg?react";
 import FileIcon from "../../../components/svgs/file.svg?react";
 import { mapToNetAppFolderData } from "../../../common/utils/mapToNetAppFolderData";
 import { formatDate } from "../../../common/utils/formatDate";
+import { DropdownButton } from "../../common/DropdownButton";
 import styles from "./netAppFolderContainer.module.scss";
 
 type NetAppFolderContainerProps = {
@@ -122,6 +123,10 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
         sortable: true,
         sortName: "file-size",
       },
+      {
+        children: <></>,
+        sortable: false,
+      },
     ];
     return tableHeadData;
   };
@@ -190,8 +195,25 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
     return rowData;
   };
 
+  const getDestinationDropdownItems = () => {
+    return [
+      {
+        id: "1",
+        label: "Move",
+        ariaLabel: "move",
+        disabled: false,
+      },
+      {
+        id: "2",
+        label: "Copy",
+        ariaLabel: "copy",
+        disabled: false,
+      },
+    ];
+  };
+
   const getTableDestinationRowData = () => {
-    const rowData = netAppDataSorted.map((data) => {
+    const rowData = netAppDataSorted.map((data, index) => {
       return {
         cells: [
           {
@@ -227,10 +249,28 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
               </span>
             ),
           },
+          {
+            children: (
+              <span>
+                <DropdownButton
+                  name="Actions"
+                  dropDownItems={getDestinationDropdownItems()}
+                  callBackFn={handleTransferAction}
+                  ariaLabel="transfer actions dropdown"
+                  dataTestId={`transfer-actions-dropdown-${index}`}
+                  showLastItemSeparator={true}
+                />
+              </span>
+            ),
+          },
         ],
       };
     });
     return rowData;
+  };
+
+  const handleTransferAction = (id: string) => {
+    console.log("id>>>", id);
   };
 
   const getTableRowData = () => {
