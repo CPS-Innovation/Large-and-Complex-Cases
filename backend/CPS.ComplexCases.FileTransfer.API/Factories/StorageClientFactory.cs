@@ -16,9 +16,8 @@ public class StorageClientFactory(IServiceProvider serviceProvider) : IStorageCl
     {
         return provider switch
         {
-            // to do change to NetApp when implemented
             StorageProvider.NetApp => _serviceProvider.GetRequiredService<NetAppStorageClient>(),
-            StorageProvider.Egress => _serviceProvider.GetRequiredService<NetAppStorageClient>(),
+            StorageProvider.Egress => _serviceProvider.GetRequiredService<EgressStorageClient>(),
             _ => throw new ArgumentOutOfRangeException(nameof(provider), $"Unsupported storage provider: {provider}")
         };
     }
