@@ -63,8 +63,12 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
 
     public async Task<GetObjectResponse?> GetObjectAsync(GetObjectArg arg)
     {
-        var response = await SendRequestAsync<GetObjectResponse>(_netAppMockHttpRequestFactory.GetObjectRequest(arg));
-        return response;
+        var response = await SendRequestAsync(_netAppMockHttpRequestFactory.GetObjectRequest(arg));
+
+        return new GetObjectResponse
+        {
+            ResponseStream = await response.Content.ReadAsStreamAsync()
+        };
     }
 
     public async Task<IEnumerable<S3Bucket>> ListBucketsAsync(ListBucketsArg arg)
@@ -175,17 +179,36 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
 
     public async Task<InitiateMultipartUploadResponse?> InitiateMultipartUploadAsync(InitiateMultipartUploadArg arg)
     {
-        return await SendRequestAsync<InitiateMultipartUploadResponse>(_netAppMockHttpRequestFactory.CreateMultipartUploadRequest(arg));
+        var response = await SendRequestAsync<InitiateMultipartUploadResult>(_netAppMockHttpRequestFactory.CreateMultipartUploadRequest(arg));
+
+        return new InitiateMultipartUploadResponse
+        {
+            UploadId = response.UploadId,
+            Key = response.Key,
+            BucketName = response.Bucket
+        };
     }
 
     public async Task<UploadPartResponse?> UploadPartAsync(UploadPartArg arg)
     {
-        return await SendRequestAsync<UploadPartResponse>(_netAppMockHttpRequestFactory.UploadPartRequest(arg));
+        var response = await SendRequestAsync(_netAppMockHttpRequestFactory.UploadPartRequest(arg));
+
+        return new UploadPartResponse
+        {
+            ETag = response.Headers.ETag?.ToString() ?? string.Empty,
+            PartNumber = arg.PartNumber
+        };
     }
 
-    public Task<CompleteMultipartUploadResponse?> CompleteMultipartUploadAsync(CompleteMultipartUploadArg arg)
+    public async Task<CompleteMultipartUploadResponse?> CompleteMultipartUploadAsync(CompleteMultipartUploadArg arg)
     {
-        throw new NotImplementedException();
+        var response = await SendRequestAsync<CompleteMultipartUploadResponse>(_netAppMockHttpRequestFactory.CompleteMultipartUploadRequest(arg));
+
+        return new CompleteMultipartUploadResponse
+        {
+            //ETag = response.Headers.ETag?.ToString() ?? string.Empty,
+            BucketName = arg.BucketName
+        };
     }
 
     private async Task<T> SendRequestAsync<T>(HttpRequestMessage request)

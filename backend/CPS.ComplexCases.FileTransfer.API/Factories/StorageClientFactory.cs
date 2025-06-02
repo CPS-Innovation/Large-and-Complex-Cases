@@ -4,6 +4,7 @@ using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 using Microsoft.Extensions.DependencyInjection;
+using CPS.ComplexCases.NetApp.Client;
 
 namespace CPS.ComplexCases.FileTransfer.API.Factories;
 
@@ -16,8 +17,8 @@ public class StorageClientFactory(IServiceProvider serviceProvider) : IStorageCl
         return provider switch
         {
             // to do change to NetApp when implemented
-            StorageProvider.NetApp => _serviceProvider.GetRequiredService<EgressStorageClient>(),
-            StorageProvider.Egress => _serviceProvider.GetRequiredService<EgressStorageClient>(),
+            StorageProvider.NetApp => _serviceProvider.GetRequiredService<NetAppStorageClient>(),
+            StorageProvider.Egress => _serviceProvider.GetRequiredService<NetAppStorageClient>(),
             _ => throw new ArgumentOutOfRangeException(nameof(provider), $"Unsupported storage provider: {provider}")
         };
     }

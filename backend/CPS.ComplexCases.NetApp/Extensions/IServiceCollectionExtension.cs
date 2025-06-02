@@ -1,4 +1,5 @@
 using Amazon.S3;
+using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
@@ -53,5 +54,6 @@ public static class IServiceCollectionExtension
         return new AmazonS3Client(credentials, s3ClientConfig);
       });
     }
+    services.AddTransient<NetAppStorageClient>();
   }
 }
