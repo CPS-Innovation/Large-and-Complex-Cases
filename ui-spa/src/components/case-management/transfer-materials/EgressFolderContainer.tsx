@@ -11,6 +11,7 @@ import FolderIcon from "../../../components/svgs/folder.svg?react";
 import FileIcon from "../../../components/svgs/file.svg?react";
 import { formatDate } from "../../../common/utils/formatDate";
 import { EgressFolderData } from "../../../common/types/EgressFolderData";
+import { DropdownButton } from "../../common/DropdownButton";
 import styles from "./egressFolderContainer.module.scss";
 
 type EgressFolderContainerProps = {
@@ -22,6 +23,7 @@ type EgressFolderContainerProps = {
     folderPath: string;
     folderId?: string;
   }[];
+  selectedSourceLength: number;
   handleFolderPathClick: (path: string) => void;
   handleFolderClick: (id: string) => void;
   handleCheckboxChange: (id: string, checked: boolean) => void;
@@ -33,6 +35,7 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
   egressData,
   egressDataStatus,
   egressPathFolders,
+  selectedSourceLength,
   handleFolderPathClick,
   handleFolderClick,
   handleCheckboxChange,
@@ -112,6 +115,15 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
         sortName: "file-size",
       },
     ];
+    if (selectedSourceLength) {
+      return [
+        ...tableHeadData,
+        {
+          children: <></>,
+          sortable: false,
+        },
+      ];
+    }
     return tableHeadData;
   };
 
@@ -177,7 +189,7 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
   };
 
   const getTableDestinationRowData = () => {
-    const rowData = egressFolderData.map((data) => {
+    const rowData = egressFolderData.map((data, index) => {
       return {
         cells: [
           {
@@ -204,7 +216,6 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
               </div>
             ),
           },
-
           {
             children: (
               <span>
@@ -212,15 +223,53 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
               </span>
             ),
           },
+          {
+            children: (
+              <span>
+                <DropdownButton
+                  name="Actions"
+                  dropDownItems={getDestinationDropdownItems()}
+                  callBackFn={handleTransferAction}
+                  ariaLabel="transfer actions dropdown"
+                  dataTestId={`transfer-actions-dropdown-${index}`}
+                  showLastItemSeparator={true}
+                />
+              </span>
+            ),
+          },
         ],
       };
     });
+    if (!selectedSourceLength) {
+      rowData.forEach((row) => row.cells.pop());
+    }
     return rowData;
   };
   const getTableRowData = () => {
     if (transferSource === "egress") return getTableSourceRowData();
 
     return getTableDestinationRowData();
+  };
+
+  const getDestinationDropdownItems = () => {
+    return [
+      {
+        id: "1",
+        label: "Move",
+        ariaLabel: "move",
+        disabled: false,
+      },
+      {
+        id: "2",
+        label: "Copy",
+        ariaLabel: "copy",
+        disabled: false,
+      },
+    ];
+  };
+
+  const handleTransferAction = (id: string) => {
+    console.log("id>>>", id);
   };
 
   return (

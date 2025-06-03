@@ -20,6 +20,7 @@ type NetAppFolderContainerProps = {
   currentFolderPath: string;
   netAppFolderDataResponse?: NetAppFolderDataResponse;
   netAppFolderDataStatus: "loading" | "succeeded" | "failed" | "initial";
+  selectedSourceLength: number;
   handleGetFolderContent: (folderId: string) => void;
   handleCheckboxChange: (id: string, checked: boolean) => void;
   isSourceFolderChecked: (checkboxId: string) => boolean;
@@ -31,6 +32,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
   currentFolderPath,
   netAppFolderDataResponse,
   netAppFolderDataStatus,
+  selectedSourceLength,
   handleGetFolderContent,
   handleCheckboxChange,
   isSourceFolderChecked,
@@ -117,17 +119,21 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
         sortable: true,
         sortName: "folder-name",
       },
-
       {
         children: <>Size</>,
         sortable: true,
         sortName: "file-size",
       },
-      {
-        children: <></>,
-        sortable: false,
-      },
     ];
+    if (selectedSourceLength) {
+      return [
+        ...tableHeadData,
+        {
+          children: <></>,
+          sortable: false,
+        },
+      ];
+    }
     return tableHeadData;
   };
 
@@ -195,23 +201,6 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
     return rowData;
   };
 
-  const getDestinationDropdownItems = () => {
-    return [
-      {
-        id: "1",
-        label: "Move",
-        ariaLabel: "move",
-        disabled: false,
-      },
-      {
-        id: "2",
-        label: "Copy",
-        ariaLabel: "copy",
-        disabled: false,
-      },
-    ];
-  };
-
   const getTableDestinationRowData = () => {
     const rowData = netAppDataSorted.map((data, index) => {
       return {
@@ -266,7 +255,28 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
         ],
       };
     });
+
+    if (!selectedSourceLength) {
+      rowData.forEach((row) => row.cells.pop());
+    }
     return rowData;
+  };
+
+  const getDestinationDropdownItems = () => {
+    return [
+      {
+        id: "1",
+        label: "Move",
+        ariaLabel: "move",
+        disabled: false,
+      },
+      {
+        id: "2",
+        label: "Copy",
+        ariaLabel: "copy",
+        disabled: false,
+      },
+    ];
   };
 
   const handleTransferAction = (id: string) => {
