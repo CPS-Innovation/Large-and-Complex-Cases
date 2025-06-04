@@ -44,6 +44,7 @@ const getFolderPathFromId = (id: number, index: number) => {
   return path;
 };
 export const getEgressFolderResultsDev = (id: string): EgressFolderResponse => {
+  if (id === "egress_1") return egressRootFolderResultsDev;
   if (!id) return egressRootFolderResultsDev;
 
   const newId = parseInt(id.split("-")[0]) + 1;

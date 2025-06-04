@@ -24,6 +24,8 @@ type FolderNavigationTableProps = {
     sortName: string,
     sortType: "ascending" | "descending",
   ) => void;
+  showInsetElement?: boolean;
+  getInsetElement?: () => React.ReactElement;
 };
 
 const FolderNavigationTable: React.FC<FolderNavigationTableProps> = ({
@@ -36,6 +38,8 @@ const FolderNavigationTable: React.FC<FolderNavigationTableProps> = ({
   getTableRowData,
   getTableHeadData,
   handleTableSort,
+  showInsetElement,
+  getInsetElement,
 }) => {
   return (
     <div className={styles.results} data-testId={`${tableName}-table-wrapper`}>
@@ -47,6 +51,7 @@ const FolderNavigationTable: React.FC<FolderNavigationTableProps> = ({
             handleFolderPathClick={handleFolderPathClick}
           />
         }
+        {showInsetElement && getInsetElement && getInsetElement()}
         {folderResultsStatus === "succeeded" && (
           <>
             <SortableTable

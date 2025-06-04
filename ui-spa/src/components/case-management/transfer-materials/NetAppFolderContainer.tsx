@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { LinkButton } from "../../govuk";
+import { LinkButton, InsetText } from "../../govuk";
 import Checkbox from "../../common/Checkbox";
 import { NetAppFolderDataResponse } from "../../../common/types/NetAppFolderData";
 import { sortByStringProperty } from "../../../common/utils/sortUtils";
@@ -239,17 +239,19 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
             ),
           },
           {
-            children: (
-              <span>
+            children: data.isFolder ? (
+              <div>
                 <DropdownButton
                   name="Actions"
-                  dropDownItems={getDestinationDropdownItems()}
+                  dropDownItems={getDestinationDropdownItems(data.path)}
                   callBackFn={handleTransferAction}
                   ariaLabel="transfer actions dropdown"
                   dataTestId={`transfer-actions-dropdown-${index}`}
                   showLastItemSeparator={true}
                 />
-              </span>
+              </div>
+            ) : (
+              <div />
             ),
           },
         ],
@@ -262,16 +264,16 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
     return rowData;
   };
 
-  const getDestinationDropdownItems = () => {
+  const getDestinationDropdownItems = (path: string) => {
     return [
       {
-        id: "1",
+        id: `${path}:move`,
         label: "Move",
         ariaLabel: "move",
         disabled: false,
       },
       {
-        id: "2",
+        id: `${path}:copy`,
         label: "Copy",
         ariaLabel: "copy",
         disabled: false,
@@ -299,6 +301,32 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
     handleGetFolderContent(path);
   };
 
+  const getInsetElement = () => {
+    const curentFolder = folders[folders.length - 1];
+    return (
+      <InsetText>
+        Transfer to {curentFolder.folderName}
+        <LinkButton
+          type="button"
+          onClick={() => {
+            handleTransferAction(`${curentFolder.folderPath}:copy`);
+          }}
+        >
+          Copy
+        </LinkButton>{" "}
+        |
+        <LinkButton
+          type="button"
+          onClick={() => {
+            handleTransferAction(`${curentFolder.folderPath}:move`);
+          }}
+        >
+          Move
+        </LinkButton>
+      </InsetText>
+    );
+  };
+
   return (
     <div>
       <div>
@@ -312,6 +340,10 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
           getTableRowData={getTableRowData}
           getTableHeadData={getTableHeadData}
           handleTableSort={handleTableSort}
+          getInsetElement={getInsetElement}
+          showInsetElement={
+            !!selectedSourceLength && transferSource === "egress"
+          }
         />
       </div>
     </div>

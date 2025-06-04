@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { LinkButton } from "../../govuk";
+import { LinkButton, InsetText } from "../../govuk";
 import Checkbox from "../../common/Checkbox";
 import FolderNavigationTable from "../../common/FolderNavigationTable";
 import {
@@ -224,17 +224,19 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
             ),
           },
           {
-            children: (
-              <span>
+            children: data.isFolder ? (
+              <div>
                 <DropdownButton
                   name="Actions"
-                  dropDownItems={getDestinationDropdownItems()}
+                  dropDownItems={getDestinationDropdownItems(data.id)}
                   callBackFn={handleTransferAction}
                   ariaLabel="transfer actions dropdown"
                   dataTestId={`transfer-actions-dropdown-${index}`}
                   showLastItemSeparator={true}
                 />
-              </span>
+              </div>
+            ) : (
+              <div />
             ),
           },
         ],
@@ -251,16 +253,17 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
     return getTableDestinationRowData();
   };
 
-  const getDestinationDropdownItems = () => {
+  const getDestinationDropdownItems = (id: string) => {
+    console.log("id>>>", id);
     return [
       {
-        id: "1",
+        id: `${id}:move`,
         label: "Move",
         ariaLabel: "move",
         disabled: false,
       },
       {
-        id: "2",
+        id: `${id}:copy`,
         label: "Copy",
         ariaLabel: "copy",
         disabled: false,
@@ -270,6 +273,32 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
 
   const handleTransferAction = (id: string) => {
     console.log("id>>>", id);
+  };
+
+  const getInsetElement = () => {
+    const curentFolder = egressPathFolders[egressPathFolders.length - 1];
+    return (
+      <InsetText>
+        Transfer to {curentFolder.folderName}
+        <LinkButton
+          type="button"
+          onClick={() => {
+            handleTransferAction(`${curentFolder.folderId}:copy`);
+          }}
+        >
+          Copy
+        </LinkButton>{" "}
+        |
+        <LinkButton
+          type="button"
+          onClick={() => {
+            handleTransferAction(`${curentFolder.folderId}:move`);
+          }}
+        >
+          Move
+        </LinkButton>
+      </InsetText>
+    );
   };
 
   return (
@@ -284,6 +313,8 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
         getTableRowData={getTableRowData}
         getTableHeadData={getTableHeadData}
         handleTableSort={handleTableSort}
+        getInsetElement={getInsetElement}
+        showInsetElement={!!selectedSourceLength && transferSource === "netapp"}
       />
     </div>
   );
