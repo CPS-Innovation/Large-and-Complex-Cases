@@ -3,6 +3,7 @@ import { LinkButton, InsetText } from "../../govuk";
 import Checkbox from "../../common/Checkbox";
 import { NetAppFolderDataResponse } from "../../../common/types/NetAppFolderData";
 import { sortByStringProperty } from "../../../common/utils/sortUtils";
+import { getActionDataFromId } from "../../../common/utils/getActionDataFromId";
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
 import { getFileNameFromPath } from "../../../common/utils/getFileNameFromPath";
 import FolderNavigationTable from "../../common/FolderNavigationTable";
@@ -24,6 +25,14 @@ type NetAppFolderContainerProps = {
   handleGetFolderContent: (folderId: string) => void;
   handleCheckboxChange: (id: string, checked: boolean) => void;
   isSourceFolderChecked: (checkboxId: string) => boolean;
+  handleSelectedActionType: (transferAction: {
+    destinationFolder: {
+      path: string;
+      name: string;
+      type: "netapp";
+    };
+    actionType: "move" | "copy";
+  }) => void;
 };
 
 const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
@@ -36,6 +45,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
   handleGetFolderContent,
   handleCheckboxChange,
   isSourceFolderChecked,
+  handleSelectedActionType,
 }) => {
   const [sortValues, setSortValues] = useState<{
     name: string;
@@ -281,10 +291,6 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
     ];
   };
 
-  const handleTransferAction = (id: string) => {
-    console.log("id>>>", id);
-  };
-
   const getTableRowData = () => {
     if (transferSource === "netapp") return getTableSourceRowData();
     return getTableDestinationRowData();
@@ -325,6 +331,19 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
         </LinkButton>
       </InsetText>
     );
+  };
+  const handleTransferAction = (id: string) => {
+    console.log("id>>>", id);
+    console.log("getActionDataFromId>>", getActionDataFromId(id));
+    const { actionData, actionType } = getActionDataFromId(id);
+    handleSelectedActionType({
+      destinationFolder: {
+        path: actionData,
+        name: getFolderNameFromPath(actionData),
+        type: "netapp",
+      },
+      actionType: actionType === "copy" ? "copy" : "move",
+    });
   };
 
   return (

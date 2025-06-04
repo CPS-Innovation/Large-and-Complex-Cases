@@ -1,9 +1,10 @@
 import { useEffect, useState, useMemo } from "react";
 import { useApi } from "../../../common/hooks/useApi";
-import { LinkButton, InsetText } from "../../govuk";
+import { LinkButton, InsetText, Checkboxes, Button } from "../../govuk";
 import NetAppFolderContainer from "./NetAppFolderContainer";
 import { getEgressFolders, getNetAppFolders } from "../../../apis/gateway-api";
 import EgressFolderContainer from "./EgressFolderContainer";
+import { Modal } from "../../common/Modal";
 import { useNavigate } from "react-router-dom";
 import styles from "./index.module.scss";
 
@@ -32,9 +33,26 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     }[]
   >([{ folderName: "Home", folderPath: "", folderId: "" }]);
   const [netAppFolderPath, setNetAppFolderPath] = useState("");
-
   const [selectedSourceFoldersOrFiles, setSelectedSourceFoldersOrFiles] =
     useState<string[]>([]);
+  const [selectedTransferAction, setSelectedTransferAction] = useState<{
+    destinationFolder:
+      | {
+          path: string;
+          name: string;
+          type: "netapp";
+        }
+      | {
+          id: string;
+          name: string;
+          type: "egress";
+        };
+    actionType: "move" | "copy";
+  } | null>(null);
+
+  const [showTransferConfirmationModal, setShowTransferConfrimationModal] =
+    useState<boolean>(false);
+
   useEffect(() => {
     if (netAppPath) setNetAppFolderPath(netAppPath);
   }, [netAppPath]);
@@ -168,6 +186,28 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     );
   };
 
+  const handleSelectedActionType = (transferAction: {
+    destinationFolder:
+      | {
+          path: string;
+          name: string;
+          type: "netapp";
+        }
+      | {
+          id: string;
+          name: string;
+          type: "egress";
+        };
+    actionType: "move" | "copy";
+  }) => {
+    setShowTransferConfrimationModal(true);
+    setSelectedTransferAction(transferAction);
+  };
+
+  const handleCloseTransferConfirmationModal = () => {
+    setShowTransferConfrimationModal(false);
+  };
+
   const renderNetappContainer = () => {
     return (
       <div
@@ -193,6 +233,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
               handleGetFolderContent={handleNetAppFolderClick}
               handleCheckboxChange={handleCheckboxChange}
               isSourceFolderChecked={isSourceFolderChecked}
+              handleSelectedActionType={handleSelectedActionType}
             />
           )}
         </div>
@@ -290,6 +331,37 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           </>
         )}
       </div>
+      <Modal
+        isVisible={showTransferConfirmationModal}
+        className={styles.transferConfirmationModal}
+        handleClose={handleCloseTransferConfirmationModal}
+        type="alert"
+        ariaLabel="Document saving alert modal"
+        ariaDescription="Saving updated document to CMS"
+      >
+        <div>
+          <div className={styles.modalHeader}>
+            Copy files to: 5.Correspondence
+          </div>
+          <div className={styles.modalContent}>
+            <Checkboxes
+              className="govuk-checkboxes--small"
+              items={[
+                {
+                  children: `I confirm I want to copy ${selectedSourceFoldersOrFiles.length} folders to ${selectedTransferAction?.destinationFolder.name}`,
+                },
+              ]}
+              name="confirmation checkbox"
+            />
+            <div className={styles.modalButtonWrapper}>
+              <Button onClick={() => {}}>Continue</Button>
+              <LinkButton onClick={handleCloseTransferConfirmationModal}>
+                Cancel{" "}
+              </LinkButton>
+            </div>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

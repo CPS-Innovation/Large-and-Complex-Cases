@@ -72,3 +72,25 @@
 .headerText {
   width: 66%;
 }
+
+.modalHeader {
+  color: #505a5f;
+  font-size: 1.5rem;
+  font-weight: bold;
+  padding: 30px 30px 30px 30px;
+  border-bottom: 1px solid #b1b4b6;
+  background: #f3f2f1;
+}
+.modalContent {
+  padding: 30px 30px 30px 30px;
+  min-width: 35rem;
+}
+.modalButtonWrapper {
+  display: flex;
+  gap: 1rem;
+  flex-direction: row;
+  align-items: baseline;
+  button {
+    margin: 0;
+  }
+}

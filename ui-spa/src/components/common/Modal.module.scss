@@ -1,0 +1,128 @@
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  // 1) gov inputs have z-index = 1 when they are focussed, so bigger than 1 required
+  // 2) wheeling on the modal does not work with z-index: 2 as pdf-lib.js seems to intercept
+  //  the wheel and starts scrolling itself, rather than the modal content.
+  // 3) z-index: 3 seems to be given to the text and annotation layer of pdf.js
+  // 4) z-index: 4 is used by the pdf viewer redaction summary footer
+  // 5) z-index: 6 is used by the redaction button
+  // So use z-index: 7
+  z-index: 7;
+}
+
+.backDrop {
+  z-index: 7;
+  position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  right: 0;
+  bottom: 0;
+  top: 0;
+  left: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modalContent {
+  z-index: 7;
+  position: fixed;
+  background: white;
+  min-width: 25rem;
+  min-height: 5.375rem;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -40%);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modalContentData {
+  width: 90%;
+  max-width: 1300px;
+  overflow-x: hidden;
+}
+.modalHeader {
+  margin-bottom: 1.5625rem;
+  padding-bottom: 0.1875rem;
+  color: #ffffff;
+  background-color: #0b0c0c;
+  text-align: right;
+}
+
+.closeContainer {
+  display: flex;
+  justify-content: flex-end;
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 5;
+}
+
+.dataModalClose {
+  box-sizing: content-box;
+  padding: 0;
+  border: 0;
+  background: #000;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 2.875rem;
+  height: 2.875rem;
+
+  &:hover {
+    background: #005a30;
+  }
+  &:focus {
+    background: #ffdd00;
+    color: #000;
+    outline: none;
+  }
+}
+
+.stopHtmlScroll {
+  overflow: hidden !important;
+}
+.modalHeader {
+  border-bottom: none !important;
+}
+
+.alertModalHeader {
+  height: 2.1875rem;
+  border-bottom: none !important;
+  position: relative;
+}
+
+.alertModalClose {
+  position: absolute;
+  background: none;
+  padding: 0;
+  border: 0;
+  right: 0.3125rem;
+  top: 0.3125rem;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  &:focus {
+    outline: 0.25rem solid #ffdd00;
+    outline-offset: 0;
+    box-shadow: inset 0 0 0 0.25rem #0b0c0c;
+  }
+}
+
+.modalLabel,
+.modalDescription {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
