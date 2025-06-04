@@ -14,7 +14,7 @@ namespace CPS.ComplexCases.NetApp.Client;
 public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazonS3UtilsWrapper amazonS3UtilsWrapper, INetAppRequestFactory netAppRequestFactory) : INetAppClient
 {
     private readonly ILogger<NetAppClient> _logger = logger;
-    private IAmazonS3 _client = client;
+    private readonly IAmazonS3 _client = client;
     private readonly IAmazonS3UtilsWrapper _amazonS3UtilsWrapper = amazonS3UtilsWrapper;
     private readonly INetAppRequestFactory _netAppRequestFactory = netAppRequestFactory;
 
@@ -25,7 +25,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
             var bucketExists = await _amazonS3UtilsWrapper.DoesS3BucketExistV2Async(_client, arg.BucketName);
             if (bucketExists)
             {
-                _logger.LogInformation($"Bucket with name {arg.BucketName} already exists.");
+                _logger.LogInformation("Bucket with name {BucketName} already exists.", arg.BucketName);
                 return false;
             }
 
@@ -34,7 +34,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
         }
         catch (AmazonS3Exception ex)
         {
-            _logger.LogError(ex.Message, $"Failed to create bucket with name {arg.BucketName}");
+            _logger.LogError(ex, ex.Message, "Failed to create bucket with name {BucketName}", arg.BucketName);
             return false;
         }
     }
@@ -48,7 +48,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
         }
         catch (AmazonS3Exception ex)
         {
-            _logger.LogError(ex.Message, $"Failed to list buckets.");
+            _logger.LogError(ex, ex.Message, "Failed to list buckets.");
             return [];
         }
     }
@@ -63,7 +63,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
         }
         catch (AmazonS3Exception ex)
         {
-            _logger.LogError(ex.Message, $"Failed to find bucket {arg.BucketName}.");
+            _logger.LogError(ex, ex.Message, "Failed to find bucket {BucketName}.", arg.BucketName);
             return null;
         }
     }
@@ -81,7 +81,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
         }
         catch (AmazonS3Exception ex)
         {
-            _logger.LogError(ex.Message, $"Failed to get ACL for bucket {bucketName}");
+            _logger.LogError(ex, ex.Message, "Failed to get ACL for bucket {BucketName}", bucketName);
             return null;
         }
     }
@@ -92,17 +92,11 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
         {
             var response = await _client.GetObjectAsync(_netAppRequestFactory.GetObjectRequest(arg));
 
-            var stream = response.ResponseStream;
-
-            return new GetObjectResponse
-            {
-                BucketName = arg.BucketName,
-                Key = arg.ObjectKey,
-            };
+            return response;
         }
         catch (AmazonS3Exception ex)
         {
-            _logger.LogError(ex.Message, $"Failed to get file {arg.ObjectKey} from bucket {arg.BucketName}.");
+            _logger.LogError(ex, ex.Message, "Failed to get file {ObjectKey} from bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
             return null;
         }
     }
@@ -116,7 +110,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
         }
         catch (AmazonS3Exception ex)
         {
-            _logger.LogError(ex.Message, $"Failed to upload file {arg.ObjectKey} to bucket {arg.BucketName}.");
+            _logger.LogError(ex, ex.Message, "Failed to upload file {ObjectKey} to bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
             return false;
         }
     }
@@ -162,7 +156,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
         }
         catch (AmazonS3Exception ex)
         {
-            _logger.LogError(ex.Message, $"Failed to list objects in bucket {arg.BucketName}.");
+            _logger.LogError(ex, "Failed to list objects in bucket {BucketName}.", arg.BucketName);
             return null;
         }
     }
@@ -199,7 +193,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
         }
         catch (AmazonS3Exception ex)
         {
-            _logger.LogError(ex.Message, $"Failed to list objects in bucket {arg.BucketName}.");
+            _logger.LogError(ex, "Failed to list objects in bucket {BucketName}.", arg.BucketName);
             return null;
         }
     }
@@ -212,7 +206,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
         }
         catch (AmazonS3Exception ex)
         {
-            _logger.LogError(ex.Message, $"Failed to initiate multipart upload for file {arg.ObjectKey}.");
+            _logger.LogError(ex, "Failed to initiate multipart upload for file {ObjectKey}.", arg.ObjectKey);
             return null;
         }
     }
@@ -225,7 +219,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
         }
         catch (AmazonS3Exception ex)
         {
-            _logger.LogError(ex.Message, $"Failed to upload part {arg.PartNumber} for file {arg.ObjectKey}.");
+            _logger.LogError(ex, "Failed to upload part {PartNumber} for file {ObjectKey}.", arg.PartNumber, arg.ObjectKey);
             return null;
         }
     }
@@ -238,7 +232,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
         }
         catch (AmazonS3Exception ex)
         {
-            _logger.LogError(ex.Message, $"Failed to complete multipart upload {arg.UploadId} for file {arg.ObjectKey}.");
+            _logger.LogError(ex, "Failed to complete multipart upload {UploadId} for file {ObjectKey}.", arg.UploadId, arg.ObjectKey);
             return null;
         }
     }

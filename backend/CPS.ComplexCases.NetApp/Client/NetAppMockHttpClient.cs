@@ -24,25 +24,25 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
 
             if (existingBucket != null)
             {
-                _logger.LogError($"A bucket with the name {arg.BucketName} already exists.");
+                _logger.LogError("A bucket with the name {BucketName} already exists.", arg.BucketName);
                 return false;
             }
 
             var response = await SendRequestAsync(_netAppMockHttpRequestFactory.CreateBucketRequest(arg));
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogInformation($"Bucket '{arg.BucketName}' created successfully.");
+                _logger.LogInformation("Bucket '{BucketName}' created successfully.", arg.BucketName);
                 return true;
             }
             else
             {
-                _logger.LogError($"Failed to create bucket. Status Code: {response.StatusCode}");
+                _logger.LogError("Failed to create bucket. Status Code: {StatusCode}", response.StatusCode);
                 return false;
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error creating bucket {arg.BucketName} in NetApp.");
+            _logger.LogError(ex, "Error creating bucket {BucketName} in NetApp.", arg.BucketName);
             throw;
         }
     }
@@ -94,7 +94,7 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
     {
         var response = await SendRequestAsync<ListBucketResult>(_netAppMockHttpRequestFactory.ListFoldersInBucketRequest(arg));
 
-        var folders = new List<ListNetAppFolderDataDto>();
+        List<ListNetAppFolderDataDto> folders;
 
         if (!string.IsNullOrEmpty(arg.OperationName) && string.IsNullOrEmpty(arg.Prefix))
         {
@@ -218,7 +218,8 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
         using var response = await SendRequestAsync(request);
         if (response.StatusCode != System.Net.HttpStatusCode.OK)
         {
-            _logger.LogError($"Request failed with status code: {response.StatusCode}");
+            _logger.LogError("Request failed with status code: {StatusCode}", response.StatusCode);
+
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
                 throw new NetAppUnauthorizedException();
@@ -229,13 +230,6 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
         var responseContent = await response.Content.ReadAsStringAsync();
         var result = DeserializeResponse<T>(responseContent) ?? throw new InvalidOperationException("Deserialization returned null.");
         return result;
-    }
-
-    private static T DeserializeResponse<T>(string responseContent)
-    {
-        var serializer = new XmlSerializer(typeof(T));
-        using var reader = new StringReader(responseContent);
-        return (T)serializer.Deserialize(reader)!;
     }
 
     private async Task<HttpResponseMessage> SendRequestAsync(HttpRequestMessage request)
@@ -251,5 +245,12 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
             _logger.LogError(ex, "Error sending request to NetApp service.");
             throw;
         }
+    }
+
+    private static T DeserializeResponse<T>(string responseContent)
+    {
+        var serializer = new XmlSerializer(typeof(T));
+        using var reader = new StringReader(responseContent);
+        return (T)serializer.Deserialize(reader)!;
     }
 }
