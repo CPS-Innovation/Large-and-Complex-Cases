@@ -7,7 +7,7 @@ export const egressRootFolderResultsDev: EgressFolderResponse = {
       isFolder: true,
       dateUpdated: "2000-01-02",
       filesize: 0,
-      path: "",
+      path: "egress/",
     },
     {
       id: "1-1",
@@ -15,7 +15,7 @@ export const egressRootFolderResultsDev: EgressFolderResponse = {
       isFolder: true,
       dateUpdated: "2000-01-03",
       filesize: 0,
-      path: "",
+      path: "egress/",
     },
     {
       id: "1-2",
@@ -23,7 +23,7 @@ export const egressRootFolderResultsDev: EgressFolderResponse = {
       isFolder: false,
       dateUpdated: "2000-01-03",
       filesize: 1234,
-      path: "",
+      path: "egress/",
     },
   ],
 
@@ -35,11 +35,11 @@ export const egressRootFolderResultsDev: EgressFolderResponse = {
   },
 };
 
-const getFolderPathFromId = (id: number, index: number) => {
+const getFolderPathFromId = (id: number, index: number, rootPath: string) => {
   let path = "";
   for (let i = 1; i < id; i++) {
-    if (path === "") path = `folder-${i}-${index}`;
-    else path = `${path}/folder-${i}-${index}`;
+    if (path === "") path = `${rootPath}folder-${i}-${index}/`;
+    else path = `${path}folder-${i}-${index}/`;
   }
   return path;
 };
@@ -59,7 +59,7 @@ export const getEgressFolderResultsDev = (id: string): EgressFolderResponse => {
       ...item,
       id: `${newId}-${index}`,
       name: `folder-${newId}-${index}`,
-      path: getFolderPathFromId(newId, index),
+      path: getFolderPathFromId(newId, index, item.path),
     };
   });
 

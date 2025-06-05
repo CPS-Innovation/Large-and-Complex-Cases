@@ -7,16 +7,20 @@ import {
   sortByDateProperty,
 } from "../../../common/utils/sortUtils";
 import { formatFileSize } from "../../../common/utils/formatFileSize";
+import { getActionDataFromId } from "../../../common/utils/getActionDataFromId";
 import FolderIcon from "../../../components/svgs/folder.svg?react";
 import FileIcon from "../../../components/svgs/file.svg?react";
 import { formatDate } from "../../../common/utils/formatDate";
 import { EgressFolderData } from "../../../common/types/EgressFolderData";
 import { DropdownButton } from "../../common/DropdownButton";
+import { TransferAction } from "../../../common/types/TransferAction";
+import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
+
 import styles from "./egressFolderContainer.module.scss";
 
 type EgressFolderContainerProps = {
   transferSource: "egress" | "netapp";
-  egressData?: EgressFolderData;
+  egressFolderData: EgressFolderData;
   egressDataStatus: "loading" | "succeeded" | "failed" | "initial";
   egressPathFolders: {
     folderName: string;
@@ -28,11 +32,12 @@ type EgressFolderContainerProps = {
   handleFolderClick: (id: string) => void;
   handleCheckboxChange: (id: string, checked: boolean) => void;
   isSourceFolderChecked: (checkboxId: string) => boolean;
+  handleSelectedActionType: (transferAction: TransferAction) => void;
 };
 
 const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
   transferSource,
-  egressData,
+  egressFolderData,
   egressDataStatus,
   egressPathFolders,
   selectedSourceLength,
@@ -40,25 +45,33 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
   handleFolderClick,
   handleCheckboxChange,
   isSourceFolderChecked,
+  handleSelectedActionType,
 }) => {
   const [sortValues, setSortValues] = useState<{
     name: string;
     type: "ascending" | "descending";
   }>();
 
-  const egressFolderData = useMemo(() => {
-    if (!egressData) return [];
+  const egressDataSorted = useMemo(() => {
     if (sortValues?.name === "folder-name")
-      return sortByStringProperty(egressData, "name", sortValues.type);
+      return sortByStringProperty(egressFolderData, "name", sortValues.type);
 
     if (sortValues?.name === "date-updated")
-      return sortByDateProperty(egressData, "dateUpdated", sortValues.type);
+      return sortByDateProperty(
+        egressFolderData,
+        "dateUpdated",
+        sortValues.type,
+      );
 
     if (sortValues?.name === "file-size")
-      return sortByStringProperty(egressData, "filesize", sortValues.type);
+      return sortByStringProperty(
+        egressFolderData,
+        "filesize",
+        sortValues.type,
+      );
 
-    return egressData;
-  }, [egressData, sortValues]);
+    return egressFolderData;
+  }, [egressFolderData, sortValues]);
 
   const handleTableSort = (
     sortName: string,
@@ -133,7 +146,7 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
   };
 
   const getTableSourceRowData = () => {
-    const rowData = egressFolderData.map((data) => {
+    const rowData = egressDataSorted.map((data) => {
       return {
         cells: [
           {
@@ -189,7 +202,7 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
   };
 
   const getTableDestinationRowData = () => {
-    const rowData = egressFolderData.map((data, index) => {
+    const rowData = egressDataSorted.map((data, index) => {
       return {
         cells: [
           {
@@ -228,7 +241,7 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
               <div>
                 <DropdownButton
                   name="Actions"
-                  dropDownItems={getDestinationDropdownItems(data.id)}
+                  dropDownItems={getDestinationDropdownItems(data.path)}
                   callBackFn={handleTransferAction}
                   ariaLabel="transfer actions dropdown"
                   dataTestId={`transfer-actions-dropdown-${index}`}
@@ -254,7 +267,6 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
   };
 
   const getDestinationDropdownItems = (id: string) => {
-    console.log("id>>>", id);
     return [
       {
         id: `${id}:move`,
@@ -273,17 +285,28 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
 
   const handleTransferAction = (id: string) => {
     console.log("id>>>", id);
+    console.log("getActionDataFromId>>", getActionDataFromId(id));
+    const { actionData, actionType } = getActionDataFromId(id);
+    handleSelectedActionType({
+      destinationFolder: {
+        path: actionData,
+        name: getFolderNameFromPath(actionData),
+        sourceType: "netapp",
+      },
+      actionType: actionType === "copy" ? "copy" : "move",
+    });
   };
 
   const getInsetElement = () => {
     const curentFolder = egressPathFolders[egressPathFolders.length - 1];
+    console.log("curentFolder>>>", curentFolder);
     return (
       <InsetText>
         Transfer to {curentFolder.folderName}
         <LinkButton
           type="button"
           onClick={() => {
-            handleTransferAction(`${curentFolder.folderId}:copy`);
+            handleTransferAction(`${curentFolder.folderPath}:copy`);
           }}
         >
           Copy
@@ -292,7 +315,7 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
         <LinkButton
           type="button"
           onClick={() => {
-            handleTransferAction(`${curentFolder.folderId}:move`);
+            handleTransferAction(`${curentFolder.folderPath}:move`);
           }}
         >
           Move
@@ -308,7 +331,7 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
         folders={egressPathFolders}
         loaderText="Loading folders from Egress"
         folderResultsStatus={egressDataStatus}
-        folderResultsLength={egressFolderData.length}
+        folderResultsLength={egressDataSorted.length}
         handleFolderPathClick={handleFolderPathClick}
         getTableRowData={getTableRowData}
         getTableHeadData={getTableHeadData}

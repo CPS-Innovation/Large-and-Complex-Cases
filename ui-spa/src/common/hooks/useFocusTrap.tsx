@@ -41,12 +41,10 @@ export const useFocusTrap = (id: string = "#modal") => {
   );
 
   useEffect(() => {
-    console.log("hiiiii", window.addEventListener);
     const setFirstElementFocus = () => {
       const tabbableElements = getTabbableElements();
       if (tabbableElements) {
         setTimeout(() => {
-          console.log("first>>>>-----11111");
           (tabbableElements[0] as HTMLElement).focus();
         }, 0);
       }
@@ -55,10 +53,8 @@ export const useFocusTrap = (id: string = "#modal") => {
   }, [getTabbableElements]);
 
   useEffect(() => {
-    console.log("adding.....");
     window.addEventListener("keydown", keyDownHandler);
     return () => {
-      console.log("removing.....");
       window.removeEventListener("keydown", keyDownHandler);
     };
   }, [keyDownHandler]);

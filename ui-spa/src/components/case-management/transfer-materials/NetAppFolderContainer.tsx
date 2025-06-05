@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { LinkButton, InsetText } from "../../govuk";
 import Checkbox from "../../common/Checkbox";
-import { NetAppFolderDataResponse } from "../../../common/types/NetAppFolderData";
+import { NetAppFolderData } from "../../../common/types/NetAppFolderData";
 import { sortByStringProperty } from "../../../common/utils/sortUtils";
 import { getActionDataFromId } from "../../../common/utils/getActionDataFromId";
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
@@ -10,7 +10,6 @@ import FolderNavigationTable from "../../common/FolderNavigationTable";
 import { formatFileSize } from "../../../common/utils/formatFileSize";
 import FolderIcon from "../../../components/svgs/folder.svg?react";
 import FileIcon from "../../../components/svgs/file.svg?react";
-import { mapToNetAppFolderData } from "../../../common/utils/mapToNetAppFolderData";
 import { formatDate } from "../../../common/utils/formatDate";
 import { DropdownButton } from "../../common/DropdownButton";
 import { TransferAction } from "../../../common/types/TransferAction";
@@ -20,7 +19,7 @@ type NetAppFolderContainerProps = {
   transferSource: "egress" | "netapp";
   connectedFolderPath: string;
   currentFolderPath: string;
-  netAppFolderDataResponse?: NetAppFolderDataResponse;
+  netAppFolderData: NetAppFolderData;
   netAppFolderDataStatus: "loading" | "succeeded" | "failed" | "initial";
   selectedSourceLength: number;
   handleGetFolderContent: (folderId: string) => void;
@@ -33,7 +32,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
   transferSource,
   connectedFolderPath,
   currentFolderPath,
-  netAppFolderDataResponse,
+  netAppFolderData,
   netAppFolderDataStatus,
   selectedSourceLength,
   handleGetFolderContent,
@@ -45,14 +44,6 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
     name: string;
     type: "ascending" | "descending";
   }>();
-
-  const netAppFolderData = useMemo(
-    () =>
-      netAppFolderDataResponse
-        ? mapToNetAppFolderData(netAppFolderDataResponse)
-        : [],
-    [netAppFolderDataResponse],
-  );
 
   const netAppDataSorted = useMemo(() => {
     if (sortValues?.name === "folder-name")
@@ -327,8 +318,6 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
     );
   };
   const handleTransferAction = (id: string) => {
-    console.log("id>>>", id);
-    console.log("getActionDataFromId>>", getActionDataFromId(id));
     const { actionData, actionType } = getActionDataFromId(id);
     handleSelectedActionType({
       destinationFolder: {
