@@ -6,7 +6,7 @@ import { getEgressFolders, getNetAppFolders } from "../../../apis/gateway-api";
 import EgressFolderContainer from "./EgressFolderContainer";
 import { useNavigate } from "react-router-dom";
 import TransferConfirmationModal from "./TransferConfirmationModal";
-import { getGroupedEgressData } from "../../../common/utils/getGroupedEgressData";
+import { getGroupedFolderFileData } from "../../../common/utils/getGroupedFolderFileData";
 import { TransferAction } from "../../../common/types/TransferAction";
 import { getFormatedEgressFolderData } from "../../../common/utils/getFormatedEgressFolderData";
 import { mapToNetAppFolderData } from "../../../common/utils/mapToNetAppFolderData";
@@ -118,7 +118,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         if (transferSource === "egress")
           updatedFolders = [
             "all-folders",
-            ...egressFolderData.map((data) => data.id),
+            ...egressFolderData.map((data) => data.path),
           ];
         if (transferSource === "netapp")
           updatedFolders = [
@@ -322,8 +322,14 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           transferAction={selectedTransferAction}
           groupedData={
             transferSource === "egress"
-              ? getGroupedEgressData(selectedSourceFoldersOrFiles, egressData!)
-              : { folders: ["1", "2"], files: [] }
+              ? getGroupedFolderFileData(
+                  selectedSourceFoldersOrFiles,
+                  egressFolderData!,
+                )
+              : getGroupedFolderFileData(
+                  selectedSourceFoldersOrFiles,
+                  netAppFolderData!,
+                )
           }
           handleCloseModal={handleCloseTransferConfirmationModal}
         />

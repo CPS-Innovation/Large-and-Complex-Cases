@@ -153,8 +153,8 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
             children: (
               <>
                 <Checkbox
-                  id={data.id}
-                  checked={isSourceFolderChecked(data.id)}
+                  id={data.path}
+                  checked={isSourceFolderChecked(data.path)}
                   onChange={handleCheckboxChange}
                   ariaLabel="select folder"
                 />
