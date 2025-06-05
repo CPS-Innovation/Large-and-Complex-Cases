@@ -5,4 +5,5 @@ namespace CPS.ComplexCases.API.Clients.FileTransfer;
 public interface IFileTransferClient
 {
     Task<HttpResponseMessage> InitiateFileTransferAsync(TransferRequest transferRequest, Guid correlationId);
+    Task<HttpResponseMessage> GetFileTransferStatusAsync(string transferId, Guid correlationId);
 }

@@ -17,12 +17,17 @@ public class FileTransferClient(IRequestFactory requestFactory, HttpClient httpC
             correlationId,
             new StringContent(JsonSerializer.Serialize(transferRequest), Encoding.UTF8, "application/json"));
     }
-
+    public async Task<HttpResponseMessage> GetFileTransferStatusAsync(string transferId, Guid correlationId)
+    {
+        return await SendRequestAsync(
+            HttpMethod.Get,
+            $"transfer/{transferId}/status",
+            correlationId);
+    }
     private async Task<HttpResponseMessage> SendRequestAsync(HttpMethod httpMethod, string requestUri, Guid correlationId, HttpContent? content = null)
     {
         var request = _requestFactory.Create(httpMethod, requestUri, correlationId, content);
 
         return await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
     }
-
 }
