@@ -1,5 +1,6 @@
 import { SortableTable } from "../govuk";
 import { Spinner } from "../common/Spinner";
+import { useMemo } from "react";
 import FolderPath, { Folder } from "../common/FolderPath";
 import styles from "./FolderNavigationTable.module.scss";
 
@@ -41,6 +42,11 @@ const FolderNavigationTable: React.FC<FolderNavigationTableProps> = ({
   showInsetElement,
   getInsetElement,
 }) => {
+  const showInset = useMemo(() => {
+    return (
+      folderResultsStatus === "succeeded" && showInsetElement && getInsetElement
+    );
+  }, [folderResultsStatus, showInsetElement, getInsetElement]);
   return (
     <div className={styles.results} data-testId={`${tableName}-table-wrapper`}>
       <div>
@@ -51,7 +57,7 @@ const FolderNavigationTable: React.FC<FolderNavigationTableProps> = ({
             handleFolderPathClick={handleFolderPathClick}
           />
         }
-        {showInsetElement && getInsetElement && getInsetElement()}
+        {showInset && getInsetElement!()}
         {folderResultsStatus === "succeeded" && (
           <>
             <SortableTable

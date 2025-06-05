@@ -13,6 +13,7 @@ import FileIcon from "../../../components/svgs/file.svg?react";
 import { mapToNetAppFolderData } from "../../../common/utils/mapToNetAppFolderData";
 import { formatDate } from "../../../common/utils/formatDate";
 import { DropdownButton } from "../../common/DropdownButton";
+import { TransferAction } from "../../../common/types/TransferAction";
 import styles from "./netAppFolderContainer.module.scss";
 
 type NetAppFolderContainerProps = {
@@ -25,14 +26,7 @@ type NetAppFolderContainerProps = {
   handleGetFolderContent: (folderId: string) => void;
   handleCheckboxChange: (id: string, checked: boolean) => void;
   isSourceFolderChecked: (checkboxId: string) => boolean;
-  handleSelectedActionType: (transferAction: {
-    destinationFolder: {
-      path: string;
-      name: string;
-      type: "netapp";
-    };
-    actionType: "move" | "copy";
-  }) => void;
+  handleSelectedActionType: (transferAction: TransferAction) => void;
 };
 
 const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
@@ -340,7 +334,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
       destinationFolder: {
         path: actionData,
         name: getFolderNameFromPath(actionData),
-        type: "netapp",
+        sourceType: "egress",
       },
       actionType: actionType === "copy" ? "copy" : "move",
     });

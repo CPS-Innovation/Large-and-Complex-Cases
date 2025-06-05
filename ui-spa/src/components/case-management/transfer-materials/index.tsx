@@ -1,11 +1,13 @@
 import { useEffect, useState, useMemo } from "react";
 import { useApi } from "../../../common/hooks/useApi";
-import { LinkButton, InsetText, Checkboxes, Button } from "../../govuk";
+import { LinkButton, InsetText } from "../../govuk";
 import NetAppFolderContainer from "./NetAppFolderContainer";
 import { getEgressFolders, getNetAppFolders } from "../../../apis/gateway-api";
 import EgressFolderContainer from "./EgressFolderContainer";
-import { Modal } from "../../common/Modal";
 import { useNavigate } from "react-router-dom";
+import TransferConfirmationModal from "./TransferConfirmationModal";
+import { getGroupedEgressData } from "../../../common/utils/getGroupedEgressData";
+import { TransferAction } from "../../../common/types/TransferAction";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
@@ -35,20 +37,8 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   const [netAppFolderPath, setNetAppFolderPath] = useState("");
   const [selectedSourceFoldersOrFiles, setSelectedSourceFoldersOrFiles] =
     useState<string[]>([]);
-  const [selectedTransferAction, setSelectedTransferAction] = useState<{
-    destinationFolder:
-      | {
-          path: string;
-          name: string;
-          type: "netapp";
-        }
-      | {
-          id: string;
-          name: string;
-          type: "egress";
-        };
-    actionType: "move" | "copy";
-  } | null>(null);
+  const [selectedTransferAction, setSelectedTransferAction] =
+    useState<TransferAction | null>(null);
 
   const [showTransferConfirmationModal, setShowTransferConfrimationModal] =
     useState<boolean>(false);
@@ -186,20 +176,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     );
   };
 
-  const handleSelectedActionType = (transferAction: {
-    destinationFolder:
-      | {
-          path: string;
-          name: string;
-          type: "netapp";
-        }
-      | {
-          id: string;
-          name: string;
-          type: "egress";
-        };
-    actionType: "move" | "copy";
-  }) => {
+  const handleSelectedActionType = (transferAction: TransferAction) => {
     setShowTransferConfrimationModal(true);
     setSelectedTransferAction(transferAction);
   };
@@ -331,37 +308,16 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           </>
         )}
       </div>
-      <Modal
-        isVisible={showTransferConfirmationModal}
-        className={styles.transferConfirmationModal}
-        handleClose={handleCloseTransferConfirmationModal}
-        type="alert"
-        ariaLabel="Document saving alert modal"
-        ariaDescription="Saving updated document to CMS"
-      >
-        <div>
-          <div className={styles.modalHeader}>
-            Copy files to: 5.Correspondence
-          </div>
-          <div className={styles.modalContent}>
-            <Checkboxes
-              className="govuk-checkboxes--small"
-              items={[
-                {
-                  children: `I confirm I want to copy ${selectedSourceFoldersOrFiles.length} folders to ${selectedTransferAction?.destinationFolder.name}`,
-                },
-              ]}
-              name="confirmation checkbox"
-            />
-            <div className={styles.modalButtonWrapper}>
-              <Button onClick={() => {}}>Continue</Button>
-              <LinkButton onClick={handleCloseTransferConfirmationModal}>
-                Cancel{" "}
-              </LinkButton>
-            </div>
-          </div>
-        </div>
-      </Modal>
+      {showTransferConfirmationModal && selectedTransferAction && (
+        <TransferConfirmationModal
+          transferAction={selectedTransferAction}
+          groupedData={getGroupedEgressData(
+            selectedSourceFoldersOrFiles,
+            egressData!,
+          )}
+          handleCloseModal={handleCloseTransferConfirmationModal}
+        />
+      )}
     </div>
   );
 };
