@@ -83,7 +83,7 @@ const NetAppPage = () => {
     }
   };
   useEffect(() => {
-    if (location.state?.searchQueryString) {
+    if (location.state?.searchQueryString !== undefined) {
       setInitialLocationState({
         searchQueryString: location.state?.searchQueryString,
       });
@@ -93,13 +93,6 @@ const NetAppPage = () => {
   const validateRoute = useCallback(() => {
     let validRoute = true;
     if (operationName === null) validRoute = false;
-    if (
-      location.pathname.endsWith("/netapp-connect") &&
-      initialLocationState?.searchQueryString === undefined &&
-      location.state?.searchQueryString === undefined
-    ) {
-      validRoute = false;
-    }
     if (
       location.pathname.endsWith("/netapp-connect") &&
       initialLocationState?.searchQueryString === undefined &&
