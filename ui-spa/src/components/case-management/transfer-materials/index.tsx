@@ -10,6 +10,7 @@ import { getGroupedFolderFileData } from "../../../common/utils/getGroupedFolder
 import { TransferAction } from "../../../common/types/TransferAction";
 import { getFormatedEgressFolderData } from "../../../common/utils/getFormatedEgressFolderData";
 import { mapToNetAppFolderData } from "../../../common/utils/mapToNetAppFolderData";
+import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
@@ -35,7 +36,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       folderPath: string;
       folderId: string;
     }[]
-  >([{ folderName: "Home", folderPath: "", folderId: "" }]);
+  >([]);
   const [netAppFolderPath, setNetAppFolderPath] = useState("");
   const [selectedSourceFoldersOrFiles, setSelectedSourceFoldersOrFiles] =
     useState<string[]>([]);
@@ -49,7 +50,9 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   }, [netAppPath]);
 
   const currentEgressFolder = useMemo(() => {
-    return egressPathFolders[egressPathFolders.length - 1];
+    if (egressPathFolders.length)
+      return egressPathFolders[egressPathFolders.length - 1];
+    return { folderId: "" };
   }, [egressPathFolders]);
 
   const {
@@ -226,6 +229,17 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       </div>
     );
   };
+
+  useEffect(() => {
+    if (!egressPathFolders.length && egressData)
+      setEgressPathFolders([
+        {
+          folderName: getFolderNameFromPath(egressData[0].path),
+          folderPath: egressData[0].path,
+          folderId: egressWorkspaceId!,
+        },
+      ]);
+  }, [egressPathFolders, egressData, egressWorkspaceId]);
 
   useEffect(() => {
     if (egressStatus === "failed" && egressError) {

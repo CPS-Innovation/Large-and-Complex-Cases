@@ -67,7 +67,10 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
       folderPath: `${connectedFolderPath}${parts.slice(0, index + 1).join("/")}/`,
     }));
     const withHome = [
-      { folderName: "Home", folderPath: connectedFolderPath },
+      {
+        folderName: getFolderNameFromPath(connectedFolderPath),
+        folderPath: connectedFolderPath,
+      },
       ...result,
     ];
     return withHome;
