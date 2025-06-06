@@ -11,5 +11,8 @@ namespace CPS.ComplexCases.NetApp.Factories
         UploadObjectArg CreateUploadObjectArg(string bucketName, string objectName, Stream stream);
         ListObjectsInBucketArg CreateListObjectsInBucketArg(string bucketName, string? continuationToken = null, int? maxKeys = null, string? prefix = null);
         ListFoldersInBucketArg CreateListFoldersInBucketArg(string bucketName, string? operationName = null, string? continuationToken = null, int? maxKeys = null, string? prefix = null);
+        InitiateMultipartUploadArg CreateInitiateMultipartUploadArg(string bucketName, string objectName);
+        UploadPartArg CreateUploadPartArg(string bucketName, string objectName, byte[] partData, int partNumber, string uploadId);
+        CompleteMultipartUploadArg CreateCompleteMultipartUploadArg(string bucketName, string objectName, string uploadId, Dictionary<int, string> parts);
     }
 }

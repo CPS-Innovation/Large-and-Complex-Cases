@@ -38,7 +38,7 @@ public class ListEgressMaterials(ILogger<ListEgressMaterials> logger,
         var skip = int.TryParse(req.Query[InputParameters.Skip], out var skipValue) ? skipValue : 0;
         var take = int.TryParse(req.Query[InputParameters.Take], out var takeValue) ? takeValue : 100;
 
-        var listMaterialsArg = _egressArgFactory.CreateListWorkspaceMaterialArg(workspaceId, skip, take, folderId);
+        var listMaterialsArg = _egressArgFactory.CreateListWorkspaceMaterialArg(workspaceId, skip, take, folderId, null);
         var permissionsArg = _egressArgFactory.CreateGetWorkspacePermissionArg(workspaceId, context.GetRequestContext().Username);
 
         try

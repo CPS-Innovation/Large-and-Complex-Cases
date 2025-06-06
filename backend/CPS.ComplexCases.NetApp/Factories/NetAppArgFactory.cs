@@ -1,3 +1,4 @@
+using Amazon.S3.Model;
 using CPS.ComplexCases.NetApp.Constants;
 using CPS.ComplexCases.NetApp.Models.Args;
 
@@ -81,6 +82,42 @@ namespace CPS.ComplexCases.NetApp.Factories
             }
 
             return prefix?.ToLowerInvariant() ?? string.Empty;
+        }
+
+        public InitiateMultipartUploadArg CreateInitiateMultipartUploadArg(string bucketName, string objectName)
+        {
+            return new InitiateMultipartUploadArg
+            {
+                BucketName = bucketName.ToLowerInvariant(),
+                ObjectKey = objectName
+            };
+        }
+
+        public UploadPartArg CreateUploadPartArg(string bucketName, string objectName, byte[] partData, int partNumber, string uploadId)
+        {
+            return new UploadPartArg
+            {
+                BucketName = bucketName.ToLowerInvariant(),
+                ObjectKey = objectName,
+                PartData = partData,
+                PartNumber = partNumber,
+                UploadId = uploadId
+            };
+        }
+
+        public CompleteMultipartUploadArg CreateCompleteMultipartUploadArg(string bucketName, string objectName, string uploadId, Dictionary<int, string> parts)
+        {
+            return new CompleteMultipartUploadArg
+            {
+                BucketName = bucketName.ToLowerInvariant(),
+                ObjectKey = objectName,
+                UploadId = uploadId,
+                CompletedParts = parts.Select(part => new PartETag
+                {
+                    PartNumber = part.Key,
+                    ETag = part.Value
+                }).ToList()
+            };
         }
     }
 }

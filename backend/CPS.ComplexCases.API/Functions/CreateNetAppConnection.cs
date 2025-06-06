@@ -4,16 +4,15 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using CPS.ComplexCases.API.Constants;
-using CPS.ComplexCases.Data.Services;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.Data.Models.Requests;
-using CPS.ComplexCases.API.Context;
-using CPS.ComplexCases.API.Validators;
 using CPS.ComplexCases.API.Validators.Requests;
-using Microsoft.Extensions.Options;
 using CPS.ComplexCases.NetApp.Models;
+using CPS.ComplexCases.Common.Helpers;
+using CPS.ComplexCases.Common.Services;
 
 namespace CPS.ComplexCases.API.Functions;
 
@@ -39,8 +38,6 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
     public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "netapp/connections")] HttpRequest req, FunctionContext functionContext)
     {
-        var context = functionContext.GetRequestContext();
-
         var netAppConnectionRequest = await ValidatorHelper.GetJsonBody<CreateNetAppConnectionDto, CreateNetAppConnectionValidator>(req);
 
         if (!netAppConnectionRequest.IsValid)
