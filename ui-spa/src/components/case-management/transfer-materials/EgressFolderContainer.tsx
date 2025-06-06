@@ -25,7 +25,7 @@ type EgressFolderContainerProps = {
   egressPathFolders: {
     folderName: string;
     folderPath: string;
-    folderId?: string;
+    folderId: string;
   }[];
   selectedSourceLength: number;
   handleFolderPathClick: (path: string) => void;

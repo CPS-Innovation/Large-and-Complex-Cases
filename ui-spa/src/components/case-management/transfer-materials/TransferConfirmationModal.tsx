@@ -62,7 +62,7 @@ const TransferConfirmationModal: React.FC<TransferConfirmationModalProps> = ({
     >
       <div>
         <div className={styles.modalHeader}>
-          Copy files to: 5.Correspondence
+          Copy files to: {transferAction.destinationFolder.name}
         </div>
         <div className={styles.modalContent}>
           <Checkboxes

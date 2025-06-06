@@ -33,7 +33,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     {
       folderName: string;
       folderPath: string;
-      folderId?: string;
+      folderId: string;
     }[]
   >([{ folderName: "Home", folderPath: "", folderId: "" }]);
   const [netAppFolderPath, setNetAppFolderPath] = useState("");
