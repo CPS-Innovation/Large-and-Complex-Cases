@@ -18,6 +18,7 @@ public class ActivityLogServiceTests
     private readonly Mock<IActivityLogRepository> _repositoryMock;
     private readonly Mock<ILogger<ActivityLogService>> _loggerMock;
     private readonly ActivityLogService _service;
+    private const int TestCaseId = 12345;
     private const string TestResourceId = "TestResourceId";
     private const string TestResourceName = "TestResourceName";
     private const string TestUserName = "TestUserName";
@@ -49,7 +50,7 @@ public class ActivityLogServiceTests
             .Verifiable();
 
         // Act
-        await _service.CreateActivityLogAsync(ActionType.TransferInitiated, ResourceType.FileTransfer, TestResourceId, TestResourceName, TestUserName);
+        await _service.CreateActivityLogAsync(ActionType.TransferInitiated, ResourceType.FileTransfer, TestCaseId, TestResourceId, TestResourceName, TestUserName);
 
         // Assert
         using (new AssertionScope())
@@ -209,10 +210,10 @@ public class ActivityLogServiceTests
         var filter = new ActivityLogFilterDto();
         _repositoryMock
             .Setup(r => r.GetByFilterAsync(filter))
-            .ThrowsAsync(new System.Exception("Repository error"));
+            .ThrowsAsync(new Exception("Repository error"));
 
         // Act & Assert
-        await Assert.ThrowsAsync<System.Exception>(() => _service.GetActivityLogsAsync(filter));
+        await Assert.ThrowsAsync<Exception>(() => _service.GetActivityLogsAsync(filter));
         _repositoryMock.Verify(r => r.GetByFilterAsync(filter), Times.Once);
     }
 }

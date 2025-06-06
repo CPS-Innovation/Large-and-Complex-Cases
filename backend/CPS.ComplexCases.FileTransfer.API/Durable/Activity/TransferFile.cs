@@ -82,7 +82,16 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             }
 
             _logger.LogInformation("File transfer completed: {SourcePath} -> {DestinationPath}", payload.SourcePath.Path, payload.DestinationPath);
-            await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.AddSuccessfulItem));
+
+            var successfulItem = new TransferItem
+            {
+                SourcePath = payload.SourcePath.Path,
+                Status = TransferStatus.Completed,
+                Size = sourceStream.Length,
+                IsRenamed = false //payload.SourcePath.IsRenamed
+            };
+
+            await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.AddSuccessfulItem), successfulItem);
         }
         catch (Exception ex)
         {

@@ -12,7 +12,7 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
     private readonly IActivityLogRepository _activityLogRepository = activityLogRepository;
     private readonly ILogger<ActivityLogService> _logger = logger;
 
-    public async Task CreateActivityLogAsync(ActionType actionType, ResourceType resourceType, string resourceId, string? resourceName, string? userName, JsonDocument? details = null)
+    public async Task CreateActivityLogAsync(ActionType actionType, ResourceType resourceType, int caseId, string resourceId, string? resourceName, string? userName, JsonDocument? details = null)
     {
         _logger.LogInformation("Creating audit log for {ResourceType} {ResourceId}", resourceType, resourceId);
         try
@@ -21,6 +21,7 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
             {
                 ActionType = actionType.GetAlternateValue(),
                 ResourceType = resourceType.ToString(),
+                CaseId = caseId,
                 ResourceId = resourceId,
                 ResourceName = resourceName,
                 UserName = userName,
@@ -67,14 +68,14 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
 
     public Task<IEnumerable<Data.Entities.ActivityLog>> GetActivityLogsByResourceIdAsync(string resourceId)
     {
-        _logger.LogInformation("Getting audit logs for {resourceId}", resourceId);
+        _logger.LogInformation("Getting audit logs for {ResourceId}", resourceId);
         try
         {
             return _activityLogRepository.GetByResourceIdAsync(resourceId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting audit logs for {resourceId}", resourceId);
+            _logger.LogError(ex, "Error getting audit logs for {ResourceId}", resourceId);
             throw;
         }
     }

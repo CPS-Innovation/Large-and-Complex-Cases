@@ -1,3 +1,5 @@
+using CPS.ComplexCases.ActivityLog.Services;
+using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
@@ -8,8 +10,10 @@ using Microsoft.Extensions.Logging;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Orchestration;
 
-public class TransferOrchestrator
+public class TransferOrchestrator(IActivityLogService activityLogService)
 {
+    private readonly IActivityLogService _activityLogService = activityLogService;
+
     [Function(nameof(TransferOrchestrator))]
     public async Task RunOrchestrator(
         [OrchestrationTrigger] TaskOrchestrationContext context)
@@ -41,7 +45,13 @@ public class TransferOrchestrator
             nameof(IntializeTransfer),
             transferEntity);
 
-        // todo: audit record activity
+        await _activityLogService.CreateActivityLogAsync(
+            ActivityLog.Enums.ActionType.TransferInitiated,
+            ActivityLog.Enums.ResourceType.FileTransfer,
+            input.CaseId,
+            input.TransferId.ToString(),
+            input.TransferDirection.GetAlternateValue(),
+            input.UserName);
 
         // 2. Fan-out: TransferFileActivity for each item
         await context.CallActivityAsync(
