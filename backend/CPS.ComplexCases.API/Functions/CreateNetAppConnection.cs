@@ -9,12 +9,12 @@ using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.Data.Models.Requests;
-using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Context;
+using CPS.ComplexCases.Common.Services;
 
 namespace CPS.ComplexCases.API.Functions;
 
@@ -66,7 +66,7 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
             ActivityLog.Enums.ResourceType.StorageConnection,
             netAppConnectionRequest.Value.CaseId,
             netAppConnectionRequest.Value.NetAppFolderPath,
-            netAppConnectionRequest.Value.OperationName,
+            "NetApp",
             context.Username);
 
         return new OkResult();

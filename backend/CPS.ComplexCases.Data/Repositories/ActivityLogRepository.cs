@@ -53,9 +53,9 @@ public class ActivityLogRepository(ApplicationDbContext dbContext) : IActivityLo
         {
             query = query.Where(a => a.Timestamp <= filter.ToDate.Value.ToUniversalTime());
         }
-        if (!string.IsNullOrEmpty(filter.UserId))
+        if (!string.IsNullOrEmpty(filter.Username))
         {
-            query = query.Where(a => a.UserId == filter.UserId);
+            query = query.Where(a => a.UserName == filter.Username);
         }
         if (!string.IsNullOrEmpty(filter.ActionType))
         {

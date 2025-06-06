@@ -32,8 +32,9 @@ public class TransferEntityState : TaskEntity<TransferEntity>
         State.UpdatedAt = DateTime.UtcNow;
     }
 
-    public void AddSuccessfulItem()
+    public void AddSuccessfulItem(TransferItem transferItem)
     {
+        State.SuccessfulItems.Add(transferItem);
         State.SuccessfulFiles++;
         State.ProcessedFiles++;
         State.UpdatedAt = DateTime.UtcNow;
@@ -46,5 +47,4 @@ public class TransferEntityState : TaskEntity<TransferEntity>
         State.ProcessedFiles++;
         State.UpdatedAt = DateTime.UtcNow;
     }
-
 }

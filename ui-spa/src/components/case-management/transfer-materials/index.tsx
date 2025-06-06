@@ -58,6 +58,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     refetch: netAppRefetch,
     status: netAppStatus,
     data: netAppData,
+    error: netAppError,
   } = useApi(getNetAppFolders, [netAppFolderPath], false);
 
   const handleEgressFolderPathClick = (path: string) => {
@@ -204,7 +205,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           `/case/${caseId}/case-management/egress-connection-error?operation-name=${operationName}`,
           {
             state: {
-              netappFolderPath: true,
+              isValid: true,
             },
           },
         );
@@ -218,8 +219,36 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       } else {
         throw new Error(`${egressError}`);
       }
+    } else if (netAppStatus === "failed" && netAppError) {
+      if (netAppError.code === 404) {
+        navigate(
+          `/case/${caseId}/case-management/shared-drive-connection-error?operation-name=${operationName}`,
+          {
+            state: {
+              isValid: true,
+            },
+          },
+        );
+        return;
+      }
+      if (netAppError.code === 401) {
+        navigate(
+          `/case/${caseId}/case-management/connection-error?type=shared drive`,
+        );
+        return;
+      } else {
+        throw new Error(`${netAppError}`);
+      }
     }
-  }, [egressStatus, egressError, caseId, operationName, navigate]);
+  }, [
+    egressStatus,
+    egressError,
+    netAppStatus,
+    netAppError,
+    caseId,
+    operationName,
+    navigate,
+  ]);
 
   useEffect(() => {
     if (egressWorkspaceId !== undefined) {
@@ -235,12 +264,14 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
 
   return (
     <div>
-      <h2>Transfer folders and files between egress and the shared drive</h2>
-      <InsetText>
-        Select the folders and files you want to transfer, then choose a
-        destination. You can switch the source and destination if needed.{" "}
-        <LinkButton onClick={handleSwitchSource}> Switch source</LinkButton>
-      </InsetText>
+      <div className={styles.headerText}>
+        <h2>{`${transferSource === "egress" ? "Transfer folders and files between egress and shared drive" : "Transfer folders and files between shared drive and egress"}`}</h2>
+        <InsetText>
+          Select the folders and files you want to transfer, then choose a
+          destination. You can switch the source and destination if needed.{" "}
+          <LinkButton onClick={handleSwitchSource}> Switch source</LinkButton>
+        </InsetText>
+      </div>
       <div
         className={styles.mainContainer}
         data-testId="transfer-main-container"

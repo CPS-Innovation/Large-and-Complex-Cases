@@ -12,15 +12,19 @@ using CPS.ComplexCases.FileTransfer.API.Durable.Orchestration;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Models.Responses;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
+using CPS.ComplexCases.Common.Services;
 
 namespace CPS.ComplexCases.FileTransfer.API.Functions;
 
 public class InitiateTransfer
 {
     private readonly ILogger<InitiateTransfer> _logger;
-    public InitiateTransfer(ILogger<InitiateTransfer> logger)
+    private readonly ICaseMetadataService _caseMetadataService;
+
+    public InitiateTransfer(ILogger<InitiateTransfer> logger, ICaseMetadataService caseMetadataService)
     {
         _logger = logger;
+        _caseMetadataService = caseMetadataService;
     }
 
     [Function(nameof(InitiateTransfer))]
@@ -38,6 +42,10 @@ public class InitiateTransfer
         var currentCorrelationId = req.Headers.GetCorrelationId();
         var transferId = Guid.NewGuid();
 
+        await _caseMetadataService.UpdateActiveTransferIdAsync(
+            transferRequest.Value.Metadata.CaseId,
+            transferId
+        );
 
         await orchestrationClient.ScheduleNewOrchestrationInstanceAsync(
             nameof(TransferOrchestrator),

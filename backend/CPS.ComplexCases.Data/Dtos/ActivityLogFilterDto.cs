@@ -4,7 +4,7 @@ public class ActivityLogFilterDto
 {
     public DateTime? FromDate { get; set; }
     public DateTime? ToDate { get; set; }
-    public string? UserId { get; set; }
+    public string? Username { get; set; }
     public string? ActionType { get; set; }
     public string? ResourceType { get; set; }
     public string? ResourceId { get; set; }

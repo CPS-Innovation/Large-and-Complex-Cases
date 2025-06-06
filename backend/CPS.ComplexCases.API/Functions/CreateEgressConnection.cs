@@ -3,8 +3,8 @@ using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Helpers;
+using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Models.Requests;
-using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
 using Microsoft.AspNetCore.Http;
@@ -58,7 +58,7 @@ public class CreateEgressConnection(ICaseMetadataService caseMetadataService, IE
       ActivityLog.Enums.ResourceType.StorageConnection,
       egressConnectionRequest.Value.CaseId,
       egressConnectionRequest.Value.EgressWorkspaceId,
-      null,
+      "Egress",
       context.Username);
 
     return new OkResult();

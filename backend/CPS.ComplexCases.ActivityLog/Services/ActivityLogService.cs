@@ -26,7 +26,8 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
                 ResourceName = resourceName,
                 UserName = userName,
                 Details = details,
-                Timestamp = DateTime.UtcNow
+                Timestamp = DateTime.UtcNow,
+                Description = SetDescription(actionType, resourceName)
             };
 
             await _activityLogRepository.AddAsync(activityLog);
@@ -92,5 +93,34 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
             _logger.LogError(ex, "Error updating audit log for case {ResourceType} {ResourceId}", auditLog.ResourceType, auditLog.ResourceId);
             throw;
         }
+    }
+
+    public Task<JsonDocument?> ConvertToJsonDocument<T>(T data)
+    {
+        return Task.Run(() =>
+        {
+            try
+            {
+                return JsonDocument.Parse(JsonSerializer.Serialize(data));
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError(ex, "Error converting data to JsonDocument");
+                return null;
+            }
+        });
+    }
+
+    private static string SetDescription(ActionType actionType, string? resourceName)
+    {
+        return actionType switch
+        {
+            ActionType.ConnectionToEgress => $"Connected to Egress workspace {resourceName}",
+            ActionType.ConnectionToNetApp => $"Connected to NetApp folder {resourceName}",
+            ActionType.TransferInitiated => $"Transfer initiated between {resourceName}",
+            ActionType.TransferCompleted => $"Transfer completed between {resourceName}",
+            ActionType.TransferFailed => $"Transfer failed between {resourceName}",
+            _ => $"Performed action {actionType} on resource {resourceName}"
+        };
     }
 }

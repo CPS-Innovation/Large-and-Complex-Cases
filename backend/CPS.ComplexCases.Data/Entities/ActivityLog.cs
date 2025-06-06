@@ -21,7 +21,6 @@ public class ActivityLog : IAuditableCreated, IAuditableUpdated
     public Guid Id { get; private set; }
     public int? CaseId { get; set; }
     public string? ActionType { get; set; }
-    public string? UserId { get; set; }
     public string? UserName { get; set; }
     public string? ResourceType { get; set; }
     public string? ResourceId { get; set; }
