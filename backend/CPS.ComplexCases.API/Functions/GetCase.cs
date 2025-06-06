@@ -3,7 +3,7 @@ using System.Net;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Domain.Response;
-using CPS.ComplexCases.API.Services;
+using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
 using Microsoft.AspNetCore.Http;
@@ -53,6 +53,7 @@ public class GetCase(ILogger<GetCase> logger,
             NetappFolderPath = caseResponse.NetappFolderPath,
             Urn = cmsResponse.Urn,
             OperationName = cmsResponse.OperationName,
+            ActiveTransferId = caseResponse.ActiveTransferId,
         };
 
         return new OkObjectResult(response);
