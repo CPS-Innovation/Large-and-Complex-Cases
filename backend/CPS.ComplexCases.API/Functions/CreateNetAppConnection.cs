@@ -9,10 +9,10 @@ using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.Data.Models.Requests;
-using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.Common.Helpers;
+using CPS.ComplexCases.Common.Services;
 
 namespace CPS.ComplexCases.API.Functions;
 

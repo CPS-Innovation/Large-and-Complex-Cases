@@ -2,7 +2,7 @@
 using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.Data.Models.Requests;
 
-namespace CPS.ComplexCases.API.Services;
+namespace CPS.ComplexCases.Common.Services;
 
 public interface ICaseMetadataService
 {
@@ -12,4 +12,5 @@ public interface ICaseMetadataService
   Task<IEnumerable<CaseMetadata>> GetCaseMetadataForEgressWorkspaceIdsAsync(IEnumerable<string> egressWorkspaceIds);
   Task<CaseMetadata?> GetCaseMetadataForCaseIdAsync(int caseId);
   Task<IEnumerable<CaseMetadata>> GetCaseMetadataForNetAppFolderPathsAsync(IEnumerable<string> netAppFolderPaths);
+  Task UpdateActiveTransferIdAsync(int caseId, Guid? activeTransferId);
 }

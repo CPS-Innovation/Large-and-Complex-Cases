@@ -15,5 +15,6 @@ public class CaseMetadataConfiguration : IEntityTypeConfiguration<CaseMetadata>
     builder.Property(x => x.CaseId).HasColumnName("case_id").IsRequired();
     builder.Property(x => x.EgressWorkspaceId).HasColumnName("egress_workspace_id").HasMaxLength(200);
     builder.Property(x => x.NetappFolderPath).HasColumnName("netapp_folder_path").HasMaxLength(260);
+    builder.Property(x => x.ActiveTransferId).HasColumnName("active_transfer_id");
   }
 }

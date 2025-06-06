@@ -4,7 +4,7 @@ using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.Data.Repositories;
 using Microsoft.Extensions.Logging;
 
-namespace CPS.ComplexCases.API.Services;
+namespace CPS.ComplexCases.Common.Services;
 
 public class CaseMetadataService : ICaseMetadataService
 {
@@ -129,6 +129,30 @@ public class CaseMetadataService : ICaseMetadataService
     catch (Exception ex)
     {
       _logger.LogError(ex, "Error retrieving metadata for multiple NetApp folder paths");
+      throw;
+    }
+  }
+
+  public async Task UpdateActiveTransferIdAsync(int caseId, Guid? activeTransferId)
+  {
+    _logger.LogInformation("Updating active transfer ID for case {CaseId}", caseId);
+    try
+    {
+      var existingMetadata = await _caseMetadataRepository.GetByCaseIdAsync(caseId);
+
+      if (existingMetadata != null)
+      {
+        existingMetadata.ActiveTransferId = activeTransferId;
+        await _caseMetadataRepository.UpdateAsync(existingMetadata);
+      }
+      else
+      {
+        _logger.LogWarning("No metadata found for case {CaseId} to update active transfer ID", caseId);
+      }
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error updating active transfer ID for case {CaseId}", caseId);
       throw;
     }
   }
