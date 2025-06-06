@@ -236,7 +236,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         {
           folderName: getFolderNameFromPath(egressData[0].path),
           folderPath: egressData[0].path,
-          folderId: egressWorkspaceId!,
+          folderId: "",
         },
       ]);
   }, [egressPathFolders, egressData, egressWorkspaceId]);
