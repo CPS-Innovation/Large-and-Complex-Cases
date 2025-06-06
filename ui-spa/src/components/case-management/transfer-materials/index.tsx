@@ -231,11 +231,19 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   };
 
   useEffect(() => {
-    if (!egressPathFolders.length && egressData)
+    if (!egressPathFolders.length && egressData?.[0]?.path)
       setEgressPathFolders([
         {
           folderName: getFolderNameFromPath(egressData[0].path),
           folderPath: egressData[0].path,
+          folderId: "",
+        },
+      ]);
+    if (!egressPathFolders.length && egressData)
+      setEgressPathFolders([
+        {
+          folderName: "Home",
+          folderPath: "Home/",
           folderId: "",
         },
       ]);
