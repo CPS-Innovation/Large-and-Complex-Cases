@@ -28,8 +28,11 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
 
         try
         {
+            var sourceFileName = Path.GetFileName(payload.SourcePath.Path);
+            var fullDestinationPath = Path.Combine(payload.DestinationPath, sourceFileName);
+
             using var sourceStream = await sourceClient.OpenReadStreamAsync(payload.SourcePath.Path, payload.WorkspaceId, payload.SourcePath.FileId);
-            var session = await destinationClient.InitiateUploadAsync(payload.DestinationPath, sourceStream.Length, payload.WorkspaceId, payload.SourcePath.Path);
+            var session = await destinationClient.InitiateUploadAsync(fullDestinationPath, sourceStream.Length, payload.WorkspaceId, payload.SourcePath.Path);
 
             long totalSize = sourceStream.Length;
             long position = 0;
@@ -81,7 +84,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 await destinationClient.CompleteUploadAsync(session, etags: uploadedChunks);
             }
 
-            _logger.LogInformation("File transfer completed: {SourcePath} -> {DestinationPath}", payload.SourcePath.Path, payload.DestinationPath);
+            _logger.LogInformation("File transfer completed: {SourcePath} -> {DestinationPath}", payload.SourcePath.Path, fullDestinationPath);
             await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.AddSuccessfulItem));
         }
         catch (Exception ex)
