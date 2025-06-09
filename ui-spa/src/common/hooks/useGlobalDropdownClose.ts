@@ -23,11 +23,7 @@ export const useGlobalDropdownClose = (
         event.target &&
         panelRef.current.contains(event.target as Node);
 
-      const isTargetFlaggedAsExempt =
-        event.target instanceof HTMLElement &&
-        event.target.hasAttribute("data-prevent-global-close");
-
-      if (!(isTargetInsidePanel || isTargetFlaggedAsExempt)) {
+      if (!isTargetInsidePanel) {
         setButtonOpen(false);
         event.stopPropagation();
       }
