@@ -24,7 +24,7 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
         await _netAppClient.CompleteMultipartUploadAsync(arg);
     }
 
-    public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string? workspaceId = null, string? sourcePath = null)
+    public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string? workspaceId = null, string? sourcePath = null, TransferOverwritePolicy? overwritePolicy = null)
     {
         var arg = _netAppArgFactory.CreateInitiateMultipartUploadArg(_options.BucketName, destinationPath);
         var response = await _netAppClient.InitiateMultipartUploadAsync(arg);

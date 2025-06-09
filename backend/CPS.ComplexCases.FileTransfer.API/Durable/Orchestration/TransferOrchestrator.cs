@@ -41,6 +41,7 @@ public class TransferOrchestrator(IActivityLogService activityLogService)
                 TransferType = input.TransferType,
                 Direction = input.TransferDirection,
                 TotalFiles = input.SourcePaths.Count,
+                IsRetry = input.IsRetry ?? false,
             };
 
             await context.CallActivityAsync(

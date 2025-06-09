@@ -40,7 +40,7 @@ public class UpdateActivityLog(IActivityLogService activityLogService)
         var errorItems = entity.State.FailedItems.Select(x => new FileTransferError
         {
             Path = x.SourcePath,
-            ErrorCode = x.ErrorCode,
+            ErrorCode = x.ErrorCode.ToString(),
             ErrorMessage = x.ErrorMessage
         }).ToList();
 

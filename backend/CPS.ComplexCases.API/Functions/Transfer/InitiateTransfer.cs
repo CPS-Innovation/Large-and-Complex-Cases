@@ -42,6 +42,7 @@ public class InitiateTransfer(ILogger<InitiateTransfer> logger, IFileTransferCli
 
         var request = new TransferRequest
         {
+            IsRetry = transferRequest.Value.IsRetry ?? false,
             TransferType = transferRequest.Value.TransferType,
             DestinationPath = transferRequest.Value.DestinationPath,
             SourcePaths = transferRequest.Value.SourcePaths.Select((path) => new TransferSourcePath

@@ -29,7 +29,7 @@ public class EgressStorageClient(
         var response = await SendRequestAsync(_egressRequestFactory.GetWorkspaceDocumentRequest(arg, token));
         return await response.Content.ReadAsStreamAsync();
     }
-    public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string? workspaceId = null, string? sourcePath = null)
+    public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string? workspaceId = null, string? sourcePath = null, TransferOverwritePolicy? overwritePolicy = null)
     {
         var token = await GetWorkspaceToken();
 
