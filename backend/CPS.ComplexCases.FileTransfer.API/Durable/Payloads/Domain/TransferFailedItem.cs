@@ -7,6 +7,6 @@ public class TransferFailedItem
 {
     public required string SourcePath { get; set; }
     public TransferStatus Status { get; set; }
-    public string? ErrorCode { get; set; }
+    public TransferErrorCode ErrorCode { get; set; }
     public string? ErrorMessage { get; set; }
 }

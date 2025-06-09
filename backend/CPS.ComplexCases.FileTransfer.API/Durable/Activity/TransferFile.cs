@@ -6,6 +6,7 @@ using CPS.ComplexCases.FileTransfer.API.Durable.State;
 using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
+using CPS.ComplexCases.FileTransfer.API.Models.Domain.Exceptions;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask.Client;
 using Microsoft.DurableTask.Entities;
@@ -87,6 +88,20 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             _logger.LogInformation("File transfer completed: {SourcePath} -> {DestinationPath}", payload.SourcePath.Path, fullDestinationPath);
             await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.AddSuccessfulItem));
         }
+        catch (FileExistsException ex)
+        {
+            _logger.LogWarning(ex, "File already exists: {Path}", payload.SourcePath.Path);
+
+            var failedItem = new TransferFailedItem
+            {
+                SourcePath = payload.SourcePath.Path,
+                Status = TransferStatus.Failed,
+                ErrorCode = TransferErrorCode.FileExists,
+                ErrorMessage = ex.Message
+            };
+
+            await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.AddFailedItem), failedItem);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Transfer failed: {Path}", payload.SourcePath.Path);
@@ -95,7 +110,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             {
                 SourcePath = payload.SourcePath.Path,
                 Status = TransferStatus.Failed,
-                ErrorCode = "TRANSFER_ERROR",
+                ErrorCode = TransferErrorCode.GeneralError,
                 ErrorMessage = ex.Message
             };
 
