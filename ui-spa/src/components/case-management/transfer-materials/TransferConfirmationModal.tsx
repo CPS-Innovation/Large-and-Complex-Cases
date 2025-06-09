@@ -15,7 +15,6 @@ const TransferConfirmationModal: React.FC<TransferConfirmationModalProps> = ({
   groupedData,
   handleCloseModal,
 }) => {
-  console.log("transferAction>>>", transferAction);
   const getConfirmationText = () => {
     let folderText,
       fileText = "";

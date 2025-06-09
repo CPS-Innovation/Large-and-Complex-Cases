@@ -284,8 +284,6 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
   };
 
   const handleTransferAction = (id: string) => {
-    console.log("id>>>", id);
-    console.log("getActionDataFromId>>", getActionDataFromId(id));
     const { actionData, actionType } = getActionDataFromId(id);
     handleSelectedActionType({
       destinationFolder: {
@@ -299,7 +297,6 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
 
   const getInsetElement = () => {
     const curentFolder = egressPathFolders[egressPathFolders.length - 1];
-    console.log("curentFolder>>>", curentFolder);
     return (
       <InsetText>
         Transfer to {curentFolder.folderName}
