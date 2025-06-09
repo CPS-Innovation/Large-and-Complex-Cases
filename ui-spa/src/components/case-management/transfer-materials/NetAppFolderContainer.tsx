@@ -298,7 +298,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
   const getInsetElement = () => {
     const curentFolder = folders[folders.length - 1];
     return (
-      <InsetText>
+      <InsetText data-testId="netapp-inset-text">
         Transfer to {curentFolder.folderName}
         <LinkButton
           type="button"

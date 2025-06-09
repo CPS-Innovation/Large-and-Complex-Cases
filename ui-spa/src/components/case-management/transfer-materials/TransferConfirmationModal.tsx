@@ -61,7 +61,8 @@ const TransferConfirmationModal: React.FC<TransferConfirmationModalProps> = ({
     >
       <div>
         <div className={styles.modalHeader}>
-          Copy files to: {transferAction.destinationFolder.name}
+          {transferAction.actionType === "copy" ? "Copy" : "Move"} files to:{" "}
+          {transferAction.destinationFolder.name}
         </div>
         <div className={styles.modalContent}>
           <Checkboxes
