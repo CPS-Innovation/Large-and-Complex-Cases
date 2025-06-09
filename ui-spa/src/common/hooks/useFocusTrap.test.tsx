@@ -38,7 +38,6 @@ describe("useFocusTrap hook", () => {
 
   it("Should trap the focus within the Modal for tab and shift+tab keypress", async () => {
     testSetUp();
-    // const user = userEvent;
 
     const openModalButtonElement = screen.getByText("Open Modal");
     openModalButtonElement.focus();
@@ -47,30 +46,23 @@ describe("useFocusTrap hook", () => {
     vi.advanceTimersByTime(10);
     //tab case
     expect(screen.getByText("Close Modal")).toHaveFocus();
-    // const abc = screen.getByText("testLink 1");
+    act(() => userEvent.tab());
+    await expect(screen.getByText("testLink 1")).toHaveFocus();
+    act(() => userEvent.tab());
+    expect(screen.getByText("testLink 2")).toHaveFocus();
+    act(() => userEvent.tab());
+    expect(screen.getByText("Close Modal")).toHaveFocus();
     act(() => userEvent.tab());
 
-    // // await user.tab();
-    // // user.tab();
-
-    // console.log("screen", screen.focus);
-
-    await expect(screen.getByText("testLink 1")).toHaveFocus();
-    // act(() => user.tab());
-    // expect(screen.getByText("testLink 2")).toHaveFocus();
-    // act(() => user.tab());
-    // expect(screen.getByText("Close Modal")).toHaveFocus();
-    // act(() => user.tab());
-
     // //shift+tab case
-    // expect(screen.getByText("testLink 1")).toHaveFocus();
-    // user.tab({ shift: true });
-    // expect(screen.getByText("Close Modal")).toHaveFocus();
-    // user.tab({ shift: true });
-    // expect(screen.getByText("testLink 2")).toHaveFocus();
-    // user.tab({ shift: true });
-    // expect(screen.getByText("testLink 1")).toHaveFocus();
-    // user.tab({ shift: true });
-    // expect(screen.getByText("Close Modal")).toHaveFocus();
+    expect(screen.getByText("testLink 1")).toHaveFocus();
+    act(() => userEvent.tab({ shift: true }));
+    expect(screen.getByText("Close Modal")).toHaveFocus();
+    act(() => userEvent.tab({ shift: true }));
+    expect(screen.getByText("testLink 2")).toHaveFocus();
+    act(() => userEvent.tab({ shift: true }));
+    expect(screen.getByText("testLink 1")).toHaveFocus();
+    act(() => userEvent.tab({ shift: true }));
+    expect(screen.getByText("Close Modal")).toHaveFocus();
   });
 });
