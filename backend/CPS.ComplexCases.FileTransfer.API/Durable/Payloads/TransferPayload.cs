@@ -13,4 +13,5 @@ public class TransferPayload
     public required List<TransferSourcePath> SourcePaths { get; set; }
     public required string DestinationPath { get; set; }
     public required string WorkspaceId { get; set; }
+    public bool? IsRetry { get; set; } = false;
 }
