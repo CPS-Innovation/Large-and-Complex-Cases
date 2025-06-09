@@ -56,8 +56,9 @@ const TransferConfirmationModal: React.FC<TransferConfirmationModalProps> = ({
       className={styles.transferConfirmationModal}
       handleClose={handleCloseModal}
       type="alert"
-      ariaLabel="Document saving alert modal"
-      ariaDescription="Saving updated document to CMS"
+      ariaLabel="Transfer confirmation alert modal"
+      ariaDescription={` ${transferAction.actionType === "copy" ? "Copy" : "Move"} files to:{" "}
+          ${transferAction.destinationFolder.name}`}
     >
       <div>
         <div className={styles.modalHeader}>

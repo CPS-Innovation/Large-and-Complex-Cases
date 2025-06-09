@@ -24,10 +24,6 @@ export const Modal: React.FC<Props> = ({
   className,
   defaultLastFocusId,
 }) => {
-  // govuk styling seems to lead to the html element being the thing
-  //  that scrolls rather than body.  We want to prevent the main content
-  //  scrolling when we scroll the modal content.
-  //  todo: not especially pure/functional!
   const htmlElement = document.getElementsByTagName("html")[0];
   if (isVisible) {
     htmlElement.classList.add(classes.stopHtmlScroll);
