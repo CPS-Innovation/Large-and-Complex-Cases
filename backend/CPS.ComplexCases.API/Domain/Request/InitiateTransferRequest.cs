@@ -17,6 +17,8 @@ public class InitiateTransferRequest
     public required int CaseId { get; set; }
     [JsonPropertyName("workspaceId")]
     public required string WorkspaceId { get; set; }
+    [JsonPropertyName("isRetry")]
+    public bool? IsRetry { get; set; } = false;
 }
 
 public class SourcePath
@@ -25,4 +27,8 @@ public class SourcePath
     public required string Path { get; set; }
     [JsonPropertyName("fileId")]
     public string? FileId { get; set; }
+    [JsonPropertyName("overwritePolicy")]
+    public string? OverwritePolicy { get; set; }
+    [JsonPropertyName("renamePattern")]
+    public string? RenamePattern { get; set; }
 }

@@ -39,6 +39,7 @@ public class InitiateTransfer
 
         if (!transferRequest.IsValid)
         {
+            _logger.LogWarning("Invalid transfer request: {Errors}", transferRequest.ValidationErrors);
             return new BadRequestObjectResult(transferRequest.ValidationErrors);
         }
 
