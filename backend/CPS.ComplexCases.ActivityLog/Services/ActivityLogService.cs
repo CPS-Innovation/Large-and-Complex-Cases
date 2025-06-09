@@ -95,20 +95,17 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
         }
     }
 
-    public Task<JsonDocument?> ConvertToJsonDocument<T>(T data)
+    public JsonDocument? ConvertToJsonDocument<T>(T data)
     {
-        return Task.Run(() =>
+        try
         {
-            try
-            {
-                return JsonDocument.Parse(JsonSerializer.Serialize(data));
-            }
-            catch (JsonException ex)
-            {
-                _logger.LogError(ex, "Error converting data to JsonDocument");
-                return null;
-            }
-        });
+            return JsonDocument.Parse(JsonSerializer.Serialize(data));
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Error converting data to JsonDocument");
+            return null;
+        }
     }
 
     private static string SetDescription(ActionType actionType, string? resourceName)
