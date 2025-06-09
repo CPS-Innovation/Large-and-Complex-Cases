@@ -28,7 +28,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
 
         try
         {
-            var sourceFileName = Path.GetFileName(payload.SourcePath.Path);
+            var sourceFileName = string.IsNullOrEmpty(payload.SourcePath.ModifiedPath) ? Path.GetFileName(payload.SourcePath.Path) : Path.GetFileName(payload.SourcePath.ModifiedPath);
             var fullDestinationPath = Path.Combine(payload.DestinationPath, sourceFileName);
 
             using var sourceStream = await sourceClient.OpenReadStreamAsync(payload.SourcePath.Path, payload.WorkspaceId, payload.SourcePath.FileId);
