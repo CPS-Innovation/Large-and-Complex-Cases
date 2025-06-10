@@ -237,6 +237,28 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
         }
     }
 
+    public async Task<bool> DoesObjectExistAsync(GetObjectArg arg)
+    {
+        try
+        {
+            var response = await _client.GetObjectMetadataAsync(new GetObjectMetadataRequest
+            {
+                BucketName = arg.BucketName,
+                Key = arg.ObjectKey
+            });
+            return response.HttpStatusCode == System.Net.HttpStatusCode.OK;
+        }
+        catch (AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return false;
+        }
+        catch (AmazonS3Exception ex)
+        {
+            _logger.LogError(ex, "Failed to check if object {ObjectKey} exists in bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
+            return false;
+        }
+    }
+
     private static async Task<SessionAWSCredentials> GetTemporaryCredentialsAsync(string accessKey, string secretKey)
     {
         using (var stsClient = new AmazonSecurityTokenServiceClient(accessKey, secretKey))

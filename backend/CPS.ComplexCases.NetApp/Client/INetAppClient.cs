@@ -17,5 +17,6 @@ namespace CPS.ComplexCases.NetApp.Client
         Task<InitiateMultipartUploadResponse?> InitiateMultipartUploadAsync(InitiateMultipartUploadArg arg);
         Task<UploadPartResponse?> UploadPartAsync(UploadPartArg arg);
         Task<CompleteMultipartUploadResponse?> CompleteMultipartUploadAsync(CompleteMultipartUploadArg arg);
+        Task<bool> DoesObjectExistAsync(GetObjectArg arg);
     }
 }

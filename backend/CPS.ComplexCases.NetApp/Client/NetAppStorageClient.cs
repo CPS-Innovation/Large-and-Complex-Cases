@@ -4,6 +4,8 @@ using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
+using CPS.ComplexCases.NetApp.Models.Args;
+using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
@@ -27,6 +29,19 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
     public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string? workspaceId = null, string? sourcePath = null, TransferOverwritePolicy? overwritePolicy = null)
     {
         var arg = _netAppArgFactory.CreateInitiateMultipartUploadArg(_options.BucketName, destinationPath);
+        if (overwritePolicy == null)
+        {
+            var objectExists = await _netAppClient.DoesObjectExistAsync(new GetObjectArg
+            {
+                BucketName = arg.BucketName,
+                ObjectKey = destinationPath
+            });
+
+            if (objectExists)
+            {
+                throw new FileExistsException($"Object {destinationPath} already exists.");
+            }
+        }
         var response = await _netAppClient.InitiateMultipartUploadAsync(arg);
 
         return new UploadSession

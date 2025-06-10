@@ -213,6 +213,17 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
         };
     }
 
+    public async Task<bool> DoesObjectExistAsync(GetObjectArg arg)
+    {
+        var response = await SendRequestAsync<GetObjectAttributesOutput>(_netAppMockHttpRequestFactory.GetObjectAttributesRequest(arg));
+
+        if (response != null && !string.IsNullOrEmpty(response.ETag))
+        {
+            return true;
+        }
+        return false;
+    }
+
     private async Task<T> SendRequestAsync<T>(HttpRequestMessage request)
     {
         using var response = await SendRequestAsync(request);

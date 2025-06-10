@@ -120,4 +120,13 @@ public class NetAppMockHttpRequestFactory : INetAppMockHttpRequestFactory
 
         return request;
     }
+
+    public HttpRequestMessage GetObjectAttributesRequest(GetObjectArg arg)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, $"{arg.BucketName}/{arg.ObjectKey}?attributes");
+        request.Headers.Add(S3Constants.HostHeaderName, arg.BucketName);
+        request.Headers.Add(S3Constants.ObjectAttributesHeaderName, "ETag");
+
+        return request;
+    }
 }
