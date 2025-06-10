@@ -1,5 +1,6 @@
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
@@ -80,9 +81,19 @@ public class TransferOrchestrator(IActivityLogService activityLogService)
                     WorkspaceId = input.WorkspaceId,
                 };
 
-                tasks.Add(context.CallActivityAsync(
-                    nameof(TransferFile),
-                    transferFilePayload));
+                if (sourcePath.OverwritePolicy != TransferOverwritePolicy.Ignore)
+                {
+                    tasks.Add(context.CallActivityAsync(
+                        nameof(TransferFile),
+                        transferFilePayload));
+                }
+                else
+                {
+                    logger.LogInformation(
+                        "Skipping transfer for {SourcePath} due to OverwritePolicy.Ignore",
+                        sourcePath.Path);
+                }
+
             }
             await Task.WhenAll(tasks);
 

@@ -5,6 +5,7 @@ using AutoFixture;
 using AutoFixture.AutoMoq;
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
+using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
@@ -140,7 +141,7 @@ public class EgressStorageClientTests
     }
 
     [Fact]
-    public async Task InitiateUploadAsync_WithValidParameters_ReturnsUploadSession()
+    public async Task InitiateUploadAsync_WithOverwritePolicyOverwrite_SkipsFileExistenceCheck()
     {
         // Arrange
         var destinationPath = _fixture.Create<string>();
@@ -166,7 +167,12 @@ public class EgressStorageClientTests
         );
 
         // Act
-        var result = await _client.InitiateUploadAsync(destinationPath, fileSize, workspaceId, sourcePath);
+        var result = await _client.InitiateUploadAsync(
+            destinationPath,
+            fileSize,
+            workspaceId,
+            sourcePath,
+            TransferOverwritePolicy.Overwrite);
 
         // Assert
         using (new AssertionScope())
@@ -179,50 +185,159 @@ public class EgressStorageClientTests
 
         VerifyTokenRequest();
         VerifyCreateUploadRequest(destinationPath, fileSize, workspaceId, "testfile.txt", token);
+        _requestFactoryMock.Verify(
+            f => f.ListEgressMaterialRequest(It.IsAny<ListWorkspaceMaterialArg>(), It.IsAny<string>()),
+            Times.Never);
     }
 
     [Fact]
-    public async Task InitiateUploadAsync_WithNullWorkspaceId_ThrowsArgumentNullException()
-    {
-        // Arrange
-        var destinationPath = _fixture.Create<string>();
-        var fileSize = _fixture.Create<long>();
-        var sourcePath = _fixture.Create<string>();
-        var token = _fixture.Create<string>();
-
-        var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
-
-        SetupTokenRequest(token);
-        SetupHttpMockResponses(("token", tokenResponse));
-
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<ArgumentNullException>(
-            () => _client.InitiateUploadAsync(destinationPath, fileSize, null, sourcePath));
-
-        exception.ParamName.Should().Be("workspaceId");
-        exception.Message.Should().Contain("Workspace ID cannot be null.");
-    }
-
-    [Fact]
-    public async Task InitiateUploadAsync_WithNullSourcePath_ThrowsArgumentNullException()
+    public async Task InitiateUploadAsync_WithoutOverwritePolicy_FileDoesNotExist_Succeeds()
     {
         // Arrange
         var destinationPath = _fixture.Create<string>();
         var fileSize = _fixture.Create<long>();
         var workspaceId = _fixture.Create<string>();
+        var sourcePath = "/path/to/testfile.txt";
+        var token = _fixture.Create<string>();
+        var uploadId = _fixture.Create<string>();
+        var md5Hash = _fixture.Create<string>();
+
+        var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
+        var listResponse = new ListCaseMaterialResponse
+        {
+            Data = new List<ListCaseMaterialDataResponse>(),
+            DataInfo = new DataInfoResponse()
+        };
+        var uploadResponse = new CreateUploadResponse
+        {
+            Id = uploadId,
+            Md5Hash = md5Hash
+        };
+
+        SetupTokenRequest(token);
+        SetupListMaterialRequest(workspaceId, destinationPath, token);
+        SetupCreateUploadRequest(destinationPath, fileSize, workspaceId, "testfile.txt", token);
+        SetupHttpMockResponses(
+            ("token", tokenResponse),
+            ("list", listResponse),
+            ("upload", uploadResponse)
+        );
+
+        // Act
+        var result = await _client.InitiateUploadAsync(destinationPath, fileSize, workspaceId, sourcePath);
+
+        // Assert
+        using (new AssertionScope())
+        {
+            result.Should().NotBeNull();
+            result.UploadId.Should().Be(uploadId);
+            result.WorkspaceId.Should().Be(workspaceId);
+            result.Md5Hash.Should().Be(md5Hash);
+        }
+
+        VerifyTokenRequest();
+        VerifyListMaterialRequest(workspaceId, destinationPath, token);
+        VerifyCreateUploadRequest(destinationPath, fileSize, workspaceId, "testfile.txt", token);
+    }
+
+    [Fact]
+    public async Task InitiateUploadAsync_WithoutOverwritePolicy_FileExists_ThrowsFileExistsException()
+    {
+        // Arrange
+        var destinationPath = _fixture.Create<string>();
+        var fileSize = _fixture.Create<long>();
+        var workspaceId = _fixture.Create<string>();
+        var sourcePath = "/path/to/testfile.txt";
         var token = _fixture.Create<string>();
 
         var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
+        var listResponse = new ListCaseMaterialResponse
+        {
+            Data = new List<ListCaseMaterialDataResponse>
+        {
+            new ListCaseMaterialDataResponse
+            {
+                Id = _fixture.Create<string>(),
+                FileName = "testfile.txt",
+                Path = destinationPath,
+                IsFolder = false,
+                Version = 1
+            },
+            new ListCaseMaterialDataResponse
+            {
+                Id = _fixture.Create<string>(),
+                FileName = "otherfile.txt",
+                Path = destinationPath,
+                IsFolder = false,
+                Version = 1
+            }
+        },
+            DataInfo = new DataInfoResponse()
+        };
 
         SetupTokenRequest(token);
-        SetupHttpMockResponses(("token", tokenResponse));
+        SetupListMaterialRequest(workspaceId, destinationPath, token);
+        SetupHttpMockResponses(
+            ("token", tokenResponse),
+            ("list", listResponse)
+        );
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<ArgumentNullException>(
-            () => _client.InitiateUploadAsync(destinationPath, fileSize, workspaceId, null));
+        var exception = await Assert.ThrowsAsync<FileExistsException>(
+            () => _client.InitiateUploadAsync(destinationPath, fileSize, workspaceId, sourcePath));
 
-        exception.ParamName.Should().Be("sourcePath");
-        exception.Message.Should().Contain("FileName path cannot be null.");
+        exception.Message.Should().Contain("File 'testfile.txt' already exists in the destination path");
+        exception.Message.Should().Contain(destinationPath);
+
+        VerifyTokenRequest();
+        VerifyListMaterialRequest(workspaceId, destinationPath, token);
+        _requestFactoryMock.Verify(
+            f => f.CreateUploadRequest(It.IsAny<CreateUploadArg>(), It.IsAny<string>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task InitiateUploadAsync_WithoutOverwritePolicy_FileExistsCaseInsensitive_ThrowsFileExistsException()
+    {
+        // Arrange
+        var destinationPath = _fixture.Create<string>();
+        var fileSize = _fixture.Create<long>();
+        var workspaceId = _fixture.Create<string>();
+        var sourcePath = "/path/to/TestFile.txt";
+        var token = _fixture.Create<string>();
+
+        var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
+        var listResponse = new ListCaseMaterialResponse
+        {
+            Data = new List<ListCaseMaterialDataResponse>
+        {
+            new ListCaseMaterialDataResponse
+            {
+                Id = _fixture.Create<string>(),
+                FileName = "testfile.txt",
+                Path = destinationPath,
+                IsFolder = false,
+                Version = 1
+            }
+        },
+            DataInfo = new DataInfoResponse()
+        };
+
+        SetupTokenRequest(token);
+        SetupListMaterialRequest(workspaceId, destinationPath, token);
+        SetupHttpMockResponses(
+            ("token", tokenResponse),
+            ("list", listResponse)
+        );
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<FileExistsException>(
+            () => _client.InitiateUploadAsync(destinationPath, fileSize, workspaceId, sourcePath));
+
+        exception.Message.Should().Contain("File 'TestFile.txt' already exists in the destination path");
+
+        VerifyTokenRequest();
+        VerifyListMaterialRequest(workspaceId, destinationPath, token);
     }
 
     [Fact]
@@ -404,6 +519,16 @@ public class EgressStorageClientTests
             .Returns(new HttpRequestMessage(HttpMethod.Post, $"{TestUrl}/api/v1/uploads/{uploadId}/complete"));
     }
 
+    private void SetupListMaterialRequest(string workspaceId, string path, string token)
+    {
+        _requestFactoryMock
+            .Setup(f => f.ListEgressMaterialRequest(
+                It.Is<ListWorkspaceMaterialArg>(arg =>
+                    arg.WorkspaceId == workspaceId && arg.Path == path),
+                token))
+            .Returns(new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/workspaces/{workspaceId}/materials"));
+    }
+
     #endregion
 
     #region Verify Methods
@@ -459,6 +584,16 @@ public class EgressStorageClientTests
                     arg.UploadId == uploadId &&
                     arg.WorkspaceId == workspaceId &&
                     arg.Md5Hash == md5Hash),
+                token),
+            Times.Once);
+    }
+
+    private void VerifyListMaterialRequest(string workspaceId, string path, string token)
+    {
+        _requestFactoryMock.Verify(
+            f => f.ListEgressMaterialRequest(
+                It.Is<ListWorkspaceMaterialArg>(arg =>
+                    arg.WorkspaceId == workspaceId && arg.Path == path),
                 token),
             Times.Once);
     }

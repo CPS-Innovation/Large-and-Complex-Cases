@@ -40,6 +40,11 @@ public class EgressRequestFactory : IEgressRequestFactory
       relativeUrl.Append($"&folder={arg.FolderId}");
     }
 
+    if (!string.IsNullOrEmpty(arg.Path))
+    {
+      relativeUrl.Append($"&path={arg.Path}");
+    }
+
     var request = new HttpRequestMessage(HttpMethod.Get, relativeUrl.ToString());
 
     AppendToken(request, token);
