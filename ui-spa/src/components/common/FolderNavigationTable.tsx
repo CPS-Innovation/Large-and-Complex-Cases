@@ -48,7 +48,7 @@ const FolderNavigationTable: React.FC<FolderNavigationTableProps> = ({
     );
   }, [folderResultsStatus, showInsetElement, getInsetElement]);
   return (
-    <div className={styles.results} data-testId={`${tableName}-table-wrapper`}>
+    <div className={styles.results} data-testid={`${tableName}-table-wrapper`}>
       <div>
         {
           <FolderPath

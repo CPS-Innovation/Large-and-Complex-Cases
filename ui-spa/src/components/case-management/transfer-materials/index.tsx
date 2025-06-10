@@ -163,7 +163,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
             ? styles.sourceContainer
             : styles.destinationContainer
         }
-        data-testId="egress-container"
+        data-testid="egress-container"
       >
         <div className={styles.titleWrapper}>
           <h3>Egress Inbound documents</h3>
@@ -205,7 +205,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
             ? styles.sourceContainer
             : styles.destinationContainer
         }
-        data-testId="netapp-container"
+        data-testid="netapp-container"
       >
         <div className={styles.titleWrapper}>
           <h3>Shared drive</h3>
@@ -325,7 +325,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       </div>
       <div
         className={styles.mainContainer}
-        data-testId="transfer-main-container"
+        data-testid="transfer-main-container"
       >
         {transferSource === "egress" ? (
           <>

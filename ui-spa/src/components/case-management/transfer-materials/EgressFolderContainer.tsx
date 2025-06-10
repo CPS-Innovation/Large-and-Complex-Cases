@@ -298,7 +298,7 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
   const getInsetElement = () => {
     const curentFolder = egressPathFolders[egressPathFolders.length - 1];
     return (
-      <InsetText data-testId="egress-inset-text">
+      <InsetText data-testid="egress-inset-text">
         Transfer to {curentFolder.folderName}
         <LinkButton
           type="button"
