@@ -35,7 +35,7 @@ test.describe("transfer material netapp list", () => {
       page.getByTestId("tab-content-transfer-materials").locator("h2"),
     ).toHaveText("Transfer folders and files between shared drive and egress");
     const netappTableWrapper = page.getByTestId("netapp-table-wrapper");
-    await validateFolderPath(page, ["Home"]);
+    await validateFolderPath(page, ["netapp"]);
     const tableHeadValues = await netappTableWrapper
       .locator("table thead tr:nth-child(1) th")
       .allTextContents();
@@ -83,7 +83,7 @@ test.describe("transfer material netapp list", () => {
       page.getByTestId("netapp-folder-table-loader"),
     ).not.toBeVisible();
     const netappTableWrapper = page.getByTestId("netapp-table-wrapper");
-    await validateFolderPath(page, ["Home"]);
+    await validateFolderPath(page, ["netapp"]);
     const tableHeadValues = await netappTableWrapper
       .locator("table thead tr:nth-child(1) th")
       .allTextContents();
@@ -127,7 +127,7 @@ test.describe("transfer material netapp list", () => {
     ).not.toBeVisible();
 
     const netappTableWrapper = page.getByTestId("netapp-table-wrapper");
-    await validateFolderPath(page, ["Home"]);
+    await validateFolderPath(page, ["netapp"]);
     await netappTableWrapper.locator('role=button[name="folder-1-0"]').click();
     await expect(page.getByTestId("netapp-folder-table-loader")).toBeVisible();
     await expect(
@@ -136,7 +136,7 @@ test.describe("transfer material netapp list", () => {
     await expect(
       page.getByTestId("netapp-folder-table-loader"),
     ).not.toBeVisible();
-    await validateFolderPath(page, ["Home", "folder-1-0"]);
+    await validateFolderPath(page, ["netapp", "folder-1-0"]);
     await netappTableWrapper.locator('role=button[name="folder-2-0"]').click();
     await expect(page.getByTestId("netapp-folder-table-loader")).toBeVisible();
     await expect(
@@ -145,7 +145,7 @@ test.describe("transfer material netapp list", () => {
     await expect(
       page.getByTestId("netapp-folder-table-loader"),
     ).not.toBeVisible();
-    await validateFolderPath(page, ["Home", "folder-1-0", "folder-2-0"]);
+    await validateFolderPath(page, ["netapp", "folder-1-0", "folder-2-0"]);
     await netappTableWrapper.locator('role=button[name="folder-3-0"]').click();
     await expect(page.getByTestId("netapp-folder-table-loader")).toBeVisible();
     await expect(
@@ -155,7 +155,7 @@ test.describe("transfer material netapp list", () => {
       page.getByTestId("netapp-folder-table-loader"),
     ).not.toBeVisible();
     await netappTableWrapper.locator('role=button[name="folder-1-0"]').click();
-    await validateFolderPath(page, ["Home", "folder-1-0"]);
+    await validateFolderPath(page, ["netapp", "folder-1-0"]);
     await netappTableWrapper.locator('role=button[name="folder-2-1"]').click();
     await expect(page.getByTestId("netapp-folder-table-loader")).toBeVisible();
     await expect(
@@ -164,7 +164,7 @@ test.describe("transfer material netapp list", () => {
     await expect(
       page.getByTestId("netapp-folder-table-loader"),
     ).not.toBeVisible();
-    await validateFolderPath(page, ["Home", "folder-1-0", "folder-2-1"]);
+    await validateFolderPath(page, ["netapp", "folder-1-0", "folder-2-1"]);
     await netappTableWrapper.locator('role=button[name="folder-3-1"]').click();
     await expect(page.getByTestId("netapp-folder-table-loader")).toBeVisible();
     await expect(
@@ -174,7 +174,7 @@ test.describe("transfer material netapp list", () => {
       page.getByTestId("netapp-folder-table-loader"),
     ).not.toBeVisible();
     await validateFolderPath(page, [
-      "Home",
+      "netapp",
       "folder-1-0",
       "folder-2-1",
       "folder-3-1",
@@ -187,15 +187,15 @@ test.describe("transfer material netapp list", () => {
     await expect(
       page.getByTestId("netapp-folder-table-loader"),
     ).not.toBeVisible();
-    await validateFolderPath(page, ["Home", "folder-1-0", "folder-2-1"]);
+    await validateFolderPath(page, ["netapp", "folder-1-0", "folder-2-1"]);
     await expect(page.locator('role=button[name="folder-3-0"]')).toBeVisible();
     await expect(page.locator('role=button[name="folder-3-1"]')).toBeVisible();
-    await netappTableWrapper.locator('role=button[name="Home"]').click();
+    await netappTableWrapper.locator('role=button[name="netapp"]').click();
     await expect(page.getByTestId("netapp-folder-table-loader")).toBeVisible();
     await expect(
       page.getByText(`Loading folders from Shared drive`),
     ).toBeVisible();
-    await validateFolderPath(page, ["Home"]);
+    await validateFolderPath(page, ["netapp"]);
     await expect(page.locator('role=button[name="folder-1-0"]')).toBeVisible();
     await expect(page.locator('role=button[name="folder-1-1"]')).toBeVisible();
   });
@@ -230,7 +230,7 @@ test.describe("transfer material netapp list", () => {
     await expect(
       page.getByTestId("netapp-folder-table-loader"),
     ).not.toBeVisible();
-    await validateFolderPath(page, ["Home"]);
+    await validateFolderPath(page, ["netapp"]);
     await expect(
       page
         .getByTestId("netapp-container")
