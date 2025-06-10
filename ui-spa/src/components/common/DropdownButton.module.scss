@@ -1,0 +1,101 @@
+.dropDownButtonWrapper {
+  position: relative;
+}
+
+.dropDownButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  svg {
+    fill: #1d70b8;
+  }
+  &:focus {
+    svg {
+      fill: #000;
+    }
+  }
+  &:disabled {
+    cursor: not-allowed;
+    svg {
+      fill: #b1b4b6;
+    }
+  }
+  &:hover:not(:disabled):not(:focus) {
+    svg {
+      fill: #1d70b8;
+    }
+  }
+}
+.upArrow {
+  svg {
+    transform: rotate(-180deg);
+  }
+}
+
+.panel {
+  position: absolute;
+  top: 2.375rem;
+  width: 200px;
+  right: 0;
+  border-bottom-left-radius: 0.3125rem;
+  border-bottom-right-radius: 0.3125rem;
+  background: #fff;
+  z-index: 7;
+  overflow-y: auto;
+  max-height: 31.25rem;
+  filter: drop-shadow(0 1px 0.15rem #000);
+}
+
+.panelList {
+  display: flex;
+  white-space: nowrap;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-end;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.panelListWithSeparator {
+  & li:last-child {
+    border-top: 1px solid #b1b4b6;
+  }
+}
+
+.panelListItem {
+  width: 100%;
+  & button {
+    margin: 0;
+    text-align: right;
+    font-size: 1.1875rem;
+    padding: 0.75rem;
+    width: 100%;
+    color: #1d70b8;
+  }
+  & :hover:not(:disabled):not(:focus) {
+    color: #1d70b8;
+    background: #ddd;
+  }
+  & button:disabled {
+    cursor: not-allowed;
+    color: #b1b4b6;
+  }
+}
+
+.dropdownBtnName {
+  padding-right: 0.625rem;
+  font-size: 1.1875rem;
+}
+
+.btnWithText {
+  display: flex;
+  color: #1d70b8;
+  background: #fff;
+  svg {
+    fill: #1d70b8;
+    scale: 0.75;
+  }
+}
