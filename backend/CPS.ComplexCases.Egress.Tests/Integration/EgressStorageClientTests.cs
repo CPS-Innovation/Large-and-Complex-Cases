@@ -1,5 +1,6 @@
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
+using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
@@ -23,7 +24,8 @@ public class EgressStorageClientTests : IDisposable
             .LoadMappings(
                 new CaseDocumentMapping(),
                 new CreateUploadMapping(),
-                new WorkspaceTokenMapping()
+                new WorkspaceTokenMapping(),
+                new CaseMaterialMapping()
             );
 
         var egressOptions = new EgressOptions
@@ -98,7 +100,6 @@ public class EgressStorageClientTests : IDisposable
         Assert.Equal("fileId", exception.ParamName);
         Assert.Contains("File ID cannot be null", exception.Message);
     }
-
     [Fact]
     public async Task InitiateUploadAsync_ShouldReturnUploadSession()
     {
@@ -110,6 +111,71 @@ public class EgressStorageClientTests : IDisposable
 
         // Act
         var result = await _client.InitiateUploadAsync(destinationPath, fileSize, workspaceId, sourcePath);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("mock-upload-id-12345", result.UploadId);
+        Assert.Equal(workspaceId, result.WorkspaceId);
+        Assert.Equal("d41d8cd98f00b204e9800998ecf8427e", result.Md5Hash);
+    }
+
+    [Fact]
+    public async Task InitiateUploadAsync_WithOverwritePolicy_ShouldReturnUploadSession()
+    {
+        // Arrange
+        const string destinationPath = "/uploads/test";
+        const long fileSize = 1024;
+        const string workspaceId = "workspace-id";
+        const string sourcePath = "/local/test-file.txt";
+
+        // Act
+        var result = await _client.InitiateUploadAsync(
+            destinationPath,
+            fileSize,
+            workspaceId,
+            sourcePath,
+            TransferOverwritePolicy.Overwrite);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("mock-upload-id-12345", result.UploadId);
+        Assert.Equal(workspaceId, result.WorkspaceId);
+        Assert.Equal("d41d8cd98f00b204e9800998ecf8427e", result.Md5Hash);
+    }
+
+    [Fact]
+    public async Task InitiateUploadAsync_FileExists_ShouldThrowFileExistsException()
+    {
+        // Arrange
+        const string destinationPath = "/uploads/test";
+        const long fileSize = 1024;
+        const string workspaceId = "workspace-file-exists";
+        const string sourcePath = "/local/test-file.txt";
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<FileExistsException>(
+            () => _client.InitiateUploadAsync(destinationPath, fileSize, workspaceId, sourcePath));
+
+        Assert.Contains("File 'test-file.txt' already exists", exception.Message);
+        Assert.Contains(destinationPath, exception.Message);
+    }
+
+    [Fact]
+    public async Task InitiateUploadAsync_FileExistsWithOverwritePolicy_ShouldSucceed()
+    {
+        // Arrange
+        const string destinationPath = "/uploads/test";
+        const long fileSize = 1024;
+        const string workspaceId = "workspace-file-exists";
+        const string sourcePath = "/local/test-file.txt";
+
+        // Act 
+        var result = await _client.InitiateUploadAsync(
+            destinationPath,
+            fileSize,
+            workspaceId,
+            sourcePath,
+            TransferOverwritePolicy.Overwrite);
 
         // Assert
         Assert.NotNull(result);
@@ -149,6 +215,7 @@ public class EgressStorageClientTests : IDisposable
         Assert.Equal("sourcePath", exception.ParamName);
         Assert.Contains("FileName path cannot be null", exception.Message);
     }
+
 
     [Fact]
     public async Task UploadChunkAsync_ShouldReturnUploadChunkResult()
@@ -255,7 +322,7 @@ public class EgressStorageClientTests : IDisposable
         const string md5Hash = "d41d8cd98f00b204e9800998ecf8427e";
 
         // Act
-        // Step 1: Initiate upload
+        // Step 1: Initiate upload (will check for existing files and find none)
         var session = await _client.InitiateUploadAsync(destinationPath, fileSize, workspaceId, sourcePath);
         Assert.NotNull(session);
         Assert.NotNull(session.UploadId);
@@ -270,5 +337,40 @@ public class EgressStorageClientTests : IDisposable
 
         // Assert - No exceptions thrown indicates success
         Assert.True(true, "Full upload workflow completed successfully");
+    }
+
+    [Fact]
+    public async Task FullUploadWorkflowWithOverwrite_ShouldCompleteSuccessfully()
+    {
+        // Arrange
+        const string destinationPath = "/uploads/test";
+        const long fileSize = 10;
+        const string workspaceId = "workspace-file-exists";
+        const string sourcePath = "/local/test-file.txt";
+        var chunkData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+        const string contentRange = "bytes 0-9/10";
+        const string md5Hash = "d41d8cd98f00b204e9800998ecf8427e";
+
+        // Act
+        // Step 1: Initiate upload with overwrite policy (should skip file existence check)
+        var session = await _client.InitiateUploadAsync(
+            destinationPath,
+            fileSize,
+            workspaceId,
+            sourcePath,
+            TransferOverwritePolicy.Overwrite);
+        Assert.NotNull(session);
+        Assert.NotNull(session.UploadId);
+
+        // Step 2: Upload chunk
+        var chunkResult = await _client.UploadChunkAsync(session, 1, chunkData, contentRange);
+        Assert.NotNull(chunkResult);
+        Assert.Equal(TransferDirection.NetAppToEgress, chunkResult.TransferDirection);
+
+        // Step 3: Complete upload
+        await _client.CompleteUploadAsync(session, md5Hash);
+
+        // Assert - No exceptions thrown indicates success
+        Assert.True(true, "Full upload workflow with overwrite completed successfully");
     }
 }
