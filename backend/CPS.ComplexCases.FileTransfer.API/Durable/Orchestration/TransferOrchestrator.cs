@@ -118,6 +118,16 @@ public class TransferOrchestrator(IActivityLogService activityLogService)
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, "TransferOrchestrator failed for TransferId: {TransferId}", input.TransferId);
+
+            await context.CallActivityAsync(
+                nameof(UpdateTransferStatus),
+                new UpdateTransferStatusPayload
+                {
+                    TransferId = input.TransferId,
+                    Status = TransferStatus.Failed,
+                });
+
             await _activityLogService.CreateActivityLogAsync(
                 ActivityLog.Enums.ActionType.TransferFailed,
                 ActivityLog.Enums.ResourceType.FileTransfer,

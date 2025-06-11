@@ -37,9 +37,8 @@ public class EgressStorageClient(
         var fileName = Path.GetFileName(sourcePath);
 
 
-        if (overwritePolicy != TransferOverwritePolicy.Overwrite)
+        if (overwritePolicy == null)
         {
-            // check to see if filename exists in the destination path
             // egress does not have endpoint to get file from path so we have to list all in the path and check if filename exists
             var listArg = new ListWorkspaceMaterialArg
             {
