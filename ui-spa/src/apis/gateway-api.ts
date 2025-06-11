@@ -23,6 +23,10 @@ import {
   NetAppFolderResponse,
   NetAppFolderDataResponse,
 } from "../common/types/NetAppFolderData";
+import { ValidateFileTransferResponse } from "../common/types/ValidateFileTransferResponse";
+import { ValidateFileTransferPayload } from "../common/types/ValidateFileTransferPayload";
+import { InitiateFileTransferResponse } from "../common/types/InitiateFileTransferResponse";
+import { InitiateFileTransferPayload } from "../common/types/InitiateFileTransferPayload";
 
 import { ApiError } from "../common/errors/ApiError";
 
@@ -308,4 +312,61 @@ export const getNetAppFolders = async (
       `Invalid API response format for netapp files/folders results, ${error}`,
     );
   }
+};
+
+export const validateFileTransfer = async (
+  payload: ValidateFileTransferPayload,
+) => {
+  const url = `${GATEWAY_BASE_URL}/api/v1/filetransfer/validate`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      ...(await buildCommonHeaders()),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new ApiError(`validating file transfer failed`, url, response);
+  }
+  return (await response.json()) as ValidateFileTransferResponse;
+};
+
+export const initiateFileTransfer = async (
+  payload: InitiateFileTransferPayload,
+) => {
+  const url = `${GATEWAY_BASE_URL}/api/v1/filetransfer/initiate`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      ...(await buildCommonHeaders()),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new ApiError(`initiate file transfer failed`, url, response);
+  }
+  return (await response.json()) as InitiateFileTransferResponse;
+};
+
+export const getTransferStatus = async (transferId: string) => {
+  const url = `${GATEWAY_BASE_URL}/api/v1/filetransfer/${transferId}/status`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      ...(await buildCommonHeaders()),
+    },
+  });
+
+  if (!response.ok) {
+    throw new ApiError(`Getting case transfer status failed`, url, response);
+  }
+  return (await response.json()) as CaseMetaDataResponse;
 };

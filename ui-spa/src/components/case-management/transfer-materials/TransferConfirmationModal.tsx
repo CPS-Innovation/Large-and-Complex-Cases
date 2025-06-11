@@ -8,12 +8,14 @@ type TransferConfirmationModalProps = {
   transferAction: TransferAction;
   groupedData: { folders: string[]; files: string[] };
   handleCloseModal: () => void;
+  handleContinue: () => void;
 };
 
 const TransferConfirmationModal: React.FC<TransferConfirmationModalProps> = ({
   transferAction,
   groupedData,
   handleCloseModal,
+  handleContinue,
 }) => {
   const getConfirmationText = () => {
     let folderText,
@@ -76,7 +78,7 @@ const TransferConfirmationModal: React.FC<TransferConfirmationModalProps> = ({
             name="confirmation checkbox"
           />
           <div className={styles.modalButtonWrapper}>
-            <Button onClick={() => {}}>Continue</Button>
+            <Button onClick={handleContinue}>Continue</Button>
             <LinkButton onClick={handleCloseModal}>Cancel </LinkButton>
           </div>
         </div>
