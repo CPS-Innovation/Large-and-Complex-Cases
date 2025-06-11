@@ -18,4 +18,6 @@ public class CaseWithMetadataResponse
   public string? EgressWorkspaceId { get; set; }
   [JsonPropertyName("netappFolderPath")]
   public string? NetappFolderPath { get; set; }
+  [JsonPropertyName("activeTransferId")]
+  public Guid? ActiveTransferId { get; set; }
 }

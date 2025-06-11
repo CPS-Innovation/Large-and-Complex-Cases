@@ -11,4 +11,8 @@ public interface INetAppRequestFactory
     GetObjectRequest GetObjectRequest(GetObjectArg arg);
     ListObjectsV2Request ListObjectsInBucketRequest(ListObjectsInBucketArg arg);
     ListObjectsV2Request ListFoldersInBucketRequest(ListFoldersInBucketArg arg);
+    InitiateMultipartUploadRequest CreateMultipartUploadRequest(InitiateMultipartUploadArg arg);
+    UploadPartRequest UploadPartRequest(UploadPartArg arg);
+    CompleteMultipartUploadRequest CompleteMultipartUploadRequest(CompleteMultipartUploadArg arg);
+    GetObjectAttributesRequest GetObjectAttributesRequest(GetObjectArg arg);
 }

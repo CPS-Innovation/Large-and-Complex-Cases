@@ -1,3 +1,4 @@
+using Amazon.S3;
 using Amazon.S3.Model;
 using CPS.ComplexCases.NetApp.Constants;
 using CPS.ComplexCases.NetApp.Models.Args;
@@ -6,12 +7,45 @@ namespace CPS.ComplexCases.NetApp.Factories;
 
 public class NetAppRequestFactory : INetAppRequestFactory
 {
+    public CompleteMultipartUploadRequest CompleteMultipartUploadRequest(CompleteMultipartUploadArg arg)
+    {
+        return new CompleteMultipartUploadRequest
+        {
+            BucketName = arg.BucketName,
+            Key = arg.ObjectKey,
+            UploadId = arg.UploadId,
+            PartETags = arg.CompletedParts
+        };
+    }
+
     public PutBucketRequest CreateBucketRequest(CreateBucketArg arg)
     {
         return new PutBucketRequest
         {
             BucketName = arg.BucketName,
             UseClientRegion = true
+        };
+    }
+
+    public InitiateMultipartUploadRequest CreateMultipartUploadRequest(InitiateMultipartUploadArg arg)
+    {
+        return new InitiateMultipartUploadRequest
+        {
+            BucketName = arg.BucketName,
+            Key = arg.ObjectKey,
+        };
+    }
+
+    public GetObjectAttributesRequest GetObjectAttributesRequest(GetObjectArg arg)
+    {
+        return new GetObjectAttributesRequest
+        {
+            BucketName = arg.BucketName,
+            Key = arg.ObjectKey,
+            ObjectAttributes =
+            [
+                ObjectAttributes.ETag,
+            ]
         };
     }
 
@@ -64,6 +98,18 @@ public class NetAppRequestFactory : INetAppRequestFactory
             BucketName = arg.BucketName,
             Key = arg.ObjectKey,
             InputStream = arg.Stream,
+        };
+    }
+
+    public UploadPartRequest UploadPartRequest(UploadPartArg arg)
+    {
+        return new UploadPartRequest
+        {
+            BucketName = arg.BucketName,
+            Key = arg.ObjectKey,
+            PartNumber = arg.PartNumber,
+            UploadId = arg.UploadId,
+            InputStream = new MemoryStream(arg.PartData)
         };
     }
 }

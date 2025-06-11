@@ -30,7 +30,10 @@
       "label": "clean-backend",
       "command": "dotnet",
       "type": "process",
-      "args": ["clean", "${workspaceFolder}/backend"],
+      "args": [
+        "clean",
+        "${workspaceFolder}/backend"
+      ],
       "problemMatcher": "$msCompile",
       "presentation": {
         "revealProblems": "onProblem",
@@ -41,7 +44,10 @@
       "label": "build-backend",
       "command": "dotnet",
       "type": "process",
-      "args": ["build", "${workspaceFolder}/backend"],
+      "args": [
+        "build",
+        "${workspaceFolder}/backend"
+      ],
       "problemMatcher": "$msCompile",
       "presentation": {
         "revealProblems": "onProblem",
@@ -58,6 +64,16 @@
         }
       },
       "command": "func start --no-build --verbose --password CPS.ComplexCases.API",
+      "isBackground": true,
+      "problemMatcher": "$func-dotnet-watch"
+    },
+    {
+      "label": "run-backend-file-transfer",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.FileTransfer.API/bin/Debug/net8.0",
+      },
+      "command": "func start --no-build --verbose --password CPS.ComplexCases.FileTransfer.API",
       "isBackground": true,
       "problemMatcher": "$func-dotnet-watch"
     },
@@ -154,24 +170,115 @@
     {
       "label": "prepare-all",
       "dependsOrder": "parallel",
-      "dependsOn": ["build-ui", "build-backend", "run-azurite"]
+      "dependsOn": [
+        "build-ui",
+        "build-backend",
+        "run-azurite"
+      ]
     },
     {
       "label": "run-backend-and-mock",
       "dependsOrder": "parallel",
-      "dependsOn": ["run-mock", "run-backend"]
+      "dependsOn": [
+        "run-mock",
+        "run-backend",
+        "run-backend-file-transfer"
+      ]
     },
     {
       "label": "build-and-run-all",
       "dependsOrder": "sequence",
-      "dependsOn": ["prepare-all", "run-backend-and-mock", "run-ui"],
+      "dependsOn": [
+        "prepare-all",
+        "run-backend-and-mock",
+        "run-ui"
+      ],
       "problemMatcher": []
     },
     {
       "label": "build-and-run-all-and-e2e",
       "dependsOrder": "sequence",
-      "dependsOn": ["build-and-run-all", "e2e"],
+      "dependsOn": [
+        "build-and-run-all",
+        "e2e"
+      ],
       "problemMatcher": []
+    },
+    {
+      "label": "clean (functions)",
+      "command": "dotnet",
+      "args": [
+        "clean",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "type": "process",
+      "problemMatcher": "$msCompile",
+      "options": {
+        "cwd": "${workspaceFolder}/backend\\CPS.ComplexCases.FileTransfer.API"
+      }
+    },
+    {
+      "label": "build (functions)",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "type": "process",
+      "dependsOn": "clean (functions)",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": "$msCompile",
+      "options": {
+        "cwd": "${workspaceFolder}/backend\\CPS.ComplexCases.FileTransfer.API"
+      }
+    },
+    {
+      "label": "clean release (functions)",
+      "command": "dotnet",
+      "args": [
+        "clean",
+        "--configuration",
+        "Release",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "type": "process",
+      "problemMatcher": "$msCompile",
+      "options": {
+        "cwd": "${workspaceFolder}/backend\\CPS.ComplexCases.FileTransfer.API"
+      }
+    },
+    {
+      "label": "publish (functions)",
+      "command": "dotnet",
+      "args": [
+        "publish",
+        "--configuration",
+        "Release",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "type": "process",
+      "dependsOn": "clean release (functions)",
+      "problemMatcher": "$msCompile",
+      "options": {
+        "cwd": "${workspaceFolder}/backend\\CPS.ComplexCases.FileTransfer.API"
+      }
+    },
+    {
+      "type": "func",
+      "dependsOn": "build (functions)",
+      "options": {
+        "cwd": "${workspaceFolder}/backend\\CPS.ComplexCases.FileTransfer.API/bin/Debug/net8.0"
+      },
+      "command": "host start",
+      "isBackground": true,
+      "problemMatcher": "$func-dotnet-watch"
     }
   ]
 }

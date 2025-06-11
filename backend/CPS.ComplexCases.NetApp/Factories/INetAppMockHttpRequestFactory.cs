@@ -12,5 +12,9 @@ namespace CPS.ComplexCases.NetApp.Factories
         HttpRequestMessage GetObjectRequest(GetObjectArg arg);
         HttpRequestMessage ListObjectsInBucketRequest(ListObjectsInBucketArg arg);
         HttpRequestMessage ListFoldersInBucketRequest(ListFoldersInBucketArg arg);
+        HttpRequestMessage CreateMultipartUploadRequest(InitiateMultipartUploadArg arg);
+        HttpRequestMessage UploadPartRequest(UploadPartArg arg);
+        HttpRequestMessage CompleteMultipartUploadRequest(CompleteMultipartUploadArg arg);
+        HttpRequestMessage GetObjectAttributesRequest(GetObjectArg arg);
     }
 }

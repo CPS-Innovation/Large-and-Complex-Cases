@@ -11,6 +11,7 @@ public class CaseMaterialMapping : IWireMockMapping
   {
     ConfigureRootFilesListing(server);
     ConfigureFolderFilesListing(server);
+    ConfigureFileExistsScenario(server);
   }
 
   private static void ConfigureRootFilesListing(WireMockServer server)
@@ -89,6 +90,60 @@ public class CaseMaterialMapping : IWireMockMapping
                 skip = 0,
                 limit = 10,
                 total_results = 1
+              }
+            }));
+  }
+
+  private static void ConfigureFileExistsScenario(WireMockServer server)
+  {
+    server
+        .Given(Request.Create()
+            .WithPath("/api/v1/workspaces/workspace-file-exists/files")
+            .UsingGet()
+            .WithParam("view", "full")
+            .WithParam("path", "/uploads/test"))
+        .RespondWith(Response.Create()
+            .WithStatusCode(200)
+            .WithBodyAsJson(new
+            {
+              data = new[]
+                {
+                        new
+                        {
+                            id = "existing-file-id",
+                            filename = "test-file.txt",
+                            path = "/uploads/test/test-file.txt",
+                            date_updated = "2022-01-01T00:00:00Z",
+                            is_folder = false,
+                            version = 1
+                        }
+                },
+              data_info = new
+              {
+                num_returned = 1,
+                skip = 0,
+                limit = 10,
+                total_results = 1
+              }
+            }));
+
+    server
+        .Given(Request.Create()
+            .WithPath("/api/v1/workspaces/workspace-id/files")
+            .UsingGet()
+            .WithParam("view", "full")
+            .WithParam("path", "/uploads/test"))
+        .RespondWith(Response.Create()
+            .WithStatusCode(200)
+            .WithBodyAsJson(new
+            {
+              data = new object[0],
+              data_info = new
+              {
+                num_returned = 0,
+                skip = 0,
+                limit = 10,
+                total_results = 0
               }
             }));
   }

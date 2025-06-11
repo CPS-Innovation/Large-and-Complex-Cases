@@ -4,16 +4,17 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using CPS.ComplexCases.API.Constants;
-using CPS.ComplexCases.Data.Services;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.Data.Models.Requests;
-using CPS.ComplexCases.API.Context;
-using CPS.ComplexCases.API.Validators;
 using CPS.ComplexCases.API.Validators.Requests;
-using Microsoft.Extensions.Options;
 using CPS.ComplexCases.NetApp.Models;
+using CPS.ComplexCases.Common.Helpers;
+using CPS.ComplexCases.ActivityLog.Services;
+using CPS.ComplexCases.API.Context;
+using CPS.ComplexCases.Common.Services;
 
 namespace CPS.ComplexCases.API.Functions;
 
@@ -21,12 +22,14 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
     ICaseMetadataService caseMetadataService,
     INetAppClient netAppClient,
     INetAppArgFactory netAppArgFactory,
-    IOptions<NetAppOptions> options)
+    IOptions<NetAppOptions> options,
+    IActivityLogService activityLogService)
 {
     private readonly ILogger<CreateNetAppConnection> _logger = logger;
     private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
     private readonly INetAppClient _netAppClient = netAppClient;
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
+    private readonly IActivityLogService _activityLogService = activityLogService;
     private readonly NetAppOptions _netAppOptions = options.Value;
 
     [Function(nameof(CreateNetAppConnection))]
@@ -57,6 +60,14 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
         }
 
         await _caseMetadataService.CreateNetAppConnectionAsync(netAppConnectionRequest.Value);
+
+        await _activityLogService.CreateActivityLogAsync(
+            ActivityLog.Enums.ActionType.ConnectionToNetApp,
+            ActivityLog.Enums.ResourceType.StorageConnection,
+            netAppConnectionRequest.Value.CaseId,
+            netAppConnectionRequest.Value.NetAppFolderPath,
+            "NetApp",
+            context.Username);
 
         return new OkResult();
     }

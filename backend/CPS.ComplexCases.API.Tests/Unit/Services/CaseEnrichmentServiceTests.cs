@@ -1,8 +1,8 @@
 using AutoFixture;
 using AutoFixture.AutoMoq;
 using CPS.ComplexCases.API.Services;
+using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Entities;
-using CPS.ComplexCases.Data.Services;
 using CPS.ComplexCases.DDEI.Models.Dto;
 using CPS.ComplexCases.Egress.Models.Dto;
 using FluentAssertions;

@@ -39,7 +39,10 @@ public class NetAppMockHttpRequestFactory : INetAppMockHttpRequestFactory
 
     public HttpRequestMessage UploadObjectRequest(UploadObjectArg arg)
     {
-        var request = new HttpRequestMessage(HttpMethod.Put, $"{arg.BucketName}/{arg.ObjectKey}");
+        var request = new HttpRequestMessage(HttpMethod.Put, $"{arg.BucketName}/{arg.ObjectKey}")
+        {
+            Content = new StreamContent(arg.Stream)
+        };
         return request;
     }
 
@@ -79,6 +82,50 @@ public class NetAppMockHttpRequestFactory : INetAppMockHttpRequestFactory
         ]);
 
         var request = new HttpRequestMessage(HttpMethod.Get, $"/{arg.BucketName}/?{query.ReadAsStringAsync().Result}");
+
+        return request;
+    }
+
+    public HttpRequestMessage CreateMultipartUploadRequest(InitiateMultipartUploadArg arg)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{arg.BucketName}/{arg.ObjectKey}?uploads");
+
+        request.Headers.Add(S3Constants.HostHeaderName, arg.BucketName);
+
+        return request;
+    }
+
+    public HttpRequestMessage UploadPartRequest(UploadPartArg arg)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Put, $"{arg.BucketName}/{arg.ObjectKey}?partNumber={arg.PartNumber}&uploadId={arg.UploadId}")
+        {
+            Content = new ByteArrayContent(arg.PartData)
+        };
+
+        return request;
+    }
+
+    public HttpRequestMessage CompleteMultipartUploadRequest(CompleteMultipartUploadArg arg)
+    {
+        var body = new StringContent(
+            $"<CompleteMultipartUpload xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">{string.Join("", arg.CompletedParts.Select(p => $"<Part><PartNumber>{p.PartNumber}</PartNumber><ETag>{p.ETag}</ETag></Part>"))}</CompleteMultipartUpload>",
+            System.Text.Encoding.UTF8,
+            "application/xml"
+        );
+
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{arg.BucketName}/{arg.ObjectKey}?uploadId={arg.UploadId}")
+        {
+            Content = body
+        };
+
+        return request;
+    }
+
+    public HttpRequestMessage GetObjectAttributesRequest(GetObjectArg arg)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, $"{arg.BucketName}/{arg.ObjectKey}?attributes");
+        request.Headers.Add(S3Constants.HostHeaderName, arg.BucketName);
+        request.Headers.Add(S3Constants.ObjectAttributesHeaderName, "ETag");
 
         return request;
     }

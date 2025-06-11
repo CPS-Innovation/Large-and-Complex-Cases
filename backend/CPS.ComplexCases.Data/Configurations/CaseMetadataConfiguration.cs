@@ -5,24 +5,16 @@ using CPS.ComplexCases.Data.Constants;
 
 namespace CPS.ComplexCases.Data.Configurations;
 
-public static class CaseMetadataConfiguration
+public class CaseMetadataConfiguration : IEntityTypeConfiguration<CaseMetadata>
 {
-  public static void Configure(ModelBuilder builder)
+  public void Configure(EntityTypeBuilder<CaseMetadata> builder)
   {
-    ConfigureEntities(builder);
-  }
+    builder.ToTable("case_metadata", SchemaNames.Lcc);
+    builder.HasKey(x => x.CaseId);
 
-  private static void ConfigureEntities(ModelBuilder builder)
-  {
-    builder.Entity<CaseMetadata>(entity =>
-    {
-      entity.ToTable("case_metadata", SchemaNames.Lcc);
-
-      entity.HasKey(x => x.CaseId);
-
-      entity.Property(x => x.CaseId).HasColumnName("case_id").IsRequired();
-      entity.Property(x => x.EgressWorkspaceId).HasColumnName("egress_workspace_id").HasMaxLength(200);
-      entity.Property(x => x.NetappFolderPath).HasColumnName("netapp_folder_path").HasMaxLength(260);
-    });
+    builder.Property(x => x.CaseId).HasColumnName("case_id").IsRequired();
+    builder.Property(x => x.EgressWorkspaceId).HasColumnName("egress_workspace_id").HasMaxLength(200);
+    builder.Property(x => x.NetappFolderPath).HasColumnName("netapp_folder_path").HasMaxLength(260);
+    builder.Property(x => x.ActiveTransferId).HasColumnName("active_transfer_id");
   }
 }

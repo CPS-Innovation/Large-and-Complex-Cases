@@ -14,5 +14,9 @@ namespace CPS.ComplexCases.NetApp.Client
         Task<GetObjectResponse?> GetObjectAsync(GetObjectArg arg);
         Task<ListNetAppObjectsDto?> ListObjectsInBucketAsync(ListObjectsInBucketArg arg);
         Task<ListNetAppObjectsDto?> ListFoldersInBucketAsync(ListFoldersInBucketArg arg);
+        Task<InitiateMultipartUploadResponse?> InitiateMultipartUploadAsync(InitiateMultipartUploadArg arg);
+        Task<UploadPartResponse?> UploadPartAsync(UploadPartArg arg);
+        Task<CompleteMultipartUploadResponse?> CompleteMultipartUploadAsync(CompleteMultipartUploadArg arg);
+        Task<bool> DoesObjectExistAsync(GetObjectArg arg);
     }
 }
