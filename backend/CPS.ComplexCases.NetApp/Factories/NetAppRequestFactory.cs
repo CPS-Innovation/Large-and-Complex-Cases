@@ -1,3 +1,4 @@
+using Amazon.S3;
 using Amazon.S3.Model;
 using CPS.ComplexCases.NetApp.Constants;
 using CPS.ComplexCases.NetApp.Models.Args;
@@ -32,6 +33,19 @@ public class NetAppRequestFactory : INetAppRequestFactory
         {
             BucketName = arg.BucketName,
             Key = arg.ObjectKey,
+        };
+    }
+
+    public GetObjectAttributesRequest GetObjectAttributesRequest(GetObjectArg arg)
+    {
+        return new GetObjectAttributesRequest
+        {
+            BucketName = arg.BucketName,
+            Key = arg.ObjectKey,
+            ObjectAttributes =
+            [
+                ObjectAttributes.ETag,
+            ]
         };
     }
 

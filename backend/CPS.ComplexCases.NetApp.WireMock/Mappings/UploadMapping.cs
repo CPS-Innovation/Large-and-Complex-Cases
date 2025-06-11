@@ -12,6 +12,8 @@ public class UploadMapping : IWireMockMapping
         ConfigureUploadRequest(server);
         ConfigureUploadPartRequest(server);
         ConfigureCompleteUploadRequest(server);
+        ConfigureGetExistingObjectRequest(server);
+        ConfigureGetObjectAttributesRequest(server);
     }
 
     private static void ConfigureUploadRequest(WireMockServer server)
@@ -72,5 +74,33 @@ public class UploadMapping : IWireMockMapping
             .RespondWith(Response.Create()
                 .WithStatusCode(200)
                 .WithBody(response));
+    }
+
+    private static void ConfigureGetExistingObjectRequest(WireMockServer server)
+    {
+        var response = @"<?xml version=""1.0\"" encoding=""UTF-8""?>
+                        <GetObjectAttributesResult>
+                            <ETag>etag-12345</ETag>
+                        </GetObjectAttributesResult>";
+
+        server
+            .Given(Request.Create()
+                .WithPath("/test-bucket/existing-document.pdf")
+                .UsingGet()
+                .WithParam("attributes"))
+            .RespondWith(Response.Create()
+                .WithStatusCode(200)
+                .WithBody(response));
+    }
+
+    private static void ConfigureGetObjectAttributesRequest(WireMockServer server)
+    {
+        server
+            .Given(Request.Create()
+                .WithPath("/test-bucket/test-document.pdf")
+                .UsingGet()
+                .WithParam("attributes"))
+            .RespondWith(Response.Create()
+                .WithStatusCode(404));
     }
 }

@@ -31,11 +31,8 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
         var arg = _netAppArgFactory.CreateInitiateMultipartUploadArg(_options.BucketName, destinationPath);
         if (overwritePolicy == null)
         {
-            var objectExists = await _netAppClient.DoesObjectExistAsync(new GetObjectArg
-            {
-                BucketName = arg.BucketName,
-                ObjectKey = destinationPath
-            });
+            var getObjectArg = _netAppArgFactory.CreateGetObjectArg(_options.BucketName, destinationPath);
+            var objectExists = await _netAppClient.DoesObjectExistAsync(getObjectArg);
 
             if (objectExists)
             {

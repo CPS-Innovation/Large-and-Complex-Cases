@@ -14,4 +14,5 @@ public interface INetAppRequestFactory
     InitiateMultipartUploadRequest CreateMultipartUploadRequest(InitiateMultipartUploadArg arg);
     UploadPartRequest UploadPartRequest(UploadPartArg arg);
     CompleteMultipartUploadRequest CompleteMultipartUploadRequest(CompleteMultipartUploadArg arg);
+    GetObjectAttributesRequest GetObjectAttributesRequest(GetObjectArg arg);
 }

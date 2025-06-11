@@ -19,6 +19,7 @@ using FluentAssertions;
 using Moq;
 using WireMock.Server;
 using Xunit;
+using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 
 namespace CPS.ComplexCases.NetApp.Tests.Integration;
 
@@ -78,14 +79,29 @@ public class NetAppStorageClientTests : IDisposable
             ObjectKey = ObjectKey
         };
 
+        var getObjectArg = new GetObjectArg
+        {
+            BucketName = BucketName,
+            ObjectKey = ObjectKey
+        };
+
         var request = new InitiateMultipartUploadRequest
         {
             BucketName = BucketName,
             Key = ObjectKey
         };
 
+        var getObjectAttributesRequest = new GetObjectAttributesRequest
+        {
+            BucketName = BucketName,
+            Key = ObjectKey,
+            ObjectAttributes = [ObjectAttributes.ETag]
+        };
+
         _netAppArgFactoryMock.Setup(f => f.CreateInitiateMultipartUploadArg(BucketName, ObjectKey)).Returns(arg);
+        _netAppArgFactoryMock.Setup(f => f.CreateGetObjectArg(BucketName, ObjectKey)).Returns(getObjectArg);
         _netAppRequestFactoryMock.Setup(f => f.CreateMultipartUploadRequest(arg)).Returns(request);
+        _netAppRequestFactoryMock.Setup(f => f.GetObjectAttributesRequest(getObjectArg)).Returns(getObjectAttributesRequest);
 
         //Act
         var result = await _client.InitiateUploadAsync(ObjectKey, 123);
@@ -94,6 +110,46 @@ public class NetAppStorageClientTests : IDisposable
         result.Should().NotBeNull();
         result.UploadId.Should().Be("upload-id-49e18525de9c");
         result.WorkspaceId.Should().Be(ObjectKey);
+    }
+
+    [Fact]
+    public async Task InitiateUploadAsync_WhereObjectExists_ThrowsException()
+    {
+        // Arrange
+        const string ExistingObjectKey = "existing-document.pdf";
+
+        var arg = new InitiateMultipartUploadArg
+        {
+            BucketName = BucketName,
+            ObjectKey = ExistingObjectKey
+        };
+
+        var getObjectArg = new GetObjectArg
+        {
+            BucketName = BucketName,
+            ObjectKey = ExistingObjectKey
+        };
+
+        var request = new InitiateMultipartUploadRequest
+        {
+            BucketName = BucketName,
+            Key = ExistingObjectKey
+        };
+
+        var getObjectAttributesRequest = new GetObjectAttributesRequest
+        {
+            BucketName = BucketName,
+            Key = ExistingObjectKey,
+            ObjectAttributes = [ObjectAttributes.ETag]
+        };
+
+        _netAppArgFactoryMock.Setup(f => f.CreateInitiateMultipartUploadArg(BucketName, ExistingObjectKey)).Returns(arg);
+        _netAppArgFactoryMock.Setup(f => f.CreateGetObjectArg(BucketName, ExistingObjectKey)).Returns(getObjectArg);
+        _netAppRequestFactoryMock.Setup(f => f.CreateMultipartUploadRequest(arg)).Returns(request);
+        _netAppRequestFactoryMock.Setup(f => f.GetObjectAttributesRequest(getObjectArg)).Returns(getObjectAttributesRequest);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<FileExistsException>(() => _client.InitiateUploadAsync(ExistingObjectKey, 123));
     }
 
     [Fact]

@@ -241,11 +241,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
     {
         try
         {
-            var response = await _client.GetObjectMetadataAsync(new GetObjectMetadataRequest
-            {
-                BucketName = arg.BucketName,
-                Key = arg.ObjectKey
-            });
+            var response = await _client.GetObjectAttributesAsync(_netAppRequestFactory.GetObjectAttributesRequest(arg));
             return response.HttpStatusCode == System.Net.HttpStatusCode.OK;
         }
         catch (AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
