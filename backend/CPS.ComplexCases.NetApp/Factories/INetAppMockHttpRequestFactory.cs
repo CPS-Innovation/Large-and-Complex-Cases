@@ -15,5 +15,6 @@ namespace CPS.ComplexCases.NetApp.Factories
         HttpRequestMessage CreateMultipartUploadRequest(InitiateMultipartUploadArg arg);
         HttpRequestMessage UploadPartRequest(UploadPartArg arg);
         HttpRequestMessage CompleteMultipartUploadRequest(CompleteMultipartUploadArg arg);
+        HttpRequestMessage GetObjectAttributesRequest(GetObjectArg arg);
     }
 }

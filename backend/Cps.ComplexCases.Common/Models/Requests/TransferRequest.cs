@@ -22,7 +22,7 @@ public class TransferMetadata
 public class TransferSourcePath
 {
     public required string Path { get; set; }
+    public string? ModifiedPath { get; set; }
     public string? FileId { get; set; }
-    public string? OverwritePolicy { get; set; }
-    public string? RenamePattern { get; set; }
+    public TransferOverwritePolicy? OverwritePolicy { get; set; }
 }

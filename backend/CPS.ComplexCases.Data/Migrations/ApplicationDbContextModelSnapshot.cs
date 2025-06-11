@@ -35,9 +35,18 @@ namespace CPS.ComplexCases.Data.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("action_type");
 
+                    b.Property<int?>("CaseId")
+                        .HasColumnType("integer")
+                        .HasColumnName("case_id");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
 
                     b.Property<JsonDocument>("Details")
                         .HasColumnType("jsonb")
@@ -65,11 +74,6 @@ namespace CPS.ComplexCases.Data.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
-
-                    b.Property<string>("UserId")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("user_id");
 
                     b.Property<string>("UserName")
                         .HasMaxLength(100)

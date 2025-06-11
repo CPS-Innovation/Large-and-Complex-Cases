@@ -6,6 +6,7 @@ using CPS.ComplexCases.FileTransfer.API.Durable.State;
 using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
+using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask.Client;
 using Microsoft.DurableTask.Entities;
@@ -28,8 +29,11 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
 
         try
         {
+            var sourceFileName = string.IsNullOrEmpty(payload.SourcePath.ModifiedPath) ? Path.GetFileName(payload.SourcePath.Path) : Path.GetFileName(payload.SourcePath.ModifiedPath);
+            var fullDestinationPath = Path.Combine(payload.DestinationPath, sourceFileName);
+
             using var sourceStream = await sourceClient.OpenReadStreamAsync(payload.SourcePath.Path, payload.WorkspaceId, payload.SourcePath.FileId);
-            var session = await destinationClient.InitiateUploadAsync(payload.DestinationPath, sourceStream.Length, payload.WorkspaceId, payload.SourcePath.Path);
+            var session = await destinationClient.InitiateUploadAsync(fullDestinationPath, sourceStream.Length, payload.WorkspaceId, payload.SourcePath.Path);
 
             long totalSize = sourceStream.Length;
             long position = 0;
@@ -82,7 +86,30 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             }
 
             _logger.LogInformation("File transfer completed: {SourcePath} -> {DestinationPath}", payload.SourcePath.Path, payload.DestinationPath);
-            await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.AddSuccessfulItem));
+
+            var successfulItem = new TransferItem
+            {
+                SourcePath = payload.SourcePath.Path,
+                Status = TransferStatus.Completed,
+                Size = sourceStream.Length,
+                IsRenamed = payload.SourcePath.ModifiedPath != null,
+            };
+
+            await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.AddSuccessfulItem), successfulItem);
+        }
+        catch (FileExistsException ex)
+        {
+            _logger.LogWarning(ex, "File already exists: {Path}", payload.SourcePath.Path);
+
+            var failedItem = new TransferFailedItem
+            {
+                SourcePath = payload.SourcePath.Path,
+                Status = TransferStatus.Failed,
+                ErrorCode = TransferErrorCode.FileExists,
+                ErrorMessage = ex.Message
+            };
+
+            await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.AddFailedItem), failedItem);
         }
         catch (Exception ex)
         {
@@ -92,7 +119,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             {
                 SourcePath = payload.SourcePath.Path,
                 Status = TransferStatus.Failed,
-                ErrorCode = "TRANSFER_ERROR",
+                ErrorCode = TransferErrorCode.GeneralError,
                 ErrorMessage = ex.Message
             };
 

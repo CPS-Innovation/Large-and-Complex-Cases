@@ -21,6 +21,7 @@ public class TransferEntity
     public DateTime? CompletedAt { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public List<TransferItem> SuccessfulItems { get; set; } = new List<TransferItem>();
     public List<TransferFailedItem> FailedItems { get; set; } = new List<TransferFailedItem>();
     public bool? IsRetry { get; set; } = false;
 }

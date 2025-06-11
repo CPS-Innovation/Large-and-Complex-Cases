@@ -7,6 +7,7 @@ using CPS.ComplexCases.Egress.Models.Response;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
+using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 
 namespace CPS.ComplexCases.Egress.Client;
 
@@ -29,11 +30,29 @@ public class EgressStorageClient(
         var response = await SendRequestAsync(_egressRequestFactory.GetWorkspaceDocumentRequest(arg, token));
         return await response.Content.ReadAsStreamAsync();
     }
-    public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string? workspaceId = null, string? sourcePath = null)
+    public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string? workspaceId = null, string? sourcePath = null, TransferOverwritePolicy? overwritePolicy = null)
     {
         var token = await GetWorkspaceToken();
 
         var fileName = Path.GetFileName(sourcePath);
+
+
+        if (overwritePolicy == null)
+        {
+            // egress does not have endpoint to get file from path so we have to list all in the path and check if filename exists
+            var listArg = new ListWorkspaceMaterialArg
+            {
+                WorkspaceId = workspaceId ?? throw new ArgumentNullException(nameof(workspaceId), "Workspace ID cannot be null."),
+                Path = destinationPath,
+            };
+            var listResponse = await SendRequestAsync<ListCaseMaterialResponse>(_egressRequestFactory.ListEgressMaterialRequest(listArg, token));
+
+            if (listResponse.Data.Any(f => f.FileName.Equals(fileName, StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new FileExistsException($"File '{fileName}' already exists in the destination path '{destinationPath}'.");
+            }
+        }
+
         var arg = new CreateUploadArg
         {
             FolderPath = destinationPath,

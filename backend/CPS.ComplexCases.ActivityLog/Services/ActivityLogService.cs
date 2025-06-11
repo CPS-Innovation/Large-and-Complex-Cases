@@ -12,7 +12,7 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
     private readonly IActivityLogRepository _activityLogRepository = activityLogRepository;
     private readonly ILogger<ActivityLogService> _logger = logger;
 
-    public async Task CreateActivityLogAsync(ActionType actionType, ResourceType resourceType, string resourceId, string? resourceName, string? userName, JsonDocument? details = null)
+    public async Task CreateActivityLogAsync(ActionType actionType, ResourceType resourceType, int caseId, string resourceId, string? resourceName, string? userName, JsonDocument? details = null)
     {
         _logger.LogInformation("Creating audit log for {ResourceType} {ResourceId}", resourceType, resourceId);
         try
@@ -21,11 +21,13 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
             {
                 ActionType = actionType.GetAlternateValue(),
                 ResourceType = resourceType.ToString(),
+                CaseId = caseId,
                 ResourceId = resourceId,
                 ResourceName = resourceName,
                 UserName = userName,
                 Details = details,
-                Timestamp = DateTime.UtcNow
+                Timestamp = DateTime.UtcNow,
+                Description = SetDescription(actionType, resourceName)
             };
 
             await _activityLogRepository.AddAsync(activityLog);
@@ -67,14 +69,14 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
 
     public Task<IEnumerable<Data.Entities.ActivityLog>> GetActivityLogsByResourceIdAsync(string resourceId)
     {
-        _logger.LogInformation("Getting audit logs for {resourceId}", resourceId);
+        _logger.LogInformation("Getting audit logs for {ResourceId}", resourceId);
         try
         {
             return _activityLogRepository.GetByResourceIdAsync(resourceId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting audit logs for {resourceId}", resourceId);
+            _logger.LogError(ex, "Error getting audit logs for {ResourceId}", resourceId);
             throw;
         }
     }
@@ -91,5 +93,31 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
             _logger.LogError(ex, "Error updating audit log for case {ResourceType} {ResourceId}", auditLog.ResourceType, auditLog.ResourceId);
             throw;
         }
+    }
+
+    public JsonDocument? ConvertToJsonDocument<T>(T data)
+    {
+        try
+        {
+            return JsonDocument.Parse(JsonSerializer.Serialize(data));
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Error converting data to JsonDocument");
+            return null;
+        }
+    }
+
+    private static string SetDescription(ActionType actionType, string? resourceName)
+    {
+        return actionType switch
+        {
+            ActionType.ConnectionToEgress => $"Connected to Egress workspace {resourceName}",
+            ActionType.ConnectionToNetApp => $"Connected to NetApp folder {resourceName}",
+            ActionType.TransferInitiated => $"Transfer initiated between {resourceName}",
+            ActionType.TransferCompleted => $"Transfer completed between {resourceName}",
+            ActionType.TransferFailed => $"Transfer failed between {resourceName}",
+            _ => $"Performed action {actionType} on resource {resourceName}"
+        };
     }
 }

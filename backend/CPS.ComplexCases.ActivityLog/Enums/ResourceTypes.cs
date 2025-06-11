@@ -4,6 +4,7 @@ namespace CPS.ComplexCases.ActivityLog.Enums
     {
         FileTransfer,
         TransferItem,
-        TransferItemPart
+        TransferItemPart,
+        StorageConnection
     }
 }

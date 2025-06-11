@@ -37,7 +37,7 @@ public class GetActivityLogs(ILogger<GetActivityLogs> logger, IActivityLogServic
         {
             FromDate = DateTime.TryParse(req.Query[InputParameters.FromDate].FirstOrDefault(), out var fromDate) ? fromDate : null,
             ToDate = DateTime.TryParse(req.Query[InputParameters.ToDate].FirstOrDefault(), out var toDate) ? toDate : null,
-            UserId = req.Query[InputParameters.UserId].FirstOrDefault(),
+            Username = req.Query[InputParameters.UserId].FirstOrDefault(),
             ActionType = req.Query[InputParameters.ActionType].FirstOrDefault(),
             ResourceType = req.Query[InputParameters.ResourceType].FirstOrDefault(),
             ResourceId = req.Query[InputParameters.ResourceId].FirstOrDefault(),

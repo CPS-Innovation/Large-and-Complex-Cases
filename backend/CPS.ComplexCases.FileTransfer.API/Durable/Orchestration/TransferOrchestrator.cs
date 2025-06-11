@@ -1,3 +1,6 @@
+using CPS.ComplexCases.ActivityLog.Services;
+using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
@@ -8,8 +11,10 @@ using Microsoft.Extensions.Logging;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Orchestration;
 
-public class TransferOrchestrator
+public class TransferOrchestrator(IActivityLogService activityLogService)
 {
+    private readonly IActivityLogService _activityLogService = activityLogService;
+
     [Function(nameof(TransferOrchestrator))]
     public async Task RunOrchestrator(
         [OrchestrationTrigger] TaskOrchestrationContext context)
@@ -24,61 +29,113 @@ public class TransferOrchestrator
             throw new ArgumentNullException(nameof(input));
         }
 
-        // 1.  initalize transfer entity
-        var transferEntity = new TransferEntity
+        try
         {
-            Id = input.TransferId,
-            Status = TransferStatus.Initiated,
-            DestinationPath = input.DestinationPath,
-            SourcePaths = input.SourcePaths,
-            CaseId = input.CaseId,
-            TransferType = input.TransferType,
-            Direction = input.TransferDirection,
-            TotalFiles = input.SourcePaths.Count,
-            IsRetry = input.IsRetry ?? false,
-        };
-
-        await context.CallActivityAsync(
-            nameof(IntializeTransfer),
-            transferEntity);
-
-        // todo: audit record activity
-
-        // 2. Fan-out: TransferFileActivity for each item
-        await context.CallActivityAsync(
-            nameof(UpdateTransferStatus),
-            new UpdateTransferStatusPayload
+            // 1.  initalize transfer entity
+            var transferEntity = new TransferEntity
             {
-                TransferId = input.TransferId,
-                Status = TransferStatus.InProgress,
-            });
-
-        var tasks = new List<Task>();
-
-        foreach (var sourcePath in input.SourcePaths)
-        {
-            var transferFilePayload = new TransferFilePayload
-            {
-                SourcePath = sourcePath,
-                DestinationPath = transferEntity.DestinationPath,
-                TransferId = transferEntity.Id,
-                TransferType = transferEntity.TransferType,
-                TransferDirection = transferEntity.Direction,
-                WorkspaceId = input.WorkspaceId,
+                Id = input.TransferId,
+                Status = TransferStatus.Initiated,
+                DestinationPath = input.DestinationPath,
+                SourcePaths = input.SourcePaths,
+                CaseId = input.CaseId,
+                TransferType = input.TransferType,
+                Direction = input.TransferDirection,
+                TotalFiles = input.SourcePaths.Count,
+                IsRetry = input.IsRetry ?? false,
             };
 
-            tasks.Add(context.CallActivityAsync(
-                nameof(TransferFile),
-                transferFilePayload));
-        }
-        await Task.WhenAll(tasks);
+            await context.CallActivityAsync(
+                nameof(IntializeTransfer),
+                transferEntity);
 
-        // 3. Finalize
-        await context.CallActivityAsync(
-            nameof(FinalizeTransfer),
-            new FinalizeTransferPayload
+            await context.CallActivityAsync(
+                nameof(UpdateActivityLog),
+                new UpdateActivityLogPayload
+                {
+                    ActionType = ActivityLog.Enums.ActionType.TransferInitiated,
+                    TransferId = input.TransferId.ToString(),
+                    UserName = input.UserName,
+                });
+
+            // 2. Fan-out: TransferFileActivity for each item
+            await context.CallActivityAsync(
+                nameof(UpdateTransferStatus),
+                new UpdateTransferStatusPayload
+                {
+                    TransferId = input.TransferId,
+                    Status = TransferStatus.InProgress,
+                });
+
+            var tasks = new List<Task>();
+
+            foreach (var sourcePath in input.SourcePaths)
             {
-                TransferId = input.TransferId,
-            });
+                var transferFilePayload = new TransferFilePayload
+                {
+                    SourcePath = sourcePath,
+                    DestinationPath = transferEntity.DestinationPath,
+                    TransferId = transferEntity.Id,
+                    TransferType = transferEntity.TransferType,
+                    TransferDirection = transferEntity.Direction,
+                    WorkspaceId = input.WorkspaceId,
+                };
+
+                if (sourcePath.OverwritePolicy != TransferOverwritePolicy.Ignore)
+                {
+                    tasks.Add(context.CallActivityAsync(
+                        nameof(TransferFile),
+                        transferFilePayload));
+                }
+                else
+                {
+                    logger.LogInformation(
+                        "Skipping transfer for {SourcePath} due to OverwritePolicy.Ignore",
+                        sourcePath.Path);
+                }
+
+            }
+            await Task.WhenAll(tasks);
+
+            // 3. Update activity log
+            await context.CallActivityAsync(
+                nameof(UpdateActivityLog),
+                new UpdateActivityLogPayload
+                {
+                    ActionType = ActivityLog.Enums.ActionType.TransferCompleted,
+                    TransferId = input.TransferId.ToString(),
+                    UserName = input.UserName,
+                });
+
+            // 4. Finalize
+            await context.CallActivityAsync(
+                nameof(FinalizeTransfer),
+                new FinalizeTransferPayload
+                {
+                    TransferId = input.TransferId,
+                });
+
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "TransferOrchestrator failed for TransferId: {TransferId}", input.TransferId);
+
+            await context.CallActivityAsync(
+                nameof(UpdateTransferStatus),
+                new UpdateTransferStatusPayload
+                {
+                    TransferId = input.TransferId,
+                    Status = TransferStatus.Failed,
+                });
+
+            await _activityLogService.CreateActivityLogAsync(
+                ActivityLog.Enums.ActionType.TransferFailed,
+                ActivityLog.Enums.ResourceType.FileTransfer,
+                input.CaseId,
+                input.TransferId.ToString(),
+                input.TransferDirection.GetAlternateValue(),
+                input.UserName,
+                details: _activityLogService.ConvertToJsonDocument(ex.Message));
+        }
     }
 }
