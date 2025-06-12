@@ -4,8 +4,8 @@ using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
-using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.Common.Models.Domain.Exceptions;
+using CPS.ComplexCases.Common.Models.Domain.Args;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
@@ -69,4 +69,10 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
 
         return new UploadChunkResult(TransferDirection.EgressToNetApp, result?.ETag, result?.PartNumber);
     }
+
+    public async Task<IEnumerable<FileTransferInfo>> ListFilesForTransferAsync(SelectedEntitiesArg selectedEntities)
+    {
+        throw new NotImplementedException();
+    }
+
 }

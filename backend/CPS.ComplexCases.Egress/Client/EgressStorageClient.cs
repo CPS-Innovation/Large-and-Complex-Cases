@@ -1,13 +1,14 @@
-using CPS.ComplexCases.Common.Storage;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using CPS.ComplexCases.Common.Models.Domain;
+using CPS.ComplexCases.Common.Models.Domain.Enums;
+using CPS.ComplexCases.Common.Models.Domain.Exceptions;
+using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
 using CPS.ComplexCases.Egress.Models.Args;
 using CPS.ComplexCases.Egress.Models.Response;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using CPS.ComplexCases.Common.Models.Domain.Enums;
-using CPS.ComplexCases.Common.Models.Domain.Exceptions;
+using CPS.ComplexCases.Common.Models.Domain.Args;
 
 namespace CPS.ComplexCases.Egress.Client;
 
@@ -30,6 +31,7 @@ public class EgressStorageClient(
         var response = await SendRequestAsync(_egressRequestFactory.GetWorkspaceDocumentRequest(arg, token));
         return await response.Content.ReadAsStreamAsync();
     }
+
     public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string? workspaceId = null, string? sourcePath = null, TransferOverwritePolicy? overwritePolicy = null)
     {
         var token = await GetWorkspaceToken();
@@ -88,6 +90,7 @@ public class EgressStorageClient(
 
         return new UploadChunkResult(TransferDirection.NetAppToEgress);
     }
+
     public async Task CompleteUploadAsync(UploadSession session, string? md5hash = null, Dictionary<int, string>? etags = null)
     {
         var token = await GetWorkspaceToken();
@@ -100,5 +103,10 @@ public class EgressStorageClient(
         };
 
         await SendRequestAsync(_egressRequestFactory.CompleteUploadRequest(completeArg, token));
+    }
+
+    public Task<IEnumerable<FileTransferInfo>> ListFilesForTransferAsync(SelectedEntitiesArg selectedEntities)
+    {
+        throw new NotImplementedException();
     }
 }
