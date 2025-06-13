@@ -94,6 +94,28 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       await delay(500);
       return HttpResponse.json(netAppRootFolderResults);
     }),
+
+    http.post(`${baseUrl}/api/v1/filetransfer/validate`, async () => {
+      await delay(2500);
+      return HttpResponse.json({ isValid: true });
+    }),
+
+    http.post(`${baseUrl}/api/v1/filetransfer/initiate`, async () => {
+      return HttpResponse.json({ transferId: "transfer-id-1" });
+    }),
+    http.get(
+      `${baseUrl}/api/v1/filetransfer/transfer-id-1/status`,
+      async () => {
+        // const url = new URL(req.request.url);
+
+        // const path = url.searchParams.get("path");
+        // const netAppRootFolderResults = isDevMock()
+        //   ? getNetAppFolderResultsDev(path as string)
+        //   : getNetAppFolderResultsPlaywright(path as string);
+        await delay(1500);
+        return HttpResponse.json({ overallStatus: "COMPLETED" });
+      },
+    ),
   ];
 };
 

@@ -8,7 +8,7 @@ export type InitiateFileTransferPayload = {
       id: string;
       path: string;
       modifiedPath: string;
-      overwritePolicy: "OVERWRITE";
+      overwritePolicy: "OVERWRITE" | "IGNORE";
     },
     {
       id: string;

@@ -39,6 +39,10 @@ const AppRoutes = () => {
         element={<CaseManagementPage />}
       />
       <Route
+        path="/case/:caseId/case-management/transfer-errors"
+        element={<CaseManagementPage />}
+      />
+      <Route
         path="/case/:caseId/case-management/egress-connection-error"
         element={<MetaDataErrorPage />}
       />

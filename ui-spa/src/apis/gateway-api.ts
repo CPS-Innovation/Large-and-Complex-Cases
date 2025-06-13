@@ -27,6 +27,7 @@ import { ValidateFileTransferResponse } from "../common/types/ValidateFileTransf
 import { ValidateFileTransferPayload } from "../common/types/ValidateFileTransferPayload";
 import { InitiateFileTransferResponse } from "../common/types/InitiateFileTransferResponse";
 import { InitiateFileTransferPayload } from "../common/types/InitiateFileTransferPayload";
+import { TransferStatusResponse } from "../common/types/TransferStatusResponse";
 
 import { ApiError } from "../common/errors/ApiError";
 
@@ -368,5 +369,5 @@ export const getTransferStatus = async (transferId: string) => {
   if (!response.ok) {
     throw new ApiError(`Getting case transfer status failed`, url, response);
   }
-  return (await response.json()) as CaseMetaDataResponse;
+  return (await response.json()) as TransferStatusResponse;
 };

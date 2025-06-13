@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { useApi } from "../../../common/hooks/useApi";
-import { LinkButton, InsetText } from "../../govuk";
+import { LinkButton, InsetText, NotificationBanner } from "../../govuk";
 import NetAppFolderContainer from "./NetAppFolderContainer";
+import { Spinner } from "../../common/Spinner";
 import {
   getEgressFolders,
   getNetAppFolders,
@@ -332,6 +333,9 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   }, [netAppFolderPath, netAppRefetch]);
 
   const handleValidateTransfer = async () => {
+    setShowTransferConfrimationModal(false);
+    setSelectedSourceFoldersOrFiles([]);
+    setSelectedTransferAction(null);
     try {
       const validationPayload = {
         caseId: caseId!,
@@ -380,15 +384,72 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (transferId) {
-      interval = setInterval(() => {
-        getTransferStatus(transferId);
+      interval = setInterval(async () => {
+        const status = await getTransferStatus(transferId);
+        if (status.overallStatus !== "IN_PROGRESS") {
+          if (status.overallStatus === "COMPLETED") {
+            egressRefetch();
+            netAppRefetch();
+            setEgressToNetAppTransferStatus("completed");
+          }
+          if (status.overallStatus === "PARTIALLY_COMPLETED") {
+            setEgressToNetAppTransferStatus("completed-with-errors");
+            navigate(`/case/${caseId}/case-management/transfer-errors`, {
+              state: {
+                isValid: true,
+              },
+            });
+          }
+          setTransferId("");
+        }
       }, 5000);
       return () => clearInterval(interval);
     }
   });
 
+  if (egressToNetAppTransferStatus === "transferring") {
+    return (
+      <div className={styles.transferContent}>
+        <div className={styles.spinnerWrapper}>
+          <Spinner
+            data-testid="transfer-spinner"
+            diameterPx={50}
+            ariaLabel={"Completing transfer from egress to shared drive"}
+          />
+          <div className={styles.spinnerText}>
+            Completing transfer from <b>egress to shared drive...</b>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (egressToNetAppTransferStatus === "validating") {
+    return (
+      <div className={styles.transferContent}>
+        <div className={styles.spinnerWrapper}>
+          <Spinner
+            data-testid="transfer-spinner"
+            diameterPx={50}
+            ariaLabel={"Indexing transfer from egress to shared drive"}
+          />
+          <div className={styles.spinnerText}>
+            Indexing transfer from <b>egress to shared drive...</b>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
+      {egressToNetAppTransferStatus === "completed" && (
+        <div className={styles.successBanner}>
+          <NotificationBanner type="success">
+            Files copied successfully
+          </NotificationBanner>
+        </div>
+      )}
       <div className={styles.headerText}>
         <h2>{`${transferSource === "egress" ? "Transfer folders and files between egress and shared drive" : "Transfer folders and files between shared drive and egress"}`}</h2>
         <InsetText>
