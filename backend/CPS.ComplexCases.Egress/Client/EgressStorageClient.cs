@@ -105,8 +105,105 @@ public class EgressStorageClient(
         await SendRequestAsync(_egressRequestFactory.CompleteUploadRequest(completeArg, token));
     }
 
-    public Task<IEnumerable<FileTransferInfo>> ListFilesForTransferAsync(List<TransferEntityDto> selectedEntities, string? workspaceId = null)
+    public async Task<IEnumerable<FileTransferInfo>> ListFilesForTransferAsync(List<TransferEntityDto> selectedEntities, string? workspaceId = null)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrEmpty(workspaceId))
+        {
+            throw new ArgumentNullException(nameof(workspaceId), "Workspace ID cannot be null or empty.");
+        }
+
+        var token = await GetWorkspaceToken();
+
+        var entityTasks = selectedEntities.Select(async entity =>
+        {
+            if (entity.IsFolder == false)
+            {
+                return new List<FileTransferInfo>
+                {
+                new FileTransferInfo
+                {
+                    Id = entity.Id,
+                    FilePath = entity.Path
+                }
+                };
+            }
+            else
+            {
+                return await GetAllFilesFromFolderParallel(workspaceId, entity.Id, token);
+            }
+        });
+
+        var results = await Task.WhenAll(entityTasks);
+        return results.SelectMany(files => files);
+    }
+
+    private async Task<List<FileTransferInfo>> GetAllFilesFromFolderParallel(string workspaceId, string? folderId, string token)
+    {
+        var allPagesData = await GetAllPagesInParallel(workspaceId, folderId, token);
+
+        var files = allPagesData
+            .Where(d => !d.IsFolder)
+            .Select(d => new FileTransferInfo
+            {
+                Id = d.Id,
+                FilePath = d.Path
+            })
+            .ToList();
+
+        var folders = allPagesData.Where(d => d.IsFolder).ToList();
+
+        if (folders.Any())
+        {
+            var subFolderTasks = folders.Select(folder =>
+                GetAllFilesFromFolderParallel(workspaceId, folder.Id, token));
+
+            var subFolderResults = await Task.WhenAll(subFolderTasks);
+            files.AddRange(subFolderResults.SelectMany(x => x));
+        }
+
+        return files;
+    }
+
+    private async Task<List<ListCaseMaterialDataResponse>> GetAllPagesInParallel(string workspaceId, string? folderId, string token)
+    {
+        const int take = 100;
+
+        var initialArg = new ListWorkspaceMaterialArg
+        {
+            WorkspaceId = workspaceId,
+            FolderId = folderId,
+            Take = take,
+            Skip = 0,
+            RecurseSubFolders = false
+        };
+
+        var initialResponse = await SendRequestAsync<ListCaseMaterialResponse>(_egressRequestFactory.ListEgressMaterialRequest(initialArg, token));
+        var totalResults = initialResponse.DataInfo.TotalResults;
+        var allData = new List<ListCaseMaterialDataResponse>(initialResponse.Data);
+
+        if (totalResults > take)
+        {
+            var remainingPages = (int)Math.Ceiling((double)(totalResults - take) / take);
+            var pageTasks = new List<Task<ListCaseMaterialResponse>>();
+
+            for (int i = 1; i <= remainingPages; i++)
+            {
+                var pageArg = new ListWorkspaceMaterialArg
+                {
+                    WorkspaceId = workspaceId,
+                    FolderId = folderId,
+                    Take = take,
+                    Skip = i * take,
+                    RecurseSubFolders = false
+                };
+
+                pageTasks.Add(SendRequestAsync<ListCaseMaterialResponse>(_egressRequestFactory.ListEgressMaterialRequest(pageArg, token)));
+            }
+
+            var pageResults = await Task.WhenAll(pageTasks);
+            allData.AddRange(pageResults.SelectMany(r => r.Data));
+        }
+
+        return allData;
     }
 }
