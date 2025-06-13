@@ -8,7 +8,7 @@ using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
 using CPS.ComplexCases.Egress.Models.Args;
 using CPS.ComplexCases.Egress.Models.Response;
-using CPS.ComplexCases.Common.Models.Domain.Args;
+using CPS.ComplexCases.Common.Models.Domain.Dtos;
 
 namespace CPS.ComplexCases.Egress.Client;
 
@@ -105,7 +105,7 @@ public class EgressStorageClient(
         await SendRequestAsync(_egressRequestFactory.CompleteUploadRequest(completeArg, token));
     }
 
-    public Task<IEnumerable<FileTransferInfo>> ListFilesForTransferAsync(SelectedEntitiesArg selectedEntities)
+    public Task<IEnumerable<FileTransferInfo>> ListFilesForTransferAsync(List<TransferEntityDto> selectedEntities, string? workspaceId = null)
     {
         throw new NotImplementedException();
     }

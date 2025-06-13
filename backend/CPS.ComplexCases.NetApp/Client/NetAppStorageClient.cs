@@ -5,7 +5,7 @@ using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.Common.Models.Domain.Exceptions;
-using CPS.ComplexCases.Common.Models.Domain.Args;
+using CPS.ComplexCases.Common.Models.Domain.Dtos;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
@@ -70,9 +70,44 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
         return new UploadChunkResult(TransferDirection.EgressToNetApp, result?.ETag, result?.PartNumber);
     }
 
-    public async Task<IEnumerable<FileTransferInfo>> ListFilesForTransferAsync(SelectedEntitiesArg selectedEntities)
+    public async Task<IEnumerable<FileTransferInfo>> ListFilesForTransferAsync(List<TransferEntityDto> selectedEntities, string? workspaceId = null)
     {
-        throw new NotImplementedException();
+        List<FileTransferInfo> filesForTransfer = [];
+
+        foreach (var entity in selectedEntities)
+        {
+            if (Path.HasExtension(entity.Path))
+            {
+                filesForTransfer.Add(new FileTransferInfo
+                {
+                    FilePath = entity.Path
+                });
+            }
+            else
+            {
+                var files = await GetListOfFilesInFolder(entity.Path);
+                if (files != null)
+                    filesForTransfer.AddRange(files);
+            }
+
+        }
+
+        return filesForTransfer;
     }
 
+    public async Task<IEnumerable<FileTransferInfo>?> GetListOfFilesInFolder(string path)
+    {
+        var arg = _netAppArgFactory.CreateListObjectsInBucketArg(_options.BucketName, path);
+        var response = await _netAppClient.ListObjectsInBucketAsync(arg);
+
+        if (response == null || !response.Data.FileData.Any())
+        {
+            return null;
+        }
+
+        return response.Data.FileData.Select(x => new FileTransferInfo
+        {
+            FilePath = x.Path
+        });
+    }
 }
