@@ -1,11 +1,11 @@
 using Microsoft.Extensions.Options;
 using CPS.ComplexCases.Common.Models.Domain;
+using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
+using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
-using CPS.ComplexCases.Common.Models.Domain.Exceptions;
-using CPS.ComplexCases.Common.Models.Domain.Dtos;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
@@ -85,19 +85,19 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
             }
             else
             {
-                var files = await GetListOfFilesInFolder(entity.Path);
+                var files = await ListFilesInFolder(entity.Path);
                 if (files != null)
                     filesForTransfer.AddRange(files);
             }
-
         }
 
         return filesForTransfer;
     }
 
-    public async Task<IEnumerable<FileTransferInfo>?> GetListOfFilesInFolder(string path)
+    public async Task<IEnumerable<FileTransferInfo>?> ListFilesInFolder(string path, string? continuationToken = null)
     {
-        var arg = _netAppArgFactory.CreateListObjectsInBucketArg(_options.BucketName, path);
+        var filesForTransfer = new List<FileTransferInfo>();
+        var arg = _netAppArgFactory.CreateListObjectsInBucketArg(_options.BucketName, continuationToken, 1000, path);
         var response = await _netAppClient.ListObjectsInBucketAsync(arg);
 
         if (response == null || !response.Data.FileData.Any())
@@ -105,9 +105,21 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
             return null;
         }
 
-        return response.Data.FileData.Select(x => new FileTransferInfo
+        filesForTransfer.AddRange(
+            response.Data.FileData.Select(x => new FileTransferInfo
+            {
+                FilePath = x.Path
+            }));
+
+        if (response.Pagination.NextContinuationToken != null)
         {
-            FilePath = x.Path
-        });
+            var nextFiles = await ListFilesInFolder(path, response.Pagination.NextContinuationToken);
+            if (nextFiles != null)
+            {
+                filesForTransfer.AddRange(nextFiles);
+            }
+        }
+
+        return filesForTransfer;
     }
 }

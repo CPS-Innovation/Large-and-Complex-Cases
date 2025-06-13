@@ -20,6 +20,7 @@ using Moq;
 using WireMock.Server;
 using Xunit;
 using CPS.ComplexCases.Common.Models.Domain.Exceptions;
+using CPS.ComplexCases.Common.Models.Domain.Dtos;
 
 namespace CPS.ComplexCases.NetApp.Tests.Integration;
 
@@ -287,6 +288,105 @@ public class NetAppStorageClientTests : IDisposable
         // Act & Assert (should not throw)
         Func<Task> act = () => _client.CompleteUploadAsync(session, null, etags);
         await act.Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public async Task ListFilesForTransferAsync_ReturnsFileTransferInfo()
+    {
+        // Arrange
+        var folderName = "/nested-objects/";
+        var maxKeys = 1000;
+
+        var selectedEntities = new List<TransferEntityDto>
+        {
+            new() { Path = ObjectKey },
+            new() { Path = folderName }
+        };
+
+        var arg = new ListObjectsInBucketArg
+        {
+            BucketName = BucketName,
+            ContinuationToken = null,
+            MaxKeys = maxKeys.ToString(),
+            Prefix = folderName
+        };
+
+        var request = new ListObjectsV2Request
+        {
+            BucketName = BucketName,
+            ContinuationToken = null,
+            MaxKeys = maxKeys,
+            Prefix = folderName
+        };
+
+        _netAppArgFactoryMock.Setup(f => f.CreateListObjectsInBucketArg(BucketName, null, maxKeys, folderName)).Returns(arg);
+        _netAppRequestFactoryMock.Setup(f => f.ListObjectsInBucketRequest(arg)).Returns(request);
+
+        // Act
+        var result = await _client.ListFilesForTransferAsync(selectedEntities, null);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Should().HaveCount(5);
+    }
+
+    [Fact]
+    public async Task ListFilesForTransferAsync_MakesMultipleCallsToApi_IfContinuationTokenIsSupplied()
+    {
+        // Arrange
+        var folderName = "/partial-results/";
+        var maxKeys = 1000;
+        var continuationToken = "next-token";
+
+        var selectedEntities = new List<TransferEntityDto>
+        {
+            new() { Path = ObjectKey },
+            new() { Path = folderName }
+        };
+
+        var argWithoutContinuationToken = new ListObjectsInBucketArg
+        {
+            BucketName = BucketName,
+            ContinuationToken = null,
+            MaxKeys = maxKeys.ToString(),
+            Prefix = folderName
+        };
+
+        var argWithContinuationToken = new ListObjectsInBucketArg
+        {
+            BucketName = BucketName,
+            ContinuationToken = continuationToken,
+            MaxKeys = maxKeys.ToString(),
+            Prefix = folderName
+        };
+
+        var requestWithoutContinuationToken = new ListObjectsV2Request
+        {
+            BucketName = BucketName,
+            ContinuationToken = null,
+            MaxKeys = maxKeys,
+            Prefix = folderName
+        };
+
+        var requestWithContinuationToken = new ListObjectsV2Request
+        {
+            BucketName = BucketName,
+            ContinuationToken = continuationToken,
+            MaxKeys = maxKeys,
+            Prefix = folderName
+        };
+
+        _netAppArgFactoryMock.Setup(f => f.CreateListObjectsInBucketArg(BucketName, null, maxKeys, folderName)).Returns(argWithoutContinuationToken);
+        _netAppArgFactoryMock.Setup(f => f.CreateListObjectsInBucketArg(BucketName, continuationToken, maxKeys, folderName)).Returns(argWithContinuationToken);
+        _netAppRequestFactoryMock.Setup(f => f.ListObjectsInBucketRequest(argWithoutContinuationToken)).Returns(requestWithoutContinuationToken);
+        _netAppRequestFactoryMock.Setup(f => f.ListObjectsInBucketRequest(argWithContinuationToken)).Returns(requestWithContinuationToken);
+
+        // Act
+        var result = await _client.ListFilesForTransferAsync(selectedEntities, null);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Should().HaveCount(4);
     }
 
     protected virtual void Dispose(bool disposing)

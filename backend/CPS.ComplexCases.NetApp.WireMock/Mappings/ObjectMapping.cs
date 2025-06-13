@@ -7,13 +7,16 @@ namespace CPS.ComplexCases.NetApp.WireMock.Mappings;
 
 public class ObjectMapping : IWireMockMapping
 {
-    private const string delimiter = "/";
+    private const string BucketName = "/test-bucket/";
 
     public void Configure(WireMockServer server)
     {
         ConfigureUploadObjectMapping(server);
         ConfigureListObjectsMapping(server);
         ConfigureListNestedObjectsMapping(server);
+        ConfigureListNestedObjectsInBucketMapping(server);
+        ConfigurePartialListWithContinuationTokenMapping(server);
+        ConfigurePartialListWithoutContinuationTokenMapping(server);
         ConfigureGetObjectMapping(server);
     }
 
@@ -55,7 +58,7 @@ public class ObjectMapping : IWireMockMapping
 
         server
             .Given(Request.Create()
-                .WithPath("/test-bucket/")
+                .WithPath(BucketName)
                 .UsingGet()
                 .WithParam("list-type", "2"))
            .RespondWith(Response.Create()
@@ -117,6 +120,154 @@ public class ObjectMapping : IWireMockMapping
                 .UsingGet()
                 .WithParam("delimiter", "/")
                 .WithParam("list-type", "2"))
+           .RespondWith(Response.Create()
+                .WithStatusCode(200)
+                .WithBody(response));
+    }
+
+    private static void ConfigureListNestedObjectsInBucketMapping(WireMockServer server)
+    {
+        var response = @"<?xml version=""1.0\"" encoding=""UTF-8""?>
+                             <ListBucketResult>
+                                <Name>nested-objects</Name>
+                                <Prefix>/</Prefix>
+                                <CommonPrefixes>
+                                    <Prefix>counsel/</Prefix>
+                                </CommonPrefixes>
+                                <CommonPrefixes>
+                                    <Prefix>counsel/statements/</Prefix>
+                                </CommonPrefixes>
+                                <CommonPrefixes>
+                                    <Prefix>multimedia/</Prefix>
+                                </CommonPrefixes>
+                                <Marker></Marker>
+                                <MaxKeys>1000</MaxKeys>
+                                <IsTruncated>false</IsTruncated>
+                                <Contents>
+                                    <Key>counsel/test-file.txt</Key>
+                                    <LastModified>2025-01-11T13:32:47+00:00</LastModified>
+                                    <ETag>""70ee1738b6b21e2c8a43f3a5ab0eee71""</ETag>
+                                    <Size>11</Size>
+                                    <StorageClass>STANDARD</StorageClass>
+                                </Contents>
+                                <Contents>
+                                    <Key>counsel/evidence.docx</Key>
+                                    <LastModified>2025-01-30T10:17:35+00:00</LastModified>
+                                    <ETag>""38b6b270ee171e2c8a40eee713f3a5ab""</ETag>
+                                    <Size>434234</Size>
+                                    <StorageClass>STANDARD</StorageClass>
+                                </Contents>
+                                <Contents>
+                                    <Key>counsel/statements/statement.docx</Key>
+                                    <LastModified>2025-01-30T10:17:35+00:00</LastModified>
+                                    <ETag>""38b6b270ee171e2c8a40eee713f3a5ab""</ETag>
+                                    <Size>434234</Size>
+                                    <StorageClass>STANDARD</StorageClass>
+                                </Contents>
+                                <Contents>
+                                    <Key>multimedia/dashcam.mp4</Key>
+                                    <LastModified>2025-01-30T10:17:35+00:00</LastModified>
+                                    <ETag>""38b6b270ee171e2c8a40eee713f3a5ab""</ETag>
+                                    <Size>434234</Size>
+                                    <StorageClass>STANDARD</StorageClass>
+                                </Contents>
+                             </ListBucketResult>";
+
+        server
+            .Given(Request.Create()
+                .WithPath(BucketName)
+                .UsingGet()
+                .WithParam("prefix", "/nested-objects/")
+                .WithParam("list-type", "2")
+                .WithParam("max-keys", "1000"))
+           .RespondWith(Response.Create()
+                .WithStatusCode(200)
+                .WithBody(response));
+    }
+
+    private static void ConfigurePartialListWithContinuationTokenMapping(WireMockServer server)
+    {
+        var response = @"<?xml version=""1.0\"" encoding=""UTF-8""?>
+                             <ListBucketResult>
+                                <Name>nested-objects</Name>
+                                <Prefix>/</Prefix>
+                                <NextContinuationToken>next-token</NextContinuationToken>
+                                <CommonPrefixes>
+                                    <Prefix>counsel/</Prefix>
+                                </CommonPrefixes>
+                                <CommonPrefixes>
+                                    <Prefix>counsel/statements/</Prefix>
+                                </CommonPrefixes>
+                                <CommonPrefixes>
+                                    <Prefix>multimedia/</Prefix>
+                                </CommonPrefixes>
+                                <Marker></Marker>
+                                <MaxKeys>1000</MaxKeys>
+                                <IsTruncated>true</IsTruncated>
+                                <Contents>
+                                    <Key>counsel/test-file.txt</Key>
+                                    <LastModified>2025-01-11T13:32:47+00:00</LastModified>
+                                    <ETag>""70ee1738b6b21e2c8a43f3a5ab0eee71""</ETag>
+                                    <Size>11</Size>
+                                    <StorageClass>STANDARD</StorageClass>
+                                </Contents>
+                                <Contents>
+                                    <Key>counsel/evidence.docx</Key>
+                                    <LastModified>2025-01-30T10:17:35+00:00</LastModified>
+                                    <ETag>""38b6b270ee171e2c8a40eee713f3a5ab""</ETag>
+                                    <Size>434234</Size>
+                                    <StorageClass>STANDARD</StorageClass>
+                                </Contents>
+                             </ListBucketResult>";
+
+        server
+            .Given(Request.Create()
+                .WithPath(BucketName)
+                .UsingGet()
+                .WithParam("prefix", "/partial-results/")
+                .WithParam("list-type", "2")
+                .WithParam("max-keys", "1000"))
+           .RespondWith(Response.Create()
+                .WithStatusCode(200)
+                .WithBody(response));
+    }
+
+    private static void ConfigurePartialListWithoutContinuationTokenMapping(WireMockServer server)
+    {
+        var response = @"<?xml version=""1.0\"" encoding=""UTF-8""?>
+                             <ListBucketResult>
+                                <Name>nested-objects</Name>
+                                <Prefix>/</Prefix>
+                                <ContinuationToken>next-token</ContinuationToken>
+                                <CommonPrefixes>
+                                    <Prefix>counsel/</Prefix>
+                                </CommonPrefixes>
+                                <CommonPrefixes>
+                                    <Prefix>counsel/statements/</Prefix>
+                                </CommonPrefixes>
+                                <CommonPrefixes>
+                                    <Prefix>multimedia/</Prefix>
+                                </CommonPrefixes>
+                                <Marker></Marker>
+                                <MaxKeys>1000</MaxKeys>
+                                <IsTruncated>false</IsTruncated>
+                                <Contents>
+                                    <Key>counsel/test-file.txt</Key>
+                                    <LastModified>2025-01-11T13:32:47+00:00</LastModified>
+                                    <ETag>""70ee1738b6b21e2c8a43f3a5ab0eee71""</ETag>
+                                    <Size>11</Size>
+                                    <StorageClass>STANDARD</StorageClass>
+                                </Contents>
+                             </ListBucketResult>";
+
+        server
+            .Given(Request.Create()
+                .WithPath(BucketName)
+                .UsingGet()
+                .WithParam("prefix", "/partial-results/")
+                .WithParam("list-type", "2")
+                .WithParam("max-keys", "1000")
+                .WithParam("continuation-token", "next-token"))
            .RespondWith(Response.Create()
                 .WithStatusCode(200)
                 .WithBody(response));
