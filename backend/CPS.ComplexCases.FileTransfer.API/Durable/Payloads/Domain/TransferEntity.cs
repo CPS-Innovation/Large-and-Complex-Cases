@@ -24,4 +24,5 @@ public class TransferEntity
     public List<TransferItem> SuccessfulItems { get; set; } = new List<TransferItem>();
     public List<TransferFailedItem> FailedItems { get; set; } = new List<TransferFailedItem>();
     public bool? IsRetry { get; set; } = false;
+    public string? UserName { get; set; }
 }
