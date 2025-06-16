@@ -113,7 +113,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
         //   ? getNetAppFolderResultsDev(path as string)
         //   : getNetAppFolderResultsPlaywright(path as string);
         await delay(1500);
-        return HttpResponse.json({ overallStatus: "COMPLETED" });
+        return HttpResponse.json({ overallStatus: "IN_PROGRESS" });
       },
     ),
   ];

@@ -3,22 +3,23 @@ import { Tabs } from "../common/tabs/Tabs";
 import { TabId } from "../../common/types/CaseManagement";
 import { ItemProps } from "../common/tabs/types";
 import TransferMaterialsPage from "./transfer-materials";
-import { useParams } from "react-router-dom";
 import { useApi } from "../../common/hooks/useApi";
 import { getCaseMetaData } from "../../apis/gateway-api";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 
 import styles from "./index.module.scss";
 
 const CaseManagementPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { caseId } = useParams();
+  const { caseId } = useParams() as { caseId: string };
+  if (!caseId) throw new Error("missing caseId in the url");
+
   const caseMetaData = useApi(getCaseMetaData, [caseId], true);
 
-  const [activeTabId, setActiveId] = useState<TabId>("transfer-materials");
+  const [activeTabId, setActiveTabId] = useState<TabId>("transfer-materials");
   const handleTabSelection = (tabId: TabId) => {
-    setActiveId(tabId);
+    setActiveTabId(tabId);
   };
 
   useEffect(() => {
@@ -84,13 +85,16 @@ const CaseManagementPage = () => {
       id: "transfer-materials",
       label: "Transfer materials",
       panel: {
-        children: (
+        children: caseMetaData?.data ? (
           <TransferMaterialsPage
             caseId={caseId}
-            operationName={caseMetaData?.data?.operationName}
-            egressWorkspaceId={caseMetaData?.data?.egressWorkspaceId}
-            netAppPath={caseMetaData?.data?.netappFolderPath ?? ""}
+            operationName={caseMetaData.data.operationName}
+            egressWorkspaceId={caseMetaData.data.egressWorkspaceId}
+            netAppPath={caseMetaData?.data.netappFolderPath}
+            activeTransferId={caseMetaData?.data.transferId}
           />
+        ) : (
+          <div> </div>
         ),
       },
     },

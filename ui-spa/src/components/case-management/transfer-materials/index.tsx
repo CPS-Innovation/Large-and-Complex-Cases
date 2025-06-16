@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useApi } from "../../../common/hooks/useApi";
 import { LinkButton, InsetText, NotificationBanner } from "../../govuk";
 import NetAppFolderContainer from "./NetAppFolderContainer";
@@ -19,13 +19,15 @@ import { getFormatedEgressFolderData } from "../../../common/utils/getFormatedEg
 import { mapToNetAppFolderData } from "../../../common/utils/mapToNetAppFolderData";
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
 import { InitiateFileTransferPayload } from "../../../common/types/InitiateFileTransferPayload";
+import { TransferStatusResponse } from "../../../common/types/TransferStatusResponse";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
-  caseId: string | undefined;
-  operationName: string | undefined;
-  egressWorkspaceId: string | undefined;
-  netAppPath: string | undefined;
+  caseId: string;
+  operationName: string;
+  egressWorkspaceId: string;
+  netAppPath: string;
+  activeTransferId: string | null;
 };
 
 const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
@@ -33,6 +35,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   operationName,
   egressWorkspaceId,
   netAppPath,
+  activeTransferId,
 }) => {
   const navigate = useNavigate();
   const [transferSource, setTransferSource] = useState<"egress" | "netapp">(
@@ -45,12 +48,12 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       folderId: string;
     }[]
   >([]);
-  const [netAppFolderPath, setNetAppFolderPath] = useState("");
+  const [netAppFolderPath, setNetAppFolderPath] = useState(netAppPath);
   const [selectedSourceFoldersOrFiles, setSelectedSourceFoldersOrFiles] =
     useState<string[]>([]);
   const [selectedTransferAction, setSelectedTransferAction] =
     useState<TransferAction | null>(null);
-  const [showTransferConfirmationModal, setShowTransferConfrimationModal] =
+  const [showTransferConfirmationModal, setShowTransferConfirmationModal] =
     useState<boolean>(false);
 
   const [egressToNetAppTransferStatus, setEgressToNetAppTransferStatus] =
@@ -62,11 +65,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       | "completed"
       | null
     >(null);
-  const [transferId, setTransferId] = useState("");
-
-  useEffect(() => {
-    if (netAppPath) setNetAppFolderPath(netAppPath);
-  }, [netAppPath]);
+  const [transferId, setTransferId] = useState(activeTransferId);
 
   const currentEgressFolder = useMemo(() => {
     if (egressPathFolders.length)
@@ -114,7 +113,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   };
 
   const handleEgressFolderClick = (id: string) => {
-    const folderData = egressFolderData!.find((item) => item.id === id);
+    const folderData = egressFolderData.find((item) => item.id === id);
     if (folderData)
       setEgressPathFolders((prevItems) => [
         ...prevItems,
@@ -208,12 +207,12 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   };
 
   const handleSelectedActionType = (transferAction: TransferAction) => {
-    setShowTransferConfrimationModal(true);
+    setShowTransferConfirmationModal(true);
     setSelectedTransferAction(transferAction);
   };
 
   const handleCloseTransferConfirmationModal = () => {
-    setShowTransferConfrimationModal(false);
+    setShowTransferConfirmationModal(false);
   };
 
   const renderNetappContainer = () => {
@@ -321,24 +320,24 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   ]);
 
   useEffect(() => {
-    if (egressWorkspaceId !== undefined) {
+    if (egressWorkspaceId && !transferId) {
       egressRefetch();
     }
-  }, [egressWorkspaceId, egressRefetch]);
+  }, [egressWorkspaceId, egressRefetch, transferId]);
 
   useEffect(() => {
-    if (netAppFolderPath) {
+    if (netAppFolderPath && !transferId) {
       netAppRefetch();
     }
-  }, [netAppFolderPath, netAppRefetch]);
+  }, [netAppFolderPath, netAppRefetch, transferId]);
 
   const handleValidateTransfer = async () => {
-    setShowTransferConfrimationModal(false);
+    setShowTransferConfirmationModal(false);
     setSelectedSourceFoldersOrFiles([]);
     setSelectedTransferAction(null);
     try {
       const validationPayload = {
-        caseId: caseId!,
+        caseId: caseId,
         transferType: "COPY" as const,
         direction: "EgressToNetApp" as const,
         sourcePaths: [
@@ -381,31 +380,59 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     }
   };
 
+  const handleStatusResponse = useCallback(
+    (status: TransferStatusResponse, interval: NodeJS.Timeout) => {
+      if (status.overallStatus === "COMPLETED") {
+        egressRefetch();
+        netAppRefetch();
+        setEgressToNetAppTransferStatus("completed");
+        setTransferId("");
+        if (interval) clearInterval(interval);
+        return;
+      }
+      if (status.overallStatus === "PARTIALLY_COMPLETED") {
+        setEgressToNetAppTransferStatus("completed-with-errors");
+        navigate(`/case/${caseId}/case-management/transfer-errors`, {
+          state: {
+            isValid: true,
+          },
+        });
+        setTransferId("");
+        if (interval) clearInterval(interval);
+      }
+    },
+    [
+      caseId,
+      navigate,
+      egressRefetch,
+      netAppRefetch,
+      setEgressToNetAppTransferStatus,
+      setTransferId,
+    ],
+  );
+
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (transferId) {
-      interval = setInterval(async () => {
-        const status = await getTransferStatus(transferId);
-        if (status.overallStatus !== "IN_PROGRESS") {
-          if (status.overallStatus === "COMPLETED") {
-            egressRefetch();
-            netAppRefetch();
-            setEgressToNetAppTransferStatus("completed");
-          }
-          if (status.overallStatus === "PARTIALLY_COMPLETED") {
-            setEgressToNetAppTransferStatus("completed-with-errors");
-            navigate(`/case/${caseId}/case-management/transfer-errors`, {
-              state: {
-                isValid: true,
-              },
-            });
-          }
-          setTransferId("");
-        }
-      }, 5000);
-      return () => clearInterval(interval);
+    if (!transferId) {
+      return;
     }
-  });
+
+    setEgressToNetAppTransferStatus("transferring");
+    const pollingInterval = 5000;
+    const fetchStatusData = async () => {
+      if (transferId) {
+        const status = await getTransferStatus(transferId);
+        handleStatusResponse(status, interval);
+      }
+    };
+
+    fetchStatusData();
+    const interval = setInterval(async () => {
+      fetchStatusData();
+    }, pollingInterval);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [transferId, setEgressToNetAppTransferStatus, handleStatusResponse]);
 
   if (egressToNetAppTransferStatus === "transferring") {
     return (
