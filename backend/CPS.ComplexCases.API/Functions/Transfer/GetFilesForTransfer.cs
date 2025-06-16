@@ -12,7 +12,7 @@ using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Extensions;
 
-namespace CPS.ComplexCases.API.Functions;
+namespace CPS.ComplexCases.API.Functions.Transfer;
 
 public class GetFilesForTransfer(IFileTransferClient transferClient)
 {
