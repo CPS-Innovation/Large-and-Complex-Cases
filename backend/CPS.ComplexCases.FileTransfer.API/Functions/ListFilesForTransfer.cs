@@ -55,6 +55,6 @@ public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorage
             result.ValidationErrors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
         }
 
-        return new OkObjectResult(filesForTransfer);
+        return new OkObjectResult(result);
     }
 }
