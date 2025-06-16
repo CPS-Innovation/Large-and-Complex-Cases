@@ -105,7 +105,7 @@ public class EgressStorageClient(
         await SendRequestAsync(_egressRequestFactory.CompleteUploadRequest(completeArg, token));
     }
 
-    public async Task<IEnumerable<FileTransferInfo>> ListFilesForTransferAsync(List<TransferEntityDto> selectedEntities, string? workspaceId = null)
+    public async Task<IEnumerable<FileTransferInfo>> ListFilesForTransferAsync(List<TransferEntityDto> selectedEntities, string? workspaceId = null, int? caseId = null)
     {
         if (string.IsNullOrEmpty(workspaceId))
         {

@@ -8,7 +8,7 @@ public class ListFilesForTransferRequest
     [JsonPropertyName("caseId")]
     public required int CaseId { get; set; }
     [JsonPropertyName("transferDirection")]
-    public TransferDirection TransferDirection { get; set; }
+    public required TransferDirection TransferDirection { get; set; }
     [JsonPropertyName("sourcePaths")]
     public required List<SelectedSourcePath> SourcePaths { get; set; }
     [JsonPropertyName("destinationPath")]

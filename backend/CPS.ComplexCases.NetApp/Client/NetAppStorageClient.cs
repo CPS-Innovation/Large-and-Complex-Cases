@@ -6,13 +6,16 @@ using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
+using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.Common.Extensions;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
-public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory netAppArgFactory, IOptions<NetAppOptions> options) : IStorageClient
+public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory netAppArgFactory, IOptions<NetAppOptions> options, ICaseMetadataService caseMetadataService) : IStorageClient
 {
     private readonly INetAppClient _netAppClient = netAppClient;
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
+    private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
     private readonly NetAppOptions _options = options.Value;
 
     public async Task CompleteUploadAsync(UploadSession session, string? md5hash = null, Dictionary<int, string>? etags = null)
@@ -70,9 +73,13 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
         return new UploadChunkResult(TransferDirection.EgressToNetApp, result?.ETag, result?.PartNumber);
     }
 
-    public async Task<IEnumerable<FileTransferInfo>> ListFilesForTransferAsync(List<TransferEntityDto> selectedEntities, string? workspaceId = null)
+    public async Task<IEnumerable<FileTransferInfo>> ListFilesForTransferAsync(List<TransferEntityDto> selectedEntities, string? workspaceId = null, int? caseId = null)
     {
         List<FileTransferInfo> filesForTransfer = [];
+
+        var caseMetaData = await _caseMetadataService.GetCaseMetadataForCaseIdAsync(caseId ??
+            throw new ArgumentNullException(nameof(caseId), "Case ID cannot be null.")) ??
+                throw new InvalidOperationException($"No metadata found for case ID {caseId}.");
 
         foreach (var entity in selectedEntities)
         {
@@ -80,14 +87,17 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
             {
                 filesForTransfer.Add(new FileTransferInfo
                 {
-                    FilePath = entity.Path
+                    FilePath = entity.Path.RemovePathPrefix(caseMetaData.NetappFolderPath),
                 });
             }
             else
             {
                 var files = await ListFilesInFolder(entity.Path);
                 if (files != null)
-                    filesForTransfer.AddRange(files);
+                    filesForTransfer.AddRange(files.Select(file => new FileTransferInfo
+                    {
+                        FilePath = file.FilePath.RemovePathPrefix(caseMetaData.NetappFolderPath)
+                    }));
             }
         }
 

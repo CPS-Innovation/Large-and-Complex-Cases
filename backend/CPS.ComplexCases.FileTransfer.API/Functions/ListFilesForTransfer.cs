@@ -1,12 +1,14 @@
-using CPS.ComplexCases.Common.Helpers;
-using CPS.ComplexCases.Common.Models.Domain.Dtos;
-using CPS.ComplexCases.Common.Models.Requests;
-using CPS.ComplexCases.FileTransfer.API.Factories;
-using CPS.ComplexCases.FileTransfer.API.Validators;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
+using CPS.ComplexCases.Common.Helpers;
+using CPS.ComplexCases.Common.Models.Domain;
+using CPS.ComplexCases.Common.Models.Domain.Dtos;
+using CPS.ComplexCases.Common.Models.Domain.Enums;
+using CPS.ComplexCases.Common.Models.Requests;
+using CPS.ComplexCases.FileTransfer.API.Factories;
+using CPS.ComplexCases.FileTransfer.API.Validators;
 
 namespace CPS.ComplexCases.FileTransfer.API.Functions;
 
@@ -35,8 +37,24 @@ public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorage
             IsFolder = path.IsFolder
         }).ToList();
 
-        var fileForTransfer = await sourceClient.ListFilesForTransferAsync(selectedEntities, request.Value.WorkspaceId);
+        var filesForTransfer = await sourceClient.ListFilesForTransferAsync(selectedEntities, request.Value.WorkspaceId);
 
-        return new OkObjectResult(fileForTransfer);
+        var result = new FilesForTransferResult
+        {
+            CaseId = request.Value?.CaseId ?? 0,
+            WorkspaceId = request.Value?.WorkspaceId ?? null,
+            TransferDirection = request.Value?.TransferDirection.ToString() ?? string.Empty,
+            Files = filesForTransfer,
+            IsInvalid = false,
+        };
+
+        if (request.Value != null && request.Value.TransferDirection == TransferDirection.EgressToNetApp)
+        {
+            var validationResult = await new FilePathValidator().ValidateAsync(filesForTransfer);
+            result.IsInvalid = validationResult.IsValid;
+            result.ValidationErrors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
+        }
+
+        return new OkObjectResult(filesForTransfer);
     }
 }
