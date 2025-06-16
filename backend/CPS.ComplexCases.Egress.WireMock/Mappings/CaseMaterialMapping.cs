@@ -65,9 +65,7 @@ public class CaseMaterialMapping : IWireMockMapping
             .WithPath("/api/v1/workspaces/workspace-id/files")
             .UsingGet()
             .WithParam("view", "full")
-            .WithParam("folder", "folder-id")
-            .WithParam("skip", "0")
-            .WithParam("limit", "10"))
+            .WithParam("folder", "folder-id"))
         .RespondWith(Response.Create()
             .WithStatusCode(200)
             .WithBodyAsJson(new
@@ -92,6 +90,39 @@ public class CaseMaterialMapping : IWireMockMapping
                 total_results = 1
               }
             }));
+
+    server
+      .Given(Request.Create()
+          .WithPath("/api/v1/workspaces/workspace-id/files")
+          .UsingGet()
+          .WithParam("view", "full")
+          .WithParam("folder", "folder-id")
+          .WithParam("skip", "0")
+          .WithParam("limit", "10"))
+      .RespondWith(Response.Create()
+          .WithStatusCode(200)
+          .WithBodyAsJson(new
+          {
+            data = new[]
+              {
+                  new
+                  {
+                    id = "nested-file-id",
+                    filename = "nested-file-name",
+                    path = "folder-id/file-path",
+                    date_updated = "2022-01-01T00:00:00Z",
+                    is_folder = false,
+                    version = 1
+                  },
+              },
+            data_info = new
+            {
+              num_returned = 1,
+              skip = 0,
+              limit = 10,
+              total_results = 1
+            }
+          }));
   }
 
   private static void ConfigureFileExistsScenario(WireMockServer server)

@@ -1,4 +1,5 @@
 using CPS.ComplexCases.Common.Models.Domain;
+using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 using CPS.ComplexCases.Egress.Client;
@@ -373,4 +374,90 @@ public class EgressStorageClientTests : IDisposable
         // Assert - No exceptions thrown indicates success
         Assert.True(true, "Full upload workflow with overwrite completed successfully");
     }
+
+    [Fact]
+    public async Task ListFilesForTransferAsync_WithSingleFile_ShouldReturnFileInfo()
+    {
+        // Arrange
+        const string workspaceId = "workspace-id";
+        var selectedEntities = new List<TransferEntityDto>
+    {
+        new TransferEntityDto
+        {
+            Id = "file-id",
+            Path = "/test/file.txt",
+            IsFolder = false
+        }
+    };
+
+        // Act
+        var result = await _client.ListFilesForTransferAsync(selectedEntities, workspaceId);
+
+        // Assert
+        Assert.NotNull(result);
+        var files = result.ToList();
+        Assert.Single(files);
+        Assert.Equal("file-id", files[0].Id);
+        Assert.Equal("/test/file.txt", files[0].FilePath);
+    }
+
+    [Fact]
+    public async Task ListFilesForTransferAsync_WithFolder_ShouldReturnFilesFromFolder()
+    {
+        // Arrange
+        const string workspaceId = "workspace-id";
+        var selectedEntities = new List<TransferEntityDto>
+        {
+        new TransferEntityDto
+        {
+            Id = "folder-id",
+            Path = "/test/folder",
+            IsFolder = true
+        }
+        };
+
+        // Act
+        var result = await _client.ListFilesForTransferAsync(selectedEntities, workspaceId);
+
+        // Assert
+        Assert.NotNull(result);
+        var files = result.ToList();
+        Assert.Single(files);
+        Assert.Equal("nested-file-id", files[0].Id);
+        Assert.Equal("folder-id/file-path", files[0].FilePath);
+    }
+
+    [Fact]
+    public async Task ListFilesForTransferAsync_WithMixedEntities_ShouldReturnAllFiles()
+    {
+        // Arrange
+        const string workspaceId = "workspace-id";
+        var selectedEntities = new List<TransferEntityDto>
+        {
+            new TransferEntityDto
+            {
+                Id = "file-id",
+                Path = "/test/standalone-file.txt",
+                IsFolder = false
+            },
+            new TransferEntityDto
+            {
+                Id = "folder-id",
+                Path = "/test/folder",
+                IsFolder = true
+            }
+        };
+
+        // Act
+        var result = await _client.ListFilesForTransferAsync(selectedEntities, workspaceId);
+
+        // Assert
+        Assert.NotNull(result);
+        var files = result.ToList();
+        Assert.Equal(2, files.Count);
+
+        Assert.Contains(files, f => f.Id == "file-id" && f.FilePath == "/test/standalone-file.txt");
+        Assert.Contains(files, f => f.Id == "nested-file-id" && f.FilePath == "folder-id/file-path");
+    }
+
 }
