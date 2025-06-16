@@ -494,12 +494,14 @@ public class EgressStorageClientTests
         var file1 = new TransferEntityDto
         {
             Id = _fixture.Create<string>(),
+            FileId = _fixture.Create<string>(),
             Path = "/path/to/file1.txt",
             IsFolder = false
         };
         var file2 = new TransferEntityDto
         {
             Id = _fixture.Create<string>(),
+            FileId = _fixture.Create<string>(),
             Path = "/path/to/file2.txt",
             IsFolder = false
         };
@@ -521,9 +523,9 @@ public class EgressStorageClientTests
             result.Should().HaveCount(2);
 
             var resultArray = result.ToArray();
-            resultArray[0].Id.Should().Be(file1.Id);
+            resultArray[0].Id.Should().Be(file1.FileId);
             resultArray[0].FilePath.Should().Be(file1.Path);
-            resultArray[1].Id.Should().Be(file2.Id);
+            resultArray[1].Id.Should().Be(file2.FileId);
             resultArray[1].FilePath.Should().Be(file2.Path);
         }
 
