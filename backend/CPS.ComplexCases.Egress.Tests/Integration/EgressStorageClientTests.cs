@@ -385,6 +385,7 @@ public class EgressStorageClientTests : IDisposable
         new TransferEntityDto
         {
             Id = "file-id",
+            FileId = "file-id",
             Path = "/test/file.txt",
             IsFolder = false
         }
@@ -437,12 +438,14 @@ public class EgressStorageClientTests : IDisposable
             new TransferEntityDto
             {
                 Id = "file-id",
+                FileId = "file-id",
                 Path = "/test/standalone-file.txt",
                 IsFolder = false
             },
             new TransferEntityDto
             {
                 Id = "folder-id",
+                FileId = "folder-id",
                 Path = "/test/folder",
                 IsFolder = true
             }
