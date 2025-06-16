@@ -90,7 +90,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             var successfulItem = new TransferItem
             {
                 SourcePath = payload.SourcePath.Path,
-                Status = TransferStatus.Completed,
+                Status = TransferItemStatus.Completed,
                 Size = sourceStream.Length,
                 IsRenamed = payload.SourcePath.ModifiedPath != null,
             };
@@ -104,7 +104,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             var failedItem = new TransferFailedItem
             {
                 SourcePath = payload.SourcePath.Path,
-                Status = TransferStatus.Failed,
+                Status = TransferItemStatus.Failed,
                 ErrorCode = TransferErrorCode.FileExists,
                 ErrorMessage = ex.Message
             };
@@ -118,7 +118,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             var failedItem = new TransferFailedItem
             {
                 SourcePath = payload.SourcePath.Path,
-                Status = TransferStatus.Failed,
+                Status = TransferItemStatus.Failed,
                 ErrorCode = TransferErrorCode.GeneralError,
                 ErrorMessage = ex.Message
             };
