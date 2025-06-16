@@ -122,7 +122,7 @@ public class EgressStorageClient(
                 {
                 new FileTransferInfo
                 {
-                    Id = entity.Id,
+                    Id = entity.FileId,
                     FilePath = entity.Path
                 }
                 };
