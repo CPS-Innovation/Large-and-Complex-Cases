@@ -50,7 +50,7 @@ public class TransferOrchestrator(IActivityLogService activityLogService, IOptio
             };
 
             await context.CallActivityAsync(
-                nameof(IntializeTransfer),
+                nameof(InitializeTransfer),
                 transferEntity);
 
             await context.CallActivityAsync(

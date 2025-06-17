@@ -67,7 +67,7 @@ public class TransferOrchestratorTests
         using (new AssertionScope())
         {
             activityCallOrder.Should().HaveCount(6);
-            activityCallOrder[0].Should().Be("IntializeTransfer");
+            activityCallOrder[0].Should().Be("InitializeTransfer");
             activityCallOrder[1].Should().Be("UpdateActivityLog");
             activityCallOrder[2].Should().Be("UpdateTransferStatus");
             activityCallOrder[3].Should().Be("TransferFile");
@@ -90,7 +90,7 @@ public class TransferOrchestratorTests
             .Returns(Task.CompletedTask)
             .Callback<TaskName, object, TaskOptions>((taskName, entity, _) =>
             {
-                if (taskName.Name == "IntializeTransfer")
+                if (taskName.Name == "InitializETransfer")
                 {
                     capturedEntity = (TransferEntity)entity;
                 }
