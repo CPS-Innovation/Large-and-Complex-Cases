@@ -14,6 +14,7 @@ namespace CPS.ComplexCases.Egress.Tests.Integration;
 
 public class EgressStorageClientTests : IDisposable
 {
+    private bool _disposed = false;
     private readonly WireMockServer _server;
     private readonly EgressStorageClient _client;
 
@@ -44,10 +45,27 @@ public class EgressStorageClientTests : IDisposable
         _client = new EgressStorageClient(logger, new OptionsWrapper<EgressOptions>(egressOptions), httpClient, new EgressRequestFactory());
     }
 
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                _server.Stop();
+            }
+            _disposed = true;
+        }
+    }
+
     public void Dispose()
     {
-        _server.Stop();
+        Dispose(true);
         GC.SuppressFinalize(this);
+    }
+
+    ~EgressStorageClientTests()
+    {
+        Dispose(false);
     }
 
     [Fact]

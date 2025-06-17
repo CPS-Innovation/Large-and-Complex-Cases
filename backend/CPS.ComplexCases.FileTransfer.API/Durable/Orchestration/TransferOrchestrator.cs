@@ -4,16 +4,19 @@ using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
+using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Orchestration;
 
-public class TransferOrchestrator(IActivityLogService activityLogService)
+public class TransferOrchestrator(IActivityLogService activityLogService, IOptions<SizeConfig> sizeConfig)
 {
     private readonly IActivityLogService _activityLogService = activityLogService;
+    private readonly SizeConfig _sizeConfig = sizeConfig.Value;
 
     [Function(nameof(TransferOrchestrator))]
     public async Task RunOrchestrator(
@@ -59,7 +62,7 @@ public class TransferOrchestrator(IActivityLogService activityLogService)
                     UserName = input.UserName,
                 });
 
-            // 2. Fan-out: TransferFileActivity for each item
+            // 2. Fan-out: TransferFileActivity for each item, throttled in batches
             await context.CallActivityAsync(
                 nameof(UpdateTransferStatus),
                 new UpdateTransferStatusPayload
@@ -68,7 +71,8 @@ public class TransferOrchestrator(IActivityLogService activityLogService)
                     Status = TransferStatus.InProgress,
                 });
 
-            var tasks = new List<Task>();
+            int batchSize = _sizeConfig.BatchSize;
+            var batch = new List<Task>();
 
             foreach (var sourcePath in input.SourcePaths)
             {
@@ -84,7 +88,7 @@ public class TransferOrchestrator(IActivityLogService activityLogService)
 
                 if (sourcePath.OverwritePolicy != TransferOverwritePolicy.Ignore)
                 {
-                    tasks.Add(context.CallActivityAsync(
+                    batch.Add(context.CallActivityAsync(
                         nameof(TransferFile),
                         transferFilePayload));
                 }
@@ -95,8 +99,18 @@ public class TransferOrchestrator(IActivityLogService activityLogService)
                         sourcePath.Path, input.CorrelationId);
                 }
 
+                if (batch.Count >= batchSize)
+                {
+                    await Task.WhenAll(batch);
+                    batch.Clear();
+                }
             }
-            await Task.WhenAll(tasks);
+
+            // Await any remaining tasks in the last batch
+            if (batch.Count > 0)
+            {
+                await Task.WhenAll(batch);
+            }
 
             // 3. Update activity log
             await context.CallActivityAsync(
