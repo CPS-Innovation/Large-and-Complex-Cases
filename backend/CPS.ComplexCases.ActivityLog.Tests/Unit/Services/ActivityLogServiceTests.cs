@@ -18,10 +18,11 @@ public class ActivityLogServiceTests
     private readonly Mock<IActivityLogRepository> _repositoryMock;
     private readonly Mock<ILogger<ActivityLogService>> _loggerMock;
     private readonly ActivityLogService _service;
-    private const int TestCaseId = 12345;
-    private const string TestResourceId = "TestResourceId";
-    private const string TestResourceName = "TestResourceName";
-    private const string TestUserName = "TestUserName";
+
+    private readonly int _testCaseId;
+    private readonly string _testResourceId;
+    private readonly string _testResourceName;
+    private readonly string _testUserName;
 
     public ActivityLogServiceTests()
     {
@@ -31,26 +32,31 @@ public class ActivityLogServiceTests
         _repositoryMock = _fixture.Freeze<Mock<IActivityLogRepository>>();
         _loggerMock = _fixture.Freeze<Mock<ILogger<ActivityLogService>>>();
 
+        _testCaseId = _fixture.Create<int>();
+        _testResourceId = _fixture.Create<string>();
+        _testResourceName = _fixture.Create<string>();
+        _testUserName = _fixture.Create<string>();
+
         _service = new ActivityLogService(_repositoryMock.Object, _loggerMock.Object);
     }
 
     [Fact]
-    public async Task AddAuditLogAsync_CallsRepositoryWithCorrectParameters()
+    public async Task AddActivityLogAsync_CallsRepositoryWithCorrectParameters()
     {
         // Arrange
         var activityLog = new Data.Entities.ActivityLog(
             Guid.NewGuid(),
             ActionType.TransferInitiated.GetAlternateValue(),
             ResourceType.FileTransfer.ToString(),
-            TestResourceId,
-            TestUserName);
+            _testResourceId,
+            _testUserName);
         _repositoryMock
             .Setup(r => r.AddAsync(activityLog))
             .Returns(Task.FromResult(activityLog))
             .Verifiable();
 
         // Act
-        await _service.CreateActivityLogAsync(ActionType.TransferInitiated, ResourceType.FileTransfer, TestCaseId, TestResourceId, TestResourceName, TestUserName);
+        await _service.CreateActivityLogAsync(ActionType.TransferInitiated, ResourceType.FileTransfer, _testCaseId, _testResourceId, _testResourceName, _testUserName);
 
         // Assert
         using (new AssertionScope())
@@ -64,7 +70,7 @@ public class ActivityLogServiceTests
     }
 
     [Fact]
-    public async Task GetAuditLogByIdAsync_ReturnsAuditLog()
+    public async Task GetActivityLogByIdAsync_ReturnsAuditLog()
     {
         // Arrange
         var id = Guid.NewGuid();
@@ -72,8 +78,8 @@ public class ActivityLogServiceTests
             id,
             ActionType.TransferInitiated.GetAlternateValue(),
             ResourceType.FileTransfer.ToString(),
-            TestResourceId,
-            TestUserName);
+            _testResourceId,
+            _testUserName);
         _repositoryMock
             .Setup(r => r.GetByIdAsync(id))
             .ReturnsAsync(expected);
@@ -90,7 +96,7 @@ public class ActivityLogServiceTests
     }
 
     [Fact]
-    public async Task GetAuditLogByIdAsync_NonExistentId_ReturnsNull()
+    public async Task GetActivityLogByIdAsync_NonExistentId_ReturnsNull()
     {
         // Arrange
         var id = Guid.NewGuid();
@@ -106,13 +112,13 @@ public class ActivityLogServiceTests
     }
 
     [Fact]
-    public async Task GetAuditLogsByResourceIdAsync_ReturnsAuditLogs()
+    public async Task GetActivityLogsByResourceIdAsync_ReturnsAuditLogs()
     {
         // Arrange
-        var resourceId = "TestResourceId";
+        var resourceId = _fixture.Create<string>();
         var expected = new List<Data.Entities.ActivityLog>
         {
-            new(Guid.NewGuid(), ActionType.TransferInitiated.GetAlternateValue(), ResourceType.FileTransfer.ToString(), resourceId, TestUserName)
+            new(Guid.NewGuid(), ActionType.TransferInitiated.GetAlternateValue(), ResourceType.FileTransfer.ToString(), resourceId, _testUserName)
         };
         _repositoryMock
             .Setup(r => r.GetByResourceIdAsync(resourceId))
@@ -131,10 +137,10 @@ public class ActivityLogServiceTests
     }
 
     [Fact]
-    public async Task GetAuditLogsByResourceIdAsync_NonExistentResourceId_ReturnsEmptyList()
+    public async Task GetActivitytLogsByResourceIdAsync_NonExistentResourceId_ReturnsEmptyList()
     {
         // Arrange
-        var resourceId = "TestResourceId";
+        var resourceId = _fixture.Create<string>();
         _repositoryMock
             .Setup(r => r.GetByResourceIdAsync(resourceId))
             .ReturnsAsync(new List<Data.Entities.ActivityLog>());
@@ -148,7 +154,7 @@ public class ActivityLogServiceTests
     }
 
     [Fact]
-    public async Task UpdateAuditLogAsync_CallsRepositoryWithCorrectParameters()
+    public async Task UpdateActivityLogAsync_CallsRepositoryWithCorrectParameters()
     {
         // Arrange
         var id = Guid.NewGuid();
@@ -156,8 +162,8 @@ public class ActivityLogServiceTests
             id,
             ActionType.TransferCompleted.GetAlternateValue(),
             ResourceType.FileTransfer.ToString(),
-            TestResourceId,
-            TestUserName);
+            _testResourceId,
+            _testUserName);
         _repositoryMock
             .Setup(r => r.UpdateAsync(activityLog))
             .Returns(Task.FromResult(activityLog))

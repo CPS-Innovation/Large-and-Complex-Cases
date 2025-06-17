@@ -14,4 +14,5 @@ public class TransferPayload
     public required string DestinationPath { get; set; }
     public required string WorkspaceId { get; set; }
     public bool? IsRetry { get; set; } = false;
+    public Guid? CorrelationId { get; set; } = null;
 }

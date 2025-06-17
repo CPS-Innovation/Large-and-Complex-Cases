@@ -35,12 +35,20 @@ public class InitiateTransfer
     [HttpTrigger(AuthorizationLevel.Function, "post", Route = "transfer")] HttpRequest req,
     [DurableClient] DurableTaskClient orchestrationClient)
     {
+        var currentCorrelationId = req.Headers.GetCorrelationId();
+        _logger.LogInformation("Initiating file transfer with CorrelationId: {CorrelationId}", currentCorrelationId);
         var transferRequest = await ValidatorHelper.GetJsonBody<TransferRequest, TransferRequestValidator>(req);
 
         if (!transferRequest.IsValid)
         {
-            _logger.LogWarning("Invalid transfer request: {Errors}", transferRequest.ValidationErrors);
+            _logger.LogWarning("Invalid transfer request: {Errors} with CorrelationId: {CorrelationId}", transferRequest.ValidationErrors, currentCorrelationId);
             return new BadRequestObjectResult(transferRequest.ValidationErrors);
+        }
+
+        if (transferRequest.Value.Metadata == null)
+        {
+            _logger.LogWarning("Transfer request missing Metadata with CorrelationId: {CorrelationId}.", currentCorrelationId);
+            return new BadRequestObjectResult("Metadata is required.");
         }
 
         var caseMetadata = await _caseMetadataService.GetCaseMetadataForCaseIdAsync(transferRequest.Value.Metadata.CaseId);
@@ -52,6 +60,12 @@ public class InitiateTransfer
 
             if (entityState != null && entityState.State != null && entityState.State.Status != TransferStatus.Completed)
             {
+                _logger.LogInformation(
+                    "Active transfer detected for CaseId: {CaseId}, TransferId: {TransferId}. Returning current status. CorrelationId: {CorrelationId}",
+                    transferRequest.Value.Metadata.CaseId,
+                    caseMetadata.ActiveTransferId.Value,
+                    currentCorrelationId);
+
                 // if the transfer is already in progress, return the current status
                 return new AcceptedResult($"/api/filetransfer/{caseMetadata.ActiveTransferId}/status", new TransferResponse
                 {
@@ -62,7 +76,6 @@ public class InitiateTransfer
             }
         }
 
-        var currentCorrelationId = req.Headers.GetCorrelationId();
         var transferId = Guid.NewGuid();
 
         await _caseMetadataService.UpdateActiveTransferIdAsync(
@@ -82,6 +95,7 @@ public class InitiateTransfer
                 UserName = transferRequest.Value.Metadata.UserName,
                 WorkspaceId = transferRequest.Value.Metadata.WorkspaceId,
                 IsRetry = transferRequest.Value.IsRetry ?? false,
+                CorrelationId = currentCorrelationId,
             },
             new StartOrchestrationOptions
             {

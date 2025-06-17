@@ -34,8 +34,12 @@ public class EgressStorageClient(
     {
         var token = await GetWorkspaceToken();
 
-        var fileName = Path.GetFileName(sourcePath);
+        if (string.IsNullOrEmpty(sourcePath))
+        {
+            throw new ArgumentNullException(nameof(sourcePath), "Source path cannot be null or empty.");
+        }
 
+        var fileName = Path.GetFileName(sourcePath);
 
         if (overwritePolicy == null)
         {
@@ -58,7 +62,7 @@ public class EgressStorageClient(
             FolderPath = destinationPath,
             FileSize = fileSize,
             WorkspaceId = workspaceId ?? throw new ArgumentNullException(nameof(workspaceId), "Workspace ID cannot be null."),
-            FileName = fileName ?? throw new ArgumentNullException(nameof(sourcePath), "FileName path cannot be null."),
+            FileName = fileName ?? throw new ArgumentNullException(nameof(sourcePath), "Source path cannot be null."),
         };
 
         var response = await SendRequestAsync<CreateUploadResponse>(_egressRequestFactory.CreateUploadRequest(arg, token));

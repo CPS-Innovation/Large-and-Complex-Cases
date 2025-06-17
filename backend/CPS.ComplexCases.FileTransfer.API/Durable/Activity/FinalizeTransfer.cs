@@ -14,6 +14,6 @@ public class FinalizeTransfer
     {
         var entityId = new EntityInstanceId(nameof(TransferEntityState), finalizeTransferPayload.TransferId.ToString());
 
-        await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.Finalize), finalizeTransferPayload);
+        await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.FinalizeTransfer));
     }
 }

@@ -15,6 +15,11 @@ using Microsoft.Extensions.Options;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 
+/// <summary>
+/// Durable activity for transferring files between storage endpoints.
+/// Handles chunked uploads, computes MD5 hashes for integrity, and manages transfer state.
+/// Signals success or failure to the associated transfer entity for orchestration.
+/// </summary>
 public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<TransferFile> logger, IOptions<SizeConfig> sizeConfig)
 {
     private readonly IStorageClientFactory _storageClientFactory = storageClientFactory;
@@ -42,14 +47,14 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             Dictionary<int, string> uploadedChunks = [];
 
             using var md5 = System.Security.Cryptography.MD5.Create();
+            byte[] buffer = new byte[chunkSize];
 
             while (position < totalSize)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 int bytesToRead = (int)Math.Min(chunkSize, totalSize - position);
-                byte[] buffer = new byte[bytesToRead];
-                int bytesRead = await sourceStream.ReadAsync(buffer, 0, bytesToRead, cancellationToken);
+                int bytesRead = await sourceStream.ReadAsync(buffer.AsMemory(0, bytesToRead), cancellationToken);
 
                 if (bytesRead <= 0)
                     break;
@@ -67,15 +72,17 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                     uploadedChunks.Add(result.PartNumber.Value, result.ETag);
                 }
 
-                _logger.LogDebug("Uploaded chunk {ChunkNumber} ({Start}-{End})", chunkNumber, start, end);
+                _logger.LogDebug("Transfer Id: {TransferId} Uploaded chunk: {ChunkNumber} ({Start}-{End})", payload.TransferId, chunkNumber, start, end);
 
                 position += bytesRead;
                 chunkNumber++;
             }
 
+            // Finalizes the MD5 hash computation. Array.Empty<byte>() is used because there is no more data to process, but TransformFinalBlock must be called to complete the hash.
             md5.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
             string md5Hash = md5.Hash != null ? Convert.ToBase64String(md5.Hash) : string.Empty;
 
+            // EgressStorageClient requires MD5 hash, while NetAppStorageClient requires ETags for chunked uploads.
             if (destinationClient is EgressStorageClient)
             {
                 await destinationClient.CompleteUploadAsync(session, md5hash: md5Hash);
@@ -95,7 +102,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 IsRenamed = payload.SourcePath.ModifiedPath != null,
             };
 
-            await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.AddSuccessfulItem), successfulItem);
+            await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.AddSuccessfulItem), successfulItem, null, cancellationToken);
         }
         catch (FileExistsException ex)
         {
@@ -110,6 +117,11 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             };
 
             await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.AddFailedItem), failedItem);
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation("Transfer cancelled: {Path}", payload.SourcePath.Path);
+            throw;
         }
         catch (Exception ex)
         {

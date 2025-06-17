@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Amazon.S3;
@@ -18,7 +14,6 @@ using CPS.ComplexCases.WireMock.Core;
 using FluentAssertions;
 using Moq;
 using WireMock.Server;
-using Xunit;
 using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 
 namespace CPS.ComplexCases.NetApp.Tests.Integration;

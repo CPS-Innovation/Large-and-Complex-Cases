@@ -43,6 +43,7 @@ public class TransferOrchestrator(IActivityLogService activityLogService)
                 Direction = input.TransferDirection,
                 TotalFiles = input.SourcePaths.Count,
                 IsRetry = input.IsRetry ?? false,
+                CorrelationId = input.CorrelationId,
             };
 
             await context.CallActivityAsync(
@@ -90,8 +91,8 @@ public class TransferOrchestrator(IActivityLogService activityLogService)
                 else
                 {
                     logger.LogInformation(
-                        "Skipping transfer for {SourcePath} due to OverwritePolicy.Ignore",
-                        sourcePath.Path);
+                        "Skipping transfer for {SourcePath} due to OverwritePolicy.Ignore. CorrelationId: {CorrelationId}",
+                        sourcePath.Path, input.CorrelationId);
                 }
 
             }
@@ -118,7 +119,7 @@ public class TransferOrchestrator(IActivityLogService activityLogService)
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "TransferOrchestrator failed for TransferId: {TransferId}", input.TransferId);
+            logger.LogError(ex, "TransferOrchestrator failed for TransferId: {TransferId}. With CorrelationId {CorrelationId}", input.TransferId, input.CorrelationId);
 
             await context.CallActivityAsync(
                 nameof(UpdateTransferStatus),
