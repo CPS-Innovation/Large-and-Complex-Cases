@@ -17,6 +17,7 @@ public class EgressStorageClientTests : IDisposable
     private bool _disposed = false;
     private readonly WireMockServer _server;
     private readonly EgressStorageClient _client;
+    private readonly HttpClient _httpClient;
 
     public EgressStorageClientTests()
     {
@@ -36,13 +37,13 @@ public class EgressStorageClientTests : IDisposable
             Password = "password"
         };
 
-        var httpClient = new HttpClient
+        _httpClient = new HttpClient
         {
             BaseAddress = new Uri(egressOptions.Url)
         };
         var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<EgressStorageClient>();
 
-        _client = new EgressStorageClient(logger, new OptionsWrapper<EgressOptions>(egressOptions), httpClient, new EgressRequestFactory());
+        _client = new EgressStorageClient(logger, new OptionsWrapper<EgressOptions>(egressOptions), _httpClient, new EgressRequestFactory());
     }
 
     protected virtual void Dispose(bool disposing)
@@ -52,6 +53,7 @@ public class EgressStorageClientTests : IDisposable
             if (disposing)
             {
                 _server.Stop();
+                _httpClient.Dispose();
             }
             _disposed = true;
         }
