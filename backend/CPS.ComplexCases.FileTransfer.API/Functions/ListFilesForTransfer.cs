@@ -37,7 +37,7 @@ public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorage
             IsFolder = path.IsFolder
         }).ToList();
 
-        var filesForTransfer = await sourceClient.ListFilesForTransferAsync(selectedEntities, request.Value.WorkspaceId);
+        var filesForTransfer = await sourceClient.ListFilesForTransferAsync(selectedEntities, request.Value.WorkspaceId, request.Value.CaseId);
 
         var result = new FilesForTransferResult
         {

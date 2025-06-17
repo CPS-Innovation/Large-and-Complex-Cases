@@ -60,7 +60,6 @@ public class NetAppMockHttpRequestFactory : INetAppMockHttpRequestFactory
         [
             new(S3Constants.ListTypeQueryName, "2"),
             new(S3Constants.ContinuationTokenQueryName, arg.ContinuationToken ?? string.Empty),
-            new(S3Constants.DelimiterQueryValue, S3Constants.Delimiter),
             new(S3Constants.MaxKeysQueryName, arg.MaxKeys ?? string.Empty),
             new(S3Constants.PrefixQueryName, arg.Prefix ?? string.Empty),
         ]);
