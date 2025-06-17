@@ -132,7 +132,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 SourcePath = payload.SourcePath.Path,
                 Status = TransferStatus.Failed,
                 ErrorCode = TransferErrorCode.GeneralError,
-                ErrorMessage = ex.Message
+                ErrorMessage = $"Exception: {ex.GetType().FullName}: {ex.Message}{Environment.NewLine}StackTrace: {ex.StackTrace}"
             };
 
             await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.AddFailedItem), failedItem);
