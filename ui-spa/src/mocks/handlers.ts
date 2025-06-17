@@ -97,7 +97,10 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
 
     http.post(`${baseUrl}/api/v1/filetransfer/validate`, async () => {
       await delay(2500);
-      return HttpResponse.json({ isValid: true });
+      return HttpResponse.json({
+        isValid: true,
+        discoveredFiles: [{ id: "1", sourcePath: "abc" }],
+      });
     }),
 
     http.post(`${baseUrl}/api/v1/filetransfer/initiate`, async () => {
@@ -113,7 +116,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
         //   ? getNetAppFolderResultsDev(path as string)
         //   : getNetAppFolderResultsPlaywright(path as string);
         await delay(1500);
-        return HttpResponse.json({ overallStatus: "IN_PROGRESS" });
+        return HttpResponse.json({ overallStatus: "COMPLETED" });
       },
     ),
   ];
