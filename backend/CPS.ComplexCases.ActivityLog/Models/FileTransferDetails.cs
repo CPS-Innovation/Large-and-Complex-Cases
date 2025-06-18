@@ -10,16 +10,25 @@ public class FileTransferDetails
     public int TransferedFileCount => Files.Count;
     public int ErrorFileCount => Errors.Count;
     public string TotalSizeTransferred => GetTotalSizeTransferred();
+    public long TotalBytesTransferred => GetTotalBytesTransferred();
     public required List<FileTransferItem> Files { get; set; } = [];
     public required List<FileTransferError> Errors { get; set; } = [];
 
     private string GetTotalSizeTransferred()
     {
-        if (Files == null || Files.Count == 0)
+        if (Files.Count == 0)
             return "0 B";
 
         long totalSize = Files.Sum(file => file.Size);
         return ByteSize.FromBytes(totalSize).ToString();
+    }
+
+    private long GetTotalBytesTransferred()
+    {
+        if (Files.Count == 0)
+            return 0;
+
+        return Files.Sum(file => file.Size);
     }
 }
 

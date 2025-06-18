@@ -7,11 +7,13 @@ using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.FileTransfer.API.Durable.Orchestration;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
+using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.DurableTask;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Durable.Orchestration;
@@ -22,6 +24,7 @@ public class TransferOrchestratorTests
     private readonly Mock<IActivityLogService> _activityLogServiceMock;
     private readonly Mock<TaskOrchestrationContext> _contextMock;
     private readonly Mock<ILogger> _loggerMock;
+    private readonly Mock<IOptions<SizeConfig>> _sizeConfigMock;
     private readonly TransferOrchestrator _orchestrator;
 
     public TransferOrchestratorTests()
@@ -32,11 +35,15 @@ public class TransferOrchestratorTests
         _activityLogServiceMock = new Mock<IActivityLogService>();
         _contextMock = new Mock<TaskOrchestrationContext>();
         _loggerMock = new Mock<ILogger>();
+        _sizeConfigMock = new Mock<IOptions<SizeConfig>>();
+
+        // Provide a default SizeConfig for tests
+        _sizeConfigMock.Setup(x => x.Value).Returns(new SizeConfig { BatchSize = 10 });
 
         _contextMock.Setup(c => c.CreateReplaySafeLogger(It.IsAny<string>()))
             .Returns(_loggerMock.Object);
 
-        _orchestrator = new TransferOrchestrator(_activityLogServiceMock.Object);
+        _orchestrator = new TransferOrchestrator(_activityLogServiceMock.Object, _sizeConfigMock.Object);
     }
 
     [Fact]
@@ -60,7 +67,7 @@ public class TransferOrchestratorTests
         using (new AssertionScope())
         {
             activityCallOrder.Should().HaveCount(6);
-            activityCallOrder[0].Should().Be("IntializeTransfer");
+            activityCallOrder[0].Should().Be("InitializeTransfer");
             activityCallOrder[1].Should().Be("UpdateActivityLog");
             activityCallOrder[2].Should().Be("UpdateTransferStatus");
             activityCallOrder[3].Should().Be("TransferFile");
@@ -83,7 +90,7 @@ public class TransferOrchestratorTests
             .Returns(Task.CompletedTask)
             .Callback<TaskName, object, TaskOptions>((taskName, entity, _) =>
             {
-                if (taskName.Name == "IntializeTransfer")
+                if (taskName.Name == "InitializeTransfer")
                 {
                     capturedEntity = (TransferEntity)entity;
                 }

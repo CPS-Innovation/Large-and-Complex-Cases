@@ -17,6 +17,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.API.Domain.Configuration;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
@@ -54,4 +55,4 @@ builder.Services.AddScoped<ICaseMetadataService, CaseMetadataService>();
 builder.Services.AddScoped<ICaseEnrichmentService, CaseEnrichmentService>();
 builder.Services.AddSingleton<IOpenApiConfigurationOptions, OpenApiConfigurationOptions>();
 
-builder.Build().Run();
+await builder.Build().RunAsync();

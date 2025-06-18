@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Amazon.S3;
@@ -18,7 +14,6 @@ using CPS.ComplexCases.WireMock.Core;
 using FluentAssertions;
 using Moq;
 using WireMock.Server;
-using Xunit;
 using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 
 namespace CPS.ComplexCases.NetApp.Tests.Integration;
@@ -287,6 +282,113 @@ public class NetAppStorageClientTests : IDisposable
         // Act & Assert (should not throw)
         Func<Task> act = () => _client.CompleteUploadAsync(session, null, etags);
         await act.Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public async Task UploadLargeFile_ShouldHandleMultipleChunksEfficiently()
+    {
+        // Arrange
+        const int largeFileSize = 50 * 1024 * 1024; // 50 MB
+        var largeFileData = new byte[largeFileSize];
+        new Random().NextBytes(largeFileData); // Fill with random data
+
+        var chunkSize = 5 * 1024 * 1024; // 5 MB chunks
+        var totalChunks = (int)Math.Ceiling((double)largeFileData.Length / chunkSize);
+        var etags = new List<PartETag>();
+
+        // Arrange
+        var arg = new InitiateMultipartUploadArg
+        {
+            BucketName = BucketName,
+            ObjectKey = ObjectKey
+        };
+
+        var getObjectArg = new GetObjectArg
+        {
+            BucketName = BucketName,
+            ObjectKey = ObjectKey
+        };
+
+        var request = new InitiateMultipartUploadRequest
+        {
+            BucketName = BucketName,
+            Key = ObjectKey
+        };
+
+        var getObjectAttributesRequest = new GetObjectAttributesRequest
+        {
+            BucketName = BucketName,
+            Key = ObjectKey,
+            ObjectAttributes = [ObjectAttributes.ETag]
+        };
+
+        var completeMultipartUploadArg = new CompleteMultipartUploadArg
+        {
+            BucketName = BucketName,
+            ObjectKey = ObjectKey,
+            UploadId = UploadId,
+            CompletedParts = []
+        };
+
+        var completeMultipartUploadRequest = new CompleteMultipartUploadRequest
+        {
+            BucketName = BucketName,
+            Key = ObjectKey,
+            UploadId = UploadId,
+            PartETags = []
+        };
+
+        _netAppArgFactoryMock.Setup(f => f.CreateInitiateMultipartUploadArg(BucketName, ObjectKey)).Returns(arg);
+        _netAppArgFactoryMock.Setup(f => f.CreateGetObjectArg(BucketName, ObjectKey)).Returns(getObjectArg);
+        _netAppRequestFactoryMock.Setup(f => f.CreateMultipartUploadRequest(arg)).Returns(request);
+        _netAppRequestFactoryMock.Setup(f => f.GetObjectAttributesRequest(getObjectArg)).Returns(getObjectAttributesRequest);
+
+        var session = await _client.InitiateUploadAsync(ObjectKey, largeFileSize);
+
+        for (int i = 0; i < totalChunks; i++)
+        {
+            var start = i * chunkSize;
+            var end = Math.Min(start + chunkSize, largeFileData.Length);
+            var chunkData = largeFileData[start..end];
+
+            var uploadPartArg = new UploadPartArg
+            {
+                BucketName = BucketName,
+                ObjectKey = ObjectKey,
+                PartNumber = i,
+                PartData = chunkData,
+                UploadId = UploadId
+            };
+
+            var uploadRequest = new UploadPartRequest
+            {
+                BucketName = BucketName,
+                Key = ObjectKey,
+                PartNumber = i,
+                UploadId = UploadId,
+                InputStream = new MemoryStream(chunkData)
+            };
+
+            _netAppArgFactoryMock.Setup(f => f.CreateUploadPartArg(BucketName, ObjectKey, chunkData, i, UploadId)).Returns(uploadPartArg);
+            _netAppRequestFactoryMock.Setup(c => c.UploadPartRequest(uploadPartArg)).Returns(uploadRequest);
+
+            // Act
+            var result = await _client.UploadChunkAsync(session, i, chunkData);
+            etags.Add(new PartETag(i, result.ETag));
+        }
+
+        completeMultipartUploadArg.CompletedParts.AddRange(etags);
+        completeMultipartUploadRequest.PartETags.AddRange(etags);
+
+        var etagsDict = etags.ToDictionary(e => e.PartNumber, e => e.ETag);
+        _netAppArgFactoryMock.Setup(f => f.CreateCompleteMultipartUploadArg(BucketName, ObjectKey, UploadId, etagsDict)).Returns(completeMultipartUploadArg);
+        _netAppRequestFactoryMock.Setup(c => c.CompleteMultipartUploadRequest(completeMultipartUploadArg)).Returns(completeMultipartUploadRequest);
+
+        // Complete the upload
+        await _client.CompleteUploadAsync(session, null, etagsDict);
+
+        // Assert
+        etags.Count.Should().Be(totalChunks);
     }
 
     protected virtual void Dispose(bool disposing)

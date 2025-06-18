@@ -14,8 +14,10 @@ namespace CPS.ComplexCases.Egress.Tests.Integration;
 
 public class EgressStorageClientTests : IDisposable
 {
+    private bool _disposed = false;
     private readonly WireMockServer _server;
     private readonly EgressStorageClient _client;
+    private readonly HttpClient _httpClient;
 
     public EgressStorageClientTests()
     {
@@ -35,19 +37,37 @@ public class EgressStorageClientTests : IDisposable
             Password = "password"
         };
 
-        var httpClient = new HttpClient
+        _httpClient = new HttpClient
         {
             BaseAddress = new Uri(egressOptions.Url)
         };
         var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<EgressStorageClient>();
 
-        _client = new EgressStorageClient(logger, new OptionsWrapper<EgressOptions>(egressOptions), httpClient, new EgressRequestFactory());
+        _client = new EgressStorageClient(logger, new OptionsWrapper<EgressOptions>(egressOptions), _httpClient, new EgressRequestFactory());
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                _server.Stop();
+                _httpClient.Dispose();
+            }
+            _disposed = true;
+        }
     }
 
     public void Dispose()
     {
-        _server.Stop();
+        Dispose(true);
         GC.SuppressFinalize(this);
+    }
+
+    ~EgressStorageClientTests()
+    {
+        Dispose(false);
     }
 
     [Fact]
@@ -213,7 +233,7 @@ public class EgressStorageClientTests : IDisposable
             () => _client.InitiateUploadAsync(destinationPath, fileSize, workspaceId, null));
 
         Assert.Equal("sourcePath", exception.ParamName);
-        Assert.Contains("FileName path cannot be null", exception.Message);
+        Assert.Contains("Source path cannot be null or empty", exception.Message);
     }
 
 
@@ -372,5 +392,32 @@ public class EgressStorageClientTests : IDisposable
 
         // Assert - No exceptions thrown indicates success
         Assert.True(true, "Full upload workflow with overwrite completed successfully");
+    }
+
+    [Fact]
+    public async Task UploadLargeFile_ShouldHandleMultipleChunks()
+    {
+        // Arrange
+        const int largeFileSize = 50 * 1024 * 1024; // 50 MB
+        var largeData = new byte[largeFileSize];
+        new Random().NextBytes(largeData);
+
+        var session = await _client.InitiateUploadAsync("/uploads/test", largeFileSize, "workspace-id", "/local/large-file.txt");
+        int chunkSize = 5 * 1024 * 1024; // 5 MB
+        int totalChunks = (int)Math.Ceiling((double)largeFileSize / chunkSize);
+
+        // Act & Assert
+        for (int i = 0; i < totalChunks; i++)
+        {
+            int offset = i * chunkSize;
+            int size = Math.Min(chunkSize, largeFileSize - offset);
+            var chunk = new byte[size];
+            Array.Copy(largeData, offset, chunk, 0, size);
+            var contentRange = $"bytes {offset}-{offset + size - 1}/{largeFileSize}";
+            var result = await _client.UploadChunkAsync(session, i + 1, chunk, contentRange);
+            Assert.NotNull(result);
+        }
+
+        await _client.CompleteUploadAsync(session, "dummy-md5");
     }
 }

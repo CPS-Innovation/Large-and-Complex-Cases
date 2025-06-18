@@ -12,6 +12,7 @@ using CPS.ComplexCases.API.Clients.FileTransfer;
 using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Extensions;
+using CPS.ComplexCases.Common.Extensions;
 
 namespace CPS.ComplexCases.API.Functions.Transfer;
 
@@ -31,12 +32,16 @@ public class InitiateTransfer(ILogger<InitiateTransfer> logger, IFileTransferCli
     public async Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "filetransfer/initiate")] HttpRequest req, FunctionContext functionContext)
     {
+        var correlationId = req.Headers.GetCorrelationId();
+
+        _logger.LogInformation("Initiating file transfer with CorrelationId: {CorrelationId}", correlationId);
         var context = functionContext.GetRequestContext();
 
         var transferRequest = await ValidatorHelper.GetJsonBody<InitiateTransferRequest, InitiateTransferRequestValidator>(req);
 
         if (!transferRequest.IsValid)
         {
+            _logger.LogWarning("Invalid transfer request: {ValidationErrors}, CorrelationId: {CorrelationId}", transferRequest.ValidationErrors, correlationId);
             return new BadRequestObjectResult(transferRequest.ValidationErrors);
         }
 

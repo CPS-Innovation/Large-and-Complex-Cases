@@ -25,4 +25,5 @@ public class TransferEntity
     public List<TransferFailedItem> FailedItems { get; set; } = new List<TransferFailedItem>();
     public bool? IsRetry { get; set; } = false;
     public string? UserName { get; set; }
+    public Guid? CorrelationId { get; set; } = null;
 }

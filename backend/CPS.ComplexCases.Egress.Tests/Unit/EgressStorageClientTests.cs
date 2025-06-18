@@ -20,7 +20,7 @@ using Moq.Protected;
 
 namespace CPS.ComplexCases.Egress.Tests.Unit;
 
-public class EgressStorageClientTests
+public class EgressStorageClientTests : IDisposable
 {
     private readonly Fixture _fixture;
     private readonly Mock<ILogger<EgressStorageClient>> _loggerMock;
@@ -30,6 +30,8 @@ public class EgressStorageClientTests
     private readonly Mock<IEgressRequestFactory> _requestFactoryMock;
     private readonly EgressStorageClient _client;
     private const string TestUrl = "https://example.com";
+
+    private bool _disposed = false;
 
     public EgressStorageClientTests()
     {
@@ -82,7 +84,7 @@ public class EgressStorageClientTests
         );
 
         // Act
-        var result = await _client.OpenReadStreamAsync(path, workspaceId, fileId);
+        await using var result = await _client.OpenReadStreamAsync(path, workspaceId, fileId);
 
         // Assert
         using (new AssertionScope())
@@ -524,7 +526,8 @@ public class EgressStorageClientTests
         _requestFactoryMock
             .Setup(f => f.ListEgressMaterialRequest(
                 It.Is<ListWorkspaceMaterialArg>(arg =>
-                    arg.WorkspaceId == workspaceId && arg.Path == path),
+                    arg.WorkspaceId == workspaceId &&
+                    arg.Path == path),
                 token))
             .Returns(new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/workspaces/{workspaceId}/materials"));
     }
@@ -635,5 +638,28 @@ public class EgressStorageClientTests
     {
         var responsesWithStream = responses.Select(r => (r.type, r.response, false)).ToArray();
         SetupHttpMockResponses(responsesWithStream);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                _httpClient?.Dispose();
+            }
+            _disposed = true;
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    ~EgressStorageClientTests()
+    {
+        Dispose(false);
     }
 }

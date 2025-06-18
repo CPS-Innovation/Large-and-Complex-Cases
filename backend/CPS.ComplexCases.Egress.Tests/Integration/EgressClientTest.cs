@@ -89,7 +89,7 @@ public class EgressClientTests : IDisposable
     public async Task ListCaseMaterialAsync_ShouldReturnPaginatedCaseMaterial()
     {
         // Arrange
-        var arg = _egressArgFactory.CreateListWorkspaceMaterialArg("workspace-id", 0, 10, null, null);
+        var arg = _egressArgFactory.CreateListWorkspaceMaterialArg("workspace-id", 0, 10);
 
         // Act
         var result = await _client.ListCaseMaterialAsync(arg);
@@ -113,7 +113,7 @@ public class EgressClientTests : IDisposable
     public async Task ListCaseMaterialAsync_ShouldReturnTraversedFolderMaterial()
     {
         // Arrange
-        var arg = _egressArgFactory.CreateListWorkspaceMaterialArg("workspace-id", 0, 10, "folder-id", null);
+        var arg = _egressArgFactory.CreateListWorkspaceMaterialArg("workspace-id", 0, 10, "folder-id");
 
         // Act
         var result = await _client.ListCaseMaterialAsync(arg);
