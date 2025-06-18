@@ -14,4 +14,13 @@ public static class PathExtensions
         }
         return path;
     }
+
+    public static string EnsureTrailingSlash(this string path)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            return string.Empty;
+        }
+        return path.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.CurrentCultureIgnoreCase) ? path : path + Path.DirectorySeparatorChar;
+    }
 }

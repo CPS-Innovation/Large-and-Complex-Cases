@@ -1,13 +1,13 @@
 using Microsoft.Extensions.Options;
+using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Domain.Exceptions;
+using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
-using CPS.ComplexCases.Common.Services;
-using CPS.ComplexCases.Common.Extensions;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
@@ -81,22 +81,26 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
             throw new ArgumentNullException(nameof(caseId), "Case ID cannot be null.")) ??
                 throw new InvalidOperationException($"No metadata found for case ID {caseId}.");
 
-        foreach (var entity in selectedEntities)
+        var paths = selectedEntities.Select(entity => entity.Path);
+
+        foreach (var path in paths)
         {
-            if (Path.HasExtension(entity.Path))
+            if (Path.HasExtension(path))
             {
                 filesForTransfer.Add(new FileTransferInfo
                 {
-                    FilePath = entity.Path.RemovePathPrefix(caseMetaData.NetappFolderPath),
+                    SourcePath = path,
+                    RelativePath = path.RemovePathPrefix(caseMetaData.NetappFolderPath),
                 });
             }
             else
             {
-                var files = await ListFilesInFolder(entity.Path);
+                var files = await ListFilesInFolder(path);
                 if (files != null)
                     filesForTransfer.AddRange(files.Select(file => new FileTransferInfo
                     {
-                        FilePath = file.FilePath.RemovePathPrefix(caseMetaData.NetappFolderPath)
+                        SourcePath = file.SourcePath,
+                        RelativePath = file.SourcePath.RemovePathPrefix(caseMetaData.NetappFolderPath)
                     }));
             }
         }
@@ -118,7 +122,7 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
         filesForTransfer.AddRange(
             response.Data.FileData.Select(x => new FileTransferInfo
             {
-                FilePath = x.Path
+                SourcePath = x.Path
             }));
 
         if (response.Pagination.NextContinuationToken != null)

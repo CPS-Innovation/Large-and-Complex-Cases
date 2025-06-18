@@ -123,7 +123,7 @@ public class EgressStorageClient(
                 new FileTransferInfo
                 {
                     Id = entity.FileId,
-                    FilePath = entity.Path
+                    SourcePath = entity.Path
                 }
                 };
             }
@@ -146,7 +146,7 @@ public class EgressStorageClient(
             .Select(d => new FileTransferInfo
             {
                 Id = d.Id,
-                FilePath = d.Path
+                SourcePath = d.Path
             })
             .ToList();
 

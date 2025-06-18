@@ -2,12 +2,14 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
+using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.FileTransfer.API.Factories;
+using CPS.ComplexCases.FileTransfer.API.Models.Domain;
 using CPS.ComplexCases.FileTransfer.API.Validators;
 
 namespace CPS.ComplexCases.FileTransfer.API.Functions;
@@ -50,7 +52,11 @@ public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorage
 
         if (request.Value != null && request.Value.TransferDirection == TransferDirection.EgressToNetApp)
         {
-            var validationResult = await new FilePathValidator().ValidateAsync(filesForTransfer);
+            var destinationPaths = filesForTransfer.Select(x => new DestinationPath
+            {
+                Path = request.Value.DestinationPath.EnsureTrailingSlash() + x.RelativePath
+            }).ToList();
+            var validationResult = await new FilePathValidator().ValidateAsync(destinationPaths);
             result.IsInvalid = validationResult.IsValid;
             result.ValidationErrors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
         }

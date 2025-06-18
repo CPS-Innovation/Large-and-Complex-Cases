@@ -524,9 +524,9 @@ public class EgressStorageClientTests
 
             var resultArray = result.ToArray();
             resultArray[0].Id.Should().Be(file1.FileId);
-            resultArray[0].FilePath.Should().Be(file1.Path);
+            resultArray[0].SourcePath.Should().Be(file1.Path);
             resultArray[1].Id.Should().Be(file2.FileId);
-            resultArray[1].FilePath.Should().Be(file2.Path);
+            resultArray[1].SourcePath.Should().Be(file2.Path);
         }
 
         VerifyTokenRequest();
@@ -597,9 +597,9 @@ public class EgressStorageClientTests
             result.Should().HaveCount(2);
 
             var resultArray = result.ToArray();
-            resultArray.Should().AllSatisfy(file => file.FilePath.Should().StartWith("/path/to/folder/"));
-            resultArray.Should().Contain(file => file.FilePath.EndsWith("file1.txt"));
-            resultArray.Should().Contain(file => file.FilePath.EndsWith("file2.txt"));
+            resultArray.Should().AllSatisfy(file => file.SourcePath.Should().StartWith("/path/to/folder/"));
+            resultArray.Should().Contain(file => file.SourcePath.EndsWith("file1.txt"));
+            resultArray.Should().Contain(file => file.SourcePath.EndsWith("file2.txt"));
         }
 
         VerifyTokenRequest();
@@ -707,9 +707,9 @@ public class EgressStorageClientTests
             result.Should().HaveCount(3);
 
             var resultArray = result.ToArray();
-            resultArray.Should().Contain(file => file.FilePath == "/parent/parent-file.txt");
-            resultArray.Should().Contain(file => file.FilePath == "/parent/subfolder/sub-file1.txt");
-            resultArray.Should().Contain(file => file.FilePath == "/parent/subfolder/sub-file2.txt");
+            resultArray.Should().Contain(file => file.SourcePath == "/parent/parent-file.txt");
+            resultArray.Should().Contain(file => file.SourcePath == "/parent/subfolder/sub-file1.txt");
+            resultArray.Should().Contain(file => file.SourcePath == "/parent/subfolder/sub-file2.txt");
         }
 
         VerifyTokenRequest();
