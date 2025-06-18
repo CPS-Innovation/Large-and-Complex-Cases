@@ -321,7 +321,7 @@ public class TransferOrchestratorTests
     }
 
     [Fact]
-    public async Task RunOrchestrator_WhenActivityThrowsException_UpdatesTransferStatusToFailed()
+    public async Task RunOrchestrator_WhenActivityThrowsException_UpdatesTransferStatusToFailedAndRethrows()
     {
         // Arrange
         var transferPayload = CreateValidTransferPayload();
@@ -347,12 +347,13 @@ public class TransferOrchestratorTests
                 return Task.CompletedTask;
             });
 
-        // Act
-        await _orchestrator.RunOrchestrator(_contextMock.Object);
+        // Act & Assert
+        var thrownException = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _orchestrator.RunOrchestrator(_contextMock.Object));
 
-        // Assert
         using (new AssertionScope())
         {
+            thrownException.Should().Be(exception);
             capturedStatusPayloads.Should().HaveCount(2);
             capturedStatusPayloads[0].Status.Should().Be(TransferStatus.InProgress);
             capturedStatusPayloads[1].Status.Should().Be(TransferStatus.Failed);
@@ -361,7 +362,7 @@ public class TransferOrchestratorTests
     }
 
     [Fact]
-    public async Task RunOrchestrator_WhenActivityThrowsException_CallsActivityLogServiceForFailure()
+    public async Task RunOrchestrator_WhenActivityThrowsException_CallsActivityLogServiceForFailureAndRethrows()
     {
         // Arrange
         var transferPayload = CreateValidTransferPayload();
@@ -380,20 +381,25 @@ public class TransferOrchestratorTests
                 return Task.CompletedTask;
             });
 
-        // Act
-        await _orchestrator.RunOrchestrator(_contextMock.Object);
+        // Act & Assert
+        var thrownException = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _orchestrator.RunOrchestrator(_contextMock.Object));
 
-        // Assert
-        _activityLogServiceMock.Verify(
-            x => x.CreateActivityLogAsync(
-                ActivityLog.Enums.ActionType.TransferFailed,
-                ActivityLog.Enums.ResourceType.FileTransfer,
-                transferPayload.CaseId,
-                transferPayload.TransferId.ToString(),
-                It.IsAny<string>(),
-                transferPayload.UserName,
-                It.IsAny<JsonDocument>()),
-            Times.Once);
+        using (new AssertionScope())
+        {
+            thrownException.Should().Be(exception);
+
+            _activityLogServiceMock.Verify(
+                x => x.CreateActivityLogAsync(
+                    ActivityLog.Enums.ActionType.TransferFailed,
+                    ActivityLog.Enums.ResourceType.FileTransfer,
+                    transferPayload.CaseId,
+                    transferPayload.TransferId.ToString(),
+                    It.IsAny<string>(),
+                    transferPayload.UserName,
+                    It.IsAny<JsonDocument>()),
+                Times.Once);
+        }
     }
 
     [Fact]
