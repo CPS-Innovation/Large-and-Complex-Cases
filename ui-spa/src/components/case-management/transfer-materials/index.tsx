@@ -18,12 +18,9 @@ import { TransferAction } from "../../../common/types/TransferAction";
 import { getFormatedEgressFolderData } from "../../../common/utils/getFormatedEgressFolderData";
 import { mapToNetAppFolderData } from "../../../common/utils/mapToNetAppFolderData";
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
-import {
-  InitiateFileTransferPayload,
-  EgressTranferPayloadSourcPath,
-  NetAppTranferPayloadSourcPath,
-} from "../../../common/types/InitiateFileTransferPayload";
+import { InitiateFileTransferPayload } from "../../../common/types/InitiateFileTransferPayload";
 import { TransferStatusResponse } from "../../../common/types/TransferStatusResponse";
+import { ValidateFileTransferResponse } from "../../../common/types/ValidateFileTransferResponse";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
@@ -340,12 +337,20 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         "selected transfer destination details should not be null",
       );
     }
-    const sourcePaths = egressFolderData
-      .filter((data) => selectedSourceFoldersOrFiles.includes(data.path))
-      .map((data) => ({
-        id: data.id,
-        path: data.path,
+    let sourcePaths = [];
+    if (selectedTransferAction.destinationFolder.sourceType === "egress") {
+      sourcePaths = egressFolderData
+        .filter((data) => selectedSourceFoldersOrFiles.includes(data.path))
+        .map((data) => ({
+          id: data.id,
+          path: data.path,
+        }));
+    } else {
+      sourcePaths = selectedSourceFoldersOrFiles.map((path) => ({
+        path: path,
       }));
+    }
+
     const validationPayload = {
       caseId: caseId,
       transferType:
@@ -362,59 +367,45 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     return validationPayload;
   };
 
-  const getEgressToNetAppTransferPayload = (
+  const getInitiateTransferPayload = (
     isRetry: boolean,
-    sourcePaths: EgressTranferPayloadSourcPath[],
-    destinationPath: string,
+    response: ValidateFileTransferResponse,
   ): InitiateFileTransferPayload => {
     if (!selectedTransferAction) {
       throw new Error(
         "selected transfer destination details should not be null",
       );
     }
+    const sourcePaths = response.discoveredFiles.map((data) => ({
+      id: data?.id,
+      path: data.sourcePath,
+    }));
 
     const payload = {
       isRetry: isRetry,
       caseId: caseId,
-      transferType:
-        selectedTransferAction.actionType === "copy"
-          ? ("COPY" as const)
-          : ("MOVE" as const),
-      direction: "EgressToNetApp" as const,
       sourcePaths: sourcePaths,
-      destinationPath: destinationPath,
+      destinationPath: response.destinationBasePath,
     };
-    return payload;
-  };
+    const uniquePayload =
+      selectedTransferAction.destinationFolder.sourceType === "egress"
+        ? {
+            transferType:
+              selectedTransferAction.actionType === "copy"
+                ? ("COPY" as const)
+                : ("MOVE" as const),
+            direction: "EgressToNetApp" as const,
+          }
+        : {
+            transferType: "COPY" as const,
+            direction: "NetAppToEgress" as const,
+          };
 
-  const getNetAppToEgressTransferPayload = (
-    isRetry: boolean,
-    sourcePaths: NetAppTranferPayloadSourcPath[],
-    destinationPath: string,
-  ): InitiateFileTransferPayload => {
-    if (!selectedTransferAction) {
-      throw new Error(
-        "selected transfer destination details should not be null",
-      );
-    }
-
-    const payload = {
-      isRetry: isRetry,
-      caseId: caseId,
-      transferType: "COPY" as const,
-      direction: "NetAppToEgress" as const,
-      sourcePaths: sourcePaths,
-      destinationPath: destinationPath,
-    };
-    return payload;
+    return { ...payload, ...uniquePayload };
   };
 
   const handleTransferConfirmationContinue = () => {
-    if (selectedTransferAction?.destinationFolder.sourceType === "egress") {
-      handleValidateTransfer();
-      return;
-    }
-    getNetAppToEgressTransferPayload(false, [], "");
+    handleValidateTransfer();
   };
 
   const handleValidateTransfer = async () => {
@@ -435,14 +426,9 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         return;
       }
 
-      const sourcePaths = response.discoveredFiles.map((data) => ({
-        id: data.id,
-        path: data.sourcePath,
-      }));
-      const initiateTransferPayload = getEgressToNetAppTransferPayload(
+      const initiateTransferPayload = getInitiateTransferPayload(
         false,
-        sourcePaths,
-        response.destinationBasePath,
+        response,
       );
       handleInitiateFileTransfer(initiateTransferPayload);
     } catch (error) {

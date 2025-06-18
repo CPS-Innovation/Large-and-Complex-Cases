@@ -3,7 +3,7 @@ export type ValidateFileTransferPayload = {
   transferType: "COPY" | "MOVE";
   direction: "EgressToNetApp" | "NetAppToEgress";
   sourcePaths: {
-    id: string;
+    id?: string;
     path: string;
   }[];
   destinationBasePath: string;
