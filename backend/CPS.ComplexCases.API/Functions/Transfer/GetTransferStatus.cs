@@ -9,6 +9,7 @@ using CPS.ComplexCases.API.Clients.FileTransfer;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Extensions;
 using Microsoft.OpenApi.Models;
+using CPS.ComplexCases.API.Exceptions;
 
 namespace CPS.ComplexCases.API.Functions.Transfer;
 
@@ -29,10 +30,21 @@ public class GetTransferStatus(ILogger<GetTransferStatus> logger, IFileTransferC
     public async Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "filetransfer/{transferId}/status")] HttpRequest req, FunctionContext functionContext, string transferId)
     {
-        var context = functionContext.GetRequestContext();
+        try
+        {
+            var context = functionContext.GetRequestContext();
 
-        var response = await _transferClient.GetFileTransferStatusAsync(transferId, context.CorrelationId);
+            var response = await _transferClient.GetFileTransferStatusAsync(transferId, context.CorrelationId);
 
-        return await response.ToActionResult();
+            return await response.ToActionResult();
+        }
+        catch (CpsAuthenticationException)
+        {
+            return new ContentResult
+            {
+                StatusCode = StatusCodes.Status401Unauthorized,
+                Content = "Unauthorized"
+            };
+        }
     }
 }
