@@ -116,7 +116,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 ErrorMessage = ex.Message
             };
 
-            await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.AddFailedItem), failedItem);
+            await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.AddFailedItem), failedItem, null, cancellationToken);
         }
         catch (OperationCanceledException)
         {
@@ -135,7 +135,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 ErrorMessage = $"Exception: {ex.GetType().FullName}: {ex.Message}{Environment.NewLine}StackTrace: {ex.StackTrace}"
             };
 
-            await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.AddFailedItem), failedItem);
+            await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.AddFailedItem), failedItem, null, cancellationToken);
         }
     }
 }

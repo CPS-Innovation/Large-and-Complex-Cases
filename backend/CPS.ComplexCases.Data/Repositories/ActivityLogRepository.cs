@@ -70,6 +70,6 @@ public class ActivityLogRepository(ApplicationDbContext dbContext) : IActivityLo
             query = query.Where(a => a.ResourceId == filter.ResourceId);
         }
 
-        return await query.Skip(filter.Skip).Take(filter.Take).ToListAsync();
+        return await query.Skip(filter.Skip).Take(filter.Take).OrderByDescending(x => new { x.Timestamp, x.Id }).ToListAsync();
     }
 }

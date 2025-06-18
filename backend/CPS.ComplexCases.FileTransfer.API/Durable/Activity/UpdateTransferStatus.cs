@@ -10,10 +10,10 @@ namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 public class UpdateTransferStatus
 {
     [Function(nameof(UpdateTransferStatus))]
-    public async Task Run([ActivityTrigger] UpdateTransferStatusPayload updateStatusPayload, [DurableClient] DurableTaskClient client)
+    public async Task Run([ActivityTrigger] UpdateTransferStatusPayload updateStatusPayload, [DurableClient] DurableTaskClient client, CancellationToken cancellationToken = default)
     {
         var entityId = new EntityInstanceId(nameof(TransferEntityState), updateStatusPayload.TransferId.ToString());
 
-        await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.UpdateStatus), updateStatusPayload.Status);
+        await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.UpdateStatus), updateStatusPayload.Status, null, cancellationToken);
     }
 }

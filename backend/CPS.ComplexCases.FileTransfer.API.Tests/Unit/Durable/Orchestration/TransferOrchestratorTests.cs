@@ -90,7 +90,7 @@ public class TransferOrchestratorTests
             .Returns(Task.CompletedTask)
             .Callback<TaskName, object, TaskOptions>((taskName, entity, _) =>
             {
-                if (taskName.Name == "InitializETransfer")
+                if (taskName.Name == "InitializeTransfer")
                 {
                     capturedEntity = (TransferEntity)entity;
                 }
