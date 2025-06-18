@@ -42,6 +42,10 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   const [transferSource, setTransferSource] = useState<"egress" | "netapp">(
     "egress",
   );
+  const [transferStatusData, setTransferStatusData] = useState<null | {
+    username: string;
+    direction: "EgressToNetApp" | "NetAppToEgress";
+  }>(null);
   const [egressPathFolders, setEgressPathFolders] = useState<
     {
       folderName: string;
@@ -440,6 +444,11 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     initiatePayload: InitiateFileTransferPayload,
   ) => {
     setTransferStatus("transferring");
+    setTransferStatusData({
+      username: "fff",
+      direction:
+        transferSource === "egress" ? "EgressToNetApp" : "NetAppToEgress",
+    });
     try {
       const initiateFileTransferResponse =
         await initiateFileTransfer(initiatePayload);
@@ -453,11 +462,23 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
 
   const handleStatusResponse = useCallback(
     (status: TransferStatusResponse, interval: NodeJS.Timeout) => {
+      if (
+        status.overallStatus === "INITIATED" ||
+        status.overallStatus === "IN_PROGRESS"
+      ) {
+        setTransferStatus("transferring");
+        setTransferStatusData({
+          username: status.username,
+          direction: status.direction,
+        });
+        return;
+      }
       if (status.overallStatus === "COMPLETED") {
         egressRefetch();
         netAppRefetch();
         setTransferStatus("completed");
         setTransferId("");
+        setTransferStatusData(null);
         if (interval) clearInterval(interval);
         return;
       }
@@ -469,6 +490,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           },
         });
         setTransferId("");
+        setTransferStatusData(null);
         if (interval) clearInterval(interval);
       }
     },
@@ -487,7 +509,6 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       return;
     }
 
-    setTransferStatus("transferring");
     const pollingInterval = 5000;
     const fetchStatusData = async () => {
       if (transferId) {
@@ -505,6 +526,43 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     };
   }, [transferId, setTransferStatus, handleStatusResponse]);
 
+  const activeTransferMessage = useMemo(() => {
+    if (!transferStatusData) {
+      return {
+        ariaLabelText: "",
+        spinnerTextContent: "",
+      };
+    }
+    if (transferStatusData?.username !== "fff") {
+      return {
+        ariaLabelText: `${transferStatusData?.username} is currently transferring`,
+        spinnerTextContent: (
+          <span>
+            <b>{transferStatusData?.username}</b> is currently transferring
+          </span>
+        ),
+      };
+    }
+
+    if (transferStatusData?.direction === "EgressToNetApp")
+      return {
+        ariaLabelText: "Completing transfer from egress to shared drive",
+        spinnerTextContent: (
+          <span>
+            Completing transfer from <b>egress to shared drive...</b>
+          </span>
+        ),
+      };
+    return {
+      ariaLabelText: "Completing transfer from shared drive to egress",
+      spinnerTextContent: (
+        <span>
+          Completing transfer from <b>shared drive to egress...</b>
+        </span>
+      ),
+    };
+  }, [transferStatusData]);
+
   if (transferStatus === "transferring") {
     return (
       <div className={styles.transferContent}>
@@ -512,22 +570,10 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           <Spinner
             data-testid="transfer-spinner"
             diameterPx={50}
-            ariaLabel={
-              transferSource === "egress"
-                ? "Completing transfer from egress to shared drive"
-                : "Completing transfer from shared drive to egress"
-            }
+            ariaLabel={activeTransferMessage.ariaLabelText}
           />
           <div className={styles.spinnerText}>
-            {transferSource === "egress" ? (
-              <span>
-                Completing transfer from <b>egress to shared drive...</b>
-              </span>
-            ) : (
-              <span>
-                Completing transfer from <b>shared drive to egress...</b>
-              </span>
-            )}
+            {activeTransferMessage.spinnerTextContent}
           </div>
         </div>
       </div>

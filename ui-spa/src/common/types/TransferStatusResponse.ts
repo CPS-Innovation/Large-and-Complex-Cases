@@ -9,6 +9,7 @@ export type TransferStatusResponse = {
   direction: "EgressToNetApp" | "NetAppToEgress";
   completedAt: null | string;
   failedFiles: TransferFailedItem[];
+  username: string;
 };
 
 export type TransferFailedItem = {
