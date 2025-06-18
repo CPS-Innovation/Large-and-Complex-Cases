@@ -29,16 +29,16 @@ public class ActivityLogRepository(ApplicationDbContext dbContext) : IActivityLo
 
     public async Task<ActivityLog?> UpdateAsync(ActivityLog activityLog)
     {
-        var existingAuditLog = await GetByIdAsync(activityLog.Id);
+        var existingActivityLog = await GetByIdAsync(activityLog.Id);
 
-        if (existingAuditLog == null)
+        if (existingActivityLog == null)
         {
             return null;
         }
 
-        _dbContext.Entry(existingAuditLog).CurrentValues.SetValues(activityLog);
+        _dbContext.Entry(existingActivityLog).CurrentValues.SetValues(activityLog);
         await _dbContext.SaveChangesAsync();
-        return existingAuditLog;
+        return existingActivityLog;
     }
 
     public async Task<IEnumerable<ActivityLog>> GetByFilterAsync(ActivityLogFilterDto filter)
@@ -70,6 +70,6 @@ public class ActivityLogRepository(ApplicationDbContext dbContext) : IActivityLo
             query = query.Where(a => a.ResourceId == filter.ResourceId);
         }
 
-        return await query.Skip(filter.Skip).Take(filter.Take).ToListAsync();
+        return await query.Skip(filter.Skip).Take(filter.Take).OrderByDescending(x => new { x.Timestamp, x.Id }).ToListAsync();
     }
 }

@@ -25,5 +25,10 @@ public class ActivityLogConfiguration : IEntityTypeConfiguration<ActivityLog>
         builder.Property(x => x.Details).HasColumnName("details").HasColumnType("jsonb");
         builder.Property(x => x.CreatedAt).HasColumnName("created_at").IsRequired();
         builder.Property(x => x.UpdatedAt).HasColumnName("updated_at");
+
+        builder.HasIndex(x => x.ActionType).HasDatabaseName("idx_activity_log_action_type");
+        builder.HasIndex(x => x.UserName).HasDatabaseName("idx_activity_log_user_name");
+        builder.HasIndex(x => x.ResourceId).HasDatabaseName("idx_activity_log_resource_id");
+        builder.HasIndex(x => x.Timestamp).HasDatabaseName("idx_activity_log_timestamp").IsDescending();
     }
 }

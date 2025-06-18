@@ -14,85 +14,83 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
 
     public async Task CreateActivityLogAsync(ActionType actionType, ResourceType resourceType, int caseId, string resourceId, string? resourceName, string? userName, JsonDocument? details = null)
     {
-        _logger.LogInformation("Creating audit log for {ResourceType} {ResourceId}", resourceType, resourceId);
-        try
+        if (string.IsNullOrWhiteSpace(resourceId))
         {
-            var activityLog = new Data.Entities.ActivityLog
-            {
-                ActionType = actionType.GetAlternateValue(),
-                ResourceType = resourceType.ToString(),
-                CaseId = caseId,
-                ResourceId = resourceId,
-                ResourceName = resourceName,
-                UserName = userName,
-                Details = details,
-                Timestamp = DateTime.UtcNow,
-                Description = SetDescription(actionType, resourceName)
-            };
+            _logger.LogWarning("Attempted to create activity log with null or empty resourceId.");
+            throw new ArgumentException("ResourceId cannot be null or empty.", nameof(resourceId));
+        }
 
-            await _activityLogRepository.AddAsync(activityLog);
-        }
-        catch (Exception ex)
+        _logger.LogInformation("Creating activity log for {ResourceType} {ResourceId}", resourceType, resourceId);
+        var activityLog = new Data.Entities.ActivityLog
         {
-            _logger.LogError(ex, "Error creating audit log for {ResourceType} {ResourceId}", resourceType, resourceId);
-            throw;
-        }
+            ActionType = actionType.GetAlternateValue(),
+            ResourceType = resourceType.ToString(),
+            CaseId = caseId,
+            ResourceId = resourceId,
+            ResourceName = resourceName,
+            UserName = userName,
+            Details = details,
+            Timestamp = DateTime.UtcNow,
+            Description = SetDescription(actionType, resourceName)
+        };
+
+        await _activityLogRepository.AddAsync(activityLog);
     }
 
     public Task<Data.Entities.ActivityLog?> GetActivityLogByIdAsync(Guid id)
     {
-        _logger.LogInformation("Getting audit log by ID {Id}", id);
-        try
+        if (id == Guid.Empty)
         {
-            return _activityLogRepository.GetByIdAsync(id);
+            _logger.LogWarning("Attempted to get activity log with empty Guid.");
+            throw new ArgumentException("Id cannot be Guid.Empty.", nameof(id));
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting audit log by ID {Id}", id);
-            throw;
-        }
+
+        _logger.LogInformation("Getting activity log by ID {Id}", id);
+
+        return _activityLogRepository.GetByIdAsync(id);
     }
 
     public Task<IEnumerable<Data.Entities.ActivityLog>> GetActivityLogsAsync(ActivityLogFilterDto filter)
     {
-        _logger.LogInformation("Getting audit logs with filter {@Filter}", filter);
-        try
-        {
-            return _activityLogRepository.GetByFilterAsync(filter);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting audit logs with filter {@Filter}", filter);
-            throw;
-        }
+        _logger.LogInformation("Getting activity logs with filter {@Filter}", filter);
+
+        return _activityLogRepository.GetByFilterAsync(filter);
     }
 
     public Task<IEnumerable<Data.Entities.ActivityLog>> GetActivityLogsByResourceIdAsync(string resourceId)
     {
-        _logger.LogInformation("Getting audit logs for {ResourceId}", resourceId);
-        try
+        if (string.IsNullOrWhiteSpace(resourceId))
         {
-            return _activityLogRepository.GetByResourceIdAsync(resourceId);
+            _logger.LogWarning("Attempted to get activity logs with null or empty resourceId.");
+            throw new ArgumentException("ResourceId cannot be null or empty.", nameof(resourceId));
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting audit logs for {ResourceId}", resourceId);
-            throw;
-        }
+
+        _logger.LogInformation("Getting activity logs for {ResourceId}", resourceId);
+
+        return _activityLogRepository.GetByResourceIdAsync(resourceId);
     }
 
-    public Task<Data.Entities.ActivityLog?> UpdateActivityLogAsync(Data.Entities.ActivityLog auditLog)
+    public Task<Data.Entities.ActivityLog?> UpdateActivityLogAsync(Data.Entities.ActivityLog activityLog)
     {
-        _logger.LogInformation("Updating audit log for case {ResourceType} {ResourceId}", auditLog.ResourceType, auditLog.ResourceId);
-        try
+        if (string.IsNullOrWhiteSpace(activityLog.ResourceId))
         {
-            return _activityLogRepository.UpdateAsync(auditLog);
+            _logger.LogWarning("Attempted to update activity log with null or empty resourceId.");
+            throw new ArgumentException("ResourceId cannot be null or empty.", nameof(activityLog.ResourceId));
         }
-        catch (Exception ex)
+        if (string.IsNullOrWhiteSpace(activityLog.ResourceType))
         {
-            _logger.LogError(ex, "Error updating audit log for case {ResourceType} {ResourceId}", auditLog.ResourceType, auditLog.ResourceId);
-            throw;
+            _logger.LogWarning("Attempted to update activity log with null or empty resourceType.");
+            throw new ArgumentException("ResourceType cannot be null or empty.", nameof(activityLog.ResourceType));
         }
+        if (activityLog.Id == Guid.Empty)
+        {
+            _logger.LogWarning("Attempted to update activity log with empty Guid.");
+            throw new ArgumentException("ActivityLog Id cannot be Guid.Empty.", nameof(activityLog.Id));
+        }
+
+        _logger.LogInformation("Updating activity log for case {ResourceType} {ResourceId}", activityLog.ResourceType, activityLog.ResourceId);
+
+        return _activityLogRepository.UpdateAsync(activityLog);
     }
 
     public JsonDocument? ConvertToJsonDocument<T>(T data)

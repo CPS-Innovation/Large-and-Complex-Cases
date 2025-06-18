@@ -14,7 +14,7 @@ public class EgressArgFactory : IEgressArgFactory
     };
   }
 
-  public ListWorkspaceMaterialArg CreateListWorkspaceMaterialArg(string workspaceId, int skip, int take, string? folderId, bool? recurseSubFolders)
+  public ListWorkspaceMaterialArg CreateListWorkspaceMaterialArg(string workspaceId, int skip, int take, string? folderId = null, bool? recurseSubFolders = null)
   {
     return new ListWorkspaceMaterialArg
     {
