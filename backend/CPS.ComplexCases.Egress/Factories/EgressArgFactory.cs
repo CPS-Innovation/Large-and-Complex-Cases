@@ -14,14 +14,15 @@ public class EgressArgFactory : IEgressArgFactory
     };
   }
 
-  public ListWorkspaceMaterialArg CreateListWorkspaceMaterialArg(string workspaceId, int skip, int take, string? folderId)
+  public ListWorkspaceMaterialArg CreateListWorkspaceMaterialArg(string workspaceId, int skip, int take, string? folderId = null, bool? recurseSubFolders = null)
   {
     return new ListWorkspaceMaterialArg
     {
       WorkspaceId = workspaceId,
       Skip = skip,
       Take = take,
-      FolderId = folderId
+      FolderId = folderId,
+      RecurseSubFolders = recurseSubFolders
     };
   }
 

@@ -22,7 +22,9 @@
     "NetAppOptions__RegionName": "",
     "NetAppOptions__EnableMock": "true",
     "ConnectionStrings__CaseManagementDatastoreConnection": "Your postgres connection string",
-    "ApiTaskHub": "mytaskhub"
+    "ApiTaskHub": "mytaskhub",
+    "FileTransferApiOptions__BaseUrl": "http://localhost:7072/api/",
+    "FileTransferApiOptions__AccessKey": "mock_access_key"
   },
   "Host": {
     "LocalHttpPort": 7071,

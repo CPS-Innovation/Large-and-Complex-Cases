@@ -1,23 +1,19 @@
-using System.Net;
-using System.Text.Json;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
 using CPS.ComplexCases.Egress.Models.Args;
 using CPS.ComplexCases.Egress.Models.Dto;
 using CPS.ComplexCases.Egress.Models.Response;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace CPS.ComplexCases.Egress.Client;
 
-public class EgressClient(ILogger<EgressClient> logger, IOptions<EgressOptions> egressOptions, HttpClient httpClient, IEgressRequestFactory egressRequestFactory) : IEgressClient
+public class EgressClient(
+    ILogger<EgressClient> logger,
+    IOptions<EgressOptions> egressOptions,
+    HttpClient httpClient,
+    IEgressRequestFactory egressRequestFactory) : BaseEgressClient(logger, egressOptions, httpClient, egressRequestFactory), IEgressClient
 {
-  private readonly ILogger<EgressClient> _logger = logger;
-  private readonly EgressOptions _egressOptions = egressOptions.Value;
-  private readonly HttpClient _httpClient = httpClient;
-  private readonly IEgressRequestFactory _egressRequestFactory = egressRequestFactory;
-
   public async Task<ListWorkspacesDto> ListWorkspacesAsync(ListEgressWorkspacesArg workspace, string email)
   {
     var token = await GetWorkspaceToken();
@@ -67,37 +63,54 @@ public class EgressClient(ILogger<EgressClient> logger, IOptions<EgressOptions> 
   public async Task<ListCaseMaterialDto> ListCaseMaterialAsync(ListWorkspaceMaterialArg arg)
   {
     var token = await GetWorkspaceToken();
-    var response = await SendRequestAsync<ListCaseMaterialResponse>(_egressRequestFactory.ListEgressMaterialRequest(arg, token));
 
-    var materialsData = response.Data.Select(data => new ListCaseMaterialDataDto
+    if (arg.RecurseSubFolders == true)
     {
-      Id = data.Id,
-      Name = data.FileName,
-      Path = data.Path,
-      DateUpdated = data.DateUpdated,
-      IsFolder = data.IsFolder,
-      Version = data.Version,
-      Filesize = data.FileSize
-    });
+      var allFiles = await GetWorkspaceMaterials(arg, token);
 
-    return new ListCaseMaterialDto
-    {
-      Data = materialsData,
-      Pagination = new PaginationDto
+      var pagedFiles = allFiles
+          .Skip(arg.Skip)
+          .Take(arg.Take)
+          .ToList();
+
+      return new ListCaseMaterialDto
       {
-        Count = response.DataInfo.NumReturned,
-        Take = response.DataInfo.Limit,
-        Skip = response.DataInfo.Skip,
-        TotalResults = response.DataInfo.TotalResults
-      }
-    };
-  }
+        Data = pagedFiles,
+        Pagination = new PaginationDto
+        {
+          Count = pagedFiles.Count,
+          Take = arg.Take,
+          Skip = arg.Skip,
+          TotalResults = allFiles.Count
+        }
+      };
+    }
+    else
+    {
+      var response = await SendRequestAsync<ListCaseMaterialResponse>(_egressRequestFactory.ListEgressMaterialRequest(arg, token));
+      var materialsData = response.Data.Select(data => new ListCaseMaterialDataDto
+      {
+        Id = data.Id,
+        Name = data.FileName,
+        Path = data.Path,
+        DateUpdated = data.DateUpdated,
+        IsFolder = data.IsFolder,
+        Version = data.Version,
+        Filesize = data.FileSize
+      });
 
-  public async Task<Stream> GetCaseDocument(GetWorkspaceDocumentArg arg)
-  {
-    var token = await GetWorkspaceToken();
-    var response = await SendRequestAsync(_egressRequestFactory.GetWorkspaceDocumentRequest(arg, token));
-    return await response.Content.ReadAsStreamAsync();
+      return new ListCaseMaterialDto
+      {
+        Data = materialsData,
+        Pagination = new PaginationDto
+        {
+          Count = response.DataInfo.NumReturned,
+          Take = response.DataInfo.Limit,
+          Skip = response.DataInfo.Skip,
+          TotalResults = response.DataInfo.TotalResults
+        }
+      };
+    }
   }
 
   public async Task<bool> GetWorkspacePermission(GetWorkspacePermissionArg arg)
@@ -107,38 +120,39 @@ public class EgressClient(ILogger<EgressClient> logger, IOptions<EgressOptions> 
     return response.Data.Any(user => user.Email.Equals(arg.Email, StringComparison.CurrentCultureIgnoreCase));
   }
 
-  private async Task<string> GetWorkspaceToken()
+  private async Task<List<ListCaseMaterialDataDto>> GetWorkspaceMaterials(ListWorkspaceMaterialArg currentArg, string token)
   {
-    var response = await SendRequestAsync<GetWorkspaceTokenResponse>(_egressRequestFactory.GetWorkspaceTokenRequest(_egressOptions.Username, _egressOptions.Password));
-    return response.Token;
-  }
+    var response = await SendRequestAsync<ListCaseMaterialResponse>(_egressRequestFactory.ListEgressMaterialRequest(currentArg, token));
+    var files = response.Data
+        .Where(d => !d.IsFolder)
+        .Select(d => new ListCaseMaterialDataDto
+        {
+          Id = d.Id,
+          Name = d.FileName,
+          Path = d.Path,
+          DateUpdated = d.DateUpdated,
+          IsFolder = d.IsFolder,
+          Version = d.Version,
+          Filesize = d.FileSize
+        })
+        .ToList();
 
-  private async Task<T> SendRequestAsync<T>(HttpRequestMessage request)
-  {
-    using var response = await SendRequestAsync(request);
-    var responseContent = await response.Content.ReadAsStringAsync();
-    var result = JsonSerializer.Deserialize<T>(responseContent) ?? throw new InvalidOperationException("Deserialization returned null.");
-    return result;
-  }
+    var folders = response.Data.Where(d => d.IsFolder).ToList();
+    var subTasks = folders.Select(folder =>
+    {
+      var subArg = new ListWorkspaceMaterialArg
+      {
+        WorkspaceId = currentArg.WorkspaceId,
+        FolderId = folder.Id,
+        Take = currentArg.Take,
+        Skip = 0,
+        RecurseSubFolders = true
+      };
+      return GetWorkspaceMaterials(subArg, token);
+    }).ToList();
 
-  private async Task<HttpResponseMessage> SendRequestAsync(HttpRequestMessage request)
-  {
-    var response = await _httpClient.SendAsync(request);
-    try
-    {
-      response.EnsureSuccessStatusCode();
-      return response;
-    }
-    catch (HttpRequestException ex) when (response.StatusCode == HttpStatusCode.NotFound)
-    {
-      _logger.LogWarning(ex, "Workspace not found. Check the workspace ID.");
-      throw;
-
-    }
-    catch (HttpRequestException ex)
-    {
-      _logger.LogError(ex, "Error sending request to egress service");
-      throw;
-    }
+    var subResults = await Task.WhenAll(subTasks);
+    files.AddRange(subResults.SelectMany(x => x));
+    return files;
   }
 }

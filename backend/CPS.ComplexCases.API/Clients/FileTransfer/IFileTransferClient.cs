@@ -1,0 +1,8 @@
+using CPS.ComplexCases.Common.Models.Requests;
+
+namespace CPS.ComplexCases.API.Clients.FileTransfer;
+
+public interface IFileTransferClient
+{
+    Task<HttpResponseMessage> InitiateFileTransferAsync(TransferRequest transferRequest, Guid correlationId);
+}

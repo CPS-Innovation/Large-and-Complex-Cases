@@ -1,4 +1,5 @@
 using System.Net;
+using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
@@ -30,6 +31,19 @@ public static class IServiceCollectionExtension
     })
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
     .AddPolicyHandler(GetRetryPolicy());
+
+    services.AddHttpClient<EgressStorageClient>(client =>
+    {
+      var egressServiceUrl = configuration["EgressOptions:Url"];
+      if (string.IsNullOrEmpty(egressServiceUrl))
+      {
+        throw new ArgumentNullException(nameof(egressServiceUrl), "EgressOptions:Url configuration is missing or empty.");
+      }
+      client.BaseAddress = new Uri(egressServiceUrl);
+    })
+    .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+    .AddPolicyHandler(GetRetryPolicy());
+
   }
 
   private static AsyncPolicyWrap<HttpResponseMessage> GetRetryPolicy()

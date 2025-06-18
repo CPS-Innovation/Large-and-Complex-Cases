@@ -14,5 +14,7 @@
     <PackageReference Include="AWSSDK.SecurityToken" Version="3.7.401.80" />
     <PackageReference Include="Microsoft.Extensions.Azure" Version="1.7.3" />
   </ItemGroup>
-
+  <ItemGroup>
+      <ProjectReference Include="..\CPS.ComplexCases.Common\CPS.ComplexCases.Common.csproj" />
+  </ItemGroup>
 </Project>
