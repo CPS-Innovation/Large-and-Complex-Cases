@@ -512,10 +512,22 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           <Spinner
             data-testid="transfer-spinner"
             diameterPx={50}
-            ariaLabel={"Completing transfer from egress to shared drive"}
+            ariaLabel={
+              transferSource === "egress"
+                ? "Completing transfer from egress to shared drive"
+                : "Completing transfer from shared drive to egress"
+            }
           />
           <div className={styles.spinnerText}>
-            Completing transfer from <b>egress to shared drive...</b>
+            {transferSource === "egress" ? (
+              <span>
+                Completing transfer from <b>egress to shared drive...</b>
+              </span>
+            ) : (
+              <span>
+                Completing transfer from <b>shared drive to egress...</b>
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -529,10 +541,22 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           <Spinner
             data-testid="transfer-spinner"
             diameterPx={50}
-            ariaLabel={"Indexing transfer from egress to shared drive"}
+            ariaLabel={
+              transferSource === "egress"
+                ? "Indexing transfer from egress to shared drive"
+                : "Indexing transfer from shared drive to egress"
+            }
           />
           <div className={styles.spinnerText}>
-            Indexing transfer from <b>egress to shared drive...</b>
+            {transferSource === "egress" ? (
+              <span>
+                Indexing transfer from <b>egress to shared drive...</b>
+              </span>
+            ) : (
+              <span>
+                Indexing transfer from <b>shared drive to egress...</b>
+              </span>
+            )}
           </div>
         </div>
       </div>
