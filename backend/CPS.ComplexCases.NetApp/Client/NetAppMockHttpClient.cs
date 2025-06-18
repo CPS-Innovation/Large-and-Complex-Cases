@@ -215,18 +215,31 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
 
     public async Task<bool> DoesObjectExistAsync(GetObjectArg arg)
     {
-        var response = await SendRequestAsync<GetObjectAttributesOutput>(_netAppMockHttpRequestFactory.GetObjectAttributesRequest(arg));
-
-        if (response != null && !string.IsNullOrEmpty(response.ETag))
+        try
         {
-            return true;
+            var response = await SendRequestAsync<GetObjectAttributesOutput>(_netAppMockHttpRequestFactory.GetObjectAttributesRequest(arg));
+
+            if (response != null && !string.IsNullOrEmpty(response.ETag))
+            {
+                return true;
+            }
+            return false;
         }
-        return false;
+        catch (NetAppNotFoundException)
+        {
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking if object exists in NetApp.");
+            throw;
+        }
     }
 
     private async Task<T> SendRequestAsync<T>(HttpRequestMessage request)
     {
         using var response = await SendRequestAsync(request);
+
         if (response.StatusCode != System.Net.HttpStatusCode.OK)
         {
             _logger.LogError("Request failed with status code: {StatusCode}", response.StatusCode);
@@ -235,9 +248,14 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
             {
                 throw new NetAppUnauthorizedException();
             }
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                throw new NetAppNotFoundException("The requested resource was not found.");
+            }
 
             throw new HttpRequestException($"Request failed with status code: {response.StatusCode}");
         }
+
         var responseContent = await response.Content.ReadAsStringAsync();
         var result = DeserializeResponse<T>(responseContent) ?? throw new InvalidOperationException("Deserialization returned null.");
         return result;
@@ -250,6 +268,10 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
         {
             response.EnsureSuccessStatusCode();
             return response;
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            throw new NetAppNotFoundException("The requested resource was not found.", ex);
         }
         catch (HttpRequestException ex)
         {
