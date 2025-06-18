@@ -11,4 +11,5 @@ public static class S3Constants
     public const string MaxKeysQueryName = "max-keys";
     public const string PrefixQueryName = "prefix";
     public const string HostHeaderName = "Host";
+    public const string ObjectAttributesHeaderName = "x-amz-object-attributes";
 }

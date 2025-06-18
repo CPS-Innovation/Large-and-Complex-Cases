@@ -1,3 +1,5 @@
+using CPS.ComplexCases.API.Extensions;
+using CPS.ComplexCases.ActivityLog.Extensions;
 using CPS.ComplexCases.API.Middleware;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Validators;
@@ -14,6 +16,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.API.Domain.Configuration;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
@@ -38,13 +42,17 @@ builder.Services.AddSingleton(_ =>
                 new HttpDocumentRetriever());
 });
 
+builder.Services.AddActivityLog();
+builder.Services.AddDataClient(builder.Configuration);
 builder.Services.AddDdeiClient(builder.Configuration);
 builder.Services.AddDdeiClientTactical();
 builder.Services.AddEgressClient(builder.Configuration);
 builder.Services.AddNetAppClient(builder.Configuration);
 builder.Services.AddDataClient(builder.Configuration);
+builder.Services.AddFileTransferClient(builder.Configuration);
 
+builder.Services.AddScoped<ICaseMetadataService, CaseMetadataService>();
 builder.Services.AddScoped<ICaseEnrichmentService, CaseEnrichmentService>();
 builder.Services.AddSingleton<IOpenApiConfigurationOptions, OpenApiConfigurationOptions>();
 
-builder.Build().Run();
+await builder.Build().RunAsync();

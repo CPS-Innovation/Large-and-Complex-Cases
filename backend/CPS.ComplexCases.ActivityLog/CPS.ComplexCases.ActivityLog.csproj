@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+    <ItemGroup>
+    <PackageReference Include="ByteSize" Version="2.1.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.5" />
+    </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\CPS.ComplexCases.Common\CPS.ComplexCases.Common.csproj" />
+      <ProjectReference Include="..\CPS.ComplexCases.Data\CPS.ComplexCases.Data.csproj" />
+    </ItemGroup>
+</Project>

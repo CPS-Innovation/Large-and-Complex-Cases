@@ -24,25 +24,25 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
 
             if (existingBucket != null)
             {
-                _logger.LogError($"A bucket with the name {arg.BucketName} already exists.");
+                _logger.LogError("A bucket with the name {BucketName} already exists.", arg.BucketName);
                 return false;
             }
 
             var response = await SendRequestAsync(_netAppMockHttpRequestFactory.CreateBucketRequest(arg));
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogInformation($"Bucket '{arg.BucketName}' created successfully.");
+                _logger.LogInformation("Bucket '{BucketName}' created successfully.", arg.BucketName);
                 return true;
             }
             else
             {
-                _logger.LogError($"Failed to create bucket. Status Code: {response.StatusCode}");
+                _logger.LogError("Failed to create bucket. Status Code: {StatusCode}", response.StatusCode);
                 return false;
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error creating bucket {arg.BucketName} in NetApp.");
+            _logger.LogError(ex, "Error creating bucket {BucketName} in NetApp.", arg.BucketName);
             throw;
         }
     }
@@ -63,8 +63,12 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
 
     public async Task<GetObjectResponse?> GetObjectAsync(GetObjectArg arg)
     {
-        var response = await SendRequestAsync<GetObjectResponse>(_netAppMockHttpRequestFactory.GetObjectRequest(arg));
-        return response;
+        var response = await SendRequestAsync(_netAppMockHttpRequestFactory.GetObjectRequest(arg));
+
+        return new GetObjectResponse
+        {
+            ResponseStream = await response.Content.ReadAsStreamAsync()
+        };
     }
 
     public async Task<IEnumerable<S3Bucket>> ListBucketsAsync(ListBucketsArg arg)
@@ -90,7 +94,7 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
     {
         var response = await SendRequestAsync<ListBucketResult>(_netAppMockHttpRequestFactory.ListFoldersInBucketRequest(arg));
 
-        var folders = new List<ListNetAppFolderDataDto>();
+        List<ListNetAppFolderDataDto> folders;
 
         if (!string.IsNullOrEmpty(arg.OperationName) && string.IsNullOrEmpty(arg.Prefix))
         {
@@ -173,12 +177,60 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
         throw new NotImplementedException();
     }
 
+    public async Task<InitiateMultipartUploadResponse?> InitiateMultipartUploadAsync(InitiateMultipartUploadArg arg)
+    {
+        var response = await SendRequestAsync<InitiateMultipartUploadResult>(_netAppMockHttpRequestFactory.CreateMultipartUploadRequest(arg));
+
+        return new InitiateMultipartUploadResponse
+        {
+            UploadId = response.UploadId,
+            Key = response.Key,
+            BucketName = response.Bucket
+        };
+    }
+
+    public async Task<UploadPartResponse?> UploadPartAsync(UploadPartArg arg)
+    {
+        var response = await SendRequestAsync(_netAppMockHttpRequestFactory.UploadPartRequest(arg));
+
+        return new UploadPartResponse
+        {
+            ETag = response.Headers.ETag?.ToString() ?? string.Empty,
+            PartNumber = arg.PartNumber
+        };
+    }
+
+    public async Task<CompleteMultipartUploadResponse?> CompleteMultipartUploadAsync(CompleteMultipartUploadArg arg)
+    {
+        var response = await SendRequestAsync<CompleteMultipartUploadResult>(_netAppMockHttpRequestFactory.CompleteMultipartUploadRequest(arg));
+
+        return new CompleteMultipartUploadResponse
+        {
+            ETag = response.ETag,
+            BucketName = response.Bucket,
+            Key = response.Key,
+            Location = response.Location
+        };
+    }
+
+    public async Task<bool> DoesObjectExistAsync(GetObjectArg arg)
+    {
+        var response = await SendRequestAsync<GetObjectAttributesOutput>(_netAppMockHttpRequestFactory.GetObjectAttributesRequest(arg));
+
+        if (response != null && !string.IsNullOrEmpty(response.ETag))
+        {
+            return true;
+        }
+        return false;
+    }
+
     private async Task<T> SendRequestAsync<T>(HttpRequestMessage request)
     {
         using var response = await SendRequestAsync(request);
         if (response.StatusCode != System.Net.HttpStatusCode.OK)
         {
-            _logger.LogError($"Request failed with status code: {response.StatusCode}");
+            _logger.LogError("Request failed with status code: {StatusCode}", response.StatusCode);
+
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
                 throw new NetAppUnauthorizedException();
@@ -189,13 +241,6 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
         var responseContent = await response.Content.ReadAsStringAsync();
         var result = DeserializeResponse<T>(responseContent) ?? throw new InvalidOperationException("Deserialization returned null.");
         return result;
-    }
-
-    private static T DeserializeResponse<T>(string responseContent)
-    {
-        var serializer = new XmlSerializer(typeof(T));
-        using var reader = new StringReader(responseContent);
-        return (T)serializer.Deserialize(reader)!;
     }
 
     private async Task<HttpResponseMessage> SendRequestAsync(HttpRequestMessage request)
@@ -211,5 +256,12 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
             _logger.LogError(ex, "Error sending request to NetApp service.");
             throw;
         }
+    }
+
+    private static T DeserializeResponse<T>(string responseContent)
+    {
+        var serializer = new XmlSerializer(typeof(T));
+        using var reader = new StringReader(responseContent);
+        return (T)serializer.Deserialize(reader)!;
     }
 }

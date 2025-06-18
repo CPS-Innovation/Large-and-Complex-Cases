@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "CPS.ComplexCases.FileTransfer.API": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7235",
+      "launchBrowser": false
+    }
+  }
+}
