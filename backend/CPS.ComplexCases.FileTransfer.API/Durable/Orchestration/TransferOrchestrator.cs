@@ -151,6 +151,8 @@ public class TransferOrchestrator(IActivityLogService activityLogService, IOptio
                 input.TransferDirection.GetAlternateValue(),
                 input.UserName,
                 details: _activityLogService.ConvertToJsonDocument(ex.Message));
+
+            throw;
         }
     }
 }
