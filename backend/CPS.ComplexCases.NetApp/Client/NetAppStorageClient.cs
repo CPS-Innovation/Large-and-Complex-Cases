@@ -1,11 +1,11 @@
 using Microsoft.Extensions.Options;
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
+using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
-using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
