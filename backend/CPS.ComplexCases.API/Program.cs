@@ -17,15 +17,15 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using CPS.ComplexCases.Common.Services;
-using CPS.ComplexCases.API.Domain.Configuration;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
 builder.ConfigureFunctionsWebApplication();
 
+// note: the order of middleware is important, as it determines the execution flow
 builder
-    .UseMiddleware<RequestValidationMiddleware>()
-    .UseMiddleware<ExceptionHandlingMiddleware>();
+    .UseMiddleware<ExceptionHandlingMiddleware>()
+    .UseMiddleware<RequestValidationMiddleware>();
 
 builder.Services
     .AddApplicationInsightsTelemetryWorkerService()

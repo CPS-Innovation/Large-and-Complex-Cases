@@ -50,21 +50,28 @@ public sealed partial class RequestValidationMiddleware(IAuthorizationValidator 
 
   private async Task<(bool, string?)> Authenticate(HttpRequestData req)
   {
-    if (!req.Headers.TryGetValues(HttpHeaderKeys.Authorization, out var accessTokenValues) ||
-        string.IsNullOrWhiteSpace(accessTokenValues.First()))
+    try
     {
-      return (false, null);
+      if (!req.Headers.TryGetValues(HttpHeaderKeys.Authorization, out var accessTokenValues) ||
+          string.IsNullOrWhiteSpace(accessTokenValues.First()))
+      {
+        return (false, null);
+      }
+
+      var validateTokenResult = await authorizationValidator.ValidateTokenAsync(accessTokenValues.First(), "user_impersonation");
+
+      if (validateTokenResult == null || validateTokenResult.Username == null)
+      {
+        return (false, null);
+      }
+
+      return validateTokenResult.IsValid
+          ? (true, validateTokenResult.Username)
+          : (false, null);
     }
-
-    var validateTokenResult = await authorizationValidator.ValidateTokenAsync(accessTokenValues.First(), "user_impersonation");
-
-    if (validateTokenResult == null || validateTokenResult.Username == null)
+    catch (Exception)
     {
-      return (false, null);
+      throw new CpsAuthenticationException();
     }
-
-    return validateTokenResult.IsValid
-        ? (true, validateTokenResult.Username)
-        : (false, null);
   }
 }
