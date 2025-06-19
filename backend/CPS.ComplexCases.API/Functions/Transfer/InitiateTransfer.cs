@@ -22,7 +22,7 @@ public class InitiateTransfer(ILogger<InitiateTransfer> logger, IFileTransferCli
     private readonly IFileTransferClient _transferClient = transferClient;
 
     [Function(nameof(InitiateTransfer))]
-    [OpenApiOperation(operationId: nameof(Run), tags: ["File Transfer"], Description = "Initiate a file transfer.")]
+    [OpenApiOperation(operationId: nameof(Run), tags: ["FileTransfer"], Description = "Initiate a file transfer.")]
     [OpenApiRequestBody(ContentType.ApplicationJson, typeof(InitiateTransferRequest), Description = "Body containing the file transfer request")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]

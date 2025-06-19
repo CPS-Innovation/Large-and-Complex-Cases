@@ -119,7 +119,8 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
     {
         try
         {
-            var response = await _client.ListObjectsV2Async(_netAppRequestFactory.ListObjectsInBucketRequest(arg));
+            var request = _netAppRequestFactory.ListObjectsInBucketRequest(arg);
+            var response = await _client.ListObjectsV2Async(request);
 
             var folders = response.CommonPrefixes.Select(data => new ListNetAppFolderDataDto
             {

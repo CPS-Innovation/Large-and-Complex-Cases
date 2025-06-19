@@ -1,18 +1,21 @@
 using Microsoft.Extensions.Options;
+using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Models.Domain;
+using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Domain.Exceptions;
+using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
-using CPS.ComplexCases.NetApp.Models.Args;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
-public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory netAppArgFactory, IOptions<NetAppOptions> options) : IStorageClient
+public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory netAppArgFactory, IOptions<NetAppOptions> options, ICaseMetadataService caseMetadataService) : IStorageClient
 {
     private readonly INetAppClient _netAppClient = netAppClient;
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
+    private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
     private readonly NetAppOptions _options = options.Value;
 
     public async Task CompleteUploadAsync(UploadSession session, string? md5hash = null, Dictionary<int, string>? etags = null)
@@ -68,5 +71,69 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
         var result = await _netAppClient.UploadPartAsync(arg);
 
         return new UploadChunkResult(TransferDirection.EgressToNetApp, result?.ETag, result?.PartNumber);
+    }
+
+    public async Task<IEnumerable<FileTransferInfo>> ListFilesForTransferAsync(List<TransferEntityDto> selectedEntities, string? workspaceId = null, int? caseId = null)
+    {
+        List<FileTransferInfo> filesForTransfer = [];
+
+        var caseMetaData = await _caseMetadataService.GetCaseMetadataForCaseIdAsync(caseId ??
+            throw new ArgumentNullException(nameof(caseId), "Case ID cannot be null.")) ??
+                throw new InvalidOperationException($"No metadata found for case ID {caseId}.");
+
+        var paths = selectedEntities.Select(entity => entity.Path);
+
+        foreach (var path in paths)
+        {
+            if (Path.HasExtension(path))
+            {
+                filesForTransfer.Add(new FileTransferInfo
+                {
+                    SourcePath = path,
+                    RelativePath = path.RemovePathPrefix(caseMetaData.NetappFolderPath),
+                });
+            }
+            else
+            {
+                var files = await ListFilesInFolder(path);
+                if (files != null)
+                    filesForTransfer.AddRange(files.Select(file => new FileTransferInfo
+                    {
+                        SourcePath = file.SourcePath,
+                        RelativePath = file.SourcePath.RemovePathPrefix(caseMetaData.NetappFolderPath)
+                    }));
+            }
+        }
+
+        return filesForTransfer;
+    }
+
+    public async Task<IEnumerable<FileTransferInfo>?> ListFilesInFolder(string path, string? continuationToken = null)
+    {
+        var filesForTransfer = new List<FileTransferInfo>();
+        var arg = _netAppArgFactory.CreateListObjectsInBucketArg(_options.BucketName, continuationToken, 1000, path);
+        var response = await _netAppClient.ListObjectsInBucketAsync(arg);
+
+        if (response == null || !response.Data.FileData.Any())
+        {
+            return null;
+        }
+
+        filesForTransfer.AddRange(
+            response.Data.FileData.Select(x => new FileTransferInfo
+            {
+                SourcePath = x.Path
+            }));
+
+        if (response.Pagination.NextContinuationToken != null)
+        {
+            var nextFiles = await ListFilesInFolder(path, response.Pagination.NextContinuationToken);
+            if (nextFiles != null)
+            {
+                filesForTransfer.AddRange(nextFiles);
+            }
+        }
+
+        return filesForTransfer;
     }
 }

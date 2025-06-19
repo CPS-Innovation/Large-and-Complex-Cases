@@ -1,9 +1,17 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Amazon.S3;
 using Amazon.S3.Model;
 using CPS.ComplexCases.Common.Models.Domain;
+using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
+using CPS.ComplexCases.Common.Models.Domain.Exceptions;
+using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
@@ -14,7 +22,7 @@ using CPS.ComplexCases.WireMock.Core;
 using FluentAssertions;
 using Moq;
 using WireMock.Server;
-using CPS.ComplexCases.Common.Models.Domain.Exceptions;
+using Xunit;
 
 namespace CPS.ComplexCases.NetApp.Tests.Integration;
 
@@ -26,9 +34,11 @@ public class NetAppStorageClientTests : IDisposable
     private readonly NetAppStorageClient _client;
     private readonly Mock<INetAppArgFactory> _netAppArgFactoryMock;
     private readonly Mock<INetAppRequestFactory> _netAppRequestFactoryMock;
+    private readonly Mock<ICaseMetadataService> _caseMetadataServiceMock;
     private const string BucketName = "test-bucket";
     private const string ObjectKey = "test-document.pdf";
     private const string UploadId = "upload-id-49e18525de9c";
+    private const int CaseId = 2164817;
 
     public NetAppStorageClientTests()
     {
@@ -57,11 +67,12 @@ public class NetAppStorageClientTests : IDisposable
         var amazonS3UtilsWrapper = new AmazonS3UtilsWrapper();
         _netAppArgFactoryMock = new Mock<INetAppArgFactory>();
         _netAppRequestFactoryMock = new Mock<INetAppRequestFactory>();
+        _caseMetadataServiceMock = new Mock<ICaseMetadataService>();
 
         var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<NetAppClient>();
 
         _netAppClient = new NetAppClient(logger, s3Client, amazonS3UtilsWrapper, _netAppRequestFactoryMock.Object);
-        _client = new NetAppStorageClient(_netAppClient, _netAppArgFactoryMock.Object, _netAppOptions);
+        _client = new NetAppStorageClient(_netAppClient, _netAppArgFactoryMock.Object, _netAppOptions, _caseMetadataServiceMock.Object);
     }
 
     [Fact]
@@ -285,6 +296,120 @@ public class NetAppStorageClientTests : IDisposable
     }
 
     [Fact]
+    public async Task ListFilesForTransferAsync_ReturnsFileTransferInfo()
+    {
+        // Arrange
+        var folderName = "/nested-objects/";
+        var maxKeys = 1000;
+
+        var selectedEntities = new List<TransferEntityDto>
+        {
+            new() { Path = ObjectKey },
+            new() { Path = folderName }
+        };
+
+        var arg = new ListObjectsInBucketArg
+        {
+            BucketName = BucketName,
+            ContinuationToken = null,
+            MaxKeys = maxKeys.ToString(),
+            Prefix = folderName
+        };
+
+        var request = new ListObjectsV2Request
+        {
+            BucketName = BucketName,
+            ContinuationToken = null,
+            MaxKeys = maxKeys,
+            Prefix = folderName
+        };
+
+        var caseMetadata = new CaseMetadata
+        {
+            CaseId = CaseId,
+            EgressWorkspaceId = "egress-workspace-id-123",
+            NetappFolderPath = "test-folder/",
+        };
+
+        _caseMetadataServiceMock.Setup(s => s.GetCaseMetadataForCaseIdAsync(CaseId)).ReturnsAsync(caseMetadata);
+        _netAppArgFactoryMock.Setup(f => f.CreateListObjectsInBucketArg(BucketName, null, maxKeys, folderName)).Returns(arg);
+        _netAppRequestFactoryMock.Setup(f => f.ListObjectsInBucketRequest(arg)).Returns(request);
+
+        // Act
+        var result = await _client.ListFilesForTransferAsync(selectedEntities, null, CaseId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Should().HaveCount(5);
+    }
+
+    [Fact]
+    public async Task ListFilesForTransferAsync_MakesMultipleCallsToApi_IfContinuationTokenIsSupplied()
+    {
+        // Arrange
+        var folderName = "/partial-results/";
+        var maxKeys = 1000;
+        var continuationToken = "next-token";
+
+        var selectedEntities = new List<TransferEntityDto>
+        {
+            new() { Path = ObjectKey },
+            new() { Path = folderName }
+        };
+
+        var argWithoutContinuationToken = new ListObjectsInBucketArg
+        {
+            BucketName = BucketName,
+            ContinuationToken = null,
+            MaxKeys = maxKeys.ToString(),
+            Prefix = folderName
+        };
+
+        var argWithContinuationToken = new ListObjectsInBucketArg
+        {
+            BucketName = BucketName,
+            ContinuationToken = continuationToken,
+            MaxKeys = maxKeys.ToString(),
+            Prefix = folderName
+        };
+
+        var requestWithoutContinuationToken = new ListObjectsV2Request
+        {
+            BucketName = BucketName,
+            ContinuationToken = null,
+            MaxKeys = maxKeys,
+            Prefix = folderName
+        };
+
+        var requestWithContinuationToken = new ListObjectsV2Request
+        {
+            BucketName = BucketName,
+            ContinuationToken = continuationToken,
+            MaxKeys = maxKeys,
+            Prefix = folderName
+        };
+
+        var caseMetadata = new CaseMetadata
+        {
+            CaseId = CaseId,
+            EgressWorkspaceId = "egress-workspace-id-123",
+            NetappFolderPath = "test-folder/",
+        };
+
+        _caseMetadataServiceMock.Setup(s => s.GetCaseMetadataForCaseIdAsync(CaseId)).ReturnsAsync(caseMetadata);
+        _netAppArgFactoryMock.Setup(f => f.CreateListObjectsInBucketArg(BucketName, null, maxKeys, folderName)).Returns(argWithoutContinuationToken);
+        _netAppArgFactoryMock.Setup(f => f.CreateListObjectsInBucketArg(BucketName, continuationToken, maxKeys, folderName)).Returns(argWithContinuationToken);
+        _netAppRequestFactoryMock.Setup(f => f.ListObjectsInBucketRequest(argWithoutContinuationToken)).Returns(requestWithoutContinuationToken);
+        _netAppRequestFactoryMock.Setup(f => f.ListObjectsInBucketRequest(argWithContinuationToken)).Returns(requestWithContinuationToken);
+
+        // Act
+        var result = await _client.ListFilesForTransferAsync(selectedEntities, null, CaseId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Should().HaveCount(4);
+    }
+
     public async Task UploadLargeFile_ShouldHandleMultipleChunksEfficiently()
     {
         // Arrange

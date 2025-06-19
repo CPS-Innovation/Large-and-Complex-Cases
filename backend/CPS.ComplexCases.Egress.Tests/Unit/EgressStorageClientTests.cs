@@ -4,6 +4,7 @@ using System.Text.Json;
 using AutoFixture;
 using AutoFixture.AutoMoq;
 using CPS.ComplexCases.Common.Models.Domain;
+using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 using CPS.ComplexCases.Egress.Client;
@@ -20,7 +21,7 @@ using Moq.Protected;
 
 namespace CPS.ComplexCases.Egress.Tests.Unit;
 
-public class EgressStorageClientTests : IDisposable
+public class EgressStorageClientTests
 {
     private readonly Fixture _fixture;
     private readonly Mock<ILogger<EgressStorageClient>> _loggerMock;
@@ -30,8 +31,6 @@ public class EgressStorageClientTests : IDisposable
     private readonly Mock<IEgressRequestFactory> _requestFactoryMock;
     private readonly EgressStorageClient _client;
     private const string TestUrl = "https://example.com";
-
-    private bool _disposed = false;
 
     public EgressStorageClientTests()
     {
@@ -464,6 +463,260 @@ public class EgressStorageClientTests : IDisposable
         exception.Message.Should().Contain("Workspace ID cannot be null.");
     }
 
+    [Fact]
+    public async Task ListFilesForTransferAsync_WithNullWorkspaceId_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var selectedEntities = new List<TransferEntityDto>
+        {
+            new TransferEntityDto
+            {
+                Id = _fixture.Create<string>(),
+                Path = _fixture.Create<string>(),
+                IsFolder = false
+            }
+        };
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.ListFilesForTransferAsync(selectedEntities, null));
+
+        exception.ParamName.Should().Be("workspaceId");
+        exception.Message.Should().Contain("Workspace ID cannot be null or empty.");
+    }
+
+    [Fact]
+    public async Task ListFilesForTransferAsync_WithFilesOnly_ReturnsFileTransferInfos()
+    {
+        // Arrange
+        var workspaceId = _fixture.Create<string>();
+        var token = _fixture.Create<string>();
+        var file1 = new TransferEntityDto
+        {
+            Id = _fixture.Create<string>(),
+            FileId = _fixture.Create<string>(),
+            Path = "/path/to/file1.txt",
+            IsFolder = false
+        };
+        var file2 = new TransferEntityDto
+        {
+            Id = _fixture.Create<string>(),
+            FileId = _fixture.Create<string>(),
+            Path = "/path/to/file2.txt",
+            IsFolder = false
+        };
+
+        var selectedEntities = new List<TransferEntityDto> { file1, file2 };
+
+        var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
+
+        SetupTokenRequest(token);
+        SetupHttpMockResponses(("token", tokenResponse));
+
+        // Act
+        var result = await _client.ListFilesForTransferAsync(selectedEntities, workspaceId);
+
+        // Assert
+        using (new AssertionScope())
+        {
+            result.Should().NotBeNull();
+            result.Should().HaveCount(2);
+
+            var resultArray = result.ToArray();
+            resultArray[0].Id.Should().Be(file1.FileId);
+            resultArray[0].SourcePath.Should().Be(file1.Path);
+            resultArray[1].Id.Should().Be(file2.FileId);
+            resultArray[1].SourcePath.Should().Be(file2.Path);
+        }
+
+        VerifyTokenRequest();
+    }
+
+    [Fact]
+    public async Task ListFilesForTransferAsync_WithSingleFolder_ReturnsAllFilesFromFolder()
+    {
+        // Arrange
+        var workspaceId = _fixture.Create<string>();
+        var folderId = _fixture.Create<string>();
+        var token = _fixture.Create<string>();
+
+        var folder = new TransferEntityDto
+        {
+            Id = folderId,
+            Path = "/path/to/folder",
+            IsFolder = true
+        };
+
+        var selectedEntities = new List<TransferEntityDto> { folder };
+
+        var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
+        var listResponse = new ListCaseMaterialResponse
+        {
+            Data = new List<ListCaseMaterialDataResponse>
+        {
+            new ListCaseMaterialDataResponse
+            {
+                Id = _fixture.Create<string>(),
+                FileName = "file1.txt",
+                Path = "/path/to/folder/file1.txt",
+                IsFolder = false,
+                Version = 1
+            },
+            new ListCaseMaterialDataResponse
+            {
+                Id = _fixture.Create<string>(),
+                FileName = "file2.txt",
+                Path = "/path/to/folder/file2.txt",
+                IsFolder = false,
+                Version = 1
+            }
+        },
+            DataInfo = new DataInfoResponse
+            {
+                TotalResults = 2,
+                NumReturned = 2,
+                Limit = 100,
+                Skip = 0
+            }
+        };
+
+        SetupTokenRequest(token);
+        SetupListMaterialRequestWithFolderId(workspaceId, folderId, token);
+        SetupHttpMockResponses(
+            ("token", tokenResponse),
+            ("list", listResponse)
+        );
+
+        // Act
+        var result = await _client.ListFilesForTransferAsync(selectedEntities, workspaceId);
+
+        // Assert
+        using (new AssertionScope())
+        {
+            result.Should().NotBeNull();
+            result.Should().HaveCount(2);
+
+            var resultArray = result.ToArray();
+            resultArray.Should().AllSatisfy(file => file.SourcePath.Should().StartWith("/path/to/folder/"));
+            resultArray.Should().Contain(file => file.SourcePath.EndsWith("file1.txt"));
+            resultArray.Should().Contain(file => file.SourcePath.EndsWith("file2.txt"));
+        }
+
+        VerifyTokenRequest();
+        VerifyListMaterialRequestWithFolderId(workspaceId, folderId, token);
+    }
+
+    [Fact]
+    public async Task ListFilesForTransferAsync_WithFolderContainingSubfolders_ReturnsAllFilesRecursively()
+    {
+        // Arrange
+        var workspaceId = _fixture.Create<string>();
+        var parentFolderId = _fixture.Create<string>();
+        var subFolderId = _fixture.Create<string>();
+        var token = _fixture.Create<string>();
+
+        var folder = new TransferEntityDto
+        {
+            Id = parentFolderId,
+            Path = "/parent",
+            IsFolder = true
+        };
+
+        var selectedEntities = new List<TransferEntityDto> { folder };
+
+        var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
+
+        // Parent folder contains 1 file and 1 subfolder
+        var parentListResponse = new ListCaseMaterialResponse
+        {
+            Data = new List<ListCaseMaterialDataResponse>
+        {
+            new ListCaseMaterialDataResponse
+            {
+                Id = _fixture.Create<string>(),
+                FileName = "parent-file.txt",
+                Path = "/parent/parent-file.txt",
+                IsFolder = false,
+                Version = 1
+            },
+            new ListCaseMaterialDataResponse
+            {
+                Id = subFolderId,
+                FileName = "subfolder",
+                Path = "/parent/subfolder",
+                IsFolder = true,
+                Version = 1
+            }
+        },
+            DataInfo = new DataInfoResponse
+            {
+                TotalResults = 2,
+                NumReturned = 2,
+                Limit = 100,
+                Skip = 0
+            }
+        };
+
+        // Subfolder contains 2 files
+        var subListResponse = new ListCaseMaterialResponse
+        {
+            Data = new List<ListCaseMaterialDataResponse>
+        {
+            new ListCaseMaterialDataResponse
+            {
+                Id = _fixture.Create<string>(),
+                FileName = "sub-file1.txt",
+                Path = "/parent/subfolder/sub-file1.txt",
+                IsFolder = false,
+                Version = 1
+            },
+            new ListCaseMaterialDataResponse
+            {
+                Id = _fixture.Create<string>(),
+                FileName = "sub-file2.txt",
+                Path = "/parent/subfolder/sub-file2.txt",
+                IsFolder = false,
+                Version = 1
+            }
+        },
+            DataInfo = new DataInfoResponse
+            {
+                TotalResults = 2,
+                NumReturned = 2,
+                Limit = 100,
+                Skip = 0
+            }
+        };
+
+        SetupTokenRequest(token);
+        SetupListMaterialRequestWithFolderId(workspaceId, parentFolderId, token);
+        SetupListMaterialRequestWithFolderId(workspaceId, subFolderId, token);
+        SetupHttpMockResponses(
+            ("token", tokenResponse),
+            ("parentList", parentListResponse),
+            ("subList", subListResponse)
+        );
+
+        // Act
+        var result = await _client.ListFilesForTransferAsync(selectedEntities, workspaceId);
+
+        // Assert
+        using (new AssertionScope())
+        {
+            result.Should().NotBeNull();
+            result.Should().HaveCount(3);
+
+            var resultArray = result.ToArray();
+            resultArray.Should().Contain(file => file.SourcePath == "/parent/parent-file.txt");
+            resultArray.Should().Contain(file => file.SourcePath == "/parent/subfolder/sub-file1.txt");
+            resultArray.Should().Contain(file => file.SourcePath == "/parent/subfolder/sub-file2.txt");
+        }
+
+        VerifyTokenRequest();
+        VerifyListMaterialRequestWithFolderId(workspaceId, parentFolderId, token);
+        VerifyListMaterialRequestWithFolderId(workspaceId, subFolderId, token);
+    }
+
     #region Setup Methods
 
     private void SetupTokenRequest(string token)
@@ -526,8 +779,35 @@ public class EgressStorageClientTests : IDisposable
         _requestFactoryMock
             .Setup(f => f.ListEgressMaterialRequest(
                 It.Is<ListWorkspaceMaterialArg>(arg =>
+                    arg.WorkspaceId == workspaceId && arg.Path == path),
+                token))
+            .Returns(new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/workspaces/{workspaceId}/materials"));
+    }
+
+    private void SetupListMaterialRequestWithFolderId(string workspaceId, string folderId, string token)
+    {
+        _requestFactoryMock
+            .Setup(f => f.ListEgressMaterialRequest(
+                It.Is<ListWorkspaceMaterialArg>(arg =>
                     arg.WorkspaceId == workspaceId &&
-                    arg.Path == path),
+                    arg.FolderId == folderId &&
+                    arg.Take == 100 &&
+                    arg.Skip == 0 &&
+                    arg.RecurseSubFolders == false),
+                token))
+            .Returns(new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/workspaces/{workspaceId}/materials"));
+    }
+
+    private void SetupListMaterialRequestWithFolderIdAndPaging(string workspaceId, string folderId, int skip, string token)
+    {
+        _requestFactoryMock
+            .Setup(f => f.ListEgressMaterialRequest(
+                It.Is<ListWorkspaceMaterialArg>(arg =>
+                    arg.WorkspaceId == workspaceId &&
+                    arg.FolderId == folderId &&
+                    arg.Take == 100 &&
+                    arg.Skip == skip &&
+                    arg.RecurseSubFolders == false),
                 token))
             .Returns(new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/workspaces/{workspaceId}/materials"));
     }
@@ -601,6 +881,33 @@ public class EgressStorageClientTests : IDisposable
             Times.Once);
     }
 
+    private void VerifyListMaterialRequestWithFolderId(string workspaceId, string folderId, string token)
+    {
+        _requestFactoryMock.Verify(
+            f => f.ListEgressMaterialRequest(
+                It.Is<ListWorkspaceMaterialArg>(arg =>
+                    arg.WorkspaceId == workspaceId &&
+                    arg.FolderId == folderId &&
+                    arg.RecurseSubFolders == false),
+                token),
+            Times.Once);
+    }
+
+    private void VerifyListMaterialRequestWithFolderIdAndPaging(string workspaceId, string folderId, int skip, string token)
+    {
+        _requestFactoryMock.Verify(
+            f => f.ListEgressMaterialRequest(
+                It.Is<ListWorkspaceMaterialArg>(arg =>
+                    arg.WorkspaceId == workspaceId &&
+                    arg.FolderId == folderId &&
+                    arg.Take == 100 &&
+                    arg.Skip == skip &&
+                    arg.RecurseSubFolders == false),
+                token),
+            Times.Once);
+    }
+
+
     #endregion
 
     private void SetupHttpMockResponses(params (string type, object response, bool isStream)[] responses)
@@ -638,28 +945,5 @@ public class EgressStorageClientTests : IDisposable
     {
         var responsesWithStream = responses.Select(r => (r.type, r.response, false)).ToArray();
         SetupHttpMockResponses(responsesWithStream);
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
-        if (!_disposed)
-        {
-            if (disposing)
-            {
-                _httpClient?.Dispose();
-            }
-            _disposed = true;
-        }
-    }
-
-    public void Dispose()
-    {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    ~EgressStorageClientTests()
-    {
-        Dispose(false);
     }
 }
