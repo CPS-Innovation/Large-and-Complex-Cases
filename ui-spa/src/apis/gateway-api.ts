@@ -318,7 +318,7 @@ export const getNetAppFolders = async (
 export const validateFileTransfer = async (
   payload: ValidateFileTransferPayload,
 ) => {
-  const url = `${GATEWAY_BASE_URL}/api/v1/filetransfer/validate`;
+  const url = `${GATEWAY_BASE_URL}/api/filetransfer/files`;
 
   const response = await fetch(url, {
     method: "POST",
@@ -338,7 +338,7 @@ export const validateFileTransfer = async (
 export const initiateFileTransfer = async (
   payload: InitiateFileTransferPayload,
 ) => {
-  const url = `${GATEWAY_BASE_URL}/api/v1/filetransfer/initiate`;
+  const url = `${GATEWAY_BASE_URL}/api/filetransfer/initiate`;
 
   const response = await fetch(url, {
     method: "POST",
@@ -356,7 +356,7 @@ export const initiateFileTransfer = async (
 };
 
 export const getTransferStatus = async (transferId: string) => {
-  const url = `${GATEWAY_BASE_URL}/api/v1/filetransfer/${transferId}/status`;
+  const url = `${GATEWAY_BASE_URL}/api/filetransfer/${transferId}/status`;
 
   const response = await fetch(url, {
     method: "GET",

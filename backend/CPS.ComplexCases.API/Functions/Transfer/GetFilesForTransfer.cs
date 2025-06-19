@@ -47,6 +47,7 @@ public class GetFilesForTransfer(IFileTransferClient transferClient, ILogger<Get
             CaseId = request.Value.CaseId,
             TransferDirection = request.Value.TransferDirection,
             DestinationPath = request.Value.DestinationPath,
+            WorkspaceId = request.Value.WorkspaceId,
             SourcePaths = request.Value.SourcePaths.Select(path => new SelectedSourcePath
             {
                 Path = path.Path,

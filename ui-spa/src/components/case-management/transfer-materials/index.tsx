@@ -348,8 +348,9 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       sourcePaths = egressFolderData
         .filter((data) => selectedSourceFoldersOrFiles.includes(data.path))
         .map((data) => ({
-          id: data.id,
+          fileId: data.id,
           path: data.path,
+          isFolder: data.isFolder,
         }));
     } else {
       sourcePaths = selectedSourceFoldersOrFiles.map((path) => ({
@@ -358,17 +359,17 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     }
 
     const validationPayload = {
-      caseId: caseId,
-      transferType:
-        selectedTransferAction.actionType === "copy"
-          ? ("COPY" as const)
-          : ("MOVE" as const),
-      direction:
+      caseId: parseInt(caseId),
+      // transferType:
+      //   selectedTransferAction.actionType === "copy"
+      //     ? ("COPY" as const)
+      //     : ("MOVE" as const),
+      transferDirection:
         selectedTransferAction.destinationFolder.sourceType === "egress"
           ? ("EgressToNetApp" as const)
           : ("NetAppToEgress" as const),
       sourcePaths: sourcePaths,
-      destinationBasePath: selectedTransferAction.destinationFolder.path,
+      destinationPath: selectedTransferAction.destinationFolder.path,
     };
     return validationPayload;
   };
@@ -401,6 +402,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
                 ? ("COPY" as const)
                 : ("MOVE" as const),
             direction: "EgressToNetApp" as const,
+            workspaceId: egressWorkspaceId,
           }
         : {
             transferType: "COPY" as const,
