@@ -30,21 +30,10 @@ public class GetTransferStatus(ILogger<GetTransferStatus> logger, IFileTransferC
     public async Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "filetransfer/{transferId}/status")] HttpRequest req, FunctionContext functionContext, string transferId)
     {
-        try
-        {
-            var context = functionContext.GetRequestContext();
+        var context = functionContext.GetRequestContext();
 
-            var response = await _transferClient.GetFileTransferStatusAsync(transferId, context.CorrelationId);
+        var response = await _transferClient.GetFileTransferStatusAsync(transferId, context.CorrelationId);
 
-            return await response.ToActionResult();
-        }
-        catch (CpsAuthenticationException)
-        {
-            return new ContentResult
-            {
-                StatusCode = StatusCodes.Status401Unauthorized,
-                Content = "Unauthorized"
-            };
-        }
+        return await response.ToActionResult();
     }
 }

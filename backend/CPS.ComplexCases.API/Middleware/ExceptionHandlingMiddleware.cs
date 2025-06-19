@@ -32,9 +32,7 @@ public class ExceptionHandlingMiddleware : IFunctionsWorkerMiddleware
       {
         BadRequestException _ => HttpStatusCode.BadRequest,
         ArgumentNullException or BadRequestException _ => HttpStatusCode.BadRequest,
-        CpsAuthenticationException _ => HttpStatusCode.ProxyAuthenticationRequired,
-        CmsUnauthorizedException _ => HttpStatusCode.Unauthorized,
-        NetAppUnauthorizedException _ => HttpStatusCode.Unauthorized,
+        CmsUnauthorizedException or CpsAuthenticationException or NetAppUnauthorizedException _ => HttpStatusCode.Unauthorized,
         _ => HttpStatusCode.InternalServerError,
       };
 
