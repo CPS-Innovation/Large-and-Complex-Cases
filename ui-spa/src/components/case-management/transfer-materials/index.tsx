@@ -21,6 +21,7 @@ import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPa
 import { InitiateFileTransferPayload } from "../../../common/types/InitiateFileTransferPayload";
 import { TransferStatusResponse } from "../../../common/types/TransferStatusResponse";
 import { ValidateFileTransferResponse } from "../../../common/types/ValidateFileTransferResponse";
+import { useUserDetails } from "../../../auth";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
@@ -39,6 +40,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   activeTransferId,
 }) => {
   const navigate = useNavigate();
+  const { username } = useUserDetails();
   const [transferSource, setTransferSource] = useState<"egress" | "netapp">(
     "egress",
   );
@@ -445,7 +447,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   ) => {
     setTransferStatus("transferring");
     setTransferStatusData({
-      username: "fff",
+      username: username,
       direction:
         transferSource === "egress" ? "EgressToNetApp" : "NetAppToEgress",
     });
@@ -478,7 +480,6 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         netAppRefetch();
         setTransferStatus("completed");
         setTransferId("");
-        setTransferStatusData(null);
         if (interval) clearInterval(interval);
         return;
       }
@@ -508,6 +509,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     if (!transferId) {
       return;
     }
+    setTransferStatus("transferring");
 
     const pollingInterval = 5000;
     const fetchStatusData = async () => {
@@ -533,7 +535,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         spinnerTextContent: "",
       };
     }
-    if (transferStatusData?.username !== "fff") {
+    if (transferStatusData?.username !== username) {
       return {
         ariaLabelText: `${transferStatusData?.username} is currently transferring`,
         spinnerTextContent: (
@@ -561,7 +563,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         </span>
       ),
     };
-  }, [transferStatusData]);
+  }, [transferStatusData, username]);
 
   if (transferStatus === "transferring") {
     return (
@@ -611,37 +613,45 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
 
   return (
     <div>
-      {transferStatus === "completed" && (
-        <div className={styles.successBanner}>
-          <NotificationBanner type="success">
-            Files copied successfully
-          </NotificationBanner>
+      {transferStatus === "completed" &&
+        transferStatusData?.username === username && (
+          <div className={styles.successBanner}>
+            <NotificationBanner type="success">
+              Files copied successfully
+            </NotificationBanner>
+          </div>
+        )}
+      {!transferId && (
+        <div>
+          <div className={styles.headerText}>
+            <h2>{`${transferSource === "egress" ? "Transfer folders and files between egress and shared drive" : "Transfer folders and files between shared drive and egress"}`}</h2>
+            <InsetText>
+              Select the folders and files you want to transfer, then choose a
+              destination. You can switch the source and destination if needed.{" "}
+              <LinkButton onClick={handleSwitchSource}>
+                {" "}
+                Switch source
+              </LinkButton>
+            </InsetText>
+          </div>
+          <div
+            className={styles.mainContainer}
+            data-testid="transfer-main-container"
+          >
+            {transferSource === "egress" ? (
+              <>
+                {renderEgressContainer()}
+                {renderNetappContainer()}
+              </>
+            ) : (
+              <>
+                {renderNetappContainer()}
+                {renderEgressContainer()}
+              </>
+            )}
+          </div>
         </div>
       )}
-      <div className={styles.headerText}>
-        <h2>{`${transferSource === "egress" ? "Transfer folders and files between egress and shared drive" : "Transfer folders and files between shared drive and egress"}`}</h2>
-        <InsetText>
-          Select the folders and files you want to transfer, then choose a
-          destination. You can switch the source and destination if needed.{" "}
-          <LinkButton onClick={handleSwitchSource}> Switch source</LinkButton>
-        </InsetText>
-      </div>
-      <div
-        className={styles.mainContainer}
-        data-testid="transfer-main-container"
-      >
-        {transferSource === "egress" ? (
-          <>
-            {renderEgressContainer()}
-            {renderNetappContainer()}
-          </>
-        ) : (
-          <>
-            {renderNetappContainer()}
-            {renderEgressContainer()}
-          </>
-        )}
-      </div>
       {showTransferConfirmationModal && selectedTransferAction && (
         <TransferConfirmationModal
           transferAction={selectedTransferAction}

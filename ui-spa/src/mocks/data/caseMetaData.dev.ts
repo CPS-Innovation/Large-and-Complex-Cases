@@ -5,5 +5,5 @@ export const caseMetaDataDev: CaseMetaDataResponse = {
   netappFolderPath: "netapp/",
   operationName: "Thunderstruck",
   urn: "45AA2098221",
-  transferId: "",
+  transferId: "transfer-id-1",
 };
