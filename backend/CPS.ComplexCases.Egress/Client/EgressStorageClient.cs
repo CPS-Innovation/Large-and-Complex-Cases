@@ -61,7 +61,7 @@ public class EgressStorageClient(
             FolderPath = destinationPath,
             FileSize = fileSize,
             WorkspaceId = workspaceId ?? throw new ArgumentNullException(nameof(workspaceId), "Workspace ID cannot be null."),
-            FileName = fileName ?? throw new ArgumentNullException(nameof(sourcePath), "FileName path cannot be null."),
+            FileName = fileName ?? throw new ArgumentNullException(nameof(sourcePath), "sourcePath path cannot be null."),
         };
 
         var response = await SendRequestAsync<CreateUploadResponse>(_egressRequestFactory.CreateUploadRequest(arg, token));

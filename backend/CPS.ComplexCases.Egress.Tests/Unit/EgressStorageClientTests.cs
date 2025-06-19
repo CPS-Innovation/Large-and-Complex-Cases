@@ -83,7 +83,7 @@ public class EgressStorageClientTests
         );
 
         // Act
-        var result = await _client.OpenReadStreamAsync(path, workspaceId, fileId);
+        await using var result = await _client.OpenReadStreamAsync(path, workspaceId, fileId);
 
         // Assert
         using (new AssertionScope())
