@@ -21,6 +21,7 @@ public class StorageClientFactory(IServiceProvider serviceProvider) : IStorageCl
             _ => throw new ArgumentOutOfRangeException(nameof(provider), $"Unsupported storage provider: {provider}")
         };
     }
+
     public (IStorageClient source, IStorageClient destination) GetClientsForDirection(TransferDirection direction)
     {
         return direction switch

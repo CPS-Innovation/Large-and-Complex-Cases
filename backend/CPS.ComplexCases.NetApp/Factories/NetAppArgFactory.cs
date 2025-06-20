@@ -70,15 +70,22 @@ namespace CPS.ComplexCases.NetApp.Factories
                 OperationName = operationName?.ToLowerInvariant(),
                 ContinuationToken = continuationToken,
                 MaxKeys = maxKeys.ToString(),
-                Prefix = SetPrefix(prefix)
+                Prefix = SetPrefix(prefix, true)
             };
         }
 
-        private static string SetPrefix(string? prefix)
+        private static string SetPrefix(string? prefix, bool ensureTrailingDelimiter = false)
         {
             if (!string.IsNullOrEmpty(prefix))
             {
-                prefix = !prefix.EndsWith(S3Constants.Delimiter) ? $"{prefix}{S3Constants.Delimiter}" : prefix;
+                if (ensureTrailingDelimiter && !prefix.EndsWith(S3Constants.Delimiter))
+                {
+                    prefix = $"{prefix}{S3Constants.Delimiter}";
+                }
+                else if (!ensureTrailingDelimiter && prefix.EndsWith(S3Constants.Delimiter))
+                {
+                    prefix = prefix.TrimEnd(S3Constants.Delimiter[0]);
+                }
             }
 
             return prefix?.ToLowerInvariant() ?? string.Empty;

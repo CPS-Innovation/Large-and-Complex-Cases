@@ -1,28 +1,29 @@
+using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Logging;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
-using System.Net;
-using CPS.ComplexCases.API.Context;
-using CPS.ComplexCases.Common.Helpers;
-using CPS.ComplexCases.API.Domain.Request;
-using CPS.ComplexCases.API.Validators.Requests;
+using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.API.Clients.FileTransfer;
-using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.API.Constants;
+using CPS.ComplexCases.API.Context;
+using CPS.ComplexCases.API.Domain.Request;
 using CPS.ComplexCases.API.Extensions;
+using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Extensions;
+using CPS.ComplexCases.Common.Helpers;
+using CPS.ComplexCases.Common.Models.Requests;
 
 namespace CPS.ComplexCases.API.Functions.Transfer;
 
-public class InitiateTransfer(ILogger<InitiateTransfer> logger, IFileTransferClient transferClient)
+public class InitiateTransfer(ILogger<InitiateTransfer> logger, IFileTransferClient transferClient, IRequestValidator requestValidator)
 {
     private readonly ILogger<InitiateTransfer> _logger = logger;
     private readonly IFileTransferClient _transferClient = transferClient;
+    private readonly IRequestValidator _requestValidator = requestValidator;
 
     [Function(nameof(InitiateTransfer))]
-    [OpenApiOperation(operationId: nameof(Run), tags: ["File Transfer"], Description = "Initiate a file transfer.")]
+    [OpenApiOperation(operationId: nameof(Run), tags: ["FileTransfer"], Description = "Initiate a file transfer.")]
     [OpenApiRequestBody(ContentType.ApplicationJson, typeof(InitiateTransferRequest), Description = "Body containing the file transfer request")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
@@ -37,7 +38,7 @@ public class InitiateTransfer(ILogger<InitiateTransfer> logger, IFileTransferCli
         _logger.LogInformation("Initiating file transfer with CorrelationId: {CorrelationId}", correlationId);
         var context = functionContext.GetRequestContext();
 
-        var transferRequest = await ValidatorHelper.GetJsonBody<InitiateTransferRequest, InitiateTransferRequestValidator>(req);
+        var transferRequest = await _requestValidator.GetJsonBody<InitiateTransferRequest, InitiateTransferRequestValidator>(req);
 
         if (!transferRequest.IsValid)
         {

@@ -1,15 +1,14 @@
+using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Logging;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
-using System.Net;
-using CPS.ComplexCases.API.Context;
+using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
 using CPS.ComplexCases.API.Clients.FileTransfer;
 using CPS.ComplexCases.API.Constants;
+using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Extensions;
-using Microsoft.OpenApi.Models;
-using CPS.ComplexCases.API.Exceptions;
 
 namespace CPS.ComplexCases.API.Functions.Transfer;
 
@@ -19,7 +18,7 @@ public class GetTransferStatus(ILogger<GetTransferStatus> logger, IFileTransferC
     private readonly IFileTransferClient _transferClient = transferClient;
 
     [Function(nameof(GetTransferStatus))]
-    [OpenApiOperation(operationId: nameof(Run), tags: ["File Transfer"], Description = "Get status of a file transfer.")]
+    [OpenApiOperation(operationId: nameof(Run), tags: ["FileTransfer"], Description = "Get status of a file transfer.")]
     [OpenApiParameter(name: "transferId", In = ParameterLocation.Path, Required = true, Type = typeof(string), Description = "The Id of the transfer.")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.NotFound, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.NotFound)]

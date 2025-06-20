@@ -23,13 +23,15 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
     INetAppClient netAppClient,
     INetAppArgFactory netAppArgFactory,
     IOptions<NetAppOptions> options,
-    IActivityLogService activityLogService)
+    IActivityLogService activityLogService,
+    IRequestValidator requestValidator)
 {
     private readonly ILogger<CreateNetAppConnection> _logger = logger;
     private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
     private readonly INetAppClient _netAppClient = netAppClient;
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
     private readonly IActivityLogService _activityLogService = activityLogService;
+    private readonly IRequestValidator _requestValidator = requestValidator;
     private readonly NetAppOptions _netAppOptions = options.Value;
 
     [Function(nameof(CreateNetAppConnection))]
@@ -44,7 +46,7 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
     {
         var context = functionContext.GetRequestContext();
 
-        var netAppConnectionRequest = await ValidatorHelper.GetJsonBody<CreateNetAppConnectionDto, CreateNetAppConnectionValidator>(req);
+        var netAppConnectionRequest = await _requestValidator.GetJsonBody<CreateNetAppConnectionDto, CreateNetAppConnectionValidator>(req);
 
         if (!netAppConnectionRequest.IsValid)
         {

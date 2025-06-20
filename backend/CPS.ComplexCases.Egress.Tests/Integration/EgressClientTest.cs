@@ -14,6 +14,8 @@ public class EgressClientTests : IDisposable
     private readonly WireMockServer _server;
     private readonly EgressClient _client;
     private readonly EgressArgFactory _egressArgFactory;
+    private bool _disposed;
+
     public EgressClientTests()
     {
         _server = WireMockServer
@@ -41,12 +43,6 @@ public class EgressClientTests : IDisposable
 
         _client = new EgressClient(logger, new OptionsWrapper<EgressOptions>(egressOptions), httpClient, new EgressRequestFactory());
         _egressArgFactory = new EgressArgFactory();
-    }
-
-    public void Dispose()
-    {
-        _server.Stop();
-        GC.SuppressFinalize(this);
     }
 
     [Fact]
@@ -131,5 +127,29 @@ public class EgressClientTests : IDisposable
         Assert.Equal("folder-id/file-path", material.Path);
         Assert.False(material.IsFolder);
         Assert.Equal(1, material.Version);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                _server?.Stop();
+                _server?.Dispose();
+            }
+            _disposed = true;
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    ~EgressClientTests()
+    {
+        Dispose(false);
     }
 }

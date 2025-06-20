@@ -1,13 +1,13 @@
-using FluentValidation;
-using Microsoft.AspNetCore.Http;
 using System.Text.Json;
+using Microsoft.AspNetCore.Http;
 using CPS.ComplexCases.Common.Models;
+using FluentValidation;
 
 namespace CPS.ComplexCases.Common.Helpers;
 
-public static class ValidatorHelper
+public class RequestValidator : IRequestValidator
 {
-  public static async Task<ValidatableRequest<T>> GetJsonBody<T, V>(HttpRequest request)
+  public async Task<ValidatableRequest<T>> GetJsonBody<T, V>(HttpRequest request)
       where V : AbstractValidator<T>, new()
   {
     using var reader = new StreamReader(request.Body);
