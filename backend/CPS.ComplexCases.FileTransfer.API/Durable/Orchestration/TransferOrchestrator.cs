@@ -46,6 +46,7 @@ public class TransferOrchestrator(IActivityLogService activityLogService, IOptio
                 Direction = input.TransferDirection,
                 TotalFiles = input.SourcePaths.Count,
                 IsRetry = input.IsRetry ?? false,
+                UserName = input.UserName,
                 CorrelationId = input.CorrelationId,
             };
 

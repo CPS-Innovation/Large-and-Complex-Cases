@@ -23,9 +23,10 @@ var builder = FunctionsApplication.CreateBuilder(args);
 
 builder.ConfigureFunctionsWebApplication();
 
+// note: the order of middleware is important, as it determines the execution flow
 builder
-    .UseMiddleware<RequestValidationMiddleware>()
-    .UseMiddleware<ExceptionHandlingMiddleware>();
+    .UseMiddleware<ExceptionHandlingMiddleware>()
+    .UseMiddleware<RequestValidationMiddleware>();
 
 builder.Services
     .AddApplicationInsightsTelemetryWorkerService()
@@ -47,9 +48,8 @@ builder.Services.AddDataClient(builder.Configuration);
 builder.Services.AddDdeiClient(builder.Configuration);
 builder.Services.AddDdeiClientTactical();
 builder.Services.AddEgressClient(builder.Configuration);
-builder.Services.AddNetAppClient(builder.Configuration);
-builder.Services.AddDataClient(builder.Configuration);
 builder.Services.AddFileTransferClient(builder.Configuration);
+builder.Services.AddNetAppClient(builder.Configuration);
 
 builder.Services.AddScoped<ICaseMetadataService, CaseMetadataService>();
 builder.Services.AddScoped<ICaseEnrichmentService, CaseEnrichmentService>();
