@@ -14,7 +14,17 @@ import {
   getEgressFolderResultsPlaywright,
   getNetAppFolderResultsDev,
   getNetAppFolderResultsPlaywright,
+  egressToNetAppValidateTransferDev,
+  egressToNetAppValidateTransferPlaywright,
+  netAppToEgressValidateTransferDev,
+  netAppToEgressValidateTransferPlaywright,
+  egressToNetAppTransferStatusDev,
+  egressToNetAppTransferStatusPlaywright,
+  netAppToEgressTransferStatusDev,
+  netAppToEgressTransferStatusPlaywright,
 } from "./data";
+import { ValidateFileTransferPayload } from "../common/types/ValidateFileTransferPayload";
+import { InitiateFileTransferPayload } from "../common/types/InitiateFileTransferPayload";
 
 export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
   const isDevMock = () => apiMockSource === "dev";
@@ -95,32 +105,62 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       return HttpResponse.json(netAppRootFolderResults);
     }),
 
-    http.post(`${baseUrl}/api/v1/filetransfer/validate`, async () => {
-      await delay(2500);
-      return HttpResponse.json({
-        isValid: true,
-        discoveredFiles: [{ id: "1", sourcePath: "abc" }],
-      });
-    }),
+    http.post(
+      `${baseUrl}/api/v1/filetransfer/validate`,
+      async ({ request }) => {
+        const requestPayload =
+          (await request.json()) as ValidateFileTransferPayload;
+        let response = {};
+        if (requestPayload.direction === "EgressToNetApp") {
+          response = isDevMock()
+            ? egressToNetAppValidateTransferDev
+            : egressToNetAppValidateTransferPlaywright;
+        }
+        if (requestPayload.direction === "NetAppToEgress") {
+          response = isDevMock()
+            ? netAppToEgressValidateTransferDev
+            : netAppToEgressValidateTransferPlaywright;
+        }
+        await delay(2500);
+        return HttpResponse.json(response);
+      },
+    ),
 
-    http.post(`${baseUrl}/api/v1/filetransfer/initiate`, async () => {
-      return HttpResponse.json({ transferId: "transfer-id-1" });
-    }),
+    http.post(
+      `${baseUrl}/api/v1/filetransfer/initiate`,
+      async ({ request }) => {
+        const requestPayload =
+          (await request.json()) as InitiateFileTransferPayload;
+        let response = {};
+        await delay(2000);
+        response =
+          requestPayload.direction === "EgressToNetApp"
+            ? { transferId: "transfer-id-egress-to-netapp" }
+            : { transferId: "transfer-id-netapp-to-egress" };
+
+        return HttpResponse.json(response);
+      },
+    ),
     http.get(
-      `${baseUrl}/api/v1/filetransfer/transfer-id-1/status`,
+      `${baseUrl}/api/v1/filetransfer/transfer-id-egress-to-netapp/status`,
       async () => {
-        // const url = new URL(req.request.url);
+        const response = isDevMock()
+          ? egressToNetAppTransferStatusDev
+          : egressToNetAppTransferStatusPlaywright;
 
-        // const path = url.searchParams.get("path");
-        // const netAppRootFolderResults = isDevMock()
-        //   ? getNetAppFolderResultsDev(path as string)
-        //   : getNetAppFolderResultsPlaywright(path as string);
         await delay(1500);
-        return HttpResponse.json({
-          overallStatus: "COMPLETED",
-          username: "abc",
-          direction: "NetAppToEgress",
-        });
+        return HttpResponse.json(response);
+      },
+    ),
+    http.get(
+      `${baseUrl}/api/v1/filetransfer/transfer-id-netapp-to-egress/status`,
+      async () => {
+        const response = isDevMock()
+          ? netAppToEgressTransferStatusDev
+          : netAppToEgressTransferStatusPlaywright;
+
+        await delay(1500);
+        return HttpResponse.json(response);
       },
     ),
   ];

@@ -8,5 +8,5 @@ export type ValidateFileTransferResponse = {
     errorType: string;
     message: string;
   }[];
-  discoveredFiles: { id: string; sourcePath: string }[];
+  discoveredFiles: { id?: string; sourcePath: string }[];
 };
