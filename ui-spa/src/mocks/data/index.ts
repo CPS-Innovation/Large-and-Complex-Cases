@@ -12,3 +12,20 @@ export { getEgressFolderResultsDev } from "./egressFolderResults.dev";
 export { getEgressFolderResultsPlaywright } from "./egressFolderResults.playwright";
 export { getNetAppFolderResultsDev } from "./netappFolderResults.dev";
 export { getNetAppFolderResultsPlaywright } from "./netappFolderResults.playwright";
+export {
+  egressToNetAppValidateTransferDev,
+  netAppToEgressValidateTransferDev,
+} from "./validateTransfer.dev";
+export {
+  egressToNetAppValidateTransferPlaywright,
+  netAppToEgressValidateTransferPlaywright,
+} from "./validateTransfer.playwright";
+
+export {
+  egressToNetAppTransferStatusDev,
+  netAppToEgressTransferStatusDev,
+} from "./transferStatus.dev";
+export {
+  egressToNetAppTransferStatusPlaywright,
+  netAppToEgressTransferStatusPlaywright,
+} from "./transferStatus.playwright";

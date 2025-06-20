@@ -1,6 +1,6 @@
-import { Checkboxes, Button } from "../../govuk";
+import { Checkboxes, Button, LinkButton } from "../../govuk";
+import { useState } from "react";
 import { Modal } from "../../common/Modal";
-import { LinkButton } from "../../govuk";
 import { TransferAction } from "../../../common/types/TransferAction";
 import styles from "./transferConfirmationModal.module.scss";
 
@@ -8,13 +8,17 @@ type TransferConfirmationModalProps = {
   transferAction: TransferAction;
   groupedData: { folders: string[]; files: string[] };
   handleCloseModal: () => void;
+  handleContinue: () => void;
 };
 
 const TransferConfirmationModal: React.FC<TransferConfirmationModalProps> = ({
   transferAction,
   groupedData,
   handleCloseModal,
+  handleContinue,
 }) => {
+  const [acceptedConfirmation, setAcceptedConfirmation] = useState(false);
+
   const getConfirmationText = () => {
     let folderText,
       fileText = "";
@@ -70,13 +74,17 @@ const TransferConfirmationModal: React.FC<TransferConfirmationModalProps> = ({
             className="govuk-checkboxes--small"
             items={[
               {
+                checked: acceptedConfirmation,
                 children: getConfirmationText(),
               },
             ]}
             name="confirmation checkbox"
+            onChange={() => setAcceptedConfirmation(!acceptedConfirmation)}
           />
           <div className={styles.modalButtonWrapper}>
-            <Button onClick={() => {}}>Continue</Button>
+            <Button onClick={handleContinue} disabled={!acceptedConfirmation}>
+              Continue
+            </Button>
             <LinkButton onClick={handleCloseModal}>Cancel </LinkButton>
           </div>
         </div>
