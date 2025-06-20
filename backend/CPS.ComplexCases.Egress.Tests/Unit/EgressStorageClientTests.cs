@@ -21,7 +21,7 @@ using Moq.Protected;
 
 namespace CPS.ComplexCases.Egress.Tests.Unit;
 
-public class EgressStorageClientTests
+public class EgressStorageClientTests : IDisposable
 {
     private readonly Fixture _fixture;
     private readonly Mock<ILogger<EgressStorageClient>> _loggerMock;
@@ -31,6 +31,11 @@ public class EgressStorageClientTests
     private readonly Mock<IEgressRequestFactory> _requestFactoryMock;
     private readonly EgressStorageClient _client;
     private const string TestUrl = "https://example.com";
+
+    public void Dispose()
+    {
+        _httpClient?.Dispose();
+    }
 
     public EgressStorageClientTests()
     {
