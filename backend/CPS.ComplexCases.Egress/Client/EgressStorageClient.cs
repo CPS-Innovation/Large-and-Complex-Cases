@@ -36,12 +36,10 @@ public class EgressStorageClient(
     {
         var token = await GetWorkspaceToken();
 
-        var fileName = Path.GetFileName(sourcePath);
-
         if (string.IsNullOrEmpty(sourcePath))
-        {
             throw new ArgumentNullException(nameof(sourcePath), "Source path cannot be null or empty.");
-        }
+
+        var fileName = Path.GetFileName(sourcePath);
 
         if (overwritePolicy != TransferOverwritePolicy.Overwrite)
         {
