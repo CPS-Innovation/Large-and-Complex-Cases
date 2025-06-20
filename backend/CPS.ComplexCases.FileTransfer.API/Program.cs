@@ -3,6 +3,7 @@ using Microsoft.Azure.Functions.Worker.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using CPS.ComplexCases.ActivityLog.Extensions;
+using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Extensions;
 using CPS.ComplexCases.Egress.Extensions;
@@ -29,5 +30,6 @@ builder.Services.Configure<SizeConfig>(
     builder.Configuration.GetSection("FileTransfer:SizeConfig"));
 
 builder.Services.AddScoped<IStorageClientFactory, StorageClientFactory>();
+builder.Services.AddScoped<IRequestValidator, RequestValidator>();
 
-builder.Build().Run();
+await builder.Build().RunAsync();

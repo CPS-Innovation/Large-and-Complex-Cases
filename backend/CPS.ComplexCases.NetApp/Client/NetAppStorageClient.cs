@@ -108,31 +108,29 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
         return filesForTransfer;
     }
 
-    public async Task<IEnumerable<FileTransferInfo>?> ListFilesInFolder(string path, string? continuationToken = null)
+    public async Task<IEnumerable<FileTransferInfo>?> ListFilesInFolder(string path)
     {
         var filesForTransfer = new List<FileTransferInfo>();
-        var arg = _netAppArgFactory.CreateListObjectsInBucketArg(_options.BucketName, continuationToken, 1000, path);
-        var response = await _netAppClient.ListObjectsInBucketAsync(arg);
 
-        if (response == null || !response.Data.FileData.Any())
+        string? continuationToken = null;
+        do
         {
-            return null;
-        }
+            var arg = _netAppArgFactory.CreateListObjectsInBucketArg(_options.BucketName, continuationToken, 1000, path);
+            var response = await _netAppClient.ListObjectsInBucketAsync(arg);
 
-        filesForTransfer.AddRange(
-            response.Data.FileData.Select(x => new FileTransferInfo
+            if (response == null || !response.Data.FileData.Any())
             {
-                SourcePath = x.Path
-            }));
-
-        if (response.Pagination.NextContinuationToken != null)
-        {
-            var nextFiles = await ListFilesInFolder(path, response.Pagination.NextContinuationToken);
-            if (nextFiles != null)
-            {
-                filesForTransfer.AddRange(nextFiles);
+                return filesForTransfer;
             }
-        }
+
+            filesForTransfer.AddRange(
+                response.Data.FileData.Select(x => new FileTransferInfo
+                {
+                    SourcePath = x.Path
+                }));
+
+            continuationToken = response.Pagination.NextContinuationToken;
+        } while (continuationToken != null);
 
         return filesForTransfer;
     }

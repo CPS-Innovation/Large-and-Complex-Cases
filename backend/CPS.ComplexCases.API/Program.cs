@@ -1,14 +1,3 @@
-using CPS.ComplexCases.API.Extensions;
-using CPS.ComplexCases.ActivityLog.Extensions;
-using CPS.ComplexCases.API.Middleware;
-using CPS.ComplexCases.API.Services;
-using CPS.ComplexCases.API.Validators;
-using CPS.ComplexCases.Data.Extensions;
-using CPS.ComplexCases.DDEI.Extensions;
-using CPS.ComplexCases.DDEI.Tactical.Extensions;
-using CPS.ComplexCases.Egress.Extensions;
-using CPS.ComplexCases.NetApp.Extensions;
-using CPS.ComplexCases.OpenApi;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Builder;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Abstractions;
@@ -16,8 +5,19 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using CPS.ComplexCases.ActivityLog.Extensions;
+using CPS.ComplexCases.API.Extensions;
+using CPS.ComplexCases.API.Middleware;
+using CPS.ComplexCases.API.Services;
+using CPS.ComplexCases.API.Validators;
+using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Services;
-using CPS.ComplexCases.API.Domain.Configuration;
+using CPS.ComplexCases.Data.Extensions;
+using CPS.ComplexCases.DDEI.Extensions;
+using CPS.ComplexCases.DDEI.Tactical.Extensions;
+using CPS.ComplexCases.Egress.Extensions;
+using CPS.ComplexCases.NetApp.Extensions;
+using CPS.ComplexCases.OpenApi;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
@@ -54,5 +54,6 @@ builder.Services.AddFileTransferClient(builder.Configuration);
 builder.Services.AddScoped<ICaseMetadataService, CaseMetadataService>();
 builder.Services.AddScoped<ICaseEnrichmentService, CaseEnrichmentService>();
 builder.Services.AddSingleton<IOpenApiConfigurationOptions, OpenApiConfigurationOptions>();
+builder.Services.AddSingleton<IRequestValidator, RequestValidator>();
 
 await builder.Build().RunAsync();

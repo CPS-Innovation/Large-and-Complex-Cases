@@ -23,11 +23,13 @@ public class InitiateTransfer
 {
     private readonly ILogger<InitiateTransfer> _logger;
     private readonly ICaseMetadataService _caseMetadataService;
+    private readonly IRequestValidator _requestValidator;
 
-    public InitiateTransfer(ILogger<InitiateTransfer> logger, ICaseMetadataService caseMetadataService)
+    public InitiateTransfer(ILogger<InitiateTransfer> logger, ICaseMetadataService caseMetadataService, IRequestValidator requestValidator)
     {
         _logger = logger;
         _caseMetadataService = caseMetadataService;
+        _requestValidator = requestValidator;
     }
 
     [Function(nameof(InitiateTransfer))]
@@ -37,7 +39,7 @@ public class InitiateTransfer
     {
         var currentCorrelationId = req.Headers.GetCorrelationId();
         _logger.LogInformation("Initiating file transfer with CorrelationId: {CorrelationId}", currentCorrelationId);
-        var transferRequest = await ValidatorHelper.GetJsonBody<TransferRequest, TransferRequestValidator>(req);
+        var transferRequest = await _requestValidator.GetJsonBody<TransferRequest, TransferRequestValidator>(req);
 
         if (!transferRequest.IsValid)
         {

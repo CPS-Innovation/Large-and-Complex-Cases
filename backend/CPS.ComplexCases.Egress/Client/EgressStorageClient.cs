@@ -38,6 +38,10 @@ public class EgressStorageClient(
 
         var fileName = Path.GetFileName(sourcePath);
 
+        if (string.IsNullOrEmpty(sourcePath))
+        {
+            throw new ArgumentNullException(nameof(sourcePath), "Source path cannot be null or empty.");
+        }
 
         if (overwritePolicy != TransferOverwritePolicy.Overwrite)
         {
@@ -107,16 +111,19 @@ public class EgressStorageClient(
 
     public async Task<IEnumerable<FileTransferInfo>> ListFilesForTransferAsync(List<TransferEntityDto> selectedEntities, string? workspaceId = null, int? caseId = null)
     {
+        if (selectedEntities == null || selectedEntities.Count == 0)
+            throw new ArgumentException("Selected entities cannot be null or empty", nameof(selectedEntities));
+
         if (string.IsNullOrEmpty(workspaceId))
         {
-            throw new ArgumentNullException(nameof(workspaceId), "Workspace ID cannot be null or empty.");
+            throw new ArgumentException("Workspace ID cannot be null or empty.", nameof(workspaceId));
         }
 
         var token = await GetWorkspaceToken();
 
         var entityTasks = selectedEntities.Select(async entity =>
         {
-            if (entity.IsFolder == false)
+            if (!entity.IsFolder)
             {
                 return new List<FileTransferInfo>
                 {
@@ -183,8 +190,11 @@ public class EgressStorageClient(
 
         if (totalResults > take)
         {
+            int batchSize = 10;
+
             var remainingPages = (int)Math.Ceiling((double)(totalResults - take) / take);
             var pageTasks = new List<Task<ListCaseMaterialResponse>>();
+            ListCaseMaterialResponse[]? pageResults = [];
 
             for (int i = 1; i <= remainingPages; i++)
             {
@@ -198,10 +208,20 @@ public class EgressStorageClient(
                 };
 
                 pageTasks.Add(SendRequestAsync<ListCaseMaterialResponse>(_egressRequestFactory.ListEgressMaterialRequest(pageArg, token)));
+
+                if (pageTasks.Count >= batchSize)
+                {
+                    pageResults = await Task.WhenAll(pageTasks);
+                    allData.AddRange(pageResults.SelectMany(r => r.Data));
+                    pageTasks.Clear();
+                }
             }
 
-            var pageResults = await Task.WhenAll(pageTasks);
-            allData.AddRange(pageResults.SelectMany(r => r.Data));
+            if (pageTasks.Count > 0)
+            {
+                pageResults = await Task.WhenAll(pageTasks);
+                allData.AddRange(pageResults.SelectMany(r => r.Data));
+            }
         }
 
         return allData;

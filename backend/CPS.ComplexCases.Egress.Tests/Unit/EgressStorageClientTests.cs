@@ -478,7 +478,7 @@ public class EgressStorageClientTests
         };
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<ArgumentNullException>(
+        var exception = await Assert.ThrowsAsync<ArgumentException>(
             () => _client.ListFilesForTransferAsync(selectedEntities, null));
 
         exception.ParamName.Should().Be("workspaceId");

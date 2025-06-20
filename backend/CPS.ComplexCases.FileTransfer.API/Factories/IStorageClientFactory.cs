@@ -7,6 +7,6 @@ namespace CPS.ComplexCases.FileTransfer.API.Factories;
 public interface IStorageClientFactory
 {
     IStorageClient GetClient(StorageProvider provider);
-    IStorageClient GetClientForDirection(TransferDirection direction) => GetClientsForDirection(direction).source;
+    IStorageClient GetSourceClientForDirection(TransferDirection direction) => GetClientsForDirection(direction).source;
     (IStorageClient source, IStorageClient destination) GetClientsForDirection(TransferDirection direction);
 }

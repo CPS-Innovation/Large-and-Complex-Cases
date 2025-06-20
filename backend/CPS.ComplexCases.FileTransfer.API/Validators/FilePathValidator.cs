@@ -5,6 +5,9 @@ namespace CPS.ComplexCases.FileTransfer.API.Validators;
 
 public class FilePathValidator : AbstractValidator<IList<DestinationPath>>
 {
+    private static readonly char[] InvalidPathChars = Path.GetInvalidPathChars();
+    private static readonly char[] InvalidFileNameChars = Path.GetInvalidFileNameChars();
+
     public FilePathValidator()
     {
         RuleFor(paths => paths)
@@ -19,30 +22,22 @@ public class FilePathValidator : AbstractValidator<IList<DestinationPath>>
                     .WithMessage("File path cannot be empty.")
                     .MaximumLength(255)
                     .WithMessage(x => $"{x.Path}: exceeds the 255 characters limit.")
-                    .Must(pathValue => !HasInvalidFileNameChars(pathValue))
+                    .Must(pathValue => !HasInvalidPathChars(pathValue))
                     .WithMessage(x => $"{x.Path}: contains invalid characters.");
             });
     }
 
-    private static bool HasInvalidFileNameChars(string path)
+    private static bool HasInvalidPathChars(string path)
     {
-        if (string.IsNullOrEmpty(path))
-            return false;
+        if (string.IsNullOrEmpty(path)) return false;
 
-        int index = path.LastIndexOf('/');
-        if (index != -1)
-        {
-            var filePath = path[..index]; // Get the file path part before the last '/'
-            var fileName = path[(index + 1)..]; // Get the file name part after the last '/'
+        var directory = Path.GetDirectoryName(path);
+        var fileName = Path.GetFileName(path);
 
-            char[] invalidFilePathChars = Path.GetInvalidFileNameChars();
-            char[] invalidFileNameChars = Path.GetInvalidPathChars();
+        var hasInvalidDirChars = !string.IsNullOrEmpty(directory) &&
+                                 directory.Any(c => InvalidPathChars.Contains(c));
+        var hasInvalidFileChars = fileName.Any(c => InvalidFileNameChars.Contains(c));
 
-            return filePath.Any(c => invalidFilePathChars.Contains(c)) ||
-                   fileName.Any(c => invalidFileNameChars.Contains(c));
-        }
-
-        char[] invalidChars = Path.GetInvalidFileNameChars();
-        return path.Any(c => invalidChars.Contains(c));
+        return hasInvalidDirChars || hasInvalidFileChars;
     }
 }

@@ -15,10 +15,11 @@ using Microsoft.Extensions.Logging;
 
 namespace CPS.ComplexCases.API.Functions.Transfer;
 
-public class GetFilesForTransfer(IFileTransferClient transferClient, ILogger<GetFilesForTransfer> logger)
+public class GetFilesForTransfer(IFileTransferClient transferClient, ILogger<GetFilesForTransfer> logger, IRequestValidator requestValidator)
 {
     private readonly IFileTransferClient _transferClient = transferClient;
     private readonly ILogger<GetFilesForTransfer> _logger = logger;
+    private readonly IRequestValidator _requestValidator = requestValidator;
 
     [Function(nameof(GetFilesForTransfer))]
     [OpenApiOperation(operationId: nameof(GetFilesForTransfer), tags: ["FileTransfer"], Description = "Gets the complete list of files to be transferred from the source storage.")]
@@ -34,7 +35,7 @@ public class GetFilesForTransfer(IFileTransferClient transferClient, ILogger<Get
 
         _logger.LogInformation("Getting files for transfer with CorrelationId: {CorrelationId}", context.CorrelationId);
 
-        var request = await ValidatorHelper.GetJsonBody<GetFilesForTransferRequest, GetFilesForTransferRequestValidator>(req);
+        var request = await _requestValidator.GetJsonBody<GetFilesForTransferRequest, GetFilesForTransferRequestValidator>(req);
 
         if (!request.IsValid)
         {
@@ -45,6 +46,7 @@ public class GetFilesForTransfer(IFileTransferClient transferClient, ILogger<Get
         var listFilesForTransferRequest = new ListFilesForTransferRequest
         {
             CaseId = request.Value.CaseId,
+            CorrelationId = context.CorrelationId,
             TransferDirection = request.Value.TransferDirection,
             DestinationPath = request.Value.DestinationPath,
             SourcePaths = request.Value.SourcePaths.Select(path => new SelectedSourcePath

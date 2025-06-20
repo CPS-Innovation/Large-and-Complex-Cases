@@ -234,7 +234,7 @@ public class EgressStorageClientTests : IDisposable
             () => _client.InitiateUploadAsync(destinationPath, fileSize, workspaceId, null));
 
         Assert.Equal("sourcePath", exception.ParamName);
-        Assert.Contains("sourcePath path cannot be null", exception.Message);
+        Assert.Contains("Source path cannot be null or empty", exception.Message);
     }
 
     [Fact]
