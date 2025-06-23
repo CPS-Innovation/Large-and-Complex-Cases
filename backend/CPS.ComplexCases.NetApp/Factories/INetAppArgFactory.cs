@@ -9,7 +9,7 @@ namespace CPS.ComplexCases.NetApp.Factories
         FindBucketArg CreateFindBucketArg(string bucketName);
         GetObjectArg CreateGetObjectArg(string bucketName, string objectName);
         UploadObjectArg CreateUploadObjectArg(string bucketName, string objectName, Stream stream);
-        ListObjectsInBucketArg CreateListObjectsInBucketArg(string bucketName, string? continuationToken = null, int? maxKeys = null, string? prefix = null);
+        ListObjectsInBucketArg CreateListObjectsInBucketArg(string bucketName, string? continuationToken = null, int? maxKeys = null, string? prefix = null, bool includeDelimiter = false);
         ListFoldersInBucketArg CreateListFoldersInBucketArg(string bucketName, string? operationName = null, string? continuationToken = null, int? maxKeys = null, string? prefix = null);
         InitiateMultipartUploadArg CreateInitiateMultipartUploadArg(string bucketName, string objectName);
         UploadPartArg CreateUploadPartArg(string bucketName, string objectName, byte[] partData, int partNumber, string uploadId);

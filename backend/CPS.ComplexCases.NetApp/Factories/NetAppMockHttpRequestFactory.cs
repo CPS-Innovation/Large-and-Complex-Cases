@@ -56,13 +56,18 @@ public class NetAppMockHttpRequestFactory : INetAppMockHttpRequestFactory
 
     public HttpRequestMessage ListObjectsInBucketRequest(ListObjectsInBucketArg arg)
     {
-        var query = new FormUrlEncodedContent(
-        [
+        var queryValues = new List<KeyValuePair<string, string>>
+        {
             new(S3Constants.ListTypeQueryName, "2"),
             new(S3Constants.ContinuationTokenQueryName, arg.ContinuationToken ?? string.Empty),
             new(S3Constants.MaxKeysQueryName, arg.MaxKeys ?? string.Empty),
-            new(S3Constants.PrefixQueryName, arg.Prefix ?? string.Empty),
-        ]);
+            new(S3Constants.PrefixQueryName, arg.Prefix ?? string.Empty)
+        };
+
+        if (arg.IncludeDelimiter)
+            queryValues.Add(new(S3Constants.DelimiterQueryValue, S3Constants.Delimiter));
+
+        var query = new FormUrlEncodedContent(queryValues);
 
         var request = new HttpRequestMessage(HttpMethod.Get, $"/{arg.BucketName}/?{query.ReadAsStringAsync().Result}");
 
