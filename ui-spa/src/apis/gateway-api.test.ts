@@ -999,7 +999,7 @@ describe("gateway apis", () => {
       const result = await validateFileTransfer(payload);
       expect(result).toEqual({ caseId: 12 });
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/filetransfer/validate`,
+        `gateway_url/api/filetransfer/files`,
         expect.objectContaining({
           method: "POST",
           credentials: "include",
@@ -1036,7 +1036,7 @@ describe("gateway apis", () => {
       await expect(validateFileTransfer(payload)).rejects.toThrow(
         new ApiError(
           `validating file transfer failed`,
-          `gateway_url/api/v1/filetransfer/validate`,
+          `gateway_url/api/filetransfer/files`,
           {
             status: 500,
             statusText: "Internal Server Error",
@@ -1045,7 +1045,7 @@ describe("gateway apis", () => {
       );
 
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/filetransfer/validate`,
+        `gateway_url/api/filetransfer/files`,
         expect.objectContaining({
           method: "POST",
           credentials: "include",
@@ -1080,7 +1080,7 @@ describe("gateway apis", () => {
       const result = await initiateFileTransfer(payload);
       expect(result).toEqual({ transferId: "12" });
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/filetransfer/initiate`,
+        `gateway_url/api/filetransfer/initiate`,
         expect.objectContaining({
           method: "POST",
           credentials: "include",
@@ -1113,7 +1113,7 @@ describe("gateway apis", () => {
       await expect(initiateFileTransfer(payload)).rejects.toThrow(
         new ApiError(
           `initiate file transfer failed`,
-          `gateway_url/api/v1/filetransfer/initiate`,
+          `gateway_url/api/filetransfer/initiate`,
           {
             status: 500,
             statusText: "Internal Server Error",
@@ -1122,7 +1122,7 @@ describe("gateway apis", () => {
       );
 
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/filetransfer/initiate`,
+        `gateway_url/api/filetransfer/initiate`,
         expect.objectContaining({
           method: "POST",
           credentials: "include",
@@ -1150,7 +1150,7 @@ describe("gateway apis", () => {
       const result = await getTransferStatus("transfer_id_1");
       expect(result).toEqual(mockData);
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/filetransfer/transfer_id_1/status`,
+        `gateway_url/api/filetransfer/transfer_id_1/status`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -1174,7 +1174,7 @@ describe("gateway apis", () => {
       await expect(getTransferStatus("transfer_id_1")).rejects.toThrow(
         new ApiError(
           `Getting case transfer status failed`,
-          "gateway_url/api/v1/filetransfer/transfer_id_1/status",
+          "gateway_url/api/filetransfer/transfer_id_1/status",
           {
             status: 500,
             statusText: "Internal Server Error",
@@ -1182,7 +1182,7 @@ describe("gateway apis", () => {
         ),
       );
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/filetransfer/transfer_id_1/status`,
+        `gateway_url/api/filetransfer/transfer_id_1/status`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
