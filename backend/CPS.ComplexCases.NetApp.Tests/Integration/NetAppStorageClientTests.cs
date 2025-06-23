@@ -332,7 +332,7 @@ public class NetAppStorageClientTests : IDisposable
         };
 
         _caseMetadataServiceMock.Setup(s => s.GetCaseMetadataForCaseIdAsync(CaseId)).ReturnsAsync(caseMetadata);
-        _netAppArgFactoryMock.Setup(f => f.CreateListObjectsInBucketArg(BucketName, null, maxKeys, folderName)).Returns(arg);
+        _netAppArgFactoryMock.Setup(f => f.CreateListObjectsInBucketArg(BucketName, null, maxKeys, folderName, false)).Returns(arg);
         _netAppRequestFactoryMock.Setup(f => f.ListObjectsInBucketRequest(arg)).Returns(request);
 
         // Act
@@ -397,8 +397,8 @@ public class NetAppStorageClientTests : IDisposable
         };
 
         _caseMetadataServiceMock.Setup(s => s.GetCaseMetadataForCaseIdAsync(CaseId)).ReturnsAsync(caseMetadata);
-        _netAppArgFactoryMock.Setup(f => f.CreateListObjectsInBucketArg(BucketName, null, maxKeys, folderName)).Returns(argWithoutContinuationToken);
-        _netAppArgFactoryMock.Setup(f => f.CreateListObjectsInBucketArg(BucketName, continuationToken, maxKeys, folderName)).Returns(argWithContinuationToken);
+        _netAppArgFactoryMock.Setup(f => f.CreateListObjectsInBucketArg(BucketName, null, maxKeys, folderName, false)).Returns(argWithoutContinuationToken);
+        _netAppArgFactoryMock.Setup(f => f.CreateListObjectsInBucketArg(BucketName, continuationToken, maxKeys, folderName, false)).Returns(argWithContinuationToken);
         _netAppRequestFactoryMock.Setup(f => f.ListObjectsInBucketRequest(argWithoutContinuationToken)).Returns(requestWithoutContinuationToken);
         _netAppRequestFactoryMock.Setup(f => f.ListObjectsInBucketRequest(argWithContinuationToken)).Returns(requestWithContinuationToken);
 
