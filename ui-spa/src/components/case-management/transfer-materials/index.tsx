@@ -616,7 +616,10 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       {transferStatus === "completed" &&
         transferStatusData?.username === username && (
           <div className={styles.successBanner}>
-            <NotificationBanner type="success">
+            <NotificationBanner
+              type="success"
+              data-testid="transfer-success-notification-banner"
+            >
               Files copied successfully
             </NotificationBanner>
           </div>
