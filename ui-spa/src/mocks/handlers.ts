@@ -111,12 +111,12 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
         const requestPayload =
           (await request.json()) as ValidateFileTransferPayload;
         let response = {};
-        if (requestPayload.direction === "EgressToNetApp") {
+        if (requestPayload.transferDirection === "EgressToNetApp") {
           response = isDevMock()
             ? egressToNetAppValidateTransferDev
             : egressToNetAppValidateTransferPlaywright;
         }
-        if (requestPayload.direction === "NetAppToEgress") {
+        if (requestPayload.transferDirection === "NetAppToEgress") {
           response = isDevMock()
             ? netAppToEgressValidateTransferDev
             : netAppToEgressValidateTransferPlaywright;
@@ -134,7 +134,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
         let response = {};
         await delay(2000);
         response =
-          requestPayload.direction === "EgressToNetApp"
+          requestPayload.transferDirection === "EgressToNetApp"
             ? { transferId: "transfer-id-egress-to-netapp" }
             : { transferId: "transfer-id-netapp-to-egress" };
 

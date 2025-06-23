@@ -985,16 +985,16 @@ describe("gateway apis", () => {
       });
 
       const payload = {
-        caseId: "12",
-        transferType: "COPY" as const,
-        direction: "EgressToNetApp" as const,
+        caseId: 12,
+        transferDirection: "EgressToNetApp" as const,
         sourcePaths: [
           {
-            id: "1",
+            fileId: "1",
             path: "abc/def",
+            isFolder: true,
           },
         ],
-        destinationBasePath: "netapp/",
+        destinationPath: "netapp/",
       };
       const result = await validateFileTransfer(payload);
       expect(result).toEqual({ caseId: 12 });
@@ -1021,16 +1021,16 @@ describe("gateway apis", () => {
         statusText: "Internal Server Error",
       });
       const payload = {
-        caseId: "12",
-        transferType: "COPY" as const,
-        direction: "EgressToNetApp" as const,
+        caseId: 12,
+        transferDirection: "EgressToNetApp" as const,
         sourcePaths: [
           {
-            id: "1",
+            fileId: "1",
             path: "abc/def",
+            isFolder: true,
           },
         ],
-        destinationBasePath: "netapp/",
+        destinationPath: "netapp/",
       };
 
       await expect(validateFileTransfer(payload)).rejects.toThrow(
@@ -1071,9 +1071,10 @@ describe("gateway apis", () => {
 
       const payload = {
         isRetry: false,
-        caseId: "12",
-        transferType: "COPY" as const,
-        direction: "EgressToNetApp" as const,
+        caseId: 12,
+        workspaceId: "thuderstruck",
+        transferType: "Copy" as const,
+        transferDirection: "EgressToNetApp" as const,
         sourcePaths: [],
         destinationPath: "netapp/",
       };
@@ -1103,9 +1104,10 @@ describe("gateway apis", () => {
       });
       const payload = {
         isRetry: false,
-        caseId: "12",
-        transferType: "COPY" as const,
-        direction: "EgressToNetApp" as const,
+        caseId: 12,
+        workspaceId: "thunderstruck",
+        transferType: "Copy" as const,
+        transferDirection: "EgressToNetApp" as const,
         sourcePaths: [],
         destinationPath: "netapp/",
       };
