@@ -298,10 +298,10 @@ coverage
 *.sw?
 
 # Playwright
-/playwright/test-results/
-/playwright/playwright-report/
-/blob-report/
-/playwright/.cache/
+ui-spa/playwright/test-results/
+ui-spa/playwright/playwright-report/
+ui-spa/blob-report/
+ui-spa/playwright/.cache/
 
 # Vite
 ui-spa/.vite/deps/
