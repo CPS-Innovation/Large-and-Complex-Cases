@@ -106,7 +106,6 @@ export const getEgressSearchResults = async (
     }
     return getEgressSearchResults(searchParams, skip + take, take, updated);
   } catch (error) {
-    console.error("Fetch failed:", error);
     throw new Error(
       `Invalid API response format for Egress workspace search results, ${error}`,
     );
@@ -180,7 +179,6 @@ export const getConnectNetAppFolders = async (
       updatedFolders,
     );
   } catch (error) {
-    console.error("Fetch failed:", error);
     throw new Error(
       `Invalid API response format for netapp folders results, ${error}`,
     );
@@ -262,7 +260,6 @@ export const getEgressFolders = async (
     }
     return getEgressFolders(workspaceId, folderId, skip + take, take, updated);
   } catch (error) {
-    console.error("Fetch failed:", error);
     throw new Error(`Invalid API response format for Egress folders, ${error}`);
   }
 };
@@ -308,7 +305,6 @@ export const getNetAppFolders = async (
       updatedFiles,
     );
   } catch (error) {
-    console.error("Fetch failed:", error);
     throw new Error(
       `Invalid API response format for netapp files/folders results, ${error}`,
     );
