@@ -51,14 +51,15 @@ namespace CPS.ComplexCases.NetApp.Factories
             };
         }
 
-        public ListObjectsInBucketArg CreateListObjectsInBucketArg(string bucketName, string? continuationToken = null, int? maxKeys = null, string? prefix = null)
+        public ListObjectsInBucketArg CreateListObjectsInBucketArg(string bucketName, string? continuationToken = null, int? maxKeys = null, string? prefix = null, bool includeDelimiter = false)
         {
             return new ListObjectsInBucketArg
             {
                 BucketName = bucketName.ToLowerInvariant(),
                 ContinuationToken = continuationToken,
                 MaxKeys = maxKeys.ToString(),
-                Prefix = SetPrefix(prefix)
+                Prefix = SetPrefix(prefix),
+                IncludeDelimiter = includeDelimiter
             };
         }
 
@@ -70,22 +71,15 @@ namespace CPS.ComplexCases.NetApp.Factories
                 OperationName = operationName?.ToLowerInvariant(),
                 ContinuationToken = continuationToken,
                 MaxKeys = maxKeys.ToString(),
-                Prefix = SetPrefix(prefix, true)
+                Prefix = SetPrefix(prefix)
             };
         }
 
-        private static string SetPrefix(string? prefix, bool ensureTrailingDelimiter = false)
+        private static string SetPrefix(string? prefix)
         {
             if (!string.IsNullOrEmpty(prefix))
             {
-                if (ensureTrailingDelimiter && !prefix.EndsWith(S3Constants.Delimiter))
-                {
-                    prefix = $"{prefix}{S3Constants.Delimiter}";
-                }
-                else if (!ensureTrailingDelimiter && prefix.EndsWith(S3Constants.Delimiter))
-                {
-                    prefix = prefix.TrimEnd(S3Constants.Delimiter[0]);
-                }
+                prefix = !prefix.EndsWith(S3Constants.Delimiter) ? $"{prefix}{S3Constants.Delimiter}" : prefix;
             }
 
             return prefix?.ToLowerInvariant() ?? string.Empty;
