@@ -36,7 +36,7 @@ public class ListNetAppFiles(ILogger<ListNetAppFiles> logger, INetAppClient netA
         var take = int.TryParse(req.Query[InputParameters.Take], out var takeValue) ? takeValue : 100;
         var path = req.Query[InputParameters.Path];
 
-        var arg = _netAppArgFactory.CreateListObjectsInBucketArg(_netAppOptions.BucketName, continuationToken, take, path);
+        var arg = _netAppArgFactory.CreateListObjectsInBucketArg(_netAppOptions.BucketName, continuationToken, take, path, true);
         var response = await _netAppClient.ListObjectsInBucketAsync(arg);
 
         if (response == null)
