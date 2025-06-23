@@ -21,7 +21,9 @@ import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPa
 import { InitiateFileTransferPayload } from "../../../common/types/InitiateFileTransferPayload";
 import { TransferStatusResponse } from "../../../common/types/TransferStatusResponse";
 import { ValidateFileTransferResponse } from "../../../common/types/ValidateFileTransferResponse";
+import { InitiateFileTransferResponse } from "../../../common/types/InitiateFileTransferResponse";
 import { useUserDetails } from "../../../auth";
+import { ApiError } from "../../../common/errors/ApiError";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
@@ -72,6 +74,9 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     | null
   >(null);
   const [transferId, setTransferId] = useState(activeTransferId);
+  const [postRequestApiError, setPostRequestApiError] = useState<null | Error>(
+    null,
+  );
 
   const currentEgressFolder = useMemo(() => {
     if (egressPathFolders.length)
@@ -326,6 +331,12 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   ]);
 
   useEffect(() => {
+    if (postRequestApiError) {
+      throw new Error(postRequestApiError.message);
+    }
+  }, [postRequestApiError]);
+
+  useEffect(() => {
     if (egressWorkspaceId && !transferId) {
       egressRefetch();
     }
@@ -370,7 +381,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           : ("NetAppToEgress" as const),
       sourcePaths: sourcePaths,
       destinationPath: selectedTransferAction.destinationFolder.path,
-      workspaceId: egressWorkspaceId
+      workspaceId: egressWorkspaceId,
     };
     return validationPayload;
   };
@@ -421,10 +432,12 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     setShowTransferConfirmationModal(false);
     setSelectedSourceFoldersOrFiles([]);
     setSelectedTransferAction(null);
+
+    let response: ValidateFileTransferResponse;
     try {
       const validationPayload = getValidateTransferPayload();
       setTransferStatus("validating");
-      const response = await validateFileTransfer(validationPayload);
+      response = await validateFileTransfer(validationPayload);
       if (response.isInvalid) {
         setTransferStatus("validated-with-errors");
         navigate(`/case/${caseId}/case-management/transfer-validation-errors`, {
@@ -441,7 +454,14 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       );
       handleInitiateFileTransfer(initiateTransferPayload);
     } catch (error) {
-      console.log(error);
+      const newError =
+        error instanceof ApiError
+          ? error
+          : new Error(
+              `Invalid validateFileTransfer api response. More details, ${error}`,
+            );
+      setPostRequestApiError(newError);
+      return;
     }
   };
 
@@ -454,23 +474,26 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       direction:
         transferSource === "egress" ? "EgressToNetApp" : "NetAppToEgress",
     });
+    let initiateFileTransferResponse: InitiateFileTransferResponse;
     try {
-      const initiateFileTransferResponse =
+      initiateFileTransferResponse =
         await initiateFileTransfer(initiatePayload);
-      if (initiateFileTransferResponse.id) {
-        setTransferId(initiateFileTransferResponse.id);
+
+      if (!initiateFileTransferResponse.id) {
+        throw new Error(
+          "Invalid initiate transfer response, id does not exist",
+        );
       }
-    } catch (e) {
-      console.log(e);
+      setTransferId(initiateFileTransferResponse.id);
+    } catch (error) {
+      setPostRequestApiError(error as Error);
+      return;
     }
   };
 
   const handleStatusResponse = useCallback(
     (status: TransferStatusResponse, interval: NodeJS.Timeout) => {
-      if (
-        status.status === "Initiated" ||
-        status.status === "InProgress"
-      ) {
+      if (status.status === "Initiated" || status.status === "InProgress") {
         setTransferStatus("transferring");
         setTransferStatusData({
           username: status.userName,
