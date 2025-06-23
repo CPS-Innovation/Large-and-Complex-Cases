@@ -32,6 +32,11 @@ public class EgressStorageClientTests
     private readonly EgressStorageClient _client;
     private const string TestUrl = "https://example.com";
 
+    public void Dispose()
+    {
+        _httpClient?.Dispose();
+    }
+
     public EgressStorageClientTests()
     {
         _fixture = new Fixture();
@@ -478,7 +483,7 @@ public class EgressStorageClientTests
         };
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<ArgumentNullException>(
+        var exception = await Assert.ThrowsAsync<ArgumentException>(
             () => _client.ListFilesForTransferAsync(selectedEntities, null));
 
         exception.ParamName.Should().Be("workspaceId");

@@ -16,10 +16,11 @@ using CPS.ComplexCases.ActivityLog.Services;
 
 namespace CPS.ComplexCases.API.Functions;
 
-public class CreateEgressConnection(ICaseMetadataService caseMetadataService, IEgressClient egressClient, IEgressArgFactory egressArgFactory, ILogger<CreateEgressConnection> logger, IActivityLogService activityLogService)
+public class CreateEgressConnection(ICaseMetadataService caseMetadataService, IEgressClient egressClient, IEgressArgFactory egressArgFactory, ILogger<CreateEgressConnection> logger, IActivityLogService activityLogService, IRequestValidator requestValidator)
 {
   private readonly ILogger<CreateEgressConnection> _logger = logger;
   private readonly IActivityLogService _activityLogService = activityLogService;
+  private readonly IRequestValidator _requestValidator = requestValidator;
   private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
   private readonly IEgressClient _egressClient = egressClient;
   private readonly IEgressArgFactory _egressArgFactory = egressArgFactory;
@@ -36,7 +37,7 @@ public class CreateEgressConnection(ICaseMetadataService caseMetadataService, IE
   {
     var context = functionContext.GetRequestContext();
 
-    var egressConnectionRequest = await ValidatorHelper.GetJsonBody<CreateEgressConnectionDto, CreateEgressConnectionValidator>(req);
+    var egressConnectionRequest = await _requestValidator.GetJsonBody<CreateEgressConnectionDto, CreateEgressConnectionValidator>(req);
 
     if (!egressConnectionRequest.IsValid)
     {

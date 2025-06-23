@@ -14,23 +14,24 @@ using CPS.ComplexCases.FileTransfer.API.Validators;
 
 namespace CPS.ComplexCases.FileTransfer.API.Functions;
 
-public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorageClientFactory storageClientFactory)
+public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorageClientFactory storageClientFactory, IRequestValidator requestValidator)
 {
     private readonly ILogger<ListFilesForTransfer> _logger = logger;
     private readonly IStorageClientFactory _storageClientFactory = storageClientFactory;
+    private readonly IRequestValidator _requestValidator = requestValidator;
 
     [Function(nameof(ListFilesForTransfer))]
     public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post", Route = "transfer/files")] HttpRequest req, FunctionContext context)
     {
-        var request = await ValidatorHelper.GetJsonBody<ListFilesForTransferRequest, ListFilesForTransferValidator>(req);
+        var request = await _requestValidator.GetJsonBody<ListFilesForTransferRequest, ListFilesForTransferValidator>(req);
 
         if (!request.IsValid)
         {
-            _logger.LogWarning("Invalid request to get files for transfer: {Errors}", request.ValidationErrors);
+            _logger.LogWarning("Invalid request to get files for transfer with CorrelationId {CorrelationId}: {Errors}", request.Value.CorrelationId, request.ValidationErrors);
             return new BadRequestObjectResult(request.ValidationErrors);
         }
 
-        var sourceClient = _storageClientFactory.GetClientForDirection(request.Value.TransferDirection);
+        var sourceClient = _storageClientFactory.GetSourceClientForDirection(request.Value.TransferDirection);
 
         var selectedEntities = request.Value.SourcePaths.Select(path => new TransferEntityDto
         {
@@ -52,12 +53,13 @@ public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorage
 
         if (request.Value != null && request.Value.TransferDirection == TransferDirection.EgressToNetApp)
         {
+            var destinationPath = request.Value.DestinationPath.EnsureTrailingSlash();
             var destinationPaths = filesForTransfer.Select(x => new DestinationPath
             {
-                Path = request.Value.DestinationPath.EnsureTrailingSlash() + x.RelativePath
+                Path = destinationPath + x.RelativePath
             }).ToList();
             var validationResult = await new FilePathValidator().ValidateAsync(destinationPaths);
-            result.IsInvalid = validationResult.IsValid;
+            result.IsInvalid = !validationResult.IsValid;
             result.ValidationErrors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
         }
 

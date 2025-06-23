@@ -15,6 +15,8 @@ public class ListFilesForTransferRequest
     public required string DestinationPath { get; set; }
     [JsonPropertyName("workspaceId")]
     public string? WorkspaceId { get; set; }
+    [JsonPropertyName("correlationId")]
+    public Guid? CorrelationId { get; set; }
 }
 
 public class SelectedSourcePath

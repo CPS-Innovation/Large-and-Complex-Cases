@@ -51,6 +51,7 @@ public class FilePathValidatorTests
         var paths = new List<DestinationPath>
         {
             new () { Path = "folder/file.txt" },
+            new () { Path = "another_folder\\another_file.log" },
             new () { Path = "another_file-123.log" }
         };
         var result = _validator.TestValidate(paths);
