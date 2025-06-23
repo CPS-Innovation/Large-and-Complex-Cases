@@ -1034,14 +1034,10 @@ describe("gateway apis", () => {
       };
 
       await expect(validateFileTransfer(payload)).rejects.toThrow(
-        new ApiError(
-          `validating file transfer failed`,
-          `gateway_url/api/filetransfer/files`,
-          {
-            status: 500,
-            statusText: "Internal Server Error",
-          },
-        ),
+        new ApiError(`files api failed`, `gateway_url/api/filetransfer/files`, {
+          status: 500,
+          statusText: "Internal Server Error",
+        }),
       );
 
       expect(fetch).toHaveBeenCalledWith(
