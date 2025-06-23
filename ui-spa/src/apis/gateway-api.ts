@@ -326,7 +326,7 @@ export const validateFileTransfer = async (
   });
 
   if (!response.ok) {
-    throw new ApiError(`validating file transfer failed`, url, response);
+    throw new ApiError(`files api failed`, url, response);
   }
   return (await response.json()) as ValidateFileTransferResponse;
 };

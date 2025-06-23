@@ -457,9 +457,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       const newError =
         error instanceof ApiError
           ? error
-          : new Error(
-              `Invalid validateFileTransfer api response. More details, ${error}`,
-            );
+          : new Error(`Invalid files api response. More details, ${error}`);
       setPostRequestApiError(newError);
       return;
     }

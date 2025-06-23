@@ -372,16 +372,16 @@ test.describe("egress-netapp-transfer", () => {
     );
     await worker.use(
       http.get(
-        "https://mocked-out-api/api/v1/filetransfer/mock-transfer-id/status",
+        "https://mocked-out-api/api/filetransfer/mock-transfer-id/status",
         async () => {
           await delay(10);
           return HttpResponse.json({
-            overallStatus: "INITIATED",
+            status: "Initiated",
             transferType: "COPY",
             direction: "EgressToNetApp",
             completedAt: null,
-            failedFiles: [],
-            username: "dev_user@example.org",
+            failedItems: [],
+            userName: "dev_user@example.org",
           });
         },
       ),
@@ -403,16 +403,16 @@ test.describe("egress-netapp-transfer", () => {
     ).toContainText("Completing transfer from egress to shared drive...");
     await worker.use(
       http.get(
-        "https://mocked-out-api/api/v1/filetransfer/mock-transfer-id/status",
+        "https://mocked-out-api/api/filetransfer/mock-transfer-id/status",
         async () => {
           await delay(10);
           return HttpResponse.json({
-            overallStatus: "IN_PROGRESS",
+            status: "InProgress",
             transferType: "COPY",
             direction: "EgressToNetApp",
             completedAt: null,
-            failedFiles: [],
-            username: "dev_user@example.org",
+            failedItems: [],
+            userName: "dev_user@example.org",
           });
         },
       ),
@@ -430,16 +430,16 @@ test.describe("egress-netapp-transfer", () => {
     ).toContainText("Completing transfer from egress to shared drive...");
     await worker.use(
       http.get(
-        "https://mocked-out-api/api/v1/filetransfer/mock-transfer-id/status",
+        "https://mocked-out-api/api/filetransfer/mock-transfer-id/status",
         async () => {
           await delay(10);
           return HttpResponse.json({
-            overallStatus: "COMPLETED",
+            status: "Completed",
             transferType: "COPY",
             direction: "EgressToNetApp",
             completedAt: null,
-            failedFiles: [],
-            username: "dev_user@example.org",
+            failedItems: [],
+            userName: "dev_user@example.org",
           });
         },
       ),
@@ -479,16 +479,16 @@ test.describe("egress-netapp-transfer", () => {
     );
     await worker.use(
       http.get(
-        "https://mocked-out-api/api/v1/filetransfer/mock-transfer-id/status",
+        "https://mocked-out-api/api/filetransfer/mock-transfer-id/status",
         async () => {
           await delay(10);
           return HttpResponse.json({
-            overallStatus: "INITIATED",
+            status: "Initiated",
             transferType: "COPY",
             direction: "EgressToNetApp",
             completedAt: null,
-            failedFiles: [],
-            username: "abc@example.org",
+            failedItems: [],
+            userName: "abc@example.org",
           });
         },
       ),
@@ -510,16 +510,16 @@ test.describe("egress-netapp-transfer", () => {
     ).toContainText("abc@example.org is currently transferring");
     await worker.use(
       http.get(
-        "https://mocked-out-api/api/v1/filetransfer/mock-transfer-id/status",
+        "https://mocked-out-api/api/filetransfer/mock-transfer-id/status",
         async () => {
           await delay(10);
           return HttpResponse.json({
-            overallStatus: "IN_PROGRESS",
+            status: "InProgress",
             transferType: "COPY",
             direction: "EgressToNetApp",
             completedAt: null,
-            failedFiles: [],
-            username: "abc@example.org",
+            failedItems: [],
+            userName: "abc@example.org",
           });
         },
       ),
@@ -537,16 +537,16 @@ test.describe("egress-netapp-transfer", () => {
     ).toContainText("abc@example.org is currently transferring");
     await worker.use(
       http.get(
-        "https://mocked-out-api/api/v1/filetransfer/mock-transfer-id/status",
+        "https://mocked-out-api/api/filetransfer/mock-transfer-id/status",
         async () => {
           await delay(10);
           return HttpResponse.json({
-            overallStatus: "COMPLETED",
+            status: "Completed",
             transferType: "COPY",
             direction: "EgressToNetApp",
             completedAt: null,
-            failedFiles: [],
-            username: "abc@example.org",
+            failedItems: [],
+            userName: "abc@example.org",
           });
         },
       ),
@@ -561,18 +561,15 @@ test.describe("egress-netapp-transfer", () => {
     await expect(page.getByTestId("egress-table-wrapper")).toBeVisible();
     await expect(page.getByTestId("netapp-table-wrapper")).toBeVisible();
   });
-  test("Should show the error page if the validate end point throws an Api error", async ({
+  test("Should show the error page if the files end point throws an Api error", async ({
     page,
     worker,
   }) => {
     await worker.use(
-      http.post(
-        "https://mocked-out-api/api/v1/filetransfer/validate",
-        async () => {
-          await delay(10);
-          return new HttpResponse(null, { status: 500 });
-        },
-      ),
+      http.post("https://mocked-out-api/api/filetransfer/files", async () => {
+        await delay(10);
+        return new HttpResponse(null, { status: 500 });
+      }),
     );
     await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
     await expect(page.getByTestId("tab-active")).toHaveText(
@@ -623,22 +620,19 @@ test.describe("egress-netapp-transfer", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        "Error: An error occurred contacting the server at https://mocked-out-api/api/v1/filetransfer/validate: validating file transfer failed; status - Internal Server Error (500)",
+        "Error: An error occurred contacting the server at https://mocked-out-api/api/filetransfer/files: files api failed; status - Internal Server Error (500)",
       ),
     ).toBeVisible();
   });
-  test("Should show the error page if the validate end point returns invalid response", async ({
+  test("Should show the error page if the files end point returns invalid response", async ({
     page,
     worker,
   }) => {
     await worker.use(
-      http.post(
-        "https://mocked-out-api/api/v1/filetransfer/validate",
-        async () => {
-          await delay(10);
-          return HttpResponse.json({ isValid: true });
-        },
-      ),
+      http.post("https://mocked-out-api/api/filetransfer/files", async () => {
+        await delay(10);
+        return HttpResponse.json({ isValid: true });
+      }),
     );
     await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
     await expect(page.getByTestId("tab-active")).toHaveText(
@@ -689,7 +683,7 @@ test.describe("egress-netapp-transfer", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        "Error: Invalid validateFileTransfer api response. More details, TypeError: Cannot read properties of undefined (reading 'map')",
+        "Error: Invalid files api response. More details, TypeError: Cannot read properties of undefined (reading 'map')",
       ),
     ).toBeVisible();
   });
@@ -699,7 +693,7 @@ test.describe("egress-netapp-transfer", () => {
   }) => {
     await worker.use(
       http.post(
-        "https://mocked-out-api/api/v1/filetransfer/initiate",
+        "https://mocked-out-api/api/filetransfer/initiate",
         async () => {
           await delay(10);
           return new HttpResponse(null, { status: 500 });
@@ -761,7 +755,7 @@ test.describe("egress-netapp-transfer", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        "Error: An error occurred contacting the server at https://mocked-out-api/api/v1/filetransfer/initiate: initiate file transfer failed; status - Internal Server Error (500)",
+        "Error: An error occurred contacting the server at https://mocked-out-api/api/filetransfer/initiate: initiate file transfer failed; status - Internal Server Error (500)",
       ),
     ).toBeVisible();
   });
@@ -771,7 +765,7 @@ test.describe("egress-netapp-transfer", () => {
   }) => {
     await worker.use(
       http.post(
-        "https://mocked-out-api/api/v1/filetransfer/initiate",
+        "https://mocked-out-api/api/filetransfer/initiate",
         async () => {
           await delay(10);
           return HttpResponse.json({});
@@ -833,7 +827,7 @@ test.describe("egress-netapp-transfer", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        "Error: Invalid initiate transfer response, transferId does not exist",
+        "Error: Invalid initiate transfer response, id does not exist",
       ),
     ).toBeVisible();
   });
