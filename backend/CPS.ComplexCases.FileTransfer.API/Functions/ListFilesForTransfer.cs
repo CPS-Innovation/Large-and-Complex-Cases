@@ -24,7 +24,6 @@ public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorage
     public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post", Route = "transfer/files")] HttpRequest req, FunctionContext context)
     {
         var request = await _requestValidator.GetJsonBody<ListFilesForTransferRequest, ListFilesForTransferValidator>(req);
-
         if (!request.IsValid)
         {
             _logger.LogWarning("Invalid request to get files for transfer with CorrelationId {CorrelationId}: {Errors}", request.Value.CorrelationId, request.ValidationErrors);
@@ -32,7 +31,6 @@ public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorage
         }
 
         var sourceClient = _storageClientFactory.GetSourceClientForDirection(request.Value.TransferDirection);
-
         var selectedEntities = request.Value.SourcePaths.Select(path => new TransferEntityDto
         {
             Path = path.Path,
@@ -49,18 +47,42 @@ public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorage
             TransferDirection = request.Value?.TransferDirection.ToString() ?? string.Empty,
             Files = filesForTransfer,
             IsInvalid = false,
+            DestinationPath = request.Value?.DestinationPath ?? string.Empty,
+            ValidationErrors = new List<FileTransferFailedInfo>()
         };
 
         if (request.Value != null && request.Value.TransferDirection == TransferDirection.EgressToNetApp)
         {
             var destinationPath = request.Value.DestinationPath.EnsureTrailingSlash();
-            var destinationPaths = filesForTransfer.Select(x => new DestinationPath
+            var validFiles = new List<FileTransferInfo>();
+            var failedFiles = new List<FileTransferFailedInfo>();
+
+            foreach (var file in filesForTransfer)
             {
-                Path = destinationPath + x.RelativePath
-            }).ToList();
-            var validationResult = await new FilePathValidator().ValidateAsync(destinationPaths);
-            result.IsInvalid = !validationResult.IsValid;
-            result.ValidationErrors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
+                var fullDestinationPath = destinationPath + file.RelativePath;
+                var destinationPaths = new List<DestinationPath> { new DestinationPath { Path = fullDestinationPath } };
+                var validationResult = await new FilePathValidator().ValidateAsync(destinationPaths);
+
+                if (validationResult.IsValid)
+                {
+                    validFiles.Add(file);
+                }
+                else
+                {
+                    failedFiles.Add(new FileTransferFailedInfo
+                    {
+                        Id = file.Id,
+                        SourcePath = file.SourcePath,
+                        RelativePath = file.RelativePath,
+                        Message = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)),
+                        ErrorType = TransferFailedType.PathLengthExceeded
+                    });
+                }
+            }
+
+            result.Files = validFiles;
+            result.ValidationErrors = failedFiles;
+            result.IsInvalid = failedFiles.Any();
         }
 
         return new OkObjectResult(result);

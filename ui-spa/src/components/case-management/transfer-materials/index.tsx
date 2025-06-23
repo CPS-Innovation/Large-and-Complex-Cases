@@ -348,8 +348,9 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       sourcePaths = egressFolderData
         .filter((data) => selectedSourceFoldersOrFiles.includes(data.path))
         .map((data) => ({
-          id: data.id,
+          fileId: data.id,
           path: data.path,
+          isFolder: data.isFolder,
         }));
     } else {
       sourcePaths = selectedSourceFoldersOrFiles.map((path) => ({
@@ -358,17 +359,18 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     }
 
     const validationPayload = {
-      caseId: caseId,
-      transferType:
-        selectedTransferAction.actionType === "copy"
-          ? ("COPY" as const)
-          : ("MOVE" as const),
-      direction:
+      caseId: parseInt(caseId),
+      // transferType:
+      //   selectedTransferAction.actionType === "copy"
+      //     ? ("COPY" as const)
+      //     : ("MOVE" as const),
+      transferDirection:
         selectedTransferAction.destinationFolder.sourceType === "egress"
           ? ("EgressToNetApp" as const)
           : ("NetAppToEgress" as const),
       sourcePaths: sourcePaths,
-      destinationBasePath: selectedTransferAction.destinationFolder.path,
+      destinationPath: selectedTransferAction.destinationFolder.path,
+      workspaceId: egressWorkspaceId
     };
     return validationPayload;
   };
@@ -382,29 +384,30 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         "selected transfer destination details should not be null",
       );
     }
-    const sourcePaths = response.discoveredFiles.map((data) => ({
-      id: data?.id,
+    const sourcePaths = response.files.map((data) => ({
+      fileId: data?.id,
       path: data.sourcePath,
     }));
 
     const payload = {
       isRetry: isRetry,
-      caseId: caseId,
+      caseId: parseInt(caseId),
       sourcePaths: sourcePaths,
-      destinationPath: response.destinationBasePath,
+      destinationPath: response.destinationPath,
+      workspaceId: egressWorkspaceId,
     };
     const uniquePayload =
       selectedTransferAction.destinationFolder.sourceType === "egress"
         ? {
             transferType:
               selectedTransferAction.actionType === "copy"
-                ? ("COPY" as const)
-                : ("MOVE" as const),
-            direction: "EgressToNetApp" as const,
+                ? ("Copy" as const)
+                : ("Move" as const),
+            transferDirection: "EgressToNetApp" as const,
           }
         : {
-            transferType: "COPY" as const,
-            direction: "NetAppToEgress" as const,
+            transferType: "Copy" as const,
+            transferDirection: "NetAppToEgress" as const,
           };
 
     return { ...payload, ...uniquePayload };
@@ -422,7 +425,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       const validationPayload = getValidateTransferPayload();
       setTransferStatus("validating");
       const response = await validateFileTransfer(validationPayload);
-      if (!response.isValid) {
+      if (response.isInvalid) {
         setTransferStatus("validated-with-errors");
         navigate(`/case/${caseId}/case-management/transfer-validation-errors`, {
           state: {
@@ -454,8 +457,8 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     try {
       const initiateFileTransferResponse =
         await initiateFileTransfer(initiatePayload);
-      if (initiateFileTransferResponse.transferId) {
-        setTransferId(initiateFileTransferResponse.transferId);
+      if (initiateFileTransferResponse.id) {
+        setTransferId(initiateFileTransferResponse.id);
       }
     } catch (e) {
       console.log(e);
@@ -465,17 +468,17 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   const handleStatusResponse = useCallback(
     (status: TransferStatusResponse, interval: NodeJS.Timeout) => {
       if (
-        status.overallStatus === "INITIATED" ||
-        status.overallStatus === "IN_PROGRESS"
+        status.status === "Initiated" ||
+        status.status === "InProgress"
       ) {
         setTransferStatus("transferring");
         setTransferStatusData({
-          username: status.username,
+          username: status.userName,
           direction: status.direction,
         });
         return;
       }
-      if (status.overallStatus === "COMPLETED") {
+      if (status.status === "Completed") {
         egressRefetch();
         netAppRefetch();
         setTransferStatus("completed");
@@ -483,7 +486,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         if (interval) clearInterval(interval);
         return;
       }
-      if (status.overallStatus === "PARTIALLY_COMPLETED") {
+      if (status.status === "PartiallyCompleted") {
         setTransferStatus("completed-with-errors");
         navigate(`/case/${caseId}/case-management/transfer-errors`, {
           state: {

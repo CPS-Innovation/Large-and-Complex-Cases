@@ -1,18 +1,18 @@
 export type TransferStatusResponse = {
-  overallStatus:
-    | "INITIATED"
-    | "IN_PROGRESS"
-    | "COMPLETED"
-    | "PARTIALLY_COMPLETED"
-    | "FAILED";
+  status:
+    | "Initiated"
+    | "InProgress"
+    | "Completed"
+    | "PartiallyCompleted"
+    | "Failed";
   transferType: "COPY" | "MOVE";
   direction: "EgressToNetApp" | "NetAppToEgress";
   completedAt: null | string;
-  failedFiles: TransferFailedItem[];
-  username: string;
+  failedItems: TransferFailedItem[];
+  userName: string;
 };
 
 export type TransferFailedItem = {
   sourcePath: string;
-  transferErrorCode: "DUPLICATE" | "NETWORK_ERROR" | "FILE_IN_USE";
+  errorCode: "FileExists" | "GeneralError";
 };

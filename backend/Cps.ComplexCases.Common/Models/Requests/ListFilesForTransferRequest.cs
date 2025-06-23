@@ -26,5 +26,5 @@ public class SelectedSourcePath
     [JsonPropertyName("fileId")]
     public string? FileId { get; set; }
     [JsonPropertyName("isFolder")]
-    public bool IsFolder { get; set; }
+    public bool? IsFolder { get; set; }
 }

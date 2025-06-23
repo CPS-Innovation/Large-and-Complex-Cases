@@ -1,10 +1,12 @@
 export type ValidateFileTransferPayload = {
-  caseId: string;
-  transferType: "COPY" | "MOVE";
-  direction: "EgressToNetApp" | "NetAppToEgress";
+  caseId: number;
+  // transferType: "COPY" | "MOVE";
+  transferDirection: "EgressToNetApp" | "NetAppToEgress";
   sourcePaths: {
-    id?: string;
+    fileId?: string;
     path: string;
+    isFolder?: boolean;
   }[];
-  destinationBasePath: string;
+  destinationPath: string;
+  workspaceId?: string;
 };

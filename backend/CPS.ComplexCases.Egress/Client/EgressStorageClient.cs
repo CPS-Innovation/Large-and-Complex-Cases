@@ -121,7 +121,7 @@ public class EgressStorageClient(
 
         var entityTasks = selectedEntities.Select(async entity =>
         {
-            if (!entity.IsFolder)
+            if (entity.IsFolder != true)
             {
                 return new List<FileTransferInfo>
                 {
@@ -151,7 +151,7 @@ public class EgressStorageClient(
             .Select(d => new FileTransferInfo
             {
                 Id = d.Id,
-                SourcePath = d.Path
+                SourcePath = Path.Combine(d.Path, d.FileName).Replace('\\', '/')
             })
             .ToList();
 

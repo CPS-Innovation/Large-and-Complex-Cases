@@ -1,3 +1,3 @@
 export type InitiateFileTransferResponse = {
-  transferId: string;
+  id: string;
 };

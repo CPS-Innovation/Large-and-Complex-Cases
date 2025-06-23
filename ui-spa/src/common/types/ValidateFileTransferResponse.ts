@@ -1,12 +1,12 @@
 export type ValidateFileTransferResponse = {
-  caseId: string;
-  isValid: boolean;
-  destinationBasePath: string;
-  errors: {
+  caseId: number;
+  isInvalid: boolean;
+  destinationPath: string;
+  validationErrors: {
     id: string;
     sourcePath: string;
     errorType: string;
     message: string;
   }[];
-  discoveredFiles: { id?: string; sourcePath: string }[];
+  files: { id?: string; sourcePath: string }[];
 };

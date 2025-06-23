@@ -32,5 +32,5 @@ public class SourcePath
     [JsonPropertyName("renamePattern")]
     public string? RenamePattern { get; set; }
     [JsonPropertyName("isFolder")]
-    public bool IsFolder { get; set; }
+    public bool? IsFolder { get; set; }
 }
