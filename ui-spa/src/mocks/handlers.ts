@@ -142,7 +142,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
           ? egressToNetAppTransferStatusDev
           : egressToNetAppTransferStatusPlaywright;
 
-        await delay(1500);
+        await delay(500);
         return HttpResponse.json(response);
       },
     ),

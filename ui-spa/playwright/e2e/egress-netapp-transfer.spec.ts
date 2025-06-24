@@ -29,40 +29,52 @@ test.describe("egress-netapp-transfer", () => {
       await expect(checkboxes.nth(i)).not.toBeChecked();
     }
     await checkboxes.nth(0).check();
-    expect(page.getByTestId("transfer-actions-dropdown-0")).toBeVisible();
-    expect(page.getByTestId("transfer-actions-dropdown-1")).toBeVisible();
-    expect(page.getByTestId("netapp-inset-text")).toBeVisible();
-    expect(page.getByTestId("netapp-inset-text")).toHaveText(
+    await expect(page.getByTestId("transfer-actions-dropdown-0")).toBeVisible();
+    await expect(page.getByTestId("transfer-actions-dropdown-1")).toBeVisible();
+    await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
+    await expect(page.getByTestId("netapp-inset-text")).toHaveText(
       "Transfer to netappCopy |Move",
     );
     await checkboxes.nth(0).uncheck();
-    expect(page.getByTestId("transfer-actions-dropdown-0")).not.toBeVisible();
-    expect(page.getByTestId("transfer-actions-dropdown-1")).not.toBeVisible();
-    expect(page.getByTestId("netapp-inset-text")).not.toBeVisible();
+    await expect(
+      page.getByTestId("transfer-actions-dropdown-0"),
+    ).not.toBeVisible();
+    await expect(
+      page.getByTestId("transfer-actions-dropdown-1"),
+    ).not.toBeVisible();
+    await expect(page.getByTestId("netapp-inset-text")).not.toBeVisible();
 
     await checkboxes.nth(1).check();
-    expect(page.getByTestId("transfer-actions-dropdown-0")).toBeVisible();
-    expect(page.getByTestId("transfer-actions-dropdown-1")).toBeVisible();
-    expect(page.getByTestId("netapp-inset-text")).toBeVisible();
-    expect(page.getByTestId("netapp-inset-text")).toHaveText(
+    await expect(page.getByTestId("transfer-actions-dropdown-0")).toBeVisible();
+    await expect(page.getByTestId("transfer-actions-dropdown-1")).toBeVisible();
+    await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
+    await expect(page.getByTestId("netapp-inset-text")).toHaveText(
       "Transfer to netappCopy |Move",
     );
     await checkboxes.nth(1).uncheck();
-    expect(page.getByTestId("transfer-actions-dropdown-0")).not.toBeVisible();
-    expect(page.getByTestId("transfer-actions-dropdown-1")).not.toBeVisible();
-    expect(page.getByTestId("netapp-inset-text")).not.toBeVisible();
+    await expect(
+      page.getByTestId("transfer-actions-dropdown-0"),
+    ).not.toBeVisible();
+    await expect(
+      page.getByTestId("transfer-actions-dropdown-1"),
+    ).not.toBeVisible();
+    await expect(page.getByTestId("netapp-inset-text")).not.toBeVisible();
 
     await checkboxes.nth(3).check();
-    expect(page.getByTestId("transfer-actions-dropdown-0")).toBeVisible();
-    expect(page.getByTestId("transfer-actions-dropdown-1")).toBeVisible();
-    expect(page.getByTestId("netapp-inset-text")).toBeVisible();
-    expect(page.getByTestId("netapp-inset-text")).toHaveText(
+    await expect(page.getByTestId("transfer-actions-dropdown-0")).toBeVisible();
+    await expect(page.getByTestId("transfer-actions-dropdown-1")).toBeVisible();
+    await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
+    await expect(page.getByTestId("netapp-inset-text")).toHaveText(
       "Transfer to netappCopy |Move",
     );
     await checkboxes.nth(3).uncheck();
-    expect(page.getByTestId("transfer-actions-dropdown-0")).not.toBeVisible();
-    expect(page.getByTestId("transfer-actions-dropdown-1")).not.toBeVisible();
-    expect(page.getByTestId("netapp-inset-text")).not.toBeVisible();
+    await expect(
+      page.getByTestId("transfer-actions-dropdown-0"),
+    ).not.toBeVisible();
+    await expect(
+      page.getByTestId("transfer-actions-dropdown-1"),
+    ).not.toBeVisible();
+    await expect(page.getByTestId("netapp-inset-text")).not.toBeVisible();
   });
   test("Should show the transfer confirmation pop up with correct texts when user chooses copy operation from inset text", async ({
     page,
@@ -78,9 +90,9 @@ test.describe("egress-netapp-transfer", () => {
       .getByTestId("egress-table-wrapper")
       .locator('input[type="checkbox"]');
     await checkboxes.nth(0).check();
-    expect(page.getByTestId("transfer-actions-dropdown-0")).toBeVisible();
-    expect(page.getByTestId("transfer-actions-dropdown-1")).toBeVisible();
-    expect(page.getByTestId("netapp-inset-text")).toBeVisible();
+    await expect(page.getByTestId("transfer-actions-dropdown-0")).toBeVisible();
+    await expect(page.getByTestId("transfer-actions-dropdown-1")).toBeVisible();
+    await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
     await page
       .getByTestId("netapp-inset-text")
       .getByRole("button", { name: "Copy" })
@@ -142,9 +154,9 @@ test.describe("egress-netapp-transfer", () => {
       .getByTestId("egress-table-wrapper")
       .locator('input[type="checkbox"]');
     await checkboxes.nth(0).check();
-    expect(page.getByTestId("transfer-actions-dropdown-0")).toBeVisible();
-    expect(page.getByTestId("transfer-actions-dropdown-1")).toBeVisible();
-    expect(page.getByTestId("netapp-inset-text")).toBeVisible();
+    await expect(page.getByTestId("transfer-actions-dropdown-0")).toBeVisible();
+    await expect(page.getByTestId("transfer-actions-dropdown-1")).toBeVisible();
+    await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
     await page
       .getByTestId("netapp-inset-text")
       .getByRole("button", { name: "Move" })
@@ -221,9 +233,9 @@ test.describe("egress-netapp-transfer", () => {
       .getByTestId("egress-table-wrapper")
       .locator('input[type="checkbox"]');
     await checkboxes.nth(0).check();
-    expect(page.getByTestId("transfer-actions-dropdown-0")).toBeVisible();
-    expect(page.getByTestId("transfer-actions-dropdown-1")).toBeVisible();
-    expect(page.getByTestId("netapp-inset-text")).toBeVisible();
+    await expect(page.getByTestId("transfer-actions-dropdown-0")).toBeVisible();
+    await expect(page.getByTestId("transfer-actions-dropdown-1")).toBeVisible();
+    await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
     await page.getByTestId("transfer-actions-dropdown-0").click();
     await expect(page.getByTestId("dropdown-panel")).toBeVisible();
     await page.getByTestId("transfer-actions-dropdown-0").click();
@@ -297,9 +309,9 @@ test.describe("egress-netapp-transfer", () => {
       .getByTestId("egress-table-wrapper")
       .locator('input[type="checkbox"]');
     await checkboxes.nth(0).check();
-    expect(page.getByTestId("transfer-actions-dropdown-0")).toBeVisible();
-    expect(page.getByTestId("transfer-actions-dropdown-1")).toBeVisible();
-    expect(page.getByTestId("netapp-inset-text")).toBeVisible();
+    await expect(page.getByTestId("transfer-actions-dropdown-0")).toBeVisible();
+    await expect(page.getByTestId("transfer-actions-dropdown-1")).toBeVisible();
+    await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
     await page
       .getByTestId("netapp-inset-text")
       .getByRole("button", { name: "Copy" })
@@ -366,7 +378,7 @@ test.describe("egress-netapp-transfer", () => {
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
           urn: "45AA2098221",
-          transferId: "mock-transfer-id",
+          activeTransferId: "mock-transfer-id",
         });
       }),
     );
@@ -444,6 +456,7 @@ test.describe("egress-netapp-transfer", () => {
         },
       ),
     );
+    await page.waitForTimeout(500);
     await expect(page.getByTestId("transfer-spinner")).not.toBeVisible();
     await expect(
       page.getByTestId("transfer-success-notification-banner"),
@@ -473,7 +486,7 @@ test.describe("egress-netapp-transfer", () => {
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
           urn: "45AA2098221",
-          transferId: "mock-transfer-id",
+          activeTransferId: "mock-transfer-id",
         });
       }),
     );
@@ -539,7 +552,6 @@ test.describe("egress-netapp-transfer", () => {
       http.get(
         "https://mocked-out-api/api/filetransfer/mock-transfer-id/status",
         async () => {
-          await delay(10);
           return HttpResponse.json({
             status: "Completed",
             transferType: "COPY",
@@ -551,6 +563,7 @@ test.describe("egress-netapp-transfer", () => {
         },
       ),
     );
+    await page.waitForTimeout(500);
     await expect(page.getByTestId("transfer-spinner")).not.toBeVisible();
     await expect(
       page.getByTestId("transfer-success-notification-banner"),
@@ -584,9 +597,9 @@ test.describe("egress-netapp-transfer", () => {
       .getByTestId("egress-table-wrapper")
       .locator('input[type="checkbox"]');
     await checkboxes.nth(0).check();
-    expect(page.getByTestId("transfer-actions-dropdown-0")).toBeVisible();
-    expect(page.getByTestId("transfer-actions-dropdown-1")).toBeVisible();
-    expect(page.getByTestId("netapp-inset-text")).toBeVisible();
+    await expect(page.getByTestId("transfer-actions-dropdown-0")).toBeVisible();
+    await expect(page.getByTestId("transfer-actions-dropdown-1")).toBeVisible();
+    await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
     await page
       .getByTestId("netapp-inset-text")
       .getByRole("button", { name: "Copy" })
@@ -647,9 +660,9 @@ test.describe("egress-netapp-transfer", () => {
       .getByTestId("egress-table-wrapper")
       .locator('input[type="checkbox"]');
     await checkboxes.nth(0).check();
-    expect(page.getByTestId("transfer-actions-dropdown-0")).toBeVisible();
-    expect(page.getByTestId("transfer-actions-dropdown-1")).toBeVisible();
-    expect(page.getByTestId("netapp-inset-text")).toBeVisible();
+    await expect(page.getByTestId("transfer-actions-dropdown-0")).toBeVisible();
+    await expect(page.getByTestId("transfer-actions-dropdown-1")).toBeVisible();
+    await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
     await page
       .getByTestId("netapp-inset-text")
       .getByRole("button", { name: "Copy" })
@@ -713,9 +726,9 @@ test.describe("egress-netapp-transfer", () => {
       .getByTestId("egress-table-wrapper")
       .locator('input[type="checkbox"]');
     await checkboxes.nth(0).check();
-    expect(page.getByTestId("transfer-actions-dropdown-0")).toBeVisible();
-    expect(page.getByTestId("transfer-actions-dropdown-1")).toBeVisible();
-    expect(page.getByTestId("netapp-inset-text")).toBeVisible();
+    await expect(page.getByTestId("transfer-actions-dropdown-0")).toBeVisible();
+    await expect(page.getByTestId("transfer-actions-dropdown-1")).toBeVisible();
+    await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
     await page
       .getByTestId("netapp-inset-text")
       .getByRole("button", { name: "Copy" })
@@ -785,9 +798,9 @@ test.describe("egress-netapp-transfer", () => {
       .getByTestId("egress-table-wrapper")
       .locator('input[type="checkbox"]');
     await checkboxes.nth(0).check();
-    expect(page.getByTestId("transfer-actions-dropdown-0")).toBeVisible();
-    expect(page.getByTestId("transfer-actions-dropdown-1")).toBeVisible();
-    expect(page.getByTestId("netapp-inset-text")).toBeVisible();
+    await expect(page.getByTestId("transfer-actions-dropdown-0")).toBeVisible();
+    await expect(page.getByTestId("transfer-actions-dropdown-1")).toBeVisible();
+    await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
     await page
       .getByTestId("netapp-inset-text")
       .getByRole("button", { name: "Copy" })
