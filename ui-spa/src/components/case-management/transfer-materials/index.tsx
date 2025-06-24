@@ -371,10 +371,6 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
 
     const validationPayload = {
       caseId: parseInt(caseId),
-      // transferType:
-      //   selectedTransferAction.actionType === "copy"
-      //     ? ("COPY" as const)
-      //     : ("MOVE" as const),
       transferDirection:
         selectedTransferAction.destinationFolder.sourceType === "egress"
           ? ("EgressToNetApp" as const)
