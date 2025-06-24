@@ -548,6 +548,7 @@ public class EgressStorageClientTests
         var folder = new TransferEntityDto
         {
             Id = folderId,
+            FileId = folderId,
             Path = "/path/to/folder",
             IsFolder = true
         };
@@ -602,7 +603,7 @@ public class EgressStorageClientTests
             result.Should().HaveCount(2);
 
             var resultArray = result.ToArray();
-            resultArray.Should().AllSatisfy(file => file.SourcePath.Should().StartWith("/path/to/folder/"));
+            resultArray.Should().AllSatisfy(file => file.SourcePath.Should().StartWith("folder/"));
             resultArray.Should().Contain(file => file.SourcePath.EndsWith("file1.txt"));
             resultArray.Should().Contain(file => file.SourcePath.EndsWith("file2.txt"));
         }
@@ -623,6 +624,7 @@ public class EgressStorageClientTests
         var folder = new TransferEntityDto
         {
             Id = parentFolderId,
+            FileId = parentFolderId,
             Path = "/parent",
             IsFolder = true
         };
@@ -640,7 +642,7 @@ public class EgressStorageClientTests
             {
                 Id = _fixture.Create<string>(),
                 FileName = "parent-file.txt",
-                Path = "/parent/parent-file.txt",
+                Path = "/parent",
                 IsFolder = false,
                 Version = 1
             },
@@ -671,7 +673,7 @@ public class EgressStorageClientTests
             {
                 Id = _fixture.Create<string>(),
                 FileName = "sub-file1.txt",
-                Path = "/parent/subfolder/sub-file1.txt",
+                Path = "/parent/subfolder",
                 IsFolder = false,
                 Version = 1
             },
@@ -679,7 +681,7 @@ public class EgressStorageClientTests
             {
                 Id = _fixture.Create<string>(),
                 FileName = "sub-file2.txt",
-                Path = "/parent/subfolder/sub-file2.txt",
+                Path = "/parent/subfolder",
                 IsFolder = false,
                 Version = 1
             }
@@ -712,9 +714,9 @@ public class EgressStorageClientTests
             result.Should().HaveCount(3);
 
             var resultArray = result.ToArray();
-            resultArray.Should().Contain(file => file.SourcePath == "/parent/parent-file.txt");
-            resultArray.Should().Contain(file => file.SourcePath == "/parent/subfolder/sub-file1.txt");
-            resultArray.Should().Contain(file => file.SourcePath == "/parent/subfolder/sub-file2.txt");
+            resultArray.Should().Contain(file => file.SourcePath == "parent/parent-file.txt");
+            resultArray.Should().Contain(file => file.SourcePath == "parent/subfolder/sub-file1.txt");
+            resultArray.Should().Contain(file => file.SourcePath == "parent/subfolder/sub-file2.txt");
         }
 
         VerifyTokenRequest();

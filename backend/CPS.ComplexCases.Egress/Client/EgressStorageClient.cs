@@ -164,7 +164,7 @@ public class EgressStorageClient(
         return files;
     }
 
-    private string ConstructRelativePath(string baseFolderPath, string filePath, string fileName)
+    private static string ConstructRelativePath(string baseFolderPath, string filePath, string fileName)
     {
         // Get the last folder name from the base path (selected folder)
         var baseFolderName = Path.GetFileName(baseFolderPath.TrimEnd('/'));

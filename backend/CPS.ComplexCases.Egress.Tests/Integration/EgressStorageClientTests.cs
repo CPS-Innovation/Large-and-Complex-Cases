@@ -234,7 +234,7 @@ public class EgressStorageClientTests : IDisposable
             () => _client.InitiateUploadAsync(destinationPath, fileSize, workspaceId, null));
 
         Assert.Equal("sourcePath", exception.ParamName);
-        Assert.Contains("sourcePath path cannot be null", exception.Message);
+        Assert.Contains("Source path cannot be null or empty.", exception.Message);
     }
 
     [Fact]
@@ -432,7 +432,8 @@ public class EgressStorageClientTests : IDisposable
         {
             Id = "folder-id",
             Path = "/test/folder",
-            IsFolder = true
+            IsFolder = true,
+            FileId = "folder-id"
         }
         };
 
@@ -444,7 +445,7 @@ public class EgressStorageClientTests : IDisposable
         var files = result.ToList();
         Assert.Single(files);
         Assert.Equal("nested-file-id", files[0].Id);
-        Assert.Equal("folder-id/file-path", files[0].SourcePath);
+        Assert.Equal("folder-id/file-path/nested-file-name", files[0].SourcePath);
     }
 
     [Fact]
@@ -479,9 +480,9 @@ public class EgressStorageClientTests : IDisposable
         Assert.Equal(2, files.Count);
 
         Assert.Contains(files, f => f.Id == "file-id" && f.SourcePath == "/test/standalone-file.txt");
-        Assert.Contains(files, f => f.Id == "nested-file-id" && f.SourcePath == "folder-id/file-path");
+        Assert.Contains(files, f => f.Id == "nested-file-id" && f.SourcePath == "folder-id/file-path/nested-file-name");
     }
-
+    [Fact]
     public async Task UploadLargeFile_ShouldHandleMultipleChunks()
     {
         // Arrange
