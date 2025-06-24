@@ -488,16 +488,16 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   };
 
   const handleStatusResponse = useCallback(
-    (status: TransferStatusResponse, interval: NodeJS.Timeout) => {
-      if (status.status === "Initiated" || status.status === "InProgress") {
+    (response: TransferStatusResponse, interval: NodeJS.Timeout) => {
+      if (response.status === "Initiated" || response.status === "InProgress") {
         setTransferStatus("transferring");
         setTransferStatusData({
-          username: status.userName,
-          direction: status.direction,
+          username: response.userName,
+          direction: response.direction,
         });
         return;
       }
-      if (status.status === "Completed") {
+      if (response.status === "Completed") {
         egressRefetch();
         netAppRefetch();
         setTransferStatus("completed");
@@ -505,7 +505,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         if (interval) clearInterval(interval);
         return;
       }
-      if (status.status === "PartiallyCompleted") {
+      if (response.status === "PartiallyCompleted") {
         setTransferStatus("completed-with-errors");
         navigate(`/case/${caseId}/case-management/transfer-errors`, {
           state: {
