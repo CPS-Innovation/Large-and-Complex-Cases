@@ -3,6 +3,6 @@ export type CaseMetaDataResponse = {
   egressWorkspaceId: string;
   netappFolderPath: string;
   operationName: string;
-  transferId: string | null;
+  activeTransferId: string | null;
   urn: string;
 };
