@@ -418,7 +418,7 @@ public class EgressStorageClientTests : IDisposable
         var files = result.ToList();
         Assert.Single(files);
         Assert.Equal("file-id", files[0].Id);
-        Assert.Equal("/test/file.txt", files[0].SourcePath);
+        Assert.Equal("file.txt", files[0].SourcePath);
     }
 
     [Fact]
@@ -479,7 +479,7 @@ public class EgressStorageClientTests : IDisposable
         var files = result.ToList();
         Assert.Equal(2, files.Count);
 
-        Assert.Contains(files, f => f.Id == "file-id" && f.SourcePath == "/test/standalone-file.txt");
+        Assert.Contains(files, f => f.Id == "file-id" && f.SourcePath == "standalone-file.txt");
         Assert.Contains(files, f => f.Id == "nested-file-id" && f.SourcePath == "folder-id/file-path/nested-file-name");
     }
     [Fact]

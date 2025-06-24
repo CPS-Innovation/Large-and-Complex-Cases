@@ -529,9 +529,9 @@ public class EgressStorageClientTests
 
             var resultArray = result.ToArray();
             resultArray[0].Id.Should().Be(file1.FileId);
-            resultArray[0].SourcePath.Should().Be(file1.Path);
+            resultArray[0].SourcePath.Should().Be(Path.GetFileName(file1.Path));
             resultArray[1].Id.Should().Be(file2.FileId);
-            resultArray[1].SourcePath.Should().Be(file2.Path);
+            resultArray[1].SourcePath.Should().Be(Path.GetFileName(file2.Path));
         }
 
         VerifyTokenRequest();

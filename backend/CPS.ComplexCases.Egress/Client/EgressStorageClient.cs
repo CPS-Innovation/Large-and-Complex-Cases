@@ -128,7 +128,7 @@ public class EgressStorageClient(
                 new FileTransferInfo
                 {
                     Id = entity.FileId,
-                    SourcePath = entity.Path
+                    SourcePath = Path.GetFileName(entity.Path)
                 }
                 };
             }
