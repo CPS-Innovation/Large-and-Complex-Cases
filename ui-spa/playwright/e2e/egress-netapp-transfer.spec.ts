@@ -14,7 +14,10 @@ test.describe("egress-netapp-transfer", () => {
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2"),
     ).toHaveText("Transfer folders and files between egress and shared drive");
-
+    await page
+      .getByTestId("egress-table-wrapper")
+      .locator('role=button[name="folder-1-0"]')
+      .click();
     const checkboxes = page
       .getByTestId("egress-table-wrapper")
       .locator('input[type="checkbox"]');
@@ -86,6 +89,10 @@ test.describe("egress-netapp-transfer", () => {
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2"),
     ).toHaveText("Transfer folders and files between egress and shared drive");
+    await page
+      .getByTestId("egress-table-wrapper")
+      .locator('role=button[name="folder-1-0"]')
+      .click();
     const checkboxes = page
       .getByTestId("egress-table-wrapper")
       .locator('input[type="checkbox"]');
@@ -150,6 +157,10 @@ test.describe("egress-netapp-transfer", () => {
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2"),
     ).toHaveText("Transfer folders and files between egress and shared drive");
+    await page
+      .getByTestId("egress-table-wrapper")
+      .locator('role=button[name="folder-1-0"]')
+      .click();
     const checkboxes = page
       .getByTestId("egress-table-wrapper")
       .locator('input[type="checkbox"]');
@@ -229,6 +240,10 @@ test.describe("egress-netapp-transfer", () => {
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2"),
     ).toHaveText("Transfer folders and files between egress and shared drive");
+    await page
+      .getByTestId("egress-table-wrapper")
+      .locator('role=button[name="folder-1-0"]')
+      .click();
     const checkboxes = page
       .getByTestId("egress-table-wrapper")
       .locator('input[type="checkbox"]');
@@ -305,6 +320,10 @@ test.describe("egress-netapp-transfer", () => {
         hasText: "Transfer folders and files between egress and shared drive",
       }),
     ).toBeVisible();
+    await page
+      .getByTestId("egress-table-wrapper")
+      .locator('role=button[name="folder-1-0"]')
+      .click();
     const checkboxes = page
       .getByTestId("egress-table-wrapper")
       .locator('input[type="checkbox"]');
@@ -593,6 +612,11 @@ test.describe("egress-netapp-transfer", () => {
         hasText: "Transfer folders and files between egress and shared drive",
       }),
     ).toBeVisible();
+    await page
+      .getByTestId("egress-table-wrapper")
+      .locator('role=button[name="folder-1-0"]')
+      .click();
+
     const checkboxes = page
       .getByTestId("egress-table-wrapper")
       .locator('input[type="checkbox"]');
@@ -656,6 +680,10 @@ test.describe("egress-netapp-transfer", () => {
         hasText: "Transfer folders and files between egress and shared drive",
       }),
     ).toBeVisible();
+    await page
+      .getByTestId("egress-table-wrapper")
+      .locator('role=button[name="folder-1-0"]')
+      .click();
     const checkboxes = page
       .getByTestId("egress-table-wrapper")
       .locator('input[type="checkbox"]');
@@ -722,6 +750,10 @@ test.describe("egress-netapp-transfer", () => {
         hasText: "Transfer folders and files between egress and shared drive",
       }),
     ).toBeVisible();
+    await page
+      .getByTestId("egress-table-wrapper")
+      .locator('role=button[name="folder-1-0"]')
+      .click();
     const checkboxes = page
       .getByTestId("egress-table-wrapper")
       .locator('input[type="checkbox"]');
@@ -794,6 +826,10 @@ test.describe("egress-netapp-transfer", () => {
         hasText: "Transfer folders and files between egress and shared drive",
       }),
     ).toBeVisible();
+    await page
+      .getByTestId("egress-table-wrapper")
+      .locator('role=button[name="folder-1-0"]')
+      .click();
     const checkboxes = page
       .getByTestId("egress-table-wrapper")
       .locator('input[type="checkbox"]');
