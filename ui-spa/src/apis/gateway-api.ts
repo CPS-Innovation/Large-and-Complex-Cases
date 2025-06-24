@@ -23,8 +23,8 @@ import {
   NetAppFolderResponse,
   NetAppFolderDataResponse,
 } from "../common/types/NetAppFolderData";
-import { ValidateFileTransferResponse } from "../common/types/ValidateFileTransferResponse";
-import { ValidateFileTransferPayload } from "../common/types/ValidateFileTransferPayload";
+import { IndexingFileTransferResponse } from "../common/types/IndexingFileTransferResponse";
+import { IndexingFileTransferPayload } from "../common/types/IndexingFileTransferPayload";
 import { InitiateFileTransferResponse } from "../common/types/InitiateFileTransferResponse";
 import { InitiateFileTransferPayload } from "../common/types/InitiateFileTransferPayload";
 import { TransferStatusResponse } from "../common/types/TransferStatusResponse";
@@ -311,8 +311,8 @@ export const getNetAppFolders = async (
   }
 };
 
-export const validateFileTransfer = async (
-  payload: ValidateFileTransferPayload,
+export const indexingFileTransfer = async (
+  payload: IndexingFileTransferPayload,
 ) => {
   const url = `${GATEWAY_BASE_URL}/api/filetransfer/files`;
 
@@ -326,9 +326,9 @@ export const validateFileTransfer = async (
   });
 
   if (!response.ok) {
-    throw new ApiError(`files api failed`, url, response);
+    throw new ApiError(`indexing file transfer api failed`, url, response);
   }
-  return (await response.json()) as ValidateFileTransferResponse;
+  return (await response.json()) as IndexingFileTransferResponse;
 };
 
 export const initiateFileTransfer = async (

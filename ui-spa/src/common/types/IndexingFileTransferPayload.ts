@@ -1,4 +1,4 @@
-export type ValidateFileTransferPayload = {
+export type IndexingFileTransferPayload = {
   caseId: number;
   transferDirection: "EgressToNetApp" | "NetAppToEgress";
   sourcePaths: {

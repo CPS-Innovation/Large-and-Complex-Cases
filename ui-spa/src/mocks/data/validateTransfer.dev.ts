@@ -1,6 +1,6 @@
-import { ValidateFileTransferResponse } from "../../common/types/ValidateFileTransferResponse";
+import { IndexingFileTransferResponse } from "../../common/types/IndexingFileTransferResponse";
 
-export const egressToNetAppValidateTransferDev: ValidateFileTransferResponse = {
+export const egressToNetAppValidateTransferDev: IndexingFileTransferResponse = {
   caseId: 12,
   isInvalid: false,
   destinationPath: "abc/",
@@ -11,7 +11,7 @@ export const egressToNetAppValidateTransferDev: ValidateFileTransferResponse = {
   ],
 };
 
-export const netAppToEgressValidateTransferDev: ValidateFileTransferResponse = {
+export const netAppToEgressValidateTransferDev: IndexingFileTransferResponse = {
   caseId: 12,
   isInvalid: false,
   destinationPath: "abc/",

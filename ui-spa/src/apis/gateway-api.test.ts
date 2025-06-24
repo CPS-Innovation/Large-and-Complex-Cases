@@ -9,7 +9,7 @@ import {
   getCaseMetaData,
   getEgressFolders,
   getNetAppFolders,
-  validateFileTransfer,
+  indexingFileTransfer,
   initiateFileTransfer,
   getTransferStatus,
 } from "./gateway-api";
@@ -973,7 +973,7 @@ describe("gateway apis", () => {
       );
     });
   });
-  describe("validateFileTransfer", () => {
+  describe("indexingFileTransfer", () => {
     it("should successfully call the post request and return the response", async () => {
       (v4 as any).mockReturnValue("id_123");
       (getAccessToken as any).mockResolvedValue("access_token");
@@ -996,7 +996,7 @@ describe("gateway apis", () => {
         ],
         destinationPath: "netapp/",
       };
-      const result = await validateFileTransfer(payload);
+      const result = await indexingFileTransfer(payload);
       expect(result).toEqual({ caseId: 12 });
       expect(fetch).toHaveBeenCalledWith(
         `gateway_url/api/filetransfer/files`,
@@ -1033,11 +1033,15 @@ describe("gateway apis", () => {
         destinationPath: "netapp/",
       };
 
-      await expect(validateFileTransfer(payload)).rejects.toThrow(
-        new ApiError(`files api failed`, `gateway_url/api/filetransfer/files`, {
-          status: 500,
-          statusText: "Internal Server Error",
-        }),
+      await expect(indexingFileTransfer(payload)).rejects.toThrow(
+        new ApiError(
+          `indexing file transfer api failed`,
+          `gateway_url/api/filetransfer/files`,
+          {
+            status: 500,
+            statusText: "Internal Server Error",
+          },
+        ),
       );
 
       expect(fetch).toHaveBeenCalledWith(

@@ -6,7 +6,7 @@ import { Spinner } from "../../common/Spinner";
 import {
   getEgressFolders,
   getNetAppFolders,
-  validateFileTransfer,
+  indexingFileTransfer,
   initiateFileTransfer,
   getTransferStatus,
 } from "../../../apis/gateway-api";
@@ -20,7 +20,7 @@ import { mapToNetAppFolderData } from "../../../common/utils/mapToNetAppFolderDa
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
 import { InitiateFileTransferPayload } from "../../../common/types/InitiateFileTransferPayload";
 import { TransferStatusResponse } from "../../../common/types/TransferStatusResponse";
-import { ValidateFileTransferResponse } from "../../../common/types/ValidateFileTransferResponse";
+import { IndexingFileTransferResponse } from "../../../common/types/IndexingFileTransferResponse";
 import { InitiateFileTransferResponse } from "../../../common/types/InitiateFileTransferResponse";
 import { useUserDetails } from "../../../auth";
 import { ApiError } from "../../../common/errors/ApiError";
@@ -388,7 +388,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
 
   const getInitiateTransferPayload = (
     isRetry: boolean,
-    response: ValidateFileTransferResponse,
+    response: IndexingFileTransferResponse,
   ): InitiateFileTransferPayload => {
     if (!selectedTransferAction) {
       throw new Error(
@@ -433,11 +433,11 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     setSelectedSourceFoldersOrFiles([]);
     setSelectedTransferAction(null);
 
-    let response: ValidateFileTransferResponse;
+    let response: IndexingFileTransferResponse;
     try {
       const validationPayload = getValidateTransferPayload();
       setTransferStatus("validating");
-      response = await validateFileTransfer(validationPayload);
+      response = await indexingFileTransfer(validationPayload);
       if (response.isInvalid) {
         setTransferStatus("validated-with-errors");
         navigate(`/case/${caseId}/case-management/transfer-validation-errors`, {
@@ -457,7 +457,9 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       const newError =
         error instanceof ApiError
           ? error
-          : new Error(`Invalid files api response. More details, ${error}`);
+          : new Error(
+              `Invalid indexing file transfer api response. More details, ${error}`,
+            );
       setPostRequestApiError(newError);
       return;
     }

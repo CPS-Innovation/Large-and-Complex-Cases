@@ -23,7 +23,7 @@ import {
   netAppToEgressTransferStatusDev,
   netAppToEgressTransferStatusPlaywright,
 } from "./data";
-import { ValidateFileTransferPayload } from "../common/types/ValidateFileTransferPayload";
+import { IndexingFileTransferPayload } from "../common/types/IndexingFileTransferPayload";
 import { InitiateFileTransferPayload } from "../common/types/InitiateFileTransferPayload";
 
 export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
@@ -107,7 +107,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
 
     http.post(`${baseUrl}/api/filetransfer/files`, async ({ request }) => {
       const requestPayload =
-        (await request.json()) as ValidateFileTransferPayload;
+        (await request.json()) as IndexingFileTransferPayload;
       let response = {};
       if (requestPayload.transferDirection === "EgressToNetApp") {
         response = isDevMock()

@@ -1,4 +1,4 @@
-export type ValidateFileTransferResponse = {
+export type IndexingFileTransferResponse = {
   caseId: number;
   isInvalid: boolean;
   destinationPath: string;

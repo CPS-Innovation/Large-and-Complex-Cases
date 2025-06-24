@@ -620,7 +620,7 @@ test.describe("egress-netapp-transfer", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        "Error: An error occurred contacting the server at https://mocked-out-api/api/filetransfer/files: files api failed; status - Internal Server Error (500)",
+        "Error: An error occurred contacting the server at https://mocked-out-api/api/filetransfer/files: indexing file transfer api failed; status - Internal Server Error (500)",
       ),
     ).toBeVisible();
   });
@@ -683,7 +683,7 @@ test.describe("egress-netapp-transfer", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        "Error: Invalid files api response. More details, TypeError: Cannot read properties of undefined (reading 'map')",
+        "Error: Invalid indexing file transfer api response. More details, TypeError: Cannot read properties of undefined (reading 'map')",
       ),
     ).toBeVisible();
   });
