@@ -1,8 +1,9 @@
 trigger:
+  batch: true
   branches:
     include:
       - main
-    
+      - HA/devops-stuff
   paths:
     include:
       - backend/*
@@ -12,13 +13,9 @@ pr:
     include:
       - main
       - HA/devops-stuff
-      
   paths:
     include:
       - backend/*
-
-pool:
-  vmImage: ubuntu-latest
 
 variables:
   buildConfiguration: 'Release'
@@ -32,6 +29,8 @@ stages:
     jobs:
       - job: Build_Solution
         displayName: 'LACC - Build Backend Solution'
+        pool:
+          vmImage: ubuntu-latest
         steps:
           - task: UseDotNet@2
             displayName: 'Use .NET SDK'
@@ -126,6 +125,8 @@ stages:
       - job: Build_Main_API
         displayName: 'LACC - Build Main API Function App'
         dependsOn: Build_Solution
+        pool:
+          vmImage: ubuntu-latest
         steps:
           - task: UseDotNet@2
             displayName: 'Use .NET SDK'
@@ -172,6 +173,8 @@ stages:
       - job: Build_FileTransfer_API
         displayName: 'LACC - Build FileTransfer API Function App'
         dependsOn: Build_Solution
+        pool:
+          vmImage: ubuntu-latest
         steps:
           - task: UseDotNet@2
             displayName: 'Use .NET SDK'
@@ -218,6 +221,8 @@ stages:
       - job: Package_Database_Scripts
         displayName: 'LACC - Package Database Migration Scripts'
         dependsOn: Build_Solution
+        pool:
+          vmImage: ubuntu-latest
         steps:
           - task: UseDotNet@2
             displayName: 'Use .NET SDK'

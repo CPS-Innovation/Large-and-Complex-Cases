@@ -1,5 +1,4 @@
 trigger: none
-pr: none
 
 resources:
   pipelines:
@@ -10,8 +9,6 @@ resources:
           include:
             - main
             - HA/devops-stuff
-        stages:
-          - Build_And_Test_Backend
 
 parameters:
   - name: environment
@@ -70,7 +67,8 @@ stages:
     jobs:
       - job: Validate_Environment
         displayName: 'LACC - Validate Target Environment'
-        pool: $(buildAgentPool)
+        pool:
+          name: $(buildAgentPool)
         steps:
           - task: AzureCLI@2
             displayName: 'Setup Key Vault Access for Pipeline'
@@ -255,13 +253,14 @@ stages:
                 fi
 
   - stage: Database_Migration
-    displayName: 'Database Migration'
+    displayName: 'LACC - Database Migration'
     dependsOn: Pre_Deployment_Validation
     condition: and(succeeded(), eq(${{ parameters.runDatabaseMigration }}, true))
     jobs:
       - deployment: Deploy_Database_Changes
-        displayName: 'Deploy Database Changes'
-        pool: $(buildAgentPool)
+        displayName: 'LACC - Deploy Database Changes'
+        pool:
+          name: $(buildAgentPool)
         environment: 'LACC-Backend-${{ parameters.environment }}'
         strategy:
           runOnce:
@@ -302,12 +301,18 @@ stages:
                         exit 1
                       fi
                       
-                      # Get PostgreSQL server details from Key Vault
-                      DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLHost" --query value -o tsv)
-                      
-                      # Extract server name from hostname (remove .postgres.database.azure.com)
-                      DB_SERVER_NAME=$(echo "$DB_HOST" | sed 's/\.postgres\.database\.azure\.com.*//')
-                      echo "PostgreSQL Server Name: $DB_SERVER_NAME"
+                                      # Get PostgreSQL server details from Key Vault or variables
+                DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLHost" --query value -o tsv 2>/dev/null || echo "$(PostgreSQLHost)")
+                
+                if [ -z "$DB_HOST" ] || [ "$DB_HOST" = "null" ]; then
+                  echo "❌ PostgreSQL host not found in Key Vault or variables"
+                  echo "Please ensure PostgreSQLHost is set in Key Vault secrets or pipeline variables"
+                  exit 1
+                fi
+                
+                # Extract server name from hostname (remove .postgres.database.azure.com)
+                DB_SERVER_NAME=$(echo "$DB_HOST" | sed 's/\.postgres\.database\.azure\.com.*//')
+                echo "PostgreSQL Server Name: $DB_SERVER_NAME"
                       
                       # Create firewall rule name with timestamp
                       RULE_NAME="AzureDevOps-Pipeline-$(date +%Y%m%d-%H%M%S)"
@@ -342,15 +347,37 @@ stages:
                       sudo apt-get update
                       sudo apt-get install -y postgresql-client
                       
-                      # Get connection details from Key Vault
-                      DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLHost" --query value -o tsv)
-                      DB_NAME=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLDatabase" --query value -o tsv)
-                      DB_USER=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLUsername" --query value -o tsv)
-                      DB_PASS=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLPassword" --query value -o tsv)
+                     # SECURITY: Disable command echoing to prevent credential exposure
+                      set +x
+                      
+                      # Get connection details from Key Vault or fallback to variables
+                      DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLHost" --query value -o tsv 2>/dev/null || echo "$(PostgreSQLHost)")
+                      DB_NAME=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLDatabase" --query value -o tsv 2>/dev/null || echo "$(PostgreSQLDatabase)")
+                      DB_USER=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLUsername" --query value -o tsv 2>/dev/null || echo "$(PostgreSQLUsername)")
+                      DB_PASS=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLPassword" --query value -o tsv 2>/dev/null || echo "$(PostgreSQLPassword)")
+                      
+                      # Validate credentials without exposing them
+                      if [ -z "$DB_HOST" ] || [ "$DB_HOST" = "null" ]; then
+                        echo "❌ PostgreSQL host not found"
+                        exit 1
+                      fi
+                      if [ -z "$DB_NAME" ] || [ "$DB_NAME" = "null" ]; then
+                        echo "❌ PostgreSQL database name not found"
+                        exit 1
+                      fi
+                      if [ -z "$DB_USER" ] || [ "$DB_USER" = "null" ]; then
+                        echo "❌ PostgreSQL username not found"
+                        exit 1
+                      fi
+                      if [ -z "$DB_PASS" ] || [ "$DB_PASS" = "null" ]; then
+                        echo "❌ PostgreSQL password not found"
+                        exit 1
+                      fi
                       
                       echo "Connecting to PostgreSQL server: $DB_HOST"
                       echo "Database: $DB_NAME"
                       echo "User: $DB_USER"
+                      echo "Password: [REDACTED FOR SECURITY]"
                       
                       # Test connection first
                       echo "Testing database connection..."
@@ -420,12 +447,20 @@ stages:
     dependsOn: 
       - Pre_Deployment_Validation
       - Database_Migration
-    condition: succeeded()
+    condition: |
+      and(
+        succeeded('Pre_Deployment_Validation'),
+        or(
+          and(eq(${{ parameters.runDatabaseMigration }}, true), succeeded('Database_Migration')),
+          eq(${{ parameters.runDatabaseMigration }}, false)
+        )
+      )
     jobs:
       - deployment: Deploy_Main_API
         displayName: 'LACC - Deploy Main API Function App'
         condition: eq(${{ parameters.deployMainAPI }}, true)
-        pool: $(buildAgentPool)
+        pool:
+          name: $(buildAgentPool)
         environment: 'LACC-Backend-${{ parameters.environment }}'
         strategy:
           runOnce:
@@ -452,7 +487,7 @@ stages:
                     appInsightsConnectionString: $(ApplicationInsightsConnectionString)
 
                 - task: AzureFunctionApp@1
-                  displayName: 'Deploy Main API to Azure Function App'
+                  displayName: 'LACC - Deploy Main API to Azure Function App'
                   inputs:
                     azureSubscription: $(azureSubscription)
                     appType: 'functionApp'
@@ -463,7 +498,8 @@ stages:
       - deployment: Deploy_FileTransfer_API
         displayName: 'LACC - Deploy FileTransfer API Function App'
         condition: eq(${{ parameters.deployFileTransferAPI }}, true)
-        pool: $(buildAgentPool)
+        pool:
+          name: $(buildAgentPool)
         environment: 'LACC-Backend-${{ parameters.environment }}'
         strategy:
           runOnce:
@@ -490,7 +526,7 @@ stages:
                     appInsightsConnectionString: $(ApplicationInsightsConnectionString)
 
                 - task: AzureFunctionApp@1
-                  displayName: 'Deploy FileTransfer API to Azure Function App'
+                  displayName: 'LACC - Deploy FileTransfer API to Azure Function App'
                   inputs:
                     azureSubscription: $(azureSubscription)
                     appType: 'functionApp'
@@ -504,7 +540,8 @@ stages:
     jobs:
       - job: Health_Check
         displayName: 'LACC - Health Check Function Apps'
-        pool: $(buildAgentPool)
+        pool:
+          name: $(buildAgentPool)
         steps:
           - task: AzureCLI@2
             displayName: 'LACC - Health Check Main API'
@@ -575,8 +612,14 @@ stages:
                   exit 1
                 fi
                 
-                # Get PostgreSQL server details from Key Vault
-                DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLHost" --query value -o tsv)
+                # Get PostgreSQL server details from Key Vault or variables
+                DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLHost" --query value -o tsv 2>/dev/null || echo "$(PostgreSQLHost)")
+                
+                if [ -z "$DB_HOST" ] || [ "$DB_HOST" = "null" ]; then
+                  echo "❌ PostgreSQL host not found in Key Vault or variables"
+                  echo "Please ensure PostgreSQLHost is set in Key Vault secrets or pipeline variables"
+                  exit 1
+                fi
                 
                 # Extract server name from hostname (remove .postgres.database.azure.com)
                 DB_SERVER_NAME=$(echo "$DB_HOST" | sed 's/\.postgres\.database\.azure\.com.*//')
@@ -616,16 +659,38 @@ stages:
                 sudo apt-get update
                 sudo apt-get install -y postgresql-client
                 
-                # Get connection details from Key Vault
-                DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLHost" --query value -o tsv)
-                DB_NAME=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLDatabase" --query value -o tsv)
-                DB_USER=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLUsername" --query value -o tsv)
-                DB_PASS=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLPassword" --query value -o tsv)
+                # SECURITY: Disable command echoing to prevent credential exposure
+                set +x
+                
+                # Get connection details from Key Vault or fallback to variables
+                DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLHost" --query value -o tsv 2>/dev/null || echo "$(PostgreSQLHost)")
+                DB_NAME=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLDatabase" --query value -o tsv 2>/dev/null || echo "$(PostgreSQLDatabase)")
+                DB_USER=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLUsername" --query value -o tsv 2>/dev/null || echo "$(PostgreSQLUsername)")
+                DB_PASS=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLPassword" --query value -o tsv 2>/dev/null || echo "$(PostgreSQLPassword)")
+                
+                # Validate credentials without exposing them
+                if [ -z "$DB_HOST" ] || [ "$DB_HOST" = "null" ]; then
+                  echo "❌ PostgreSQL host not found"
+                  exit 1
+                fi
+                if [ -z "$DB_NAME" ] || [ "$DB_NAME" = "null" ]; then
+                  echo "❌ PostgreSQL database name not found"
+                  exit 1
+                fi
+                if [ -z "$DB_USER" ] || [ "$DB_USER" = "null" ]; then
+                  echo "❌ PostgreSQL username not found"
+                  exit 1
+                fi
+                if [ -z "$DB_PASS" ] || [ "$DB_PASS" = "null" ]; then
+                  echo "❌ PostgreSQL password not found"
+                  exit 1
+                fi
                 
                 echo "Testing database connection..."
                 echo "Host: $DB_HOST"
                 echo "Database: $DB_NAME"
                 echo "User: $DB_USER"
+                echo "Password: [REDACTED FOR SECURITY]"
                 
                 # Test database connection with detailed output
                 PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -c "SELECT 'Database connection successful' as status, version(), current_database(), current_user, inet_server_addr(), inet_server_port();" -t
