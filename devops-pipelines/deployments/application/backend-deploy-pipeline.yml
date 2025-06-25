@@ -209,7 +209,7 @@ stages:
                 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
                   echo "Attempt $((RETRY_COUNT + 1))/$MAX_RETRIES: Testing Key Vault access..."
                   
-                  if az keyvault secret list --vault-name "$(keyVaultName)" --query "[0].name" -o tsv > /dev/null 2>&1; then
+                  if az keyvault secret list --vault-name "$(keyVaultName)" -o tsv > /dev/null 2>&1; then
                     echo "✅ Key Vault access confirmed - pipeline can read secrets"
                     break
                   else
