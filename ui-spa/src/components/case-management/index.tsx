@@ -1,23 +1,25 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Tabs } from "../common/tabs/Tabs";
 import { TabId } from "../../common/types/CaseManagement";
 import { ItemProps } from "../common/tabs/types";
 import TransferMaterialsPage from "./transfer-materials";
-import { useParams } from "react-router-dom";
 import { useApi } from "../../common/hooks/useApi";
 import { getCaseMetaData } from "../../apis/gateway-api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 
 import styles from "./index.module.scss";
 
 const CaseManagementPage = () => {
   const navigate = useNavigate();
-  const { caseId } = useParams();
+  const location = useLocation();
+  const { caseId } = useParams() as { caseId: string };
+  if (!caseId) throw new Error("missing caseId in the url");
+
   const caseMetaData = useApi(getCaseMetaData, [caseId], true);
 
-  const [activeTabId, setActiveId] = useState<TabId>("transfer-materials");
+  const [activeTabId, setActiveTabId] = useState<TabId>("transfer-materials");
   const handleTabSelection = (tabId: TabId) => {
-    setActiveId(tabId);
+    setActiveTabId(tabId);
   };
 
   useEffect(() => {
@@ -59,18 +61,40 @@ const CaseManagementPage = () => {
     }
   }, [caseMetaData, navigate, caseId]);
 
+  const validateRoute = useCallback(() => {
+    if (
+      location.pathname.endsWith("/transfer-validation-errors") &&
+      !location?.state?.isRouteValid
+    ) {
+      navigate(`/`);
+    }
+    if (
+      location.pathname.endsWith("/transfer-errors") &&
+      !location?.state?.isRouteValid
+    ) {
+      navigate(`/`);
+    }
+  }, [location, navigate]);
+
+  useEffect(() => {
+    validateRoute();
+  }, [location, validateRoute]);
+
   const items: ItemProps<TabId>[] = [
     {
       id: "transfer-materials",
       label: "Transfer materials",
       panel: {
-        children: (
+        children: caseMetaData?.data ? (
           <TransferMaterialsPage
             caseId={caseId}
-            operationName={caseMetaData?.data?.operationName}
-            egressWorkspaceId={caseMetaData?.data?.egressWorkspaceId}
-            netAppPath={caseMetaData?.data?.netappFolderPath ?? ""}
+            operationName={caseMetaData.data.operationName}
+            egressWorkspaceId={caseMetaData.data.egressWorkspaceId}
+            netAppPath={caseMetaData?.data.netappFolderPath}
+            activeTransferId={caseMetaData?.data.activeTransferId}
           />
+        ) : (
+          <div> </div>
         ),
       },
     },
@@ -83,6 +107,22 @@ const CaseManagementPage = () => {
   if (caseMetaData.status === "loading" || caseMetaData.status === "initial") {
     return <div className="govuk-width-container">loading...</div>;
   }
+  if (location.pathname.endsWith("/transfer-validation-errors"))
+    return (
+      <div className="govuk-width-container">
+        <div>
+          <h1>Handle validation errors</h1>
+        </div>
+      </div>
+    );
+  if (location.pathname.endsWith("/transfer-errors"))
+    return (
+      <div className="govuk-width-container">
+        <div>
+          <h1>Handle Transfer errors</h1>
+        </div>
+      </div>
+    );
   return (
     <div className="govuk-width-container">
       <h1 className={styles.workspaceName}>

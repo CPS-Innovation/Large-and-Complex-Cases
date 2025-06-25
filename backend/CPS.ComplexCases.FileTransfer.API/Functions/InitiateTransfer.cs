@@ -60,7 +60,7 @@ public class InitiateTransfer
             var entityId = new EntityInstanceId(nameof(TransferEntityState), caseMetadata.ActiveTransferId.Value.ToString());
             var entityState = await orchestrationClient.Entities.GetEntityAsync<TransferEntity>(entityId);
 
-            if (entityState != null && entityState.State != null && entityState.State.Status != TransferStatus.Completed)
+            if (entityState != null && entityState.State != null && entityState.State.Status == TransferStatus.InProgress)
             {
                 _logger.LogInformation(
                     "Active transfer detected for CaseId: {CaseId}, TransferId: {TransferId}. Returning current status. CorrelationId: {CorrelationId}",

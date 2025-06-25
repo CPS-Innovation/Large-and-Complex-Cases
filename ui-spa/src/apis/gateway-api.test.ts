@@ -9,6 +9,9 @@ import {
   getCaseMetaData,
   getEgressFolders,
   getNetAppFolders,
+  indexingFileTransfer,
+  initiateFileTransfer,
+  getTransferStatus,
 } from "./gateway-api";
 import { ApiError } from "../common/errors/ApiError";
 import { v4 } from "uuid";
@@ -959,6 +962,229 @@ describe("gateway apis", () => {
 
       expect(fetch).toHaveBeenCalledWith(
         `gateway_url/api/netapp/files?path=/netapp&take=50&continuation-token=`,
+        expect.objectContaining({
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+  });
+  describe("indexingFileTransfer", () => {
+    it("should successfully call the post request and return the response", async () => {
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        json: () => ({
+          caseId: 12,
+        }),
+      });
+
+      const payload = {
+        caseId: 12,
+        transferDirection: "EgressToNetApp" as const,
+        sourcePaths: [
+          {
+            fileId: "1",
+            path: "abc/def",
+            isFolder: true,
+          },
+        ],
+        destinationPath: "netapp/",
+      };
+      const result = await indexingFileTransfer(payload);
+      expect(result).toEqual({ caseId: 12 });
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/filetransfer/files`,
+        expect.objectContaining({
+          method: "POST",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+          body: JSON.stringify(payload),
+        }),
+      );
+    });
+
+    it("should throw an ApiError when post request fails", async () => {
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+      });
+      const payload = {
+        caseId: 12,
+        transferDirection: "EgressToNetApp" as const,
+        sourcePaths: [
+          {
+            fileId: "1",
+            path: "abc/def",
+            isFolder: true,
+          },
+        ],
+        destinationPath: "netapp/",
+      };
+
+      await expect(indexingFileTransfer(payload)).rejects.toThrow(
+        new ApiError(
+          `indexing file transfer api failed`,
+          `gateway_url/api/filetransfer/files`,
+          {
+            status: 500,
+            statusText: "Internal Server Error",
+          },
+        ),
+      );
+
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/filetransfer/files`,
+        expect.objectContaining({
+          method: "POST",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+          body: JSON.stringify(payload),
+        }),
+      );
+    });
+  });
+  describe("initiateFileTransfer", () => {
+    it("should successfully call the post request and return the response", async () => {
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        json: () => ({
+          transferId: "12",
+        }),
+      });
+
+      const payload = {
+        isRetry: false,
+        caseId: 12,
+        workspaceId: "thuderstruck",
+        transferType: "Copy" as const,
+        transferDirection: "EgressToNetApp" as const,
+        sourcePaths: [],
+        destinationPath: "netapp/",
+      };
+      const result = await initiateFileTransfer(payload);
+      expect(result).toEqual({ transferId: "12" });
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/filetransfer/initiate`,
+        expect.objectContaining({
+          method: "POST",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+          body: JSON.stringify(payload),
+        }),
+      );
+    });
+
+    it("should throw an ApiError when post request fails", async () => {
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+      });
+      const payload = {
+        isRetry: false,
+        caseId: 12,
+        workspaceId: "thunderstruck",
+        transferType: "Copy" as const,
+        transferDirection: "EgressToNetApp" as const,
+        sourcePaths: [],
+        destinationPath: "netapp/",
+      };
+
+      await expect(initiateFileTransfer(payload)).rejects.toThrow(
+        new ApiError(
+          `initiate file transfer failed`,
+          `gateway_url/api/filetransfer/initiate`,
+          {
+            status: 500,
+            statusText: "Internal Server Error",
+          },
+        ),
+      );
+
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/filetransfer/initiate`,
+        expect.objectContaining({
+          method: "POST",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+          body: JSON.stringify(payload),
+        }),
+      );
+    });
+  });
+  describe("getTransferStatus", () => {
+    it("should return transferStatus when fetch is successful", async () => {
+      const mockData = {
+        caseId: 12,
+      };
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        json: async () => mockData,
+      });
+
+      const result = await getTransferStatus("transfer_id_1");
+      expect(result).toEqual(mockData);
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/filetransfer/transfer_id_1/status`,
+        expect.objectContaining({
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+
+    it("should throw an ApiError when fetch fails", async () => {
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+      });
+
+      await expect(getTransferStatus("transfer_id_1")).rejects.toThrow(
+        new ApiError(
+          `Getting case transfer status failed`,
+          "gateway_url/api/filetransfer/transfer_id_1/status",
+          {
+            status: 500,
+            statusText: "Internal Server Error",
+          },
+        ),
+      );
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/filetransfer/transfer_id_1/status`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",

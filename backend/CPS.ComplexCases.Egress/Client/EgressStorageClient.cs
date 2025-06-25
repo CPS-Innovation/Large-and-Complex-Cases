@@ -121,20 +121,20 @@ public class EgressStorageClient(
 
         var entityTasks = selectedEntities.Select(async entity =>
         {
-            if (!entity.IsFolder)
+            if (entity.IsFolder != true)
             {
                 return new List<FileTransferInfo>
                 {
                 new FileTransferInfo
                 {
                     Id = entity.FileId,
-                    SourcePath = entity.Path
+                    SourcePath = Path.GetFileName(entity.Path)
                 }
                 };
             }
             else
             {
-                return await GetAllFilesFromFolderParallel(workspaceId, entity.Id, token);
+                return await GetAllFilesFromFolderParallel(workspaceId, entity.FileId, entity.Path, token);
             }
         });
 
@@ -142,31 +142,43 @@ public class EgressStorageClient(
         return results.SelectMany(files => files);
     }
 
-    private async Task<List<FileTransferInfo>> GetAllFilesFromFolderParallel(string workspaceId, string? folderId, string token)
+    private async Task<List<FileTransferInfo>> GetAllFilesFromFolderParallel(string workspaceId, string? folderId, string baseFolderPath, string token)
     {
         var allPagesData = await GetAllPagesInParallel(workspaceId, folderId, token);
-
         var files = allPagesData
             .Where(d => !d.IsFolder)
             .Select(d => new FileTransferInfo
             {
                 Id = d.Id,
-                SourcePath = d.Path
+                SourcePath = ConstructRelativePath(baseFolderPath, d.Path, d.FileName)
             })
             .ToList();
-
         var folders = allPagesData.Where(d => d.IsFolder).ToList();
-
         if (folders.Any())
         {
             var subFolderTasks = folders.Select(folder =>
-                GetAllFilesFromFolderParallel(workspaceId, folder.Id, token));
-
+                GetAllFilesFromFolderParallel(workspaceId, folder.Id, baseFolderPath, token));
             var subFolderResults = await Task.WhenAll(subFolderTasks);
             files.AddRange(subFolderResults.SelectMany(x => x));
         }
-
         return files;
+    }
+
+    private static string ConstructRelativePath(string baseFolderPath, string filePath, string fileName)
+    {
+        // Get the last folder name from the base path (selected folder)
+        var baseFolderName = Path.GetFileName(baseFolderPath.TrimEnd('/'));
+
+        var baseFolderIndex = filePath.LastIndexOf(baseFolderName);
+
+        if (baseFolderIndex >= 0)
+        {
+            var relativePath = filePath.Substring(baseFolderIndex);
+            return Path.Combine(relativePath, fileName).Replace('\\', '/');
+        }
+
+        // Fallback: if we can't find the base folder in the path, use the original logic
+        return Path.Combine(filePath, fileName).Replace('\\', '/');
     }
 
     private async Task<List<ListCaseMaterialDataResponse>> GetAllPagesInParallel(string workspaceId, string? folderId, string token)
