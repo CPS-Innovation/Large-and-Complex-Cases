@@ -1,0 +1,692 @@
+trigger: none
+pr: none
+
+resources:
+  pipelines:
+    - pipeline: BackendBuild
+      source: 'LACC - Backend Build'
+      trigger:
+        branches:
+          include:
+            - main
+            - HA/devops-stuff
+        stages:
+          - Build_And_Test_Backend
+
+parameters:
+  - name: environment
+    displayName: 'Target Environment'
+    type: string
+    default: 'dev'
+    values:
+      - dev
+      - qa
+      - prod
+  - name: runDatabaseMigration
+    displayName: 'Run Database Migration'
+    type: boolean
+    default: true
+  - name: deployMainAPI
+    displayName: 'Deploy Main API'
+    type: boolean
+    default: true
+  - name: deployFileTransferAPI
+    displayName: 'Deploy FileTransfer API'
+    type: boolean
+    default: true
+
+variables:
+  - group: lacc-backend-global-variables
+  - group: lacc-backend-secrets-${{ lower(parameters.environment) }}-variables
+  - group: lacc-backend-config-${{ lower(parameters.environment) }}-variables
+  - name: environmentSuffix
+    value: ${{ lower(parameters.environment) }}
+  - name: resourceGroupName
+    value: 'rg-lacc-$(environmentSuffix)-temp'
+  - name: mainApiName
+    value: 'func-lacc-api-$(environmentSuffix)-temp'
+  - name: fileTransferApiName
+    value: 'func-lacc-filetransfer-$(environmentSuffix)-temp'
+  - name: keyVaultName
+    value: 'kv-lacc-$(environmentSuffix)-temp'
+  - name: buildAgentPool
+    ${{ if eq(parameters.environment, 'dev') }}:
+      value: 'LaCC Pre-Prod Build Agents'
+    ${{ if eq(parameters.environment, 'qa') }}:
+      value: 'LaCC Pre-Prod Build Agents'
+    ${{ if eq(parameters.environment, 'prod') }}:
+      value: 'LaCC Prod Build Agents'
+  - name: azureSubscription
+    ${{ if eq(parameters.environment, 'dev') }}:
+      value: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
+    ${{ if eq(parameters.environment, 'qa') }}:
+      value: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
+    ${{ if eq(parameters.environment, 'prod') }}:
+      value: 'Azure Pipeline: Large and Complex Cases - Prod'
+
+stages:
+  - stage: Pre_Deployment_Validation
+    displayName: 'LACC - Pre-Deployment Validation'
+    jobs:
+      - job: Validate_Environment
+        displayName: 'LACC - Validate Target Environment'
+        pool: $(buildAgentPool)
+        steps:
+          - task: AzureCLI@2
+            displayName: 'Setup Key Vault Access for Pipeline'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Setting up Key Vault access for Azure DevOps pipeline..."
+                
+                # Method 1: Try to get service principal from current context
+                CURRENT_USER=$(az account show --query user.name -o tsv)
+                echo "Current authenticated user/principal: $CURRENT_USER"
+                
+                # Method 2: Get the service principal object ID from the service connection
+                # This works when using service principal authentication
+                SP_OBJECT_ID=""
+                
+                # Try to get service principal details
+                if [[ "$CURRENT_USER" != *"@"* ]]; then
+                  # This looks like a service principal ID, get its object ID
+                  SP_OBJECT_ID=$(az ad sp show --id "$CURRENT_USER" --query id -o tsv 2>/dev/null || echo "")
+                fi
+                
+                # Method 3: Alternative approach - get from token
+                if [ -z "$SP_OBJECT_ID" ]; then
+                  # Try to extract from access token
+                  TOKEN_INFO=$(az account get-access-token --query accessToken -o tsv 2>/dev/null || echo "")
+                  if [ -n "$TOKEN_INFO" ]; then
+                    # Decode token to get object ID (this requires jq)
+                    SP_OBJECT_ID=$(echo "$TOKEN_INFO" | cut -d'.' -f2 | base64 -d 2>/dev/null | jq -r '.oid' 2>/dev/null || echo "")
+                  fi
+                fi
+                
+                # Method 4: Use the service connection's managed identity if available
+                if [ -z "$SP_OBJECT_ID" ]; then
+                  echo "Attempting to use service connection managed identity..."
+                  # Get the service connection's principal ID
+                  SP_OBJECT_ID=$(az ad signed-in-user show --query id -o tsv 2>/dev/null || echo "")
+                fi
+                
+                # Grant Key Vault access if we found the object ID
+                if [ -n "$SP_OBJECT_ID" ] && [ "$SP_OBJECT_ID" != "null" ] && [ "$SP_OBJECT_ID" != "" ]; then
+                  echo "Service Principal Object ID found: $SP_OBJECT_ID"
+                  echo "Granting Key Vault access permissions..."
+                  
+                  az keyvault set-policy \
+                    --name "$(keyVaultName)" \
+                    --object-id "$SP_OBJECT_ID" \
+                    --secret-permissions get list set \
+                    --output table || echo "Warning: Could not set Key Vault policy (may already exist or insufficient permissions)"
+                    
+                  echo "Key Vault access policy configured successfully"
+                else
+                  echo "Warning: Could not determine service principal object ID"
+                  echo "Key Vault access may need to be configured manually"
+                fi
+                
+                # Test Key Vault connectivity
+                echo "Testing Key Vault connectivity..."
+                if az keyvault secret list --vault-name "$(keyVaultName)" --query "[0].name" -o tsv > /dev/null 2>&1; then
+                  echo "✅ Key Vault access confirmed - pipeline can read secrets"
+                else
+                  echo "❌ Key Vault access test failed"
+                  echo "Please ensure the Azure DevOps service connection has Key Vault access permissions"
+                  echo "Required permissions: Secret Get, Secret List, Secret Set"
+                  exit 1
+                fi
+
+          - task: AzureCLI@2
+            displayName: 'LACC - Initialize Key Vault Secrets from Variable Groups'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Initializing Key Vault secrets from Azure DevOps variable groups..."
+                echo "🔐 Only storing sensitive secrets in Key Vault"
+                
+                # Function to safely set Key Vault secret
+                set_kv_secret() {
+                  local secret_name="$1"
+                  local secret_value="$2"
+                  local description="$3"
+                  
+                  if [ -n "$secret_value" ] && [ "$secret_value" != "" ] && [ "$secret_value" != "null" ]; then
+                    echo "Setting Key Vault secret: $secret_name"
+                    az keyvault secret set \
+                      --vault-name "$(keyVaultName)" \
+                      --name "$secret_name" \
+                      --value "$secret_value" \
+                      --description "$description" \
+                      --output none
+                    
+                    if [ $? -eq 0 ]; then
+                      echo "✅ Secret '$secret_name' set successfully"
+                    else
+                      echo "❌ Failed to set secret '$secret_name'"
+                    fi
+                  else
+                    echo "⚠️ Skipping '$secret_name' - value is empty or not provided"
+                  fi
+                }
+                
+                echo "📋 Setting storage connection secrets..."
+                
+                # Azure Storage (for Functions)
+                set_kv_secret "AzureWebJobsStorage" "$(AzureWebJobsStorage)" "Azure Storage connection for Functions runtime"
+                
+                echo "📋 Setting database connection secrets..."
+                
+                # Database Connection String
+                set_kv_secret "ConnectionStrings--CaseManagementDatastoreConnection" "$(CaseManagementDatastoreConnection)" "PostgreSQL database connection string"
+                
+                echo "📋 Setting external API authentication secrets..."
+                
+                # Egress API Credentials
+                set_kv_secret "EgressOptions--Username" "$(EgressOptionsUsername)" "Egress API username"
+                set_kv_secret "EgressOptions--Password" "$(EgressOptionsPassword)" "Egress API password"
+                
+                # DDEI API Credentials
+                set_kv_secret "DDEIOptions--AccessKey" "$(DDEIOptionsAccessKey)" "DDEI API access key"
+                
+                # NetApp API Credentials
+                set_kv_secret "NetAppOptions--AccessKey" "$(NetAppOptionsAccessKey)" "NetApp API access key"
+                set_kv_secret "NetAppOptions--SecretKey" "$(NetAppOptionsSecretKey)" "NetApp API secret key"
+                
+                # File Transfer API Credentials
+                set_kv_secret "FileTransferApiOptions--AccessKey" "$(FileTransferApiOptionsAccessKey)" "File Transfer API access key"
+                
+                echo "✅ Key Vault secret initialization completed"
+                echo "📋 Secrets stored in Key Vault:"
+                echo "  - AzureWebJobsStorage"
+                echo "  - EgressOptions--Username"
+                echo "  - EgressOptions--Password"
+                echo "  - DDEIOptions--AccessKey"
+                echo "  - ConnectionStrings--CaseManagementDatastoreConnection"
+                echo "  - NetAppOptions--AccessKey"
+                echo "  - NetAppOptions--SecretKey"
+                echo "  - FileTransferApiOptions--AccessKey"
+                
+                # List all secrets that were set (names only, not values)
+                echo "📋 Current Key Vault secrets:"
+                az keyvault secret list --vault-name "$(keyVaultName)" --query "[].name" -o table
+
+          - task: AzureCLI@2
+            displayName: 'LACC - Check Resource Group Exists'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                if ! az group show --name $(resourceGroupName) &> /dev/null; then
+                  echo "##vso[task.logissue type=error]Resource group $(resourceGroupName) does not exist"
+                  exit 1
+                fi
+                echo "Resource group $(resourceGroupName) exists"
+
+          - task: AzureCLI@2
+            displayName: 'Check Function Apps Exist'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Check Main API if deployment is enabled
+                if [ "${{ parameters.deployMainAPI }}" = "True" ]; then
+                  if ! az functionapp show --name $(mainApiName) --resource-group $(resourceGroupName) &> /dev/null; then
+                    echo "##vso[task.logissue type=error]Main API Function App $(mainApiName) does not exist"
+                    exit 1
+                  fi
+                  echo "Main API Function App $(mainApiName) exists"
+                fi
+                
+                # Check FileTransfer API if deployment is enabled
+                if [ "${{ parameters.deployFileTransferAPI }}" = "True" ]; then
+                  if ! az functionapp show --name $(fileTransferApiName) --resource-group $(resourceGroupName) &> /dev/null; then
+                    echo "##vso[task.logissue type=error]FileTransfer API Function App $(fileTransferApiName) does not exist"
+                    exit 1
+                  fi
+                  echo "FileTransfer API Function App $(fileTransferApiName) exists"
+                fi
+
+  - stage: Database_Migration
+    displayName: 'Database Migration'
+    dependsOn: Pre_Deployment_Validation
+    condition: and(succeeded(), eq(${{ parameters.runDatabaseMigration }}, true))
+    jobs:
+      - deployment: Deploy_Database_Changes
+        displayName: 'Deploy Database Changes'
+        pool: $(buildAgentPool)
+        environment: 'LACC-Backend-${{ parameters.environment }}'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: DownloadBuildArtifacts@0
+                  displayName: 'Download Database Scripts'
+                  inputs:
+                    buildType: 'specific'
+                    project: '$(System.TeamProjectId)'
+                    pipeline: BackendBuild
+                    buildVersionToDownload: 'latest'
+                    artifactName: 'database-scripts-drop'
+                    downloadPath: '$(Pipeline.Workspace)'
+
+                - task: ExtractFiles@1
+                  displayName: 'Extract Database Scripts'
+                  inputs:
+                    archiveFilePatterns: '$(Pipeline.Workspace)/database-scripts-drop/*.zip'
+                    destinationFolder: '$(Pipeline.Workspace)/database-scripts'
+                    cleanDestinationFolder: true
+
+                - task: AzureCLI@2
+                  displayName: 'Configure PostgreSQL Firewall for Pipeline'
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Configuring PostgreSQL Flexible Server firewall for pipeline access..."
+                      
+                      # Get the current public IP of the build agent
+                      PIPELINE_IP=$(curl -s https://api.ipify.org || curl -s https://ipinfo.io/ip || curl -s https://icanhazip.com)
+                      echo "Pipeline IP Address: $PIPELINE_IP"
+                      
+                      if [ -z "$PIPELINE_IP" ]; then
+                        echo "❌ Could not determine pipeline IP address"
+                        exit 1
+                      fi
+                      
+                      # Get PostgreSQL server details from Key Vault
+                      DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLHost" --query value -o tsv)
+                      
+                      # Extract server name from hostname (remove .postgres.database.azure.com)
+                      DB_SERVER_NAME=$(echo "$DB_HOST" | sed 's/\.postgres\.database\.azure\.com.*//')
+                      echo "PostgreSQL Server Name: $DB_SERVER_NAME"
+                      
+                      # Create firewall rule name with timestamp
+                      RULE_NAME="AzureDevOps-Pipeline-$(date +%Y%m%d-%H%M%S)"
+                      echo "Creating firewall rule: $RULE_NAME"
+                      
+                      # Add firewall rule for the pipeline IP
+                      az postgres flexible-server firewall-rule create \
+                        --resource-group "$(resourceGroupName)" \
+                        --name "$DB_SERVER_NAME" \
+                        --rule-name "$RULE_NAME" \
+                        --start-ip-address "$PIPELINE_IP" \
+                        --end-ip-address "$PIPELINE_IP" \
+                        --output table
+                      
+                      if [ $? -eq 0 ]; then
+                        echo "✅ Firewall rule created successfully"
+                        echo "##vso[task.setvariable variable=firewallRuleName]$RULE_NAME"
+                        echo "##vso[task.setvariable variable=pipelineIP]$PIPELINE_IP"
+                      else
+                        echo "❌ Failed to create firewall rule"
+                        exit 1
+                      fi
+
+                - task: AzureCLI@2
+                  displayName: 'Run Database Migration'
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      # Install PostgreSQL client
+                      sudo apt-get update
+                      sudo apt-get install -y postgresql-client
+                      
+                      # Get connection details from Key Vault
+                      DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLHost" --query value -o tsv)
+                      DB_NAME=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLDatabase" --query value -o tsv)
+                      DB_USER=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLUsername" --query value -o tsv)
+                      DB_PASS=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLPassword" --query value -o tsv)
+                      
+                      echo "Connecting to PostgreSQL server: $DB_HOST"
+                      echo "Database: $DB_NAME"
+                      echo "User: $DB_USER"
+                      
+                      # Test connection first
+                      echo "Testing database connection..."
+                      PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -c "SELECT version();" -t
+                      
+                      if [ $? -eq 0 ]; then
+                        echo "✅ Database connection successful"
+                        
+                        # Run migration script
+                        echo "Running database migration script..."
+                        PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -f "$(Pipeline.Workspace)/database-scripts/migration-script.sql"
+                        
+                        if [ $? -eq 0 ]; then
+                          echo "✅ Database migration completed successfully"
+                        else
+                          echo "❌ Database migration failed"
+                          exit 1
+                        fi
+                      else
+                        echo "❌ Database connection failed"
+                        echo "Please check:"
+                        echo "1. PostgreSQL server is running"
+                        echo "2. Firewall rules are configured correctly"
+                        echo "3. Connection string is correct"
+                        echo "4. User has necessary permissions"
+                        exit 1
+                      fi
+
+                - task: AzureCLI@2
+                  displayName: 'Cleanup PostgreSQL Firewall Rule'
+                  condition: always()
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Cleaning up temporary firewall rule..."
+                      
+                      # Get variables from previous step
+                      RULE_NAME="$(firewallRuleName)"
+                      PIPELINE_IP="$(pipelineIP)"
+                      
+                      if [ -n "$RULE_NAME" ]; then
+                        # Get PostgreSQL server details
+                        DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLHost" --query value -o tsv)
+                        DB_SERVER_NAME=$(echo "$DB_HOST" | sed 's/\.postgres\.database\.azure\.com.*//')
+                        
+                        echo "Removing firewall rule: $RULE_NAME"
+                        echo "From PostgreSQL server: $DB_SERVER_NAME"
+                        echo "Pipeline IP was: $PIPELINE_IP"
+                        
+                        # Remove the temporary firewall rule
+                        az postgres flexible-server firewall-rule delete \
+                          --resource-group "$(resourceGroupName)" \
+                          --name "$DB_SERVER_NAME" \
+                          --rule-name "$RULE_NAME" \
+                          --yes \
+                          --output table || echo "Warning: Could not remove firewall rule (may not exist)"
+                        
+                        echo "✅ Firewall rule cleanup completed"
+                      else
+                        echo "No firewall rule to clean up"
+                      fi
+
+  - stage: Deploy_Function_Apps
+    displayName: 'LACC - Deploy Function Apps'
+    dependsOn: 
+      - Pre_Deployment_Validation
+      - Database_Migration
+    condition: succeeded()
+    jobs:
+      - deployment: Deploy_Main_API
+        displayName: 'LACC - Deploy Main API Function App'
+        condition: eq(${{ parameters.deployMainAPI }}, true)
+        pool: $(buildAgentPool)
+        environment: 'LACC-Backend-${{ parameters.environment }}'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: DownloadBuildArtifacts@0
+                  displayName: 'LACC - Download Main API Artifact'
+                  inputs:
+                    buildType: 'specific'
+                    project: '$(System.TeamProjectId)'
+                    pipeline: BackendBuild
+                    buildVersionToDownload: 'latest'
+                    artifactName: 'lacc-main-api-drop'
+                    downloadPath: '$(Pipeline.Workspace)'
+
+                - template: ../templates/configuration-template.yml
+                  parameters:
+                    environment: ${{ parameters.environment }}
+                    functionAppName: $(mainApiName)
+                    subscriptionName: $(azureSubscription)
+                    resourceGroupName: $(resourceGroupName)
+                    keyVaultName: $(keyVaultName)
+                    appInsightsKey: $(ApplicationInsightsInstrumentationKey)
+                    appInsightsConnectionString: $(ApplicationInsightsConnectionString)
+
+                - task: AzureFunctionApp@1
+                  displayName: 'Deploy Main API to Azure Function App'
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    appType: 'functionApp'
+                    appName: $(mainApiName)
+                    package: '$(Pipeline.Workspace)/lacc-main-api-drop/*.zip'
+                    deploymentMethod: 'auto'
+
+      - deployment: Deploy_FileTransfer_API
+        displayName: 'LACC - Deploy FileTransfer API Function App'
+        condition: eq(${{ parameters.deployFileTransferAPI }}, true)
+        pool: $(buildAgentPool)
+        environment: 'LACC-Backend-${{ parameters.environment }}'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: DownloadBuildArtifacts@0
+                  displayName: 'LACC - Download FileTransfer API Artifact'
+                  inputs:
+                    buildType: 'specific'
+                    project: '$(System.TeamProjectId)'
+                    pipeline: BackendBuild
+                    buildVersionToDownload: 'latest'
+                    artifactName: 'lacc-filetransfer-api-drop'
+                    downloadPath: '$(Pipeline.Workspace)'
+
+                - template: ../templates/configuration-template.yml
+                  parameters:
+                    environment: ${{ parameters.environment }}
+                    functionAppName: $(fileTransferApiName)
+                    subscriptionName: $(azureSubscription)
+                    resourceGroupName: $(resourceGroupName)
+                    keyVaultName: $(keyVaultName)
+                    appInsightsKey: $(ApplicationInsightsInstrumentationKey)
+                    appInsightsConnectionString: $(ApplicationInsightsConnectionString)
+
+                - task: AzureFunctionApp@1
+                  displayName: 'Deploy FileTransfer API to Azure Function App'
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    appType: 'functionApp'
+                    appName: $(fileTransferApiName)
+                    package: '$(Pipeline.Workspace)/lacc-filetransfer-api-drop/*.zip'
+                    deploymentMethod: 'auto'
+
+  - stage: Post_Deployment_Validation
+    displayName: 'LACC - Post-Deployment Validation'
+    dependsOn: Deploy_Function_Apps
+    jobs:
+      - job: Health_Check
+        displayName: 'LACC - Health Check Function Apps'
+        pool: $(buildAgentPool)
+        steps:
+          - task: AzureCLI@2
+            displayName: 'LACC - Health Check Main API'
+            condition: eq(${{ parameters.deployMainAPI }}, true)
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                FUNCTION_URL=$(az functionapp show --name $(mainApiName) --resource-group $(resourceGroupName) --query defaultHostName -o tsv)
+                
+                # Wait for function app to be ready
+                sleep 30
+                
+                # Check health endpoint
+                HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://$FUNCTION_URL/api/health" || echo "000")
+                
+                if [ "$HTTP_STATUS" -eq 200 ]; then
+                  echo "Main API health check passed"
+                  echo "Main API is accessible at: https://$FUNCTION_URL"
+                else
+                  echo "##vso[task.logissue type=error]Main API health check failed with status: $HTTP_STATUS"
+                  echo "Attempted URL: https://$FUNCTION_URL/api/health"
+                  exit 1
+                fi
+
+          - task: AzureCLI@2
+            displayName: 'LACC - Health Check FileTransfer API'
+            condition: eq(${{ parameters.deployFileTransferAPI }}, true)
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                FUNCTION_URL=$(az functionapp show --name $(fileTransferApiName) --resource-group $(resourceGroupName) --query defaultHostName -o tsv)
+                
+                # Wait for function app to be ready
+                sleep 30
+                
+                # Check health endpoint
+                HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://$FUNCTION_URL/api/health" || echo "000")
+                
+                if [ "$HTTP_STATUS" -eq 200 ]; then
+                  echo "FileTransfer API health check passed"
+                  echo "FileTransfer API is accessible at: https://$FUNCTION_URL"
+                else
+                  echo "##vso[task.logissue type=error]FileTransfer API health check failed with status: $HTTP_STATUS"
+                  echo "Attempted URL: https://$FUNCTION_URL/api/health"
+                  exit 1
+                fi
+
+          - task: AzureCLI@2
+            displayName: 'LACC - Configure PostgreSQL Firewall for Connection Test'
+            condition: eq(${{ parameters.runDatabaseMigration }}, true)
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Configuring PostgreSQL Flexible Server firewall for connection test..."
+                
+                # Get the current public IP of the build agent
+                PIPELINE_IP=$(curl -s https://api.ipify.org || curl -s https://ipinfo.io/ip || curl -s https://icanhazip.com)
+                echo "Pipeline IP Address: $PIPELINE_IP"
+                
+                if [ -z "$PIPELINE_IP" ]; then
+                  echo "❌ Could not determine pipeline IP address"
+                  exit 1
+                fi
+                
+                # Get PostgreSQL server details from Key Vault
+                DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLHost" --query value -o tsv)
+                
+                # Extract server name from hostname (remove .postgres.database.azure.com)
+                DB_SERVER_NAME=$(echo "$DB_HOST" | sed 's/\.postgres\.database\.azure\.com.*//')
+                echo "PostgreSQL Server Name: $DB_SERVER_NAME"
+                
+                # Create firewall rule name with timestamp
+                RULE_NAME="AzureDevOps-Test-$(date +%Y%m%d-%H%M%S)"
+                echo "Creating firewall rule: $RULE_NAME"
+                
+                # Add firewall rule for the pipeline IP
+                az postgres flexible-server firewall-rule create \
+                  --resource-group "$(resourceGroupName)" \
+                  --name "$DB_SERVER_NAME" \
+                  --rule-name "$RULE_NAME" \
+                  --start-ip-address "$PIPELINE_IP" \
+                  --end-ip-address "$PIPELINE_IP" \
+                  --output table
+                
+                if [ $? -eq 0 ]; then
+                  echo "✅ Firewall rule created successfully"
+                  echo "##vso[task.setvariable variable=testFirewallRuleName]$RULE_NAME"
+                  echo "##vso[task.setvariable variable=testPipelineIP]$PIPELINE_IP"
+                else
+                  echo "❌ Failed to create firewall rule"
+                  exit 1
+                fi
+
+          - task: AzureCLI@2
+            displayName: 'LACC - Database Connection Test'
+            condition: eq(${{ parameters.runDatabaseMigration }}, true)
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Install PostgreSQL client
+                sudo apt-get update
+                sudo apt-get install -y postgresql-client
+                
+                # Get connection details from Key Vault
+                DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLHost" --query value -o tsv)
+                DB_NAME=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLDatabase" --query value -o tsv)
+                DB_USER=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLUsername" --query value -o tsv)
+                DB_PASS=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLPassword" --query value -o tsv)
+                
+                echo "Testing database connection..."
+                echo "Host: $DB_HOST"
+                echo "Database: $DB_NAME"
+                echo "User: $DB_USER"
+                
+                # Test database connection with detailed output
+                PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -c "SELECT 'Database connection successful' as status, version(), current_database(), current_user, inet_server_addr(), inet_server_port();" -t
+                
+                if [ $? -eq 0 ]; then
+                  echo "✅ Database connection test passed"
+                  
+                  # Additional checks
+                  echo "Running additional database health checks..."
+                  
+                  # Check if we can query system tables
+                  PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -c "SELECT count(*) as table_count FROM information_schema.tables WHERE table_schema = 'public';" -t
+                  
+                  echo "✅ Database health check completed successfully"
+                else
+                  echo "❌ Database connection test failed"
+                  echo "Please check:"
+                  echo "1. PostgreSQL server is running and accessible"
+                  echo "2. Firewall rules are configured correctly"
+                  echo "3. Connection credentials are correct"
+                  echo "4. Network connectivity is available"
+                  exit 1
+                fi
+
+          - task: AzureCLI@2
+            displayName: 'LACC - Cleanup PostgreSQL Test Firewall Rule'
+            condition: always()
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Cleaning up temporary test firewall rule..."
+                
+                # Get variables from previous step
+                RULE_NAME="$(testFirewallRuleName)"
+                PIPELINE_IP="$(testPipelineIP)"
+                
+                if [ -n "$RULE_NAME" ]; then
+                  # Get PostgreSQL server details
+                  DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLHost" --query value -o tsv 2>/dev/null || echo "")
+                  
+                  if [ -n "$DB_HOST" ]; then
+                    DB_SERVER_NAME=$(echo "$DB_HOST" | sed 's/\.postgres\.database\.azure\.com.*//')
+                    
+                    echo "Removing test firewall rule: $RULE_NAME"
+                    echo "From PostgreSQL server: $DB_SERVER_NAME"
+                    echo "Pipeline IP was: $PIPELINE_IP"
+                    
+                    # Remove the temporary firewall rule
+                    az postgres flexible-server firewall-rule delete \
+                      --resource-group "$(resourceGroupName)" \
+                      --name "$DB_SERVER_NAME" \
+                      --rule-name "$RULE_NAME" \
+                      --yes \
+                      --output table || echo "Warning: Could not remove test firewall rule (may not exist)"
+                    
+                    echo "✅ Test firewall rule cleanup completed"
+                  else
+                    echo "Could not retrieve database host for cleanup"
+                  fi
+                else
+                  echo "No test firewall rule to clean up"
+                fi 
