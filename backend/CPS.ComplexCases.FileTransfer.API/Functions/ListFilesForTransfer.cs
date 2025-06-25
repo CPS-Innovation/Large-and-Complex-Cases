@@ -57,11 +57,13 @@ public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorage
             var validFiles = new List<FileTransferInfo>();
             var failedFiles = new List<FileTransferFailedInfo>();
 
+            var pathValidator = new FilePathValidator();
+
             foreach (var file in filesForTransfer)
             {
                 var fullDestinationPath = destinationPath + file.RelativePath;
                 var destinationPaths = new List<DestinationPath> { new DestinationPath { Path = fullDestinationPath } };
-                var validationResult = await new FilePathValidator().ValidateAsync(destinationPaths);
+                var validationResult = await pathValidator.ValidateAsync(destinationPaths);
 
                 if (validationResult.IsValid)
                 {

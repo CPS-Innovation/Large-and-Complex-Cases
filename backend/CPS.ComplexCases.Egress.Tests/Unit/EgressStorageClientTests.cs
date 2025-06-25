@@ -21,7 +21,7 @@ using Moq.Protected;
 
 namespace CPS.ComplexCases.Egress.Tests.Unit;
 
-public class EgressStorageClientTests
+public class EgressStorageClientTests : IDisposable
 {
     private readonly Fixture _fixture;
     private readonly Mock<ILogger<EgressStorageClient>> _loggerMock;
