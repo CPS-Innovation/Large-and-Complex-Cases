@@ -70,6 +70,65 @@ stages:
         pool:
           name: $(buildAgentPool)
         steps:
+          - task: PowerShell@2
+            displayName: 'Install Azure CLI'
+            inputs:
+              targetType: 'inline'
+              script: |
+                Write-Host "Checking if Azure CLI is installed..."
+                
+                # Check if az command exists
+                try {
+                  $azVersion = az --version 2>$null
+                  if ($azVersion) {
+                    Write-Host "✅ Azure CLI is already installed"
+                    az --version
+                    return
+                  }
+                } catch {
+                  Write-Host "Azure CLI not found, installing..."
+                }
+                
+                # Install Azure CLI on Windows
+                if ($env:OS -like "*Windows*" -or $IsWindows) {
+                  Write-Host "Installing Azure CLI on Windows..."
+                  
+                  # Download and install Azure CLI
+                  $downloadUrl = "https://aka.ms/installazurecliwindows"
+                  $installerPath = "$env:TEMP\AzureCLI.msi"
+                  
+                  Write-Host "Downloading Azure CLI installer..."
+                  Invoke-WebRequest -Uri $downloadUrl -OutFile $installerPath
+                  
+                  Write-Host "Installing Azure CLI..."
+                  Start-Process msiexec.exe -Wait -ArgumentList "/I $installerPath /quiet /norestart"
+                  
+                  # Clean up
+                  Remove-Item $installerPath -Force -ErrorAction SilentlyContinue
+                  
+                  # Add to PATH for current session
+                  $azPath = "${env:ProgramFiles(x86)}\Microsoft SDKs\Azure\CLI2\wbin"
+                  if (Test-Path $azPath) {
+                    $env:PATH += ";$azPath"
+                    Write-Host "✅ Azure CLI installed successfully"
+                  } else {
+                    Write-Host "❌ Azure CLI installation may have failed"
+                  }
+                } else {
+                  # Linux installation
+                  Write-Host "Installing Azure CLI on Linux..."
+                  bash -c "curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash"
+                }
+                
+                # Verify installation
+                try {
+                  az --version
+                  Write-Host "✅ Azure CLI installation verified"
+                } catch {
+                  Write-Host "❌ Azure CLI installation verification failed"
+                  exit 1
+                }
+
           - task: AzureCLI@2
             displayName: 'Setup Key Vault Access for Pipeline'
             inputs:
