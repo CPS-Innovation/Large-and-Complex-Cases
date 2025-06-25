@@ -67,7 +67,7 @@ test.describe("egress-netapp-transfer-error-handling", () => {
       ),
     ).toBeVisible();
   });
-  test("Should show the error page if the indexing file transfer end point returns invalid response", async ({
+  test("Should show the error page if the indexing file transfer end point response missing required properties", async ({
     page,
     worker,
   }) => {
