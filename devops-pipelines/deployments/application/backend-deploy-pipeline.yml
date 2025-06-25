@@ -46,13 +46,6 @@ variables:
     value: 'func-lacc-filetransfer-$(environmentSuffix)-temp'
   - name: keyVaultName
     value: 'kv-lacc-$(environmentSuffix)-temp'
-  - name: buildAgentPool
-    ${{ if eq(parameters.environment, 'dev') }}:
-      value: 'LaCC Pre-Prod Build Agents'
-    ${{ if eq(parameters.environment, 'qa') }}:
-      value: 'LaCC Pre-Prod Build Agents'
-    ${{ if eq(parameters.environment, 'prod') }}:
-      value: 'LaCC Prod Build Agents'
   - name: azureSubscription
     ${{ if eq(parameters.environment, 'dev') }}:
       value: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
@@ -68,7 +61,7 @@ stages:
       - job: Validate_Environment
         displayName: 'LACC - Validate Target Environment'
         pool:
-          name: $(buildAgentPool)
+          vmImage: 'ubuntu-latest'
         steps:
           - task: Bash@3
             displayName: 'Install Azure CLI'
@@ -424,7 +417,7 @@ stages:
       - deployment: Deploy_Database_Changes
         displayName: 'LACC - Deploy Database Changes'
         pool:
-          name: $(buildAgentPool)
+          vmImage: 'ubuntu-latest'
         environment: 'LACC-Backend-${{ parameters.environment }}'
         strategy:
           runOnce:
@@ -624,7 +617,7 @@ stages:
         displayName: 'LACC - Deploy Main API Function App'
         condition: eq(${{ parameters.deployMainAPI }}, true)
         pool:
-          name: $(buildAgentPool)
+          vmImage: 'ubuntu-latest'
         environment: 'LACC-Backend-${{ parameters.environment }}'
         strategy:
           runOnce:
@@ -663,7 +656,7 @@ stages:
         displayName: 'LACC - Deploy FileTransfer API Function App'
         condition: eq(${{ parameters.deployFileTransferAPI }}, true)
         pool:
-          name: $(buildAgentPool)
+          vmImage: 'ubuntu-latest'
         environment: 'LACC-Backend-${{ parameters.environment }}'
         strategy:
           runOnce:
@@ -705,7 +698,7 @@ stages:
       - job: Health_Check
         displayName: 'LACC - Health Check Function Apps'
         pool:
-          name: $(buildAgentPool)
+          vmImage: 'ubuntu-latest'
         steps:
           - task: AzureCLI@2
             displayName: 'LACC - Health Check Main API'
