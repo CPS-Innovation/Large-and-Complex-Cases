@@ -197,16 +197,43 @@ stages:
                   echo "Key Vault access may need to be configured manually"
                 fi
                 
-                # Test Key Vault connectivity
+                # Test Key Vault connectivity with retry logic
                 echo "Testing Key Vault connectivity..."
-                if az keyvault secret list --vault-name "$(keyVaultName)" --query "[0].name" -o tsv > /dev/null 2>&1; then
-                  echo "✅ Key Vault access confirmed - pipeline can read secrets"
-                else
-                  echo "❌ Key Vault access test failed"
-                  echo "Please ensure the Azure DevOps service connection has Key Vault access permissions"
-                  echo "Required permissions: Secret Get, Secret List, Secret Set"
-                  exit 1
-                fi
+                echo "Note: Azure Key Vault policies can take up to 5 minutes to propagate"
+                
+                # Retry logic for Key Vault access
+                MAX_RETRIES=5
+                RETRY_DELAY=30
+                RETRY_COUNT=0
+                
+                while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+                  echo "Attempt $((RETRY_COUNT + 1))/$MAX_RETRIES: Testing Key Vault access..."
+                  
+                  if az keyvault secret list --vault-name "$(keyVaultName)" --query "[0].name" -o tsv > /dev/null 2>&1; then
+                    echo "✅ Key Vault access confirmed - pipeline can read secrets"
+                    break
+                  else
+                    RETRY_COUNT=$((RETRY_COUNT + 1))
+                    if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                      echo "⏳ Key Vault access not ready yet. Waiting $RETRY_DELAY seconds before retry..."
+                      echo "This is normal - Azure policies can take time to propagate"
+                      sleep $RETRY_DELAY
+                    else
+                      echo "❌ Key Vault access test failed after $MAX_RETRIES attempts"
+                      echo "Possible causes:"
+                      echo "1. Key Vault firewall blocking build agent IP"
+                      echo "2. Service principal lacks permissions"
+                      echo "3. Key Vault network restrictions"
+                      echo "4. Policy propagation taking longer than expected"
+                      echo ""
+                      echo "Manual verification steps:"
+                      echo "1. Check Key Vault access policies in Azure Portal"
+                      echo "2. Verify service principal permissions"
+                      echo "3. Check Key Vault networking/firewall settings"
+                      exit 1
+                    fi
+                  fi
+                done
 
           - task: AzureCLI@2
             displayName: 'LACC - Initialize Key Vault Secrets from Variable Groups'
