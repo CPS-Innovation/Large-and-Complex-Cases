@@ -3,7 +3,7 @@ trigger: none
 resources:
   pipelines:
     - pipeline: BackendBuild
-      source: 'LACC - Backend Build'
+      source: 'LACC Backend - Build, Test & Package'
       trigger:
         branches:
           include:

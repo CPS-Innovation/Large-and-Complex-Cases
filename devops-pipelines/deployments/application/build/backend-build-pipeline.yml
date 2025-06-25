@@ -25,7 +25,7 @@ variables:
 
 stages:
   - stage: Build_And_Test_Backend
-    displayName: 'LACC - Build and Test Backend'
+    displayName: 'LACC Backend - Build, Test & Package'
     jobs:
       - job: Build_Solution
         displayName: 'LACC - Build Backend Solution'
