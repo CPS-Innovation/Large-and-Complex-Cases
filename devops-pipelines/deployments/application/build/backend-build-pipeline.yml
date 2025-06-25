@@ -57,17 +57,13 @@ stages:
             inputs:
               command: 'test'
               projects: 'backend/**/*Tests.csproj'
-              arguments: '--configuration $(buildConfiguration) --no-build --logger trx --results-directory $(testResultsDirectory) --collect:"XPlat Code Coverage" --settings backend/CodeCoverage.runsettings'
-            continueOnError: true
-
-          - task: PublishTestResults@2
-            displayName: 'Publish Test Results'
-            inputs:
+              arguments: '--configuration $(buildConfiguration) --no-build --collect:"XPlat Code Coverage" --settings backend/CodeCoverage.runsettings'
+              publishTestResults: true
               testResultsFormat: 'VSTest'
               testResultsFiles: '**/*.trx'
-              searchFolder: '$(testResultsDirectory)'
-              publishRunAttachments: true
-            condition: always()
+            continueOnError: true
+
+
 
           - task: PublishCodeCoverageResults@1
             displayName: 'Publish Code Coverage'
