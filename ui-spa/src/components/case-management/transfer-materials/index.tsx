@@ -74,9 +74,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     | null
   >(null);
   const [transferId, setTransferId] = useState(activeTransferId);
-  const [postRequestApiError, setPostRequestApiError] = useState<null | Error>(
-    null,
-  );
+  const [apiRequestError, setApiRequestError] = useState<null | Error>(null);
 
   const currentEgressFolder = useMemo(() => {
     if (egressPathFolders.length)
@@ -331,10 +329,10 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   ]);
 
   useEffect(() => {
-    if (postRequestApiError) {
-      throw new Error(postRequestApiError.message);
+    if (apiRequestError) {
+      throw new Error(apiRequestError.message);
     }
-  }, [postRequestApiError]);
+  }, [apiRequestError]);
 
   useEffect(() => {
     if (egressWorkspaceId && !transferId) {
@@ -451,7 +449,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           : new Error(
               `Invalid indexing file transfer api response. More details, ${error}`,
             );
-      setPostRequestApiError(newError);
+      setApiRequestError(newError);
       return;
     }
   };
@@ -477,7 +475,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       }
       setTransferId(initiateFileTransferResponse.id);
     } catch (error) {
-      setPostRequestApiError(error as Error);
+      setApiRequestError(error as Error);
       return;
     }
   };
@@ -530,8 +528,13 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
 
     const pollingInterval = 5000;
     const fetchStatusData = async () => {
-      const status = await getTransferStatus(transferId);
-      handleStatusResponse(status, interval);
+      try {
+        const status = await getTransferStatus(transferId);
+        handleStatusResponse(status, interval);
+      } catch (error) {
+        if (interval) clearInterval(interval);
+        setApiRequestError(error as Error);
+      }
     };
 
     fetchStatusData();
