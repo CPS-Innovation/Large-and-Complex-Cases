@@ -130,6 +130,25 @@ stages:
               packageType: 'sdk'
               version: $(dotNetVersion)
 
+          - task: PowerShell@2
+            displayName: 'Create Local NuGet Config for HttpTelemetry'
+            inputs:
+              targetType: 'inline'
+              script: |
+                # Create a NuGet.config file with local source for HttpTelemetry package
+                $nugetConfig = @'
+                <?xml version="1.0" encoding="utf-8"?>
+                <configuration>
+                  <packageSources>
+                    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+                    <add key="local-httptelem" value="$(Build.SourcesDirectory)/backend/CPS.ComplexCases.API.HttpTelemetry/bin" />
+                  </packageSources>
+                </configuration>
+                '@
+                
+                $nugetConfig | Out-File -FilePath "$(Build.SourcesDirectory)/backend/NuGet.config" -Encoding UTF8
+                Write-Host "Created NuGet.config with local HttpTelemetry source"
+
           - task: DotNetCoreCLI@2
             displayName: 'Restore Main API'
             inputs:
@@ -165,6 +184,18 @@ stages:
             inputs:
               pathtoPublish: '$(Build.ArtifactStagingDirectory)/lacc-main-api-$(Build.BuildId).zip'
               artifactName: 'lacc-main-api-drop'
+
+          - task: PowerShell@2
+            displayName: 'Cleanup Temporary NuGet Config'
+            inputs:
+              targetType: 'inline'
+              script: |
+                $nugetConfigPath = "$(Build.SourcesDirectory)/backend/NuGet.config"
+                if (Test-Path $nugetConfigPath) {
+                  Remove-Item $nugetConfigPath -Force
+                  Write-Host "Removed temporary NuGet.config"
+                }
+            condition: always()
 
       - job: Build_FileTransfer_API
         displayName: 'LACC - Build FileTransfer API Function App'
