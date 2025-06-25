@@ -301,18 +301,18 @@ stages:
                         exit 1
                       fi
                       
-                                      # Get PostgreSQL server details from Key Vault or variables
-                DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLHost" --query value -o tsv 2>/dev/null || echo "$(PostgreSQLHost)")
-                
-                if [ -z "$DB_HOST" ] || [ "$DB_HOST" = "null" ]; then
-                  echo "❌ PostgreSQL host not found in Key Vault or variables"
-                  echo "Please ensure PostgreSQLHost is set in Key Vault secrets or pipeline variables"
-                  exit 1
-                fi
-                
-                # Extract server name from hostname (remove .postgres.database.azure.com)
-                DB_SERVER_NAME=$(echo "$DB_HOST" | sed 's/\.postgres\.database\.azure\.com.*//')
-                echo "PostgreSQL Server Name: $DB_SERVER_NAME"
+                      # Get PostgreSQL server details from Key Vault or variables
+                      DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLHost" --query value -o tsv 2>/dev/null || echo "$(PostgreSQLHost)")
+                      
+                      if [ -z "$DB_HOST" ] || [ "$DB_HOST" = "null" ]; then
+                        echo "❌ PostgreSQL host not found in Key Vault or variables"
+                        echo "Please ensure PostgreSQLHost is set in Key Vault secrets or pipeline variables"
+                        exit 1
+                      fi
+                      
+                      # Extract server name from hostname (remove .postgres.database.azure.com)
+                      DB_SERVER_NAME=$(echo "$DB_HOST" | sed 's/\.postgres\.database\.azure\.com.*//')
+                      echo "PostgreSQL Server Name: $DB_SERVER_NAME"
                       
                       # Create firewall rule name with timestamp
                       RULE_NAME="AzureDevOps-Pipeline-$(date +%Y%m%d-%H%M%S)"
@@ -347,7 +347,7 @@ stages:
                       sudo apt-get update
                       sudo apt-get install -y postgresql-client
                       
-                     # SECURITY: Disable command echoing to prevent credential exposure
+                      # SECURITY: Disable command echoing to prevent credential exposure
                       set +x
                       
                       # Get connection details from Key Vault or fallback to variables
