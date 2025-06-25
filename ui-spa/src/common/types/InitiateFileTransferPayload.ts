@@ -3,7 +3,6 @@ export type InitiateFileTransferPayload =
   | NetAppToEgressTransferPayload;
 
 export type EgreessToNetAppTransferPayload = {
-  isRetry: boolean;
   workspaceId: string;
   caseId: number;
   transferType: "Copy" | "Move";
@@ -13,7 +12,6 @@ export type EgreessToNetAppTransferPayload = {
 };
 
 export type NetAppToEgressTransferPayload = {
-  isRetry: boolean;
   caseId: number;
   transferType: "Copy";
   transferDirection: "NetAppToEgress";

@@ -64,13 +64,13 @@ const CaseManagementPage = () => {
   const validateRoute = useCallback(() => {
     if (
       location.pathname.endsWith("/transfer-validation-errors") &&
-      location?.state?.isValid === undefined
+      !location?.state?.isRouteValid
     ) {
       navigate(`/`);
     }
     if (
       location.pathname.endsWith("/transfer-errors") &&
-      location?.state?.isValid === undefined
+      !location?.state?.isRouteValid
     ) {
       navigate(`/`);
     }

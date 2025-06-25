@@ -383,7 +383,6 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   };
 
   const getInitiateTransferPayload = (
-    isRetry: boolean,
     response: IndexingFileTransferResponse,
   ): InitiateFileTransferPayload => {
     if (!selectedTransferAction) {
@@ -397,7 +396,6 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     }));
 
     const payload = {
-      isRetry: isRetry,
       caseId: parseInt(caseId),
       sourcePaths: sourcePaths,
       destinationPath: response.destinationPath,
@@ -438,16 +436,13 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         setTransferStatus("validated-with-errors");
         navigate(`/case/${caseId}/case-management/transfer-validation-errors`, {
           state: {
-            isValid: true,
+            isRouteValid: true,
           },
         });
         return;
       }
 
-      const initiateTransferPayload = getInitiateTransferPayload(
-        false,
-        response,
-      );
+      const initiateTransferPayload = getInitiateTransferPayload(response);
       handleInitiateFileTransfer(initiateTransferPayload);
     } catch (error) {
       const newError =
@@ -509,7 +504,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         setTransferStatus("completed-with-errors");
         navigate(`/case/${caseId}/case-management/transfer-errors`, {
           state: {
-            isValid: true,
+            isRouteValid: true,
           },
         });
         setTransferId("");
@@ -535,10 +530,8 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
 
     const pollingInterval = 5000;
     const fetchStatusData = async () => {
-      if (transferId) {
-        const status = await getTransferStatus(transferId);
-        handleStatusResponse(status, interval);
-      }
+      const status = await getTransferStatus(transferId);
+      handleStatusResponse(status, interval);
     };
 
     fetchStatusData();
