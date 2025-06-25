@@ -74,7 +74,7 @@ test.describe("egress-netapp-transfer-error-handling", () => {
     await worker.use(
       http.post("https://mocked-out-api/api/filetransfer/files", async () => {
         await delay(10);
-        return HttpResponse.json({ isValid: true });
+        return HttpResponse.json({ isInvalid: false });
       }),
     );
     await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
