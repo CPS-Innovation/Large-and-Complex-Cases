@@ -5,9 +5,6 @@
     <OutputType>Exe</OutputType>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RestoreAdditionalProjectSources>
-      $(MSBuildThisFileDirectory)/../CPS.ComplexCases.API.HttpTelemetry/bin/
-    </RestoreAdditionalProjectSources>
   </PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
