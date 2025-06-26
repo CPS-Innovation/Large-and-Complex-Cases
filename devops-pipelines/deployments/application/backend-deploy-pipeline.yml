@@ -458,12 +458,21 @@ stages:
                         exit 1
                       fi
                       
-                      # Get PostgreSQL server details from Key Vault or variables
-                      DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLHost" --query value -o tsv 2>/dev/null || echo "$(PostgreSQLHost)")
+                      # Get PostgreSQL connection string and parse components
+                      CONNECTION_STRING=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null)
                       
-                      if [ -z "$DB_HOST" ] || [ "$DB_HOST" = "null" ]; then
-                        echo "❌ PostgreSQL host not found in Key Vault or variables"
-                        echo "Please ensure PostgreSQLHost is set in Key Vault secrets or pipeline variables"
+                      if [ -z "$CONNECTION_STRING" ] || [ "$CONNECTION_STRING" = "null" ]; then
+                        echo "❌ PostgreSQL connection string not found in Key Vault"
+                        echo "Please ensure ConnectionStrings--CaseManagementDatastoreConnection is set in Key Vault"
+                        exit 1
+                      fi
+                      
+                      # Parse host from connection string (format: Host=host;...)
+                      DB_HOST=$(echo "$CONNECTION_STRING" | grep -oP '(?<=Host=)[^;]+' | head -1)
+                      
+                      if [ -z "$DB_HOST" ]; then
+                        echo "❌ Could not parse PostgreSQL host from connection string"
+                        echo "Connection string format should include: Host=hostname;..."
                         exit 1
                       fi
                       
@@ -507,27 +516,36 @@ stages:
                       # SECURITY: Disable command echoing to prevent credential exposure
                       set +x
                       
-                      # Get connection details from Key Vault or fallback to variables
-                      DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLHost" --query value -o tsv 2>/dev/null || echo "$(PostgreSQLHost)")
-                      DB_NAME=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLDatabase" --query value -o tsv 2>/dev/null || echo "$(PostgreSQLDatabase)")
-                      DB_USER=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLUsername" --query value -o tsv 2>/dev/null || echo "$(PostgreSQLUsername)")
-                      DB_PASS=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLPassword" --query value -o tsv 2>/dev/null || echo "$(PostgreSQLPassword)")
+                      # Get connection string from Key Vault and parse components
+                      CONNECTION_STRING=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null)
                       
-                      # Validate credentials without exposing them
-                      if [ -z "$DB_HOST" ] || [ "$DB_HOST" = "null" ]; then
-                        echo "❌ PostgreSQL host not found"
+                      if [ -z "$CONNECTION_STRING" ] || [ "$CONNECTION_STRING" = "null" ]; then
+                        echo "❌ PostgreSQL connection string not found in Key Vault"
+                        echo "Please ensure ConnectionStrings--CaseManagementDatastoreConnection is set in Key Vault"
                         exit 1
                       fi
-                      if [ -z "$DB_NAME" ] || [ "$DB_NAME" = "null" ]; then
-                        echo "❌ PostgreSQL database name not found"
+                      
+                      # Parse connection string components (format: Host=host;Database=db;Username=user;Password=pass;...)
+                      DB_HOST=$(echo "$CONNECTION_STRING" | grep -oP '(?<=Host=)[^;]+' | head -1)
+                      DB_NAME=$(echo "$CONNECTION_STRING" | grep -oP '(?<=Database=)[^;]+' | head -1)
+                      DB_USER=$(echo "$CONNECTION_STRING" | grep -oP '(?<=Username=)[^;]+' | head -1)
+                      DB_PASS=$(echo "$CONNECTION_STRING" | grep -oP '(?<=Password=)[^;]+' | head -1)
+                      
+                      # Validate parsed credentials without exposing them
+                      if [ -z "$DB_HOST" ]; then
+                        echo "❌ Could not parse PostgreSQL host from connection string"
                         exit 1
                       fi
-                      if [ -z "$DB_USER" ] || [ "$DB_USER" = "null" ]; then
-                        echo "❌ PostgreSQL username not found"
+                      if [ -z "$DB_NAME" ]; then
+                        echo "❌ Could not parse PostgreSQL database name from connection string"
                         exit 1
                       fi
-                      if [ -z "$DB_PASS" ] || [ "$DB_PASS" = "null" ]; then
-                        echo "❌ PostgreSQL password not found"
+                      if [ -z "$DB_USER" ]; then
+                        echo "❌ Could not parse PostgreSQL username from connection string"
+                        exit 1
+                      fi
+                      if [ -z "$DB_PASS" ]; then
+                        echo "❌ Could not parse PostgreSQL password from connection string"
                         exit 1
                       fi
                       
@@ -578,8 +596,9 @@ stages:
                       PIPELINE_IP="$(pipelineIP)"
                       
                       if [ -n "$RULE_NAME" ]; then
-                        # Get PostgreSQL server details
-                        DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLHost" --query value -o tsv)
+                        # Get PostgreSQL server details from connection string
+                        CONNECTION_STRING=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null)
+                        DB_HOST=$(echo "$CONNECTION_STRING" | grep -oP '(?<=Host=)[^;]+' | head -1)
                         DB_SERVER_NAME=$(echo "$DB_HOST" | sed 's/\.postgres\.database\.azure\.com.*//')
                         
                         echo "Removing firewall rule: $RULE_NAME"
@@ -769,12 +788,21 @@ stages:
                   exit 1
                 fi
                 
-                # Get PostgreSQL server details from Key Vault or variables
-                DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLHost" --query value -o tsv 2>/dev/null || echo "$(PostgreSQLHost)")
+                # Get PostgreSQL connection string and parse host
+                CONNECTION_STRING=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null)
                 
-                if [ -z "$DB_HOST" ] || [ "$DB_HOST" = "null" ]; then
-                  echo "❌ PostgreSQL host not found in Key Vault or variables"
-                  echo "Please ensure PostgreSQLHost is set in Key Vault secrets or pipeline variables"
+                if [ -z "$CONNECTION_STRING" ] || [ "$CONNECTION_STRING" = "null" ]; then
+                  echo "❌ PostgreSQL connection string not found in Key Vault"
+                  echo "Please ensure ConnectionStrings--CaseManagementDatastoreConnection is set in Key Vault"
+                  exit 1
+                fi
+                
+                # Parse host from connection string
+                DB_HOST=$(echo "$CONNECTION_STRING" | grep -oP '(?<=Host=)[^;]+' | head -1)
+                
+                if [ -z "$DB_HOST" ]; then
+                  echo "❌ Could not parse PostgreSQL host from connection string"
+                  echo "Connection string format should include: Host=hostname;..."
                   exit 1
                 fi
                 
@@ -819,27 +847,36 @@ stages:
                 # SECURITY: Disable command echoing to prevent credential exposure
                 set +x
                 
-                # Get connection details from Key Vault or fallback to variables
-                DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLHost" --query value -o tsv 2>/dev/null || echo "$(PostgreSQLHost)")
-                DB_NAME=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLDatabase" --query value -o tsv 2>/dev/null || echo "$(PostgreSQLDatabase)")
-                DB_USER=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLUsername" --query value -o tsv 2>/dev/null || echo "$(PostgreSQLUsername)")
-                DB_PASS=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLPassword" --query value -o tsv 2>/dev/null || echo "$(PostgreSQLPassword)")
+                # Get connection string from Key Vault and parse components
+                CONNECTION_STRING=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null)
                 
-                # Validate credentials without exposing them
-                if [ -z "$DB_HOST" ] || [ "$DB_HOST" = "null" ]; then
-                  echo "❌ PostgreSQL host not found"
+                if [ -z "$CONNECTION_STRING" ] || [ "$CONNECTION_STRING" = "null" ]; then
+                  echo "❌ PostgreSQL connection string not found in Key Vault"
+                  echo "Please ensure ConnectionStrings--CaseManagementDatastoreConnection is set in Key Vault"
                   exit 1
                 fi
-                if [ -z "$DB_NAME" ] || [ "$DB_NAME" = "null" ]; then
-                  echo "❌ PostgreSQL database name not found"
+                
+                # Parse connection string components
+                DB_HOST=$(echo "$CONNECTION_STRING" | grep -oP '(?<=Host=)[^;]+' | head -1)
+                DB_NAME=$(echo "$CONNECTION_STRING" | grep -oP '(?<=Database=)[^;]+' | head -1)
+                DB_USER=$(echo "$CONNECTION_STRING" | grep -oP '(?<=Username=)[^;]+' | head -1)
+                DB_PASS=$(echo "$CONNECTION_STRING" | grep -oP '(?<=Password=)[^;]+' | head -1)
+                
+                # Validate parsed credentials without exposing them
+                if [ -z "$DB_HOST" ]; then
+                  echo "❌ Could not parse PostgreSQL host from connection string"
                   exit 1
                 fi
-                if [ -z "$DB_USER" ] || [ "$DB_USER" = "null" ]; then
-                  echo "❌ PostgreSQL username not found"
+                if [ -z "$DB_NAME" ]; then
+                  echo "❌ Could not parse PostgreSQL database name from connection string"
                   exit 1
                 fi
-                if [ -z "$DB_PASS" ] || [ "$DB_PASS" = "null" ]; then
-                  echo "❌ PostgreSQL password not found"
+                if [ -z "$DB_USER" ]; then
+                  echo "❌ Could not parse PostgreSQL username from connection string"
+                  exit 1
+                fi
+                if [ -z "$DB_PASS" ]; then
+                  echo "❌ Could not parse PostgreSQL password from connection string"
                   exit 1
                 fi
                 
@@ -887,10 +924,11 @@ stages:
                 PIPELINE_IP="$(testPipelineIP)"
                 
                 if [ -n "$RULE_NAME" ]; then
-                  # Get PostgreSQL server details
-                  DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "PostgreSQLHost" --query value -o tsv 2>/dev/null || echo "")
+                  # Get PostgreSQL server details from connection string
+                  CONNECTION_STRING=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null || echo "")
                   
-                  if [ -n "$DB_HOST" ]; then
+                  if [ -n "$CONNECTION_STRING" ]; then
+                    DB_HOST=$(echo "$CONNECTION_STRING" | grep -oP '(?<=Host=)[^;]+' | head -1)
                     DB_SERVER_NAME=$(echo "$DB_HOST" | sed 's/\.postgres\.database\.azure\.com.*//')
                     
                     echo "Removing test firewall rule: $RULE_NAME"
