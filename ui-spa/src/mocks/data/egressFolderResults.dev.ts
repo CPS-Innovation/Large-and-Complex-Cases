@@ -7,7 +7,7 @@ export const egressRootFolderResultsDev: EgressFolderResponse = {
       isFolder: true,
       dateUpdated: "2000-01-02",
       filesize: 0,
-      path: "egress",
+      path: "",
     },
     {
       id: "1-1",
@@ -15,7 +15,7 @@ export const egressRootFolderResultsDev: EgressFolderResponse = {
       isFolder: true,
       dateUpdated: "2000-01-03",
       filesize: 0,
-      path: "egress",
+      path: "",
     },
     {
       id: "1-2",
@@ -23,7 +23,7 @@ export const egressRootFolderResultsDev: EgressFolderResponse = {
       isFolder: false,
       dateUpdated: "2000-01-03",
       filesize: 1234,
-      path: "egress",
+      path: "",
     },
   ],
 
