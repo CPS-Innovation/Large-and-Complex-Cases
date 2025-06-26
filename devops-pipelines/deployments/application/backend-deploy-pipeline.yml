@@ -441,6 +441,32 @@ stages:
                     cleanDestinationFolder: true
 
                 - task: AzureCLI@2
+                  displayName: 'Temporarily Allow Key Vault Access for Pipeline'
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Temporarily allowing pipeline access to Key Vault..."
+                      
+                      # Get current pipeline IP
+                      PIPELINE_IP=$(curl -s https://api.ipify.org || curl -s https://ipinfo.io/ip || curl -s https://icanhazip.com)
+                      echo "Pipeline IP Address: $PIPELINE_IP"
+                      
+                      # Add pipeline IP to Key Vault firewall rules
+                      az keyvault network-rule add \
+                        --name "$(keyVaultName)" \
+                        --ip-address "$PIPELINE_IP" \
+                        --output table
+                      
+                      # Wait a moment for the rule to take effect
+                      echo "Waiting for firewall rule to take effect..."
+                      sleep 30
+                      
+                      echo "✅ Key Vault access configured for pipeline IP: $PIPELINE_IP"
+                      echo "##vso[task.setvariable variable=pipelineIP]$PIPELINE_IP"
+
+                - task: AzureCLI@2
                   displayName: 'Configure PostgreSQL Firewall for Pipeline'
                   inputs:
                     azureSubscription: $(azureSubscription)
@@ -628,6 +654,33 @@ stages:
                         echo "✅ Firewall rule cleanup completed"
                       else
                         echo "No firewall rule to clean up"
+                      fi
+
+                - task: AzureCLI@2
+                  displayName: 'Cleanup Key Vault Firewall Rule'
+                  condition: always()
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Cleaning up temporary Key Vault firewall rule..."
+                      
+                      # Get pipeline IP from previous step
+                      PIPELINE_IP="$(pipelineIP)"
+                      
+                      if [ -n "$PIPELINE_IP" ]; then
+                        echo "Removing pipeline IP from Key Vault firewall: $PIPELINE_IP"
+                        
+                        # Remove pipeline IP from Key Vault firewall rules
+                        az keyvault network-rule remove \
+                          --name "$(keyVaultName)" \
+                          --ip-address "$PIPELINE_IP" \
+                          --output table || echo "Warning: Could not remove Key Vault firewall rule (may not exist)"
+                        
+                        echo "✅ Key Vault firewall rule cleanup completed"
+                      else
+                        echo "No Key Vault firewall rule to clean up"
                       fi
 
   - stage: Deploy_Function_Apps
