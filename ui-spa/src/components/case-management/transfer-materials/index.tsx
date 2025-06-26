@@ -532,8 +532,10 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         const status = await getTransferStatus(transferId);
         handleStatusResponse(status, interval);
       } catch (error) {
-        if (interval) clearInterval(interval);
-        setApiRequestError(error as Error);
+        if ((error as ApiError).code !== 404) {
+          if (interval) clearInterval(interval);
+          setApiRequestError(error as Error);
+        }
       }
     };
 

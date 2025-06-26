@@ -98,6 +98,7 @@ public class InitiateTransfer
                 WorkspaceId = transferRequest.Value.Metadata.WorkspaceId,
                 IsRetry = transferRequest.Value.IsRetry ?? false,
                 CorrelationId = currentCorrelationId,
+                TransferDirection = transferRequest.Value.TransferDirection,
             },
             new StartOrchestrationOptions
             {

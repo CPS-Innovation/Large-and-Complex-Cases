@@ -61,7 +61,8 @@ public class InitiateTransfer(ILogger<InitiateTransfer> logger, IFileTransferCli
                 UserName = context.Username,
                 CaseId = transferRequest.Value.CaseId,
                 WorkspaceId = transferRequest.Value.WorkspaceId,
-            }
+            },
+            TransferDirection = transferRequest.Value.TransferDirection,
         };
 
         var response = await _transferClient.InitiateFileTransferAsync(request, context.CorrelationId);
