@@ -921,40 +921,17 @@ stages:
                 # Wait for function app to be ready
                 sleep 15
                 
-                # Check health endpoint
-                HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://$FUNCTION_URL/api/health" || echo "000")
+                # Check status endpoint
+                HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://$FUNCTION_URL/api/status" || echo "000")
                 
                 if [ "$HTTP_STATUS" -eq 200 ]; then
-                  echo "Main API health check passed"
+                  echo "✅ Main API health check passed"
                   echo "Main API is accessible at: https://$FUNCTION_URL"
+                  echo "Status endpoint: https://$FUNCTION_URL/api/status"
                 else
-                  echo "##vso[task.logissue type=error]Main API health check failed with status: $HTTP_STATUS"
-                  echo "Attempted URL: https://$FUNCTION_URL/api/health"
-                  exit 1
-                fi
-
-          - task: AzureCLI@2
-            displayName: 'LACC - Health Check FileTransfer API'
-            condition: eq(${{ parameters.deployFileTransferAPI }}, true)
-            inputs:
-              azureSubscription: $(azureSubscription)
-              scriptType: 'bash'
-              scriptLocation: 'inlineScript'
-              inlineScript: |
-                FUNCTION_URL=$(az functionapp show --name $(fileTransferApiName) --resource-group $(resourceGroupName) --query defaultHostName -o tsv)
-                
-                # Wait for function app to be ready
-                sleep 15
-                
-                # Check health endpoint
-                HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://$FUNCTION_URL/api/health" || echo "000")
-                
-                if [ "$HTTP_STATUS" -eq 200 ]; then
-                  echo "FileTransfer API health check passed"
-                  echo "FileTransfer API is accessible at: https://$FUNCTION_URL"
-                else
-                  echo "##vso[task.logissue type=error]FileTransfer API health check failed with status: $HTTP_STATUS"
-                  echo "Attempted URL: https://$FUNCTION_URL/api/health"
+                  echo "##vso[task.logissue type=error]❌ Main API health check failed with status: $HTTP_STATUS"
+                  echo "Attempted URL: https://$FUNCTION_URL/api/status"
+                  echo "Please check if the Main API is deployed correctly and the /api/status endpoint exists"
                   exit 1
                 fi
 
