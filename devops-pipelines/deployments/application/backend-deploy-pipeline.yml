@@ -461,7 +461,7 @@ stages:
                       
                       # Wait a moment for the rule to take effect
                       echo "Waiting for firewall rule to take effect..."
-                      sleep 30
+                      sleep 10
                       
                       echo "✅ Key Vault access configured for Database Migration IP: $PIPELINE_IP"
                       echo "##vso[task.setvariable variable=dbMigrationIP]$PIPELINE_IP"
@@ -546,8 +546,9 @@ stages:
                     scriptType: 'bash'
                     scriptLocation: 'inlineScript'
                     inlineScript: |
-                      # Install PostgreSQL client
-                      sudo apt-get update
+                      # Install PostgreSQL client (optimized)
+                      echo "Installing PostgreSQL client..."
+                      sudo apt-get update -qq
                       sudo apt-get install -y postgresql-client
                       
                       # SECURITY: Disable command echoing to prevent credential exposure
@@ -740,31 +741,7 @@ stages:
           runOnce:
             deploy:
               steps:
-                - task: AzureCLI@2
-                  displayName: 'Temporarily Allow Key Vault Access for Main API Deployment'
-                  inputs:
-                    azureSubscription: $(azureSubscription)
-                    scriptType: 'bash'
-                    scriptLocation: 'inlineScript'
-                    inlineScript: |
-                      echo "Temporarily allowing pipeline access to Key Vault for Main API Deployment..."
-                      
-                      # Get current pipeline IP for this stage
-                      PIPELINE_IP=$(curl -s https://api.ipify.org || curl -s https://ipinfo.io/ip || curl -s https://icanhazip.com)
-                      echo "Main API Deployment Stage IP Address: $PIPELINE_IP"
-                      
-                      # Add pipeline IP to Key Vault firewall rules
-                      az keyvault network-rule add \
-                        --name "$(keyVaultName)" \
-                        --ip-address "$PIPELINE_IP" \
-                        --output table
-                      
-                      # Wait a moment for the rule to take effect
-                      echo "Waiting for firewall rule to take effect..."
-                      sleep 30
-                      
-                      echo "✅ Key Vault access configured for Main API Deployment IP: $PIPELINE_IP"
-                      echo "##vso[task.setvariable variable=mainApiDeployIP]$PIPELINE_IP"
+
 
                 - task: DownloadBuildArtifacts@0
                   displayName: 'LACC - Download Main API Artifact'
@@ -795,32 +772,7 @@ stages:
                     package: '$(Pipeline.Workspace)/lacc-main-api-drop/*.zip'
                     deploymentMethod: 'auto'
 
-                - task: AzureCLI@2
-                  displayName: 'Cleanup Key Vault Access for Main API Deployment'
-                  condition: always()
-                  inputs:
-                    azureSubscription: $(azureSubscription)
-                    scriptType: 'bash'
-                    scriptLocation: 'inlineScript'
-                    inlineScript: |
-                      echo "Cleaning up Key Vault firewall rule for Main API Deployment..."
-                      
-                      # Get this stage's IP
-                      MAIN_API_IP="$(mainApiDeployIP)"
-                      
-                      if [ -n "$MAIN_API_IP" ]; then
-                        echo "Removing Main API Deployment IP from Key Vault firewall: $MAIN_API_IP"
-                        
-                        # Remove this stage's IP from Key Vault firewall rules
-                        az keyvault network-rule remove \
-                          --name "$(keyVaultName)" \
-                          --ip-address "$MAIN_API_IP" \
-                          --output table || echo "Warning: Could not remove Key Vault firewall rule for Main API Deployment"
-                        
-                        echo "✅ Main API Deployment Key Vault firewall rule cleanup completed"
-                      else
-                        echo "No Main API Deployment Key Vault firewall rule to clean up"
-                      fi
+
 
       - deployment: Deploy_FileTransfer_API
         displayName: 'LACC - Deploy FileTransfer API Function App'
@@ -832,31 +784,7 @@ stages:
           runOnce:
             deploy:
               steps:
-                - task: AzureCLI@2
-                  displayName: 'Temporarily Allow Key Vault Access for FileTransfer API Deployment'
-                  inputs:
-                    azureSubscription: $(azureSubscription)
-                    scriptType: 'bash'
-                    scriptLocation: 'inlineScript'
-                    inlineScript: |
-                      echo "Temporarily allowing pipeline access to Key Vault for FileTransfer API Deployment..."
-                      
-                      # Get current pipeline IP for this stage
-                      PIPELINE_IP=$(curl -s https://api.ipify.org || curl -s https://ipinfo.io/ip || curl -s https://icanhazip.com)
-                      echo "FileTransfer API Deployment Stage IP Address: $PIPELINE_IP"
-                      
-                      # Add pipeline IP to Key Vault firewall rules
-                      az keyvault network-rule add \
-                        --name "$(keyVaultName)" \
-                        --ip-address "$PIPELINE_IP" \
-                        --output table
-                      
-                      # Wait a moment for the rule to take effect
-                      echo "Waiting for firewall rule to take effect..."
-                      sleep 30
-                      
-                      echo "✅ Key Vault access configured for FileTransfer API Deployment IP: $PIPELINE_IP"
-                      echo "##vso[task.setvariable variable=fileTransferApiDeployIP]$PIPELINE_IP"
+
 
                 - task: DownloadBuildArtifacts@0
                   displayName: 'LACC - Download FileTransfer API Artifact'
@@ -887,32 +815,7 @@ stages:
                     package: '$(Pipeline.Workspace)/lacc-filetransfer-api-drop/*.zip'
                     deploymentMethod: 'auto'
 
-                - task: AzureCLI@2
-                  displayName: 'Cleanup Key Vault Access for FileTransfer API Deployment'
-                  condition: always()
-                  inputs:
-                    azureSubscription: $(azureSubscription)
-                    scriptType: 'bash'
-                    scriptLocation: 'inlineScript'
-                    inlineScript: |
-                      echo "Cleaning up Key Vault firewall rule for FileTransfer API Deployment..."
-                      
-                      # Get this stage's IP
-                      FILE_TRANSFER_IP="$(fileTransferApiDeployIP)"
-                      
-                      if [ -n "$FILE_TRANSFER_IP" ]; then
-                        echo "Removing FileTransfer API Deployment IP from Key Vault firewall: $FILE_TRANSFER_IP"
-                        
-                        # Remove this stage's IP from Key Vault firewall rules
-                        az keyvault network-rule remove \
-                          --name "$(keyVaultName)" \
-                          --ip-address "$FILE_TRANSFER_IP" \
-                          --output table || echo "Warning: Could not remove Key Vault firewall rule for FileTransfer API Deployment"
-                        
-                        echo "✅ FileTransfer API Deployment Key Vault firewall rule cleanup completed"
-                      else
-                        echo "No FileTransfer API Deployment Key Vault firewall rule to clean up"
-                      fi
+
 
   - stage: Post_Deployment_Validation
     displayName: 'LACC - Post-Deployment Validation'
@@ -944,7 +847,7 @@ stages:
                 
                 # Wait a moment for the rule to take effect
                 echo "Waiting for firewall rule to take effect..."
-                sleep 30
+                sleep 10
                 
                 echo "✅ Key Vault access configured for Post-Deployment Validation IP: $PIPELINE_IP"
                 echo "##vso[task.setvariable variable=validationStageIP]$PIPELINE_IP"
@@ -960,7 +863,7 @@ stages:
                 FUNCTION_URL=$(az functionapp show --name $(mainApiName) --resource-group $(resourceGroupName) --query defaultHostName -o tsv)
                 
                 # Wait for function app to be ready
-                sleep 30
+                sleep 15
                 
                 # Check health endpoint
                 HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://$FUNCTION_URL/api/health" || echo "000")
@@ -985,7 +888,7 @@ stages:
                 FUNCTION_URL=$(az functionapp show --name $(fileTransferApiName) --resource-group $(resourceGroupName) --query defaultHostName -o tsv)
                 
                 # Wait for function app to be ready
-                sleep 30
+                sleep 15
                 
                 # Check health endpoint
                 HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://$FUNCTION_URL/api/health" || echo "000")
@@ -1071,8 +974,9 @@ stages:
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
-                # Install PostgreSQL client
-                sudo apt-get update
+                # Install PostgreSQL client (optimized)
+                echo "Installing PostgreSQL client..."
+                sudo apt-get update -qq
                 sudo apt-get install -y postgresql-client
                 
                 # SECURITY: Disable command echoing to prevent credential exposure
