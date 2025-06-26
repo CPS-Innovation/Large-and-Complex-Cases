@@ -593,8 +593,38 @@ stages:
                       echo "User: $DB_USER"
                       echo "Password: [REDACTED FOR SECURITY]"
                       
-                      # Test connection first
-                      echo "Testing database connection..."
+                      # First, test connection to the server using the default 'postgres' database
+                      echo "Testing server connection..."
+                      PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "postgres" -c "SELECT version();" -t
+                      
+                      if [ $? -ne 0 ]; then
+                        echo "❌ Cannot connect to PostgreSQL server"
+                        echo "Please check server connectivity and credentials"
+                        exit 1
+                      fi
+                      
+                      echo "✅ Server connection successful"
+                      
+                      # Check if the target database exists
+                      echo "Checking if database '$DB_NAME' exists..."
+                      DB_EXISTS=$(PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "postgres" -tAc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME';" 2>/dev/null)
+                      
+                      if [ -z "$DB_EXISTS" ]; then
+                        echo "Database '$DB_NAME' does not exist. Creating it..."
+                        PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "postgres" -c "CREATE DATABASE \"$DB_NAME\";"
+                        
+                        if [ $? -eq 0 ]; then
+                          echo "✅ Database '$DB_NAME' created successfully"
+                        else
+                          echo "❌ Failed to create database '$DB_NAME'"
+                          exit 1
+                        fi
+                      else
+                        echo "✅ Database '$DB_NAME' already exists"
+                      fi
+                      
+                      # Now test connection to the target database
+                      echo "Testing connection to target database '$DB_NAME'..."
                       PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -c "SELECT version();" -t
                       
                       if [ $? -eq 0 ]; then
@@ -1089,7 +1119,17 @@ stages:
                 echo "User: $DB_USER"
                 echo "Password: [REDACTED FOR SECURITY]"
                 
-                # Test database connection with detailed output
+                # First test server connectivity
+                echo "Testing server connectivity..."
+                PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "postgres" -c "SELECT 'Server connection successful' as status;" -t
+                
+                if [ $? -ne 0 ]; then
+                  echo "❌ Cannot connect to PostgreSQL server"
+                  exit 1
+                fi
+                
+                # Then test target database connection with detailed output
+                echo "Testing target database connection..."
                 PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -c "SELECT 'Database connection successful' as status, version(), current_database(), current_user, inet_server_addr(), inet_server_port();" -t
                 
                 if [ $? -eq 0 ]; then
