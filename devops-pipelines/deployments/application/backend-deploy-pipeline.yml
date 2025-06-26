@@ -441,17 +441,17 @@ stages:
                     cleanDestinationFolder: true
 
                 - task: AzureCLI@2
-                  displayName: 'Temporarily Allow Key Vault Access for Pipeline'
+                  displayName: 'Temporarily Allow Key Vault Access for Database Migration'
                   inputs:
                     azureSubscription: $(azureSubscription)
                     scriptType: 'bash'
                     scriptLocation: 'inlineScript'
                     inlineScript: |
-                      echo "Temporarily allowing pipeline access to Key Vault..."
+                      echo "Temporarily allowing pipeline access to Key Vault for Database Migration..."
                       
-                      # Get current pipeline IP
+                      # Get current pipeline IP for this stage
                       PIPELINE_IP=$(curl -s https://api.ipify.org || curl -s https://ipinfo.io/ip || curl -s https://icanhazip.com)
-                      echo "Pipeline IP Address: $PIPELINE_IP"
+                      echo "Database Migration Stage IP Address: $PIPELINE_IP"
                       
                       # Add pipeline IP to Key Vault firewall rules
                       az keyvault network-rule add \
@@ -463,8 +463,8 @@ stages:
                       echo "Waiting for firewall rule to take effect..."
                       sleep 30
                       
-                      echo "✅ Key Vault access configured for pipeline IP: $PIPELINE_IP"
-                      echo "##vso[task.setvariable variable=pipelineIP]$PIPELINE_IP"
+                      echo "✅ Key Vault access configured for Database Migration IP: $PIPELINE_IP"
+                      echo "##vso[task.setvariable variable=dbMigrationIP]$PIPELINE_IP"
 
                 - task: AzureCLI@2
                   displayName: 'Configure PostgreSQL Firewall for Pipeline'
@@ -658,31 +658,33 @@ stages:
                       fi
 
                 - task: AzureCLI@2
-                  displayName: 'Cleanup Key Vault Firewall Rule'
+                  displayName: 'Cleanup Key Vault Access for Database Migration'
                   condition: always()
                   inputs:
                     azureSubscription: $(azureSubscription)
                     scriptType: 'bash'
                     scriptLocation: 'inlineScript'
                     inlineScript: |
-                      echo "Cleaning up temporary Key Vault firewall rule..."
+                      echo "Cleaning up Key Vault firewall rule for Database Migration stage..."
                       
-                      # Get pipeline IP from previous step
-                      PIPELINE_IP="$(pipelineIP)"
+                      # Get this stage's IP
+                      DB_MIGRATION_IP="$(dbMigrationIP)"
                       
-                      if [ -n "$PIPELINE_IP" ]; then
-                        echo "Removing pipeline IP from Key Vault firewall: $PIPELINE_IP"
+                      if [ -n "$DB_MIGRATION_IP" ]; then
+                        echo "Removing Database Migration IP from Key Vault firewall: $DB_MIGRATION_IP"
                         
-                        # Remove pipeline IP from Key Vault firewall rules
+                        # Remove this stage's IP from Key Vault firewall rules
                         az keyvault network-rule remove \
                           --name "$(keyVaultName)" \
-                          --ip-address "$PIPELINE_IP" \
-                          --output table || echo "Warning: Could not remove Key Vault firewall rule (may not exist)"
+                          --ip-address "$DB_MIGRATION_IP" \
+                          --output table || echo "Warning: Could not remove Key Vault firewall rule for Database Migration"
                         
-                        echo "✅ Key Vault firewall rule cleanup completed"
+                        echo "✅ Database Migration Key Vault firewall rule cleanup completed"
                       else
-                        echo "No Key Vault firewall rule to clean up"
+                        echo "No Database Migration Key Vault firewall rule to clean up"
                       fi
+
+
 
   - stage: Deploy_Function_Apps
     displayName: 'LACC - Deploy Function Apps'
@@ -708,6 +710,32 @@ stages:
           runOnce:
             deploy:
               steps:
+                - task: AzureCLI@2
+                  displayName: 'Temporarily Allow Key Vault Access for Main API Deployment'
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Temporarily allowing pipeline access to Key Vault for Main API Deployment..."
+                      
+                      # Get current pipeline IP for this stage
+                      PIPELINE_IP=$(curl -s https://api.ipify.org || curl -s https://ipinfo.io/ip || curl -s https://icanhazip.com)
+                      echo "Main API Deployment Stage IP Address: $PIPELINE_IP"
+                      
+                      # Add pipeline IP to Key Vault firewall rules
+                      az keyvault network-rule add \
+                        --name "$(keyVaultName)" \
+                        --ip-address "$PIPELINE_IP" \
+                        --output table
+                      
+                      # Wait a moment for the rule to take effect
+                      echo "Waiting for firewall rule to take effect..."
+                      sleep 30
+                      
+                      echo "✅ Key Vault access configured for Main API Deployment IP: $PIPELINE_IP"
+                      echo "##vso[task.setvariable variable=mainApiDeployIP]$PIPELINE_IP"
+
                 - task: DownloadBuildArtifacts@0
                   displayName: 'LACC - Download Main API Artifact'
                   inputs:
@@ -737,6 +765,33 @@ stages:
                     package: '$(Pipeline.Workspace)/lacc-main-api-drop/*.zip'
                     deploymentMethod: 'auto'
 
+                - task: AzureCLI@2
+                  displayName: 'Cleanup Key Vault Access for Main API Deployment'
+                  condition: always()
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Cleaning up Key Vault firewall rule for Main API Deployment..."
+                      
+                      # Get this stage's IP
+                      MAIN_API_IP="$(mainApiDeployIP)"
+                      
+                      if [ -n "$MAIN_API_IP" ]; then
+                        echo "Removing Main API Deployment IP from Key Vault firewall: $MAIN_API_IP"
+                        
+                        # Remove this stage's IP from Key Vault firewall rules
+                        az keyvault network-rule remove \
+                          --name "$(keyVaultName)" \
+                          --ip-address "$MAIN_API_IP" \
+                          --output table || echo "Warning: Could not remove Key Vault firewall rule for Main API Deployment"
+                        
+                        echo "✅ Main API Deployment Key Vault firewall rule cleanup completed"
+                      else
+                        echo "No Main API Deployment Key Vault firewall rule to clean up"
+                      fi
+
       - deployment: Deploy_FileTransfer_API
         displayName: 'LACC - Deploy FileTransfer API Function App'
         condition: eq(${{ parameters.deployFileTransferAPI }}, true)
@@ -747,6 +802,32 @@ stages:
           runOnce:
             deploy:
               steps:
+                - task: AzureCLI@2
+                  displayName: 'Temporarily Allow Key Vault Access for FileTransfer API Deployment'
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Temporarily allowing pipeline access to Key Vault for FileTransfer API Deployment..."
+                      
+                      # Get current pipeline IP for this stage
+                      PIPELINE_IP=$(curl -s https://api.ipify.org || curl -s https://ipinfo.io/ip || curl -s https://icanhazip.com)
+                      echo "FileTransfer API Deployment Stage IP Address: $PIPELINE_IP"
+                      
+                      # Add pipeline IP to Key Vault firewall rules
+                      az keyvault network-rule add \
+                        --name "$(keyVaultName)" \
+                        --ip-address "$PIPELINE_IP" \
+                        --output table
+                      
+                      # Wait a moment for the rule to take effect
+                      echo "Waiting for firewall rule to take effect..."
+                      sleep 30
+                      
+                      echo "✅ Key Vault access configured for FileTransfer API Deployment IP: $PIPELINE_IP"
+                      echo "##vso[task.setvariable variable=fileTransferApiDeployIP]$PIPELINE_IP"
+
                 - task: DownloadBuildArtifacts@0
                   displayName: 'LACC - Download FileTransfer API Artifact'
                   inputs:
@@ -776,6 +857,33 @@ stages:
                     package: '$(Pipeline.Workspace)/lacc-filetransfer-api-drop/*.zip'
                     deploymentMethod: 'auto'
 
+                - task: AzureCLI@2
+                  displayName: 'Cleanup Key Vault Access for FileTransfer API Deployment'
+                  condition: always()
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Cleaning up Key Vault firewall rule for FileTransfer API Deployment..."
+                      
+                      # Get this stage's IP
+                      FILE_TRANSFER_IP="$(fileTransferApiDeployIP)"
+                      
+                      if [ -n "$FILE_TRANSFER_IP" ]; then
+                        echo "Removing FileTransfer API Deployment IP from Key Vault firewall: $FILE_TRANSFER_IP"
+                        
+                        # Remove this stage's IP from Key Vault firewall rules
+                        az keyvault network-rule remove \
+                          --name "$(keyVaultName)" \
+                          --ip-address "$FILE_TRANSFER_IP" \
+                          --output table || echo "Warning: Could not remove Key Vault firewall rule for FileTransfer API Deployment"
+                        
+                        echo "✅ FileTransfer API Deployment Key Vault firewall rule cleanup completed"
+                      else
+                        echo "No FileTransfer API Deployment Key Vault firewall rule to clean up"
+                      fi
+
   - stage: Post_Deployment_Validation
     displayName: 'LACC - Post-Deployment Validation'
     dependsOn: Deploy_Function_Apps
@@ -785,6 +893,32 @@ stages:
         pool:
           vmImage: 'ubuntu-latest'
         steps:
+          - task: AzureCLI@2
+            displayName: 'Temporarily Allow Key Vault Access for Post-Deployment Validation'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Temporarily allowing pipeline access to Key Vault for Post-Deployment Validation..."
+                
+                # Get current pipeline IP for this stage
+                PIPELINE_IP=$(curl -s https://api.ipify.org || curl -s https://ipinfo.io/ip || curl -s https://icanhazip.com)
+                echo "Post-Deployment Validation Stage IP Address: $PIPELINE_IP"
+                
+                # Add pipeline IP to Key Vault firewall rules
+                az keyvault network-rule add \
+                  --name "$(keyVaultName)" \
+                  --ip-address "$PIPELINE_IP" \
+                  --output table
+                
+                # Wait a moment for the rule to take effect
+                echo "Waiting for firewall rule to take effect..."
+                sleep 30
+                
+                echo "✅ Key Vault access configured for Post-Deployment Validation IP: $PIPELINE_IP"
+                echo "##vso[task.setvariable variable=validationStageIP]$PIPELINE_IP"
+
           - task: AzureCLI@2
             displayName: 'LACC - Health Check Main API'
             condition: eq(${{ parameters.deployMainAPI }}, true)
@@ -1018,4 +1152,32 @@ stages:
                   fi
                 else
                   echo "No test firewall rule to clean up"
-                fi 
+                fi
+
+          - task: AzureCLI@2
+            displayName: 'Cleanup Key Vault Access for Post-Deployment Validation'
+            condition: always()
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Cleaning up Key Vault firewall rule for Post-Deployment Validation..."
+                
+                # Get this stage's IP
+                VALIDATION_IP="$(validationStageIP)"
+                
+                if [ -n "$VALIDATION_IP" ]; then
+                  echo "Removing Post-Deployment Validation IP from Key Vault firewall: $VALIDATION_IP"
+                  
+                  # Remove this stage's IP from Key Vault firewall rules
+                  az keyvault network-rule remove \
+                    --name "$(keyVaultName)" \
+                    --ip-address "$VALIDATION_IP" \
+                    --output table || echo "Warning: Could not remove Key Vault firewall rule for Post-Deployment Validation"
+                  
+                  echo "✅ Post-Deployment Validation Key Vault firewall rule cleanup completed"
+                else
+                  echo "No Post-Deployment Validation Key Vault firewall rule to clean up"
+                fi
+
