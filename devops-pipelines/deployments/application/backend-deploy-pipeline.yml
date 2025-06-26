@@ -770,7 +770,35 @@ stages:
                     appType: 'functionApp'
                     appName: $(mainApiName)
                     package: '$(Pipeline.Workspace)/lacc-main-api-drop/*.zip'
-                    deploymentMethod: 'auto'
+                    deploymentMethod: 'zipDeploy'
+                    enableCustomDeployment: true
+
+                - task: AzureCLI@2
+                  displayName: 'LACC - Verify Main API Deployment'
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Verifying Main API deployment..."
+                      
+                      # Check if deployment completed successfully
+                      DEPLOYMENT_STATUS=$(az functionapp deployment list --name $(mainApiName) --resource-group $(resourceGroupName) --query "[0].status" -o tsv)
+                      echo "Latest deployment status: $DEPLOYMENT_STATUS"
+                      
+                      # Wait a moment for extraction to complete
+                      echo "Waiting for deployment to stabilize..."
+                      sleep 10
+                      
+                      # Check if function app is running
+                      APP_STATE=$(az functionapp show --name $(mainApiName) --resource-group $(resourceGroupName) --query "state" -o tsv)
+                      echo "Function app state: $APP_STATE"
+                      
+                      if [ "$APP_STATE" != "Running" ]; then
+                        echo "⚠️ Function app is not in Running state"
+                      else
+                        echo "✅ Function app is running"
+                      fi
 
 
 
@@ -813,7 +841,35 @@ stages:
                     appType: 'functionApp'
                     appName: $(fileTransferApiName)
                     package: '$(Pipeline.Workspace)/lacc-filetransfer-api-drop/*.zip'
-                    deploymentMethod: 'auto'
+                    deploymentMethod: 'zipDeploy'
+                    enableCustomDeployment: true
+
+                - task: AzureCLI@2
+                  displayName: 'LACC - Verify FileTransfer API Deployment'
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Verifying FileTransfer API deployment..."
+                      
+                      # Check if deployment completed successfully
+                      DEPLOYMENT_STATUS=$(az functionapp deployment list --name $(fileTransferApiName) --resource-group $(resourceGroupName) --query "[0].status" -o tsv)
+                      echo "Latest deployment status: $DEPLOYMENT_STATUS"
+                      
+                      # Wait a moment for extraction to complete
+                      echo "Waiting for deployment to stabilize..."
+                      sleep 10
+                      
+                      # Check if function app is running
+                      APP_STATE=$(az functionapp show --name $(fileTransferApiName) --resource-group $(resourceGroupName) --query "state" -o tsv)
+                      echo "Function app state: $APP_STATE"
+                      
+                      if [ "$APP_STATE" != "Running" ]; then
+                        echo "⚠️ Function app is not in Running state"
+                      else
+                        echo "✅ Function app is running"
+                      fi
 
 
 
