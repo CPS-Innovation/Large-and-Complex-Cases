@@ -5,3 +5,11 @@
 .fileName {
   margin-left: 0.25rem;
 }
+.hideFirstColumn {
+  table th:first-child {
+    display: none;
+  }
+  table td:first-child {
+    display: none;
+  }
+}

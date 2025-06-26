@@ -13,6 +13,10 @@ test.describe("egress-netapp-transfer", () => {
       ).toHaveText(
         "Transfer folders and files between egress and shared drive",
       );
+      await page
+        .getByTestId("egress-table-wrapper")
+        .locator('role=button[name="folder-1-0"]')
+        .click();
     });
     test("Should show and hide the actions button and current folder text indent in the netapp side based on the files and folders selected on the egress side ", async ({
       page,

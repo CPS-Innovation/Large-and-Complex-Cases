@@ -84,14 +84,12 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
     const tableHeadData = [
       {
         children: (
-          <>
-            <Checkbox
-              id={"all-folders"}
-              checked={isSourceFolderChecked("all-folders")}
-              onChange={handleCheckboxChange}
-              ariaLabel="Select all folders"
-            />
-          </>
+          <Checkbox
+            id={"all-folders"}
+            checked={isSourceFolderChecked("all-folders")}
+            onChange={handleCheckboxChange}
+            ariaLabel="Select all folders"
+          />
         ),
         sortable: false,
       },
@@ -151,14 +149,12 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
         cells: [
           {
             children: (
-              <>
-                <Checkbox
-                  id={data.path}
-                  checked={isSourceFolderChecked(data.path)}
-                  onChange={handleCheckboxChange}
-                  ariaLabel="select folder"
-                />
-              </>
+              <Checkbox
+                id={data.path}
+                checked={isSourceFolderChecked(data.path)}
+                onChange={handleCheckboxChange}
+                ariaLabel="select folder"
+              />
             ),
           },
           {
@@ -321,8 +317,17 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
     );
   };
 
+  const hideFirstColumn = useMemo(() => {
+    if (transferSource !== "egress") {
+      return false;
+    }
+    if (!egressFolderData.length) return true;
+    //below condition is to check for the root egress folder
+    return egressFolderData?.[0]?.path === `${egressFolderData?.[0]?.name}/`;
+  }, [transferSource, egressFolderData]);
+
   return (
-    <div>
+    <div className={hideFirstColumn ? styles.hideFirstColumn : ""}>
       <FolderNavigationTable
         tableName="egress"
         folders={egressPathFolders}
