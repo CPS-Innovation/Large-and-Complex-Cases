@@ -767,11 +767,11 @@ stages:
                   displayName: 'LACC - Deploy Main API to Azure Function App'
                   inputs:
                     azureSubscription: $(azureSubscription)
-                    appType: 'functionApp'
+                    appType: 'functionAppLinux'
                     appName: $(mainApiName)
                     package: '$(Pipeline.Workspace)/lacc-main-api-drop/*.zip'
+                    runtimeStack: 'DOTNET-ISOLATED|8.0'
                     deploymentMethod: 'zipDeploy'
-                    enableCustomDeployment: true
 
                 - task: AzureCLI@2
                   displayName: 'LACC - Verify Main API Deployment'
@@ -838,11 +838,11 @@ stages:
                   displayName: 'LACC - Deploy FileTransfer API to Azure Function App'
                   inputs:
                     azureSubscription: $(azureSubscription)
-                    appType: 'functionApp'
+                    appType: 'functionAppLinux'
                     appName: $(fileTransferApiName)
                     package: '$(Pipeline.Workspace)/lacc-filetransfer-api-drop/*.zip'
+                    runtimeStack: 'DOTNET-ISOLATED|8.0'
                     deploymentMethod: 'zipDeploy'
-                    enableCustomDeployment: true
 
                 - task: AzureCLI@2
                   displayName: 'LACC - Verify FileTransfer API Deployment'
