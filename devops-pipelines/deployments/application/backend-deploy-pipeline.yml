@@ -563,10 +563,10 @@ stages:
                         exit 1
                       fi
                       
-                      # Parse connection string components (format: Host=host;Database=db;Username=user;Password=pass;...)
+                      # Parse connection string components (format: Host=host;Database=db;User Id=user;Password=pass;...)
                       DB_HOST=$(echo "$CONNECTION_STRING" | grep -oP '(?<=Host=)[^;]+' | head -1)
                       DB_NAME=$(echo "$CONNECTION_STRING" | grep -oP '(?<=Database=)[^;]+' | head -1)
-                      DB_USER=$(echo "$CONNECTION_STRING" | grep -oP '(?<=Username=)[^;]+' | head -1)
+                      DB_USER=$(echo "$CONNECTION_STRING" | grep -oP '(?<=User Id=)[^;]+' | head -1)
                       DB_PASS=$(echo "$CONNECTION_STRING" | grep -oP '(?<=Password=)[^;]+' | head -1)
                       
                       # Validate parsed credentials without exposing them
@@ -580,6 +580,7 @@ stages:
                       fi
                       if [ -z "$DB_USER" ]; then
                         echo "❌ Could not parse PostgreSQL username from connection string"
+                        echo "Expected format: User Id=username (not Username=username)"
                         exit 1
                       fi
                       if [ -z "$DB_PASS" ]; then
@@ -926,7 +927,7 @@ stages:
                 # Parse connection string components
                 DB_HOST=$(echo "$CONNECTION_STRING" | grep -oP '(?<=Host=)[^;]+' | head -1)
                 DB_NAME=$(echo "$CONNECTION_STRING" | grep -oP '(?<=Database=)[^;]+' | head -1)
-                DB_USER=$(echo "$CONNECTION_STRING" | grep -oP '(?<=Username=)[^;]+' | head -1)
+                DB_USER=$(echo "$CONNECTION_STRING" | grep -oP '(?<=User Id=)[^;]+' | head -1)
                 DB_PASS=$(echo "$CONNECTION_STRING" | grep -oP '(?<=Password=)[^;]+' | head -1)
                 
                 # Validate parsed credentials without exposing them
@@ -940,6 +941,7 @@ stages:
                 fi
                 if [ -z "$DB_USER" ]; then
                   echo "❌ Could not parse PostgreSQL username from connection string"
+                  echo "Expected format: User Id=username (not Username=username)"
                   exit 1
                 fi
                 if [ -z "$DB_PASS" ]; then
