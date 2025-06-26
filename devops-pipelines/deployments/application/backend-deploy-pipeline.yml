@@ -459,13 +459,24 @@ stages:
                       fi
                       
                       # Get PostgreSQL connection string and parse components
-                      CONNECTION_STRING=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null)
+                      echo "Retrieving connection string from Key Vault: $(keyVaultName)"
+                      echo "Secret name: ConnectionStrings--CaseManagementDatastoreConnection"
+                      
+                      # Check if secret exists and list versions for debugging
+                      echo "Checking secret versions..."
+                      az keyvault secret list-versions --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query "[].{Version:id, Enabled:attributes.enabled}" -o table || echo "Could not list versions"
+                      
+                      # Get the current version of the secret
+                      CONNECTION_STRING=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv)
                       
                       if [ -z "$CONNECTION_STRING" ] || [ "$CONNECTION_STRING" = "null" ]; then
                         echo "❌ PostgreSQL connection string not found in Key Vault"
                         echo "Please ensure ConnectionStrings--CaseManagementDatastoreConnection is set in Key Vault"
+                        echo "Also check that the secret is enabled and the service principal has access"
                         exit 1
                       fi
+                      
+                      echo "✅ Connection string retrieved successfully (length: ${#CONNECTION_STRING} characters)"
                       
                       # Parse host from connection string (format: Host=host;...)
                       DB_HOST=$(echo "$CONNECTION_STRING" | grep -oP '(?<=Host=)[^;]+' | head -1)
@@ -517,7 +528,8 @@ stages:
                       set +x
                       
                       # Get connection string from Key Vault and parse components
-                      CONNECTION_STRING=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null)
+                      echo "Retrieving connection string from Key Vault: $(keyVaultName)"
+                      CONNECTION_STRING=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv)
                       
                       if [ -z "$CONNECTION_STRING" ] || [ "$CONNECTION_STRING" = "null" ]; then
                         echo "❌ PostgreSQL connection string not found in Key Vault"
@@ -597,7 +609,7 @@ stages:
                       
                       if [ -n "$RULE_NAME" ]; then
                         # Get PostgreSQL server details from connection string
-                        CONNECTION_STRING=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null)
+                        CONNECTION_STRING=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv)
                         DB_HOST=$(echo "$CONNECTION_STRING" | grep -oP '(?<=Host=)[^;]+' | head -1)
                         DB_SERVER_NAME=$(echo "$DB_HOST" | sed 's/\.postgres\.database\.azure\.com.*//')
                         
@@ -789,7 +801,8 @@ stages:
                 fi
                 
                 # Get PostgreSQL connection string and parse host
-                CONNECTION_STRING=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null)
+                echo "Retrieving connection string from Key Vault: $(keyVaultName)"
+                CONNECTION_STRING=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv)
                 
                 if [ -z "$CONNECTION_STRING" ] || [ "$CONNECTION_STRING" = "null" ]; then
                   echo "❌ PostgreSQL connection string not found in Key Vault"
@@ -848,7 +861,8 @@ stages:
                 set +x
                 
                 # Get connection string from Key Vault and parse components
-                CONNECTION_STRING=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null)
+                echo "Retrieving connection string from Key Vault: $(keyVaultName)"
+                CONNECTION_STRING=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv)
                 
                 if [ -z "$CONNECTION_STRING" ] || [ "$CONNECTION_STRING" = "null" ]; then
                   echo "❌ PostgreSQL connection string not found in Key Vault"
@@ -925,7 +939,7 @@ stages:
                 
                 if [ -n "$RULE_NAME" ]; then
                   # Get PostgreSQL server details from connection string
-                  CONNECTION_STRING=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null || echo "")
+                  CONNECTION_STRING=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv || echo "")
                   
                   if [ -n "$CONNECTION_STRING" ]; then
                     DB_HOST=$(echo "$CONNECTION_STRING" | grep -oP '(?<=Host=)[^;]+' | head -1)
