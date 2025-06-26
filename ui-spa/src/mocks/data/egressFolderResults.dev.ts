@@ -38,8 +38,8 @@ export const egressRootFolderResultsDev: EgressFolderResponse = {
 const getFolderPathFromId = (id: number, index: number, rootPath: string) => {
   let path = "";
   for (let i = 1; i < id; i++) {
-    if (path === "") path = `${rootPath}folder-${i}-${index}/`;
-    else path = `${path}folder-${i}-${index}/`;
+    if (path === "") path = `${rootPath}folder-${i}-${index}`;
+    else path = `${path}/folder-${i}-${index}`;
   }
   return path;
 };
