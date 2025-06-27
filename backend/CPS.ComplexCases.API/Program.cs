@@ -1,6 +1,6 @@
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Builder;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Abstractions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -21,49 +21,54 @@ using CPS.ComplexCases.DDEI.Tactical.Extensions;
 using CPS.ComplexCases.Egress.Extensions;
 using CPS.ComplexCases.NetApp.Extensions;
 
-var builder = FunctionsApplication.CreateBuilder(args);
-
-
 // Create a temporary logger for configuration phase
 using var loggerFactory = LoggerFactory.Create(configure => configure.AddConsole());
 var logger = loggerFactory.CreateLogger("Configuration");
 
-// Configure Azure Key Vault if KeyVaultUri is provided
-builder.Configuration.AddKeyVaultIfConfigured(builder.Configuration, logger);
+var host = new HostBuilder()
+    .ConfigureFunctionsWebApplication() // ✅ Adds ASP.NET Core integration
+    .ConfigureFunctionsWorkerDefaults((context, builder) =>
+    {
+        builder.UseMiddleware<ExceptionHandlingMiddleware>();
+        builder.UseMiddleware<RequestValidationMiddleware>();
+    })
+    .ConfigureAppConfiguration((context, config) =>
+    {
+        // ✅ Configure Azure Key Vault if KeyVaultUri is provided
+        config.AddKeyVaultIfConfigured(config.Build(), logger);
+    })
+    .ConfigureServices((context, services) =>
+    {
+        // Get configuration for service registrations
+        var configuration = context.Configuration;
+        
+        services
+            .AddApplicationInsightsTelemetryWorkerService()
+            .ConfigureFunctionsApplicationInsights();
 
-builder.ConfigureFunctionsWebApplication();
+        services.AddSingleton<IAuthorizationValidator, AuthorizationValidator>();
 
-// note: the order of middleware is important, as it determines the execution flow
-builder
-    .UseMiddleware<ExceptionHandlingMiddleware>()
-    .UseMiddleware<RequestValidationMiddleware>();
+        services.AddSingleton(provider =>
+        {
+            return new ConfigurationManager<OpenIdConnectConfiguration>(
+                        $"https://login.microsoftonline.com/{configuration["TenantId"]}/v2.0/.well-known/openid-configuration",
+                        new OpenIdConnectConfigurationRetriever(),
+                        new HttpDocumentRetriever());
+        });
 
-builder.Services
-    .AddApplicationInsightsTelemetryWorkerService()
-    .ConfigureFunctionsApplicationInsights();
+        services.AddActivityLog();
+        services.AddDataClient(configuration);
+        services.AddDdeiClient(configuration);
+        services.AddDdeiClientTactical();
+        services.AddEgressClient(configuration);
+        services.AddFileTransferClient(configuration);
+        services.AddNetAppClient(configuration);
 
-builder.Services.AddSingleton<IAuthorizationValidator, AuthorizationValidator>();
+        services.AddScoped<ICaseMetadataService, CaseMetadataService>();
+        services.AddScoped<ICaseEnrichmentService, CaseEnrichmentService>();
+        services.AddSingleton<IOpenApiConfigurationOptions, OpenApiConfigurationOptions>();
+        services.AddSingleton<IRequestValidator, RequestValidator>();
+    })
+    .Build();
 
-builder.Services.AddSingleton(_ =>
-{
-    // as per https://github.com/dotnet/aspnetcore/issues/43220, there is guidance to only have one instance of ConfigurationManager.
-    return new ConfigurationManager<OpenIdConnectConfiguration>(
-                $"https://login.microsoftonline.com/{builder.Configuration["TenantId"]}/v2.0/.well-known/openid-configuration",
-                new OpenIdConnectConfigurationRetriever(),
-                new HttpDocumentRetriever());
-});
-
-builder.Services.AddActivityLog();
-builder.Services.AddDataClient(builder.Configuration);
-builder.Services.AddDdeiClient(builder.Configuration);
-builder.Services.AddDdeiClientTactical();
-builder.Services.AddEgressClient(builder.Configuration);
-builder.Services.AddFileTransferClient(builder.Configuration);
-builder.Services.AddNetAppClient(builder.Configuration);
-
-builder.Services.AddScoped<ICaseMetadataService, CaseMetadataService>();
-builder.Services.AddScoped<ICaseEnrichmentService, CaseEnrichmentService>();
-builder.Services.AddSingleton<IOpenApiConfigurationOptions, OpenApiConfigurationOptions>();
-builder.Services.AddSingleton<IRequestValidator, RequestValidator>();
-
-await builder.Build().RunAsync();
+await host.RunAsync();

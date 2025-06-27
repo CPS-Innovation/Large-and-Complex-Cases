@@ -1,5 +1,5 @@
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Builder;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Abstractions;
@@ -15,35 +15,44 @@ using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.NetApp.Extensions;
 using Microsoft.Extensions.Logging;
 
-var builder = FunctionsApplication.CreateBuilder(args);
-
 // Create a temporary logger for configuration phase
 using var loggerFactory = LoggerFactory.Create(configure => configure.AddConsole());
 var logger = loggerFactory.CreateLogger("Configuration");
 
-// Configure Azure Key Vault if KeyVaultUri is provided
-builder.Configuration.AddKeyVaultIfConfigured(builder.Configuration, logger);
+var host = new HostBuilder()
+    .ConfigureFunctionsWebApplication() // ✅ Adds ASP.NET Core integration
+    .ConfigureFunctionsWorkerDefaults()
+    .ConfigureAppConfiguration((context, config) =>
+    {
+        // ✅ Configure Azure Key Vault if KeyVaultUri is provided
+        config.AddKeyVaultIfConfigured(config.Build(), logger);
+    })
+    .ConfigureServices((context, services) =>
+    {
+        // Get configuration for service registrations
+        var configuration = context.Configuration;
+        
+        services
+            .AddApplicationInsightsTelemetryWorkerService()
+            .ConfigureFunctionsApplicationInsights();
 
-builder.ConfigureFunctionsWebApplication();
+        // ✅ Add services with configuration
+        services.AddActivityLog();
+        services.AddEgressClient(configuration);
+        services.AddNetAppClient(configuration);
+        services.AddDataClient(configuration);
 
-builder.Services
-    .AddApplicationInsightsTelemetryWorkerService()
-    .ConfigureFunctionsApplicationInsights();
+        services.AddScoped<ICaseMetadataService, CaseMetadataService>();
 
-builder.Services.AddActivityLog();
-builder.Services.AddEgressClient(builder.Configuration);
-builder.Services.AddNetAppClient(builder.Configuration);
-builder.Services.AddDataClient(builder.Configuration);
+        services.Configure<SizeConfig>(
+            configuration.GetSection("FileTransfer:SizeConfig"));
 
-builder.Services.AddScoped<ICaseMetadataService, CaseMetadataService>();
+        services.AddScoped<IStorageClientFactory, StorageClientFactory>();
+        services.AddScoped<IRequestValidator, RequestValidator>();
 
-builder.Services.Configure<SizeConfig>(
-    builder.Configuration.GetSection("FileTransfer:SizeConfig"));
+        // Configure OpenAPI
+        services.AddSingleton<IOpenApiConfigurationOptions, FileTransferApiOpenApiConfigurationOptions>();
+    })
+    .Build();
 
-builder.Services.AddScoped<IStorageClientFactory, StorageClientFactory>();
-builder.Services.AddScoped<IRequestValidator, RequestValidator>();
-
-// Configure OpenAPI
-builder.Services.AddSingleton<IOpenApiConfigurationOptions, FileTransferApiOpenApiConfigurationOptions>();
-
-await builder.Build().RunAsync();
+await host.RunAsync();
