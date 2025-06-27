@@ -1,6 +1,6 @@
 import { IndexingFileTransferResponse } from "../../common/types/IndexingFileTransferResponse";
 
-export const egressToNetAppValidateTransferPlaywright: IndexingFileTransferResponse =
+export const egressToNetAppIndexingTransferPlaywright: IndexingFileTransferResponse =
   {
     caseId: 12,
     isInvalid: false,
@@ -12,7 +12,7 @@ export const egressToNetAppValidateTransferPlaywright: IndexingFileTransferRespo
     ],
   };
 
-export const netAppToEgressValidateTransferPlaywright: IndexingFileTransferResponse =
+export const netAppToEgressIndexingTransferPlaywright: IndexingFileTransferResponse =
   {
     caseId: 12,
     isInvalid: false,

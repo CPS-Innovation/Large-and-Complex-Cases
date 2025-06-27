@@ -1,0 +1,13 @@
+.contentWrapper {
+  width: 75%;
+}
+.errorListItem {
+  display: flex;
+  gap: 1rem;
+  &:first-child span {
+    max-width: 50rem;
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: break-all;
+  }
+}

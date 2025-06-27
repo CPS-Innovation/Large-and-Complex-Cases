@@ -430,11 +430,14 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       const validationPayload = getValidateTransferPayload();
       setTransferStatus("validating");
       response = await indexingFileTransfer(validationPayload);
+      console.log("validated with errors response....", response);
       if (response.isInvalid) {
+        console.log("validated with errors....");
         setTransferStatus("validated-with-errors");
-        navigate(`/case/${caseId}/case-management/transfer-validation-errors`, {
+        navigate(`/case/${caseId}/case-management/transfer-resolve-file-path`, {
           state: {
             isRouteValid: true,
+            validationErrors: response.validationErrors,
           },
         });
         return;
