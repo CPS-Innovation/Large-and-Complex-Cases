@@ -34,8 +34,8 @@ steps:
             "slotSetting": false
           },
           {
-            "name": "WEBSITE_RUN_FROM_PACKAGE",
-            "value": "1",
+            "name": "DOTNET_FRAMEWORK_VERSION",
+            "value": "v8.0",
             "slotSetting": false
           },
           {
@@ -55,42 +55,7 @@ steps:
           },
           {
             "name": "AzureWebJobsStorage",
-            "value": "@Microsoft.KeyVault(SecretUri=https://${{ parameters.keyVaultName }}.vault.azure.net/secrets/AzureWebJobsStorage/)",
-            "slotSetting": false
-          },
-          {
-            "name": "ConnectionStrings__CaseManagementDatastoreConnection",
-            "value": "@Microsoft.KeyVault(SecretUri=https://${{ parameters.keyVaultName }}.vault.azure.net/secrets/ConnectionStrings--CaseManagementDatastoreConnection/)",
-            "slotSetting": false
-          },
-          {
-            "name": "EgressOptions__Username",
-            "value": "@Microsoft.KeyVault(SecretUri=https://${{ parameters.keyVaultName }}.vault.azure.net/secrets/EgressOptions--Username/)",
-            "slotSetting": false
-          },
-          {
-            "name": "EgressOptions__Password",
-            "value": "@Microsoft.KeyVault(SecretUri=https://${{ parameters.keyVaultName }}.vault.azure.net/secrets/EgressOptions--Password/)",
-            "slotSetting": false
-          },
-          {
-            "name": "DDEIOptions__AccessKey",
-            "value": "@Microsoft.KeyVault(SecretUri=https://${{ parameters.keyVaultName }}.vault.azure.net/secrets/DDEIOptions--AccessKey/)",
-            "slotSetting": false
-          },
-          {
-            "name": "NetAppOptions__AccessKey",
-            "value": "@Microsoft.KeyVault(SecretUri=https://${{ parameters.keyVaultName }}.vault.azure.net/secrets/NetAppOptions--AccessKey/)",
-            "slotSetting": false
-          },
-          {
-            "name": "NetAppOptions__SecretKey",
-            "value": "@Microsoft.KeyVault(SecretUri=https://${{ parameters.keyVaultName }}.vault.azure.net/secrets/NetAppOptions--SecretKey/)",
-            "slotSetting": false
-          },
-          {
-            "name": "FileTransferApiOptions__AccessKey",
-            "value": "@Microsoft.KeyVault(SecretUri=https://${{ parameters.keyVaultName }}.vault.azure.net/secrets/FileTransferApiOptions--AccessKey/)",
+            "value": "$(AzureWebJobsStorage)",
             "slotSetting": false
           },
           {

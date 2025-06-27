@@ -24,8 +24,8 @@ var builder = FunctionsApplication.CreateBuilder(args);
 
 
 // Create a temporary logger for configuration phase
-// using var loggerFactory = LoggerFactory.Create(configure => configure.AddConsole());
-// var logger = loggerFactory.CreateLogger("Configuration");
+using var loggerFactory = LoggerFactory.Create(configure => configure.AddConsole());
+var logger = loggerFactory.CreateLogger("Configuration");
 
 // Configure Azure Key Vault if KeyVaultUri is provided
 builder.Configuration.AddKeyVaultIfConfigured(builder.Configuration);
