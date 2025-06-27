@@ -9,10 +9,7 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Ardalis.SmartEnum" Version="8.2.0" />
-    <PackageReference Include="Azure.Identity" Version="1.13.2" />
     <PackageReference Include="FluentValidation" Version="11.11.0" />
-    <PackageReference Include="Grpc" Version="2.46.6" />
-    <PackageReference Include="Contrib.Grpc.Core.M1" Version="2.46.7" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.OpenApi" Version="1.5.1" />
     <PackageReference Include="Microsoft.IdentityModel.Protocols" Version="8.6.1" />
     <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.6.1" />
@@ -25,7 +22,6 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.5" />
     <PackageReference Include="Microsoft.Extensions.Azure" Version="1.10.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.5" />
-    <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.3.2" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CPS.ComplexCases.ActivityLog\CPS.ComplexCases.ActivityLog.csproj" />

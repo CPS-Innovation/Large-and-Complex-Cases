@@ -1,13 +1,16 @@
+using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Requests;
+using CPS.ComplexCases.Common.Constants;
 using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain;
 using CPS.ComplexCases.FileTransfer.API.Validators;
@@ -21,6 +24,11 @@ public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorage
     private readonly IRequestValidator _requestValidator = requestValidator;
 
     [Function(nameof(ListFilesForTransfer))]
+    [OpenApiOperation(operationId: nameof(ListFilesForTransfer), tags: ["FileTransfer"], Description = "Lists all files that will be included in a transfer operation based on the selected source paths.")]
+    [OpenApiRequestBody(contentType: ContentType.ApplicationJson, bodyType: typeof(ListFilesForTransferRequest), Required = true, Description = "Request containing transfer direction, source paths, and destination information.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(FilesForTransferResult), Description = ApiResponseDescriptions.Success)]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.ApplicationJson, bodyType: typeof(IEnumerable<string>), Description = ApiResponseDescriptions.BadRequest)]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, bodyType: typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
     public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post", Route = "transfer/files")] HttpRequest req, FunctionContext context)
     {
         var request = await _requestValidator.GetJsonBody<ListFilesForTransferRequest, ListFilesForTransferValidator>(req);

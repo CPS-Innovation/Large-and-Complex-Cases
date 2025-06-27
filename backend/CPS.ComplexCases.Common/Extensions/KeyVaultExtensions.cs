@@ -2,7 +2,7 @@ using Azure.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace CPS.ComplexCases.API.Extensions;
+namespace CPS.ComplexCases.Common.Extensions;
 
 public static class KeyVaultExtensions
 {

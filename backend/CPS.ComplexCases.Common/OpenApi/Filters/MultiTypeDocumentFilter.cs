@@ -3,7 +3,7 @@ using System.Reflection;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Abstractions;
 using Microsoft.OpenApi.Models;
 
-namespace CPS.ComplexCases.OpenApi.Filters;
+namespace CPS.ComplexCases.Common.OpenApi.Filters;
 
 public class MultiTypeDocumentFilter : IDocumentFilter
 {

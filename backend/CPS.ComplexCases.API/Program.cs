@@ -8,7 +8,9 @@ using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using CPS.ComplexCases.ActivityLog.Extensions;
 using CPS.ComplexCases.API.Extensions;
+using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.API.Middleware;
+using CPS.ComplexCases.API.OpenApi;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Validators;
 using CPS.ComplexCases.Common.Helpers;
@@ -18,7 +20,6 @@ using CPS.ComplexCases.DDEI.Extensions;
 using CPS.ComplexCases.DDEI.Tactical.Extensions;
 using CPS.ComplexCases.Egress.Extensions;
 using CPS.ComplexCases.NetApp.Extensions;
-using CPS.ComplexCases.OpenApi;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
@@ -28,7 +29,7 @@ using var loggerFactory = LoggerFactory.Create(configure => configure.AddConsole
 var logger = loggerFactory.CreateLogger("Configuration");
 
 // Configure Azure Key Vault if KeyVaultUri is provided
-builder.Configuration.AddKeyVaultIfConfigured(builder.Configuration);
+builder.Configuration.AddKeyVaultIfConfigured(builder.Configuration, logger);
 
 builder.ConfigureFunctionsWebApplication();
 
