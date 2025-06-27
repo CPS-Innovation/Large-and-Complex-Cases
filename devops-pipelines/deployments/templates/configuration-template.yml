@@ -137,5 +137,20 @@ steps:
             "name": "WEBSITE_ENABLE_SYNC_UPDATE_SITE",
             "value": "true",
             "slotSetting": false
+          },
+          {
+            "name": "WEBSITE_USE_PLACEHOLDER_DOTNETISOLATED",
+            "value": "1",
+            "slotSetting": false
+          },
+          {
+            "name": "WEBSITE_PLACEHOLDER_MODE",
+            "value": "1",
+            "slotSetting": false
+          },
+          {
+            "name": "FUNCTIONS_INPROC_NET8_ENABLED",
+            "value": "0",
+            "slotSetting": false
           }
         ]
