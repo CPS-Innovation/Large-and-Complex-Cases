@@ -763,7 +763,7 @@ stages:
                     appInsightsKey: $(ApplicationInsightsInstrumentationKey)
                     appInsightsConnectionString: $(ApplicationInsightsConnectionString)
 
-                - task: AzureFunctionApp@1
+                - task: AzureFunctionApp@2
                   displayName: 'LACC - Deploy Main API to Azure Function App'
                   inputs:
                     azureSubscription: $(azureSubscription)
@@ -771,7 +771,7 @@ stages:
                     appName: $(mainApiName)
                     package: '$(Pipeline.Workspace)/lacc-main-api-drop/*.zip'
                     runtimeStack: 'DOTNET-ISOLATED|8.0'
-                    deploymentMethod: 'runFromPackage'
+                    deploymentMethod: 'zipDeploy'
 
                 - task: AzureCLI@2
                   displayName: 'LACC - Verify Main API Deployment'
@@ -834,7 +834,7 @@ stages:
                     appInsightsKey: $(ApplicationInsightsInstrumentationKey)
                     appInsightsConnectionString: $(ApplicationInsightsConnectionString)
 
-                - task: AzureFunctionApp@1
+                - task: AzureFunctionApp@2
                   displayName: 'LACC - Deploy FileTransfer API to Azure Function App'
                   inputs:
                     azureSubscription: $(azureSubscription)
@@ -842,7 +842,7 @@ stages:
                     appName: $(fileTransferApiName)
                     package: '$(Pipeline.Workspace)/lacc-filetransfer-api-drop/*.zip'
                     runtimeStack: 'DOTNET-ISOLATED|8.0'
-                    deploymentMethod: 'runFromPackage'
+                    deploymentMethod: 'zipDeploy'
 
                 - task: AzureCLI@2
                   displayName: 'LACC - Verify FileTransfer API Deployment'
