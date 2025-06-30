@@ -194,7 +194,7 @@ stages:
             inputs:
               pathtoPublish: 'ui-spa/coverage/html-enhanced'
               artifactName: 'ui-coverage-report'
-            condition: and(always(), exists('ui-spa/coverage/html-enhanced'))
+            condition: always()
 
           - task: Npm@1
             displayName: 'Build UI Application'
@@ -209,7 +209,7 @@ stages:
               sourceFolder: 'ui-spa/public'
               contents: 'web.config'
               targetFolder: 'ui-spa/dist'
-            condition: exists('ui-spa/public/web.config')
+            continueOnError: true
 
           - task: ArchiveFiles@2
             displayName: 'Archive UI Build'
