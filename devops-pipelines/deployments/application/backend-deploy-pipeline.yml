@@ -772,7 +772,7 @@ stages:
                     appName: $(mainApiName)
                     package: '$(Pipeline.Workspace)/lacc-main-api-drop/*.zip'
                     runtimeStack: 'DOTNET-ISOLATED|8.0'
-                    deploymentMethod: 'zipDeploy'
+                    deploymentMethod: 'runFromPackage'
 
                 - task: AzureCLI@2
                   displayName: 'LACC - Verify Main API Deployment'
@@ -843,7 +843,7 @@ stages:
                     appName: $(fileTransferApiName)
                     package: '$(Pipeline.Workspace)/lacc-filetransfer-api-drop/*.zip'
                     runtimeStack: 'DOTNET-ISOLATED|8.0'
-                    deploymentMethod: 'zipDeploy'
+                    deploymentMethod: 'runFromPackage'
 
                 - task: AzureCLI@2
                   displayName: 'LACC - Verify FileTransfer API Deployment'
