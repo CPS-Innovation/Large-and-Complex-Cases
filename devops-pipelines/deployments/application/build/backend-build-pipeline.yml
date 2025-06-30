@@ -149,6 +149,7 @@ stages:
               command: 'publish'
               projects: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
               publishWebProjects: false
+              zipAfterPublish: false
               arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/MainAPI --no-restore /p:SourceRevisionId=$(Build.SourceVersion)'
 
           - task: ArchiveFiles@2
@@ -197,6 +198,7 @@ stages:
               command: 'publish'
               projects: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
               publishWebProjects: false
+              zipAfterPublish: false
               arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/FileTransferAPI --no-restore /p:SourceRevisionId=$(Build.SourceVersion)'
 
           - task: ArchiveFiles@2
