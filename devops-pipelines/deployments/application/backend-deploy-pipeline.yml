@@ -643,8 +643,8 @@ stages:
                       # Then test target database connection with detailed output
                       echo "Testing target database connection..."
                       PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -c "SELECT 'Database connection successful' as status, version(), current_database(), current_user, inet_server_addr(), inet_server_port();" -t
-                      
-                      if [ $? -eq 0 ]; then
+                        
+                        if [ $? -eq 0 ]; then
                         echo "✅ Database connection test passed"
                         
                         # Additional checks
@@ -734,7 +734,7 @@ stages:
     dependsOn: 
       - Pre_Deployment_Validation
       - ${{ if eq(parameters.runDatabaseMigration, true) }}:
-        - Database_Migration
+      - Database_Migration
     condition: |
       and(
         succeeded('Pre_Deployment_Validation'),
@@ -964,6 +964,99 @@ stages:
                 echo "✅ Function App IP whitelisting to Key Vault completed"
                 echo "Waiting for Key Vault network rules to propagate..."
                 sleep 30
+
+          - task: AzureCLI@2
+            displayName: 'LACC - Configure Inter-Function App Communication'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Configuring inter-Function App communication access restrictions..."
+                echo "Main API needs to communicate with FileTransfer API"
+                
+                # Only proceed if both Function Apps are deployed
+                if [ "${{ parameters.deployMainAPI }}" = "True" ] && [ "${{ parameters.deployFileTransferAPI }}" = "True" ]; then
+                  echo "Both Main API and FileTransfer API are deployed, configuring inter-app communication..."
+                  
+                  # Check if both function apps exist
+                  if ! az functionapp show --name "$(mainApiName)" --resource-group "$(resourceGroupName)" &> /dev/null; then
+                    echo "⚠️ Main API Function App $(mainApiName) not found, skipping inter-app communication setup..."
+                    exit 0
+                  fi
+                  
+                  if ! az functionapp show --name "$(fileTransferApiName)" --resource-group "$(resourceGroupName)" &> /dev/null; then
+                    echo "⚠️ FileTransfer API Function App $(fileTransferApiName) not found, skipping inter-app communication setup..."
+                    exit 0
+                  fi
+                  
+                  echo "Getting Main API outbound IP addresses..."
+                  
+                  # Get Main API outbound IP addresses
+                  MAIN_API_OUTBOUND_IPS=$(az functionapp show --name "$(mainApiName)" --resource-group "$(resourceGroupName)" --query "outboundIpAddresses" -o tsv)
+                  MAIN_API_ADDITIONAL_OUTBOUND_IPS=$(az functionapp show --name "$(mainApiName)" --resource-group "$(resourceGroupName)" --query "possibleOutboundIpAddresses" -o tsv 2>/dev/null || echo "")
+                  
+                  if [ -z "$MAIN_API_OUTBOUND_IPS" ]; then
+                    echo "❌ Could not retrieve Main API outbound IPs"
+                    exit 1
+                  fi
+                  
+                  echo "Main API current outbound IPs: $MAIN_API_OUTBOUND_IPS"
+                  if [ -n "$MAIN_API_ADDITIONAL_OUTBOUND_IPS" ]; then
+                    echo "Main API possible outbound IPs: $MAIN_API_ADDITIONAL_OUTBOUND_IPS"
+                    # Combine both sets and remove duplicates
+                    ALL_MAIN_API_IPS=$(echo "$MAIN_API_OUTBOUND_IPS,$MAIN_API_ADDITIONAL_OUTBOUND_IPS" | tr ',' '\n' | sort | uniq | tr '\n' ',' | sed 's/,$//')
+                  else
+                    ALL_MAIN_API_IPS="$MAIN_API_OUTBOUND_IPS"
+                  fi
+                  
+                  echo "Adding Main API outbound IPs to FileTransfer API access restrictions..."
+                  
+                  # Add each Main API IP to FileTransfer API access restrictions
+                  IFS=',' read -ra IP_ARRAY <<< "$ALL_MAIN_API_IPS"
+                  RULE_COUNTER=1
+                  
+                  for ip in "${IP_ARRAY[@]}"; do
+                    if [ -n "$ip" ] && [ "$ip" != "" ]; then
+                      # Create unique rule name for Main API communication
+                      RULE_NAME="MainAPI-Communication-$(echo $ip | tr '.' '-')"
+                      
+                      # Truncate rule name if too long (Azure limit is 80 characters)
+                      if [ ${#RULE_NAME} -gt 78 ]; then
+                        RULE_NAME="MainAPI-$(echo $ip | tr '.' '-' | cut -c1-20)"
+                      fi
+                      
+                      echo "Adding Main API IP $ip to FileTransfer API with rule: $RULE_NAME"
+                      
+                      # Add access restriction rule with priority 200 (lower than pipeline health checks at 100)
+                      az functionapp config access-restriction add \
+                        --resource-group "$(resourceGroupName)" \
+                        --name "$(fileTransferApiName)" \
+                        --rule-name "$RULE_NAME" \
+                        --action Allow \
+                        --ip-address "$ip" \
+                        --priority $((200 + RULE_COUNTER)) \
+                        --output table || echo "Warning: Could not add access restriction for Main API IP $ip (may already exist)"
+                      
+                      if [ $? -eq 0 ]; then
+                        echo "✅ Successfully added Main API IP $ip to FileTransfer API access restrictions"
+                      else
+                        echo "❌ Failed to add Main API IP $ip to FileTransfer API access restrictions"
+                      fi
+                      
+                      RULE_COUNTER=$((RULE_COUNTER + 1))
+                    fi
+                  done
+                  
+                  echo "✅ Inter-Function App communication configuration completed"
+                  echo "Main API ($(mainApiName)) can now communicate with FileTransfer API ($(fileTransferApiName))"
+                  
+                else
+                  echo "ℹ️ Skipping inter-Function App communication setup:"
+                  echo "  - Deploy Main API: ${{ parameters.deployMainAPI }}"
+                  echo "  - Deploy FileTransfer API: ${{ parameters.deployFileTransferAPI }}"
+                  echo "Both Function Apps must be deployed for inter-app communication setup"
+                fi
                 
                 # Now whitelist Function App IPs to PostgreSQL Flexible Server
                 echo "Configuring PostgreSQL Flexible Server firewall for Function App outbound IPs..."
@@ -1171,23 +1264,49 @@ stages:
                     return 0
                   fi
                   
+                  # Check current access restriction configuration
+                  echo "Checking current access restriction configuration for $display_name..."
+                  CURRENT_RESTRICTIONS=$(az functionapp config access-restriction show --name "$function_name" --resource-group "$(resourceGroupName)" --query "mainSiteAccessRestrictions" -o json 2>/dev/null || echo "[]")
+                  
+                  if [ "$CURRENT_RESTRICTIONS" = "[]" ] || [ -z "$CURRENT_RESTRICTIONS" ]; then
+                    echo "ℹ️ No existing access restrictions found for $display_name"
+                    echo "This suggests access restrictions may need to be initialized..."
+                    
+                    # For Premium Function Apps, we might need to configure the scm site access restrictions first
+                    echo "Attempting to initialize access restrictions for $display_name..."
+                    
+                    # First, try to set a basic configuration to enable access restrictions
+                    az functionapp config set \
+                      --name "$function_name" \
+                      --resource-group "$(resourceGroupName)" \
+                      --use-32bit-worker-process false \
+                      --output none 2>/dev/null || echo "Could not update function app config"
+                  else
+                    echo "✅ Access restrictions are already configured for $display_name"
+                    echo "Current restriction count: $(echo "$CURRENT_RESTRICTIONS" | jq length 2>/dev/null || echo "unknown")"
+                  fi
+                  
                   # Create unique rule name for pipeline access
                   RULE_NAME="AzureDevOps-HealthCheck-$(date +%Y%m%d-%H%M%S)"
                   
                   echo "Adding access restriction rule: $RULE_NAME for $display_name"
                   echo "Pipeline IP: $PIPELINE_IP"
                   
-                  # Add IP access restriction rule for the pipeline
-                  az functionapp config access-restriction add \
+                  # Try to add the access restriction with better error handling
+                  echo "Attempting to add access restriction..."
+                  
+                  ADD_RESULT=$(az functionapp config access-restriction add \
                     --resource-group "$(resourceGroupName)" \
                     --name "$function_name" \
                     --rule-name "$RULE_NAME" \
                     --action Allow \
                     --ip-address "$PIPELINE_IP" \
                     --priority 100 \
-                    --output table || echo "Warning: Could not add access restriction for $function_name (may already exist or restrictions not enabled)"
+                    --output json 2>&1)
                   
-                  if [ $? -eq 0 ]; then
+                  ADD_EXIT_CODE=$?
+                  
+                  if [ $ADD_EXIT_CODE -eq 0 ]; then
                     echo "✅ Access restriction added successfully for $display_name"
                     
                     # Store rule name for cleanup
@@ -1196,8 +1315,54 @@ stages:
                     elif [ "$function_name" = "$(fileTransferApiName)" ]; then
                       echo "##vso[task.setvariable variable=fileTransferApiAccessRuleName]$RULE_NAME"
                     fi
+                    
+                    # Verify the rule was added
+                    echo "Verifying access restriction was added..."
+                    VERIFICATION=$(az functionapp config access-restriction show --name "$function_name" --resource-group "$(resourceGroupName)" --query "mainSiteAccessRestrictions[?contains(name, '$RULE_NAME')]" -o json 2>/dev/null || echo "[]")
+                    
+                    if [ "$VERIFICATION" != "[]" ] && [ -n "$VERIFICATION" ]; then
+                      echo "✅ Access restriction verified in Function App configuration"
+                    else
+                      echo "⚠️ Access restriction may not have been added correctly"
+                    fi
+                    
                   else
                     echo "❌ Failed to add access restriction for $display_name"
+                    echo "Error details: $ADD_RESULT"
+                    
+                    # Check if it's a Premium plan issue
+                    PLAN_INFO=$(az functionapp show --name "$function_name" --resource-group "$(resourceGroupName)" --query "{sku: appServicePlan, kind: kind}" -o json 2>/dev/null || echo "{}")
+                    echo "Function App details: $PLAN_INFO"
+                    
+                    # Try alternative approach for Premium plans
+                    echo "Attempting alternative access restriction method for Premium Function Apps..."
+                    
+                    # Try using webapp commands instead (Function Apps are essentially web apps)
+                    ALT_RESULT=$(az webapp config access-restriction add \
+                      --resource-group "$(resourceGroupName)" \
+                      --name "$function_name" \
+                      --rule-name "$RULE_NAME" \
+                      --action Allow \
+                      --ip-address "$PIPELINE_IP" \
+                      --priority 100 \
+                      --output json 2>&1)
+                    
+                    ALT_EXIT_CODE=$?
+                    
+                    if [ $ALT_EXIT_CODE -eq 0 ]; then
+                      echo "✅ Access restriction added successfully using alternative method for $display_name"
+                      
+                      # Store rule name for cleanup
+                      if [ "$function_name" = "$(mainApiName)" ]; then
+                        echo "##vso[task.setvariable variable=mainApiAccessRuleName]$RULE_NAME"
+                      elif [ "$function_name" = "$(fileTransferApiName)" ]; then
+                        echo "##vso[task.setvariable variable=fileTransferApiAccessRuleName]$RULE_NAME"
+                      fi
+                    else
+                      echo "❌ Alternative method also failed for $display_name"
+                      echo "Alternative error: $ALT_RESULT"
+                      echo "⚠️ Proceeding without access restrictions - health checks may fail"
+                    fi
                   fi
                 }
                 
@@ -1244,11 +1409,11 @@ stages:
                   HTTP_STATUS=$(timeout 30 curl -s -o /dev/null -w "%{http_code}" "https://$FUNCTION_URL/api/status" 2>/dev/null || echo "000")
                   
                   echo "HTTP Status: $HTTP_STATUS"
-                  
-                  if [ "$HTTP_STATUS" -eq 200 ]; then
+                
+                if [ "$HTTP_STATUS" -eq 200 ]; then
                     echo "✅ Main API health check passed on attempt $((RETRY_COUNT + 1))"
-                    echo "Main API is accessible at: https://$FUNCTION_URL"
-                    echo "Status endpoint: https://$FUNCTION_URL/api/status"
+                  echo "Main API is accessible at: https://$FUNCTION_URL"
+                  echo "Status endpoint: https://$FUNCTION_URL/api/status"
                     SUCCESS=true
                     break
                   elif [ "$HTTP_STATUS" -eq 403 ] || [ "$HTTP_STATUS" -eq 000 ]; then
@@ -1632,17 +1797,50 @@ stages:
                   if [ -n "$rule_name_var" ]; then
                     echo "Removing access restriction rule: $rule_name_var from $display_name"
                     
-                    # Remove the access restriction rule
-                    az functionapp config access-restriction remove \
+                    # Try to remove using functionapp command first
+                    echo "Attempting to remove access restriction using functionapp command..."
+                    REMOVE_RESULT=$(az functionapp config access-restriction remove \
                       --resource-group "$(resourceGroupName)" \
                       --name "$function_name" \
                       --rule-name "$rule_name_var" \
-                      --output table || echo "Warning: Could not remove access restriction rule $rule_name_var from $function_name (may not exist)"
+                      --output json 2>&1)
                     
-                    if [ $? -eq 0 ]; then
-                      echo "✅ Access restriction cleanup completed for $display_name"
+                    REMOVE_EXIT_CODE=$?
+                    
+                    if [ $REMOVE_EXIT_CODE -eq 0 ]; then
+                      echo "✅ Access restriction removed successfully from $display_name"
                     else
-                      echo "❌ Failed to remove access restriction from $display_name"
+                      echo "⚠️ Standard removal failed, trying alternative method..."
+                      echo "Error details: $REMOVE_RESULT"
+                      
+                      # Try alternative approach using webapp commands
+                      echo "Attempting to remove access restriction using webapp command..."
+                      ALT_REMOVE_RESULT=$(az webapp config access-restriction remove \
+                        --resource-group "$(resourceGroupName)" \
+                        --name "$function_name" \
+                        --rule-name "$rule_name_var" \
+                        --output json 2>&1)
+                      
+                      ALT_REMOVE_EXIT_CODE=$?
+                      
+                      if [ $ALT_REMOVE_EXIT_CODE -eq 0 ]; then
+                        echo "✅ Access restriction removed successfully using alternative method from $display_name"
+                      else
+                        echo "❌ Failed to remove access restriction from $display_name using both methods"
+                        echo "Alternative error: $ALT_REMOVE_RESULT"
+                        echo "⚠️ Manual cleanup may be required for rule: $rule_name_var"
+                      fi
+                    fi
+                    
+                    # Verify the rule was removed
+                    echo "Verifying access restriction was removed..."
+                    VERIFICATION=$(az functionapp config access-restriction show --name "$function_name" --resource-group "$(resourceGroupName)" --query "mainSiteAccessRestrictions[?contains(name, '$rule_name_var')]" -o json 2>/dev/null || echo "[]")
+                    
+                    if [ "$VERIFICATION" = "[]" ] || [ -z "$VERIFICATION" ]; then
+                      echo "✅ Access restriction removal verified"
+                    else
+                      echo "⚠️ Access restriction may still exist in Function App configuration"
+                      echo "Remaining rules with similar name: $VERIFICATION"
                     fi
                   else
                     echo "No access restriction rule name to clean up for $display_name"
@@ -1685,6 +1883,7 @@ stages:
                 echo "🔒 Persistent firewall rules (NOT cleaned up - by design):"
                 echo "  - Function App outbound IPs in Key Vault firewall (permanent access required)"
                 echo "  - Function App outbound IPs in PostgreSQL firewall (permanent access required)"
+                echo "  - Main API outbound IPs in FileTransfer API access restrictions (inter-app communication)"
                 echo ""
                 echo "📋 Key Vault: $(keyVaultName)"
                 echo "📋 PostgreSQL Server: Connected via connection string in Key Vault"
