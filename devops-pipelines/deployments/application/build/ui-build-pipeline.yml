@@ -72,18 +72,6 @@ stages:
               reportDirectory: 'ui-spa/coverage'
             condition: always()
 
-          - task: NodeTool@0
-            displayName: 'Ensure Node.js for Coverage Tools'
-            inputs:
-              versionSpec: '$(nodeVersion)'
-
-          - task: Npm@1
-            displayName: 'Install Coverage Report Tools'
-            inputs:
-              command: 'custom'
-              customCommand: 'install -g nyc html-coverage-badge-generator'
-            condition: always()
-
           - task: PowerShell@2
             displayName: 'Generate Beautiful HTML Coverage Report'
             inputs:
