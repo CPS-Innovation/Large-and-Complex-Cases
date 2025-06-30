@@ -43,7 +43,7 @@ variables:
   - name: mainApiName
     value: 'func-lacc-api-$(environmentSuffix)-temp'
   - name: fileTransferApiName
-    value: 'func-lacc-filetransfer-$(environmentSuffix)-temp'
+    value: 'func-lacc-filetransfer-api-$(environmentSuffix)-temp'
   - name: keyVaultName
     value: 'kv-lacc-$(environmentSuffix)-temp'
   - name: azureSubscription
@@ -721,7 +721,8 @@ stages:
     displayName: 'LACC - Deploy Function Apps'
     dependsOn: 
       - Pre_Deployment_Validation
-      - Database_Migration
+      - ${{ if eq(parameters.runDatabaseMigration, true) }}:
+        - Database_Migration
     condition: |
       and(
         succeeded('Pre_Deployment_Validation'),
@@ -767,7 +768,7 @@ stages:
                   displayName: 'LACC - Deploy Main API to Azure Function App'
                   inputs:
                     azureSubscription: $(azureSubscription)
-                    appType: 'functionAppLinux'
+                    appType: 'functionApp'
                     appName: $(mainApiName)
                     package: '$(Pipeline.Workspace)/lacc-main-api-drop/*.zip'
                     runtimeStack: 'DOTNET-ISOLATED|8.0'
@@ -838,7 +839,7 @@ stages:
                   displayName: 'LACC - Deploy FileTransfer API to Azure Function App'
                   inputs:
                     azureSubscription: $(azureSubscription)
-                    appType: 'functionAppLinux'
+                    appType: 'functionApp'
                     appName: $(fileTransferApiName)
                     package: '$(Pipeline.Workspace)/lacc-filetransfer-api-drop/*.zip'
                     runtimeStack: 'DOTNET-ISOLATED|8.0'
@@ -882,6 +883,169 @@ stages:
         pool:
           vmImage: 'ubuntu-latest'
         steps:
+          - task: AzureCLI@2
+            displayName: 'LACC - Whitelist Function App Outbound IPs to Key Vault'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Configuring Key Vault firewall to allow Function App outbound IPs..."
+                
+                # Function to add IP addresses to Key Vault firewall
+                add_function_ips_to_keyvault() {
+                  local function_name="$1"
+                  local display_name="$2"
+                  
+                  echo "Processing $display_name ($function_name)..."
+                  
+                  # Check if function app exists
+                  if ! az functionapp show --name "$function_name" --resource-group "$(resourceGroupName)" &> /dev/null; then
+                    echo "⚠️ Function App $function_name not found or not deployed, skipping..."
+                    return 0
+                  fi
+                  
+                  # Get outbound IP addresses
+                  echo "Getting outbound IP addresses for $function_name..."
+                  OUTBOUND_IPS=$(az functionapp show --name "$function_name" --resource-group "$(resourceGroupName)" --query "outboundIpAddresses" -o tsv)
+                  ADDITIONAL_OUTBOUND_IPS=$(az functionapp show --name "$function_name" --resource-group "$(resourceGroupName)" --query "possibleOutboundIpAddresses" -o tsv 2>/dev/null || echo "")
+                  
+                  if [ -z "$OUTBOUND_IPS" ]; then
+                    echo "⚠️ Could not retrieve outbound IPs for $function_name"
+                    return 0
+                  fi
+                  
+                  echo "Current outbound IPs for $function_name: $OUTBOUND_IPS"
+                  if [ -n "$ADDITIONAL_OUTBOUND_IPS" ]; then
+                    echo "Possible outbound IPs for $function_name: $ADDITIONAL_OUTBOUND_IPS"
+                    # Combine both sets and remove duplicates
+                    ALL_IPS=$(echo "$OUTBOUND_IPS,$ADDITIONAL_OUTBOUND_IPS" | tr ',' '\n' | sort | uniq | tr '\n' ',' | sed 's/,$//')
+                  else
+                    ALL_IPS="$OUTBOUND_IPS"
+                  fi
+                  
+                  # Add each IP to Key Vault firewall
+                  IFS=',' read -ra IP_ARRAY <<< "$ALL_IPS"
+                  for ip in "${IP_ARRAY[@]}"; do
+                    if [ -n "$ip" ] && [ "$ip" != "" ]; then
+                      echo "Adding IP $ip to Key Vault firewall for $display_name..."
+                      az keyvault network-rule add \
+                        --name "$(keyVaultName)" \
+                        --ip-address "$ip" \
+                        --output none || echo "Warning: Could not add IP $ip (may already exist)"
+                    fi
+                  done
+                  
+                  echo "✅ Completed IP whitelisting for $display_name"
+                }
+                
+                # Add IPs for Main API if deployed
+                if [ "${{ parameters.deployMainAPI }}" = "True" ]; then
+                  add_function_ips_to_keyvault "$(mainApiName)" "Main API"
+                fi
+                
+                # Add IPs for FileTransfer API if deployed
+                if [ "${{ parameters.deployFileTransferAPI }}" = "True" ]; then
+                  add_function_ips_to_keyvault "$(fileTransferApiName)" "FileTransfer API"
+                fi
+                
+                echo "✅ Function App IP whitelisting to Key Vault completed"
+                echo "Waiting for Key Vault network rules to propagate..."
+                sleep 15
+                
+                # Now whitelist Function App IPs to PostgreSQL Flexible Server
+                echo "Configuring PostgreSQL Flexible Server firewall for Function App outbound IPs..."
+                
+                # Get PostgreSQL server details from connection string
+                echo "Retrieving connection string from Key Vault: $(keyVaultName)"
+                CONNECTION_STRING=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null || echo "")
+                
+                if [ -z "$CONNECTION_STRING" ] || [ "$CONNECTION_STRING" = "null" ]; then
+                  echo "⚠️ PostgreSQL connection string not found in Key Vault"
+                  echo "Skipping PostgreSQL firewall configuration"
+                else
+                  # Parse host from connection string
+                  DB_HOST=$(echo "$CONNECTION_STRING" | grep -oP '(?<=Host=)[^;]+' | head -1)
+                  
+                  if [ -z "$DB_HOST" ]; then
+                    echo "⚠️ Could not parse PostgreSQL host from connection string"
+                    echo "Skipping PostgreSQL firewall configuration"
+                  else
+                    # Extract server name from hostname (remove .postgres.database.azure.com)
+                    DB_SERVER_NAME=$(echo "$DB_HOST" | sed 's/\.postgres\.database\.azure\.com.*//')
+                    echo "PostgreSQL Server Name: $DB_SERVER_NAME"
+                    
+                    # Function to add Function App IPs to PostgreSQL firewall
+                    add_function_ips_to_postgres() {
+                      local function_name="$1"
+                      local display_name="$2"
+                      
+                      echo "Adding $display_name outbound IPs to PostgreSQL firewall..."
+                      
+                      # Check if function app exists
+                      if ! az functionapp show --name "$function_name" --resource-group "$(resourceGroupName)" &> /dev/null; then
+                        echo "⚠️ Function App $function_name not found, skipping PostgreSQL firewall config..."
+                        return 0
+                      fi
+                      
+                      # Get outbound IP addresses
+                      OUTBOUND_IPS=$(az functionapp show --name "$function_name" --resource-group "$(resourceGroupName)" --query "outboundIpAddresses" -o tsv)
+                      ADDITIONAL_OUTBOUND_IPS=$(az functionapp show --name "$function_name" --resource-group "$(resourceGroupName)" --query "possibleOutboundIpAddresses" -o tsv 2>/dev/null || echo "")
+                      
+                      if [ -z "$OUTBOUND_IPS" ]; then
+                        echo "⚠️ Could not retrieve outbound IPs for $function_name"
+                        return 0
+                      fi
+                      
+                      # Combine both sets and remove duplicates
+                      if [ -n "$ADDITIONAL_OUTBOUND_IPS" ]; then
+                        ALL_IPS=$(echo "$OUTBOUND_IPS,$ADDITIONAL_OUTBOUND_IPS" | tr ',' '\n' | sort | uniq | tr '\n' ',' | sed 's/,$//')
+                      else
+                        ALL_IPS="$OUTBOUND_IPS"
+                      fi
+                      
+                      # Add each IP to PostgreSQL firewall
+                      IFS=',' read -ra IP_ARRAY <<< "$ALL_IPS"
+                      for ip in "${IP_ARRAY[@]}"; do
+                        if [ -n "$ip" ] && [ "$ip" != "" ]; then
+                          # Create unique rule name with IP and timestamp
+                          RULE_NAME="FunctionApp-$display_name-$(echo $ip | tr '.' '-')-$(date +%Y%m%d)"
+                          
+                          # Truncate rule name if too long (Azure limit is 80 characters)
+                          if [ ${#RULE_NAME} -gt 78 ]; then
+                            RULE_NAME="FuncApp-$(echo $ip | tr '.' '-')-$(date +%H%M%S)"
+                          fi
+                          
+                          echo "Adding IP $ip to PostgreSQL firewall with rule: $RULE_NAME"
+                          az postgres flexible-server firewall-rule create \
+                            --resource-group "$(resourceGroupName)" \
+                            --name "$DB_SERVER_NAME" \
+                            --rule-name "$RULE_NAME" \
+                            --start-ip-address "$ip" \
+                            --end-ip-address "$ip" \
+                            --output none || echo "Warning: Could not add IP $ip to PostgreSQL firewall (may already exist)"
+                        fi
+                      done
+                      
+                      echo "✅ Completed PostgreSQL firewall configuration for $display_name"
+                    }
+                    
+                    # Add IPs for Main API if deployed
+                    if [ "${{ parameters.deployMainAPI }}" = "True" ]; then
+                      add_function_ips_to_postgres "$(mainApiName)" "MainAPI"
+                    fi
+                    
+                    # Add IPs for FileTransfer API if deployed
+                    if [ "${{ parameters.deployFileTransferAPI }}" = "True" ]; then
+                      add_function_ips_to_postgres "$(fileTransferApiName)" "FileTransferAPI"
+                    fi
+                    
+                    echo "✅ Function App IP whitelisting to PostgreSQL completed"
+                  fi
+                fi
+                
+                echo "✅ Complete Function App IP whitelisting finished"
+
           - task: AzureCLI@2
             displayName: 'Temporarily Allow Key Vault Access for Post-Deployment Validation'
             inputs:
@@ -932,6 +1096,33 @@ stages:
                   echo "##vso[task.logissue type=error]❌ Main API health check failed with status: $HTTP_STATUS"
                   echo "Attempted URL: https://$FUNCTION_URL/api/status"
                   echo "Please check if the Main API is deployed correctly and the /api/status endpoint exists"
+                  exit 1
+                fi
+
+          - task: AzureCLI@2
+            displayName: 'LACC - Health Check FileTransfer API'
+            condition: eq(${{ parameters.deployFileTransferAPI }}, true)
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                FUNCTION_URL=$(az functionapp show --name $(fileTransferApiName) --resource-group $(resourceGroupName) --query defaultHostName -o tsv)
+                
+                # Wait for function app to be ready
+                sleep 15
+                
+                # Check status endpoint
+                HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://$FUNCTION_URL/api/status" || echo "000")
+                
+                if [ "$HTTP_STATUS" -eq 200 ]; then
+                  echo "✅ FileTransfer API health check passed"
+                  echo "FileTransfer API is accessible at: https://$FUNCTION_URL"
+                  echo "Status endpoint: https://$FUNCTION_URL/api/status"
+                else
+                  echo "##vso[task.logissue type=error]❌ FileTransfer API health check failed with status: $HTTP_STATUS"
+                  echo "Attempted URL: https://$FUNCTION_URL/api/status"
+                  echo "Please check if the FileTransfer API is deployed correctly and the /api/status endpoint exists"
                   exit 1
                 fi
 

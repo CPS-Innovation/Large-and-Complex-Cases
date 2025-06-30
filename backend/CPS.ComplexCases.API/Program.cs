@@ -1,6 +1,5 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Abstractions;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -26,12 +25,12 @@ using var loggerFactory = LoggerFactory.Create(configure => configure.AddConsole
 var logger = loggerFactory.CreateLogger("Configuration");
 
 var host = new HostBuilder()
-    .ConfigureFunctionsWebApplication() // ✅ Adds ASP.NET Core integration
-    .ConfigureFunctionsWorkerDefaults((context, builder) =>
-    {
-        builder.UseMiddleware<ExceptionHandlingMiddleware>();
-        builder.UseMiddleware<RequestValidationMiddleware>();
-    })
+    .ConfigureFunctionsWebApplication(webApp =>
+    { 
+        // note: the order of middleware is important, as it determines the execution flow
+        webApp.UseMiddleware<ExceptionHandlingMiddleware>();
+        webApp.UseMiddleware<RequestValidationMiddleware>();
+    }) // ✅ Adds ASP.NET Core integration
     .ConfigureAppConfiguration((context, config) =>
     {
         // ✅ Configure Azure Key Vault if KeyVaultUri is provided

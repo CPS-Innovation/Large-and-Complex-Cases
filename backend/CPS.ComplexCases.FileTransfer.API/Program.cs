@@ -21,7 +21,6 @@ var logger = loggerFactory.CreateLogger("Configuration");
 
 var host = new HostBuilder()
     .ConfigureFunctionsWebApplication() // ✅ Adds ASP.NET Core integration
-    .ConfigureFunctionsWorkerDefaults()
     .ConfigureAppConfiguration((context, config) =>
     {
         // ✅ Configure Azure Key Vault if KeyVaultUri is provided
