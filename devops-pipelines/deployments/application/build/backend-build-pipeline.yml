@@ -150,7 +150,7 @@ stages:
               projects: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
               publishWebProjects: false
               zipAfterPublish: false
-              arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/MainAPI --no-restore /p:SourceRevisionId=$(Build.SourceVersion) /p:PublishUrl=$(Build.ArtifactStagingDirectory)/MainAPI'
+              arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/MainAPI --no-restore --self-contained false /p:PublishReadyToRun=false /p:SourceRevisionId=$(Build.SourceVersion)'
 
           - task: Bash@3
             displayName: 'Debug - List Main API Output Structure'
@@ -160,6 +160,16 @@ stages:
                 echo "Checking Main API output structure:"
                 echo "Contents of $(Build.ArtifactStagingDirectory)/MainAPI:"
                 find "$(Build.ArtifactStagingDirectory)/MainAPI" -type f | sed "s|$(Build.ArtifactStagingDirectory)/MainAPI||" | head -20
+                
+                echo ""
+                echo "🔍 Checking for .azurefunctions folder:"
+                if [ -d "$(Build.ArtifactStagingDirectory)/MainAPI/.azurefunctions" ]; then
+                  echo "✅ .azurefunctions folder found!"
+                  echo "Contents:"
+                  find "$(Build.ArtifactStagingDirectory)/MainAPI/.azurefunctions" -type f | sed "s|$(Build.ArtifactStagingDirectory)/MainAPI||"
+                else
+                  echo "❌ .azurefunctions folder NOT found - this will cause function discovery issues!"
+                fi
 
           - task: Bash@3
             displayName: 'Fix Main API Folder Structure and Archive'
@@ -241,7 +251,7 @@ stages:
               projects: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
               publishWebProjects: false
               zipAfterPublish: false
-              arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/FileTransferAPI --no-restore /p:SourceRevisionId=$(Build.SourceVersion) /p:PublishUrl=$(Build.ArtifactStagingDirectory)/FileTransferAPI'
+              arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/FileTransferAPI --no-restore --self-contained false /p:PublishReadyToRun=false /p:SourceRevisionId=$(Build.SourceVersion)'
 
           - task: Bash@3
             displayName: 'Debug - List FileTransfer API Output Structure'
@@ -251,6 +261,16 @@ stages:
                 echo "Checking FileTransfer API output structure:"
                 echo "Contents of $(Build.ArtifactStagingDirectory)/FileTransferAPI:"
                 find "$(Build.ArtifactStagingDirectory)/FileTransferAPI" -type f | sed "s|$(Build.ArtifactStagingDirectory)/FileTransferAPI||" | head -20
+                
+                echo ""
+                echo "🔍 Checking for .azurefunctions folder:"
+                if [ -d "$(Build.ArtifactStagingDirectory)/FileTransferAPI/.azurefunctions" ]; then
+                  echo "✅ .azurefunctions folder found!"
+                  echo "Contents:"
+                  find "$(Build.ArtifactStagingDirectory)/FileTransferAPI/.azurefunctions" -type f | sed "s|$(Build.ArtifactStagingDirectory)/FileTransferAPI||"
+                else
+                  echo "❌ .azurefunctions folder NOT found - this will cause function discovery issues!"
+                fi
 
           - task: Bash@3
             displayName: 'Fix FileTransfer API Folder Structure and Archive'
@@ -319,6 +339,13 @@ stages:
                   else
                     echo "  ⚠️ host.json not found at root level - may still be nested"
                   fi
+                  
+                  # Check for .azurefunctions folder and metadata loader
+                  if unzip -l "$mainApiZip" | grep -q "\.azurefunctions/.*\.dll"; then
+                    echo "  ✅ .azurefunctions folder with DLLs found!"
+                  else
+                    echo "  ❌ .azurefunctions folder or DLLs missing - functions won't be discovered!"
+                  fi
                 fi
                 
                 # Check FileTransfer API zip
@@ -338,6 +365,13 @@ stages:
                     echo "  ✅ host.json found at root level - structure is correct!"
                   else
                     echo "  ⚠️ host.json not found at root level - may still be nested"
+                  fi
+                  
+                  # Check for .azurefunctions folder and metadata loader
+                  if unzip -l "$fileTransferZip" | grep -q "\.azurefunctions/.*\.dll"; then
+                    echo "  ✅ .azurefunctions folder with DLLs found!"
+                  else
+                    echo "  ❌ .azurefunctions folder or DLLs missing - functions won't be discovered!"
                   fi
                 fi
 
