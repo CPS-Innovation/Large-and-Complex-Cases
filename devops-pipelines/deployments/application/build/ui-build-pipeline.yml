@@ -89,6 +89,7 @@ stages:
             inputs:
               targetType: 'inline'
               script: |
+                $ErrorActionPreference = 'Continue'
                 # Navigate to UI directory
                 Set-Location ui-spa
                 
@@ -186,7 +187,6 @@ stages:
                 } else {
                   Write-Host "No coverage files found - skipping enhanced report generation"
                 }
-            errorActionPreference: 'continue'
             condition: always()
 
           - task: PublishBuildArtifacts@1
