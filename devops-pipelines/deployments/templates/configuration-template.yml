@@ -140,17 +140,22 @@ steps:
           },
           {
             "name": "WEBSITE_USE_PLACEHOLDER_DOTNETISOLATED",
-            "value": "1",
+            "value": "0",
             "slotSetting": false
           },
           {
             "name": "WEBSITE_PLACEHOLDER_MODE",
-            "value": "1",
+            "value": "0",
             "slotSetting": false
           },
           {
             "name": "FUNCTIONS_INPROC_NET8_ENABLED",
             "value": "0",
+            "slotSetting": false
+          },
+          {
+            "name": "WEBSITE_RUN_FROM_PACKAGE",
+            "value": "1",
             "slotSetting": false
           }
         ]
