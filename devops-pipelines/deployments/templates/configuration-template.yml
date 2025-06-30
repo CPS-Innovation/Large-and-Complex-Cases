@@ -39,11 +39,6 @@ steps:
             "slotSetting": false
           },
           {
-            "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
-            "value": "false",
-            "slotSetting": false
-          },
-          {
             "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
             "value": "${{ parameters.appInsightsKey }}",
             "slotSetting": false
@@ -134,23 +129,8 @@ steps:
             "slotSetting": false
           },
           {
-            "name": "WEBSITE_ENABLE_SYNC_UPDATE_SITE",
-            "value": "true",
-            "slotSetting": false
-          },
-          {
             "name": "WEBSITE_USE_PLACEHOLDER_DOTNETISOLATED",
-            "value": "0",
-            "slotSetting": false
-          },
-          {
-            "name": "WEBSITE_PLACEHOLDER_MODE",
-            "value": "0",
-            "slotSetting": false
-          },
-          {
-            "name": "FUNCTIONS_INPROC_NET8_ENABLED",
-            "value": "0",
+            "value": "1",
             "slotSetting": false
           },
           {
