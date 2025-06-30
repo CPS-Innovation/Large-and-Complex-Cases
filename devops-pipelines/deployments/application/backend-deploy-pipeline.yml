@@ -896,6 +896,71 @@ stages:
           vmImage: 'ubuntu-latest'
         steps:
           - task: AzureCLI@2
+            displayName: 'LACC - Setup Key Vault Access for Post-Deployment Validation'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Setting up Key Vault access for Post-Deployment Validation stage..."
+                
+                # Get current pipeline IP for this specific stage/agent
+                PIPELINE_IP=$(curl -s https://api.ipify.org || curl -s https://ipinfo.io/ip || curl -s https://icanhazip.com)
+                echo "Post-Deployment Validation Stage IP Address: $PIPELINE_IP"
+                
+                if [ -z "$PIPELINE_IP" ]; then
+                  echo "❌ Could not determine pipeline IP address"
+                  exit 1
+                fi
+                
+                echo "Adding pipeline IP to Key Vault firewall for this stage..."
+                az keyvault network-rule add \
+                  --name "$(keyVaultName)" \
+                  --ip-address "$PIPELINE_IP" \
+                  --output table || echo "Warning: Could not add Key Vault firewall rule (may already exist)"
+                
+                # Wait for the rule to take effect and verify access with extended retry
+                echo "Waiting for Key Vault firewall rule to take effect..."
+                sleep 30
+                
+                # Test Key Vault access with extended retry logic
+                echo "Testing Key Vault access with extended retry logic..."
+                SUCCESS=false
+                for i in {1..8}; do
+                  echo "Access test attempt $i/8..."
+                  
+                  if az keyvault secret list --vault-name "$(keyVaultName)" --query "[0].name" -o tsv >/dev/null 2>&1; then
+                    echo "✅ Key Vault access confirmed on attempt $i"
+                    SUCCESS=true
+                    break
+                  else
+                    echo "Access test failed, waiting 20 more seconds for propagation..."
+                    sleep 20
+                  fi
+                done
+                
+                if [ "$SUCCESS" = false ]; then
+                  echo "❌ Key Vault access still not working after extended retry"
+                  echo "Current IP: $PIPELINE_IP"
+                  echo "Key Vault: $(keyVaultName)"
+                  echo ""
+                  echo "Debugging information:"
+                  echo "1. Checking if Key Vault exists..."
+                  az keyvault show --name "$(keyVaultName)" --query "name" -o tsv || echo "Key Vault not found or no access"
+                  
+                  echo "2. Checking current network rules..."
+                  az keyvault network-rule list --name "$(keyVaultName)" --query "ipRules[].value" -o table || echo "Cannot access network rules"
+                  
+                  echo "3. This may cause issues with database connection tests and secret retrieval"
+                  echo "4. Continuing with deployment but some validation steps may fail..."
+                else
+                  echo "✅ Key Vault access successfully configured for Post-Deployment Validation"
+                fi
+                
+                # Store the IP for cleanup later
+                echo "##vso[task.setvariable variable=postDeploymentValidationIP]$PIPELINE_IP"
+
+          - task: AzureCLI@2
             displayName: 'LACC - Whitelist Function App Outbound IPs to Key Vault'
             inputs:
               azureSubscription: $(azureSubscription)
@@ -1179,56 +1244,7 @@ stages:
                 
                 echo "✅ Complete Function App IP whitelisting finished"
 
-          - task: AzureCLI@2
-            displayName: 'Temporarily Allow Key Vault Access for Post-Deployment Validation'
-            inputs:
-              azureSubscription: $(azureSubscription)
-              scriptType: 'bash'
-              scriptLocation: 'inlineScript'
-              inlineScript: |
-                echo "Temporarily allowing pipeline access to Key Vault for Post-Deployment Validation..."
-                
-                # Get current pipeline IP for this stage
-                PIPELINE_IP=$(curl -s https://api.ipify.org || curl -s https://ipinfo.io/ip || curl -s https://icanhazip.com)
-                echo "Post-Deployment Validation Stage IP Address: $PIPELINE_IP"
-                
-                if [ -z "$PIPELINE_IP" ]; then
-                  echo "❌ Could not determine pipeline IP address"
-                  exit 1
-                fi
-                
-                # Add pipeline IP to Key Vault firewall rules
-                echo "Adding pipeline IP to Key Vault firewall..."
-                az keyvault network-rule add \
-                  --name "$(keyVaultName)" \
-                  --ip-address "$PIPELINE_IP" \
-                  --output table
-                
-                # Wait longer for the rule to take effect and verify access
-                echo "Waiting for Key Vault firewall rule to take effect..."
-                sleep 20
-                
-                # Test Key Vault access with retry logic
-                echo "Testing Key Vault access with retry logic..."
-                for i in {1..5}; do
-                  echo "Access test attempt $i..."
-                  if az keyvault secret list --vault-name "$(keyVaultName)" --query "[0].name" -o tsv >/dev/null 2>&1; then
-                    echo "✅ Key Vault access confirmed on attempt $i"
-                    break
-                  else
-                    if [ $i -eq 5 ]; then
-                      echo "❌ Key Vault access still not working after 5 attempts"
-                      echo "This may cause issues with database connection tests"
-                      echo "Continuing with deployment but database tests may fail..."
-                    else
-                      echo "Access test failed, waiting 15 more seconds for propagation..."
-                      sleep 15
-                    fi
-                  fi
-                done
-                
-                echo "✅ Key Vault access configured for Post-Deployment Validation IP: $PIPELINE_IP"
-                echo "##vso[task.setvariable variable=validationStageIP]$PIPELINE_IP"
+
 
           - task: AzureCLI@2
             displayName: 'Temporarily Allow Function App Access for Health Checks'
@@ -1240,7 +1256,7 @@ stages:
                 echo "Temporarily allowing pipeline access to Function Apps for health checks..."
                 
                 # Get current pipeline IP for this stage (should be same as above but let's be safe)
-                PIPELINE_IP="$(validationStageIP)"
+                PIPELINE_IP="$(postDeploymentValidationIP)"
                 if [ -z "$PIPELINE_IP" ]; then
                   PIPELINE_IP=$(curl -s https://api.ipify.org || curl -s https://ipinfo.io/ip || curl -s https://icanhazip.com)
                   echo "Health Check Stage IP Address: $PIPELINE_IP"
@@ -1726,8 +1742,8 @@ stages:
               inlineScript: |
                 echo "Cleaning up Key Vault firewall rule for Post-Deployment Validation..."
                 
-                # Get this stage's IP
-                VALIDATION_IP="$(validationStageIP)"
+                # Get this stage's IP (using the new variable name)
+                VALIDATION_IP="$(postDeploymentValidationIP)"
                 
                 if [ -n "$VALIDATION_IP" ]; then
                   echo "Removing Post-Deployment Validation IP from Key Vault firewall: $VALIDATION_IP"
