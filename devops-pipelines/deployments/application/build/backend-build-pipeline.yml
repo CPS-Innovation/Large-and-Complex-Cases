@@ -63,8 +63,6 @@ stages:
               testResultsFiles: '**/*.trx'
             continueOnError: true
 
-
-
           - task: PublishCodeCoverageResults@1
             displayName: 'Publish Code Coverage'
             inputs:
@@ -153,65 +151,89 @@ stages:
               arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/MainAPI --no-restore --self-contained false /p:PublishReadyToRun=false /p:SourceRevisionId=$(Build.SourceVersion)'
 
           - task: Bash@3
-            displayName: 'Debug - List Main API Output Structure'
+            displayName: 'Debug and Create Clean Deployment Package - Main API'
             inputs:
               targetType: 'inline'
               script: |
-                echo "Checking Main API output structure:"
-                echo "Contents of $(Build.ArtifactStagingDirectory)/MainAPI:"
-                find "$(Build.ArtifactStagingDirectory)/MainAPI" -type f | sed "s|$(Build.ArtifactStagingDirectory)/MainAPI||" | head -20
+                echo "=== DEBUGGING MAIN API PUBLISH OUTPUT ==="
+                echo "Contents of MainAPI directory:"
+                find "$(Build.ArtifactStagingDirectory)/MainAPI" -type f | head -20
+                
+                echo ""
+                echo "Directory structure:"
+                find "$(Build.ArtifactStagingDirectory)/MainAPI" -type d
+                
+                # Find where the actual function files are
+                echo ""
+                echo "Looking for host.json:"
+                find "$(Build.ArtifactStagingDirectory)/MainAPI" -name "host.json" -type f
+                
+                echo ""
+                echo "Looking for .dll files:"
+                find "$(Build.ArtifactStagingDirectory)/MainAPI" -name "*.dll" -type f | head -5
                 
                 echo ""
                 echo "🔍 Checking for .azurefunctions folder:"
-                if [ -d "$(Build.ArtifactStagingDirectory)/MainAPI/.azurefunctions" ]; then
-                  echo "✅ .azurefunctions folder found!"
-                  echo "Contents:"
-                  find "$(Build.ArtifactStagingDirectory)/MainAPI/.azurefunctions" -type f | sed "s|$(Build.ArtifactStagingDirectory)/MainAPI||"
+                find "$(Build.ArtifactStagingDirectory)/MainAPI" -name ".azurefunctions" -type d
+                
+                # Create a clean directory with just the function files
+                mkdir -p "$(Build.ArtifactStagingDirectory)/MainAPI_Clean"
+                
+                # Find the directory that contains host.json (this should be our function root)
+                FUNCTION_ROOT=$(find "$(Build.ArtifactStagingDirectory)/MainAPI" -name "host.json" -type f -exec dirname {} \;)
+                echo ""
+                echo "Function root directory: $FUNCTION_ROOT"
+                
+                if [ -n "$FUNCTION_ROOT" ]; then
+                  echo "Copying files from function root to clean directory..."
+                  cp -r "$FUNCTION_ROOT"/* "$(Build.ArtifactStagingDirectory)/MainAPI_Clean/"
+                  
+                  # CRITICAL: Also copy any hidden files (like .azurefunctions)
+                  cp -r "$FUNCTION_ROOT"/.[^.]* "$(Build.ArtifactStagingDirectory)/MainAPI_Clean/" 2>/dev/null || true
+                  
+                  echo ""
+                  echo "Clean publish directory contents (including hidden files):"
+                  ls -la "$(Build.ArtifactStagingDirectory)/MainAPI_Clean/"
+                  
+                  echo ""
+                  echo "✅ Verifying .azurefunctions folder was copied:"
+                  if [ -d "$(Build.ArtifactStagingDirectory)/MainAPI_Clean/.azurefunctions" ]; then
+                    echo "✅ .azurefunctions folder found!"
+                    echo "Contents:"
+                    ls -la "$(Build.ArtifactStagingDirectory)/MainAPI_Clean/.azurefunctions/"
+                  else
+                    echo "❌ .azurefunctions folder missing - functions may not be discovered!"
+                  fi
+                  
+                  echo ""
+                  echo "Creating zip from clean directory..."
+                  cd "$(Build.ArtifactStagingDirectory)/MainAPI_Clean"
+                  zip -r "../lacc-main-api-$(Build.BuildId).zip" .
+                  
+                  echo ""
+                  echo "Final zip contents:"
+                  unzip -l "../lacc-main-api-$(Build.BuildId).zip" | head -20
+                  
+                  echo ""
+                  echo "Verifying host.json is at root:"
+                  if unzip -l "../lacc-main-api-$(Build.BuildId).zip" | grep -E "^\s*[0-9]+.*host\.json$"; then
+                    echo "✅ host.json found at root level!"
+                  else
+                    echo "❌ ERROR: host.json not found at root level!"
+                    exit 1
+                  fi
+                  
+                  echo ""
+                  echo "Verifying .azurefunctions folder in zip:"
+                  if unzip -l "../lacc-main-api-$(Build.BuildId).zip" | grep -E "\.azurefunctions/"; then
+                    echo "✅ .azurefunctions folder found in zip!"
+                  else
+                    echo "❌ WARNING: .azurefunctions folder not found in zip!"
+                  fi
                 else
-                  echo "❌ .azurefunctions folder NOT found - this will cause function discovery issues!"
+                  echo "ERROR: Could not find host.json in publish output!"
+                  exit 1
                 fi
-
-          - task: Bash@3
-            displayName: 'Fix Main API Folder Structure and Archive'
-            inputs:
-              targetType: 'inline'
-              script: |
-                mainApiPath="$(Build.ArtifactStagingDirectory)/MainAPI"
-                zipFile="$(Build.ArtifactStagingDirectory)/lacc-main-api-$(Build.BuildId).zip"
-                
-                echo "Checking for nested folder structure..."
-                
-                # Check if there's a nested project folder (common with .NET publish)
-                nestedFolders=($(find "$mainApiPath" -maxdepth 1 -type d ! -path "$mainApiPath"))
-                
-                if [ ${#nestedFolders[@]} -eq 1 ] && [ -f "${nestedFolders[0]}/host.json" ]; then
-                  folderName=$(basename "${nestedFolders[0]}")
-                  echo "Found nested folder: $folderName"
-                  echo "Extracting files from nested folder to root level..."
-                  
-                  # Create temp folder for correct structure
-                  tempPath="$(Build.ArtifactStagingDirectory)/MainAPI_Fixed"
-                  mkdir -p "$tempPath"
-                  
-                  # Copy all files from nested folder to temp folder
-                  cp -r "${nestedFolders[0]}"/* "$tempPath/"
-                  
-                  # Archive the fixed folder
-                  echo "Creating zip from fixed folder structure..."
-                  cd "$tempPath"
-                  zip -r "$zipFile" .
-                  cd - > /dev/null
-                  
-                  # Cleanup temp folder
-                  rm -rf "$tempPath"
-                else
-                  echo "No nested folder found, archiving as-is..."
-                  cd "$mainApiPath"
-                  zip -r "$zipFile" .
-                  cd - > /dev/null
-                fi
-                
-                echo "✅ Main API zip created: $zipFile"
 
           - task: PublishBuildArtifacts@1
             displayName: 'Publish Main API Artifact'
@@ -254,126 +276,91 @@ stages:
               arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/FileTransferAPI --no-restore --self-contained false /p:PublishReadyToRun=false /p:SourceRevisionId=$(Build.SourceVersion)'
 
           - task: Bash@3
-            displayName: 'Debug - List FileTransfer API Output Structure'
+            displayName: 'Debug and Create Clean Deployment Package - FileTransfer API'
             inputs:
               targetType: 'inline'
               script: |
-                echo "Checking FileTransfer API output structure:"
-                echo "Contents of $(Build.ArtifactStagingDirectory)/FileTransferAPI:"
-                find "$(Build.ArtifactStagingDirectory)/FileTransferAPI" -type f | sed "s|$(Build.ArtifactStagingDirectory)/FileTransferAPI||" | head -20
+                echo "=== DEBUGGING FILETRANSFER API PUBLISH OUTPUT ==="
+                echo "Contents of FileTransferAPI directory:"
+                find "$(Build.ArtifactStagingDirectory)/FileTransferAPI" -type f | head -20
+                
+                echo ""
+                echo "Directory structure:"
+                find "$(Build.ArtifactStagingDirectory)/FileTransferAPI" -type d
+                
+                # Find where the actual function files are
+                echo ""
+                echo "Looking for host.json:"
+                find "$(Build.ArtifactStagingDirectory)/FileTransferAPI" -name "host.json" -type f
+                
+                echo ""
+                echo "Looking for .dll files:"
+                find "$(Build.ArtifactStagingDirectory)/FileTransferAPI" -name "*.dll" -type f | head -5
                 
                 echo ""
                 echo "🔍 Checking for .azurefunctions folder:"
-                if [ -d "$(Build.ArtifactStagingDirectory)/FileTransferAPI/.azurefunctions" ]; then
-                  echo "✅ .azurefunctions folder found!"
-                  echo "Contents:"
-                  find "$(Build.ArtifactStagingDirectory)/FileTransferAPI/.azurefunctions" -type f | sed "s|$(Build.ArtifactStagingDirectory)/FileTransferAPI||"
+                find "$(Build.ArtifactStagingDirectory)/FileTransferAPI" -name ".azurefunctions" -type d
+                
+                # Create a clean directory with just the function files
+                mkdir -p "$(Build.ArtifactStagingDirectory)/FileTransferAPI_Clean"
+                
+                # Find the directory that contains host.json (this should be our function root)
+                FUNCTION_ROOT=$(find "$(Build.ArtifactStagingDirectory)/FileTransferAPI" -name "host.json" -type f -exec dirname {} \;)
+                echo ""
+                echo "Function root directory: $FUNCTION_ROOT"
+                
+                if [ -n "$FUNCTION_ROOT" ]; then
+                  echo "Copying files from function root to clean directory..."
+                  cp -r "$FUNCTION_ROOT"/* "$(Build.ArtifactStagingDirectory)/FileTransferAPI_Clean/"
+                  
+                  # CRITICAL: Also copy any hidden files (like .azurefunctions)
+                  cp -r "$FUNCTION_ROOT"/.[^.]* "$(Build.ArtifactStagingDirectory)/FileTransferAPI_Clean/" 2>/dev/null || true
+                  
+                  echo ""
+                  echo "Clean publish directory contents (including hidden files):"
+                  ls -la "$(Build.ArtifactStagingDirectory)/FileTransferAPI_Clean/"
+                  
+                  echo ""
+                  echo "✅ Verifying .azurefunctions folder was copied:"
+                  if [ -d "$(Build.ArtifactStagingDirectory)/FileTransferAPI_Clean/.azurefunctions" ]; then
+                    echo "✅ .azurefunctions folder found!"
+                    echo "Contents:"
+                    ls -la "$(Build.ArtifactStagingDirectory)/FileTransferAPI_Clean/.azurefunctions/"
+                  else
+                    echo "❌ .azurefunctions folder missing - functions may not be discovered!"
+                  fi
+                  
+                  echo ""
+                  echo "Creating zip from clean directory..."
+                  cd "$(Build.ArtifactStagingDirectory)/FileTransferAPI_Clean"
+                  zip -r "../lacc-filetransfer-api-$(Build.BuildId).zip" .
+                  
+                  echo ""
+                  echo "Final zip contents:"
+                  unzip -l "../lacc-filetransfer-api-$(Build.BuildId).zip" | head -20
+                  
+                  echo ""
+                  echo "Verifying host.json is at root:"
+                  if unzip -l "../lacc-filetransfer-api-$(Build.BuildId).zip" | grep -E "^\s*[0-9]+.*host\.json$"; then
+                    echo "✅ host.json found at root level!"
+                  else
+                    echo "❌ ERROR: host.json not found at root level!"
+                    exit 1
+                  fi
+                  
+                  echo ""
+                  echo "Verifying .azurefunctions folder in zip:"
+                  if unzip -l "../lacc-filetransfer-api-$(Build.BuildId).zip" | grep -E "\.azurefunctions/"; then
+                    echo "✅ .azurefunctions folder found in zip!"
+                  else
+                    echo "❌ WARNING: .azurefunctions folder not found in zip!"
+                  fi
                 else
-                  echo "❌ .azurefunctions folder NOT found - this will cause function discovery issues!"
+                  echo "ERROR: Could not find host.json in publish output!"
+                  exit 1
                 fi
 
-          - task: Bash@3
-            displayName: 'Fix FileTransfer API Folder Structure and Archive'
-            inputs:
-              targetType: 'inline'
-              script: |
-                fileTransferApiPath="$(Build.ArtifactStagingDirectory)/FileTransferAPI"
-                zipFile="$(Build.ArtifactStagingDirectory)/lacc-filetransfer-api-$(Build.BuildId).zip"
-                
-                echo "Checking for nested folder structure..."
-                
-                # Check if there's a nested project folder (common with .NET publish)
-                nestedFolders=($(find "$fileTransferApiPath" -maxdepth 1 -type d ! -path "$fileTransferApiPath"))
-                
-                if [ ${#nestedFolders[@]} -eq 1 ] && [ -f "${nestedFolders[0]}/host.json" ]; then
-                  folderName=$(basename "${nestedFolders[0]}")
-                  echo "Found nested folder: $folderName"
-                  echo "Extracting files from nested folder to root level..."
-                  
-                  # Create temp folder for correct structure
-                  tempPath="$(Build.ArtifactStagingDirectory)/FileTransferAPI_Fixed"
-                  mkdir -p "$tempPath"
-                  
-                  # Copy all files from nested folder to temp folder
-                  cp -r "${nestedFolders[0]}"/* "$tempPath/"
-                  
-                  # Archive the fixed folder
-                  echo "Creating zip from fixed folder structure..."
-                  cd "$tempPath"
-                  zip -r "$zipFile" .
-                  cd - > /dev/null
-                  
-                  # Cleanup temp folder
-                  rm -rf "$tempPath"
-                else
-                  echo "No nested folder found, archiving as-is..."
-                  cd "$fileTransferApiPath"
-                  zip -r "$zipFile" .
-                  cd - > /dev/null
-                fi
-                
-                echo "✅ FileTransfer API zip created: $zipFile"
 
-          - task: Bash@3
-            displayName: 'Verify Zip Contents'
-            inputs:
-              targetType: 'inline'
-              script: |
-                echo "🔍 Verifying zip file contents..."
-                
-                # Check Main API zip
-                mainApiZip="$(Build.ArtifactStagingDirectory)/lacc-main-api-$(Build.BuildId).zip"
-                if [ -f "$mainApiZip" ]; then
-                  echo ""
-                  echo "📦 Main API Zip Contents:"
-                  unzip -l "$mainApiZip" | head -20 | tail -n +4 | head -n -2 | sed 's/^/  /'
-                  
-                  totalFiles=$(unzip -l "$mainApiZip" | tail -n 2 | head -n 1 | awk '{print $2}')
-                  if [ "$totalFiles" -gt 10 ]; then
-                    echo "  ... and $((totalFiles - 10)) more files"
-                  fi
-                  
-                  # Check if host.json is at root level (not nested)
-                  if unzip -l "$mainApiZip" | grep -q "^.*host\.json$"; then
-                    echo "  ✅ host.json found at root level - structure is correct!"
-                  else
-                    echo "  ⚠️ host.json not found at root level - may still be nested"
-                  fi
-                  
-                  # Check for .azurefunctions folder and metadata loader
-                  if unzip -l "$mainApiZip" | grep -q "\.azurefunctions/.*\.dll"; then
-                    echo "  ✅ .azurefunctions folder with DLLs found!"
-                  else
-                    echo "  ❌ .azurefunctions folder or DLLs missing - functions won't be discovered!"
-                  fi
-                fi
-                
-                # Check FileTransfer API zip
-                fileTransferZip="$(Build.ArtifactStagingDirectory)/lacc-filetransfer-api-$(Build.BuildId).zip"
-                if [ -f "$fileTransferZip" ]; then
-                  echo ""
-                  echo "📦 FileTransfer API Zip Contents:"
-                  unzip -l "$fileTransferZip" | head -20 | tail -n +4 | head -n -2 | sed 's/^/  /'
-                  
-                  totalFiles=$(unzip -l "$fileTransferZip" | tail -n 2 | head -n 1 | awk '{print $2}')
-                  if [ "$totalFiles" -gt 10 ]; then
-                    echo "  ... and $((totalFiles - 10)) more files"
-                  fi
-                  
-                  # Check if host.json is at root level (not nested)
-                  if unzip -l "$fileTransferZip" | grep -q "^.*host\.json$"; then
-                    echo "  ✅ host.json found at root level - structure is correct!"
-                  else
-                    echo "  ⚠️ host.json not found at root level - may still be nested"
-                  fi
-                  
-                  # Check for .azurefunctions folder and metadata loader
-                  if unzip -l "$fileTransferZip" | grep -q "\.azurefunctions/.*\.dll"; then
-                    echo "  ✅ .azurefunctions folder with DLLs found!"
-                  else
-                    echo "  ❌ .azurefunctions folder or DLLs missing - functions won't be discovered!"
-                  fi
-                fi
 
           - task: PublishBuildArtifacts@1
             displayName: 'Publish FileTransfer API Artifact'
