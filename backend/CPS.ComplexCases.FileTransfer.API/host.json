@@ -20,9 +20,5 @@
     "healthCheckWindow": "00:02:00",
     "healthCheckThreshold": 6,
     "counterThreshold": 0.80
-  },
-  "extensionBundle": {
-    "id": "Microsoft.Azure.Functions.ExtensionBundle",
-    "version": "[4.*, 5.0.0)"
   }
 }
