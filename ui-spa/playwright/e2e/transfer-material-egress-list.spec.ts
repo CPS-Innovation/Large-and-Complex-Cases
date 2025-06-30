@@ -4,6 +4,13 @@ import { expect, test } from "../utils/test";
 test.describe("transfer material egress list", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/case/12/case-management");
+    await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
+    await expect(page.getByTestId("tab-active")).toHaveText(
+      "Transfer materials",
+    );
+    await expect(
+      page.getByTestId("tab-content-transfer-materials").locator("h2"),
+    ).toHaveText("Transfer folders and files between egress and shared drive");
   });
   const validateFolderPath = async (page, expectedResult: string[]) => {
     const texts = await page
@@ -16,17 +23,10 @@ test.describe("transfer material egress list", () => {
   test("Should show the transfer material tab with correct initial content", async ({
     page,
   }) => {
-    await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
     await expect(page.getByText("45AA2098221")).toBeVisible();
-    await expect(page.getByTestId("tab-active")).toHaveText(
-      "Transfer materials",
-    );
     await expect(
       page.getByTestId("tab-content-transfer-materials"),
     ).toBeVisible();
-    await expect(
-      page.getByTestId("tab-content-transfer-materials").locator("h2"),
-    ).toHaveText("Transfer folders and files between egress and shared drive");
     await expect(
       page.getByTestId("tab-content-transfer-materials"),
     ).toContainText(
@@ -50,13 +50,6 @@ test.describe("transfer material egress list", () => {
   test("Should show the egress folders results correctly when egress is the source table", async ({
     page,
   }) => {
-    await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
-    await expect(page.getByTestId("tab-active")).toHaveText(
-      "Transfer materials",
-    );
-    await expect(
-      page.getByTestId("tab-content-transfer-materials").locator("h2"),
-    ).toHaveText("Transfer folders and files between egress and shared drive");
     await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
     await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
     await expect(
@@ -91,13 +84,6 @@ test.describe("transfer material egress list", () => {
   test("Should show the egress folders results correctly when egress is the destination table", async ({
     page,
   }) => {
-    await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
-    await expect(page.getByTestId("tab-active")).toHaveText(
-      "Transfer materials",
-    );
-    await expect(
-      page.getByTestId("tab-content-transfer-materials").locator("h2"),
-    ).toHaveText("Transfer folders and files between egress and shared drive");
     await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
     await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
     await expect(
@@ -131,13 +117,6 @@ test.describe("transfer material egress list", () => {
   test("Should correctly navigate through the egress folders", async ({
     page,
   }) => {
-    await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
-    await expect(page.getByTestId("tab-active")).toHaveText(
-      "Transfer materials",
-    );
-    await expect(
-      page.getByTestId("tab-content-transfer-materials").locator("h2"),
-    ).toHaveText("Transfer folders and files between egress and shared drive");
     await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
     await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
     await expect(
@@ -226,18 +205,96 @@ test.describe("transfer material egress list", () => {
     );
     await page.goto("/case/12/case-management");
     await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
-    await expect(page.getByTestId("tab-active")).toHaveText(
-      "Transfer materials",
-    );
-    await expect(
-      page.getByTestId("tab-content-transfer-materials").locator("h2"),
-    ).toHaveText("Transfer folders and files between egress and shared drive");
     await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
     await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
     await expect(
       page.getByTestId("egress-folder-table-loader"),
     ).not.toBeVisible();
     await validateFolderPath(page, ["Home"]);
+    await expect(
+      page
+        .getByTestId("egress-container")
+        .getByText("There are no documents currently in this folder"),
+    ).toBeVisible();
+  });
+
+  test("Should hide checkboxes from the root egress folders and show checkboxes for the rest of the folders, when the egress is the source table", async ({
+    page,
+  }) => {
+    await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
+    await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
+    await expect(
+      page.getByTestId("egress-folder-table-loader"),
+    ).not.toBeVisible();
+    const egressTableWrapper = page.getByTestId("egress-table-wrapper");
+    await validateFolderPath(page, ["Home"]);
+    const checkboxes = await egressTableWrapper
+      .locator('table input[type="checkbox"]')
+      .all();
+
+    await Promise.all(
+      checkboxes.map((checkbox) => expect(checkbox).toBeHidden()),
+    );
+    await egressTableWrapper.locator('role=button[name="folder-1-0"]').click();
+    await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
+    await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
+    await expect(
+      page.getByTestId("egress-folder-table-loader"),
+    ).not.toBeVisible();
+    await validateFolderPath(page, ["Home", "folder-1-0"]);
+    await Promise.all(
+      checkboxes.map((checkbox) => expect(checkbox).not.toBeHidden()),
+    );
+    await egressTableWrapper.locator('role=button[name="folder-2-0"]').click();
+    await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
+    await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
+    await expect(
+      page.getByTestId("egress-folder-table-loader"),
+    ).not.toBeVisible();
+    await validateFolderPath(page, ["Home", "folder-1-0", "folder-2-0"]);
+    await Promise.all(
+      checkboxes.map((checkbox) => expect(checkbox).not.toBeHidden()),
+    );
+    await egressTableWrapper.locator('role=button[name="Home"]').click();
+    await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
+    await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
+    await validateFolderPath(page, ["Home"]);
+    await expect(
+      page.getByTestId("egress-folder-table-loader"),
+    ).not.toBeVisible();
+    await Promise.all(
+      checkboxes.map((checkbox) => expect(checkbox).toBeHidden()),
+    );
+  });
+
+  test("Should hide checkboxes from the table head, if there are not contents inside the folder, when the egress is the source table", async ({
+    page,
+  }) => {
+    await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
+    await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
+    await expect(
+      page.getByTestId("egress-folder-table-loader"),
+    ).not.toBeVisible();
+    const egressTableWrapper = page.getByTestId("egress-table-wrapper");
+    await validateFolderPath(page, ["Home"]);
+    const checkboxes = await egressTableWrapper
+      .locator('table input[type="checkbox"]')
+      .all();
+
+    await Promise.all(
+      checkboxes.map((checkbox) => expect(checkbox).toBeHidden()),
+    );
+    await egressTableWrapper.locator('role=button[name="folder-1-0"]').click();
+    await validateFolderPath(page, ["Home", "folder-1-0"]);
+    await egressTableWrapper.locator('role=button[name="folder-2-0"]').click();
+    await validateFolderPath(page, ["Home", "folder-1-0", "folder-2-0"]);
+    await egressTableWrapper.locator('role=button[name="folder-3-0"]').click();
+    await validateFolderPath(page, [
+      "Home",
+      "folder-1-0",
+      "folder-2-0",
+      "folder-3-0",
+    ]);
     await expect(
       page
         .getByTestId("egress-container")

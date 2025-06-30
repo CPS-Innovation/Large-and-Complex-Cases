@@ -3,6 +3,19 @@ import { delay, HttpResponse, http } from "msw";
 test.describe("egress-netapp-transfer-error-handling", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/case/12/case-management");
+    await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
+    await expect(page.getByTestId("tab-active")).toHaveText(
+      "Transfer materials",
+    );
+    await expect(
+      page.getByTestId("tab-content-transfer-materials").locator("h2", {
+        hasText: "Transfer folders and files between egress and shared drive",
+      }),
+    ).toBeVisible();
+    await page
+      .getByTestId("egress-table-wrapper")
+      .locator('role=button[name="folder-1-0"]')
+      .click();
   });
   test("Should show the error page if the indexing file transfer end point throws an Api error", async ({
     page,
@@ -14,15 +27,6 @@ test.describe("egress-netapp-transfer-error-handling", () => {
         return new HttpResponse(null, { status: 500 });
       }),
     );
-    await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
-    await expect(page.getByTestId("tab-active")).toHaveText(
-      "Transfer materials",
-    );
-    await expect(
-      page.getByTestId("tab-content-transfer-materials").locator("h2", {
-        hasText: "Transfer folders and files between egress and shared drive",
-      }),
-    ).toBeVisible();
     const checkboxes = page
       .getByTestId("egress-table-wrapper")
       .locator('input[type="checkbox"]');
@@ -77,15 +81,6 @@ test.describe("egress-netapp-transfer-error-handling", () => {
         return HttpResponse.json({ isInvalid: false });
       }),
     );
-    await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
-    await expect(page.getByTestId("tab-active")).toHaveText(
-      "Transfer materials",
-    );
-    await expect(
-      page.getByTestId("tab-content-transfer-materials").locator("h2", {
-        hasText: "Transfer folders and files between egress and shared drive",
-      }),
-    ).toBeVisible();
     const checkboxes = page
       .getByTestId("egress-table-wrapper")
       .locator('input[type="checkbox"]');
@@ -143,15 +138,6 @@ test.describe("egress-netapp-transfer-error-handling", () => {
         },
       ),
     );
-    await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
-    await expect(page.getByTestId("tab-active")).toHaveText(
-      "Transfer materials",
-    );
-    await expect(
-      page.getByTestId("tab-content-transfer-materials").locator("h2", {
-        hasText: "Transfer folders and files between egress and shared drive",
-      }),
-    ).toBeVisible();
     const checkboxes = page
       .getByTestId("egress-table-wrapper")
       .locator('input[type="checkbox"]');
@@ -215,15 +201,6 @@ test.describe("egress-netapp-transfer-error-handling", () => {
         },
       ),
     );
-    await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
-    await expect(page.getByTestId("tab-active")).toHaveText(
-      "Transfer materials",
-    );
-    await expect(
-      page.getByTestId("tab-content-transfer-materials").locator("h2", {
-        hasText: "Transfer folders and files between egress and shared drive",
-      }),
-    ).toBeVisible();
     const checkboxes = page
       .getByTestId("egress-table-wrapper")
       .locator('input[type="checkbox"]');
@@ -287,15 +264,6 @@ test.describe("egress-netapp-transfer-error-handling", () => {
         },
       ),
     );
-    await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
-    await expect(page.getByTestId("tab-active")).toHaveText(
-      "Transfer materials",
-    );
-    await expect(
-      page.getByTestId("tab-content-transfer-materials").locator("h2", {
-        hasText: "Transfer folders and files between egress and shared drive",
-      }),
-    ).toBeVisible();
     const checkboxes = page
       .getByTestId("egress-table-wrapper")
       .locator('input[type="checkbox"]');
