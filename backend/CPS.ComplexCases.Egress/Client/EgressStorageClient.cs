@@ -180,10 +180,10 @@ public class EgressStorageClient(
             Path = parentPath
         };
 
-        var request = _egressRequestFactory.CreateFolderRequest(arg, token);
-
         try
         {
+            var request = _egressRequestFactory.CreateFolderRequest(arg, token);
+
             var response = await _httpClient.SendAsync(request);
 
             if (response.IsSuccessStatusCode)
