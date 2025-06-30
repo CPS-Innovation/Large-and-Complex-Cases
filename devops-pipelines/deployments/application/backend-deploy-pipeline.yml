@@ -1138,6 +1138,84 @@ stages:
                 echo "##vso[task.setvariable variable=validationStageIP]$PIPELINE_IP"
 
           - task: AzureCLI@2
+            displayName: 'Temporarily Allow Function App Access for Health Checks'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Temporarily allowing pipeline access to Function Apps for health checks..."
+                
+                # Get current pipeline IP for this stage (should be same as above but let's be safe)
+                PIPELINE_IP="$(validationStageIP)"
+                if [ -z "$PIPELINE_IP" ]; then
+                  PIPELINE_IP=$(curl -s https://api.ipify.org || curl -s https://ipinfo.io/ip || curl -s https://icanhazip.com)
+                  echo "Health Check Stage IP Address: $PIPELINE_IP"
+                fi
+                
+                if [ -z "$PIPELINE_IP" ]; then
+                  echo "❌ Could not determine pipeline IP address"
+                  exit 1
+                fi
+                
+                # Function to add pipeline IP to Function App access restrictions
+                add_pipeline_ip_to_function_app() {
+                  local function_name="$1"
+                  local display_name="$2"
+                  
+                  echo "Adding pipeline IP to $display_name access restrictions..."
+                  
+                  # Check if function app exists
+                  if ! az functionapp show --name "$function_name" --resource-group "$(resourceGroupName)" &> /dev/null; then
+                    echo "⚠️ Function App $function_name not found, skipping access restriction setup..."
+                    return 0
+                  fi
+                  
+                  # Create unique rule name for pipeline access
+                  RULE_NAME="AzureDevOps-HealthCheck-$(date +%Y%m%d-%H%M%S)"
+                  
+                  echo "Adding access restriction rule: $RULE_NAME for $display_name"
+                  echo "Pipeline IP: $PIPELINE_IP"
+                  
+                  # Add IP access restriction rule for the pipeline
+                  az functionapp config access-restriction add \
+                    --resource-group "$(resourceGroupName)" \
+                    --name "$function_name" \
+                    --rule-name "$RULE_NAME" \
+                    --action Allow \
+                    --ip-address "$PIPELINE_IP" \
+                    --priority 100 \
+                    --output table || echo "Warning: Could not add access restriction for $function_name (may already exist or restrictions not enabled)"
+                  
+                  if [ $? -eq 0 ]; then
+                    echo "✅ Access restriction added successfully for $display_name"
+                    
+                    # Store rule name for cleanup
+                    if [ "$function_name" = "$(mainApiName)" ]; then
+                      echo "##vso[task.setvariable variable=mainApiAccessRuleName]$RULE_NAME"
+                    elif [ "$function_name" = "$(fileTransferApiName)" ]; then
+                      echo "##vso[task.setvariable variable=fileTransferApiAccessRuleName]$RULE_NAME"
+                    fi
+                  else
+                    echo "❌ Failed to add access restriction for $display_name"
+                  fi
+                }
+                
+                # Add IP for Main API if deployed
+                if [ "${{ parameters.deployMainAPI }}" = "True" ]; then
+                  add_pipeline_ip_to_function_app "$(mainApiName)" "Main API"
+                fi
+                
+                # Add IP for FileTransfer API if deployed
+                if [ "${{ parameters.deployFileTransferAPI }}" = "True" ]; then
+                  add_pipeline_ip_to_function_app "$(fileTransferApiName)" "FileTransfer API"
+                fi
+                
+                echo "✅ Function App access restrictions configured for health checks"
+                echo "Waiting for access restriction rules to propagate..."
+                sleep 15
+
+          - task: AzureCLI@2
             displayName: 'LACC - Health Check Main API'
             condition: eq(${{ parameters.deployMainAPI }}, true)
             inputs:
@@ -1147,20 +1225,58 @@ stages:
               inlineScript: |
                 FUNCTION_URL=$(az functionapp show --name $(mainApiName) --resource-group $(resourceGroupName) --query defaultHostName -o tsv)
                 
-                # Wait for function app to be ready
-                sleep 15
+                echo "Testing Main API health check at: https://$FUNCTION_URL/api/status"
+                echo "Note: Access restrictions may take a moment to propagate..."
                 
-                # Check status endpoint
-                HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://$FUNCTION_URL/api/status" || echo "000")
+                # Wait for function app to be ready and access restrictions to propagate
+                sleep 20
                 
-                if [ "$HTTP_STATUS" -eq 200 ]; then
-                  echo "✅ Main API health check passed"
-                  echo "Main API is accessible at: https://$FUNCTION_URL"
-                  echo "Status endpoint: https://$FUNCTION_URL/api/status"
-                else
-                  echo "##vso[task.logissue type=error]❌ Main API health check failed with status: $HTTP_STATUS"
+                # Health check with retry logic for access restriction propagation
+                MAX_RETRIES=5
+                RETRY_DELAY=15
+                RETRY_COUNT=0
+                SUCCESS=false
+                
+                while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+                  echo "Health check attempt $((RETRY_COUNT + 1))/$MAX_RETRIES for Main API..."
+                  
+                  # Check status endpoint with timeout
+                  HTTP_STATUS=$(timeout 30 curl -s -o /dev/null -w "%{http_code}" "https://$FUNCTION_URL/api/status" 2>/dev/null || echo "000")
+                  
+                  echo "HTTP Status: $HTTP_STATUS"
+                  
+                  if [ "$HTTP_STATUS" -eq 200 ]; then
+                    echo "✅ Main API health check passed on attempt $((RETRY_COUNT + 1))"
+                    echo "Main API is accessible at: https://$FUNCTION_URL"
+                    echo "Status endpoint: https://$FUNCTION_URL/api/status"
+                    SUCCESS=true
+                    break
+                  elif [ "$HTTP_STATUS" -eq 403 ] || [ "$HTTP_STATUS" -eq 000 ]; then
+                    echo "⏳ Access restricted or connection failed (status: $HTTP_STATUS). Waiting for access restrictions to propagate..."
+                    if [ $RETRY_COUNT -lt $((MAX_RETRIES - 1)) ]; then
+                      echo "Waiting $RETRY_DELAY seconds before retry..."
+                      sleep $RETRY_DELAY
+                    fi
+                  else
+                    echo "❌ Unexpected HTTP status: $HTTP_STATUS"
+                    if [ $RETRY_COUNT -lt $((MAX_RETRIES - 1)) ]; then
+                      echo "Waiting $RETRY_DELAY seconds before retry..."
+                      sleep $RETRY_DELAY
+                    fi
+                  fi
+                  
+                  RETRY_COUNT=$((RETRY_COUNT + 1))
+                done
+                
+                if [ "$SUCCESS" = false ]; then
+                  echo "##vso[task.logissue type=error]❌ Main API health check failed after $MAX_RETRIES attempts"
+                  echo "Last HTTP status: $HTTP_STATUS"
                   echo "Attempted URL: https://$FUNCTION_URL/api/status"
-                  echo "Please check if the Main API is deployed correctly and the /api/status endpoint exists"
+                  echo "Possible causes:"
+                  echo "1. Function app not deployed correctly"
+                  echo "2. /api/status endpoint does not exist"
+                  echo "3. Access restrictions not allowing pipeline IP"
+                  echo "4. Function app not responding (internal error)"
                   exit 1
                 fi
 
@@ -1174,20 +1290,58 @@ stages:
               inlineScript: |
                 FUNCTION_URL=$(az functionapp show --name $(fileTransferApiName) --resource-group $(resourceGroupName) --query defaultHostName -o tsv)
                 
-                # Wait for function app to be ready
-                sleep 15
+                echo "Testing FileTransfer API health check at: https://$FUNCTION_URL/api/status"
+                echo "Note: Access restrictions may take a moment to propagate..."
                 
-                # Check status endpoint
-                HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://$FUNCTION_URL/api/status" || echo "000")
+                # Wait for function app to be ready and access restrictions to propagate
+                sleep 20
                 
-                if [ "$HTTP_STATUS" -eq 200 ]; then
-                  echo "✅ FileTransfer API health check passed"
-                  echo "FileTransfer API is accessible at: https://$FUNCTION_URL"
-                  echo "Status endpoint: https://$FUNCTION_URL/api/status"
-                else
-                  echo "##vso[task.logissue type=error]❌ FileTransfer API health check failed with status: $HTTP_STATUS"
+                # Health check with retry logic for access restriction propagation
+                MAX_RETRIES=5
+                RETRY_DELAY=15
+                RETRY_COUNT=0
+                SUCCESS=false
+                
+                while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+                  echo "Health check attempt $((RETRY_COUNT + 1))/$MAX_RETRIES for FileTransfer API..."
+                  
+                  # Check status endpoint with timeout
+                  HTTP_STATUS=$(timeout 30 curl -s -o /dev/null -w "%{http_code}" "https://$FUNCTION_URL/api/status" 2>/dev/null || echo "000")
+                  
+                  echo "HTTP Status: $HTTP_STATUS"
+                  
+                  if [ "$HTTP_STATUS" -eq 200 ]; then
+                    echo "✅ FileTransfer API health check passed on attempt $((RETRY_COUNT + 1))"
+                    echo "FileTransfer API is accessible at: https://$FUNCTION_URL"
+                    echo "Status endpoint: https://$FUNCTION_URL/api/status"
+                    SUCCESS=true
+                    break
+                  elif [ "$HTTP_STATUS" -eq 403 ] || [ "$HTTP_STATUS" -eq 000 ]; then
+                    echo "⏳ Access restricted or connection failed (status: $HTTP_STATUS). Waiting for access restrictions to propagate..."
+                    if [ $RETRY_COUNT -lt $((MAX_RETRIES - 1)) ]; then
+                      echo "Waiting $RETRY_DELAY seconds before retry..."
+                      sleep $RETRY_DELAY
+                    fi
+                  else
+                    echo "❌ Unexpected HTTP status: $HTTP_STATUS"
+                    if [ $RETRY_COUNT -lt $((MAX_RETRIES - 1)) ]; then
+                      echo "Waiting $RETRY_DELAY seconds before retry..."
+                      sleep $RETRY_DELAY
+                    fi
+                  fi
+                  
+                  RETRY_COUNT=$((RETRY_COUNT + 1))
+                done
+                
+                if [ "$SUCCESS" = false ]; then
+                  echo "##vso[task.logissue type=error]❌ FileTransfer API health check failed after $MAX_RETRIES attempts"
+                  echo "Last HTTP status: $HTTP_STATUS"
                   echo "Attempted URL: https://$FUNCTION_URL/api/status"
-                  echo "Please check if the FileTransfer API is deployed correctly and the /api/status endpoint exists"
+                  echo "Possible causes:"
+                  echo "1. Function app not deployed correctly"
+                  echo "2. /api/status endpoint does not exist"
+                  echo "3. Access restrictions not allowing pipeline IP"
+                  echo "4. Function app not responding (internal error)"
                   exit 1
                 fi
 
@@ -1452,6 +1606,64 @@ stages:
                 fi
 
           - task: AzureCLI@2
+            displayName: 'Cleanup Function App Access Restrictions for Health Checks'
+            condition: always()
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Cleaning up Function App access restrictions for health checks..."
+                
+                # Function to remove pipeline IP from Function App access restrictions
+                remove_pipeline_ip_from_function_app() {
+                  local function_name="$1"
+                  local display_name="$2"
+                  local rule_name_var="$3"
+                  
+                  echo "Removing pipeline access restriction from $display_name..."
+                  
+                  # Check if function app exists
+                  if ! az functionapp show --name "$function_name" --resource-group "$(resourceGroupName)" &> /dev/null; then
+                    echo "⚠️ Function App $function_name not found, skipping access restriction cleanup..."
+                    return 0
+                  fi
+                  
+                  if [ -n "$rule_name_var" ]; then
+                    echo "Removing access restriction rule: $rule_name_var from $display_name"
+                    
+                    # Remove the access restriction rule
+                    az functionapp config access-restriction remove \
+                      --resource-group "$(resourceGroupName)" \
+                      --name "$function_name" \
+                      --rule-name "$rule_name_var" \
+                      --output table || echo "Warning: Could not remove access restriction rule $rule_name_var from $function_name (may not exist)"
+                    
+                    if [ $? -eq 0 ]; then
+                      echo "✅ Access restriction cleanup completed for $display_name"
+                    else
+                      echo "❌ Failed to remove access restriction from $display_name"
+                    fi
+                  else
+                    echo "No access restriction rule name to clean up for $display_name"
+                  fi
+                }
+                
+                # Clean up Main API access restriction if deployed
+                if [ "${{ parameters.deployMainAPI }}" = "True" ]; then
+                  MAIN_API_RULE_NAME="$(mainApiAccessRuleName)"
+                  remove_pipeline_ip_from_function_app "$(mainApiName)" "Main API" "$MAIN_API_RULE_NAME"
+                fi
+                
+                # Clean up FileTransfer API access restriction if deployed
+                if [ "${{ parameters.deployFileTransferAPI }}" = "True" ]; then
+                  FILETRANSFER_API_RULE_NAME="$(fileTransferApiAccessRuleName)"
+                  remove_pipeline_ip_from_function_app "$(fileTransferApiName)" "FileTransfer API" "$FILETRANSFER_API_RULE_NAME"
+                fi
+                
+                echo "✅ Function App access restriction cleanup completed"
+
+          - task: AzureCLI@2
             displayName: 'Final Cleanup Summary'
             condition: always()
             inputs:
@@ -1468,6 +1680,7 @@ stages:
                 echo "  3. Connection Test PostgreSQL firewall rule (temporary pipeline access)"
                 echo "  4. Post-Deployment Validation Key Vault firewall rule (temporary pipeline access)"
                 echo "  5. Pre-Deployment Build Agent Key Vault firewall rule (temporary build agent access)"
+                echo "  6. Function App access restrictions for health checks (temporary pipeline access)"
                 echo ""
                 echo "🔒 Persistent firewall rules (NOT cleaned up - by design):"
                 echo "  - Function App outbound IPs in Key Vault firewall (permanent access required)"
@@ -1475,6 +1688,7 @@ stages:
                 echo ""
                 echo "📋 Key Vault: $(keyVaultName)"
                 echo "📋 PostgreSQL Server: Connected via connection string in Key Vault"
+                echo "📋 Function Apps: $(mainApiName), $(fileTransferApiName)"
                 echo ""
                 echo "✅ Pipeline cleanup completed successfully!"
 
