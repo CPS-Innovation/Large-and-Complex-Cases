@@ -391,6 +391,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     const sourcePaths = response.files.map((data) => ({
       fileId: data?.id,
       path: data.sourcePath,
+      relativePath: data.relativePath,
     }));
 
     const payload = {

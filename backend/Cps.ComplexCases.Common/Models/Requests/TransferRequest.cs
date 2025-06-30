@@ -4,7 +4,6 @@ namespace CPS.ComplexCases.Common.Models.Requests;
 
 public class TransferRequest
 {
-    public bool? IsRetry { get; set; } = false;
     public TransferType TransferType { get; set; }
     public TransferDirection TransferDirection { get; set; }
     public required List<TransferSourcePath> SourcePaths { get; set; }
@@ -22,7 +21,7 @@ public class TransferMetadata
 public class TransferSourcePath
 {
     public required string Path { get; set; }
+    public string? RelativePath { get; set; }
     public string? ModifiedPath { get; set; }
     public string? FileId { get; set; }
-    public TransferOverwritePolicy? OverwritePolicy { get; set; }
 }

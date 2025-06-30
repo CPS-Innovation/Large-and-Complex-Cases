@@ -227,34 +227,6 @@ public class TransferOrchestratorTests
     }
 
     [Fact]
-    public async Task RunOrchestrator_WithIgnoreOverwritePolicy_SkipsTransferFileForIgnoredPaths()
-    {
-        // Arrange
-        var transferPayload = CreateTransferPayloadWithIgnoredPaths();
-        var capturedTransferPayloads = new List<TransferFilePayload>();
-
-        _contextMock.Setup(c => c.GetInput<TransferPayload>())
-            .Returns(transferPayload);
-
-        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
-            .Returns(Task.CompletedTask)
-            .Callback<TaskName, object, TaskOptions>((taskName, payload, _) =>
-            {
-                if (taskName.Name == "TransferFile" && payload is TransferFilePayload transferFilePayload)
-                {
-                    capturedTransferPayloads.Add(transferFilePayload);
-                }
-            });
-
-        // Act
-        await _orchestrator.RunOrchestrator(_contextMock.Object);
-
-        // Assert
-        var nonIgnoredPaths = transferPayload.SourcePaths.Count(sp => sp.OverwritePolicy != TransferOverwritePolicy.Ignore);
-        capturedTransferPayloads.Should().HaveCount(nonIgnoredPaths);
-    }
-
-    [Fact]
     public async Task RunOrchestrator_WithValidInput_CallsUpdateActivityLogWithCorrectCompletedPayload()
     {
         // Arrange
@@ -424,7 +396,6 @@ public class TransferOrchestratorTests
                 new TransferSourcePath
                 {
                     Path = _fixture.Create<string>(),
-                    OverwritePolicy = TransferOverwritePolicy.Overwrite
                 }
             },
             CaseId = _fixture.Create<int>(),
@@ -446,13 +417,11 @@ public class TransferOrchestratorTests
             new TransferSourcePath
             {
                 Path = _fixture.Create<string>(),
-                OverwritePolicy = TransferOverwritePolicy.Overwrite
             },
 
             new TransferSourcePath
             {
                 Path = _fixture.Create<string>(),
-                OverwritePolicy = TransferOverwritePolicy.Overwrite
             }
         },
             CaseId = _fixture.Create<int>(),
@@ -464,31 +433,4 @@ public class TransferOrchestratorTests
         };
     }
 
-    private TransferPayload CreateTransferPayloadWithIgnoredPaths()
-    {
-        return new TransferPayload
-        {
-            TransferId = _fixture.Create<Guid>(),
-            DestinationPath = _fixture.Create<string>(),
-            SourcePaths = new List<TransferSourcePath>
-        {
-            new TransferSourcePath
-            {
-                Path = _fixture.Create<string>(),
-                OverwritePolicy = TransferOverwritePolicy.Overwrite
-            },
-            new TransferSourcePath
-            {
-                Path = _fixture.Create<string>(),
-                OverwritePolicy = TransferOverwritePolicy.Ignore
-            }
-        },
-            CaseId = _fixture.Create<int>(),
-            TransferType = _fixture.Create<TransferType>(),
-            TransferDirection = _fixture.Create<TransferDirection>(),
-            WorkspaceId = _fixture.Create<string>(),
-            UserName = _fixture.Create<string>(),
-            IsRetry = _fixture.Create<bool>()
-        };
-    }
 }
