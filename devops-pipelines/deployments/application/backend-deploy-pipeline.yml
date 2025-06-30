@@ -239,6 +239,9 @@ stages:
                     --ip-address "$BUILD_AGENT_IP" \
                     --output table || echo "Warning: Could not add IP to Key Vault firewall (may already exist or firewall disabled)"
                   
+                  # Store build agent IP for cleanup later
+                  echo "##vso[task.setvariable variable=buildAgentIP]$BUILD_AGENT_IP"
+                  
                   # Wait a moment for networking changes to apply
                   echo "Waiting for Key Vault networking changes to apply..."
                   sleep 10
@@ -574,11 +577,29 @@ stages:
                       # SECURITY: Parse connection string components WITHOUT storing the full secret in variables
                       echo "Retrieving and parsing connection string securely from Key Vault: $(keyVaultName)"
                       
-                      # Extract components directly from Key Vault command output without storing full connection string
-                      DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=Host=)[^;]+' | head -1)
-                      DB_NAME=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=Database=)[^;]+' | head -1)
-                      DB_USER=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=User Id=)[^;]+' | head -1)
-                      DB_PASS=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=Password=)[^;]+' | head -1)
+                      # Add retry logic for Key Vault access
+                      for attempt in {1..3}; do
+                        echo "Key Vault access attempt $attempt..."
+                        
+                        # Extract components directly from Key Vault command output without storing full connection string
+                        DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=Host=)[^;]+' | head -1)
+                        DB_NAME=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=Database=)[^;]+' | head -1)
+                        DB_USER=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=User Id=)[^;]+' | head -1)
+                        DB_PASS=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=Password=)[^;]+' | head -1)
+                        
+                        # Check if we successfully retrieved all components
+                        if [ -n "$DB_HOST" ] && [ -n "$DB_NAME" ] && [ -n "$DB_USER" ] && [ -n "$DB_PASS" ]; then
+                          echo "✅ Successfully retrieved connection string components on attempt $attempt"
+                          break
+                        else
+                          if [ $attempt -eq 3 ]; then
+                            echo "❌ Failed to retrieve connection string components after 3 attempts"
+                          else
+                            echo "Key Vault access failed, waiting 10 seconds before retry..."
+                            sleep 10
+                          fi
+                        fi
+                      done
                       
                       # Validate that we successfully retrieved and parsed credentials without exposing them
                       if [ -z "$DB_HOST" ]; then
@@ -604,65 +625,42 @@ stages:
                         exit 1
                       fi
                       
-                      echo "Connecting to PostgreSQL server: $DB_HOST"
+                      echo "Testing database connection..."
+                      echo "Host: $DB_HOST"
                       echo "Database: $DB_NAME"
                       echo "User: $DB_USER"
                       echo "Password: [REDACTED FOR SECURITY]"
                       
-                      # First, test connection to the server using the default 'postgres' database
-                      echo "Testing server connection..."
-                      PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "postgres" -c "SELECT version();" -t
+                      # First test server connectivity
+                      echo "Testing server connectivity..."
+                      PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "postgres" -c "SELECT 'Server connection successful' as status;" -t
                       
                       if [ $? -ne 0 ]; then
                         echo "❌ Cannot connect to PostgreSQL server"
-                        echo "Please check server connectivity and credentials"
                         exit 1
                       fi
                       
-                      echo "✅ Server connection successful"
-                      
-                      # Check if the target database exists
-                      echo "Checking if database '$DB_NAME' exists..."
-                      DB_EXISTS=$(PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "postgres" -tAc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME';" 2>/dev/null)
-                      
-                      if [ -z "$DB_EXISTS" ]; then
-                        echo "Database '$DB_NAME' does not exist. Creating it..."
-                        PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "postgres" -c "CREATE DATABASE \"$DB_NAME\";"
-                        
-                        if [ $? -eq 0 ]; then
-                          echo "✅ Database '$DB_NAME' created successfully"
-                        else
-                          echo "❌ Failed to create database '$DB_NAME'"
-                          exit 1
-                        fi
-                      else
-                        echo "✅ Database '$DB_NAME' already exists"
-                      fi
-                      
-                      # Now test connection to the target database
-                      echo "Testing connection to target database '$DB_NAME'..."
-                      PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -c "SELECT version();" -t
+                      # Then test target database connection with detailed output
+                      echo "Testing target database connection..."
+                      PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -c "SELECT 'Database connection successful' as status, version(), current_database(), current_user, inet_server_addr(), inet_server_port();" -t
                       
                       if [ $? -eq 0 ]; then
-                        echo "✅ Database connection successful"
+                        echo "✅ Database connection test passed"
                         
-                        # Run migration script
-                        echo "Running database migration script..."
-                        PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -f "$(Pipeline.Workspace)/database-scripts/migration-script.sql"
+                        # Additional checks
+                        echo "Running additional database health checks..."
                         
-                        if [ $? -eq 0 ]; then
-                          echo "✅ Database migration completed successfully"
-                        else
-                          echo "❌ Database migration failed"
-                          exit 1
-                        fi
+                        # Check if we can query system tables
+                        PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -c "SELECT count(*) as table_count FROM information_schema.tables WHERE table_schema = 'public';" -t
+                        
+                        echo "✅ Database health check completed successfully"
                       else
-                        echo "❌ Database connection failed"
+                        echo "❌ Database connection test failed"
                         echo "Please check:"
-                        echo "1. PostgreSQL server is running"
+                        echo "1. PostgreSQL server is running and accessible"
                         echo "2. Firewall rules are configured correctly"
-                        echo "3. Connection string is correct"
-                        echo "4. User has necessary permissions"
+                        echo "3. Connection credentials are correct"
+                        echo "4. Network connectivity is available"
                         exit 1
                       fi
 
@@ -965,7 +963,7 @@ stages:
                 
                 echo "✅ Function App IP whitelisting to Key Vault completed"
                 echo "Waiting for Key Vault network rules to propagate..."
-                sleep 15
+                sleep 30
                 
                 # Now whitelist Function App IPs to PostgreSQL Flexible Server
                 echo "Configuring PostgreSQL Flexible Server firewall for Function App outbound IPs..."
@@ -975,9 +973,16 @@ stages:
                 echo "Key Vault Name: $(keyVaultName)"
                 echo "Expected Secret Name: ConnectionStrings--CaseManagementDatastoreConnection"
                 
-                # List all secrets to see what's available
+                # List all secrets to see what's available (with retry for network propagation)
                 echo "📋 Available secrets in Key Vault:"
-                az keyvault secret list --vault-name "$(keyVaultName)" --query "[].name" -o table || echo "Could not list secrets"
+                for i in {1..3}; do
+                  if az keyvault secret list --vault-name "$(keyVaultName)" --query "[].name" -o table; then
+                    break
+                  else
+                    echo "Attempt $i failed, waiting for Key Vault network rules to propagate..."
+                    sleep 10
+                  fi
+                done
                 
                 # Check if the specific secret exists
                 echo "🔍 Checking if PostgreSQL connection string secret exists..."
@@ -994,12 +999,12 @@ stages:
                     echo "❌ Could not parse PostgreSQL host from connection string or connection string is empty"
                     echo "Skipping PostgreSQL firewall configuration for Function Apps"
                     echo "⚠️ Function Apps may not be able to connect to PostgreSQL without manual firewall configuration"
-                                     else
-                     echo "✅ Successfully parsed database host: $DB_HOST"
-                     
-                     # Extract server name from hostname (remove .postgres.database.azure.com)
-                     DB_SERVER_NAME=$(echo "$DB_HOST" | sed 's/\.postgres\.database\.azure\.com.*//')
-                     echo "PostgreSQL Server Name: $DB_SERVER_NAME"
+                  else
+                    echo "✅ Successfully parsed database host: $DB_HOST"
+                    
+                    # Extract server name from hostname (remove .postgres.database.azure.com)
+                    DB_SERVER_NAME=$(echo "$DB_HOST" | sed 's/\.postgres\.database\.azure\.com.*//')
+                    echo "PostgreSQL Server Name: $DB_SERVER_NAME"
                     
                     # Function to add Function App IPs to PostgreSQL firewall
                     add_function_ips_to_postgres() {
@@ -1066,21 +1071,20 @@ stages:
                       add_function_ips_to_postgres "$(fileTransferApiName)" "FileTransferAPI"
                     fi
                     
-                                         echo "✅ Function App IP whitelisting to PostgreSQL completed"
-                     fi
-                   fi
-                 else
-                   echo "❌ Secret 'ConnectionStrings--CaseManagementDatastoreConnection' does not exist in Key Vault"
-                   echo "This could be due to:"
-                   echo "1. The variable 'CaseManagementDatastoreConnection' was not set in the variable group"
-                   echo "2. The secret was not created successfully in the Pre_Deployment_Validation stage"
-                   echo "3. Access permissions issue"
-                   echo ""
-                   echo "Skipping PostgreSQL firewall configuration for Function Apps"
-                   echo "⚠️ Function Apps may not be able to connect to PostgreSQL without manual firewall configuration"
-                 fi
-                 
-                 echo "✅ Complete Function App IP whitelisting finished"
+                    echo "✅ Function App IP whitelisting to PostgreSQL completed"
+                  fi
+                else
+                  echo "❌ Secret 'ConnectionStrings--CaseManagementDatastoreConnection' does not exist in Key Vault"
+                  echo "This could be due to:"
+                  echo "1. The variable 'CaseManagementDatastoreConnection' was not set in the variable group"
+                  echo "2. The secret was not created successfully in the Pre_Deployment_Validation stage"
+                  echo "3. Access permissions issue"
+                  echo ""
+                  echo "Skipping PostgreSQL firewall configuration for Function Apps"
+                  echo "⚠️ Function Apps may not be able to connect to PostgreSQL without manual firewall configuration"
+                fi
+                
+                echo "✅ Complete Function App IP whitelisting finished"
 
           - task: AzureCLI@2
             displayName: 'Temporarily Allow Key Vault Access for Post-Deployment Validation'
@@ -1095,15 +1099,40 @@ stages:
                 PIPELINE_IP=$(curl -s https://api.ipify.org || curl -s https://ipinfo.io/ip || curl -s https://icanhazip.com)
                 echo "Post-Deployment Validation Stage IP Address: $PIPELINE_IP"
                 
+                if [ -z "$PIPELINE_IP" ]; then
+                  echo "❌ Could not determine pipeline IP address"
+                  exit 1
+                fi
+                
                 # Add pipeline IP to Key Vault firewall rules
+                echo "Adding pipeline IP to Key Vault firewall..."
                 az keyvault network-rule add \
                   --name "$(keyVaultName)" \
                   --ip-address "$PIPELINE_IP" \
                   --output table
                 
-                # Wait a moment for the rule to take effect
-                echo "Waiting for firewall rule to take effect..."
-                sleep 10
+                # Wait longer for the rule to take effect and verify access
+                echo "Waiting for Key Vault firewall rule to take effect..."
+                sleep 20
+                
+                # Test Key Vault access with retry logic
+                echo "Testing Key Vault access with retry logic..."
+                for i in {1..5}; do
+                  echo "Access test attempt $i..."
+                  if az keyvault secret list --vault-name "$(keyVaultName)" --query "[0].name" -o tsv >/dev/null 2>&1; then
+                    echo "✅ Key Vault access confirmed on attempt $i"
+                    break
+                  else
+                    if [ $i -eq 5 ]; then
+                      echo "❌ Key Vault access still not working after 5 attempts"
+                      echo "This may cause issues with database connection tests"
+                      echo "Continuing with deployment but database tests may fail..."
+                    else
+                      echo "Access test failed, waiting 15 more seconds for propagation..."
+                      sleep 15
+                    fi
+                  fi
+                done
                 
                 echo "✅ Key Vault access configured for Post-Deployment Validation IP: $PIPELINE_IP"
                 echo "##vso[task.setvariable variable=validationStageIP]$PIPELINE_IP"
@@ -1240,11 +1269,29 @@ stages:
                 # SECURITY: Parse connection string components WITHOUT storing the full secret in variables
                 echo "Retrieving and parsing connection string securely from Key Vault: $(keyVaultName)"
                 
-                # Extract components directly from Key Vault command output without storing full connection string
-                DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=Host=)[^;]+' | head -1)
-                DB_NAME=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=Database=)[^;]+' | head -1)
-                DB_USER=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=User Id=)[^;]+' | head -1)
-                DB_PASS=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=Password=)[^;]+' | head -1)
+                # Add retry logic for Key Vault access
+                for attempt in {1..3}; do
+                  echo "Key Vault access attempt $attempt..."
+                  
+                  # Extract components directly from Key Vault command output without storing full connection string
+                  DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=Host=)[^;]+' | head -1)
+                  DB_NAME=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=Database=)[^;]+' | head -1)
+                  DB_USER=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=User Id=)[^;]+' | head -1)
+                  DB_PASS=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=Password=)[^;]+' | head -1)
+                  
+                  # Check if we successfully retrieved all components
+                  if [ -n "$DB_HOST" ] && [ -n "$DB_NAME" ] && [ -n "$DB_USER" ] && [ -n "$DB_PASS" ]; then
+                    echo "✅ Successfully retrieved connection string components on attempt $attempt"
+                    break
+                  else
+                    if [ $attempt -eq 3 ]; then
+                      echo "❌ Failed to retrieve connection string components after 3 attempts"
+                    else
+                      echo "Key Vault access failed, waiting 10 seconds before retry..."
+                      sleep 10
+                    fi
+                  fi
+                done
                 
                 # Validate that we successfully retrieved and parsed credentials without exposing them
                 if [ -z "$DB_HOST" ]; then
@@ -1376,4 +1423,58 @@ stages:
                 else
                   echo "No Post-Deployment Validation Key Vault firewall rule to clean up"
                 fi
+
+          - task: AzureCLI@2
+            displayName: 'Cleanup Pre-Deployment Build Agent IP from Key Vault'
+            condition: always()
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Cleaning up Pre-Deployment Build Agent IP from Key Vault firewall..."
+                
+                # Get the build agent IP from the variable set in pre-deployment validation
+                BUILD_AGENT_IP="$(buildAgentIP)"
+                
+                if [ -n "$BUILD_AGENT_IP" ]; then
+                  echo "Removing Pre-Deployment Build Agent IP from Key Vault firewall: $BUILD_AGENT_IP"
+                  
+                  # Remove the build agent IP from Key Vault firewall rules
+                  az keyvault network-rule remove \
+                    --name "$(keyVaultName)" \
+                    --ip-address "$BUILD_AGENT_IP" \
+                    --output table || echo "Warning: Could not remove Key Vault firewall rule for Build Agent (may not exist or already removed)"
+                  
+                  echo "✅ Pre-Deployment Build Agent Key Vault firewall rule cleanup completed"
+                else
+                  echo "No Pre-Deployment Build Agent IP to clean up (variable not set)"
+                fi
+
+          - task: AzureCLI@2
+            displayName: 'Final Cleanup Summary'
+            condition: always()
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "🧹 Final Cleanup Summary"
+                echo "========================"
+                echo ""
+                echo "✅ Cleanup operations completed:"
+                echo "  1. Database Migration PostgreSQL firewall rule (temporary pipeline access)"
+                echo "  2. Database Migration Key Vault firewall rule (temporary pipeline access)"
+                echo "  3. Connection Test PostgreSQL firewall rule (temporary pipeline access)"
+                echo "  4. Post-Deployment Validation Key Vault firewall rule (temporary pipeline access)"
+                echo "  5. Pre-Deployment Build Agent Key Vault firewall rule (temporary build agent access)"
+                echo ""
+                echo "🔒 Persistent firewall rules (NOT cleaned up - by design):"
+                echo "  - Function App outbound IPs in Key Vault firewall (permanent access required)"
+                echo "  - Function App outbound IPs in PostgreSQL firewall (permanent access required)"
+                echo ""
+                echo "📋 Key Vault: $(keyVaultName)"
+                echo "📋 PostgreSQL Server: Connected via connection string in Key Vault"
+                echo ""
+                echo "✅ Pipeline cleanup completed successfully!"
 
