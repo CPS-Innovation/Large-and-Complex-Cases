@@ -1,13 +1,60 @@
 .contentWrapper {
   width: 75%;
+  & :global(.govuk-inset-text) {
+    max-width: 80%;
+  }
+  .btnCompleteTransfer {
+    margin-bottom: 3rem;
+  }
+}
+.errorWrapper {
+  margin-bottom: 2.5rem;
+}
+.errorList {
+  border: 1px solid #f3f2f1;
+  padding: 0 1.5rem 1.5rem 1.5rem;
+  margin: 0;
+  & li:not(:last-child) {
+    border-bottom: 1px solid #b1b4b6;
+  }
 }
 .errorListItem {
-  display: flex;
+  display: inline-grid;
+  grid-template-columns: min(690px) 1fr 1fr;
   gap: 1rem;
+  padding: 1rem 0 1rem 0;
+
+  align-items: center;
   &:first-child span {
     max-width: 50rem;
     white-space: normal;
     overflow-wrap: break-word;
     word-break: break-all;
   }
+  & :global(.govuk-button--secondary) {
+    margin-bottom: 0;
+  }
+  .renameButton {
+    justify-self: end;
+  }
+  .statusTag {
+    font-weight: normal;
+    color: #2a0b06;
+    text-transform: lowercase;
+    width: 130px;
+    text-align: center;
+  }
+}
+
+.relativePathWrapper {
+  padding: 1.5rem;
+  background-color: #f3f2f1;
+}
+.relativePathText {
+  margin-left: 1rem;
+  color: #003078;
+}
+
+.fileNameText {
+  margin-left: 0.5rem;
 }

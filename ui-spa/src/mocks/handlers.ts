@@ -116,6 +116,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
           : egressToNetAppIndexingTransferPlaywright;
       }
       if (requestPayload.transferDirection === "NetAppToEgress") {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         response = isDevMock()
           ? netAppToEgressIndexingTransferDev
           : netAppToEgressIndexingTransferPlaywright;

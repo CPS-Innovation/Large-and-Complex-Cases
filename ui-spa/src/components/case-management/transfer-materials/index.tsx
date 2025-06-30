@@ -438,6 +438,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           state: {
             isRouteValid: true,
             validationErrors: response.validationErrors,
+            destinationPath: response.destinationPath,
           },
         });
         return;
