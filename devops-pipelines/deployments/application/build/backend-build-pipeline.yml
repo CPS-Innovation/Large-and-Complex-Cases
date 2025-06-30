@@ -150,16 +150,58 @@ stages:
               projects: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
               publishWebProjects: false
               zipAfterPublish: false
-              arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/MainAPI --no-restore /p:SourceRevisionId=$(Build.SourceVersion)'
+              arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/MainAPI --no-restore /p:SourceRevisionId=$(Build.SourceVersion) /p:PublishUrl=$(Build.ArtifactStagingDirectory)/MainAPI'
 
-          - task: ArchiveFiles@2
-            displayName: 'Archive Main API'
+          - task: Bash@3
+            displayName: 'Debug - List Main API Output Structure'
             inputs:
-              rootFolderOrFile: '$(Build.ArtifactStagingDirectory)/MainAPI'
-              includeRootFolder: false
-              archiveType: 'zip'
-              archiveFile: '$(Build.ArtifactStagingDirectory)/lacc-main-api-$(Build.BuildId).zip'
-              replaceExistingArchive: true
+              targetType: 'inline'
+              script: |
+                echo "Checking Main API output structure:"
+                echo "Contents of $(Build.ArtifactStagingDirectory)/MainAPI:"
+                find "$(Build.ArtifactStagingDirectory)/MainAPI" -type f | sed "s|$(Build.ArtifactStagingDirectory)/MainAPI||" | head -20
+
+          - task: Bash@3
+            displayName: 'Fix Main API Folder Structure and Archive'
+            inputs:
+              targetType: 'inline'
+              script: |
+                mainApiPath="$(Build.ArtifactStagingDirectory)/MainAPI"
+                zipFile="$(Build.ArtifactStagingDirectory)/lacc-main-api-$(Build.BuildId).zip"
+                
+                echo "Checking for nested folder structure..."
+                
+                # Check if there's a nested project folder (common with .NET publish)
+                nestedFolders=($(find "$mainApiPath" -maxdepth 1 -type d ! -path "$mainApiPath"))
+                
+                if [ ${#nestedFolders[@]} -eq 1 ] && [ -f "${nestedFolders[0]}/host.json" ]; then
+                  folderName=$(basename "${nestedFolders[0]}")
+                  echo "Found nested folder: $folderName"
+                  echo "Extracting files from nested folder to root level..."
+                  
+                  # Create temp folder for correct structure
+                  tempPath="$(Build.ArtifactStagingDirectory)/MainAPI_Fixed"
+                  mkdir -p "$tempPath"
+                  
+                  # Copy all files from nested folder to temp folder
+                  cp -r "${nestedFolders[0]}"/* "$tempPath/"
+                  
+                  # Archive the fixed folder
+                  echo "Creating zip from fixed folder structure..."
+                  cd "$tempPath"
+                  zip -r "$zipFile" .
+                  cd - > /dev/null
+                  
+                  # Cleanup temp folder
+                  rm -rf "$tempPath"
+                else
+                  echo "No nested folder found, archiving as-is..."
+                  cd "$mainApiPath"
+                  zip -r "$zipFile" .
+                  cd - > /dev/null
+                fi
+                
+                echo "✅ Main API zip created: $zipFile"
 
           - task: PublishBuildArtifacts@1
             displayName: 'Publish Main API Artifact'
@@ -199,16 +241,105 @@ stages:
               projects: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
               publishWebProjects: false
               zipAfterPublish: false
-              arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/FileTransferAPI --no-restore /p:SourceRevisionId=$(Build.SourceVersion)'
+              arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/FileTransferAPI --no-restore /p:SourceRevisionId=$(Build.SourceVersion) /p:PublishUrl=$(Build.ArtifactStagingDirectory)/FileTransferAPI'
 
-          - task: ArchiveFiles@2
-            displayName: 'Archive FileTransfer API'
+          - task: Bash@3
+            displayName: 'Debug - List FileTransfer API Output Structure'
             inputs:
-              rootFolderOrFile: '$(Build.ArtifactStagingDirectory)/FileTransferAPI'
-              includeRootFolder: false
-              archiveType: 'zip'
-              archiveFile: '$(Build.ArtifactStagingDirectory)/lacc-filetransfer-api-$(Build.BuildId).zip'
-              replaceExistingArchive: true
+              targetType: 'inline'
+              script: |
+                echo "Checking FileTransfer API output structure:"
+                echo "Contents of $(Build.ArtifactStagingDirectory)/FileTransferAPI:"
+                find "$(Build.ArtifactStagingDirectory)/FileTransferAPI" -type f | sed "s|$(Build.ArtifactStagingDirectory)/FileTransferAPI||" | head -20
+
+          - task: Bash@3
+            displayName: 'Fix FileTransfer API Folder Structure and Archive'
+            inputs:
+              targetType: 'inline'
+              script: |
+                fileTransferApiPath="$(Build.ArtifactStagingDirectory)/FileTransferAPI"
+                zipFile="$(Build.ArtifactStagingDirectory)/lacc-filetransfer-api-$(Build.BuildId).zip"
+                
+                echo "Checking for nested folder structure..."
+                
+                # Check if there's a nested project folder (common with .NET publish)
+                nestedFolders=($(find "$fileTransferApiPath" -maxdepth 1 -type d ! -path "$fileTransferApiPath"))
+                
+                if [ ${#nestedFolders[@]} -eq 1 ] && [ -f "${nestedFolders[0]}/host.json" ]; then
+                  folderName=$(basename "${nestedFolders[0]}")
+                  echo "Found nested folder: $folderName"
+                  echo "Extracting files from nested folder to root level..."
+                  
+                  # Create temp folder for correct structure
+                  tempPath="$(Build.ArtifactStagingDirectory)/FileTransferAPI_Fixed"
+                  mkdir -p "$tempPath"
+                  
+                  # Copy all files from nested folder to temp folder
+                  cp -r "${nestedFolders[0]}"/* "$tempPath/"
+                  
+                  # Archive the fixed folder
+                  echo "Creating zip from fixed folder structure..."
+                  cd "$tempPath"
+                  zip -r "$zipFile" .
+                  cd - > /dev/null
+                  
+                  # Cleanup temp folder
+                  rm -rf "$tempPath"
+                else
+                  echo "No nested folder found, archiving as-is..."
+                  cd "$fileTransferApiPath"
+                  zip -r "$zipFile" .
+                  cd - > /dev/null
+                fi
+                
+                echo "✅ FileTransfer API zip created: $zipFile"
+
+          - task: Bash@3
+            displayName: 'Verify Zip Contents'
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "🔍 Verifying zip file contents..."
+                
+                # Check Main API zip
+                mainApiZip="$(Build.ArtifactStagingDirectory)/lacc-main-api-$(Build.BuildId).zip"
+                if [ -f "$mainApiZip" ]; then
+                  echo ""
+                  echo "📦 Main API Zip Contents:"
+                  unzip -l "$mainApiZip" | head -20 | tail -n +4 | head -n -2 | sed 's/^/  /'
+                  
+                  totalFiles=$(unzip -l "$mainApiZip" | tail -n 2 | head -n 1 | awk '{print $2}')
+                  if [ "$totalFiles" -gt 10 ]; then
+                    echo "  ... and $((totalFiles - 10)) more files"
+                  fi
+                  
+                  # Check if host.json is at root level (not nested)
+                  if unzip -l "$mainApiZip" | grep -q "^.*host\.json$"; then
+                    echo "  ✅ host.json found at root level - structure is correct!"
+                  else
+                    echo "  ⚠️ host.json not found at root level - may still be nested"
+                  fi
+                fi
+                
+                # Check FileTransfer API zip
+                fileTransferZip="$(Build.ArtifactStagingDirectory)/lacc-filetransfer-api-$(Build.BuildId).zip"
+                if [ -f "$fileTransferZip" ]; then
+                  echo ""
+                  echo "📦 FileTransfer API Zip Contents:"
+                  unzip -l "$fileTransferZip" | head -20 | tail -n +4 | head -n -2 | sed 's/^/  /'
+                  
+                  totalFiles=$(unzip -l "$fileTransferZip" | tail -n 2 | head -n 1 | awk '{print $2}')
+                  if [ "$totalFiles" -gt 10 ]; then
+                    echo "  ... and $((totalFiles - 10)) more files"
+                  fi
+                  
+                  # Check if host.json is at root level (not nested)
+                  if unzip -l "$fileTransferZip" | grep -q "^.*host\.json$"; then
+                    echo "  ✅ host.json found at root level - structure is correct!"
+                  else
+                    echo "  ⚠️ host.json not found at root level - may still be nested"
+                  fi
+                fi
 
           - task: PublishBuildArtifacts@1
             displayName: 'Publish FileTransfer API Artifact'
