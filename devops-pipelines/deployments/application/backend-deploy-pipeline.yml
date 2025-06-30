@@ -733,7 +733,7 @@ stages:
     displayName: 'LACC - Deploy Function Apps'
     dependsOn: 
       - Pre_Deployment_Validation
-      - ${{ if eq(parameters.runDatabaseMigration, true) }}:
+      ${{ if eq(parameters.runDatabaseMigration, true) }}:
       - Database_Migration
     condition: |
       and(
