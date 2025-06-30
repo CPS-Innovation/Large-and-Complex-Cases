@@ -1,0 +1,296 @@
+trigger:
+  branches:
+    include:
+      - main
+      - HA/devops-stuff
+
+  paths:
+    include:
+      - ui-spa/*
+
+pr:
+  branches:
+    include:
+      - main
+      - HA/devops-stuff
+      
+  paths:
+    include:
+      - ui-spa/*
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  nodeVersion: '20.x'
+  uiTestResultsDirectory: '$(Agent.TempDirectory)/UITestResults'
+
+stages:
+  - stage: Build_And_Test_UI
+    displayName: 'LACC - Build and Test UI'
+    jobs:
+      - job: Build_And_Test_UI_SPA
+        displayName: 'LACC - Build and Test UI SPA'
+        steps:
+          - task: NodeTool@0
+            displayName: 'Use Node.js'
+            inputs:
+              versionSpec: '$(nodeVersion)'
+
+          - task: Npm@1
+            displayName: 'Install UI Dependencies'
+            inputs:
+              command: 'ci'
+              workingDir: 'ui-spa'
+
+          - task: Npm@1
+            displayName: 'Lint UI Code'
+            inputs:
+              command: 'custom'
+              customCommand: 'run lint'
+              workingDir: 'ui-spa'
+
+          - task: Npm@1
+            displayName: 'Run UI Unit Tests'
+            inputs:
+              command: 'custom'
+              customCommand: 'run coverage'
+              workingDir: 'ui-spa'
+            continueOnError: true
+
+          - task: PublishTestResults@2
+            displayName: 'Publish UI Test Results'
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'ui-spa/coverage/junit.xml'
+              publishRunAttachments: true
+            condition: always()
+
+          - task: PublishCodeCoverageResults@1
+            displayName: 'Publish UI Code Coverage'
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: 'ui-spa/coverage/cobertura-coverage.xml'
+              reportDirectory: 'ui-spa/coverage'
+            condition: always()
+
+          - task: NodeTool@0
+            displayName: 'Ensure Node.js for Coverage Tools'
+            inputs:
+              versionSpec: '$(nodeVersion)'
+
+          - task: Npm@1
+            displayName: 'Install Coverage Report Tools'
+            inputs:
+              command: 'custom'
+              customCommand: 'install -g nyc html-coverage-badge-generator'
+            condition: always()
+
+          - task: PowerShell@2
+            displayName: 'Generate Beautiful HTML Coverage Report'
+            inputs:
+              targetType: 'inline'
+              script: |
+                # Navigate to UI directory
+                Set-Location ui-spa
+                
+                if (Test-Path "coverage/cobertura-coverage.xml") {
+                  Write-Host "Generating enhanced coverage report..."
+                  
+                  # Create enhanced HTML report directory
+                  New-Item -Path "coverage/html-enhanced" -ItemType Directory -Force
+                  
+                  # Copy existing HTML report
+                  if (Test-Path "coverage/lcov-report") {
+                    Copy-Item -Path "coverage/lcov-report/*" -Destination "coverage/html-enhanced/" -Recurse -Force
+                  }
+                  
+                  # Generate coverage badges
+                  if (Test-Path "coverage/coverage-summary.json") {
+                    Write-Host "Generating coverage badges..."
+                    
+                    # Create badges directory
+                    New-Item -Path "coverage/html-enhanced/badges" -ItemType Directory -Force
+                    
+                    # Create badge generation script content
+                    $badgeScriptContent = @"
+const fs = require('fs');
+const path = require('path');
+
+try {
+  const summary = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
+  const total = summary.total;
+  
+  const createBadge = (label, value) => {
+    const percentage = Math.round(value);
+    const badgeColor = percentage >= 80 ? 'brightgreen' : percentage >= 60 ? 'yellow' : 'red';
+    return \`<svg xmlns="http://www.w3.org/2000/svg" width="104" height="20">
+      <linearGradient id="b" x2="0" y2="100%">
+        <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+        <stop offset="1" stop-opacity=".1"/>
+      </linearGradient>
+      <mask id="a">
+        <rect width="104" height="20" rx="3" fill="#fff"/>
+      </mask>
+      <g mask="url(#a)">
+        <path fill="#555" d="M0 0h63v20H0z"/>
+        <path fill="\${badgeColor}" d="M63 0h41v20H63z"/>
+        <path fill="url(#b)" d="M0 0h104v20H0z"/>
+      </g>
+      <g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="110">
+        <text x="325" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="530">\${label}</text>
+        <text x="325" y="140" transform="scale(.1)" textLength="530">\${label}</text>
+        <text x="825" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="310">\${percentage}%</text>
+        <text x="825" y="140" transform="scale(.1)" textLength="310">\${percentage}%</text>
+      </g>
+    </svg>\`;
+  };
+  
+  // Generate badges
+  fs.writeFileSync('coverage/html-enhanced/badges/lines.svg', createBadge('lines', total.lines.pct));
+  fs.writeFileSync('coverage/html-enhanced/badges/functions.svg', createBadge('functions', total.functions.pct));
+  fs.writeFileSync('coverage/html-enhanced/badges/branches.svg', createBadge('branches', total.branches.pct));
+  fs.writeFileSync('coverage/html-enhanced/badges/statements.svg', createBadge('statements', total.statements.pct));
+  
+  console.log('Coverage badges generated successfully');
+} catch (error) {
+  console.log('Error generating badges:', error.message);
+}
+"@
+                    
+                    # Write and execute the badge script
+                    $badgeScriptContent | Out-File -FilePath "badge-generator.js" -Encoding UTF8
+                    node badge-generator.js
+                    Remove-Item "badge-generator.js" -Force -ErrorAction SilentlyContinue
+                  }
+                  
+                  # Create enhanced index.html with project branding
+                  $enhancedHtmlContent = @"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPS Complex Cases UI - Coverage Report</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .header { background: #2563eb; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .header h1 { margin: 0; font-size: 24px; }
+        .header p { margin: 5px 0 0 0; opacity: 0.9; }
+        .badges { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
+        .badge img { height: 20px; }
+        .report-frame { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .report-frame iframe { width: 100%; height: 80vh; border: none; border-radius: 8px; }
+        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎯 CPS Complex Cases UI - Coverage Report</h1>
+        <p>Generated on BUILD_DATE | Build: BUILD_NUMBER</p>
+    </div>
+    
+    <div class="badges">
+        <div class="badge"><img src="badges/lines.svg" alt="Lines Coverage" /></div>
+        <div class="badge"><img src="badges/functions.svg" alt="Functions Coverage" /></div>
+        <div class="badge"><img src="badges/branches.svg" alt="Branches Coverage" /></div>
+        <div class="badge"><img src="badges/statements.svg" alt="Statements Coverage" /></div>
+    </div>
+    
+    <div class="report-frame">
+        <iframe src="index.html" title="Coverage Report"></iframe>
+    </div>
+    
+    <div class="footer">
+        <p>Generated by Vitest Coverage | Enhanced for CPS Complex Cases Project</p>
+    </div>
+</body>
+</html>
+"@
+                  
+                  # Replace placeholders and write enhanced HTML
+                  if (Test-Path "coverage/html-enhanced/index.html") {
+                    $buildDate = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+                    $buildNumber = $env:BUILD_BUILDNUMBER
+                    if (-not $buildNumber) { $buildNumber = "Local" }
+                    
+                    $enhancedHtmlContent = $enhancedHtmlContent -replace 'BUILD_DATE', $buildDate
+                    $enhancedHtmlContent = $enhancedHtmlContent -replace 'BUILD_NUMBER', $buildNumber
+                    $enhancedHtmlContent | Out-File -FilePath "coverage/html-enhanced/enhanced-report.html" -Encoding UTF8
+                    Write-Host "Enhanced HTML coverage report generated successfully"
+                  }
+                  
+                  Write-Host "Coverage report location: ui-spa/coverage/html-enhanced"
+                } else {
+                  Write-Host "No coverage files found - skipping enhanced report generation"
+                }
+            condition: always()
+            errorActionPreference: 'continue'
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Enhanced HTML Coverage Report'
+            inputs:
+              pathtoPublish: 'ui-spa/coverage/html-enhanced'
+              artifactName: 'ui-coverage-report'
+            condition: and(always(), exists('ui-spa/coverage/html-enhanced'))
+
+          - task: Npm@1
+            displayName: 'Build UI Application'
+            inputs:
+              command: 'custom'
+              customCommand: 'run build'
+              workingDir: 'ui-spa'
+
+          - task: CopyFiles@2
+            displayName: 'Copy web.config for Azure Web App'
+            inputs:
+              sourceFolder: 'ui-spa/public'
+              contents: 'web.config'
+              targetFolder: 'ui-spa/dist'
+            condition: exists('ui-spa/public/web.config')
+
+          - task: ArchiveFiles@2
+            displayName: 'Archive UI Build'
+            inputs:
+              rootFolderOrFile: 'ui-spa/dist'
+              includeRootFolder: false
+              archiveType: 'zip'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/lacc-ui-spa-$(Build.BuildId).zip'
+              replaceExistingArchive: true
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish UI SPA Artifact'
+            inputs:
+              pathtoPublish: '$(Build.ArtifactStagingDirectory)/lacc-ui-spa-$(Build.BuildId).zip'
+              artifactName: 'lacc-ui-spa-drop'
+
+          - task: Npm@1
+            displayName: 'Install Playwright Browsers'
+            inputs:
+              command: 'custom'
+              customCommand: 'exec playwright install --with-deps'
+              workingDir: 'ui-spa'
+            continueOnError: true
+
+          - task: Npm@1
+            displayName: 'Run E2E Tests'
+            inputs:
+              command: 'custom'
+              customCommand: 'run ui:e2e:ci'
+              workingDir: 'ui-spa'
+            continueOnError: true
+
+          - task: PublishTestResults@2
+            displayName: 'Publish E2E Test Results'
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'ui-spa/playwright/test-results/junit.xml'
+              publishRunAttachments: true
+            condition: always()
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish E2E Test Report'
+            inputs:
+              pathtoPublish: 'ui-spa/playwright/playwright-report'
+              artifactName: 'e2e-test-report'
+            condition: always() 
