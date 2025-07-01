@@ -102,7 +102,29 @@ public class InitiateTransferRequestValidatorTests
     }
 
     [Fact]
-    public void Validate_WhenCaseIdIsEmpty_ReturnsValidationError()
+    public void Validate_WhenSourcePathPathIsEmpty_ReturnsValidationError()
+    {
+        // Arrange
+        var request = new InitiateTransferRequest
+        {
+            DestinationPath = "test/destination",
+            TransferType = TransferType.Copy,
+            TransferDirection = TransferDirection.EgressToNetApp,
+            SourcePaths = new List<SourcePath> { new SourcePath { Path = string.Empty } },
+            CaseId = 1,
+            WorkspaceId = "TestWorkspace"
+        };
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Single(result.Errors, e => e.PropertyName == "SourcePaths[0].Path" && e.ErrorMessage == "SourcePath.Path is required.");
+    }
+
+    [Fact]
+    public void Validate_WhenCaseIdIsZeroOrNegative_ReturnsValidationError()
     {
         // Arrange
         var request = new InitiateTransferRequest
@@ -120,7 +142,29 @@ public class InitiateTransferRequestValidatorTests
 
         // Assert
         Assert.False(result.IsValid);
-        Assert.Single(result.Errors, e => e.PropertyName == nameof(request.CaseId) && e.ErrorMessage == "CaseId is required.");
+        Assert.Single(result.Errors, e => e.PropertyName == nameof(request.CaseId) && e.ErrorMessage == "CaseId must be greater than 0.");
+    }
+
+    [Fact]
+    public void Validate_WhenCaseIdIsNegative_ReturnsValidationError()
+    {
+        // Arrange
+        var request = new InitiateTransferRequest
+        {
+            DestinationPath = "test/destination",
+            TransferType = TransferType.Copy,
+            TransferDirection = TransferDirection.EgressToNetApp,
+            SourcePaths = new List<SourcePath> { new SourcePath { Path = "test/path" } },
+            CaseId = -1,
+            WorkspaceId = "TestWorkspace"
+        };
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Single(result.Errors, e => e.PropertyName == nameof(request.CaseId) && e.ErrorMessage == "CaseId must be greater than 0.");
     }
 
     [Fact]
@@ -144,7 +188,6 @@ public class InitiateTransferRequestValidatorTests
         Assert.False(result.IsValid);
         Assert.Single(result.Errors, e => e.PropertyName == nameof(request.WorkspaceId) && e.ErrorMessage == "WorkspaceId is required.");
     }
-
 
     [Fact]
     public void Validate_WhenNetAppToEgressWithMoveTransferType_ReturnsValidationError()
