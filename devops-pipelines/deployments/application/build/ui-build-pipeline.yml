@@ -1,3 +1,13 @@
+parameters:
+  - name: environment
+    displayName: 'Target Environment'
+    type: string
+    default: 'dev'
+    values:
+      - dev
+      - qa
+      - prod
+
 trigger:
   branches:
     include:
@@ -22,6 +32,7 @@ pool:
 variables:
   nodeVersion: '20.x'
   uiTestResultsDirectory: '$(Agent.TempDirectory)/UITestResults'
+  - group: lacc-ui-config-${{ lower(parameters.environment) }}-variables
 
 stages:
   - stage: Build_And_Test_UI
@@ -180,14 +191,13 @@ stages:
               command: 'custom'
               customCommand: 'run build'
               workingDir: 'ui-spa'
-
-          - task: CopyFiles@2
-            displayName: 'Copy web.config for Azure Web App'
-            inputs:
-              sourceFolder: 'ui-spa/public'
-              contents: 'web.config'
-              targetFolder: 'ui-spa/dist'
-            continueOnError: true
+            env:
+              # API Configuration
+              VITE_GATEWAY_BASE_URL: $(VITE_GATEWAY_BASE_URL)
+              VITE_GATEWAY_SCOPE: $(VITE_GATEWAY_SCOPE)
+              VITE_CLIENT_ID: $(VITE_CLIENT_ID)
+              VITE_TENANT_ID: $(VITE_TENANT_ID)
+              
 
           - task: ArchiveFiles@2
             displayName: 'Archive UI Build'
