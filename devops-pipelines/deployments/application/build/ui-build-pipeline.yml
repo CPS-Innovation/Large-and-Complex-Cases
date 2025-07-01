@@ -251,11 +251,11 @@ stages:
               testResultsFormat: 'JUnit'
               testResultsFiles: 'ui-spa/playwright/test-results/junit.xml'
               publishRunAttachments: true
-            condition: always()
+            condition: and(always(), eq('${{ parameters.runE2E }}', true))
 
           - task: PublishBuildArtifacts@1
             displayName: 'Publish E2E Test Report'
             inputs:
               pathtoPublish: 'ui-spa/playwright/playwright-report'
               artifactName: 'e2e-test-report'
-            condition: always()
+            condition: and(always(), eq('${{ parameters.runE2E }}', true))
