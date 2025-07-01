@@ -47,7 +47,6 @@ stages:
       vmImage: $(build-agent)
     jobs:
       - deployment: CI_Deploy_LACCUI_${{ variables.environmentSuffix }}
-        environment: LACC-UI-${{ variables.environmentSuffix }}
         strategy:
           runOnce:
             deploy:
