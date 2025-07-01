@@ -1,6 +1,5 @@
 using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Data.Models.Requests;
-using FluentAssertions;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Validators;
 
@@ -28,8 +27,8 @@ public class CreateNetAppConnectionValidatorTests
         var result = _validator.Validate(request);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.PropertyName == nameof(request.CaseId) && e.ErrorMessage == "CaseId is required.");
+        Assert.False(result.IsValid);
+        Assert.Single(result.Errors, e => e.PropertyName == nameof(request.CaseId) && e.ErrorMessage == "CaseId is required.");
     }
 
     [Fact]
@@ -47,8 +46,8 @@ public class CreateNetAppConnectionValidatorTests
         var result = _validator.Validate(request);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.PropertyName == nameof(request.OperationName) && e.ErrorMessage == "BucketName is required.");
+        Assert.False(result.IsValid);
+        Assert.Single(result.Errors, e => e.PropertyName == nameof(request.OperationName) && e.ErrorMessage == "BucketName is required.");
     }
 
     [Fact]
@@ -66,12 +65,11 @@ public class CreateNetAppConnectionValidatorTests
         var result = _validator.Validate(request);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.PropertyName == nameof(request.NetAppFolderPath) && e.ErrorMessage == "NetAppFolderPath is required.");
+        Assert.False(result.IsValid);
+        Assert.Single(result.Errors, e => e.PropertyName == nameof(request.NetAppFolderPath) && e.ErrorMessage == "NetAppFolderPath is required.");
     }
 
     [Fact]
-
     public void Validate_WhenAllPropertiesAreValid_ReturnsValidationSuccess()
     {
         // Arrange
@@ -86,6 +84,6 @@ public class CreateNetAppConnectionValidatorTests
         var result = _validator.Validate(request);
 
         // Assert
-        result.IsValid.Should().BeTrue();
+        Assert.True(result.IsValid);
     }
 }

@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Amazon.S3;
@@ -9,7 +5,6 @@ using Amazon.S3.Model;
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
-using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.NetApp.Client;
@@ -19,10 +14,8 @@ using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.WireMock.Mappings;
 using CPS.ComplexCases.NetApp.Wrappers;
 using CPS.ComplexCases.WireMock.Core;
-using FluentAssertions;
 using Moq;
 using WireMock.Server;
-using Xunit;
 
 namespace CPS.ComplexCases.NetApp.Tests.Integration;
 
@@ -113,9 +106,9 @@ public class NetAppStorageClientTests : IDisposable
         var result = await _client.InitiateUploadAsync(ObjectKey, 123, "source-file.txt");
 
         // Assert
-        result.Should().NotBeNull();
-        result.UploadId.Should().Be("upload-id-49e18525de9c");
-        result.WorkspaceId.Should().Be(ObjectKey);
+        Assert.NotNull(result);
+        Assert.Equal("upload-id-49e18525de9c", result.UploadId);
+        Assert.Equal(ObjectKey, result.WorkspaceId);
     }
 
     [Fact]
@@ -141,12 +134,12 @@ public class NetAppStorageClientTests : IDisposable
         var result = await _client.OpenReadStreamAsync(ObjectKey);
 
         // Assert
-        result.Should().NotBeNull();
-        result.CanRead.Should().BeTrue();
+        Assert.NotNull(result);
+        Assert.True(result.CanRead);
 
         using var reader = new StreamReader(result);
         var content = await reader.ReadToEndAsync();
-        content.Should().NotBeNullOrEmpty();
+        Assert.False(string.IsNullOrEmpty(content));
     }
 
     [Fact]
@@ -211,8 +204,8 @@ public class NetAppStorageClientTests : IDisposable
         var result = await _client.UploadChunkAsync(session, 2, chunkData);
 
         // Assert
-        result.TransferDirection.Should().Be(TransferDirection.EgressToNetApp);
-        result.ETag.Should().Be("etag-12345");
+        Assert.Equal(TransferDirection.EgressToNetApp, result.TransferDirection);
+        Assert.Equal("etag-12345", result.ETag);
     }
 
     [Fact]
@@ -251,8 +244,7 @@ public class NetAppStorageClientTests : IDisposable
         _netAppRequestFactoryMock.Setup(c => c.CompleteMultipartUploadRequest(arg)).Returns(request);
 
         // Act & Assert (should not throw)
-        Func<Task> act = () => _client.CompleteUploadAsync(session, null, etags);
-        await act.Should().NotThrowAsync();
+        await _client.CompleteUploadAsync(session, null, etags);
     }
 
     [Fact]
@@ -299,8 +291,8 @@ public class NetAppStorageClientTests : IDisposable
         var result = await _client.ListFilesForTransferAsync(selectedEntities, null, CaseId);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Should().HaveCount(5);
+        Assert.NotNull(result);
+        Assert.Equal(5, result.Count());
     }
 
     [Fact]
@@ -366,8 +358,8 @@ public class NetAppStorageClientTests : IDisposable
         var result = await _client.ListFilesForTransferAsync(selectedEntities, null, CaseId);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Should().HaveCount(4);
+        Assert.NotNull(result);
+        Assert.Equal(4, result.Count());
     }
 
     public async Task UploadLargeFile_ShouldHandleMultipleChunksEfficiently()
@@ -473,7 +465,7 @@ public class NetAppStorageClientTests : IDisposable
         await _client.CompleteUploadAsync(session, null, etagsDict);
 
         // Assert
-        etags.Count.Should().Be(totalChunks);
+        Assert.Equal(totalChunks, etags.Count);
     }
 
     protected virtual void Dispose(bool disposing)

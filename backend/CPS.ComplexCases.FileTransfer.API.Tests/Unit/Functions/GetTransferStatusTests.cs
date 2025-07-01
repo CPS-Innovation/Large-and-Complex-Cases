@@ -7,8 +7,6 @@ using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Functions;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 using CPS.ComplexCases.FileTransfer.API.Tests.Unit.Stubs;
-using FluentAssertions;
-using FluentAssertions.Execution;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.DurableTask.Client.Entities;
@@ -51,7 +49,6 @@ public class GetTransferStatusTests
             })
             .Returns(true);
 
-
         _function = new GetTransferStatus(_loggerMock.Object);
     }
 
@@ -72,12 +69,20 @@ public class GetTransferStatusTests
         var result = await _function.Run(_httpRequestMock.Object, durableTaskClientStub, _transferId);
 
         // Assert
-        using (new AssertionScope())
-        {
-            result.Should().BeOfType<OkObjectResult>();
-            var okResult = (OkObjectResult)result;
-            okResult.Value.Should().BeEquivalentTo(transferEntity);
-        }
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.NotNull(okResult.Value);
+        var returnedEntity = Assert.IsType<TransferEntity>(okResult.Value);
+        Assert.Equal(transferEntity.Id, returnedEntity.Id);
+        Assert.Equal(transferEntity.Status, returnedEntity.Status);
+        Assert.Equal(transferEntity.DestinationPath, returnedEntity.DestinationPath);
+        Assert.Equal(transferEntity.SourcePaths, returnedEntity.SourcePaths);
+        Assert.Equal(transferEntity.CaseId, returnedEntity.CaseId);
+        Assert.Equal(transferEntity.TransferType, returnedEntity.TransferType);
+        Assert.Equal(transferEntity.Direction, returnedEntity.Direction);
+        Assert.Equal(transferEntity.TotalFiles, returnedEntity.TotalFiles);
+        Assert.Equal(transferEntity.IsRetry, returnedEntity.IsRetry);
+        Assert.Equal(transferEntity.CreatedAt, returnedEntity.CreatedAt);
+        Assert.Equal(transferEntity.UpdatedAt, returnedEntity.UpdatedAt);
     }
 
     [Fact]
@@ -92,12 +97,11 @@ public class GetTransferStatusTests
         };
         var durableTaskClientStub = new DurableTaskClientStub(stub);
 
-
         // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             _function.Run(_httpRequestMock.Object, durableTaskClientStub, _transferId));
 
-        ex.Should().Be(expected);
+        Assert.Equal(expected, ex);
     }
 
     [Fact]
@@ -126,13 +130,9 @@ public class GetTransferStatusTests
             var result = await _function.Run(_httpRequestMock.Object, durableTaskClientStub, _transferId);
 
             // Assert
-            using (new AssertionScope())
-            {
-                result.Should().BeOfType<OkObjectResult>();
-                var ok = (OkObjectResult)result;
-                var returned = (TransferEntity)ok.Value!;
-                returned.Status.Should().Be(status);
-            }
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returned = Assert.IsType<TransferEntity>(okResult.Value);
+            Assert.Equal(status, returned.Status);
         }
     }
 

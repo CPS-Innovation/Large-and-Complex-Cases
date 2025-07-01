@@ -5,8 +5,6 @@ using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Data.Dtos;
 using CPS.ComplexCases.Data.Repositories;
-using FluentAssertions;
-using FluentAssertions.Execution;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -59,14 +57,11 @@ public class ActivityLogServiceTests
         await _service.CreateActivityLogAsync(ActionType.TransferInitiated, ResourceType.FileTransfer, _testCaseId, _testResourceId, _testResourceName, _testUserName);
 
         // Assert
-        using (new AssertionScope())
-        {
-            _repositoryMock.Verify(r => r.AddAsync(It.Is<Data.Entities.ActivityLog>(a =>
-                a.ActionType == activityLog.ActionType &&
-                a.ResourceType == activityLog.ResourceType &&
-                a.ResourceId == activityLog.ResourceId &&
-                a.UserName == activityLog.UserName)), Times.Once);
-        }
+        _repositoryMock.Verify(r => r.AddAsync(It.Is<Data.Entities.ActivityLog>(a =>
+            a.ActionType == activityLog.ActionType &&
+            a.ResourceType == activityLog.ResourceType &&
+            a.ResourceId == activityLog.ResourceId &&
+            a.UserName == activityLog.UserName)), Times.Once);
     }
 
     [Fact]
@@ -88,11 +83,12 @@ public class ActivityLogServiceTests
         var result = await _service.GetActivityLogByIdAsync(id);
 
         // Assert
-        using (new AssertionScope())
-        {
-            result.Should().NotBeNull();
-            result.Should().BeEquivalentTo(expected);
-        }
+        Assert.NotNull(result);
+        Assert.Equal(expected.Id, result.Id);
+        Assert.Equal(expected.ActionType, result.ActionType);
+        Assert.Equal(expected.ResourceType, result.ResourceType);
+        Assert.Equal(expected.ResourceId, result.ResourceId);
+        Assert.Equal(expected.UserName, result.UserName);
     }
 
     [Fact]
@@ -108,7 +104,7 @@ public class ActivityLogServiceTests
         var result = await _service.GetActivityLogByIdAsync(id);
 
         // Assert
-        result.Should().BeNull();
+        Assert.Null(result);
     }
 
     [Fact]
@@ -128,11 +124,17 @@ public class ActivityLogServiceTests
         var result = await _service.GetActivityLogsByResourceIdAsync(resourceId);
 
         // Assert
-        using (new AssertionScope())
+        Assert.NotNull(result);
+        Assert.Equal(expected.Count, result.Count());
+        var expectedList = expected.ToList();
+        var resultList = result.ToList();
+        for (int i = 0; i < expectedList.Count; i++)
         {
-            result.Should().NotBeNull();
-            result.Count().Should().Be(expected.Count);
-            result.Should().BeEquivalentTo(expected);
+            Assert.Equal(expectedList[i].Id, resultList[i].Id);
+            Assert.Equal(expectedList[i].ActionType, resultList[i].ActionType);
+            Assert.Equal(expectedList[i].ResourceType, resultList[i].ResourceType);
+            Assert.Equal(expectedList[i].ResourceId, resultList[i].ResourceId);
+            Assert.Equal(expectedList[i].UserName, resultList[i].UserName);
         }
     }
 
@@ -149,8 +151,8 @@ public class ActivityLogServiceTests
         var result = await _service.GetActivityLogsByResourceIdAsync(resourceId);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Should().BeEmpty();
+        Assert.NotNull(result);
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -173,15 +175,12 @@ public class ActivityLogServiceTests
         await _service.UpdateActivityLogAsync(activityLog);
 
         // Assert
-        using (new AssertionScope())
-        {
-            _repositoryMock.Verify(r => r.UpdateAsync(It.Is<Data.Entities.ActivityLog>(a =>
-                a.Id == activityLog.Id &&
-                a.ActionType == activityLog.ActionType &&
-                a.ResourceType == activityLog.ResourceType &&
-                a.ResourceId == activityLog.ResourceId &&
-                a.UserName == activityLog.UserName)), Times.Once);
-        }
+        _repositoryMock.Verify(r => r.UpdateAsync(It.Is<Data.Entities.ActivityLog>(a =>
+            a.Id == activityLog.Id &&
+            a.ActionType == activityLog.ActionType &&
+            a.ResourceType == activityLog.ResourceType &&
+            a.ResourceId == activityLog.ResourceId &&
+            a.UserName == activityLog.UserName)), Times.Once);
     }
 
     [Fact]
@@ -203,9 +202,9 @@ public class ActivityLogServiceTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Collection(result,
-            log => Assert.Equal("1", log.ResourceId),
-            log => Assert.Equal("2", log.ResourceId));
+        var resultList = result.ToList();
+        Assert.Equal("1", resultList[0].ResourceId);
+        Assert.Equal("2", resultList[1].ResourceId);
         _repositoryMock.Verify(r => r.GetByFilterAsync(filter), Times.Once);
     }
 
