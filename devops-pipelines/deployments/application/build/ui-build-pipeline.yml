@@ -30,9 +30,9 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  nodeVersion: '20.x'
-  uiTestResultsDirectory: '$(Agent.TempDirectory)/UITestResults'
-  group: lacc-ui-config-${{ lower(parameters.environment) }}-variables
+  - group: lacc-ui-config-${{ lower(parameters.environment) }}-variables
+  - name: nodeVersion
+    value: '20.x'
 
 stages:
   - stage: Build_And_Test_UI
