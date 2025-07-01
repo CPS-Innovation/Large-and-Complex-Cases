@@ -27,10 +27,8 @@ public class SourcePath
     public required string Path { get; set; }
     [JsonPropertyName("fileId")]
     public string? FileId { get; set; }
-    [JsonPropertyName("overwritePolicy")]
-    public string? OverwritePolicy { get; set; }
-    [JsonPropertyName("renamePattern")]
-    public string? RenamePattern { get; set; }
     [JsonPropertyName("isFolder")]
     public bool? IsFolder { get; set; }
+    [JsonPropertyName("relativePath")]
+    public string? RelativePath { get; set; }
 }

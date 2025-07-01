@@ -8,5 +8,5 @@ export type IndexingFileTransferResponse = {
     errorType: string;
     message: string;
   }[];
-  files: { id?: string; sourcePath: string }[];
+  files: { id?: string; sourcePath: string, relativePath?: string }[];
 };

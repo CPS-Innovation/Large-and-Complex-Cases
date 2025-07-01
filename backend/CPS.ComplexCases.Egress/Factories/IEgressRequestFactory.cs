@@ -12,4 +12,5 @@ public interface IEgressRequestFactory
   HttpRequestMessage CreateUploadRequest(CreateUploadArg arg, string token);
   HttpRequestMessage UploadChunkRequest(UploadChunkArg arg, string token);
   HttpRequestMessage CompleteUploadRequest(CompleteUploadArg arg, string token);
+  HttpRequestMessage CreateFolderRequest(CreateFolderArg arg, string token);
 }

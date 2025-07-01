@@ -59,7 +59,7 @@ public class NetAppStorageClientTests : IDisposable
         var s3ClientConfig = new AmazonS3Config
         {
             ServiceURL = _server.Urls[0],
-            ForcePathStyle = true
+            ForcePathStyle = true,
         };
 
         var credentials = new Amazon.Runtime.BasicAWSCredentials("fakeAccessKey", "fakeSecretKey");
@@ -79,83 +79,47 @@ public class NetAppStorageClientTests : IDisposable
     public async Task InitiateUploadAsync_ReturnsUploadSession()
     {
         // Arrange
+        const string destinationPath = "";
+        const string sourcePath = ObjectKey;
+        var fullPath = Path.Combine(destinationPath, sourcePath).Replace('\\', '/');
+
         var arg = new InitiateMultipartUploadArg
         {
             BucketName = BucketName,
-            ObjectKey = ObjectKey
+            ObjectKey = fullPath
         };
 
         var getObjectArg = new GetObjectArg
         {
             BucketName = BucketName,
-            ObjectKey = ObjectKey
+            ObjectKey = fullPath
         };
 
         var request = new InitiateMultipartUploadRequest
         {
             BucketName = BucketName,
-            Key = ObjectKey
+            Key = fullPath
         };
 
         var getObjectAttributesRequest = new GetObjectAttributesRequest
         {
             BucketName = BucketName,
-            Key = ObjectKey,
+            Key = fullPath,
             ObjectAttributes = [ObjectAttributes.ETag]
         };
 
-        _netAppArgFactoryMock.Setup(f => f.CreateInitiateMultipartUploadArg(BucketName, ObjectKey)).Returns(arg);
-        _netAppArgFactoryMock.Setup(f => f.CreateGetObjectArg(BucketName, ObjectKey)).Returns(getObjectArg);
+        _netAppArgFactoryMock.Setup(f => f.CreateInitiateMultipartUploadArg(BucketName, fullPath)).Returns(arg);
+        _netAppArgFactoryMock.Setup(f => f.CreateGetObjectArg(BucketName, fullPath)).Returns(getObjectArg);
         _netAppRequestFactoryMock.Setup(f => f.CreateMultipartUploadRequest(arg)).Returns(request);
         _netAppRequestFactoryMock.Setup(f => f.GetObjectAttributesRequest(getObjectArg)).Returns(getObjectAttributesRequest);
 
-        //Act
-        var result = await _client.InitiateUploadAsync(ObjectKey, 123);
+        // Act
+        var result = await _client.InitiateUploadAsync(destinationPath, 123, sourcePath);
 
         // Assert
         result.Should().NotBeNull();
         result.UploadId.Should().Be("upload-id-49e18525de9c");
-        result.WorkspaceId.Should().Be(ObjectKey);
-    }
-
-    [Fact]
-    public async Task InitiateUploadAsync_WhereObjectExists_ThrowsException()
-    {
-        // Arrange
-        const string ExistingObjectKey = "existing-document.pdf";
-
-        var arg = new InitiateMultipartUploadArg
-        {
-            BucketName = BucketName,
-            ObjectKey = ExistingObjectKey
-        };
-
-        var getObjectArg = new GetObjectArg
-        {
-            BucketName = BucketName,
-            ObjectKey = ExistingObjectKey
-        };
-
-        var request = new InitiateMultipartUploadRequest
-        {
-            BucketName = BucketName,
-            Key = ExistingObjectKey
-        };
-
-        var getObjectAttributesRequest = new GetObjectAttributesRequest
-        {
-            BucketName = BucketName,
-            Key = ExistingObjectKey,
-            ObjectAttributes = [ObjectAttributes.ETag]
-        };
-
-        _netAppArgFactoryMock.Setup(f => f.CreateInitiateMultipartUploadArg(BucketName, ExistingObjectKey)).Returns(arg);
-        _netAppArgFactoryMock.Setup(f => f.CreateGetObjectArg(BucketName, ExistingObjectKey)).Returns(getObjectArg);
-        _netAppRequestFactoryMock.Setup(f => f.CreateMultipartUploadRequest(arg)).Returns(request);
-        _netAppRequestFactoryMock.Setup(f => f.GetObjectAttributesRequest(getObjectArg)).Returns(getObjectAttributesRequest);
-
-        // Act & Assert
-        await Assert.ThrowsAsync<FileExistsException>(() => _client.InitiateUploadAsync(ExistingObjectKey, 123));
+        result.WorkspaceId.Should().Be(fullPath);
     }
 
     [Fact]
@@ -468,7 +432,7 @@ public class NetAppStorageClientTests : IDisposable
         _netAppRequestFactoryMock.Setup(f => f.CreateMultipartUploadRequest(arg)).Returns(request);
         _netAppRequestFactoryMock.Setup(f => f.GetObjectAttributesRequest(getObjectArg)).Returns(getObjectAttributesRequest);
 
-        var session = await _client.InitiateUploadAsync(ObjectKey, largeFileSize);
+        var session = await _client.InitiateUploadAsync(ObjectKey, largeFileSize, "source-file.txt");
 
         for (int i = 0; i < totalChunks; i++)
         {
