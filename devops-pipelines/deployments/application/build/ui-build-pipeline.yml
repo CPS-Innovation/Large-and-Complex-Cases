@@ -36,10 +36,10 @@ variables:
 
 stages:
   - stage: Build_And_Test_UI
-    displayName: 'LACC - Build and Test UI'
+    displayName: 'LACC - Build and Test UI - ${{ Upper(parameters.environment) }}'
     jobs:
       - job: Build_And_Test_UI_SPA
-        displayName: 'LACC - Build and Test UI SPA'
+        displayName: 'LACC - Build and Test UI SPA - ${{ Upper(parameters.environment) }}'
         steps:
           - task: NodeTool@0
             displayName: 'Use Node.js'
@@ -212,7 +212,7 @@ stages:
             displayName: 'Publish UI SPA Artifact'
             inputs:
               pathtoPublish: '$(Build.ArtifactStagingDirectory)/lacc-ui-spa-$(Build.BuildId).zip'
-              artifactName: 'lacc-ui-spa-drop'
+              artifactName: 'lacc-ui-${{ parameters.environment }}-drop'
 
           - task: Npm@1
             displayName: 'Install Playwright Browsers'
