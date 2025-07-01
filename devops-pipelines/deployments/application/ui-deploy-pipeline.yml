@@ -50,7 +50,7 @@ stages:
         steps:
           - download: LACCUIBuild
             artifact: lacc-ui-$(environmentSuffix)-drop
-            path: $(Pipeline.Workspace)/LACCUIBuild/lacc-ui-$(environmentSuffix)-drop
+            displayName: 'Download UI Build Artifact'
           - task: AzureRmWebAppDeployment@4
             inputs:
               ConnectionType: 'AzureRM'
