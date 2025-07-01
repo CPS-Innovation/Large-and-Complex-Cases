@@ -32,7 +32,7 @@ pool:
 variables:
   nodeVersion: '20.x'
   uiTestResultsDirectory: '$(Agent.TempDirectory)/UITestResults'
-  - group: lacc-ui-config-${{ lower(parameters.environment) }}-variables
+  group: lacc-ui-config-${{ lower(parameters.environment) }}-variables
 
 stages:
   - stage: Build_And_Test_UI
