@@ -55,7 +55,7 @@ stages:
               resourceGroupName: $(resourceGroupName)
               appType: 'webAppLinux'
               WebAppName: '$(appName)'
-              packageForLinux: '$(Pipeline.Workspace)/LACCUIBuild/lacc-ui-$(environmentSuffix)-drop'
+              packageForLinux: '$(Pipeline.Workspace)/LACCUIBuild/lacc-ui-$(environmentSuffix)-drop/*.zip'
               RuntimeStack: 'NODE|20-lts'
               StartupCommand: 'pm2 serve /home/site/wwwroot/ --no-daemon --spa'
               
