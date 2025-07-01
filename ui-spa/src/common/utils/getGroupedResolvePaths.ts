@@ -4,23 +4,32 @@ import { getFileNameFromPath } from "./getFileNameFromPath";
 
 export type ResolvePathFileType = {
   id: string;
-  relativePath: string;
+  relativeSourcePath: string;
   sourceName: string;
+  relativeFinalPath: string;
 };
 
-export const getGroupedResolvePaths = (errors: IndexingError[]) => {
-  const errorFiles: ResolvePathFileType[] = errors.map((error) => ({
+export const getMappedResolvePathFiles = (
+  errors: IndexingError[],
+  destinationPath: string,
+) => {
+  const mappedFiles: ResolvePathFileType[] = errors.map((error) => ({
     id: error.id,
-    relativePath: getRelativePathFromPath(error.sourcePath),
+    relativeSourcePath: getRelativePathFromPath(error.sourcePath),
     sourceName: getFileNameFromPath(error.sourcePath),
+    relativeFinalPath: `${destinationPath}/${getRelativePathFromPath(error.sourcePath)}`,
   }));
-  const groupedFiles = errorFiles.reduce(
+  return mappedFiles;
+};
+
+export const getGroupedResolvePaths = (files: ResolvePathFileType[]) => {
+  const groupedFiles = files.reduce(
     (acc, curr) => {
-      if (!acc[`${curr.relativePath}`]) {
-        acc[`${curr.relativePath}`] = [curr];
+      if (!acc[`${curr.relativeSourcePath}`]) {
+        acc[`${curr.relativeSourcePath}`] = [curr];
         return acc;
       }
-      acc[`${curr.relativePath}`].push(curr);
+      acc[`${curr.relativeSourcePath}`].push(curr);
       return acc;
     },
     {} as Record<string, ResolvePathFileType[]>,

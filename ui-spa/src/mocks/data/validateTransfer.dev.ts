@@ -29,7 +29,7 @@ export const egressToNetAppIndexingErrorDev: IndexingFileTransferResponse = {
   caseId: 12,
   isInvalid: true,
   destinationPath:
-    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1",
+    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1",
   validationErrors: [
     {
       id: "id_3",

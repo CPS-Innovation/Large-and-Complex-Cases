@@ -1,0 +1,23 @@
+.contentWrapper {
+  & :global(.govuk-heading-xl) {
+    margin-bottom: 25px;
+  }
+
+  .fileNameInput {
+    width: 70%;
+  }
+
+  .statusTag {
+    font-weight: normal;
+    text-transform: lowercase;
+    width: 125px;
+    text-align: center;
+    margin-left: 0.5rem;
+  }
+  .btnWrapper {
+    margin-top: 2.5rem;
+    display: flex;
+    gap: 0.75rem;
+    align-items: baseline;
+  }
+}

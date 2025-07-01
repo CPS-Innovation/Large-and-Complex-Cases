@@ -5,49 +5,78 @@ import FolderIcon from "../../../components/svgs/folder.svg?react";
 import FileIcon from "../../../components/svgs/file.svg?react";
 import {
   getGroupedResolvePaths,
+  getMappedResolvePathFiles,
   ResolvePathFileType,
 } from "../../../common/utils/getGroupedResolvePaths";
+import { RenameTransferFilePage } from "./RenameTransferFilePage";
 import styles from "./TransferResolveFilePathPage.module.scss";
 
 const TransferResolveFilePathPage = () => {
   const location = useLocation();
-  const initialValue = getGroupedResolvePaths(
+  const initialValue = getMappedResolvePathFiles(
     location?.state?.validationErrors,
+    location?.state?.destinationPath,
   );
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   const [resolvePathFiles, setResolvePathFiles] =
-    useState<Record<string, ResolvePathFileType[]>>(initialValue);
+    useState<ResolvePathFileType[]>(initialValue);
+  const [selectedRenameFile, setSelectedRenameFile] =
+    useState<ResolvePathFileType | null>(null);
+
+  const groupedResolvedPathFiles: Record<string, ResolvePathFileType[]> =
+    useMemo(() => {
+      return getGroupedResolvePaths(resolvePathFiles);
+    }, [resolvePathFiles]);
 
   const unResolvedPaths = useMemo(() => {
-    const filePaths = Object.keys(resolvePathFiles).reduce((acc, curr) => {
-      const resolvedFilePaths = resolvePathFiles[`${curr}`].map(
-        (file) =>
-          `${location?.state?.destinationPath}/${file.relativePath}/${file.sourceName}`,
-      );
-      acc = [...acc, ...resolvedFilePaths];
-      return acc;
-    }, [] as string[]);
-    return !!filePaths.find((path) => path.length > 260);
-  }, [resolvePathFiles, location?.state?.destinationPath]);
+    return !!resolvePathFiles.find(
+      (file) => file.relativeFinalPath.length + file.sourceName.length > 260,
+    );
+  }, [resolvePathFiles]);
 
-  const getCharactersTag = useCallback(
-    (sourcePath: string) => {
-      const totalCharacters =
-        `${location?.state?.destinationPath}/${sourcePath}`.length;
-      if (totalCharacters > 260)
-        return (
-          <Tag gdsTagColour="red" className={styles.statusTag}>
-            {totalCharacters} characters
-          </Tag>
-        );
+  const getCharactersTag = useCallback((filePath: string) => {
+    if (filePath.length > 260)
       return (
-        <Tag gdsTagColour="green" className={styles.statusTag}>
-          {totalCharacters} characters
+        <Tag gdsTagColour="red" className={styles.statusTag}>
+          {filePath.length} characters
         </Tag>
       );
-    },
-    [location?.state?.destinationPath],
-  );
+    return (
+      <Tag gdsTagColour="green" className={styles.statusTag}>
+        {filePath.length} characters
+      </Tag>
+    );
+  }, []);
+
+  const handleRenameButtonClick = (id: string) => {
+    const selectedFile = resolvePathFiles.find((file) => file.id === id)!;
+    setSelectedRenameFile(selectedFile);
+  };
+
+  const handleRenameCancel = () => {
+    setSelectedRenameFile(null);
+  };
+
+  const handleRenameContinue = (newName: string) => {
+    setResolvePathFiles((prevValues) =>
+      prevValues.map((value) =>
+        value.id === selectedRenameFile!.id
+          ? { ...value, sourceName: newName }
+          : value,
+      ),
+    );
+    setSelectedRenameFile(null);
+  };
+
+  if (selectedRenameFile)
+    return (
+      <RenameTransferFilePage
+        fileName={selectedRenameFile.sourceName}
+        relativeFilePath={selectedRenameFile.relativeFinalPath}
+        handleCancel={handleRenameCancel}
+        handleContinue={handleRenameContinue}
+      />
+    );
 
   return (
     <div className="govuk-width-container">
@@ -67,7 +96,7 @@ const TransferResolveFilePathPage = () => {
 
         <div>
           <div>
-            {Object.keys(resolvePathFiles).map((key) => {
+            {Object.keys(groupedResolvedPathFiles).map((key) => {
               return (
                 <div key={key} className={styles.errorWrapper}>
                   <div className={styles.relativePathWrapper}>
@@ -75,7 +104,7 @@ const TransferResolveFilePathPage = () => {
                     <span className={styles.relativePathText}>{key}</span>
                   </div>
                   <ul className={styles.errorList}>
-                    {resolvePathFiles[key].map((file) => {
+                    {groupedResolvedPathFiles[key].map((file) => {
                       return (
                         <li
                           key={file.sourceName}
@@ -89,13 +118,14 @@ const TransferResolveFilePathPage = () => {
                           </div>
                           <div>
                             {getCharactersTag(
-                              `${file.relativePath}/${file.sourceName}`,
+                              `${file.relativeFinalPath}/${file.sourceName}`,
                             )}
                           </div>
                           <div className={styles.renameButton}>
                             <Button
                               name="secondary"
                               className="govuk-button--secondary"
+                              onClick={() => handleRenameButtonClick(file.id)}
                             >
                               Rename
                             </Button>
