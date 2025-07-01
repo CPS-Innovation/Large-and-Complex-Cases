@@ -36,7 +36,7 @@ variables:
 
 stages:
   - stage: Build_And_Test_UI
-    displayName: 'LACC - Build and Test UI - ${{ Upper(parameters.environment) }}'
+    displayName: 'LACC UI- Build, Test & Package'
     jobs:
       - job: Build_And_Test_UI_SPA
         displayName: 'LACC - Build and Test UI SPA - ${{ Upper(parameters.environment) }}'
