@@ -7,6 +7,10 @@ parameters:
       - dev
       - qa
       - prod
+  - name: runE2E
+    displayName: 'Run E2E Tests'
+    type: boolean
+    default: true
 
 trigger:
   branches:
@@ -236,9 +240,10 @@ stages:
 
               echo "E2E tests completed. Reports:"
               ls -l playwright/test-results
-            displayName: 'Run E2E Tests (Playwright)'
+            displayName: 'Run E2E Tests (Playwright, Bash)'
             workingDirectory: ui-spa
             continueOnError: true
+            condition: eq('${{ parameters.runE2E }}', true)
 
           - task: PublishTestResults@2
             displayName: 'Publish E2E Test Results'
