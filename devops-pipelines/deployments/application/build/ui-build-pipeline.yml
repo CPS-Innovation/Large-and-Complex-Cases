@@ -33,6 +33,8 @@ variables:
   - group: lacc-ui-config-${{ lower(parameters.environment) }}-variables
   - name: nodeVersion
     value: '20.x'
+  - name: uiTestResultsDirectory
+    value: '$(Agent.TempDirectory)/UITestResults'
 
 stages:
   - stage: Build_And_Test_UI
