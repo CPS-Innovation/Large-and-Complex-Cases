@@ -46,21 +46,18 @@ stages:
     pool:
       vmImage: $(build-agent)
     jobs:
-      - deployment: CI_Deploy_LACCUI_${{ variables.environmentSuffix }}
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - task: AzureRmWebAppDeployment@4
-                  inputs:
-                    ConnectionType: 'AzureRM'
-                    azureSubscription: $(azureSubscription)
-                    resourceGroupName: $(resourceGroupName)
-                    appType: 'webAppLinux'
-                    WebAppName: '$(appName)'
-                    packageForLinux: '$(Pipeline.Workspace)/LACCUIBuild/lacc-ui-$(environmentSuffix)-drop'
-                    RuntimeStack: 'NODE|20-lts'
-                    StartupCommand: 'pm2 serve /home/site/wwwroot/ --no-daemon --spa'
-                    
-                  displayName: 'Deploy LACC UI to ${{ variables.environmentSuffix }}'
-                  retryCountOnTaskFailure: 1 
+      - job: CI_Deploy_LACCUI_${{ variables.environmentSuffix }}
+        steps:
+          - task: AzureRmWebAppDeployment@4
+            inputs:
+              ConnectionType: 'AzureRM'
+              azureSubscription: $(azureSubscription)
+              resourceGroupName: $(resourceGroupName)
+              appType: 'webAppLinux'
+              WebAppName: '$(appName)'
+              packageForLinux: '$(Pipeline.Workspace)/LACCUIBuild/lacc-ui-$(environmentSuffix)-drop'
+              RuntimeStack: 'NODE|20-lts'
+              StartupCommand: 'pm2 serve /home/site/wwwroot/ --no-daemon --spa'
+              
+            displayName: 'Deploy LACC UI to ${{ variables.environmentSuffix }}'
+            retryCountOnTaskFailure: 1 
