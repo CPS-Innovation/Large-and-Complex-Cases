@@ -55,6 +55,7 @@ stages:
               echo "Listing contents of artifact directory:"
               ls -lR $(Pipeline.Workspace)/LACCUIBuild
             displayName: 'List artifact directory'
+            condition: always()
           - task: AzureRmWebAppDeployment@4
             inputs:
               ConnectionType: 'AzureRM'
