@@ -41,13 +41,13 @@ variables:
       value: 'Azure Pipeline: Large and Complex Cases - Prod'
 
 stages:
-  - stage: Deploy-$(environmentSuffix)
-    displayName: 'Deploy to -$(environmentSuffix)'
+  - stage: Deploy_${{ variables.environmentSuffix }}
+    displayName: 'Deploy to ${{ variables.environmentSuffix }}'
     pool:
       vmImage: $(build-agent)
     jobs:
-      - deployment: CI_Deploy_LACCUI-$(environmentSuffix)
-        environment: $(environmentSuffix)
+      - deployment: CI_Deploy_LACCUI_${{ variables.environmentSuffix }}
+        environment: ${{ variables.environmentSuffix }}
         strategy:
           runOnce:
             deploy:
@@ -63,5 +63,5 @@ stages:
                     RuntimeStack: 'NODE|20-lts'
                     StartupCommand: 'pm2 serve /home/site/wwwroot/ --no-daemon --spa'
                     
-                  displayName: 'Deploy LACC UI to $(environmentSuffix)'
+                  displayName: 'Deploy LACC UI to ${{ variables.environmentSuffix }}'
                   retryCountOnTaskFailure: 1 
