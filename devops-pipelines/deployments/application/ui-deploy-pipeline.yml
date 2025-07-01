@@ -48,11 +48,9 @@ stages:
     jobs:
       - job: CI_Deploy_LACCUI_${{ variables.environmentSuffix }}
         steps:
-          - task: DownloadPipelineArtifact@2
-            inputs:
-              source: 'LACCUIBuild'
-              artifact: 'lacc-ui-$(environmentSuffix)-drop'
-              path: '$(Pipeline.Workspace)/LACCUIBuild/lacc-ui-$(environmentSuffix)-drop'
+          - download: LACCUIBuild
+            artifact: lacc-ui-$(environmentSuffix)-drop
+            path: $(Pipeline.Workspace)/LACCUIBuild/lacc-ui-$(environmentSuffix)-drop
           - task: AzureRmWebAppDeployment@4
             inputs:
               ConnectionType: 'AzureRM'
