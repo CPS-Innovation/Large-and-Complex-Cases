@@ -79,43 +79,47 @@ public class NetAppStorageClientTests : IDisposable
     public async Task InitiateUploadAsync_ReturnsUploadSession()
     {
         // Arrange
+        const string destinationPath = "";
+        const string sourcePath = ObjectKey;
+        var fullPath = Path.Combine(destinationPath, sourcePath).Replace('\\', '/');
+
         var arg = new InitiateMultipartUploadArg
         {
             BucketName = BucketName,
-            ObjectKey = ObjectKey
+            ObjectKey = fullPath
         };
 
         var getObjectArg = new GetObjectArg
         {
             BucketName = BucketName,
-            ObjectKey = ObjectKey
+            ObjectKey = fullPath
         };
 
         var request = new InitiateMultipartUploadRequest
         {
             BucketName = BucketName,
-            Key = ObjectKey
+            Key = fullPath
         };
 
         var getObjectAttributesRequest = new GetObjectAttributesRequest
         {
             BucketName = BucketName,
-            Key = ObjectKey,
+            Key = fullPath,
             ObjectAttributes = [ObjectAttributes.ETag]
         };
 
-        _netAppArgFactoryMock.Setup(f => f.CreateInitiateMultipartUploadArg(BucketName, ObjectKey)).Returns(arg);
-        _netAppArgFactoryMock.Setup(f => f.CreateGetObjectArg(BucketName, ObjectKey)).Returns(getObjectArg);
+        _netAppArgFactoryMock.Setup(f => f.CreateInitiateMultipartUploadArg(BucketName, fullPath)).Returns(arg);
+        _netAppArgFactoryMock.Setup(f => f.CreateGetObjectArg(BucketName, fullPath)).Returns(getObjectArg);
         _netAppRequestFactoryMock.Setup(f => f.CreateMultipartUploadRequest(arg)).Returns(request);
         _netAppRequestFactoryMock.Setup(f => f.GetObjectAttributesRequest(getObjectArg)).Returns(getObjectAttributesRequest);
 
-        //Act
-        var result = await _client.InitiateUploadAsync(ObjectKey, 123, "source-file.txt");
+        // Act
+        var result = await _client.InitiateUploadAsync(destinationPath, 123, sourcePath);
 
         // Assert
         result.Should().NotBeNull();
         result.UploadId.Should().Be("upload-id-49e18525de9c");
-        result.WorkspaceId.Should().Be(ObjectKey);
+        result.WorkspaceId.Should().Be(fullPath);
     }
 
     [Fact]
