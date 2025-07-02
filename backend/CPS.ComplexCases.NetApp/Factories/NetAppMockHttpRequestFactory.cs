@@ -48,7 +48,7 @@ public class NetAppMockHttpRequestFactory : INetAppMockHttpRequestFactory
 
     public HttpRequestMessage GetObjectRequest(GetObjectArg arg)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, arg.ObjectKey);
+        var request = new HttpRequestMessage(HttpMethod.Get, $"{arg.BucketName}/{arg.ObjectKey}");
         request.Headers.Add(S3Constants.HostHeaderName, arg.BucketName);
 
         return request;

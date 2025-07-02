@@ -29,19 +29,12 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
         await _netAppClient.CompleteMultipartUploadAsync(arg);
     }
 
-    public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string? workspaceId = null, string? sourcePath = null, TransferOverwritePolicy? overwritePolicy = null)
+    public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string sourcePath, string? workspaceId = null, string? relativePath = null)
     {
-        var arg = _netAppArgFactory.CreateInitiateMultipartUploadArg(_options.BucketName, destinationPath);
-        if (overwritePolicy == null)
-        {
-            var getObjectArg = _netAppArgFactory.CreateGetObjectArg(_options.BucketName, destinationPath);
-            var objectExists = await _netAppClient.DoesObjectExistAsync(getObjectArg);
+        var fullDestinationPath = Path.Combine(destinationPath, sourcePath).Replace('\\', '/');
 
-            if (objectExists)
-            {
-                throw new FileExistsException($"Object {destinationPath} already exists.");
-            }
-        }
+        var arg = _netAppArgFactory.CreateInitiateMultipartUploadArg(_options.BucketName, fullDestinationPath);
+
         var response = await _netAppClient.InitiateMultipartUploadAsync(arg);
 
         return new UploadSession

@@ -53,7 +53,7 @@ public abstract class BaseEgressClient
         }
         catch (HttpRequestException ex) when (response.StatusCode == HttpStatusCode.NotFound)
         {
-            _logger.LogWarning(ex, "Workspace not found. Check the workspace ID.");
+            _logger.LogWarning(ex, "Resource not found. Check the workspace ID.");
             throw;
         }
         catch (HttpRequestException ex)

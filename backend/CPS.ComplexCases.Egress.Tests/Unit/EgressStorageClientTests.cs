@@ -6,7 +6,6 @@ using AutoFixture.AutoMoq;
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
-using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
@@ -146,205 +145,6 @@ public class EgressStorageClientTests : IDisposable
         exception.Message.Should().Contain("File ID cannot be null.");
     }
 
-    [Fact]
-    public async Task InitiateUploadAsync_WithOverwritePolicyOverwrite_SkipsFileExistenceCheck()
-    {
-        // Arrange
-        var destinationPath = _fixture.Create<string>();
-        var fileSize = _fixture.Create<long>();
-        var workspaceId = _fixture.Create<string>();
-        var sourcePath = "/path/to/testfile.txt";
-        var token = _fixture.Create<string>();
-        var uploadId = _fixture.Create<string>();
-        var md5Hash = _fixture.Create<string>();
-
-        var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
-        var uploadResponse = new CreateUploadResponse
-        {
-            Id = uploadId,
-            Md5Hash = md5Hash
-        };
-
-        SetupTokenRequest(token);
-        SetupCreateUploadRequest(destinationPath, fileSize, workspaceId, "testfile.txt", token);
-        SetupHttpMockResponses(
-            ("token", tokenResponse),
-            ("upload", uploadResponse)
-        );
-
-        // Act
-        var result = await _client.InitiateUploadAsync(
-            destinationPath,
-            fileSize,
-            workspaceId,
-            sourcePath,
-            TransferOverwritePolicy.Overwrite);
-
-        // Assert
-        using (new AssertionScope())
-        {
-            result.Should().NotBeNull();
-            result.UploadId.Should().Be(uploadId);
-            result.WorkspaceId.Should().Be(workspaceId);
-            result.Md5Hash.Should().Be(md5Hash);
-        }
-
-        VerifyTokenRequest();
-        VerifyCreateUploadRequest(destinationPath, fileSize, workspaceId, "testfile.txt", token);
-        _requestFactoryMock.Verify(
-            f => f.ListEgressMaterialRequest(It.IsAny<ListWorkspaceMaterialArg>(), It.IsAny<string>()),
-            Times.Never);
-    }
-
-    [Fact]
-    public async Task InitiateUploadAsync_WithoutOverwritePolicy_FileDoesNotExist_Succeeds()
-    {
-        // Arrange
-        var destinationPath = _fixture.Create<string>();
-        var fileSize = _fixture.Create<long>();
-        var workspaceId = _fixture.Create<string>();
-        var sourcePath = "/path/to/testfile.txt";
-        var token = _fixture.Create<string>();
-        var uploadId = _fixture.Create<string>();
-        var md5Hash = _fixture.Create<string>();
-
-        var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
-        var listResponse = new ListCaseMaterialResponse
-        {
-            Data = new List<ListCaseMaterialDataResponse>(),
-            DataInfo = new DataInfoResponse()
-        };
-        var uploadResponse = new CreateUploadResponse
-        {
-            Id = uploadId,
-            Md5Hash = md5Hash
-        };
-
-        SetupTokenRequest(token);
-        SetupListMaterialRequest(workspaceId, destinationPath, token);
-        SetupCreateUploadRequest(destinationPath, fileSize, workspaceId, "testfile.txt", token);
-        SetupHttpMockResponses(
-            ("token", tokenResponse),
-            ("list", listResponse),
-            ("upload", uploadResponse)
-        );
-
-        // Act
-        var result = await _client.InitiateUploadAsync(destinationPath, fileSize, workspaceId, sourcePath);
-
-        // Assert
-        using (new AssertionScope())
-        {
-            result.Should().NotBeNull();
-            result.UploadId.Should().Be(uploadId);
-            result.WorkspaceId.Should().Be(workspaceId);
-            result.Md5Hash.Should().Be(md5Hash);
-        }
-
-        VerifyTokenRequest();
-        VerifyListMaterialRequest(workspaceId, destinationPath, token);
-        VerifyCreateUploadRequest(destinationPath, fileSize, workspaceId, "testfile.txt", token);
-    }
-
-    [Fact]
-    public async Task InitiateUploadAsync_WithoutOverwritePolicy_FileExists_ThrowsFileExistsException()
-    {
-        // Arrange
-        var destinationPath = _fixture.Create<string>();
-        var fileSize = _fixture.Create<long>();
-        var workspaceId = _fixture.Create<string>();
-        var sourcePath = "/path/to/testfile.txt";
-        var token = _fixture.Create<string>();
-
-        var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
-        var listResponse = new ListCaseMaterialResponse
-        {
-            Data = new List<ListCaseMaterialDataResponse>
-        {
-            new ListCaseMaterialDataResponse
-            {
-                Id = _fixture.Create<string>(),
-                FileName = "testfile.txt",
-                Path = destinationPath,
-                IsFolder = false,
-                Version = 1
-            },
-            new ListCaseMaterialDataResponse
-            {
-                Id = _fixture.Create<string>(),
-                FileName = "otherfile.txt",
-                Path = destinationPath,
-                IsFolder = false,
-                Version = 1
-            }
-        },
-            DataInfo = new DataInfoResponse()
-        };
-
-        SetupTokenRequest(token);
-        SetupListMaterialRequest(workspaceId, destinationPath, token);
-        SetupHttpMockResponses(
-            ("token", tokenResponse),
-            ("list", listResponse)
-        );
-
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<FileExistsException>(
-            () => _client.InitiateUploadAsync(destinationPath, fileSize, workspaceId, sourcePath));
-
-        exception.Message.Should().Contain("File 'testfile.txt' already exists in the destination path");
-        exception.Message.Should().Contain(destinationPath);
-
-        VerifyTokenRequest();
-        VerifyListMaterialRequest(workspaceId, destinationPath, token);
-        _requestFactoryMock.Verify(
-            f => f.CreateUploadRequest(It.IsAny<CreateUploadArg>(), It.IsAny<string>()),
-            Times.Never);
-    }
-
-    [Fact]
-    public async Task InitiateUploadAsync_WithoutOverwritePolicy_FileExistsCaseInsensitive_ThrowsFileExistsException()
-    {
-        // Arrange
-        var destinationPath = _fixture.Create<string>();
-        var fileSize = _fixture.Create<long>();
-        var workspaceId = _fixture.Create<string>();
-        var sourcePath = "/path/to/TestFile.txt";
-        var token = _fixture.Create<string>();
-
-        var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
-        var listResponse = new ListCaseMaterialResponse
-        {
-            Data = new List<ListCaseMaterialDataResponse>
-        {
-            new ListCaseMaterialDataResponse
-            {
-                Id = _fixture.Create<string>(),
-                FileName = "testfile.txt",
-                Path = destinationPath,
-                IsFolder = false,
-                Version = 1
-            }
-        },
-            DataInfo = new DataInfoResponse()
-        };
-
-        SetupTokenRequest(token);
-        SetupListMaterialRequest(workspaceId, destinationPath, token);
-        SetupHttpMockResponses(
-            ("token", tokenResponse),
-            ("list", listResponse)
-        );
-
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<FileExistsException>(
-            () => _client.InitiateUploadAsync(destinationPath, fileSize, workspaceId, sourcePath));
-
-        exception.Message.Should().Contain("File 'TestFile.txt' already exists in the destination path");
-
-        VerifyTokenRequest();
-        VerifyListMaterialRequest(workspaceId, destinationPath, token);
-    }
 
     [Fact]
     public async Task UploadChunkAsync_WithValidParameters_ReturnsUploadChunkResult()
@@ -724,13 +524,135 @@ public class EgressStorageClientTests : IDisposable
         VerifyListMaterialRequestWithFolderId(workspaceId, subFolderId, token);
     }
 
+    [Fact]
+    public async Task InitiateUploadAsync_WhenFolderCreationFails_ThrowsHttpRequestException()
+    {
+        // Arrange
+        var destinationPath = "uploads/documents";
+        var fileSize = 1024L;
+        var sourcePath = "test.txt";
+        var workspaceId = _fixture.Create<string>();
+        var relativePath = "subfolder/test.txt";
+        var token = _fixture.Create<string>();
+
+        var fileName = Path.GetFileName(relativePath);
+        var sourceDirectory = Path.GetDirectoryName(relativePath) ?? string.Empty;
+        var fullDestinationPath = Path.Combine(destinationPath, sourceDirectory).Replace('\\', '/');
+
+        var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
+
+        SetupTokenRequest(token);
+        SetupCreateUploadRequest(fullDestinationPath, fileSize, workspaceId, fileName, token);
+        SetupCreateFolderRequest(workspaceId, token);
+
+
+        // Upload fails with 404, folder creation fails with 500
+        SetupHttpMockResponsesWithStatus(
+            ("token", tokenResponse, HttpStatusCode.OK),
+            ("uploadFail", "Not Found", HttpStatusCode.NotFound),
+            ("folderCreateFail", "Internal Server Error", HttpStatusCode.InternalServerError)
+        );
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<HttpRequestException>(
+            () => _client.InitiateUploadAsync(destinationPath, fileSize, sourcePath, workspaceId, relativePath));
+
+        exception.Message.Should().Contain("500");
+
+        VerifyTokenRequest();
+        VerifyCreateUploadRequest(fullDestinationPath, fileSize, workspaceId, fileName, token);
+        VerifyCreateFolderRequest(workspaceId, token);
+    }
+
+    [Fact]
+    public async Task InitiateUploadAsync_WhenFolderCreationSucceedsButRetryUploadFails_ThrowsHttpRequestException()
+    {
+        // Arrange
+        var destinationPath = "uploads/documents";
+        var fileSize = 1024L;
+        var sourcePath = "test.txt";
+        var workspaceId = _fixture.Create<string>();
+        var relativePath = "subfolder/test.txt";
+        var token = _fixture.Create<string>();
+
+        var fileName = Path.GetFileName(relativePath);
+        var sourceDirectory = Path.GetDirectoryName(relativePath) ?? string.Empty;
+        var fullDestinationPath = Path.Combine(destinationPath, sourceDirectory).Replace('\\', '/');
+
+        var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
+
+        SetupTokenRequest(token);
+        SetupCreateUploadRequest(fullDestinationPath, fileSize, workspaceId, fileName, token);
+        SetupCreateFolderRequest(workspaceId, token);
+
+        // Upload fails with 404, folder creation succeeds, retry upload fails with different error
+        SetupHttpMockResponsesWithStatus(
+            ("token", tokenResponse, HttpStatusCode.OK),
+            ("uploadFail", "Not Found", HttpStatusCode.NotFound),
+            ("folderCreate", new { Success = true }, HttpStatusCode.OK),
+            ("uploadRetryFail", "Forbidden", HttpStatusCode.Forbidden)
+        );
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<HttpRequestException>(
+            () => _client.InitiateUploadAsync(destinationPath, fileSize, sourcePath, workspaceId, relativePath));
+
+        exception.Message.Should().Contain("403");
+
+        VerifyTokenRequest();
+        VerifyCreateUploadRequest(fullDestinationPath, fileSize, workspaceId, fileName, token);
+        VerifyCreateFolderRequest(workspaceId, token);
+    }
+
+    [Fact]
+    public async Task InitiateUploadAsync_WhenInitialUploadFailsWithNon404Error_DoesNotAttemptFolderCreation()
+    {
+        // Arrange
+        var destinationPath = "uploads/documents";
+        var fileSize = 1024L;
+        var sourcePath = "test.txt";
+        var workspaceId = _fixture.Create<string>();
+        var relativePath = "subfolder/test.txt";
+        var token = _fixture.Create<string>();
+
+
+        var fileName = Path.GetFileName(relativePath);
+        var sourceDirectory = Path.GetDirectoryName(relativePath) ?? string.Empty;
+        var fullDestinationPath = Path.Combine(destinationPath, sourceDirectory).Replace('\\', '/');
+
+        var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
+
+        SetupTokenRequest(token);
+        SetupCreateUploadRequest(fullDestinationPath, fileSize, workspaceId, fileName, token);
+
+        // Upload fails with 403 (not 404)
+        SetupHttpMockResponsesWithStatus(
+            ("token", tokenResponse, HttpStatusCode.OK),
+            ("uploadFail", "Forbidden", HttpStatusCode.Forbidden)
+        );
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<HttpRequestException>(
+            () => _client.InitiateUploadAsync(destinationPath, fileSize, sourcePath, workspaceId, relativePath));
+
+        exception.Message.Should().Contain("403");
+
+        VerifyTokenRequest();
+        VerifyCreateUploadRequest(fullDestinationPath, fileSize, workspaceId, fileName, token);
+
+        // Verify folder creation was NOT attempted
+        _requestFactoryMock.Verify(
+            f => f.CreateFolderRequest(It.IsAny<CreateFolderArg>(), It.IsAny<string>()),
+            Times.Never);
+    }
+
     #region Setup Methods
 
     private void SetupTokenRequest(string token)
     {
         _requestFactoryMock
             .Setup(f => f.GetWorkspaceTokenRequest(It.IsAny<string>(), It.IsAny<string>()))
-            .Returns(new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/auth"));
+            .Returns(() => new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/auth"));
     }
 
     private void SetupDocumentRequest(string workspaceId, string fileId, string token)
@@ -740,20 +662,7 @@ public class EgressStorageClientTests : IDisposable
                 It.Is<GetWorkspaceDocumentArg>(arg =>
                     arg.WorkspaceId == workspaceId && arg.FileId == fileId),
                 token))
-            .Returns(new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/workspaces/{workspaceId}/documents/{fileId}"));
-    }
-
-    private void SetupCreateUploadRequest(string destinationPath, long fileSize, string workspaceId, string fileName, string token)
-    {
-        _requestFactoryMock
-            .Setup(f => f.CreateUploadRequest(
-                It.Is<CreateUploadArg>(arg =>
-                    arg.FolderPath == destinationPath &&
-                    arg.FileSize == fileSize &&
-                    arg.WorkspaceId == workspaceId &&
-                    arg.FileName == fileName),
-                token))
-            .Returns(new HttpRequestMessage(HttpMethod.Post, $"{TestUrl}/api/v1/uploads"));
+            .Returns(() => new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/workspaces/{workspaceId}/documents/{fileId}"));
     }
 
     private void SetupUploadChunkRequest(string uploadId, string workspaceId, string contentRange, byte[] chunkData, string token)
@@ -766,7 +675,7 @@ public class EgressStorageClientTests : IDisposable
                     arg.ContentRange == contentRange &&
                     arg.ChunkData == chunkData),
                 token))
-            .Returns(new HttpRequestMessage(HttpMethod.Put, $"{TestUrl}/api/v1/uploads/{uploadId}/chunks"));
+            .Returns(() => new HttpRequestMessage(HttpMethod.Put, $"{TestUrl}/api/v1/uploads/{uploadId}/chunks"));
     }
 
     private void SetupCompleteUploadRequest(string uploadId, string workspaceId, string md5Hash, string token)
@@ -778,17 +687,7 @@ public class EgressStorageClientTests : IDisposable
                     arg.WorkspaceId == workspaceId &&
                     arg.Md5Hash == md5Hash),
                 token))
-            .Returns(new HttpRequestMessage(HttpMethod.Post, $"{TestUrl}/api/v1/uploads/{uploadId}/complete"));
-    }
-
-    private void SetupListMaterialRequest(string workspaceId, string path, string token)
-    {
-        _requestFactoryMock
-            .Setup(f => f.ListEgressMaterialRequest(
-                It.Is<ListWorkspaceMaterialArg>(arg =>
-                    arg.WorkspaceId == workspaceId && arg.Path == path),
-                token))
-            .Returns(new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/workspaces/{workspaceId}/materials"));
+            .Returns(() => new HttpRequestMessage(HttpMethod.Post, $"{TestUrl}/api/v1/uploads/{uploadId}/complete"));
     }
 
     private void SetupListMaterialRequestWithFolderId(string workspaceId, string folderId, string token)
@@ -802,21 +701,27 @@ public class EgressStorageClientTests : IDisposable
                     arg.Skip == 0 &&
                     arg.RecurseSubFolders == false),
                 token))
-            .Returns(new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/workspaces/{workspaceId}/materials"));
+            .Returns(() => new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/workspaces/{workspaceId}/materials"));
     }
 
-    private void SetupListMaterialRequestWithFolderIdAndPaging(string workspaceId, string folderId, int skip, string token)
+    private void SetupCreateFolderRequest(string workspaceId, string token)
     {
         _requestFactoryMock
-            .Setup(f => f.ListEgressMaterialRequest(
-                It.Is<ListWorkspaceMaterialArg>(arg =>
+            .Setup(f => f.CreateFolderRequest(It.IsAny<CreateFolderArg>(), token))
+            .Returns(() => new HttpRequestMessage(HttpMethod.Post, $"{TestUrl}/api/v1/workspaces/{workspaceId}/folders"));
+    }
+
+    private void SetupCreateUploadRequest(string destinationPath, long fileSize, string workspaceId, string fileName, string token)
+    {
+        _requestFactoryMock
+            .Setup(f => f.CreateUploadRequest(
+                It.Is<CreateUploadArg>(arg =>
+                    arg.FolderPath == destinationPath &&
+                    arg.FileSize == fileSize &&
                     arg.WorkspaceId == workspaceId &&
-                    arg.FolderId == folderId &&
-                    arg.Take == 100 &&
-                    arg.Skip == skip &&
-                    arg.RecurseSubFolders == false),
+                    arg.FileName == fileName),
                 token))
-            .Returns(new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/workspaces/{workspaceId}/materials"));
+            .Returns(() => new HttpRequestMessage(HttpMethod.Post, $"{TestUrl}/api/v1/uploads"));
     }
 
     #endregion
@@ -836,19 +741,6 @@ public class EgressStorageClientTests : IDisposable
             f => f.GetWorkspaceDocumentRequest(
                 It.Is<GetWorkspaceDocumentArg>(arg =>
                     arg.WorkspaceId == workspaceId && arg.FileId == fileId),
-                token),
-            Times.Once);
-    }
-
-    private void VerifyCreateUploadRequest(string destinationPath, long fileSize, string workspaceId, string fileName, string token)
-    {
-        _requestFactoryMock.Verify(
-            f => f.CreateUploadRequest(
-                It.Is<CreateUploadArg>(arg =>
-                    arg.FolderPath == destinationPath &&
-                    arg.FileSize == fileSize &&
-                    arg.WorkspaceId == workspaceId &&
-                    arg.FileName == fileName),
                 token),
             Times.Once);
     }
@@ -878,16 +770,6 @@ public class EgressStorageClientTests : IDisposable
             Times.Once);
     }
 
-    private void VerifyListMaterialRequest(string workspaceId, string path, string token)
-    {
-        _requestFactoryMock.Verify(
-            f => f.ListEgressMaterialRequest(
-                It.Is<ListWorkspaceMaterialArg>(arg =>
-                    arg.WorkspaceId == workspaceId && arg.Path == path),
-                token),
-            Times.Once);
-    }
-
     private void VerifyListMaterialRequestWithFolderId(string workspaceId, string folderId, string token)
     {
         _requestFactoryMock.Verify(
@@ -900,20 +782,25 @@ public class EgressStorageClientTests : IDisposable
             Times.Once);
     }
 
-    private void VerifyListMaterialRequestWithFolderIdAndPaging(string workspaceId, string folderId, int skip, string token)
+    private void VerifyCreateFolderRequest(string workspaceId, string token)
     {
         _requestFactoryMock.Verify(
-            f => f.ListEgressMaterialRequest(
-                It.Is<ListWorkspaceMaterialArg>(arg =>
+            f => f.CreateFolderRequest(It.IsAny<CreateFolderArg>(), token),
+            Times.AtLeastOnce);
+    }
+
+    private void VerifyCreateUploadRequest(string destinationPath, long fileSize, string workspaceId, string fileName, string token)
+    {
+        _requestFactoryMock.Verify(
+            f => f.CreateUploadRequest(
+                It.Is<CreateUploadArg>(arg =>
+                    arg.FolderPath == destinationPath &&
+                    arg.FileSize == fileSize &&
                     arg.WorkspaceId == workspaceId &&
-                    arg.FolderId == folderId &&
-                    arg.Take == 100 &&
-                    arg.Skip == skip &&
-                    arg.RecurseSubFolders == false),
+                    arg.FileName == fileName),
                 token),
             Times.Once);
     }
-
 
     #endregion
 
@@ -952,5 +839,39 @@ public class EgressStorageClientTests : IDisposable
     {
         var responsesWithStream = responses.Select(r => (r.type, r.response, false)).ToArray();
         SetupHttpMockResponses(responsesWithStream);
+    }
+
+    private void SetupHttpMockResponsesWithStatus(params (string type, object response, HttpStatusCode statusCode)[] responses)
+    {
+        var sequence = _httpMessageHandlerMock
+            .Protected()
+            .SetupSequence<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            );
+
+        foreach (var (_, response, statusCode) in responses)
+        {
+            HttpContent content;
+
+            if (response is string stringContent)
+            {
+                content = new StringContent(stringContent);
+            }
+            else
+            {
+                var jsonContent = JsonSerializer.Serialize(response);
+                content = new StringContent(jsonContent);
+            }
+
+            var httpResponse = new HttpResponseMessage
+            {
+                StatusCode = statusCode,
+                Content = content
+            };
+
+            sequence = sequence.ReturnsAsync(httpResponse);
+        }
     }
 }

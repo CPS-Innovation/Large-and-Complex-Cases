@@ -96,8 +96,8 @@ public class InitiateTransfer
                 CaseId = transferRequest.Value.Metadata.CaseId,
                 UserName = transferRequest.Value.Metadata.UserName,
                 WorkspaceId = transferRequest.Value.Metadata.WorkspaceId,
-                IsRetry = transferRequest.Value.IsRetry ?? false,
                 CorrelationId = currentCorrelationId,
+                TransferDirection = transferRequest.Value.TransferDirection,
             },
             new StartOrchestrationOptions
             {

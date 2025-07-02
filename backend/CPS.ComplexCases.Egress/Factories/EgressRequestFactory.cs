@@ -136,6 +136,24 @@ public class EgressRequestFactory : IEgressRequestFactory
     return request;
   }
 
+  public HttpRequestMessage CreateFolderRequest(CreateFolderArg arg, string token)
+  {
+
+    var folderData = new
+    {
+      folder_name = arg.FolderName,
+    };
+
+    var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/workspaces/{arg.WorkspaceId}/files?path={Uri.EscapeDataString(arg.Path ?? string.Empty)}")
+    {
+      Content = new StringContent(JsonSerializer.Serialize(folderData), Encoding.UTF8, "application/json")
+    };
+
+    AppendToken(request, token);
+
+    return request;
+  }
+
   private static void AppendToken(HttpRequestMessage request, string token)
   {
     var basicAuthValue = Convert.ToBase64String(Encoding.UTF8.GetBytes(token));

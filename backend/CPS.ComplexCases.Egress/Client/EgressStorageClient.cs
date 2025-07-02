@@ -9,6 +9,7 @@ using CPS.ComplexCases.Egress.Models;
 using CPS.ComplexCases.Egress.Models.Args;
 using CPS.ComplexCases.Egress.Models.Response;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
+using System.Net;
 
 namespace CPS.ComplexCases.Egress.Client;
 
@@ -32,48 +33,50 @@ public class EgressStorageClient(
         return await response.Content.ReadAsStreamAsync();
     }
 
-    public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string? workspaceId = null, string? sourcePath = null, TransferOverwritePolicy? overwritePolicy = null)
+    public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string sourcePath, string? workspaceId = null, string? relativePath = null)
     {
         var token = await GetWorkspaceToken();
 
-        if (string.IsNullOrEmpty(sourcePath))
-            throw new ArgumentNullException(nameof(sourcePath), "Source path cannot be null or empty.");
+        if (string.IsNullOrEmpty(relativePath))
+            throw new ArgumentNullException(nameof(relativePath), "Relative path cannot be null or empty.");
 
-        var fileName = Path.GetFileName(sourcePath);
-
-        if (overwritePolicy != TransferOverwritePolicy.Overwrite)
-        {
-            // check to see if filename exists in the destination path
-            // egress does not have endpoint to get file from path so we have to list all in the path and check if filename exists
-            var listArg = new ListWorkspaceMaterialArg
-            {
-                WorkspaceId = workspaceId ?? throw new ArgumentNullException(nameof(workspaceId), "Workspace ID cannot be null."),
-                Path = destinationPath,
-            };
-            var listResponse = await SendRequestAsync<ListCaseMaterialResponse>(_egressRequestFactory.ListEgressMaterialRequest(listArg, token));
-
-            if (listResponse.Data.Any(f => f.FileName.Equals(fileName, StringComparison.OrdinalIgnoreCase)))
-            {
-                throw new FileExistsException($"File '{fileName}' already exists in the destination path '{destinationPath}'.");
-            }
-        }
+        var fileName = Path.GetFileName(relativePath);
+        var sourceDirectory = Path.GetDirectoryName(relativePath) ?? string.Empty;
+        var fullDestinationPath = Path.Combine(destinationPath, sourceDirectory).Replace('\\', '/');
 
         var arg = new CreateUploadArg
         {
-            FolderPath = destinationPath,
+            FolderPath = fullDestinationPath,
             FileSize = fileSize,
             WorkspaceId = workspaceId ?? throw new ArgumentNullException(nameof(workspaceId), "Workspace ID cannot be null."),
-            FileName = fileName ?? throw new ArgumentNullException(nameof(sourcePath), "sourcePath path cannot be null."),
+            FileName = fileName,
         };
 
-        var response = await SendRequestAsync<CreateUploadResponse>(_egressRequestFactory.CreateUploadRequest(arg, token));
-
-        return new UploadSession
+        try
         {
-            UploadId = response.Id,
-            WorkspaceId = workspaceId,
-            Md5Hash = response.Md5Hash,
-        };
+            var response = await SendRequestAsync<CreateUploadResponse>(_egressRequestFactory.CreateUploadRequest(arg, token));
+
+            return new UploadSession
+            {
+                UploadId = response.Id,
+                WorkspaceId = workspaceId,
+                Md5Hash = response.Md5Hash,
+            };
+        }
+        catch (HttpRequestException ex) when (ex.Message.Contains("404"))
+        {
+            _logger.LogInformation("Folder structure doesn't exist for path {FolderPath}, creating it", fullDestinationPath);
+
+            await CreateFolderStructureAsync(fullDestinationPath, workspaceId, token);
+
+            var response = await SendRequestAsync<CreateUploadResponse>(_egressRequestFactory.CreateUploadRequest(arg, token));
+            return new UploadSession
+            {
+                UploadId = response.Id,
+                WorkspaceId = workspaceId,
+                Md5Hash = response.Md5Hash,
+            };
+        }
     }
 
     public async Task<UploadChunkResult> UploadChunkAsync(UploadSession session, int chunkNumber, byte[] chunkData, string? contentRange = null)
@@ -141,7 +144,78 @@ public class EgressStorageClient(
         var results = await Task.WhenAll(entityTasks);
         return results.SelectMany(files => files);
     }
+    private async Task CreateFolderStructureAsync(string folderPath, string workspaceId, string token)
+    {
+        if (string.IsNullOrEmpty(folderPath) || folderPath == "/" || folderPath == "\\")
+            return;
 
+        _logger.LogDebug("Creating folder structure for path: {FolderPath}", folderPath);
+
+        var pathSegments = folderPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        var currentPath = "";
+
+        foreach (var segment in pathSegments)
+        {
+            currentPath = string.IsNullOrEmpty(currentPath) ? segment : $"{currentPath}/{segment}";
+            var wasCreated = await TryCreateFolderAsync(currentPath, workspaceId, token);
+
+            if (wasCreated)
+            {
+                _logger.LogDebug("Successfully created folder: {FolderPath}", currentPath);
+            }
+        }
+
+        _logger.LogInformation("Completed folder structure creation for path: {FolderPath}", folderPath);
+    }
+
+    private async Task<bool> TryCreateFolderAsync(string folderPath, string workspaceId, string token)
+    {
+        var parentPath = Path.GetDirectoryName(folderPath)?.Replace('\\', '/') ?? "";
+        var folderName = Path.GetFileName(folderPath);
+
+        var arg = new CreateFolderArg
+        {
+            WorkspaceId = workspaceId,
+            FolderName = folderName,
+            Path = parentPath
+        };
+
+        try
+        {
+            var request = _egressRequestFactory.CreateFolderRequest(arg, token);
+
+            var response = await _httpClient.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return true;
+            }
+
+            if (response.StatusCode == HttpStatusCode.Conflict)
+            {
+                // Folder already exists - this is expected and OK
+                _logger.LogDebug("Folder {FolderPath} already exists", folderPath);
+                return false;
+            }
+
+            var errorContent = await response.Content.ReadAsStringAsync();
+            _logger.LogError("Failed to create folder {FolderPath}. Status: {StatusCode}, Response: {Response}",
+                folderPath, response.StatusCode, errorContent);
+
+            response.EnsureSuccessStatusCode();
+            return false;
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "HTTP error occurred while creating folder {FolderPath}", folderPath);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error occurred while creating folder {FolderPath}", folderPath);
+            throw;
+        }
+    }
     private async Task<List<FileTransferInfo>> GetAllFilesFromFolderParallel(string workspaceId, string? folderId, string baseFolderPath, string token)
     {
         var allPagesData = await GetAllPagesInParallel(workspaceId, folderId, token);

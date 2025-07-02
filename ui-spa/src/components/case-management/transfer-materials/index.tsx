@@ -391,6 +391,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     const sourcePaths = response.files.map((data) => ({
       fileId: data?.id,
       path: data.sourcePath,
+      relativePath: data.relativePath,
     }));
 
     const payload = {
@@ -537,8 +538,10 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         const status = await getTransferStatus(transferId);
         handleStatusResponse(status, interval);
       } catch (error) {
-        if (interval) clearInterval(interval);
-        setApiRequestError(error as Error);
+        if ((error as ApiError).code !== 404) {
+          if (interval) clearInterval(interval);
+          setApiRequestError(error as Error);
+        }
       }
     };
 
