@@ -384,7 +384,7 @@ test.describe("egress-netapp-transfer", () => {
     worker,
   }) => {
     await worker.use(
-      http.get("https://mocked-out-api/api/cases/12", async () => {
+      http.get("https://mocked-out-api/api/v1/cases/12", async () => {
         await delay(10);
         return HttpResponse.json({
           caseId: "12",
@@ -398,7 +398,7 @@ test.describe("egress-netapp-transfer", () => {
     );
     await worker.use(
       http.get(
-        "https://mocked-out-api/api/filetransfer/mock-transfer-id/status",
+        "https://mocked-out-api/api/v1/filetransfer/mock-transfer-id/status",
         async () => {
           await delay(10);
           return HttpResponse.json({
@@ -430,7 +430,7 @@ test.describe("egress-netapp-transfer", () => {
     ).toContainText("Completing transfer from egress to shared drive...");
     await worker.use(
       http.get(
-        "https://mocked-out-api/api/filetransfer/mock-transfer-id/status",
+        "https://mocked-out-api/api/v1/filetransfer/mock-transfer-id/status",
         async () => {
           await delay(10);
           return HttpResponse.json({
@@ -457,7 +457,7 @@ test.describe("egress-netapp-transfer", () => {
     ).toContainText("Completing transfer from egress to shared drive...");
     await worker.use(
       http.get(
-        "https://mocked-out-api/api/filetransfer/mock-transfer-id/status",
+        "https://mocked-out-api/api/v1/filetransfer/mock-transfer-id/status",
         async () => {
           await delay(10);
           return HttpResponse.json({
@@ -493,7 +493,7 @@ test.describe("egress-netapp-transfer", () => {
     worker,
   }) => {
     await worker.use(
-      http.get("https://mocked-out-api/api/cases/12", async () => {
+      http.get("https://mocked-out-api/api/v1/cases/12", async () => {
         await delay(10);
         return HttpResponse.json({
           caseId: "12",
@@ -507,7 +507,7 @@ test.describe("egress-netapp-transfer", () => {
     );
     await worker.use(
       http.get(
-        "https://mocked-out-api/api/filetransfer/mock-transfer-id/status",
+        "https://mocked-out-api/api/v1/filetransfer/mock-transfer-id/status",
         async () => {
           await delay(10);
           return HttpResponse.json({
@@ -539,7 +539,7 @@ test.describe("egress-netapp-transfer", () => {
     ).toContainText("abc@example.org is currently transferring");
     await worker.use(
       http.get(
-        "https://mocked-out-api/api/filetransfer/mock-transfer-id/status",
+        "https://mocked-out-api/api/v1/filetransfer/mock-transfer-id/status",
         async () => {
           await delay(10);
           return HttpResponse.json({
@@ -566,7 +566,7 @@ test.describe("egress-netapp-transfer", () => {
     ).toContainText("abc@example.org is currently transferring");
     await worker.use(
       http.get(
-        "https://mocked-out-api/api/filetransfer/mock-transfer-id/status",
+        "https://mocked-out-api/api/v1/filetransfer/mock-transfer-id/status",
         async () => {
           return HttpResponse.json({
             status: "Completed",

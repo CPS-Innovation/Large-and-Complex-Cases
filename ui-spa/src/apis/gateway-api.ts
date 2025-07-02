@@ -43,7 +43,7 @@ const buildCommonHeaders = async (): Promise<Record<string, string>> => {
 export const getCaseSearchResults = async (
   searchParams: string,
 ): Promise<SearchResultData> => {
-  const url = `${GATEWAY_BASE_URL}/api/case-search?${searchParams}`;
+  const url = `${GATEWAY_BASE_URL}/api/v1/case-search?${searchParams}`;
 
   const response = await fetch(url, {
     method: "GET",
@@ -60,7 +60,7 @@ export const getCaseSearchResults = async (
 };
 
 export const getCaseDivisionsOrAreas = async () => {
-  const url = `${GATEWAY_BASE_URL}/api/areas`;
+  const url = `${GATEWAY_BASE_URL}/api/v1/areas`;
 
   const response = await fetch(url, {
     method: "GET",
@@ -82,7 +82,7 @@ export const getEgressSearchResults = async (
   take: number = 50,
   collected: EgressSearchResultData = [],
 ): Promise<EgressSearchResultData> => {
-  const url = `${GATEWAY_BASE_URL}/api/egress/workspaces`;
+  const url = `${GATEWAY_BASE_URL}/api/v1/egress/workspaces`;
   const response = await fetch(
     `${url}?${searchParams}&skip=${skip}&take=${take}`,
     {
@@ -119,7 +119,7 @@ export const connectEgressWorkspace = async ({
   workspaceId: string;
   caseId: string;
 }) => {
-  const url = `${GATEWAY_BASE_URL}/api/egress/connections`;
+  const url = `${GATEWAY_BASE_URL}/api/v1/egress/connections`;
 
   const response = await fetch(url, {
     method: "POST",
@@ -146,7 +146,7 @@ export const getConnectNetAppFolders = async (
   continuationToken = "",
   collectedFolders: ConnectNetAppFolder[] = [],
 ): Promise<ConnectNetAppFolderData> => {
-  const url = `${GATEWAY_BASE_URL}/api/netapp/folders`;
+  const url = `${GATEWAY_BASE_URL}/api/v1/netapp/folders`;
   const response = await fetch(
     `${url}?operation-name=${operationName}&path=${folderPath}&take=${take}&continuation-token=${continuationToken}`,
     {
@@ -194,7 +194,7 @@ export const connectNetAppFolder = async ({
   folderPath: string;
   caseId: string;
 }) => {
-  const url = `${GATEWAY_BASE_URL}/api/netapp/connections`;
+  const url = `${GATEWAY_BASE_URL}/api/v1/netapp/connections`;
 
   const response = await fetch(url, {
     method: "POST",
@@ -216,7 +216,7 @@ export const connectNetAppFolder = async ({
 };
 
 export const getCaseMetaData = async (caseId: string) => {
-  const url = `${GATEWAY_BASE_URL}/api/cases/${caseId}`;
+  const url = `${GATEWAY_BASE_URL}/api/v1/cases/${caseId}`;
 
   const response = await fetch(url, {
     method: "GET",
@@ -239,7 +239,7 @@ export const getEgressFolders = async (
   take: number = 50,
   collected: EgressFolderData = [],
 ): Promise<EgressFolderData> => {
-  const url = `${GATEWAY_BASE_URL}/api/egress/workspaces/${workspaceId}/files?folder-id=${folderId}&skip=${skip}&take=${take}`;
+  const url = `${GATEWAY_BASE_URL}/api/v1/egress/workspaces/${workspaceId}/files?folder-id=${folderId}&skip=${skip}&take=${take}`;
   const response = await fetch(url, {
     method: "GET",
     credentials: "include",
@@ -271,7 +271,7 @@ export const getNetAppFolders = async (
   collectedFolders: NetAppFolder[] = [],
   collectedFiles: NetAppFile[] = [],
 ): Promise<NetAppFolderDataResponse> => {
-  const url = `${GATEWAY_BASE_URL}/api/netapp/files`;
+  const url = `${GATEWAY_BASE_URL}/api/v1/netapp/files`;
   const response = await fetch(
     `${url}?path=${folderPath}&take=${take}&continuation-token=${continuationToken}`,
     {
@@ -314,7 +314,7 @@ export const getNetAppFolders = async (
 export const indexingFileTransfer = async (
   payload: IndexingFileTransferPayload,
 ) => {
-  const url = `${GATEWAY_BASE_URL}/api/filetransfer/files`;
+  const url = `${GATEWAY_BASE_URL}/api/v1/filetransfer/files`;
 
   const response = await fetch(url, {
     method: "POST",
@@ -334,7 +334,7 @@ export const indexingFileTransfer = async (
 export const initiateFileTransfer = async (
   payload: InitiateFileTransferPayload,
 ) => {
-  const url = `${GATEWAY_BASE_URL}/api/filetransfer/initiate`;
+  const url = `${GATEWAY_BASE_URL}/api/v1/filetransfer/initiate`;
 
   const response = await fetch(url, {
     method: "POST",
@@ -352,7 +352,7 @@ export const initiateFileTransfer = async (
 };
 
 export const getTransferStatus = async (transferId: string) => {
-  const url = `${GATEWAY_BASE_URL}/api/filetransfer/${transferId}/status`;
+  const url = `${GATEWAY_BASE_URL}/api/v1/filetransfer/${transferId}/status`;
 
   const response = await fetch(url, {
     method: "GET",

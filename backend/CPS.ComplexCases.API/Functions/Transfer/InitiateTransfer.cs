@@ -31,7 +31,7 @@ public class InitiateTransfer(ILogger<InitiateTransfer> logger, IFileTransferCli
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Forbidden, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Forbidden)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
     public async Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "filetransfer/initiate")] HttpRequest req, FunctionContext functionContext)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "v1/filetransfer/initiate")] HttpRequest req, FunctionContext functionContext)
     {
         var correlationId = req.Headers.GetCorrelationId();
 

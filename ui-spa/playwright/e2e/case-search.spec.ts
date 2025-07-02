@@ -68,7 +68,7 @@ test.describe("Case Search/Results", async () => {
   test.describe("Case Search", () => {
     test.beforeEach(async ({ page }) => {
       await page.goto("/");
-      await page.waitForResponse(`https://mocked-out-api/api/areas`);
+      await page.waitForResponse(`https://mocked-out-api/api/v1/areas`);
     });
     test("Should successfully complete the case search by operation name and area and see the results", async ({
       page,
@@ -225,7 +225,7 @@ test.describe("Case Search/Results", async () => {
     }) => {
       const emptyHomeAreaResponse = { ...caseAreasPlaywright, homeArea: {} };
       await worker.use(
-        http.get("https://mocked-out-api/api/areas", async () => {
+        http.get("https://mocked-out-api/api/v1/areas", async () => {
           await delay(10);
           return HttpResponse.json(emptyHomeAreaResponse);
         }),
@@ -262,7 +262,7 @@ test.describe("Case Search/Results", async () => {
     }) => {
       const emptyHomeAreaResponse = { ...caseAreasPlaywright, homeArea: {} };
       await worker.use(
-        http.get("https://mocked-out-api/api/areas", async () => {
+        http.get("https://mocked-out-api/api/v1/areas", async () => {
           await delay(10);
           return HttpResponse.json(emptyHomeAreaResponse);
         }),
@@ -306,7 +306,7 @@ test.describe("Case Search/Results", async () => {
       worker,
     }) => {
       await worker.use(
-        http.get("https://mocked-out-api/api/areas", async () => {
+        http.get("https://mocked-out-api/api/v1/areas", async () => {
           await delay(10);
           return new HttpResponse(null, { status: 500 });
         }),
@@ -337,8 +337,8 @@ test.describe("Case Search/Results", async () => {
       page,
     }) => {
       await page.goto("/search-results?operation-name=thunder&area=1015");
-      await page.waitForResponse(`https://mocked-out-api/api/areas`);
-      await page.waitForResponse(`https://mocked-out-api/api/case-search?*`);
+      await page.waitForResponse(`https://mocked-out-api/api/v1/areas`);
+      await page.waitForResponse(`https://mocked-out-api/api/v1/case-search?*`);
       const areaSelect = await page.getByTestId("search-operation-area");
       const options = await areaSelect.locator("option").allTextContents();
       expect(options).toHaveLength(51);
@@ -364,8 +364,8 @@ test.describe("Case Search/Results", async () => {
       page,
     }) => {
       await page.goto("/search-results?defendant-name=thunder&area=1057708");
-      await page.waitForResponse(`https://mocked-out-api/api/areas`);
-      await page.waitForResponse(`https://mocked-out-api/api/case-search?*`);
+      await page.waitForResponse(`https://mocked-out-api/api/v1/areas`);
+      await page.waitForResponse(`https://mocked-out-api/api/v1/case-search?*`);
       const areaSelect = await page.getByTestId("search-defendant-area");
       const options = await areaSelect.locator("option").allTextContents();
       expect(options).toHaveLength(51);
@@ -391,7 +391,7 @@ test.describe("Case Search/Results", async () => {
       page,
     }) => {
       await page.goto("/search-results?urn=11AA2222233");
-      await page.waitForResponse(`https://mocked-out-api/api/case-search?*`);
+      await page.waitForResponse(`https://mocked-out-api/api/v1/case-search?*`);
       await expect(page.locator("h1")).toHaveText(
         `Search results for URN "11AA2222233"`,
       );
@@ -408,13 +408,13 @@ test.describe("Case Search/Results", async () => {
       worker,
     }) => {
       await worker.use(
-        http.get("https://mocked-out-api/api/case-search", async () => {
+        http.get("https://mocked-out-api/api/v1/case-search", async () => {
           await delay(10);
           return HttpResponse.json([]);
         }),
       );
       await page.goto("/search-results?urn=11AA2222233");
-      await page.waitForResponse(`https://mocked-out-api/api/case-search?*`);
+      await page.waitForResponse(`https://mocked-out-api/api/v1/case-search?*`);
 
       await expect(page.locator("h1")).toHaveText(
         `Search results for URN "11AA2222233"`,
@@ -473,13 +473,13 @@ test.describe("Case Search/Results", async () => {
     }) => {
       const emptyHomeAreaResponse = { ...caseAreasPlaywright, homeArea: {} };
       await worker.use(
-        http.get("https://mocked-out-api/api/areas", async () => {
+        http.get("https://mocked-out-api/api/v1/areas", async () => {
           await delay(10);
           return HttpResponse.json(emptyHomeAreaResponse);
         }),
       );
       await page.goto("/search-results?operation-name=&area=123");
-      await page.waitForResponse(`https://mocked-out-api/api/areas`);
+      await page.waitForResponse(`https://mocked-out-api/api/v1/areas`);
       await expect(page.getByTestId("search-error-summary")).toBeVisible();
       await expect(
         page
@@ -522,13 +522,13 @@ test.describe("Case Search/Results", async () => {
     }) => {
       const emptyHomeAreaResponse = { ...caseAreasPlaywright, homeArea: {} };
       await worker.use(
-        http.get("https://mocked-out-api/api/areas", async () => {
+        http.get("https://mocked-out-api/api/v1/areas", async () => {
           await delay(10);
           return HttpResponse.json(emptyHomeAreaResponse);
         }),
       );
       await page.goto("/search-results?defendant-name=&area=234");
-      await page.waitForResponse(`https://mocked-out-api/api/areas`);
+      await page.waitForResponse(`https://mocked-out-api/api/v1/areas`);
       await expect(page.getByTestId("search-error-summary")).toBeVisible();
       await expect(
         page
@@ -579,13 +579,13 @@ test.describe("Case Search/Results", async () => {
       worker,
     }) => {
       await worker.use(
-        http.get("https://mocked-out-api/api/areas", async () => {
+        http.get("https://mocked-out-api/api/v1/areas", async () => {
           await delay(10);
           return new HttpResponse(null, { status: 500 });
         }),
       );
       await page.goto("/search-results?defendant-name=ww&area=234");
-      await page.waitForResponse(`https://mocked-out-api/api/areas`);
+      await page.waitForResponse(`https://mocked-out-api/api/v1/areas`);
       await expect(page.locator("h1")).toHaveText(
         "Sorry, there is a problem with the service",
       );
@@ -596,7 +596,7 @@ test.describe("Case Search/Results", async () => {
       ).toBeVisible();
       await expect(
         page.getByText(
-          "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/areas: Getting case areas failed; status - Internal Server Error (500)",
+          "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/areas: Getting case areas failed; status - Internal Server Error (500)",
         ),
       ).toBeVisible();
     });
@@ -606,13 +606,13 @@ test.describe("Case Search/Results", async () => {
       worker,
     }) => {
       await worker.use(
-        http.get("https://mocked-out-api/api/areas", async () => {
+        http.get("https://mocked-out-api/api/v1/areas", async () => {
           await delay(10);
           return new HttpResponse(null, { status: 500 });
         }),
       );
       await page.goto("/search-results?operation-name=ww&area=234");
-      await page.waitForResponse(`https://mocked-out-api/api/areas`);
+      await page.waitForResponse(`https://mocked-out-api/api/v1/areas`);
       await expect(page.locator("h1")).toHaveText(
         "Sorry, there is a problem with the service",
       );
@@ -623,7 +623,7 @@ test.describe("Case Search/Results", async () => {
       ).toBeVisible();
       await expect(
         page.getByText(
-          "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/areas: Getting case areas failed; status - Internal Server Error (500)",
+          "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/areas: Getting case areas failed; status - Internal Server Error (500)",
         ),
       ).toBeVisible();
     });
@@ -633,14 +633,14 @@ test.describe("Case Search/Results", async () => {
       worker,
     }) => {
       await worker.use(
-        http.get("https://mocked-out-api/api/case-search", async () => {
+        http.get("https://mocked-out-api/api/v1/case-search", async () => {
           await delay(10);
           return new HttpResponse(null, { status: 500 });
         }),
       );
       await page.goto("/search-results?operation-name=ww&area=1001");
-      await page.waitForResponse(`https://mocked-out-api/api/areas`);
-      await page.waitForResponse(`https://mocked-out-api/api/case-search?*`);
+      await page.waitForResponse(`https://mocked-out-api/api/v1/areas`);
+      await page.waitForResponse(`https://mocked-out-api/api/v1/case-search?*`);
       await expect(page.locator("h1")).toHaveText(
         "Sorry, there is a problem with the service",
       );
@@ -651,13 +651,13 @@ test.describe("Case Search/Results", async () => {
       ).toBeVisible();
       await expect(
         page.getByText(
-          "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/case-search?operation-name=ww&area=1001: Searching for cases failed; status - Internal Server Error (500)",
+          "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/case-search?operation-name=ww&area=1001: Searching for cases failed; status - Internal Server Error (500)",
         ),
       ).toBeVisible();
 
       await page.goto("/search-results?defendant-name=ww&area=1001");
-      await page.waitForResponse(`https://mocked-out-api/api/areas`);
-      await page.waitForResponse(`https://mocked-out-api/api/case-search?*`);
+      await page.waitForResponse(`https://mocked-out-api/api/v1/areas`);
+      await page.waitForResponse(`https://mocked-out-api/api/v1/case-search?*`);
       await expect(page.locator("h1")).toHaveText(
         "Sorry, there is a problem with the service",
       );
@@ -668,12 +668,12 @@ test.describe("Case Search/Results", async () => {
       ).toBeVisible();
       await expect(
         page.getByText(
-          "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/case-search?defendant-name=ww&area=1001: Searching for cases failed; status - Internal Server Error (500)",
+          "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/case-search?defendant-name=ww&area=1001: Searching for cases failed; status - Internal Server Error (500)",
         ),
       ).toBeVisible();
 
       await page.goto("/search-results?urn=11AA2222233");
-      await page.waitForResponse(`https://mocked-out-api/api/case-search?*`);
+      await page.waitForResponse(`https://mocked-out-api/api/v1/case-search?*`);
       await expect(page.locator("h1")).toHaveText(
         "Sorry, there is a problem with the service",
       );
@@ -684,7 +684,7 @@ test.describe("Case Search/Results", async () => {
       ).toBeVisible();
       await expect(
         page.getByText(
-          "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/case-search?urn=11AA2222233: Searching for cases failed; status - Internal Server Error (500)",
+          "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/case-search?urn=11AA2222233: Searching for cases failed; status - Internal Server Error (500)",
         ),
       ).toBeVisible();
     });
