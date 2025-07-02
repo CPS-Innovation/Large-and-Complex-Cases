@@ -1,4 +1,4 @@
-import { useCallback, useState, useMemo } from "react";
+import { useCallback, useState, useMemo, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { BackLink, Button, InsetText, Tag } from "../../govuk";
 import FolderIcon from "../../../components/svgs/folder.svg?react";
@@ -25,15 +25,19 @@ const TransferResolveFilePathPage = () => {
   const [selectedRenameFile, setSelectedRenameFile] =
     useState<ResolvePathFileType | null>(null);
 
+  const [disableTransferBtn, setDisableTransferBtn] = useState(true);
+
   const groupedResolvedPathFiles: Record<string, ResolvePathFileType[]> =
     useMemo(() => {
       return getGroupedResolvePaths(resolvePathFiles);
     }, [resolvePathFiles]);
 
-  const unResolvedPaths = useMemo(() => {
-    return !!resolvePathFiles.find(
+  useEffect(() => {
+    const largePathFiles = resolvePathFiles.find(
       (file) => file.relativeFinalPath.length + file.sourceName.length > 260,
     );
+
+    setDisableTransferBtn(!!largePathFiles);
   }, [resolvePathFiles]);
 
   const getCharactersTag = useCallback((filePath: string) => {
@@ -71,6 +75,7 @@ const TransferResolveFilePathPage = () => {
   };
 
   const handleCompleteTransferBtnClick = async () => {
+    setDisableTransferBtn(true);
     const resolvedFiles = resolvePathFiles.map((file) => ({
       id: file.id,
       sourcePath: `${file.relativeSourcePath}/${file.sourceName}`,
@@ -166,7 +171,7 @@ const TransferResolveFilePathPage = () => {
 
           <Button
             className={styles.btnCompleteTransfer}
-            disabled={unResolvedPaths}
+            disabled={disableTransferBtn}
             onClick={handleCompleteTransferBtnClick}
           >
             Complete transfer
