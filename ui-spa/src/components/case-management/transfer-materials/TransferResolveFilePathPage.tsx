@@ -1,5 +1,5 @@
 import { useCallback, useState, useMemo } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { BackLink, Button, InsetText, Tag } from "../../govuk";
 import FolderIcon from "../../../components/svgs/folder.svg?react";
 import FileIcon from "../../../components/svgs/file.svg?react";
@@ -9,9 +9,11 @@ import {
   ResolvePathFileType,
 } from "../../../common/utils/getGroupedResolvePaths";
 import { RenameTransferFilePage } from "./RenameTransferFilePage";
+import { initiateFileTransfer } from "../../../apis/gateway-api";
 import styles from "./TransferResolveFilePathPage.module.scss";
 
 const TransferResolveFilePathPage = () => {
+  const navigate = useNavigate();
   const location = useLocation();
   const initialValue = getMappedResolvePathFiles(
     location?.state?.validationErrors,
@@ -66,6 +68,29 @@ const TransferResolveFilePathPage = () => {
       ),
     );
     setSelectedRenameFile(null);
+  };
+
+  const handleCompleteTransferBtnClick = async () => {
+    const resolvedFiles = resolvePathFiles.map((file) => ({
+      id: file.id,
+      sourcePath: `${file.relativeSourcePath}/${file.sourceName}`,
+    }));
+
+    const initiatePayload = {
+      ...location.state.initiateTransferPayload,
+      sourcePaths: [
+        ...location.state.initiateTransferPayload.sourcePaths,
+        ...resolvedFiles,
+      ],
+    };
+
+    try {
+      await initiateFileTransfer(initiatePayload);
+      navigate(`/case/${initiatePayload.caseId}/case-management/`);
+    } catch (error) {
+      console.log("error>>>>", error);
+      return;
+    }
   };
 
   if (selectedRenameFile)
@@ -142,6 +167,7 @@ const TransferResolveFilePathPage = () => {
           <Button
             className={styles.btnCompleteTransfer}
             disabled={unResolvedPaths}
+            onClick={handleCompleteTransferBtnClick}
           >
             Complete transfer
           </Button>
