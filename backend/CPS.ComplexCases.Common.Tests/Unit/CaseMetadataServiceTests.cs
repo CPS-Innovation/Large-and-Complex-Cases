@@ -4,8 +4,6 @@ using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.Data.Repositories;
-using FluentAssertions;
-using FluentAssertions.Execution;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -62,24 +60,21 @@ public class CaseMetadataServiceTests
         await _service.CreateEgressConnectionAsync(createDto);
 
         // Assert
-        using (new AssertionScope())
-        {
-            existingMetadata.EgressWorkspaceId.Should().Be(egressWorkspaceId);
+        Assert.Equal(egressWorkspaceId, existingMetadata.EgressWorkspaceId);
 
-            _repositoryMock.Verify(
-                r => r.GetByCaseIdAsync(caseId),
-                Times.Once);
+        _repositoryMock.Verify(
+            r => r.GetByCaseIdAsync(caseId),
+            Times.Once);
 
-            _repositoryMock.Verify(
-                r => r.UpdateAsync(It.Is<CaseMetadata>(m =>
-                    m.CaseId == caseId &&
-                    m.EgressWorkspaceId == egressWorkspaceId)),
-                Times.Once);
+        _repositoryMock.Verify(
+            r => r.UpdateAsync(It.Is<CaseMetadata>(m =>
+                m.CaseId == caseId &&
+                m.EgressWorkspaceId == egressWorkspaceId)),
+            Times.Once);
 
-            _repositoryMock.Verify(
-                r => r.AddAsync(It.IsAny<CaseMetadata>()),
-                Times.Never);
-        }
+        _repositoryMock.Verify(
+            r => r.AddAsync(It.IsAny<CaseMetadata>()),
+            Times.Never);
     }
 
     [Fact]
@@ -112,22 +107,19 @@ public class CaseMetadataServiceTests
         await _service.CreateEgressConnectionAsync(createDto);
 
         // Assert
-        using (new AssertionScope())
-        {
-            _repositoryMock.Verify(
-                r => r.GetByCaseIdAsync(caseId),
-                Times.Once);
+        _repositoryMock.Verify(
+            r => r.GetByCaseIdAsync(caseId),
+            Times.Once);
 
-            _repositoryMock.Verify(
-                r => r.UpdateAsync(It.IsAny<CaseMetadata>()),
-                Times.Never);
+        _repositoryMock.Verify(
+            r => r.UpdateAsync(It.IsAny<CaseMetadata>()),
+            Times.Never);
 
-            _repositoryMock.Verify(
-                r => r.AddAsync(It.Is<CaseMetadata>(m =>
-                    m.CaseId == caseId &&
-                    m.EgressWorkspaceId == egressWorkspaceId)),
-                Times.Once);
-        }
+        _repositoryMock.Verify(
+            r => r.AddAsync(It.Is<CaseMetadata>(m =>
+                m.CaseId == caseId &&
+                m.EgressWorkspaceId == egressWorkspaceId)),
+            Times.Once);
     }
 
     [Fact]
@@ -152,18 +144,15 @@ public class CaseMetadataServiceTests
         var exception = await Assert.ThrowsAsync<Exception>(
             () => _service.CreateEgressConnectionAsync(createDto));
 
-        using (new AssertionScope())
-        {
-            exception.Should().BeSameAs(expectedException);
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Error,
-                    It.IsAny<EventId>(),
-                    It.IsAny<It.IsAnyType>(),
-                    It.Is<Exception>(ex => ex == expectedException),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-                Times.Once);
-        }
+        Assert.Same(expectedException, exception);
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.Is<Exception>(ex => ex == expectedException),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 
     [Fact]
@@ -188,16 +177,13 @@ public class CaseMetadataServiceTests
         var result = await _service.GetCaseMetadataForCaseIdsAsync(caseIds);
 
         // Assert
-        using (new AssertionScope())
-        {
-            result.Should().BeEquivalentTo(expectedMetadata);
+        Assert.Equal(expectedMetadata, result);
 
-            _repositoryMock.Verify(
-                r => r.GetByCaseIdsAsync(It.Is<IEnumerable<int>>(ids =>
-                    ids.Count() == caseIds.Count &&
-                    ids.All(id => caseIds.Contains(id)))),
-                Times.Once);
-        }
+        _repositoryMock.Verify(
+            r => r.GetByCaseIdsAsync(It.Is<IEnumerable<int>>(ids =>
+                ids.Count() == caseIds.Count &&
+                ids.All(id => caseIds.Contains(id)))),
+            Times.Once);
     }
 
     [Fact]
@@ -215,18 +201,15 @@ public class CaseMetadataServiceTests
         var exception = await Assert.ThrowsAsync<Exception>(
             () => _service.GetCaseMetadataForCaseIdsAsync(caseIds));
 
-        using (new AssertionScope())
-        {
-            exception.Should().BeSameAs(expectedException);
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Error,
-                    It.IsAny<EventId>(),
-                    It.IsAny<It.IsAnyType>(),
-                    It.Is<Exception>(ex => ex == expectedException),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-                Times.Once);
-        }
+        Assert.Same(expectedException, exception);
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.Is<Exception>(ex => ex == expectedException),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 
     [Fact]
@@ -251,16 +234,13 @@ public class CaseMetadataServiceTests
         var result = await _service.GetCaseMetadataForEgressWorkspaceIdsAsync(workspaceIds);
 
         // Assert
-        using (new AssertionScope())
-        {
-            result.Should().BeEquivalentTo(expectedMetadata);
+        Assert.Equal(expectedMetadata, result);
 
-            _repositoryMock.Verify(
-                r => r.GetByEgressWorkspaceIdsAsync(It.Is<IEnumerable<string>>(ids =>
-                    ids.Count() == workspaceIds.Count &&
-                    ids.All(id => workspaceIds.Contains(id)))),
-                Times.Once);
-        }
+        _repositoryMock.Verify(
+            r => r.GetByEgressWorkspaceIdsAsync(It.Is<IEnumerable<string>>(ids =>
+                ids.Count() == workspaceIds.Count &&
+                ids.All(id => workspaceIds.Contains(id)))),
+            Times.Once);
     }
 
     [Fact]
@@ -278,19 +258,17 @@ public class CaseMetadataServiceTests
         var exception = await Assert.ThrowsAsync<Exception>(
             () => _service.GetCaseMetadataForEgressWorkspaceIdsAsync(workspaceIds));
 
-        using (new AssertionScope())
-        {
-            exception.Should().BeSameAs(expectedException);
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Error,
-                    It.IsAny<EventId>(),
-                    It.IsAny<It.IsAnyType>(),
-                    It.Is<Exception>(ex => ex == expectedException),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-                Times.Once);
-        }
+        Assert.Same(expectedException, exception);
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.Is<Exception>(ex => ex == expectedException),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
+
     [Fact]
     public async Task GetCaseMetadataForCaseIdAsync_WhenCaseIdProvided_ReturnsMatchingRecord()
     {
@@ -307,15 +285,13 @@ public class CaseMetadataServiceTests
         var result = await _service.GetCaseMetadataForCaseIdAsync(caseId);
 
         // Assert
-        using (new AssertionScope())
-        {
-            result.Should().BeEquivalentTo(expectedMetadata);
+        Assert.Equal(expectedMetadata, result);
 
-            _repositoryMock.Verify(
-                r => r.GetByCaseIdAsync(caseId),
-                Times.Once);
-        }
+        _repositoryMock.Verify(
+            r => r.GetByCaseIdAsync(caseId),
+            Times.Once);
     }
+
     [Fact]
     public async Task GetCaseMetadataForCaseIdAsync_WhenRepositoryThrowsException_LogsAndRethrows()
     {
@@ -331,17 +307,14 @@ public class CaseMetadataServiceTests
         var exception = await Assert.ThrowsAsync<Exception>(
             () => _service.GetCaseMetadataForCaseIdAsync(caseId));
 
-        using (new AssertionScope())
-        {
-            exception.Should().BeSameAs(expectedException);
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Error,
-                    It.IsAny<EventId>(),
-                    It.IsAny<It.IsAnyType>(),
-                    It.Is<Exception>(ex => ex == expectedException),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-                Times.Once);
-        }
+        Assert.Same(expectedException, exception);
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.Is<Exception>(ex => ex == expectedException),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 }

@@ -5,8 +5,6 @@ using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.DDEI.Models.Dto;
 using CPS.ComplexCases.Egress.Models.Dto;
-using FluentAssertions;
-using FluentAssertions.Execution;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -56,22 +54,19 @@ public class CaseEnrichmentServiceTests
     var result = await _service.EnrichCasesWithMetadataAsync(cases);
 
     // Assert
-    using (new AssertionScope())
+    Assert.Equal(cases.Count, result.Count());
+
+    foreach (var caseResponse in result)
     {
-      result.Should().HaveCount(cases.Count);
-
-      foreach (var caseResponse in result)
-      {
-        var expectedMetadata = metadata.First(m => m.CaseId == caseResponse.CaseId);
-        caseResponse.EgressWorkspaceId.Should().Be(expectedMetadata.EgressWorkspaceId);
-        caseResponse.NetappFolderPath.Should().Be(expectedMetadata.NetappFolderPath);
-      }
-
-      _caseMetadataServiceMock.Verify(
-          s => s.GetCaseMetadataForCaseIdsAsync(It.Is<IEnumerable<int>>(ids =>
-              ids.All(id => caseIds.Contains(id)) && ids.Count() == caseIds.Count)),
-          Times.Once);
+      var expectedMetadata = metadata.First(m => m.CaseId == caseResponse.CaseId);
+      Assert.Equal(expectedMetadata.EgressWorkspaceId, caseResponse.EgressWorkspaceId);
+      Assert.Equal(expectedMetadata.NetappFolderPath, caseResponse.NetappFolderPath);
     }
+
+    _caseMetadataServiceMock.Verify(
+        s => s.GetCaseMetadataForCaseIdsAsync(It.Is<IEnumerable<int>>(ids =>
+            ids.All(id => caseIds.Contains(id)) && ids.Count() == caseIds.Count)),
+        Times.Once);
   }
 
   [Fact]
@@ -100,19 +95,16 @@ public class CaseEnrichmentServiceTests
     var result = await _service.EnrichCasesWithMetadataAsync(cases);
 
     // Assert
-    using (new AssertionScope())
+    Assert.Equal(cases.Count, result.Count());
+
+    var firstCaseResponse = result.First(c => c.CaseId == cases.First().CaseId);
+    Assert.Equal(metadata.First().EgressWorkspaceId, firstCaseResponse.EgressWorkspaceId);
+    Assert.Equal(metadata.First().NetappFolderPath, firstCaseResponse.NetappFolderPath);
+
+    foreach (var caseResponse in result.Where(c => c.CaseId != cases.First().CaseId))
     {
-      result.Should().HaveCount(cases.Count);
-
-      var firstCaseResponse = result.First(c => c.CaseId == cases.First().CaseId);
-      firstCaseResponse.EgressWorkspaceId.Should().Be(metadata.First().EgressWorkspaceId);
-      firstCaseResponse.NetappFolderPath.Should().Be(metadata.First().NetappFolderPath);
-
-      foreach (var caseResponse in result.Where(c => c.CaseId != cases.First().CaseId))
-      {
-        caseResponse.EgressWorkspaceId.Should().BeNull();
-        caseResponse.NetappFolderPath.Should().BeNull();
-      }
+      Assert.Null(caseResponse.EgressWorkspaceId);
+      Assert.Null(caseResponse.NetappFolderPath);
     }
   }
 
@@ -126,14 +118,11 @@ public class CaseEnrichmentServiceTests
     var result = await _service.EnrichCasesWithMetadataAsync(cases);
 
     // Assert
-    using (new AssertionScope())
-    {
-      result.Should().BeEmpty();
+    Assert.Empty(result);
 
-      _caseMetadataServiceMock.Verify(
-          s => s.GetCaseMetadataForCaseIdsAsync(It.IsAny<IEnumerable<int>>()),
-          Times.Never);
-    }
+    _caseMetadataServiceMock.Verify(
+        s => s.GetCaseMetadataForCaseIdsAsync(It.IsAny<IEnumerable<int>>()),
+        Times.Never);
   }
 
   [Fact]
@@ -151,25 +140,22 @@ public class CaseEnrichmentServiceTests
     var result = await _service.EnrichCasesWithMetadataAsync(cases);
 
     // Assert
-    using (new AssertionScope())
+    Assert.Equal(cases.Count, result.Count());
+
+    foreach (var caseResponse in result)
     {
-      result.Should().HaveCount(cases.Count);
-
-      foreach (var caseResponse in result)
-      {
-        caseResponse.EgressWorkspaceId.Should().BeNull();
-        caseResponse.NetappFolderPath.Should().BeNull();
-      }
-
-      _loggerMock.Verify(
-          x => x.Log(
-              LogLevel.Warning,
-              It.IsAny<EventId>(),
-              It.IsAny<It.IsAnyType>(),
-              It.Is<Exception>(ex => ex == expectedException),
-              It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-          Times.Once);
+      Assert.Null(caseResponse.EgressWorkspaceId);
+      Assert.Null(caseResponse.NetappFolderPath);
     }
+
+    _loggerMock.Verify(
+        x => x.Log(
+            LogLevel.Warning,
+            It.IsAny<EventId>(),
+            It.IsAny<It.IsAnyType>(),
+            It.Is<Exception>(ex => ex == expectedException),
+            It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+        Times.Once);
   }
 
   [Fact]
@@ -187,16 +173,13 @@ public class CaseEnrichmentServiceTests
     var result = await _service.EnrichCasesWithMetadataAsync(cases);
 
     // Assert
-    using (new AssertionScope())
-    {
-      var caseResponse = result.Single();
+    var caseResponse = result.Single();
 
-      caseResponse.CaseId.Should().Be(caseDto.CaseId);
-      caseResponse.Urn.Should().Be(caseDto.Urn);
-      caseResponse.OperationName.Should().Be(caseDto.OperationName);
-      caseResponse.LeadDefendantName.Should().Be(caseDto.LeadDefendantName);
-      caseResponse.RegistrationDate.Should().Be(caseDto.RegistrationDate);
-    }
+    Assert.Equal(caseDto.CaseId, caseResponse.CaseId);
+    Assert.Equal(caseDto.Urn, caseResponse.Urn);
+    Assert.Equal(caseDto.OperationName, caseResponse.OperationName);
+    Assert.Equal(caseDto.LeadDefendantName, caseResponse.LeadDefendantName);
+    Assert.Equal(caseDto.RegistrationDate, caseResponse.RegistrationDate);
   }
 
   [Fact]
@@ -222,26 +205,23 @@ public class CaseEnrichmentServiceTests
     var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces);
 
     // Assert
-    using (new AssertionScope())
+    Assert.Equal(workspaces.Data.Count(), result.Data.Count());
+
+    foreach (var workspaceResponse in result.Data)
     {
-      result.Data.Should().HaveCount(workspaces.Data.Count());
-
-      foreach (var workspaceResponse in result.Data)
-      {
-        var expectedMetadata = metadata.First(m => m.EgressWorkspaceId == workspaceResponse.Id);
-        workspaceResponse.CaseId.Should().Be(expectedMetadata.CaseId);
-      }
-
-      result.Pagination.Count.Should().Be(workspaces.Pagination.Count);
-      result.Pagination.Take.Should().Be(workspaces.Pagination.Take);
-      result.Pagination.Skip.Should().Be(workspaces.Pagination.Skip);
-      result.Pagination.TotalResults.Should().Be(workspaces.Pagination.TotalResults);
-
-      _caseMetadataServiceMock.Verify(
-          s => s.GetCaseMetadataForEgressWorkspaceIdsAsync(It.Is<IEnumerable<string>>(ids =>
-              ids.All(id => workspaceIds.Contains(id)) && ids.Count() == workspaceIds.Count)),
-          Times.Once);
+      var expectedMetadata = metadata.First(m => m.EgressWorkspaceId == workspaceResponse.Id);
+      Assert.Equal(expectedMetadata.CaseId, workspaceResponse.CaseId);
     }
+
+    Assert.Equal(workspaces.Pagination.Count, result.Pagination.Count);
+    Assert.Equal(workspaces.Pagination.Take, result.Pagination.Take);
+    Assert.Equal(workspaces.Pagination.Skip, result.Pagination.Skip);
+    Assert.Equal(workspaces.Pagination.TotalResults, result.Pagination.TotalResults);
+
+    _caseMetadataServiceMock.Verify(
+        s => s.GetCaseMetadataForEgressWorkspaceIdsAsync(It.Is<IEnumerable<string>>(ids =>
+            ids.All(id => workspaceIds.Contains(id)) && ids.Count() == workspaceIds.Count)),
+        Times.Once);
   }
 
   [Fact]
@@ -270,17 +250,14 @@ public class CaseEnrichmentServiceTests
     var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces);
 
     // Assert
-    using (new AssertionScope())
+    Assert.Equal(workspaces.Data.Count(), result.Data.Count());
+
+    var firstWorkspaceResponse = result.Data.First(w => w.Id == workspaces.Data.First().Id);
+    Assert.Equal(metadata.First().CaseId, firstWorkspaceResponse.CaseId);
+
+    foreach (var workspaceResponse in result.Data.Where(w => w.Id != workspaces.Data.First().Id))
     {
-      result.Data.Should().HaveCount(workspaces.Data.Count());
-
-      var firstWorkspaceResponse = result.Data.First(w => w.Id == workspaces.Data.First().Id);
-      firstWorkspaceResponse.CaseId.Should().Be(metadata.First().CaseId);
-
-      foreach (var workspaceResponse in result.Data.Where(w => w.Id != workspaces.Data.First().Id))
-      {
-        workspaceResponse.CaseId.Should().BeNull();
-      }
+      Assert.Null(workspaceResponse.CaseId);
     }
   }
 
@@ -294,14 +271,11 @@ public class CaseEnrichmentServiceTests
     var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces);
 
     // Assert
-    using (new AssertionScope())
-    {
-      result.Data.Should().BeEmpty();
+    Assert.Empty(result.Data);
 
-      _caseMetadataServiceMock.Verify(
-          s => s.GetCaseMetadataForEgressWorkspaceIdsAsync(It.IsAny<IEnumerable<string>>()),
-          Times.Never);
-    }
+    _caseMetadataServiceMock.Verify(
+        s => s.GetCaseMetadataForEgressWorkspaceIdsAsync(It.IsAny<IEnumerable<string>>()),
+        Times.Never);
   }
 
   [Fact]
@@ -319,24 +293,21 @@ public class CaseEnrichmentServiceTests
     var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces);
 
     // Assert
-    using (new AssertionScope())
+    Assert.Equal(workspaces.Data.Count(), result.Data.Count());
+
+    foreach (var workspaceResponse in result.Data)
     {
-      result.Data.Should().HaveCount(workspaces.Data.Count());
-
-      foreach (var workspaceResponse in result.Data)
-      {
-        workspaceResponse.CaseId.Should().BeNull();
-      }
-
-      _loggerMock.Verify(
-          x => x.Log(
-              LogLevel.Warning,
-              It.IsAny<EventId>(),
-              It.IsAny<It.IsAnyType>(),
-              It.Is<Exception>(ex => ex == expectedException),
-              It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-          Times.Once);
+      Assert.Null(workspaceResponse.CaseId);
     }
+
+    _loggerMock.Verify(
+        x => x.Log(
+            LogLevel.Warning,
+            It.IsAny<EventId>(),
+            It.IsAny<It.IsAnyType>(),
+            It.Is<Exception>(ex => ex == expectedException),
+            It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+        Times.Once);
   }
 
   [Fact]
@@ -354,15 +325,12 @@ public class CaseEnrichmentServiceTests
     var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces);
 
     // Assert
-    using (new AssertionScope())
-    {
-      var workspaceResponse = result.Data.Single();
+    var workspaceResponse = result.Data.Single();
 
-      workspaceResponse.Id.Should().Be(workspace.Id);
-      workspaceResponse.Name.Should().Be(workspace.Name);
-      workspaceResponse.DateCreated.Should().Be(workspace.DateCreated);
-      workspaceResponse.CaseId.Should().BeNull();
-    }
+    Assert.Equal(workspace.Id, workspaceResponse.Id);
+    Assert.Equal(workspace.Name, workspaceResponse.Name);
+    Assert.Equal(workspace.DateCreated, workspaceResponse.DateCreated);
+    Assert.Null(workspaceResponse.CaseId);
   }
   private ListWorkspacesDto CreateSampleWorkspaces(int count)
   {

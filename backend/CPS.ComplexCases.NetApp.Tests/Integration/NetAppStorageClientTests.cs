@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Amazon.S3;
@@ -9,7 +5,6 @@ using Amazon.S3.Model;
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
-using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.NetApp.Client;
@@ -19,10 +14,8 @@ using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.WireMock.Mappings;
 using CPS.ComplexCases.NetApp.Wrappers;
 using CPS.ComplexCases.WireMock.Core;
-using FluentAssertions;
 using Moq;
 using WireMock.Server;
-using Xunit;
 
 namespace CPS.ComplexCases.NetApp.Tests.Integration;
 
@@ -113,13 +106,13 @@ public class NetAppStorageClientTests : IDisposable
         _netAppRequestFactoryMock.Setup(f => f.CreateMultipartUploadRequest(arg)).Returns(request);
         _netAppRequestFactoryMock.Setup(f => f.GetObjectAttributesRequest(getObjectArg)).Returns(getObjectAttributesRequest);
 
-        // Act
+        //Act
         var result = await _client.InitiateUploadAsync(destinationPath, 123, sourcePath);
 
         // Assert
-        result.Should().NotBeNull();
-        result.UploadId.Should().Be("upload-id-49e18525de9c");
-        result.WorkspaceId.Should().Be(fullPath);
+        Assert.NotNull(result);
+        Assert.Equal("upload-id-49e18525de9c", result.UploadId);
+        Assert.Equal(fullPath, result.WorkspaceId);
     }
 
     [Fact]
@@ -145,12 +138,12 @@ public class NetAppStorageClientTests : IDisposable
         var result = await _client.OpenReadStreamAsync(ObjectKey);
 
         // Assert
-        result.Should().NotBeNull();
-        result.CanRead.Should().BeTrue();
+        Assert.NotNull(result);
+        Assert.True(result.CanRead);
 
         using var reader = new StreamReader(result);
         var content = await reader.ReadToEndAsync();
-        content.Should().NotBeNullOrEmpty();
+        Assert.False(string.IsNullOrEmpty(content));
     }
 
     [Fact]
@@ -215,8 +208,8 @@ public class NetAppStorageClientTests : IDisposable
         var result = await _client.UploadChunkAsync(session, 2, chunkData);
 
         // Assert
-        result.TransferDirection.Should().Be(TransferDirection.EgressToNetApp);
-        result.ETag.Should().Be("etag-12345");
+        Assert.Equal(TransferDirection.EgressToNetApp, result.TransferDirection);
+        Assert.Equal("etag-12345", result.ETag);
     }
 
     [Fact]
@@ -255,8 +248,7 @@ public class NetAppStorageClientTests : IDisposable
         _netAppRequestFactoryMock.Setup(c => c.CompleteMultipartUploadRequest(arg)).Returns(request);
 
         // Act & Assert (should not throw)
-        Func<Task> act = () => _client.CompleteUploadAsync(session, null, etags);
-        await act.Should().NotThrowAsync();
+        await _client.CompleteUploadAsync(session, null, etags);
     }
 
     [Fact]
@@ -303,8 +295,8 @@ public class NetAppStorageClientTests : IDisposable
         var result = await _client.ListFilesForTransferAsync(selectedEntities, null, CaseId);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Should().HaveCount(5);
+        Assert.NotNull(result);
+        Assert.Equal(5, result.Count());
     }
 
     [Fact]
@@ -370,51 +362,55 @@ public class NetAppStorageClientTests : IDisposable
         var result = await _client.ListFilesForTransferAsync(selectedEntities, null, CaseId);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Should().HaveCount(4);
+        Assert.NotNull(result);
+        Assert.Equal(4, result.Count());
     }
 
+    [Fact]
     public async Task UploadLargeFile_ShouldHandleMultipleChunksEfficiently()
     {
         // Arrange
+        const string destinationPath = "";
+        const string sourcePath = ObjectKey;
+        var fullPath = Path.Combine(destinationPath, sourcePath).Replace('\\', '/');
+
         const int largeFileSize = 50 * 1024 * 1024; // 50 MB
         var largeFileData = new byte[largeFileSize];
-        new Random().NextBytes(largeFileData); // Fill with random data
+        new Random().NextBytes(largeFileData);
 
         var chunkSize = 5 * 1024 * 1024; // 5 MB chunks
         var totalChunks = (int)Math.Ceiling((double)largeFileData.Length / chunkSize);
         var etags = new List<PartETag>();
 
-        // Arrange
         var arg = new InitiateMultipartUploadArg
         {
             BucketName = BucketName,
-            ObjectKey = ObjectKey
+            ObjectKey = fullPath
         };
 
         var getObjectArg = new GetObjectArg
         {
             BucketName = BucketName,
-            ObjectKey = ObjectKey
+            ObjectKey = fullPath
         };
 
         var request = new InitiateMultipartUploadRequest
         {
             BucketName = BucketName,
-            Key = ObjectKey
+            Key = fullPath
         };
 
         var getObjectAttributesRequest = new GetObjectAttributesRequest
         {
             BucketName = BucketName,
-            Key = ObjectKey,
+            Key = fullPath,
             ObjectAttributes = [ObjectAttributes.ETag]
         };
 
         var completeMultipartUploadArg = new CompleteMultipartUploadArg
         {
             BucketName = BucketName,
-            ObjectKey = ObjectKey,
+            ObjectKey = fullPath,
             UploadId = UploadId,
             CompletedParts = []
         };
@@ -422,29 +418,30 @@ public class NetAppStorageClientTests : IDisposable
         var completeMultipartUploadRequest = new CompleteMultipartUploadRequest
         {
             BucketName = BucketName,
-            Key = ObjectKey,
+            Key = fullPath,
             UploadId = UploadId,
             PartETags = []
         };
 
-        _netAppArgFactoryMock.Setup(f => f.CreateInitiateMultipartUploadArg(BucketName, ObjectKey)).Returns(arg);
-        _netAppArgFactoryMock.Setup(f => f.CreateGetObjectArg(BucketName, ObjectKey)).Returns(getObjectArg);
+        _netAppArgFactoryMock.Setup(f => f.CreateInitiateMultipartUploadArg(BucketName, fullPath)).Returns(arg);
+        _netAppArgFactoryMock.Setup(f => f.CreateGetObjectArg(BucketName, fullPath)).Returns(getObjectArg);
         _netAppRequestFactoryMock.Setup(f => f.CreateMultipartUploadRequest(arg)).Returns(request);
         _netAppRequestFactoryMock.Setup(f => f.GetObjectAttributesRequest(getObjectArg)).Returns(getObjectAttributesRequest);
 
-        var session = await _client.InitiateUploadAsync(ObjectKey, largeFileSize, "source-file.txt");
+        var session = await _client.InitiateUploadAsync(destinationPath, largeFileSize, sourcePath);
 
         for (int i = 0; i < totalChunks; i++)
         {
             var start = i * chunkSize;
             var end = Math.Min(start + chunkSize, largeFileData.Length);
             var chunkData = largeFileData[start..end];
+            var partNumber = i + 1;
 
             var uploadPartArg = new UploadPartArg
             {
                 BucketName = BucketName,
-                ObjectKey = ObjectKey,
-                PartNumber = i,
+                ObjectKey = fullPath,
+                PartNumber = partNumber,
                 PartData = chunkData,
                 UploadId = UploadId
             };
@@ -452,32 +449,31 @@ public class NetAppStorageClientTests : IDisposable
             var uploadRequest = new UploadPartRequest
             {
                 BucketName = BucketName,
-                Key = ObjectKey,
-                PartNumber = i,
+                Key = fullPath,
+                PartNumber = partNumber,
                 UploadId = UploadId,
                 InputStream = new MemoryStream(chunkData)
             };
 
-            _netAppArgFactoryMock.Setup(f => f.CreateUploadPartArg(BucketName, ObjectKey, chunkData, i, UploadId)).Returns(uploadPartArg);
+            _netAppArgFactoryMock.Setup(f => f.CreateUploadPartArg(BucketName, fullPath, chunkData, partNumber, UploadId)).Returns(uploadPartArg);
             _netAppRequestFactoryMock.Setup(c => c.UploadPartRequest(uploadPartArg)).Returns(uploadRequest);
 
             // Act
-            var result = await _client.UploadChunkAsync(session, i, chunkData);
-            etags.Add(new PartETag(i, result.ETag));
+            var result = await _client.UploadChunkAsync(session, partNumber, chunkData);
+            etags.Add(new PartETag(partNumber, result.ETag));
         }
 
         completeMultipartUploadArg.CompletedParts.AddRange(etags);
         completeMultipartUploadRequest.PartETags.AddRange(etags);
 
         var etagsDict = etags.ToDictionary(e => e.PartNumber, e => e.ETag);
-        _netAppArgFactoryMock.Setup(f => f.CreateCompleteMultipartUploadArg(BucketName, ObjectKey, UploadId, etagsDict)).Returns(completeMultipartUploadArg);
+        _netAppArgFactoryMock.Setup(f => f.CreateCompleteMultipartUploadArg(BucketName, fullPath, UploadId, etagsDict)).Returns(completeMultipartUploadArg);
         _netAppRequestFactoryMock.Setup(c => c.CompleteMultipartUploadRequest(completeMultipartUploadArg)).Returns(completeMultipartUploadRequest);
 
-        // Complete the upload
         await _client.CompleteUploadAsync(session, null, etagsDict);
 
         // Assert
-        etags.Count.Should().Be(totalChunks);
+        Assert.Equal(totalChunks, etags.Count);
     }
 
     protected virtual void Dispose(bool disposing)
