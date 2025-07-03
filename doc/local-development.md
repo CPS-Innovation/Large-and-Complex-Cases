@@ -51,7 +51,7 @@ Environment variables for backend services are managed via `local.settings.json`
 **To use:**  
 - Copy `local.settings.example.json` to `local.settings.json` in the same directory for both `CPS.ComplexCases.API` and `CPS.ComplexCases.FileTransfer.API`.
 - Fill in the required secrets and connection strings.
-- **Note:** Some secrets (e.g., Azure AD client IDs, access keys) may only be available from a team member or the Azure portal. If you do not have these, please contact your project lead or DevOps engineer.
+- **Note:** Some secrets (e.g., Azure AD client IDs, access keys) may only be available from a team member or the Azure portal. If you do not have these, please contact your team lead or DevOps engineer.
 
 ### UI (React SPA)
 
@@ -112,11 +112,13 @@ VITE_MOCK_AUTH=true
 
 > **Note:** Both `CPS.ComplexCases.API` (Main API) and `CPS.ComplexCases.FileTransfer.API` (FileTransfer API) must be running together for the application to function end-to-end. The UI only talks to the Main API, which acts as a gateway and calls the FileTransfer API for file operations. If the FileTransfer API is not running, file transfer features will not work.
 
-1. **Restore, build, and test (optional):**
+1. **Restore, build, test, and (optionally) apply migrations:**
    ```powershell
-   ./scripts/build-and-test-backend-local.ps1
+   ./scripts/build-and-test-backend-local.ps1 -RunMigration -ConnectionString "Host=localhost;Port=5432;Database=lacc;Username=postgres;Password=yourpassword"
    ```
-   - Use `-SkipTests` to skip tests, `-PublishApps` to create deployment zips, and `-RunMigration` to apply DB migrations.
+   - Only use `-RunMigration` and `-ConnectionString` if you want to apply or update database migrations. For normal build/test, these are not required.
+
+   - The `-ConnectionString` parameter is required with `-RunMigration` to apply migrations to your local database.
 
 2. **Run the Function Apps locally:**
    - Open two terminals:
@@ -152,6 +154,7 @@ VITE_MOCK_AUTH=true
    ```bash
    npm run build
    ```
+   - This creates a production build in the `dist/` folder, but does **not** start a server.
 
 4. **Preview the production build:**
    ```bash
@@ -162,6 +165,7 @@ VITE_MOCK_AUTH=true
 
 - Once both backend APIs and the UI are running, open [http://localhost:5173](http://localhost:5173) in your browser.
 - The UI communicates **only** with the **Main backend API** (`CPS.ComplexCases.API`, gateway API) running on port 7071. The Main API orchestrates business logic and, for file transfer operations, calls the **FileTransfer API** (`CPS.ComplexCases.FileTransfer.API`) running on port 7072. If the FileTransfer API is not running, any file transfer features in the UI or Main API will not work.
+- **Note:** If you change the port or base URL in your backend, update `VITE_GATEWAY_BASE_URL` in your `.env.local` accordingly.
 
 ## Example Workflow
 
@@ -169,8 +173,9 @@ VITE_MOCK_AUTH=true
 2. Start PostgreSQL and ensure your connection string is correct.
 3. Run the backend build/test script with migration:
    ```powershell
-   ./scripts/build-and-test-backend-local.ps1 -RunMigration
+   ./scripts/build-and-test-backend-local.ps1 -RunMigration -ConnectionString "Host=localhost;Port=5432;Database=lacc;Username=postgres;Password=yourpassword"
    ```
+   - The `-ConnectionString` parameter is required with `-RunMigration` to apply migrations to your local database.
 4. In two terminals, start both backend function apps:
    ```powershell
    # Terminal 1
@@ -213,6 +218,11 @@ VITE_MOCK_AUTH=true
 - For missing environment variables, ensure your `.env.local` and `local.settings.json` files are present and correct.
 - For Azure Functions, ensure you have [Azure Functions Core Tools](https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local) installed and available in your PATH.
 - If you encounter issues on first run, try running `npm ci` in `ui-spa/` and `dotnet restore` in `backend/` manually.
+- If database migrations fail, double-check your connection string and ensure your PostgreSQL user has the correct permissions.
+
+## Getting Help
+
+If you have questions or run into issues, please contact your team lead.
 
 ## Additional Notes
 
