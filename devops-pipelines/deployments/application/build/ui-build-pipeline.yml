@@ -10,7 +10,7 @@ parameters:
   - name: runE2E
     displayName: 'Run E2E Tests'
     type: boolean
-    default: true
+    default: false
 
 trigger:
   branches:

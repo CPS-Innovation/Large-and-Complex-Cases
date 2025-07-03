@@ -12,7 +12,10 @@ param(
     [switch]$SkipE2E,
     
     [Parameter(Mandatory=$false)]
-    [switch]$VerboseOutput
+    [switch]$VerboseOutput,
+    
+    [Parameter(Mandatory=$false)]
+    [switch]$PublishApps
 )
 
 Write-Host "Starting CPS Complex Cases UI Build Process..." -ForegroundColor Green
@@ -116,10 +119,14 @@ function Build-UI {
                 Write-Host "OK web.config copied for Azure Web App deployment" -ForegroundColor Green
             }
             
-            # Create UI deployment package
-            $uiZipPath = Join-Path $OutputPath "UI-SPA.zip"
-            Compress-Archive -Path "$uiBuildPath\*" -DestinationPath $uiZipPath -Force
-            Write-Host "OK UI deployment package created: $uiZipPath" -ForegroundColor Green
+            if ($PublishApps) {
+                # Create UI deployment package
+                $uiZipPath = Join-Path $OutputPath "UI-SPA.zip"
+                Compress-Archive -Path "$uiBuildPath\*" -DestinationPath $uiZipPath -Force
+                Write-Host "OK UI deployment package created: $uiZipPath" -ForegroundColor Green
+            } else {
+                Write-Host "Skipping UI deployment package as -PublishApps was not specified" -ForegroundColor Yellow
+            }
         }
     }
     finally {

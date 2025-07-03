@@ -22,7 +22,13 @@ param(
     [string]$ConnectionString = "",
     
     [Parameter(Mandatory=$false)]
-    [switch]$VerboseOutput
+    [switch]$VerboseOutput,
+    
+    [Parameter(Mandatory=$false)]
+    [switch]$PublishApps,
+    
+    [Parameter(Mandatory=$false)]
+    [switch]$PublishUI
 )
 
 # Set strict mode and error action
@@ -316,32 +322,30 @@ try {
     }
     
     # Step 4: Publish Function Apps
-    Write-Host "Publishing Function Apps..." -ForegroundColor Cyan
-    
-    $functionApps = @(
-        @{ Name = "MainAPI"; Project = "CPS.ComplexCases.API/CPS.ComplexCases.API.csproj"; OutputDir = "MainAPI" },
-        @{ Name = "FileTransferAPI"; Project = "CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj"; OutputDir = "FileTransferAPI" }
-    )
-    
-    foreach ($app in $functionApps) {
-        Write-Host "Publishing $($app.Name)..." -ForegroundColor Yellow
-        
-        $publishPath = Join-Path $OutputPath $app.OutputDir
-        $projectPath = Join-Path $BackendPath $app.Project
-        
-        if (Test-Path $projectPath) {
-            $publishCommand = "publish `"$projectPath`" --configuration $Configuration --output `"$publishPath`" --no-restore --verbosity minimal"
-            Invoke-DotNetCommand -Command $publishCommand -Description "Publishing $($app.Name)"
-            
-            # Create zip file
-            $zipPath = Join-Path $OutputPath "$($app.Name).zip"
-            if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
-            
-            Compress-Archive -Path "$publishPath\*" -DestinationPath $zipPath -Force
-            Write-Host "OK $($app.Name) packaged to $zipPath" -ForegroundColor Green
-        } else {
-            Write-Host "WARNING: Project not found: $projectPath" -ForegroundColor Yellow
+    if ($PublishApps) {
+        Write-Host "Publishing Function Apps..." -ForegroundColor Cyan
+        $functionApps = @(
+            @{ Name = "MainAPI"; Project = "CPS.ComplexCases.API/CPS.ComplexCases.API.csproj"; OutputDir = "MainAPI" },
+            @{ Name = "FileTransferAPI"; Project = "CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj"; OutputDir = "FileTransferAPI" }
+        )
+        foreach ($app in $functionApps) {
+            Write-Host "Publishing $($app.Name)..." -ForegroundColor Yellow
+            $publishPath = Join-Path $OutputPath $app.OutputDir
+            $projectPath = Join-Path $BackendPath $app.Project
+            if (Test-Path $projectPath) {
+                $publishCommand = "publish `"$projectPath`" --configuration $Configuration --output `"$publishPath`" --no-restore --verbosity minimal"
+                Invoke-DotNetCommand -Command $publishCommand -Description "Publishing $($app.Name)"
+                # Create zip file
+                $zipPath = Join-Path $OutputPath "$($app.Name).zip"
+                if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
+                Compress-Archive -Path "$publishPath\*" -DestinationPath $zipPath -Force
+                Write-Host "OK $($app.Name) packaged to $zipPath" -ForegroundColor Green
+            } else {
+                Write-Host "WARNING: Project not found: $projectPath" -ForegroundColor Yellow
+            }
         }
+    } else {
+        Write-Host "Skipping Function App publish as -PublishApps was not specified" -ForegroundColor Yellow
     }
     
     # Step 5: Generate migration script
@@ -536,16 +540,18 @@ try {
             }
             
             # Create UI deployment package
-            $uiZipPath = Join-Path $OutputPath "UI-SPA.zip"
-            if (Test-Path $uiZipPath) { Remove-Item $uiZipPath -Force }
-            
-            Compress-Archive -Path "$uiBuildPath\*" -DestinationPath $uiZipPath -Force
-            Write-Host "OK UI deployment package created: $uiZipPath" -ForegroundColor Green
-            
-            # Calculate and display package size
-            $uiZipInfo = Get-Item $uiZipPath
-            $uiSizeMB = [math]::Round($uiZipInfo.Length / 1MB, 2)
-            Write-Host "UI package size: $uiSizeMB MB" -ForegroundColor Cyan
+            if ($PublishUI) {
+                $uiZipPath = Join-Path $OutputPath "UI-SPA.zip"
+                if (Test-Path $uiZipPath) { Remove-Item $uiZipPath -Force }
+                Compress-Archive -Path "$uiBuildPath\*" -DestinationPath $uiZipPath -Force
+                Write-Host "OK UI deployment package created: $uiZipPath" -ForegroundColor Green
+                # Calculate and display package size
+                $uiZipInfo = Get-Item $uiZipPath
+                $uiSizeMB = [math]::Round($uiZipInfo.Length / 1MB, 2)
+                Write-Host "UI package size: $uiSizeMB MB" -ForegroundColor Cyan
+            } else {
+                Write-Host "Skipping UI deployment package as -PublishUI was not specified" -ForegroundColor Yellow
+            }
         } else {
             Write-Host "WARNING: UI dist folder not found: $distPath" -ForegroundColor Yellow
         }

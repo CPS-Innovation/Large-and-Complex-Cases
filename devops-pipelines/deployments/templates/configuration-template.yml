@@ -49,11 +49,6 @@ steps:
             "slotSetting": false
           },
           {
-            "name": "AzureWebJobsStorage",
-            "value": "$(AzureWebJobsStorage)",
-            "slotSetting": false
-          },
-          {
             "name": "KeyVaultUri",
             "value": "https://${{ parameters.keyVaultName }}.vault.azure.net/",
             "slotSetting": false
