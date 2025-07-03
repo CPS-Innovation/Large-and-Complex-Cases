@@ -3,6 +3,7 @@ import { BackLink, Input, Tag, Button, LinkButton } from "../../govuk";
 import styles from "./RenameTransferFilePage.module.scss";
 
 type RenameTransferFilePageProps = {
+  backLinkUrl: string;
   fileName: string;
   relativeFilePath: string;
   handleCancel: () => void;
@@ -10,6 +11,7 @@ type RenameTransferFilePageProps = {
 };
 
 export const RenameTransferFilePage: React.FC<RenameTransferFilePageProps> = ({
+  backLinkUrl,
   fileName,
   relativeFilePath,
   handleCancel,
@@ -43,7 +45,7 @@ export const RenameTransferFilePage: React.FC<RenameTransferFilePageProps> = ({
   }, [relativeFilePath, inputValue]);
   return (
     <div className="govuk-width-container">
-      <BackLink to={"/"}>Back</BackLink>
+      <BackLink to={backLinkUrl}>Back</BackLink>
       <div className={styles.contentWrapper}>
         <h1 className="govuk-heading-xl">Edit file name</h1>
 

@@ -29,7 +29,7 @@ export const egressToNetAppIndexingErrorDev: IndexingFileTransferResponse = {
   caseId: 12,
   isInvalid: true,
   destinationPath:
-    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1",
+    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination",
   validationErrors: [
     {
       id: "id_3",
@@ -37,13 +37,9 @@ export const egressToNetAppIndexingErrorDev: IndexingFileTransferResponse = {
         "egress/folder3/file3qeeweweweweewweewwewewewewewewweewerwrrwwrwrrrrrrwrwrwrwweewweeewweweeweweweew.pdf",
       errorType: "",
     },
-    { id: "id_4", sourcePath: "egress/folder3/file4.pdf", errorType: "" },
-    { id: "id_5", sourcePath: "egress/folder4/file4.pdf", errorType: "" },
-    {
-      id: "id_6",
-      sourcePath: "egress/folder3/folder1/file4.pdf",
-      errorType: "",
-    },
+    { id: "id_4", sourcePath: "file4.pdf", errorType: "" },
+    { id: "id_5", sourcePath: "egress/folder4/file5.pdf", errorType: "" },
+    { id: "id_6", sourcePath: "egress/folder3/file6.pdf", errorType: "" },
   ],
   files: [
     { id: "id_1", sourcePath: "egress/folder1/file1.pdf" },

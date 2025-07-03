@@ -441,6 +441,10 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
             validationErrors: response.validationErrors,
             destinationPath: response.destinationPath,
             initiateTransferPayload: getInitiateTransferPayload(response),
+            baseFolderName:
+              "folderName" in currentEgressFolder
+                ? currentEgressFolder.folderName
+                : "",
           },
         });
         return;

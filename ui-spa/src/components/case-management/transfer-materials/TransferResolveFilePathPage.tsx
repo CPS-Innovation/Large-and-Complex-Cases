@@ -1,5 +1,5 @@
 import { useCallback, useState, useMemo, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { BackLink, Button, InsetText, Tag } from "../../govuk";
 import FolderIcon from "../../../components/svgs/folder.svg?react";
 import FileIcon from "../../../components/svgs/file.svg?react";
@@ -10,18 +10,21 @@ import {
 } from "../../../common/utils/getGroupedResolvePaths";
 import { RenameTransferFilePage } from "./RenameTransferFilePage";
 import { initiateFileTransfer } from "../../../apis/gateway-api";
+import { EgressTranferPayloadSourcePath } from "../../../common/types/InitiateFileTransferPayload";
+import { TransferResolvePageLocationState } from "../../../common/types/TransferResolvePageLocationState";
 import styles from "./TransferResolveFilePathPage.module.scss";
 
 const TransferResolveFilePathPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const initialValue = getMappedResolvePathFiles(
-    location?.state?.validationErrors,
-    location?.state?.destinationPath,
-  );
+  const { caseId } = useParams();
 
-  const [resolvePathFiles, setResolvePathFiles] =
-    useState<ResolvePathFileType[]>(initialValue);
+  const [locationState, setLocationState] =
+    useState<TransferResolvePageLocationState>();
+
+  const [resolvePathFiles, setResolvePathFiles] = useState<
+    ResolvePathFileType[]
+  >([]);
   const [selectedRenameFile, setSelectedRenameFile] =
     useState<ResolvePathFileType | null>(null);
 
@@ -29,8 +32,11 @@ const TransferResolveFilePathPage = () => {
 
   const groupedResolvedPathFiles: Record<string, ResolvePathFileType[]> =
     useMemo(() => {
-      return getGroupedResolvePaths(resolvePathFiles);
-    }, [resolvePathFiles]);
+      return getGroupedResolvePaths(
+        resolvePathFiles,
+        locationState ? locationState?.baseFolderName : "",
+      );
+    }, [resolvePathFiles, locationState]);
 
   useEffect(() => {
     const largePathFiles = resolvePathFiles.find(
@@ -39,6 +45,17 @@ const TransferResolveFilePathPage = () => {
 
     setDisableTransferBtn(!!largePathFiles);
   }, [resolvePathFiles]);
+
+  useEffect(() => {
+    const initialValue = getMappedResolvePathFiles(
+      location?.state?.validationErrors,
+      location?.state?.destinationPath,
+    );
+    setResolvePathFiles(initialValue);
+    if (!locationState) {
+      setLocationState(location.state);
+    }
+  }, []);
 
   const getCharactersTag = useCallback((filePath: string) => {
     if (filePath.length > 260)
@@ -57,9 +74,11 @@ const TransferResolveFilePathPage = () => {
   const handleRenameButtonClick = (id: string) => {
     const selectedFile = resolvePathFiles.find((file) => file.id === id)!;
     setSelectedRenameFile(selectedFile);
+    navigate(`/case/${caseId}/case-management/transfer-rename-file`);
   };
 
   const handleRenameCancel = () => {
+    navigate(`/case/${caseId}/case-management/transfer-resolve-file-path`);
     setSelectedRenameFile(null);
   };
 
@@ -72,35 +91,46 @@ const TransferResolveFilePathPage = () => {
       ),
     );
     setSelectedRenameFile(null);
+    navigate(`/case/${caseId}/case-management/transfer-resolve-file-path`);
   };
 
   const handleCompleteTransferBtnClick = async () => {
+    if (!locationState?.initiateTransferPayload) {
+      return;
+    }
     setDisableTransferBtn(true);
-    const resolvedFiles = resolvePathFiles.map((file) => ({
-      id: file.id,
-      sourcePath: `${file.relativeSourcePath}/${file.sourceName}`,
-    }));
+    const resolvedFiles: EgressTranferPayloadSourcePath[] =
+      resolvePathFiles.map((file) => ({
+        fileId: file.id,
+        path: file.relativeSourcePath
+          ? `${file.relativeSourcePath}/${file.sourceName}`
+          : file.sourceName,
+        modifiedPath: file.relativeSourcePath
+          ? `${file.relativeSourcePath}/${file.sourceName}`
+          : file.sourceName,
+      }));
 
     const initiatePayload = {
-      ...location.state.initiateTransferPayload,
+      ...locationState?.initiateTransferPayload,
       sourcePaths: [
-        ...location.state.initiateTransferPayload.sourcePaths,
+        ...(locationState?.initiateTransferPayload?.sourcePaths ?? []),
         ...resolvedFiles,
       ],
     };
 
     try {
       await initiateFileTransfer(initiatePayload);
-      navigate(`/case/${initiatePayload.caseId}/case-management/`);
+      navigate(`/case/${caseId}/case-management/`);
     } catch (error) {
       console.log("error>>>>", error);
       return;
     }
   };
 
-  if (selectedRenameFile)
+  if (location.pathname.endsWith("/transfer-rename-file") && selectedRenameFile)
     return (
       <RenameTransferFilePage
+        backLinkUrl={`/case/${caseId}/case-management/transfer-resolve-file-path`}
         fileName={selectedRenameFile.sourceName}
         relativeFilePath={selectedRenameFile.relativeFinalPath}
         handleCancel={handleRenameCancel}
@@ -110,13 +140,14 @@ const TransferResolveFilePathPage = () => {
 
   return (
     <div className="govuk-width-container">
-      <BackLink to={"/"}>Back</BackLink>
+      <BackLink to={`/case/${caseId}/case-management/`}>Back</BackLink>
       <div className={styles.contentWrapper}>
         <h1 className="govuk-heading-xl">File paths are too long</h1>
         <InsetText>
           <p>
-            You cannot complete the transfer because <b>4 file paths</b> are
-            longer than the shared drive limit of 260 characters.
+            You cannot complete the transfer because{" "}
+            <b>{resolvePathFiles.length} file paths</b> are longer than the
+            shared drive limit of 260 characters.
           </p>
           <p>
             You can fix this by choosing a different destination folder with

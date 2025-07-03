@@ -108,7 +108,10 @@ const CaseManagementPage = () => {
   if (caseMetaData.status === "loading" || caseMetaData.status === "initial") {
     return <div className="govuk-width-container">loading...</div>;
   }
-  if (location.pathname.endsWith("/transfer-resolve-file-path"))
+  if (
+    location.pathname.endsWith("/transfer-resolve-file-path") ||
+    location.pathname.endsWith("/transfer-rename-file")
+  )
     return <TransferResolveFilePathPage />;
   if (location.pathname.endsWith("/transfer-errors"))
     return (

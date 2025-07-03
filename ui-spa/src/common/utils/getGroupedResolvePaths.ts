@@ -13,6 +13,7 @@ export const getMappedResolvePathFiles = (
   errors: IndexingError[],
   destinationPath: string,
 ) => {
+  console.log("helloioooo i called you");
   const mappedFiles: ResolvePathFileType[] = errors.map((error) => ({
     id: error.id,
     relativeSourcePath: getRelativePathFromPath(error.sourcePath),
@@ -22,14 +23,20 @@ export const getMappedResolvePathFiles = (
   return mappedFiles;
 };
 
-export const getGroupedResolvePaths = (files: ResolvePathFileType[]) => {
+export const getGroupedResolvePaths = (
+  files: ResolvePathFileType[],
+  basePath: string,
+) => {
   const groupedFiles = files.reduce(
     (acc, curr) => {
-      if (!acc[`${curr.relativeSourcePath}`]) {
-        acc[`${curr.relativeSourcePath}`] = [curr];
+      const relativeSourcePath = curr.relativeSourcePath
+        ? curr.relativeSourcePath
+        : basePath;
+      if (!acc[`${relativeSourcePath}`]) {
+        acc[`${relativeSourcePath}`] = [curr];
         return acc;
       }
-      acc[`${curr.relativeSourcePath}`].push(curr);
+      acc[`${relativeSourcePath}`].push(curr);
       return acc;
     },
     {} as Record<string, ResolvePathFileType[]>,
