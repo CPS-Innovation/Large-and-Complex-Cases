@@ -21,7 +21,6 @@ resources:
         branches:
           include:
             - main
-            - HA/devops-stuff
 
 variables:
   - name: environmentSuffix

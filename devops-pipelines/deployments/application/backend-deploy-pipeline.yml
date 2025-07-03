@@ -8,7 +8,6 @@ resources:
         branches:
           include:
             - main
-            - HA/devops-stuff
 
 parameters:
   - name: environment
@@ -827,8 +826,6 @@ stages:
           runOnce:
             deploy:
               steps:
-
-
                 - task: DownloadBuildArtifacts@0
                   displayName: 'LACC - Download FileTransfer API Artifact'
                   inputs:
