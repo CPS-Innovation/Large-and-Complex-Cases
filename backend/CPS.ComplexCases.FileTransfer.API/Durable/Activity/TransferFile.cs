@@ -34,11 +34,10 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
 
         try
         {
-            var sourceFileName = string.IsNullOrEmpty(payload.SourcePath.ModifiedPath) ? Path.GetFileName(payload.SourcePath.Path) : Path.GetFileName(payload.SourcePath.ModifiedPath);
-            var fullDestinationPath = Path.Combine(payload.DestinationPath, sourceFileName);
+            var sourceFilePath = string.IsNullOrEmpty(payload.SourcePath.ModifiedPath) ? payload.SourcePath.Path : payload.SourcePath.ModifiedPath;
 
             using var sourceStream = await sourceClient.OpenReadStreamAsync(payload.SourcePath.Path, payload.WorkspaceId, payload.SourcePath.FileId);
-            var session = await destinationClient.InitiateUploadAsync(fullDestinationPath, sourceStream.Length, payload.WorkspaceId, payload.SourcePath.Path);
+            var session = await destinationClient.InitiateUploadAsync(payload.DestinationPath, sourceStream.Length, sourceFilePath, payload.WorkspaceId, payload.SourcePath.RelativePath);
 
             long totalSize = sourceStream.Length;
             long position = 0;

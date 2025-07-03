@@ -5,4 +5,5 @@ export const caseMetaDataPlaywright: CaseMetaDataResponse = {
   netappFolderPath: "netapp/",
   operationName: "Thunderstruck",
   urn: "45AA2098221",
+  activeTransferId: null,
 };

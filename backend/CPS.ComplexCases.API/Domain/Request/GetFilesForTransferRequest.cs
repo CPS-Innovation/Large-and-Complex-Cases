@@ -13,4 +13,6 @@ public class GetFilesForTransferRequest
     public required List<SourcePath> SourcePaths { get; set; }
     [JsonPropertyName("destinationPath")]
     public required string DestinationPath { get; set; }
+    [JsonPropertyName("workspaceId")]
+    public string? WorkspaceId { get; set; }
 }

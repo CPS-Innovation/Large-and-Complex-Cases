@@ -23,6 +23,11 @@ import {
   NetAppFolderResponse,
   NetAppFolderDataResponse,
 } from "../common/types/NetAppFolderData";
+import { IndexingFileTransferResponse } from "../common/types/IndexingFileTransferResponse";
+import { IndexingFileTransferPayload } from "../common/types/IndexingFileTransferPayload";
+import { InitiateFileTransferResponse } from "../common/types/InitiateFileTransferResponse";
+import { InitiateFileTransferPayload } from "../common/types/InitiateFileTransferPayload";
+import { TransferStatusResponse } from "../common/types/TransferStatusResponse";
 
 import { ApiError } from "../common/errors/ApiError";
 
@@ -101,7 +106,6 @@ export const getEgressSearchResults = async (
     }
     return getEgressSearchResults(searchParams, skip + take, take, updated);
   } catch (error) {
-    console.error("Fetch failed:", error);
     throw new Error(
       `Invalid API response format for Egress workspace search results, ${error}`,
     );
@@ -175,7 +179,6 @@ export const getConnectNetAppFolders = async (
       updatedFolders,
     );
   } catch (error) {
-    console.error("Fetch failed:", error);
     throw new Error(
       `Invalid API response format for netapp folders results, ${error}`,
     );
@@ -257,7 +260,6 @@ export const getEgressFolders = async (
     }
     return getEgressFolders(workspaceId, folderId, skip + take, take, updated);
   } catch (error) {
-    console.error("Fetch failed:", error);
     throw new Error(`Invalid API response format for Egress folders, ${error}`);
   }
 };
@@ -303,9 +305,65 @@ export const getNetAppFolders = async (
       updatedFiles,
     );
   } catch (error) {
-    console.error("Fetch failed:", error);
     throw new Error(
       `Invalid API response format for netapp files/folders results, ${error}`,
     );
   }
+};
+
+export const indexingFileTransfer = async (
+  payload: IndexingFileTransferPayload,
+) => {
+  const url = `${GATEWAY_BASE_URL}/api/filetransfer/files`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      ...(await buildCommonHeaders()),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new ApiError(`indexing file transfer api failed`, url, response);
+  }
+  return (await response.json()) as IndexingFileTransferResponse;
+};
+
+export const initiateFileTransfer = async (
+  payload: InitiateFileTransferPayload,
+) => {
+  const url = `${GATEWAY_BASE_URL}/api/filetransfer/initiate`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      ...(await buildCommonHeaders()),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new ApiError(`initiate file transfer failed`, url, response);
+  }
+  return (await response.json()) as InitiateFileTransferResponse;
+};
+
+export const getTransferStatus = async (transferId: string) => {
+  const url = `${GATEWAY_BASE_URL}/api/filetransfer/${transferId}/status`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      ...(await buildCommonHeaders()),
+    },
+  });
+
+  if (!response.ok) {
+    throw new ApiError(`Getting case transfer status failed`, url, response);
+  }
+  return (await response.json()) as TransferStatusResponse;
 };

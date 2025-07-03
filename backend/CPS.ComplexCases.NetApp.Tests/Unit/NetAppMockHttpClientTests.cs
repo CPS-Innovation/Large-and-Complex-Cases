@@ -6,7 +6,6 @@ using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Models.S3.Result;
-using FluentAssertions;
 using Moq;
 using Moq.Protected;
 
@@ -61,7 +60,7 @@ public class NetAppMockHttpClientTests
         var result = await _client.CreateBucketAsync(createBucketArg);
 
         // Assert
-        result.Should().BeFalse();
+        Assert.False(result);
         _loggerMock.Verify(x => x.Log(
             It.Is<LogLevel>(logLevel => logLevel == LogLevel.Error),
             It.Is<EventId>(eventId => eventId.Id == 0),
@@ -99,9 +98,9 @@ public class NetAppMockHttpClientTests
         var result = await _client.ListFoldersInBucketAsync(arg);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Data.BucketName.Should().Be(bucketName);
-        result.Data.FolderData.Should().ContainSingle(x => x.Path == "folder1/");
+        Assert.NotNull(result);
+        Assert.Equal(bucketName, result.Data.BucketName);
+        Assert.Single(result.Data.FolderData, x => x.Path == "folder1/");
     }
 
     [Fact]

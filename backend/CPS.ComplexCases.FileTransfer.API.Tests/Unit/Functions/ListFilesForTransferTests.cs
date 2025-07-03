@@ -14,7 +14,6 @@ using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Functions;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain;
 using CPS.ComplexCases.FileTransfer.API.Validators;
-using FluentAssertions;
 using Moq;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Functions;
@@ -72,7 +71,7 @@ public class ListFilesForTransferTests
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-        badRequest.Value.Should().BeEquivalentTo(validationResult.ValidationErrors);
+        Assert.Equal(validationResult.ValidationErrors, badRequest.Value);
     }
 
     [Fact]
@@ -112,8 +111,8 @@ public class ListFilesForTransferTests
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
         var filesResult = Assert.IsType<FilesForTransferResult>(okResult.Value);
-        filesResult.Should().NotBeNull();
-        filesResult.IsInvalid.Should().BeFalse();
+        Assert.NotNull(filesResult);
+        Assert.False(filesResult.IsInvalid);
     }
 
     [Fact]
@@ -161,9 +160,15 @@ public class ListFilesForTransferTests
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
         var filesResult = Assert.IsType<FilesForTransferResult>(okResult.Value);
-        filesResult.IsInvalid.Should().BeTrue();
-        filesResult.ValidationErrors.Should().ContainSingle();
-        filesResult.ValidationErrors.First().Should().Be(expectedErrorMessage);
+        Assert.True(filesResult.IsInvalid);
+
+        Assert.NotNull(filesResult.ValidationErrors);
+        var error = filesResult.ValidationErrors.First();
+        Assert.NotNull(error);
+        Assert.Equal(TransferFailedType.PathLengthExceeded, error.ErrorType);
+        Assert.Equal(expectedErrorMessage, error.Message);
+        Assert.Equal(relativePath, error.RelativePath);
+        Assert.Equal($"source/{relativePath}", error.SourcePath);
     }
 
     [Fact]
@@ -205,8 +210,8 @@ public class ListFilesForTransferTests
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
         var filesResult = Assert.IsType<FilesForTransferResult>(okResult.Value);
-        filesResult.IsInvalid.Should().BeFalse();
-        filesResult.ValidationErrors.Should().BeNullOrEmpty();
+        Assert.False(filesResult.IsInvalid);
+        Assert.True(filesResult.ValidationErrors == null || !filesResult.ValidationErrors.Any());
     }
 
     [Fact]
@@ -238,7 +243,7 @@ public class ListFilesForTransferTests
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
         var filesResult = Assert.IsType<FilesForTransferResult>(okResult.Value);
-        filesResult.Files.Should().BeEmpty();
+        Assert.Empty(filesResult.Files);
     }
 
     [Fact]
@@ -292,13 +297,13 @@ public class ListFilesForTransferTests
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
         var filesResult = Assert.IsType<FilesForTransferResult>(okResult.Value);
-        filesResult.Files.Should().HaveCount(2);
-        filesResult.CaseId.Should().Be(_testCaseId);
-        filesResult.WorkspaceId.Should().Be(_testWorkspaceId);
-        filesResult.TransferDirection.Should().Be(TransferDirection.EgressToNetApp.ToString());
-        filesResult.IsInvalid.Should().BeFalse();
-        filesResult.Files.Should().ContainSingle(f => f.Id == "file1" && f.SourcePath == "source/file1.txt" && f.RelativePath == "file1.txt");
-        filesResult.Files.Should().ContainSingle(f => f.Id == "folder1" && f.SourcePath == "source/folder1/file2.txt" && f.RelativePath == "folder1/file2.txt");
+        Assert.Equal(2, filesResult.Files.Count());
+        Assert.Equal(_testCaseId, filesResult.CaseId);
+        Assert.Equal(_testWorkspaceId, filesResult.WorkspaceId);
+        Assert.Equal(TransferDirection.EgressToNetApp.ToString(), filesResult.TransferDirection);
+        Assert.False(filesResult.IsInvalid);
+        Assert.Single(filesResult.Files, f => f.Id == "file1" && f.SourcePath == "source/file1.txt" && f.RelativePath == "file1.txt");
+        Assert.Single(filesResult.Files, f => f.Id == "folder1" && f.SourcePath == "source/folder1/file2.txt" && f.RelativePath == "folder1/file2.txt");
     }
 
     private ListFilesForTransferRequest CreateRequest(TransferDirection transferDirection, string destinationPath = "valid/path/")

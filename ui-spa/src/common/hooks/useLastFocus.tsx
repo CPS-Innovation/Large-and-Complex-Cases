@@ -16,11 +16,11 @@ export const useLastFocus = (defaultFocusId?: string) => {
       else {
         if (defaultFocusId) {
           const defaultElement = document.querySelector(
-            `${defaultFocusId}`
+            `${defaultFocusId}`,
           ) as HTMLElement;
           if (defaultElement) defaultElement.focus();
         }
       }
     };
-  }, []);
+  }, [defaultFocusId]);
 };

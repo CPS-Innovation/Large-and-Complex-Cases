@@ -82,7 +82,7 @@ namespace CPS.ComplexCases.NetApp.Factories
                 prefix = !prefix.EndsWith(S3Constants.Delimiter) ? $"{prefix}{S3Constants.Delimiter}" : prefix;
             }
 
-            return prefix?.ToLowerInvariant() ?? string.Empty;
+            return prefix ?? string.Empty;
         }
 
         public InitiateMultipartUploadArg CreateInitiateMultipartUploadArg(string bucketName, string objectName)
