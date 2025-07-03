@@ -123,8 +123,8 @@ public class ListFilesForTransferTests
         var reqMock = new Mock<HttpRequest>();
         var context = new Mock<FunctionContext>().Object;
         var destinationPath = new string('a', 256);
-        var relativePath = "file1.txt";
-        var expectedErrorMessage = $"{destinationPath}/{relativePath}: exceeds the 255 characters limit.";
+        var sourcePath = "file1.txt";
+        var expectedErrorMessage = $"{destinationPath}/{sourcePath}: exceeds the 255 characters limit.";
 
         var validationResult = new ValidatableRequest<ListFilesForTransferRequest>
         {
@@ -138,8 +138,7 @@ public class ListFilesForTransferTests
         var filesForTransfer = new List<FileTransferInfo>
         {
             new () {
-                SourcePath = $"source/{relativePath}",
-                RelativePath = relativePath
+                SourcePath = sourcePath,
             }
         };
 
@@ -168,8 +167,7 @@ public class ListFilesForTransferTests
         error.Should().NotBeNull();
         error.ErrorType.Should().Be(TransferFailedType.PathLengthExceeded);
         error.Message.Should().Be(expectedErrorMessage);
-        error.RelativePath.Should().Be(relativePath);
-        error.SourcePath.Should().Be($"source/{relativePath}");
+        error.SourcePath.Should().Be(sourcePath);
     }
 
     [Fact]
