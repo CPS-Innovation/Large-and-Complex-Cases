@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useApi } from "../../../common/hooks/useApi";
 import { LinkButton, InsetText, NotificationBanner } from "../../govuk";
 import NetAppFolderContainer from "./NetAppFolderContainer";
@@ -562,7 +562,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     if (!transferStatusData) {
       return {
         ariaLabelText: "",
-        spinnerTextContent: "",
+        spinnerTextContent: <span> Completing transfer</span>,
       };
     }
     if (transferStatusData?.username !== username) {

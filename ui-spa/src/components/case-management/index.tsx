@@ -92,7 +92,9 @@ const CaseManagementPage = () => {
             operationName={caseMetaData.data.operationName}
             egressWorkspaceId={caseMetaData.data.egressWorkspaceId}
             netAppPath={caseMetaData?.data.netappFolderPath}
-            activeTransferId={caseMetaData?.data.activeTransferId}
+            activeTransferId={
+              location?.state?.transferId ?? caseMetaData?.data.activeTransferId
+            }
           />
         ) : (
           <div> </div>

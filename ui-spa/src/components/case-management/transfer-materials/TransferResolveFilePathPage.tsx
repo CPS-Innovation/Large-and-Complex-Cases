@@ -119,8 +119,12 @@ const TransferResolveFilePathPage = () => {
     };
 
     try {
-      await initiateFileTransfer(initiatePayload);
-      navigate(`/case/${caseId}/case-management/`);
+      const response = await initiateFileTransfer(initiatePayload);
+      navigate(`/case/${caseId}/case-management/`, {
+        state: {
+          transferId: response.id,
+        },
+      });
     } catch (error) {
       console.log("error>>>>", error);
       return;
