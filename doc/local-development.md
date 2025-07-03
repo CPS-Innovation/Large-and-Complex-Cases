@@ -192,30 +192,20 @@ VITE_MOCK_AUTH=true
 ## Running Tests Only
 
 ### Backend
-- To run backend tests with coverage:
+- To run all backend tests with coverage, use the script:
   ```powershell
   ./scripts/build-and-test-backend-local.ps1
   ```
-  (Remove `-SkipTests` if present.)
-- To run backend tests only (no build/package):
-  - You can use `dotnet test` directly in the backend directory if needed.
+  - This script will restore, build, and test all backend projects, and generate coverage reports (unless skipped with flags).
+  - You do **not** need to run any dotnet commands manually for backend tests or coverage if you use this script.
 
 ### UI
-- To run UI unit tests, coverage, and E2E tests, use the script:
+- To run all UI tests (unit, coverage, and E2E), use the script:
   ```powershell
   ./scripts/build-and-test-ui-local.ps1
   ```
-  - This will handle installing dependencies, running lint, unit tests with coverage, and E2E tests (unless skipped with flags).
-- To run UI unit tests with coverage only (without E2E):
-  ```bash
-  cd ui-spa
-  npm run coverage
-  ```
-- To run UI E2E tests (locally only):
-  ```bash
-  cd ui-spa
-  npm run ui:e2e
-  ```
+  - This script will install dependencies, lint, build, run unit tests with coverage, and run E2E tests (unless skipped with flags).
+  - You do **not** need to run any npm commands manually for UI tests or E2E if you use this script.
 
 ## Troubleshooting
 
