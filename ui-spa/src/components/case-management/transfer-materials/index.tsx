@@ -8,7 +8,6 @@ import {
   getNetAppFolders,
   indexingFileTransfer,
   initiateFileTransfer,
-  getTransferStatus,
 } from "../../../apis/gateway-api";
 import EgressFolderContainer from "./EgressFolderContainer";
 import { useNavigate } from "react-router-dom";
@@ -24,6 +23,7 @@ import { IndexingFileTransferResponse } from "../../../common/types/IndexingFile
 import { InitiateFileTransferResponse } from "../../../common/types/InitiateFileTransferResponse";
 import { useUserDetails } from "../../../auth";
 import { ApiError } from "../../../common/errors/ApiError";
+import { pollTransferStatus } from "../../../common/utils/pollTransferStatus";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
@@ -108,6 +108,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     () => (netAppData ? mapToNetAppFolderData(netAppData) : []),
     [netAppData],
   );
+  const unMounting = useRef(false);
 
   const handleEgressFolderPathClick = (path: string) => {
     const index = egressPathFolders.findIndex(
@@ -491,7 +492,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   };
 
   const handleStatusResponse = useCallback(
-    (response: TransferStatusResponse, interval: NodeJS.Timeout) => {
+    (response: TransferStatusResponse) => {
       if (response.status === "Initiated" || response.status === "InProgress") {
         setTransferStatus("transferring");
         setTransferStatusData({
@@ -505,8 +506,6 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         netAppRefetch();
         setTransferStatus("completed");
         setTransferId("");
-        if (interval) clearInterval(interval);
-        return;
       }
       if (response.status === "PartiallyCompleted") {
         setTransferStatus("completed-with-errors");
@@ -517,7 +516,6 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         });
         setTransferId("");
         setTransferStatusData(null);
-        if (interval) clearInterval(interval);
       }
     },
     [
@@ -531,31 +529,23 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   );
 
   useEffect(() => {
+    unMounting.current = false;
+    return () => {
+      unMounting.current = true;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!transferId) {
       return;
     }
     setTransferStatus("transferring");
-
-    const pollingInterval = 5000;
-    const fetchStatusData = async () => {
-      try {
-        const status = await getTransferStatus(transferId);
-        handleStatusResponse(status, interval);
-      } catch (error) {
-        if ((error as ApiError).code !== 404) {
-          if (interval) clearInterval(interval);
-          setApiRequestError(error as Error);
-        }
-      }
-    };
-
-    fetchStatusData();
-    const interval = setInterval(async () => {
-      fetchStatusData();
-    }, pollingInterval);
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+    pollTransferStatus(
+      transferId,
+      unMounting.current,
+      handleStatusResponse,
+      setApiRequestError,
+    );
   }, [transferId, setTransferStatus, handleStatusResponse]);
 
   const activeTransferMessage = useMemo(() => {
