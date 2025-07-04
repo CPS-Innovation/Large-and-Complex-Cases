@@ -5,17 +5,13 @@
     <OutputType>Exe</OutputType>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RestoreAdditionalProjectSources>
-      $(MSBuildThisFileDirectory)/../CPS.ComplexCases.API.HttpTelemetry/bin/
-    </RestoreAdditionalProjectSources>
+    <FunctionsInDependencies>true</FunctionsInDependencies>
+    <_FunctionsSkipCleanOutput>true</_FunctionsSkipCleanOutput>
   </PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Ardalis.SmartEnum" Version="8.2.0" />
-    <PackageReference Include="Azure.Identity" Version="1.13.2" />
     <PackageReference Include="FluentValidation" Version="11.11.0" />
-    <PackageReference Include="Grpc" Version="2.46.6" />
-    <PackageReference Include="Contrib.Grpc.Core.M1" Version="2.46.7" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.OpenApi" Version="1.5.1" />
     <PackageReference Include="Microsoft.IdentityModel.Protocols" Version="8.6.1" />
     <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.6.1" />
@@ -28,13 +24,13 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.5" />
     <PackageReference Include="Microsoft.Extensions.Azure" Version="1.10.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.5" />
+    <PackageReference Include="CPS.ComplexCases.API.HttpTelemetry" Version="1.0.41" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CPS.ComplexCases.ActivityLog\CPS.ComplexCases.ActivityLog.csproj" />
     <ProjectReference Include="..\CPS.ComplexCases.NetApp\CPS.ComplexCases.NetApp.csproj" />
     <ProjectReference Include="..\CPS.ComplexCases.Egress\CPS.ComplexCases.Egress.csproj" />
     <ProjectReference Include="..\CPS.ComplexCases.DDEI\CPS.ComplexCases.DDEI.csproj" />
-    <ProjectReference Include="..\CPS.ComplexCases.API.HttpTelemetry\CPS.ComplexCases.API.HttpTelemetry.csproj" />
     <ProjectReference Include="..\CPS.ComplexCases.Data\CPS.ComplexCases.Data.csproj" />
     <ProjectReference Include="..\CPS.ComplexCases.Common\CPS.ComplexCases.Common.csproj" />
   </ItemGroup>
@@ -50,12 +46,4 @@
   <ItemGroup>
     <Using Include="System.Threading.ExecutionContext" Alias="ExecutionContext" />
   </ItemGroup>
-
-  <Target Name="CopyGrpcNativeAssetsToOutDir" AfterTargets="Build">
-    <ItemGroup>
-      <NativeAssetToCopy Condition="$([MSBuild]::IsOSPlatform('OSX'))" Include="$(OutDir)runtimes/osx-arm64/native/*" />
-    </ItemGroup>
-    <Copy SourceFiles="@(NativeAssetToCopy)" DestinationFolder="$(OutDir).azurefunctions/runtimes/osx-arm64/native" />
-  </Target>
-
 </Project>

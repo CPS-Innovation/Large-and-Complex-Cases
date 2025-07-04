@@ -302,6 +302,13 @@ ui-spa/playwright/test-results/
 ui-spa/playwright/playwright-report/
 ui-spa/blob-report/
 ui-spa/playwright/.cache/
+ui-spa/playwright-report/
 
 # Vite
 ui-spa/.vite/deps/
+
+# build-output
+build-output/
+
+# coverage-reports
+coverage-reports/

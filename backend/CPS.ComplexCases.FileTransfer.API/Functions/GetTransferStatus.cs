@@ -1,9 +1,12 @@
+using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask.Client;
 using Microsoft.Extensions.Logging;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using CPS.ComplexCases.Common.Extensions;
+using CPS.ComplexCases.Common.Constants;
 using Microsoft.DurableTask.Entities;
 using CPS.ComplexCases.FileTransfer.API.Durable.State;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
@@ -20,6 +23,11 @@ public class GetTransferStatus
     }
 
     [Function(nameof(GetTransferStatus))]
+    [OpenApiOperation(operationId: nameof(GetTransferStatus), tags: ["FileTransfer"], Description = "Retrieves the current status and details of a file transfer operation by transfer ID.")]
+    [OpenApiParameter(name: "transferId", In = Microsoft.OpenApi.Models.ParameterLocation.Path, Required = true, Type = typeof(string), Description = "The unique identifier of the transfer to retrieve status for.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(TransferEntity), Description = "Transfer status retrieved successfully.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.NotFound, contentType: ContentType.ApplicationJson, bodyType: typeof(object), Description = ApiResponseDescriptions.NotFound)]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, bodyType: typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
     public async Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Function, "get", Route = "transfer/{transferId}/status")] HttpRequest req,
         [DurableClient] DurableTaskClient orchestrationClient,
