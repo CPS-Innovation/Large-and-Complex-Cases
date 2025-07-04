@@ -1,7 +1,14 @@
 .iconButtonWrapper {
   display: flex;
-  align-items: center;
+  align-items: baseline;
+  & svg {
+    flex: 0 0 auto;
+  }
 }
 .fileName {
+  max-width: 22.5rem;
   margin-left: 0.25rem;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-all;
 }
