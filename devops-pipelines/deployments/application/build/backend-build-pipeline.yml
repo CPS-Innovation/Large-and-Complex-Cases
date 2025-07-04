@@ -58,7 +58,8 @@ stages:
             inputs:
               command: 'pack'
               packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-              arguments: '--configuration $(buildConfiguration) --output $(Build.SourcesDirectory)/localnuget'
+              outputDir: '$(Build.SourcesDirectory)/localnuget'
+              arguments: '--configuration $(buildConfiguration)'
 
           - script: ls -lR $(Build.SourcesDirectory)/localnuget
             displayName: 'List localnuget directory contents'
