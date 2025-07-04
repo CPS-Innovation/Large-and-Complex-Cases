@@ -50,8 +50,12 @@ stages:
               projects: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
               arguments: '--configuration $(buildConfiguration)'
 
-          - script: echo Resolved output-- $(Build.SourcesDirectory)/localnuget
-            displayName: 'Echo output path'
+          - script: |
+              echo "Resolved output-- $(Build.SourcesDirectory)/localnuget"
+              # Ensure the localnuget directory exists and is clean
+              mkdir -p $(Build.SourcesDirectory)/localnuget
+              rm -f $(Build.SourcesDirectory)/localnuget/*.nupkg
+            displayName: 'Prepare local NuGet directory'
 
           - task: DotNetCoreCLI@2
             displayName: 'Pack HttpTelemetry Project'
@@ -59,7 +63,7 @@ stages:
               command: 'pack'
               packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
               outputDir: '$(Build.SourcesDirectory)/localnuget'
-              arguments: '--configuration $(buildConfiguration)'
+              arguments: '--configuration $(buildConfiguration) --no-build'
 
           - script: ls -lR $(Build.SourcesDirectory)/localnuget
             displayName: 'List localnuget directory contents'
@@ -87,9 +91,14 @@ stages:
             displayName: 'Download HttpTelemetry NuGet Package'
             inputs:
               artifact: 'localnuget'
-              path: '$(Build.SourcesDirectory)/_downloaded_localnuget'
+              path: '$(Build.SourcesDirectory)/localnuget'
 
-          - script: ls -lR $(Build.SourcesDirectory)/_downloaded_localnuget
+          - script: |
+              echo "Contents of localnuget directory:"
+              ls -la $(Build.SourcesDirectory)/localnuget
+              echo ""
+              echo "NuGet package files:"
+              find $(Build.SourcesDirectory)/localnuget -name "*.nupkg"
             displayName: 'List downloaded localnuget contents'
 
           - task: DotNetCoreCLI@2
@@ -97,7 +106,7 @@ stages:
             inputs:
               command: 'restore'
               projects: 'backend/CPS.ComplexCases.sln'
-              arguments: '--source $(Build.SourcesDirectory)/_downloaded_localnuget --source https://api.nuget.org/v3/index.json'
+              arguments: '--source $(Build.SourcesDirectory)/localnuget --source https://api.nuget.org/v3/index.json --disable-parallel'
 
           - task: DotNetCoreCLI@2
             displayName: 'Build Solution'
@@ -182,6 +191,12 @@ stages:
             inputs:
               packageType: 'sdk'
               version: $(dotNetVersion)
+
+          - task: DownloadPipelineArtifact@2
+            displayName: 'Download HttpTelemetry NuGet Package'
+            inputs:
+              artifact: 'localnuget'
+              path: '$(Build.SourcesDirectory)/localnuget'
 
           - task: DotNetCoreCLI@2
             displayName: 'Restore Main API'
@@ -309,6 +324,12 @@ stages:
               packageType: 'sdk'
               version: $(dotNetVersion)
 
+          - task: DownloadPipelineArtifact@2
+            displayName: 'Download HttpTelemetry NuGet Package'
+            inputs:
+              artifact: 'localnuget'
+              path: '$(Build.SourcesDirectory)/localnuget'
+
           - task: DotNetCoreCLI@2
             displayName: 'Restore FileTransfer API'
             inputs:
@@ -434,6 +455,12 @@ stages:
             inputs:
               packageType: 'sdk'
               version: $(dotNetVersion)
+
+          - task: DownloadPipelineArtifact@2
+            displayName: 'Download HttpTelemetry NuGet Package'
+            inputs:
+              artifact: 'localnuget'
+              path: '$(Build.SourcesDirectory)/localnuget'
 
           - task: DotNetCoreCLI@2
             displayName: 'Install EF Core Tools'
