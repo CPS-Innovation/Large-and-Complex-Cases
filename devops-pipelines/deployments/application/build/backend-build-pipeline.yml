@@ -41,7 +41,7 @@ stages:
             inputs:
               command: 'restore'
               projects: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-              arguments: '--source $(Build.ArtifactStagingDirectory)/localnuget --source https://api.nuget.org/v3/index.json'
+              arguments: '--source $(Build.SourcesDirectory)/localnuget --source https://api.nuget.org/v3/index.json'
 
           - task: DotNetCoreCLI@2
             displayName: 'Build HttpTelemetry Project'
@@ -50,10 +50,10 @@ stages:
               projects: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
               arguments: '--configuration $(buildConfiguration)'
 
-          - script: echo "Resolved output: $(Build.ArtifactStagingDirectory)/localnuget"
+          - script: echo "Resolved output: $(Build.SourcesDirectory)/localnuget"
             displayName: 'Echo output path'
 
-          - script: mkdir -p $(Build.ArtifactStagingDirectory)/localnuget
+          - script: mkdir -p $(Build.SourcesDirectory)/localnuget
             displayName: 'Ensure localnuget directory exists'
 
           - task: DotNetCoreCLI@2
@@ -61,20 +61,20 @@ stages:
             inputs:
               command: 'pack'
               packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-              arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/localnuget'
+              arguments: '--configuration $(buildConfiguration) --output $(Build.SourcesDirectory)/localnuget'
 
-          - script: ls -lR $(Build.ArtifactStagingDirectory)
-            displayName: 'List all files in ArtifactStagingDirectory'
+          - script: ls -lR $(Build.SourcesDirectory)
+            displayName: 'List all files in SourcesDirectory'
             continueOnError: true
 
-          - script: ls -lR $(Build.ArtifactStagingDirectory)/localnuget
+          - script: ls -lR $(Build.SourcesDirectory)/localnuget
             displayName: 'List localnuget directory contents'
             continueOnError: true
 
           - task: PublishPipelineArtifact@1
             displayName: 'Publish HttpTelemetry NuGet Package'
             inputs:
-              targetPath: '$(Build.ArtifactStagingDirectory)/localnuget'
+              targetPath: '$(Build.SourcesDirectory)/localnuget'
               artifact: 'localnuget'
 
       - job: Build_Solution
@@ -93,14 +93,14 @@ stages:
             displayName: 'Download HttpTelemetry NuGet Package'
             inputs:
               artifact: 'localnuget'
-              path: '$(Build.ArtifactStagingDirectory)/localnuget'
+              path: '$(Build.SourcesDirectory)/localnuget'
 
           - task: DotNetCoreCLI@2
             displayName: 'Restore NuGet Packages'
             inputs:
               command: 'restore'
               projects: 'backend/CPS.ComplexCases.sln'
-              arguments: '--source $(Build.ArtifactStagingDirectory)/localnuget --source https://api.nuget.org/v3/index.json'
+              arguments: '--source $(Build.SourcesDirectory)/localnuget --source https://api.nuget.org/v3/index.json'
 
           - task: DotNetCoreCLI@2
             displayName: 'Build Solution'
@@ -192,7 +192,7 @@ stages:
             inputs:
               command: 'restore'
               projects: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-              arguments: '--source $(Build.ArtifactStagingDirectory)/localnuget --source https://api.nuget.org/v3/index.json'
+              arguments: '--source $(Build.SourcesDirectory)/localnuget --source https://api.nuget.org/v3/index.json'
 
           - task: DotNetCoreCLI@2
             displayName: 'Build Main API'
@@ -318,7 +318,7 @@ stages:
             inputs:
               command: 'restore'
               projects: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
-              arguments: '--source $(Build.ArtifactStagingDirectory)/localnuget --source https://api.nuget.org/v3/index.json'
+              arguments: '--source $(Build.SourcesDirectory)/localnuget --source https://api.nuget.org/v3/index.json'
 
           - task: DotNetCoreCLI@2
             displayName: 'Build FileTransfer API'
