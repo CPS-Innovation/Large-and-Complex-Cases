@@ -50,7 +50,7 @@ stages:
               projects: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
               arguments: '--configuration $(buildConfiguration)'
 
-          - script: echo "Resolved output: $(Build.SourcesDirectory)/localnuget"
+          - script: echo Resolved output-- $(Build.SourcesDirectory)/localnuget
             displayName: 'Echo output path'
 
           - script: mkdir -p $(Build.SourcesDirectory)/localnuget
@@ -158,7 +158,6 @@ stages:
                     -assemblyfilters:"+*;-*.Tests;-*.WireMock" `
                     -classfilters:"+*;-*Tests*;-*Mock*;-*Migrations*" `
                     -verbosity:"Info"
-                  
                   Write-Host "Coverage report generated successfully"
                   Write-Host "Report location: $(coverageReportsDirectory)/html"
                 } else {
