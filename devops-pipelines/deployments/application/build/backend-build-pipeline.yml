@@ -25,8 +25,41 @@ stages:
   - stage: Build_And_Test_Backend
     displayName: 'LACC Backend - Build, Test & Package'
     jobs:
+      - job: Build_HttpTelemetry
+        displayName: 'LACC - Build HttpTelemetry Assembly'
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - task: UseDotNet@2
+            displayName: 'Use .NET SDK'
+            inputs:
+              packageType: 'sdk'
+              version: $(dotNetVersion)
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Restore HttpTelemetry Project'
+            inputs:
+              command: 'restore'
+              projects: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+              arguments: '--source $(Build.ArtifactStagingDirectory)/localnuget'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Build HttpTelemetry Project'
+            inputs:
+              command: 'build'
+              projects: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+              arguments: '--configuration $(buildConfiguration)'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Pack HttpTelemetry Project'
+            inputs:
+              command: 'pack'
+              packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+              arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/localnuget'
+
       - job: Build_Solution
         displayName: 'LACC - Build Backend Solution'
+        dependsOn: Build_HttpTelemetry
         pool:
           vmImage: ubuntu-latest
         steps:
@@ -114,39 +147,6 @@ stages:
               pathtoPublish: '$(coverageReportsDirectory)/html'
               artifactName: 'backend-coverage-report'
             condition: always()
-
-      - job: Build_HttpTelemetry
-        displayName: 'LACC - Build HttpTelemetry Assembly'
-        dependsOn: Build_Solution
-        pool:
-          vmImage: ubuntu-latest
-        steps:
-          - task: UseDotNet@2
-            displayName: 'Use .NET SDK'
-            inputs:
-              packageType: 'sdk'
-              version: $(dotNetVersion)
-
-          - task: DotNetCoreCLI@2
-            displayName: 'Restore HttpTelemetry Project'
-            inputs:
-              command: 'restore'
-              projects: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-              arguments: '--source $(Build.ArtifactStagingDirectory)/localnuget'
-
-          - task: DotNetCoreCLI@2
-            displayName: 'Build HttpTelemetry Project'
-            inputs:
-              command: 'build'
-              projects: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-              arguments: '--configuration $(buildConfiguration)'
-
-          - task: DotNetCoreCLI@2
-            displayName: 'Pack HttpTelemetry Project'
-            inputs:
-              command: 'pack'
-              packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-              arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/localnuget'
 
       - job: Build_Main_API
         displayName: 'LACC - Build Main API Function App'
