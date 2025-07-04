@@ -41,7 +41,7 @@ stages:
             inputs:
               command: 'restore'
               projects: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-              arguments: '--source $(Build.ArtifactStagingDirectory)/localnuget'
+              arguments: '--source $(Build.ArtifactStagingDirectory)/localnuget --source https://api.nuget.org/v3/index.json'
 
           - task: DotNetCoreCLI@2
             displayName: 'Build HttpTelemetry Project'
@@ -74,8 +74,7 @@ stages:
             inputs:
               command: 'restore'
               projects: 'backend/CPS.ComplexCases.sln'
-              feedsToUse: 'select'
-              arguments: '--source $(Build.ArtifactStagingDirectory)/localnuget'
+              arguments: '--source $(Build.ArtifactStagingDirectory)/localnuget --source https://api.nuget.org/v3/index.json'
 
           - task: DotNetCoreCLI@2
             displayName: 'Build Solution'
@@ -167,7 +166,7 @@ stages:
             inputs:
               command: 'restore'
               projects: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-              arguments: '--source $(Build.ArtifactStagingDirectory)/localnuget'
+              arguments: '--source $(Build.ArtifactStagingDirectory)/localnuget --source https://api.nuget.org/v3/index.json'
 
           - task: DotNetCoreCLI@2
             displayName: 'Build Main API'
@@ -293,6 +292,7 @@ stages:
             inputs:
               command: 'restore'
               projects: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
+              arguments: '--source $(Build.ArtifactStagingDirectory)/localnuget --source https://api.nuget.org/v3/index.json'
 
           - task: DotNetCoreCLI@2
             displayName: 'Build FileTransfer API'
