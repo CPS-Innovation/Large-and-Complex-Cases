@@ -81,11 +81,17 @@ const TransferResolveFilePathPage = () => {
   const handleRenameButtonClick = (id: string) => {
     const selectedFile = resolvePathFiles.find((file) => file.id === id)!;
     setSelectedRenameFile(selectedFile);
-    navigate(`/case/${caseId}/case-management/transfer-rename-file`);
+    navigate(`/case/${caseId}/case-management/transfer-rename-file`, {
+      replace: true,
+      state: { isRouteValid: true },
+    });
   };
 
   const handleRenameCancel = () => {
-    navigate(`/case/${caseId}/case-management/transfer-resolve-file-path`);
+    navigate(`/case/${caseId}/case-management/transfer-resolve-file-path`, {
+      replace: true,
+      state: { isRouteValid: true },
+    });
     setSelectedRenameFile(null);
   };
 
@@ -98,7 +104,10 @@ const TransferResolveFilePathPage = () => {
       ),
     );
     setSelectedRenameFile(null);
-    navigate(`/case/${caseId}/case-management/transfer-resolve-file-path`);
+    navigate(`/case/${caseId}/case-management/transfer-resolve-file-path`, {
+      replace: true,
+      state: { isRouteValid: true },
+    });
   };
 
   const handleStartTransferBtnClick = async () => {
@@ -128,6 +137,7 @@ const TransferResolveFilePathPage = () => {
     try {
       const response = await initiateFileTransfer(initiatePayload);
       navigate(`/case/${caseId}/case-management/`, {
+        replace: true,
         state: {
           transferId: response.id,
         },
@@ -139,7 +149,7 @@ const TransferResolveFilePathPage = () => {
   };
 
   const handleCancel = async () => {
-    navigate(`/case/${caseId}/case-management`);
+    navigate(`/case/${caseId}/case-management`, { replace: true });
   };
 
   if (location.pathname.endsWith("/transfer-rename-file") && selectedRenameFile)
@@ -155,7 +165,9 @@ const TransferResolveFilePathPage = () => {
 
   return (
     <div className="govuk-width-container">
-      <BackLink to={`/case/${caseId}/case-management/`}>Back</BackLink>
+      <BackLink to={`/case/${caseId}/case-management/`} replace>
+        Back
+      </BackLink>
       {!largePathFiles && (
         <div className={styles.successBanner}>
           <NotificationBanner
