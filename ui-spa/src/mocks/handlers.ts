@@ -22,7 +22,7 @@ import {
   egressToNetAppTransferStatusPlaywright,
   netAppToEgressTransferStatusDev,
   netAppToEgressTransferStatusPlaywright,
-  // egressToNetAppIndexingErrorDev,
+  egressToNetAppIndexingErrorDev,
 } from "./data";
 import { IndexingFileTransferPayload } from "../common/types/IndexingFileTransferPayload";
 import { InitiateFileTransferPayload } from "../common/types/InitiateFileTransferPayload";
@@ -122,7 +122,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
           : netAppToEgressIndexingTransferPlaywright;
       }
       await delay(2500);
-      return HttpResponse.json(response);
+      return HttpResponse.json(egressToNetAppIndexingErrorDev);
     }),
 
     http.post(`${baseUrl}/api/filetransfer/initiate`, async ({ request }) => {

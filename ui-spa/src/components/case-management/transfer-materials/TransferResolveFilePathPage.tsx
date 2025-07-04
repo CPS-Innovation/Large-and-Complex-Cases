@@ -48,7 +48,7 @@ const TransferResolveFilePathPage = () => {
   const largePathFiles = useMemo(
     () =>
       resolvePathFiles.find(
-        (file) => file.relativeFinalPath.length + file.sourceName.length > 260,
+        (file) => `${file.relativeFinalPath}/${file.sourceName}`.length > 260,
       ),
     [resolvePathFiles],
   );

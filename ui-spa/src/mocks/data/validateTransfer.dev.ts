@@ -34,12 +34,16 @@ export const egressToNetAppIndexingErrorDev: IndexingFileTransferResponse = {
     {
       id: "id_3",
       sourcePath:
-        "egress/folder3/file3qeeweweweweewweewwewewewewewewweewerwrrwwrwrrrrrrwrwrwrwweewweeewweweeweweweewfile3qeeweweweweewweewwewewewewewewweewerwrrwwrwrrrrrrwrwrwrwweewweeewweweeweweweewfile3qeeweweweweewweewwewewewewewewweewerwrrwwrwrrrrrrwrwrwrwweewweeewweweeweweweew.pdf",
+        "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
       errorType: "",
     },
-    { id: "id_4", sourcePath: "file4.pdf", errorType: "" },
-    { id: "id_5", sourcePath: "egress/folder4/file5.pdf", errorType: "" },
-    { id: "id_6", sourcePath: "egress/folder3/file6.pdf", errorType: "" },
+    // { id: "id_4", sourcePath: "file4.pdf", errorType: "" },
+    {
+      id: "id_5",
+      sourcePath:
+        "egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
+      errorType: "",
+    },
   ],
   files: [
     { id: "id_1", sourcePath: "egress/folder1/file1.pdf" },
