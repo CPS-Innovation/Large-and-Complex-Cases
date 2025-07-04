@@ -87,14 +87,17 @@ stages:
             displayName: 'Download HttpTelemetry NuGet Package'
             inputs:
               artifact: 'localnuget'
-              path: '$(Build.SourcesDirectory)/localnuget'
+              path: '$(Build.SourcesDirectory)/_downloaded_localnuget'
+
+          - script: ls -lR $(Build.SourcesDirectory)/_downloaded_localnuget
+            displayName: 'List downloaded localnuget contents'
 
           - task: DotNetCoreCLI@2
             displayName: 'Restore NuGet Packages'
             inputs:
               command: 'restore'
               projects: 'backend/CPS.ComplexCases.sln'
-              arguments: '--no-cache --source $(Build.SourcesDirectory)/localnuget --source https://api.nuget.org/v3/index.json'
+              arguments: '--no-cache --source $(Build.SourcesDirectory)/_downloaded_localnuget --source https://api.nuget.org/v3/index.json'
 
           - task: DotNetCoreCLI@2
             displayName: 'Build Solution'
