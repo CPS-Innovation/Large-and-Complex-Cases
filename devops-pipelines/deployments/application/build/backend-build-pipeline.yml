@@ -101,12 +101,40 @@ stages:
               find $(Build.SourcesDirectory)/localnuget -name "*.nupkg"
             displayName: 'List downloaded localnuget contents'
 
+          - task: PowerShell@2
+            displayName: 'Create NuGet.Config'
+            inputs:
+              targetType: 'inline'
+              script: |
+                $nugetConfigContent = @"
+                <?xml version="1.0" encoding="utf-8"?>
+                <configuration>
+                  <packageSources>
+                    <clear />
+                    <add key="local-packages" value="$(Build.SourcesDirectory)/localnuget" />
+                    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+                  </packageSources>
+                  <packageSourceMapping>
+                    <clear />
+                    <packageSource key="nuget.org">
+                      <package pattern="*" />
+                    </packageSource>
+                    <packageSource key="local-packages">
+                      <package pattern="CPS.ComplexCases.API.HttpTelemetry" />
+                    </packageSource>
+                  </packageSourceMapping>
+                </configuration>
+                "@
+                $nugetConfigPath = "$(Build.SourcesDirectory)/NuGet.Config"
+                Set-Content -Path $nugetConfigPath -Value $nugetConfigContent
+                Write-Host "NuGet.Config created at $nugetConfigPath"
+
           - task: DotNetCoreCLI@2
             displayName: 'Restore NuGet Packages'
             inputs:
               command: 'restore'
               projects: 'backend/CPS.ComplexCases.sln'
-              arguments: '--source $(Build.SourcesDirectory)/localnuget --source https://api.nuget.org/v3/index.json --disable-parallel'
+              arguments: '--configfile $(Build.SourcesDirectory)/NuGet.Config'
 
           - task: DotNetCoreCLI@2
             displayName: 'Build Solution'
@@ -198,12 +226,40 @@ stages:
               artifact: 'localnuget'
               path: '$(Build.SourcesDirectory)/localnuget'
 
+          - task: PowerShell@2
+            displayName: 'Create NuGet.Config'
+            inputs:
+              targetType: 'inline'
+              script: |
+                $nugetConfigContent = @"
+                <?xml version="1.0" encoding="utf-8"?>
+                <configuration>
+                  <packageSources>
+                    <clear />
+                    <add key="local-packages" value="$(Build.SourcesDirectory)/localnuget" />
+                    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+                  </packageSources>
+                  <packageSourceMapping>
+                    <clear />
+                    <packageSource key="nuget.org">
+                      <package pattern="*" />
+                    </packageSource>
+                    <packageSource key="local-packages">
+                      <package pattern="CPS.ComplexCases.API.HttpTelemetry" />
+                    </packageSource>
+                  </packageSourceMapping>
+                </configuration>
+                "@
+                $nugetConfigPath = "$(Build.SourcesDirectory)/NuGet.Config"
+                Set-Content -Path $nugetConfigPath -Value $nugetConfigContent
+                Write-Host "NuGet.Config created at $nugetConfigPath"
+
           - task: DotNetCoreCLI@2
             displayName: 'Restore Main API'
             inputs:
               command: 'restore'
               projects: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-              arguments: '--source $(Build.SourcesDirectory)/localnuget --source https://api.nuget.org/v3/index.json'
+              arguments: '--configfile $(Build.SourcesDirectory)/NuGet.Config'
 
           - task: DotNetCoreCLI@2
             displayName: 'Build Main API'
@@ -330,12 +386,40 @@ stages:
               artifact: 'localnuget'
               path: '$(Build.SourcesDirectory)/localnuget'
 
+          - task: PowerShell@2
+            displayName: 'Create NuGet.Config'
+            inputs:
+              targetType: 'inline'
+              script: |
+                $nugetConfigContent = @"
+                <?xml version="1.0" encoding="utf-8"?>
+                <configuration>
+                  <packageSources>
+                    <clear />
+                    <add key="local-packages" value="$(Build.SourcesDirectory)/localnuget" />
+                    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+                  </packageSources>
+                  <packageSourceMapping>
+                    <clear />
+                    <packageSource key="nuget.org">
+                      <package pattern="*" />
+                    </packageSource>
+                    <packageSource key="local-packages">
+                      <package pattern="CPS.ComplexCases.API.HttpTelemetry" />
+                    </packageSource>
+                  </packageSourceMapping>
+                </configuration>
+                "@
+                $nugetConfigPath = "$(Build.SourcesDirectory)/NuGet.Config"
+                Set-Content -Path $nugetConfigPath -Value $nugetConfigContent
+                Write-Host "NuGet.Config created at $nugetConfigPath"
+
           - task: DotNetCoreCLI@2
             displayName: 'Restore FileTransfer API'
             inputs:
               command: 'restore'
               projects: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
-              arguments: '--source $(Build.SourcesDirectory)/localnuget --source https://api.nuget.org/v3/index.json'
+              arguments: '--configfile $(Build.SourcesDirectory)/NuGet.Config'
 
           - task: DotNetCoreCLI@2
             displayName: 'Build FileTransfer API'
@@ -461,6 +545,34 @@ stages:
             inputs:
               artifact: 'localnuget'
               path: '$(Build.SourcesDirectory)/localnuget'
+
+          - task: PowerShell@2
+            displayName: 'Create NuGet.Config'
+            inputs:
+              targetType: 'inline'
+              script: |
+                $nugetConfigContent = @"
+                <?xml version="1.0" encoding="utf-8"?>
+                <configuration>
+                  <packageSources>
+                    <clear />
+                    <add key="local-packages" value="$(Build.SourcesDirectory)/localnuget" />
+                    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+                  </packageSources>
+                  <packageSourceMapping>
+                    <clear />
+                    <packageSource key="nuget.org">
+                      <package pattern="*" />
+                    </packageSource>
+                    <packageSource key="local-packages">
+                      <package pattern="CPS.ComplexCases.API.HttpTelemetry" />
+                    </packageSource>
+                  </packageSourceMapping>
+                </configuration>
+                "@
+                $nugetConfigPath = "$(Build.SourcesDirectory)/NuGet.Config"
+                Set-Content -Path $nugetConfigPath -Value $nugetConfigContent
+                Write-Host "NuGet.Config created at $nugetConfigPath"
 
           - task: DotNetCoreCLI@2
             displayName: 'Install EF Core Tools'
