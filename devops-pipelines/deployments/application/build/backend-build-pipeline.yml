@@ -50,12 +50,19 @@ stages:
               projects: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
               arguments: '--configuration $(buildConfiguration)'
 
+          - script: mkdir -p $(Build.ArtifactStagingDirectory)/localnuget
+            displayName: 'Ensure localnuget directory exists'
+
           - task: DotNetCoreCLI@2
             displayName: 'Pack HttpTelemetry Project'
             inputs:
               command: 'pack'
               packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
               arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/localnuget'
+
+          - script: ls -lR $(Build.ArtifactStagingDirectory)/localnuget
+            displayName: 'List localnuget directory contents'
+            continueOnError: true
 
           - task: PublishPipelineArtifact@1
             displayName: 'Publish HttpTelemetry NuGet Package'
