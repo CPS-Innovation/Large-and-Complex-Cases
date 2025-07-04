@@ -50,6 +50,9 @@ stages:
               projects: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
               arguments: '--configuration $(buildConfiguration)'
 
+          - script: echo "Resolved output: $(Build.ArtifactStagingDirectory)/localnuget"
+            displayName: 'Echo output path'
+
           - script: mkdir -p $(Build.ArtifactStagingDirectory)/localnuget
             displayName: 'Ensure localnuget directory exists'
 
@@ -59,6 +62,10 @@ stages:
               command: 'pack'
               packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
               arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/localnuget'
+
+          - script: ls -lR $(Build.ArtifactStagingDirectory)
+            displayName: 'List all files in ArtifactStagingDirectory'
+            continueOnError: true
 
           - script: ls -lR $(Build.ArtifactStagingDirectory)/localnuget
             displayName: 'List localnuget directory contents'
