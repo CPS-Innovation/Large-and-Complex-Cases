@@ -7,6 +7,9 @@
     <Nullable>enable</Nullable>
     <FunctionsInDependencies>true</FunctionsInDependencies>
     <_FunctionsSkipCleanOutput>true</_FunctionsSkipCleanOutput>
+    <RestoreAdditionalProjectSources>
+      $(MSBuildThisFileDirectory)/../CPS.ComplexCases.API.HttpTelemetry/bin/
+    </RestoreAdditionalProjectSources>
   </PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />

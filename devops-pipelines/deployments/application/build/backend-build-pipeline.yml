@@ -114,9 +114,36 @@ stages:
               artifactName: 'backend-coverage-report'
             condition: always()
 
+      - job: Build_HttpTelemetry
+        displayName: 'LACC - Build HttpTelemetry Assembly'
+        dependsOn: Build_Solution
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - task: UseDotNet@2
+            displayName: 'Use .NET SDK'
+            inputs:
+              packageType: 'sdk'
+              version: $(dotNetVersion)
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Restore HttpTelemetry Project'
+            inputs:
+              command: 'restore'
+              projects: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Build HttpTelemetry Project'
+            inputs:
+              command: 'build'
+              projects: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+              arguments: '--configuration $(buildConfiguration)'
+
       - job: Build_Main_API
         displayName: 'LACC - Build Main API Function App'
-        dependsOn: Build_Solution
+        dependsOn:
+          - Build_Solution
+          - Build_HttpTelemetry
         pool:
           vmImage: ubuntu-latest
         steps:
