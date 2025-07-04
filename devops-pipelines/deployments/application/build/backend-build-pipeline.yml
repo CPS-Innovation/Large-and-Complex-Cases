@@ -53,19 +53,12 @@ stages:
           - script: echo Resolved output-- $(Build.SourcesDirectory)/localnuget
             displayName: 'Echo output path'
 
-          - script: mkdir -p $(Build.SourcesDirectory)/localnuget
-            displayName: 'Ensure localnuget directory exists'
-
           - task: DotNetCoreCLI@2
             displayName: 'Pack HttpTelemetry Project'
             inputs:
               command: 'pack'
               packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
               arguments: '--configuration $(buildConfiguration) --output $(Build.SourcesDirectory)/localnuget'
-
-          - script: ls -lR $(Build.SourcesDirectory)
-            displayName: 'List all files in SourcesDirectory'
-            continueOnError: true
 
           - script: ls -lR $(Build.SourcesDirectory)/localnuget
             displayName: 'List localnuget directory contents'
