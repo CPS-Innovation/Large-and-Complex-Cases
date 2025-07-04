@@ -3,8 +3,14 @@
   & :global(.govuk-inset-text) {
     max-width: 80%;
   }
-  .btnCompleteTransfer {
+  .btnStartTransfer {
     margin-bottom: 3rem;
+  }
+  .btnWrapper {
+    margin-top: 2.5rem;
+    display: flex;
+    gap: 0.75rem;
+    align-items: baseline;
   }
 }
 .errorWrapper {
@@ -41,7 +47,7 @@
     font-weight: normal;
     color: #2a0b06;
     text-transform: lowercase;
-    width: 130px;
+    width: 8.125rem;
     text-align: center;
   }
 }
@@ -57,4 +63,9 @@
 
 .fileNameText {
   margin-left: 0.5rem;
+}
+
+.successBanner {
+  margin-top: 2rem;
+  width: 60%;
 }

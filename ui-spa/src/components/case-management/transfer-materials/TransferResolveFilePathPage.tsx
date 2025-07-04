@@ -1,6 +1,13 @@
 import { useCallback, useState, useMemo, useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { BackLink, Button, InsetText, Tag } from "../../govuk";
+import {
+  BackLink,
+  Button,
+  InsetText,
+  Tag,
+  NotificationBanner,
+  LinkButton,
+} from "../../govuk";
 import FolderIcon from "../../../components/svgs/folder.svg?react";
 import FileIcon from "../../../components/svgs/file.svg?react";
 import {
@@ -28,7 +35,7 @@ const TransferResolveFilePathPage = () => {
   const [selectedRenameFile, setSelectedRenameFile] =
     useState<ResolvePathFileType | null>(null);
 
-  const [disableTransferBtn, setDisableTransferBtn] = useState(true);
+  const [disableBtns, setDisableBtns] = useState(false);
 
   const groupedResolvedPathFiles: Record<string, ResolvePathFileType[]> =
     useMemo(() => {
@@ -38,13 +45,13 @@ const TransferResolveFilePathPage = () => {
       );
     }, [resolvePathFiles, locationState]);
 
-  useEffect(() => {
-    const largePathFiles = resolvePathFiles.find(
-      (file) => file.relativeFinalPath.length + file.sourceName.length > 260,
-    );
-
-    setDisableTransferBtn(!!largePathFiles);
-  }, [resolvePathFiles]);
+  const largePathFiles = useMemo(
+    () =>
+      resolvePathFiles.find(
+        (file) => file.relativeFinalPath.length + file.sourceName.length > 260,
+      ),
+    [resolvePathFiles],
+  );
 
   useEffect(() => {
     const initialValue = getMappedResolvePathFiles(
@@ -94,11 +101,11 @@ const TransferResolveFilePathPage = () => {
     navigate(`/case/${caseId}/case-management/transfer-resolve-file-path`);
   };
 
-  const handleCompleteTransferBtnClick = async () => {
+  const handleStartTransferBtnClick = async () => {
     if (!locationState?.initiateTransferPayload) {
       return;
     }
-    setDisableTransferBtn(true);
+    setDisableBtns(true);
     const resolvedFiles: EgressTranferPayloadSourcePath[] =
       resolvePathFiles.map((file) => ({
         fileId: file.id,
@@ -131,6 +138,10 @@ const TransferResolveFilePathPage = () => {
     }
   };
 
+  const handleCancel = async () => {
+    navigate(`/case/${caseId}/case-management`);
+  };
+
   if (location.pathname.endsWith("/transfer-rename-file") && selectedRenameFile)
     return (
       <RenameTransferFilePage
@@ -145,6 +156,16 @@ const TransferResolveFilePathPage = () => {
   return (
     <div className="govuk-width-container">
       <BackLink to={`/case/${caseId}/case-management/`}>Back</BackLink>
+      {!largePathFiles && (
+        <div className={styles.successBanner}>
+          <NotificationBanner
+            type="success"
+            data-testid="transfer-success-notification-banner"
+          >
+            All file are now under the 260 character limit
+          </NotificationBanner>
+        </div>
+      )}
       <div className={styles.contentWrapper}>
         <h1 className="govuk-heading-xl">File paths are too long</h1>
         <InsetText>
@@ -190,6 +211,7 @@ const TransferResolveFilePathPage = () => {
                             <Button
                               name="secondary"
                               className="govuk-button--secondary"
+                              disabled={disableBtns}
                               onClick={() => handleRenameButtonClick(file.id)}
                             >
                               Rename
@@ -203,14 +225,18 @@ const TransferResolveFilePathPage = () => {
               );
             })}
           </div>
-
-          <Button
-            className={styles.btnCompleteTransfer}
-            disabled={disableTransferBtn}
-            onClick={handleCompleteTransferBtnClick}
-          >
-            Complete transfer
-          </Button>
+          <div className={styles.btnWrapper}>
+            <Button
+              className={styles.btnStartTransfer}
+              disabled={disableBtns || !!largePathFiles}
+              onClick={handleStartTransferBtnClick}
+            >
+              Start transfer
+            </Button>
+            <LinkButton onClick={handleCancel} disabled={disableBtns}>
+              Cancel
+            </LinkButton>
+          </div>
         </div>
       </div>
     </div>
