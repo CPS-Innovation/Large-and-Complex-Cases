@@ -57,6 +57,12 @@ stages:
               packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
               arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/localnuget'
 
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish HttpTelemetry NuGet Package'
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)/localnuget'
+              artifact: 'localnuget'
+
       - job: Build_Solution
         displayName: 'LACC - Build Backend Solution'
         dependsOn: Build_HttpTelemetry
@@ -68,6 +74,12 @@ stages:
             inputs:
               packageType: 'sdk'
               version: $(dotNetVersion)
+
+          - task: DownloadPipelineArtifact@2
+            displayName: 'Download HttpTelemetry NuGet Package'
+            inputs:
+              artifact: 'localnuget'
+              path: '$(Build.ArtifactStagingDirectory)/localnuget'
 
           - task: DotNetCoreCLI@2
             displayName: 'Restore NuGet Packages'
