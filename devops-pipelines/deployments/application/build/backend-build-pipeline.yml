@@ -92,12 +92,14 @@ stages:
           - script: ls -lR $(Build.SourcesDirectory)/_downloaded_localnuget
             displayName: 'List downloaded localnuget contents'
 
-          - task: DotNetCoreCLI@2
+          - task: NuGetCommand@2
             displayName: 'Restore NuGet Packages'
             inputs:
               command: 'restore'
-              projects: 'backend/CPS.ComplexCases.sln'
-              arguments: '--no-cache --source $(Build.SourcesDirectory)/_downloaded_localnuget --source https://api.nuget.org/v3/index.json'
+              restoreSolution: 'backend/CPS.ComplexCases.sln'
+              feedsToUse: 'select'
+              vstsFeed: ''
+              arguments: '-Source $(Build.SourcesDirectory)/_downloaded_localnuget -Source https://api.nuget.org/v3/index.json'
 
           - task: DotNetCoreCLI@2
             displayName: 'Build Solution'
