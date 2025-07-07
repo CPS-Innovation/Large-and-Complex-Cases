@@ -1,13 +1,16 @@
-trigger: none
+trigger:
+  batch: true
+  branches:
+    include:
+      - main
+
+pr: none
 
 resources:
   pipelines:
     - pipeline: BackendBuild
       source: 'LACC Backend - Build, Test & Package'
-      trigger:
-        branches:
-          include:
-            - main
+      trigger: none
 
 parameters:
   - name: environment

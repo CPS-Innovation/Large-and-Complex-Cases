@@ -11,16 +11,19 @@ parameters:
       - qa
       - prod
 
-trigger: none
+trigger:
+  batch: true
+  branches:
+    include:
+      - main
+
+pr: none
 
 resources:
   pipelines:
     - pipeline: 'LACCUIBuild'
       source: 'LACC UI- Build, Test & Package'
-      trigger:
-        branches:
-          include:
-            - main
+      trigger: none
                       
 variables:
   - name: environmentSuffix
