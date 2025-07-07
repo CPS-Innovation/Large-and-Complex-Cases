@@ -136,7 +136,7 @@ const TransferResolveFilePathPage = () => {
 
     try {
       const response = await initiateFileTransfer(initiatePayload);
-      navigate(`/case/${caseId}/case-management/`, {
+      navigate(`/case/${caseId}/case-management`, {
         replace: true,
         state: {
           transferId: response.id,
@@ -165,14 +165,14 @@ const TransferResolveFilePathPage = () => {
 
   return (
     <div className="govuk-width-container">
-      <BackLink to={`/case/${caseId}/case-management/`} replace>
+      <BackLink to={`/case/${caseId}/case-management`} replace>
         Back
       </BackLink>
       {!largePathFiles && (
         <div className={styles.successBanner}>
           <NotificationBanner
             type="success"
-            data-testid="transfer-success-notification-banner"
+            data-testid="resolve-path-success-notification-banner"
           >
             All file are now under the 260 character limit
           </NotificationBanner>
@@ -180,7 +180,7 @@ const TransferResolveFilePathPage = () => {
       )}
       <div className={styles.contentWrapper}>
         <h1 className="govuk-heading-xl">File paths are too long</h1>
-        <InsetText>
+        <InsetText data-testId="resolve-file-path-inset-text">
           <p>
             You cannot complete the transfer because{" "}
             <b>{resolvePathFiles.length} file paths</b> are longer than the
@@ -196,10 +196,10 @@ const TransferResolveFilePathPage = () => {
           <div>
             {Object.keys(groupedResolvedPathFiles).map((key) => {
               return (
-                <div key={key} className={styles.errorWrapper}>
+                <section key={key} className={styles.errorWrapper}>
                   <div className={styles.relativePathWrapper}>
                     <FolderIcon />
-                    <span className={styles.relativePathText}>{key}</span>
+                    <h2 className={styles.relativePathText}>{key}</h2>
                   </div>
                   <ul className={styles.errorList}>
                     {groupedResolvedPathFiles[key].map((file) => {
@@ -208,13 +208,13 @@ const TransferResolveFilePathPage = () => {
                           key={file.sourceName}
                           className={styles.errorListItem}
                         >
-                          <div>
+                          <div data-testid="file-name-wrapper">
                             <FileIcon />
                             <span className={styles.fileNameText}>
                               {file.sourceName}
                             </span>
                           </div>
-                          <div>
+                          <div data-testid="character-tag">
                             {getCharactersTag(
                               `${file.relativeFinalPath}/${file.sourceName}`,
                             )}
@@ -233,7 +233,7 @@ const TransferResolveFilePathPage = () => {
                       );
                     })}
                   </ul>
-                </div>
+                </section>
               );
             })}
           </div>

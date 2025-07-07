@@ -505,6 +505,10 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         egressRefetch();
         netAppRefetch();
         setTransferStatus("completed");
+        setTransferStatusData({
+          username: response.userName,
+          direction: response.direction,
+        });
         setTransferId("");
       }
       if (response.status === "PartiallyCompleted") {

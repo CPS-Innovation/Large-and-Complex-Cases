@@ -29,7 +29,11 @@ export const RenameTransferFilePage: React.FC<RenameTransferFilePageProps> = ({
       return (
         <p>
           File path length:
-          <Tag gdsTagColour="red" className={styles.statusTag}>
+          <Tag
+            gdsTagColour="red"
+            className={styles.statusTag}
+            data-testid="character-tag"
+          >
             {characterCount} characters
           </Tag>
         </p>
@@ -37,7 +41,11 @@ export const RenameTransferFilePage: React.FC<RenameTransferFilePageProps> = ({
     return (
       <p>
         File path length:
-        <Tag gdsTagColour="green" className={styles.statusTag}>
+        <Tag
+          gdsTagColour="green"
+          className={styles.statusTag}
+          data-testid="character-tag"
+        >
           {characterCount} characters
         </Tag>
       </p>
