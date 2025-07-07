@@ -1,15 +1,14 @@
+using System.Net;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using CPS.ComplexCases.Common.Models.Domain;
+using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
-using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
 using CPS.ComplexCases.Egress.Models.Args;
 using CPS.ComplexCases.Egress.Models.Response;
-using CPS.ComplexCases.Common.Models.Domain.Dtos;
-using System.Net;
 
 namespace CPS.ComplexCases.Egress.Client;
 
@@ -144,6 +143,38 @@ public class EgressStorageClient(
         var results = await Task.WhenAll(entityTasks);
         return results.SelectMany(files => files);
     }
+
+    public async Task<DeleteFilesResult> DeleteFilesAsync(List<DeletionEntityDto> filesToDelete, string? workspaceId = null)
+    {
+        if (filesToDelete == null || filesToDelete.Count == 0)
+            throw new ArgumentException("Selected entities cannot be null or empty", nameof(filesToDelete));
+
+        if (string.IsNullOrEmpty(workspaceId))
+        {
+            throw new ArgumentException("Workspace ID cannot be null or empty.", nameof(workspaceId));
+        }
+
+        var token = await GetWorkspaceToken();
+
+        var fileIds = filesToDelete.Select(f => f.FileId).ToList();
+
+        if (fileIds.Count == 0)
+        {
+            _logger.LogInformation("No files to delete for workspace ID {WorkspaceId}.", workspaceId);
+            return new DeleteFilesResult();
+        }
+
+        var deleteArg = new DeleteFilesArg
+        {
+            WorkspaceId = workspaceId,
+            FileIds = fileIds!
+        };
+
+        await SendRequestAsync(_egressRequestFactory.DeleteFilesRequest(deleteArg, token));
+
+        return new DeleteFilesResult();
+    }
+
     private async Task CreateFolderStructureAsync(string folderPath, string workspaceId, string token)
     {
         if (string.IsNullOrEmpty(folderPath) || folderPath == "/" || folderPath == "\\")
@@ -216,6 +247,7 @@ public class EgressStorageClient(
             throw;
         }
     }
+
     private async Task<List<FileTransferInfo>> GetAllFilesFromFolderParallel(string workspaceId, string? folderId, string baseFolderPath, string token)
     {
         var allPagesData = await GetAllPagesInParallel(workspaceId, folderId, token);

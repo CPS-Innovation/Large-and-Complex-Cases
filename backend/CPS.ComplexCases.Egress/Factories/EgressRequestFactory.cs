@@ -138,7 +138,6 @@ public class EgressRequestFactory : IEgressRequestFactory
 
   public HttpRequestMessage CreateFolderRequest(CreateFolderArg arg, string token)
   {
-
     var folderData = new
     {
       folder_name = arg.FolderName,
@@ -151,6 +150,22 @@ public class EgressRequestFactory : IEgressRequestFactory
 
     AppendToken(request, token);
 
+    return request;
+  }
+
+  public HttpRequestMessage DeleteFilesRequest(DeleteFilesArg arg, string token)
+  {
+    var fileData = new
+    {
+      file_ids = arg.FileIds
+    };
+
+    var request = new HttpRequestMessage(HttpMethod.Delete, $"/api/v1/workspaces/{arg.WorkspaceId}/files")
+    {
+      Content = new StringContent(JsonSerializer.Serialize(fileData), Encoding.UTF8, "application/json")
+    };
+
+    AppendToken(request, token);
     return request;
   }
 

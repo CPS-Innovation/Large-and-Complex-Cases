@@ -10,6 +10,7 @@ using CPS.ComplexCases.Egress.Extensions;
 using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.NetApp.Extensions;
+using CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
@@ -31,5 +32,6 @@ builder.Services.Configure<SizeConfig>(
 
 builder.Services.AddScoped<IStorageClientFactory, StorageClientFactory>();
 builder.Services.AddScoped<IRequestValidator, RequestValidator>();
+builder.Services.AddScoped<ITransferEntityReader, TransferEntityReader>();
 
 await builder.Build().RunAsync();
