@@ -1,9 +1,4 @@
 resource "azurerm_linux_web_app" "complex_cases_ui" {
-  #checkov:skip=CKV_AZURE_88:Ensure that app services use Azure Files
-  #checkov:skip=CKV_AZURE_16:Ensure that Register with Azure Active Directory is enabled on App Service
-  #checkov:skip=CKV_AZURE_213:Ensure that App Service configures health check
-  #checkov:skip=CKV_AZURE_71:Ensure that Managed identity provider is enabled for app services
-  #checkov:skip=CKV_AZURE_17:Ensure the web app has 'Client Certificates (Incoming client certificates)' set
   name                          = "${local.product_prefix}-ui"
   location                      = var.location
   resource_group_name           = azurerm_resource_group.rg_complex_cases.name

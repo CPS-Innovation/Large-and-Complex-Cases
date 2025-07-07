@@ -1,5 +1,4 @@
 resource "azurerm_subnet" "sn_complex_cases_storage_subnet" {
-  #checkov:skip=CKV2_AZURE_31:Ensure VNET subnet is configured with a Network Security Group (NSG)
   name                 = "${local.product_prefix}-storage-subnet"
   resource_group_name  = data.azurerm_resource_group.networking_resource_group.name
   virtual_network_name = data.azurerm_virtual_network.complex_cases_vnet.name
@@ -19,7 +18,6 @@ resource "azurerm_subnet_route_table_association" "rt_assocation_complex_cases_s
 ##############
 
 resource "azurerm_subnet" "sn_complex_cases_ui_subnet" {
-  #checkov:skip=CKV2_AZURE_31:Ensure VNET subnet is configured with a Network Security Group (NSG)
   name                 = "${local.product_prefix}-ui-subnet"
   resource_group_name  = data.azurerm_resource_group.networking_resource_group.name
   virtual_network_name = data.azurerm_virtual_network.complex_cases_vnet.name
@@ -48,7 +46,6 @@ resource "azurerm_subnet_route_table_association" "rt_assocation_complex_cases_u
 ##############
 
 resource "azurerm_subnet" "sn_complex_cases_api_subnet" {
-  #checkov:skip=CKV2_AZURE_31:Ensure VNET subnet is configured with a Network Security Group (NSG)
   name                 = "${local.product_prefix}-api-subnet"
   resource_group_name  = data.azurerm_resource_group.networking_resource_group.name
   virtual_network_name = data.azurerm_virtual_network.complex_cases_vnet.name
@@ -77,7 +74,6 @@ resource "azurerm_subnet_route_table_association" "rt_assocation_complex_cases_a
 ##############
 
 resource "azurerm_subnet" "sn_complex_cases_endpoints_subnet" {
-  #checkov:skip=CKV2_AZURE_31:Ensure VNET subnet is configured with a Network Security Group (NSG)
   name                 = "${local.product_prefix}-endpoints-subnet"
   resource_group_name  = data.azurerm_resource_group.networking_resource_group.name
   virtual_network_name = data.azurerm_virtual_network.complex_cases_vnet.name
@@ -97,7 +93,6 @@ resource "azurerm_subnet_route_table_association" "rt_assocation_complex_cases_e
 ##############
 
 resource "azurerm_subnet" "sn_complex_cases_mock_subnet" {
-  #checkov:skip=CKV2_AZURE_31:Ensure VNET subnet is configured with a Network Security Group (NSG)
   name                 = "${local.product_prefix}-mock-subnet"
   resource_group_name  = data.azurerm_resource_group.networking_resource_group.name
   virtual_network_name = data.azurerm_virtual_network.complex_cases_vnet.name
