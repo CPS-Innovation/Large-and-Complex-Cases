@@ -67,7 +67,6 @@ resource "azurerm_linux_function_app" "complex_cases_api" {
     # our default_provider:
     active_directory_v2 {
       tenant_auth_endpoint = "https://sts.windows.net/${data.azurerm_client_config.current.tenant_id}/v2.0"
-      #checkov:skip=CKV_SECRET_6:Base64 High Entropy String - Misunderstanding of setting "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"
       client_secret_setting_name = "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"
       client_id                  = azuread_application.complex_cases_api.client_id
       allowed_audiences          = ["https://CPSGOVUK.onmicrosoft.com/${local.product_prefix}-api"]
@@ -217,8 +216,6 @@ resource "time_rotating" "schedule_api" {
 }
 
 # resource "azurerm_key_vault_secret" "kvs_complex_cases_api_client_secret" {
-#   #checkov:skip=CKV_AZURE_41:Ensure that the expiration date is set on all secrets
-#   #checkov:skip=CKV_AZURE_114:Ensure that key vault secrets have "content_type" set
 #   name         = "api-client-secret${local.resource_prefix}"
 #   value        = azuread_application_password.pwd_complex_cases_api.value
 #   key_vault_id = azurerm_key_vault.kv_complex_cases.id

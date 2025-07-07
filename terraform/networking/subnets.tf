@@ -1,5 +1,4 @@
 resource "azurerm_subnet" "sn_complex_cases_ampls_subnet" {
-  #checkov:skip=CKV2_AZURE_31:Ensure VNET subnet is configured with a Network Security Group (NSG)
   name                 = "${local.product_name}-ampls-subnet"
   resource_group_name  = data.azurerm_resource_group.networking_resource_group.name
   virtual_network_name = data.azurerm_virtual_network.complex_cases_vnet.name
@@ -18,7 +17,6 @@ resource "azurerm_subnet_route_table_association" "rt_assocation_complex_cases_a
 ################################
 
 resource "azurerm_subnet" "sn_complex_cases_dns_resolver_inbound_subnet" {
-  #checkov:skip=CKV2_AZURE_31:Ensure VNET subnet is configured with a Network Security Group (NSG)
   name                 = "${local.product_name}-dns-resolve-inbound-subnet"
   resource_group_name  = data.azurerm_resource_group.networking_resource_group.name
   virtual_network_name = data.azurerm_virtual_network.complex_cases_vnet.name
@@ -39,7 +37,6 @@ resource "azurerm_subnet" "sn_complex_cases_dns_resolver_inbound_subnet" {
 ################################
 
 resource "azurerm_subnet" "sn_complex_cases_dns_resolver_outbound_subnet" {
-  #checkov:skip=CKV2_AZURE_31:Ensure VNET subnet is configured with a Network Security Group (NSG)
   name                 = "${local.product_name}-dns-resolve-outbound-subnet"
   resource_group_name  = data.azurerm_resource_group.networking_resource_group.name
   virtual_network_name = data.azurerm_virtual_network.complex_cases_vnet.name

@@ -43,7 +43,6 @@ resource "azurerm_linux_web_app" "complex_cases_ui" {
 
     active_directory_v2 {
       tenant_auth_endpoint = "https://sts.windows.net/${data.azurerm_client_config.current.tenant_id}/v2.0"
-      #checkov:skip=CKV_SECRET_6:Base64 High Entropy String - Misunderstanding of setting "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"
       client_secret_setting_name = "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"
       client_id                  = azuread_application.complex_cases_ui.client_id
     }
@@ -221,8 +220,6 @@ resource "azuread_application_password" "pwd_e2e_test_secret" {
 }
 
 # resource "azurerm_key_vault_secret" "kvs_complex_cases_ui_client_secret" {
-#   #checkov:skip=CKV_AZURE_41:Ensure that the expiration date is set on all secrets
-#   #checkov:skip=CKV_AZURE_114:Ensure that key vault secrets have "content_type" set
 #   name         = "ui-client-secret${local.resource_prefix}"
 #   value        = azuread_application_password.pwd_complex_cases_ui.value
 #   key_vault_id = azurerm_key_vault.kv_complex_cases.id
