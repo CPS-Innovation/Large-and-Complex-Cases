@@ -21,6 +21,13 @@ resources:
         branches:
           include:
             - main
+        stages:
+          - Build_And_Test_UI
+        event: 
+          include:
+            - push
+          exclude:
+            - pullrequest
 
 variables:
   - name: environmentSuffix

@@ -8,6 +8,13 @@ resources:
         branches:
           include:
             - main
+        stages:
+          - Build_And_Test_Backend
+        event: 
+          include:
+            - push
+          exclude:
+            - pullrequest
 
 parameters:
   - name: environment
@@ -1556,4 +1563,3 @@ stages:
                 echo "📋 Function Apps: $(mainApiName), $(fileTransferApiName)"
                 echo ""
                 echo "✅ Pipeline cleanup completed successfully!"
-

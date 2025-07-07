@@ -30,548 +30,115 @@ stages:
         pool:
           vmImage: ubuntu-latest
         steps:
-          - task: UseDotNet@2
-            displayName: 'Use .NET SDK'
-            inputs:
-              packageType: 'sdk'
-              version: $(dotNetVersion)
+          # Build and pack HttpTelemetry
+          - template: ../../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+              projectName: 'HttpTelemetry'
+              buildConfiguration: $(buildConfiguration)
+              dotNetVersion: $(dotNetVersion)
+              useLocalNuGet: false
+              publishOutput: false
+              runTests: false
 
-          - task: DotNetCoreCLI@2
-            displayName: 'Restore HttpTelemetry Project'
-            inputs:
-              command: 'restore'
-              projects: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-
-          - task: DotNetCoreCLI@2
-            displayName: 'Build HttpTelemetry Project'
-            inputs:
-              command: 'build'
-              projects: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-              arguments: '--configuration $(buildConfiguration)'
-
+          # Pack and publish NuGet package
           - script: |
-              echo "Resolved output-- $(Build.SourcesDirectory)/localnuget"
-              # Ensure the localnuget directory exists and is clean
               mkdir -p $(Build.SourcesDirectory)/localnuget
               rm -f $(Build.SourcesDirectory)/localnuget/*.nupkg
             displayName: 'Prepare local NuGet directory'
 
           - task: DotNetCoreCLI@2
-            displayName: 'Pack HttpTelemetry Project'
+            displayName: 'Pack HttpTelemetry'
             inputs:
               command: 'pack'
               packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
               outputDir: '$(Build.SourcesDirectory)/localnuget'
               arguments: '--configuration $(buildConfiguration) --no-build'
 
-          - script: ls -lR $(Build.SourcesDirectory)/localnuget
-            displayName: 'List localnuget directory contents'
-            continueOnError: true
-
           - task: PublishPipelineArtifact@1
-            displayName: 'Publish HttpTelemetry NuGet Package'
+            displayName: 'Publish HttpTelemetry Package'
             inputs:
               targetPath: '$(Build.SourcesDirectory)/localnuget'
               artifact: 'localnuget'
 
-      - job: Build_Solution
-        displayName: 'LACC - Build Backend Solution'
+      - job: Build_And_Test_Solution
+        displayName: 'LACC - Build & Test Solution'
         dependsOn: Build_HttpTelemetry
         pool:
           vmImage: ubuntu-latest
+        variables:
+          testResultsDirectory: '$(Agent.TempDirectory)/TestResults'
+          coverageReportsDirectory: '$(Agent.TempDirectory)/CoverageReports'
         steps:
-          - task: UseDotNet@2
-            displayName: 'Use .NET SDK'
-            inputs:
-              packageType: 'sdk'
-              version: $(dotNetVersion)
+          # Build and test full solution
+          - template: ../../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.sln'
+              projectName: 'Backend Solution'
+              buildConfiguration: $(buildConfiguration)
+              dotNetVersion: $(dotNetVersion)
+              useLocalNuGet: true
+              publishOutput: false
+              runTests: true
+              testResultsDirectory: $(testResultsDirectory)
+              coverageReportsDirectory: $(coverageReportsDirectory)
 
-          - task: DownloadPipelineArtifact@2
-            displayName: 'Download HttpTelemetry NuGet Package'
-            inputs:
-              artifact: 'localnuget'
-              path: '$(Build.SourcesDirectory)/localnuget'
-
-          - script: |
-              echo "Contents of localnuget directory:"
-              ls -la $(Build.SourcesDirectory)/localnuget
-              echo ""
-              echo "NuGet package files:"
-              find $(Build.SourcesDirectory)/localnuget -name "*.nupkg"
-            displayName: 'List downloaded localnuget contents'
-
-          - task: PowerShell@2
-            displayName: 'Create NuGet.Config'
-            inputs:
-              targetType: 'inline'
-              script: |
-                $nugetConfigContent = @"
-                <?xml version="1.0" encoding="utf-8"?>
-                <configuration>
-                  <packageSources>
-                    <clear />
-                    <add key="local-packages" value="$(Build.SourcesDirectory)/localnuget" />
-                    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
-                  </packageSources>
-                  <packageSourceMapping>
-                    <clear />
-                    <packageSource key="nuget.org">
-                      <package pattern="*" />
-                    </packageSource>
-                    <packageSource key="local-packages">
-                      <package pattern="CPS.ComplexCases.API.HttpTelemetry" />
-                    </packageSource>
-                  </packageSourceMapping>
-                </configuration>
-                "@
-                $nugetConfigPath = "$(Build.SourcesDirectory)/NuGet.Config"
-                Set-Content -Path $nugetConfigPath -Value $nugetConfigContent
-                Write-Host "NuGet.Config created at $nugetConfigPath"
-
-          - task: DotNetCoreCLI@2
-            displayName: 'Restore NuGet Packages'
-            inputs:
-              command: 'restore'
-              projects: 'backend/CPS.ComplexCases.sln'
-              nugetConfigPath: '$(Build.SourcesDirectory)/NuGet.Config'
-
-          - task: DotNetCoreCLI@2
-            displayName: 'Build Solution'
-            inputs:
-              command: 'build'
-              projects: 'backend/CPS.ComplexCases.sln'
-              arguments: '--configuration $(buildConfiguration) --no-restore'
-
-          - task: DotNetCoreCLI@2
-            displayName: 'Run All Tests'
-            inputs:
-              command: 'test'
-              projects: 'backend/**/*Tests.csproj'
-              arguments: '--configuration $(buildConfiguration) --no-build --collect:"XPlat Code Coverage" --settings backend/CodeCoverage.runsettings'
-              publishTestResults: true
-              testResultsFormat: 'VSTest'
-              testResultsFiles: '**/*.trx'
-            continueOnError: true
-
-          - task: PublishCodeCoverageResults@1
-            displayName: 'Publish Code Coverage'
-            inputs:
-              codeCoverageTool: 'Cobertura'
-              summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
-              reportDirectory: '$(coverageReportsDirectory)'
-            condition: always()
-
-          - task: DotNetCoreCLI@2
-            displayName: 'Install ReportGenerator Tool'
-            inputs:
-              command: 'custom'
-              custom: 'tool'
-              arguments: 'install --global dotnet-reportgenerator-globaltool'
-            condition: always()
-
-          - task: PowerShell@2
-            displayName: 'Generate Beautiful HTML Coverage Report'
-            inputs:
-              targetType: 'inline'
-              script: |
-                # Find all coverage files
-                $coverageFiles = Get-ChildItem -Path "$(Agent.TempDirectory)" -Filter "coverage.cobertura.xml" -Recurse
-                
-                if ($coverageFiles.Count -gt 0) {
-                  $coverageFilePaths = $coverageFiles.FullName -join ";"
-                  
-                  # Generate beautiful HTML report
-                  reportgenerator `
-                    -reports:"$coverageFilePaths" `
-                    -targetdir:"$(coverageReportsDirectory)/html" `
-                    -reporttypes:"Html;HtmlSummary;Badges;TextSummary" `
-                    -historydir:"$(coverageReportsDirectory)/history" `
-                    -title:"CPS Complex Cases Backend Coverage Report" `
-                    -tag:"$(Build.BuildNumber)" `
-                    -assemblyfilters:"+*;-*.Tests;-*.WireMock" `
-                    -classfilters:"+*;-*Tests*;-*Mock*;-*Migrations*" `
-                    -verbosity:"Info"
-                  Write-Host "Coverage report generated successfully"
-                  Write-Host "Report location: $(coverageReportsDirectory)/html"
-                } else {
-                  Write-Host "No coverage files found"
-                }
-            condition: always()
-
-          - task: PublishBuildArtifacts@1
-            displayName: 'Publish HTML Coverage Report'
-            inputs:
-              pathtoPublish: '$(coverageReportsDirectory)/html'
-              artifactName: 'backend-coverage-report'
-            condition: always()
+          # Generate coverage report
+          - template: ../../templates/dotnet-code-coverage-steps.yml
+            parameters:
+              coverageReportsDirectory: $(coverageReportsDirectory)
+              projectName: 'Backend'
 
       - job: Build_Main_API
-        displayName: 'LACC - Build Main API Function App'
-        dependsOn:
-          - Build_Solution
-          - Build_HttpTelemetry
+        displayName: 'LACC - Build Main API'
+        dependsOn: Build_And_Test_Solution
         pool:
           vmImage: ubuntu-latest
         steps:
-          - task: UseDotNet@2
-            displayName: 'Use .NET SDK'
-            inputs:
-              packageType: 'sdk'
-              version: $(dotNetVersion)
-
-          - task: DownloadPipelineArtifact@2
-            displayName: 'Download HttpTelemetry NuGet Package'
-            inputs:
-              artifact: 'localnuget'
-              path: '$(Build.SourcesDirectory)/localnuget'
-
-          - task: PowerShell@2
-            displayName: 'Create NuGet.Config'
-            inputs:
-              targetType: 'inline'
-              script: |
-                $nugetConfigContent = @"
-                <?xml version="1.0" encoding="utf-8"?>
-                <configuration>
-                  <packageSources>
-                    <clear />
-                    <add key="local-packages" value="$(Build.SourcesDirectory)/localnuget" />
-                    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
-                  </packageSources>
-                  <packageSourceMapping>
-                    <clear />
-                    <packageSource key="nuget.org">
-                      <package pattern="*" />
-                    </packageSource>
-                    <packageSource key="local-packages">
-                      <package pattern="CPS.ComplexCases.API.HttpTelemetry" />
-                    </packageSource>
-                  </packageSourceMapping>
-                </configuration>
-                "@
-                $nugetConfigPath = "$(Build.SourcesDirectory)/NuGet.Config"
-                Set-Content -Path $nugetConfigPath -Value $nugetConfigContent
-                Write-Host "NuGet.Config created at $nugetConfigPath"
-
-          - task: DotNetCoreCLI@2
-            displayName: 'Restore Main API'
-            inputs:
-              command: 'restore'
-              projects: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-              nugetConfigPath: '$(Build.SourcesDirectory)/NuGet.Config'
-
-          - task: DotNetCoreCLI@2
-            displayName: 'Build Main API'
-            inputs:
-              command: 'build'
-              projects: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-              arguments: '--configuration $(buildConfiguration)'
-
-          - task: DotNetCoreCLI@2
-            displayName: 'Publish Main API'
-            inputs:
-              command: 'publish'
-              projects: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-              publishWebProjects: false
-              zipAfterPublish: false
-              arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/MainAPI --no-restore --self-contained false /p:PublishReadyToRun=false /p:SourceRevisionId=$(Build.SourceVersion)'
-
-          - task: Bash@3
-            displayName: 'Debug and Create Clean Deployment Package - Main API'
-            inputs:
-              targetType: 'inline'
-              script: |
-                echo "=== DEBUGGING MAIN API PUBLISH OUTPUT ==="
-                echo "Contents of MainAPI directory:"
-                find "$(Build.ArtifactStagingDirectory)/MainAPI" -type f | head -20
-                
-                echo ""
-                echo "Directory structure:"
-                find "$(Build.ArtifactStagingDirectory)/MainAPI" -type d
-                
-                # Find where the actual function files are
-                echo ""
-                echo "Looking for host.json:"
-                find "$(Build.ArtifactStagingDirectory)/MainAPI" -name "host.json" -type f
-                
-                echo ""
-                echo "Looking for .dll files:"
-                find "$(Build.ArtifactStagingDirectory)/MainAPI" -name "*.dll" -type f | head -5
-                
-                echo ""
-                echo "🔍 Checking for .azurefunctions folder:"
-                find "$(Build.ArtifactStagingDirectory)/MainAPI" -name ".azurefunctions" -type d
-                
-                # Create a clean directory with just the function files
-                mkdir -p "$(Build.ArtifactStagingDirectory)/MainAPI_Clean"
-                
-                # Find the directory that contains host.json (this should be our function root)
-                FUNCTION_ROOT=$(find "$(Build.ArtifactStagingDirectory)/MainAPI" -name "host.json" -type f -exec dirname {} \;)
-                echo ""
-                echo "Function root directory: $FUNCTION_ROOT"
-                
-                if [ -n "$FUNCTION_ROOT" ]; then
-                  echo "Copying files from function root to clean directory..."
-                  cp -r "$FUNCTION_ROOT"/* "$(Build.ArtifactStagingDirectory)/MainAPI_Clean/"
-                  
-                  # CRITICAL: Also copy any hidden files (like .azurefunctions)
-                  cp -r "$FUNCTION_ROOT"/.[^.]* "$(Build.ArtifactStagingDirectory)/MainAPI_Clean/" 2>/dev/null || true
-                  
-                  echo ""
-                  echo "Clean publish directory contents (including hidden files):"
-                  ls -la "$(Build.ArtifactStagingDirectory)/MainAPI_Clean/"
-                  
-                  echo ""
-                  echo "✅ Verifying .azurefunctions folder was copied:"
-                  if [ -d "$(Build.ArtifactStagingDirectory)/MainAPI_Clean/.azurefunctions" ]; then
-                    echo "✅ .azurefunctions folder found!"
-                    echo "Contents:"
-                    ls -la "$(Build.ArtifactStagingDirectory)/MainAPI_Clean/.azurefunctions/"
-                  else
-                    echo "❌ .azurefunctions folder missing - functions may not be discovered!"
-                  fi
-                  
-                  echo ""
-                  echo "Creating zip from clean directory..."
-                  cd "$(Build.ArtifactStagingDirectory)/MainAPI_Clean"
-                  zip -r "../lacc-main-api-$(Build.BuildId).zip" .
-                  
-                  echo ""
-                  echo "Final zip contents:"
-                  unzip -l "../lacc-main-api-$(Build.BuildId).zip" | head -20
-                  
-                  echo ""
-                  echo "Verifying host.json is at root:"
-                  if unzip -l "../lacc-main-api-$(Build.BuildId).zip" | grep -E "^\s*[0-9]+.*host\.json$"; then
-                    echo "✅ host.json found at root level!"
-                  else
-                    echo "❌ ERROR: host.json not found at root level!"
-                    exit 1
-                  fi
-                  
-                  echo ""
-                  echo "Verifying .azurefunctions folder in zip:"
-                  if unzip -l "../lacc-main-api-$(Build.BuildId).zip" | grep -E "\.azurefunctions/"; then
-                    echo "✅ .azurefunctions folder found in zip!"
-                  else
-                    echo "❌ WARNING: .azurefunctions folder not found in zip!"
-                  fi
-                else
-                  echo "ERROR: Could not find host.json in publish output!"
-                  exit 1
-                fi
-
-          - task: PublishBuildArtifacts@1
-            displayName: 'Publish Main API Artifact'
-            inputs:
-              pathtoPublish: '$(Build.ArtifactStagingDirectory)/lacc-main-api-$(Build.BuildId).zip'
-              artifactName: 'lacc-main-api-drop'
+          # Build and publish Main API
+          - template: ../../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+              projectName: 'lacc-main-api-drop'
+              buildConfiguration: $(buildConfiguration)
+              dotNetVersion: $(dotNetVersion)
+              useLocalNuGet: true
+              publishOutput: true
+              runTests: false
 
       - job: Build_FileTransfer_API
-        displayName: 'LACC - Build FileTransfer API Function App'
-        dependsOn: Build_Solution
+        displayName: 'LACC - Build FileTransfer API'
+        dependsOn: Build_And_Test_Solution
         pool:
           vmImage: ubuntu-latest
         steps:
-          - task: UseDotNet@2
-            displayName: 'Use .NET SDK'
-            inputs:
-              packageType: 'sdk'
-              version: $(dotNetVersion)
-
-          - task: DownloadPipelineArtifact@2
-            displayName: 'Download HttpTelemetry NuGet Package'
-            inputs:
-              artifact: 'localnuget'
-              path: '$(Build.SourcesDirectory)/localnuget'
-
-          - task: PowerShell@2
-            displayName: 'Create NuGet.Config'
-            inputs:
-              targetType: 'inline'
-              script: |
-                $nugetConfigContent = @"
-                <?xml version="1.0" encoding="utf-8"?>
-                <configuration>
-                  <packageSources>
-                    <clear />
-                    <add key="local-packages" value="$(Build.SourcesDirectory)/localnuget" />
-                    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
-                  </packageSources>
-                  <packageSourceMapping>
-                    <clear />
-                    <packageSource key="nuget.org">
-                      <package pattern="*" />
-                    </packageSource>
-                    <packageSource key="local-packages">
-                      <package pattern="CPS.ComplexCases.API.HttpTelemetry" />
-                    </packageSource>
-                  </packageSourceMapping>
-                </configuration>
-                "@
-                $nugetConfigPath = "$(Build.SourcesDirectory)/NuGet.Config"
-                Set-Content -Path $nugetConfigPath -Value $nugetConfigContent
-                Write-Host "NuGet.Config created at $nugetConfigPath"
-
-          - task: DotNetCoreCLI@2
-            displayName: 'Restore FileTransfer API'
-            inputs:
-              command: 'restore'
-              projects: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
-              nugetConfigPath: '$(Build.SourcesDirectory)/NuGet.Config'
-
-          - task: DotNetCoreCLI@2
-            displayName: 'Build FileTransfer API'
-            inputs:
-              command: 'build'
-              projects: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
-              arguments: '--configuration $(buildConfiguration)'
-
-          - task: DotNetCoreCLI@2
-            displayName: 'Publish FileTransfer API'
-            inputs:
-              command: 'publish'
-              projects: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
-              publishWebProjects: false
-              zipAfterPublish: false
-              arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/FileTransferAPI --no-restore --self-contained false /p:PublishReadyToRun=false /p:SourceRevisionId=$(Build.SourceVersion)'
-
-          - task: Bash@3
-            displayName: 'Debug and Create Clean Deployment Package - FileTransfer API'
-            inputs:
-              targetType: 'inline'
-              script: |
-                echo "=== DEBUGGING FILETRANSFER API PUBLISH OUTPUT ==="
-                echo "Contents of FileTransferAPI directory:"
-                find "$(Build.ArtifactStagingDirectory)/FileTransferAPI" -type f | head -20
-                
-                echo ""
-                echo "Directory structure:"
-                find "$(Build.ArtifactStagingDirectory)/FileTransferAPI" -type d
-                
-                # Find where the actual function files are
-                echo ""
-                echo "Looking for host.json:"
-                find "$(Build.ArtifactStagingDirectory)/FileTransferAPI" -name "host.json" -type f
-                
-                echo ""
-                echo "Looking for .dll files:"
-                find "$(Build.ArtifactStagingDirectory)/FileTransferAPI" -name "*.dll" -type f | head -5
-                
-                echo ""
-                echo "🔍 Checking for .azurefunctions folder:"
-                find "$(Build.ArtifactStagingDirectory)/FileTransferAPI" -name ".azurefunctions" -type d
-                
-                # Create a clean directory with just the function files
-                mkdir -p "$(Build.ArtifactStagingDirectory)/FileTransferAPI_Clean"
-                
-                # Find the directory that contains host.json (this should be our function root)
-                FUNCTION_ROOT=$(find "$(Build.ArtifactStagingDirectory)/FileTransferAPI" -name "host.json" -type f -exec dirname {} \;)
-                echo ""
-                echo "Function root directory: $FUNCTION_ROOT"
-                
-                if [ -n "$FUNCTION_ROOT" ]; then
-                  echo "Copying files from function root to clean directory..."
-                  cp -r "$FUNCTION_ROOT"/* "$(Build.ArtifactStagingDirectory)/FileTransferAPI_Clean/"
-                  
-                  # CRITICAL: Also copy any hidden files (like .azurefunctions)
-                  cp -r "$FUNCTION_ROOT"/.[^.]* "$(Build.ArtifactStagingDirectory)/FileTransferAPI_Clean/" 2>/dev/null || true
-                  
-                  echo ""
-                  echo "Clean publish directory contents (including hidden files):"
-                  ls -la "$(Build.ArtifactStagingDirectory)/FileTransferAPI_Clean/"
-                  
-                  echo ""
-                  echo "✅ Verifying .azurefunctions folder was copied:"
-                  if [ -d "$(Build.ArtifactStagingDirectory)/FileTransferAPI_Clean/.azurefunctions" ]; then
-                    echo "✅ .azurefunctions folder found!"
-                    echo "Contents:"
-                    ls -la "$(Build.ArtifactStagingDirectory)/FileTransferAPI_Clean/.azurefunctions/"
-                  else
-                    echo "❌ .azurefunctions folder missing - functions may not be discovered!"
-                  fi
-                  
-                  echo ""
-                  echo "Creating zip from clean directory..."
-                  cd "$(Build.ArtifactStagingDirectory)/FileTransferAPI_Clean"
-                  zip -r "../lacc-filetransfer-api-$(Build.BuildId).zip" .
-                  
-                  echo ""
-                  echo "Final zip contents:"
-                  unzip -l "../lacc-filetransfer-api-$(Build.BuildId).zip" | head -20
-                  
-                  echo ""
-                  echo "Verifying host.json is at root:"
-                  if unzip -l "../lacc-filetransfer-api-$(Build.BuildId).zip" | grep -E "^\s*[0-9]+.*host\.json$"; then
-                    echo "✅ host.json found at root level!"
-                  else
-                    echo "❌ ERROR: host.json not found at root level!"
-                    exit 1
-                  fi
-                  
-                  echo ""
-                  echo "Verifying .azurefunctions folder in zip:"
-                  if unzip -l "../lacc-filetransfer-api-$(Build.BuildId).zip" | grep -E "\.azurefunctions/"; then
-                    echo "✅ .azurefunctions folder found in zip!"
-                  else
-                    echo "❌ WARNING: .azurefunctions folder not found in zip!"
-                  fi
-                else
-                  echo "ERROR: Could not find host.json in publish output!"
-                  exit 1
-                fi
-
-          - task: PublishBuildArtifacts@1
-            displayName: 'Publish FileTransfer API Artifact'
-            inputs:
-              pathtoPublish: '$(Build.ArtifactStagingDirectory)/lacc-filetransfer-api-$(Build.BuildId).zip'
-              artifactName: 'lacc-filetransfer-api-drop'
+          # Build and publish FileTransfer API
+          - template: ../../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
+              projectName: 'lacc-filetransfer-api-drop'
+              buildConfiguration: $(buildConfiguration)
+              dotNetVersion: $(dotNetVersion)
+              useLocalNuGet: true
+              publishOutput: true
+              runTests: false
 
       - job: Package_Database_Scripts
         displayName: 'LACC - Package Database Migration Scripts'
-        dependsOn: Build_Solution
+        dependsOn: Build_And_Test_Solution
         pool:
           vmImage: ubuntu-latest
         steps:
-          - task: UseDotNet@2
-            displayName: 'Use .NET SDK'
-            inputs:
-              packageType: 'sdk'
-              version: $(dotNetVersion)
-
-          - task: DownloadPipelineArtifact@2
-            displayName: 'Download HttpTelemetry NuGet Package'
-            inputs:
-              artifact: 'localnuget'
-              path: '$(Build.SourcesDirectory)/localnuget'
-
-          - task: PowerShell@2
-            displayName: 'Create NuGet.Config'
-            inputs:
-              targetType: 'inline'
-              script: |
-                $nugetConfigContent = @"
-                <?xml version="1.0" encoding="utf-8"?>
-                <configuration>
-                  <packageSources>
-                    <clear />
-                    <add key="local-packages" value="$(Build.SourcesDirectory)/localnuget" />
-                    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
-                  </packageSources>
-                  <packageSourceMapping>
-                    <clear />
-                    <packageSource key="nuget.org">
-                      <package pattern="*" />
-                    </packageSource>
-                    <packageSource key="local-packages">
-                      <package pattern="CPS.ComplexCases.API.HttpTelemetry" />
-                    </packageSource>
-                  </packageSourceMapping>
-                </configuration>
-                "@
-                $nugetConfigPath = "$(Build.SourcesDirectory)/NuGet.Config"
-                Set-Content -Path $nugetConfigPath -Value $nugetConfigContent
-                Write-Host "NuGet.Config created at $nugetConfigPath"
+          # Build Data project with dependencies
+          - template: ../../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
+              projectName: 'Database'
+              buildConfiguration: $(buildConfiguration)
+              dotNetVersion: $(dotNetVersion)
+              useLocalNuGet: true
+              publishOutput: false
+              runTests: false
 
           - task: DotNetCoreCLI@2
             displayName: 'Install EF Core Tools'
@@ -600,12 +167,11 @@ stages:
               rootFolderOrFile: '$(Build.ArtifactStagingDirectory)'
               includeRootFolder: false
               archiveType: 'zip'
-              archiveFile: '$(Build.ArtifactStagingDirectory)/database-scripts-$(Build.BuildId).zip'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/database-scripts.zip'
               replaceExistingArchive: true
-              excludeRootFolder: true
 
           - task: PublishBuildArtifacts@1
-            displayName: 'Publish Database Scripts Artifact'
+            displayName: 'Publish Database Scripts'
             inputs:
-              pathtoPublish: '$(Build.ArtifactStagingDirectory)/database-scripts-$(Build.BuildId).zip'
+              pathtoPublish: '$(Build.ArtifactStagingDirectory)/database-scripts.zip'
               artifactName: 'database-scripts-drop' 
