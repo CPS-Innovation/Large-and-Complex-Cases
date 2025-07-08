@@ -9,6 +9,7 @@ type RenameTransferFilePageProps = {
   handleCancel: () => void;
   handleContinue: (name: string) => void;
 };
+const MAX_FILE_PATH_CHARACTERS = 260;
 
 export const RenameTransferFilePage: React.FC<RenameTransferFilePageProps> = ({
   backLinkUrl,
@@ -25,7 +26,7 @@ export const RenameTransferFilePage: React.FC<RenameTransferFilePageProps> = ({
 
   const getCharactersText = useCallback(() => {
     const characterCount = `${relativeFilePath}/${inputValue}`.length;
-    if (characterCount > 260)
+    if (characterCount > MAX_FILE_PATH_CHARACTERS)
       return (
         <p>
           File path length:
@@ -65,7 +66,10 @@ export const RenameTransferFilePage: React.FC<RenameTransferFilePageProps> = ({
           className={styles.fileNameInput}
         />
         {getCharactersText()}
-        <p>You must reduce this to 260 characters or fewer.</p>
+        <p>
+          You must reduce this to {MAX_FILE_PATH_CHARACTERS} characters or
+          fewer.
+        </p>
         <div className={styles.btnWrapper}>
           <Button onClick={() => handleContinue(inputValue)}>Continue</Button>
           <LinkButton onClick={handleCancel}>Cancel</LinkButton>

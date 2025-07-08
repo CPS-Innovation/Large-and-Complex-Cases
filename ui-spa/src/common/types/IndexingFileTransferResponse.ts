@@ -1,7 +1,6 @@
 export type IndexingError = {
   id: string;
   sourcePath: string;
-  errorType: string;
 };
 
 export type IndexingFileTransferResponse = {

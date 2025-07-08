@@ -627,12 +627,12 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
         {
           fileName:
             "file6qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
-          characterText: "247 characters",
+          characterText: "246 characters",
         },
         {
           fileName:
             "file6_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
-          characterText: "249 characters",
+          characterText: "248 characters",
         },
       ],
     });

@@ -12,14 +12,16 @@ import FolderIcon from "../../../components/svgs/folder.svg?react";
 import FileIcon from "../../../components/svgs/file.svg?react";
 import {
   getGroupedResolvePaths,
-  getMappedResolvePathFiles,
   ResolvePathFileType,
 } from "../../../common/utils/getGroupedResolvePaths";
+import { getMappedResolvePathFiles } from "../../../common/utils/getMappedResolvePathFiles";
 import { RenameTransferFilePage } from "./RenameTransferFilePage";
 import { initiateFileTransfer } from "../../../apis/gateway-api";
 import { EgressTranferPayloadSourcePath } from "../../../common/types/InitiateFileTransferPayload";
 import { TransferResolvePageLocationState } from "../../../common/types/TransferResolvePageLocationState";
 import styles from "./TransferResolveFilePathPage.module.scss";
+
+const MAX_FILE_PATH_CHARACTERS = 260;
 
 const TransferResolveFilePathPage = () => {
   const navigate = useNavigate();
@@ -48,7 +50,9 @@ const TransferResolveFilePathPage = () => {
   const largePathFiles = useMemo(
     () =>
       resolvePathFiles.find(
-        (file) => `${file.relativeFinalPath}/${file.sourceName}`.length > 260,
+        (file) =>
+          `${file.relativeFinalPath}/${file.sourceName}`.length >
+          MAX_FILE_PATH_CHARACTERS,
       ),
     [resolvePathFiles],
   );
@@ -65,7 +69,7 @@ const TransferResolveFilePathPage = () => {
   }, []);
 
   const getCharactersTag = useCallback((filePath: string) => {
-    if (filePath.length > 260)
+    if (filePath.length > MAX_FILE_PATH_CHARACTERS)
       return (
         <Tag gdsTagColour="red" className={styles.statusTag}>
           {filePath.length} characters
@@ -174,7 +178,8 @@ const TransferResolveFilePathPage = () => {
             type="success"
             data-testid="resolve-path-success-notification-banner"
           >
-            All file are now under the 260 character limit
+            All file are now under the {MAX_FILE_PATH_CHARACTERS} character
+            limit
           </NotificationBanner>
         </div>
       )}
@@ -183,8 +188,11 @@ const TransferResolveFilePathPage = () => {
         <InsetText data-testId="resolve-file-path-inset-text">
           <p>
             You cannot complete the transfer because{" "}
-            <b>{resolvePathFiles.length} file paths</b> are longer than the
-            shared drive limit of 260 characters.
+            <b>{resolvePathFiles.length} file paths </b>
+            are longer than the shared drive limit of {
+              MAX_FILE_PATH_CHARACTERS
+            }{" "}
+            characters.
           </p>
           <p>
             You can fix this by choosing a different destination folder with
