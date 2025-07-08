@@ -65,7 +65,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
     );
     const section2ListItems = await section.locator("ul").locator("li").all();
     await expect(section2ListItems).toHaveLength(expectedData.filePaths.length);
-    expectedData.filePaths.forEach(async (data, index) => {
+    await expectedData.filePaths.forEach(async (data, index) => {
       await expect(
         section2ListItems[index].getByTestId("file-name-wrapper"),
       ).toHaveText(expectedData.filePaths[index].fileName);
@@ -536,6 +536,18 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
             "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination",
           validationErrors: [
             {
+              id: "id_6",
+              sourcePath:
+                "file6qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+              errorType: "",
+            },
+            {
+              id: "id_6_1",
+              sourcePath:
+                "file6_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+              errorType: "",
+            },
+            {
               id: "id_3",
               sourcePath:
                 "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
@@ -559,18 +571,6 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
                 "egress/folder4/folder5/file5_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
               errorType: "",
             },
-            {
-              id: "id_6",
-              sourcePath:
-                "file6qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
-              errorType: "",
-            },
-            {
-              id: "id_6_1",
-              sourcePath:
-                "file6_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
-              errorType: "",
-            },
           ],
           files: [
             { id: "id_1", sourcePath: "egress/folder1/file1.pdf" },
@@ -585,10 +585,25 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       "/case/12/case-management/transfer-resolve-file-path",
     );
     await expect(page.locator("h1")).toHaveText("File paths are too long");
-    await expect(page.locator("section")).toHaveCount(3);
-    const sections = await page.locator("section").all();
 
+    const sections = await page.locator("section").all();
     await validateFilePathErrorSection(sections[0], {
+      relativePath: "folder-1-0",
+      filePaths: [
+        {
+          fileName:
+            "file6qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+          characterText: "246 characters",
+        },
+        {
+          fileName:
+            "file6_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+          characterText: "248 characters",
+        },
+      ],
+    });
+
+    await validateFilePathErrorSection(sections[1], {
       relativePath: "egress/folder3",
       filePaths: [
         {
@@ -604,7 +619,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       ],
     });
 
-    await validateFilePathErrorSection(sections[1], {
+    await validateFilePathErrorSection(sections[2], {
       relativePath: "egress/folder4/folder5",
       filePaths: [
         {
@@ -621,21 +636,13 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       ],
     });
 
-    await validateFilePathErrorSection(sections[2], {
-      relativePath: "folder-1-0",
-      filePaths: [
-        {
-          fileName:
-            "file6qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
-          characterText: "246 characters",
-        },
-        {
-          fileName:
-            "file6_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
-          characterText: "248 characters",
-        },
-      ],
-    });
+    await expect(page.locator("section")).toHaveCount(3);
+    await expect(
+      page.getByRole("button", { name: "Start transfer" }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Cancel" }),
+    ).not.toBeDisabled();
   });
   test("Shouldnt be able to directly land on the resolve transfer path files page", async ({
     page,

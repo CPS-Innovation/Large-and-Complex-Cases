@@ -432,9 +432,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       const validationPayload = getValidateTransferPayload();
       setTransferStatus("validating");
       response = await indexingFileTransfer(validationPayload);
-      console.log("validated with errors response....", response);
       if (response.isInvalid) {
-        console.log("validated with errors....");
         setTransferStatus("validated-with-errors");
         navigate(`/case/${caseId}/case-management/transfer-resolve-file-path`, {
           state: {
@@ -531,6 +529,9 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       setTransferId,
     ],
   );
+  const isComponentUnmounted = useCallback(() => {
+    return unMounting.current;
+  }, []);
 
   useEffect(() => {
     unMounting.current = false;
@@ -546,11 +547,16 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     setTransferStatus("transferring");
     pollTransferStatus(
       transferId,
-      unMounting.current,
+      isComponentUnmounted,
       handleStatusResponse,
       setApiRequestError,
     );
-  }, [transferId, setTransferStatus, handleStatusResponse]);
+  }, [
+    transferId,
+    setTransferStatus,
+    isComponentUnmounted,
+    handleStatusResponse,
+  ]);
 
   const activeTransferMessage = useMemo(() => {
     if (!transferStatusData) {
