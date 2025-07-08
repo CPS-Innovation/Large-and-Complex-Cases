@@ -7,8 +7,6 @@ using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
 using CPS.ComplexCases.Egress.Models.Args;
 using CPS.ComplexCases.Egress.Models.Response;
-using FluentAssertions;
-using FluentAssertions.Execution;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -105,12 +103,9 @@ public class EgressClientTests
 
         // Assert
         var workspace = Assert.Single(result.Data);
-        using (new AssertionScope())
-        {
-            workspace.Should().NotBeNull();
-            workspace.Id.Should().Be(workspaceId);
-            workspace.Name.Should().Be(workspaceName);
-        }
+        Assert.NotNull(workspace);
+        Assert.Equal(workspaceId, workspace.Id);
+        Assert.Equal(workspaceName, workspace.Name);
 
         VerifyRequestFactoryCalls(findWorkspaceArg, workspaceId, token);
     }
@@ -160,7 +155,7 @@ public class EgressClientTests
         var result = await _client.ListWorkspacesAsync(arg, email);
 
         // Assert
-        result.Data.Should().BeEmpty();
+        Assert.Empty(result.Data);
         VerifyRequestFactoryCalls(arg, workspaceId, token);
     }
 

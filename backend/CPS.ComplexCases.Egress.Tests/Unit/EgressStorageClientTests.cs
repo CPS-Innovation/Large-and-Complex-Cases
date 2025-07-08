@@ -11,8 +11,6 @@ using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
 using CPS.ComplexCases.Egress.Models.Args;
 using CPS.ComplexCases.Egress.Models.Response;
-using FluentAssertions;
-using FluentAssertions.Execution;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -90,14 +88,11 @@ public class EgressStorageClientTests : IDisposable
         await using var result = await _client.OpenReadStreamAsync(path, workspaceId, fileId);
 
         // Assert
-        using (new AssertionScope())
-        {
-            result.Should().NotBeNull();
+        Assert.NotNull(result);
 
-            using var reader = new StreamReader(result);
-            var content = await reader.ReadToEndAsync();
-            content.Should().Be(fileContent);
-        }
+        using var reader = new StreamReader(result);
+        var content = await reader.ReadToEndAsync();
+        Assert.Equal(fileContent, content);
 
         VerifyTokenRequest();
         VerifyDocumentRequest(workspaceId, fileId, token);
@@ -120,8 +115,8 @@ public class EgressStorageClientTests : IDisposable
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(
             () => _client.OpenReadStreamAsync(path, null, fileId));
 
-        exception.ParamName.Should().Be("workspaceId");
-        exception.Message.Should().Contain("Workspace ID cannot be null.");
+        Assert.Equal("workspaceId", exception.ParamName);
+        Assert.Contains("Workspace ID cannot be null.", exception.Message);
     }
 
     [Fact]
@@ -141,10 +136,9 @@ public class EgressStorageClientTests : IDisposable
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(
             () => _client.OpenReadStreamAsync(path, workspaceId, null));
 
-        exception.ParamName.Should().Be("fileId");
-        exception.Message.Should().Contain("File ID cannot be null.");
+        Assert.Equal("fileId", exception.ParamName);
+        Assert.Contains("File ID cannot be null.", exception.Message);
     }
-
 
     [Fact]
     public async Task UploadChunkAsync_WithValidParameters_ReturnsUploadChunkResult()
@@ -176,11 +170,8 @@ public class EgressStorageClientTests : IDisposable
         var result = await _client.UploadChunkAsync(session, chunkNumber, chunkData, contentRange);
 
         // Assert
-        using (new AssertionScope())
-        {
-            result.Should().NotBeNull();
-            result.TransferDirection.Should().Be(TransferDirection.NetAppToEgress);
-        }
+        Assert.NotNull(result);
+        Assert.Equal(TransferDirection.NetAppToEgress, result.TransferDirection);
 
         VerifyTokenRequest();
         VerifyUploadChunkRequest(uploadId, workspaceId, contentRange, chunkData, token);
@@ -208,8 +199,8 @@ public class EgressStorageClientTests : IDisposable
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(
             () => _client.UploadChunkAsync(session, chunkNumber, chunkData));
 
-        exception.ParamName.Should().Be("WorkspaceId");
-        exception.Message.Should().Contain("Workspace ID cannot be null.");
+        Assert.Equal("WorkspaceId", exception.ParamName);
+        Assert.Contains("Workspace ID cannot be null.", exception.Message);
     }
 
     [Fact]
@@ -264,8 +255,8 @@ public class EgressStorageClientTests : IDisposable
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(
             () => _client.CompleteUploadAsync(session));
 
-        exception.ParamName.Should().Be("WorkspaceId");
-        exception.Message.Should().Contain("Workspace ID cannot be null.");
+        Assert.Equal("WorkspaceId", exception.ParamName);
+        Assert.Contains("Workspace ID cannot be null.", exception.Message);
     }
 
     [Fact]
@@ -286,8 +277,8 @@ public class EgressStorageClientTests : IDisposable
         var exception = await Assert.ThrowsAsync<ArgumentException>(
             () => _client.ListFilesForTransferAsync(selectedEntities, null));
 
-        exception.ParamName.Should().Be("workspaceId");
-        exception.Message.Should().Contain("Workspace ID cannot be null or empty.");
+        Assert.Equal("workspaceId", exception.ParamName);
+        Assert.Contains("Workspace ID cannot be null or empty.", exception.Message);
     }
 
     [Fact]
@@ -322,17 +313,14 @@ public class EgressStorageClientTests : IDisposable
         var result = await _client.ListFilesForTransferAsync(selectedEntities, workspaceId);
 
         // Assert
-        using (new AssertionScope())
-        {
-            result.Should().NotBeNull();
-            result.Should().HaveCount(2);
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count());
 
-            var resultArray = result.ToArray();
-            resultArray[0].Id.Should().Be(file1.FileId);
-            resultArray[0].SourcePath.Should().Be(Path.GetFileName(file1.Path));
-            resultArray[1].Id.Should().Be(file2.FileId);
-            resultArray[1].SourcePath.Should().Be(Path.GetFileName(file2.Path));
-        }
+        var resultArray = result.ToArray();
+        Assert.Equal(file1.FileId, resultArray[0].Id);
+        Assert.Equal(Path.GetFileName(file1.Path), resultArray[0].SourcePath);
+        Assert.Equal(file2.FileId, resultArray[1].Id);
+        Assert.Equal(Path.GetFileName(file2.Path), resultArray[1].SourcePath);
 
         VerifyTokenRequest();
     }
@@ -359,24 +347,24 @@ public class EgressStorageClientTests : IDisposable
         var listResponse = new ListCaseMaterialResponse
         {
             Data = new List<ListCaseMaterialDataResponse>
-        {
-            new ListCaseMaterialDataResponse
             {
-                Id = _fixture.Create<string>(),
-                FileName = "file1.txt",
-                Path = "/path/to/folder/file1.txt",
-                IsFolder = false,
-                Version = 1
+                new ListCaseMaterialDataResponse
+                {
+                    Id = _fixture.Create<string>(),
+                    FileName = "file1.txt",
+                    Path = "/path/to/folder/file1.txt",
+                    IsFolder = false,
+                    Version = 1
+                },
+                new ListCaseMaterialDataResponse
+                {
+                    Id = _fixture.Create<string>(),
+                    FileName = "file2.txt",
+                    Path = "/path/to/folder/file2.txt",
+                    IsFolder = false,
+                    Version = 1
+                }
             },
-            new ListCaseMaterialDataResponse
-            {
-                Id = _fixture.Create<string>(),
-                FileName = "file2.txt",
-                Path = "/path/to/folder/file2.txt",
-                IsFolder = false,
-                Version = 1
-            }
-        },
             DataInfo = new DataInfoResponse
             {
                 TotalResults = 2,
@@ -397,16 +385,16 @@ public class EgressStorageClientTests : IDisposable
         var result = await _client.ListFilesForTransferAsync(selectedEntities, workspaceId);
 
         // Assert
-        using (new AssertionScope())
-        {
-            result.Should().NotBeNull();
-            result.Should().HaveCount(2);
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count());
 
-            var resultArray = result.ToArray();
-            resultArray.Should().AllSatisfy(file => file.SourcePath.Should().StartWith("folder/"));
-            resultArray.Should().Contain(file => file.SourcePath.EndsWith("file1.txt"));
-            resultArray.Should().Contain(file => file.SourcePath.EndsWith("file2.txt"));
+        var resultArray = result.ToArray();
+        foreach (var file in resultArray)
+        {
+            Assert.StartsWith("folder/", file.SourcePath);
         }
+        Assert.Contains(resultArray, file => file.SourcePath.EndsWith("file1.txt"));
+        Assert.Contains(resultArray, file => file.SourcePath.EndsWith("file2.txt"));
 
         VerifyTokenRequest();
         VerifyListMaterialRequestWithFolderId(workspaceId, folderId, token);
@@ -437,24 +425,24 @@ public class EgressStorageClientTests : IDisposable
         var parentListResponse = new ListCaseMaterialResponse
         {
             Data = new List<ListCaseMaterialDataResponse>
-        {
-            new ListCaseMaterialDataResponse
             {
-                Id = _fixture.Create<string>(),
-                FileName = "parent-file.txt",
-                Path = "/parent",
-                IsFolder = false,
-                Version = 1
+                new ListCaseMaterialDataResponse
+                {
+                    Id = _fixture.Create<string>(),
+                    FileName = "parent-file.txt",
+                    Path = "/parent",
+                    IsFolder = false,
+                    Version = 1
+                },
+                new ListCaseMaterialDataResponse
+                {
+                    Id = subFolderId,
+                    FileName = "subfolder",
+                    Path = "/parent/subfolder",
+                    IsFolder = true,
+                    Version = 1
+                }
             },
-            new ListCaseMaterialDataResponse
-            {
-                Id = subFolderId,
-                FileName = "subfolder",
-                Path = "/parent/subfolder",
-                IsFolder = true,
-                Version = 1
-            }
-        },
             DataInfo = new DataInfoResponse
             {
                 TotalResults = 2,
@@ -468,24 +456,24 @@ public class EgressStorageClientTests : IDisposable
         var subListResponse = new ListCaseMaterialResponse
         {
             Data = new List<ListCaseMaterialDataResponse>
-        {
-            new ListCaseMaterialDataResponse
             {
-                Id = _fixture.Create<string>(),
-                FileName = "sub-file1.txt",
-                Path = "/parent/subfolder",
-                IsFolder = false,
-                Version = 1
+                new ListCaseMaterialDataResponse
+                {
+                    Id = _fixture.Create<string>(),
+                    FileName = "sub-file1.txt",
+                    Path = "/parent/subfolder",
+                    IsFolder = false,
+                    Version = 1
+                },
+                new ListCaseMaterialDataResponse
+                {
+                    Id = _fixture.Create<string>(),
+                    FileName = "sub-file2.txt",
+                    Path = "/parent/subfolder",
+                    IsFolder = false,
+                    Version = 1
+                }
             },
-            new ListCaseMaterialDataResponse
-            {
-                Id = _fixture.Create<string>(),
-                FileName = "sub-file2.txt",
-                Path = "/parent/subfolder",
-                IsFolder = false,
-                Version = 1
-            }
-        },
             DataInfo = new DataInfoResponse
             {
                 TotalResults = 2,
@@ -508,16 +496,13 @@ public class EgressStorageClientTests : IDisposable
         var result = await _client.ListFilesForTransferAsync(selectedEntities, workspaceId);
 
         // Assert
-        using (new AssertionScope())
-        {
-            result.Should().NotBeNull();
-            result.Should().HaveCount(3);
+        Assert.NotNull(result);
+        Assert.Equal(3, result.Count());
 
-            var resultArray = result.ToArray();
-            resultArray.Should().Contain(file => file.SourcePath == "parent/parent-file.txt");
-            resultArray.Should().Contain(file => file.SourcePath == "parent/subfolder/sub-file1.txt");
-            resultArray.Should().Contain(file => file.SourcePath == "parent/subfolder/sub-file2.txt");
-        }
+        var resultArray = result.ToArray();
+        Assert.Contains(resultArray, file => file.SourcePath == "parent/parent-file.txt");
+        Assert.Contains(resultArray, file => file.SourcePath == "parent/subfolder/sub-file1.txt");
+        Assert.Contains(resultArray, file => file.SourcePath == "parent/subfolder/sub-file2.txt");
 
         VerifyTokenRequest();
         VerifyListMaterialRequestWithFolderId(workspaceId, parentFolderId, token);
@@ -545,7 +530,6 @@ public class EgressStorageClientTests : IDisposable
         SetupCreateUploadRequest(fullDestinationPath, fileSize, workspaceId, fileName, token);
         SetupCreateFolderRequest(workspaceId, token);
 
-
         // Upload fails with 404, folder creation fails with 500
         SetupHttpMockResponsesWithStatus(
             ("token", tokenResponse, HttpStatusCode.OK),
@@ -557,7 +541,7 @@ public class EgressStorageClientTests : IDisposable
         var exception = await Assert.ThrowsAsync<HttpRequestException>(
             () => _client.InitiateUploadAsync(destinationPath, fileSize, sourcePath, workspaceId, relativePath));
 
-        exception.Message.Should().Contain("500");
+        Assert.Contains("500", exception.Message);
 
         VerifyTokenRequest();
         VerifyCreateUploadRequest(fullDestinationPath, fileSize, workspaceId, fileName, token);
@@ -597,7 +581,7 @@ public class EgressStorageClientTests : IDisposable
         var exception = await Assert.ThrowsAsync<HttpRequestException>(
             () => _client.InitiateUploadAsync(destinationPath, fileSize, sourcePath, workspaceId, relativePath));
 
-        exception.Message.Should().Contain("403");
+        Assert.Contains("403", exception.Message);
 
         VerifyTokenRequest();
         VerifyCreateUploadRequest(fullDestinationPath, fileSize, workspaceId, fileName, token);
@@ -635,7 +619,7 @@ public class EgressStorageClientTests : IDisposable
         var exception = await Assert.ThrowsAsync<HttpRequestException>(
             () => _client.InitiateUploadAsync(destinationPath, fileSize, sourcePath, workspaceId, relativePath));
 
-        exception.Message.Should().Contain("403");
+        Assert.Contains("403", exception.Message);
 
         VerifyTokenRequest();
         VerifyCreateUploadRequest(fullDestinationPath, fileSize, workspaceId, fileName, token);

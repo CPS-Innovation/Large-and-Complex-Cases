@@ -38,7 +38,8 @@ public class FilePathValidatorTests
     [Fact]
     public void Should_Have_Error_When_FilePath_Has_Invalid_Characters()
     {
-        var invalidPath = "invalid*file?.txt";
+        // Use null character which is invalid on both Windows and Linux
+        var invalidPath = "invalid\0file.txt";
         var paths = new List<DestinationPath> { new() { Path = invalidPath } };
         var result = _validator.TestValidate(paths);
         result.ShouldHaveValidationErrorFor("paths[0].Path")

@@ -161,8 +161,8 @@ public class ListFilesForTransferTests
         var okResult = Assert.IsType<OkObjectResult>(result);
         var filesResult = Assert.IsType<FilesForTransferResult>(okResult.Value);
         filesResult.IsInvalid.Should().BeTrue();
-
         filesResult.ValidationErrors.Should().NotBeNull();
+
         var error = filesResult.ValidationErrors.First();
         error.Should().NotBeNull();
         error.ErrorType.Should().Be(TransferFailedType.PathLengthExceeded);

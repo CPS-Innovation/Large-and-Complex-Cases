@@ -1,0 +1,121 @@
+parameters:
+  projectPath: ''
+  projectName: ''
+  buildConfiguration: 'Release'
+  dotNetVersion: '8.x'
+  useLocalNuGet: false
+  publishOutput: false
+  runTests: false
+  testResultsDirectory: ''
+  coverageReportsDirectory: ''
+
+steps:
+  - task: UseDotNet@2
+    displayName: 'Use .NET SDK'
+    inputs:
+      packageType: 'sdk'
+      version: ${{ parameters.dotNetVersion }}
+
+  # Download local NuGet package if needed
+  - ${{ if eq(parameters.useLocalNuGet, true) }}:
+    - task: DownloadPipelineArtifact@2
+      displayName: 'Download Local NuGet Package'
+      inputs:
+        artifact: 'localnuget'
+        path: '$(Build.SourcesDirectory)/localnuget'
+
+    - task: PowerShell@2
+      displayName: 'Create NuGet.Config'
+      inputs:
+        targetType: 'inline'
+        script: |
+          $nugetConfigContent = @"
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <packageSources>
+              <clear />
+              <add key="local-packages" value="$(Build.SourcesDirectory)/localnuget" />
+              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+            </packageSources>
+            <packageSourceMapping>
+              <packageSource key="local-packages">
+                <package pattern="CPS.ComplexCases.*" />
+              </packageSource>
+              <packageSource key="nuget.org">
+                <package pattern="*" />
+              </packageSource>
+            </packageSourceMapping>
+            <config>
+              <add key="globalPackagesFolder" value="$(Build.SourcesDirectory)/packages" />
+            </config>
+            <packageRestore>
+              <add key="enabled" value="True" />
+              <add key="automatic" value="True" />
+            </packageRestore>
+          </configuration>
+          "@
+          Set-Content -Path "$(Build.SourcesDirectory)/NuGet.Config" -Value $nugetConfigContent -Encoding UTF8
+
+  # Restore packages
+  - task: DotNetCoreCLI@2
+    displayName: 'Restore ${{ parameters.projectName }}'
+    inputs:
+      command: 'restore'
+      projects: '${{ parameters.projectPath }}'
+      ${{ if eq(parameters.useLocalNuGet, true) }}:
+        nugetConfigPath: '$(Build.SourcesDirectory)/NuGet.Config'
+        feedsToUse: 'config'
+
+  # Build project
+  - task: DotNetCoreCLI@2
+    displayName: 'Build ${{ parameters.projectName }}'
+    inputs:
+      command: 'build'
+      projects: '${{ parameters.projectPath }}'
+      arguments: '--configuration ${{ parameters.buildConfiguration }} --no-restore'
+
+  # Run tests if enabled
+  - ${{ if eq(parameters.runTests, true) }}:
+    - task: DotNetCoreCLI@2
+      displayName: 'Run Tests'
+      inputs:
+        command: 'test'
+        projects: '${{ parameters.projectPath }}'
+        arguments: '--configuration ${{ parameters.buildConfiguration }} --no-build --collect:"XPlat Code Coverage;Format=cobertura" --settings backend/CodeCoverage.runsettings'
+        publishTestResults: true
+        testResultsFormat: 'VSTest'
+        testResultsFiles: '**/*.trx'
+        testRunTitle: '${{ parameters.projectName }} Tests'
+        workingDirectory: '$(Build.SourcesDirectory)'
+        resultsDirectory: '${{ parameters.testResultsDirectory }}'
+      continueOnError: true
+
+    - task: PublishCodeCoverageResults@1
+      displayName: 'Publish Code Coverage'
+      inputs:
+        codeCoverageTool: 'Cobertura'
+        summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+        failIfCoverageEmpty: true
+      condition: succeededOrFailed()
+
+    # Generate detailed HTML coverage report
+    - template: dotnet-code-coverage-steps.yml
+      parameters:
+        coverageReportsDirectory: ${{ parameters.coverageReportsDirectory }}
+        projectName: ${{ parameters.projectName }}
+
+  # Publish if enabled
+  - ${{ if eq(parameters.publishOutput, true) }}:
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish ${{ parameters.projectName }}'
+      inputs:
+        command: 'publish'
+        projects: '${{ parameters.projectPath }}'
+        publishWebProjects: false
+        arguments: '--configuration ${{ parameters.buildConfiguration }} --output $(Build.ArtifactStagingDirectory)/${{ parameters.projectName }} --no-restore --self-contained false /p:PublishReadyToRun=false /p:SourceRevisionId=$(Build.SourceVersion)'
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish ${{ parameters.projectName }} Artifact'
+      inputs:
+        pathtoPublish: '$(Build.ArtifactStagingDirectory)/${{ parameters.projectName }}'
+        artifactName: '${{ parameters.projectName }}' 

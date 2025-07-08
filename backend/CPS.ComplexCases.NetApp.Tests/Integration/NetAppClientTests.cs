@@ -1,6 +1,5 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Amazon.Runtime;
 using Amazon.S3;
 using CPS.ComplexCases.NetApp.Client;
@@ -9,8 +8,6 @@ using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.WireMock.Mappings;
 using CPS.ComplexCases.NetApp.Wrappers;
 using CPS.ComplexCases.WireMock.Core;
-using FluentAssertions;
-using Moq;
 using WireMock.Server;
 
 namespace CPS.ComplexCases.NetApp.Tests.Integration
@@ -62,7 +59,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             var result = await _client.CreateBucketAsync(arg);
 
             // Assert
-            result.Should().BeTrue();
+            Assert.True(result);
         }
 
         [Fact]
@@ -76,8 +73,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             var result = await _client.FindBucketAsync(arg);
 
             // Assert
-            result.Should().NotBeNull();
-            result.BucketName.Should().Be(bucketName);
+            Assert.NotNull(result);
+            Assert.Equal(bucketName, result.BucketName);
         }
 
         [Fact]
@@ -87,8 +84,9 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             var result = await _client.ListBucketsAsync(_netAppArgFactory.CreateListBucketsArg());
 
             // Assert
-            result.Should().NotBeNullOrEmpty();
-            result.Count().Should().BeGreaterThanOrEqualTo(1);
+            Assert.NotNull(result);
+            Assert.True(result.Any());
+            Assert.True(result.Count() >= 1);
         }
 
         [Fact]
@@ -104,7 +102,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             var result = await _client.UploadObjectAsync(arg);
 
             // Assert
-            result.Should().BeTrue();
+            Assert.True(result);
         }
 
         [Fact]
@@ -119,10 +117,10 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             var result = await _client.ListObjectsInBucketAsync(arg);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Data.BucketName.Should().Be(bucketName);
-            result.Data.FileData.Should().HaveCount(2);
-            result.Data.FileData.ToList()[0].Path.Should().Be(objectName);
+            Assert.NotNull(result);
+            Assert.Equal(bucketName, result.Data.BucketName);
+            Assert.Equal(2, result.Data.FileData.Count());
+            Assert.Equal(objectName, result.Data.FileData.ToList()[0].Path);
         }
 
         [Fact]
@@ -137,9 +135,9 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             var result = await _client.GetObjectAsync(arg);
 
             // Assert
-            result.Should().NotBeNull();
-            result.BucketName.Should().Be(bucketName);
-            result.Key.Should().Be(objectName);
+            Assert.NotNull(result);
+            Assert.Equal(bucketName, result.BucketName);
+            Assert.Equal(objectName, result.Key);
         }
 
         [Fact]
@@ -153,11 +151,11 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             var result = await _client.ListFoldersInBucketAsync(arg);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Data.FolderData.Should().HaveCount(3);
-            result.Data.FolderData.Should().Contain(x => x.Path == "counsel/");
-            result.Data.FolderData.Should().Contain(x => x.Path == "counsel/statements/");
-            result.Data.FolderData.Should().Contain(x => x.Path == "multimedia/");
+            Assert.NotNull(result);
+            Assert.Equal(3, result.Data.FolderData.Count());
+            Assert.Contains(result.Data.FolderData, x => x.Path == "counsel/");
+            Assert.Contains(result.Data.FolderData, x => x.Path == "counsel/statements/");
+            Assert.Contains(result.Data.FolderData, x => x.Path == "multimedia/");
         }
     }
 }
