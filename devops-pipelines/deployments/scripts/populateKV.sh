@@ -1,3 +1,8 @@
+echo $KEY_VAULT_NAME
+echo $CASE_MANAGEMENT_DATASTORE_CONNECTION
+
+exit 0
+
 echo "Initializing Key Vault secrets from Azure DevOps variable groups..."
 echo "🔐 Only storing sensitive secrets in Key Vault"
 
@@ -49,7 +54,6 @@ set_kv_secret "FileTransferApiOptions--AccessKey" "$FILE_TRANSFER_API_OPTIONS_AC
 
 echo "✅ Key Vault secret initialization completed"
 echo "📋 Secrets stored in Key Vault:"
-echo "  - AzureWebJobsStorage"
 echo "  - EgressOptions--Username"
 echo "  - EgressOptions--Password"
 echo "  - DDEIOptions--AccessKey"
