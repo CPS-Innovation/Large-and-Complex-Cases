@@ -76,12 +76,6 @@ stages:
                   exit 0
                 fi
 
-                echo "pwd..."
-                pwd
-
-                echo "ls..."
-                ls
-                
                 echo "Azure CLI not found, installing..."
                 bash $(System.DefaultWorkingDirectory)/devops-pipelines/deployments/scripts/installAzureCli.sh
                
@@ -92,7 +86,7 @@ stages:
               azureSubscription: $(azureSubscription)
               scriptType: 'bash'
               scriptLocation: 'scriptPath'
-              scriptPath: '../scripts/populateKV.sh'
+              scriptPath: '$(System.DefaultWorkingDirectory)/devops-pipelines/deployments/scripts/populateKV.sh'
                 
   - stage: Database_Migration
     displayName: 'LACC - Database Migration'
