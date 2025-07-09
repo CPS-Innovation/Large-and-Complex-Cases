@@ -2,6 +2,8 @@
 
 echo key vault name is: $KEY_VAULT_NAME
 
+echo DDEI options access key is: $DDEI_OPTIONS_ACCESS_KEY
+
 exit 0
 
 echo "Initializing Key Vault secrets from Azure DevOps variable groups..."
