@@ -1,0 +1,136 @@
+parameters:
+  - name: environment
+    type: string
+  - name: functionAppName
+    type: string
+  - name: subscriptionName
+    type: string
+  - name: resourceGroupName
+    type: string
+  - name: keyVaultName
+    type: string
+  - name: appInsightsKey
+    type: string
+  - name: appInsightsConnectionString
+    type: string
+
+steps:
+  - task: AzureAppServiceSettings@1
+    displayName: 'Configure Function App Settings'
+    inputs:
+      azureSubscription: ${{ parameters.subscriptionName }}
+      appName: ${{ parameters.functionAppName }}
+      resourceGroupName: ${{ parameters.resourceGroupName }}
+      appSettings: |
+        [
+          {
+            "name": "FUNCTIONS_EXTENSION_VERSION",
+            "value": "~4",
+            "slotSetting": false
+          },
+          {
+            "name": "FUNCTIONS_WORKER_RUNTIME",
+            "value": "dotnet-isolated",
+            "slotSetting": false
+          },
+          {
+            "name": "DOTNET_FRAMEWORK_VERSION",
+            "value": "v8.0",
+            "slotSetting": false
+          },
+          {
+            "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+            "value": "${{ parameters.appInsightsKey }}",
+            "slotSetting": false
+          },
+          {
+            "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+            "value": "${{ parameters.appInsightsConnectionString }}",
+            "slotSetting": false
+          },
+          {
+            "name": "KeyVaultUri",
+            "value": "https://${{ parameters.keyVaultName }}.vault.azure.net/",
+            "slotSetting": false
+          },
+          {
+            "name": "NetAppOptions__Url",
+            "value": "$(NetAppOptionsUrl)",
+            "slotSetting": false
+          },
+          {
+            "name": "NetAppOptions__EnableMock",
+            "value": "$(NetAppOptionsEnableMock)",
+            "slotSetting": false
+          },
+          {
+            "name": "NetAppOptions__BucketName",
+            "value": "$(NetAppOptionsBucketName)",
+            "slotSetting": false
+          },
+          {
+            "name": "NetAppOptions__RegionName",
+            "value": "$(NetAppOptionsRegionName)",
+            "slotSetting": false
+          },
+          {
+            "name": "EgressOptions__Url",
+            "value": "$(EgressOptionsUrl)",
+            "slotSetting": false
+          },
+          {
+            "name": "TenantId",
+            "value": "$(TenantId)",
+            "slotSetting": false
+          },
+          {
+            "name": "CallingAppValidAudience",
+            "value": "$(CallingAppValidAudience)",
+            "slotSetting": false
+          },
+          {
+            "name": "CallingAppValidRoles",
+            "value": "$(CallingAppValidRoles)",
+            "slotSetting": false
+          },
+          {
+            "name": "DDEIOptions__BaseUrl",
+            "value": "$(DDEIOptionsBaseUrl)",
+            "slotSetting": false
+          },
+          {
+            "name": "FileTransferApiOptions__BaseUrl",
+            "value": "$(FileTransferApiOptionsBaseUrl)",
+            "slotSetting": false
+          },
+          {
+            "name": "FileTransferApiOptions__RetryAttempts",
+            "value": "$(FileTransferApiOptionsRetryAttempts)",
+            "slotSetting": false
+          },
+          {
+            "name": "FileTransferApiOptions__FirstRetryDelaySeconds",
+            "value": "$(FileTransferApiOptionsFirstRetryDelaySeconds)",
+            "slotSetting": false
+          },
+          {
+            "name": "SizeConfig__ChunkSizeBytes",
+            "value": "$(SizeConfigChunkSizeBytes)",
+            "slotSetting": false
+          },
+          {
+            "name": "SizeConfig__BatchSize",
+            "value": "$(SizeConfigBatchSize)",
+            "slotSetting": false
+          },
+          {
+            "name": "WEBSITE_USE_PLACEHOLDER_DOTNETISOLATED",
+            "value": "1",
+            "slotSetting": false
+          },
+          {
+            "name": "WEBSITE_RUN_FROM_PACKAGE",
+            "value": "1",
+            "slotSetting": false
+          }
+        ]
