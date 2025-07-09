@@ -537,6 +537,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     unMounting.current = false;
     return () => {
       unMounting.current = true;
+      window.history.replaceState({}, "", window.location.pathname);
     };
   }, []);
 
