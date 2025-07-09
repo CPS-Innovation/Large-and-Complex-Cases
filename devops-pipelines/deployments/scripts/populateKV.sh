@@ -1,5 +1,9 @@
 #!/bin/bash
 
+echo key vault name is: $KEY_VAULT_NAME
+
+exit 0
+
 echo "Initializing Key Vault secrets from Azure DevOps variable groups..."
 echo "🔐 Only storing sensitive secrets in Key Vault"
 
