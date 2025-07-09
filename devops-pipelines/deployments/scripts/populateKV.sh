@@ -1,7 +1,4 @@
-echo $KEY_VAULT_NAME
-echo $CASE_MANAGEMENT_DATASTORE_CONNECTION
-
-exit 0
+#!/bin/bash
 
 echo "Initializing Key Vault secrets from Azure DevOps variable groups..."
 echo "🔐 Only storing sensitive secrets in Key Vault"
