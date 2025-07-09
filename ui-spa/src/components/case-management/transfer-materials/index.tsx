@@ -312,7 +312,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       }
       if (netAppError.code === 401) {
         navigate(
-          `/case/${caseId}/case-management/connection-error?type=shared drive`,
+          `/case/${caseId}/case-management/connection-error?type=shareddrive`,
         );
         return;
       } else {
@@ -537,7 +537,11 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     unMounting.current = false;
     return () => {
       unMounting.current = true;
-      window.history.replaceState({}, "", window.location.pathname);
+      const params = new URLSearchParams(window.location.search);
+      const url = `${params}`
+        ? `${window.location.pathname}?${params}`
+        : window.location.pathname;
+      window.history.replaceState({}, "", url);
     };
   }, []);
 

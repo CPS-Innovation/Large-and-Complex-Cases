@@ -12,7 +12,8 @@ const FolderAccessErrorPage = () => {
       <BackLink to={"/"}>Back</BackLink>
       <div className={styles.contentWrapper}>
         <h1 className="govuk-heading-xl">
-          Sorry, there was a problem connecting to {folderType}
+          Sorry, there was a problem connecting to{" "}
+          {folderType === "shareddrive" ? "shared drive" : "egress"}
         </h1>
         <div>
           <span>You can:</span>
