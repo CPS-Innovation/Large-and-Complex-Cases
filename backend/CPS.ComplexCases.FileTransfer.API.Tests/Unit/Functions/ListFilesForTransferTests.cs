@@ -121,9 +121,9 @@ public class ListFilesForTransferTests
         // Arrange
         var reqMock = new Mock<HttpRequest>();
         var context = new Mock<FunctionContext>().Object;
-        var destinationPath = new string('a', 256);
+        var destinationPath = new string('a', 261);
         var sourcePath = "file1.txt";
-        var expectedErrorMessage = $"{destinationPath}/{sourcePath}: exceeds the 255 characters limit.";
+        var expectedErrorMessage = $"{destinationPath}/{sourcePath}: exceeds the 260 characters limit.";
 
         var validationResult = new ValidatableRequest<ListFilesForTransferRequest>
         {
