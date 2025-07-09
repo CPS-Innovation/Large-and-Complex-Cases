@@ -14,7 +14,7 @@ resources:
 
 parameters:
   - name: environment
-    displayName: 'Target Environment (must be all lowercase)'
+    displayName: 'Target Environment'
     type: string
     default: 'dev'
     values:
