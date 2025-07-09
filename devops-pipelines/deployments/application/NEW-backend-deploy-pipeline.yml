@@ -77,8 +77,7 @@ stages:
                 fi
 
                 echo "Azure CLI not found, installing..."
-                bash $(System.DefaultWorkingDirectory)/devops-pipelines/deployments/scripts/installAzureCli.sh
-               
+                bash $(System.DefaultWorkingDirectory)/devops-pipelines/deployments/scripts/installAzureCli.sh   
 
           - task: AzureCLI@2
             displayName: 'LACC - Initialize Key Vault Secrets from Variable Groups'
@@ -87,10 +86,16 @@ stages:
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
-                echo "keyVaultName is $(keyVaultName)"
-                echo "KEY_VAULT_NAME is $KEY_VAULT_NAME"
+                bash $(System.DefaultWorkingDirectory)/devops-pipelines/deployments/scripts/populateKV.sh
             env:
               KEY_VAULT_NAME: $(keyVaultName)
+              CASE_MANAGEMENT_DATASTORE_CONNECTION: $(CaseManagementDatastoreConnection)
+              EGRESS_OPTIONS_USERNAME: $(EgressOptionsUsername)
+              EGRESS_OPTIONS_PASSWORD: $(EgressOptionsPassword)
+              DDEI_OPTIONS_ACCESS_KEY: $(DDEIOptionsAccessKey)
+              NET_APP_OPTIONS_ACCESS_KEY: $(NetAppOptionsAccessKey)
+              NET_APP_OPTIONS_SECRET_KEY: $(NetAppOptionsSecretKey)
+              FILE_TRANSFER_API_OPTIONS_ACCESS_KEY: $(FileTransferApiOptionsAccessKey)
 
           # - task: AzureCLI@2
           #   displayName: 'LACC - Initialize Key Vault Secrets from Variable Groups'
@@ -260,6 +265,22 @@ stages:
           runOnce:
             deploy:
               steps:
+                - task: Bash@3
+                  displayName: 'Ensure Azure CLI'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      echo "Checking if Azure CLI is installed..."
+                      
+                      # Check if az command exists
+                      if command -v az &> /dev/null; then
+                        echo "Azure CLI is already installed"
+                        az --version
+                        exit 0
+                      fi
+
+                      echo "Azure CLI not found, installing..."
+                      bash $(System.DefaultWorkingDirectory)/devops-pipelines/deployments/scripts/installAzureCli.sh
 
                 - task: DownloadBuildArtifacts@0
                   displayName: 'LACC - Download Main API Artifact'
@@ -326,6 +347,23 @@ stages:
           runOnce:
             deploy:
               steps:
+                - task: Bash@3
+                  displayName: 'Ensure Azure CLI'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      echo "Checking if Azure CLI is installed..."
+                      
+                      # Check if az command exists
+                      if command -v az &> /dev/null; then
+                        echo "Azure CLI is already installed"
+                        az --version
+                        exit 0
+                      fi
+
+                      echo "Azure CLI not found, installing..."
+                      bash $(System.DefaultWorkingDirectory)/devops-pipelines/deployments/scripts/installAzureCli.sh
+
                 - task: DownloadBuildArtifacts@0
                   displayName: 'LACC - Download FileTransfer API Artifact'
                   inputs:
