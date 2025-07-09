@@ -20,8 +20,8 @@ public class FilePathValidator : AbstractValidator<IList<DestinationPath>>
                 path.RuleFor(x => x.Path)
                     .NotEmpty()
                     .WithMessage("File path cannot be empty.")
-                    .MaximumLength(255)
-                    .WithMessage(x => $"{x.Path}: exceeds the 255 characters limit.")
+                    .MaximumLength(260)
+                    .WithMessage(x => $"{x.Path}: exceeds the 260 characters limit.")
                     .Must(pathValue => !HasInvalidPathChars(pathValue))
                     .WithMessage(x => $"{x.Path}: contains invalid characters.");
             });
