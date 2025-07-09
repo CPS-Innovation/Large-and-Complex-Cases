@@ -170,9 +170,19 @@ public class EgressStorageClient(
             FileIds = fileIds!
         };
 
-        await SendRequestAsync(_egressRequestFactory.DeleteFilesRequest(deleteArg, token));
+        var result = await SendRequestAsync<DeleteFilesResponse>(_egressRequestFactory.DeleteFilesRequest(deleteArg, token));
 
-        return new DeleteFilesResult();
+        return new DeleteFilesResult
+        {
+            DeletedFiles = result.Files.Select(x => x.FileId).Where(id => id != null).Cast<string>().ToList(),
+            FailedFiles = result.Files.Where(x => x.Code > 0).Select(x => new FailedFileDeletion
+            {
+                FileId = x.FileId,
+                Filename = x.Filename,
+                Reason = x.Status
+            })
+            .ToList()
+        };
     }
 
     private async Task CreateFolderStructureAsync(string folderPath, string workspaceId, string token)
