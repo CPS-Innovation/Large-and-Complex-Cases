@@ -10,7 +10,7 @@ set_kv_secret() {
     if [ -n "$secret_value" ] && [ "$secret_value" != "" ] && [ "$secret_value" != "null" ]; then
     echo "Setting Key Vault secret: $secret_name"
     az keyvault secret set \
-        --vault-name "$KEYVAULTNAME" \
+        --vault-name "$KEY_VAULT_NAME" \
         --name "$secret_name" \
         --value "$secret_value" \
         --description "$description" \
@@ -28,29 +28,24 @@ set_kv_secret() {
 
 echo "📋 Setting storage connection secrets..."
 
-# Azure Storage (for Functions)
-set_kv_secret "AzureWebJobsStorage" "$AZUREWEBJOBSSTORAGE" "Azure Storage connection for Functions runtime"
-
-echo "📋 Setting database connection secrets..."
-
 # Database Connection String
-set_kv_secret "ConnectionStrings--CaseManagementDatastoreConnection" "$CASEMANAGEMENTDATASTORECONNECTION" connection string"
+set_kv_secret "ConnectionStrings--CaseManagementDatastoreConnection" "$CASE_MANAGEMENT_DATASTORE_CONNECTION" connection string"
 
 echo "📋 Setting external API authentication secrets..."
 
 # Egress API Credentials
-set_kv_secret "EgressOptions--Username" "$EGRESSOPTIONSUSERNAME" "Egress API username"
-set_kv_secret "EgressOptions--Password" "$EGRESSOPTIONSPASSWORD" "Egress API password"
+set_kv_secret "EgressOptions--Username" "$EGRESS_OPTIONS_USERNAME" "Egress API username"
+set_kv_secret "EgressOptions--Password" "$EGRESS_OPTIONS_PASSWORD" "Egress API password"
 
 # DDEI API Credentials
-set_kv_secret "DDEIOptions--AccessKey" "$DDEIOPTIONSACCESSKEY" "DDEI API access key"
+set_kv_secret "DDEIOptions--AccessKey" "$DDEI_OPTIONS_ACCESS_KEY" "DDEI API access key"
 
 # NetApp API Credentials
-set_kv_secret "NetAppOptions--AccessKey" "$NETAPPOPTIONSACCESSKEY" "NetApp API access key"
-set_kv_secret "NetAppOptions--SecretKey" "$NETAPPOPTIONSSECRETKEY" "NetApp API secret key"
+set_kv_secret "NetAppOptions--AccessKey" "$NET_APP_OPTIONS_ACCESS_KEY" "NetApp API access key"
+set_kv_secret "NetAppOptions--SecretKey" "$NET_APP_OPTIONS_SECRET_KEY" "NetApp API secret key"
 
 # File Transfer API Credentials
-set_kv_secret "FileTransferApiOptions--AccessKey" "$FILETRANSFERAPIOPTIONSACCESSKEY" "File Transfer API access key"
+set_kv_secret "FileTransferApiOptions--AccessKey" "$FILE_TRANSFER_API_OPTIONS_ACCESS_KEY" "File Transfer API access key"
 
 echo "✅ Key Vault secret initialization completed"
 echo "📋 Secrets stored in Key Vault:"
@@ -65,20 +60,20 @@ echo "  - FileTransferApiOptions--AccessKey"
 
 # List all secrets that were set (names only, not values)
 echo "📋 Current Key Vault secrets:"
-az keyvault secret list --vault-name "$KEYVAULTNAME" --query "[].name" -o table
+az keyvault secret list --vault-name "$KEY_VAULT_NAME" --query "[].name" -o table
 
 # Verify PostgreSQL connection string was set correctly (SECURELY)
 echo "🔍 Verifying PostgreSQL connection string secret..."
-POSTGRES_SECRET_EXISTS=$(az keyvault secret show --vault-name "$KEYVAULTNAME" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query "id" -o tsv 2>/dev/null || echo "")
+POSTGRES_SECRET_EXISTS=$(az keyvault secret show --vault-name "$KEY_VAULT_NAME" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query "id" -o tsv 2>/dev/null || echo "")
 
 if [ -n "$POSTGRES_SECRET_EXISTS" ]; then
     echo "✅ PostgreSQL connection string secret exists in Key Vault"
     
     # Test if we can retrieve the value WITHOUT storing it in a variable (for security)
     # We only check if the secret can be retrieved, not store its content
-    if az keyvault secret show --vault-name "$KEYVAULTNAME" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv >/dev/null 2>&1; then
+    if az keyvault secret show --vault-name "$KEY_VAULT_NAME" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv >/dev/null 2>&1; then
     # Get just the length without storing the actual secret
-    SECRET_LENGTH=$(az keyvault secret show --vault-name "$KEYVAULTNAME" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | wc -c)
+    SECRET_LENGTH=$(az keyvault secret show --vault-name "$KEY_VAULT_NAME" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | wc -c)
     echo "✅ PostgreSQL connection string value is accessible (length: $SECRET_LENGTH characters)"
     else
     echo "❌ PostgreSQL connection string secret exists but value is empty or inaccessible"
