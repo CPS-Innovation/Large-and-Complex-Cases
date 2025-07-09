@@ -347,7 +347,7 @@ stages:
           runOnce:
             deploy:
               steps:
-                - checkout: repo
+                - checkout: self
                   sparseCheckoutDirectories: devops-pipelines/deployments/scripts
 
                 - task: Bash@3
