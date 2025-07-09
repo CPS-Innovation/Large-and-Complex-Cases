@@ -85,17 +85,29 @@ stages:
             inputs:
               azureSubscription: $(azureSubscription)
               scriptType: 'bash'
-              scriptLocation: 'scriptPath'
-              scriptPath: '$(System.DefaultWorkingDirectory)/devops-pipelines/deployments/scripts/populateKV.sh'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "keyVaultName is $(keyVaultName)"
+                echo "KEY_VAULT_NAME is $KEY_VAULT_NAME"
             env:
               KEY_VAULT_NAME: $(keyVaultName)
-              CASE_MANAGEMENT_DATASTORE_CONNECTION: $(CaseManagementDatastoreConnection)
-              EGRESS_OPTIONS_USERNAME: $(EgressOptionsUsername)
-              EGRESS_OPTIONS_PASSWORD: $(EgressOptionsPassword)
-              DDEI_OPTIONS_ACCESS_KEY: $(DDEIOptionsAccessKey)
-              NET_APP_OPTIONS_ACCESS_KEY: $(NetAppOptionsAccessKey)
-              NET_APP_OPTIONS_SECRET_KEY: $(NetAppOptionsSecretKey)
-              FILE_TRANSFER_API_OPTIONS_ACCESS_KEY: $(FileTransferApiOptionsAccessKey)
+
+          # - task: AzureCLI@2
+          #   displayName: 'LACC - Initialize Key Vault Secrets from Variable Groups'
+          #   inputs:
+          #     azureSubscription: $(azureSubscription)
+          #     scriptType: 'bash'
+          #     scriptLocation: 'scriptPath'
+          #     scriptPath: '$(System.DefaultWorkingDirectory)/devops-pipelines/deployments/scripts/populateKV.sh'
+          #   env:
+          #     KEY_VAULT_NAME: $(keyVaultName)
+          #     CASE_MANAGEMENT_DATASTORE_CONNECTION: $(CaseManagementDatastoreConnection)
+          #     EGRESS_OPTIONS_USERNAME: $(EgressOptionsUsername)
+          #     EGRESS_OPTIONS_PASSWORD: $(EgressOptionsPassword)
+          #     DDEI_OPTIONS_ACCESS_KEY: $(DDEIOptionsAccessKey)
+          #     NET_APP_OPTIONS_ACCESS_KEY: $(NetAppOptionsAccessKey)
+          #     NET_APP_OPTIONS_SECRET_KEY: $(NetAppOptionsSecretKey)
+          #     FILE_TRANSFER_API_OPTIONS_ACCESS_KEY: $(FileTransferApiOptionsAccessKey)
 
   - stage: Database_Migration
     displayName: 'LACC - Database Migration'
