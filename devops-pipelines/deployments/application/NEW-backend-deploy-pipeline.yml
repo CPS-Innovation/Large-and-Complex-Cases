@@ -89,7 +89,7 @@ stages:
                 bash $(System.DefaultWorkingDirectory)/devops-pipelines/deployments/scripts/populateKV.sh
             env:
               KEY_VAULT_NAME: $(keyVaultName)
-              # CASE_MANAGEMENT_DATASTORE_CONNECTION: $(CaseManagementDatastoreConnection)
+              CASE_MANAGEMENT_DATASTORE_CONNECTION: $(CaseManagementDatastoreConnection)
               EGRESS_OPTIONS_USERNAME: $(EgressOptionsUsername)
               EGRESS_OPTIONS_PASSWORD: $(EgressOptionsPassword)
               DDEI_OPTIONS_ACCESS_KEY: $(DDEIOptionsAccessKey)
