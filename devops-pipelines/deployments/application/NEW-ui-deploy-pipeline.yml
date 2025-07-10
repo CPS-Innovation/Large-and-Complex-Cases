@@ -45,7 +45,7 @@ stages:
             inputs:
               buildType: 'specific'
               project: '$(System.TeamProjectId)'
-              pipeline: 'LACC UI- Build, Test & Package'
+              pipeline: '[TEST]LACC UI - Test & Build'
               buildVersionToDownload: 'latest'
               artifactName: 'lacc-ui-${{ parameters.environment }}-drop'
               downloadPath: '$(Pipeline.Workspace)'
