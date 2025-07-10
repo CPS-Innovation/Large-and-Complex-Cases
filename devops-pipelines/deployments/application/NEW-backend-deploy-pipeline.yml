@@ -56,10 +56,10 @@ variables:
 pool: 'LaCC Pre-Prod Build Agents' #'LARGE-AND-COMPLEX-CASES-PRE-PROD'
 
 stages:
-  - stage: Pre_Deployment_Validation
-    displayName: 'LACC - Pre-Deployment Validation'
+  - stage: Update_Key_Vault
+    displayName: 'LACC - Update Kay Vault'
     jobs:
-      - job: Validate_Environment
+      - job: Populate_KV
         displayName: 'LACC - Validate Target Environment'
         steps:
           - task: Bash@3
@@ -99,7 +99,7 @@ stages:
 
   - stage: Database_Migration
     displayName: 'LACC - Database Migration'
-    dependsOn: Pre_Deployment_Validation
+    dependsOn: Update_Key_Vault
     condition: and(succeeded(), eq(${{ parameters.runDatabaseMigration }}, true))
     jobs:
       - deployment: Deploy_Database_Changes
@@ -118,6 +118,12 @@ stages:
                     buildVersionToDownload: 'latest'
                     artifactName: 'database-scripts-drop'
                     downloadPath: '$(Pipeline.Workspace)'
+
+                - script: |
+                    echo "Installing the unzip package..."
+                    sudo apt-get install unzip
+                  failOnStderr: true
+                  displayName: 'Install unzip'
 
                 - task: ExtractFiles@1
                   displayName: 'Extract Database Scripts'
@@ -235,10 +241,10 @@ stages:
     displayName: 'LACC - Deploy Function Apps'
     ${{ if eq(parameters.runDatabaseMigration, true) }}:
       dependsOn: 
-        - Pre_Deployment_Validation
+        - Update_Key_Vault
         - Database_Migration
     ${{ else }}:
-      dependsOn: Pre_Deployment_Validation
+      dependsOn: Update_Key_Vault
     jobs:
       - deployment: Deploy_Main_API
         displayName: 'LACC - Deploy Main API Function App'
