@@ -30,13 +30,13 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
   const isDevMock = () => apiMockSource === "dev";
   const RESPONSE_DELAY = isDevMock() ? 10 : 0;
   return [
-    http.get(`${baseUrl}/api/areas`, async () => {
+    http.get(`${baseUrl}/api/v1/areas`, async () => {
       const results = isDevMock() ? caseAreasDev : caseAreasPlaywright;
       await delay(RESPONSE_DELAY);
       return HttpResponse.json(results);
     }),
 
-    http.get(`${baseUrl}/api/case-search`, async () => {
+    http.get(`${baseUrl}/api/v1/case-search`, async () => {
       const caseSearchResults = isDevMock()
         ? casesSearchResultsDev
         : casesSearchResultsPlaywright;
@@ -44,7 +44,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       return HttpResponse.json(caseSearchResults);
     }),
 
-    http.get(`${baseUrl}/api/egress/workspaces`, async () => {
+    http.get(`${baseUrl}/api/v1/egress/workspaces`, async () => {
       const egressSearchResults = isDevMock()
         ? egressSearchResultsDev
         : egressSearchResultsPlaywright;
@@ -53,11 +53,11 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       return HttpResponse.json(egressSearchResults);
     }),
 
-    http.post(`${baseUrl}/api/egress/connections`, async () => {
+    http.post(`${baseUrl}/api/v1/egress/connections`, async () => {
       return HttpResponse.json({});
     }),
 
-    http.get(`${baseUrl}/api/netapp/folders`, async (req) => {
+    http.get(`${baseUrl}/api/v1/netapp/folders`, async (req) => {
       const url = new URL(req.request.url);
 
       const path = url.searchParams.get("path");
@@ -69,11 +69,11 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       return HttpResponse.json(netAppRootFolderResults);
     }),
 
-    http.post(`${baseUrl}/api/netapp/connections`, async () => {
+    http.post(`${baseUrl}/api/v1/netapp/connections`, async () => {
       return HttpResponse.json({});
     }),
 
-    http.get(`${baseUrl}/api/cases/12`, async () => {
+    http.get(`${baseUrl}/api/v1/cases/12`, async () => {
       const caseMetaDataResults = isDevMock()
         ? caseMetaDataDev
         : caseMetaDataPlaywright;
@@ -82,7 +82,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       return HttpResponse.json(caseMetaDataResults);
     }),
 
-    http.get(`${baseUrl}/api/egress/workspaces/egress_1/files`, async (req) => {
+    http.get(`${baseUrl}/api/v1/egress/workspaces/egress_1/files`, async (req) => {
       const url = new URL(req.request.url);
 
       const folderId = url.searchParams.get("folder-id");
@@ -94,7 +94,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       return HttpResponse.json(netAppRootFolderResults);
     }),
 
-    http.get(`${baseUrl}/api/netapp/files`, async (req) => {
+    http.get(`${baseUrl}/api/v1/netapp/files`, async (req) => {
       const url = new URL(req.request.url);
 
       const path = url.searchParams.get("path");
@@ -105,7 +105,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       return HttpResponse.json(netAppRootFolderResults);
     }),
 
-    http.post(`${baseUrl}/api/filetransfer/files`, async ({ request }) => {
+    http.post(`${baseUrl}/api/v1/filetransfer/files`, async ({ request }) => {
       const requestPayload =
         (await request.json()) as IndexingFileTransferPayload;
       let response = {};
@@ -123,7 +123,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       return HttpResponse.json(response);
     }),
 
-    http.post(`${baseUrl}/api/filetransfer/initiate`, async ({ request }) => {
+    http.post(`${baseUrl}/api/v1/filetransfer/initiate`, async ({ request }) => {
       const requestPayload =
         (await request.json()) as InitiateFileTransferPayload;
       let response = {};
@@ -136,7 +136,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       return HttpResponse.json(response);
     }),
     http.get(
-      `${baseUrl}/api/filetransfer/transfer-id-egress-to-netapp/status`,
+      `${baseUrl}/api/v1/filetransfer/transfer-id-egress-to-netapp/status`,
       async () => {
         const response = isDevMock()
           ? egressToNetAppTransferStatusDev
@@ -147,7 +147,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       },
     ),
     http.get(
-      `${baseUrl}/api/filetransfer/transfer-id-netapp-to-egress/status`,
+      `${baseUrl}/api/v1/filetransfer/transfer-id-netapp-to-egress/status`,
       async () => {
         const response = isDevMock()
           ? netAppToEgressTransferStatusDev

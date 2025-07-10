@@ -4,7 +4,7 @@ import { expect, test } from "../utils/test";
 test.describe("egress connect", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    await page.waitForResponse(`https://mocked-out-api/api/areas`);
+    await page.waitForResponse(`https://mocked-out-api/api/v1/areas`);
   });
 
   test("Should successfully connect to an egress folder", async ({ page }) => {
@@ -79,7 +79,7 @@ test.describe("egress connect", () => {
     worker,
   }) => {
     await worker.use(
-      http.post("https://mocked-out-api/api/egress/connections", async () => {
+      http.post("https://mocked-out-api/api/v1/egress/connections", async () => {
         await delay(10);
         return new HttpResponse(null, { status: 500 });
       }),
@@ -190,7 +190,7 @@ test.describe("egress connect", () => {
     worker,
   }) => {
     await worker.use(
-      http.get("https://mocked-out-api/api/egress/workspaces", async () => {
+      http.get("https://mocked-out-api/api/v1/egress/workspaces", async () => {
         await delay(10);
         return HttpResponse.json({
           data: [],
@@ -244,7 +244,7 @@ test.describe("egress connect", () => {
     worker,
   }) => {
     await worker.use(
-      http.get("https://mocked-out-api/api/egress/workspaces", async () => {
+      http.get("https://mocked-out-api/api/v1/egress/workspaces", async () => {
         await delay(10);
         return new HttpResponse(null, { status: 500 });
       }),
@@ -277,7 +277,7 @@ test.describe("egress connect", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/egress/workspaces: Searching for Egress workspaces failed; status - Internal Server Error (500)",
+        "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/egress/workspaces: Searching for Egress workspaces failed; status - Internal Server Error (500)",
       ),
     ).toBeVisible();
   });

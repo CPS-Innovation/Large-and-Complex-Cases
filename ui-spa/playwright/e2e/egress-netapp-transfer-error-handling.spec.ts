@@ -22,7 +22,7 @@ test.describe("egress-netapp-transfer-error-handling", () => {
     worker,
   }) => {
     await worker.use(
-      http.post("https://mocked-out-api/api/filetransfer/files", async () => {
+      http.post("https://mocked-out-api/api/v1/filetransfer/files", async () => {
         await delay(10);
         return new HttpResponse(null, { status: 500 });
       }),
@@ -67,7 +67,7 @@ test.describe("egress-netapp-transfer-error-handling", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        "Error: An error occurred contacting the server at https://mocked-out-api/api/filetransfer/files: indexing file transfer api failed; status - Internal Server Error (500)",
+        "Error: An error occurred contacting the server at https://mocked-out-api/api/v1/filetransfer/files: indexing file transfer api failed; status - Internal Server Error (500)",
       ),
     ).toBeVisible();
   });
@@ -76,7 +76,7 @@ test.describe("egress-netapp-transfer-error-handling", () => {
     worker,
   }) => {
     await worker.use(
-      http.post("https://mocked-out-api/api/filetransfer/files", async () => {
+      http.post("https://mocked-out-api/api/v1/filetransfer/files", async () => {
         await delay(10);
         return HttpResponse.json({ isInvalid: false });
       }),
@@ -131,7 +131,7 @@ test.describe("egress-netapp-transfer-error-handling", () => {
   }) => {
     await worker.use(
       http.post(
-        "https://mocked-out-api/api/filetransfer/initiate",
+        "https://mocked-out-api/api/v1/filetransfer/initiate",
         async () => {
           await delay(10);
           return new HttpResponse(null, { status: 500 });
@@ -184,7 +184,7 @@ test.describe("egress-netapp-transfer-error-handling", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        "Error: An error occurred contacting the server at https://mocked-out-api/api/filetransfer/initiate: initiate file transfer failed; status - Internal Server Error (500)",
+        "Error: An error occurred contacting the server at https://mocked-out-api/api/v1/filetransfer/initiate: initiate file transfer failed; status - Internal Server Error (500)",
       ),
     ).toBeVisible();
   });
@@ -194,7 +194,7 @@ test.describe("egress-netapp-transfer-error-handling", () => {
   }) => {
     await worker.use(
       http.post(
-        "https://mocked-out-api/api/filetransfer/initiate",
+        "https://mocked-out-api/api/v1/filetransfer/initiate",
         async () => {
           await delay(10);
           return HttpResponse.json({});
@@ -257,7 +257,7 @@ test.describe("egress-netapp-transfer-error-handling", () => {
   }) => {
     await worker.use(
       http.get(
-        "https://mocked-out-api/api/filetransfer/transfer-id-egress-to-netapp/status",
+        "https://mocked-out-api/api/v1/filetransfer/transfer-id-egress-to-netapp/status",
         async () => {
           await delay(10);
           return new HttpResponse(null, { status: 500 });
@@ -313,7 +313,7 @@ test.describe("egress-netapp-transfer-error-handling", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        "Error: An error occurred contacting the server at https://mocked-out-api/api/filetransfer/transfer-id-egress-to-netapp/status: Getting case transfer status failed; status - Internal Server Error (500)",
+        "Error: An error occurred contacting the server at https://mocked-out-api/api/v1/filetransfer/transfer-id-egress-to-netapp/status: Getting case transfer status failed; status - Internal Server Error (500)",
       ),
     ).toBeVisible();
   });

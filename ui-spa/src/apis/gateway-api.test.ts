@@ -60,7 +60,7 @@ describe("gateway apis", () => {
       const result = await getCaseSearchResults("thunder");
       expect(result).toEqual(mockData);
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/case-search?thunder`,
+        `gateway_url/api/v1/case-search?thunder`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -84,7 +84,7 @@ describe("gateway apis", () => {
       await expect(getCaseSearchResults("thunder")).rejects.toThrow(ApiError);
 
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/case-search?thunder`,
+        `gateway_url/api/v1/case-search?thunder`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -113,7 +113,7 @@ describe("gateway apis", () => {
       const result = await getCaseDivisionsOrAreas();
       expect(result).toEqual(mockData);
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/areas`,
+        `gateway_url/api/v1/areas`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -135,13 +135,13 @@ describe("gateway apis", () => {
       });
 
       await expect(getCaseDivisionsOrAreas()).rejects.toThrow(
-        new ApiError(`Getting case areas failed`, "gateway_url/api/areas", {
+        new ApiError(`Getting case areas failed`, "gateway_url/api/v1/areas", {
           status: 500,
           statusText: "Internal Server Error",
         }),
       );
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/areas`,
+        `gateway_url/api/v1/areas`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -174,7 +174,7 @@ describe("gateway apis", () => {
       const result = await getEgressSearchResults("thunder", 0, 50, []);
       expect(result).toEqual(mockData.data);
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/egress/workspaces?thunder&skip=0&take=50`,
+        `gateway_url/api/v1/egress/workspaces?thunder&skip=0&take=50`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -208,7 +208,7 @@ describe("gateway apis", () => {
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenNthCalledWith(
         1,
-        `gateway_url/api/egress/workspaces?thunder&skip=0&take=50`,
+        `gateway_url/api/v1/egress/workspaces?thunder&skip=0&take=50`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -220,7 +220,7 @@ describe("gateway apis", () => {
       );
       expect(fetch).toHaveBeenNthCalledWith(
         2,
-        `gateway_url/api/egress/workspaces?thunder&skip=50&take=50`,
+        `gateway_url/api/v1/egress/workspaces?thunder&skip=50&take=50`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -246,7 +246,7 @@ describe("gateway apis", () => {
       ).rejects.toThrow(
         new ApiError(
           `Searching for Egress workspaces failed`,
-          "gateway_url/api/egress/workspaces",
+          "gateway_url/api/v1/egress/workspaces",
           {
             status: 500,
             statusText: "Internal Server Error",
@@ -255,7 +255,7 @@ describe("gateway apis", () => {
       );
 
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/egress/workspaces?thunder&skip=0&take=50`,
+        `gateway_url/api/v1/egress/workspaces?thunder&skip=0&take=50`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -291,7 +291,7 @@ describe("gateway apis", () => {
       );
 
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/egress/workspaces?thunder&skip=0&take=50`,
+        `gateway_url/api/v1/egress/workspaces?thunder&skip=0&take=50`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -317,7 +317,7 @@ describe("gateway apis", () => {
       });
       expect(result).toEqual({ ok: true });
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/egress/connections`,
+        `gateway_url/api/v1/egress/connections`,
         expect.objectContaining({
           method: "POST",
           credentials: "include",
@@ -350,7 +350,7 @@ describe("gateway apis", () => {
       ).rejects.toThrow(ApiError);
 
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/egress/connections`,
+        `gateway_url/api/v1/egress/connections`,
         expect.objectContaining({
           method: "POST",
           credentials: "include",
@@ -393,7 +393,7 @@ describe("gateway apis", () => {
       );
       expect(result).toEqual(mockData.data);
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/netapp/folders?operation-name=thunder&path=/netapp&take=50&continuation-token=`,
+        `gateway_url/api/v1/netapp/folders?operation-name=thunder&path=/netapp&take=50&continuation-token=`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -440,7 +440,7 @@ describe("gateway apis", () => {
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenNthCalledWith(
         1,
-        `gateway_url/api/netapp/folders?operation-name=thunder&path=/netapp&take=50&continuation-token=`,
+        `gateway_url/api/v1/netapp/folders?operation-name=thunder&path=/netapp&take=50&continuation-token=`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -452,7 +452,7 @@ describe("gateway apis", () => {
       );
       expect(fetch).toHaveBeenNthCalledWith(
         2,
-        `gateway_url/api/netapp/folders?operation-name=thunder&path=/netapp&take=50&continuation-token=abc`,
+        `gateway_url/api/v1/netapp/folders?operation-name=thunder&path=/netapp&take=50&continuation-token=abc`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -477,7 +477,7 @@ describe("gateway apis", () => {
       ).rejects.toThrow(
         new ApiError(
           `getting netapp folders failed`,
-          "gateway_url/api/netapp/folders",
+          "gateway_url/api/v1/netapp/folders",
           {
             status: 500,
             statusText: "Internal Server Error",
@@ -486,7 +486,7 @@ describe("gateway apis", () => {
       );
 
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/netapp/folders?operation-name=thunder&path=/netapp&take=50&continuation-token=`,
+        `gateway_url/api/v1/netapp/folders?operation-name=thunder&path=/netapp&take=50&continuation-token=`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -518,7 +518,7 @@ describe("gateway apis", () => {
       );
 
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/netapp/folders?operation-name=thunder&path=/netapp&take=50&continuation-token=`,
+        `gateway_url/api/v1/netapp/folders?operation-name=thunder&path=/netapp&take=50&continuation-token=`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -545,7 +545,7 @@ describe("gateway apis", () => {
       });
       expect(result).toEqual({ ok: true });
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/netapp/connections`,
+        `gateway_url/api/v1/netapp/connections`,
         expect.objectContaining({
           method: "POST",
           credentials: "include",
@@ -579,7 +579,7 @@ describe("gateway apis", () => {
       ).rejects.toThrow(
         new ApiError(
           `Connecting to NetApp folder failed`,
-          `gateway_url/api/netapp/connections`,
+          `gateway_url/api/v1/netapp/connections`,
           {
             status: 500,
             statusText: "Internal Server Error",
@@ -588,7 +588,7 @@ describe("gateway apis", () => {
       );
 
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/netapp/connections`,
+        `gateway_url/api/v1/netapp/connections`,
         expect.objectContaining({
           method: "POST",
           credentials: "include",
@@ -624,7 +624,7 @@ describe("gateway apis", () => {
       const result = await getCaseMetaData("12");
       expect(result).toEqual(mockData);
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/cases/12`,
+        `gateway_url/api/v1/cases/12`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -648,7 +648,7 @@ describe("gateway apis", () => {
       await expect(getCaseMetaData("12")).rejects.toThrow(
         new ApiError(
           `Getting case metadata failed`,
-          "gateway_url/api/cases/12",
+          "gateway_url/api/v1/cases/12",
           {
             status: 500,
             statusText: "Internal Server Error",
@@ -656,7 +656,7 @@ describe("gateway apis", () => {
         ),
       );
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/cases/12`,
+        `gateway_url/api/v1/cases/12`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -689,7 +689,7 @@ describe("gateway apis", () => {
       const result = await getEgressFolders("thunder", "folder-1", 0, 50, []);
       expect(result).toEqual(mockData.data);
       expect(fetch).toHaveBeenCalledWith(
-        "gateway_url/api/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50",
+        "gateway_url/api/v1/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50",
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -723,7 +723,7 @@ describe("gateway apis", () => {
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenNthCalledWith(
         1,
-        "gateway_url/api/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50",
+        "gateway_url/api/v1/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50",
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -735,7 +735,7 @@ describe("gateway apis", () => {
       );
       expect(fetch).toHaveBeenNthCalledWith(
         2,
-        "gateway_url/api/egress/workspaces/thunder/files?folder-id=folder-1&skip=50&take=50",
+        "gateway_url/api/v1/egress/workspaces/thunder/files?folder-id=folder-1&skip=50&take=50",
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -761,7 +761,7 @@ describe("gateway apis", () => {
       ).rejects.toThrow(
         new ApiError(
           `Getting egress folders failed`,
-          "gateway_url/api/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50",
+          "gateway_url/api/v1/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50",
           {
             status: 500,
             statusText: "Internal Server Error",
@@ -770,7 +770,7 @@ describe("gateway apis", () => {
       );
 
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50`,
+        `gateway_url/api/v1/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -804,7 +804,7 @@ describe("gateway apis", () => {
       ).rejects.toThrow("Invalid API response format for Egress folders");
 
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50`,
+        `gateway_url/api/v1/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -837,7 +837,7 @@ describe("gateway apis", () => {
       const result = await getNetAppFolders("/netapp", 50, "", []);
       expect(result).toEqual(mockData.data);
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/netapp/files?path=/netapp&take=50&continuation-token=`,
+        `gateway_url/api/v1/netapp/files?path=/netapp&take=50&continuation-token=`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -884,7 +884,7 @@ describe("gateway apis", () => {
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenNthCalledWith(
         1,
-        `gateway_url/api/netapp/files?path=/netapp&take=50&continuation-token=`,
+        `gateway_url/api/v1/netapp/files?path=/netapp&take=50&continuation-token=`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -896,7 +896,7 @@ describe("gateway apis", () => {
       );
       expect(fetch).toHaveBeenNthCalledWith(
         2,
-        `gateway_url/api/netapp/files?path=/netapp&take=50&continuation-token=abc`,
+        `gateway_url/api/v1/netapp/files?path=/netapp&take=50&continuation-token=abc`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -919,7 +919,7 @@ describe("gateway apis", () => {
       await expect(getNetAppFolders("/netapp", 50, "", [])).rejects.toThrow(
         new ApiError(
           `getting netapp files/folders failed`,
-          "gateway_url/api/netapp/files",
+          "gateway_url/api/v1/netapp/files",
           {
             status: 500,
             statusText: "Internal Server Error",
@@ -928,7 +928,7 @@ describe("gateway apis", () => {
       );
 
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/netapp/files?path=/netapp&take=50&continuation-token=`,
+        `gateway_url/api/v1/netapp/files?path=/netapp&take=50&continuation-token=`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -961,7 +961,7 @@ describe("gateway apis", () => {
       );
 
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/netapp/files?path=/netapp&take=50&continuation-token=`,
+        `gateway_url/api/v1/netapp/files?path=/netapp&take=50&continuation-token=`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -999,7 +999,7 @@ describe("gateway apis", () => {
       const result = await indexingFileTransfer(payload);
       expect(result).toEqual({ caseId: 12 });
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/filetransfer/files`,
+        `gateway_url/api/v1/filetransfer/files`,
         expect.objectContaining({
           method: "POST",
           credentials: "include",
@@ -1036,7 +1036,7 @@ describe("gateway apis", () => {
       await expect(indexingFileTransfer(payload)).rejects.toThrow(
         new ApiError(
           `indexing file transfer api failed`,
-          `gateway_url/api/filetransfer/files`,
+          `gateway_url/api/v1/filetransfer/files`,
           {
             status: 500,
             statusText: "Internal Server Error",
@@ -1045,7 +1045,7 @@ describe("gateway apis", () => {
       );
 
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/filetransfer/files`,
+        `gateway_url/api/v1/filetransfer/files`,
         expect.objectContaining({
           method: "POST",
           credentials: "include",
@@ -1081,7 +1081,7 @@ describe("gateway apis", () => {
       const result = await initiateFileTransfer(payload);
       expect(result).toEqual({ transferId: "12" });
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/filetransfer/initiate`,
+        `gateway_url/api/v1/filetransfer/initiate`,
         expect.objectContaining({
           method: "POST",
           credentials: "include",
@@ -1115,7 +1115,7 @@ describe("gateway apis", () => {
       await expect(initiateFileTransfer(payload)).rejects.toThrow(
         new ApiError(
           `initiate file transfer failed`,
-          `gateway_url/api/filetransfer/initiate`,
+          `gateway_url/api/v1/filetransfer/initiate`,
           {
             status: 500,
             statusText: "Internal Server Error",
@@ -1124,7 +1124,7 @@ describe("gateway apis", () => {
       );
 
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/filetransfer/initiate`,
+        `gateway_url/api/v1/filetransfer/initiate`,
         expect.objectContaining({
           method: "POST",
           credentials: "include",
@@ -1152,7 +1152,7 @@ describe("gateway apis", () => {
       const result = await getTransferStatus("transfer_id_1");
       expect(result).toEqual(mockData);
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/filetransfer/transfer_id_1/status`,
+        `gateway_url/api/v1/filetransfer/transfer_id_1/status`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -1176,7 +1176,7 @@ describe("gateway apis", () => {
       await expect(getTransferStatus("transfer_id_1")).rejects.toThrow(
         new ApiError(
           `Getting case transfer status failed`,
-          "gateway_url/api/filetransfer/transfer_id_1/status",
+          "gateway_url/api/v1/filetransfer/transfer_id_1/status",
           {
             status: 500,
             statusText: "Internal Server Error",
@@ -1184,7 +1184,7 @@ describe("gateway apis", () => {
         ),
       );
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/filetransfer/transfer_id_1/status`,
+        `gateway_url/api/v1/filetransfer/transfer_id_1/status`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",

@@ -34,7 +34,7 @@ public class ListEgressWorkspaces(ILogger<ListEgressWorkspaces> logger,
   [OpenApiResponseWithBody(statusCode: HttpStatusCode.Forbidden, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Forbidden)]
   [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
 
-  public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "egress/workspaces")] HttpRequest req, FunctionContext context)
+  public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/egress/workspaces")] HttpRequest req, FunctionContext context)
   {
     var operationName = req.Query[InputParameters.WorkspaceName];
     var skip = int.TryParse(req.Query[InputParameters.Skip], out var skipValue) ? skipValue : 0;

@@ -77,7 +77,7 @@ public class InitiateTransfer
                     currentCorrelationId);
 
                 // if the transfer is already in progress, return the current status
-                return new AcceptedResult($"/api/filetransfer/{caseMetadata.ActiveTransferId}/status", new TransferResponse
+                return new AcceptedResult($"/api/v1/filetransfer/{caseMetadata.ActiveTransferId}/status", new TransferResponse
                 {
                     Id = caseMetadata.ActiveTransferId.Value,
                     Status = entityState.State.Status,
@@ -113,7 +113,7 @@ public class InitiateTransfer
             }
         );
 
-        return new AcceptedResult($"/api/filetransfer/{transferId}/status", new TransferResponse
+        return new AcceptedResult($"/api/v1/filetransfer/{transferId}/status", new TransferResponse
         {
             Id = transferId,
             Status = TransferStatus.Initiated,
