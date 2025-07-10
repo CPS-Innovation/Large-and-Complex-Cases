@@ -6,11 +6,11 @@ trigger:
 
 pr: none
 
-resources:
-  pipelines:
-    - pipeline: BackendBuild
-      source: 'LACC Backend - Build, Test & Package'
-      trigger: none
+# resources:
+#   pipelines:
+#     - pipeline: BackendBuild
+#       source: 'LACC Backend - Build, Test & Package'
+#       trigger: none
 
 parameters:
   - name: environment
@@ -57,11 +57,15 @@ pool: 'LaCC Pre-Prod Build Agents' #'LARGE-AND-COMPLEX-CASES-PRE-PROD'
 
 stages:
   - stage: Update_Key_Vault
-    displayName: 'LACC - Update Kay Vault'
+    displayName: 'LACC - Update Key Vault'
     jobs:
       - job: Populate_KV
         displayName: 'LACC - Validate Target Environment'
         steps:
+          - checkout: self
+            sparseCheckoutDirectories: devops-pipelines/deployments/scripts
+            fetchDepth: 1
+
           - task: Bash@3
             displayName: 'Ensure Azure CLI'
             inputs:
@@ -121,8 +125,8 @@ stages:
 
                 - script: |
                     echo "Installing the unzip package..."
+                    sudo apt-get update
                     sudo apt-get install unzip
-                  failOnStderr: true
                   displayName: 'Install unzip'
 
                 - task: ExtractFiles@1
