@@ -283,7 +283,7 @@ test.describe("netapp meta data issues", () => {
     await page.goto("/case/12/case-management");
     await expect(page).toHaveURL("/case/12/case-management");
     await expect(page).toHaveURL(
-      "/case/12/case-management/connection-error?type=shared drive",
+      "/case/12/case-management/connection-error?type=shareddrive",
     );
     await expect(page.locator("h1")).toHaveText(
       "Sorry, there was a problem connecting to shared drive",

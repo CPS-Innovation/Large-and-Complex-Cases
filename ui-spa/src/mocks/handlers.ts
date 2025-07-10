@@ -14,14 +14,15 @@ import {
   getEgressFolderResultsPlaywright,
   getNetAppFolderResultsDev,
   getNetAppFolderResultsPlaywright,
-  egressToNetAppValidateTransferDev,
-  egressToNetAppValidateTransferPlaywright,
-  netAppToEgressValidateTransferDev,
-  netAppToEgressValidateTransferPlaywright,
+  egressToNetAppIndexingTransferDev,
+  egressToNetAppIndexingTransferPlaywright,
+  netAppToEgressIndexingTransferDev,
+  netAppToEgressIndexingTransferPlaywright,
   egressToNetAppTransferStatusDev,
   egressToNetAppTransferStatusPlaywright,
   netAppToEgressTransferStatusDev,
   netAppToEgressTransferStatusPlaywright,
+  // egressToNetAppIndexingErrorDev,
 } from "./data";
 import { IndexingFileTransferPayload } from "../common/types/IndexingFileTransferPayload";
 import { InitiateFileTransferPayload } from "../common/types/InitiateFileTransferPayload";
@@ -111,13 +112,13 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       let response = {};
       if (requestPayload.transferDirection === "EgressToNetApp") {
         response = isDevMock()
-          ? egressToNetAppValidateTransferDev
-          : egressToNetAppValidateTransferPlaywright;
+          ? egressToNetAppIndexingTransferDev
+          : egressToNetAppIndexingTransferPlaywright;
       }
       if (requestPayload.transferDirection === "NetAppToEgress") {
         response = isDevMock()
-          ? netAppToEgressValidateTransferDev
-          : netAppToEgressValidateTransferPlaywright;
+          ? netAppToEgressIndexingTransferDev
+          : netAppToEgressIndexingTransferPlaywright;
       }
       await delay(2500);
       return HttpResponse.json(response);

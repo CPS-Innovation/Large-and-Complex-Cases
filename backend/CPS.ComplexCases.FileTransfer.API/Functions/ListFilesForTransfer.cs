@@ -69,7 +69,7 @@ public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorage
 
             foreach (var file in filesForTransfer)
             {
-                var fullDestinationPath = destinationPath + file.RelativePath;
+                var fullDestinationPath = destinationPath + file.SourcePath;
                 var destinationPaths = new List<DestinationPath> { new DestinationPath { Path = fullDestinationPath } };
                 var validationResult = await pathValidator.ValidateAsync(destinationPaths);
 
