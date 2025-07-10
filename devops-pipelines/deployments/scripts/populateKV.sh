@@ -1,11 +1,5 @@
 #!/bin/bash
 
-echo key vault name is: $KEY_VAULT_NAME
-
-echo DDEI options access key is: $DDEI_OPTIONS_ACCESS_KEY
-
-exit 0
-
 echo "Initializing Key Vault secrets from Azure DevOps variable groups..."
 echo "🔐 Only storing sensitive secrets in Key Vault"
 
@@ -37,7 +31,8 @@ set_kv_secret() {
 echo "📋 Setting storage connection secrets..."
 
 # Database Connection String
-set_kv_secret "ConnectionStrings--CaseManagementDatastoreConnection" "$CASE_MANAGEMENT_DATASTORE_CONNECTION" connection string"
+# set_kv_secret "ConnectionStrings--CaseManagementDatastoreConnection" "$CASE_MANAGEMENT_DATASTORE_CONNECTION" "connection string"
+set_kv_sercet "ConnectionStrings--CaseManagementDatastoreConnection" $(CaseManagementDatastoreConnection) "connection string"
 
 echo "📋 Setting external API authentication secrets..."
 
