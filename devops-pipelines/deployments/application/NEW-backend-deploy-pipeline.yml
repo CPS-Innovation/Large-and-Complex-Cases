@@ -89,30 +89,13 @@ stages:
                 bash $(System.DefaultWorkingDirectory)/devops-pipelines/deployments/scripts/populateKV.sh
             env:
               KEY_VAULT_NAME: $(keyVaultName)
-              CASE_MANAGEMENT_DATASTORE_CONNECTION: $(CaseManagementDatastoreConnection)
+              # CASE_MANAGEMENT_DATASTORE_CONNECTION: $(CaseManagementDatastoreConnection)
               EGRESS_OPTIONS_USERNAME: $(EgressOptionsUsername)
               EGRESS_OPTIONS_PASSWORD: $(EgressOptionsPassword)
               DDEI_OPTIONS_ACCESS_KEY: $(DDEIOptionsAccessKey)
               NET_APP_OPTIONS_ACCESS_KEY: $(NetAppOptionsAccessKey)
               NET_APP_OPTIONS_SECRET_KEY: $(NetAppOptionsSecretKey)
               FILE_TRANSFER_API_OPTIONS_ACCESS_KEY: $(FileTransferApiOptionsAccessKey)
-
-          # - task: AzureCLI@2
-          #   displayName: 'LACC - Initialize Key Vault Secrets from Variable Groups'
-          #   inputs:
-          #     azureSubscription: $(azureSubscription)
-          #     scriptType: 'bash'
-          #     scriptLocation: 'scriptPath'
-          #     scriptPath: '$(System.DefaultWorkingDirectory)/devops-pipelines/deployments/scripts/populateKV.sh'
-          #   env:
-          #     KEY_VAULT_NAME: $(keyVaultName)
-          #     CASE_MANAGEMENT_DATASTORE_CONNECTION: $(CaseManagementDatastoreConnection)
-          #     EGRESS_OPTIONS_USERNAME: $(EgressOptionsUsername)
-          #     EGRESS_OPTIONS_PASSWORD: $(EgressOptionsPassword)
-          #     DDEI_OPTIONS_ACCESS_KEY: $(DDEIOptionsAccessKey)
-          #     NET_APP_OPTIONS_ACCESS_KEY: $(NetAppOptionsAccessKey)
-          #     NET_APP_OPTIONS_SECRET_KEY: $(NetAppOptionsSecretKey)
-          #     FILE_TRANSFER_API_OPTIONS_ACCESS_KEY: $(FileTransferApiOptionsAccessKey)
 
   - stage: Database_Migration
     displayName: 'LACC - Database Migration'
@@ -265,23 +248,7 @@ stages:
           runOnce:
             deploy:
               steps:
-                - task: Bash@3
-                  displayName: 'Ensure Azure CLI'
-                  inputs:
-                    targetType: 'inline'
-                    script: |
-                      echo "Checking if Azure CLI is installed..."
-                      
-                      # Check if az command exists
-                      if command -v az &> /dev/null; then
-                        echo "Azure CLI is already installed"
-                        az --version
-                        exit 0
-                      fi
-
-                      echo "Azure CLI not found, installing..."
-                      bash $(System.DefaultWorkingDirectory)/devops-pipelines/deployments/scripts/installAzureCli.sh
-
+                
                 - task: DownloadBuildArtifacts@0
                   displayName: 'LACC - Download Main API Artifact'
                   inputs:
@@ -311,6 +278,27 @@ stages:
                     package: '$(Pipeline.Workspace)/lacc-main-api-drop/*.zip'
                     runtimeStack: 'DOTNET-ISOLATED|8.0'
                     deploymentMethod: 'runFromPackage'
+                
+                - checkout: self
+                  sparseCheckoutDirectories: devops-pipelines/deployments/scripts
+                  fetchDepth: 1
+
+                - task: Bash@3
+                  displayName: 'Ensure Azure CLI'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      echo "Checking if Azure CLI is installed..."
+                      
+                      # Check if az command exists
+                      if command -v az &> /dev/null; then
+                        echo "Azure CLI is already installed"
+                        az --version
+                        exit 0
+                      fi
+
+                      echo "Azure CLI not found, installing..."
+                      bash $(System.DefaultWorkingDirectory)/devops-pipelines/deployments/scripts/installAzureCli.sh 
 
                 - task: AzureCLI@2
                   displayName: 'LACC - Verify Main API Deployment'
@@ -347,31 +335,6 @@ stages:
           runOnce:
             deploy:
               steps:
-                - checkout: self
-                  sparseCheckoutDirectories: devops-pipelines/deployments/scripts
-
-                - task: Bash@3
-                  displayName: 'Ensure Azure CLI'
-                  inputs:
-                    targetType: 'inline'
-                    script: |
-                      echo "pwd..."
-                      pwd
-                      echo "ls..."
-                      ls
-
-                      echo "Checking if Azure CLI is installed..."
-                      
-                      # Check if az command exists
-                      if command -v az &> /dev/null; then
-                        echo "Azure CLI is already installed"
-                        az --version
-                        exit 0
-                      fi
-
-                      echo "Azure CLI not found, installing..."
-                      bash ./scripts/installAzureCli.sh
-
                 - task: DownloadBuildArtifacts@0
                   displayName: 'LACC - Download FileTransfer API Artifact'
                   inputs:
@@ -401,6 +364,27 @@ stages:
                     package: '$(Pipeline.Workspace)/lacc-filetransfer-api-drop/*.zip'
                     runtimeStack: 'DOTNET-ISOLATED|8.0'
                     deploymentMethod: 'runFromPackage'
+                
+                - checkout: self
+                  sparseCheckoutDirectories: devops-pipelines/deployments/scripts
+                  fetchDepth: 1
+
+                - task: Bash@3
+                  displayName: 'Ensure Azure CLI'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      echo "Checking if Azure CLI is installed..."
+                      
+                      # Check if az command exists
+                      if command -v az &> /dev/null; then
+                        echo "Azure CLI is already installed"
+                        az --version
+                        exit 0
+                      fi
+
+                      echo "Azure CLI not found, installing..."
+                      bash $(System.DefaultWorkingDirectory)/devops-pipelines/deployments/scripts/installAzureCli.sh 
 
                 - task: AzureCLI@2
                   displayName: 'LACC - Verify FileTransfer API Deployment'
