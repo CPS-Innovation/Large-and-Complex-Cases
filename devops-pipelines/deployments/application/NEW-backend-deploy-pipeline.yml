@@ -6,12 +6,6 @@ trigger:
 
 pr: none
 
-# resources:
-#   pipelines:
-#     - pipeline: BackendBuild
-#       source: 'LACC Backend - Build, Test & Package'
-#       trigger: none
-
 parameters:
   - name: environment
     displayName: 'Target Environment'
@@ -126,7 +120,7 @@ stages:
                 - script: |
                     echo "Installing the unzip package..."
                     sudo apt-get update
-                    sudo apt-get install unzip
+                    sudo apt-get install unzip -y
                   displayName: 'Install unzip'
 
                 - task: ExtractFiles@1
