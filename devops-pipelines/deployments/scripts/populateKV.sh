@@ -31,8 +31,7 @@ set_kv_secret() {
 echo "📋 Setting storage connection secrets..."
 
 # Database Connection String
-# set_kv_secret "ConnectionStrings--CaseManagementDatastoreConnection" "$CASE_MANAGEMENT_DATASTORE_CONNECTION" "connection string"
-set_kv_sercet "ConnectionStrings--CaseManagementDatastoreConnection" $(CaseManagementDatastoreConnection) "connection string"
+set_kv_secret "ConnectionStrings--CaseManagementDatastoreConnection" "$CASE_MANAGEMENT_DATASTORE_CONNECTION" "connection string"
 
 echo "📋 Setting external API authentication secrets..."
 
