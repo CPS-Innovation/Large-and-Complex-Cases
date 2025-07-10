@@ -36,7 +36,7 @@ stages:
   - stage: Deploy_${{ parameters.environment }}
     displayName: 'Deploy to ${{ parameters.environment }}'
     pool:
-      vmImage: $(build-agent)
+      name: $(build-agent)
     jobs:
       - job: CI_Deploy_LACCUI_${{ parameters.environment }}
         steps:
