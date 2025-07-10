@@ -39,16 +39,6 @@ steps:
             "slotSetting": false
           },
           {
-            "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
-            "value": "${{ parameters.appInsightsKey }}",
-            "slotSetting": false
-          },
-          {
-            "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
-            "value": "${{ parameters.appInsightsConnectionString }}",
-            "slotSetting": false
-          },
-          {
             "name": "KeyVaultUri",
             "value": "https://${{ parameters.keyVaultName }}.vault.azure.net/",
             "slotSetting": false
