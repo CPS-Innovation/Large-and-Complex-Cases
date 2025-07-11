@@ -265,12 +265,6 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
   const getDestinationDropdownItems = (id: string) => {
     return [
       {
-        id: `${id}:move`,
-        label: "Move",
-        ariaLabel: "move",
-        disabled: false,
-      },
-      {
         id: `${id}:copy`,
         label: "Copy",
         ariaLabel: "copy",
@@ -280,14 +274,14 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
   };
 
   const handleTransferAction = (id: string) => {
-    const { actionData, actionType } = getActionDataFromId(id);
+    const { actionData } = getActionDataFromId(id);
     handleSelectedActionType({
       destinationFolder: {
         path: actionData,
         name: getFolderNameFromPath(actionData),
         sourceType: "netapp",
       },
-      actionType: actionType === "copy" ? "copy" : "move",
+      actionType: "copy",
     });
   };
 
@@ -304,15 +298,6 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
         >
           Copy
         </LinkButton>{" "}
-        |
-        <LinkButton
-          type="button"
-          onClick={() => {
-            handleTransferAction(`${curentFolder.folderPath}:move`);
-          }}
-        >
-          Move
-        </LinkButton>
       </InsetText>
     );
   };

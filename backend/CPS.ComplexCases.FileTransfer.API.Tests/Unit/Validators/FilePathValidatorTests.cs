@@ -28,17 +28,18 @@ public class FilePathValidatorTests
     [Fact]
     public void Should_Have_Error_When_FilePath_Too_Long()
     {
-        var longPath = new string('a', 256);
+        var longPath = new string('a', 261);
         var paths = new List<DestinationPath> { new() { Path = longPath } };
         var result = _validator.TestValidate(paths);
         result.ShouldHaveValidationErrorFor("paths[0].Path")
-            .WithErrorMessage($"{longPath}: exceeds the 255 characters limit.");
+            .WithErrorMessage($"{longPath}: exceeds the 260 characters limit.");
     }
 
     [Fact]
     public void Should_Have_Error_When_FilePath_Has_Invalid_Characters()
     {
-        var invalidPath = "invalid*file?.txt";
+        // Use null character which is invalid on both Windows and Linux
+        var invalidPath = "invalid\0file.txt";
         var paths = new List<DestinationPath> { new() { Path = invalidPath } };
         var result = _validator.TestValidate(paths);
         result.ShouldHaveValidationErrorFor("paths[0].Path")

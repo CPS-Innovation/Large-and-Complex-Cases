@@ -188,7 +188,7 @@ test.describe("transfer material egress list", () => {
   }) => {
     await worker.use(
       http.get(
-        "https://mocked-out-api/api/egress/workspaces/egress_1/files",
+        "https://mocked-out-api/api/v1/egress/workspaces/egress_1/files",
         async () => {
           await delay(500);
           return HttpResponse.json({

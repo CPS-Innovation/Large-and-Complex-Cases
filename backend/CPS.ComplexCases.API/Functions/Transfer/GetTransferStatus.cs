@@ -27,7 +27,7 @@ public class GetTransferStatus(ILogger<GetTransferStatus> logger, IFileTransferC
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Forbidden, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Forbidden)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
     public async Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "filetransfer/{transferId}/status")] HttpRequest req, FunctionContext functionContext, string transferId)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/filetransfer/{transferId}/status")] HttpRequest req, FunctionContext functionContext, string transferId)
     {
         var context = functionContext.GetRequestContext();
 

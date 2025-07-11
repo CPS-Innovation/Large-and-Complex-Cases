@@ -7,7 +7,7 @@ test.describe("egress meta data issues", () => {
     worker,
   }) => {
     await worker.use(
-      http.get("https://mocked-out-api/api/cases/12", async () => {
+      http.get("https://mocked-out-api/api/v1/cases/12", async () => {
         await delay(1000);
         return HttpResponse.json({
           caseId: "12",
@@ -45,7 +45,7 @@ test.describe("egress meta data issues", () => {
     worker,
   }) => {
     await worker.use(
-      http.get("https://mocked-out-api/api/cases/12", async () => {
+      http.get("https://mocked-out-api/api/v1/cases/12", async () => {
         await delay(1000);
         return HttpResponse.json({
           caseId: "12",
@@ -69,7 +69,7 @@ test.describe("egress meta data issues", () => {
   }) => {
     await worker.use(
       http.get(
-        "https://mocked-out-api/api/egress/workspaces/egress_1/files",
+        "https://mocked-out-api/api/v1/egress/workspaces/egress_1/files",
         async () => {
           await delay(500);
           return new HttpResponse(null, { status: 404 });
@@ -107,7 +107,7 @@ test.describe("egress meta data issues", () => {
   }) => {
     await worker.use(
       http.get(
-        "https://mocked-out-api/api/egress/workspaces/egress_1/files",
+        "https://mocked-out-api/api/v1/egress/workspaces/egress_1/files",
         async () => {
           await delay(500);
           return new HttpResponse(null, { status: 401 });
@@ -140,7 +140,7 @@ test.describe("egress meta data issues", () => {
     worker,
   }) => {
     await worker.use(
-      http.get("https://mocked-out-api/api/cases/12", async () => {
+      http.get("https://mocked-out-api/api/v1/cases/12", async () => {
         await delay(500);
         return HttpResponse.json(null, { status: 500 });
       }),
@@ -158,7 +158,7 @@ test.describe("egress meta data issues", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/cases/12: Getting case metadata failed; status - Internal Server Error (500)",
+        "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/cases/12: Getting case metadata failed; status - Internal Server Error (500)",
       ),
     ).toBeVisible();
   });
@@ -168,7 +168,7 @@ test.describe("egress meta data issues", () => {
   }) => {
     await worker.use(
       http.get(
-        "https://mocked-out-api/api/egress/workspaces/egress_1/files",
+        "https://mocked-out-api/api/v1/egress/workspaces/egress_1/files",
         async () => {
           await delay(500);
           return HttpResponse.json(null, { status: 500 });
@@ -189,7 +189,7 @@ test.describe("egress meta data issues", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/egress/workspaces/egress_1/files?folder-id=&skip=0&take=50: Getting egress folders failed; status - Internal Server Error (500)",
+        "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/egress/workspaces/egress_1/files?folder-id=&skip=0&take=50: Getting egress folders failed; status - Internal Server Error (500)",
       ),
     ).toBeVisible();
   });
@@ -201,7 +201,7 @@ test.describe("netapp meta data issues", () => {
     worker,
   }) => {
     await worker.use(
-      http.get("https://mocked-out-api/api/cases/12", async () => {
+      http.get("https://mocked-out-api/api/v1/cases/12", async () => {
         await delay(1000);
         return HttpResponse.json({
           caseId: "12",
@@ -239,7 +239,7 @@ test.describe("netapp meta data issues", () => {
     worker,
   }) => {
     await worker.use(
-      http.get("https://mocked-out-api/api/netapp/files", async () => {
+      http.get("https://mocked-out-api/api/v1/netapp/files", async () => {
         await delay(500);
         return new HttpResponse(null, { status: 404 });
       }),
@@ -274,7 +274,7 @@ test.describe("netapp meta data issues", () => {
     worker,
   }) => {
     await worker.use(
-      http.get("https://mocked-out-api/api/netapp/files", async () => {
+      http.get("https://mocked-out-api/api/v1/netapp/files", async () => {
         await delay(500);
         return new HttpResponse(null, { status: 401 });
       }),
@@ -283,7 +283,7 @@ test.describe("netapp meta data issues", () => {
     await page.goto("/case/12/case-management");
     await expect(page).toHaveURL("/case/12/case-management");
     await expect(page).toHaveURL(
-      "/case/12/case-management/connection-error?type=shared drive",
+      "/case/12/case-management/connection-error?type=shareddrive",
     );
     await expect(page.locator("h1")).toHaveText(
       "Sorry, there was a problem connecting to shared drive",
@@ -305,7 +305,7 @@ test.describe("netapp meta data issues", () => {
     worker,
   }) => {
     await worker.use(
-      http.get("https://mocked-out-api/api/netapp/files", async () => {
+      http.get("https://mocked-out-api/api/v1/netapp/files", async () => {
         await delay(500);
         return HttpResponse.json(null, { status: 500 });
       }),
@@ -324,7 +324,7 @@ test.describe("netapp meta data issues", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/netapp/files: getting netapp files/folders failed; status - Internal Server Error (500)",
+        "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/netapp/files: getting netapp files/folders failed; status - Internal Server Error (500)",
       ),
     ).toBeVisible();
   });

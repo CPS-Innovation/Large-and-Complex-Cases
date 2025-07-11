@@ -4,7 +4,7 @@ import { expect, test } from "../utils/test";
 test.describe("netapp connect", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    await page.waitForResponse(`https://mocked-out-api/api/areas`);
+    await page.waitForResponse(`https://mocked-out-api/api/v1/areas`);
   });
 
   const validateFolderPath = async (page, expectedResult: string[]) => {
@@ -91,7 +91,7 @@ test.describe("netapp connect", () => {
     worker,
   }) => {
     await worker.use(
-      http.post("https://mocked-out-api/api/netapp/connections", async () => {
+      http.post("https://mocked-out-api/api/v1/netapp/connections", async () => {
         await delay(10);
         return new HttpResponse(null, { status: 500 });
       }),
@@ -161,7 +161,7 @@ test.describe("netapp connect", () => {
     worker,
   }) => {
     await worker.use(
-      http.get("https://mocked-out-api/api/netapp/folders", async () => {
+      http.get("https://mocked-out-api/api/v1/netapp/folders", async () => {
         await delay(10);
         return HttpResponse.json({
           data: {
@@ -211,7 +211,7 @@ test.describe("netapp connect", () => {
     worker,
   }) => {
     await worker.use(
-      http.get("https://mocked-out-api/api/netapp/folders", async () => {
+      http.get("https://mocked-out-api/api/v1/netapp/folders", async () => {
         await delay(10);
         return new HttpResponse(null, { status: 500 });
       }),
@@ -244,7 +244,7 @@ test.describe("netapp connect", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/netapp/folders: getting netapp folders failed; status - Internal Server Error (500)",
+        "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/netapp/folders: getting netapp folders failed; status - Internal Server Error (500)",
       ),
     ).toBeVisible();
   });

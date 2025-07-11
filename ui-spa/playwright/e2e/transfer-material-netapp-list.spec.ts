@@ -205,7 +205,7 @@ test.describe("transfer material netapp list", () => {
     worker,
   }) => {
     await worker.use(
-      http.get("https://mocked-out-api/api/netapp/files", async () => {
+      http.get("https://mocked-out-api/api/v1/netapp/files", async () => {
         await delay(500);
         return HttpResponse.json({
           data: { fileData: [], folderData: [] },

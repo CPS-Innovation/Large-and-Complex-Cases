@@ -1,43 +1,66 @@
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Builder;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Abstractions;
+using Microsoft.DurableTask.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.ActivityLog.Extensions;
+using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Helpers;
+using CPS.ComplexCases.Common.OpenApi;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Extensions;
 using CPS.ComplexCases.Egress.Extensions;
+using CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
 using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.NetApp.Extensions;
-using CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
-using Microsoft.DurableTask.Client;
 
-var builder = FunctionsApplication.CreateBuilder(args);
+// Create a temporary logger for configuration phase
+using var loggerFactory = LoggerFactory.Create(configure => configure.AddConsole());
+var logger = loggerFactory.CreateLogger("Configuration");
 
-builder.ConfigureFunctionsWebApplication();
+var host = new HostBuilder()
+    .ConfigureFunctionsWebApplication() // ✅ Adds ASP.NET Core integration
+    .ConfigureAppConfiguration((context, config) =>
+    {
+        // ✅ Configure Azure Key Vault if KeyVaultUri is provided
+        config.AddKeyVaultIfConfigured(config.Build(), logger);
+    })
+    .ConfigureServices((context, services) =>
+    {
+        // Get configuration for service registrations
+        var configuration = context.Configuration;
 
-builder.Services
-    .AddApplicationInsightsTelemetryWorkerService()
-    .ConfigureFunctionsApplicationInsights();
+        services
+            .AddApplicationInsightsTelemetryWorkerService()
+            .ConfigureFunctionsApplicationInsights();
 
-builder.Services.AddActivityLog();
-builder.Services.AddEgressClient(builder.Configuration);
-builder.Services.AddNetAppClient(builder.Configuration);
-builder.Services.AddDataClient(builder.Configuration);
+        // ✅ Add services with configuration
+        services.AddActivityLog();
+        services.AddEgressClient(configuration);
+        services.AddNetAppClient(configuration);
+        services.AddDataClient(configuration);
 
-builder.Services.AddScoped<ICaseMetadataService, CaseMetadataService>();
+        services.AddScoped<ICaseMetadataService, CaseMetadataService>();
 
-builder.Services.Configure<SizeConfig>(
-    builder.Configuration.GetSection("FileTransfer:SizeConfig"));
+        services.Configure<SizeConfig>(
+            configuration.GetSection("FileTransfer:SizeConfig"));
 
-builder.Services.AddScoped<IStorageClientFactory, StorageClientFactory>();
-builder.Services.AddScoped<IRequestValidator, RequestValidator>();
-builder.Services.AddScoped<ITransferEntityHelper, TransferEntityHelper>();
+        services.AddScoped<IStorageClientFactory, StorageClientFactory>();
+        services.AddScoped<IRequestValidator, RequestValidator>();
 
-builder.Services.AddDurableTaskClient(x =>
-{
-    x.UseGrpc();
-});
+        services.AddScoped<IStorageClientFactory, StorageClientFactory>();
+        services.AddScoped<IRequestValidator, RequestValidator>();
+        services.AddScoped<ITransferEntityHelper, TransferEntityHelper>();
 
-await builder.Build().RunAsync();
+        services.AddDurableTaskClient(x =>
+        {
+            x.UseGrpc();
+        });
+        // Configure OpenAPI
+        services.AddSingleton<IOpenApiConfigurationOptions, FileTransferApiOpenApiConfigurationOptions>();
+    })
+    .Build();
+
+await host.RunAsync();

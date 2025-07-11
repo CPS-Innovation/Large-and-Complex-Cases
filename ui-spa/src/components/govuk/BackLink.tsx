@@ -7,6 +7,7 @@ export type BackLinkProps = {
   to?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   state?: any;
+  replace?: boolean;
   children: ReactNode;
 };
 

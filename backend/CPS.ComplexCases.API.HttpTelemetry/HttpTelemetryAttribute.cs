@@ -1,9 +1,7 @@
-using Microsoft.Azure.WebJobs.Description;
-
 namespace CPS.ComplexCases.API.HttpTelemetry;
 
 [AttributeUsage(AttributeTargets.Parameter)]
-[Binding]
+[Microsoft.Azure.WebJobs.Description.Binding]
 public class HttpTelemetryAttribute : Attribute
 {
 }

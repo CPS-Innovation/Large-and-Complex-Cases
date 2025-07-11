@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useApi } from "../../../common/hooks/useApi";
 import { LinkButton, InsetText, NotificationBanner } from "../../govuk";
 import NetAppFolderContainer from "./NetAppFolderContainer";
@@ -8,7 +8,6 @@ import {
   getNetAppFolders,
   indexingFileTransfer,
   initiateFileTransfer,
-  getTransferStatus,
 } from "../../../apis/gateway-api";
 import EgressFolderContainer from "./EgressFolderContainer";
 import { useNavigate } from "react-router-dom";
@@ -24,6 +23,7 @@ import { IndexingFileTransferResponse } from "../../../common/types/IndexingFile
 import { InitiateFileTransferResponse } from "../../../common/types/InitiateFileTransferResponse";
 import { useUserDetails } from "../../../auth";
 import { ApiError } from "../../../common/errors/ApiError";
+import { pollTransferStatus } from "../../../common/utils/pollTransferStatus";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
@@ -108,6 +108,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     () => (netAppData ? mapToNetAppFolderData(netAppData) : []),
     [netAppData],
   );
+  const unMounting = useRef(false);
 
   const handleEgressFolderPathClick = (path: string) => {
     const index = egressPathFolders.findIndex(
@@ -311,7 +312,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       }
       if (netAppError.code === 401) {
         navigate(
-          `/case/${caseId}/case-management/connection-error?type=shared drive`,
+          `/case/${caseId}/case-management/connection-error?type=shareddrive`,
         );
         return;
       } else {
@@ -433,9 +434,16 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       response = await indexingFileTransfer(validationPayload);
       if (response.isInvalid) {
         setTransferStatus("validated-with-errors");
-        navigate(`/case/${caseId}/case-management/transfer-validation-errors`, {
+        navigate(`/case/${caseId}/case-management/transfer-resolve-file-path`, {
           state: {
             isRouteValid: true,
+            validationErrors: response.validationErrors,
+            destinationPath: response.destinationPath,
+            initiateTransferPayload: getInitiateTransferPayload(response),
+            baseFolderName:
+              "folderName" in currentEgressFolder
+                ? currentEgressFolder.folderName
+                : "",
           },
         });
         return;
@@ -482,7 +490,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   };
 
   const handleStatusResponse = useCallback(
-    (response: TransferStatusResponse, interval: NodeJS.Timeout) => {
+    (response: TransferStatusResponse) => {
       if (response.status === "Initiated" || response.status === "InProgress") {
         setTransferStatus("transferring");
         setTransferStatusData({
@@ -495,9 +503,11 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         egressRefetch();
         netAppRefetch();
         setTransferStatus("completed");
+        setTransferStatusData({
+          username: response.userName,
+          direction: response.direction,
+        });
         setTransferId("");
-        if (interval) clearInterval(interval);
-        return;
       }
       if (response.status === "PartiallyCompleted") {
         setTransferStatus("completed-with-errors");
@@ -508,7 +518,6 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         });
         setTransferId("");
         setTransferStatusData(null);
-        if (interval) clearInterval(interval);
       }
     },
     [
@@ -520,40 +529,45 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       setTransferId,
     ],
   );
+  const isComponentUnmounted = useCallback(() => {
+    return unMounting.current;
+  }, []);
+
+  useEffect(() => {
+    unMounting.current = false;
+    return () => {
+      unMounting.current = true;
+      const params = new URLSearchParams(window.location.search);
+      const url = `${params}`
+        ? `${window.location.pathname}?${params}`
+        : window.location.pathname;
+      window.history.replaceState({}, "", url);
+    };
+  }, []);
 
   useEffect(() => {
     if (!transferId) {
       return;
     }
     setTransferStatus("transferring");
-
-    const pollingInterval = 5000;
-    const fetchStatusData = async () => {
-      try {
-        const status = await getTransferStatus(transferId);
-        handleStatusResponse(status, interval);
-      } catch (error) {
-        if ((error as ApiError).code !== 404) {
-          if (interval) clearInterval(interval);
-          setApiRequestError(error as Error);
-        }
-      }
-    };
-
-    fetchStatusData();
-    const interval = setInterval(async () => {
-      fetchStatusData();
-    }, pollingInterval);
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [transferId, setTransferStatus, handleStatusResponse]);
+    pollTransferStatus(
+      transferId,
+      isComponentUnmounted,
+      handleStatusResponse,
+      setApiRequestError,
+    );
+  }, [
+    transferId,
+    setTransferStatus,
+    isComponentUnmounted,
+    handleStatusResponse,
+  ]);
 
   const activeTransferMessage = useMemo(() => {
     if (!transferStatusData) {
       return {
         ariaLabelText: "",
-        spinnerTextContent: "",
+        spinnerTextContent: <span> Completing transfer</span>,
       };
     }
     if (transferStatusData?.username !== username) {

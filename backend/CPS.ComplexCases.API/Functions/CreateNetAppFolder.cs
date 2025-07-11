@@ -16,7 +16,7 @@ public class CreateNetAppFolder(ILogger<CreateNetAppFolder> logger,
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
 
     [Function(nameof(CreateNetAppFolder))]
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "cases/{operationName}/netapp")] HttpRequest req, string operationName)
+    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "v1/cases/{operationName}/netapp")] HttpRequest req, string operationName)
     {
         var arg = _netAppArgFactory.CreateFindBucketArg(operationName!);
         var result = await _netAppClient.FindBucketAsync(arg);

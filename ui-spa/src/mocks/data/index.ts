@@ -13,12 +13,13 @@ export { getEgressFolderResultsPlaywright } from "./egressFolderResults.playwrig
 export { getNetAppFolderResultsDev } from "./netappFolderResults.dev";
 export { getNetAppFolderResultsPlaywright } from "./netappFolderResults.playwright";
 export {
-  egressToNetAppValidateTransferDev,
-  netAppToEgressValidateTransferDev,
+  egressToNetAppIndexingTransferDev,
+  netAppToEgressIndexingTransferDev,
+  egressToNetAppIndexingErrorDev,
 } from "./validateTransfer.dev";
 export {
-  egressToNetAppValidateTransferPlaywright,
-  netAppToEgressValidateTransferPlaywright,
+  egressToNetAppIndexingTransferPlaywright,
+  netAppToEgressIndexingTransferPlaywright,
 } from "./validateTransfer.playwright";
 
 export {

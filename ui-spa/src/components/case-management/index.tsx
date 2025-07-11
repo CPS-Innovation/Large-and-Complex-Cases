@@ -3,6 +3,7 @@ import { Tabs } from "../common/tabs/Tabs";
 import { TabId } from "../../common/types/CaseManagement";
 import { ItemProps } from "../common/tabs/types";
 import TransferMaterialsPage from "./transfer-materials";
+import TransferResolveFilePathPage from "./transfer-materials/TransferResolveFilePathPage";
 import { useApi } from "../../common/hooks/useApi";
 import { getCaseMetaData } from "../../apis/gateway-api";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
@@ -63,7 +64,13 @@ const CaseManagementPage = () => {
 
   const validateRoute = useCallback(() => {
     if (
-      location.pathname.endsWith("/transfer-validation-errors") &&
+      location.pathname.endsWith("/transfer-resolve-file-path") &&
+      !location?.state?.isRouteValid
+    ) {
+      navigate(`/`);
+    }
+    if (
+      location.pathname.endsWith("/transfer-rename-file") &&
       !location?.state?.isRouteValid
     ) {
       navigate(`/`);
@@ -91,7 +98,9 @@ const CaseManagementPage = () => {
             operationName={caseMetaData.data.operationName}
             egressWorkspaceId={caseMetaData.data.egressWorkspaceId}
             netAppPath={caseMetaData?.data.netappFolderPath}
-            activeTransferId={caseMetaData?.data.activeTransferId}
+            activeTransferId={
+              location?.state?.transferId ?? caseMetaData?.data.activeTransferId
+            }
           />
         ) : (
           <div> </div>
@@ -107,14 +116,11 @@ const CaseManagementPage = () => {
   if (caseMetaData.status === "loading" || caseMetaData.status === "initial") {
     return <div className="govuk-width-container">loading...</div>;
   }
-  if (location.pathname.endsWith("/transfer-validation-errors"))
-    return (
-      <div className="govuk-width-container">
-        <div>
-          <h1>Handle validation errors</h1>
-        </div>
-      </div>
-    );
+  if (
+    location.pathname.endsWith("/transfer-resolve-file-path") ||
+    location.pathname.endsWith("/transfer-rename-file")
+  )
+    return <TransferResolveFilePathPage />;
   if (location.pathname.endsWith("/transfer-errors"))
     return (
       <div className="govuk-width-container">

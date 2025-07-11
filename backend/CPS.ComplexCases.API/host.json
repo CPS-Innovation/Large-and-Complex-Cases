@@ -7,14 +7,15 @@
         "excludedTypes": "Request"
       },
       "enableLiveMetricsFilters": true
+    },
+    "logLevel": {
+      "default": "Information",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
     }
   },
-  "extensions": {
-    "durableTask": {
-      "hubName": "%ApiTaskHub%",
-      "storageProvider": {
-        "type": "AzureStorage"
-      }
-    }
+  "extensionBundle": {
+    "id": "Microsoft.Azure.Functions.ExtensionBundle",
+    "version": "[4.*, 5.0.0)"
   }
 }

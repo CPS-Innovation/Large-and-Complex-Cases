@@ -1,11 +1,14 @@
+using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask.Client;
 using Microsoft.Extensions.Logging;
 using Microsoft.DurableTask;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models.Requests;
+using CPS.ComplexCases.Common.Constants;
 using CPS.ComplexCases.FileTransfer.API.Validators;
 using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.FileTransfer.API.Durable.Orchestration;
@@ -33,6 +36,11 @@ public class InitiateTransfer
     }
 
     [Function(nameof(InitiateTransfer))]
+    [OpenApiOperation(operationId: nameof(InitiateTransfer), tags: ["FileTransfer"], Description = "Initiates a new file transfer operation. If a transfer is already in progress for the case, returns the current transfer status.")]
+    [OpenApiRequestBody(contentType: ContentType.ApplicationJson, bodyType: typeof(TransferRequest), Required = true, Description = "Request containing transfer details including source paths, destination, and metadata.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.Accepted, contentType: ContentType.ApplicationJson, bodyType: typeof(TransferResponse), Description = "Transfer initiated successfully. Returns transfer ID and status.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.ApplicationJson, bodyType: typeof(IEnumerable<string>), Description = ApiResponseDescriptions.BadRequest)]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, bodyType: typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
     public async Task<IActionResult> Run(
     [HttpTrigger(AuthorizationLevel.Function, "post", Route = "transfer")] HttpRequest req,
     [DurableClient] DurableTaskClient orchestrationClient)
@@ -69,7 +77,7 @@ public class InitiateTransfer
                     currentCorrelationId);
 
                 // if the transfer is already in progress, return the current status
-                return new AcceptedResult($"/api/filetransfer/{caseMetadata.ActiveTransferId}/status", new TransferResponse
+                return new AcceptedResult($"/api/v1/filetransfer/{caseMetadata.ActiveTransferId}/status", new TransferResponse
                 {
                     Id = caseMetadata.ActiveTransferId.Value,
                     Status = entityState.State.Status,
@@ -105,7 +113,7 @@ public class InitiateTransfer
             }
         );
 
-        return new AcceptedResult($"/api/filetransfer/{transferId}/status", new TransferResponse
+        return new AcceptedResult($"/api/v1/filetransfer/{transferId}/status", new TransferResponse
         {
             Id = transferId,
             Status = TransferStatus.Initiated,

@@ -9,8 +9,6 @@ using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
-using FluentAssertions;
-using FluentAssertions.Execution;
 using Microsoft.DurableTask;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -64,16 +62,13 @@ public class TransferOrchestratorTests
         await _orchestrator.RunOrchestrator(_contextMock.Object);
 
         // Assert
-        using (new AssertionScope())
-        {
-            activityCallOrder.Should().HaveCount(6);
-            activityCallOrder[0].Should().Be("InitializeTransfer");
-            activityCallOrder[1].Should().Be("UpdateActivityLog");
-            activityCallOrder[2].Should().Be("UpdateTransferStatus");
-            activityCallOrder[3].Should().Be("TransferFile");
-            activityCallOrder[4].Should().Be("UpdateActivityLog");
-            activityCallOrder[5].Should().Be("FinalizeTransfer");
-        }
+        Assert.Equal(6, activityCallOrder.Count);
+        Assert.Equal("InitializeTransfer", activityCallOrder[0]);
+        Assert.Equal("UpdateActivityLog", activityCallOrder[1]);
+        Assert.Equal("UpdateTransferStatus", activityCallOrder[2]);
+        Assert.Equal("TransferFile", activityCallOrder[3]);
+        Assert.Equal("UpdateActivityLog", activityCallOrder[4]);
+        Assert.Equal("FinalizeTransfer", activityCallOrder[5]);
     }
 
     [Fact]
@@ -100,19 +95,16 @@ public class TransferOrchestratorTests
         await _orchestrator.RunOrchestrator(_contextMock.Object);
 
         // Assert
-        using (new AssertionScope())
-        {
-            capturedEntity.Should().NotBeNull();
-            capturedEntity.Id.Should().Be(transferPayload.TransferId);
-            capturedEntity.Status.Should().Be(TransferStatus.Initiated);
-            capturedEntity.DestinationPath.Should().Be(transferPayload.DestinationPath);
-            capturedEntity.SourcePaths.Should().BeEquivalentTo(transferPayload.SourcePaths);
-            capturedEntity.CaseId.Should().Be(transferPayload.CaseId);
-            capturedEntity.TransferType.Should().Be(transferPayload.TransferType);
-            capturedEntity.Direction.Should().Be(transferPayload.TransferDirection);
-            capturedEntity.TotalFiles.Should().Be(transferPayload.SourcePaths.Count);
-            capturedEntity.IsRetry.Should().Be(transferPayload.IsRetry ?? false);
-        }
+        Assert.NotNull(capturedEntity);
+        Assert.Equal(transferPayload.TransferId, capturedEntity.Id);
+        Assert.Equal(TransferStatus.Initiated, capturedEntity.Status);
+        Assert.Equal(transferPayload.DestinationPath, capturedEntity.DestinationPath);
+        Assert.Equal(transferPayload.SourcePaths, capturedEntity.SourcePaths);
+        Assert.Equal(transferPayload.CaseId, capturedEntity.CaseId);
+        Assert.Equal(transferPayload.TransferType, capturedEntity.TransferType);
+        Assert.Equal(transferPayload.TransferDirection, capturedEntity.Direction);
+        Assert.Equal(transferPayload.SourcePaths.Count, capturedEntity.TotalFiles);
+        Assert.Equal(transferPayload.IsRetry ?? false, capturedEntity.IsRetry);
     }
 
     [Fact]
@@ -142,13 +134,10 @@ public class TransferOrchestratorTests
         await _orchestrator.RunOrchestrator(_contextMock.Object);
 
         // Assert
-        using (new AssertionScope())
-        {
-            capturedPayload.Should().NotBeNull();
-            capturedPayload.ActionType.Should().Be(ActivityLog.Enums.ActionType.TransferInitiated);
-            capturedPayload.TransferId.Should().Be(transferPayload.TransferId.ToString());
-            capturedPayload.UserName.Should().Be(transferPayload.UserName);
-        }
+        Assert.NotNull(capturedPayload);
+        Assert.Equal(ActivityLog.Enums.ActionType.TransferInitiated, capturedPayload.ActionType);
+        Assert.Equal(transferPayload.TransferId.ToString(), capturedPayload.TransferId);
+        Assert.Equal(transferPayload.UserName, capturedPayload.UserName);
     }
 
     [Fact]
@@ -175,12 +164,9 @@ public class TransferOrchestratorTests
         await _orchestrator.RunOrchestrator(_contextMock.Object);
 
         // Assert
-        using (new AssertionScope())
-        {
-            capturedPayload.Should().NotBeNull();
-            capturedPayload.TransferId.Should().Be(transferPayload.TransferId);
-            capturedPayload.Status.Should().Be(TransferStatus.InProgress);
-        }
+        Assert.NotNull(capturedPayload);
+        Assert.Equal(transferPayload.TransferId, capturedPayload.TransferId);
+        Assert.Equal(TransferStatus.InProgress, capturedPayload.Status);
     }
 
     [Fact]
@@ -207,22 +193,19 @@ public class TransferOrchestratorTests
         await _orchestrator.RunOrchestrator(_contextMock.Object);
 
         // Assert
-        using (new AssertionScope())
+        Assert.Equal(transferPayload.SourcePaths.Count, capturedTransferPayloads.Count);
+
+        for (int i = 0; i < transferPayload.SourcePaths.Count; i++)
         {
-            capturedTransferPayloads.Should().HaveCount(transferPayload.SourcePaths.Count);
+            var captured = capturedTransferPayloads[i];
+            var expected = transferPayload.SourcePaths[i];
 
-            for (int i = 0; i < transferPayload.SourcePaths.Count; i++)
-            {
-                var captured = capturedTransferPayloads[i];
-                var expected = transferPayload.SourcePaths[i];
-
-                captured.SourcePath.Should().Be(expected);
-                captured.DestinationPath.Should().Be(transferPayload.DestinationPath);
-                captured.TransferId.Should().Be(transferPayload.TransferId);
-                captured.TransferType.Should().Be(transferPayload.TransferType);
-                captured.TransferDirection.Should().Be(transferPayload.TransferDirection);
-                captured.WorkspaceId.Should().Be(transferPayload.WorkspaceId);
-            }
+            Assert.Equal(expected, captured.SourcePath);
+            Assert.Equal(transferPayload.DestinationPath, captured.DestinationPath);
+            Assert.Equal(transferPayload.TransferId, captured.TransferId);
+            Assert.Equal(transferPayload.TransferType, captured.TransferType);
+            Assert.Equal(transferPayload.TransferDirection, captured.TransferDirection);
+            Assert.Equal(transferPayload.WorkspaceId, captured.WorkspaceId);
         }
     }
 
@@ -250,15 +233,12 @@ public class TransferOrchestratorTests
         await _orchestrator.RunOrchestrator(_contextMock.Object);
 
         // Assert
-        using (new AssertionScope())
-        {
-            capturedPayloads.Should().HaveCount(2);
+        Assert.Equal(2, capturedPayloads.Count);
 
-            var completedPayload = capturedPayloads[1];
-            completedPayload.ActionType.Should().Be(ActivityLog.Enums.ActionType.TransferCompleted);
-            completedPayload.TransferId.Should().Be(transferPayload.TransferId.ToString());
-            completedPayload.UserName.Should().Be(transferPayload.UserName);
-        }
+        var completedPayload = capturedPayloads[1];
+        Assert.Equal(ActivityLog.Enums.ActionType.TransferCompleted, completedPayload.ActionType);
+        Assert.Equal(transferPayload.TransferId.ToString(), completedPayload.TransferId);
+        Assert.Equal(transferPayload.UserName, completedPayload.UserName);
     }
 
     [Fact]
@@ -285,11 +265,8 @@ public class TransferOrchestratorTests
         await _orchestrator.RunOrchestrator(_contextMock.Object);
 
         // Assert
-        using (new AssertionScope())
-        {
-            capturedPayload.Should().NotBeNull();
-            capturedPayload.TransferId.Should().Be(transferPayload.TransferId);
-        }
+        Assert.NotNull(capturedPayload);
+        Assert.Equal(transferPayload.TransferId, capturedPayload.TransferId);
     }
 
     [Fact]
@@ -323,14 +300,11 @@ public class TransferOrchestratorTests
         var thrownException = await Assert.ThrowsAsync<InvalidOperationException>(
             () => _orchestrator.RunOrchestrator(_contextMock.Object));
 
-        using (new AssertionScope())
-        {
-            thrownException.Should().Be(exception);
-            capturedStatusPayloads.Should().HaveCount(2);
-            capturedStatusPayloads[0].Status.Should().Be(TransferStatus.InProgress);
-            capturedStatusPayloads[1].Status.Should().Be(TransferStatus.Failed);
-            capturedStatusPayloads[1].TransferId.Should().Be(transferPayload.TransferId);
-        }
+        Assert.Equal(exception, thrownException);
+        Assert.Equal(2, capturedStatusPayloads.Count);
+        Assert.Equal(TransferStatus.InProgress, capturedStatusPayloads[0].Status);
+        Assert.Equal(TransferStatus.Failed, capturedStatusPayloads[1].Status);
+        Assert.Equal(transferPayload.TransferId, capturedStatusPayloads[1].TransferId);
     }
 
     [Fact]
@@ -357,21 +331,18 @@ public class TransferOrchestratorTests
         var thrownException = await Assert.ThrowsAsync<InvalidOperationException>(
             () => _orchestrator.RunOrchestrator(_contextMock.Object));
 
-        using (new AssertionScope())
-        {
-            thrownException.Should().Be(exception);
+        Assert.Equal(exception, thrownException);
 
-            _activityLogServiceMock.Verify(
-                x => x.CreateActivityLogAsync(
-                    ActivityLog.Enums.ActionType.TransferFailed,
-                    ActivityLog.Enums.ResourceType.FileTransfer,
-                    transferPayload.CaseId,
-                    transferPayload.TransferId.ToString(),
-                    It.IsAny<string>(),
-                    transferPayload.UserName,
-                    It.IsAny<JsonDocument>()),
-                Times.Once);
-        }
+        _activityLogServiceMock.Verify(
+            x => x.CreateActivityLogAsync(
+                ActivityLog.Enums.ActionType.TransferFailed,
+                ActivityLog.Enums.ResourceType.FileTransfer,
+                transferPayload.CaseId,
+                transferPayload.TransferId.ToString(),
+                It.IsAny<string>(),
+                transferPayload.UserName,
+                It.IsAny<JsonDocument>()),
+            Times.Once);
     }
 
     [Fact]

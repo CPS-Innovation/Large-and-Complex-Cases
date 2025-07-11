@@ -12,7 +12,7 @@ const MetaDataErrorPage = () => {
   const errorType = useMemo(() => {
     return location.pathname.includes("egress-connection-error")
       ? "egress"
-      : "shared drive";
+      : "shareddrive";
   }, [location]);
   const handleCancel = () => {
     navigate("/");
@@ -54,11 +54,13 @@ const MetaDataErrorPage = () => {
       <BackLink to={"/"}>Back</BackLink>
       <div className={styles.contentWrapper}>
         <h1 className="govuk-heading-xl">
-          There was a problem connecting to {errorType}
+          There was a problem connecting to{" "}
+          {errorType === "shareddrive" ? "shared drive" : "egress"}
         </h1>
         <p>
-          The connection to {errorType} folder for <b>{operationName}</b> case
-          has stopped working.
+          The connection to{" "}
+          {errorType === "shareddrive" ? "shared drive" : "egress"} folder for{" "}
+          <b>{operationName}</b> case has stopped working.
         </p>
         <div className={styles.btnWrapper}>
           <Button onClick={handleReconnect}>Reconnect</Button>
