@@ -17,6 +17,8 @@ using CPS.ComplexCases.Egress.Models.Args;
 using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain;
 using CPS.ComplexCases.FileTransfer.API.Validators;
+using Microsoft.AspNetCore.Http.HttpResults;
+using CPS.ComplexCases.FileTransfer.API.Models.Results;
 
 namespace CPS.ComplexCases.FileTransfer.API.Functions;
 
@@ -61,7 +63,7 @@ public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorage
 
             if (!hasPermission)
             {
-                return new UnauthorizedResult();
+                return new EgressPermissionExceptionResult("You do not have permission to move files from Egress to NetApp. Please contact your administrator for access.");
             }
         }
 

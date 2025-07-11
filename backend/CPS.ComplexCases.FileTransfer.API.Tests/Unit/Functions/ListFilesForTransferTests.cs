@@ -17,6 +17,7 @@ using CPS.ComplexCases.FileTransfer.API.Functions;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain;
 using CPS.ComplexCases.FileTransfer.API.Validators;
 using Moq;
+using CPS.ComplexCases.FileTransfer.API.Models.Results;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Functions;
 
@@ -217,7 +218,7 @@ public class ListFilesForTransferTests
     }
 
     [Fact]
-    public async Task Run_MoveFrom_EgressToNetApp_WithUserPermissionCheck_ReturnsUnauthorized_WhenUserLacksPermission()
+    public async Task Run_MoveFrom_EgressToNetApp_WithUserPermissionCheck_ReturnsEgressPermissionExceptionResult_WhenUserLacksPermission()
     {
         // Arrange
         var reqMock = new Mock<HttpRequest>();
@@ -239,7 +240,7 @@ public class ListFilesForTransferTests
         var result = await _function.Run(reqMock.Object, context);
 
         // Assert
-        Assert.IsType<UnauthorizedResult>(result);
+        Assert.IsType<EgressPermissionExceptionResult>(result);
     }
 
     [Fact]
