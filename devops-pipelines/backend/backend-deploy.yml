@@ -119,7 +119,7 @@ stages:
                   inputs:
                     buildType: 'specific'
                     project: '$(System.TeamProjectId)'
-                    pipeline: 'LACC Backend - Build, Test & Package'
+                    pipeline: 'LACC-BE-dev-build'
                     buildVersionToDownload: 'latest'
                     artifactName: '$(buildArtifact)'
                     downloadPath: '$(Pipeline.Workspace)'
@@ -293,7 +293,7 @@ stages:
                   inputs:
                     buildType: 'specific'
                     project: '$(System.TeamProjectId)'
-                    pipeline: 'LACC Backend - Build, Test & Package'
+                    pipeline: 'LACC-BE-dev-build'
                     buildVersionToDownload: 'latest'
                     artifactName: '$(buildArtifact)'
                     downloadPath: '$(Pipeline.Workspace)'
@@ -399,7 +399,7 @@ stages:
                   inputs:
                     buildType: 'specific'
                     project: '$(System.TeamProjectId)'
-                    pipeline: 'LACC Backend - Build, Test & Package'
+                    pipeline: 'LACC-BE-dev-build'
                     buildVersionToDownload: 'latest'
                     artifactName: '$(buildArtifact)'
                     downloadPath: '$(Pipeline.Workspace)'
