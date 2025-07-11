@@ -40,6 +40,8 @@ variables:
     value: 'fa-lacc-filetransfer-api-${{ parameters.environment }}'
   - name: keyVaultName
     value: 'kv-lacc-${{ parameters.environment }}'
+  - name: scripts_directory
+    value: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts'
   - name: azureSubscription
     ${{ if ne(parameters.environment, 'prod') }}:
       value: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
@@ -75,7 +77,7 @@ stages:
                 fi
 
                 echo "Azure CLI not found, installing..."
-                bash $(System.DefaultWorkingDirectory)/devops-pipelines/deployments/scripts/installAzureCli.sh   
+                bash $(scripts_directory)/installAzureCli.sh   
 
           - task: AzureCLI@2
             displayName: 'LACC - Initialize Key Vault Secrets from Variable Groups'
@@ -84,7 +86,7 @@ stages:
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
-                bash $(System.DefaultWorkingDirectory)/devops-pipelines/deployments/scripts/populateKV.sh
+                bash $(scripts_directory)/populateKV.sh
             env:
               KEY_VAULT_NAME: $(keyVaultName)
               CASE_MANAGEMENT_DATASTORE_CONNECTION: $(CaseManagementDatastoreConnection)
@@ -263,7 +265,7 @@ stages:
                     artifactName: 'lacc-main-api-drop'
                     downloadPath: '$(Pipeline.Workspace)'
 
-                - template: ../templates/configuration-template.yml
+                - template: ../templates/fa-config.yml
                   parameters:
                     environment: ${{ parameters.environment }}
                     functionAppName: $(mainApiName)
@@ -302,7 +304,7 @@ stages:
                       fi
 
                       echo "Azure CLI not found, installing..."
-                      bash $(System.DefaultWorkingDirectory)/devops-pipelines/deployments/scripts/installAzureCli.sh 
+                      bash $(scripts_directory)/installAzureCli.sh 
 
                 - task: AzureCLI@2
                   displayName: 'LACC - Verify Main API Deployment'
@@ -349,7 +351,7 @@ stages:
                     artifactName: 'lacc-filetransfer-api-drop'
                     downloadPath: '$(Pipeline.Workspace)'
 
-                - template: ../templates/configuration-template.yml
+                - template: ../templates/fa-config.yml
                   parameters:
                     environment: ${{ parameters.environment }}
                     functionAppName: $(fileTransferApiName)
@@ -388,7 +390,7 @@ stages:
                       fi
 
                       echo "Azure CLI not found, installing..."
-                      bash $(System.DefaultWorkingDirectory)/devops-pipelines/deployments/scripts/installAzureCli.sh 
+                      bash $(scripts_directory)/installAzureCli.sh 
 
                 - task: AzureCLI@2
                   displayName: 'LACC - Verify FileTransfer API Deployment'

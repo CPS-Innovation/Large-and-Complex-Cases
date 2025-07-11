@@ -22,7 +22,7 @@ stages:
           vmImage: ubuntu-latest
         steps:
           # Build and pack HttpTelemetry
-          - template: ../../templates/dotnet-build-steps.yml
+          - template: ../templates/dotnet-build-steps.yml
             parameters:
               projectPath: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
               projectName: 'HttpTelemetry'
@@ -62,7 +62,7 @@ stages:
           coverageReportsDirectory: '$(Agent.TempDirectory)/CoverageReports'
         steps:
           # Build and test full solution
-          - template: ../../templates/dotnet-build-steps.yml
+          - template: ../templates/dotnet-build-steps.yml
             parameters:
               projectPath: 'backend/CPS.ComplexCases.sln'
               projectName: 'Backend Solution'
@@ -75,7 +75,7 @@ stages:
               coverageReportsDirectory: $(coverageReportsDirectory)
 
           # Generate coverage report
-          - template: ../../templates/dotnet-code-coverage-steps.yml
+          - template: ../templates/dotnet-code-coverage-steps.yml
             parameters:
               coverageReportsDirectory: $(coverageReportsDirectory)
               projectName: 'Backend'
@@ -87,7 +87,7 @@ stages:
           vmImage: ubuntu-latest
         steps:
           # Build and publish Main API
-          - template: ../../templates/dotnet-build-steps.yml
+          - template: ../templates/dotnet-build-steps.yml
             parameters:
               projectPath: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
               projectName: 'lacc-main-api-drop'
@@ -104,7 +104,7 @@ stages:
           vmImage: ubuntu-latest
         steps:
           # Build and publish FileTransfer API
-          - template: ../../templates/dotnet-build-steps.yml
+          - template: ../templates/dotnet-build-steps.yml
             parameters:
               projectPath: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
               projectName: 'lacc-filetransfer-api-drop'
@@ -121,7 +121,7 @@ stages:
           vmImage: ubuntu-latest
         steps:
           # Build Data project with dependencies
-          - template: ../../templates/dotnet-build-steps.yml
+          - template: ../templates/dotnet-build-steps.yml
             parameters:
               projectPath: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
               projectName: 'Database'
@@ -165,4 +165,4 @@ stages:
             displayName: 'Publish Database Scripts'
             inputs:
               pathtoPublish: '$(Build.ArtifactStagingDirectory)/database-scripts.zip'
-              artifactName: 'database-scripts-drop' 
+              artifactName: 'database-scripts-drop'
