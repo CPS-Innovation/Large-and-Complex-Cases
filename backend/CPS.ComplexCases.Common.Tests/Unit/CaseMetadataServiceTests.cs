@@ -317,4 +317,136 @@ public class CaseMetadataServiceTests
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
+
+    [Fact]
+    public async Task ClearActiveTransferIdAsync_WhenMetadataExists_ClearsActiveTransferIdAndReturnsTrue()
+    {
+        // Arrange
+        var transferId = _fixture.Create<Guid>();
+        var existingMetadata = new CaseMetadata
+        {
+            CaseId = _fixture.Create<int>(),
+            ActiveTransferId = transferId
+        };
+
+        _repositoryMock
+            .Setup(r => r.GetByActiveTransferIdAsync(transferId))
+            .ReturnsAsync(existingMetadata);
+
+        _repositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<CaseMetadata>()))
+            .ReturnsAsync(existingMetadata);
+
+        // Act
+        var result = await _service.ClearActiveTransferIdAsync(transferId);
+
+        // Assert
+        Assert.True(result);
+        Assert.Null(existingMetadata.ActiveTransferId);
+
+        _repositoryMock.Verify(
+            r => r.GetByActiveTransferIdAsync(transferId),
+            Times.Once);
+
+        _repositoryMock.Verify(
+            r => r.UpdateAsync(It.Is<CaseMetadata>(m =>
+                m.CaseId == existingMetadata.CaseId &&
+                m.ActiveTransferId == null)),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ClearActiveTransferIdAsync_WhenMetadataDoesNotExist_LogsWarningAndReturnsFalse()
+    {
+        // Arrange
+        var transferId = _fixture.Create<Guid>();
+
+        _repositoryMock
+            .Setup(r => r.GetByActiveTransferIdAsync(transferId))
+            .ReturnsAsync((CaseMetadata?)null);
+
+        // Act
+        var result = await _service.ClearActiveTransferIdAsync(transferId);
+
+        // Assert
+        Assert.False(result);
+
+        _repositoryMock.Verify(
+            r => r.GetByActiveTransferIdAsync(transferId),
+            Times.Once);
+
+        _repositoryMock.Verify(
+            r => r.UpdateAsync(It.IsAny<CaseMetadata>()),
+            Times.Never);
+
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"No metadata found for transfer {transferId}")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ClearActiveTransferIdAsync_WhenRepositoryThrowsException_LogsAndRethrows()
+    {
+        // Arrange
+        var transferId = _fixture.Create<Guid>();
+        var expectedException = new Exception("Repository error");
+
+        _repositoryMock
+            .Setup(r => r.GetByActiveTransferIdAsync(transferId))
+            .ThrowsAsync(expectedException);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<Exception>(
+            () => _service.ClearActiveTransferIdAsync(transferId));
+
+        Assert.Same(expectedException, exception);
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.Is<Exception>(ex => ex == expectedException),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ClearActiveTransferIdAsync_WhenUpdateThrowsException_LogsAndRethrows()
+    {
+        // Arrange
+        var transferId = _fixture.Create<Guid>();
+        var existingMetadata = new CaseMetadata
+        {
+            CaseId = _fixture.Create<int>(),
+            ActiveTransferId = transferId
+        };
+        var expectedException = new Exception("Update error");
+
+        _repositoryMock
+            .Setup(r => r.GetByActiveTransferIdAsync(transferId))
+            .ReturnsAsync(existingMetadata);
+
+        _repositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<CaseMetadata>()))
+            .ThrowsAsync(expectedException);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<Exception>(
+            () => _service.ClearActiveTransferIdAsync(transferId));
+
+        Assert.Same(expectedException, exception);
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.Is<Exception>(ex => ex == expectedException),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
 }
