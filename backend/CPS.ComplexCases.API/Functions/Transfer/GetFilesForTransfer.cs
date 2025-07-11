@@ -3,15 +3,15 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
+using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.API.Clients.FileTransfer;
 using CPS.ComplexCases.API.Constants;
+using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Domain.Request;
+using CPS.ComplexCases.API.Extensions;
 using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models.Requests;
-using CPS.ComplexCases.API.Context;
-using CPS.ComplexCases.API.Extensions;
-using Microsoft.Extensions.Logging;
 
 namespace CPS.ComplexCases.API.Functions.Transfer;
 
@@ -48,8 +48,10 @@ public class GetFilesForTransfer(IFileTransferClient transferClient, ILogger<Get
             CaseId = request.Value.CaseId,
             CorrelationId = context.CorrelationId,
             TransferDirection = request.Value.TransferDirection,
+            TransferType = request.Value.TransferType,
             DestinationPath = request.Value.DestinationPath,
             WorkspaceId = request.Value.WorkspaceId,
+            Username = context.Username,
             SourcePaths = request.Value.SourcePaths.Select(path => new SelectedSourcePath
             {
                 Path = path.Path,

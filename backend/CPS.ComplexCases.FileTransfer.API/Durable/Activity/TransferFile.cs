@@ -99,6 +99,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 Status = TransferItemStatus.Completed,
                 Size = sourceStream.Length,
                 IsRenamed = payload.SourcePath.ModifiedPath != null,
+                FileId = payload.SourcePath.FileId
             };
 
             await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.AddSuccessfulItem), successfulItem, null, cancellationToken);

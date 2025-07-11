@@ -374,6 +374,10 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         selectedTransferAction.destinationFolder.sourceType === "egress"
           ? ("EgressToNetApp" as const)
           : ("NetAppToEgress" as const),
+        transferType:
+              selectedTransferAction.actionType === "copy"
+                ? ("Copy" as const)
+                : ("Move" as const),
       sourcePaths: sourcePaths,
       destinationPath: selectedTransferAction.destinationFolder.path,
       workspaceId: egressWorkspaceId,

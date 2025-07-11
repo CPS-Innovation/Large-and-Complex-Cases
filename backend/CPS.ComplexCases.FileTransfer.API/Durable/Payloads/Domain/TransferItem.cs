@@ -8,4 +8,5 @@ public class TransferItem
     public required TransferItemStatus Status { get; set; }
     public required bool IsRenamed { get; set; }
     public required long Size { get; set; }
+    public string? FileId { get; set; }
 }

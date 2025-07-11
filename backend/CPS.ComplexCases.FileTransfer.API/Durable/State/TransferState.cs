@@ -47,4 +47,11 @@ public class TransferEntityState : TaskEntity<TransferEntity>
         State.ProcessedFiles++;
         State.UpdatedAt = DateTime.UtcNow;
     }
+
+    public void DeleteMovedItemsCompleted(List<FailedToDeleteItem> failedToDeleteItems)
+    {
+        State.MovedFilesDeletedSuccessfully = failedToDeleteItems.Count == 0;
+        State.FailedToDeleteItems.AddRange(failedToDeleteItems);
+        State.UpdatedAt = DateTime.UtcNow;
+    }
 }

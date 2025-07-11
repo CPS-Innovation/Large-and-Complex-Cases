@@ -9,6 +9,8 @@ public class ListFilesForTransferRequest
     public required int CaseId { get; set; }
     [JsonPropertyName("transferDirection")]
     public required TransferDirection TransferDirection { get; set; }
+    [JsonPropertyName("transferType")]
+    public required TransferType TransferType { get; set; }
     [JsonPropertyName("sourcePaths")]
     public required List<SelectedSourcePath> SourcePaths { get; set; }
     [JsonPropertyName("destinationPath")]
@@ -17,6 +19,8 @@ public class ListFilesForTransferRequest
     public string? WorkspaceId { get; set; }
     [JsonPropertyName("correlationId")]
     public Guid? CorrelationId { get; set; }
+    [JsonPropertyName("username")]
+    public string? Username { get; set; }
 }
 
 public class SelectedSourcePath
