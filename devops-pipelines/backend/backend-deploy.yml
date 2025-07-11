@@ -272,8 +272,6 @@ stages:
                     subscriptionName: $(azureSubscription)
                     resourceGroupName: $(resourceGroupName)
                     keyVaultName: $(keyVaultName)
-                    appInsightsKey: $(ApplicationInsightsInstrumentationKey)
-                    appInsightsConnectionString: $(ApplicationInsightsConnectionString)
 
                 - task: AzureFunctionApp@2
                   displayName: 'LACC - Deploy Main API to Azure Function App'
