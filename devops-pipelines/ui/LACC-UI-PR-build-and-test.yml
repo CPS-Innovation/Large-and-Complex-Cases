@@ -1,0 +1,34 @@
+# Build and test code on PR against main for LACC UI React web app.
+# NB triggered through build policy on the 'main' branch in Azure DevOps
+trigger: none
+
+stages:
+  - stage: Build_and_Test_on_PR
+    displayName: 'Build and test on PR'
+    jobs:
+      - job: Build_and_Test
+        pool:
+          vmImage: ubuntu-latest
+
+        steps:
+          - task: Npm@1
+            displayName: Install npm dependencies
+            inputs:
+              command: 'install'
+              workingDir: '$(Pipeline.Workspace)/ui-spa'
+
+          - task: Npm@1
+            displayName: Build web app package
+            inputs:
+              command: 'custom'
+              customCommand: 'run build'
+              workingDir: '$(Pipeline.Workspace)/ui-spa'
+
+          - task: Npm@1
+            displayName: Run tests
+            env:
+              CI: 'true'
+            inputs:
+              command: 'custom'
+              customCommand: 'test'
+              workingDir: '$(Pipeline.Workspace)/ui-spa'
