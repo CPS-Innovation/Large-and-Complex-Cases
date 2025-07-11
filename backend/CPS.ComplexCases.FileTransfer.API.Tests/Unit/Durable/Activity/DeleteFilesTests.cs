@@ -24,7 +24,7 @@ public class DeleteFilesTests
     private readonly Mock<IStorageClientFactory> _storageClientFactoryMock;
     private readonly Mock<IStorageClient> _storageClientMock;
     private readonly Mock<ILogger<DeleteFiles>> _loggerMock;
-    private readonly Mock<ITransferEntityReader> _transferEntityReaderMock = new Mock<ITransferEntityReader>();
+    private readonly Mock<ITransferEntityHelper> _transferEntityHelperMock;
     private readonly DeleteFiles _activity;
     private readonly string _workspaceId;
     private readonly string _destinationPath;
@@ -37,12 +37,12 @@ public class DeleteFilesTests
         _storageClientFactoryMock = new Mock<IStorageClientFactory>();
         _storageClientMock = new Mock<IStorageClient>();
         _loggerMock = new Mock<ILogger<DeleteFiles>>();
-        _transferEntityReaderMock = new Mock<ITransferEntityReader>();
+        _transferEntityHelperMock = new Mock<ITransferEntityHelper>();
 
         _workspaceId = _fixture.Create<string>();
         _destinationPath = _fixture.Create<string>();
 
-        _activity = new DeleteFiles(_transferEntityReaderMock.Object, _storageClientFactoryMock.Object, _loggerMock.Object);
+        _activity = new DeleteFiles(_transferEntityHelperMock.Object, _storageClientFactoryMock.Object, _loggerMock.Object);
     }
 
     [Fact]
@@ -78,7 +78,7 @@ public class DeleteFilesTests
             TransferId = Guid.NewGuid()
         };
 
-        _transferEntityReaderMock
+        _transferEntityHelperMock
             .Setup(c => c.GetTransferEntityAsync(
                 It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((EntityMetadata<TransferEntity>?)null);
@@ -110,7 +110,7 @@ public class DeleteFilesTests
              }
          );
 
-        _transferEntityReaderMock
+        _transferEntityHelperMock
             .Setup(c => c.GetTransferEntityAsync(
                 It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
@@ -167,10 +167,15 @@ public class DeleteFilesTests
             }
         );
 
-        _transferEntityReaderMock
+        _transferEntityHelperMock
              .Setup(c => c.GetTransferEntityAsync(
                  It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
+
+        _transferEntityHelperMock
+            .Setup(c => c.DeleteMovedItemsCompleted(
+                It.IsAny<Guid>(), It.IsAny<List<FailedToDeleteItem>>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
 
         _storageClientFactoryMock
             .Setup(f => f.GetSourceClientForDirection(payload.TransferDirection))

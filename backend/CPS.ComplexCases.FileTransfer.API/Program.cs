@@ -11,6 +11,7 @@ using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.NetApp.Extensions;
 using CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
+using Microsoft.DurableTask.Client;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
@@ -32,6 +33,11 @@ builder.Services.Configure<SizeConfig>(
 
 builder.Services.AddScoped<IStorageClientFactory, StorageClientFactory>();
 builder.Services.AddScoped<IRequestValidator, RequestValidator>();
-builder.Services.AddScoped<ITransferEntityReader, TransferEntityReader>();
+builder.Services.AddScoped<ITransferEntityHelper, TransferEntityHelper>();
+
+builder.Services.AddDurableTaskClient(x =>
+{
+    x.UseGrpc();
+});
 
 await builder.Build().RunAsync();

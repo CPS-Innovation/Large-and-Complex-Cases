@@ -64,6 +64,14 @@ public class EgressRequestFactory : IEgressRequestFactory
 
     var request = new HttpRequestMessage(HttpMethod.Get, relativeUrl.ToString());
 
+    AppendToken(request, token);
+
+    return request;
+  }
+
+  public HttpRequestMessage GetWorkspacePermissionsByRoleIdRequest(GetWorkspacePermissionsByRoleIdArg arg, string token)
+  {
+    var request = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/workspaces/{arg.WorkspaceId}/roles/{arg.RoleId}?view=full");
 
     AppendToken(request, token);
 

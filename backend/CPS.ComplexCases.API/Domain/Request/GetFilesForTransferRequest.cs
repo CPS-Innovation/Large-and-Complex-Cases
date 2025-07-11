@@ -9,6 +9,8 @@ public class GetFilesForTransferRequest
     public required int CaseId { get; set; }
     [JsonPropertyName("transferDirection")]
     public TransferDirection TransferDirection { get; set; }
+    [JsonPropertyName("transferType")]
+    public TransferType TransferType { get; set; }
     [JsonPropertyName("sourcePaths")]
     public required List<SourcePath> SourcePaths { get; set; }
     [JsonPropertyName("destinationPath")]

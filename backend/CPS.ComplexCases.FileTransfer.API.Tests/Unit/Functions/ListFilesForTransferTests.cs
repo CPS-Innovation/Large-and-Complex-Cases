@@ -10,6 +10,8 @@ using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.Common.Storage;
+using CPS.ComplexCases.Egress.Client;
+using CPS.ComplexCases.Egress.Models.Args;
 using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Functions;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain;
@@ -26,6 +28,7 @@ public class ListFilesForTransferTests
     private readonly Mock<IStorageClientFactory> _storageClientFactoryMock;
     private readonly Mock<IStorageClient> _storageClientMock;
     private readonly Mock<IRequestValidator> _requestValidatorMock;
+    private readonly Mock<IEgressClient> _egressClientMock;
     private readonly ListFilesForTransfer _function;
     private readonly int _testCaseId;
     private readonly string _testWorkspaceId;
@@ -38,12 +41,13 @@ public class ListFilesForTransferTests
         _storageClientFactoryMock = new Mock<IStorageClientFactory>();
         _storageClientMock = new Mock<IStorageClient>();
         _requestValidatorMock = new Mock<IRequestValidator>();
+        _egressClientMock = new Mock<IEgressClient>();
 
         _testWorkspaceId = _fixture.Create<string>();
         _testCaseId = _fixture.Create<int>();
         _testCorrelationId = _fixture.Create<Guid>();
 
-        _function = new ListFilesForTransfer(_loggerMock.Object, _storageClientFactoryMock.Object, _requestValidatorMock.Object);
+        _function = new ListFilesForTransfer(_loggerMock.Object, _storageClientFactoryMock.Object, _requestValidatorMock.Object, _egressClientMock.Object);
     }
 
     [Fact]
@@ -216,6 +220,32 @@ public class ListFilesForTransferTests
     }
 
     [Fact]
+    public async Task Run_MoveFrom_EgressToNetApp_WithUserPermissionCheck_ReturnsUnauthorized_WhenUserLacksPermission()
+    {
+        // Arrange
+        var reqMock = new Mock<HttpRequest>();
+        var context = new Mock<FunctionContext>().Object;
+
+        var validationResult = new ValidatableRequest<ListFilesForTransferRequest>
+        {
+            IsValid = true,
+            Value = CreateRequest(TransferDirection.EgressToNetApp, "valid/path/", TransferType.Move)
+        };
+
+        _requestValidatorMock.Setup(v => v.GetJsonBody<ListFilesForTransferRequest, ListFilesForTransferValidator>(It.IsAny<HttpRequest>()))
+            .ReturnsAsync(validationResult);
+
+        _egressClientMock.Setup(c => c.GetWorkspacePermission(It.IsAny<GetWorkspacePermissionArg>()))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _function.Run(reqMock.Object, context);
+
+        // Assert
+        Assert.IsType<UnauthorizedResult>(result);
+    }
+
+    [Fact]
     public async Task Run_WithEmptySourcePaths_HandlesGracefully()
     {
         // Arrange
@@ -307,13 +337,14 @@ public class ListFilesForTransferTests
         filesResult.Files.Should().ContainSingle(f => f.Id == "folder1" && f.SourcePath == "source/folder1/file2.txt" && f.RelativePath == "folder1/file2.txt");
     }
 
-    private ListFilesForTransferRequest CreateRequest(TransferDirection transferDirection, string destinationPath = "valid/path/")
+    private ListFilesForTransferRequest CreateRequest(TransferDirection transferDirection, string destinationPath = "valid/path/", TransferType transferType = TransferType.Copy)
     {
         return new ListFilesForTransferRequest
         {
             CaseId = _testCaseId,
             CorrelationId = _testCorrelationId,
             TransferDirection = transferDirection,
+            TransferType = transferType,
             DestinationPath = destinationPath,
             WorkspaceId = _testWorkspaceId,
             SourcePaths = _fixture.Create<List<SelectedSourcePath>>()

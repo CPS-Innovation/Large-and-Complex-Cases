@@ -114,8 +114,8 @@ public class TransferOrchestrator(IActivityLogService activityLogService, IOptio
                     UserName = input.UserName,
                 });
 
-            // 4. Delete files if transfer direction is EgressToNetApp
-            if (input.TransferDirection == TransferDirection.EgressToNetApp)
+            // 4. Delete files if transfer direction is EgressToNetApp and transfer type is Move
+            if (input.TransferDirection == TransferDirection.EgressToNetApp && input.TransferType == TransferType.Move)
             {
                 await context.CallActivityAsync(
                     nameof(DeleteFiles),

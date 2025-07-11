@@ -1,16 +1,17 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
+using CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
+using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
-using CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 
-public class DeleteFiles(ITransferEntityReader transferEntityReader, IStorageClientFactory storageClientFactory, ILogger<DeleteFiles> logger)
+public class DeleteFiles(ITransferEntityHelper transferEntityHelper, IStorageClientFactory storageClientFactory, ILogger<DeleteFiles> logger)
 {
-    private readonly ITransferEntityReader _transferEntityReader = transferEntityReader;
+    private readonly ITransferEntityHelper _transferEntityHelper = transferEntityHelper;
     private readonly IStorageClientFactory _storageClientFactory = storageClientFactory;
     private readonly ILogger<DeleteFiles> _logger = logger;
 
@@ -28,7 +29,7 @@ public class DeleteFiles(ITransferEntityReader transferEntityReader, IStorageCli
             throw new ArgumentException("Invalid transfer direction for DeleteFiles activity.", nameof(payload));
         }
 
-        var entity = await _transferEntityReader.GetTransferEntityAsync(payload.TransferId, cancellationToken) ?? throw new InvalidOperationException($"Transfer entity with ID {payload.TransferId} not found.");
+        var entity = await _transferEntityHelper.GetTransferEntityAsync(payload.TransferId, cancellationToken) ?? throw new InvalidOperationException($"Transfer entity with ID {payload.TransferId} not found.");
 
         var filesToDelete = entity.State.SuccessfulItems
             .Where(x => x.Status == TransferItemStatus.Completed)
@@ -47,6 +48,24 @@ public class DeleteFiles(ITransferEntityReader transferEntityReader, IStorageCli
 
         var storageClient = _storageClientFactory.GetSourceClientForDirection(payload.TransferDirection);
 
-        await storageClient.DeleteFilesAsync(filesToDelete, payload.WorkspaceId);
+        var result = await storageClient.DeleteFilesAsync(filesToDelete, payload.WorkspaceId);
+
+        if (result.FailedFiles != null && result.FailedFiles.Count != 0)
+        {
+            _logger.LogWarning("Failed to delete some files for transfer ID {TransferId}.", payload.TransferId);
+
+            var failedItems = result.FailedFiles.Select(x => new FailedToDeleteItem
+            {
+                FileId = x.FileId,
+                ErrorMessage = x.Reason ?? "Unknown error"
+            }).ToList();
+
+            await _transferEntityHelper.DeleteMovedItemsCompleted(payload.TransferId, failedItems, cancellationToken);
+        }
+        else
+        {
+            _logger.LogInformation("Successfully deleted all files for transfer ID {TransferId}.", payload.TransferId);
+            await _transferEntityHelper.DeleteMovedItemsCompleted(payload.TransferId, new List<FailedToDeleteItem>(), cancellationToken);
+        }
     }
 }

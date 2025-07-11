@@ -8,17 +8,21 @@ using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Requests;
+using CPS.ComplexCases.Egress.Client;
+using CPS.ComplexCases.Egress.Constants;
+using CPS.ComplexCases.Egress.Models.Args;
 using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain;
 using CPS.ComplexCases.FileTransfer.API.Validators;
 
 namespace CPS.ComplexCases.FileTransfer.API.Functions;
 
-public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorageClientFactory storageClientFactory, IRequestValidator requestValidator)
+public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorageClientFactory storageClientFactory, IRequestValidator requestValidator, IEgressClient egressClient)
 {
     private readonly ILogger<ListFilesForTransfer> _logger = logger;
     private readonly IStorageClientFactory _storageClientFactory = storageClientFactory;
     private readonly IRequestValidator _requestValidator = requestValidator;
+    private readonly IEgressClient _egressClient = egressClient;
 
     [Function(nameof(ListFilesForTransfer))]
     public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post", Route = "transfer/files")] HttpRequest req, FunctionContext context)
@@ -37,6 +41,21 @@ public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorage
             FileId = path.FileId,
             IsFolder = path.IsFolder
         }).ToList();
+
+        if (request.Value != null && request.Value.TransferDirection == TransferDirection.EgressToNetApp && request.Value.TransferType == TransferType.Move)
+        {
+            var hasPermission = await _egressClient.GetWorkspacePermission(new GetWorkspacePermissionArg
+            {
+                WorkspaceId = request.Value.WorkspaceId,
+                Email = request.Value.Username,
+                Permission = EgressFilePermissions.EditDelete
+            });
+
+            if (!hasPermission)
+            {
+                return new UnauthorizedResult();
+            }
+        }
 
         var filesForTransfer = await sourceClient.ListFilesForTransferAsync(selectedEntities, request.Value.WorkspaceId, request.Value.CaseId);
 
