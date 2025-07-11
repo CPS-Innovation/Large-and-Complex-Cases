@@ -290,11 +290,6 @@ stages:
                     subscriptionName: $(azureSubscription)
                     resourceGroupName: $(resourceGroupName)
                     keyVaultName: $(keyVaultName)
-<<<<<<< HEAD
-=======
-                    appInsightsKey: $(ApplicationInsightsInstrumentationKey)
-                    appInsightsConnectionString: $(ApplicationInsightsConnectionString)
->>>>>>> b6d4b88 (rearrange devops-pipelines directory)
 
                 - task: AzureFunctionApp@2
                   displayName: 'LACC - Deploy Main API to Azure Function App'
@@ -307,11 +302,7 @@ stages:
                     deploymentMethod: 'runFromPackage'
                 
                 - checkout: self
-<<<<<<< HEAD
                   sparseCheckoutDirectories: devops-pipelines/scripts
-=======
-                  sparseCheckoutDirectories: devops-pipelines/deployments/scripts
->>>>>>> b6d4b88 (rearrange devops-pipelines directory)
                   fetchDepth: 1
 
                 - task: Bash@3
@@ -383,11 +374,6 @@ stages:
                     subscriptionName: $(azureSubscription)
                     resourceGroupName: $(resourceGroupName)
                     keyVaultName: $(keyVaultName)
-<<<<<<< HEAD
-=======
-                    appInsightsKey: $(ApplicationInsightsInstrumentationKey)
-                    appInsightsConnectionString: $(ApplicationInsightsConnectionString)
->>>>>>> b6d4b88 (rearrange devops-pipelines directory)
 
                 - task: AzureFunctionApp@2
                   displayName: 'LACC - Deploy FileTransfer API to Azure Function App'
@@ -400,11 +386,7 @@ stages:
                     deploymentMethod: 'runFromPackage'
                 
                 - checkout: self
-<<<<<<< HEAD
                   sparseCheckoutDirectories: devops-pipelines/scripts
-=======
-                  sparseCheckoutDirectories: devops-pipelines/deployments/scripts
->>>>>>> b6d4b88 (rearrange devops-pipelines directory)
                   fetchDepth: 1
 
                 - task: Bash@3
