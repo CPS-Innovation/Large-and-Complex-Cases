@@ -60,5 +60,11 @@ namespace CPS.ComplexCases.Data.Repositories
           .Where(m => netAppFolderPaths.Contains(m.NetappFolderPath))
           .ToListAsync();
     }
+    public async Task<CaseMetadata?> GetByActiveTransferIdAsync(Guid activeTransferId)
+    {
+      return await _dbContext.CaseMetadata
+          .FirstOrDefaultAsync(m => m.ActiveTransferId == activeTransferId);
+    }
+    
   }
 }

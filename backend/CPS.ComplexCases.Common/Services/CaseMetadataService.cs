@@ -1,4 +1,3 @@
-
 using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.Data.Repositories;
@@ -153,6 +152,32 @@ public class CaseMetadataService : ICaseMetadataService
     catch (Exception ex)
     {
       _logger.LogError(ex, "Error updating active transfer ID for case {CaseId}", caseId);
+      throw;
+    }
+  }
+
+  public async Task<bool> ClearActiveTransferIdAsync(Guid transferId)
+  {
+    _logger.LogInformation("Clearing active transfer ID for transfer {TransferId}", transferId);
+    try
+    {
+      var existingMetadata = await _caseMetadataRepository.GetByActiveTransferIdAsync(transferId);
+
+      if (existingMetadata != null)
+      {
+        existingMetadata.ActiveTransferId = null;
+        await _caseMetadataRepository.UpdateAsync(existingMetadata);
+        return true;
+      }
+      else
+      {
+        _logger.LogWarning("No metadata found for transfer {TransferId} to clear active transfer ID", transferId);
+        return false;
+      }
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error clearing active transfer ID for transfer {TransferId}", transferId);
       throw;
     }
   }
