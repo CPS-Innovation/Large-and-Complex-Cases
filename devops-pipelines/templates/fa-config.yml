@@ -9,10 +9,6 @@ parameters:
     type: string
   - name: keyVaultName
     type: string
-  - name: appInsightsKey
-    type: string
-  - name: appInsightsConnectionString
-    type: string
 
 steps:
   - task: AzureAppServiceSettings@1
@@ -91,11 +87,6 @@ steps:
           {
             "name": "FileTransferApiOptions__BaseUrl",
             "value": "$(FileTransferApiOptionsBaseUrl)",
-            "slotSetting": false
-          },
-          {
-            "name": "FileTransferApiOptions__RetryAttempts",
-            "value": "$(FileTransferApiOptionsRetryAttempts)",
             "slotSetting": false
           },
           {
