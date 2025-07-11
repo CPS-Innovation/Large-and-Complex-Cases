@@ -59,7 +59,7 @@ stages:
         displayName: 'LACC - Validate Target Environment'
         steps:
           - checkout: self
-            sparseCheckoutDirectories: devops-pipelines/deployments/scripts
+            sparseCheckoutDirectories: devops-pipelines/scripts
             fetchDepth: 1
 
           - task: Bash@3
@@ -284,7 +284,7 @@ stages:
                     deploymentMethod: 'runFromPackage'
                 
                 - checkout: self
-                  sparseCheckoutDirectories: devops-pipelines/deployments/scripts
+                  sparseCheckoutDirectories: devops-pipelines/scripts
                   fetchDepth: 1
 
                 - task: Bash@3
@@ -368,7 +368,7 @@ stages:
                     deploymentMethod: 'runFromPackage'
                 
                 - checkout: self
-                  sparseCheckoutDirectories: devops-pipelines/deployments/scripts
+                  sparseCheckoutDirectories: devops-pipelines/scripts
                   fetchDepth: 1
 
                 - task: Bash@3
