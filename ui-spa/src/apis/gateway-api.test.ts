@@ -987,6 +987,7 @@ describe("gateway apis", () => {
       const payload = {
         caseId: 12,
         transferDirection: "EgressToNetApp" as const,
+        transferType: "Copy" as const,
         sourcePaths: [
           {
             fileId: "1",
@@ -1023,6 +1024,7 @@ describe("gateway apis", () => {
       const payload = {
         caseId: 12,
         transferDirection: "EgressToNetApp" as const,
+        transferType: "Copy" as const,
         sourcePaths: [
           {
             fileId: "1",
