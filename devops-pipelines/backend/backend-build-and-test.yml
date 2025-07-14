@@ -24,6 +24,16 @@ stages:
       - job: Package_NuGet
         displayName: 'Pack and Publish NuGet Package'
         steps:
+          - template: ../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+              projectName: 'HttpTelemetry'
+              buildConfiguration: $(buildConfiguration)
+              dotNetVersion: $(dotNetVersion)
+              useLocalNuGet: false
+              publishOutput: false
+              runTests: false
+
           - script: |
               mkdir -p $(Build.SourcesDirectory)/localnuget
               rm -f $(Build.SourcesDirectory)/localnuget/*.nupkg
@@ -35,7 +45,7 @@ stages:
               command: 'pack'
               packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
               outputDir: '$(Build.SourcesDirectory)/localnuget'
-              arguments: '--configuration $(buildConfiguration)'
+              arguments: '--configuration $(buildConfiguration) --no-build'
 
           - task: PublishPipelineArtifact@1
             displayName: 'Publish HttpTelemetry Package'
