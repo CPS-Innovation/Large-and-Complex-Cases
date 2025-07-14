@@ -1,19 +1,60 @@
 trigger: none
+  # branches:
+  #   include:
+  #     - main
+  # paths:
+  #   include:
+  #     - backend/*
 
-pr:
-  branches:
-    include:
-      - main
-  paths:
-    include:
-      - backend/*
+variables:
+  buildConfiguration: 'Release'
+  dotNetVersion: '8.x'
+  testResultsDirectory: '$(Agent.TempDirectory)/TestResults'
+  coverageReportsDirectory: '$(Agent.TempDirectory)/CoverageReports'
 
 stages:
   - stage: Build_And_Test_Backend
     displayName: 'LACC Backend - Build, Test & Package'
     jobs:
+      - job: Build_HttpTelemetry
+        displayName: 'LACC - Build HttpTelemetry Assembly'
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          # Build and pack HttpTelemetry
+          - template: ../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+              projectName: 'HttpTelemetry'
+              buildConfiguration: $(buildConfiguration)
+              dotNetVersion: $(dotNetVersion)
+              useLocalNuGet: false
+              publishOutput: false
+              runTests: false
+
+          # Pack and publish NuGet package
+          - script: |
+              mkdir -p $(Build.SourcesDirectory)/localnuget
+              rm -f $(Build.SourcesDirectory)/localnuget/*.nupkg
+            displayName: 'Prepare local NuGet directory'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Pack HttpTelemetry'
+            inputs:
+              command: 'pack'
+              packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+              outputDir: '$(Build.SourcesDirectory)/localnuget'
+              arguments: '--configuration $(buildConfiguration) --no-build'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish HttpTelemetry Package'
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/localnuget'
+              artifact: 'localnuget'
+
       - job: Build_And_Test_Solution
         displayName: 'LACC - Build & Test Solution'
+        dependsOn: Build_HttpTelemetry
         pool:
           vmImage: ubuntu-latest
         variables:
@@ -25,8 +66,8 @@ stages:
             parameters:
               projectPath: 'backend/CPS.ComplexCases.sln'
               projectName: 'Backend Solution'
-              buildConfiguration: 'Release'
-              dotNetVersion: '8.x'
+              buildConfiguration: $(buildConfiguration)
+              dotNetVersion: $(dotNetVersion)
               useLocalNuGet: true
               publishOutput: false
               runTests: true
@@ -37,7 +78,6 @@ stages:
           - template: ../templates/dotnet-code-coverage-steps.yml
             parameters:
               coverageReportsDirectory: $(coverageReportsDirectory)
-<<<<<<< HEAD
               projectName: 'Backend'
 
       - job: Build_Main_API
@@ -103,7 +143,7 @@ stages:
             inputs:
               command: 'custom'
               custom: 'ef'
-              arguments: 'migrations script --idempotent --output $(Build.ArtifactStagingDirectory)/migration-script.sql --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+              arguments: 'migrations script --output $(Build.ArtifactStagingDirectory)/migration-script.sql --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
 
           - task: CopyFiles@2
             displayName: 'Copy Migration Files'
@@ -126,6 +166,3 @@ stages:
             inputs:
               pathtoPublish: '$(Build.ArtifactStagingDirectory)/database-scripts.zip'
               artifactName: 'database-scripts-drop'
-=======
-              projectName: 'Backend'
->>>>>>> 77c95a7 (separate backend test and build pipelines)
