@@ -6,6 +6,7 @@ using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
+using CPS.ComplexCases.Common.Models.Domain.Enums;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 
@@ -23,13 +24,19 @@ public class DeleteFiles(ITransferEntityHelper transferEntityHelper, IStorageCli
             throw new ArgumentNullException(nameof(payload), "DeleteFilesPayload cannot be null.");
         }
 
-        if (payload.TransferDirection == Common.Models.Domain.Enums.TransferDirection.NetAppToEgress)
+        if (!AllowedDirections.Contains(payload.TransferDirection))
         {
             _logger.LogError("Invalid transfer direction for DeleteFiles activity: {TransferDirection}", payload.TransferDirection);
             throw new ArgumentException("Invalid transfer direction for DeleteFiles activity.", nameof(payload));
         }
 
-        var entity = await _transferEntityHelper.GetTransferEntityAsync(payload.TransferId, cancellationToken) ?? throw new InvalidOperationException($"Transfer entity with ID {payload.TransferId} not found.");
+        var entity = await _transferEntityHelper.GetTransferEntityAsync(payload.TransferId, cancellationToken);
+
+        if (entity == null)
+        {
+            _logger.LogError("Transfer entity with ID {TransferId} not found.", payload.TransferId);
+            throw new InvalidOperationException($"Transfer entity with ID {payload.TransferId} not found.");
+        }
 
         var filesToDelete = entity.State.SuccessfulItems
             .Where(x => x.Status == TransferItemStatus.Completed)
@@ -48,24 +55,37 @@ public class DeleteFiles(ITransferEntityHelper transferEntityHelper, IStorageCli
 
         var storageClient = _storageClientFactory.GetSourceClientForDirection(payload.TransferDirection);
 
-        var result = await storageClient.DeleteFilesAsync(filesToDelete, payload.WorkspaceId);
-
-        if (result.FailedFiles != null && result.FailedFiles.Count != 0)
+        try
         {
-            _logger.LogWarning("Failed to delete some files for transfer ID {TransferId}.", payload.TransferId);
+            var result = await storageClient.DeleteFilesAsync(filesToDelete, payload.WorkspaceId);
 
-            var failedItems = result.FailedFiles.Select(x => new FailedToDeleteItem
+            if (result.FailedFiles != null && result.FailedFiles.Count != 0)
             {
-                FileId = x.FileId,
-                ErrorMessage = x.Reason ?? "Unknown error"
-            }).ToList();
+                _logger.LogWarning("Failed to delete some files for transfer ID {TransferId}.", payload.TransferId);
 
-            await _transferEntityHelper.DeleteMovedItemsCompleted(payload.TransferId, failedItems, cancellationToken);
+                var failedItems = result.FailedFiles.Select(x => new FailedToDeleteItem
+                {
+                    FileId = x.FileId,
+                    ErrorMessage = x.Reason ?? "Unknown error"
+                }).ToList();
+
+                await _transferEntityHelper.DeleteMovedItemsCompleted(payload.TransferId, failedItems, cancellationToken);
+            }
+            else
+            {
+                _logger.LogInformation("Successfully deleted all files for transfer ID {TransferId}.", payload.TransferId);
+                await _transferEntityHelper.DeleteMovedItemsCompleted(payload.TransferId, new List<FailedToDeleteItem>(), cancellationToken);
+            }
         }
-        else
+        catch (Exception ex)
         {
-            _logger.LogInformation("Successfully deleted all files for transfer ID {TransferId}.", payload.TransferId);
-            await _transferEntityHelper.DeleteMovedItemsCompleted(payload.TransferId, new List<FailedToDeleteItem>(), cancellationToken);
+            _logger.LogError(ex, "Error occurred while deleting files for transfer ID {TransferId}: {Message}", payload.TransferId, ex.Message);
         }
     }
+
+    private static readonly HashSet<TransferDirection> AllowedDirections =
+    [
+        TransferDirection.EgressToNetApp
+    ];
 }
+

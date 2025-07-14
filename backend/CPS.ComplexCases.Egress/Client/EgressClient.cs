@@ -117,18 +117,17 @@ public class EgressClient(
   {
     var token = await GetWorkspaceToken();
     var response = await SendRequestAsync<GetWorkspacePermissionsResponse>(_egressRequestFactory.GetWorkspacePermissionsRequest(arg, token));
-    var userExists = response.Data.Any(user => user.Email.Equals(arg.Email, StringComparison.CurrentCultureIgnoreCase));
+    var user = response.Data.SingleOrDefault(user => user.Email.Equals(arg.Email, StringComparison.OrdinalIgnoreCase));
 
-    if (userExists && arg.Permission != null)
+    if (user != null && arg.Permission != null)
     {
-      var user = response.Data.Single(u => u.Email.Equals(arg.Email, StringComparison.CurrentCultureIgnoreCase));
       var permissions = await GetPermissionsByRoleId(user.RoleId, arg.WorkspaceId, token);
       return permissions.Contains(arg.Permission);
     }
     else
     {
       // If no specific permission is requested, return if the user exists in the workspace
-      return userExists;
+      return user != null;
     }
   }
 

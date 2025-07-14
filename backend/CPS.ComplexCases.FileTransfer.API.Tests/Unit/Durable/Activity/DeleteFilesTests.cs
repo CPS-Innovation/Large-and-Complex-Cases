@@ -93,7 +93,7 @@ public class DeleteFilesTests
     {
         // Arrange
         var transferId = _fixture.Create<Guid>();
-        var expectedErrorMessage = $"No files to delete for transfer ID {transferId}.";
+        var expectedPartialErrorMessage = "No files";
 
         var payload = new DeleteFilesPayload
         {
@@ -123,7 +123,7 @@ public class DeleteFilesTests
             l => l.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains(expectedErrorMessage)),
+                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains(expectedPartialErrorMessage) && v.ToString().Contains(transferId.ToString())),
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
@@ -198,6 +198,73 @@ public class DeleteFilesTests
                     l.Any(x => x.Path == "file1.txt" && x.FileId == "f1") &&
                     l.Any(x => x.Path == "file2.txt" && x.FileId == "f2")),
                 payload.WorkspaceId),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_LogsError_WhenDeleteFilesAsyncThrowsException()
+    {
+        // Arrange
+        var payload = new DeleteFilesPayload
+        {
+            TransferId = Guid.NewGuid(),
+            TransferDirection = TransferDirection.EgressToNetApp,
+            WorkspaceId = _workspaceId
+        };
+
+        var successfulItems = new List<TransferItem>
+        {
+            new() {
+                Status = TransferItemStatus.Completed,
+                SourcePath = "file1.txt",
+                FileId = "f1",
+                Size = 1234,
+                IsRenamed = false
+            },
+            new() {
+                Status = TransferItemStatus.Completed,
+                SourcePath = "file2.txt",
+                FileId = "f2",
+                Size = 5678,
+                IsRenamed = false
+            }
+        };
+
+        var entity = new EntityMetadata<TransferEntity>(
+            id: new EntityInstanceId(nameof(TransferEntityState), payload.TransferId.ToString()),
+            state: new TransferEntity
+            {
+                SuccessfulItems = successfulItems,
+                DestinationPath = _destinationPath,
+            }
+        );
+
+        _transferEntityHelperMock
+            .Setup(x => x.GetTransferEntityAsync(payload.TransferId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(entity);
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetSourceClientForDirection(payload.TransferDirection))
+            .Returns(_storageClientMock.Object);
+
+        var exception = new Exception("delete failed");
+        _storageClientMock
+            .Setup(x => x.DeleteFilesAsync(It.IsAny<List<DeletionEntityDto>>(), payload.WorkspaceId))
+            .ThrowsAsync(exception);
+
+        var sut = new DeleteFiles(_transferEntityHelperMock.Object, _storageClientFactoryMock.Object, _loggerMock.Object);
+
+        // Act
+        await sut.Run(payload, CancellationToken.None);
+
+        // Assert
+        _loggerMock.Verify(
+            l => l.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Error occurred while deleting files")),
+                exception,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
 }
