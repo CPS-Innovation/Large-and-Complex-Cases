@@ -22,7 +22,7 @@ stages:
     displayName: 'LACC Backend - Build, Test & Package'
     jobs:
       - job: Package_NuGet
-        displayName: Pack and Publish NuGet Package
+        displayName: 'Pack and Publish NuGet Package'
         steps:
           - script: |
               mkdir -p $(Build.SourcesDirectory)/localnuget
@@ -45,6 +45,7 @@ stages:
 
       - job: Build_And_Test_Solution
         displayName: 'LACC - Build & Test Solution'
+        dependsOn: Package_NuGet
         steps:
           # Build and test full solution
           - template: ../templates/dotnet-build-steps.yml
