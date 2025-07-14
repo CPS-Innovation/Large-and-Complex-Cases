@@ -4,6 +4,8 @@ parameters:
   buildConfiguration: 'Release'
   dotNetVersion: '8.x'
   useLocalNuGet: false
+  nugetArtifact: 'localnuget'
+  nugetArtifactPath: '$(Build.SourcesDirectory)/localnuget'
   publishOutput: false
   runTests: false
   testResultsDirectory: ''
@@ -21,8 +23,8 @@ steps:
     - task: DownloadPipelineArtifact@2
       displayName: 'Download Local NuGet Package'
       inputs:
-        artifact: 'localnuget'
-        path: '$(Build.SourcesDirectory)/localnuget'
+        artifact: '${{ parameters.nugetArtifact }}'
+        path: '${{ parameters.nugetArtifactPath }}'
 
     - task: PowerShell@2
       displayName: 'Create NuGet.Config'
@@ -34,7 +36,7 @@ steps:
           <configuration>
             <packageSources>
               <clear />
-              <add key="local-packages" value="$(Build.SourcesDirectory)/localnuget" />
+              <add key="local-packages" value="${{ parameters.nugetArtifactPath }}" />
               <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
             </packageSources>
             <packageSourceMapping>
