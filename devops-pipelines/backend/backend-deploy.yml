@@ -114,7 +114,7 @@ stages:
                   inputs:
                     buildType: 'specific'
                     project: '$(System.TeamProjectId)'
-                    pipeline: 'LACC-BE-dev-build'
+                    pipeline: 'LACC Backend - Build, Test & Package'
                     buildVersionToDownload: 'latest'
                     artifactName: 'database-scripts-drop'
                     downloadPath: '$(Pipeline.Workspace)'
@@ -260,7 +260,7 @@ stages:
                   inputs:
                     buildType: 'specific'
                     project: '$(System.TeamProjectId)'
-                    pipeline: 'LACC-BE-dev-build'
+                    pipeline: 'LACC Backend - Build, Test & Package'
                     buildVersionToDownload: 'latest'
                     artifactName: 'lacc-main-api-drop'
                     downloadPath: '$(Pipeline.Workspace)'
@@ -344,7 +344,7 @@ stages:
                   inputs:
                     buildType: 'specific'
                     project: '$(System.TeamProjectId)'
-                    pipeline: 'LACC-BE-dev-build'
+                    pipeline: 'LACC Backend - Build, Test & Package'
                     buildVersionToDownload: 'latest'
                     artifactName: 'lacc-filetransfer-api-drop'
                     downloadPath: '$(Pipeline.Workspace)'
