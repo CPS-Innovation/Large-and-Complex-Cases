@@ -85,8 +85,8 @@ steps:
             "slotSetting": false
           },
           {
-            "name": "FileTransferApiOptions__BaseUrl",
-            "value": "$(FileTransferApiOptionsBaseUrl)",
+            "name": "FileTransferApiOptions__RetryAttempts",
+            "value": "$(FileTransferApiOptionsRetryAttempts)",
             "slotSetting": false
           },
           {
