@@ -8,7 +8,7 @@ parameters:
     default: 'dev'
     values:
       - dev
-      - qa
+      - stage
       - prod
 
 trigger:
@@ -19,46 +19,37 @@ trigger:
 
 pr: none
 
-resources:
-  pipelines:
-    - pipeline: 'LACCUIBuild'
-      source: 'LACC UI- Build, Test & Package'
-      trigger: none
-                      
 variables:
-  - name: environmentSuffix
-    value: ${{ lower(parameters.environment) }}
   - name: resourceGroupName
-    value: 'rg-lacc-$(environmentSuffix)-temp'
+    value: 'rg-lacc-${{ parameters.environment }}'
   - name: appName
-    value: 'app-lacc-ui-$(environmentSuffix)-temp'
+    value: 'lacc-app-ui-spa-${{ parameters.environment }}'
   - name: build-agent
-    value: 'ubuntu-latest'
+    value: 'LaCC Pre-Prod Build Agents'
   - name: azureSubscription
-    ${{ if eq(parameters.environment, 'dev') }}:
+    ${{ if ne(parameters.environment, 'prod') }}:
       value: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
-    ${{ if eq(parameters.environment, 'qa') }}:
-      value: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
-    ${{ if eq(parameters.environment, 'prod') }}:
+    ${{ else }}:
       value: 'Azure Pipeline: Large and Complex Cases - Prod'
 
 stages:
-  - stage: Deploy_${{ variables.environmentSuffix }}
-    displayName: 'Deploy to ${{ variables.environmentSuffix }}'
+  - stage: Deploy_${{ parameters.environment }}
+    displayName: 'Deploy to ${{ parameters.environment }}'
     pool:
-      vmImage: $(build-agent)
+      name: $(build-agent)
     jobs:
-      - job: CI_Deploy_LACCUI_${{ variables.environmentSuffix }}
+      - job: CI_Deploy_LACCUI_${{ parameters.environment }}
         steps:
           - task: DownloadBuildArtifacts@0
             displayName: 'Download UI Build Artifact'
             inputs:
               buildType: 'specific'
               project: '$(System.TeamProjectId)'
-              pipeline: 'LACC UI- Build, Test & Package'
+              pipeline: 'LACC-UI-dev-build-and-test'
               buildVersionToDownload: 'latest'
-              artifactName: 'lacc-ui-$(environmentSuffix)-drop'
+              artifactName: 'lacc-ui-${{ parameters.environment }}-drop'
               downloadPath: '$(Pipeline.Workspace)'
+
           - task: AzureRmWebAppDeployment@4
             inputs:
               ConnectionType: 'AzureRM'
@@ -66,9 +57,9 @@ stages:
               resourceGroupName: $(resourceGroupName)
               appType: 'webAppLinux'
               WebAppName: '$(appName)'
-              packageForLinux: '$(Pipeline.Workspace)/lacc-ui-$(environmentSuffix)-drop/*.zip'
+              packageForLinux: '$(Pipeline.Workspace)/lacc-ui-${{ parameters.environment }}-drop/*.zip'
               RuntimeStack: 'NODE|20-lts'
               StartupCommand: 'pm2 serve /home/site/wwwroot/ --no-daemon --spa'
               
-            displayName: 'Deploy LACC UI to ${{ variables.environmentSuffix }}'
+            displayName: 'Deploy LACC UI to ${{ parameters.environment }}'
             retryCountOnTaskFailure: 1 
