@@ -1,5 +1,6 @@
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
@@ -113,7 +114,20 @@ public class TransferOrchestrator(IActivityLogService activityLogService, IOptio
                     UserName = input.UserName,
                 });
 
-            // 4. Finalize
+            // 4. Delete files if transfer direction is EgressToNetApp and transfer type is Move
+            if (input.TransferDirection == TransferDirection.EgressToNetApp && input.TransferType == TransferType.Move)
+            {
+                await context.CallActivityAsync(
+                    nameof(DeleteFiles),
+                    new DeleteFilesPayload
+                    {
+                        TransferId = input.TransferId,
+                        TransferDirection = input.TransferDirection,
+                        WorkspaceId = input.WorkspaceId,
+                    });
+            }
+
+            // 5. Finalize
             await context.CallActivityAsync(
                 nameof(FinalizeTransfer),
                 new FinalizeTransferPayload

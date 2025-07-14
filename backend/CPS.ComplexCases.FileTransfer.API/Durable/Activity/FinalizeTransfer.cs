@@ -1,5 +1,4 @@
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
-using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Durable.State;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask.Client;

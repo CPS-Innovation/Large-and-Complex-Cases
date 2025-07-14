@@ -117,7 +117,35 @@ public class EgressClient(
   {
     var token = await GetWorkspaceToken();
     var response = await SendRequestAsync<GetWorkspacePermissionsResponse>(_egressRequestFactory.GetWorkspacePermissionsRequest(arg, token));
-    return response.Data.Any(user => user.Email.Equals(arg.Email, StringComparison.CurrentCultureIgnoreCase));
+    var user = response.Data.SingleOrDefault(user => user.Email.Equals(arg.Email, StringComparison.OrdinalIgnoreCase));
+
+    if (user != null && arg.Permission != null)
+    {
+      var permissions = await GetPermissionsByRoleId(user.RoleId, arg.WorkspaceId, token);
+      return permissions.Contains(arg.Permission);
+    }
+    else
+    {
+      // If no specific permission is requested, return if the user exists in the workspace
+      return user != null;
+    }
+  }
+
+  private async Task<IEnumerable<string>> GetPermissionsByRoleId(string roleId, string workspaceId, string token)
+  {
+    var arg = new GetWorkspacePermissionsByRoleIdArg
+    {
+      WorkspaceId = workspaceId,
+      RoleId = roleId
+    };
+
+    var response = await SendRequestAsync<GetWorkspacePermissionsByRoleIdResponse>(_egressRequestFactory.GetWorkspacePermissionsByRoleIdRequest(arg, token));
+
+    return response.FilePermissions != null
+        ? response.FilePermissions
+            .Distinct()
+            .ToList()
+        : [];
   }
 
   private async Task<List<ListCaseMaterialDataDto>> GetWorkspaceMaterials(ListWorkspaceMaterialArg currentArg, string token)
