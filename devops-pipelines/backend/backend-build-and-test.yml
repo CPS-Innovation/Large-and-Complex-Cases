@@ -19,7 +19,7 @@ pool:
 
 stages:
   - stage: Build_And_Test_Backend
-    displayName: 'LACC Backend - Build, Test & Package'
+    displayName: 'LACC Backend - Package & Test'
     jobs:
       - job: Package_NuGet
         displayName: 'Pack and Publish NuGet Package'
