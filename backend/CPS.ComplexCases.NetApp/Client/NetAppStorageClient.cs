@@ -3,7 +3,6 @@ using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
-using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.NetApp.Factories;
@@ -126,5 +125,10 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
         } while (continuationToken != null);
 
         return filesForTransfer;
+    }
+
+    public Task<DeleteFilesResult> DeleteFilesAsync(List<DeletionEntityDto> filesToDelete, string? workspaceId = null)
+    {
+        throw new NotImplementedException();
     }
 }

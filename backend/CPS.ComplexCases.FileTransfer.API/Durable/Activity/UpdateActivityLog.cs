@@ -7,6 +7,7 @@ using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Durable.State;
+using CPS.ComplexCases.Common.Models.Domain.Enums;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 
@@ -44,15 +45,32 @@ public class UpdateActivityLog(IActivityLogService activityLogService)
             ErrorMessage = x.ErrorMessage
         }).ToList();
 
+        var sourcePath = Path.GetDirectoryName(entity.State.SourcePaths.First().RelativePath);
+        var deletionErrors = new List<FileTransferError>();
+
+        if (entity.State.TransferType == TransferType.Move && payload.ActionType != ActionType.TransferInitiated)
+        {
+            deletionErrors = entity.State.DeletionErrors.Select(x => new FileTransferError
+            {
+                Path = x.FileId,
+                ErrorMessage = x.ErrorMessage
+            }).ToList();
+            errorItems.AddRange(deletionErrors);
+        }
+
         var fileTransferDetails = new FileTransferDetails
         {
             TransferId = payload.TransferId,
             TransferDirection = entity.State.Direction.ToString(),
+            TransferType = entity.State.TransferType.ToString(),
+            TotalFiles = entity.State.TotalFiles,
+            SourcePath = sourcePath!,
+            DestinationPath = entity.State.DestinationPath,
             Files = successfulItems,
-            Errors = errorItems
+            Errors = errorItems,
+            DeletionErrors = deletionErrors,
+            ExceptionMessage = payload.ExceptionMessage
         };
-
-        var detailsJson = _activityLogService.ConvertToJsonDocument(fileTransferDetails);
 
         await _activityLogService.CreateActivityLogAsync(
             actionType: payload.ActionType,
@@ -61,7 +79,7 @@ public class UpdateActivityLog(IActivityLogService activityLogService)
             resourceName: entity.State.Direction.ToString(),
             caseId: entity.State.CaseId,
             userName: payload.UserName,
-            details: payload.ActionType != ActionType.TransferInitiated ? detailsJson : null
+            details: _activityLogService.ConvertToJsonDocument(fileTransferDetails)
         );
     }
 }
