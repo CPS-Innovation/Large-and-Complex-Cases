@@ -1,4 +1,6 @@
-trigger:
+trigger: none
+
+pr:
   branches:
     include:
       - main

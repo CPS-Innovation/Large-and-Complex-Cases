@@ -3,6 +3,9 @@ trigger:
   branches:
     include:
       - main
+  paths:
+    include:
+      - backend/*
 
 pr: none
 

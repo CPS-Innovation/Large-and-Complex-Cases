@@ -1,3 +1,13 @@
+trigger: none
+
+pr:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - ui-spa/*
+
 parameters:
   - name: environment
     displayName: 'Target Environment'
@@ -11,14 +21,6 @@ parameters:
     displayName: 'Run E2E Tests'
     type: boolean
     default: false
-
-pr:
-  branches:
-    include:
-      - main
-  paths:
-    include:
-      - ui-spa/*
 
 pool:
   vmImage: ubuntu-latest
