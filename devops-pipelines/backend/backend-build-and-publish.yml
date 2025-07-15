@@ -1,10 +1,13 @@
-trigger:
-  branches:
-    include:
-      - main
-  paths:
-    include:
-      - backend/*
+trigger: none
+  # batch: true
+  # branches:
+  #   include:
+  #     - main
+  # paths:
+  #   include:
+  #     - backend/*
+
+pr: none
 
 variables:
   buildConfiguration: 'Release'
@@ -29,6 +32,8 @@ stages:
               buildConfiguration: $(buildConfiguration)
               dotNetVersion: $(dotNetVersion)
               useLocalNuGet: true
+              nugetArtifactSource: 'specific'
+              nugetArtifactPipeline: 'LACC-BE-dev-test'
               publishOutput: true
               runTests: false
 
@@ -46,6 +51,8 @@ stages:
               buildConfiguration: $(buildConfiguration)
               dotNetVersion: $(dotNetVersion)
               useLocalNuGet: true
+              nugetArtifactSource: 'specific'
+              nugetArtifactPipeline: 'LACC-BE-dev-test'
               publishOutput: true
               runTests: false
 
@@ -67,6 +74,8 @@ stages:
               buildConfiguration: $(buildConfiguration)
               dotNetVersion: $(dotNetVersion)
               useLocalNuGet: true
+              nugetArtifactSource: 'specific'
+              nugetArtifactPipeline: 'LACC-BE-dev-test'
               publishOutput: false
               runTests: false
 
