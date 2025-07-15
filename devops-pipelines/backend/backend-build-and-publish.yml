@@ -62,7 +62,6 @@ stages:
     jobs:
       - job: Package_Database_Scripts
         displayName: 'Package Database Migration Scripts'
-        dependsOn: Build_And_Test_Solution
         pool:
           vmImage: ubuntu-latest
         steps:
