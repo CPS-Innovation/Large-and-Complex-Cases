@@ -29,7 +29,7 @@ steps:
         artifact: '${{ parameters.nugetArtifact }}'
         path: '${{ parameters.nugetArtifactDownloadPath }}'
         project: '$(System.TeamProjectId)'
-        pipeline: 'S{{ parameters.nugetArtifactPipeline}}'
+        pipeline: '${{ parameters.nugetArtifactPipeline }}'
 
     - task: PowerShell@2
       displayName: 'Create NuGet.Config'
