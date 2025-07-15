@@ -1,11 +1,11 @@
-trigger: none
-  # batch: true
-  # branches:
-  #   include:
-  #     - main
-  # paths:
-  #   include:
-  #     - backend/*
+trigger:
+  batch: true
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - backend/*
 
 pr: none
 

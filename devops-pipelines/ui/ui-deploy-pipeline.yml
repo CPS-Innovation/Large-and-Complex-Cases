@@ -49,11 +49,7 @@ stages:
             inputs:
               buildType: 'specific'
               project: '$(System.TeamProjectId)'
-<<<<<<< HEAD
               pipeline: 'LACC-UI-dev-build-and-test'
-=======
-              pipeline: '[TEST]LACC UI - Test & Build'
->>>>>>> b6d4b88 (rearrange devops-pipelines directory)
               buildVersionToDownload: 'latest'
               artifactName: '$(buildArtifact)'
               downloadPath: '$(Pipeline.Workspace)'
