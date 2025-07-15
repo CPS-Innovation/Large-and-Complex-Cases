@@ -1,5 +1,15 @@
 # Deploy the LACC UI React app to an Azure App Service instance
 # Uses the pre-installed 'PM2' app that comes with Node on Azure
+trigger:
+  batch: true
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - ui-spa/*
+
+pr: none
 
 parameters:
   - name: environment
@@ -10,14 +20,6 @@ parameters:
       - dev
       - stage
       - prod
-
-trigger:
-  batch: true
-  branches:
-    include:
-      - main
-
-pr: none
 
 variables:
   - name: resourceGroupName
