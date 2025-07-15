@@ -1,0 +1,29 @@
+.listContent {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.listItem {
+  margin-bottom: 0.5rem;
+  .statusTag {
+    font-weight: normal;
+    text-align: center;
+    text-transform: capitalize;
+    margin-left: 0.5rem;
+    color: #2a0b06;
+  }
+}
+
+.list {
+  padding-left: 1.3rem;
+}
+
+.relativePath {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: bold;
+}
+.seperator {
+  border-bottom: 1px solid #b1b4b6;
+}

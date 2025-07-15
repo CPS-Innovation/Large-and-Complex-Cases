@@ -1,0 +1,17 @@
+.titleWrapper {
+  min-height: 2rem;
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background: #f3f2f1;
+  h2 {
+    margin: 0;
+  }
+}
+
+.contentWrapper {
+  padding: 1rem;
+}
+.activities {
+  border: 1px solid #b1b4b6;
+}
