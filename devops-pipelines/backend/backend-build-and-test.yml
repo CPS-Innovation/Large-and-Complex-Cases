@@ -57,7 +57,6 @@ stages:
         displayName: 'LACC - Build & Test Solution'
         dependsOn: Package_NuGet
         steps:
-          # Build and test full solution
           - template: ../templates/dotnet-build-steps.yml
             parameters:
               projectPath: 'backend/CPS.ComplexCases.sln'
