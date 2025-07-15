@@ -6,8 +6,6 @@ parameters:
   useLocalNuGet: false
   nugetArtifact: 'localnuget'
   nugetArtifactDownloadPath: '$(Build.SourcesDirectory)/localnuget'
-  nugetArtifactSource: 'current'
-  nugetArtifactPipeline: '$(System.DefinitionId)'
   publishOutput: false
   runTests: false
   testResultsDirectory: ''
@@ -25,11 +23,9 @@ steps:
     - task: DownloadPipelineArtifact@2
       displayName: 'Download Local NuGet Package'
       inputs:
-        source: '${{ parameters.nugetArtifactSource }}'
+        buildType: 'current'
         artifact: '${{ parameters.nugetArtifact }}'
         path: '${{ parameters.nugetArtifactDownloadPath }}'
-        project: '$(System.TeamProjectId)'
-        pipeline: '${{ parameters.nugetArtifactPipeline }}'
 
     - task: PowerShell@2
       displayName: 'Create NuGet.Config'
