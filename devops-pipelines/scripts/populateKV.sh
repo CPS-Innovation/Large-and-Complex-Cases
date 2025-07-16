@@ -50,14 +50,6 @@ set_kv_secret "NetAppOptions--SecretKey" "$NET_APP_OPTIONS_SECRET_KEY" "NetApp A
 set_kv_secret "FileTransferApiOptions--AccessKey" "$FILE_TRANSFER_API_OPTIONS_ACCESS_KEY" "File Transfer API access key"
 
 echo "✅ Key Vault secret initialization completed"
-echo "📋 Secrets stored in Key Vault:"
-echo "  - EgressOptions--Username"
-echo "  - EgressOptions--Password"
-echo "  - DDEIOptions--AccessKey"
-echo "  - ConnectionStrings--CaseManagementDatastoreConnection"
-echo "  - NetAppOptions--AccessKey"
-echo "  - NetAppOptions--SecretKey"
-echo "  - FileTransferApiOptions--AccessKey"
 
 # List all secrets that were set (names only, not values)
 echo "📋 Current Key Vault secrets:"
