@@ -28,6 +28,7 @@ import { IndexingFileTransferPayload } from "../common/types/IndexingFileTransfe
 import { InitiateFileTransferResponse } from "../common/types/InitiateFileTransferResponse";
 import { InitiateFileTransferPayload } from "../common/types/InitiateFileTransferPayload";
 import { TransferStatusResponse } from "../common/types/TransferStatusResponse";
+import { ActivityLogResponse } from "../common/types/ActivityLogResponse";
 
 import { ApiError } from "../common/errors/ApiError";
 
@@ -366,4 +367,21 @@ export const getTransferStatus = async (transferId: string) => {
     throw new ApiError(`Getting case transfer status failed`, url, response);
   }
   return (await response.json()) as TransferStatusResponse;
+};
+
+export const getActivityLog = async (caseId: string) => {
+  const url = `${GATEWAY_BASE_URL}/api/v1/activity/logs?caseId=${caseId}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      ...(await buildCommonHeaders()),
+    },
+  });
+
+  if (!response.ok) {
+    throw new ApiError(`Getting case activity log failed`, url, response);
+  }
+  return (await response.json()) as ActivityLogResponse;
 };

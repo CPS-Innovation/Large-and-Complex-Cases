@@ -4,8 +4,8 @@ export type ActivityRelativePathFileType = {
 };
 
 export const getGroupedActvityFilePaths = (
-  successFiles: { sourcePath: string }[],
-  failedFiles: { sourcePath: string }[],
+  successFiles: { path: string }[],
+  failedFiles: { path: string }[],
   sourcePath: string,
 ) => {
   const getRelativePathAndFileName = (
@@ -19,13 +19,13 @@ export const getGroupedActvityFilePaths = (
     };
   };
   const sourcePathParts = sourcePath.split("/");
-  const successFilePaths = successFiles.map(({ sourcePath: file }) => ({
+  const successFilePaths = successFiles.map(({ path }) => ({
     hasFailed: false,
-    ...getRelativePathAndFileName(sourcePathParts.length, file),
+    ...getRelativePathAndFileName(sourcePathParts.length, path),
   }));
-  const failedFilePaths = failedFiles.map(({ sourcePath: file }) => ({
+  const failedFilePaths = failedFiles.map(({ path }) => ({
     hasFailed: true,
-    ...getRelativePathAndFileName(sourcePathParts.length, file),
+    ...getRelativePathAndFileName(sourcePathParts.length, path),
   }));
 
   const groupedFiles = [...failedFilePaths, ...successFilePaths].reduce(

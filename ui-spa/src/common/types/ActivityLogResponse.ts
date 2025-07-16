@@ -22,10 +22,10 @@ export type ActivityItem = {
     sourcePath: string;
     destinationPath: string;
     files: {
-      sourcePath: string;
+      path: string;
     }[];
     errors: {
-      sourcePath: string;
+      path: string;
     }[];
   } | null;
 };

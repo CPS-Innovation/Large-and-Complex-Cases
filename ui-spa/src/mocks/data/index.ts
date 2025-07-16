@@ -30,3 +30,5 @@ export {
   egressToNetAppTransferStatusPlaywright,
   netAppToEgressTransferStatusPlaywright,
 } from "./transferStatus.playwright";
+export { activityLogDev } from "./activityLog.dev";
+export { activityLogPlaywright } from "./activityLog.playwright";
