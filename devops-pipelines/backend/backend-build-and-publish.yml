@@ -3,9 +3,9 @@ trigger:
   branches:
     include:
       - devops/cicd
-  paths:
-    include:
-      - backend/*
+  # paths:
+  #   include:
+  #     - backend/*
 
 pr: none
 

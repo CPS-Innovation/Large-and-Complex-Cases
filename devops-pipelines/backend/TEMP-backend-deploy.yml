@@ -1,12 +1,5 @@
-resources:
-  pipelines:
-  - pipeline: build
-    source: 'LACC-BE-dev-build'
-    branch: devops/cicd
-    trigger: 
-      branches:
-        include:
-          - devops/cicd
+trigger: none
+# configured manually in Azure Devops to run after successful completion of 'LACC-BE-dev-build'
 
 parameters:
   - name: environment
@@ -109,18 +102,16 @@ stages:
           runOnce:
             deploy:
               steps:
-                - download: build
-                  artifact: 'database-scripts-drop'
 
-                # - task: DownloadPipelineArtifact@2
-                #   displayName: 'Download Database Scripts'
-                #   inputs:
-                #     buildType: 'specific'
-                #     project: '$(System.TeamProjectId)'
-                #     pipeline: '$(buildPipeline)'
-                #     buildVersionToDownload: 'latest'
-                #     artifactName: 'database-scripts-drop'
-                #     downloadPath: '$(Pipeline.Workspace)'
+                - task: DownloadPipelineArtifact@2
+                  displayName: 'Download Database Scripts'
+                  inputs:
+                    buildType: 'specific'
+                    project: '$(System.TeamProjectId)'
+                    pipeline: '$(buildPipeline)'
+                    buildVersionToDownload: 'latest'
+                    artifactName: 'database-scripts-drop'
+                    downloadPath: '$(Pipeline.Workspace)'
 
                 - script: |
                     echo "Installing the unzip package..."
