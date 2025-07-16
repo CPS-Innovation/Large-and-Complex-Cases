@@ -83,17 +83,20 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       return HttpResponse.json(caseMetaDataResults);
     }),
 
-    http.get(`${baseUrl}/api/v1/egress/workspaces/egress_1/files`, async (req) => {
-      const url = new URL(req.request.url);
+    http.get(
+      `${baseUrl}/api/v1/egress/workspaces/egress_1/files`,
+      async (req) => {
+        const url = new URL(req.request.url);
 
-      const folderId = url.searchParams.get("folder-id");
-      const netAppRootFolderResults = isDevMock()
-        ? getEgressFolderResultsDev(folderId as string)
-        : getEgressFolderResultsPlaywright(folderId as string);
-      await delay(500);
+        const folderId = url.searchParams.get("folder-id");
+        const netAppRootFolderResults = isDevMock()
+          ? getEgressFolderResultsDev(folderId as string)
+          : getEgressFolderResultsPlaywright(folderId as string);
+        await delay(500);
 
-      return HttpResponse.json(netAppRootFolderResults);
-    }),
+        return HttpResponse.json(netAppRootFolderResults);
+      },
+    ),
 
     http.get(`${baseUrl}/api/v1/netapp/files`, async (req) => {
       const url = new URL(req.request.url);
@@ -124,18 +127,21 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       return HttpResponse.json(response);
     }),
 
-    http.post(`${baseUrl}/api/v1/filetransfer/initiate`, async ({ request }) => {
-      const requestPayload =
-        (await request.json()) as InitiateFileTransferPayload;
-      let response = {};
-      await delay(2000);
-      response =
-        requestPayload.transferDirection === "EgressToNetApp"
-          ? { id: "transfer-id-egress-to-netapp" }
-          : { id: "transfer-id-netapp-to-egress" };
+    http.post(
+      `${baseUrl}/api/v1/filetransfer/initiate`,
+      async ({ request }) => {
+        const requestPayload =
+          (await request.json()) as InitiateFileTransferPayload;
+        let response = {};
+        await delay(2000);
+        response =
+          requestPayload.transferDirection === "EgressToNetApp"
+            ? { id: "transfer-id-egress-to-netapp" }
+            : { id: "transfer-id-netapp-to-egress" };
 
-      return HttpResponse.json(response);
-    }),
+        return HttpResponse.json(response);
+      },
+    ),
     http.get(
       `${baseUrl}/api/v1/filetransfer/transfer-id-egress-to-netapp/status`,
       async () => {
@@ -156,6 +162,19 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
 
         await delay(1500);
         return HttpResponse.json(response);
+      },
+    ),
+
+    http.post(
+      `${baseUrl}/api/v1/filetransfer/transfer-id-egress-to-netapp/clear`,
+      async () => {
+        return HttpResponse.json({});
+      },
+    ),
+    http.post(
+      `${baseUrl}/api/v1/filetransfer/transfer-id-netapp-to-egress/clear`,
+      async () => {
+        return HttpResponse.json({});
       },
     ),
   ];
