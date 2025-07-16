@@ -30,7 +30,6 @@ parameters:
     default: true
 
 variables:
-  - group: lacc-backend-global-variables
   - group: lacc-backend-secrets-${{ parameters.environment }}-variables
   - group: lacc-backend-config-${{ parameters.environment }}
   - name: resourceGroupName
