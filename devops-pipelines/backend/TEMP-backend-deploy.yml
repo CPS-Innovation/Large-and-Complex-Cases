@@ -6,9 +6,6 @@ resources:
       branches:
         include:
           - main
-      paths:
-        include:
-          - backend/*
 
 parameters:
   - name: environment
