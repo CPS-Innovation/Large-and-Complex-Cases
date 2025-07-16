@@ -8,7 +8,7 @@ export const activityLogDev: ActivityLogResponse = {
       userId: "dwight_schrute@cps.gov.uk",
       userName: "David",
       caseId: "case_1",
-      description: " Case connected to Egress",
+      description: "Case connected to Egress",
       details: null,
     },
     {
@@ -18,7 +18,7 @@ export const activityLogDev: ActivityLogResponse = {
       userId: "dwight_schrute@cps.gov.uk",
       userName: "David",
       caseId: "case_1",
-      description: " Case connected to the Shared drive",
+      description: "Case connected to the Shared drive",
       details: null,
     },
     {
@@ -28,7 +28,7 @@ export const activityLogDev: ActivityLogResponse = {
       userId: "dwight_schrute@cps.gov.uk",
       userName: "David",
       caseId: "case_1",
-      description: "Transfer from egress to shared drive",
+      description: "Document/folders copying from egress to shared drive",
       details: {
         transferId: "transfer-1",
         sourceSystem: "egress",
@@ -47,7 +47,7 @@ export const activityLogDev: ActivityLogResponse = {
       userId: "dwight_schrute@cps.gov.uk",
       userName: "David",
       caseId: "case_1",
-      description: "Transfer from egress to shared drive",
+      description: "Document/folders copied from egress to shared drive",
       details: {
         transferId: "transfer-1",
         sourceSystem: "egress",
@@ -86,7 +86,7 @@ export const activityLogDev: ActivityLogResponse = {
       userId: "dwight_schrute@cps.gov.uk",
       userName: "David",
       caseId: "case_1",
-      description: "Transfer from egress to shared drive",
+      description: "Document/folders copying from egress to shared drive",
       details: {
         transferId: "transfer-1",
         sourceSystem: "egress",
@@ -105,7 +105,7 @@ export const activityLogDev: ActivityLogResponse = {
       userId: "dwight_schrute@cps.gov.uk",
       userName: "David",
       caseId: "case_1",
-      description: "Transfer from egress to shared drive",
+      description: "Document/folders copied from egress to shared drive",
       details: {
         transferId: "transfer-1",
         sourceSystem: "egress",

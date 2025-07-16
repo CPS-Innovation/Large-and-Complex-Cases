@@ -5,8 +5,8 @@ import { Tag, Button } from "../../govuk";
 import { getGroupedActvityFilePaths } from "../../../common/utils/getGroupedActivityFilePaths";
 import styles from "./relativePathFiles.module.scss";
 type RelativePathFilesProps = {
-  successFiles: { sourcePath: string }[];
-  errorFiles: { sourcePath: string }[];
+  successFiles: { path: string }[];
+  errorFiles: { path: string }[];
   sourcePath: string;
 };
 
@@ -65,7 +65,6 @@ const RelativePathFiles: React.FC<RelativePathFilesProps> = ({
                 ))}
               </ul>
             )}
-            <Button> Download the list of files (.csv)</Button>
           </section>
         );
       })}
