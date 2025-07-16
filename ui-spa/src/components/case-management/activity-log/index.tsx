@@ -9,6 +9,8 @@ const ActvityLogPageProps = () => {
   const { caseId } = useParams() as { caseId: string };
   const activityLogResponse = useApi(getActivityLog, [caseId], true);
 
+  console.log(activityLogResponse)
+
   useEffect(() => {
     if (activityLogResponse.status === "failed")
       throw new Error(`${activityLogResponse.error}`);

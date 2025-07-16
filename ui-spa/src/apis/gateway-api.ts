@@ -385,3 +385,21 @@ export const getActivityLog = async (caseId: string) => {
   }
   return (await response.json()) as ActivityLogResponse;
 };
+
+
+export const downloadActivityLog = async (transferId: string) => {
+  const url = `${GATEWAY_BASE_URL}/api/v1/activity/${transferId}/logs/download`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      ...(await buildCommonHeaders()),
+    },
+  });
+
+  if (!response.ok) {
+    throw new ApiError(`Downloading activity log failed`, url, response);
+  }
+  return response;
+};

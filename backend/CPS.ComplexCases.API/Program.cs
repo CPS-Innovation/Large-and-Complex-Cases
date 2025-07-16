@@ -19,6 +19,8 @@ using CPS.ComplexCases.DDEI.Extensions;
 using CPS.ComplexCases.DDEI.Tactical.Extensions;
 using CPS.ComplexCases.Egress.Extensions;
 using CPS.ComplexCases.NetApp.Extensions;
+using Microsoft.AspNetCore.Http.Json;
+using System.Text.Json;
 
 // Create a temporary logger for configuration phase
 using var loggerFactory = LoggerFactory.Create(configure => configure.AddConsole());
@@ -26,7 +28,7 @@ var logger = loggerFactory.CreateLogger("Configuration");
 
 var host = new HostBuilder()
     .ConfigureFunctionsWebApplication(webApp =>
-    { 
+    {
         // note: the order of middleware is important, as it determines the execution flow
         webApp.UseMiddleware<ExceptionHandlingMiddleware>();
         webApp.UseMiddleware<RequestValidationMiddleware>();
@@ -40,7 +42,7 @@ var host = new HostBuilder()
     {
         // Get configuration for service registrations
         var configuration = context.Configuration;
-        
+
         services
             .AddApplicationInsightsTelemetryWorkerService()
             .ConfigureFunctionsApplicationInsights();
@@ -53,6 +55,19 @@ var host = new HostBuilder()
                         $"https://login.microsoftonline.com/{configuration["TenantId"]}/v2.0/.well-known/openid-configuration",
                         new OpenIdConnectConfigurationRetriever(),
                         new HttpDocumentRetriever());
+        });
+
+        services.ConfigureHttpJsonOptions(options =>
+        {
+            options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            options.SerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase;
+        });
+
+        // For Azure Functions, also configure:
+        services.Configure<JsonOptions>(options =>
+        {
+            options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            options.SerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase;
         });
 
         services.AddActivityLog();

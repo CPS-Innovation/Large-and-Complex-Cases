@@ -4,6 +4,7 @@ using CPS.ComplexCases.ActivityLog.Enums;
 using CPS.ComplexCases.Data.Dtos;
 using CPS.ComplexCases.Data.Repositories;
 using Microsoft.Extensions.Logging;
+using CPS.ComplexCases.Common.Helpers;
 
 namespace CPS.ComplexCases.ActivityLog.Services;
 
@@ -93,6 +94,27 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
         return _activityLogRepository.UpdateAsync(activityLog);
     }
 
+    public string GenerateFileDetailsCsvAsync(Data.Entities.ActivityLog activityLog)
+    {
+        _logger.LogInformation("Generating file details CSV for activity log {ActivityLogId}", activityLog.Id);
+
+        if (activityLog.Details == null)
+        {
+            _logger.LogWarning("Activity log details are null for ID {ActivityLogId}", activityLog.Id);
+            return string.Empty;
+        }
+
+        var fileRecords = ExtractFileRecordsFromDetails(activityLog.Details);
+
+        if (fileRecords.Count == 0)
+        {
+            _logger.LogInformation("No file records to export for activity log ID: {ActivityLogId}", activityLog.Id);
+            return string.Empty;
+        }
+
+        return CsvGeneratorHelper.GenerateCsv(fileRecords);
+    }
+
     public JsonDocument? ConvertToJsonDocument<T>(T data)
     {
         try
@@ -104,6 +126,79 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
             _logger.LogError(ex, "Error converting data to JsonDocument");
             return null;
         }
+    }
+
+    private List<Dictionary<string, object?>> ExtractFileRecordsFromDetails(JsonDocument details)
+    {
+        var fileRecords = new List<Dictionary<string, object?>>();
+
+        if (details?.RootElement.ValueKind != JsonValueKind.Object)
+        {
+            _logger.LogWarning("Details is not a valid JSON object or is null");
+            return fileRecords;
+        }
+
+        try
+        {
+            var rootElement = details.RootElement;
+
+            // Handle Files (Success)
+            if (rootElement.TryGetProperty("Files", out var filesElement) &&
+                filesElement.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var fileElement in filesElement.EnumerateArray())
+                {
+                    var fileRecord = new Dictionary<string, object?>();
+
+                    if (fileElement.TryGetProperty("Path", out var pathElement))
+                    {
+                        var path = pathElement.GetString();
+                        fileRecord["Path"] = path;
+                        fileRecord["FileName"] = !string.IsNullOrEmpty(path) ? Path.GetFileName(path) : null;
+                    }
+                    else
+                    {
+                        fileRecord["Path"] = null;
+                        fileRecord["FileName"] = null;
+                    }
+
+                    fileRecord["Status"] = "Success";
+                    fileRecords.Add(fileRecord);
+                }
+            }
+
+            // Handle Errors (Fail)
+            if (rootElement.TryGetProperty("Errors", out var errorsElement) &&
+                errorsElement.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var errorElement in errorsElement.EnumerateArray())
+                {
+                    var fileRecord = new Dictionary<string, object?>();
+
+                    if (errorElement.TryGetProperty("Path", out var pathElement))
+                    {
+                        var path = pathElement.GetString();
+                        fileRecord["Path"] = path;
+                        fileRecord["FileName"] = !string.IsNullOrEmpty(path) ? Path.GetFileName(path) : null;
+                    }
+                    else
+                    {
+                        fileRecord["Path"] = null;
+                        fileRecord["FileName"] = null;
+                    }
+
+                    fileRecord["Status"] = "Fail";
+                    fileRecords.Add(fileRecord);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error extracting file records from JSON details");
+        }
+
+        _logger.LogInformation("Extracted {Count} file records from activity log details", fileRecords.Count);
+        return fileRecords;
     }
 
     private static string SetDescription(ActionType actionType, string? resourceName)

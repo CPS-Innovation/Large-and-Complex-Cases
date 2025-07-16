@@ -6,6 +6,7 @@ import { Details, Tag, Button } from "../../govuk";
 import RelativePathFiles from "./RelativePathFiles";
 import { formatDate } from "../../../common/utils/formatDate";
 import styles from "./activityTimeline.module.scss";
+import { downloadActivityLog } from "../../../apis/gateway-api";
 
 type ActivityTimelineProps = {
   activities: ActivityLogResponse;
@@ -21,7 +22,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
       activity.actionType === "TRANSFER_FAILED"
     ) {
       console.log("ctivity.actionType >>", activity.actionType);
-      if (activity.details?.errors.length && activity.details?.files.length)
+      if (activity.details?.Errors.length && activity.details?.Files.length)
         return (
           <Tag
             gdsTagColour="yellow"
@@ -32,7 +33,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
           </Tag>
         );
 
-      if (!activity.details?.errors.length)
+      if (!activity.details?.Errors.length)
         return (
           <Tag
             gdsTagColour="green"
@@ -42,7 +43,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
             Completed
           </Tag>
         );
-      if (activity.details?.errors.length)
+      if (activity.details?.Errors.length)
         return (
           <Tag
             gdsTagColour="red"
@@ -72,12 +73,32 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
       );
     }
   };
+
+  const handleDownload = async (activityId: string) => {
+    try {
+      const response = await downloadActivityLog(activityId);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      // Use filename from API if available, else fallback
+      a.download = `activity-log-${activityId}-files.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      // Optionally show error to user
+      console.error("Failed to download activity log:", error);
+    }
+  };
+
   return (
     <section
       className={styles.activitiesTimeline}
       data-testid="activities-list"
     >
-      {activities?.items.toReversed().map((activity) => (
+      {activities?.toReversed().map((activity) => (
         <div className={styles.activityWrapper} key={activity.id}>
           <div className={styles.activityHead}></div>
           <div className={styles.activityTitle}>
@@ -98,26 +119,29 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
               <div>
                 <div>
                   <span> Source:</span>
-                  <span> {activity.details.sourcePath}</span>
+                  <span> {activity.details.SourcePath}</span>
                 </div>
                 <div>
                   <span> Destination:</span>
-                  <span> {activity.details.destinationPath}</span>
+                  <span> {activity.details.DestinationPath}</span>
                 </div>
               </div>
 
-              {(!!activity.details.files.length ||
-                !!activity.details.errors.length) && (
+              {(!!activity.details.Files.length ||
+                !!activity.details.Errors.length) && (
                 <div>
                   <p>Below is a list of documents/folders copied:</p>
                   <Details summaryChildren="View files">
                     <RelativePathFiles
-                      successFiles={activity.details.files}
-                      errorFiles={activity.details.errors}
-                      sourcePath={activity.details.sourcePath}
+                      successFiles={activity.details.Files}
+                      errorFiles={activity.details.Errors}
+                      sourcePath={activity.details.SourcePath}
                     />
                   </Details>
-                  <Button className={styles.downloadBtn}>
+                  <Button
+                    className={styles.downloadBtn}
+                    onClick={() => handleDownload(activity.id)}
+                  >
                     Download the list of files (.csv)
                   </Button>
                 </div>

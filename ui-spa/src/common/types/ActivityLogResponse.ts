@@ -15,21 +15,19 @@ export type ActivityItem = {
   resourceType?: "FileTransfer";
   resourceName?: string;
   details: {
-    transferId: string;
-    sourceSystem: string;
-    destinationSystem: string;
-    fileCount: number;
-    sourcePath: string;
-    destinationPath: string;
-    files: {
-      path: string;
+    TransferId: string;
+    SourceSystem: string;
+    DestinationSystem: string;
+    FileCount: number;
+    SourcePath: string;
+    DestinationPath: string;
+    Files: {
+      Path: string;
     }[];
-    errors: {
-      path: string;
+    Errors: {
+      Path: string;
     }[];
   } | null;
 };
 
-export type ActivityLogResponse = {
-  items: ActivityItem[];
-};
+export type ActivityLogResponse =  ActivityItem[];

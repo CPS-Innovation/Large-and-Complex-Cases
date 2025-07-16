@@ -5,8 +5,8 @@ import { Tag, Button } from "../../govuk";
 import { getGroupedActvityFilePaths } from "../../../common/utils/getGroupedActivityFilePaths";
 import styles from "./relativePathFiles.module.scss";
 type RelativePathFilesProps = {
-  successFiles: { path: string }[];
-  errorFiles: { path: string }[];
+  successFiles: { Path: string }[];
+  errorFiles: { Path: string }[];
   sourcePath: string;
 };
 

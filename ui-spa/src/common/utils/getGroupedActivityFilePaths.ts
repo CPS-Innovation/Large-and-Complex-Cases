@@ -4,28 +4,28 @@ export type ActivityRelativePathFileType = {
 };
 
 export const getGroupedActvityFilePaths = (
-  successFiles: { path: string }[],
-  failedFiles: { path: string }[],
+  successFiles: { Path: string }[],
+  failedFiles: { Path: string }[],
   sourcePath: string,
 ) => {
   const getRelativePathAndFileName = (
     sourcePartsLength: number,
     filePath: string,
   ) => {
-    const pathParts = filePath.split("/");
+    const pathParts = filePath?.split("/");
     return {
       relativePath: pathParts.slice(sourcePartsLength, -1).join(" > "),
-      fileName: pathParts[pathParts.length - 1],
+      fileName: pathParts[pathParts?.length - 1],
     };
   };
-  const sourcePathParts = sourcePath.split("/");
-  const successFilePaths = successFiles.map(({ path }) => ({
+  const sourcePathParts = sourcePath?.split("/") || [];
+  const successFilePaths = successFiles.map(({ Path }) => ({
     hasFailed: false,
-    ...getRelativePathAndFileName(sourcePathParts.length, path),
+    ...getRelativePathAndFileName(sourcePathParts.length, Path),
   }));
-  const failedFilePaths = failedFiles.map(({ path }) => ({
+  const failedFilePaths = failedFiles.map(({ Path }) => ({
     hasFailed: true,
-    ...getRelativePathAndFileName(sourcePathParts.length, path),
+    ...getRelativePathAndFileName(sourcePathParts.length, Path),
   }));
 
   const groupedFiles = [...failedFilePaths, ...successFilePaths].reduce(
@@ -38,14 +38,14 @@ export const getGroupedActvityFilePaths = (
         if (curr.hasFailed) {
           value.errors = [
             {
-              relativePathParts: curr.relativePath.split(">"),
+              relativePathParts: curr.relativePath?.split(">"),
               fileName: curr.fileName,
             },
           ];
         } else {
           value.success = [
             {
-              relativePathParts: curr.relativePath.split(">"),
+              relativePathParts: curr.relativePath?.split(">"),
               fileName: curr.fileName,
             },
           ];
@@ -56,12 +56,12 @@ export const getGroupedActvityFilePaths = (
       }
       if (curr.hasFailed)
         acc[`${curr.relativePath}`].errors.push({
-          relativePathParts: curr.relativePath.split(">"),
+          relativePathParts: curr.relativePath?.split(">"),
           fileName: curr.fileName,
         });
 
       acc[`${curr.relativePath}`].success.push({
-        relativePathParts: curr.relativePath.split(">"),
+        relativePathParts: curr.relativePath?.split(">"),
         fileName: curr.fileName,
       });
 
