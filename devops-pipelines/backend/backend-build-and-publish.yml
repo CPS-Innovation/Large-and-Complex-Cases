@@ -56,6 +56,7 @@ stages:
     
   - stage: Build_Main_API
     displayName: 'LACC Backend - Build Main API'
+    dependsOn: Package_NuGet
     jobs:
       - job: Build_Main_API
         displayName: 'Build Main API'
@@ -72,7 +73,7 @@ stages:
 
   - stage: Build_Filetransfer_API
     displayName: 'LACC Backend - Build Main API'
-    dependsOn: []
+    dependsOn: Package_NuGet
     jobs:
       - job: Build_FileTransfer_API
         displayName: 'Build FileTransfer API'
@@ -89,7 +90,7 @@ stages:
 
   - stage: Package_Database
     displayName: 'LACC Backend - Build Database Migration Scripts'
-    dependsOn: []
+    dependsOn: Package_NuGet
     jobs:
       - job: Package_Database_Scripts
         displayName: 'Package Database Migration Scripts'

@@ -1,7 +1,8 @@
 resources:
   pipelines:
   - pipeline: build
-    source: LACC-BE-dev-build
+    source: 'LACC-BE-dev-build'
+    branch: devops/cicd
     trigger: 
       branches:
         include:
