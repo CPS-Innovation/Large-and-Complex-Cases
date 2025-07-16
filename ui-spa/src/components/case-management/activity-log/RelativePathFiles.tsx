@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import FolderIcon from "../../../components/svgs/folder.svg?react";
 import FileIcon from "../../../components/svgs/file.svg?react";
-import { Tag, Button } from "../../govuk";
+import { Tag } from "../../govuk";
 import { getGroupedActvityFilePaths } from "../../../common/utils/getGroupedActivityFilePaths";
 import styles from "./relativePathFiles.module.scss";
 type RelativePathFilesProps = {

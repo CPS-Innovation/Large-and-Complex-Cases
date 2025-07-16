@@ -1,11 +1,9 @@
 .titleWrapper {
-  min-height: 2rem;
   display: flex;
   align-items: center;
-  padding: 1rem;
   background: #f3f2f1;
-  h2 {
-    margin: 0;
+  h3 {
+    margin-left: 1rem;
   }
 }
 
@@ -14,4 +12,13 @@
 }
 .activities {
   border: 1px solid #b1b4b6;
+}
+.titleText {
+  margin-bottom: 1rem;
+  .lastUpdatedText {
+    color: #505a5f;
+  }
+  h2 {
+    margin-bottom: 0;
+  }
 }

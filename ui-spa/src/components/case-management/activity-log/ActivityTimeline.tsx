@@ -96,13 +96,17 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
           {activity.details && (
             <div>
               <div>
-                <div>
-                  <span> Source:</span>
-                  <span> {activity.details.sourcePath}</span>
+                <div className={styles.locationData}>
+                  <span className={styles.locationTitle}> Source:</span>
+                  <span className={styles.locationPath}>
+                    {activity.details.sourcePath.replace("/", " > ")}
+                  </span>
                 </div>
-                <div>
-                  <span> Destination:</span>
-                  <span> {activity.details.destinationPath}</span>
+                <div className={styles.locationData}>
+                  <span className={styles.locationTitle}> Destination:</span>
+                  <span className={styles.locationPath}>
+                    {activity.details.destinationPath.replace("/", " > ")}
+                  </span>
                 </div>
               </div>
 
