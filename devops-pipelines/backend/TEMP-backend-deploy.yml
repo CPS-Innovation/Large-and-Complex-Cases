@@ -2,10 +2,10 @@ resources:
   pipelines:
   - pipeline: build
     source: 'LACC-BE-dev-build'
-    trigger: 
-      branches:
-        include:
-          - main
+    trigger: true
+      # branches:
+      #   include:
+      #     - main
 
 parameters:
   - name: environment
@@ -38,8 +38,6 @@ variables:
     value: 'kv-lacc-${{ parameters.environment }}'
   - name: scripts_directory
     value: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts'
-  # - name: buildPipeline
-  #   value: 'LACC-BE-dev-build' 
   - name: azureSubscription
     ${{ if ne(parameters.environment, 'prod') }}:
       value: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
@@ -102,24 +100,13 @@ stages:
     jobs:
       - deployment: Deploy_Database_Changes
         displayName: 'LACC - Deploy Database Changes'
-        # environment: 'LACC-Backend-${{ parameters.environment }}'
-        environment: 'TEST-LACC-Backend'
+        environment: 'LACC-Backend-${{ parameters.environment }}'
         strategy:
           runOnce:
             deploy:
               steps:
                 - download: build
                   artifact: 'database-scripts-drop'
-
-                # - task: DownloadPipelineArtifact@2
-                #   displayName: 'Download Database Scripts'
-                #   inputs:
-                #     buildType: 'specific'
-                #     project: '$(System.TeamProjectId)'
-                #     pipeline: '$(buildPipeline)'
-                #     buildVersionToDownload: 'latest'
-                #     artifactName: 'database-scripts-drop'
-                #     downloadPath: '$(Pipeline.Workspace)'
 
                 - script: |
                     echo "Installing the unzip package..."
@@ -157,8 +144,7 @@ stages:
       - deployment: Deploy_Main_API
         displayName: 'LACC - Deploy Main API Function App'
         condition: eq(${{ parameters.deployMainAPI }}, true)
-        # environment: 'LACC-Backend-${{ parameters.environment }}'
-        environment: 'TEST-LACC-Backend'
+        environment: 'LACC-Backend-${{ parameters.environment }}'
         strategy:
           runOnce:
             deploy:
@@ -167,15 +153,13 @@ stages:
                   parameters:
                     environment: ${{ parameters.environment }}
                     functionAppName: 'fa-lacc-api-${{ parameters.environment }}'
-                    # buildPipeline: '$(buildPipeline)'
                     pipelineResourceAlias: 'build'
                     buildArtifactName: 'lacc-main-api-drop'
 
       - deployment: Deploy_FileTransfer_API
         displayName: 'LACC - Deploy FileTransfer API Function App'
         condition: eq(${{ parameters.deployFileTransferAPI }}, true)
-        # environment: 'LACC-Backend-${{ parameters.environment }}'
-        environment: 'TEST-LACC-Backend'
+        environment: 'LACC-Backend-${{ parameters.environment }}'
         strategy:
           runOnce:
             deploy:
@@ -184,6 +168,5 @@ stages:
                   parameters:
                     environment: ${{ parameters.environment }}
                     functionAppName: 'fa-lacc-filetransfer-api-${{ parameters.environment }}'
-                    # buildPipeline: '$(buildPipeline)'
                     pipelineResourceAlias: 'build'
                     buildArtifactName: 'lacc-filetransfer-api-drop'
