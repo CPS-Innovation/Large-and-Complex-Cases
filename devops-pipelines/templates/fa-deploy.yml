@@ -1,22 +1,25 @@
 parameters:
   environment: ''
   functionAppName: ''
-  buildPipeline: ''
+  # buildPipeline: ''
   buildArtifactName: ''
+  pipelineResourceAlias: ''
   keyVaultName: $(keyVaultName)
   azureSubscription: $(azureSubscription)
   resourceGroupName: $(resourceGroupName)
 
 steps:
-  - task: DownloadPipelineArtifact@2
-    displayName: 'Download Build Artifact'
-    inputs:
-      buildType: 'specific'
-      project: '$(System.TeamProjectId)'
-      pipeline: '${{ parameters.buildPipeline }}'
-      buildVersionToDownload: 'latest'
-      artifactName: '${{ parameters.buildArtifactName }}'
-      downloadPath: '$(Pipeline.Workspace)'
+  - download: '${{ parameters.pipelineResourceAlias}}'
+    artifact: '${{ parameters.buildArtifactName }}'
+  # - task: DownloadPipelineArtifact@2
+  #   displayName: 'Download Build Artifact'
+  #   inputs:
+  #     buildType: 'specific'
+  #     project: '$(System.TeamProjectId)'
+  #     pipeline: '${{ parameters.buildPipeline }}'
+  #     buildVersionToDownload: 'latest'
+  #     artifactName: '${{ parameters.buildArtifactName }}'
+  #     downloadPath: '$(Pipeline.Workspace)'
 
   - template: ../templates/fa-config.yml
     parameters:
@@ -32,7 +35,7 @@ steps:
   #     azureSubscription: ${{ parameters.azureSubscription }}
   #     appType: 'functionApp'
   #     appName: ${{ parameters.functionAppName }}
-  #     package: '$(Pipeline.Workspace)/${{ parameters.buildArtifactName }}/*.zip'
+  #     package: '$(Pipeline.Workspace)/${{ parameters.pipelineResourceAlias}}/${{ parameters.buildArtifactName }}/*.zip'
   #     runtimeStack: 'DOTNET-ISOLATED|8.0'
   #     deploymentMethod: 'runFromPackage'
 
