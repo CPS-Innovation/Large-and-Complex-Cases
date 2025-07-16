@@ -2,10 +2,10 @@ trigger:
   batch: true
   branches:
     include:
-      - devops/cicd
-  # paths:
-  #   include:
-  #     - backend/*
+      - main
+  paths:
+    include:
+      - backend/*
 
 pr: none
 
