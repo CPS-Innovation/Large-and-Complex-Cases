@@ -102,7 +102,8 @@ stages:
     jobs:
       - deployment: Deploy_Database_Changes
         displayName: 'LACC - Deploy Database Changes'
-        environment: 'LACC-Backend-${{ parameters.environment }}'
+        # environment: 'LACC-Backend-${{ parameters.environment }}'
+        environment: 'TEST-LACC-Backend'
         strategy:
           runOnce:
             deploy:
@@ -156,7 +157,8 @@ stages:
       - deployment: Deploy_Main_API
         displayName: 'LACC - Deploy Main API Function App'
         condition: eq(${{ parameters.deployMainAPI }}, true)
-        environment: 'LACC-Backend-${{ parameters.environment }}'
+        # environment: 'LACC-Backend-${{ parameters.environment }}'
+        environment: 'TEST-LACC-Backend'
         strategy:
           runOnce:
             deploy:
@@ -171,7 +173,8 @@ stages:
       - deployment: Deploy_FileTransfer_API
         displayName: 'LACC - Deploy FileTransfer API Function App'
         condition: eq(${{ parameters.deployFileTransferAPI }}, true)
-        environment: 'LACC-Backend-${{ parameters.environment }}'
+        # environment: 'LACC-Backend-${{ parameters.environment }}'
+        environment: 'TEST-LACC-Backend'
         strategy:
           runOnce:
             deploy:
