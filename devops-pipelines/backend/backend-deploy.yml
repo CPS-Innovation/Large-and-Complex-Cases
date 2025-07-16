@@ -460,14 +460,3 @@ stages:
                       else
                         echo "✅ Function app is running"
                       fi
-
-                - script: |
-                    echo "Cleaning up downloaded artifacts..."
-
-                    if ! rm -r "$(buildArtifact)" 2>err.log; then
-                      cat err.log >&2
-                      exit 1
-                    else
-                      echo "Downloaded artifact removed successfully."
-                    fi
-                  workingDirectory: $(Pipeline.Workspace)
