@@ -38,8 +38,8 @@ variables:
     value: 'kv-lacc-${{ parameters.environment }}'
   - name: scripts_directory
     value: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts'
-  - name: buildPipeline
-    value: 'LACC-BE-dev-build' 
+  # - name: buildPipeline
+  #   value: 'LACC-BE-dev-build' 
   - name: azureSubscription
     ${{ if ne(parameters.environment, 'prod') }}:
       value: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
@@ -130,7 +130,7 @@ stages:
                 - task: ExtractFiles@1
                   displayName: 'Extract Database Scripts'
                   inputs:
-                    archiveFilePatterns: '$(Pipeline.Workspace)/database-scripts-drop/*.zip'
+                    archiveFilePatterns: '$(Pipeline.Workspace)/build/database-scripts-drop/*.zip'
                     destinationFolder: '$(Pipeline.Workspace)/database-scripts'
                     cleanDestinationFolder: true
 
@@ -167,7 +167,8 @@ stages:
                   parameters:
                     environment: ${{ parameters.environment }}
                     functionAppName: 'fa-lacc-api-${{ parameters.environment }}'
-                    buildPipeline: '$(buildPipeline)'
+                    # buildPipeline: '$(buildPipeline)'
+                    pipelineResourceAlias: 'build'
                     buildArtifactName: 'lacc-main-api-drop'
 
       - deployment: Deploy_FileTransfer_API
@@ -183,5 +184,6 @@ stages:
                   parameters:
                     environment: ${{ parameters.environment }}
                     functionAppName: 'fa-lacc-filetransfer-api-${{ parameters.environment }}'
-                    buildPipeline: '$(buildPipeline)'
+                    # buildPipeline: '$(buildPipeline)'
+                    pipelineResourceAlias: 'build'
                     buildArtifactName: 'lacc-filetransfer-api-drop'
