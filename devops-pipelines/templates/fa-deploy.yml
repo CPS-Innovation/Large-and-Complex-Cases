@@ -48,7 +48,7 @@ steps:
         fi
 
         echo "Azure CLI not found, installing..."
-        bash '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/installAzureCli.sh 
+        bash '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/installAzureCli.sh'
 
   - task: AzureCLI@2
     displayName: 'Verify Function App Deployment'
