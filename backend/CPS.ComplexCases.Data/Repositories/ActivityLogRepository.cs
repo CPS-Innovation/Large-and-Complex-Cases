@@ -41,9 +41,9 @@ public class ActivityLogRepository(ApplicationDbContext dbContext) : IActivityLo
         return existingActivityLog;
     }
 
-    public async Task<IEnumerable<ActivityLog>> GetByFilterAsync(ActivityLogFilterDto filter)
+    public async Task<ActivityLogResultsDto> GetByFilterAsync(ActivityLogFilterDto filter)
     {
-        IQueryable<ActivityLog> query = _dbContext.ActivityLogs;
+        IQueryable<ActivityLog> query = _dbContext.ActivityLogs.AsNoTracking();
 
         if (filter.FromDate.HasValue)
         {
@@ -70,10 +70,20 @@ public class ActivityLogRepository(ApplicationDbContext dbContext) : IActivityLo
             query = query.Where(a => a.ResourceId == filter.ResourceId);
         }
 
-        return await query.OrderByDescending(x => x.Timestamp)
+        var totalCount = await query.CountAsync();
+
+        var results = await query.OrderByDescending(x => x.Timestamp)
                         .ThenByDescending(x => x.Id)
                         .Skip(filter.Skip)
                         .Take(filter.Take)
                         .ToListAsync();
+
+        return new ActivityLogResultsDto
+        {
+            Logs = results,
+            TotalCount = totalCount,
+            Skip = filter.Skip,
+            Take = filter.Take
+        };
     }
 }

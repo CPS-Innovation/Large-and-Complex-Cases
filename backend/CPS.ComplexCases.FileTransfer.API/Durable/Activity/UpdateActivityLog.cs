@@ -45,7 +45,7 @@ public class UpdateActivityLog(IActivityLogService activityLogService)
             ErrorMessage = x.ErrorMessage
         }).ToList();
 
-        var sourcePath = Path.GetDirectoryName(entity.State.SourcePaths.First().RelativePath);
+        var sourcePath = Path.GetDirectoryName(entity.State.SourcePaths[0].Path);
         var deletionErrors = new List<FileTransferError>();
 
         if (entity.State.TransferType == TransferType.Move && payload.ActionType != ActionType.TransferInitiated)
