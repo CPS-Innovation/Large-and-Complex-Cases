@@ -1,0 +1,173 @@
+resources:
+  pipelines:
+  - pipeline: build
+    source: 'LACC-BE-dev-build'
+    trigger: 
+      branches:
+        include:
+          - main
+
+parameters:
+  - name: environment
+    displayName: 'Target Environment'
+    type: string
+    default: 'dev'
+    values:
+      - dev
+      - stage
+      - prod
+  - name: runDatabaseMigration
+    displayName: 'Run Database Migration'
+    type: boolean
+    default: true
+  - name: deployMainAPI
+    displayName: 'Deploy Main API'
+    type: boolean
+    default: true
+  - name: deployFileTransferAPI
+    displayName: 'Deploy FileTransfer API'
+    type: boolean
+    default: true
+
+variables:
+  - group: lacc-backend-secrets-${{ parameters.environment }}-variables
+  - group: lacc-backend-config-${{ parameters.environment }}
+  - name: resourceGroupName
+    value: 'rg-lacc-${{ parameters.environment }}' 
+  - name: keyVaultName
+    value: 'kv-lacc-${{ parameters.environment }}'
+  - name: scripts_directory
+    value: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts'
+  - name: azureSubscription
+    ${{ if ne(parameters.environment, 'prod') }}:
+      value: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
+    ${{ else }}:
+      value: 'Azure Pipeline: Large and Complex Cases - Prod'
+
+# TODO: conditionally use prod pool for prod      
+pool: 'LaCC Pre-Prod Build Agents' #'LARGE-AND-COMPLEX-CASES-PRE-PROD'
+
+stages:
+  - stage: Update_Key_Vault
+    displayName: 'LACC - Update Key Vault'
+    jobs:
+      - job: Populate_KV
+        displayName: 'LACC - Validate Target Environment'
+        steps:
+          - checkout: self
+            sparseCheckoutDirectories: devops-pipelines/scripts
+            fetchDepth: 1
+
+          - task: Bash@3
+            displayName: 'Ensure Azure CLI'
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "Checking if Azure CLI is installed..."
+                
+                # Check if az command exists
+                if command -v az &> /dev/null; then
+                  echo "Azure CLI is already installed"
+                  az --version
+                  exit 0
+                fi
+
+                echo "Azure CLI not found, installing..."
+                bash $(scripts_directory)/installAzureCli.sh   
+
+          - task: AzureCLI@2
+            displayName: 'LACC - Initialize Key Vault Secrets from Variable Groups'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                bash $(scripts_directory)/populateKV.sh
+            env:
+              KEY_VAULT_NAME: $(keyVaultName)
+              CASE_MANAGEMENT_DATASTORE_CONNECTION: $(CaseManagementDatastoreConnection)
+              EGRESS_OPTIONS_USERNAME: $(EgressOptionsUsername)
+              EGRESS_OPTIONS_PASSWORD: $(EgressOptionsPassword)
+              DDEI_OPTIONS_ACCESS_KEY: $(DDEIOptionsAccessKey)
+              NET_APP_OPTIONS_ACCESS_KEY: $(NetAppOptionsAccessKey)
+              NET_APP_OPTIONS_SECRET_KEY: $(NetAppOptionsSecretKey)
+              FILE_TRANSFER_API_OPTIONS_ACCESS_KEY: $(FileTransferApiOptionsAccessKey)
+
+  - stage: Database_Migration
+    displayName: 'LACC - Database Migration'
+    dependsOn: Update_Key_Vault
+    condition: and(succeeded(), eq(${{ parameters.runDatabaseMigration }}, true))
+    jobs:
+      - deployment: Deploy_Database_Changes
+        displayName: 'LACC - Deploy Database Changes'
+        environment: 'LACC-Backend-${{ parameters.environment }}'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: build
+                  artifact: 'database-scripts-drop'
+
+                - script: |
+                    echo "Installing the unzip package..."
+                    sudo apt-get update
+                    sudo apt-get install unzip -y
+                  displayName: 'Install unzip'
+
+                - task: ExtractFiles@1
+                  displayName: 'Extract Database Scripts'
+                  inputs:
+                    archiveFilePatterns: '$(Pipeline.Workspace)/build/database-scripts-drop/*.zip'
+                    destinationFolder: '$(Pipeline.Workspace)/database-scripts'
+                    cleanDestinationFolder: true
+
+                - task: AzureCLI@2
+                  displayName: 'Run Database Migration'
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      bash $(scripts_directory)/updateDatabase.sh
+                  env:
+                    KEY_VAULT_NAME: $(keyVaultName)
+                    MIGRATION_SCRIPT_PATH: '$(Pipeline.Workspace)/database-scripts/migration-script.sql'
+              
+  - stage: Deploy_Function_Apps
+    displayName: 'LACC - Deploy Function Apps'
+    ${{ if eq(parameters.runDatabaseMigration, true) }}:
+      dependsOn: 
+        - Update_Key_Vault
+        - Database_Migration
+    ${{ else }}:
+      dependsOn: Update_Key_Vault
+    jobs:
+      - deployment: Deploy_Main_API
+        displayName: 'LACC - Deploy Main API Function App'
+        condition: eq(${{ parameters.deployMainAPI }}, true)
+        environment: 'LACC-Backend-${{ parameters.environment }}'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: ../templates/fa-deploy.yml
+                  parameters:
+                    environment: ${{ parameters.environment }}
+                    functionAppName: 'fa-lacc-api-${{ parameters.environment }}'
+                    pipelineResourceAlias: 'build'
+                    buildArtifactName: 'lacc-main-api-drop'
+
+      - deployment: Deploy_FileTransfer_API
+        displayName: 'LACC - Deploy FileTransfer API Function App'
+        condition: eq(${{ parameters.deployFileTransferAPI }}, true)
+        environment: 'LACC-Backend-${{ parameters.environment }}'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: ../templates/fa-deploy.yml
+                  parameters:
+                    environment: ${{ parameters.environment }}
+                    functionAppName: 'fa-lacc-filetransfer-api-${{ parameters.environment }}'
+                    pipelineResourceAlias: 'build'
+                    buildArtifactName: 'lacc-filetransfer-api-drop'
