@@ -101,7 +101,7 @@ stages:
       - deployment: Deploy_Database_Changes
         displayName: 'LACC - Deploy Database Changes'
         # environment: 'LACC-Backend-${{ parameters.environment }}'
-        environment: 'LACC_TEST' # used for testing purposes, to swap for above once the code is approved
+        environment: 'TEST-LACC-Backend' # used for testing purposes, to swap for above once the code is approved
         strategy:
           runOnce:
             deploy:
@@ -147,7 +147,7 @@ stages:
   #       displayName: 'LACC - Deploy Main API Function App'
   #       condition: eq(${{ parameters.deployMainAPI }}, true)
   #       # environment: 'LACC-Backend-${{ parameters.environment }}'
-  #       environment: 'LACC_TEST' # used for testing purposes, to swap for above once the code is approved
+  #       environment: 'TEST-LACC-Backend' # used for testing purposes, to swap for above once the code is approved
   #       strategy:
   #         runOnce:
   #           deploy:
@@ -163,7 +163,7 @@ stages:
   #       displayName: 'LACC - Deploy FileTransfer API Function App'
   #       condition: eq(${{ parameters.deployFileTransferAPI }}, true)
   #       # environment: 'LACC-Backend-${{ parameters.environment }}'
-  #       environment: 'LACC_TEST' # used for testing purposes, to swap for above once the code is approved
+  #       environment: 'TEST-LACC-Backend' # used for testing purposes, to swap for above once the code is approved
   #       strategy:
   #         runOnce:
   #           deploy:
