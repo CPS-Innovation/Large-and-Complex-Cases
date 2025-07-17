@@ -1,6 +1,6 @@
 import { ActivityLogResponse } from "../../common/types/ActivityLogResponse";
 export const activityLogDev: ActivityLogResponse = {
-  items: [
+  data: [
     {
       id: "1",
       actionType: "CONNECTION_TO_EGRESS",
