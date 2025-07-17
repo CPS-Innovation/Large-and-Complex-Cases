@@ -1,9 +1,12 @@
 using System.Text.Json;
-using CPS.ComplexCases.Common.Attributes;
+using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.ActivityLog.Enums;
+using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Data.Dtos;
 using CPS.ComplexCases.Data.Repositories;
-using Microsoft.Extensions.Logging;
+using CPS.ComplexCases.ActivityLog.Models.Responses;
+using CPS.ComplexCases.Common.Models.Domain.Dto;
 
 namespace CPS.ComplexCases.ActivityLog.Services;
 
@@ -50,11 +53,23 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
         return _activityLogRepository.GetByIdAsync(id);
     }
 
-    public Task<IEnumerable<Data.Entities.ActivityLog>> GetActivityLogsAsync(ActivityLogFilterDto filter)
+    public async Task<ActivityLogsResponse> GetActivityLogsAsync(ActivityLogFilterDto filter)
     {
         _logger.LogInformation("Getting activity logs with filter {@Filter}", filter);
 
-        return _activityLogRepository.GetByFilterAsync(filter);
+        var result = await _activityLogRepository.GetByFilterAsync(filter);
+
+        return new ActivityLogsResponse
+        {
+            Data = result.Logs,
+            Pagination = new PaginationDto
+            {
+                TotalResults = result.TotalCount,
+                Skip = filter.Skip,
+                Take = filter.Take,
+                Count = result.Logs.Count()
+            }
+        };
     }
 
     public Task<IEnumerable<Data.Entities.ActivityLog>> GetActivityLogsByResourceIdAsync(string resourceId)
@@ -97,7 +112,7 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
     {
         try
         {
-            return JsonDocument.Parse(JsonSerializer.Serialize(data));
+            return JsonDocument.Parse(data.SerializeWithCamelCase());
         }
         catch (JsonException ex)
         {

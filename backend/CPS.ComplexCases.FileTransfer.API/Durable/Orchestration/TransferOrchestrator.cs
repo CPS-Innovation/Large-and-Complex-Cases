@@ -1,5 +1,3 @@
-using CPS.ComplexCases.ActivityLog.Services;
-using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
@@ -13,9 +11,8 @@ using Microsoft.Extensions.Options;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Orchestration;
 
-public class TransferOrchestrator(IActivityLogService activityLogService, IOptions<SizeConfig> sizeConfig)
+public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
 {
-    private readonly IActivityLogService _activityLogService = activityLogService;
     private readonly SizeConfig _sizeConfig = sizeConfig.Value;
 
     [Function(nameof(TransferOrchestrator))]
@@ -104,17 +101,7 @@ public class TransferOrchestrator(IActivityLogService activityLogService, IOptio
                 await Task.WhenAll(batch);
             }
 
-            // 3. Update activity log
-            await context.CallActivityAsync(
-                nameof(UpdateActivityLog),
-                new UpdateActivityLogPayload
-                {
-                    ActionType = ActivityLog.Enums.ActionType.TransferCompleted,
-                    TransferId = input.TransferId.ToString(),
-                    UserName = input.UserName,
-                });
-
-            // 4. Delete files if transfer direction is EgressToNetApp and transfer type is Move
+            // 3. Delete files if transfer direction is EgressToNetApp and transfer type is Move
             if (input.TransferDirection == TransferDirection.EgressToNetApp && input.TransferType == TransferType.Move)
             {
                 await context.CallActivityAsync(
@@ -126,6 +113,16 @@ public class TransferOrchestrator(IActivityLogService activityLogService, IOptio
                         WorkspaceId = input.WorkspaceId,
                     });
             }
+
+            // 4. Update activity log
+            await context.CallActivityAsync(
+                nameof(UpdateActivityLog),
+                new UpdateActivityLogPayload
+                {
+                    ActionType = ActivityLog.Enums.ActionType.TransferCompleted,
+                    TransferId = input.TransferId.ToString(),
+                    UserName = input.UserName,
+                });
 
             // 5. Finalize
             await context.CallActivityAsync(
@@ -148,14 +145,15 @@ public class TransferOrchestrator(IActivityLogService activityLogService, IOptio
                     Status = TransferStatus.Failed,
                 });
 
-            await _activityLogService.CreateActivityLogAsync(
-                ActivityLog.Enums.ActionType.TransferFailed,
-                ActivityLog.Enums.ResourceType.FileTransfer,
-                input.CaseId,
-                input.TransferId.ToString(),
-                input.TransferDirection.GetAlternateValue(),
-                input.UserName,
-                details: _activityLogService.ConvertToJsonDocument(ex.Message));
+            await context.CallActivityAsync(
+                nameof(UpdateActivityLog),
+                new UpdateActivityLogPayload
+                {
+                    ActionType = ActivityLog.Enums.ActionType.TransferCompleted,
+                    TransferId = input.TransferId.ToString(),
+                    UserName = input.UserName,
+                    ExceptionMessage = ex.Message
+                });
 
             throw;
         }

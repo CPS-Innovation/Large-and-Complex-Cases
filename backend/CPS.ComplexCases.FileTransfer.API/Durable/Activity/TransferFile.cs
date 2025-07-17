@@ -95,7 +95,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
 
             var successfulItem = new TransferItem
             {
-                SourcePath = payload.SourcePath.Path,
+                SourcePath = payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
                 Status = TransferItemStatus.Completed,
                 Size = sourceStream.Length,
                 IsRenamed = payload.SourcePath.ModifiedPath != null,

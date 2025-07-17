@@ -1,5 +1,4 @@
 using ByteSizeLib;
-using CPS.ComplexCases.Common.Models.Domain.Enums;
 
 namespace CPS.ComplexCases.ActivityLog.Models;
 
@@ -7,12 +6,20 @@ public class FileTransferDetails
 {
     public required string TransferId { get; set; }
     public required string TransferDirection { get; set; }
+    public required string TransferType { get; set; }
+    public required string SourcePath { get; set; }
+    public required string DestinationPath { get; set; }
+    public int TotalFiles { get; set; }
     public int TransferedFileCount => Files.Count;
     public int ErrorFileCount => Errors.Count;
+    public bool IsCompleted => TransferedFileCount == TotalFiles && ErrorFileCount == 0;
+    public bool SourceFilesDeletedSuccessfully => TransferType == Common.Models.Domain.Enums.TransferType.Move.ToString() && DeletionErrors.Count == 0;
     public string TotalSizeTransferred => GetTotalSizeTransferred();
     public long TotalBytesTransferred => GetTotalBytesTransferred();
     public required List<FileTransferItem> Files { get; set; } = [];
     public required List<FileTransferError> Errors { get; set; } = [];
+    public List<FileTransferError> DeletionErrors { get; set; } = [];
+    public string? ExceptionMessage { get; set; }
 
     private string GetTotalSizeTransferred()
     {
