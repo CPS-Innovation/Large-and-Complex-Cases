@@ -114,7 +114,7 @@ const CaseManagementPage = () => {
       panel: {
         children: (
           <div>
-            <ActivityLogPage />
+            <ActivityLogPage isTabActive={activeTabId === "activity-log"} />
           </div>
         ),
       },
