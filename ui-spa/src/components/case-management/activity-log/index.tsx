@@ -6,9 +6,13 @@ import { useParams } from "react-router-dom";
 import { formatDate } from "../../../common/utils/formatDate";
 import styles from "./index.module.scss";
 
-const ActvityLogPageProps = () => {
+type ActivityLogPageProps = {
+  isTabActive: boolean;
+};
+
+const ActivityLogPage: React.FC<ActivityLogPageProps> = ({ isTabActive }) => {
   const { caseId } = useParams() as { caseId: string };
-  const activityLogResponse = useApi(getActivityLog, [caseId], true);
+  const activityLogResponse = useApi(getActivityLog, [caseId], isTabActive);
 
   const getLastUpdatedText = () => {
     if (!activityLogResponse?.data) return "";
@@ -22,6 +26,7 @@ const ActvityLogPageProps = () => {
     if (activityLogResponse.status === "failed")
       throw new Error(`${activityLogResponse.error}`);
   }, [activityLogResponse]);
+  if (!isTabActive) return <> </>;
   return (
     <div>
       <div className={styles.titleText}>
@@ -42,4 +47,4 @@ const ActvityLogPageProps = () => {
   );
 };
 
-export default ActvityLogPageProps;
+export default ActivityLogPage;
