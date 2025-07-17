@@ -21,11 +21,15 @@ export const activityLogDev: ActivityLogResponse = {
             path: "egress/folder1/file1.pdf",
           },
           {
+            path: "egress/folder1/folder2/folder3/file1.pdf",
+          },
+          {
             path: "egress/folder1/file2.pdf",
           },
           {
             path: "egress/folder1/folder22/file1.pdf",
           },
+
           {
             path: "egress/file10.pdf",
           },

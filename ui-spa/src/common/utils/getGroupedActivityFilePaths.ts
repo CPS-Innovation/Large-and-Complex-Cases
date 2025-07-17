@@ -1,3 +1,5 @@
+import { getCleanPath } from "./getCleanPath";
+
 export type ActivityRelativePathFileType = {
   errors: { relativePathParts: string[]; fileName: string }[];
   success: { relativePathParts: string[]; fileName: string }[];
@@ -18,7 +20,7 @@ export const getGroupedActvityFilePaths = (
       fileName: pathParts[pathParts.length - 1],
     };
   };
-  const sourcePathParts = sourcePath.split("/");
+  const sourcePathParts = getCleanPath(sourcePath).split("/");
   const successFilePaths = successFiles.map(({ path }) => ({
     hasFailed: false,
     ...getRelativePathAndFileName(sourcePathParts.length, path),

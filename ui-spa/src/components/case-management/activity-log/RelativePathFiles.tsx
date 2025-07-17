@@ -3,6 +3,7 @@ import FolderIcon from "../../../components/svgs/folder.svg?react";
 import FileIcon from "../../../components/svgs/file.svg?react";
 import { Tag } from "../../govuk";
 import { getGroupedActvityFilePaths } from "../../../common/utils/getGroupedActivityFilePaths";
+import { sortRelativePaths } from "../../../common/utils/sortRelativePaths";
 import styles from "./relativePathFiles.module.scss";
 type RelativePathFilesProps = {
   successFiles: { path: string }[];
@@ -20,16 +21,16 @@ const RelativePathFiles: React.FC<RelativePathFilesProps> = ({
     [successFiles, errorFiles, sourcePath],
   );
 
-  console.log("groupedFiles>>>", groupedFiles);
   return (
     <div>
-      {Object.keys(groupedFiles).map((key) => {
+      {sortRelativePaths(Object.keys(groupedFiles)).map((key) => {
         return (
           <section key={key}>
             <div className={styles.relativePath}>
-              <FolderIcon />
+              {key && <FolderIcon />}
               <span>{key}</span>
             </div>
+
             {!!groupedFiles[`${key}`].errors.length && (
               <ul className={styles.list}>
                 {groupedFiles[`${key}`].errors.map((file) => (

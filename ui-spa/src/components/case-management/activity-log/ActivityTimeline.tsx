@@ -5,6 +5,7 @@ import {
 import { Details, Tag, Button } from "../../govuk";
 import RelativePathFiles from "./RelativePathFiles";
 import { formatDate } from "../../../common/utils/formatDate";
+import { getCleanPath } from "../../../common/utils/getCleanPath";
 import styles from "./activityTimeline.module.scss";
 
 type ActivityTimelineProps = {
@@ -14,7 +15,6 @@ type ActivityTimelineProps = {
 export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
   activities,
 }) => {
-  console.log("activities,>>>", activities);
   const getTransferStatusTag = (activity: ActivityItem) => {
     if (
       activity.actionType === "TRANSFER_COMPLETED" ||
@@ -99,13 +99,19 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
                 <div className={styles.locationData}>
                   <span className={styles.locationTitle}> Source:</span>
                   <span className={styles.locationPath}>
-                    {activity.details.sourcePath.replace("/", " > ")}
+                    {getCleanPath(activity.details.sourcePath).replace(
+                      /\//g,
+                      " > ",
+                    )}
                   </span>
                 </div>
                 <div className={styles.locationData}>
                   <span className={styles.locationTitle}> Destination:</span>
                   <span className={styles.locationPath}>
-                    {activity.details.destinationPath.replace("/", " > ")}
+                    {getCleanPath(activity.details.destinationPath).replace(
+                      /\//g,
+                      " > ",
+                    )}
                   </span>
                 </div>
               </div>
