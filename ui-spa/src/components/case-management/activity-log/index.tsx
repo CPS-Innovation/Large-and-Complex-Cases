@@ -16,7 +16,7 @@ const ActivityLogPage: React.FC<ActivityLogPageProps> = ({ isTabActive }) => {
 
   const getLastUpdatedText = () => {
     if (!activityLogResponse?.data) return "";
-    const { items } = activityLogResponse.data;
+    const { data: items } = activityLogResponse.data;
     if (!items) return "";
     const { timestamp } = items[items.length - 1];
     return <span> Last Updated {formatDate(timestamp, true)}</span>;

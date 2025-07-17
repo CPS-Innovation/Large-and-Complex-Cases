@@ -31,5 +31,5 @@ export type ActivityItem = {
 };
 
 export type ActivityLogResponse = {
-  items: ActivityItem[];
+  data: ActivityItem[];
 };
