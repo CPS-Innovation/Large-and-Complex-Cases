@@ -77,7 +77,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
       className={styles.activitiesTimeline}
       data-testid="activities-list"
     >
-      {activities?.data.toReversed().map((activity) => (
+      {activities?.data.map((activity) => (
         <div className={styles.activityWrapper} key={activity.id}>
           <div className={styles.activityHead}></div>
           <div className={styles.activityTitle}>

@@ -18,7 +18,7 @@ const ActivityLogPage: React.FC<ActivityLogPageProps> = ({ isTabActive }) => {
     if (!activityLogResponse?.data) return "";
     const { data: items } = activityLogResponse.data;
     if (!items) return "";
-    const { timestamp } = items[items.length - 1];
+    const { timestamp } = items[0];
     return <span> Last Updated {formatDate(timestamp, true)}</span>;
   };
 
@@ -26,6 +26,7 @@ const ActivityLogPage: React.FC<ActivityLogPageProps> = ({ isTabActive }) => {
     if (activityLogResponse.status === "failed")
       throw new Error(`${activityLogResponse.error}`);
   }, [activityLogResponse]);
+
   if (!isTabActive) return <> </>;
   return (
     <div>
