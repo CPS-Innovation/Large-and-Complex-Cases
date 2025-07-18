@@ -144,7 +144,7 @@ stages:
                       echo 'ls Scripts Directory':
                       cd $(scripts_directory)
                       ls
-                      # bash $(scripts_directory)/updateDatabase.sh
+                      bash $(scripts_directory)/updateDatabase.sh
                   env:
                     KEY_VAULT_NAME: $(keyVaultName)
                     MIGRATION_SCRIPT_PATH: '$(Pipeline.Workspace)/database-scripts/migration-script.sql'
