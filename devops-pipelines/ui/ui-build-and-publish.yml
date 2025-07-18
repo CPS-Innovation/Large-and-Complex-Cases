@@ -64,5 +64,5 @@ stages:
           - task: PublishPipelineArtifact@1
             displayName: 'Publish Web App Package'
             inputs:
-              targetPath: 'ui-spa/dist'
+              targetPath: '$(workingDir)/dist'
               artifact: 'lacc-ui-${{ parameters.environment }}-drop'
