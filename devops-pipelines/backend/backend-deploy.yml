@@ -141,7 +141,8 @@ stages:
                     azureSubscription: $(azureSubscription)
                     scriptType: 'bash'
                     scriptLocation: 'inlineScript'
-                    inlineScript: |     
+                    inlineScript: |   
+
                       echo "Installing PostgreSQL client..."
                       sudo apt-get update -qq
                       sudo apt-get install -y postgresql-client
@@ -168,10 +169,10 @@ stages:
                           break
                         else
                           if [ $attempt -eq 3 ]; then
-                          echo "❌ Failed to retrieve connection string components after 3 attempts"
+                            echo "❌ Failed to retrieve connection string components after 3 attempts"
                           else
-                          echo "Key Vault access failed, waiting 10 seconds before retry..."
-                          sleep 10
+                            echo "Key Vault access failed, waiting 10 seconds before retry..."
+                            sleep 10
                           fi
                         fi
                       done
