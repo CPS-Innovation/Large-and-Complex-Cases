@@ -369,6 +369,22 @@ export const getTransferStatus = async (transferId: string) => {
   return (await response.json()) as TransferStatusResponse;
 };
 
+export const handleFileTransferClear = async (transferId: string) => {
+  const url = `${GATEWAY_BASE_URL}/api/v1/filetransfer/${transferId}/clear`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      ...(await buildCommonHeaders()),
+    },
+  });
+
+  if (!response.ok) {
+    throw new ApiError(`clear file transfer api failed`, url, response);
+  }
+};
+
 export const getActivityLog = async (caseId: string) => {
   const url = `${GATEWAY_BASE_URL}/api/v1/activity/logs?caseId=${caseId}`;
 

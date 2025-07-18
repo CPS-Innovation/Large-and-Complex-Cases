@@ -145,7 +145,7 @@ stages:
             inputs:
               command: 'custom'
               custom: 'ef'
-              arguments: 'migrations script --output $(Build.ArtifactStagingDirectory)/migration-script.sql --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+              arguments: 'migrations script --idempotent --output $(Build.ArtifactStagingDirectory)/migration-script.sql --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
 
           - task: CopyFiles@2
             displayName: 'Copy Migration Files'

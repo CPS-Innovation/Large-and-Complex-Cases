@@ -95,37 +95,40 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
     worker,
   }) => {
     await worker.use(
-      http.post("https://mocked-out-api/api/filetransfer/files", async () => {
-        await delay(500);
-        return HttpResponse.json({
-          caseId: 12,
-          isInvalid: true,
-          destinationPath:
-            "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination",
-          validationErrors: [
-            {
-              id: "id_3",
-              sourcePath:
-                "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
-              errorType: "",
-            },
-            {
-              id: "id_5",
-              sourcePath:
-                "egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
-              errorType: "",
-            },
-          ],
-          files: [
-            { id: "id_1", sourcePath: "egress/folder1/file1.pdf" },
-            { id: "id_2", sourcePath: "egress/folder1/file2.pdf" },
-          ],
-        });
-      }),
+      http.post(
+        "https://mocked-out-api/api/v1/filetransfer/files",
+        async () => {
+          await delay(500);
+          return HttpResponse.json({
+            caseId: 12,
+            isInvalid: true,
+            destinationPath:
+              "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination",
+            validationErrors: [
+              {
+                id: "id_3",
+                sourcePath:
+                  "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+                errorType: "",
+              },
+              {
+                id: "id_5",
+                sourcePath:
+                  "egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
+                errorType: "",
+              },
+            ],
+            files: [
+              { id: "id_1", sourcePath: "egress/folder1/file1.pdf" },
+              { id: "id_2", sourcePath: "egress/folder1/file2.pdf" },
+            ],
+          });
+        },
+      ),
     );
     await worker.use(
       http.get(
-        "https://mocked-out-api/api/filetransfer/transfer-id-egress-to-netapp/status",
+        "https://mocked-out-api/api/v1/filetransfer/transfer-id-egress-to-netapp/status",
         async () => {
           await delay(10);
           return HttpResponse.json({
@@ -351,7 +354,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
     ).toContainText("Completing transfer from egress to shared drive...");
     await worker.use(
       http.get(
-        "https://mocked-out-api/api/filetransfer/transfer-id-egress-to-netapp/status",
+        "https://mocked-out-api/api/v1/filetransfer/transfer-id-egress-to-netapp/status",
         async () => {
           await delay(10);
           return HttpResponse.json({
@@ -387,33 +390,36 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
     worker,
   }) => {
     await worker.use(
-      http.post("https://mocked-out-api/api/filetransfer/files", async () => {
-        await delay(500);
-        return HttpResponse.json({
-          caseId: 12,
-          isInvalid: true,
-          destinationPath:
-            "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination",
-          validationErrors: [
-            {
-              id: "id_3",
-              sourcePath:
-                "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
-              errorType: "",
-            },
-            {
-              id: "id_5",
-              sourcePath:
-                "egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
-              errorType: "",
-            },
-          ],
-          files: [
-            { id: "id_1", sourcePath: "egress/folder1/file1.pdf" },
-            { id: "id_2", sourcePath: "egress/folder1/file2.pdf" },
-          ],
-        });
-      }),
+      http.post(
+        "https://mocked-out-api/api/v1/filetransfer/files",
+        async () => {
+          await delay(500);
+          return HttpResponse.json({
+            caseId: 12,
+            isInvalid: true,
+            destinationPath:
+              "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination",
+            validationErrors: [
+              {
+                id: "id_3",
+                sourcePath:
+                  "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+                errorType: "",
+              },
+              {
+                id: "id_5",
+                sourcePath:
+                  "egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
+                errorType: "",
+              },
+            ],
+            files: [
+              { id: "id_1", sourcePath: "egress/folder1/file1.pdf" },
+              { id: "id_2", sourcePath: "egress/folder1/file2.pdf" },
+            ],
+          });
+        },
+      ),
     );
     await caseManagementPageLoad(page);
     await startEgressToNetAppTransfer(page);
@@ -450,33 +456,36 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
     worker,
   }) => {
     await worker.use(
-      http.post("https://mocked-out-api/api/filetransfer/files", async () => {
-        await delay(500);
-        return HttpResponse.json({
-          caseId: 12,
-          isInvalid: true,
-          destinationPath:
-            "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination",
-          validationErrors: [
-            {
-              id: "id_3",
-              sourcePath:
-                "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
-              errorType: "",
-            },
-            {
-              id: "id_5",
-              sourcePath:
-                "egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
-              errorType: "",
-            },
-          ],
-          files: [
-            { id: "id_1", sourcePath: "egress/folder1/file1.pdf" },
-            { id: "id_2", sourcePath: "egress/folder1/file2.pdf" },
-          ],
-        });
-      }),
+      http.post(
+        "https://mocked-out-api/api/v1/filetransfer/files",
+        async () => {
+          await delay(500);
+          return HttpResponse.json({
+            caseId: 12,
+            isInvalid: true,
+            destinationPath:
+              "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination",
+            validationErrors: [
+              {
+                id: "id_3",
+                sourcePath:
+                  "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+                errorType: "",
+              },
+              {
+                id: "id_5",
+                sourcePath:
+                  "egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
+                errorType: "",
+              },
+            ],
+            files: [
+              { id: "id_1", sourcePath: "egress/folder1/file1.pdf" },
+              { id: "id_2", sourcePath: "egress/folder1/file2.pdf" },
+            ],
+          });
+        },
+      ),
     );
     await caseManagementPageLoad(page);
     await startEgressToNetAppTransfer(page);
@@ -527,57 +536,60 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
     worker,
   }) => {
     await worker.use(
-      http.post("https://mocked-out-api/api/filetransfer/files", async () => {
-        await delay(500);
-        return HttpResponse.json({
-          caseId: 12,
-          isInvalid: true,
-          destinationPath:
-            "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination",
-          validationErrors: [
-            {
-              id: "id_6",
-              sourcePath:
-                "file6qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
-              errorType: "",
-            },
-            {
-              id: "id_6_1",
-              sourcePath:
-                "file6_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
-              errorType: "",
-            },
-            {
-              id: "id_3",
-              sourcePath:
-                "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
-              errorType: "",
-            },
-            {
-              id: "id_3_1",
-              sourcePath:
-                "egress/folder3/file3_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
-              errorType: "",
-            },
-            {
-              id: "id_5",
-              sourcePath:
-                "egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
-              errorType: "",
-            },
-            {
-              id: "id_5_1",
-              sourcePath:
-                "egress/folder4/folder5/file5_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
-              errorType: "",
-            },
-          ],
-          files: [
-            { id: "id_1", sourcePath: "egress/folder1/file1.pdf" },
-            { id: "id_2", sourcePath: "egress/folder1/file2.pdf" },
-          ],
-        });
-      }),
+      http.post(
+        "https://mocked-out-api/api/v1/filetransfer/files",
+        async () => {
+          await delay(500);
+          return HttpResponse.json({
+            caseId: 12,
+            isInvalid: true,
+            destinationPath:
+              "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination",
+            validationErrors: [
+              {
+                id: "id_6",
+                sourcePath:
+                  "file6qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+                errorType: "",
+              },
+              {
+                id: "id_6_1",
+                sourcePath:
+                  "file6_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+                errorType: "",
+              },
+              {
+                id: "id_3",
+                sourcePath:
+                  "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+                errorType: "",
+              },
+              {
+                id: "id_3_1",
+                sourcePath:
+                  "egress/folder3/file3_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+                errorType: "",
+              },
+              {
+                id: "id_5",
+                sourcePath:
+                  "egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
+                errorType: "",
+              },
+              {
+                id: "id_5_1",
+                sourcePath:
+                  "egress/folder4/folder5/file5_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
+                errorType: "",
+              },
+            ],
+            files: [
+              { id: "id_1", sourcePath: "egress/folder1/file1.pdf" },
+              { id: "id_2", sourcePath: "egress/folder1/file2.pdf" },
+            ],
+          });
+        },
+      ),
     );
     await caseManagementPageLoad(page);
     await startEgressToNetAppTransfer(page);
