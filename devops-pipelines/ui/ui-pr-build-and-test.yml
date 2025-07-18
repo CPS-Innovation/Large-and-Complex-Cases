@@ -24,6 +24,8 @@ pool:
 variables:
   - name: nodeVersion
     value: '20.x'
+  - name: workingDir
+    value: ui-spa
 
 stages:
   - stage: Build_and_Test_UI
@@ -44,28 +46,28 @@ stages:
             displayName: 'Install NPM Dependencies'
             inputs:
               command: 'ci'
-              workingDir: 'ui-spa'
+              workingDir: '$(workingDir)'
               
           - task: Npm@1
             displayName: 'Lint UI Code'
             inputs:
               command: 'custom'
               customCommand: 'run lint'
-              workingDir: 'ui-spa'
+              workingDir: '$(workingDir)'
 
           - task: Npm@1
             displayName: 'Build Web App Package'
             inputs:
               command: 'custom'
               customCommand: 'run build'
-              workingDir: 'ui-spa'
+              workingDir: '$(workingDir)'
 
           - task: Npm@1
             displayName: 'Run UI Unit Tests'
             inputs:
               command: 'custom'
               customCommand: 'run coverage'
-              workingDir: 'ui-spa'
+              workingDir: '$(workingDir)'
             continueOnError: true
 
           - task: PublishTestResults@2

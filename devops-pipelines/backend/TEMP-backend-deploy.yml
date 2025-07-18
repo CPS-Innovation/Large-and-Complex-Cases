@@ -140,10 +140,6 @@ stages:
                     scriptType: 'bash'
                     scriptLocation: 'inlineScript'
                     inlineScript: |
-                      echo Pipeline.workspace is $(Pipeline.Workspace)
-                      echo 'ls Scripts Directory':
-                      cd $(scripts_directory)
-                      ls
                       bash $(scripts_directory)/updateDatabase.sh
                   env:
                     KEY_VAULT_NAME: $(keyVaultName)
