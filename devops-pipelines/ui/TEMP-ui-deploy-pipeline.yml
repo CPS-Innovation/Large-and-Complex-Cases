@@ -68,6 +68,7 @@ stages:
             displayName: 'Deploy LACC UI to ${{ parameters.environment }}'
             retryCountOnTaskFailure: 1 
 
+<<<<<<< HEAD
           - script: |
               echo "Cleaning up downloaded artifacts..."
 
@@ -78,3 +79,38 @@ stages:
                 echo "Downloaded artifact removed successfully."
               fi
             workingDirectory: $(Pipeline.Workspace)
+=======
+
+          # - script: |
+          #     set -e
+          #     echo "Installing Playwright browsers..."
+          #     npx playwright install --with-deps
+
+          #     echo "Building app in Playwright mode..."
+          #     npx vite build --mode playwright
+
+          #     echo "Running Playwright E2E tests with real-time output..."
+          #     npx playwright test --reporter=list,html,junit --output=playwright/test-results --workers=1
+
+          #     echo "E2E tests completed. Reports:"
+          #     ls -l playwright/test-results
+          #   displayName: 'Run E2E Tests (Playwright, Bash)'
+          #   workingDirectory: ui-spa
+          #   continueOnError: true
+          #   condition: eq('${{ parameters.runE2E }}', true)
+
+          # - task: PublishTestResults@2
+          #   displayName: 'Publish E2E Test Results'
+          #   inputs:
+          #     testResultsFormat: 'JUnit'
+          #     testResultsFiles: 'ui-spa/playwright/test-results/junit.xml'
+          #     publishRunAttachments: true
+          #   condition: and(always(), eq('${{ parameters.runE2E }}', true))
+
+          # - task: PublishBuildArtifacts@1
+          #   displayName: 'Publish E2E Test Report'
+          #   inputs:
+          #     pathtoPublish: 'ui-spa/playwright/playwright-report'
+          #     artifactName: 'e2e-test-report'
+          #   condition: and(always(), eq('${{ parameters.runE2E }}', true))
+>>>>>>> b887aff (add ui build and publish pipeline, update backend deployment stage dependencies)
