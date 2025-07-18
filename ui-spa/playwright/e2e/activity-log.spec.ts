@@ -21,7 +21,7 @@ test.describe("activity log", () => {
 
     await expect(page.locator("h2")).toHaveText(`Activity Log`);
     await expect(page.getByTestId("activity-log-last-update")).toHaveText(
-      "Last Updated 15/07/2025, 12:45 pm",
+      "Last Updated 18/01/2024, 12:46 pm",
     );
   });
 

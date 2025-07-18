@@ -22,7 +22,7 @@ import {
   egressToNetAppTransferStatusPlaywright,
   netAppToEgressTransferStatusDev,
   netAppToEgressTransferStatusPlaywright,
-  egressToNetAppIndexingErrorDev,
+  // egressToNetAppIndexingErrorDev,
   activityLogDev,
   activityLogPlaywright,
 } from "./data";
@@ -126,7 +126,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
           : netAppToEgressIndexingTransferPlaywright;
       }
       await delay(2500);
-      return HttpResponse.json(egressToNetAppIndexingErrorDev);
+      return HttpResponse.json(response);
     }),
 
     http.post(
