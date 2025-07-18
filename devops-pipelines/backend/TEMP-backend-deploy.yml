@@ -1,11 +1,13 @@
-resources:
-  pipelines:
-  - pipeline: build
-    source: 'LACC-BE-dev-build'
-    trigger: 
-      branches:
-        include:
-          - main
+# resources:
+#   pipelines:
+#   - pipeline: build
+#     source: 'LACC-BE-dev-build'
+#     trigger: 
+#       branches:
+#         include:
+#           - main
+
+trigger: none
 
 parameters:
   - name: environment
