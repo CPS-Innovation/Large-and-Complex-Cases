@@ -66,6 +66,7 @@ stages:
               StartupCommand: 'pm2 serve /home/site/wwwroot/ --no-daemon --spa'
               
             displayName: 'Deploy LACC UI to ${{ parameters.environment }}'
+<<<<<<< HEAD
             retryCountOnTaskFailure: 1 
 
 <<<<<<< HEAD
@@ -114,3 +115,6 @@ stages:
           #     artifactName: 'e2e-test-report'
           #   condition: and(always(), eq('${{ parameters.runE2E }}', true))
 >>>>>>> b887aff (add ui build and publish pipeline, update backend deployment stage dependencies)
+=======
+            retryCountOnTaskFailure: 1 
+>>>>>>> 3832250 (test e2e)

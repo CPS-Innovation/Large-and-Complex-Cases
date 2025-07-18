@@ -30,9 +30,10 @@ variables:
 
 stages:
   - stage: Build_and_Publish_Artifact
-    displayName: 'Build Artifact'
+    displayName: 'LACC UI - Build & Publish Web App Package'
     jobs:
       - job: Build_and_Publish_Artifact
+        displayName: 'Build UI SPA'
         steps:
           - checkout: self
             sparseCheckoutDirectories: '$(workingDir)'
@@ -58,7 +59,7 @@ stages:
               VITE_GATEWAY_BASE_URL: $(VITE_GATEWAY_BASE_URL)
               VITE_GATEWAY_SCOPE: $(VITE_GATEWAY_SCOPE)
               VITE_CLIENT_ID: $(VITE_CLIENT_ID)
-              VITE_TENANT_ID: $(VITE_TENANT_ID)  
+              VITE_TENANT_ID: $(VITE_TENANT_ID) 
 
           - task: PublishPipelineArtifact@1
             displayName: 'Publish Web App Package'
