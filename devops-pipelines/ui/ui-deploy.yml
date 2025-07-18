@@ -1,26 +1,3 @@
-# Deploy the LACC UI React app to an Azure App Service instance
-# Uses the pre-installed 'PM2' app that comes with Node on Azure
-resources:
-  pipelines:
-  - pipeline: build
-    source: '[TEST] LACC-UI-dev-build'
-    # source: 'LACC-BE-dev-build'
-    # trigger: 
-    #   branches:
-    #     include:
-    #      - main
-
-trigger:
-  batch: true
-  branches:
-    include:
-      - devops/ci-cd
-  paths:
-    include:
-      - devops-pipelines/ui/*
-
-pr: none
-
 parameters:
   - name: environment
     displayName: 'Target Environment'
@@ -30,6 +7,15 @@ parameters:
       - dev
       - stage
       - prod
+
+resources:
+  pipelines:
+  - pipeline: build
+    source: 'LACC-UI-dev-build'
+    trigger: 
+      branches:
+        include:
+         - main
 
 variables:
   - name: resourceGroupName

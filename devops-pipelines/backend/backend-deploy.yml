@@ -1,14 +1,3 @@
-# resources:
-#   pipelines:
-#   - pipeline: build
-#     source: 'LACC-BE-dev-build'
-#     trigger: 
-#       branches:
-#         include:
-#           - main
-
-trigger: none
-
 parameters:
   - name: environment
     displayName: 'Target Environment'
@@ -21,7 +10,7 @@ parameters:
   - name: updateKeyVault
     displayName: 'Update Key Vault Secrets'
     type: boolean
-    default: false
+    default: true
   - name: runDatabaseMigration
     displayName: 'Run Database Migration'
     type: boolean
@@ -34,6 +23,15 @@ parameters:
     displayName: 'Deploy FileTransfer API'
     type: boolean
     default: true
+
+resources:
+  pipelines:
+  - pipeline: build
+    source: 'LACC-BE-dev-build'
+    trigger: 
+      branches:
+        include:
+          - main
 
 variables:
   - group: lacc-backend-secrets-${{ parameters.environment }}-variables
