@@ -248,6 +248,11 @@ stages:
                       # Check if we can query system tables
                       PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -c "SELECT count(*) as table_count FROM information_schema.tables WHERE table_schema = 'public';" -t
 
+                      if [ $? -ne 0 ]; then
+                        echo "❌ Additional health checks failed. System tables could not be queried."
+                        exit 1
+                      fi 
+
                       echo "✅ Database health check completed successfully"
               
   - stage: Deploy_Function_Apps
