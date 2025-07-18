@@ -22,7 +22,6 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  - group: lacc-ui-config-${{ parameters.environment }}
   - name: nodeVersion
     value: '20.x'
 
@@ -55,7 +54,7 @@ stages:
               workingDir: 'ui-spa'
 
           - task: Npm@1
-            displayName: Build web app package
+            displayName: 'Build Web App Package'
             inputs:
               command: 'custom'
               customCommand: 'run build'
@@ -86,6 +85,7 @@ stages:
             condition: always()
 
           - task: PowerShell@2
+            displayName: 'Generate Enhanced Coverage Reports'
             inputs:
               filePath: 'devops-pipelines/scripts/generateHTMLReport.ps1'
               arguments: >
@@ -103,22 +103,3 @@ stages:
               pathtoPublish: 'ui-spa/coverage/html-enhanced'
               artifactName: 'ui-coverage-report'
             condition: always()
-
-          - script: |
-              echo "VITE_GATEWAY_BASE_URL=$(VITE_GATEWAY_BASE_URL)"
-              echo "VITE_GATEWAY_SCOPE=$(VITE_GATEWAY_SCOPE)"
-              echo "VITE_CLIENT_ID=$(VITE_CLIENT_ID)"
-              echo "VITE_TENANT_ID=$(VITE_TENANT_ID)"
-            displayName: 'Print React env variables'
-
-          - task: Npm@1
-            displayName: 'Build UI Application'
-            inputs:
-              command: 'custom'
-              customCommand: 'run build'
-              workingDir: 'ui-spa'
-            env:
-              VITE_GATEWAY_BASE_URL: $(VITE_GATEWAY_BASE_URL)
-              VITE_GATEWAY_SCOPE: $(VITE_GATEWAY_SCOPE)
-              VITE_CLIENT_ID: $(VITE_CLIENT_ID)
-              VITE_TENANT_ID: $(VITE_TENANT_ID)
