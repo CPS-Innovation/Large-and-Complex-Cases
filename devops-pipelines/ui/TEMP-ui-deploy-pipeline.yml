@@ -1,0 +1,70 @@
+# Deploy the LACC UI React app to an Azure App Service instance
+# Uses the pre-installed 'PM2' app that comes with Node on Azure
+resources:
+  pipelines:
+  - pipeline: build
+    source: '[TEST] LACC-UI-dev-build'
+    # source: 'LACC-BE-dev-build'
+    # trigger: 
+    #   branches:
+    #     include:
+    #      - main
+
+trigger:
+  batch: true
+  branches:
+    include:
+      - devops/ci-cd
+  paths:
+    include:
+      - devops-pipelines/ui/*
+
+pr: none
+
+parameters:
+  - name: environment
+    displayName: 'Target Environment'
+    type: string
+    default: 'dev'
+    values:
+      - dev
+      - stage
+      - prod
+
+variables:
+  - name: resourceGroupName
+    value: 'rg-lacc-${{ parameters.environment }}'
+  - name: webAppName
+    value: 'lacc-app-ui-spa-${{ parameters.environment }}'
+  - name: build-agent
+    value: 'LaCC Pre-Prod Build Agents'
+  - name: azureSubscription
+    ${{ if ne(parameters.environment, 'prod') }}:
+      value: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
+    ${{ else }}:
+      value: 'Azure Pipeline: Large and Complex Cases - Prod'
+
+stages:
+  - stage: Deploy_${{ parameters.environment }}
+    displayName: 'Deploy to ${{ parameters.environment }}'
+    pool:
+      name: $(build-agent)
+    jobs:
+      - deployment: Deploy_UI
+        displayName: 'LACC - Deploy UI SPA'
+        environment: 'LACC-UI-${{ parameters.environment }}'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureRmWebAppDeployment@4
+                  inputs:
+                    ConnectionType: 'AzureRM'
+                    azureSubscription: $(azureSubscription)
+                    resourceGroupName: $(resourceGroupName)
+                    appType: 'webAppLinux'
+                    WebAppName: '$(webAppName)'
+                    packageForLinux: '$(Pipeline.Workspace)/build/lacc-ui-${{ parameters.environment }}-drop'
+                    RuntimeStack: 'NODE|20-lts'
+                    StartupCommand: 'pm2 serve /home/site/wwwroot/ --no-daemon --spa'   
+                  displayName: 'Deploy LACC UI to ${{ parameters.environment }}'
