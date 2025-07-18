@@ -14,7 +14,8 @@
     "coverage": "vitest run --coverage",
     "ui:e2e": "npx playwright   test --ui",
     "ui:e2e:ci": "tsc -b && vite build --mode playwright && CI=true npx playwright test",
-    "ui:e2e:report": "npx playwright show-report ./playwright/playwright-report"
+    "ui:e2e:report": "npx playwright show-report ./playwright/playwright-report",
+    "prepare": "cd .. && husky ui-spa/.husky"
   },
   "dependencies": {
     "@azure/msal-browser": "^4.4.0",
@@ -48,6 +49,7 @@
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.18",
     "globals": "^15.14.0",
+    "husky": "^9.1.7",
     "jsdom": "^26.0.0",
     "msw": "^2.7.0",
     "playwright-msw": "^3.0.1",
