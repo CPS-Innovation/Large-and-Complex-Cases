@@ -1,3 +1,4 @@
+using CPS.ComplexCases.Common.Models.Domain.Dto;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
 using CPS.ComplexCases.Egress.Models.Args;

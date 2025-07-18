@@ -319,8 +319,10 @@ public class EgressStorageClientTests : IDisposable
         var resultArray = result.ToArray();
         Assert.Equal(file1.FileId, resultArray[0].Id);
         Assert.Equal(Path.GetFileName(file1.Path), resultArray[0].SourcePath);
+        Assert.Equal(file1.Path, resultArray[0].FullFilePath);
         Assert.Equal(file2.FileId, resultArray[1].Id);
         Assert.Equal(Path.GetFileName(file2.Path), resultArray[1].SourcePath);
+        Assert.Equal(file2.Path, resultArray[1].FullFilePath);
 
         VerifyTokenRequest();
     }

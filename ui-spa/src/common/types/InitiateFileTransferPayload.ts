@@ -23,6 +23,7 @@ export type EgressTranferPayloadSourcePath = {
   fileId?: string;
   path: string;
   modifiedPath?: string;
+  fullFilePath?: string;
 };
 
 export type NetAppTranferPayloadSourcePath = {

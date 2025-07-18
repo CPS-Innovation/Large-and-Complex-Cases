@@ -1,4 +1,4 @@
-namespace CPS.ComplexCases.Egress.Models.Dto;
+namespace CPS.ComplexCases.Common.Models.Domain.Dto;
 
 public class PaginationDto
 {

@@ -9,5 +9,5 @@ public interface IActivityLogRepository
     Task<IEnumerable<ActivityLog>> GetByResourceIdAsync(string resourceId);
     Task<ActivityLog> AddAsync(ActivityLog activityLog);
     Task<ActivityLog?> UpdateAsync(ActivityLog activityLog);
-    Task<IEnumerable<ActivityLog>> GetByFilterAsync(ActivityLogFilterDto filter);
+    Task<ActivityLogResultsDto> GetByFilterAsync(ActivityLogFilterDto filter);
 }

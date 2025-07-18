@@ -31,4 +31,6 @@ public class SourcePath
     public bool? IsFolder { get; set; }
     [JsonPropertyName("relativePath")]
     public string? RelativePath { get; set; }
+    [JsonPropertyName("fullFilePath")]
+    public string? FullFilePath { get; set; }
 }

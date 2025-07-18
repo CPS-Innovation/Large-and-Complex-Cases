@@ -45,6 +45,11 @@ public class EgressRequestFactory : IEgressRequestFactory
       relativeUrl.Append($"&path={arg.Path}");
     }
 
+    if (arg.ViewFullDetails.HasValue && arg.ViewFullDetails.Value)
+    {
+      relativeUrl.Append("&view=full");
+    }
+
     var request = new HttpRequestMessage(HttpMethod.Get, relativeUrl.ToString());
 
     AppendToken(request, token);

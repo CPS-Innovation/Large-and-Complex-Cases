@@ -24,4 +24,5 @@ public class TransferSourcePath
     public string? RelativePath { get; set; }
     public string? ModifiedPath { get; set; }
     public string? FileId { get; set; }
+    public string? FullFilePath { get; set; }
 }

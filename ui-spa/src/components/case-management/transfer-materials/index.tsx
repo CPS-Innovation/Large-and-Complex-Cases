@@ -398,6 +398,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       fileId: data?.id,
       path: data.sourcePath,
       relativePath: data.relativePath,
+      fullFilePath: data.fullFilePath
     }));
 
     const payload = {

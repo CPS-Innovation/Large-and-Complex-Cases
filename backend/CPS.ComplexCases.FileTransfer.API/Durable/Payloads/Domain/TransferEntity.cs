@@ -23,7 +23,7 @@ public class TransferEntity
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public List<TransferItem> SuccessfulItems { get; set; } = new List<TransferItem>();
     public List<TransferFailedItem> FailedItems { get; set; } = new List<TransferFailedItem>();
-    public List<FailedToDeleteItem> FailedToDeleteItems { get; set; } = new List<FailedToDeleteItem>();
+    public List<DeletionError> DeletionErrors { get; set; } = new List<DeletionError>();
     public bool? IsRetry { get; set; } = false;
     public bool? MovedFilesDeletedSuccessfully { get; set; } = false;
     public string? UserName { get; set; }

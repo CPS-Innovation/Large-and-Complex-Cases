@@ -1,7 +1,5 @@
-using System.Text.Json;
 using AutoFixture;
 using AutoFixture.AutoMoq;
-using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.FileTransfer.API.Durable.Orchestration;
@@ -19,7 +17,6 @@ namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Durable.Orchestration;
 public class TransferOrchestratorTests
 {
     private readonly Fixture _fixture;
-    private readonly Mock<IActivityLogService> _activityLogServiceMock;
     private readonly Mock<TaskOrchestrationContext> _contextMock;
     private readonly Mock<ILogger> _loggerMock;
     private readonly Mock<IOptions<SizeConfig>> _sizeConfigMock;
@@ -30,7 +27,6 @@ public class TransferOrchestratorTests
         _fixture = new Fixture();
         _fixture.Customize(new AutoMoqCustomization());
 
-        _activityLogServiceMock = new Mock<IActivityLogService>();
         _contextMock = new Mock<TaskOrchestrationContext>();
         _loggerMock = new Mock<ILogger>();
         _sizeConfigMock = new Mock<IOptions<SizeConfig>>();
@@ -41,7 +37,7 @@ public class TransferOrchestratorTests
         _contextMock.Setup(c => c.CreateReplaySafeLogger(It.IsAny<string>()))
             .Returns(_loggerMock.Object);
 
-        _orchestrator = new TransferOrchestrator(_activityLogServiceMock.Object, _sizeConfigMock.Object);
+        _orchestrator = new TransferOrchestrator(_sizeConfigMock.Object);
     }
 
     [Fact]
@@ -305,44 +301,6 @@ public class TransferOrchestratorTests
         Assert.Equal(TransferStatus.InProgress, capturedStatusPayloads[0].Status);
         Assert.Equal(TransferStatus.Failed, capturedStatusPayloads[1].Status);
         Assert.Equal(transferPayload.TransferId, capturedStatusPayloads[1].TransferId);
-    }
-
-    [Fact]
-    public async Task RunOrchestrator_WhenActivityThrowsException_CallsActivityLogServiceForFailureAndRethrows()
-    {
-        // Arrange
-        var transferPayload = CreateValidTransferPayload();
-        var exception = new InvalidOperationException("Test exception");
-
-        _contextMock.Setup(c => c.GetInput<TransferPayload>())
-            .Returns(transferPayload);
-
-        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
-            .Returns<TaskName, object, TaskOptions>((taskName, payload, options) =>
-            {
-                if (taskName.Name == "TransferFile")
-                {
-                    throw exception;
-                }
-                return Task.CompletedTask;
-            });
-
-        // Act & Assert
-        var thrownException = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _orchestrator.RunOrchestrator(_contextMock.Object));
-
-        Assert.Equal(exception, thrownException);
-
-        _activityLogServiceMock.Verify(
-            x => x.CreateActivityLogAsync(
-                ActivityLog.Enums.ActionType.TransferFailed,
-                ActivityLog.Enums.ResourceType.FileTransfer,
-                transferPayload.CaseId,
-                transferPayload.TransferId.ToString(),
-                It.IsAny<string>(),
-                transferPayload.UserName,
-                It.IsAny<JsonDocument>()),
-            Times.Once);
     }
 
     [Fact]

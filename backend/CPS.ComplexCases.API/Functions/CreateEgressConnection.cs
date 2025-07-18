@@ -59,7 +59,7 @@ public class CreateEgressConnection(ICaseMetadataService caseMetadataService, IE
       ActivityLog.Enums.ResourceType.StorageConnection,
       egressConnectionRequest.Value.CaseId,
       egressConnectionRequest.Value.EgressWorkspaceId,
-      "Egress",
+      egressConnectionRequest.Value.EgressWorkspaceId,
       context.Username);
 
     return new OkResult();

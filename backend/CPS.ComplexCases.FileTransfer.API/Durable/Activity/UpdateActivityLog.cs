@@ -1,18 +1,22 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask.Client;
 using Microsoft.DurableTask.Entities;
+using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.ActivityLog.Enums;
+using CPS.ComplexCases.ActivityLog.Extensions;
 using CPS.ComplexCases.ActivityLog.Models;
 using CPS.ComplexCases.ActivityLog.Services;
+using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Durable.State;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 
-public class UpdateActivityLog(IActivityLogService activityLogService)
+public class UpdateActivityLog(IActivityLogService activityLogService, ILogger<UpdateActivityLog> logger)
 {
     private readonly IActivityLogService _activityLogService = activityLogService;
+    private readonly ILogger<UpdateActivityLog> _logger = logger;
 
     [Function(nameof(UpdateActivityLog))]
     public async Task Run([ActivityTrigger] UpdateActivityLogPayload payload, [DurableClient] DurableTaskClient client)
@@ -44,15 +48,32 @@ public class UpdateActivityLog(IActivityLogService activityLogService)
             ErrorMessage = x.ErrorMessage
         }).ToList();
 
+        var sourcePath = Path.GetDirectoryName(entity.State.SourcePaths[0].FullFilePath);
+        var deletionErrors = new List<FileTransferError>();
+
+        if (entity.State.TransferType == TransferType.Move && entity.State.Direction == TransferDirection.EgressToNetApp && payload.ActionType != ActionType.TransferInitiated)
+        {
+            deletionErrors = entity.State.DeletionErrors.Select(x => new FileTransferError
+            {
+                Path = x.FileId,
+                ErrorMessage = x.ErrorMessage
+            }).ToList();
+            errorItems.AddRange(deletionErrors);
+        }
+
         var fileTransferDetails = new FileTransferDetails
         {
             TransferId = payload.TransferId,
             TransferDirection = entity.State.Direction.ToString(),
+            TransferType = entity.State.TransferType.ToString(),
+            TotalFiles = entity.State.TotalFiles,
+            SourcePath = sourcePath!,
+            DestinationPath = entity.State.DestinationPath,
             Files = successfulItems,
-            Errors = errorItems
+            Errors = errorItems,
+            DeletionErrors = deletionErrors,
+            ExceptionMessage = payload.ExceptionMessage
         };
-
-        var detailsJson = _activityLogService.ConvertToJsonDocument(fileTransferDetails);
 
         await _activityLogService.CreateActivityLogAsync(
             actionType: payload.ActionType,
@@ -61,7 +82,7 @@ public class UpdateActivityLog(IActivityLogService activityLogService)
             resourceName: entity.State.Direction.ToString(),
             caseId: entity.State.CaseId,
             userName: payload.UserName,
-            details: payload.ActionType != ActionType.TransferInitiated ? detailsJson : null
+            details: fileTransferDetails.SerializeToJsonDocument(_logger)
         );
     }
 }

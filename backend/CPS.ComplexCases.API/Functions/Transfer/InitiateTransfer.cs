@@ -55,6 +55,7 @@ public class InitiateTransfer(ILogger<InitiateTransfer> logger, IFileTransferCli
                 Path = path.Path,
                 FileId = path.FileId,
                 RelativePath = path.RelativePath,
+                FullFilePath = path.FullFilePath,
             }).ToList(),
             Metadata = new TransferMetadata
             {

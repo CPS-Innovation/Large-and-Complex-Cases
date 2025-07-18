@@ -8,5 +8,5 @@ export type IndexingFileTransferResponse = {
   isInvalid: boolean;
   destinationPath: string;
   validationErrors: IndexingError[];
-  files: { id?: string; sourcePath: string; relativePath?: string }[];
+  files: { id?: string; sourcePath: string; relativePath?: string; fullFilePath?: string }[];
 };
