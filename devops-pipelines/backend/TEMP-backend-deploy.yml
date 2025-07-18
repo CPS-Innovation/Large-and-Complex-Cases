@@ -139,6 +139,8 @@ stages:
                     scriptType: 'bash'
                     scriptLocation: 'inlineScript'
                     inlineScript: |
+                      echo Pipeline.workspace is $(Pipeline.Workspace)
+                      echo scripts directory is $(scripts_directory)
                       bash $(scripts_directory)/updateDatabase.sh
                   env:
                     KEY_VAULT_NAME: $(keyVaultName)
