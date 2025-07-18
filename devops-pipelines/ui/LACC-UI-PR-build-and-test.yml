@@ -1,34 +1,124 @@
-# Build and test code on PR against main for LACC UI React web app.
-# NB triggered through build policy on the 'main' branch in Azure DevOps
+parameters:
+  - name: environment
+    displayName: 'Target Environment'
+    type: string
+    default: 'dev'
+    values:
+      - dev
+      - stage
+      - prod
+
 trigger: none
 
+pr:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - ui-spa/*
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  - group: lacc-ui-config-${{ parameters.environment }}
+  - name: nodeVersion
+    value: '20.x'
+
 stages:
-  - stage: Build_and_Test_on_PR
-    displayName: 'Build and test on PR'
+  - stage: Build_and_Test_UI
+    displayName: 'LACC UI - Build & Test'
     jobs:
       - job: Build_and_Test
-        pool:
-          vmImage: ubuntu-latest
-
+        displayName: 'Build & Test App'
         steps:
-          - task: Npm@1
-            displayName: Install npm dependencies
+          - checkout: self
+            sparseCheckoutDirectories: ui-spa devops-pipelines/scripts
+
+          - task: UseNode@1
+            displayName: 'Use Node.js'
             inputs:
-              command: 'install'
-              workingDir: '$(Pipeline.Workspace)/ui-spa'
+              version: '$(nodeVersion)'
+
+          - task: Npm@1
+            displayName: 'Install NPM Dependencies'
+            inputs:
+              command: 'ci'
+              workingDir: 'ui-spa'
+              
+          - task: Npm@1
+            displayName: 'Lint UI Code'
+            inputs:
+              command: 'custom'
+              customCommand: 'run lint'
+              workingDir: 'ui-spa'
 
           - task: Npm@1
             displayName: Build web app package
             inputs:
               command: 'custom'
               customCommand: 'run build'
-              workingDir: '$(Pipeline.Workspace)/ui-spa'
+              workingDir: 'ui-spa'
 
           - task: Npm@1
-            displayName: Run tests
-            env:
-              CI: 'true'
+            displayName: 'Run UI Unit Tests'
             inputs:
               command: 'custom'
-              customCommand: 'test'
-              workingDir: '$(Pipeline.Workspace)/ui-spa'
+              customCommand: 'run coverage'
+              workingDir: 'ui-spa'
+            continueOnError: true
+
+          - task: PublishTestResults@2
+            displayName: 'Publish UI Test Results'
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'ui-spa/coverage/junit.xml'
+              publishRunAttachments: true
+            condition: always()
+
+          - task: PublishCodeCoverageResults@1
+            displayName: 'Publish UI Code Coverage'
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: 'ui-spa/coverage/cobertura-coverage.xml'
+              reportDirectory: 'ui-spa/coverage'
+            condition: always()
+
+          - task: PowerShell@2
+            inputs:
+              filePath: 'devops-pipelines/scripts/generateHTMLReport.ps1'
+              arguments: |
+                -ProjectPath '$(Build.SourcesDirectory)/ui-spa'
+                -CoverageSummaryPath 'coverage/coverage-summary.json'
+                -CoberturaPath 'coverage/cobertura-coverage.xml'
+                -LcovReportPath 'coverage/lcov-report'
+                -OutputReportPath 'coverage/html-enhanced'
+              pwsh: true
+            condition: always
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Enhanced HTML Coverage Report'
+            inputs:
+              pathtoPublish: 'ui-spa/coverage/html-enhanced'
+              artifactName: 'ui-coverage-report'
+            condition: always()
+
+          - script: |
+              echo "VITE_GATEWAY_BASE_URL=$(VITE_GATEWAY_BASE_URL)"
+              echo "VITE_GATEWAY_SCOPE=$(VITE_GATEWAY_SCOPE)"
+              echo "VITE_CLIENT_ID=$(VITE_CLIENT_ID)"
+              echo "VITE_TENANT_ID=$(VITE_TENANT_ID)"
+            displayName: 'Print React env variables'
+
+          - task: Npm@1
+            displayName: 'Build UI Application'
+            inputs:
+              command: 'custom'
+              customCommand: 'run build'
+              workingDir: 'ui-spa'
+            env:
+              VITE_GATEWAY_BASE_URL: $(VITE_GATEWAY_BASE_URL)
+              VITE_GATEWAY_SCOPE: $(VITE_GATEWAY_SCOPE)
+              VITE_CLIENT_ID: $(VITE_CLIENT_ID)
+              VITE_TENANT_ID: $(VITE_TENANT_ID)
