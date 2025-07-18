@@ -113,9 +113,6 @@ stages:
           runOnce:
             deploy:
               steps:
-                - checkout: self
-                  sparseCheckoutDirectories: 'devops-pipelines\scripts'
-
                 - download: build
                   artifact: 'database-scripts-drop'
 
@@ -140,8 +137,10 @@ stages:
                     scriptLocation: 'inlineScript'
                     inlineScript: |
                       echo Pipeline.workspace is $(Pipeline.Workspace)
-                      echo scripts directory is $(scripts_directory)
-                      bash $(scripts_directory)/updateDatabase.sh
+                      echo 'ls DefaultWorkingDirectory':
+                      cd $(System.DefaultWorkingDirectory)
+                      ls
+                      # bash $(scripts_directory)/updateDatabase.sh
                   env:
                     KEY_VAULT_NAME: $(keyVaultName)
                     MIGRATION_SCRIPT_PATH: '$(Pipeline.Workspace)/database-scripts/migration-script.sql'
