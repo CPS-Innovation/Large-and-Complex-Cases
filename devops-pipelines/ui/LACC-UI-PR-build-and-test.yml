@@ -95,7 +95,7 @@ stages:
                 -LcovReportPath 'coverage/lcov-report'
                 -OutputReportPath 'coverage/html-enhanced'
               pwsh: true
-            condition: always
+            condition: always()
 
           - task: PublishBuildArtifacts@1
             displayName: 'Publish Enhanced HTML Coverage Report'
