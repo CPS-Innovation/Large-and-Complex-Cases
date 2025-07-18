@@ -32,18 +32,23 @@ const ActivityLogPage: React.FC<ActivityLogPageProps> = ({ isTabActive }) => {
     <div>
       <div className={styles.titleText}>
         <h2>Activity Log</h2>
-        <span className={styles.lastUpdatedText}>{getLastUpdatedText()}</span>
+        <span
+          className={styles.lastUpdatedText}
+          data-testid={"activity-log-last-update"}
+        >
+          {getLastUpdatedText()}
+        </span>
       </div>
-      <div className={styles.activities}>
-        <div className={styles.titleWrapper}>
-          <h3>Activity</h3>
-        </div>
-        <div className={styles.contentWrapper}>
-          {activityLogResponse?.data && (
+      {activityLogResponse?.data && (
+        <div className={styles.activities}>
+          <div className={styles.titleWrapper}>
+            <h3>Activity</h3>
+          </div>
+          <div className={styles.contentWrapper}>
             <ActivityTimeline activities={activityLogResponse.data} />
-          )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

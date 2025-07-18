@@ -22,11 +22,14 @@ const RelativePathFiles: React.FC<RelativePathFilesProps> = ({
   );
 
   return (
-    <div>
+    <div data-testid="activity-files">
       {sortRelativePaths(Object.keys(groupedFiles)).map((key) => {
         return (
           <section key={key}>
-            <div className={styles.relativePath}>
+            <div
+              className={styles.relativePath}
+              data-testId="activity-relative-path"
+            >
               {key && <FolderIcon />}
               <span>{key}</span>
             </div>
