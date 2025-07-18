@@ -117,6 +117,23 @@ stages:
                   sparseCheckoutDirectories: devops-pipelines/scripts
                   fetchDepth: 1
 
+                - task: Bash@3
+                  displayName: 'Ensure Azure CLI'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      echo "Checking if Azure CLI is installed..."
+                      
+                      # Check if az command exists
+                      if command -v az &> /dev/null; then
+                        echo "Azure CLI is already installed"
+                        az --version
+                        exit 0
+                      fi
+
+                      echo "Azure CLI not found, installing..."
+                      bash $(scripts_directory)/installAzureCli.sh 
+
                 - download: build
                   artifact: 'database-scripts-drop'
 
