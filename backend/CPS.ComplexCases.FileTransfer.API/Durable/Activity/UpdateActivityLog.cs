@@ -1,19 +1,22 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask.Client;
 using Microsoft.DurableTask.Entities;
+using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.ActivityLog.Enums;
+using CPS.ComplexCases.ActivityLog.Extensions;
 using CPS.ComplexCases.ActivityLog.Models;
 using CPS.ComplexCases.ActivityLog.Services;
+using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Durable.State;
-using CPS.ComplexCases.Common.Models.Domain.Enums;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 
-public class UpdateActivityLog(IActivityLogService activityLogService)
+public class UpdateActivityLog(IActivityLogService activityLogService, ILogger<UpdateActivityLog> logger)
 {
     private readonly IActivityLogService _activityLogService = activityLogService;
+    private readonly ILogger<UpdateActivityLog> _logger = logger;
 
     [Function(nameof(UpdateActivityLog))]
     public async Task Run([ActivityTrigger] UpdateActivityLogPayload payload, [DurableClient] DurableTaskClient client)
@@ -45,10 +48,10 @@ public class UpdateActivityLog(IActivityLogService activityLogService)
             ErrorMessage = x.ErrorMessage
         }).ToList();
 
-        var sourcePath = Path.GetDirectoryName(entity.State.SourcePaths[0].Path);
+        var sourcePath = Path.GetDirectoryName(entity.State.SourcePaths[0].FullFilePath);
         var deletionErrors = new List<FileTransferError>();
 
-        if (entity.State.TransferType == TransferType.Move && payload.ActionType != ActionType.TransferInitiated)
+        if (entity.State.TransferType == TransferType.Move && entity.State.Direction == TransferDirection.EgressToNetApp && payload.ActionType != ActionType.TransferInitiated)
         {
             deletionErrors = entity.State.DeletionErrors.Select(x => new FileTransferError
             {
@@ -79,7 +82,7 @@ public class UpdateActivityLog(IActivityLogService activityLogService)
             resourceName: entity.State.Direction.ToString(),
             caseId: entity.State.CaseId,
             userName: payload.UserName,
-            details: _activityLogService.ConvertToJsonDocument(fileTransferDetails)
+            details: fileTransferDetails.SerializeToJsonDocument(_logger)
         );
     }
 }

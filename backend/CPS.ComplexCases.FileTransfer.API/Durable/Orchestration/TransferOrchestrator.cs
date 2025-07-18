@@ -149,7 +149,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
                 nameof(UpdateActivityLog),
                 new UpdateActivityLogPayload
                 {
-                    ActionType = ActivityLog.Enums.ActionType.TransferCompleted,
+                    ActionType = ActivityLog.Enums.ActionType.TransferFailed,
                     TransferId = input.TransferId.ToString(),
                     UserName = input.UserName,
                     ExceptionMessage = ex.Message

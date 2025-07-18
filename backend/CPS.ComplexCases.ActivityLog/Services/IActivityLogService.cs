@@ -12,5 +12,4 @@ public interface IActivityLogService
     Task<Data.Entities.ActivityLog?> UpdateActivityLogAsync(Data.Entities.ActivityLog auditLog);
     Task<IEnumerable<Data.Entities.ActivityLog>> GetActivityLogsByResourceIdAsync(string resourceId);
     Task<ActivityLogsResponse> GetActivityLogsAsync(ActivityLogFilterDto filter);
-    JsonDocument? ConvertToJsonDocument<T>(T data);
 }
