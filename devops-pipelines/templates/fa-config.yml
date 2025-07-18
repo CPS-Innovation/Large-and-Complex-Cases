@@ -3,7 +3,7 @@ parameters:
     type: string
   - name: functionAppName
     type: string
-  - name: subscriptionName
+  - name: azureSubscription
     type: string
   - name: resourceGroupName
     type: string
@@ -14,7 +14,7 @@ steps:
   - task: AzureAppServiceSettings@1
     displayName: 'Configure Function App Settings'
     inputs:
-      azureSubscription: ${{ parameters.subscriptionName }}
+      azureSubscription: ${{ parameters.azureSubscription }}
       appName: ${{ parameters.functionAppName }}
       resourceGroupName: ${{ parameters.resourceGroupName }}
       appSettings: |

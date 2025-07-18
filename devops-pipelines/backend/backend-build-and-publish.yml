@@ -1,6 +1,5 @@
-trigger: none
-
-pr:
+trigger:
+  batch: true
   branches:
     include:
       - main
@@ -8,87 +7,60 @@ pr:
     include:
       - backend/*
 
+pr: none
+
 variables:
   buildConfiguration: 'Release'
   dotNetVersion: '8.x'
   testResultsDirectory: '$(Agent.TempDirectory)/TestResults'
   coverageReportsDirectory: '$(Agent.TempDirectory)/CoverageReports'
 
+pool:
+  vmImage: ubuntu-latest
+
 stages:
-  - stage: Build_And_Test_Backend
-    displayName: 'LACC Backend - Build, Test & Package'
+  - stage: Package_NuGet
+    displayName: 'LACC Backend - Produce Nuget Package'
+    jobs: 
+    - job: Package_NuGet
+      displayName: 'Pack and Publish NuGet Package'
+      steps:
+        - template: ../templates/dotnet-build-steps.yml
+          parameters:
+            projectPath: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+            projectName: 'HttpTelemetry'
+            buildConfiguration: $(buildConfiguration)
+            dotNetVersion: $(dotNetVersion)
+            useLocalNuGet: false
+            publishOutput: false
+            runTests: false
+
+        - script: |
+            mkdir -p $(Build.SourcesDirectory)/localnuget
+            rm -f $(Build.SourcesDirectory)/localnuget/*.nupkg
+          displayName: 'Prepare local NuGet directory'
+
+        - task: DotNetCoreCLI@2
+          displayName: 'Pack HttpTelemetry'
+          inputs:
+            command: 'pack'
+            packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+            outputDir: '$(Build.SourcesDirectory)/localnuget'
+            arguments: '--configuration $(buildConfiguration) --no-build'
+
+        - task: PublishPipelineArtifact@1
+          displayName: 'Publish HttpTelemetry Package'
+          inputs:
+            targetPath: '$(Build.SourcesDirectory)/localnuget'
+            artifact: 'localnuget'
+    
+  - stage: Build_Main_API
+    displayName: 'LACC Backend - Build Main API'
+    dependsOn: Package_NuGet
     jobs:
-      - job: Build_HttpTelemetry
-        displayName: 'LACC - Build HttpTelemetry Assembly'
-        pool:
-          vmImage: ubuntu-latest
-        steps:
-          # Build and pack HttpTelemetry
-          - template: ../templates/dotnet-build-steps.yml
-            parameters:
-              projectPath: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-              projectName: 'HttpTelemetry'
-              buildConfiguration: $(buildConfiguration)
-              dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: false
-              publishOutput: false
-              runTests: false
-
-          # Pack and publish NuGet package
-          - script: |
-              mkdir -p $(Build.SourcesDirectory)/localnuget
-              rm -f $(Build.SourcesDirectory)/localnuget/*.nupkg
-            displayName: 'Prepare local NuGet directory'
-
-          - task: DotNetCoreCLI@2
-            displayName: 'Pack HttpTelemetry'
-            inputs:
-              command: 'pack'
-              packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-              outputDir: '$(Build.SourcesDirectory)/localnuget'
-              arguments: '--configuration $(buildConfiguration) --no-build'
-
-          - task: PublishPipelineArtifact@1
-            displayName: 'Publish HttpTelemetry Package'
-            inputs:
-              targetPath: '$(Build.SourcesDirectory)/localnuget'
-              artifact: 'localnuget'
-
-      - job: Build_And_Test_Solution
-        displayName: 'LACC - Build & Test Solution'
-        dependsOn: Build_HttpTelemetry
-        pool:
-          vmImage: ubuntu-latest
-        variables:
-          testResultsDirectory: '$(Agent.TempDirectory)/TestResults'
-          coverageReportsDirectory: '$(Agent.TempDirectory)/CoverageReports'
-        steps:
-          # Build and test full solution
-          - template: ../templates/dotnet-build-steps.yml
-            parameters:
-              projectPath: 'backend/CPS.ComplexCases.sln'
-              projectName: 'Backend Solution'
-              buildConfiguration: $(buildConfiguration)
-              dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: true
-              publishOutput: false
-              runTests: true
-              testResultsDirectory: $(testResultsDirectory)
-              coverageReportsDirectory: $(coverageReportsDirectory)
-
-          # Generate coverage report
-          - template: ../templates/dotnet-code-coverage-steps.yml
-            parameters:
-              coverageReportsDirectory: $(coverageReportsDirectory)
-              projectName: 'Backend'
-
       - job: Build_Main_API
-        displayName: 'LACC - Build Main API'
-        dependsOn: Build_And_Test_Solution
-        pool:
-          vmImage: ubuntu-latest
+        displayName: 'Build Main API'
         steps:
-          # Build and publish Main API
           - template: ../templates/dotnet-build-steps.yml
             parameters:
               projectPath: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
@@ -99,13 +71,13 @@ stages:
               publishOutput: true
               runTests: false
 
+  - stage: Build_Filetransfer_API
+    displayName: 'LACC Backend - Build Main API'
+    dependsOn: Package_NuGet
+    jobs:
       - job: Build_FileTransfer_API
-        displayName: 'LACC - Build FileTransfer API'
-        dependsOn: Build_And_Test_Solution
-        pool:
-          vmImage: ubuntu-latest
+        displayName: 'Build FileTransfer API'
         steps:
-          # Build and publish FileTransfer API
           - template: ../templates/dotnet-build-steps.yml
             parameters:
               projectPath: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
@@ -116,9 +88,12 @@ stages:
               publishOutput: true
               runTests: false
 
+  - stage: Package_Database
+    displayName: 'LACC Backend - Build Database Migration Scripts'
+    dependsOn: Package_NuGet
+    jobs:
       - job: Package_Database_Scripts
-        displayName: 'LACC - Package Database Migration Scripts'
-        dependsOn: Build_And_Test_Solution
+        displayName: 'Package Database Migration Scripts'
         pool:
           vmImage: ubuntu-latest
         steps:
