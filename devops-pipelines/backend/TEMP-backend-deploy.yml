@@ -113,6 +113,10 @@ stages:
           runOnce:
             deploy:
               steps:
+                - checkout: self
+                  sparseCheckoutDirectories: devops-pipelines/scripts
+                  fetchDepth: 1
+
                 - download: build
                   artifact: 'database-scripts-drop'
 
