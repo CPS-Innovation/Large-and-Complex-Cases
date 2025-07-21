@@ -66,6 +66,7 @@ const TransferResolveFilePathPage = () => {
     if (!locationState) {
       setLocationState(location.state);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getCharactersTag = useCallback((filePath: string) => {

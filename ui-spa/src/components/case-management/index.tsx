@@ -4,6 +4,7 @@ import { TabId } from "../../common/types/CaseManagement";
 import { ItemProps } from "../common/tabs/types";
 import TransferMaterialsPage from "./transfer-materials";
 import TransferResolveFilePathPage from "./transfer-materials/TransferResolveFilePathPage";
+import ActivityLogPage from "./activity-log/index";
 import { useApi } from "../../common/hooks/useApi";
 import { getCaseMetaData } from "../../apis/gateway-api";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
@@ -94,6 +95,7 @@ const CaseManagementPage = () => {
       panel: {
         children: caseMetaData?.data ? (
           <TransferMaterialsPage
+            isTabActive={activeTabId === "transfer-materials"}
             caseId={caseId}
             operationName={caseMetaData.data.operationName}
             egressWorkspaceId={caseMetaData.data.egressWorkspaceId}
@@ -108,9 +110,15 @@ const CaseManagementPage = () => {
       },
     },
     {
-      id: "manage-materials",
-      label: "Manage materials",
-      panel: { children: <div>manage materials</div> },
+      id: "activity-log",
+      label: "Activity log",
+      panel: {
+        children: (
+          <div>
+            <ActivityLogPage isTabActive={activeTabId === "activity-log"} />
+          </div>
+        ),
+      },
     },
   ];
   if (caseMetaData.status === "loading" || caseMetaData.status === "initial") {

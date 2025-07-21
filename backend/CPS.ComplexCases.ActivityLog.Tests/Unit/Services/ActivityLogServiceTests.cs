@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AutoFixture;
 using AutoFixture.AutoMoq;
 using CPS.ComplexCases.ActivityLog.Enums;
@@ -190,19 +191,27 @@ public class ActivityLogServiceTests
         var filter = new ActivityLogFilterDto();
         var logs = new List<Data.Entities.ActivityLog>
         {
-            new Data.Entities.ActivityLog { ResourceId = "1", ResourceType = "Case" },
-            new Data.Entities.ActivityLog { ResourceId = "2", ResourceType = "Document" }
+            CreateActivityLogWithProperties("1", "Case"),
+            CreateActivityLogWithProperties("2", "Document")
         };
+        var activityLogResultsDto = new ActivityLogResultsDto
+        {
+            Logs = logs,
+            TotalCount = logs.Count,
+            Skip = 0,
+            Take = logs.Count
+        };
+
         _repositoryMock
             .Setup(r => r.GetByFilterAsync(filter))
-            .ReturnsAsync(logs);
+            .ReturnsAsync(activityLogResultsDto);
 
         // Act
         var result = await _service.GetActivityLogsAsync(filter);
 
         // Assert
         Assert.NotNull(result);
-        var resultList = result.ToList();
+        var resultList = result.Data.ToList();
         Assert.Equal("1", resultList[0].ResourceId);
         Assert.Equal("2", resultList[1].ResourceId);
         _repositoryMock.Verify(r => r.GetByFilterAsync(filter), Times.Once);
@@ -220,5 +229,309 @@ public class ActivityLogServiceTests
         // Act & Assert
         await Assert.ThrowsAsync<Exception>(() => _service.GetActivityLogsAsync(filter));
         _repositoryMock.Verify(r => r.GetByFilterAsync(filter), Times.Once);
+    }
+
+    [Fact]
+    public void GenerateFileDetailsCsvAsync_WithValidFilesAndErrors_ReturnsCorrectCsv()
+    {
+        // Arrange
+        var activityLogId = Guid.NewGuid();
+        var jsonDetails = JsonDocument.Parse(@"{
+            ""Files"": [
+                {""Path"": ""C:\\Documents\\file1.txt""},
+                {""Path"": ""C:\\Documents\\file2.pdf""}
+            ],
+            ""Errors"": [
+                {""Path"": ""C:\\Documents\\error1.doc""},
+                {""Path"": ""C:\\Documents\\error2.xlsx""}
+            ]
+        }");
+
+        var activityLog = CreateActivityLogWithDetails(activityLogId, jsonDetails);
+
+        // Act
+        var result = _service.GenerateFileDetailsCsvAsync(activityLog);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+
+        // Verify CSV contains headers
+        Assert.Contains("Path", result);
+        Assert.Contains("FileName", result);
+        Assert.Contains("Status", result);
+
+        // Verify successful files are included
+        Assert.Contains("C:\\Documents\\file1.txt", result);
+        Assert.Contains("file1.txt", result);
+        Assert.Contains("C:\\Documents\\file2.pdf", result);
+        Assert.Contains("file2.pdf", result);
+
+        // Verify error files are included
+        Assert.Contains("C:\\Documents\\error1.doc", result);
+        Assert.Contains("error1.doc", result);
+        Assert.Contains("C:\\Documents\\error2.xlsx", result);
+        Assert.Contains("error2.xlsx", result);
+
+        // Verify status values
+        Assert.Contains("Success", result);
+        Assert.Contains("Fail", result);
+    }
+
+    [Fact]
+    public void GenerateFileDetailsCsvAsync_WithOnlyFiles_ReturnsCorrectCsv()
+    {
+        // Arrange
+        var activityLogId = Guid.NewGuid();
+        var jsonDetails = JsonDocument.Parse(@"{
+            ""Files"": [
+                {""Path"": ""C:\\Documents\\success1.txt""},
+                {""Path"": ""C:\\Documents\\success2.pdf""}
+            ]
+        }");
+
+        var activityLog = CreateActivityLogWithDetails(activityLogId, jsonDetails);
+
+        // Act
+        var result = _service.GenerateFileDetailsCsvAsync(activityLog);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("success1.txt", result);
+        Assert.Contains("success2.pdf", result);
+        Assert.Contains("Success", result);
+        Assert.DoesNotContain("Fail", result);
+    }
+
+    [Fact]
+    public void GenerateFileDetailsCsvAsync_WithOnlyErrors_ReturnsCorrectCsv()
+    {
+        // Arrange
+        var activityLogId = Guid.NewGuid();
+        var jsonDetails = JsonDocument.Parse(@"{
+            ""Errors"": [
+                {""Path"": ""C:\\Documents\\error1.doc""},
+                {""Path"": ""C:\\Documents\\error2.xlsx""}
+            ]
+        }");
+
+        var activityLog = CreateActivityLogWithDetails(activityLogId, jsonDetails);
+
+        // Act
+        var result = _service.GenerateFileDetailsCsvAsync(activityLog);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("error1.doc", result);
+        Assert.Contains("error2.xlsx", result);
+        Assert.Contains("Fail", result);
+        Assert.DoesNotContain("Success", result);
+    }
+
+    [Fact]
+    public void GenerateFileDetailsCsvAsync_WithEmptyFilesAndErrorsArrays_ReturnsEmptyString()
+    {
+        // Arrange
+        var activityLogId = Guid.NewGuid();
+        var jsonDetails = JsonDocument.Parse(@"{
+            ""Files"": [],
+            ""Errors"": []
+        }");
+
+        var activityLog = CreateActivityLogWithDetails(activityLogId, jsonDetails);
+
+        // Act
+        var result = _service.GenerateFileDetailsCsvAsync(activityLog);
+
+        // Assert
+        Assert.Equal(string.Empty, result);
+
+        // Verify logging
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v != null && v.ToString()!.Contains("No file records to export")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public void GenerateFileDetailsCsvAsync_WithNullDetails_ReturnsEmptyString()
+    {
+        // Arrange
+        var activityLogId = Guid.NewGuid();
+        var activityLog = CreateActivityLogWithDetails(activityLogId, null);
+
+        // Act
+        var result = _service.GenerateFileDetailsCsvAsync(activityLog);
+
+        // Assert
+        Assert.Equal(string.Empty, result);
+
+        // Verify warning is logged
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v != null && v.ToString()!.Contains("Activity log details are null")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public void GenerateFileDetailsCsvAsync_WithInvalidJsonStructure_ReturnsEmptyString()
+    {
+        // Arrange
+        var activityLogId = Guid.NewGuid();
+        var jsonDetails = JsonDocument.Parse(@"""this is not an object""");
+
+        var activityLog = CreateActivityLogWithDetails(activityLogId, jsonDetails);
+
+        // Act
+        var result = _service.GenerateFileDetailsCsvAsync(activityLog);
+
+        // Assert
+        Assert.Equal(string.Empty, result);
+
+        // Verify warning is logged
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v != null && v.ToString()!.Contains("Details is not a valid JSON object")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public void GenerateFileDetailsCsvAsync_WithMissingFilesAndErrorsProperties_ReturnsEmptyString()
+    {
+        // Arrange
+        var activityLogId = Guid.NewGuid();
+        var jsonDetails = JsonDocument.Parse(@"{
+            ""SomeOtherProperty"": ""value"",
+            ""AnotherProperty"": 123
+        }");
+
+        var activityLog = CreateActivityLogWithDetails(activityLogId, jsonDetails);
+
+        // Act
+        var result = _service.GenerateFileDetailsCsvAsync(activityLog);
+
+        // Assert
+        Assert.Equal(string.Empty, result);
+
+        // Verify no file records logging
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v != null && v.ToString()!.Contains("No file records to export")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public void GenerateFileDetailsCsvAsync_WithNullPathInFiles_HandlesGracefully()
+    {
+        // Arrange
+        var activityLogId = Guid.NewGuid();
+        var jsonDetails = JsonDocument.Parse(@"{
+            ""Files"": [
+                {""Path"": null},
+                {""Path"": ""C:\\Documents\\valid.txt""},
+                {}
+            ]
+        }");
+
+        var activityLog = CreateActivityLogWithDetails(activityLogId, jsonDetails);
+
+        // Act
+        var result = _service.GenerateFileDetailsCsvAsync(activityLog);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("valid.txt", result);
+        Assert.Contains("Success", result);
+        // Should handle null paths gracefully
+        Assert.Contains(",,Success", result); // Empty path and filename with Success status
+    }
+
+    [Fact]
+    public void GenerateFileDetailsCsvAsync_WithNonArrayFilesProperty_ReturnsEmptyString()
+    {
+        // Arrange
+        var activityLogId = Guid.NewGuid();
+        var jsonDetails = JsonDocument.Parse(@"{
+            ""Files"": ""not an array"",
+            ""Errors"": ""also not an array""
+        }");
+
+        var activityLog = CreateActivityLogWithDetails(activityLogId, jsonDetails);
+
+        // Act
+        var result = _service.GenerateFileDetailsCsvAsync(activityLog);
+
+        // Assert
+        Assert.Equal(string.Empty, result);
+
+        // Verify no file records logging
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v != null && v.ToString()!.Contains("No file records to export")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public void GenerateFileDetailsCsvAsync_WithFilePathsWithoutExtension_ExtractsFileNameCorrectly()
+    {
+        // Arrange
+        var activityLogId = Guid.NewGuid();
+        var jsonDetails = JsonDocument.Parse(@"{
+            ""Files"": [
+                {""Path"": ""C:\\Documents\\README""},
+                {""Path"": ""C:\\Documents\\folder\\script""}
+            ]
+        }");
+
+        var activityLog = CreateActivityLogWithDetails(activityLogId, jsonDetails);
+
+        // Act
+        var result = _service.GenerateFileDetailsCsvAsync(activityLog);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains("README", result);
+        Assert.Contains("script", result);
+        Assert.Contains("Success", result);
+    }
+
+    private Data.Entities.ActivityLog CreateActivityLogWithProperties(string resourceId, string resourceType)
+    {
+        var activityLog = new Data.Entities.ActivityLog();
+        activityLog.ResourceId = resourceId;
+        activityLog.ResourceType = resourceType;
+        return activityLog;
+    }
+
+    private Data.Entities.ActivityLog CreateActivityLogWithDetails(Guid id, JsonDocument? details)
+    {
+        var activityLog = new Data.Entities.ActivityLog();
+        activityLog.Details = details;
+
+        return activityLog;
     }
 }

@@ -12,3 +12,4 @@ export { SortableTable } from "./SortableTable";
 export { LinkButton } from "./LinkButton";
 export { Checkboxes } from "./Checkboxes";
 export { NotificationBanner } from "./NotificationBanner";
+export { Details } from "./Details";
