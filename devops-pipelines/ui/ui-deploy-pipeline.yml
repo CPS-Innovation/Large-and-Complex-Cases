@@ -75,3 +75,4 @@ stages:
               else
                 echo "Downloaded artifact removed successfully."
               fi
+            workingDirectory: $(Pipeline.Workspace)
