@@ -129,50 +129,37 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
         return CsvGeneratorHelper.GenerateCsv(fileRecords);
     }
 
-    private List<FileRecordCsvDto> ExtractFileRecordsFromDetails(JsonDocument details)
+    private List<FileRecordCsvDto> ExtractFileRecordsFromDetails(JsonDocument? details)
     {
         var fileRecords = new List<FileRecordCsvDto>();
 
-        if (details?.RootElement.ValueKind != JsonValueKind.Object)
+        if (details == null)
         {
-            _logger.LogWarning("Details is not a valid JSON object or is null");
+            _logger.LogWarning("Details are null");
             return fileRecords;
         }
 
+        var rootElement = details.RootElement;
+        if (rootElement.ValueKind != JsonValueKind.Object)
+        {
+            _logger.LogWarning("Details is not a valid JSON object");
+            return fileRecords;
+        }
+
+        int successCount = 0, failCount = 0;
+
         try
         {
-            var rootElement = details.RootElement;
-
-            // Handle Files (Success)
             if (rootElement.TryGetProperty("Files", out var filesElement) &&
                 filesElement.ValueKind == JsonValueKind.Array)
             {
-                foreach (var fileElement in filesElement.EnumerateArray())
-                {
-                    var path = fileElement.TryGetProperty("Path", out var pathElement) ? pathElement.GetString() : null;
-                    fileRecords.Add(new FileRecordCsvDto
-                    {
-                        Path = path,
-                        FileName = !string.IsNullOrEmpty(path) ? Path.GetFileName(path) : null,
-                        Status = FileRecordStatus.Success
-                    });
-                }
+                successCount = AddFileRecords(filesElement, FileRecordStatus.Success, fileRecords);
             }
 
-            // Handle Errors (Fail)
             if (rootElement.TryGetProperty("Errors", out var errorsElement) &&
                 errorsElement.ValueKind == JsonValueKind.Array)
             {
-                foreach (var errorElement in errorsElement.EnumerateArray())
-                {
-                    var path = errorElement.TryGetProperty("Path", out var pathElement) ? pathElement.GetString() : null;
-                    fileRecords.Add(new FileRecordCsvDto
-                    {
-                        Path = path,
-                        FileName = !string.IsNullOrEmpty(path) ? Path.GetFileName(path) : null,
-                        Status = FileRecordStatus.Fail
-                    });
-                }
+                failCount = AddFileRecords(errorsElement, FileRecordStatus.Fail, fileRecords);
             }
         }
         catch (Exception ex)
@@ -180,8 +167,25 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
             _logger.LogError(ex, "Error extracting file records from JSON details");
         }
 
-        _logger.LogInformation("Extracted {Count} file records from activity log details", fileRecords.Count);
+        _logger.LogInformation("Extracted {SuccessCount} successful and {FailCount} failed file records from activity log details", successCount, failCount);
         return fileRecords;
+    }
+
+    private static int AddFileRecords(JsonElement parent, FileRecordStatus status, List<FileRecordCsvDto> records)
+    {
+        int count = 0;
+        foreach (var element in parent.EnumerateArray())
+        {
+            var path = element.TryGetProperty("Path", out var pathElement) ? pathElement.GetString() : null;
+            records.Add(new FileRecordCsvDto
+            {
+                Path = path,
+                FileName = !string.IsNullOrEmpty(path) ? Path.GetFileName(path) : null,
+                Status = status
+            });
+            count++;
+        }
+        return count;
     }
 
     private static string SetDescription(ActionType actionType, string? resourceName)
