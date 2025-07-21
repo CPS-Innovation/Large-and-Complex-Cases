@@ -22,7 +22,7 @@ import {
   egressToNetAppTransferStatusPlaywright,
   netAppToEgressTransferStatusDev,
   netAppToEgressTransferStatusPlaywright,
-  egressToNetAppIndexingErrorDev,
+  // egressToNetAppIndexingErrorDev,
   activityLogDev,
   activityLogPlaywright,
 } from "./data";
@@ -126,7 +126,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
           : netAppToEgressIndexingTransferPlaywright;
       }
       await delay(2500);
-      return HttpResponse.json(egressToNetAppIndexingErrorDev);
+      return HttpResponse.json(response);
     }),
 
     http.post(
@@ -172,6 +172,19 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       await delay(1500);
       return HttpResponse.json(response);
     }),
+
+    http.post(
+      `${baseUrl}/api/v1/filetransfer/transfer-id-egress-to-netapp/clear`,
+      async () => {
+        return HttpResponse.json({});
+      },
+    ),
+    http.post(
+      `${baseUrl}/api/v1/filetransfer/transfer-id-netapp-to-egress/clear`,
+      async () => {
+        return HttpResponse.json({});
+      },
+    ),
   ];
 };
 

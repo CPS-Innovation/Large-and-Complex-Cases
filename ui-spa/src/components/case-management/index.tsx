@@ -95,6 +95,7 @@ const CaseManagementPage = () => {
       panel: {
         children: caseMetaData?.data ? (
           <TransferMaterialsPage
+            isTabActive={activeTabId === "transfer-materials"}
             caseId={caseId}
             operationName={caseMetaData.data.operationName}
             egressWorkspaceId={caseMetaData.data.egressWorkspaceId}

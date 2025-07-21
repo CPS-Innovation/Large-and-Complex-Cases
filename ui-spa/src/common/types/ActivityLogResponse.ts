@@ -8,7 +8,6 @@ export type ActivityItem = {
     | "CONNECTION_TO_NETAPP";
 
   timestamp: string;
-  userId: string;
   userName: string;
   caseId: string;
   description: string;
@@ -16,17 +15,18 @@ export type ActivityItem = {
   resourceName?: string;
   details: {
     transferId: string;
-    sourceSystem: string;
-    destinationSystem: string;
-    fileCount: number;
     sourcePath: string;
     destinationPath: string;
+    errorFileCount: number;
+    transferedFileCount: number;
+    totalFiles: number;
     files: {
       path: string;
     }[];
     errors: {
       path: string;
     }[];
+    deletionErrors: { path: string }[];
   } | null;
 };
 

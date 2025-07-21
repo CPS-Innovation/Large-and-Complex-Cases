@@ -5,6 +5,8 @@ import {
 import { Details, Tag, Button } from "../../govuk";
 import RelativePathFiles from "./RelativePathFiles";
 import { formatDate } from "../../../common/utils/formatDate";
+import { getCleanPath } from "../../../common/utils/getCleanPath";
+import { getTransferActivityStatusTagData } from "../../../common/utils/getTransferActivityStatusTagData";
 import styles from "./activityTimeline.module.scss";
 
 type ActivityTimelineProps = {
@@ -14,45 +16,18 @@ type ActivityTimelineProps = {
 export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
   activities,
 }) => {
-  console.log("activities,>>>", activities);
   const getTransferStatusTag = (activity: ActivityItem) => {
-    if (
-      activity.actionType === "TRANSFER_COMPLETED" ||
-      activity.actionType === "TRANSFER_FAILED"
-    ) {
-      console.log("ctivity.actionType >>", activity.actionType);
-      if (activity.details?.errors.length && activity.details?.files.length)
-        return (
-          <Tag
-            gdsTagColour="yellow"
-            className={styles.transferStatusTag}
-            data-testid="transfer-status-tag"
-          >
-            Completed with errors
-          </Tag>
-        );
-
-      if (!activity.details?.errors.length)
-        return (
-          <Tag
-            gdsTagColour="green"
-            className={styles.transferStatusTag}
-            data-testid="transfer-status-tag"
-          >
-            Completed
-          </Tag>
-        );
-      if (activity.details?.errors.length)
-        return (
-          <Tag
-            gdsTagColour="red"
-            className={styles.transferStatusTag}
-            data-testid="transfer-status-tag"
-          >
-            Failed
-          </Tag>
-        );
-    }
+    const statusTagData = getTransferActivityStatusTagData(activity);
+    if (!statusTagData) return <></>;
+    return (
+      <Tag
+        gdsTagColour={statusTagData.color}
+        className={styles.transferStatusTag}
+        data-testid="transfer-status-tag"
+      >
+        {statusTagData.name}
+      </Tag>
+    );
   };
 
   const getTransferTag = (activity: ActivityItem) => {
@@ -73,39 +48,55 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
     }
   };
   return (
-    <section
+    <div
       className={styles.activitiesTimeline}
-      data-testid="activities-list"
+      data-testid="activities-timeline"
     >
-      {activities?.data.toReversed().map((activity) => (
-        <div className={styles.activityWrapper} key={activity.id}>
+      {activities?.data.map((activity) => (
+        <section className={styles.activityWrapper} key={activity.id}>
           <div className={styles.activityHead}></div>
           <div className={styles.activityTitle}>
             <div className={styles.activityTransferTags}>
               {getTransferTag(activity)}
               {getTransferStatusTag(activity)}
             </div>
-            <b>{activity.description}</b>{" "}
-            <span className={styles.userId}>by {activity.userId}</span>
+            <div className={styles.descriptionWrapper}>
+              <h4>{activity.description}</h4>{" "}
+              <span className={styles.userId} data-testid="activity-user">
+                by {activity.userName}
+              </span>
+            </div>
           </div>
 
-          <span className={styles.activityDate}>
+          <span className={styles.activityDate} data-testid="activity-date">
             {formatDate(activity.timestamp, true)}
           </span>
 
           {activity.details && (
             <div>
               <div>
-                <div className={styles.locationData}>
-                  <span className={styles.locationTitle}> Source:</span>
+                <div
+                  className={styles.locationData}
+                  data-testid="transfer-source"
+                >
+                  <span className={styles.locationTitle}>Source:</span>
                   <span className={styles.locationPath}>
-                    {activity.details.sourcePath.replace("/", " > ")}
+                    {getCleanPath(activity.details.sourcePath).replace(
+                      /\//g,
+                      " > ",
+                    )}
                   </span>
                 </div>
-                <div className={styles.locationData}>
-                  <span className={styles.locationTitle}> Destination:</span>
+                <div
+                  className={styles.locationData}
+                  data-testid="transfer-destination"
+                >
+                  <span className={styles.locationTitle}>Destination:</span>
                   <span className={styles.locationPath}>
-                    {activity.details.destinationPath.replace("/", " > ")}
+                    {getCleanPath(activity.details.destinationPath).replace(
+                      /\//g,
+                      " > ",
+                    )}
                   </span>
                 </div>
               </div>
@@ -128,8 +119,8 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
               )}
             </div>
           )}
-        </div>
+        </section>
       ))}
-    </section>
+    </div>
   );
 };
