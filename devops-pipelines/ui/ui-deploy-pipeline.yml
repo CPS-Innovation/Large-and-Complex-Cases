@@ -42,6 +42,16 @@ stages:
     jobs:
       - job: CI_Deploy_LACCUI_${{ parameters.environment }}
         steps:
+          - script: |
+              echo "Cleaning up downloaded artifacts..."
+
+              if ! rm -r "lacc-ui-${{ parameters.environment }}-drop" 2>err.log; then
+                cat err.log >&2
+              else
+                echo "Downloaded artifact removed successfully."
+              fi
+            workingDirectory: $(Pipeline.Workspace)
+
           - task: DownloadBuildArtifacts@0
             displayName: 'Download UI Build Artifact'
             inputs:
