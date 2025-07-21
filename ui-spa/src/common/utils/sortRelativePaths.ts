@@ -4,6 +4,5 @@ export const sortRelativePaths = (paths: string[]) => {
     const countB = b ? (b.match(/>/g) || []).length : -1;
     return countA - countB;
   });
-  console.log("result>>>", result);
   return result;
 };
