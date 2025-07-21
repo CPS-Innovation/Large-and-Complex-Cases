@@ -168,7 +168,7 @@ public class ActivityLogServiceTests
             _testUserName);
         _repositoryMock
             .Setup(r => r.UpdateAsync(activityLog))
-            .Returns(Task.FromResult(activityLog))
+            .ReturnsAsync(activityLog)
             .Verifiable();
 
         // Act

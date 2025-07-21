@@ -17,7 +17,7 @@ public class DeleteFiles(ITransferEntityHelper transferEntityHelper, IStorageCli
     private readonly ILogger<DeleteFiles> _logger = logger;
 
     [Function(nameof(DeleteFiles))]
-    public async Task Run([ActivityTrigger] DeleteFilesPayload payload, CancellationToken cancellationToken = default)
+    public async Task Run([ActivityTrigger] DeleteFilesPayload? payload, CancellationToken cancellationToken = default)
     {
         if (payload == null)
         {

@@ -123,7 +123,7 @@ public class DeleteFilesTests
             l => l.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains(expectedPartialErrorMessage) && v.ToString().Contains(transferId.ToString())),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedPartialErrorMessage) && v.ToString()!.Contains(transferId.ToString())),
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
@@ -262,7 +262,7 @@ public class DeleteFilesTests
             l => l.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Error occurred while deleting files")),
+                It.Is<It.IsAnyType>((v, t) => v != null && v.ToString()!.Contains("Error occurred while deleting files")),
                 exception,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
