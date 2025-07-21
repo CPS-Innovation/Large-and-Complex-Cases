@@ -8,6 +8,7 @@ using CPS.ComplexCases.Common.Models.Domain.Dto;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Data.Dtos;
 using CPS.ComplexCases.Data.Repositories;
+using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.ActivityLog.Extensions;
 
 namespace CPS.ComplexCases.ActivityLog.Services;
@@ -117,6 +118,86 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
         _logger.LogInformation("Updating activity log for case {ResourceType} {ResourceId}", activityLog.ResourceType, activityLog.ResourceId);
 
         return _activityLogRepository.UpdateAsync(activityLog);
+    }
+
+    public string GenerateFileDetailsCsvAsync(Data.Entities.ActivityLog activityLog)
+    {
+        _logger.LogInformation("Generating file details CSV for activity log {ActivityLogId}", activityLog.Id);
+
+        if (activityLog.Details == null)
+        {
+            _logger.LogWarning("Activity log details are null for ID {ActivityLogId}", activityLog.Id);
+            return string.Empty;
+        }
+
+        var fileRecords = ExtractFileRecordsFromDetails(activityLog.Details);
+
+        if (fileRecords.Count == 0)
+        {
+            _logger.LogInformation("No file records to export for activity log ID: {ActivityLogId}", activityLog.Id);
+            return string.Empty;
+        }
+
+        return CsvGeneratorHelper.GenerateCsv(fileRecords);
+    }
+
+    private List<FileRecordCsvDto> ExtractFileRecordsFromDetails(JsonDocument? details)
+    {
+        var fileRecords = new List<FileRecordCsvDto>();
+
+        if (details == null)
+        {
+            _logger.LogWarning("Details are null");
+            return fileRecords;
+        }
+
+        var rootElement = details.RootElement;
+        if (rootElement.ValueKind != JsonValueKind.Object)
+        {
+            _logger.LogWarning("Details is not a valid JSON object");
+            return fileRecords;
+        }
+
+        int successCount = 0, failCount = 0;
+
+        try
+        {
+            if (rootElement.TryGetProperty("Files", out var filesElement) &&
+                filesElement.ValueKind == JsonValueKind.Array)
+            {
+                successCount = AddFileRecords(filesElement, FileRecordStatus.Success, fileRecords);
+            }
+
+            if (rootElement.TryGetProperty("Errors", out var errorsElement) &&
+                errorsElement.ValueKind == JsonValueKind.Array)
+            {
+                failCount = AddFileRecords(errorsElement, FileRecordStatus.Fail, fileRecords);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error extracting file records from JSON details");
+        }
+
+        _logger.LogInformation("Extracted {SuccessCount} successful and {FailCount} failed file records from activity log details", successCount, failCount);
+        return fileRecords;
+    }
+
+    private static int AddFileRecords(JsonElement parent, FileRecordStatus status, List<FileRecordCsvDto> records)
+    {
+        int count = 0;
+        foreach (var element in parent.EnumerateArray())
+        {
+            var path = element.TryGetProperty("Path", out var pathElement) ? pathElement.GetString() : null;
+            records.Add(new FileRecordCsvDto
+            {
+                Path = path,
+                FileName = !string.IsNullOrEmpty(path) ? Path.GetFileName(path) : null,
+                Status = status
+            });
+            count++;
+        }
+        return count;
     }
 
     private static string SetDescription(ActionType actionType, string? resourceName, FileTransferDetails? transferDetails = null)
