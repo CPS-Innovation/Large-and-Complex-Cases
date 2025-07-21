@@ -28,6 +28,7 @@ import { pollTransferStatus } from "../../../common/utils/pollTransferStatus";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
+  isTabActive: boolean;
   caseId: string;
   operationName: string;
   egressWorkspaceId: string;
@@ -36,6 +37,7 @@ type TransferMaterialsPageProps = {
 };
 
 const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
+  isTabActive,
   caseId,
   operationName,
   egressWorkspaceId,
@@ -398,6 +400,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       fileId: data?.id,
       path: data.sourcePath,
       relativePath: data.relativePath,
+      fullFilePath: data.fullFilePath
     }));
 
     const payload = {
@@ -615,6 +618,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     };
   }, [transferStatusData, username]);
 
+  if (!isTabActive) return <> </>;
   if (transferStatus === "transferring") {
     return (
       <div className={styles.transferContent}>

@@ -1,1 +1,1 @@
-export type TabId = "transfer-materials" | "manage-materials";
+export type TabId = "transfer-materials" | "activity-log";

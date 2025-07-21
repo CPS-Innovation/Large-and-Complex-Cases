@@ -63,7 +63,7 @@ public class DeleteFiles(ITransferEntityHelper transferEntityHelper, IStorageCli
             {
                 _logger.LogWarning("Failed to delete some files for transfer ID {TransferId}.", payload.TransferId);
 
-                var failedItems = result.FailedFiles.Select(x => new FailedToDeleteItem
+                var failedItems = result.FailedFiles.Select(x => new DeletionError
                 {
                     FileId = x.FileId,
                     ErrorMessage = x.Reason ?? "Unknown error"
@@ -74,7 +74,7 @@ public class DeleteFiles(ITransferEntityHelper transferEntityHelper, IStorageCli
             else
             {
                 _logger.LogInformation("Successfully deleted all files for transfer ID {TransferId}.", payload.TransferId);
-                await _transferEntityHelper.DeleteMovedItemsCompleted(payload.TransferId, new List<FailedToDeleteItem>(), cancellationToken);
+                await _transferEntityHelper.DeleteMovedItemsCompleted(payload.TransferId, new List<DeletionError>(), cancellationToken);
             }
         }
         catch (Exception ex)

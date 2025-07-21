@@ -174,7 +174,7 @@ public class DeleteFilesTests
 
         _transferEntityHelperMock
             .Setup(c => c.DeleteMovedItemsCompleted(
-                It.IsAny<Guid>(), It.IsAny<List<FailedToDeleteItem>>(), It.IsAny<CancellationToken>()))
+                It.IsAny<Guid>(), It.IsAny<List<DeletionError>>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         _storageClientFactoryMock

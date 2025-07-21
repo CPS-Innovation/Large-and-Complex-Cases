@@ -23,6 +23,8 @@ import {
   netAppToEgressTransferStatusDev,
   netAppToEgressTransferStatusPlaywright,
   // egressToNetAppIndexingErrorDev,
+  activityLogDev,
+  activityLogPlaywright,
 } from "./data";
 import { IndexingFileTransferPayload } from "../common/types/IndexingFileTransferPayload";
 import { InitiateFileTransferPayload } from "../common/types/InitiateFileTransferPayload";
@@ -164,6 +166,12 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
         return HttpResponse.json(response);
       },
     ),
+    http.get(`${baseUrl}/api/v1/activity/logs`, async () => {
+      const response = isDevMock() ? activityLogDev : activityLogPlaywright;
+
+      await delay(1500);
+      return HttpResponse.json(response);
+    }),
 
     http.post(
       `${baseUrl}/api/v1/filetransfer/transfer-id-egress-to-netapp/clear`,
