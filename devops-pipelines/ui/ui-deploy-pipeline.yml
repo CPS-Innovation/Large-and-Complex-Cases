@@ -65,3 +65,13 @@ stages:
               
             displayName: 'Deploy LACC UI to ${{ parameters.environment }}'
             retryCountOnTaskFailure: 1 
+
+          - script: |
+              echo "Cleaning up downloaded artifacts..."
+
+              if ! rm -r "lacc-ui-${{ parameters.environment }}-drop" 2>err.log; then
+                cat err.log >&2
+                exit 1
+              else
+                echo "Downloaded artifact removed successfully."
+              fi

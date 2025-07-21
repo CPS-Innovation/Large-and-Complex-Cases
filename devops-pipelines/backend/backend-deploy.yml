@@ -108,6 +108,8 @@ stages:
       - deployment: Deploy_Database_Changes
         displayName: 'LACC - Deploy Database Changes'
         environment: 'LACC-Backend-${{ parameters.environment }}'
+        variables: 
+          buildArtifact: 'database-scripts-drop'
         strategy:
           runOnce:
             deploy:
@@ -119,7 +121,7 @@ stages:
                     project: '$(System.TeamProjectId)'
                     pipeline: 'LACC Backend - Build, Test & Package'
                     buildVersionToDownload: 'latest'
-                    artifactName: 'database-scripts-drop'
+                    artifactName: '$(buildArtifact)'
                     downloadPath: '$(Pipeline.Workspace)'
 
                 - script: |
@@ -131,8 +133,8 @@ stages:
                 - task: ExtractFiles@1
                   displayName: 'Extract Database Scripts'
                   inputs:
-                    archiveFilePatterns: '$(Pipeline.Workspace)/database-scripts-drop/*.zip'
-                    destinationFolder: '$(Pipeline.Workspace)/database-scripts'
+                    archiveFilePatterns: '$(Pipeline.Workspace)/$(buildArtifact)/*.zip'
+                    destinationFolder: '$(Pipeline.Workspace)/$(buildArtifact)/database-scripts'
                     cleanDestinationFolder: true
 
                 - task: AzureCLI@2
@@ -233,7 +235,7 @@ stages:
 
                       # Run migration script
                       echo "Running database migration script..."
-                      PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -f "$(Pipeline.Workspace)/database-scripts/migration-script.sql"
+                      PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -f "$(Pipeline.Workspace)/$(buildArtifact)/database-scripts/migration-script.sql"
 
                       if [ $? -ne 0 ]; then
                         echo "❌ Database migration failed"
@@ -254,6 +256,16 @@ stages:
                       fi 
 
                       echo "✅ Database health check completed successfully"
+
+                - script: |
+                    echo "Cleaning up downloaded artifacts..."
+
+                    if ! rm -r "$(buildArtifact)" 2>err.log; then
+                      cat err.log >&2
+                      exit 1
+                    else
+                      echo "Downloaded artifact removed successfully."
+                    fi
               
   - stage: Deploy_Function_Apps
     displayName: 'LACC - Deploy Function Apps'
@@ -268,6 +280,8 @@ stages:
         displayName: 'LACC - Deploy Main API Function App'
         condition: eq(${{ parameters.deployMainAPI }}, true)
         environment: 'LACC-Backend-${{ parameters.environment }}'
+        variables: 
+          buildArtifact: 'lacc-main-api-drop'
         strategy:
           runOnce:
             deploy:
@@ -280,7 +294,7 @@ stages:
                     project: '$(System.TeamProjectId)'
                     pipeline: 'LACC Backend - Build, Test & Package'
                     buildVersionToDownload: 'latest'
-                    artifactName: 'lacc-main-api-drop'
+                    artifactName: '$(buildArtifact)'
                     downloadPath: '$(Pipeline.Workspace)'
 
                 - template: ../templates/fa-config.yml
@@ -297,7 +311,7 @@ stages:
                     azureSubscription: $(azureSubscription)
                     appType: 'functionApp'
                     appName: $(mainApiName)
-                    package: '$(Pipeline.Workspace)/lacc-main-api-drop/*.zip'
+                    package: '$(Pipeline.Workspace)/$(buildArtifact)/*.zip'
                     runtimeStack: 'DOTNET-ISOLATED|8.0'
                     deploymentMethod: 'runFromPackage'
                 
@@ -349,10 +363,22 @@ stages:
                         echo "✅ Function app is running"
                       fi
 
+                - script: |
+                    echo "Cleaning up downloaded artifacts..."
+
+                    if ! rm -r "$(buildArtifact)" 2>err.log; then
+                      cat err.log >&2
+                      exit 1
+                    else
+                      echo "Downloaded artifact removed successfully."
+                    fi                      
+
       - deployment: Deploy_FileTransfer_API
         displayName: 'LACC - Deploy FileTransfer API Function App'
         condition: eq(${{ parameters.deployFileTransferAPI }}, true)
         environment: 'LACC-Backend-${{ parameters.environment }}'
+        variables: 
+          buildArtifact: 'lacc-filetransfer-api-drop'
         strategy:
           runOnce:
             deploy:
@@ -364,7 +390,7 @@ stages:
                     project: '$(System.TeamProjectId)'
                     pipeline: 'LACC Backend - Build, Test & Package'
                     buildVersionToDownload: 'latest'
-                    artifactName: 'lacc-filetransfer-api-drop'
+                    artifactName: '$(buildArtifact)'
                     downloadPath: '$(Pipeline.Workspace)'
 
                 - template: ../templates/fa-config.yml
@@ -381,7 +407,7 @@ stages:
                     azureSubscription: $(azureSubscription)
                     appType: 'functionApp'
                     appName: $(fileTransferApiName)
-                    package: '$(Pipeline.Workspace)/lacc-filetransfer-api-drop/*.zip'
+                    package: '$(Pipeline.Workspace)/$(buildArtifact)/*.zip'
                     runtimeStack: 'DOTNET-ISOLATED|8.0'
                     deploymentMethod: 'runFromPackage'
                 
@@ -432,3 +458,13 @@ stages:
                       else
                         echo "✅ Function app is running"
                       fi
+
+                - script: |
+                    echo "Cleaning up downloaded artifacts..."
+
+                    if ! rm -r "$(buildArtifact)" 2>err.log; then
+                      cat err.log >&2
+                      exit 1
+                    else
+                      echo "Downloaded artifact removed successfully."
+                    fi
