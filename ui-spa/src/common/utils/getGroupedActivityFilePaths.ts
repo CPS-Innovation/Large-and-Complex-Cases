@@ -1,8 +1,8 @@
 import { getCleanPath } from "./getCleanPath";
 
 export type ActivityRelativePathFileType = {
-  errors: { relativePathParts: string[]; fileName: string }[];
-  success: { relativePathParts: string[]; fileName: string }[];
+  errors: { fileName: string }[];
+  success: { fileName: string }[];
 };
 
 export const getGroupedActvityFilePaths = (
@@ -40,14 +40,12 @@ export const getGroupedActvityFilePaths = (
         if (curr.hasFailed) {
           value.errors = [
             {
-              relativePathParts: curr.relativePath.split(">"),
               fileName: curr.fileName,
             },
           ];
         } else {
           value.success = [
             {
-              relativePathParts: curr.relativePath.split(">"),
               fileName: curr.fileName,
             },
           ];
@@ -58,14 +56,12 @@ export const getGroupedActvityFilePaths = (
       }
       if (curr.hasFailed)
         acc[`${curr.relativePath}`].errors.push({
-          relativePathParts: curr.relativePath.split(">"),
           fileName: curr.fileName,
         });
-
-      acc[`${curr.relativePath}`].success.push({
-        relativePathParts: curr.relativePath.split(">"),
-        fileName: curr.fileName,
-      });
+      else
+        acc[`${curr.relativePath}`].success.push({
+          fileName: curr.fileName,
+        });
 
       return acc;
     },
