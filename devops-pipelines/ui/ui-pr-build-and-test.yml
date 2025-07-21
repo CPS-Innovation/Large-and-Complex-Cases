@@ -49,6 +49,13 @@ stages:
               workingDir: '$(workingDir)'
 
           - task: Npm@1
+            displayName: 'Lint Code'
+            inputs:
+              command: 'custom'
+              customCommand: 'run lint'
+              workingDir: 'ui-spa'
+
+          - task: Npm@1
             displayName: 'Build Web App Package'
             inputs:
               command: 'custom'
