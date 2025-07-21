@@ -12,11 +12,11 @@ namespace CPS.ComplexCases.Data.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.EnsureSchema(
-                name: "lcc");
+                name: "large_complex_cases");
 
             migrationBuilder.CreateTable(
                 name: "case_metadata",
-                schema: "lcc",
+                schema: "large_complex_cases",
                 columns: table => new
                 {
                     case_id = table.Column<int>(type: "integer", nullable: false)
@@ -35,7 +35,7 @@ namespace CPS.ComplexCases.Data.Migrations
         {
             migrationBuilder.DropTable(
                 name: "case_metadata",
-                schema: "lcc");
+                schema: "large_complex_cases");
         }
     }
 }

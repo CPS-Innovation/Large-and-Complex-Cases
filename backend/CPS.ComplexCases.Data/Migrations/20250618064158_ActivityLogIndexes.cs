@@ -12,26 +12,26 @@ namespace CPS.ComplexCases.Data.Migrations
         {
             migrationBuilder.CreateIndex(
                 name: "idx_activity_log_action_type",
-                schema: "lcc",
+                schema: "large_complex_cases",
                 table: "activity_log",
                 column: "action_type");
 
             migrationBuilder.CreateIndex(
                 name: "idx_activity_log_resource_id",
-                schema: "lcc",
+                schema: "large_complex_cases",
                 table: "activity_log",
                 column: "resource_id");
 
             migrationBuilder.CreateIndex(
                 name: "idx_activity_log_timestamp",
-                schema: "lcc",
+                schema: "large_complex_cases",
                 table: "activity_log",
                 column: "timestamp",
                 descending: new bool[0]);
 
             migrationBuilder.CreateIndex(
                 name: "idx_activity_log_user_name",
-                schema: "lcc",
+                schema: "large_complex_cases",
                 table: "activity_log",
                 column: "user_name");
         }
@@ -41,22 +41,22 @@ namespace CPS.ComplexCases.Data.Migrations
         {
             migrationBuilder.DropIndex(
                 name: "idx_activity_log_action_type",
-                schema: "lcc",
+                schema: "large_complex_cases",
                 table: "activity_log");
 
             migrationBuilder.DropIndex(
                 name: "idx_activity_log_resource_id",
-                schema: "lcc",
+                schema: "large_complex_cases",
                 table: "activity_log");
 
             migrationBuilder.DropIndex(
                 name: "idx_activity_log_timestamp",
-                schema: "lcc",
+                schema: "large_complex_cases",
                 table: "activity_log");
 
             migrationBuilder.DropIndex(
                 name: "idx_activity_log_user_name",
-                schema: "lcc",
+                schema: "large_complex_cases",
                 table: "activity_log");
         }
     }
