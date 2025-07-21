@@ -1,0 +1,119 @@
+.activitiesTimeline {
+  padding: 0;
+  margin: 0;
+}
+.activityWrapper:not(:last-child) > .activityHead {
+  &::after {
+    background-color: #1d70b8;
+    content: "";
+    height: 100%;
+    left: 0;
+    position: absolute;
+    margin-top: 0.75rem;
+    padding-left: 0.3rem;
+    z-index: 1;
+  }
+}
+.activityWrapper {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding-left: 1.25rem;
+  padding-bottom: 1.875rem;
+
+  .transferTag {
+    font-weight: normal;
+    text-align: center;
+    text-transform: none;
+  }
+  .transferStatusTag {
+    font-weight: normal;
+    text-align: center;
+    text-transform: none;
+  }
+  .activityTransferTags {
+    margin-bottom: 0.3rem;
+  }
+  .activityHead {
+    margin: 0;
+    font-size: 1.1875rem;
+    &::before {
+      background-color: #1d70b8;
+      content: "";
+      padding-top: 0.3em;
+      padding-right: 0.9375rem;
+      left: 0;
+      position: absolute;
+      margin-top: 0.55em;
+      z-index: 1;
+    }
+  }
+
+  .activityDate {
+    color: #505a5f;
+    margin: 0.3rem 0 0.1rem 0;
+    font-size: 1rem;
+  }
+  .userId {
+    color: #505a5f;
+  }
+  .activityText {
+    font-size: 1rem;
+  }
+
+  .locationData {
+    margin-top: 1rem;
+  }
+  .locationTitle {
+    font-size: 0.9rem;
+    color: black;
+    background: #ffffff;
+    padding: 0.4rem;
+    box-shadow: inset 0px 0px 0px 1px rgba(0, 0, 0, 0.1);
+  }
+  .locationPath {
+    font-size: 0.9rem;
+    padding: 0.4rem;
+    color: #003078;
+    background: #f3f2f1;
+  }
+
+  .downloadBtn {
+    font-weight: 400;
+    font-size: 1rem;
+    line-height: 1.25;
+    z-index: 1;
+    border: 1px solid #00823b;
+    color: #00823b;
+    background-color: #fff;
+    box-shadow: 0 1px 0 0 #00703c;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    margin-bottom: 0;
+    &:hover {
+      text-decoration: none;
+      border: 1px solid #00823b;
+      color: #00823b;
+      background-color: #fff;
+      box-shadow: 0 2px 0 0 #00703c;
+    }
+  }
+  .descriptionWrapper {
+    display: flex;
+    gap: 0.5rem;
+  }
+  h4 {
+    margin: 0;
+  }
+}
+
+.visuallyHidden {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
