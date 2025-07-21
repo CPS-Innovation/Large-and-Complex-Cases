@@ -26,6 +26,8 @@ variables:
     value: 'rg-lacc-${{ parameters.environment }}'
   - name: appName
     value: 'lacc-app-ui-spa-${{ parameters.environment }}'
+  - name: buildArtifact
+    value: 'lacc-ui-${{ parameters.environment }}-drop'
   - name: build-agent
     value: 'LaCC Pre-Prod Build Agents'
   - name: azureSubscription
@@ -42,16 +44,6 @@ stages:
     jobs:
       - job: CI_Deploy_LACCUI_${{ parameters.environment }}
         steps:
-          - script: |
-              echo "Cleaning up downloaded artifacts..."
-
-              if ! rm -r "lacc-ui-${{ parameters.environment }}-drop" 2>err.log; then
-                cat err.log >&2
-              else
-                echo "Downloaded artifact removed successfully."
-              fi
-            workingDirectory: $(Pipeline.Workspace)
-
           - task: DownloadBuildArtifacts@0
             displayName: 'Download UI Build Artifact'
             inputs:
@@ -59,7 +51,7 @@ stages:
               project: '$(System.TeamProjectId)'
               pipeline: 'LACC-UI-dev-build-and-test'
               buildVersionToDownload: 'latest'
-              artifactName: 'lacc-ui-${{ parameters.environment }}-drop'
+              artifactName: '$(buildArtifact)'
               downloadPath: '$(Pipeline.Workspace)'
 
           - task: AzureRmWebAppDeployment@4
@@ -69,7 +61,7 @@ stages:
               resourceGroupName: $(resourceGroupName)
               appType: 'webAppLinux'
               WebAppName: '$(appName)'
-              packageForLinux: '$(Pipeline.Workspace)/lacc-ui-${{ parameters.environment }}-drop/*.zip'
+              packageForLinux: '$(Pipeline.Workspace)/$(buildArtifact)/*.zip'
               RuntimeStack: 'NODE|20-lts'
               StartupCommand: 'pm2 serve /home/site/wwwroot/ --no-daemon --spa'
               
@@ -79,7 +71,7 @@ stages:
           - script: |
               echo "Cleaning up downloaded artifacts..."
 
-              if ! rm -r "lacc-ui-${{ parameters.environment }}-drop" 2>err.log; then
+              if ! rm -r "$(buildArtifact)" 2>err.log; then
                 cat err.log >&2
                 exit 1
               else

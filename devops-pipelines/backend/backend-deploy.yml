@@ -266,6 +266,7 @@ stages:
                     else
                       echo "Downloaded artifact removed successfully."
                     fi
+                  workingDirectory: $(Pipeline.Workspace)
               
   - stage: Deploy_Function_Apps
     displayName: 'LACC - Deploy Function Apps'
@@ -371,7 +372,8 @@ stages:
                       exit 1
                     else
                       echo "Downloaded artifact removed successfully."
-                    fi                      
+                    fi
+                  workingDirectory: $(Pipeline.Workspace)                      
 
       - deployment: Deploy_FileTransfer_API
         displayName: 'LACC - Deploy FileTransfer API Function App'
@@ -468,3 +470,4 @@ stages:
                     else
                       echo "Downloaded artifact removed successfully."
                     fi
+                  workingDirectory: $(Pipeline.Workspace)
