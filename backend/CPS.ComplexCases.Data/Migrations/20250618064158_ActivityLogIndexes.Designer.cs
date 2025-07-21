@@ -98,7 +98,7 @@ namespace CPS.ComplexCases.Data.Migrations
                     b.HasIndex("UserName")
                         .HasDatabaseName("idx_activity_log_user_name");
 
-                    b.ToTable("activity_log", "lcc");
+                    b.ToTable("activity_log", "large_complex_cases");
                 });
 
             modelBuilder.Entity("CPS.ComplexCases.Data.Entities.CaseMetadata", b =>
@@ -126,7 +126,7 @@ namespace CPS.ComplexCases.Data.Migrations
 
                     b.HasKey("CaseId");
 
-                    b.ToTable("case_metadata", "lcc");
+                    b.ToTable("case_metadata", "large_complex_cases");
                 });
 #pragma warning restore 612, 618
         }
