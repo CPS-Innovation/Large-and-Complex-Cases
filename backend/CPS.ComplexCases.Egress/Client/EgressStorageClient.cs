@@ -1,6 +1,7 @@
 using System.Net;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
@@ -127,11 +128,12 @@ public class EgressStorageClient(
             {
                 return new List<FileTransferInfo>
                 {
-                new FileTransferInfo
-                {
-                    Id = entity.FileId,
-                    SourcePath = Path.GetFileName(entity.Path)
-                }
+                    new FileTransferInfo
+                    {
+                        Id = entity.FileId,
+                        SourcePath = Path.GetFileName(entity.Path),
+                        FullFilePath = entity.Path,
+                    }
                 };
             }
             else
@@ -266,7 +268,8 @@ public class EgressStorageClient(
             .Select(d => new FileTransferInfo
             {
                 Id = d.Id,
-                SourcePath = ConstructRelativePath(baseFolderPath, d.Path, d.FileName)
+                SourcePath = ConstructRelativePath(baseFolderPath, d.Path, d.FileName),
+                FullFilePath = d.Path.EnsureTrailingSlash() + d.FileName
             })
             .ToList();
         var folders = allPagesData.Where(d => d.IsFolder).ToList();
@@ -330,7 +333,8 @@ public class EgressStorageClient(
                     FolderId = folderId,
                     Take = take,
                     Skip = i * take,
-                    RecurseSubFolders = false
+                    RecurseSubFolders = false,
+                    ViewFullDetails = true
                 };
 
                 pageTasks.Add(SendRequestAsync<ListCaseMaterialResponse>(_egressRequestFactory.ListEgressMaterialRequest(pageArg, token)));

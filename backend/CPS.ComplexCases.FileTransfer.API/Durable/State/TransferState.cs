@@ -48,10 +48,10 @@ public class TransferEntityState : TaskEntity<TransferEntity>
         State.UpdatedAt = DateTime.UtcNow;
     }
 
-    public void DeleteMovedItemsCompleted(List<FailedToDeleteItem> failedToDeleteItems)
+    public void DeleteMovedItemsCompleted(List<DeletionError> failedToDeleteItems)
     {
         State.MovedFilesDeletedSuccessfully = failedToDeleteItems.Count == 0;
-        State.FailedToDeleteItems.AddRange(failedToDeleteItems);
+        State.DeletionErrors.AddRange(failedToDeleteItems);
         State.UpdatedAt = DateTime.UtcNow;
     }
 }
