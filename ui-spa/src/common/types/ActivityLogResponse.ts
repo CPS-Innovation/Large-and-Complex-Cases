@@ -17,6 +17,7 @@ export type ActivityItem = {
     transferId: string;
     sourcePath: string;
     destinationPath: string;
+    transferType: "Move" | "Copy";
     errorFileCount: number;
     transferedFileCount: number;
     totalFiles: number;

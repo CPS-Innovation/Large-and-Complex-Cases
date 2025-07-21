@@ -14,6 +14,7 @@ describe("getTransferActivityStatusTagData", () => {
       totalFiles: 6,
       errorFileCount: 2,
       transferedFileCount: 4,
+      transferType: "Copy",
       sourcePath: "egress/folder1",
       destinationPath: "netapp/folder2",
       files: [

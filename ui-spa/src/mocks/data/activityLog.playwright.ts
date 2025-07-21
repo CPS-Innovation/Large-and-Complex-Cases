@@ -13,6 +13,7 @@ export const activityLogPlaywright: ActivityLogResponse = {
         totalFiles: 6,
         errorFileCount: 2,
         transferedFileCount: 4,
+        transferType: "Copy",
         sourcePath: "egress/folder1",
         destinationPath: "netapp/folder2",
         files: [
@@ -52,6 +53,7 @@ export const activityLogPlaywright: ActivityLogResponse = {
         totalFiles: 2,
         errorFileCount: 0,
         transferedFileCount: 0,
+        transferType: "Copy",
         sourcePath: "egress",
         destinationPath: "netapp/folder2",
         files: [],

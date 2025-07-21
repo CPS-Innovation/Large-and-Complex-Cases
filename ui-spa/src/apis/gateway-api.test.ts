@@ -12,6 +12,8 @@ import {
   indexingFileTransfer,
   initiateFileTransfer,
   getTransferStatus,
+  handleFileTransferClear,
+  getActivityLog,
 } from "./gateway-api";
 import { ApiError } from "../common/errors/ApiError";
 import { v4 } from "uuid";
@@ -1187,6 +1189,120 @@ describe("gateway apis", () => {
       );
       expect(fetch).toHaveBeenCalledWith(
         `gateway_url/api/v1/filetransfer/transfer_id_1/status`,
+        expect.objectContaining({
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+  });
+  describe("handleFileTransferClear", () => {
+    it("should handle when post request is successful", async () => {
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: true,
+      });
+
+      await handleFileTransferClear("mock_transfer_Id");
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/v1/filetransfer/mock_transfer_Id/clear`,
+        expect.objectContaining({
+          method: "POST",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+
+    it("should throw an ApiError when fetch fails", async () => {
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+      });
+
+      await expect(handleFileTransferClear("mock_transfer_Id")).rejects.toThrow(
+        new ApiError(
+          `clear file transfer api failed`,
+          "gateway_url/api/v1/filetransfer/mock_transfer_Id/clear",
+          {
+            status: 500,
+            statusText: "Internal Server Error",
+          },
+        ),
+      );
+
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/v1/filetransfer/mock_transfer_Id/clear`,
+        expect.objectContaining({
+          method: "POST",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+  });
+  describe("getActivityLog", () => {
+    it("should return activityLog when fetch is successful", async () => {
+      const mockData = {
+        caseId: 12,
+      };
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        json: async () => mockData,
+      });
+
+      const result = await getActivityLog("test_case_id");
+      expect(result).toEqual(mockData);
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/v1/activity/logs?caseId=test_case_id`,
+        expect.objectContaining({
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+
+    it("should throw an ApiError when fetch fails", async () => {
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+      });
+
+      await expect(getActivityLog("test_case_id")).rejects.toThrow(
+        new ApiError(
+          `Getting case activity log failed`,
+          "gateway_url/api/v1/activity/logs?caseId=test_case_id",
+          {
+            status: 500,
+            statusText: "Internal Server Error",
+          },
+        ),
+      );
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/v1/activity/logs?caseId=test_case_id`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
