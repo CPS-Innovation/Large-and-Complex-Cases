@@ -8,6 +8,7 @@ import {
   getNetAppFolders,
   indexingFileTransfer,
   initiateFileTransfer,
+  handleFileTransferClear,
 } from "../../../apis/gateway-api";
 import EgressFolderContainer from "./EgressFolderContainer";
 import { useNavigate } from "react-router-dom";
@@ -27,6 +28,7 @@ import { pollTransferStatus } from "../../../common/utils/pollTransferStatus";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
+  isTabActive: boolean;
   caseId: string;
   operationName: string;
   egressWorkspaceId: string;
@@ -35,6 +37,7 @@ type TransferMaterialsPageProps = {
 };
 
 const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
+  isTabActive,
   caseId,
   operationName,
   egressWorkspaceId,
@@ -374,10 +377,10 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         selectedTransferAction.destinationFolder.sourceType === "egress"
           ? ("EgressToNetApp" as const)
           : ("NetAppToEgress" as const),
-        transferType:
-              selectedTransferAction.actionType === "copy"
-                ? ("Copy" as const)
-                : ("Move" as const),
+      transferType:
+        selectedTransferAction.actionType === "copy"
+          ? ("Copy" as const)
+          : ("Move" as const),
       sourcePaths: sourcePaths,
       destinationPath: selectedTransferAction.destinationFolder.path,
       workspaceId: egressWorkspaceId,
@@ -397,6 +400,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       fileId: data?.id,
       path: data.sourcePath,
       relativePath: data.relativePath,
+      fullFilePath: data.fullFilePath
     }));
 
     const payload = {
@@ -511,15 +515,23 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           username: response.userName,
           direction: response.direction,
         });
+        if (response.userName === username)
+          handleFileTransferClear(transferId!);
+
         setTransferId("");
       }
-      if (response.status === "PartiallyCompleted") {
+      if (
+        response.status === "PartiallyCompleted" ||
+        response.status === "Failed"
+      ) {
         setTransferStatus("completed-with-errors");
         navigate(`/case/${caseId}/case-management/transfer-errors`, {
           state: {
             isRouteValid: true,
           },
         });
+        if (response.userName === username)
+          handleFileTransferClear(transferId!);
         setTransferId("");
         setTransferStatusData(null);
       }
@@ -531,6 +543,8 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       netAppRefetch,
       setTransferStatus,
       setTransferId,
+      username,
+      transferId,
     ],
   );
   const isComponentUnmounted = useCallback(() => {
@@ -604,6 +618,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     };
   }, [transferStatusData, username]);
 
+  if (!isTabActive) return <> </>;
   if (transferStatus === "transferring") {
     return (
       <div className={styles.transferContent}>

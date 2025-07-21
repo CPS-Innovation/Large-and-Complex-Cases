@@ -194,16 +194,24 @@ public class ActivityLogServiceTests
             CreateActivityLogWithProperties("1", "Case"),
             CreateActivityLogWithProperties("2", "Document")
         };
+        var activityLogResultsDto = new ActivityLogResultsDto
+        {
+            Logs = logs,
+            TotalCount = logs.Count,
+            Skip = 0,
+            Take = logs.Count
+        };
+
         _repositoryMock
             .Setup(r => r.GetByFilterAsync(filter))
-            .ReturnsAsync(logs);
+            .ReturnsAsync(activityLogResultsDto);
 
         // Act
         var result = await _service.GetActivityLogsAsync(filter);
 
         // Assert
         Assert.NotNull(result);
-        var resultList = result.ToList();
+        var resultList = result.Data.ToList();
         Assert.Equal("1", resultList[0].ResourceId);
         Assert.Equal("2", resultList[1].ResourceId);
         _repositoryMock.Verify(r => r.GetByFilterAsync(filter), Times.Once);

@@ -5,5 +5,5 @@ namespace CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
 public interface ITransferEntityHelper
 {
     Task<Microsoft.DurableTask.Client.Entities.EntityMetadata<TransferEntity>?> GetTransferEntityAsync(Guid transferId, CancellationToken cancellationToken = default);
-    Task DeleteMovedItemsCompleted(Guid transferId, List<FailedToDeleteItem> failedItems, CancellationToken cancellationToken = default);
+    Task DeleteMovedItemsCompleted(Guid transferId, List<DeletionError> failedItems, CancellationToken cancellationToken = default);
 }
