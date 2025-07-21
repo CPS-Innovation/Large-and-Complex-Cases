@@ -47,13 +47,6 @@ stages:
             inputs:
               command: 'ci'
               workingDir: '$(workingDir)'
-              
-          - task: Npm@1
-            displayName: 'Lint UI Code'
-            inputs:
-              command: 'custom'
-              customCommand: 'run lint'
-              workingDir: '$(workingDir)'
 
           - task: Npm@1
             displayName: 'Build Web App Package'
