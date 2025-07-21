@@ -10,7 +10,7 @@ public class TransferEntityHelper(DurableTaskClient durableClient) : ITransferEn
 {
     private readonly DurableTaskClient _durableClient = durableClient;
 
-    public Task DeleteMovedItemsCompleted(Guid transferId, List<FailedToDeleteItem> failedItems, CancellationToken cancellationToken = default)
+    public Task DeleteMovedItemsCompleted(Guid transferId, List<DeletionError> failedItems, CancellationToken cancellationToken = default)
     {
         var entityId = GetEntityInstanceId(transferId);
         return _durableClient.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.DeleteMovedItemsCompleted), failedItems, null, cancellationToken);

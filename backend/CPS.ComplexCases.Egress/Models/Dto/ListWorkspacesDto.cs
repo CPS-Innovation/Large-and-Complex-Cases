@@ -1,3 +1,5 @@
+using CPS.ComplexCases.Common.Models.Domain.Dto;
+
 namespace CPS.ComplexCases.Egress.Models.Dto;
 
 public class ListWorkspacesDto

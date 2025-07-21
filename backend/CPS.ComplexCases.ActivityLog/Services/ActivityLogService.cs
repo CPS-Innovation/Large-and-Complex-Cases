@@ -1,9 +1,14 @@
 using System.Text.Json;
-using CPS.ComplexCases.Common.Attributes;
+using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.ActivityLog.Enums;
+using CPS.ComplexCases.ActivityLog.Models;
+using CPS.ComplexCases.ActivityLog.Models.Responses;
+using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.Common.Models.Domain.Dto;
+using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Data.Dtos;
 using CPS.ComplexCases.Data.Repositories;
-using Microsoft.Extensions.Logging;
+using CPS.ComplexCases.ActivityLog.Extensions;
 
 namespace CPS.ComplexCases.ActivityLog.Services;
 
@@ -11,6 +16,8 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
 {
     private readonly IActivityLogRepository _activityLogRepository = activityLogRepository;
     private readonly ILogger<ActivityLogService> _logger = logger;
+    private const string EgressResource = "Egress";
+    private const string SharedDriveResource = "Shared Drive";
 
     public async Task CreateActivityLogAsync(ActionType actionType, ResourceType resourceType, int caseId, string resourceId, string? resourceName, string? userName, JsonDocument? details = null)
     {
@@ -18,6 +25,13 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
         {
             _logger.LogWarning("Attempted to create activity log with null or empty resourceId.");
             throw new ArgumentException("ResourceId cannot be null or empty.", nameof(resourceId));
+        }
+
+        FileTransferDetails? transferDetails = null;
+
+        if (actionType.ToString().StartsWith("Transfer") && details != null)
+        {
+            transferDetails = details.DeserializeJsonDocument<FileTransferDetails>(_logger);
         }
 
         _logger.LogInformation("Creating activity log for {ResourceType} {ResourceId}", resourceType, resourceId);
@@ -31,7 +45,7 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
             UserName = userName,
             Details = details,
             Timestamp = DateTime.UtcNow,
-            Description = SetDescription(actionType, resourceName)
+            Description = SetDescription(actionType, resourceName, transferDetails)
         };
 
         await _activityLogRepository.AddAsync(activityLog);
@@ -50,11 +64,23 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
         return _activityLogRepository.GetByIdAsync(id);
     }
 
-    public Task<IEnumerable<Data.Entities.ActivityLog>> GetActivityLogsAsync(ActivityLogFilterDto filter)
+    public async Task<ActivityLogsResponse> GetActivityLogsAsync(ActivityLogFilterDto filter)
     {
         _logger.LogInformation("Getting activity logs with filter {@Filter}", filter);
 
-        return _activityLogRepository.GetByFilterAsync(filter);
+        var result = await _activityLogRepository.GetByFilterAsync(filter);
+
+        return new ActivityLogsResponse
+        {
+            Data = result.Logs,
+            Pagination = new PaginationDto
+            {
+                TotalResults = result.TotalCount,
+                Skip = filter.Skip,
+                Take = filter.Take,
+                Count = result.Logs.Count()
+            }
+        };
     }
 
     public Task<IEnumerable<Data.Entities.ActivityLog>> GetActivityLogsByResourceIdAsync(string resourceId)
@@ -93,21 +119,29 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
         return _activityLogRepository.UpdateAsync(activityLog);
     }
 
-    public JsonDocument? ConvertToJsonDocument<T>(T data)
+    private static string SetDescription(ActionType actionType, string? resourceName, FileTransferDetails? transferDetails = null)
     {
-        try
+        if (string.IsNullOrWhiteSpace(resourceName))
         {
-            return JsonDocument.Parse(JsonSerializer.Serialize(data));
+            resourceName = transferDetails?.SourcePath ?? "Unknown Resource";
         }
-        catch (JsonException ex)
-        {
-            _logger.LogError(ex, "Error converting data to JsonDocument");
-            return null;
-        }
-    }
 
-    private static string SetDescription(ActionType actionType, string? resourceName)
-    {
+        if (transferDetails != null)
+        {
+            var transferType = transferDetails.TransferType == TransferType.Copy.ToString() ? "copied" : "moved";
+            var (source, destination) = transferDetails.TransferDirection == TransferDirection.EgressToNetApp.ToString()
+                ? (EgressResource, SharedDriveResource)
+                : (SharedDriveResource, EgressResource);
+
+            return actionType switch
+            {
+                ActionType.TransferInitiated => $"Transfer initiated from {source} to {destination}",
+                ActionType.TransferCompleted => $"Documents/folders {transferType} from {source} to {destination}",
+                ActionType.TransferFailed => $"Transfer failed from {source} to {destination}",
+                _ => $"Performed action {actionType} on resource {resourceName}"
+            };
+        }
+
         return actionType switch
         {
             ActionType.ConnectionToEgress => $"Connected to Egress workspace {resourceName}",

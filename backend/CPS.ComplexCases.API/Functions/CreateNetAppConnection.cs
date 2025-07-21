@@ -68,7 +68,7 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
             ActivityLog.Enums.ResourceType.StorageConnection,
             netAppConnectionRequest.Value.CaseId,
             netAppConnectionRequest.Value.NetAppFolderPath,
-            "NetApp",
+            netAppConnectionRequest.Value.NetAppFolderPath,
             context.Username);
 
         return new OkResult();
