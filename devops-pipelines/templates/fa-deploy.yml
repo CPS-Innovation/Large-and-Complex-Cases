@@ -1,0 +1,78 @@
+parameters:
+  environment: ''
+  functionAppName: ''
+  buildArtifactName: ''
+  pipelineResourceAlias: ''
+  keyVaultName: $(keyVaultName)
+  azureSubscription: $(azureSubscription)
+  resourceGroupName: $(resourceGroupName)
+
+steps:
+  - download: '${{ parameters.pipelineResourceAlias}}'
+    artifact: '${{ parameters.buildArtifactName }}'
+
+  - template: ../templates/fa-config.yml
+    parameters:
+      environment: ${{ parameters.environment }}
+      functionAppName: ${{ parameters.functionAppName }}
+      azureSubscription: ${{ parameters.azureSubscription }}
+      resourceGroupName: ${{ parameters.resourceGroupName }}
+      keyVaultName: ${{ parameters.keyVaultName }}
+
+  - task: AzureFunctionApp@2
+    displayName: 'Deploy Package to Azure Function App'
+    inputs:
+      azureSubscription: ${{ parameters.azureSubscription }}
+      appType: 'functionApp'
+      appName: ${{ parameters.functionAppName }}
+      package: '$(Pipeline.Workspace)/${{ parameters.pipelineResourceAlias}}/${{ parameters.buildArtifactName }}/*.zip'
+      runtimeStack: 'DOTNET-ISOLATED|8.0'
+      deploymentMethod: 'runFromPackage'
+
+  - checkout: self
+    sparseCheckoutDirectories: devops-pipelines/scripts
+    fetchDepth: 1
+
+  - task: Bash@3
+    displayName: 'Ensure Azure CLI'
+    inputs:
+      targetType: 'inline'
+      script: |
+        echo "Checking if Azure CLI is installed..."
+        
+        # Check if az command exists
+        if command -v az &> /dev/null; then
+          echo "Azure CLI is already installed"
+          az --version
+          exit 0
+        fi
+
+        echo "Azure CLI not found, installing..."
+        bash '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/installAzureCli.sh'
+
+  - task: AzureCLI@2
+    displayName: 'Verify Function App Deployment'
+    inputs:
+      azureSubscription: ${{ parameters.azureSubscription }}
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "Verifying deployment to ${{ parameters.functionAppName }}..."
+        
+        # Check if deployment completed successfully
+        DEPLOYMENT_STATUS=$(az functionapp deployment list --name ${{ parameters.functionAppName }} --resource-group ${{ parameters.resourceGroupName }} --query "[0].status" -o tsv)
+        echo "Latest deployment status: $DEPLOYMENT_STATUS"
+        
+        # Wait a moment for extraction to complete
+        echo "Waiting for deployment to stabilize..."
+        sleep 10
+        
+        # Check if function app is running
+        APP_STATE=$(az functionapp show --name ${{ parameters.functionAppName }} --resource-group ${{ parameters.resourceGroupName }} --query "state" -o tsv)
+        echo "Function app state: $APP_STATE"
+        
+        if [ "$APP_STATE" != "Running" ]; then
+          echo "⚠️ Function app is not in Running state"
+        else
+          echo "✅ Function app is running"
+        fi

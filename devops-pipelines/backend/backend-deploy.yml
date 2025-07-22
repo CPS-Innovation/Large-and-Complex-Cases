@@ -1,14 +1,3 @@
-trigger:
-  batch: true
-  branches:
-    include:
-      - main
-  paths:
-    include:
-      - backend/*
-
-pr: none
-
 parameters:
   - name: environment
     displayName: 'Target Environment'
@@ -18,6 +7,10 @@ parameters:
       - dev
       - stage
       - prod
+  - name: updateKeyVault
+    displayName: 'Update Key Vault Secrets'
+    type: boolean
+    default: true
   - name: runDatabaseMigration
     displayName: 'Run Database Migration'
     type: boolean
@@ -31,16 +24,20 @@ parameters:
     type: boolean
     default: true
 
+resources:
+  pipelines:
+  - pipeline: build
+    source: 'LACC-BE-dev-build'
+    trigger: 
+      branches:
+        include:
+          - main
+
 variables:
-  - group: lacc-backend-global-variables
   - group: lacc-backend-secrets-${{ parameters.environment }}-variables
-  - group: lacc-backend-config-${{ parameters.environment }}-variables
+  - group: lacc-backend-config-${{ parameters.environment }}
   - name: resourceGroupName
-    value: 'rg-lacc-${{ parameters.environment }}'
-  - name: mainApiName
-    value: 'fa-lacc-api-${{ parameters.environment }}'
-  - name: fileTransferApiName
-    value: 'fa-lacc-filetransfer-api-${{ parameters.environment }}'
+    value: 'rg-lacc-${{ parameters.environment }}' 
   - name: keyVaultName
     value: 'kv-lacc-${{ parameters.environment }}'
   - name: scripts_directory
@@ -57,6 +54,7 @@ pool: 'LaCC Pre-Prod Build Agents' #'LARGE-AND-COMPLEX-CASES-PRE-PROD'
 stages:
   - stage: Update_Key_Vault
     displayName: 'LACC - Update Key Vault'
+    condition: ${{ eq(parameters.updateKeyVault, true) }}
     jobs:
       - job: Populate_KV
         displayName: 'LACC - Validate Target Environment'
@@ -102,27 +100,41 @@ stages:
 
   - stage: Database_Migration
     displayName: 'LACC - Database Migration'
-    dependsOn: Update_Key_Vault
-    condition: and(succeeded(), eq(${{ parameters.runDatabaseMigration }}, true))
+    ${{ if eq(parameters.updateKeyVault, true) }}:
+      dependsOn: 
+        - Update_Key_Vault
+    condition: ${{ eq(parameters.runDatabaseMigration, true) }}
     jobs:
       - deployment: Deploy_Database_Changes
         displayName: 'LACC - Deploy Database Changes'
         environment: 'LACC-Backend-${{ parameters.environment }}'
-        variables: 
-          buildArtifact: 'database-scripts-drop'
         strategy:
           runOnce:
             deploy:
               steps:
-                - task: DownloadBuildArtifacts@0
-                  displayName: 'Download Database Scripts'
+                - checkout: self
+                  sparseCheckoutDirectories: devops-pipelines/scripts
+                  fetchDepth: 1
+
+                - task: Bash@3
+                  displayName: 'Ensure Azure CLI'
                   inputs:
-                    buildType: 'specific'
-                    project: '$(System.TeamProjectId)'
-                    pipeline: 'LACC Backend - Build, Test & Package'
-                    buildVersionToDownload: 'latest'
-                    artifactName: '$(buildArtifact)'
-                    downloadPath: '$(Pipeline.Workspace)'
+                    targetType: 'inline'
+                    script: |
+                      echo "Checking if Azure CLI is installed..."
+                      
+                      # Check if az command exists
+                      if command -v az &> /dev/null; then
+                        echo "Azure CLI is already installed"
+                        az --version
+                        exit 0
+                      fi
+
+                      echo "Azure CLI not found, installing..."
+                      bash $(scripts_directory)/installAzureCli.sh 
+
+                - download: build
+                  artifact: 'database-scripts-drop'
 
                 - script: |
                     echo "Installing the unzip package..."
@@ -133,8 +145,8 @@ stages:
                 - task: ExtractFiles@1
                   displayName: 'Extract Database Scripts'
                   inputs:
-                    archiveFilePatterns: '$(Pipeline.Workspace)/$(buildArtifact)/*.zip'
-                    destinationFolder: '$(Pipeline.Workspace)/$(buildArtifact)/database-scripts'
+                    archiveFilePatterns: '$(Pipeline.Workspace)/build/database-scripts-drop/*.zip'
+                    destinationFolder: '$(Pipeline.Workspace)/build/database-scripts'
                     cleanDestinationFolder: true
 
                 - task: AzureCLI@2
@@ -143,331 +155,53 @@ stages:
                     azureSubscription: $(azureSubscription)
                     scriptType: 'bash'
                     scriptLocation: 'inlineScript'
-                    inlineScript: |   
+                    inlineScript: |
+                      bash $(scripts_directory)/updateDatabase.sh
+                  env:
+                    KEY_VAULT_NAME: $(keyVaultName)
+                    MIGRATION_SCRIPT_PATH: '$(Pipeline.Workspace)/build/database-scripts/migration-script.sql'
+                
+                - template: ../templates/runner-cleanup.yml
+                  parameters:
+                    buildArtifactDir: 'build'
 
-                      echo "Installing PostgreSQL client..."
-                      sudo apt-get update -qq
-                      sudo apt-get install -y postgresql-client
-
-                      # SECURITY: Disable command echoing to prevent credential exposure
-                      set +x
-
-                      # SECURITY: Parse connection string components WITHOUT storing the full secret in variables
-                      echo "Retrieving and parsing connection string securely from Key Vault: $(keyVaultName)"
-
-                      # Add retry logic for Key Vault access
-                      for attempt in {1..3}; do
-                        echo "Key Vault access attempt $attempt..."
-
-                        # Extract components directly from Key Vault command output without storing full connection string
-                        DB_HOST=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=Host=)[^;]+' | head -1)
-                        DB_NAME=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=Database=)[^;]+' | head -1)
-                        DB_USER=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=User Id=)[^;]+' | head -1)
-                        DB_PASS=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=Password=)[^;]+' | head -1)
-
-                        # Check if we successfully retrieved all components
-                        if [ -n "$DB_HOST" ] && [ -n "$DB_NAME" ] && [ -n "$DB_USER" ] && [ -n "$DB_PASS" ]; then
-                          echo "✅ Successfully retrieved connection string components on attempt $attempt"
-                          break
-                        else
-                          if [ $attempt -eq 3 ]; then
-                            echo "❌ Failed to retrieve connection string components after 3 attempts"
-                          else
-                            echo "Key Vault access failed, waiting 10 seconds before retry..."
-                            sleep 10
-                          fi
-                        fi
-                      done
-
-                      # Validate that we successfully retrieved and parsed credentials without exposing them
-                      if [ -z "$DB_HOST" ]; then
-                        echo "❌ Could not parse PostgreSQL host from connection string"
-                        echo "This could indicate:"
-                        echo "1. PostgreSQL connection string not found in Key Vault"
-                        echo "2. Connection string format is incorrect"
-                        echo "3. Key Vault access permissions issue"
-                        echo "Please ensure ConnectionStrings--CaseManagementDatastoreConnection is set in Key Vault"
-                        exit 1
-                      fi
-                      if [ -z "$DB_NAME" ]; then
-                        echo "❌ Could not parse PostgreSQL database name from connection string"
-                        exit 1
-                      fi
-                      if [ -z "$DB_USER" ]; then
-                        echo "❌ Could not parse PostgreSQL username from connection string"
-                        echo "Expected format: User Id=username (not Username=username)"
-                        exit 1
-                      fi
-                      if [ -z "$DB_PASS" ]; then
-                        echo "❌ Could not parse PostgreSQL password from connection string"
-                        exit 1
-                      fi
-
-                      echo "Testing database connection..."
-                      echo "Host: $DB_HOST"
-                      echo "Database: $DB_NAME"
-                      echo "User: $DB_USER"
-                      echo "Password: [REDACTED FOR SECURITY]"
-
-                      # First test server connectivity
-                      echo "Testing server connectivity..."
-                      PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "postgres" -c "SELECT 'Server connection successful' as status;" -t
-
-                      if [ $? -ne 0 ]; then
-                        echo "❌ Cannot connect to PostgreSQL server"
-                        exit 1
-                      fi
-
-                      # Then test target database connection with detailed output
-                      echo "Testing target database connection..."
-                      PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -c "SELECT 'Database connection successful' as status, version(), current_database(), current_user, inet_server_addr(), inet_server_port();" -t
-
-                      if [ $? -ne 0 ]; then
-                        echo "❌ Database connection test failed"
-                        echo "Please check:"
-                        echo "1. PostgreSQL server is running and accessible"
-                        echo "2. Connection credentials are correct"
-                        echo "3. Network connectivity is available"
-                        exit 1
-                      fi
-
-                      echo "✅ Database connection test passed"
-
-                      # Run migration script
-                      echo "Running database migration script..."
-                      PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -f "$(Pipeline.Workspace)/$(buildArtifact)/database-scripts/migration-script.sql"
-
-                      if [ $? -ne 0 ]; then
-                        echo "❌ Database migration failed"
-                        exit 1
-                      fi 
-
-                      echo "✅ Database migration completed successfully"
-
-                      # Additional checks
-                      echo "Running additional database health checks..."
-
-                      # Check if we can query system tables
-                      PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -c "SELECT count(*) as table_count FROM information_schema.tables WHERE table_schema = 'public';" -t
-
-                      if [ $? -ne 0 ]; then
-                        echo "❌ Additional health checks failed. System tables could not be queried."
-                        exit 1
-                      fi 
-
-                      echo "✅ Database health check completed successfully"
-
-                - script: |
-                    echo "Cleaning up downloaded artifacts..."
-
-                    if ! rm -r "$(buildArtifact)" 2>err.log; then
-                      cat err.log >&2
-                      exit 1
-                    else
-                      echo "Downloaded artifact removed successfully."
-                    fi
-                  workingDirectory: $(Pipeline.Workspace)
-              
   - stage: Deploy_Function_Apps
     displayName: 'LACC - Deploy Function Apps'
-    ${{ if eq(parameters.runDatabaseMigration, true) }}:
-      dependsOn: 
-        - Update_Key_Vault
-        - Database_Migration
-    ${{ else }}:
-      dependsOn: Update_Key_Vault
     jobs:
       - deployment: Deploy_Main_API
         displayName: 'LACC - Deploy Main API Function App'
-        condition: eq(${{ parameters.deployMainAPI }}, true)
+        condition: ${{ eq(parameters.deployMainAPI, true) }}
         environment: 'LACC-Backend-${{ parameters.environment }}'
-        variables: 
-          buildArtifact: 'lacc-main-api-drop'
         strategy:
           runOnce:
             deploy:
               steps:
-                
-                - task: DownloadBuildArtifacts@0
-                  displayName: 'LACC - Download Main API Artifact'
-                  inputs:
-                    buildType: 'specific'
-                    project: '$(System.TeamProjectId)'
-                    pipeline: 'LACC Backend - Build, Test & Package'
-                    buildVersionToDownload: 'latest'
-                    artifactName: '$(buildArtifact)'
-                    downloadPath: '$(Pipeline.Workspace)'
-
-                - template: ../templates/fa-config.yml
+                - template: ../templates/fa-deploy.yml
                   parameters:
                     environment: ${{ parameters.environment }}
-                    functionAppName: $(mainApiName)
-                    subscriptionName: $(azureSubscription)
-                    resourceGroupName: $(resourceGroupName)
-                    keyVaultName: $(keyVaultName)
-
-                - task: AzureFunctionApp@2
-                  displayName: 'LACC - Deploy Main API to Azure Function App'
-                  inputs:
-                    azureSubscription: $(azureSubscription)
-                    appType: 'functionApp'
-                    appName: $(mainApiName)
-                    package: '$(Pipeline.Workspace)/$(buildArtifact)/*.zip'
-                    runtimeStack: 'DOTNET-ISOLATED|8.0'
-                    deploymentMethod: 'runFromPackage'
+                    functionAppName: 'fa-lacc-api-${{ parameters.environment }}'
+                    pipelineResourceAlias: 'build'
+                    buildArtifactName: 'lacc-main-api-drop'
                 
-                - checkout: self
-                  sparseCheckoutDirectories: devops-pipelines/scripts
-                  fetchDepth: 1
-
-                - task: Bash@3
-                  displayName: 'Ensure Azure CLI'
-                  inputs:
-                    targetType: 'inline'
-                    script: |
-                      echo "Checking if Azure CLI is installed..."
-                      
-                      # Check if az command exists
-                      if command -v az &> /dev/null; then
-                        echo "Azure CLI is already installed"
-                        az --version
-                        exit 0
-                      fi
-
-                      echo "Azure CLI not found, installing..."
-                      bash $(scripts_directory)/installAzureCli.sh 
-
-                - task: AzureCLI@2
-                  displayName: 'LACC - Verify Main API Deployment'
-                  inputs:
-                    azureSubscription: $(azureSubscription)
-                    scriptType: 'bash'
-                    scriptLocation: 'inlineScript'
-                    inlineScript: |
-                      echo "Verifying Main API deployment..."
-                      
-                      # Check if deployment completed successfully
-                      DEPLOYMENT_STATUS=$(az functionapp deployment list --name $(mainApiName) --resource-group $(resourceGroupName) --query "[0].status" -o tsv)
-                      echo "Latest deployment status: $DEPLOYMENT_STATUS"
-                      
-                      # Wait a moment for extraction to complete
-                      echo "Waiting for deployment to stabilize..."
-                      sleep 10
-                      
-                      # Check if function app is running
-                      APP_STATE=$(az functionapp show --name $(mainApiName) --resource-group $(resourceGroupName) --query "state" -o tsv)
-                      echo "Function app state: $APP_STATE"
-                      
-                      if [ "$APP_STATE" != "Running" ]; then
-                        echo "⚠️ Function app is not in Running state"
-                      else
-                        echo "✅ Function app is running"
-                      fi
-
-                - script: |
-                    echo "Cleaning up downloaded artifacts..."
-
-                    if ! rm -r "$(buildArtifact)" 2>err.log; then
-                      cat err.log >&2
-                      exit 1
-                    else
-                      echo "Downloaded artifact removed successfully."
-                    fi
-                  workingDirectory: $(Pipeline.Workspace)                      
+                - template: ../templates/runner-cleanup.yml
+                  parameters:
+                    buildArtifactDir: 'build'
 
       - deployment: Deploy_FileTransfer_API
         displayName: 'LACC - Deploy FileTransfer API Function App'
-        condition: eq(${{ parameters.deployFileTransferAPI }}, true)
+        condition: ${{ eq(parameters.deployFileTransferAPI, true) }}
         environment: 'LACC-Backend-${{ parameters.environment }}'
-        variables: 
-          buildArtifact: 'lacc-filetransfer-api-drop'
         strategy:
           runOnce:
             deploy:
               steps:
-                - task: DownloadBuildArtifacts@0
-                  displayName: 'LACC - Download FileTransfer API Artifact'
-                  inputs:
-                    buildType: 'specific'
-                    project: '$(System.TeamProjectId)'
-                    pipeline: 'LACC Backend - Build, Test & Package'
-                    buildVersionToDownload: 'latest'
-                    artifactName: '$(buildArtifact)'
-                    downloadPath: '$(Pipeline.Workspace)'
-
-                - template: ../templates/fa-config.yml
+                - template: ../templates/fa-deploy.yml
                   parameters:
                     environment: ${{ parameters.environment }}
-                    functionAppName: $(fileTransferApiName)
-                    subscriptionName: $(azureSubscription)
-                    resourceGroupName: $(resourceGroupName)
-                    keyVaultName: $(keyVaultName)
-
-                - task: AzureFunctionApp@2
-                  displayName: 'LACC - Deploy FileTransfer API to Azure Function App'
-                  inputs:
-                    azureSubscription: $(azureSubscription)
-                    appType: 'functionApp'
-                    appName: $(fileTransferApiName)
-                    package: '$(Pipeline.Workspace)/$(buildArtifact)/*.zip'
-                    runtimeStack: 'DOTNET-ISOLATED|8.0'
-                    deploymentMethod: 'runFromPackage'
+                    functionAppName: 'fa-lacc-filetransfer-api-${{ parameters.environment }}'
+                    pipelineResourceAlias: 'build'
+                    buildArtifactName: 'lacc-filetransfer-api-drop'
                 
-                - checkout: self
-                  sparseCheckoutDirectories: devops-pipelines/scripts
-                  fetchDepth: 1
-
-                - task: Bash@3
-                  displayName: 'Ensure Azure CLI'
-                  inputs:
-                    targetType: 'inline'
-                    script: |
-                      echo "Checking if Azure CLI is installed..."
-                      
-                      # Check if az command exists
-                      if command -v az &> /dev/null; then
-                        echo "Azure CLI is already installed"
-                        az --version
-                        exit 0
-                      fi
-
-                      echo "Azure CLI not found, installing..."
-                      bash $(scripts_directory)/installAzureCli.sh 
-
-                - task: AzureCLI@2
-                  displayName: 'LACC - Verify FileTransfer API Deployment'
-                  inputs:
-                    azureSubscription: $(azureSubscription)
-                    scriptType: 'bash'
-                    scriptLocation: 'inlineScript'
-                    inlineScript: |
-                      echo "Verifying FileTransfer API deployment..."
-                      
-                      # Check if deployment completed successfully
-                      DEPLOYMENT_STATUS=$(az functionapp deployment list --name $(fileTransferApiName) --resource-group $(resourceGroupName) --query "[0].status" -o tsv)
-                      echo "Latest deployment status: $DEPLOYMENT_STATUS"
-                      
-                      # Wait a moment for extraction to complete
-                      echo "Waiting for deployment to stabilize..."
-                      sleep 10
-                      
-                      # Check if function app is running
-                      APP_STATE=$(az functionapp show --name $(fileTransferApiName) --resource-group $(resourceGroupName) --query "state" -o tsv)
-                      echo "Function app state: $APP_STATE"
-                      
-                      if [ "$APP_STATE" != "Running" ]; then
-                        echo "⚠️ Function app is not in Running state"
-                      else
-                        echo "✅ Function app is running"
-                      fi
-
-                - script: |
-                    echo "Cleaning up downloaded artifacts..."
-
-                    if ! rm -r "$(buildArtifact)" 2>err.log; then
-                      cat err.log >&2
-                      exit 1
-                    else
-                      echo "Downloaded artifact removed successfully."
-                    fi
-                  workingDirectory: $(Pipeline.Workspace)
+                - template: ../templates/runner-cleanup.yml
+                  parameters:
+                    buildArtifactDir: 'build'

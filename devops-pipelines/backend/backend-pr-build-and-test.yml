@@ -1,0 +1,169 @@
+trigger: none
+
+pr:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - backend/*
+
+variables:
+  buildConfiguration: 'Release'
+  dotNetVersion: '8.x'
+  testResultsDirectory: '$(Agent.TempDirectory)/TestResults'
+  coverageReportsDirectory: '$(Agent.TempDirectory)/CoverageReports'
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - stage: Build_And_Test_Backend
+    displayName: 'LACC Backend - Build, Test & Package'
+    jobs:
+      - job: Package_NuGet
+        displayName: 'Pack and Publish NuGet Package'
+        steps:
+          - checkout: self
+            sparseCheckoutDirectories: backend devops-pipelines/templates
+
+          - template: ../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+              projectName: 'HttpTelemetry'
+              buildConfiguration: $(buildConfiguration)
+              dotNetVersion: $(dotNetVersion)
+              useLocalNuGet: false
+              publishOutput: false
+              runTests: false
+
+          - script: |
+              mkdir -p $(Build.SourcesDirectory)/localnuget
+              rm -f $(Build.SourcesDirectory)/localnuget/*.nupkg
+            displayName: 'Prepare local NuGet directory'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Pack HttpTelemetry'
+            inputs:
+              command: 'pack'
+              packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+              outputDir: '$(Build.SourcesDirectory)/localnuget'
+              arguments: '--configuration $(buildConfiguration) --no-build'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish HttpTelemetry Package'
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/localnuget'
+              artifact: 'localnuget'
+
+      - job: Build_And_Test_Solution
+        displayName: 'Build & Test Solution'
+        dependsOn: Package_NuGet
+        steps:
+          - checkout: self
+            sparseCheckoutDirectories: backend devops-pipelines/templates
+
+          - template: ../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.sln'
+              projectName: 'Backend Solution'
+              buildConfiguration: '$(buildConfiguration)'
+              dotNetVersion: $(dotNetVersion)
+              useLocalNuGet: true
+              publishOutput: false
+              runTests: true
+              testResultsDirectory: $(testResultsDirectory)
+              coverageReportsDirectory: $(coverageReportsDirectory)
+
+          # Generate coverage report
+          - template: ../templates/dotnet-code-coverage-steps.yml
+            parameters:
+              coverageReportsDirectory: $(coverageReportsDirectory)
+              projectName: 'Backend'
+
+      - job: Build_Main_API
+        displayName: 'LACC - Build Main API'
+        dependsOn: Build_And_Test_Solution
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          # Build and publish Main API
+          - template: ../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+              projectName: 'lacc-main-api-drop'
+              buildConfiguration: $(buildConfiguration)
+              dotNetVersion: $(dotNetVersion)
+              useLocalNuGet: true
+              publishOutput: true
+              runTests: false
+
+      - job: Build_FileTransfer_API
+        displayName: 'LACC - Build FileTransfer API'
+        dependsOn: Build_And_Test_Solution
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          # Build and publish FileTransfer API
+          - template: ../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
+              projectName: 'lacc-filetransfer-api-drop'
+              buildConfiguration: $(buildConfiguration)
+              dotNetVersion: $(dotNetVersion)
+              useLocalNuGet: true
+              publishOutput: true
+              runTests: false
+
+      - job: Package_Database_Scripts
+        displayName: 'LACC - Package Database Migration Scripts'
+        dependsOn: Build_And_Test_Solution
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          # Build Data project with dependencies
+          - template: ../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
+              projectName: 'Database'
+              buildConfiguration: $(buildConfiguration)
+              dotNetVersion: $(dotNetVersion)
+              useLocalNuGet: true
+              publishOutput: false
+              runTests: false
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Install EF Core Tools'
+            inputs:
+              command: 'custom'
+              custom: 'tool'
+              arguments: 'install --global dotnet-ef'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Generate Migration Scripts'
+            inputs:
+              command: 'custom'
+              custom: 'ef'
+              arguments: 'migrations script --idempotent --output $(Build.ArtifactStagingDirectory)/migration-script.sql --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+
+          - task: CopyFiles@2
+            displayName: 'Copy Migration Files'
+            inputs:
+              sourceFolder: 'backend/CPS.ComplexCases.Data/Migrations'
+              contents: '**'
+              targetFolder: '$(Build.ArtifactStagingDirectory)/migrations'
+
+          - task: ArchiveFiles@2
+            displayName: 'Archive Database Scripts'
+            inputs:
+              rootFolderOrFile: '$(Build.ArtifactStagingDirectory)'
+              includeRootFolder: false
+              archiveType: 'zip'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/database-scripts.zip'
+              replaceExistingArchive: true
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Database Scripts'
+            inputs:
+              pathtoPublish: '$(Build.ArtifactStagingDirectory)/database-scripts.zip'
+              artifactName: 'database-scripts-drop'
