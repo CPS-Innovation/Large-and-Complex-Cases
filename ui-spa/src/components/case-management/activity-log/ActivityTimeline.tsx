@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   ActivityLogResponse,
   ActivityItem,
@@ -7,6 +8,7 @@ import RelativePathFiles from "./RelativePathFiles";
 import { formatDate } from "../../../common/utils/formatDate";
 import { getCleanPath } from "../../../common/utils/getCleanPath";
 import { getTransferActivityStatusTagData } from "../../../common/utils/getTransferActivityStatusTagData";
+import { downloadActivityLog } from "../../../apis/gateway-api";
 import styles from "./activityTimeline.module.scss";
 
 type ActivityTimelineProps = {
@@ -16,6 +18,15 @@ type ActivityTimelineProps = {
 export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
   activities,
 }) => {
+  const [downLoadTooltipText, setDownLoadTooltipText] = useState("");
+
+  const showDownloadResult = (text: string) => {
+    setDownLoadTooltipText(text);
+    setTimeout(() => {
+      setDownLoadTooltipText("");
+    }, 1000);
+  };
+
   const getTransferStatusTag = (activity: ActivityItem) => {
     const statusTagData = getTransferActivityStatusTagData(activity);
     if (!statusTagData) return <></>;
@@ -45,6 +56,25 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
           Transfer
         </Tag>
       );
+    }
+  };
+
+  const handleDownload = async (activityId: string) => {
+    try {
+      const response = await downloadActivityLog(activityId);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `activity-log-${activityId}-files.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      showDownloadResult("File list successfully downloaded");
+    } catch (error) {
+      console.error("Failed to download activity log:", error);
+      showDownloadResult("File list download failed");
     }
   };
   return (
@@ -112,9 +142,19 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
                       sourcePath={activity.details.sourcePath}
                     />
                   </Details>
-                  <Button className={styles.downloadBtn}>
-                    Download the list of files (.csv)
-                  </Button>
+                  <div className={styles.downloadBtnWrapper}>
+                    <Button
+                      className={styles.downloadBtn}
+                      onClick={() => handleDownload(activity.id)}
+                    >
+                      Download the list of files (.csv)
+                    </Button>
+                    {downLoadTooltipText && (
+                      <div className={styles.tooltip}>
+                        <span>{downLoadTooltipText}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

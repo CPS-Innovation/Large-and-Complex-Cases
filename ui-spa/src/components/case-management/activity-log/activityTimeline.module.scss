@@ -117,3 +117,36 @@
   white-space: nowrap;
   width: 1px;
 }
+.downloadBtnWrapper {
+  position: relative;
+  .tooltip {
+    position: absolute;
+    background-color: #333;
+    color: #fff;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    z-index: 2;
+    white-space: nowrap;
+    opacity: 0.9;
+    display: inline-block;
+    font-size: 0.875rem;
+    visibility: visible;
+    left: 16.2rem;
+    max-width: 8rem;
+    transform: translateY(-50%);
+    top: 50%;
+    text-wrap: wrap;
+    text-align: center;
+    &:before {
+      width: 0;
+      height: 0;
+      border-top: 0.625rem solid transparent;
+      border-bottom: 0.625rem solid transparent;
+      border-right: 0.625rem solid rgba(0, 0, 0, 0.8);
+      left: -0.625rem;
+      top: 1rem;
+      position: absolute;
+      content: " ";
+    }
+  }
+}

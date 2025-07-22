@@ -152,7 +152,6 @@ const CaseManagementPage = () => {
           label: item.label,
           panel: item.panel,
         }))}
-        title="Contents"
         activeTabId={activeTabId}
         handleTabSelection={handleTabSelection}
       />
