@@ -146,7 +146,7 @@ stages:
                   displayName: 'Extract Database Scripts'
                   inputs:
                     archiveFilePatterns: '$(Pipeline.Workspace)/build/database-scripts-drop/*.zip'
-                    destinationFolder: '$(Pipeline.Workspace)/database-scripts'
+                    destinationFolder: '$(Pipeline.Workspace)/build/database-scripts'
                     cleanDestinationFolder: true
 
                 - task: AzureCLI@2
@@ -159,8 +159,12 @@ stages:
                       bash $(scripts_directory)/updateDatabase.sh
                   env:
                     KEY_VAULT_NAME: $(keyVaultName)
-                    MIGRATION_SCRIPT_PATH: '$(Pipeline.Workspace)/database-scripts/migration-script.sql'
-              
+                    MIGRATION_SCRIPT_PATH: '$(Pipeline.Workspace)/build/database-scripts/migration-script.sql'
+                
+                - template: templates/runner-cleanup.yml
+                  parameters:
+                    buildArtifactDir: 'build'
+
   - stage: Deploy_Function_Apps
     displayName: 'LACC - Deploy Function Apps'
     jobs:
@@ -178,6 +182,10 @@ stages:
                     functionAppName: 'fa-lacc-api-${{ parameters.environment }}'
                     pipelineResourceAlias: 'build'
                     buildArtifactName: 'lacc-main-api-drop'
+                
+                - template: templates/runner-cleanup.yml
+                  parameters:
+                    buildArtifactDir: 'build'
 
       - deployment: Deploy_FileTransfer_API
         displayName: 'LACC - Deploy FileTransfer API Function App'
@@ -193,3 +201,7 @@ stages:
                     functionAppName: 'fa-lacc-filetransfer-api-${{ parameters.environment }}'
                     pipelineResourceAlias: 'build'
                     buildArtifactName: 'lacc-filetransfer-api-drop'
+                
+                - template: templates/runner-cleanup.yml
+                  parameters:
+                    buildArtifactDir: 'build'

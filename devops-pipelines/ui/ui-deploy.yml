@@ -22,7 +22,7 @@ variables:
     value: 'rg-lacc-${{ parameters.environment }}'
   - name: webAppName
     value: 'lacc-app-ui-spa-${{ parameters.environment }}'
-  - name: build-agent
+  - name: buildAgent
     value: 'LaCC Pre-Prod Build Agents'
   - name: azureSubscription
     ${{ if ne(parameters.environment, 'prod') }}:
@@ -34,7 +34,7 @@ stages:
   - stage: Deploy_${{ parameters.environment }}
     displayName: 'Deploy to ${{ parameters.environment }}'
     pool:
-      name: $(build-agent)
+      name: $(buildAgent)
     jobs:
       - deployment: Deploy_UI
         displayName: 'LACC - Deploy UI SPA'
@@ -54,3 +54,7 @@ stages:
                     RuntimeStack: 'NODE|20-lts'
                     StartupCommand: 'pm2 serve /home/site/wwwroot/ --no-daemon --spa'   
                   displayName: 'Deploy LACC UI to ${{ parameters.environment }}'
+
+                - template: templates/runner-cleanup.yml
+                  parameters:
+                    buildArtifactDir: 'build'
