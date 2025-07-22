@@ -152,7 +152,10 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
                       Download the list of files (.csv)
                     </Button>
                     {downloadTooltipTexts[`${activity.id}`] && (
-                      <div className={styles.tooltip}>
+                      <div
+                        className={styles.tooltip}
+                        data-testid="activity-download-tooltip"
+                      >
                         <span>{downloadTooltipTexts[`${activity.id}`]}</span>
                       </div>
                     )}
