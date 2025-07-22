@@ -14,6 +14,7 @@ import {
   getTransferStatus,
   handleFileTransferClear,
   getActivityLog,
+  downloadActivityLog,
 } from "./gateway-api";
 import { ApiError } from "../common/errors/ApiError";
 import { v4 } from "uuid";
@@ -1303,6 +1304,65 @@ describe("gateway apis", () => {
       );
       expect(fetch).toHaveBeenCalledWith(
         `gateway_url/api/v1/activity/logs?caseId=test_case_id`,
+        expect.objectContaining({
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+  });
+
+  describe("downloadActivityLog", () => {
+    it("should succesfully make the fetch call and return the response", async () => {
+      const mockBlob = new Blob(["hello"], { type: "text/csv" });
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        blob: async () => mockBlob,
+      });
+
+      const result = await downloadActivityLog("test_activity_id");
+      expect(result.ok).toEqual(true);
+      expect(await result.blob()).toEqual(mockBlob);
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/v1/activity/test_activity_id/logs/download`,
+        expect.objectContaining({
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+
+    it("should throw an ApiError when fetch fails", async () => {
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+      });
+
+      await expect(downloadActivityLog("test_activity_id")).rejects.toThrow(
+        new ApiError(
+          `Downloading activity log failed`,
+          "gateway_url/api/v1/activity/test_activity_id/logs/download",
+          {
+            status: 500,
+            statusText: "Internal Server Error",
+          },
+        ),
+      );
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/v1/activity/test_activity_id/logs/download`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
