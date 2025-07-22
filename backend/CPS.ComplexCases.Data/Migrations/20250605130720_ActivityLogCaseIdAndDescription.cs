@@ -12,14 +12,14 @@ namespace CPS.ComplexCases.Data.Migrations
         {
             migrationBuilder.AddColumn<int>(
                 name: "case_id",
-                schema: "lcc",
+                schema: "large_complex_cases",
                 table: "activity_log",
                 type: "integer",
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "description",
-                schema: "lcc",
+                schema: "large_complex_cases",
                 table: "activity_log",
                 type: "character varying(500)",
                 maxLength: 500,
@@ -31,12 +31,12 @@ namespace CPS.ComplexCases.Data.Migrations
         {
             migrationBuilder.DropColumn(
                 name: "case_id",
-                schema: "lcc",
+                schema: "large_complex_cases",
                 table: "activity_log");
 
             migrationBuilder.DropColumn(
                 name: "description",
-                schema: "lcc",
+                schema: "large_complex_cases",
                 table: "activity_log");
         }
     }

@@ -13,7 +13,7 @@ namespace CPS.ComplexCases.Data.Migrations
         {
             migrationBuilder.AddColumn<Guid>(
                 name: "active_transfer_id",
-                schema: "lcc",
+                schema: "large_complex_cases",
                 table: "case_metadata",
                 type: "uuid",
                 nullable: true);
@@ -24,7 +24,7 @@ namespace CPS.ComplexCases.Data.Migrations
         {
             migrationBuilder.DropColumn(
                 name: "active_transfer_id",
-                schema: "lcc",
+                schema: "large_complex_cases",
                 table: "case_metadata");
         }
     }
