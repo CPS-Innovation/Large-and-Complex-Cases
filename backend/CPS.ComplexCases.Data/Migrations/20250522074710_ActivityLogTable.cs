@@ -14,7 +14,7 @@ namespace CPS.ComplexCases.Data.Migrations
         {
             migrationBuilder.CreateTable(
                 name: "activity_log",
-                schema: "lcc",
+                schema: "large_complex_cases",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -40,7 +40,7 @@ namespace CPS.ComplexCases.Data.Migrations
         {
             migrationBuilder.DropTable(
                 name: "activity_log",
-                schema: "lcc");
+                schema: "large_complex_cases");
         }
     }
 }
