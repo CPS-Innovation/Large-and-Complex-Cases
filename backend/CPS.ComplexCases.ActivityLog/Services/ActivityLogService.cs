@@ -162,13 +162,13 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
 
         try
         {
-            if (rootElement.TryGetProperty("Files", out var filesElement) &&
+            if (rootElement.TryGetProperty("files", out var filesElement) &&
                 filesElement.ValueKind == JsonValueKind.Array)
             {
                 successCount = AddFileRecords(filesElement, FileRecordStatus.Success, fileRecords);
             }
 
-            if (rootElement.TryGetProperty("Errors", out var errorsElement) &&
+            if (rootElement.TryGetProperty("errors", out var errorsElement) &&
                 errorsElement.ValueKind == JsonValueKind.Array)
             {
                 failCount = AddFileRecords(errorsElement, FileRecordStatus.Fail, fileRecords);
@@ -188,7 +188,7 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
         int count = 0;
         foreach (var element in parent.EnumerateArray())
         {
-            var path = element.TryGetProperty("Path", out var pathElement) ? pathElement.GetString() : null;
+            var path = element.TryGetProperty("path", out var pathElement) ? pathElement.GetString() : null;
             records.Add(new FileRecordCsvDto
             {
                 Path = path,
