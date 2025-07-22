@@ -161,7 +161,7 @@ stages:
                     KEY_VAULT_NAME: $(keyVaultName)
                     MIGRATION_SCRIPT_PATH: '$(Pipeline.Workspace)/build/database-scripts/migration-script.sql'
                 
-                - template: templates/runner-cleanup.yml
+                - template: ../templates/runner-cleanup.yml
                   parameters:
                     buildArtifactDir: 'build'
 
@@ -183,7 +183,7 @@ stages:
                     pipelineResourceAlias: 'build'
                     buildArtifactName: 'lacc-main-api-drop'
                 
-                - template: templates/runner-cleanup.yml
+                - template: ../templates/runner-cleanup.yml
                   parameters:
                     buildArtifactDir: 'build'
 
@@ -202,6 +202,6 @@ stages:
                     pipelineResourceAlias: 'build'
                     buildArtifactName: 'lacc-filetransfer-api-drop'
                 
-                - template: templates/runner-cleanup.yml
+                - template: ../templates/runner-cleanup.yml
                   parameters:
                     buildArtifactDir: 'build'

@@ -55,6 +55,6 @@ stages:
                     StartupCommand: 'pm2 serve /home/site/wwwroot/ --no-daemon --spa'   
                   displayName: 'Deploy LACC UI to ${{ parameters.environment }}'
 
-                - template: templates/runner-cleanup.yml
+                - template: ../templates/runner-cleanup.yml
                   parameters:
                     buildArtifactDir: 'build'
