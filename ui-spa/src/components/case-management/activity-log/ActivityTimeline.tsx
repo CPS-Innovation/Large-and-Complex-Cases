@@ -18,12 +18,14 @@ type ActivityTimelineProps = {
 export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
   activities,
 }) => {
-  const [downLoadTooltipText, setDownLoadTooltipText] = useState("");
+  const [downloadTooltipTexts, setDownloadTooltipTexts] = useState<
+    Record<string, string>
+  >({});
 
-  const showDownloadResult = (text: string) => {
-    setDownLoadTooltipText(text);
+  const showDownloadResult = (activityId: string, text: string) => {
+    setDownloadTooltipTexts({ [`${activityId}`]: text });
     setTimeout(() => {
-      setDownLoadTooltipText("");
+      setDownloadTooltipTexts({ [`${activityId}`]: "" });
     }, 1000);
   };
 
@@ -71,10 +73,10 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-      showDownloadResult("File list successfully downloaded");
+      showDownloadResult(activityId, "File list successfully downloaded");
     } catch (error) {
       console.error("Failed to download activity log:", error);
-      showDownloadResult("File list download failed");
+      showDownloadResult(activityId, "File list download failed");
     }
   };
   return (
@@ -149,9 +151,9 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
                     >
                       Download the list of files (.csv)
                     </Button>
-                    {downLoadTooltipText && (
+                    {downloadTooltipTexts[`${activity.id}`] && (
                       <div className={styles.tooltip}>
-                        <span>{downLoadTooltipText}</span>
+                        <span>{downloadTooltipTexts[`${activity.id}`]}</span>
                       </div>
                     )}
                   </div>
