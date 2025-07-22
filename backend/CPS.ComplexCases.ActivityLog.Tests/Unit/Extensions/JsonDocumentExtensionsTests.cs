@@ -40,7 +40,7 @@ public class JsonDocumentExtensionsTests
             l => l.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Failed to deserialize JsonDocument")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to deserialize JsonDocument")),
                 It.IsAny<JsonException>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
@@ -52,14 +52,14 @@ public class JsonDocumentExtensionsTests
         var loggerMock = new Mock<ILogger>();
         JsonDocument? doc = null;
 
-        var result = JsonDocumentExtensions.DeserializeJsonDocument<TestClass>(doc, loggerMock.Object);
+        var result = JsonDocumentExtensions.DeserializeJsonDocument<TestClass>(doc!, loggerMock.Object);
 
         Assert.Null(result);
         loggerMock.Verify(
             l => l.Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Attempted to deserialize a null JsonDocument")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Attempted to deserialize a null JsonDocument")),
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
@@ -93,7 +93,7 @@ public class JsonDocumentExtensionsTests
             l => l.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Failed to serialize object to JsonDocument")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to serialize object to JsonDocument")),
                 It.IsAny<JsonException>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
