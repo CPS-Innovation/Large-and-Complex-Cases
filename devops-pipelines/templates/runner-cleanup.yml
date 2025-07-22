@@ -1,5 +1,5 @@
 parameters:
-  workingDirectory: $(Pipelines.Workspace)
+  workingDirectory: $(Pipeline.Workspace)
   buildArtifactDir: ''
 
 steps:
