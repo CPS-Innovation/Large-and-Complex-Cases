@@ -29,22 +29,25 @@ steps:
         CMD="$CMD --base-url=${{ parameters.appUrl }}"
       fi
 
-      PLAYWRIGHT_JUNIT_OUTPUT_FILE=${{ parameters.junitResultsFile}}
+      PLAYWRIGHT_JUNIT_OUTPUT_FILE=${{ parameters.junitResultsFile }}
       eval $CMD
 
-      echo "E2E tests completed.
+      echo "E2E tests completed."
+
+      echo "########### run ls playwright-report ##########'
+
     displayName: 'Run E2E Tests'
     workingDirectory: ${{ parameters.workingDir }}
     continueOnError: true
     env:
       RUN_BUILD: ${{ lower(parameters.runBuild) }}
 
-  - task: PublishTestResults@2
-    displayName: 'Publish E2E Test Results'
-    inputs:
-      testResultsFormat: 'JUnit'
-      testResultsFiles: '${{ parameters.workingDir }}/${{ parameters.junitResultsFile}}'
-      publishRunAttachments: true
+  # - task: PublishTestResults@2
+  #   displayName: 'Publish E2E Test Results'
+  #   inputs:
+  #     testResultsFormat: 'JUnit'
+  #     testResultsFiles: '${{ parameters.workingDir }}/${{ parameters.junitResultsFile}}'
+  #     publishRunAttachments: true
 
   - task: PublishBuildArtifacts@1
     displayName: 'Upload E2E Test Report As Build Artifact'
