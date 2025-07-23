@@ -29,13 +29,17 @@ steps:
         CMD="$CMD --base-url=${{ parameters.appUrl }}"
       fi
 
-      PLAYWRIGHT_JUNIT_OUTPUT_FILE=${{ parameters.junitResultsFile }}
+      PLAYWRIGHT_JUNIT_OUTPUT_NAME=results.xml
       eval $CMD
 
       echo "E2E tests completed."
 
-      echo "########### run ls playwright ##########"
-      ls playwright
+      echo "########### run ls playwright/test-results ##########"
+      ls playwright/test-results
+      echo "########### run ls playwright/e2e ##########"
+      ls playwright/e2e
+      echo "########### run ls current directory ##########"
+      ls
 
     displayName: 'Run E2E Tests'
     workingDirectory: ${{ parameters.workingDir }}
