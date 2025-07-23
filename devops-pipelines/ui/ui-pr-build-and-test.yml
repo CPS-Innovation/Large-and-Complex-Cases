@@ -7,9 +7,6 @@ parameters:
       - dev
       - stage
       - prod
-  - name: runE2E
-    type: boolean
-    default: false
 
 trigger: none
 
@@ -89,6 +86,7 @@ stages:
               reportDirectory: 'ui-spa/coverage'
             condition: always()
 
+          # TODO: The below is currently not working. Needs debug:
           - task: PowerShell@2
             displayName: 'Generate Enhanced Coverage Reports'
             inputs:
@@ -109,7 +107,4 @@ stages:
               artifactName: 'ui-coverage-report'
             condition: always()
 
-          - ${{ if eq(parameters.runE2E, true) }}:
-            - template: ../templates/test-e2e.yml
-              parameters:
-                runBuild: true
+          - template: ../templates/test-e2e.yml

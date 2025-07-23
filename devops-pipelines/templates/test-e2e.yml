@@ -1,6 +1,6 @@
 parameters:
   workingDir: 'ui-spa'
-  runBuild: false
+  runBuild: true # This will build the app locally in playwright mode for testing. If set to false, tests will run on a live app at the url defined below.
   appUrl: 'https://$(webAppName).azurewebsites.net'
 
 steps:
@@ -19,6 +19,7 @@ steps:
       customCommand: 'exec vite build -- --mode playwright'
       workingDir: ${{ parameters.workingDir }}
 
+  # TODO: Also output results as junit and publish to test results tab
   - script: |
       echo "Running Playwright E2E tests with real-time output..."
       
