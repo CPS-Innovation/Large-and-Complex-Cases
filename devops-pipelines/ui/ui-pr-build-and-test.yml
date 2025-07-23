@@ -51,63 +51,63 @@ stages:
               command: 'ci'
               workingDir: '$(workingDir)'
 
-          # - task: Npm@1
-          #   displayName: 'Lint Code'
-          #   inputs:
-          #     command: 'custom'
-          #     customCommand: 'run lint'
-          #     workingDir: 'ui-spa'
+          - task: Npm@1
+            displayName: 'Lint Code'
+            inputs:
+              command: 'custom'
+              customCommand: 'run lint'
+              workingDir: 'ui-spa'
 
-          # - task: Npm@1
-          #   displayName: 'Build Web App Package'
-          #   inputs:
-          #     command: 'custom'
-          #     customCommand: 'run build'
-          #     workingDir: '$(workingDir)'
+          - task: Npm@1
+            displayName: 'Build Web App Package'
+            inputs:
+              command: 'custom'
+              customCommand: 'run build'
+              workingDir: '$(workingDir)'
 
-          # - task: Npm@1
-          #   displayName: 'Run UI Unit Tests'
-          #   inputs:
-          #     command: 'custom'
-          #     customCommand: 'run coverage'
-          #     workingDir: '$(workingDir)'
-          #   continueOnError: true
+          - task: Npm@1
+            displayName: 'Run UI Unit Tests'
+            inputs:
+              command: 'custom'
+              customCommand: 'run coverage'
+              workingDir: '$(workingDir)'
+            continueOnError: true
 
-          # - task: PublishTestResults@2
-          #   displayName: 'Publish UI Test Results'
-          #   inputs:
-          #     testResultsFormat: 'JUnit'
-          #     testResultsFiles: 'ui-spa/coverage/junit.xml'
-          #     publishRunAttachments: true
-          #   condition: always()
+          - task: PublishTestResults@2
+            displayName: 'Publish UI Test Results'
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'ui-spa/coverage/junit.xml'
+              publishRunAttachments: true
+            condition: always()
 
-          # - task: PublishCodeCoverageResults@1
-          #   displayName: 'Publish UI Code Coverage'
-          #   inputs:
-          #     codeCoverageTool: 'Cobertura'
-          #     summaryFileLocation: 'ui-spa/coverage/cobertura-coverage.xml'
-          #     reportDirectory: 'ui-spa/coverage'
-          #   condition: always()
+          - task: PublishCodeCoverageResults@1
+            displayName: 'Publish UI Code Coverage'
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: 'ui-spa/coverage/cobertura-coverage.xml'
+              reportDirectory: 'ui-spa/coverage'
+            condition: always()
 
-          # - task: PowerShell@2
-          #   displayName: 'Generate Enhanced Coverage Reports'
-          #   inputs:
-          #     filePath: 'devops-pipelines/scripts/generateHTMLReport.ps1'
-          #     arguments: >
-          #       -ProjectPath '$(Build.SourcesDirectory)/ui-spa'
-          #       -CoverageSummaryPath 'coverage/coverage-summary.json'
-          #       -CoberturaPath 'coverage/cobertura-coverage.xml'
-          #       -LcovReportPath 'coverage/lcov-report'
-          #       -OutputReportPath 'coverage/html-enhanced'
-          #     pwsh: true
-          #   condition: always()
+          - task: PowerShell@2
+            displayName: 'Generate Enhanced Coverage Reports'
+            inputs:
+              filePath: 'devops-pipelines/scripts/generateHTMLReport.ps1'
+              arguments: >
+                -ProjectPath '$(Build.SourcesDirectory)/ui-spa'
+                -CoverageSummaryPath 'coverage/coverage-summary.json'
+                -CoberturaPath 'coverage/cobertura-coverage.xml'
+                -LcovReportPath 'coverage/lcov-report'
+                -OutputReportPath 'coverage/html-enhanced'
+              pwsh: true
+            condition: always()
 
-          # - task: PublishBuildArtifacts@1
-          #   displayName: 'Publish Enhanced HTML Coverage Report'
-          #   inputs:
-          #     pathtoPublish: 'ui-spa/coverage/html-enhanced'
-          #     artifactName: 'ui-coverage-report'
-          #   condition: always()
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Enhanced HTML Coverage Report'
+            inputs:
+              pathtoPublish: 'ui-spa/coverage/html-enhanced'
+              artifactName: 'ui-coverage-report'
+            condition: always()
 
           - ${{ if eq(parameters.runE2E, true) }}:
             - template: ../templates/test-e2e.yml

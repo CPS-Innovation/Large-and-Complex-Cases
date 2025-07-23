@@ -1,6 +1,6 @@
 parameters:
   workingDir: 'ui-spa'
-  testResultsDir: 'playwright/test-results'
+  junitResultsFile: 'playwright/results.xml'
   runBuild: false
   appUrl: 'https://$(webAppName).azurewebsites.net'
 
@@ -22,38 +22,29 @@ steps:
 
   - script: |
       echo "Running Playwright E2E tests with real-time output..."
-
-      CMD="npm exec playwright test -- --reporter=list,html,junit --output=${{ parameters.testResultsDir }} --workers=1"
+      
+      CMD="npm exec playwright test -- --reporter=list,html,junit --workers=1"
 
       if [ "$RUN_BUILD" = "true"]; then
         CMD="$CMD --base-url=${{ parameters.appUrl }}"
       fi
 
+      PLAYWRIGHT_JUNIT_OUTPUT_FILE=${{ parameters.junitResultsFile}}
       eval $CMD
 
-      echo "######### run pwd... ##########"
-      pwd
-      echo "######### run ls... ##########"
-      ls
-      echo "######### run ls playwright... ##########"
-      ls playwright
-      echo "######### run ls playwright-report... ##########"
-      ls playwright-report
-
-      # echo "E2E tests completed. Reports:"
-      # ls -l ${{ parameters.testResultsDir }}
+      echo "E2E tests completed.
     displayName: 'Run E2E Tests'
     workingDirectory: ${{ parameters.workingDir }}
     continueOnError: true
     env:
       RUN_BUILD: ${{ lower(parameters.runBuild) }}
 
-  # - task: PublishTestResults@2
-  #   displayName: 'Publish E2E Test Results'
-  #   inputs:
-  #     testResultsFormat: 'JUnit'
-  #     testResultsFiles: '${{ parameters.workingDir }}/playwright-report/${{ parameters.testResultsDir }}/junit.xml'
-  #     publishRunAttachments: true
+  - task: PublishTestResults@2
+    displayName: 'Publish E2E Test Results'
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: '${{ parameters.workingDir }}/${{ parameters.junitResultsFile}}'
+      publishRunAttachments: true
 
   - task: PublishBuildArtifacts@1
     displayName: 'Upload E2E Test Report As Build Artifact'
