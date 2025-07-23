@@ -86,6 +86,7 @@ stages:
               reportDirectory: 'ui-spa/coverage'
             condition: always()
 
+          # TODO: The below is currently not working. Needs debug:
           - task: PowerShell@2
             displayName: 'Generate Enhanced Coverage Reports'
             inputs:
@@ -105,3 +106,5 @@ stages:
               pathtoPublish: 'ui-spa/coverage/html-enhanced'
               artifactName: 'ui-coverage-report'
             condition: always()
+
+          - template: ../templates/test-e2e.yml
