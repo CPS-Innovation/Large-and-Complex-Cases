@@ -8,7 +8,7 @@ parameters:
       - stage
       - prod
   - name: runE2E
-    type: bool
+    type: boolean
     default: false
 
 trigger: none
