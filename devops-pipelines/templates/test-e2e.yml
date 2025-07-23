@@ -34,7 +34,7 @@ steps:
 
       echo "E2E tests completed."
 
-      echo "########### run ls playwright ##########'
+      echo "########### run ls playwright ##########"
       ls playwright
 
     displayName: 'Run E2E Tests'
