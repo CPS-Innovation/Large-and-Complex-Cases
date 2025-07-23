@@ -34,7 +34,8 @@ steps:
 
       echo "E2E tests completed."
 
-      echo "########### run ls playwright-report ##########'
+      echo "########### run ls playwright ##########'
+      ls playwright
 
     displayName: 'Run E2E Tests'
     workingDirectory: ${{ parameters.workingDir }}
