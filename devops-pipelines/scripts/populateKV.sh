@@ -33,21 +33,21 @@ echo "📋 Setting storage connection secrets..."
 # Database Connection String
 set_kv_secret "ConnectionStrings--CaseManagementDatastoreConnection" "$CASE_MANAGEMENT_DATASTORE_CONNECTION" "connection string"
 
-# echo "📋 Setting external API authentication secrets..."
+echo "📋 Setting external API authentication secrets..."
 
-# # Egress API Credentials
-# set_kv_secret "EgressOptions--Username" "$EGRESS_OPTIONS_USERNAME" "Egress API username"
-# set_kv_secret "EgressOptions--Password" "$EGRESS_OPTIONS_PASSWORD" "Egress API password"
+# Egress API Credentials
+set_kv_secret "EgressOptions--Username" "$EGRESS_OPTIONS_USERNAME" "Egress API username"
+set_kv_secret "EgressOptions--Password" "$EGRESS_OPTIONS_PASSWORD" "Egress API password"
 
-# # DDEI API Credentials
-# set_kv_secret "DDEIOptions--AccessKey" "$DDEI_OPTIONS_ACCESS_KEY" "DDEI API access key"
+# DDEI API Credentials
+set_kv_secret "DDEIOptions--AccessKey" "$DDEI_OPTIONS_ACCESS_KEY" "DDEI API access key"
 
-# # NetApp API Credentials
-# set_kv_secret "NetAppOptions--AccessKey" "$NET_APP_OPTIONS_ACCESS_KEY" "NetApp API access key"
-# set_kv_secret "NetAppOptions--SecretKey" "$NET_APP_OPTIONS_SECRET_KEY" "NetApp API secret key"
+# NetApp API Credentials
+set_kv_secret "NetAppOptions--AccessKey" "$NET_APP_OPTIONS_ACCESS_KEY" "NetApp API access key"
+set_kv_secret "NetAppOptions--SecretKey" "$NET_APP_OPTIONS_SECRET_KEY" "NetApp API secret key"
 
-# # File Transfer API Credentials
-# set_kv_secret "FileTransferApiOptions--AccessKey" "$FILE_TRANSFER_API_OPTIONS_ACCESS_KEY" "File Transfer API access key"
+# File Transfer API Credentials
+set_kv_secret "FileTransferApiOptions--AccessKey" "$FILE_TRANSFER_API_OPTIONS_ACCESS_KEY" "File Transfer API access key"
 
 echo "✅ Key Vault secret initialization completed"
 

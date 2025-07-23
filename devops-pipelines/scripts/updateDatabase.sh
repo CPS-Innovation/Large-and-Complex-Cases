@@ -17,10 +17,7 @@ for attempt in {1..3}; do
 # Extract components directly from Key Vault command output without storing full connection string
 DB_HOST=$(az keyvault secret show --vault-name "$KEY_VAULT_NAME" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=Host=)[^;]+' | head -1)
 DB_NAME=$(az keyvault secret show --vault-name "$KEY_VAULT_NAME" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=Database=)[^;]+' | head -1)
-
 DB_USER=$(az keyvault secret show --vault-name "$KEY_VAULT_NAME" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=Username=)[^;]+' | head -1)
-# DB_USER=$(az keyvault secret show --vault-name "$KEY_VAULT_NAME" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=User Id=)[^;]+' | head -1)
-
 DB_PASS=$(az keyvault secret show --vault-name "$KEY_VAULT_NAME" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=Password=)[^;]+' | head -1)
 
 # Check if we successfully retrieved all components
@@ -53,7 +50,6 @@ if [ -z "$DB_NAME" ]; then
 fi
 if [ -z "$DB_USER" ]; then
     echo "❌ Could not parse PostgreSQL username from connection string"
-    echo "Expected format: User Id=username (not Username=username)"
     exit 1
 fi
 if [ -z "$DB_PASS" ]; then

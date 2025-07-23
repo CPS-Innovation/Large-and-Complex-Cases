@@ -34,8 +34,7 @@ resources:
           - main
 
 variables:
-  # - group: lacc-backend-secrets-${{ parameters.environment }}-variables
-  - group: TEST-lacc-backend-secrets # for testion the new connection string
+  - group: lacc-backend-secrets-${{ parameters.environment }}-variables
   - group: lacc-backend-config-${{ parameters.environment }}
   - name: resourceGroupName
     value: 'rg-lacc-${{ parameters.environment }}' 
@@ -92,12 +91,12 @@ stages:
             env:
               KEY_VAULT_NAME: $(keyVaultName)
               CASE_MANAGEMENT_DATASTORE_CONNECTION: $(CaseManagementDatastoreConnection)
-              # EGRESS_OPTIONS_USERNAME: $(EgressOptionsUsername)
-              # EGRESS_OPTIONS_PASSWORD: $(EgressOptionsPassword)
-              # DDEI_OPTIONS_ACCESS_KEY: $(DDEIOptionsAccessKey)
-              # NET_APP_OPTIONS_ACCESS_KEY: $(NetAppOptionsAccessKey)
-              # NET_APP_OPTIONS_SECRET_KEY: $(NetAppOptionsSecretKey)
-              # FILE_TRANSFER_API_OPTIONS_ACCESS_KEY: $(FileTransferApiOptionsAccessKey)
+              EGRESS_OPTIONS_USERNAME: $(EgressOptionsUsername)
+              EGRESS_OPTIONS_PASSWORD: $(EgressOptionsPassword)
+              DDEI_OPTIONS_ACCESS_KEY: $(DDEIOptionsAccessKey)
+              NET_APP_OPTIONS_ACCESS_KEY: $(NetAppOptionsAccessKey)
+              NET_APP_OPTIONS_SECRET_KEY: $(NetAppOptionsSecretKey)
+              FILE_TRANSFER_API_OPTIONS_ACCESS_KEY: $(FileTransferApiOptionsAccessKey)
 
   - stage: Database_Migration
     displayName: 'LACC - Database Migration'
