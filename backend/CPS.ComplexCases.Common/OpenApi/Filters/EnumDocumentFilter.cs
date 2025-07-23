@@ -22,13 +22,16 @@ public class EnumDocumentFilter : IDocumentFilter
                         propertyType = propertyType.GetGenericArguments().FirstOrDefault();
                     }
 
-                    property.Value.Enum = Enum.GetNames(propertyType)
-                        .Select(name => new OpenApiString(name))
-                        .Cast<IOpenApiAny>()
-                        .ToList();
-                    property.Value.Type = "string";
-                    property.Value.Default = property.Value.Enum[0];
-                    property.Value.Format = null;
+                    if (propertyType != null)
+                    {
+                        property.Value.Enum = Enum.GetNames(propertyType)
+                            .Select(name => new OpenApiString(name))
+                            .Cast<IOpenApiAny>()
+                            .ToList();
+                        property.Value.Type = "string";
+                        property.Value.Default = property.Value.Enum[0];
+                        property.Value.Format = null;
+                    }
                 }
             }
         }
