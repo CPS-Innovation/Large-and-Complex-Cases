@@ -31,6 +31,11 @@ steps:
 
       eval $CMD
 
+      echo "######### run pwd... ##########"
+      pwd
+      echo "######### run ls... ##########"
+      ls
+
       echo "E2E tests completed. Reports:"
       ls -l ${{ parameters.testResultsDir }}
     displayName: 'Run E2E Tests'
