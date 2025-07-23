@@ -106,6 +106,7 @@ stages:
               artifactName: 'ui-coverage-report'
             condition: always()
 
-          - template: ../templates/test-e2e.yml
-            parameters:
-              runBuild: true
+          - ${{ if eq(parameters.runE2E, true) }}:
+            - template: ../templates/test-e2e.yml
+              parameters:
+                runBuild: true
