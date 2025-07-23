@@ -111,7 +111,7 @@ public class NetAppStorageClientTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("upload-id-49e18525de9c", result.UploadId);
+        Assert.Equal(UploadId, result.UploadId);
         Assert.Equal(fullPath, result.WorkspaceId);
     }
 
@@ -230,7 +230,7 @@ public class NetAppStorageClientTests : IDisposable
             UploadId = UploadId,
             CompletedParts =
             [
-                new PartETag(1, "etag-12345")
+
             ]
         };
 
@@ -240,7 +240,7 @@ public class NetAppStorageClientTests : IDisposable
             Key = ObjectKey,
             UploadId = UploadId,
             PartETags = [
-                new PartETag(1, "etag-12345")
+
             ]
         };
 

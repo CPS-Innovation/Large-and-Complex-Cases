@@ -362,7 +362,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
 
             // Assert
             Assert.NotNull(result);
-            Assert.Empty(result?.Data.FileData);
+            Assert.NotNull(result.Data);
+            Assert.Empty(result.Data.FileData);
         }
 
         [Fact]
@@ -407,7 +408,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(2, data?.Count());
+            Assert.Equal(2, data?.Count);
             Assert.Contains("folder1/", data[0].Path);
             Assert.Contains("folder2/", data[1].Path);
         }
@@ -453,6 +454,153 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedExceptionMessage)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task InitiateMultipartUploadAsync_ReturnsResponse_OnSuccess()
+        {
+            var arg = _fixture.Create<InitiateMultipartUploadArg>();
+            var response = new InitiateMultipartUploadResponse();
+
+            _amazonS3Mock.Setup(s => s.InitiateMultipartUploadAsync(It.IsAny<InitiateMultipartUploadRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
+
+            var result = await _client.InitiateMultipartUploadAsync(arg);
+
+            Assert.Equal(response, result);
+        }
+
+        [Fact]
+        public async Task InitiateMultipartUploadAsync_ReturnsNull_AndLogs_OnException()
+        {
+            var arg = new InitiateMultipartUploadArg { ObjectKey = "file.txt", BucketName = "bucket" };
+
+            _amazonS3Mock.Setup(s => s.InitiateMultipartUploadAsync(It.IsAny<InitiateMultipartUploadRequest>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new AmazonS3Exception("fail"));
+
+            var result = await _client.InitiateMultipartUploadAsync(arg);
+
+            Assert.Null(result);
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Failed to initiate multipart upload")),
+                    It.IsAny<AmazonS3Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task UploadPartAsync_ReturnsResponse_OnSuccess()
+        {
+            var arg = new UploadPartArg { UploadId = "1", ObjectKey = "file.txt", BucketName = "bucket", PartNumber = 1, PartData = new byte[] { 1, 2, 3 } };
+            var response = new UploadPartResponse();
+
+            _amazonS3Mock.Setup(s => s.UploadPartAsync(It.IsAny<UploadPartRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
+
+            var result = await _client.UploadPartAsync(arg);
+
+            Assert.Equal(response, result);
+        }
+
+        [Fact]
+        public async Task UploadPartAsync_Throws_OnException_AndLogs()
+        {
+            var arg = new UploadPartArg { UploadId = "1", ObjectKey = "file.txt", BucketName = "bucket", PartNumber = 1, PartData = new byte[] { 1, 2, 3 } };
+
+            _amazonS3Mock.Setup(s => s.UploadPartAsync(It.IsAny<UploadPartRequest>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new AmazonS3Exception("fail"));
+
+            await Assert.ThrowsAsync<AmazonS3Exception>(() => _client.UploadPartAsync(arg));
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Failed to upload part")),
+                    It.IsAny<AmazonS3Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task CompleteMultipartUploadAsync_ReturnsResponse_OnSuccess()
+        {
+            var arg = new CompleteMultipartUploadArg { ObjectKey = "file.txt", BucketName = "bucket", UploadId = "uploadid", CompletedParts = [] };
+            var response = new CompleteMultipartUploadResponse();
+
+            _amazonS3Mock.Setup(s => s.CompleteMultipartUploadAsync(It.IsAny<CompleteMultipartUploadRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
+
+            var result = await _client.CompleteMultipartUploadAsync(arg);
+
+            Assert.Equal(response, result);
+        }
+
+        [Fact]
+        public async Task CompleteMultipartUploadAsync_Throws_OnException_AndLogs()
+        {
+            var arg = new CompleteMultipartUploadArg { ObjectKey = "file.txt", BucketName = "bucket", UploadId = "uploadid", CompletedParts = [] };
+
+            _amazonS3Mock.Setup(s => s.CompleteMultipartUploadAsync(It.IsAny<CompleteMultipartUploadRequest>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new AmazonS3Exception("fail"));
+
+            await Assert.ThrowsAsync<AmazonS3Exception>(() => _client.CompleteMultipartUploadAsync(arg));
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Failed to complete multipart upload")),
+                    It.IsAny<AmazonS3Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task DoesObjectExistAsync_ReturnsTrue_OnSuccess()
+        {
+            var arg = new GetObjectArg { ObjectKey = "file.txt", BucketName = "bucket" };
+            var response = new GetObjectAttributesResponse { HttpStatusCode = System.Net.HttpStatusCode.OK };
+
+            _amazonS3Mock.Setup(s => s.GetObjectAttributesAsync(It.IsAny<GetObjectAttributesRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
+
+            var result = await _client.DoesObjectExistAsync(arg);
+
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task DoesObjectExistAsync_ReturnsFalse_OnNotFound()
+        {
+            var arg = new GetObjectArg { ObjectKey = "file.txt", BucketName = "bucket" };
+            var ex = new AmazonS3Exception("not found") { StatusCode = System.Net.HttpStatusCode.NotFound };
+
+            _amazonS3Mock.Setup(s => s.GetObjectAttributesAsync(It.IsAny<GetObjectAttributesRequest>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(ex);
+
+            var result = await _client.DoesObjectExistAsync(arg);
+
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task DoesObjectExistAsync_ReturnsFalse_AndLogs_OnOtherException()
+        {
+            var arg = new GetObjectArg { ObjectKey = "file.txt", BucketName = "bucket" };
+            var ex = new AmazonS3Exception("fail") { StatusCode = System.Net.HttpStatusCode.InternalServerError };
+
+            _amazonS3Mock.Setup(s => s.GetObjectAttributesAsync(It.IsAny<GetObjectAttributesRequest>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(ex);
+
+            var result = await _client.DoesObjectExistAsync(arg);
+
+            Assert.False(result);
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Failed to check if object")),
+                    ex,
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
         }
     }
 }
