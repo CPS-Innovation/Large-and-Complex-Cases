@@ -105,3 +105,7 @@ stages:
               pathtoPublish: 'ui-spa/coverage/html-enhanced'
               artifactName: 'ui-coverage-report'
             condition: always()
+
+          - template: ../templates/test-e2e.yml
+            parameters:
+              runBuild: true
