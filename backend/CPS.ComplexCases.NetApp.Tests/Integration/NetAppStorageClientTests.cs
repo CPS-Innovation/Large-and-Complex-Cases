@@ -147,7 +147,7 @@ public class NetAppStorageClientTests : IDisposable
     }
 
     [Fact]
-    public async Task OpenReadStreamAsync_ThrowsIfNullResponse()
+    public async Task OpenReadStreamAsync_ThrowsIfFileNotFound()
     {
         // Arrange
         var invalidFilePath = "invalid-file-path/file.txt";
@@ -168,7 +168,7 @@ public class NetAppStorageClientTests : IDisposable
         _netAppRequestFactoryMock.Setup(f => f.GetObjectRequest(arg)).Returns(request);
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _client.OpenReadStreamAsync(invalidFilePath));
+        await Assert.ThrowsAsync<AmazonS3Exception>(() => _client.OpenReadStreamAsync(invalidFilePath));
     }
 
     [Fact]

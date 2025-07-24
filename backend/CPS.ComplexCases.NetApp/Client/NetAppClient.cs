@@ -97,7 +97,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
         catch (AmazonS3Exception ex)
         {
             _logger.LogError(ex, ex.Message, "Failed to get file {ObjectKey} from bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
-            return null;
+            throw;
         }
     }
 
@@ -111,7 +111,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
         catch (AmazonS3Exception ex)
         {
             _logger.LogError(ex, ex.Message, "Failed to upload file {ObjectKey} to bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
-            return false;
+            throw;
         }
     }
 

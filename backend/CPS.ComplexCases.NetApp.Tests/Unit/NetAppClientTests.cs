@@ -211,7 +211,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         }
 
         [Fact]
-        public async Task GetObjectAsync_WhenObjectDoesNotExist_ReturnsNull()
+        public async Task GetObjectAsync_WhenObjectDoesNotExist_ReturnsException()
         {
             // Arrange
             var arg = _fixture.Create<GetObjectArg>();
@@ -221,10 +221,10 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 .ThrowsAsync(new AmazonS3Exception(expectedExceptionMessage));
 
             // Act
-            var result = await _client.GetObjectAsync(arg);
+            var result = await Record.ExceptionAsync(() => _client.GetObjectAsync(arg));
 
             // Assert
-            Assert.Null(result);
+            Assert.NotNull(result);
             _loggerMock.Verify(x => x.Log(
                 It.Is<LogLevel>(logLevel => logLevel == LogLevel.Error),
                 It.IsAny<EventId>(),
@@ -234,7 +234,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         }
 
         [Fact]
-        public async Task GetObjectAsync_WhenExceptionThrown_LogsErrorAndReturnsNull()
+        public async Task GetObjectAsync_WhenExceptionThrown_LogsErrorAndThrows()
         {
             // Arrange
             var arg = _fixture.Create<GetObjectArg>();
@@ -244,10 +244,10 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 .ThrowsAsync(new AmazonS3Exception(expectedExceptionMessage));
 
             // Act
-            var result = await _client.GetObjectAsync(arg);
+            var result = await Record.ExceptionAsync(() => _client.GetObjectAsync(arg));
 
             // Assert
-            Assert.Null(result);
+            Assert.NotNull(result);
             _loggerMock.Verify(x => x.Log(
                 It.Is<LogLevel>(logLevel => logLevel == LogLevel.Error),
                 It.IsAny<EventId>(),
@@ -297,7 +297,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         }
 
         [Fact]
-        public async Task UploadObjectAsync_WhenExceptionThrown_LogsErrorAndReturnsFalse()
+        public async Task UploadObjectAsync_WhenExceptionThrown_LogsErrorThrows()
         {
             // Arrange
             var arg = _fixture.Create<UploadObjectArg>();
@@ -307,10 +307,10 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 .ThrowsAsync(new AmazonS3Exception(expectedExceptionMessage));
 
             // Act
-            var result = await _client.UploadObjectAsync(arg);
+            var result = await Record.ExceptionAsync(() => _client.UploadObjectAsync(arg));
 
             // Assert
-            Assert.False(result);
+            Assert.NotNull(result);
             _loggerMock.Verify(x => x.Log(
                 It.Is<LogLevel>(logLevel => logLevel == LogLevel.Error),
                 It.IsAny<EventId>(),
