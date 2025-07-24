@@ -91,7 +91,6 @@ steps:
         testRunTitle: '${{ parameters.projectName }} Tests'
         workingDirectory: '$(Build.SourcesDirectory)'
         resultsDirectory: '${{ parameters.testResultsDirectory }}'
-      continueOnError: true
 
     - task: PublishCodeCoverageResults@2
       displayName: 'Publish Code Coverage'
