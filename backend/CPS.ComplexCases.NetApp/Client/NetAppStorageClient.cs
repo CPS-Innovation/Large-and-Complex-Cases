@@ -40,7 +40,9 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
         var response = await _netAppClient.InitiateMultipartUploadAsync(arg);
 
         if (response == null)
-            throw new InvalidOperationException("Failed to initiate multipart upload.");
+        {
+            throw new InvalidOperationException("Failed to initiate multipart upload. Response was null.");
+        }
 
         return new UploadSession
         {

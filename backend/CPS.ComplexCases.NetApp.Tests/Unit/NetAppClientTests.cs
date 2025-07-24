@@ -409,6 +409,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             // Assert
             Assert.NotNull(result);
             Assert.Equal(2, data?.Count);
+            Assert.NotNull(data);
             Assert.Contains("folder1/", data[0].Path);
             Assert.Contains("folder2/", data[1].Path);
         }
@@ -484,7 +485,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 l => l.Log(
                     LogLevel.Error,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Failed to initiate multipart upload")),
+                    It.Is<It.IsAnyType>((v, t) => v != null && v!.ToString()!.Contains("Failed to initiate multipart upload")),
                     It.IsAny<AmazonS3Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
@@ -516,7 +517,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 l => l.Log(
                     LogLevel.Error,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Failed to upload part")),
+                    It.Is<It.IsAnyType>((v, t) => v != null && v!.ToString()!.Contains("Failed to upload part")),
                     It.IsAny<AmazonS3Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
@@ -548,7 +549,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 l => l.Log(
                     LogLevel.Error,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Failed to complete multipart upload")),
+                    It.Is<It.IsAnyType>((v, t) => v != null && v!.ToString()!.Contains("Failed to complete multipart upload")),
                     It.IsAny<AmazonS3Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
@@ -597,7 +598,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 l => l.Log(
                     LogLevel.Error,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Failed to check if object")),
+                    It.Is<It.IsAnyType>((v, t) => v != null && v!.ToString()!.Contains("Failed to check if object")),
                     ex,
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
