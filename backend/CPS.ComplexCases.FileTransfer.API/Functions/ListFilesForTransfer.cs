@@ -52,7 +52,7 @@ public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorage
             IsFolder = path.IsFolder
         }).ToList();
 
-        if (request.Value != null && request.Value.TransferDirection == TransferDirection.EgressToNetApp && request.Value.TransferType == TransferType.Move)
+        if (request.Value != null && request.Value.WorkspaceId != null && request.Value.TransferDirection == TransferDirection.EgressToNetApp && request.Value.TransferType == TransferType.Move)
         {
             var hasPermission = await _egressClient.GetWorkspacePermission(new GetWorkspacePermissionArg
             {
@@ -67,7 +67,7 @@ public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorage
             }
         }
 
-        var filesForTransfer = await sourceClient.ListFilesForTransferAsync(selectedEntities, request.Value.WorkspaceId, request.Value.CaseId);
+        var filesForTransfer = await sourceClient.ListFilesForTransferAsync(selectedEntities, request.Value?.WorkspaceId, request.Value?.CaseId);
 
         var result = new FilesForTransferResult
         {

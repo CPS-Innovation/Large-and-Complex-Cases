@@ -1,4 +1,5 @@
-import { format, parseISO, isValid, isToday } from "date-fns";
+import { parseISO, isValid, isToday } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 
 export const formatDate = (
   dateString: string | null | undefined,
@@ -12,11 +13,12 @@ export const formatDate = (
   if (!isValid(date)) {
     return "--";
   }
+  const formattedTime = formatInTimeZone(date, "Europe/London", "dd/MM/yyyy");
   if (!withTime) {
-    return isToday(date) ? "Today" : format(date, "dd/MM/yyyy");
+    return isToday(date) ? "Today" : formattedTime;
   }
-  const timeString = format(date, "h:mm aaa");
+  const timeString = formatInTimeZone(date, "Europe/London", "h:mm aaa");
   return isToday(date)
     ? `Today, ${timeString}`
-    : `${format(date, "dd/MM/yyyy")}, ${timeString}`;
+    : `${formattedTime}, ${timeString}`;
 };

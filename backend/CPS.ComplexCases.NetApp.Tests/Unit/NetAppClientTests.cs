@@ -362,7 +362,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
 
             // Assert
             Assert.NotNull(result);
-            Assert.Empty(result?.Data.FileData);
+            Assert.NotNull(result.Data.FileData);
+            Assert.Empty(result.Data.FileData);
         }
 
         [Fact]
@@ -408,6 +409,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             // Assert
             Assert.NotNull(result);
             Assert.Equal(2, data?.Count());
+            Assert.NotNull(data);
             Assert.Contains("folder1/", data[0].Path);
             Assert.Contains("folder2/", data[1].Path);
         }

@@ -11,7 +11,7 @@ public class DurableEntityClientStub : DurableEntityClient
     {
     }
 
-    public Func<EntityInstanceId, CancellationToken, Task<EntityMetadata<TransferEntity>>> OnGetEntityAsync { get; set; }
+    public Func<EntityInstanceId, CancellationToken, Task<EntityMetadata<TransferEntity>>>? OnGetEntityAsync { get; set; }
 
     public override Task<CleanEntityStorageResult> CleanEntityStorageAsync(CleanEntityStorageRequest? request = null, bool continueUntilComplete = true, CancellationToken cancellation = default)
     {
@@ -32,6 +32,10 @@ public class DurableEntityClientStub : DurableEntityClient
     {
         if (typeof(T) == typeof(TransferEntity))
         {
+            if (OnGetEntityAsync == null)
+            {
+                throw new InvalidOperationException("OnGetEntityAsync delegate is not set.");
+            }
             return (Task<EntityMetadata<T>?>)(object)OnGetEntityAsync(id, cancellationToken);
         }
 
@@ -48,6 +52,10 @@ public class DurableEntityClientStub : DurableEntityClient
     {
         if (typeof(T) == typeof(TransferEntity))
         {
+            if (OnGetEntityAsync == null)
+            {
+                throw new InvalidOperationException("OnGetEntityAsync delegate is not set.");
+            }
             return (Task<EntityMetadata<T>?>)(object)OnGetEntityAsync(id, cancellation);
         }
 

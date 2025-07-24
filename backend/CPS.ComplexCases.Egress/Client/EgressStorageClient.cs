@@ -179,9 +179,9 @@ public class EgressStorageClient(
             DeletedFiles = result.Files.Select(x => x.FileId).Where(id => id != null).Cast<string>().ToList(),
             FailedFiles = result.Files.Where(x => x.Code > 0).Select(x => new FailedFileDeletion
             {
-                FileId = x.FileId,
-                Filename = x.Filename,
-                Reason = x.Status
+                FileId = x.FileId ?? string.Empty,
+                Filename = x.Filename ?? string.Empty,
+                Reason = x.Status ?? string.Empty
             })
             .ToList()
         };

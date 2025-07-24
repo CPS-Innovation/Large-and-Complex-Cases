@@ -115,6 +115,7 @@ test.describe("activity log", () => {
             transferedFileCount: 0,
             sourcePath: "egress",
             destinationPath: "netapp/folder2",
+            transferType: "Copy",
             files: [],
             errors: [],
             deletionErrors: [],
@@ -197,6 +198,7 @@ test.describe("activity log", () => {
             transferedFileCount: 4,
             sourcePath: "egress/folder1",
             destinationPath: "netapp/folder2",
+            transferType: "Copy",
             files: [
               {
                 path: "egress/folder1/folder3/file1.pdf",
@@ -236,6 +238,7 @@ test.describe("activity log", () => {
             transferedFileCount: 0,
             sourcePath: "egress",
             destinationPath: "netapp/folder2",
+            transferType: "Copy",
             files: [],
             errors: [],
             deletionErrors: [],
@@ -396,6 +399,7 @@ test.describe("activity log", () => {
             transferedFileCount: 4,
             sourcePath: "egress/folder1",
             destinationPath: "netapp/folder2",
+            transferType: "Copy",
             files: [
               {
                 path: "egress/folder1/folder3/file1.pdf",
@@ -435,6 +439,7 @@ test.describe("activity log", () => {
             transferedFileCount: 0,
             sourcePath: "egress",
             destinationPath: "netapp/folder2",
+            transferType: "Copy",
             files: [],
             errors: [],
             deletionErrors: [],
@@ -574,5 +579,104 @@ test.describe("activity log", () => {
     await expect(sections.nth(0).locator("button")).toHaveText(
       "Download the list of files (.csv)",
     );
+  });
+
+  test("Should show and hide the activity file download tooltip", async ({
+    page,
+    worker,
+  }) => {
+    const activityLog: ActivityLogResponse = {
+      data: [
+        {
+          id: "4",
+          actionType: "TRANSFER_FAILED",
+          timestamp: "2024-01-18T13:50:10.865517Z",
+          userName: "dwight_schrute@cps.gov.uk",
+          caseId: "case_1",
+          description: "Documents/folders copied from egress to shared drive",
+          details: {
+            transferId: "transfer-1",
+            totalFiles: 6,
+            errorFileCount: 2,
+            transferedFileCount: 4,
+            sourcePath: "egress/folder1",
+            destinationPath: "netapp/folder2",
+            transferType: "Copy",
+            files: [
+              {
+                path: "egress/folder1/folder3/file1.pdf",
+              },
+              {
+                path: "egress/folder1/file2.pdf",
+              },
+              {
+                path: "egress/folder1/file4.pdf",
+              },
+            ],
+            errors: [
+              {
+                path: "egress/folder1/folder3/file6.pdf",
+              },
+            ],
+            deletionErrors: [],
+          },
+        },
+      ],
+    };
+    await worker.use(
+      http.get("https://mocked-out-api/api/v1/activity/logs", async () => {
+        await delay(10);
+        return HttpResponse.json(activityLog);
+      }),
+    );
+    await goToActivityLog(page);
+    await expect(page.locator("h2")).toHaveText(`Activity Log`);
+    await expect(page.getByTestId("activity-log-last-update")).toHaveText(
+      "Last Updated 18/01/2024, 1:50 pm",
+    );
+    const sections = await page
+      .getByTestId("activities-timeline")
+      .locator(":scope>section");
+    await expect(sections.nth(0).getByTestId("transfer-tag")).toBeVisible();
+    await expect(sections.nth(0).getByTestId("transfer-tag")).toHaveText(
+      "Transfer",
+    );
+    await expect(
+      sections.nth(0).getByTestId("transfer-status-tag"),
+    ).toBeVisible();
+    await expect(sections.nth(0).getByTestId("transfer-status-tag")).toHaveText(
+      "Completed with errors",
+    );
+    await expect(
+      page.getByTestId("activity-download-tooltip"),
+    ).not.toBeVisible();
+    await expect(sections.nth(0).locator("button")).toHaveText(
+      "Download the list of files (.csv)",
+    );
+    await sections.nth(0).locator("button").click();
+    await expect(page.getByTestId("activity-download-tooltip")).toBeVisible();
+    await expect(page.getByTestId("activity-download-tooltip")).toHaveText(
+      "File list successfully downloaded",
+    );
+    await expect(
+      page.getByTestId("activity-download-tooltip"),
+    ).not.toBeVisible();
+    await worker.use(
+      http.get(
+        "https://mocked-out-api/api/v1/activity/4/logs/download",
+        async () => {
+          await delay(10);
+          return new HttpResponse(null, { status: 500 });
+        },
+      ),
+    );
+    await sections.nth(0).locator("button").click();
+    await expect(page.getByTestId("activity-download-tooltip")).toBeVisible();
+    await expect(page.getByTestId("activity-download-tooltip")).toHaveText(
+      "File list download failed",
+    );
+    await expect(
+      page.getByTestId("activity-download-tooltip"),
+    ).not.toBeVisible();
   });
 });
