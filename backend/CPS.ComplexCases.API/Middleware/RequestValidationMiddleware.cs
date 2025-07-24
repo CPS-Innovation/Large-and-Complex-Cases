@@ -3,6 +3,7 @@ using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Exceptions;
 using CPS.ComplexCases.API.Validators;
+using CPS.ComplexCases.Common.Helpers;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Azure.Functions.Worker.Middleware;
@@ -12,13 +13,7 @@ namespace CPS.ComplexCases.API.Middleware;
 public sealed partial class RequestValidationMiddleware(IAuthorizationValidator authorizationValidator) : IFunctionsWorkerMiddleware
 {
   private readonly string[] _unauthenticatedRoutes = ["/api/status", "/api/tactical/login", "/api/swagger/ui", "/api/swagger.json"];
-  private static string[] _blockedSwaggerRoutes = [
-    "/api/swagger/ui",
-    "/api/swagger.json",
-    "/api/swagger"
-];
-  private static readonly string? Environment = System.Environment.GetEnvironmentVariable("AZURE_FUNCTIONS_ENVIRONMENT");
-  private static readonly bool IsProduction = !string.IsNullOrEmpty(Environment) && string.Equals(Environment, "Production", StringComparison.OrdinalIgnoreCase);
+
 
 
   public async Task Invoke(FunctionContext context, FunctionExecutionDelegate next)
@@ -26,7 +21,7 @@ public sealed partial class RequestValidationMiddleware(IAuthorizationValidator 
     var httpRequestData = await context.GetHttpRequestDataAsync() ?? throw new ArgumentNullException(nameof(context), "Context does not contains HttpRequestData");
 
     // Only block Swagger in production
-    if (IsProduction && IsSwaggerRoute(httpRequestData.Url.AbsolutePath))
+    if (SwaggerRouteHelper.IsProduction && SwaggerRouteHelper.IsSwaggerRoute(httpRequestData.Url.AbsolutePath))
     {
       var response = httpRequestData.CreateResponse(HttpStatusCode.NotFound);
       await response.WriteStringAsync("Not Found");
@@ -46,12 +41,6 @@ public sealed partial class RequestValidationMiddleware(IAuthorizationValidator 
     }
 
     await next(context);
-  }
-
-  private static bool IsSwaggerRoute(string path)
-  {
-    return _blockedSwaggerRoutes.Any(route =>
-        path.StartsWith(route, StringComparison.OrdinalIgnoreCase));
   }
 
   private static Guid EstablishCorrelation(HttpRequestData httpRequestData)
