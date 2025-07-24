@@ -6,6 +6,7 @@ import {
 import { Details, Tag, Button } from "../../govuk";
 import RelativePathFiles from "./RelativePathFiles";
 import { formatDate } from "../../../common/utils/formatDate";
+import { formatInTimeZone } from "date-fns-tz";
 import { getCleanPath } from "../../../common/utils/getCleanPath";
 import { getTransferActivityStatusTagData } from "../../../common/utils/getTransferActivityStatusTagData";
 import { downloadActivityLog } from "../../../apis/gateway-api";
@@ -62,13 +63,18 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
   };
 
   const handleDownload = async (activityId: string) => {
+    const formattedTime = formatInTimeZone(
+      Date.now(),
+      "Europe/London",
+      "yyyyMMdd-HHmmss",
+    );
     try {
       const response = await downloadActivityLog(activityId);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `activity-log-${activityId}-files.csv`;
+      a.download = `activity-log-${activityId}-files-${formattedTime}.csv`;
       document.body.appendChild(a);
       a.click();
       a.remove();
