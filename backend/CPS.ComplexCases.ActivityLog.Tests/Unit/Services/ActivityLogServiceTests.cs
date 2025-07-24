@@ -257,7 +257,7 @@ public class ActivityLogServiceTests
         Assert.NotEmpty(result);
 
         // Verify CSV contains headers
-        Assert.Contains("path", result);
+        Assert.Contains("Path", result);
         Assert.Contains("FileName", result);
         Assert.Contains("Status", result);
 
