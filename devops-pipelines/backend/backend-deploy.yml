@@ -34,7 +34,7 @@ resources:
           - main
 
 variables:
-  - group: lacc-backend-secrets-${{ parameters.environment }
+  - group: lacc-backend-secrets-${{ parameters.environment }}
   - group: lacc-backend-config-${{ parameters.environment }}
   - name: resourceGroupName
     value: 'rg-lacc-${{ parameters.environment }}' 
