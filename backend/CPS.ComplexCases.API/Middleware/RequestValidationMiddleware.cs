@@ -1,3 +1,4 @@
+using System.Net;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Exceptions;
@@ -11,27 +12,26 @@ namespace CPS.ComplexCases.API.Middleware;
 public sealed partial class RequestValidationMiddleware(IAuthorizationValidator authorizationValidator) : IFunctionsWorkerMiddleware
 {
   private readonly string[] _unauthenticatedRoutes = ["/api/status", "/api/tactical/login", "/api/swagger/ui", "/api/swagger.json"];
-  private readonly string[] _blockedSwaggerRoutes = [
+  private static string[] _blockedSwaggerRoutes = [
     "/api/swagger/ui",
     "/api/swagger.json",
     "/api/swagger"
 ];
+  private static readonly string? Environment = System.Environment.GetEnvironmentVariable("AZURE_FUNCTIONS_ENVIRONMENT");
+  private static readonly bool IsProduction = !string.IsNullOrEmpty(Environment) && string.Equals(Environment, "Production", StringComparison.OrdinalIgnoreCase);
+
 
   public async Task Invoke(FunctionContext context, FunctionExecutionDelegate next)
   {
     var httpRequestData = await context.GetHttpRequestDataAsync() ?? throw new ArgumentNullException(nameof(context), "Context does not contains HttpRequestData");
 
     // Only block Swagger in production
-    var environment = Environment.GetEnvironmentVariable("AZURE_FUNCTIONS_ENVIRONMENT");
-    if (string.Equals(environment, "Production", StringComparison.OrdinalIgnoreCase))
+    if (IsProduction && IsSwaggerRoute(httpRequestData.Url.AbsolutePath))
     {
-      if (_blockedSwaggerRoutes.Any(route => httpRequestData.Url.AbsolutePath.StartsWith(route, StringComparison.OrdinalIgnoreCase)))
-      {
-        var response = httpRequestData.CreateResponse(System.Net.HttpStatusCode.NotFound);
-        await response.WriteStringAsync("Not Found");
-        context.GetInvocationResult().Value = response;
-        return;
-      }
+      var response = httpRequestData.CreateResponse(HttpStatusCode.NotFound);
+      await response.WriteStringAsync("Not Found");
+      context.GetInvocationResult().Value = response;
+      return;
     }
 
     var correlationId = EstablishCorrelation(httpRequestData);
@@ -46,6 +46,12 @@ public sealed partial class RequestValidationMiddleware(IAuthorizationValidator 
     }
 
     await next(context);
+  }
+
+  private static bool IsSwaggerRoute(string path)
+  {
+    return _blockedSwaggerRoutes.Any(route =>
+        path.StartsWith(route, StringComparison.OrdinalIgnoreCase));
   }
 
   private static Guid EstablishCorrelation(HttpRequestData httpRequestData)

@@ -15,13 +15,17 @@ using CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
 using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.NetApp.Extensions;
+using CPS.ComplexCases.FileTransfer.API.Middleware;
 
 // Create a temporary logger for configuration phase
 using var loggerFactory = LoggerFactory.Create(configure => configure.AddConsole());
 var logger = loggerFactory.CreateLogger("Configuration");
 
 var host = new HostBuilder()
-    .ConfigureFunctionsWebApplication() // ✅ Adds ASP.NET Core integration
+    .ConfigureFunctionsWebApplication(webApp =>
+    {
+        webApp.UseMiddleware<RequestValidationMiddleware>();
+    }) // ✅ Adds ASP.NET Core integration
     .ConfigureAppConfiguration((context, config) =>
     {
         // ✅ Configure Azure Key Vault if KeyVaultUri is provided
