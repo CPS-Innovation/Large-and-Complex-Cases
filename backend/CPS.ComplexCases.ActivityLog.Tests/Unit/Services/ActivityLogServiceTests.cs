@@ -237,13 +237,13 @@ public class ActivityLogServiceTests
         // Arrange
         var activityLogId = Guid.NewGuid();
         var jsonDetails = JsonDocument.Parse(@"{
-            ""Files"": [
-                {""Path"": ""C:\\Documents\\file1.txt""},
-                {""Path"": ""C:\\Documents\\file2.pdf""}
+            ""files"": [
+                {""path"": ""C:\\Documents\\file1.txt""},
+                {""path"": ""C:\\Documents\\file2.pdf""}
             ],
-            ""Errors"": [
-                {""Path"": ""C:\\Documents\\error1.doc""},
-                {""Path"": ""C:\\Documents\\error2.xlsx""}
+            ""errors"": [
+                {""path"": ""C:\\Documents\\error1.doc""},
+                {""path"": ""C:\\Documents\\error2.xlsx""}
             ]
         }");
 
@@ -284,9 +284,9 @@ public class ActivityLogServiceTests
         // Arrange
         var activityLogId = Guid.NewGuid();
         var jsonDetails = JsonDocument.Parse(@"{
-            ""Files"": [
-                {""Path"": ""C:\\Documents\\success1.txt""},
-                {""Path"": ""C:\\Documents\\success2.pdf""}
+            ""files"": [
+                {""path"": ""C:\\Documents\\success1.txt""},
+                {""path"": ""C:\\Documents\\success2.pdf""}
             ]
         }");
 
@@ -310,9 +310,9 @@ public class ActivityLogServiceTests
         // Arrange
         var activityLogId = Guid.NewGuid();
         var jsonDetails = JsonDocument.Parse(@"{
-            ""Errors"": [
-                {""Path"": ""C:\\Documents\\error1.doc""},
-                {""Path"": ""C:\\Documents\\error2.xlsx""}
+            ""errors"": [
+                {""path"": ""C:\\Documents\\error1.doc""},
+                {""path"": ""C:\\Documents\\error2.xlsx""}
             ]
         }");
 
@@ -336,8 +336,8 @@ public class ActivityLogServiceTests
         // Arrange
         var activityLogId = Guid.NewGuid();
         var jsonDetails = JsonDocument.Parse(@"{
-            ""Files"": [],
-            ""Errors"": []
+            ""files"": [],
+            ""errors"": []
         }");
 
         var activityLog = CreateActivityLogWithDetails(activityLogId, jsonDetails);
@@ -444,9 +444,9 @@ public class ActivityLogServiceTests
         // Arrange
         var activityLogId = Guid.NewGuid();
         var jsonDetails = JsonDocument.Parse(@"{
-            ""Files"": [
-                {""Path"": null},
-                {""Path"": ""C:\\Documents\\valid.txt""},
+            ""files"": [
+                {""path"": null},
+                {""path"": ""C:\\Documents\\valid.txt""},
                 {}
             ]
         }");
@@ -471,8 +471,8 @@ public class ActivityLogServiceTests
         // Arrange
         var activityLogId = Guid.NewGuid();
         var jsonDetails = JsonDocument.Parse(@"{
-            ""Files"": ""not an array"",
-            ""Errors"": ""also not an array""
+            ""files"": ""not an array"",
+            ""errors"": ""also not an array""
         }");
 
         var activityLog = CreateActivityLogWithDetails(activityLogId, jsonDetails);
@@ -500,9 +500,9 @@ public class ActivityLogServiceTests
         // Arrange
         var activityLogId = Guid.NewGuid();
         var jsonDetails = JsonDocument.Parse(@"{
-            ""Files"": [
-                {""Path"": ""C:\\Documents\\README""},
-                {""Path"": ""C:\\Documents\\folder\\script""}
+            ""files"": [
+                {""path"": ""C:\\Documents\\README""},
+                {""path"": ""C:\\Documents\\folder\\script""}
             ]
         }");
 
