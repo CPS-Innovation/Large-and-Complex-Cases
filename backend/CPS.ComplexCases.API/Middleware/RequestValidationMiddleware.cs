@@ -1,7 +1,9 @@
+using System.Net;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Exceptions;
 using CPS.ComplexCases.API.Validators;
+using CPS.ComplexCases.Common.Helpers;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Azure.Functions.Worker.Middleware;
@@ -12,9 +14,20 @@ public sealed partial class RequestValidationMiddleware(IAuthorizationValidator 
 {
   private readonly string[] _unauthenticatedRoutes = ["/api/status", "/api/tactical/login", "/api/swagger/ui", "/api/swagger.json"];
 
+
+
   public async Task Invoke(FunctionContext context, FunctionExecutionDelegate next)
   {
     var httpRequestData = await context.GetHttpRequestDataAsync() ?? throw new ArgumentNullException(nameof(context), "Context does not contains HttpRequestData");
+
+    // Only block Swagger in production
+    if (SwaggerRouteHelper.IsProduction && SwaggerRouteHelper.IsSwaggerRoute(httpRequestData.Url.AbsolutePath))
+    {
+      var response = httpRequestData.CreateResponse(HttpStatusCode.NotFound);
+      await response.WriteStringAsync("Not Found");
+      context.GetInvocationResult().Value = response;
+      return;
+    }
 
     var correlationId = EstablishCorrelation(httpRequestData);
     var cmsAuthValues = EstablishCmsAuthValues(httpRequestData);
