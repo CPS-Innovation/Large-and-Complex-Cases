@@ -26,7 +26,7 @@ var logger = loggerFactory.CreateLogger("Configuration");
 
 var host = new HostBuilder()
     .ConfigureFunctionsWebApplication(webApp =>
-    { 
+    {
         // note: the order of middleware is important, as it determines the execution flow
         webApp.UseMiddleware<ExceptionHandlingMiddleware>();
         webApp.UseMiddleware<RequestValidationMiddleware>();
@@ -40,7 +40,7 @@ var host = new HostBuilder()
     {
         // Get configuration for service registrations
         var configuration = context.Configuration;
-        
+
         services
             .AddApplicationInsightsTelemetryWorkerService()
             .ConfigureFunctionsApplicationInsights();

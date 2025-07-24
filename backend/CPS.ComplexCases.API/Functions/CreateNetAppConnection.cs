@@ -15,6 +15,7 @@ using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.Common.Services;
+using Microsoft.OpenApi.Models;
 
 namespace CPS.ComplexCases.API.Functions;
 
@@ -36,6 +37,7 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
 
     [Function(nameof(CreateNetAppConnection))]
     [OpenApiOperation(operationId: nameof(CreateEgressConnection), tags: ["NetApp"], Description = "Connect an NetApp folder to a case.")]
+    // [OpenApiSecurity("OAuth2", SecuritySchemeType.OAuth2, Description = "OAuth2 via Azure AD")]
     [OpenApiRequestBody(ContentType.ApplicationJson, typeof(CreateNetAppConnectionDto), Description = "Body containing the NetApp connection to create")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]

@@ -22,4 +22,37 @@ public class FileTransferApiOpenApiConfigurationOptions : BaseOpenApiConfigurati
             Url = null,
         },
     };
+    public override IDictionary<string, OpenApiSecurityScheme> SecuritySchemes => new Dictionary<string, OpenApiSecurityScheme>
+    {
+        {
+            "FunctionKey", new OpenApiSecurityScheme
+            {
+                Name = "x-functions-key",
+                Type = SecuritySchemeType.ApiKey,
+                In = ParameterLocation.Header,
+                Description = "Function key required in `x-functions-key` header.",
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "FunctionKey"
+                }
+            }
+        }
+    };
+
+    public override OpenApiSecurityRequirement SecurityRequirements => new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "FunctionKey"
+                }
+            },
+            Array.Empty<string>()
+        }
+    };
+
 }

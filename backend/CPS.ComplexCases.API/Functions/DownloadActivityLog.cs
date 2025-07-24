@@ -18,6 +18,7 @@ public class DownloadActivityLog(ILogger<DownloadActivityLog> logger, IActivityL
 
     [Function(nameof(DownloadActivityLog))]
     [OpenApiOperation(operationId: nameof(DownloadActivityLog), tags: ["ActivityLog"], Description = "Download activity log data in CSV format.")]
+    // [OpenApiSecurity("OAuth2", SecuritySchemeType.OAuth2, Description = "OAuth2 via Azure AD")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "text/csv", bodyType: typeof(byte[]), Description = "CSV file containing activity log file paths")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]
