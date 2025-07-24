@@ -653,6 +653,15 @@ test.describe("activity log", () => {
     await expect(sections.nth(0).locator("button")).toHaveText(
       "Download the list of files (.csv)",
     );
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      sections.nth(0).locator("button").click(),
+    ]);
+    await expect(download.suggestedFilename()).toEqual(
+      expect.stringMatching(
+        /^activity-log-4-files-Thunderstruck-\d+-\d+\.csv$/,
+      ),
+    );
     await sections.nth(0).locator("button").click();
     await expect(page.getByTestId("activity-download-tooltip")).toBeVisible();
     await expect(page.getByTestId("activity-download-tooltip")).toHaveText(
