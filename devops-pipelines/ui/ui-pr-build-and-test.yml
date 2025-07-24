@@ -1,0 +1,110 @@
+parameters:
+  - name: environment
+    displayName: 'Target Environment'
+    type: string
+    default: 'dev'
+    values:
+      - dev
+      - stage
+      - prod
+
+trigger: none
+
+pr:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - ui-spa/*
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  - name: nodeVersion
+    value: '20.x'
+  - name: workingDir
+    value: ui-spa
+
+stages:
+  - stage: Build_and_Test_UI
+    displayName: 'LACC UI - Build & Test'
+    jobs:
+      - job: Build_and_Test
+        displayName: 'Build & Test App'
+        steps:
+          - checkout: self
+            sparseCheckoutDirectories: ui-spa devops-pipelines/scripts
+
+          - task: UseNode@1
+            displayName: 'Use Node.js'
+            inputs:
+              version: '$(nodeVersion)'
+
+          - task: Npm@1
+            displayName: 'Install NPM Dependencies'
+            inputs:
+              command: 'ci'
+              workingDir: '$(workingDir)'
+
+          - task: Npm@1
+            displayName: 'Lint Code'
+            inputs:
+              command: 'custom'
+              customCommand: 'run lint'
+              workingDir: 'ui-spa'
+
+          - task: Npm@1
+            displayName: 'Build Web App Package'
+            inputs:
+              command: 'custom'
+              customCommand: 'run build'
+              workingDir: '$(workingDir)'
+
+          - task: Npm@1
+            displayName: 'Run UI Unit Tests'
+            inputs:
+              command: 'custom'
+              customCommand: 'run coverage'
+              workingDir: '$(workingDir)'
+            continueOnError: true
+
+          - task: PublishTestResults@2
+            displayName: 'Publish UI Test Results'
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'ui-spa/coverage/junit.xml'
+              publishRunAttachments: true
+            condition: always()
+
+          - task: PublishCodeCoverageResults@1
+            displayName: 'Publish UI Code Coverage'
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: 'ui-spa/coverage/cobertura-coverage.xml'
+              reportDirectory: 'ui-spa/coverage'
+            condition: always()
+
+          # TODO: The below is currently not working. Needs debug:
+          - task: PowerShell@2
+            displayName: 'Generate Enhanced Coverage Reports'
+            inputs:
+              filePath: 'devops-pipelines/scripts/generateHTMLReport.ps1'
+              arguments: >
+                -ProjectPath '$(Build.SourcesDirectory)/ui-spa'
+                -CoverageSummaryPath 'coverage/coverage-summary.json'
+                -CoberturaPath 'coverage/cobertura-coverage.xml'
+                -LcovReportPath 'coverage/lcov-report'
+                -OutputReportPath 'coverage/html-enhanced'
+              pwsh: true
+            condition: always()
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Enhanced HTML Coverage Report'
+            inputs:
+              pathtoPublish: 'ui-spa/coverage/html-enhanced'
+              artifactName: 'ui-coverage-report'
+            condition: always()
+
+          - template: ../templates/test-e2e.yml

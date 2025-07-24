@@ -7,6 +7,7 @@
     <Nullable>enable</Nullable>
     <FunctionsInDependencies>true</FunctionsInDependencies>
     <_FunctionsSkipCleanOutput>true</_FunctionsSkipCleanOutput>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
