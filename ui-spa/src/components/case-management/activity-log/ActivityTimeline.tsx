@@ -13,11 +13,13 @@ import { downloadActivityLog } from "../../../apis/gateway-api";
 import styles from "./activityTimeline.module.scss";
 
 type ActivityTimelineProps = {
+  operationName: string;
   activities: ActivityLogResponse;
 };
 
 export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
   activities,
+  operationName,
 }) => {
   const [downloadTooltipTexts, setDownloadTooltipTexts] = useState<
     Record<string, string>
@@ -74,7 +76,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `activity-log-${activityId}-files-${formattedTime}.csv`;
+      a.download = `activity-log-${activityId}-files-${operationName}-${formattedTime}.csv`;
       document.body.appendChild(a);
       a.click();
       a.remove();
