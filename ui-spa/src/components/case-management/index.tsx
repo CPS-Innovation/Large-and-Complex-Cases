@@ -105,7 +105,7 @@ const CaseManagementPage = () => {
             }
           />
         ) : (
-          <div> </div>
+          <></>
         ),
       },
     },
@@ -113,10 +113,15 @@ const CaseManagementPage = () => {
       id: "activity-log",
       label: "Activity log",
       panel: {
-        children: (
+        children: caseMetaData?.data ? (
           <div>
-            <ActivityLogPage isTabActive={activeTabId === "activity-log"} />
+            <ActivityLogPage
+              operationName={caseMetaData.data.operationName}
+              isTabActive={activeTabId === "activity-log"}
+            />
           </div>
+        ) : (
+          <></>
         ),
       },
     },
@@ -152,7 +157,6 @@ const CaseManagementPage = () => {
           label: item.label,
           panel: item.panel,
         }))}
-        title="Contents"
         activeTabId={activeTabId}
         handleTabSelection={handleTabSelection}
       />

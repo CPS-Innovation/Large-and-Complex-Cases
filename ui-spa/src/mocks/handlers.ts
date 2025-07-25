@@ -185,6 +185,15 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
         return HttpResponse.json({});
       },
     ),
+    http.get(`${baseUrl}/api/v1/activity/*/logs/download`, async () => {
+      const mockBlob = new Blob(["hello"], { type: "text/csv" });
+
+      await delay(100);
+      return new HttpResponse(mockBlob, {
+        status: 200,
+        headers: { "Content-Type": "text/csv" },
+      });
+    }),
   ];
 };
 

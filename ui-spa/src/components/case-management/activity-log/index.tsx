@@ -7,10 +7,14 @@ import { formatDate } from "../../../common/utils/formatDate";
 import styles from "./index.module.scss";
 
 type ActivityLogPageProps = {
+  operationName: string;
   isTabActive: boolean;
 };
 
-const ActivityLogPage: React.FC<ActivityLogPageProps> = ({ isTabActive }) => {
+const ActivityLogPage: React.FC<ActivityLogPageProps> = ({
+  isTabActive,
+  operationName,
+}) => {
   const { caseId } = useParams() as { caseId: string };
   const activityLogResponse = useApi(getActivityLog, [caseId], isTabActive);
 
@@ -45,7 +49,10 @@ const ActivityLogPage: React.FC<ActivityLogPageProps> = ({ isTabActive }) => {
             <h3>Activity</h3>
           </div>
           <div className={styles.contentWrapper}>
-            <ActivityTimeline activities={activityLogResponse.data} />
+            <ActivityTimeline
+              activities={activityLogResponse.data}
+              operationName={operationName}
+            />
           </div>
         </div>
       )}
