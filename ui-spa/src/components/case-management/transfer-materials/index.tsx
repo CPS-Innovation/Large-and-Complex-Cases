@@ -400,7 +400,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       fileId: data?.id,
       path: data.sourcePath,
       relativePath: data.relativePath,
-      fullFilePath: data.fullFilePath
+      fullFilePath: data.fullFilePath,
     }));
 
     const payload = {
@@ -528,6 +528,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         navigate(`/case/${caseId}/case-management/transfer-errors`, {
           state: {
             isRouteValid: true,
+            transferId: transferId,
           },
         });
         if (response.userName === username)

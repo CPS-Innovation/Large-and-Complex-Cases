@@ -1,0 +1,44 @@
+import { Button, BackLink } from "../../govuk";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
+import styles from "./transferErrorPage.module.scss";
+
+const TransferErrorPage: React.FC = () => {
+  const { state }: { state: { transferId: string } } = useLocation();
+  const { caseId } = useParams();
+  const navigate = useNavigate();
+
+  const handleButtonClick = () => {
+    navigate(`/case/${caseId}/case-management`, {
+      replace: true,
+    });
+  };
+
+  return (
+    <div className="govuk-width-container">
+      <BackLink to={`/case/${caseId}/case-management`} replace>
+        Back
+      </BackLink>
+      <h1>There is a problem transferring files</h1>
+
+      <div>
+        You can:
+        <ul className={styles.userActionsList}>
+          <li>try again</li>
+          <li>
+            check the activity log to see if any files or folders have
+            transferred successfully
+          </li>
+        </ul>
+        <Button onClick={handleButtonClick}>Continue</Button>
+      </div>
+
+      <p className={styles.continueBtn}>
+        To get help, call the Service Desk{" "}
+        <a href="tel:08006926996">0800 692 69961</a>. Tell them you're seeing
+        error code: <b>{state.transferId}</b> .
+      </p>
+    </div>
+  );
+};
+
+export default TransferErrorPage;
