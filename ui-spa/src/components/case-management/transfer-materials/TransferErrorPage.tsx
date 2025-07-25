@@ -18,25 +18,28 @@ const TransferErrorPage: React.FC = () => {
       <BackLink to={`/case/${caseId}/case-management`} replace>
         Back
       </BackLink>
-      <h1>There is a problem transferring files</h1>
+      <div className={styles.contentWrapper}>
+        <h1>There is a problem transferring files</h1>
+        <div>
+          You can:
+          <ul className={styles.userActionsList}>
+            <li>try again</li>
+            <li>
+              check the activity log to see if any files or folders have
+              transferred successfully
+            </li>
+          </ul>
+          <Button onClick={handleButtonClick} className={styles.continueBtn}>
+            Continue
+          </Button>
+        </div>
 
-      <div>
-        You can:
-        <ul className={styles.userActionsList}>
-          <li>try again</li>
-          <li>
-            check the activity log to see if any files or folders have
-            transferred successfully
-          </li>
-        </ul>
-        <Button onClick={handleButtonClick}>Continue</Button>
+        <p data-testid="contact-information">
+          To get help, call the Service Desk{" "}
+          <a href="tel:08006926996">0800 692 6996</a>. Tell them you're seeing
+          error code: <b>{state.transferId}</b>.
+        </p>
       </div>
-
-      <p className={styles.continueBtn}>
-        To get help, call the Service Desk{" "}
-        <a href="tel:08006926996">0800 692 69961</a>. Tell them you're seeing
-        error code: <b>{state.transferId}</b> .
-      </p>
     </div>
   );
 };
