@@ -32,7 +32,7 @@ stages:
   - stage: Deploy_${{ parameters.environment }}
     displayName: 'Deploy to ${{ parameters.environment }}'
     pool:
-      name: 'LACC PreProd Pool'
+      name: 'LaCC Pre-Prod Build Agents'
     jobs:
       - deployment: Deploy_UI
         displayName: 'LACC - Deploy UI SPA'
