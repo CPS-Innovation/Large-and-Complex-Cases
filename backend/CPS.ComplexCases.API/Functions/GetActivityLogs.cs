@@ -1,6 +1,7 @@
 using System.Net;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Constants;
+using CPS.ComplexCases.Common.OpenApi;
 using CPS.ComplexCases.Data.Dtos;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -18,6 +19,7 @@ public class GetActivityLogs(ILogger<GetActivityLogs> logger, IActivityLogServic
 
     [Function(nameof(GetActivityLogs))]
     [OpenApiOperation(operationId: nameof(GetActivityLogs), tags: ["ActivityLog"], Description = "Lists filtered activity logs.")]
+    [OpenApiSecurity("implicit_auth", SecuritySchemeType.OAuth2, Flows = typeof(ImplicitAuthFlow))]
     [OpenApiParameter(name: InputParameters.FromDate, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The start date for filtering activity logs.")]
     [OpenApiParameter(name: InputParameters.ToDate, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The end date for filtering activity logs.")]
     [OpenApiParameter(name: InputParameters.UserId, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The user ID for filtering activity logs.")]

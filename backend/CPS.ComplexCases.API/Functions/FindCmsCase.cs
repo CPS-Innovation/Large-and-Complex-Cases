@@ -11,6 +11,7 @@ using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
 using CPS.ComplexCases.DDEI.Models.Dto;
 using CPS.ComplexCases.API.Services;
+using CPS.ComplexCases.Common.OpenApi;
 
 namespace CPS.ComplexCases.API.Functions;
 
@@ -26,6 +27,7 @@ public class FindCmsCase(ILogger<FindCmsCase> logger,
 
   [Function(nameof(FindCmsCase))]
   [OpenApiOperation(operationId: nameof(FindCmsCase), tags: ["CMS"], Description = "Finds a case in CMS based on operation name, URN, defendant name, and area.")]
+  [OpenApiSecurity("implicit_auth", SecuritySchemeType.OAuth2, Flows = typeof(ImplicitAuthFlow))]
   [OpenApiParameter(name: InputParameters.OperationName, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The operation name to search for.")]
   [OpenApiParameter(name: InputParameters.Urn, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The URN to search for.")]
   [OpenApiParameter(name: InputParameters.DefendantName, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The defendant name to search for.")]

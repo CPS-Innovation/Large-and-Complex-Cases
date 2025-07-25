@@ -14,6 +14,7 @@ using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.ActivityLog.Services;
 using Microsoft.OpenApi.Models;
+using CPS.ComplexCases.Common.OpenApi;
 
 namespace CPS.ComplexCases.API.Functions;
 
@@ -28,7 +29,7 @@ public class CreateEgressConnection(ICaseMetadataService caseMetadataService, IE
 
   [Function(nameof(CreateEgressConnection))]
   [OpenApiOperation(operationId: nameof(CreateEgressConnection), tags: ["Egress"], Description = "Connect an Egress workspace to a case.")]
-  [OpenApiSecurity("oauth2", SecuritySchemeType.OAuth2)]
+  [OpenApiSecurity("implicit_auth", SecuritySchemeType.OAuth2, Flows = typeof(ImplicitAuthFlow))]
   [OpenApiRequestBody(ContentType.ApplicationJson, typeof(CreateEgressConnectionDto), Description = "Body containing the Egress connection to create")]
   [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]
   [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
