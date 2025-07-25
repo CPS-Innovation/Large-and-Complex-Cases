@@ -97,7 +97,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
         catch (AmazonS3Exception ex)
         {
             _logger.LogError(ex, ex.Message, "Failed to get file {ObjectKey} from bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
-            return null;
+            throw;
         }
     }
 
@@ -111,7 +111,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
         catch (AmazonS3Exception ex)
         {
             _logger.LogError(ex, ex.Message, "Failed to upload file {ObjectKey} to bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
-            return false;
+            throw;
         }
     }
 
@@ -221,7 +221,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
         catch (AmazonS3Exception ex)
         {
             _logger.LogError(ex, "Failed to upload part {PartNumber} for file {ObjectKey}.", arg.PartNumber, arg.ObjectKey);
-            return null;
+            throw;
         }
     }
 
@@ -234,7 +234,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
         catch (AmazonS3Exception ex)
         {
             _logger.LogError(ex, "Failed to complete multipart upload {UploadId} for file {ObjectKey}.", arg.UploadId, arg.ObjectKey);
-            return null;
+            throw;
         }
     }
 

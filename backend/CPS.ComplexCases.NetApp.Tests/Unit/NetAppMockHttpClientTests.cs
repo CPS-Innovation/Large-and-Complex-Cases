@@ -9,6 +9,8 @@ using CPS.ComplexCases.NetApp.Models.S3.Result;
 using Moq;
 using Moq.Protected;
 
+namespace CPS.ComplexCases.NetApp.Tests.Unit;
+
 public class NetAppMockHttpClientTests
 {
     private readonly Mock<ILogger<NetAppMockHttpClient>> _loggerMock;

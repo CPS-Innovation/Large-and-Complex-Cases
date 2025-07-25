@@ -1,4 +1,5 @@
 using CPS.ComplexCases.WireMock.Core;
+using WireMock.Matchers;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
@@ -7,6 +8,9 @@ namespace CPS.ComplexCases.NetApp.WireMock.Mappings;
 
 public class UploadMapping : IWireMockMapping
 {
+    private const string TestDocumentFilePath = "/test-bucket/test-document.pdf";
+    private const string ExistingDocumentFilePath = "/test-bucket/existing-document.pdf";
+
     public void Configure(WireMockServer server)
     {
         ConfigureUploadRequest(server);
@@ -27,7 +31,7 @@ public class UploadMapping : IWireMockMapping
 
         server
             .Given(Request.Create()
-                .WithPath("/test-bucket/test-document.pdf")
+                .WithPath(TestDocumentFilePath)
                 .UsingPost()
                 .WithParam("uploads"))
             .RespondWith(Response.Create()
@@ -39,9 +43,9 @@ public class UploadMapping : IWireMockMapping
     {
         server
             .Given(Request.Create()
-                .WithPath("/test-bucket/test-document.pdf")
+                .WithPath(TestDocumentFilePath)
                 .UsingPut()
-                .WithParam("partNumber", "2")
+                .WithParam("partNumber", new WildcardMatcher("*"))
                 .WithParam("uploadId", "upload-id-49e18525de9c"))
             .RespondWith(Response.Create()
                 .WithStatusCode(200)
@@ -50,14 +54,6 @@ public class UploadMapping : IWireMockMapping
 
     private static void ConfigureCompleteUploadRequest(WireMockServer server)
     {
-        var request = @"<?xml version=""1.0\"" encoding=""UTF-8""?>
-                        <CompleteMultipartUpload>
-                            <Part>
-                                <ETag>etag-12345</ETag>
-                                <PartNumber>1</PartNumber>
-                            </Part>
-                        </CompleteMultipartUpload>";
-
         var response = @"<?xml version=""1.0\"" encoding=""UTF-8""?>
                         <CompleteMultipartUploadResult>
                             <Location>https://test-bucket.s3.amazonaws.com/test-document.pdf</Location>
@@ -67,10 +63,9 @@ public class UploadMapping : IWireMockMapping
 
         server
             .Given(Request.Create()
-                .WithPath("/test-bucket/test-document.pdf")
+                .WithPath(TestDocumentFilePath)
                 .UsingPost()
-                .WithParam("uploadId", "upload-id-49e18525de9c")
-                .WithBody(request))
+                .WithParam("uploadId", "upload-id-49e18525de9c"))
             .RespondWith(Response.Create()
                 .WithStatusCode(200)
                 .WithBody(response));
@@ -85,7 +80,7 @@ public class UploadMapping : IWireMockMapping
 
         server
             .Given(Request.Create()
-                .WithPath("/test-bucket/existing-document.pdf")
+                .WithPath(ExistingDocumentFilePath)
                 .UsingGet()
                 .WithParam("attributes"))
             .RespondWith(Response.Create()
@@ -97,7 +92,7 @@ public class UploadMapping : IWireMockMapping
     {
         server
             .Given(Request.Create()
-                .WithPath("/test-bucket/test-document.pdf")
+                .WithPath(TestDocumentFilePath)
                 .UsingGet()
                 .WithParam("attributes"))
             .RespondWith(Response.Create()
