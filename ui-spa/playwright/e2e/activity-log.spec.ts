@@ -658,9 +658,7 @@ test.describe("activity log", () => {
       sections.nth(0).locator("button").click(),
     ]);
     await expect(download.suggestedFilename()).toEqual(
-      expect.stringMatching(
-        /^activity-log-4-files-Thunderstruck-\d+-\d+\.csv$/,
-      ),
+      "activity-log-files-Thunderstruck-18-01-2024-1-50-PM.csv",
     );
     await sections.nth(0).locator("button").click();
     await expect(page.getByTestId("activity-download-tooltip")).toBeVisible();
