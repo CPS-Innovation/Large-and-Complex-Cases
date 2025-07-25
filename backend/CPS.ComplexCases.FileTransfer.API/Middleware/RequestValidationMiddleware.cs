@@ -10,15 +10,18 @@ public sealed partial class RequestValidationMiddleware() : IFunctionsWorkerMidd
 {
   public async Task Invoke(FunctionContext context, FunctionExecutionDelegate next)
   {
-    var httpRequestData = await context.GetHttpRequestDataAsync() ?? throw new ArgumentNullException(nameof(context), "Context does not contains HttpRequestData");
+    var httpRequestData = await context.GetHttpRequestDataAsync();
 
-    // Only block Swagger in production
-    if (SwaggerRouteHelper.IsProduction && SwaggerRouteHelper.IsSwaggerRoute(httpRequestData.Url.AbsolutePath))
+    if (httpRequestData != null)
     {
-      var response = httpRequestData.CreateResponse(HttpStatusCode.NotFound);
-      await response.WriteStringAsync("Not Found");
-      context.GetInvocationResult().Value = response;
-      return;
+      // Only block Swagger in production
+      if (SwaggerRouteHelper.IsProduction && SwaggerRouteHelper.IsSwaggerRoute(httpRequestData.Url.AbsolutePath))
+      {
+        var response = httpRequestData.CreateResponse(HttpStatusCode.NotFound);
+        await response.WriteStringAsync("Not Found");
+        context.GetInvocationResult().Value = response;
+        return;
+      }
     }
 
     await next(context);
