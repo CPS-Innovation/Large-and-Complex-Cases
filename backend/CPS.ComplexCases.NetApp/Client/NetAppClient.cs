@@ -96,6 +96,12 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
         }
         catch (AmazonS3Exception ex)
         {
+            if (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning("Object {ObjectKey} not found in bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
+                throw new FileNotFoundException($"Object {arg.ObjectKey} not found in bucket {arg.BucketName}.", ex);
+            }
+
             _logger.LogError(ex, ex.Message, "Failed to get file {ObjectKey} from bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
             throw;
         }

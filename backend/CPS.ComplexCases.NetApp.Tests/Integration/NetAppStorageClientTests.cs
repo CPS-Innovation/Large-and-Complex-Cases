@@ -168,7 +168,7 @@ public class NetAppStorageClientTests : IDisposable
         _netAppRequestFactoryMock.Setup(f => f.GetObjectRequest(arg)).Returns(request);
 
         // Act & Assert
-        await Assert.ThrowsAsync<AmazonS3Exception>(() => _client.OpenReadStreamAsync(invalidFilePath));
+        await Assert.ThrowsAsync<FileNotFoundException>(() => _client.OpenReadStreamAsync(invalidFilePath));
     }
 
     [Fact]
