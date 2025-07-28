@@ -126,6 +126,8 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
           : netAppToEgressIndexingTransferPlaywright;
       }
       await delay(2500);
+      // console.log(response);
+      // await delay(2500);
       // return HttpResponse.json({
       //   caseId: 12,
       //   isInvalid: true,
