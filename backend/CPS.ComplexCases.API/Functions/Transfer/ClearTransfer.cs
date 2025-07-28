@@ -1,11 +1,13 @@
 using System.Net;
 using CPS.ComplexCases.API.Constants;
+using CPS.ComplexCases.Common.OpenApi;
 using CPS.ComplexCases.Common.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
 
 namespace CPS.ComplexCases.API.Functions.Transfer;
 
@@ -16,6 +18,7 @@ public class ClearTransfer(ICaseMetadataService caseMetadataService, ILogger<Cle
 
     [Function(nameof(ClearTransfer))]
     [OpenApiOperation(operationId: nameof(ClearTransfer), tags: ["FileTransfer"], Description = "Clear file transfer notification.")]
+    [OpenApiSecurity("implicit_auth", SecuritySchemeType.OAuth2, Flows = typeof(ImplicitAuthFlow))]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]
