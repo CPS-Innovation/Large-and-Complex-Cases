@@ -47,6 +47,10 @@ const AppRoutes = () => {
         element={<CaseManagementPage />}
       />
       <Route
+        path="/case/:caseId/case-management/transfer-move-permissions-error"
+        element={<CaseManagementPage />}
+      />
+      <Route
         path="/case/:caseId/case-management/egress-connection-error"
         element={<MetaDataErrorPage />}
       />
@@ -58,7 +62,6 @@ const AppRoutes = () => {
         path="/case/:caseId/case-management/connection-error"
         element={<FolderAccessErrorPage />}
       />
-
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

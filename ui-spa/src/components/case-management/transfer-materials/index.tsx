@@ -52,6 +52,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   const [transferStatusData, setTransferStatusData] = useState<null | {
     username: string;
     direction: "EgressToNetApp" | "NetAppToEgress";
+    transferType: "Move" | "Copy";
   }>(null);
   const [egressPathFolders, setEgressPathFolders] = useState<
     {
@@ -436,8 +437,8 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     setSelectedTransferAction(null);
 
     let response: IndexingFileTransferResponse;
+    const validationPayload = getValidateTransferPayload();
     try {
-      const validationPayload = getValidateTransferPayload();
       setTransferStatus("validating");
       response = await indexingFileTransfer(validationPayload);
       if (response.isInvalid) {
@@ -460,6 +461,21 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       const initiateTransferPayload = getInitiateTransferPayload(response);
       handleInitiateFileTransfer(initiateTransferPayload);
     } catch (error) {
+      if (
+        error instanceof ApiError &&
+        error.code == 403 &&
+        validationPayload.transferType === "Move"
+      ) {
+        navigate(
+          `/case/${caseId}/case-management/transfer-move-permissions-error`,
+          {
+            state: {
+              isRouteValid: true,
+            },
+          },
+        );
+        return;
+      }
       const newError =
         error instanceof ApiError
           ? error
@@ -479,6 +495,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       username: username,
       direction:
         transferSource === "egress" ? "EgressToNetApp" : "NetAppToEgress",
+      transferType: initiatePayload.transferType,
     });
     let initiateFileTransferResponse: InitiateFileTransferResponse;
     try {
@@ -504,6 +521,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         setTransferStatusData({
           username: response.userName,
           direction: response.direction,
+          transferType: response.transferType === "COPY" ? "Copy" : "Move",
         });
         return;
       }
@@ -514,6 +532,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         setTransferStatusData({
           username: response.userName,
           direction: response.direction,
+          transferType: response.transferType === "COPY" ? "Copy" : "Move",
         });
         if (response.userName === username)
           handleFileTransferClear(transferId!);
@@ -675,7 +694,13 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
               type="success"
               data-testid="transfer-success-notification-banner"
             >
-              Files copied successfully
+              <b className={styles.successMessage}>
+                Files{" "}
+                {transferStatusData.transferType === "Copy"
+                  ? "copied"
+                  : "moved"}{" "}
+                successfully
+              </b>
             </NotificationBanner>
           </div>
         )}

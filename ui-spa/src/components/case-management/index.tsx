@@ -9,6 +9,7 @@ import { useApi } from "../../common/hooks/useApi";
 import { getCaseMetaData } from "../../apis/gateway-api";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import TransferErrorPage from "./transfer-materials/TransferErrorPage";
+import TransferMovePermissionsErrorPage from "./transfer-materials/TransferMovePermissionsErrorPage";
 
 import styles from "./index.module.scss";
 
@@ -83,6 +84,13 @@ const CaseManagementPage = () => {
     ) {
       navigate(`/`);
     }
+
+    if (
+      location.pathname.endsWith("/transfer-move-permissions-error") &&
+      !location?.state?.isRouteValid
+    ) {
+      navigate(`/`);
+    }
   }, [location, navigate]);
 
   useEffect(() => {
@@ -137,6 +145,8 @@ const CaseManagementPage = () => {
     return <TransferResolveFilePathPage />;
   if (location.pathname.endsWith("/transfer-errors"))
     return <TransferErrorPage />;
+  if (location.pathname.endsWith("/transfer-move-permissions-error"))
+    return <TransferMovePermissionsErrorPage />;
   return (
     <div className="govuk-width-container">
       <h1 className={styles.workspaceName}>
