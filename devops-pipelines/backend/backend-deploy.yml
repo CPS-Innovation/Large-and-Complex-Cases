@@ -49,7 +49,7 @@ variables:
       value: 'Azure Pipeline: Large and Complex Cases - Prod'
 
 # TODO: conditionally use prod pool for prod      
-pool: 'LaCC Pre-Prod Build Agents' #'LARGE-AND-COMPLEX-CASES-PRE-PROD'
+pool: 'LaCC Pre-Prod Build Agents'
 
 stages:
   - stage: Update_Key_Vault

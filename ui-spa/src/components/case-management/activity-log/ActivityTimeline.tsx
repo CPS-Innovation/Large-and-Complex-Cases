@@ -64,11 +64,11 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
     }
   };
 
-  const handleDownload = async (activityId: string) => {
+  const handleDownload = async (activityId: string, timestamp: string) => {
     const formattedTime = formatInTimeZone(
-      Date.now(),
+      timestamp,
       "Europe/London",
-      "yyyyMMdd-HHmmss",
+      "dd-MM-yyyy-h-mm-aa",
     );
     try {
       const response = await downloadActivityLog(activityId);
@@ -76,7 +76,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `activity-log-${activityId}-files-${operationName}-${formattedTime}.csv`;
+      a.download = `activity-log-files-${operationName}-${formattedTime}.csv`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -155,7 +155,9 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
                   <div className={styles.downloadBtnWrapper}>
                     <Button
                       className={styles.downloadBtn}
-                      onClick={() => handleDownload(activity.id)}
+                      onClick={() =>
+                        handleDownload(activity.id, activity.timestamp)
+                      }
                     >
                       Download the list of files (.csv)
                     </Button>

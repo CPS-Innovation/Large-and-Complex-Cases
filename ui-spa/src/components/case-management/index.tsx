@@ -8,6 +8,7 @@ import ActivityLogPage from "./activity-log/index";
 import { useApi } from "../../common/hooks/useApi";
 import { getCaseMetaData } from "../../apis/gateway-api";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
+import TransferErrorPage from "./transfer-materials/TransferErrorPage";
 
 import styles from "./index.module.scss";
 
@@ -135,13 +136,7 @@ const CaseManagementPage = () => {
   )
     return <TransferResolveFilePathPage />;
   if (location.pathname.endsWith("/transfer-errors"))
-    return (
-      <div className="govuk-width-container">
-        <div>
-          <h1>Handle Transfer errors</h1>
-        </div>
-      </div>
-    );
+    return <TransferErrorPage />;
   return (
     <div className="govuk-width-container">
       <h1 className={styles.workspaceName}>

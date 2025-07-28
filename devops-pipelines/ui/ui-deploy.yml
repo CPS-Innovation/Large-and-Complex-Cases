@@ -22,8 +22,6 @@ variables:
     value: 'rg-lacc-${{ parameters.environment }}'
   - name: webAppName
     value: 'lacc-app-ui-spa-${{ parameters.environment }}'
-  - name: buildAgent
-    value: 'LaCC Pre-Prod Build Agents'
   - name: azureSubscription
     ${{ if ne(parameters.environment, 'prod') }}:
       value: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
@@ -34,7 +32,7 @@ stages:
   - stage: Deploy_${{ parameters.environment }}
     displayName: 'Deploy to ${{ parameters.environment }}'
     pool:
-      name: $(buildAgent)
+      name: 'LaCC Pre-Prod Build Agents'
     jobs:
       - deployment: Deploy_UI
         displayName: 'LACC - Deploy UI SPA'
