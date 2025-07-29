@@ -26,11 +26,32 @@ var logger = loggerFactory.CreateLogger("Configuration");
 
 var host = new HostBuilder()
     .ConfigureFunctionsWebApplication(webApp =>
-    { 
+    {
         // note: the order of middleware is important, as it determines the execution flow
         webApp.UseMiddleware<ExceptionHandlingMiddleware>();
         webApp.UseMiddleware<RequestValidationMiddleware>();
     }) // ✅ Adds ASP.NET Core integration
+    .ConfigureLogging((context, logging) =>
+    {
+        // Clear providers to avoid conflicts with default filtering
+        logging.ClearProviders();
+
+        var connectionString = context.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
+        if (!string.IsNullOrEmpty(connectionString))
+        {
+            logging.AddApplicationInsights(
+                configureTelemetryConfiguration: (config) => config.ConnectionString = connectionString,
+                configureApplicationInsightsLoggerOptions: (options) => { }
+            );
+        }
+
+        if (context.HostingEnvironment.IsDevelopment())
+        {
+            logging.AddConsole();
+        }
+
+        logging.SetMinimumLevel(LogLevel.Information);
+    })
     .ConfigureAppConfiguration((context, config) =>
     {
         // ✅ Configure Azure Key Vault if KeyVaultUri is provided
@@ -40,7 +61,7 @@ var host = new HostBuilder()
     {
         // Get configuration for service registrations
         var configuration = context.Configuration;
-        
+
         services
             .AddApplicationInsightsTelemetryWorkerService()
             .ConfigureFunctionsApplicationInsights();
