@@ -50,7 +50,13 @@ var host = new HostBuilder()
             logging.AddConsole();
         }
 
-        logging.SetMinimumLevel(LogLevel.Information);
+        // Read minimum log level from configuration, fallback to Information if not set or invalid
+        var logLevelString = context.Configuration["Logging:LogLevel:Default"];
+        if (!Enum.TryParse<LogLevel>(logLevelString, true, out var minLevel))
+        {
+            minLevel = LogLevel.Information;
+        }
+        logging.SetMinimumLevel(minLevel);
     })
     .ConfigureAppConfiguration((context, config) =>
     {
