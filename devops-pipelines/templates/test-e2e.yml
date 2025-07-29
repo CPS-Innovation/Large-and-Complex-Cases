@@ -16,27 +16,33 @@ steps:
     condition: ${{ eq(parameters.runBuild, true) }}
     inputs:
       command: 'custom'
-      customCommand: 'exec vite build -- --mode playwright'
+      # customCommand: 'exec vite build -- --mode playwright'
+      customCommand: 'run ui:e2e:ci'
       workingDir: ${{ parameters.workingDir }}
 
-  # TODO: Also output results as junit and publish to test results tab
   - script: |
-      echo "Running Playwright E2E tests with real-time output..."
-      
-      CMD="npm exec playwright test -- --reporter=list,html --workers=1"
-
-      if [ "$RUN_BUILD" = "true"]; then
-        CMD="$CMD --base-url=${{ parameters.appUrl }}"
-      fi
-      
-      eval $CMD
-
-      echo "E2E tests completed."
-    displayName: 'Run E2E Tests'
+      echo "ls playwright"
+      ls playwright
     workingDirectory: ${{ parameters.workingDir }}
-    continueOnError: true
-    env:
-      RUN_BUILD: ${{ lower(parameters.runBuild) }}
+
+  # # TODO: Also output results as junit and publish to test results tab
+  # - script: |
+  #     echo "Running Playwright E2E tests with real-time output..."
+      
+  #     CMD="npm exec playwright test -- --reporter=list,html --workers=1"
+
+  #     if [ "$RUN_BUILD" = "true"]; then
+  #       CMD="$CMD --base-url=${{ parameters.appUrl }}"
+  #     fi
+      
+  #     eval $CMD
+
+  #     echo "E2E tests completed."
+  #   displayName: 'Run E2E Tests'
+  #   workingDirectory: ${{ parameters.workingDir }}
+  #   continueOnError: true
+  #   env:
+  #     RUN_BUILD: ${{ lower(parameters.runBuild) }}
 
   - task: PublishBuildArtifacts@1
     displayName: 'Upload E2E Test Report As Build Artifact'
