@@ -82,7 +82,6 @@ stages:
           #   displayName: 'Publish UI Code Coverage'
           #   inputs:
           #     summaryFileLocation: 'ui-spa/coverage/cobertura-coverage.xml'
-          #     reportDirectory: 'ui-spa/coverage'
           #   condition: always()
 
           - template: ../templates/test-e2e.yml

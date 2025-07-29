@@ -16,18 +16,9 @@ steps:
     condition: ${{ eq(parameters.runBuild, true) }}
     inputs:
       command: 'custom'
-      # customCommand: 'exec vite build -- --mode playwright'
       customCommand: 'run ui:e2e:ci'
       workingDir: ${{ parameters.workingDir }}
 
-  - script: |
-      echo "ls playwright"
-      ls playwright
-      echo "ls test-results"
-      ls playwright/test-results
-    workingDirectory: ${{ parameters.workingDir }}
-
-  # # TODO: Also output results as junit and publish to test results tab
   # - script: |
   #     echo "Running Playwright E2E tests with real-time output..."
       
@@ -51,3 +42,23 @@ steps:
     inputs:
       pathtoPublish: '${{ parameters.workingDir }}/playwright/playwright-report'
       artifactName: 'e2e-test-report'
+
+  - task: PublishTestResults@2
+    displayName: 'Publish E2E Test Results'
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: '${{ parameters.workingDir }}/playwright/test-results/junit.xml'
+      publishRunAttachments: true
+    condition: always()
+
+  - task: PublishCodeCoverageResults@2
+    displayName: 'XML Publish E2E Code Coverage'
+    inputs:
+      summaryFileLocation: '${{ parameters.workingDir }}/playwright/test-results/junit.xml'
+    condition: always()
+
+  - task: PublishCodeCoverageResults@2
+    displayName: 'HTML Publish E2E Code Coverage'
+    inputs:
+      summaryFileLocation: '${{ parameters.workingDir }}/playwright/playwright-report/index.html'
+    condition: always()
