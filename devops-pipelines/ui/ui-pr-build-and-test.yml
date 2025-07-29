@@ -48,40 +48,40 @@ stages:
               command: 'ci'
               workingDir: '$(workingDir)'
 
-          # - task: Npm@1
-          #   displayName: 'Lint Code'
-          #   inputs:
-          #     command: 'custom'
-          #     customCommand: 'run lint'
-          #     workingDir: 'ui-spa'
+          - task: Npm@1
+            displayName: 'Lint Code'
+            inputs:
+              command: 'custom'
+              customCommand: 'run lint'
+              workingDir: 'ui-spa'
 
-          # - task: Npm@1
-          #   displayName: 'Build Web App Package'
-          #   inputs:
-          #     command: 'custom'
-          #     customCommand: 'run build'
-          #     workingDir: '$(workingDir)'
+          - task: Npm@1
+            displayName: 'Build Web App Package'
+            inputs:
+              command: 'custom'
+              customCommand: 'run build'
+              workingDir: '$(workingDir)'
 
-          # - task: Npm@1
-          #   displayName: 'Run UI Unit Tests'
-          #   inputs:
-          #     command: 'custom'
-          #     customCommand: 'run coverage'
-          #     workingDir: '$(workingDir)'
-          #   continueOnError: true
+          - task: Npm@1
+            displayName: 'Run UI Unit Tests'
+            inputs:
+              command: 'custom'
+              customCommand: 'run coverage'
+              workingDir: '$(workingDir)'
+            continueOnError: true
 
-          # - task: PublishTestResults@2
-          #   displayName: 'Publish UI Test Results'
-          #   inputs:
-          #     testResultsFormat: 'JUnit'
-          #     testResultsFiles: 'ui-spa/coverage/junit.xml'
-          #     publishRunAttachments: true
-          #   condition: always()
+          - task: PublishTestResults@2
+            displayName: 'Publish UI Test Results'
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'ui-spa/coverage/junit.xml'
+              publishRunAttachments: true
+            condition: always()
 
-          # - task: PublishCodeCoverageResults@2
-          #   displayName: 'Publish UI Code Coverage'
-          #   inputs:
-          #     summaryFileLocation: 'ui-spa/coverage/cobertura-coverage.xml'
-          #   condition: always()
+          - task: PublishCodeCoverageResults@2
+            displayName: 'Publish UI Code Coverage'
+            inputs:
+              summaryFileLocation: 'ui-spa/coverage/cobertura-coverage.xml'
+            condition: always()
 
           - template: ../templates/test-e2e.yml
