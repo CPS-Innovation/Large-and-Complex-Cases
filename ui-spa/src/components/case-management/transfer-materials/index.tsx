@@ -519,7 +519,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         setTransferStatusData({
           username: response.userName,
           direction: response.direction,
-          transferType: response.transferType === "COPY" ? "Copy" : "Move",
+          transferType: response.transferType,
         });
         return;
       }
@@ -528,7 +528,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         setTransferStatusData({
           username: response.userName,
           direction: response.direction,
-          transferType: response.transferType === "COPY" ? "Copy" : "Move",
+          transferType: response.transferType,
         });
         if (response.userName === username)
           handleFileTransferClear(transferId!);

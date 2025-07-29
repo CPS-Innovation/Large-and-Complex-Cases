@@ -126,34 +126,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
           : netAppToEgressIndexingTransferPlaywright;
       }
       await delay(2500);
-      // console.log(response);
-      // await delay(2500);
-      // return HttpResponse.json({
-      //   caseId: 12,
-      //   isInvalid: true,
-      //   destinationPath:
-      //     "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination",
-      //   validationErrors: [
-      //     {
-      //       id: "id_3",
-      //       sourcePath:
-      //         "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
-      //       errorType: "",
-      //     },
-      //     {
-      //       id: "id_5",
-      //       sourcePath:
-      //         "egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
-      //       errorType: "",
-      //     },
-      //   ],
-      //   files: [
-      //     { id: "id_1", sourcePath: "egress/folder1/file1.pdf" },
-      //     { id: "id_2", sourcePath: "egress/folder1/file2.pdf" },
-      //   ],
-      // });
       return HttpResponse.json(response);
-      // return HttpResponse.json(null, { status: 403 });
     }),
 
     http.post(

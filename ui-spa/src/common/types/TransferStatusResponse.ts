@@ -5,7 +5,7 @@ export type TransferStatusResponse = {
     | "Completed"
     | "PartiallyCompleted"
     | "Failed";
-  transferType: "COPY" | "MOVE";
+  transferType: "Copy" | "Move";
   direction: "EgressToNetApp" | "NetAppToEgress";
   completedAt: null | string;
   failedItems: TransferFailedItem[];

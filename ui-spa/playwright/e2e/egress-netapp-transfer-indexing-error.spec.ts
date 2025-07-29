@@ -727,7 +727,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL("/case/12/case-management");
       await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
     });
-    test("User should not be able to land directly on the transfer permissions error page,it should be redirected to search case page", async ({
+    test("User should not be able to land directly on the transfer permissions error page, it should be redirected to search case page", async ({
       page,
     }) => {
       await page.goto("/case/12/case-management/transfer-permissions-error");
