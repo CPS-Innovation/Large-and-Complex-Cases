@@ -388,7 +388,7 @@ test.describe("egress-netapp-transfer", () => {
             await delay(10);
             return HttpResponse.json({
               status: "Completed",
-              transferType: "MOVE",
+              transferType: "Move",
               direction: "EgressToNetApp",
               completedAt: null,
               failedItems: [],
@@ -489,7 +489,7 @@ test.describe("egress-netapp-transfer", () => {
           await delay(10);
           return HttpResponse.json({
             status: "Initiated",
-            transferType: "COPY",
+            transferType: "Copy",
             direction: "EgressToNetApp",
             completedAt: null,
             failedItems: [],
@@ -521,7 +521,7 @@ test.describe("egress-netapp-transfer", () => {
           await delay(10);
           return HttpResponse.json({
             status: "InProgress",
-            transferType: "COPY",
+            transferType: "Copy",
             direction: "EgressToNetApp",
             completedAt: null,
             failedItems: [],
@@ -548,7 +548,7 @@ test.describe("egress-netapp-transfer", () => {
           await delay(10);
           return HttpResponse.json({
             status: "Completed",
-            transferType: "COPY",
+            transferType: "Copy",
             direction: "EgressToNetApp",
             completedAt: null,
             failedItems: [],
@@ -598,7 +598,7 @@ test.describe("egress-netapp-transfer", () => {
           await delay(10);
           return HttpResponse.json({
             status: "Initiated",
-            transferType: "COPY",
+            transferType: "Copy",
             direction: "EgressToNetApp",
             completedAt: null,
             failedItems: [],
@@ -630,7 +630,7 @@ test.describe("egress-netapp-transfer", () => {
           await delay(10);
           return HttpResponse.json({
             status: "InProgress",
-            transferType: "COPY",
+            transferType: "Copy",
             direction: "EgressToNetApp",
             completedAt: null,
             failedItems: [],
@@ -656,7 +656,7 @@ test.describe("egress-netapp-transfer", () => {
         async () => {
           return HttpResponse.json({
             status: "Completed",
-            transferType: "COPY",
+            transferType: "Copy",
             direction: "EgressToNetApp",
             completedAt: null,
             failedItems: [],

@@ -140,7 +140,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
             await delay(10);
             return HttpResponse.json({
               status: "InProgress",
-              transferType: "COPY",
+              transferType: "Copy",
               direction: "EgressToNetApp",
               completedAt: null,
               failedItems: [],
@@ -366,7 +366,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
             await delay(10);
             return HttpResponse.json({
               status: "Completed",
-              transferType: "COPY",
+              transferType: "Copy",
               direction: "EgressToNetApp",
               completedAt: null,
               failedItems: [],

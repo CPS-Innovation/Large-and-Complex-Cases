@@ -1,7 +1,7 @@
 import { TransferStatusResponse } from "../../common/types/TransferStatusResponse";
 export const egressToNetAppTransferStatusPlaywright: TransferStatusResponse = {
   status: "Completed",
-  transferType: "COPY",
+  transferType: "Copy",
   direction: "EgressToNetApp",
   completedAt: null,
   failedItems: [],
@@ -10,7 +10,7 @@ export const egressToNetAppTransferStatusPlaywright: TransferStatusResponse = {
 
 export const netAppToEgressTransferStatusPlaywright: TransferStatusResponse = {
   status: "Completed",
-  transferType: "COPY",
+  transferType: "Copy",
   direction: "NetAppToEgress",
   completedAt: null,
   failedItems: [],

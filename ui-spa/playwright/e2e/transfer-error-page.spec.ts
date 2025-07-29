@@ -63,7 +63,7 @@ test.describe("transfer-error-page", () => {
           await delay(10);
           return HttpResponse.json({
             status: "PartiallyCompleted",
-            transferType: "COPY",
+            transferType: "Copy",
             direction: "EgressToNetApp",
             completedAt: null,
             failedItems: [],
@@ -122,7 +122,7 @@ test.describe("transfer-error-page", () => {
           await delay(10);
           return HttpResponse.json({
             status: "Failed",
-            transferType: "COPY",
+            transferType: "Copy",
             direction: "EgressToNetApp",
             completedAt: null,
             failedItems: [],
