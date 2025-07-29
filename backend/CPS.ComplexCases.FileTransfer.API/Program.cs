@@ -26,6 +26,33 @@ var host = new HostBuilder()
     {
         webApp.UseMiddleware<RequestValidationMiddleware>();
     }) // ✅ Adds ASP.NET Core integration
+    .ConfigureLogging((context, logging) =>
+    {
+        // Clear providers to avoid conflicts with default filtering
+        logging.ClearProviders();
+
+        var connectionString = context.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
+        if (!string.IsNullOrEmpty(connectionString))
+        {
+            logging.AddApplicationInsights(
+                configureTelemetryConfiguration: (config) => config.ConnectionString = connectionString,
+                configureApplicationInsightsLoggerOptions: (options) => { }
+            );
+        }
+
+        if (context.HostingEnvironment.IsDevelopment())
+        {
+            logging.AddConsole();
+        }
+
+        // Read minimum log level from configuration, fallback to Information if not set or invalid
+        var logLevelString = context.Configuration["Logging:LogLevel:Default"];
+        if (!Enum.TryParse<LogLevel>(logLevelString, true, out var minLevel))
+        {
+            minLevel = LogLevel.Information;
+        }
+        logging.SetMinimumLevel(minLevel);
+    })
     .ConfigureAppConfiguration((context, config) =>
     {
         // ✅ Configure Azure Key Vault if KeyVaultUri is provided
