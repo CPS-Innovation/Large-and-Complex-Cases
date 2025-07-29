@@ -18,19 +18,23 @@ const TransferMovePermissionsErrorPage = () => {
         Back
       </BackLink>
       <div className={styles.contentWrapper}>
-        <h1>Cannot complete move operation</h1>
+        <h1>You do not have permission to transfer these files from egress</h1>
         <div>
-          You can:
-          <ul className={styles.userActionsList}>
-            <li>try again</li>
-            <li>
-              check the activity log to see if any files or folders have
-              transferred successfully
-            </li>
-          </ul>
-          <Button onClick={handleButtonClick} className={styles.continueBtn}>
-            Continue
+          <p>
+            If you think you should have access, contact the egress
+            administrator for the case.
+          </p>
+          <Button
+            onClick={handleButtonClick}
+            className={styles.returnToCaseBtn}
+          >
+            Return to the case
           </Button>
+
+          <p data-testid="contact-information">
+            To get help, call the Service Desk{" "}
+            <a href="tel:08006926996">0800 692 6996</a>.
+          </p>
         </div>
       </div>
     </div>
