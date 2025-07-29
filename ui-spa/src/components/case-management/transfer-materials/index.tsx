@@ -467,14 +467,11 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         error.code == 403 &&
         validationPayload.transferType === "Move"
       ) {
-        navigate(
-          `/case/${caseId}/case-management/transfer-move-permissions-error`,
-          {
-            state: {
-              isRouteValid: true,
-            },
+        navigate(`/case/${caseId}/case-management/transfer-permissions-error`, {
+          state: {
+            isRouteValid: true,
           },
-        );
+        });
         return;
       }
       const newError =

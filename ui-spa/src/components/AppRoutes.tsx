@@ -47,7 +47,7 @@ const AppRoutes = () => {
         element={<CaseManagementPage />}
       />
       <Route
-        path="/case/:caseId/case-management/transfer-move-permissions-error"
+        path="/case/:caseId/case-management/transfer-permissions-error"
         element={<CaseManagementPage />}
       />
       <Route

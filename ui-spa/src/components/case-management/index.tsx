@@ -86,7 +86,7 @@ const CaseManagementPage = () => {
     }
 
     if (
-      location.pathname.endsWith("/transfer-move-permissions-error") &&
+      location.pathname.endsWith("/transfer-permissions-error") &&
       !location?.state?.isRouteValid
     ) {
       navigate(`/`);
@@ -145,7 +145,7 @@ const CaseManagementPage = () => {
     return <TransferResolveFilePathPage />;
   if (location.pathname.endsWith("/transfer-errors"))
     return <TransferErrorPage />;
-  if (location.pathname.endsWith("/transfer-move-permissions-error"))
+  if (location.pathname.endsWith("/transfer-permissions-error"))
     return <TransferMovePermissionsErrorPage />;
   return (
     <div className="govuk-width-container">

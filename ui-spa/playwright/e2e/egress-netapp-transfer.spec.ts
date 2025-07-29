@@ -308,7 +308,7 @@ test.describe("egress-netapp-transfer", () => {
         ),
       ).toBeVisible();
     });
-    test("Should successfully complete and egress to netapp transfer", async ({
+    test("Should successfully complete egress to netapp transfer, copy operation", async ({
       page,
     }) => {
       const checkboxes = page
@@ -369,6 +369,92 @@ test.describe("egress-netapp-transfer", () => {
       await expect(
         page.getByTestId("transfer-success-notification-banner"),
       ).toContainText("Files copied successfully");
+      await expect(
+        page.getByTestId("tab-content-transfer-materials").locator("h2").nth(1),
+      ).toHaveText(
+        "Transfer folders and files between egress and shared drive",
+      );
+      await expect(page.getByTestId("egress-table-wrapper")).toBeVisible();
+      await expect(page.getByTestId("netapp-table-wrapper")).toBeVisible();
+    });
+    test("Should successfully complete egress to netapp transfer, move operation", async ({
+      page,
+      worker,
+    }) => {
+      await worker.use(
+        http.get(
+          "https://mocked-out-api/api/v1/filetransfer/transfer-id-egress-to-netapp/status",
+          async () => {
+            await delay(10);
+            return HttpResponse.json({
+              status: "Completed",
+              transferType: "MOVE",
+              direction: "EgressToNetApp",
+              completedAt: null,
+              failedItems: [],
+              userName: "dev_user@example.org",
+            });
+          },
+        ),
+      );
+      const checkboxes = page
+        .getByTestId("egress-table-wrapper")
+        .locator('input[type="checkbox"]');
+      await checkboxes.nth(0).check();
+      await expect(
+        page.getByTestId("transfer-actions-dropdown-0"),
+      ).toBeVisible();
+      await expect(
+        page.getByTestId("transfer-actions-dropdown-1"),
+      ).toBeVisible();
+      await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
+      await page
+        .getByTestId("netapp-inset-text")
+        .getByRole("button", { name: "Move" })
+        .click();
+      const confirmationModal = await page.getByTestId("div-modal");
+      await expect(confirmationModal).toBeVisible();
+      await expect(confirmationModal).toContainText("Move files to: netapp");
+      await expect(
+        confirmationModal.getByLabel(
+          "I confirm I want to move 2 folders and 1 file to netapp",
+        ),
+      ).toBeVisible();
+      await expect(
+        confirmationModal.getByRole("button", { name: "Continue" }),
+      ).toBeDisabled();
+      await confirmationModal
+        .getByLabel("I confirm I want to move 2 folders and 1 file to netapp")
+        .click();
+      await expect(
+        confirmationModal.getByRole("button", { name: "Continue" }),
+      ).not.toBeDisabled();
+      await confirmationModal.getByRole("button", { name: "Continue" }).click();
+      await expect(confirmationModal).not.toBeVisible();
+      await expect(page.getByTestId("transfer-spinner")).toBeVisible();
+      await expect(
+        page.getByTestId("tab-content-transfer-materials").locator("h2", {
+          hasText: "Transfer folders and files between egress and shared drive",
+        }),
+      ).not.toBeVisible();
+      await expect(page.getByTestId("egress-table-wrapper")).not.toBeVisible();
+      await expect(page.getByTestId("netapp-table-wrapper")).not.toBeVisible();
+      await expect(
+        page.getByTestId("tab-content-transfer-materials"),
+      ).toContainText("Indexing transfer from egress to shared drive...");
+      await expect(
+        page.getByTestId("tab-content-transfer-materials"),
+      ).toContainText("Completing transfer from egress to shared drive...");
+      await expect(page.getByTestId("transfer-spinner")).not.toBeVisible();
+      await expect(
+        page.getByTestId("transfer-success-notification-banner"),
+      ).toBeVisible();
+      await expect(
+        page.getByTestId("transfer-success-notification-banner"),
+      ).toContainText("Success");
+      await expect(
+        page.getByTestId("transfer-success-notification-banner"),
+      ).toContainText("Files moved successfully");
       await expect(
         page.getByTestId("tab-content-transfer-materials").locator("h2").nth(1),
       ).toHaveText(
