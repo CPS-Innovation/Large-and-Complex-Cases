@@ -21,11 +21,14 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
     {
         var arg = _netAppArgFactory.CreateCompleteMultipartUploadArg(
             _options.BucketName,
-            session.WorkspaceId ?? throw new ArgumentNullException(nameof(session.WorkspaceId), "Workspace ID cannot be null."),
+            session.WorkspaceId ?? throw new ArgumentNullException(nameof(session.WorkspaceId), "session.WorkspaceId cannot be null."),
             session.UploadId ?? throw new ArgumentNullException(nameof(session.UploadId), "Upload ID cannot be null."),
             etags ?? throw new ArgumentNullException(nameof(etags), "ETags cannot be null."));
 
-        await _netAppClient.CompleteMultipartUploadAsync(arg);
+        var result = await _netAppClient.CompleteMultipartUploadAsync(arg);
+
+        if (result == null)
+            throw new InvalidOperationException("Failed to complete multipart upload.");
     }
 
     public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string sourcePath, string? workspaceId = null, string? relativePath = null)
@@ -66,6 +69,9 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
             session.UploadId ?? throw new ArgumentNullException(nameof(session.UploadId), "Upload ID cannot be null."));
 
         var result = await _netAppClient.UploadPartAsync(arg);
+
+        if (result == null)
+            throw new InvalidOperationException("Failed to upload part.");
 
         return new UploadChunkResult(TransferDirection.EgressToNetApp, result?.ETag, result?.PartNumber);
     }
