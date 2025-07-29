@@ -78,33 +78,36 @@ stages:
               publishRunAttachments: true
             condition: always()
 
-          - task: PublishCodeCoverageResults@1
+          - task: PublishCodeCoverageResults@2
             displayName: 'Publish UI Code Coverage'
             inputs:
-              codeCoverageTool: 'Cobertura'
               summaryFileLocation: 'ui-spa/coverage/cobertura-coverage.xml'
               reportDirectory: 'ui-spa/coverage'
             condition: always()
 
-          # TODO: The below is currently not working. Needs debug:
-          - task: PowerShell@2
-            displayName: 'Generate Enhanced Coverage Reports'
-            inputs:
-              filePath: 'devops-pipelines/scripts/generateHTMLReport.ps1'
-              arguments: >
-                -ProjectPath '$(Build.SourcesDirectory)/ui-spa'
-                -CoverageSummaryPath 'coverage/coverage-summary.json'
-                -CoberturaPath 'coverage/cobertura-coverage.xml'
-                -LcovReportPath 'coverage/lcov-report'
-                -OutputReportPath 'coverage/html-enhanced'
-              pwsh: true
-            condition: always()
+          - script: |
+              echo "######### ls $(Build.SourcesDirectory)/ui-spa/coverage ########### "
+              ls $(Build.SourcesDirectory)/ui-spa/coverage
 
-          - task: PublishBuildArtifacts@1
-            displayName: 'Publish Enhanced HTML Coverage Report'
-            inputs:
-              pathtoPublish: 'ui-spa/coverage/html-enhanced'
-              artifactName: 'ui-coverage-report'
-            condition: always()
+          # # TODO: The below is currently not working. Needs debug:
+          # - task: PowerShell@2
+          #   displayName: 'Generate Enhanced Coverage Reports'
+          #   inputs:
+          #     filePath: 'devops-pipelines/scripts/generateHTMLReport.ps1'
+          #     arguments: >
+          #       -ProjectPath '$(Build.SourcesDirectory)/ui-spa'
+          #       -CoverageSummaryPath 'coverage/coverage-summary.json'
+          #       -CoberturaPath 'coverage/cobertura-coverage.xml'
+          #       -LcovReportPath 'coverage/lcov-report'
+          #       -OutputReportPath 'coverage/html-enhanced'
+          #     pwsh: true
+          #   condition: always()
 
-          - template: ../templates/test-e2e.yml
+          # - task: PublishBuildArtifacts@1
+          #   displayName: 'Publish Enhanced HTML Coverage Report'
+          #   inputs:
+          #     pathtoPublish: 'ui-spa/coverage/html-enhanced'
+          #     artifactName: 'ui-coverage-report'
+          #   condition: always()
+
+          # - template: ../templates/test-e2e.yml
