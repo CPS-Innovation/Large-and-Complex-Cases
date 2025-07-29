@@ -1,6 +1,6 @@
 param (
     [string]$ProjectPath = "ui-spa",
-    [string]$CoverageSummaryPath = "coverage/coverage-summary.json",
+    [string]$CoverageSummaryPath = "coverage/coverage-final.json",
     [string]$CoberturaPath = "coverage/cobertura-coverage.xml",
     [string]$LcovReportPath = "coverage/lcov-report",
     [string]$OutputReportPath = "coverage/html-enhanced"

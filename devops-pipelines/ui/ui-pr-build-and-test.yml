@@ -89,25 +89,25 @@ stages:
               echo "######### ls $(Build.SourcesDirectory)/ui-spa/coverage ########### "
               ls $(Build.SourcesDirectory)/ui-spa/coverage
 
-          # # TODO: The below is currently not working. Needs debug:
-          # - task: PowerShell@2
-          #   displayName: 'Generate Enhanced Coverage Reports'
-          #   inputs:
-          #     filePath: 'devops-pipelines/scripts/generateHTMLReport.ps1'
-          #     arguments: >
-          #       -ProjectPath '$(Build.SourcesDirectory)/ui-spa'
-          #       -CoverageSummaryPath 'coverage/coverage-summary.json'
-          #       -CoberturaPath 'coverage/cobertura-coverage.xml'
-          #       -LcovReportPath 'coverage/lcov-report'
-          #       -OutputReportPath 'coverage/html-enhanced'
-          #     pwsh: true
-          #   condition: always()
+          # TODO: The below is currently not working. Needs debug:
+          - task: PowerShell@2
+            displayName: 'Generate Enhanced Coverage Reports'
+            inputs:
+              filePath: 'devops-pipelines/scripts/generateHTMLReport.ps1'
+              arguments: >
+                -ProjectPath '$(Build.SourcesDirectory)/ui-spa'
+                -CoverageSummaryPath 'coverage/coverage-final.json'
+                -CoberturaPath 'coverage/cobertura-coverage.xml'
+                -LcovReportPath 'coverage/lcov-report'
+                -OutputReportPath 'coverage/html-enhanced'
+              pwsh: true
+            condition: always()
 
-          # - task: PublishBuildArtifacts@1
-          #   displayName: 'Publish Enhanced HTML Coverage Report'
-          #   inputs:
-          #     pathtoPublish: 'ui-spa/coverage/html-enhanced'
-          #     artifactName: 'ui-coverage-report'
-          #   condition: always()
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Enhanced HTML Coverage Report'
+            inputs:
+              pathtoPublish: 'ui-spa/coverage/html-enhanced'
+              artifactName: 'ui-coverage-report'
+            condition: always()
 
           # - template: ../templates/test-e2e.yml
