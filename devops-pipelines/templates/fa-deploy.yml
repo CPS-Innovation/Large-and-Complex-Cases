@@ -8,7 +8,6 @@ parameters:
   resourceGroupName: $(resourceGroupName)
   deployToSlot: true
   slotName: ''
-  sourceSlotName: ${{ iif(eq('lower(parameters.deployToSlot)', 'true'), 'parameters.slotName', 'parameters.functionAppName') }}
 
 steps:
   - download: '${{ parameters.pipelineResourceAlias}}'
@@ -17,7 +16,7 @@ steps:
   - template: ../templates/fa-config.yml
     parameters:
       environment: ${{ parameters.environment }}
-      functionAppName: $(sourceSlotName)
+      functionAppName:  ${{ iif(eq('lower(parameters.deployToSlot)', 'true'), 'parameters.slotName', 'parameters.functionAppName') }}
       # ${{ if eq('lower(parameters.deployToSlot)', 'true') }}:
       #   functionAppName: ${{ parameters.slotName }}
       # ${{ else }}:
@@ -69,10 +68,10 @@ steps:
       inlineScript: |
         if []
 
-        echo "Verifying deployment to $(sourceSlotName)..."
+        echo "Verifying deployment to $FA_NAME..."
         
         # Check if deployment completed successfully
-        DEPLOYMENT_STATUS=$(az functionapp deployment list --name $(sourceSlotName) --resource-group ${{ parameters.resourceGroupName }} --query "[0].status" -o tsv)
+        DEPLOYMENT_STATUS=$(az functionapp deployment list --name $FA_NAME --resource-group ${{ parameters.resourceGroupName }} --query "[0].status" -o tsv)
         echo "Latest deployment status: $DEPLOYMENT_STATUS"
         
         # Wait a moment for extraction to complete
@@ -80,7 +79,7 @@ steps:
         sleep 10
         
         # Check if function app is running
-        APP_STATE=$(az functionapp show --name $(sourceSlotName) --resource-group ${{ parameters.resourceGroupName }} --query "state" -o tsv)
+        APP_STATE=$(az functionapp show --name $FA_NAME --resource-group ${{ parameters.resourceGroupName }} --query "state" -o tsv)
         echo "Function app state: $APP_STATE"
         
         if [ "$APP_STATE" != "Running" ]; then
@@ -88,3 +87,5 @@ steps:
         else
           echo "✅ Function app is running"
         fi
+      env:
+        FA_NAME: ${{ iif(eq('lower(parameters.deployToSlot)', 'true'), 'parameters.slotName', 'parameters.functionAppName') }}
