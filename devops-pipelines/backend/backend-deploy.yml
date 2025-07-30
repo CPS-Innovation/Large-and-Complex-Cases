@@ -166,6 +166,7 @@ stages:
                     buildArtifactDir: 'build'
 
   - stage: Deploy_Function_Apps
+    condition: ${{ or(eq(parameters.deployMainAPI, true), eq(parameters.deployFileTransferAPI, true)) }}
     displayName: 'LACC - Deploy Function Apps'
     jobs:
       - deployment: Deploy_Main_API
@@ -185,7 +186,6 @@ stages:
                     deployToSlot: true
                     slotName: 'fa-lacc-api-dev/test-slot'
 
-                
                 - template: ../templates/runner-cleanup.yml
                   parameters:
                     buildArtifactDir: 'build'
