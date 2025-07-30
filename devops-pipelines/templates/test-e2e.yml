@@ -29,6 +29,6 @@ steps:
     displayName: 'Publish E2E Test Results'
     inputs:
       testResultsFormat: 'JUnit'
-      testResultsFiles: '${{ parameters.workingDir }}/playwright/test-results/junit.xml'
+      testResultsFiles: '${{ parameters.workingDir }}/playwright/e2e-test-results.xml'
       publishRunAttachments: true
     condition: always()

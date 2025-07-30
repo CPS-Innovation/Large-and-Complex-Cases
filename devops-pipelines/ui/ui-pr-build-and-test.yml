@@ -74,7 +74,7 @@ stages:
             displayName: 'Publish UI Test Results'
             inputs:
               testResultsFormat: 'JUnit'
-              testResultsFiles: 'ui-spa/coverage/junit.xml'
+              testResultsFiles: 'ui-spa/coverage/unit-test-results.xml'
               publishRunAttachments: true
             condition: always()
 
