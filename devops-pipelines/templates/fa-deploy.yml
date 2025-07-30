@@ -14,14 +14,13 @@ steps:
     artifact: '${{ parameters.buildArtifactName }}'
 
   - script: |
-      if ["$DEPLOY_TO_SLOT" = "true"]; then
+      if [ "$DEPLOY_TO_SLOT" = "true" ]; then
         sourceSlotName=${{ parameters.slotName }}
       else
         sourceSlotName=${{ parameters.functionAppName }}
       fi
 
       echo "##vso[task.setvariable variable=sourceSlotName;]$sourceSlotName"
-
     env:
       DEPLOY_TO_SLOT: ${{ lower(parameters.deployToSlot) }}
 
@@ -74,8 +73,6 @@ steps:
       scriptType: 'bash'
       scriptLocation: 'inlineScript'
       inlineScript: |
-        if []
-
         echo "Verifying deployment to $(sourceSlotName)..."
         
         # Check if deployment completed successfully
