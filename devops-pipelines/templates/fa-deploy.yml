@@ -6,6 +6,11 @@ parameters:
   keyVaultName: $(keyVaultName)
   azureSubscription: $(azureSubscription)
   resourceGroupName: $(resourceGroupName)
+  deployToSlot: true
+  slotName: ''
+
+variables:
+  sourceSlotName: ${{ iif(eq('lower(parameters.deployToSlot)', 'true'), 'parameters.slotName', 'parameters.functionAppName') }}
 
 steps:
   - download: '${{ parameters.pipelineResourceAlias}}'
@@ -14,7 +19,11 @@ steps:
   - template: ../templates/fa-config.yml
     parameters:
       environment: ${{ parameters.environment }}
-      functionAppName: ${{ parameters.functionAppName }}
+      functionAppName: $(sourceSlotName)
+      # ${{ if eq('lower(parameters.deployToSlot)', 'true') }}:
+      #   functionAppName: ${{ parameters.slotName }}
+      # ${{ else }}:
+      #   functionAppName: ${{ parameters.functionAppName }}
       azureSubscription: ${{ parameters.azureSubscription }}
       resourceGroupName: ${{ parameters.resourceGroupName }}
       keyVaultName: ${{ parameters.keyVaultName }}
@@ -28,6 +37,9 @@ steps:
       package: '$(Pipeline.Workspace)/${{ parameters.pipelineResourceAlias}}/${{ parameters.buildArtifactName }}/*.zip'
       runtimeStack: 'DOTNET-ISOLATED|8.0'
       deploymentMethod: 'runFromPackage'
+      deployToSlotOrASE: ${{ parameters.deployToSlot }}
+      slotName: ${{ parameters.slotName }}
+      resourceGroupName: ${{ parameters.resourceGroupName }}
 
   - checkout: self
     sparseCheckoutDirectories: devops-pipelines/scripts
@@ -57,10 +69,12 @@ steps:
       scriptType: 'bash'
       scriptLocation: 'inlineScript'
       inlineScript: |
-        echo "Verifying deployment to ${{ parameters.functionAppName }}..."
+        if []
+
+        echo "Verifying deployment to $(sourceSlotName)..."
         
         # Check if deployment completed successfully
-        DEPLOYMENT_STATUS=$(az functionapp deployment list --name ${{ parameters.functionAppName }} --resource-group ${{ parameters.resourceGroupName }} --query "[0].status" -o tsv)
+        DEPLOYMENT_STATUS=$(az functionapp deployment list --name $(sourceSlotName) --resource-group ${{ parameters.resourceGroupName }} --query "[0].status" -o tsv)
         echo "Latest deployment status: $DEPLOYMENT_STATUS"
         
         # Wait a moment for extraction to complete
@@ -68,7 +82,7 @@ steps:
         sleep 10
         
         # Check if function app is running
-        APP_STATE=$(az functionapp show --name ${{ parameters.functionAppName }} --resource-group ${{ parameters.resourceGroupName }} --query "state" -o tsv)
+        APP_STATE=$(az functionapp show --name $(sourceSlotName) --resource-group ${{ parameters.resourceGroupName }} --query "state" -o tsv)
         echo "Function app state: $APP_STATE"
         
         if [ "$APP_STATE" != "Running" ]; then

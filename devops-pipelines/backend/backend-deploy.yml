@@ -182,6 +182,9 @@ stages:
                     functionAppName: 'fa-lacc-api-${{ parameters.environment }}'
                     pipelineResourceAlias: 'build'
                     buildArtifactName: 'lacc-main-api-drop'
+                    deployToSlot: true
+                    slotName: 'fa-lacc-api-dev/test-slot'
+
                 
                 - template: ../templates/runner-cleanup.yml
                   parameters:
@@ -201,7 +204,8 @@ stages:
                     functionAppName: 'fa-lacc-filetransfer-api-${{ parameters.environment }}'
                     pipelineResourceAlias: 'build'
                     buildArtifactName: 'lacc-filetransfer-api-drop'
-                
+                    deployToSlot: false
+
                 - template: ../templates/runner-cleanup.yml
                   parameters:
                     buildArtifactDir: 'build'
