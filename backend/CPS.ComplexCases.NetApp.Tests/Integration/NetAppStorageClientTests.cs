@@ -111,7 +111,7 @@ public class NetAppStorageClientTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("upload-id-49e18525de9c", result.UploadId);
+        Assert.Equal(UploadId, result.UploadId);
         Assert.Equal(fullPath, result.WorkspaceId);
     }
 
@@ -147,7 +147,7 @@ public class NetAppStorageClientTests : IDisposable
     }
 
     [Fact]
-    public async Task OpenReadStreamAsync_ThrowsIfNullResponse()
+    public async Task OpenReadStreamAsync_ThrowsIfFileNotFound()
     {
         // Arrange
         var invalidFilePath = "invalid-file-path/file.txt";
@@ -168,7 +168,7 @@ public class NetAppStorageClientTests : IDisposable
         _netAppRequestFactoryMock.Setup(f => f.GetObjectRequest(arg)).Returns(request);
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _client.OpenReadStreamAsync(invalidFilePath));
+        await Assert.ThrowsAsync<FileNotFoundException>(() => _client.OpenReadStreamAsync(invalidFilePath));
     }
 
     [Fact]
@@ -230,7 +230,7 @@ public class NetAppStorageClientTests : IDisposable
             UploadId = UploadId,
             CompletedParts =
             [
-                new PartETag(1, "etag-12345")
+
             ]
         };
 
@@ -240,7 +240,7 @@ public class NetAppStorageClientTests : IDisposable
             Key = ObjectKey,
             UploadId = UploadId,
             PartETags = [
-                new PartETag(1, "etag-12345")
+
             ]
         };
 

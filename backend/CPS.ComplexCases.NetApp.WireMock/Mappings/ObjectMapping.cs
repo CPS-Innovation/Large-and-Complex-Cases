@@ -18,6 +18,7 @@ public class ObjectMapping : IWireMockMapping
         ConfigurePartialListWithContinuationTokenMapping(server);
         ConfigurePartialListWithoutContinuationTokenMapping(server);
         ConfigureGetObjectMapping(server);
+        ConfigureInvalidGetObjectMapping(server);
     }
 
     private static void ConfigureUploadObjectMapping(WireMockServer server)
@@ -292,5 +293,15 @@ public class ObjectMapping : IWireMockMapping
                 .WithHeader("x-amz-id-2", "eftixk72aD6Ap51TnqcoF8eFidJG9Z/2mkiDFu8yU9AS1ed4OpIszj7UDNEHGran")
                 .WithHeader("x-amz-request-id", "318BC8BC148832E5")
                 .WithBody(fileBytes));
+    }
+
+    private static void ConfigureInvalidGetObjectMapping(WireMockServer server)
+    {
+        server
+            .Given(Request.Create()
+                .WithPath("/test-bucket/invalid-file-path/file.txt")
+                .UsingGet())
+            .RespondWith(Response.Create()
+                .WithStatusCode(404));
     }
 }

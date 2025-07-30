@@ -4,7 +4,6 @@ using Amazon.Runtime;
 using Amazon.S3;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
-using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.WireMock.Mappings;
 using CPS.ComplexCases.NetApp.Wrappers;
 using CPS.ComplexCases.WireMock.Core;
@@ -86,7 +85,6 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             // Assert
             Assert.NotNull(result);
             Assert.True(result.Any());
-            Assert.True(result.Count() >= 1);
         }
 
         [Fact]
