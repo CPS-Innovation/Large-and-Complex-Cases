@@ -8,8 +8,6 @@ parameters:
   resourceGroupName: $(resourceGroupName)
   deployToSlot: true
   slotName: ''
-
-variables:
   sourceSlotName: ${{ iif(eq('lower(parameters.deployToSlot)', 'true'), 'parameters.slotName', 'parameters.functionAppName') }}
 
 steps:
