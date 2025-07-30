@@ -184,7 +184,7 @@ stages:
                     pipelineResourceAlias: 'build'
                     buildArtifactName: 'lacc-main-api-drop'
                     deployToSlot: true
-                    slotName: 'fa-lacc-api-dev/test-slot'
+                    slotName: 'test-slot'
 
                 - template: ../templates/runner-cleanup.yml
                   parameters:
