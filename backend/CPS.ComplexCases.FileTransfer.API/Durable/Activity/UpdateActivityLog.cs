@@ -10,13 +10,16 @@ using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Durable.State;
+using CPS.ComplexCases.Common.Telemetry;
+using CPS.ComplexCases.FileTransfer.API.TelemetryEvents;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 
-public class UpdateActivityLog(IActivityLogService activityLogService, ILogger<UpdateActivityLog> logger)
+public class UpdateActivityLog(IActivityLogService activityLogService, ILogger<UpdateActivityLog> logger, ITelemetryClient telemetryClient)
 {
     private readonly IActivityLogService _activityLogService = activityLogService;
     private readonly ILogger<UpdateActivityLog> _logger = logger;
+    private readonly ITelemetryClient _telemetryClient = telemetryClient;
 
     [Function(nameof(UpdateActivityLog))]
     public async Task Run([ActivityTrigger] UpdateActivityLogPayload payload, [DurableClient] DurableTaskClient client)
@@ -86,5 +89,13 @@ public class UpdateActivityLog(IActivityLogService activityLogService, ILogger<U
             userName: payload.UserName,
             details: fileTransferDetails.SerializeToJsonDocument(_logger)
         );
+
+        _telemetryClient.TrackEvent(new ActivityLogUpdatedEvent(
+            correlationId: Guid.Parse(payload.TransferId),
+            caseId: entity.State.CaseId
+            )
+        {
+            TransferCount = entity.State.SuccessfulItems.Count
+        });
     }
 }
