@@ -16,7 +16,7 @@ steps:
   - template: ../templates/fa-config.yml
     parameters:
       environment: ${{ parameters.environment }}
-      functionAppName:  $(sourceSlotName)
+      functionAppName: ${{ parameters.functionAppName }}
       azureSubscription: ${{ parameters.azureSubscription }}
       resourceGroupName: ${{ parameters.resourceGroupName }}
       keyVaultName: ${{ parameters.keyVaultName }}
