@@ -542,7 +542,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await page.getByRole("link", { name: "Back" }).click();
       await expect(page).toHaveURL("/case/12/case-management");
     });
-    test("Should show the indexing error files correctly ", async ({
+    test("Should show the indexing error files correctly", async ({
       page,
       worker,
     }) => {
@@ -684,7 +684,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
   });
 
   test.describe("Transfer move operation user permissions issue", () => {
-    test("Should show user permissions error page when user tries to do w move operation without enough permissions", async ({
+    test("Should show user permissions error page when user tries to do a move operation without enough permissions", async ({
       page,
       worker,
     }) => {
