@@ -11,7 +11,7 @@ import {
   handleFileTransferClear,
 } from "../../../apis/gateway-api";
 import EgressFolderContainer from "./EgressFolderContainer";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import TransferConfirmationModal from "./TransferConfirmationModal";
 import { getGroupedFolderFileData } from "../../../common/utils/getGroupedFolderFileData";
 import { TransferAction } from "../../../common/types/TransferAction";
@@ -45,6 +45,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   activeTransferId,
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { username } = useUserDetails();
   const [transferSource, setTransferSource] = useState<"egress" | "netapp">(
     "egress",
@@ -52,6 +53,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   const [transferStatusData, setTransferStatusData] = useState<null | {
     username: string;
     direction: "EgressToNetApp" | "NetAppToEgress";
+    transferType: "Move" | "Copy";
   }>(null);
   const [egressPathFolders, setEgressPathFolders] = useState<
     {
@@ -436,8 +438,8 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     setSelectedTransferAction(null);
 
     let response: IndexingFileTransferResponse;
+    const validationPayload = getValidateTransferPayload();
     try {
-      const validationPayload = getValidateTransferPayload();
       setTransferStatus("validating");
       response = await indexingFileTransfer(validationPayload);
       if (response.isInvalid) {
@@ -460,6 +462,18 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       const initiateTransferPayload = getInitiateTransferPayload(response);
       handleInitiateFileTransfer(initiateTransferPayload);
     } catch (error) {
+      if (
+        error instanceof ApiError &&
+        error.code == 403 &&
+        validationPayload.transferType === "Move"
+      ) {
+        navigate(`/case/${caseId}/case-management/transfer-permissions-error`, {
+          state: {
+            isRouteValid: true,
+          },
+        });
+        return;
+      }
       const newError =
         error instanceof ApiError
           ? error
@@ -479,6 +493,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       username: username,
       direction:
         transferSource === "egress" ? "EgressToNetApp" : "NetAppToEgress",
+      transferType: initiatePayload.transferType,
     });
     let initiateFileTransferResponse: InitiateFileTransferResponse;
     try {
@@ -504,16 +519,16 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         setTransferStatusData({
           username: response.userName,
           direction: response.direction,
+          transferType: response.transferType,
         });
         return;
       }
       if (response.status === "Completed") {
-        egressRefetch();
-        netAppRefetch();
         setTransferStatus("completed");
         setTransferStatusData({
           username: response.userName,
           direction: response.direction,
+          transferType: response.transferType,
         });
         if (response.userName === username)
           handleFileTransferClear(transferId!);
@@ -537,16 +552,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         setTransferStatusData(null);
       }
     },
-    [
-      caseId,
-      navigate,
-      egressRefetch,
-      netAppRefetch,
-      setTransferStatus,
-      setTransferId,
-      username,
-      transferId,
-    ],
+    [caseId, navigate, setTransferStatus, setTransferId, username, transferId],
   );
   const isComponentUnmounted = useCallback(() => {
     return unMounting.current;
@@ -554,13 +560,11 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
 
   useEffect(() => {
     unMounting.current = false;
+    if (location.state) {
+      window.history.replaceState({}, "", location.pathname + location.search);
+    }
     return () => {
       unMounting.current = true;
-      const params = new URLSearchParams(window.location.search);
-      const url = `${params}`
-        ? `${window.location.pathname}?${params}`
-        : window.location.pathname;
-      window.history.replaceState({}, "", url);
     };
   }, []);
 
@@ -675,7 +679,13 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
               type="success"
               data-testid="transfer-success-notification-banner"
             >
-              Files copied successfully
+              <b className={styles.successMessage}>
+                Files{" "}
+                {transferStatusData.transferType === "Copy"
+                  ? "copied"
+                  : "moved"}{" "}
+                successfully
+              </b>
             </NotificationBanner>
           </div>
         )}

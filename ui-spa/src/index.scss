@@ -29,4 +29,7 @@ $govuk-assets-path: "/node_modules/govuk-frontend/govuk/assets/";
 body {
   margin: 0;
   font-size: 19px;
+  h1 {
+    font-size: 3rem;
+  }
 }

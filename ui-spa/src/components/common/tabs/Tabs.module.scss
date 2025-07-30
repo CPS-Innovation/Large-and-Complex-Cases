@@ -37,7 +37,12 @@
 .inactiveTab {
   border: none;
   background-color: #f3f2f1;
-  text-decoration: underline;
+  .tabButton {
+    text-decoration: underline;
+    &:hover {
+      text-decoration-thickness: max(0.1875rem, 0.1875rem, 0.12em);
+    }
+  }
 }
 
 .tabListItem {
@@ -60,6 +65,9 @@
   background-color: transparent;
   cursor: pointer;
   margin: 0;
+  &:focus:hover {
+    text-decoration: none;
+  }
 
   &:focus {
     outline: 0.1875rem solid rgba(0, 0, 0, 0);
@@ -74,11 +82,6 @@
   max-width: 11.25rem;
   text-overflow: ellipsis;
   overflow: hidden;
-}
-
-.inactiveTab:hover {
-  text-decoration: underline;
-  text-decoration-thickness: max(0.1875rem, 0.1875rem, 0.12em);
 }
 
 .contentArea {

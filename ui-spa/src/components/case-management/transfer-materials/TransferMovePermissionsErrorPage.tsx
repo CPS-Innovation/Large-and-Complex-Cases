@@ -1,0 +1,44 @@
+import { Button, BackLink } from "../../govuk";
+import { useParams, useNavigate } from "react-router-dom";
+import styles from "./TransferMovePermissionsErrorPage.module.scss";
+
+const TransferMovePermissionsErrorPage = () => {
+  const { caseId } = useParams();
+  const navigate = useNavigate();
+
+  const handleButtonClick = () => {
+    navigate(`/case/${caseId}/case-management`, {
+      replace: true,
+    });
+  };
+
+  return (
+    <div className="govuk-width-container">
+      <BackLink to={`/case/${caseId}/case-management`} replace>
+        Back
+      </BackLink>
+      <div className={styles.contentWrapper}>
+        <h1>You do not have permission to transfer these files from egress</h1>
+        <div>
+          <p>
+            If you think you should have access, contact the egress
+            administrator for the case.
+          </p>
+          <Button
+            onClick={handleButtonClick}
+            className={styles.returnToCaseBtn}
+          >
+            Return to the case
+          </Button>
+
+          <p data-testid="contact-information">
+            To get help, call the Service Desk{" "}
+            <a href="tel:08006926996">0800 692 6996</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default TransferMovePermissionsErrorPage;

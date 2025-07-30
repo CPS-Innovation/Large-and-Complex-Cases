@@ -89,5 +89,8 @@
 
 .successBanner {
   margin-top: 2rem;
-  width: 60%;
+  width: 50%;
+  .successMessage {
+    font-size: 1.5rem;
+  }
 }
