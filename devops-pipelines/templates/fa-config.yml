@@ -9,6 +9,8 @@ parameters:
     type: string
   - name: keyVaultName
     type: string
+  - name: slotName
+    type: string
 
 steps:
   - task: AzureAppServiceSettings@1
@@ -17,6 +19,7 @@ steps:
       azureSubscription: ${{ parameters.azureSubscription }}
       appName: ${{ parameters.functionAppName }}
       resourceGroupName: ${{ parameters.resourceGroupName }}
+      slotName: ${{ parameters.slotName }}
       appSettings: |
         [
           {
