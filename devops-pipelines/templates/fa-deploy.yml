@@ -64,11 +64,17 @@ steps:
       scriptLocation: 'inlineScript'
       inlineScript: |
         echo "Establishing which of the app's slots needs verifying..."
-        if [ "$DEPLOY_TO_SLOT" = "true" ]; then
-          sourceSlotName=${{ parameters.slotName }}
-        else
-          sourceSlotName=${{ parameters.functionAppName }}
-        fi
+
+        case ${{ parameters.deployToSlot }} in
+          true)    
+            sourceSlotName=${{ parameters.slotName }};;
+          false)   
+            sourceSlotName=${{ parameters.functionAppName }};;
+          *)
+            echo "The expression parameters.deployToSlot did not resolve to a boolean value."
+            echo "The value is ${{ parameters.deployToSlot }}"
+            exit 1
+        esac
 
         echo "Verifying deployment to $(sourceSlotName)..."
         
@@ -89,5 +95,3 @@ steps:
         else
           echo "✅ Function app is running"
         fi
-    env:
-      DEPLOY_TO_SLOT: ${{ lower(parameters.deployToSlot) }}
