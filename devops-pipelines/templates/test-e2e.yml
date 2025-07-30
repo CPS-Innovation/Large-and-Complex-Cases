@@ -1,7 +1,5 @@
 parameters:
   workingDir: 'ui-spa'
-  # runBuild: true # This will build the app locally in playwright mode for testing. If set to false, tests will run on a live app at the url defined below.
-  # appUrl: 'https://$(webAppName).azurewebsites.net'
 
 steps:
   - task: Npm@1
@@ -12,8 +10,7 @@ steps:
       workingDir: ${{ parameters.workingDir }}
   
   - task: Npm@1
-    displayName: 'Build App In Playwright Mode'
-    # condition: ${{ eq(parameters.runBuild, true) }}
+    displayName: 'Run E2E Tests in CI Mode'
     inputs:
       command: 'custom'
       customCommand: 'run ui:e2e:ci'
