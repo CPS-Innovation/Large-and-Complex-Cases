@@ -80,9 +80,6 @@ var host = new HostBuilder()
 
         services.AddScoped<IStorageClientFactory, StorageClientFactory>();
         services.AddScoped<IRequestValidator, RequestValidator>();
-
-        services.AddScoped<IStorageClientFactory, StorageClientFactory>();
-        services.AddScoped<IRequestValidator, RequestValidator>();
         services.AddScoped<ITransferEntityHelper, TransferEntityHelper>();
 
         services.AddDurableTaskClient(x =>
