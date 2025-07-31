@@ -12,16 +12,10 @@ parameters:
 steps:
   - download: none
 
-  - task: AzureCLI@2
-    displayName: 'Verify Function App Deployment'
-    inputs:
-      azureSubscription: ${{ parameters.azureSubscription }}
-      scriptType: 'bash'
-      scriptLocation: 'inlineScript'
-      inlineScript: |
-        echo "The values of parameters.deployToSlot is: ${{ parameters.deployToSlot }}"
-        echo "The values of parameters.slotName is: ${{ parameters.slotName }}"
-        echo "The values of parameters.functionAppName is: ${{ parameters.functionAppName }}"
+  - script: |
+      echo "The values of parameters.deployToSlot is: ${{ parameters.deployToSlot }}"
+      echo "The values of parameters.slotName is: ${{ parameters.slotName }}"
+      echo "The values of parameters.functionAppName is: ${{ parameters.functionAppName }}"
 
   # - download: '${{ parameters.pipelineResourceAlias}}'
   #   artifact: '${{ parameters.buildArtifactName }}'
