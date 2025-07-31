@@ -2,10 +2,12 @@ using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
+using CPS.ComplexCases.FileTransfer.API.Durable.State;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask;
+using Microsoft.DurableTask.Entities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -31,7 +33,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
 
         try
         {
-            // 1.  initalize transfer entity
+            // 1. Initialize transfer entity
             var transferEntity = new TransferEntity
             {
                 Id = input.TransferId,
@@ -46,6 +48,8 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
                 UserName = input.UserName,
                 CorrelationId = input.CorrelationId,
             };
+
+            var entityId = new EntityInstanceId(nameof(TransferEntityState), input.TransferId.ToString());
 
             await context.CallActivityAsync(
                 nameof(InitializeTransfer),
@@ -70,7 +74,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
                 });
 
             int batchSize = _sizeConfig.BatchSize;
-            var batch = new List<Task>();
+            var batch = new List<Task<TransferResult>>();
 
             foreach (var sourcePath in input.SourcePaths)
             {
@@ -84,21 +88,25 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
                     WorkspaceId = input.WorkspaceId,
                 };
 
-                batch.Add(context.CallActivityAsync(
+                // Activity now returns TransferResult instead of void
+                batch.Add(context.CallActivityAsync<TransferResult>(
                     nameof(TransferFile),
                     transferFilePayload));
 
                 if (batch.Count >= batchSize)
                 {
-                    await Task.WhenAll(batch);
+                    // Process batch results and update entity synchronously
+                    var batchResults = await Task.WhenAll(batch);
+                    await ProcessTransferResults(context, entityId, batchResults);
                     batch.Clear();
                 }
             }
 
-            // Await any remaining tasks in the last batch
+            // Process any remaining tasks in the last batch
             if (batch.Count > 0)
             {
-                await Task.WhenAll(batch);
+                var remainingResults = await Task.WhenAll(batch);
+                await ProcessTransferResults(context, entityId, remainingResults);
             }
 
             // 3. Delete files if transfer direction is EgressToNetApp and transfer type is Move
@@ -131,7 +139,6 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
                 {
                     TransferId = input.TransferId,
                 });
-
         }
         catch (Exception ex)
         {
@@ -156,6 +163,37 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
                 });
 
             throw;
+        }
+    }
+
+    /// <summary>
+    /// Processes transfer results and updates the entity synchronously
+    /// This eliminates the race condition by ensuring all entity updates are completed
+    /// before the orchestrator continues
+    /// </summary>
+    private async Task ProcessTransferResults(
+        TaskOrchestrationContext context,
+        EntityInstanceId entityId,
+        TransferResult[] results)
+    {
+        foreach (var result in results)
+        {
+            if (result.IsSuccess && result.SuccessfulItem != null)
+            {
+                // Use CallEntityAsync for synchronous entity updates
+                await context.Entities.CallEntityAsync(
+                    entityId,
+                    nameof(TransferEntityState.AddSuccessfulItem),
+                    result.SuccessfulItem);
+            }
+            else if (!result.IsSuccess && result.FailedItem != null)
+            {
+                // Use CallEntityAsync for synchronous entity updates
+                await context.Entities.CallEntityAsync(
+                    entityId,
+                    nameof(TransferEntityState.AddFailedItem),
+                    result.FailedItem);
+            }
         }
     }
 }
