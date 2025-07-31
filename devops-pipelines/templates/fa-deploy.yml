@@ -63,39 +63,47 @@ steps:
       scriptType: 'bash'
       scriptLocation: 'inlineScript'
       inlineScript: |
-        echo "Establishing which of the app's slots needs verifying..."
+        DEPLOYMENT_STATE_CMD="az functionapp log deployment list --name ${{ parameters.functionAppName }} --resource-group ${{ parameters.resourceGroupName }} --query "[0].provisioningState" -o tsv"
+        APP_STATE_CMD="az functionapp show --name ${{ parameters.functionAppName }} --resource-group ${{ parameters.resourceGroupName }} --query "state" -o tsv"
 
-        case ${{ parameters.deployToSlot }} in
-          true) 
-            echo "The value of parameters.deployToSlot is: ${{ parameters.deployToSlot }}"
-            echo "You've entered case true"
-            sourceSlotName=${{ parameters.slotName }};;
-          false)
-            echo "The value of parameters.deployToSlot is: ${{ parameters.deployToSlot }}"
-            echo "You've entered case true"   
-            sourceSlotName=${{ parameters.functionAppName }};;
-          *)
-            echo "The expression parameters.deployToSlot did not resolve to a boolean value."
-            echo "The value is ${{ parameters.deployToSlot }}"
-            exit 1
-        esac
+        if [ "$USE_SLOT" = "true" ]; then
+          DEPLOYMENT_STATE_CMD+=" --slot ${{ parameters.slotName }}"
+          APP_STATE_CMD+=" --slot ${{ parameters.slotName }}"
+          echo "Verifying deployment to ${{ parameters.functionAppName }}/${{ parameters.slotName }}..."
+        else
+          echo "Verifying deployment to ${{ parameters.functionAppName }}..."
+        fi
 
-        echo "Verifying deployment to $sourceSlotName..."
-        
         # Check if deployment completed successfully
-        DEPLOYMENT_STATUS=$(az functionapp deployment list --name $sourceSlotName --resource-group ${{ parameters.resourceGroupName }} --query "[0].status" -o tsv)
-        echo "Latest deployment status: $DEPLOYMENT_STATUS"
+        DEPLOYMENT_STATE=$(eval "$DEPLOYMENT_STATE_CMD" 2>&1)
+        EXIT_CODE=$?
+
+        if [ $EXIT_CODE -ne 0 ]; then
+          echo "$DEPLOYMENT_STATE"
+          exit 1
+        fi
+
+        echo "Latest deployment status: "$DEPLOYMENT_STATE""
         
         # Wait a moment for extraction to complete
         echo "Waiting for deployment to stabilize..."
         sleep 10
         
         # Check if function app is running
-        APP_STATE=$(az functionapp show --name $sourceSlotName --resource-group ${{ parameters.resourceGroupName }} --query "state" -o tsv)
-        echo "Function app state: $APP_STATE"
+        APP_STATE=$(eval "$APP_STATE_CMD" 2>&1)
+        EXIT_CODE=$?
+
+        if [ $EXIT_CODE -ne 0 ]; then
+          echo "$APP_STATE"
+          exit 1
+        fi
+
+        echo "Function app state: "$APP_STATE""
         
         if [ "$APP_STATE" != "Running" ]; then
-          echo "⚠️ Function app is not in Running state"
+          echo "##vso[task.logissue type=warning]⚠️ Function app is not in Running state."
         else
-          echo "✅ Function app is running"
+          echo "✅ Function app is running."
         fi
+    env:
+      USE_SLOT: ${{ lower(parameters.deployToSlot) }}
