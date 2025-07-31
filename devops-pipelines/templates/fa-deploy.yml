@@ -107,3 +107,16 @@ steps:
         fi
     env:
       USE_SLOT: ${{ lower(parameters.deployToSlot) }}
+
+#  TODO: The above check does not provide real confirmation that the app is working as expected.
+#         A more robust way needs to be found to verify the app is operational.
+
+  - task: AzureAppServiceManage@0
+    condition: ${{ eq(parameters.deployToSlot, true) }}
+    displayName: "Perform Slot Swap"
+    inputs:
+      azureSubscription: ${{ parameters.azureSubscription }}
+      WebAppName: ${{ parameters.functionAppName }}
+      ResourceGroupName: ${{ parameters.resourceGroupName }}
+      SourceSlot: ${{ parameters.slotName }}
+      SwapWithProduction: true 
