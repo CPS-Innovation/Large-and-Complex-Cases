@@ -1,16 +1,14 @@
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
+using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
-using CPS.ComplexCases.Common.Models.Domain.Exceptions;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using CPS.ComplexCases.Common.Telemetry;
-using CPS.ComplexCases.FileTransfer.API.TelemetryEvents;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 
@@ -20,18 +18,16 @@ namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 /// Handles chunked uploads, computes MD5 hashes for integrity, and returns transfer results.
 /// No longer directly signals the entity - results are handled by the orchestrator.
 /// </summary>
-public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<TransferFile> logger, IOptions<SizeConfig> sizeConfig, ITelemetryClient telemetryClient)
+public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<TransferFile> logger, IOptions<SizeConfig> sizeConfig)
 {
     private readonly IStorageClientFactory _storageClientFactory = storageClientFactory;
     private readonly ILogger<TransferFile> _logger = logger;
-    private readonly ITelemetryClient _telemetryClient = telemetryClient;
     private readonly SizeConfig _sizeConfig = sizeConfig.Value;
 
     [Function(nameof(TransferFile))]
     public async Task<TransferResult> Run([ActivityTrigger] TransferFilePayload payload, CancellationToken cancellationToken = default)
     {
         var (sourceClient, destinationClient) = _storageClientFactory.GetClientsForDirection(payload.TransferDirection);
-        var telemetryEvent = new FileTransferredEvent(payload.TransferId, 123, payload.SourcePath.FullFilePath);
 
         try
         {
@@ -103,8 +99,6 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 FileId = payload.SourcePath.FileId
             };
 
-            _telemetryClient.TrackEvent(telemetryEvent);
-
             return new TransferResult
             {
                 IsSuccess = true,
@@ -113,7 +107,6 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         }
         catch (FileExistsException ex)
         {
-            _telemetryClient.TrackEventFailure(telemetryEvent);
             _logger.LogWarning(ex, "File already exists: {Path}", payload.SourcePath.Path);
 
             var failedItem = new TransferFailedItem
@@ -132,13 +125,11 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         }
         catch (OperationCanceledException)
         {
-            _telemetryClient.TrackEventFailure(telemetryEvent);
             _logger.LogInformation("Transfer cancelled: {Path}", payload.SourcePath.Path);
             throw; // Re-throw cancellation exceptions
         }
         catch (Exception ex)
         {
-            _telemetryClient.TrackEventFailure(telemetryEvent);
             _logger.LogError(ex, "Transfer failed: {Path}", payload.SourcePath.Path);
 
             var failedItem = new TransferFailedItem

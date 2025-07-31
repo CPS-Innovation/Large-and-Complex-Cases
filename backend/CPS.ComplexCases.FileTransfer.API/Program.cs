@@ -16,7 +16,6 @@ using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.NetApp.Extensions;
 using CPS.ComplexCases.FileTransfer.API.Middleware;
-using CPS.ComplexCases.Common.Telemetry;
 
 // Create a temporary logger for configuration phase
 using var loggerFactory = LoggerFactory.Create(configure => configure.AddConsole());
@@ -58,8 +57,6 @@ var host = new HostBuilder()
         services.AddScoped<IStorageClientFactory, StorageClientFactory>();
         services.AddScoped<IRequestValidator, RequestValidator>();
         services.AddScoped<ITransferEntityHelper, TransferEntityHelper>();
-
-        services.AddSingleton<ITelemetryClient, TelemetryClient>();
 
         services.AddDurableTaskClient(x =>
         {

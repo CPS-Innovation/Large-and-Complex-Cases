@@ -171,14 +171,14 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
     /// This eliminates the race condition by ensuring all entity updates are completed
     /// before the orchestrator continues
     /// </summary>
-    private async Task ProcessTransferResults(
+    private static async Task ProcessTransferResults(
         TaskOrchestrationContext context,
         EntityInstanceId entityId,
         TransferResult[] results)
     {
         foreach (var result in results)
         {
-            if (result.IsSuccess && result.SuccessfulItem != null)
+            if (result != null && result.IsSuccess && result.SuccessfulItem != null)
             {
                 // Use CallEntityAsync for synchronous entity updates
                 await context.Entities.CallEntityAsync(
@@ -186,7 +186,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
                     nameof(TransferEntityState.AddSuccessfulItem),
                     result.SuccessfulItem);
             }
-            else if (!result.IsSuccess && result.FailedItem != null)
+            else if (result != null && !result.IsSuccess && result.FailedItem != null)
             {
                 // Use CallEntityAsync for synchronous entity updates
                 await context.Entities.CallEntityAsync(
