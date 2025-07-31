@@ -10,95 +10,92 @@ parameters:
   slotName: ''
 
 steps:
-  - download: none
+  - download: '${{ parameters.pipelineResourceAlias}}'
+    artifact: '${{ parameters.buildArtifactName }}'
 
-  - script: |
-      echo "The values of parameters.deployToSlot is: ${{ parameters.deployToSlot }}"
-      echo "The values of parameters.slotName is: ${{ parameters.slotName }}"
-      echo "The values of parameters.functionAppName is: ${{ parameters.functionAppName }}"
+  - template: ../templates/fa-config.yml
+    parameters:
+      environment: ${{ parameters.environment }}
+      functionAppName: ${{ parameters.functionAppName }}
+      azureSubscription: ${{ parameters.azureSubscription }}
+      resourceGroupName: ${{ parameters.resourceGroupName }}
+      keyVaultName: ${{ parameters.keyVaultName }}
+      slotName: ${{ parameters.slotName }}
 
-  # - download: '${{ parameters.pipelineResourceAlias}}'
-  #   artifact: '${{ parameters.buildArtifactName }}'
+  - task: AzureFunctionApp@2
+    displayName: 'Deploy Package to Azure Function App'
+    inputs:
+      azureSubscription: ${{ parameters.azureSubscription }}
+      appType: 'functionApp'
+      appName: ${{ parameters.functionAppName }}
+      package: '$(Pipeline.Workspace)/${{ parameters.pipelineResourceAlias}}/${{ parameters.buildArtifactName }}/*.zip'
+      runtimeStack: 'DOTNET-ISOLATED|8.0'
+      deploymentMethod: 'runFromPackage'
+      deployToSlotOrASE: ${{ parameters.deployToSlot }}
+      slotName: ${{ parameters.slotName }}
+      resourceGroupName: ${{ parameters.resourceGroupName }}
 
-  # - template: ../templates/fa-config.yml
-  #   parameters:
-  #     environment: ${{ parameters.environment }}
-  #     functionAppName: ${{ parameters.functionAppName }}
-  #     azureSubscription: ${{ parameters.azureSubscription }}
-  #     resourceGroupName: ${{ parameters.resourceGroupName }}
-  #     keyVaultName: ${{ parameters.keyVaultName }}
-  #     slotName: ${{ parameters.slotName }}
+  - checkout: self
+    sparseCheckoutDirectories: devops-pipelines/scripts
+    fetchDepth: 1
 
-  # - task: AzureFunctionApp@2
-  #   displayName: 'Deploy Package to Azure Function App'
-  #   inputs:
-  #     azureSubscription: ${{ parameters.azureSubscription }}
-  #     appType: 'functionApp'
-  #     appName: ${{ parameters.functionAppName }}
-  #     package: '$(Pipeline.Workspace)/${{ parameters.pipelineResourceAlias}}/${{ parameters.buildArtifactName }}/*.zip'
-  #     runtimeStack: 'DOTNET-ISOLATED|8.0'
-  #     deploymentMethod: 'runFromPackage'
-  #     deployToSlotOrASE: ${{ parameters.deployToSlot }}
-  #     slotName: ${{ parameters.slotName }}
-  #     resourceGroupName: ${{ parameters.resourceGroupName }}
-
-  # - checkout: self
-  #   sparseCheckoutDirectories: devops-pipelines/scripts
-  #   fetchDepth: 1
-
-  # - task: Bash@3
-  #   displayName: 'Ensure Azure CLI'
-  #   inputs:
-  #     targetType: 'inline'
-  #     script: |
-  #       echo "Checking if Azure CLI is installed..."
+  - task: Bash@3
+    displayName: 'Ensure Azure CLI'
+    inputs:
+      targetType: 'inline'
+      script: |
+        echo "Checking if Azure CLI is installed..."
         
-  #       # Check if az command exists
-  #       if command -v az &> /dev/null; then
-  #         echo "Azure CLI is already installed"
-  #         az --version
-  #         exit 0
-  #       fi
+        # Check if az command exists
+        if command -v az &> /dev/null; then
+          echo "Azure CLI is already installed"
+          az --version
+          exit 0
+        fi
 
-  #       echo "Azure CLI not found, installing..."
-  #       bash '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/installAzureCli.sh'
+        echo "Azure CLI not found, installing..."
+        bash '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/installAzureCli.sh'
 
-  # - task: AzureCLI@2
-  #   displayName: 'Verify Function App Deployment'
-  #   inputs:
-  #     azureSubscription: ${{ parameters.azureSubscription }}
-  #     scriptType: 'bash'
-  #     scriptLocation: 'inlineScript'
-  #     inlineScript: |
-  #       echo "Establishing which of the app's slots needs verifying..."
+  - task: AzureCLI@2
+    displayName: 'Verify Function App Deployment'
+    inputs:
+      azureSubscription: ${{ parameters.azureSubscription }}
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "Establishing which of the app's slots needs verifying..."
 
-  #       case ${{ parameters.deployToSlot }} in
-  #         true)    
-  #           sourceSlotName=${{ parameters.slotName }};;
-  #         false)   
-  #           sourceSlotName=${{ parameters.functionAppName }};;
-  #         *)
-  #           echo "The expression parameters.deployToSlot did not resolve to a boolean value."
-  #           echo "The value is ${{ parameters.deployToSlot }}"
-  #           exit 1
-  #       esac
+        case ${{ parameters.deployToSlot }} in
+          true) 
+            echo "The value of parameters.deployToSlot is: ${{ parameters.deployToSlot }}"
+            echo "You've entered case true"
+            sourceSlotName=${{ parameters.slotName }};;
+          false)
+            echo "The value of parameters.deployToSlot is: ${{ parameters.deployToSlot }}"
+            echo "You've entered case true"   
+            sourceSlotName=${{ parameters.functionAppName }};;
+          *)
+            echo "The expression parameters.deployToSlot did not resolve to a boolean value."
+            echo "The value is ${{ parameters.deployToSlot }}"
+            exit 1
+        esac
 
-  #       echo "Verifying deployment to $(sourceSlotName)..."
+        echo "Verifying deployment to $sourceSlotName..."
         
-  #       # Check if deployment completed successfully
-  #       DEPLOYMENT_STATUS=$(az functionapp deployment list --name $(sourceSlotName) --resource-group ${{ parameters.resourceGroupName }} --query "[0].status" -o tsv)
-  #       echo "Latest deployment status: $DEPLOYMENT_STATUS"
+        # Check if deployment completed successfully
+        DEPLOYMENT_STATUS=$(az functionapp deployment list --name $sourceSlotName --resource-group ${{ parameters.resourceGroupName }} --query "[0].status" -o tsv)
+        echo "Latest deployment status: $DEPLOYMENT_STATUS"
         
-  #       # Wait a moment for extraction to complete
-  #       echo "Waiting for deployment to stabilize..."
-  #       sleep 10
+        # Wait a moment for extraction to complete
+        echo "Waiting for deployment to stabilize..."
+        sleep 10
         
-  #       # Check if function app is running
-  #       APP_STATE=$(az functionapp show --name $(sourceSlotName) --resource-group ${{ parameters.resourceGroupName }} --query "state" -o tsv)
-  #       echo "Function app state: $APP_STATE"
+        # Check if function app is running
+        APP_STATE=$(az functionapp show --name $sourceSlotName --resource-group ${{ parameters.resourceGroupName }} --query "state" -o tsv)
+        echo "Function app state: $APP_STATE"
         
-  #       if [ "$APP_STATE" != "Running" ]; then
-  #         echo "⚠️ Function app is not in Running state"
-  #       else
-  #         echo "✅ Function app is running"
-  #       fi
+        if [ "$APP_STATE" != "Running" ]; then
+          echo "⚠️ Function app is not in Running state"
+        else
+          echo "✅ Function app is running"
+        fi
