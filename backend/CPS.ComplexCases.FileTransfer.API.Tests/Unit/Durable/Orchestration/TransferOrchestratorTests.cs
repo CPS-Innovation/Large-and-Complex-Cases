@@ -8,6 +8,7 @@ using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 using Microsoft.DurableTask;
+using Microsoft.DurableTask.Entities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -54,6 +55,13 @@ public class TransferOrchestratorTests
             .Returns(Task.CompletedTask)
             .Callback<TaskName, object, TaskOptions>((taskName, _, __) => activityCallOrder.Add(taskName.Name));
 
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.FromResult(new TransferResult { IsSuccess = true }))
+            .Callback<TaskName, object, TaskOptions>((taskName, _, __) => activityCallOrder.Add(taskName.Name));
+
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask);
+
         // Act
         await _orchestrator.RunOrchestrator(_contextMock.Object);
 
@@ -86,6 +94,12 @@ public class TransferOrchestratorTests
                     capturedEntity = (TransferEntity)entity;
                 }
             });
+
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.FromResult(new TransferResult { IsSuccess = true }));
+
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask);
 
         // Act
         await _orchestrator.RunOrchestrator(_contextMock.Object);
@@ -126,6 +140,12 @@ public class TransferOrchestratorTests
                 }
             });
 
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.FromResult(new TransferResult { IsSuccess = true }));
+
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask);
+
         // Act
         await _orchestrator.RunOrchestrator(_contextMock.Object);
 
@@ -156,6 +176,12 @@ public class TransferOrchestratorTests
                 }
             });
 
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.FromResult(new TransferResult { IsSuccess = true }));
+
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask);
+
         // Act
         await _orchestrator.RunOrchestrator(_contextMock.Object);
 
@@ -175,8 +201,8 @@ public class TransferOrchestratorTests
         _contextMock.Setup(c => c.GetInput<TransferPayload>())
             .Returns(transferPayload);
 
-        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
-            .Returns(Task.CompletedTask)
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.FromResult(new TransferResult { SuccessfulItem = _fixture.Create<TransferItem>(), IsSuccess = true }))
             .Callback<TaskName, object, TaskOptions>((taskName, payload, _) =>
             {
                 if (taskName.Name == "TransferFile" && payload is TransferFilePayload transferFilePayload)
@@ -184,6 +210,9 @@ public class TransferOrchestratorTests
                     capturedTransferPayloads.Add(transferFilePayload);
                 }
             });
+
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask);
 
         // Act
         await _orchestrator.RunOrchestrator(_contextMock.Object);
@@ -225,6 +254,12 @@ public class TransferOrchestratorTests
                 }
             });
 
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.FromResult(new TransferResult { IsSuccess = true }));
+
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask);
+
         // Act
         await _orchestrator.RunOrchestrator(_contextMock.Object);
 
@@ -257,6 +292,12 @@ public class TransferOrchestratorTests
                 }
             });
 
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.FromResult(new TransferResult { IsSuccess = true }));
+
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask);
+
         // Act
         await _orchestrator.RunOrchestrator(_contextMock.Object);
 
@@ -276,7 +317,7 @@ public class TransferOrchestratorTests
         _contextMock.Setup(c => c.GetInput<TransferPayload>())
             .Returns(transferPayload);
 
-        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
             .Returns<TaskName, object, TaskOptions>((taskName, payload, options) =>
             {
                 if (taskName.Name == "TransferFile")
@@ -284,6 +325,12 @@ public class TransferOrchestratorTests
                     throw exception;
                 }
 
+                return (Task<TransferResult>)Task.CompletedTask;
+            });
+
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns<TaskName, object, TaskOptions>((taskName, payload, options) =>
+            {
                 if (taskName.Name == "UpdateTransferStatus" && payload is UpdateTransferStatusPayload statusPayload)
                 {
                     capturedStatusPayloads.Add(statusPayload);
@@ -291,6 +338,9 @@ public class TransferOrchestratorTests
 
                 return Task.CompletedTask;
             });
+
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask);
 
         // Act & Assert
         var thrownException = await Assert.ThrowsAsync<InvalidOperationException>(

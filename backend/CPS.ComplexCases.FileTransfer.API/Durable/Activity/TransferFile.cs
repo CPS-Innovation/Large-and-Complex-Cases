@@ -1,24 +1,22 @@
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
+using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
-using CPS.ComplexCases.FileTransfer.API.Durable.State;
 using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
-using CPS.ComplexCases.Common.Models.Domain.Exceptions;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.DurableTask.Client;
-using Microsoft.DurableTask.Entities;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 
+
 /// <summary>
 /// Durable activity for transferring files between storage endpoints.
-/// Handles chunked uploads, computes MD5 hashes for integrity, and manages transfer state.
-/// Signals success or failure to the associated transfer entity for orchestration.
+/// Handles chunked uploads, computes MD5 hashes for integrity, and returns transfer results.
+/// No longer directly signals the entity - results are handled by the orchestrator.
 /// </summary>
 public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<TransferFile> logger, IOptions<SizeConfig> sizeConfig)
 {
@@ -27,10 +25,9 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
     private readonly SizeConfig _sizeConfig = sizeConfig.Value;
 
     [Function(nameof(TransferFile))]
-    public async Task Run([ActivityTrigger] TransferFilePayload payload, [DurableClient] DurableTaskClient client, CancellationToken cancellationToken = default)
+    public async Task<TransferResult> Run([ActivityTrigger] TransferFilePayload payload, CancellationToken cancellationToken = default)
     {
         var (sourceClient, destinationClient) = _storageClientFactory.GetClientsForDirection(payload.TransferDirection);
-        var entityId = new EntityInstanceId(nameof(TransferEntityState), payload.TransferId.ToString());
 
         try
         {
@@ -102,7 +99,11 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 FileId = payload.SourcePath.FileId
             };
 
-            await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.AddSuccessfulItem), successfulItem, null, cancellationToken);
+            return new TransferResult
+            {
+                IsSuccess = true,
+                SuccessfulItem = successfulItem
+            };
         }
         catch (FileExistsException ex)
         {
@@ -116,12 +117,16 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 ErrorMessage = ex.Message
             };
 
-            await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.AddFailedItem), failedItem, null, cancellationToken);
+            return new TransferResult
+            {
+                IsSuccess = false,
+                FailedItem = failedItem
+            };
         }
         catch (OperationCanceledException)
         {
             _logger.LogInformation("Transfer cancelled: {Path}", payload.SourcePath.Path);
-            throw;
+            throw; // Re-throw cancellation exceptions
         }
         catch (Exception ex)
         {
@@ -135,7 +140,11 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 ErrorMessage = $"Exception: {ex.GetType().FullName}: {ex.Message}{Environment.NewLine}StackTrace: {ex.StackTrace}"
             };
 
-            await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.AddFailedItem), failedItem, null, cancellationToken);
+            return new TransferResult
+            {
+                IsSuccess = false,
+                FailedItem = failedItem
+            };
         }
     }
 }
