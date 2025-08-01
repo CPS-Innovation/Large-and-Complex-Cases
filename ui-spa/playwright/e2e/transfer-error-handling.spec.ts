@@ -1,6 +1,6 @@
 import { expect, test } from "../utils/test";
 import { delay, HttpResponse, http } from "msw";
-test.describe("egress-netapp-transfer-error-handling", () => {
+test.describe("transfer-error-handling", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/case/12/case-management");
     await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
@@ -22,10 +22,13 @@ test.describe("egress-netapp-transfer-error-handling", () => {
     worker,
   }) => {
     await worker.use(
-      http.post("https://mocked-out-api/api/v1/filetransfer/files", async () => {
-        await delay(10);
-        return new HttpResponse(null, { status: 500 });
-      }),
+      http.post(
+        "https://mocked-out-api/api/v1/filetransfer/files",
+        async () => {
+          await delay(10);
+          return new HttpResponse(null, { status: 500 });
+        },
+      ),
     );
     const checkboxes = page
       .getByTestId("egress-table-wrapper")
@@ -76,10 +79,13 @@ test.describe("egress-netapp-transfer-error-handling", () => {
     worker,
   }) => {
     await worker.use(
-      http.post("https://mocked-out-api/api/v1/filetransfer/files", async () => {
-        await delay(10);
-        return HttpResponse.json({ isInvalid: false });
-      }),
+      http.post(
+        "https://mocked-out-api/api/v1/filetransfer/files",
+        async () => {
+          await delay(10);
+          return HttpResponse.json({ isInvalid: false });
+        },
+      ),
     );
     const checkboxes = page
       .getByTestId("egress-table-wrapper")
