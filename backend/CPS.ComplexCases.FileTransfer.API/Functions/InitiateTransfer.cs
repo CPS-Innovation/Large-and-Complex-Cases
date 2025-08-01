@@ -37,6 +37,7 @@ public class InitiateTransfer
 
     [Function(nameof(InitiateTransfer))]
     [OpenApiOperation(operationId: nameof(InitiateTransfer), tags: ["FileTransfer"], Description = "Initiates a new file transfer operation. If a transfer is already in progress for the case, returns the current transfer status.")]
+    [OpenApiParameter(name: HttpHeaderKeys.CorrelationId, In = Microsoft.OpenApi.Models.ParameterLocation.Header, Required = true, Type = typeof(string), Description = "Correlation identifier for tracking the request.")]
     [OpenApiRequestBody(contentType: ContentType.ApplicationJson, bodyType: typeof(TransferRequest), Required = true, Description = "Request containing transfer details including source paths, destination, and metadata.")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Accepted, contentType: ContentType.ApplicationJson, bodyType: typeof(TransferResponse), Description = "Transfer initiated successfully. Returns transfer ID and status.")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.ApplicationJson, bodyType: typeof(IEnumerable<string>), Description = ApiResponseDescriptions.BadRequest)]

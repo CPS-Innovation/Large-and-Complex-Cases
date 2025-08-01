@@ -37,4 +37,7 @@ public class BaseOpenApiConfigurationOptions : IOpenApiConfigurationOptions
         new DateOnlyDocumentFilter(),
         new OrderByTagsDocumentFilter()
     ];
+    public virtual IDictionary<string, OpenApiSecurityScheme> SecuritySchemes => new Dictionary<string, OpenApiSecurityScheme>();
+    public virtual OpenApiSecurityRequirement SecurityRequirements => new OpenApiSecurityRequirement();
+
 }

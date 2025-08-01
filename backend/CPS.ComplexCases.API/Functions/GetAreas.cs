@@ -8,6 +8,7 @@ using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
+using Microsoft.OpenApi.Models;
 
 namespace CPS.ComplexCases.API.Functions;
 

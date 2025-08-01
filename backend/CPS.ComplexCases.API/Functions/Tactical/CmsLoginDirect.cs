@@ -8,6 +8,7 @@ using Microsoft.OpenApi.Models;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.DDEI.Tactical.Client;
 using CPS.ComplexCases.DDEI.Tactical.Models.Request;
+using CPS.ComplexCases.Common.OpenApi.Filters;
 
 namespace CPS.ComplexCases.API.Functions.Tactical;
 
@@ -17,6 +18,7 @@ public class CmsLoginDirect(IDdeiClientTactical ddeiClient)
 
   [Function(nameof(CmsLoginDirectGet))]
   [OpenApiOperation(operationId: nameof(CmsLoginDirectGet), tags: ["CMS", "Authentication"], Description = "Returns the developer CMS login form.")]
+  [OpenApiNoSecurity]
   [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.TextPlain, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]
   [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
   [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]
@@ -30,6 +32,7 @@ public class CmsLoginDirect(IDdeiClientTactical ddeiClient)
 
   [Function(nameof(CmsLoginDirectPost))]
   [OpenApiOperation(operationId: nameof(CmsLoginDirectPost), tags: ["CMS", "Authentication"], Description = "Authenticates a user in CMS and returns a token and cookie.")]
+  [OpenApiNoSecurity]
   [OpenApiRequestBody(contentType: ContentType.MultipartFormData, bodyType: typeof(AuthenticationRequest), Description = "Form data including username and password.")]
   [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.TextHtml, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]
   [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]

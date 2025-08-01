@@ -17,7 +17,6 @@ using CPS.ComplexCases.Egress.Models.Args;
 using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain;
 using CPS.ComplexCases.FileTransfer.API.Validators;
-using Microsoft.AspNetCore.Http.HttpResults;
 using CPS.ComplexCases.FileTransfer.API.Models.Results;
 
 namespace CPS.ComplexCases.FileTransfer.API.Functions;
@@ -31,6 +30,7 @@ public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorage
 
     [Function(nameof(ListFilesForTransfer))]
     [OpenApiOperation(operationId: nameof(ListFilesForTransfer), tags: ["FileTransfer"], Description = "Lists all files that will be included in a transfer operation based on the selected source paths.")]
+    [OpenApiParameter(name: HttpHeaderKeys.CorrelationId, In = Microsoft.OpenApi.Models.ParameterLocation.Header, Required = true, Type = typeof(string), Description = "Correlation identifier for tracking the request.")]
     [OpenApiRequestBody(contentType: ContentType.ApplicationJson, bodyType: typeof(ListFilesForTransferRequest), Required = true, Description = "Request containing transfer direction, source paths, and destination information.")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(FilesForTransferResult), Description = ApiResponseDescriptions.Success)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.ApplicationJson, bodyType: typeof(IEnumerable<string>), Description = ApiResponseDescriptions.BadRequest)]

@@ -15,6 +15,7 @@ using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.Common.Services;
+using Microsoft.OpenApi.Models;
 
 namespace CPS.ComplexCases.API.Functions;
 
