@@ -287,6 +287,7 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
 
   const getInsetElement = () => {
     const curentFolder = egressPathFolders[egressPathFolders.length - 1];
+    if (egressPathFolders.length === 1) return <></>;
     return (
       <InsetText data-testid="egress-inset-text">
         Transfer to {curentFolder.folderName}

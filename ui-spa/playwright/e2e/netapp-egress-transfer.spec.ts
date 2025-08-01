@@ -1,28 +1,30 @@
 import { expect, test } from "../utils/test";
 import { delay, HttpResponse, http } from "msw";
-test.describe("egress-netapp-transfer", () => {
-  test.describe("egress-netapp: transfer selection, confirmation and happy path", () => {
+test.describe("netapp-egress-transfer", () => {
+  test.describe("netapp to egress : transfer selection, confirmation and happy path", () => {
     test.beforeEach(async ({ page }) => {
       await page.goto("/case/12/case-management");
       await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
       await expect(page.getByTestId("tab-active")).toHaveText(
         "Transfer materials",
       );
+      await page.getByRole("button", { name: "Switch source" }).click();
+
       await expect(
         page.getByTestId("tab-content-transfer-materials").locator("h2"),
       ).toHaveText(
-        "Transfer folders and files between egress and shared drive",
+        "Transfer folders and files between shared drive and egress",
       );
+    });
+    test("Should show and hide the actions button and current folder text indent in the egress side based on the files and folders selected on the netapp side ", async ({
+      page,
+    }) => {
       await page
         .getByTestId("egress-table-wrapper")
         .locator('role=button[name="folder-1-0"]')
         .click();
-    });
-    test("Should show and hide the actions button and current folder text indent in the netapp side based on the files and folders selected on the egress side ", async ({
-      page,
-    }) => {
       const checkboxes = page
-        .getByTestId("egress-table-wrapper")
+        .getByTestId("netapp-table-wrapper")
         .locator('input[type="checkbox"]');
       await checkboxes.nth(0).check();
       const count = await checkboxes.count();
@@ -41,9 +43,9 @@ test.describe("egress-netapp-transfer", () => {
       await expect(
         page.getByTestId("transfer-actions-dropdown-1"),
       ).toBeVisible();
-      await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
-      await expect(page.getByTestId("netapp-inset-text")).toHaveText(
-        "Transfer to netappCopy |Move",
+      await expect(page.getByTestId("egress-inset-text")).toBeVisible();
+      await expect(page.getByTestId("egress-inset-text")).toHaveText(
+        "Transfer to folder-1-0Copy",
       );
       await checkboxes.nth(0).uncheck();
       await expect(
@@ -52,7 +54,7 @@ test.describe("egress-netapp-transfer", () => {
       await expect(
         page.getByTestId("transfer-actions-dropdown-1"),
       ).not.toBeVisible();
-      await expect(page.getByTestId("netapp-inset-text")).not.toBeVisible();
+      await expect(page.getByTestId("egress-inset-text")).not.toBeVisible();
 
       await checkboxes.nth(1).check();
       await expect(
@@ -61,9 +63,9 @@ test.describe("egress-netapp-transfer", () => {
       await expect(
         page.getByTestId("transfer-actions-dropdown-1"),
       ).toBeVisible();
-      await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
-      await expect(page.getByTestId("netapp-inset-text")).toHaveText(
-        "Transfer to netappCopy |Move",
+      await expect(page.getByTestId("egress-inset-text")).toBeVisible();
+      await expect(page.getByTestId("egress-inset-text")).toHaveText(
+        "Transfer to folder-1-0Copy",
       );
       await checkboxes.nth(1).uncheck();
       await expect(
@@ -72,7 +74,7 @@ test.describe("egress-netapp-transfer", () => {
       await expect(
         page.getByTestId("transfer-actions-dropdown-1"),
       ).not.toBeVisible();
-      await expect(page.getByTestId("netapp-inset-text")).not.toBeVisible();
+      await expect(page.getByTestId("egress-inset-text")).not.toBeVisible();
 
       await checkboxes.nth(3).check();
       await expect(
@@ -81,9 +83,9 @@ test.describe("egress-netapp-transfer", () => {
       await expect(
         page.getByTestId("transfer-actions-dropdown-1"),
       ).toBeVisible();
-      await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
-      await expect(page.getByTestId("netapp-inset-text")).toHaveText(
-        "Transfer to netappCopy |Move",
+      await expect(page.getByTestId("egress-inset-text")).toBeVisible();
+      await expect(page.getByTestId("egress-inset-text")).toHaveText(
+        "Transfer to folder-1-0Copy",
       );
       await checkboxes.nth(3).uncheck();
       await expect(
@@ -92,152 +94,84 @@ test.describe("egress-netapp-transfer", () => {
       await expect(
         page.getByTestId("transfer-actions-dropdown-1"),
       ).not.toBeVisible();
-      await expect(page.getByTestId("netapp-inset-text")).not.toBeVisible();
+      await expect(page.getByTestId("egress-inset-text")).not.toBeVisible();
     });
-    test("Should show the egress to netapp transfer confirmation pop up with correct texts when user chooses copy operation from inset text", async ({
+    test("Should show the netapp to egress transfer confirmation pop up with correct texts when user chooses copy operation from inset text", async ({
       page,
     }) => {
-      const checkboxes = page
+      await page
         .getByTestId("egress-table-wrapper")
-        .locator('input[type="checkbox"]');
-      await checkboxes.nth(0).check();
-      await expect(
-        page.getByTestId("transfer-actions-dropdown-0"),
-      ).toBeVisible();
-      await expect(
-        page.getByTestId("transfer-actions-dropdown-1"),
-      ).toBeVisible();
-      await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
-      await page
-        .getByTestId("netapp-inset-text")
-        .getByRole("button", { name: "Copy" })
+        .locator('role=button[name="folder-1-0"]')
         .click();
-      const confirmationModal = await page.getByTestId("div-modal");
-      await expect(confirmationModal).toBeVisible();
-      await expect(confirmationModal).toContainText("Copy files to: netapp");
-      await expect(
-        confirmationModal.getByLabel(
-          "I confirm I want to copy 2 folders and 1 file to netapp",
-        ),
-      ).toBeVisible();
-      await expect(
-        confirmationModal.getByRole("button", { name: "Continue" }),
-      ).toBeVisible();
-      await expect(
-        confirmationModal.getByRole("button", { name: "Cancel" }),
-      ).toBeVisible();
-      await confirmationModal.getByRole("button", { name: "Cancel" }).click();
-      await expect(confirmationModal).not.toBeVisible();
-      await checkboxes.nth(0).uncheck();
-      await checkboxes.nth(1).check();
-      await page
-        .getByTestId("netapp-inset-text")
-        .getByRole("button", { name: "Copy" })
-        .click();
-      await expect(confirmationModal).toBeVisible();
-      await expect(
-        confirmationModal.getByLabel(
-          "I confirm I want to copy 1 folder to netapp",
-        ),
-      ).toBeVisible();
-      await confirmationModal.getByRole("button", { name: "Cancel" }).click();
-      await checkboxes.nth(2).check();
-      await page
-        .getByTestId("netapp-inset-text")
-        .getByRole("button", { name: "Copy" })
-        .click();
-      await expect(confirmationModal).toBeVisible();
-      await expect(
-        confirmationModal.getByLabel(
-          "I confirm I want to copy 2 folders to netapp",
-        ),
-      ).toBeVisible();
-      await confirmationModal.getByRole("button", { name: "Cancel" }).click();
-      await expect(confirmationModal).not.toBeVisible();
-    });
-    test("Should show the  egress to netapp transfer confirmation pop up with correct texts when user chooses move operation from inset text", async ({
-      page,
-    }) => {
       const checkboxes = page
-        .getByTestId("egress-table-wrapper")
-        .locator('input[type="checkbox"]');
-      await checkboxes.nth(0).check();
-      await expect(
-        page.getByTestId("transfer-actions-dropdown-0"),
-      ).toBeVisible();
-      await expect(
-        page.getByTestId("transfer-actions-dropdown-1"),
-      ).toBeVisible();
-      await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
-      await page
-        .getByTestId("netapp-inset-text")
-        .getByRole("button", { name: "Move" })
-        .click();
-      const confirmationModal = await page.getByTestId("div-modal");
-      await expect(confirmationModal).toBeVisible();
-      await expect(confirmationModal).toContainText("Move files to: netapp");
-      await expect(
-        confirmationModal.getByLabel(
-          "I confirm I want to move 2 folders and 1 file to netapp",
-        ),
-      ).toBeVisible();
-      await expect(
-        confirmationModal.getByRole("button", { name: "Continue" }),
-      ).toBeVisible();
-      await expect(
-        confirmationModal.getByRole("button", { name: "Cancel" }),
-      ).toBeVisible();
-      await confirmationModal.getByRole("button", { name: "Cancel" }).click();
-      await expect(confirmationModal).not.toBeVisible();
-      await checkboxes.nth(0).uncheck();
-      await checkboxes.nth(1).check();
-      await page
-        .getByTestId("netapp-inset-text")
-        .getByRole("button", { name: "Move" })
-        .click();
-      await expect(confirmationModal).toBeVisible();
-      await expect(
-        confirmationModal.getByLabel(
-          "I confirm I want to move 1 folder to netapp",
-        ),
-      ).toBeVisible();
-      await confirmationModal.getByRole("button", { name: "Cancel" }).click();
-      await checkboxes.nth(2).check();
-      await page
-        .getByTestId("netapp-inset-text")
-        .getByRole("button", { name: "Move" })
-        .click();
-      await expect(confirmationModal).toBeVisible();
-      await expect(
-        confirmationModal.getByLabel(
-          "I confirm I want to move 2 folders to netapp",
-        ),
-      ).toBeVisible();
-      await confirmationModal.getByRole("button", { name: "Cancel" }).click();
-      await expect(confirmationModal).not.toBeVisible();
-      await page
         .getByTestId("netapp-table-wrapper")
-        .getByRole("button", { name: "folder-1-1" })
-        .click();
+        .locator('input[type="checkbox"]');
+      await checkboxes.nth(0).check();
+      await expect(
+        page.getByTestId("transfer-actions-dropdown-0"),
+      ).toBeVisible();
+      await expect(
+        page.getByTestId("transfer-actions-dropdown-1"),
+      ).toBeVisible();
+      await expect(page.getByTestId("egress-inset-text")).toBeVisible();
       await page
-        .getByTestId("netapp-inset-text")
-        .getByRole("button", { name: "Move" })
+        .getByTestId("egress-inset-text")
+        .getByRole("button", { name: "Copy" })
         .click();
+      const confirmationModal = await page.getByTestId("div-modal");
       await expect(confirmationModal).toBeVisible();
       await expect(confirmationModal).toContainText(
-        "Move files to: folder-1-1",
+        "Copy files to: folder-1-0",
       );
       await expect(
         confirmationModal.getByLabel(
-          "I confirm I want to move 2 folders to folder-1-1",
+          "I confirm I want to copy 2 folders and 2 files to folder-1-0",
         ),
       ).toBeVisible();
+      await expect(
+        confirmationModal.getByRole("button", { name: "Continue" }),
+      ).toBeVisible();
+      await expect(
+        confirmationModal.getByRole("button", { name: "Cancel" }),
+      ).toBeVisible();
+      await confirmationModal.getByRole("button", { name: "Cancel" }).click();
+      await expect(confirmationModal).not.toBeVisible();
+      await checkboxes.nth(0).uncheck();
+      await checkboxes.nth(1).check();
+      await page
+        .getByTestId("egress-inset-text")
+        .getByRole("button", { name: "Copy" })
+        .click();
+      await expect(confirmationModal).toBeVisible();
+      await expect(
+        confirmationModal.getByLabel(
+          "I confirm I want to copy 1 folder to folder-1-0",
+        ),
+      ).toBeVisible();
+      await confirmationModal.getByRole("button", { name: "Cancel" }).click();
+      await checkboxes.nth(2).check();
+      await page
+        .getByTestId("egress-inset-text")
+        .getByRole("button", { name: "Copy" })
+        .click();
+      await expect(confirmationModal).toBeVisible();
+      await expect(
+        confirmationModal.getByLabel(
+          "I confirm I want to copy 2 folders to folder-1-0",
+        ),
+      ).toBeVisible();
+      await confirmationModal.getByRole("button", { name: "Cancel" }).click();
+      await expect(confirmationModal).not.toBeVisible();
     });
-    test("Should show the egress to netapp transfer confirmation pop up with correct texts when user chooses copy/move operation from the action dropdown", async ({
+    test("Should show the netapp to egress transfer confirmation pop up with correct texts when user chooses copy operation from the action dropdown", async ({
       page,
     }) => {
-      const checkboxes = page
+      await page
         .getByTestId("egress-table-wrapper")
+        .locator('role=button[name="folder-1-0"]')
+        .click();
+      const checkboxes = page
+        .getByTestId("netapp-table-wrapper")
         .locator('input[type="checkbox"]');
       await checkboxes.nth(0).check();
       await expect(
@@ -246,24 +180,30 @@ test.describe("egress-netapp-transfer", () => {
       await expect(
         page.getByTestId("transfer-actions-dropdown-1"),
       ).toBeVisible();
-      await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
+      await expect(page.getByTestId("egress-inset-text")).toBeVisible();
       await page.getByTestId("transfer-actions-dropdown-0").click();
       await expect(page.getByTestId("dropdown-panel")).toBeVisible();
       await page.getByTestId("transfer-actions-dropdown-0").click();
       await expect(page.getByTestId("dropdown-panel")).not.toBeVisible();
       await page.getByTestId("transfer-actions-dropdown-0").click();
+      await expect(
+        page
+          .getByTestId("dropdown-panel")
+          .getByRole("button", { name: "Move" }),
+      ).not.toBeVisible();
       await page
         .getByTestId("dropdown-panel")
-        .getByRole("button", { name: "Move" })
+        .getByRole("button", { name: "Copy" })
         .click();
+
       const confirmationModal = await page.getByTestId("div-modal");
       await expect(confirmationModal).toBeVisible();
       await expect(confirmationModal).toContainText(
-        "Move files to: folder-1-0",
+        "Copy files to: folder-2-0",
       );
       await expect(
         confirmationModal.getByLabel(
-          "I confirm I want to move 2 folders and 1 file to folder-1-0",
+          "I confirm I want to copy 2 folders and 2 files to folder-2-0",
         ),
       ).toBeVisible();
       await expect(
@@ -274,45 +214,59 @@ test.describe("egress-netapp-transfer", () => {
       ).toBeVisible();
       await confirmationModal.getByRole("button", { name: "Cancel" }).click();
       await page.getByTestId("transfer-actions-dropdown-1").click();
+      await expect(
+        page
+          .getByTestId("dropdown-panel")
+          .getByRole("button", { name: "Move" }),
+      ).not.toBeVisible();
       await page
         .getByTestId("dropdown-panel")
         .getByRole("button", { name: "Copy" })
         .click();
       await expect(confirmationModal).toBeVisible();
       await expect(confirmationModal).toContainText(
-        "Copy files to: folder-1-1",
+        "Copy files to: folder-2-1",
       );
       await expect(
         confirmationModal.getByLabel(
-          "I confirm I want to copy 2 folders and 1 file to folder-1-1",
+          "I confirm I want to copy 2 folders and 2 files to folder-2-1",
         ),
       ).toBeVisible();
       await confirmationModal.getByRole("button", { name: "Cancel" }).click();
       await page
-        .getByTestId("netapp-table-wrapper")
-        .getByRole("button", { name: "folder-1-1" })
+        .getByTestId("egress-table-wrapper")
+        .getByRole("button", { name: "folder-2-1" })
         .click();
       await page.getByTestId("transfer-actions-dropdown-0").click();
+      await expect(
+        page
+          .getByTestId("dropdown-panel")
+          .getByRole("button", { name: "Move" }),
+      ).not.toBeVisible();
       await page
         .getByTestId("dropdown-panel")
-        .getByRole("button", { name: "Move" })
+        .getByRole("button", { name: "Copy" })
         .click();
       const newConfirmationModal = await page.getByTestId("div-modal");
       await expect(newConfirmationModal).toBeVisible();
       await expect(newConfirmationModal).toContainText(
-        "Move files to: folder-2-0",
+        "Copy files to: folder-3-0",
       );
       await expect(
         newConfirmationModal.getByLabel(
-          "I confirm I want to move 2 folders and 1 file to folder-2-0",
+          "I confirm I want to copy 2 folders and 2 files to folder-3-0",
         ),
       ).toBeVisible();
     });
-    test("Should successfully complete egress to netapp transfer, copy operation", async ({
+    test("Should successfully complete netapp to egress transfer, copy operation", async ({
       page,
     }) => {
-      const checkboxes = page
+      await page
         .getByTestId("egress-table-wrapper")
+        .locator('role=button[name="folder-1-0"]')
+        .click();
+      const checkboxes = page
+        .getByTestId("netapp-table-wrapper")
         .locator('input[type="checkbox"]');
       await checkboxes.nth(0).check();
       await expect(
@@ -321,24 +275,28 @@ test.describe("egress-netapp-transfer", () => {
       await expect(
         page.getByTestId("transfer-actions-dropdown-1"),
       ).toBeVisible();
-      await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
+      await expect(page.getByTestId("egress-inset-text")).toBeVisible();
       await page
-        .getByTestId("netapp-inset-text")
+        .getByTestId("egress-inset-text")
         .getByRole("button", { name: "Copy" })
         .click();
       const confirmationModal = await page.getByTestId("div-modal");
       await expect(confirmationModal).toBeVisible();
-      await expect(confirmationModal).toContainText("Copy files to: netapp");
+      await expect(confirmationModal).toContainText(
+        "Copy files to: folder-1-0",
+      );
       await expect(
         confirmationModal.getByLabel(
-          "I confirm I want to copy 2 folders and 1 file to netapp",
+          "I confirm I want to copy 2 folders and 2 files to folder-1-0",
         ),
       ).toBeVisible();
       await expect(
         confirmationModal.getByRole("button", { name: "Continue" }),
       ).toBeDisabled();
       await confirmationModal
-        .getByLabel("I confirm I want to copy 2 folders and 1 file to netapp")
+        .getByLabel(
+          "I confirm I want to copy 2 folders and 2 files to folder-1-0",
+        )
         .click();
       await expect(
         confirmationModal.getByRole("button", { name: "Continue" }),
@@ -348,17 +306,17 @@ test.describe("egress-netapp-transfer", () => {
       await expect(page.getByTestId("transfer-spinner")).toBeVisible();
       await expect(
         page.getByTestId("tab-content-transfer-materials").locator("h2", {
-          hasText: "Transfer folders and files between egress and shared drive",
+          hasText: "Transfer folders and files between shared drive and egress",
         }),
       ).not.toBeVisible();
       await expect(page.getByTestId("egress-table-wrapper")).not.toBeVisible();
       await expect(page.getByTestId("netapp-table-wrapper")).not.toBeVisible();
       await expect(
         page.getByTestId("tab-content-transfer-materials"),
-      ).toContainText("Indexing transfer from egress to shared drive...");
+      ).toContainText("Indexing transfer from shared drive to egress...");
       await expect(
         page.getByTestId("tab-content-transfer-materials"),
-      ).toContainText("Completing transfer from egress to shared drive...");
+      ).toContainText("Completing transfer from shared drive to egress...");
       await expect(page.getByTestId("transfer-spinner")).not.toBeVisible();
       await expect(
         page.getByTestId("transfer-success-notification-banner"),
@@ -372,33 +330,14 @@ test.describe("egress-netapp-transfer", () => {
       await expect(
         page.getByTestId("tab-content-transfer-materials").locator("h2").nth(1),
       ).toHaveText(
-        "Transfer folders and files between egress and shared drive",
+        "Transfer folders and files between shared drive and egress",
       );
       await expect(page.getByTestId("egress-table-wrapper")).toBeVisible();
       await expect(page.getByTestId("netapp-table-wrapper")).toBeVisible();
     });
-    test("Should successfully complete egress to netapp transfer, move operation", async ({
-      page,
-      worker,
-    }) => {
-      await worker.use(
-        http.get(
-          "https://mocked-out-api/api/v1/filetransfer/transfer-id-egress-to-netapp/status",
-          async () => {
-            await delay(10);
-            return HttpResponse.json({
-              status: "Completed",
-              transferType: "Move",
-              direction: "EgressToNetApp",
-              completedAt: null,
-              failedItems: [],
-              userName: "dev_user@example.org",
-            });
-          },
-        ),
-      );
+    test("Should not allow copying to root egress folder", async ({ page }) => {
       const checkboxes = page
-        .getByTestId("egress-table-wrapper")
+        .getByTestId("netapp-table-wrapper")
         .locator('input[type="checkbox"]');
       await checkboxes.nth(0).check();
       await expect(
@@ -407,65 +346,11 @@ test.describe("egress-netapp-transfer", () => {
       await expect(
         page.getByTestId("transfer-actions-dropdown-1"),
       ).toBeVisible();
-      await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
-      await page
-        .getByTestId("netapp-inset-text")
-        .getByRole("button", { name: "Move" })
-        .click();
-      const confirmationModal = await page.getByTestId("div-modal");
-      await expect(confirmationModal).toBeVisible();
-      await expect(confirmationModal).toContainText("Move files to: netapp");
-      await expect(
-        confirmationModal.getByLabel(
-          "I confirm I want to move 2 folders and 1 file to netapp",
-        ),
-      ).toBeVisible();
-      await expect(
-        confirmationModal.getByRole("button", { name: "Continue" }),
-      ).toBeDisabled();
-      await confirmationModal
-        .getByLabel("I confirm I want to move 2 folders and 1 file to netapp")
-        .click();
-      await expect(
-        confirmationModal.getByRole("button", { name: "Continue" }),
-      ).not.toBeDisabled();
-      await confirmationModal.getByRole("button", { name: "Continue" }).click();
-      await expect(confirmationModal).not.toBeVisible();
-      await expect(page.getByTestId("transfer-spinner")).toBeVisible();
-      await expect(
-        page.getByTestId("tab-content-transfer-materials").locator("h2", {
-          hasText: "Transfer folders and files between egress and shared drive",
-        }),
-      ).not.toBeVisible();
-      await expect(page.getByTestId("egress-table-wrapper")).not.toBeVisible();
-      await expect(page.getByTestId("netapp-table-wrapper")).not.toBeVisible();
-      await expect(
-        page.getByTestId("tab-content-transfer-materials"),
-      ).toContainText("Indexing transfer from egress to shared drive...");
-      await expect(
-        page.getByTestId("tab-content-transfer-materials"),
-      ).toContainText("Completing transfer from egress to shared drive...");
-      await expect(page.getByTestId("transfer-spinner")).not.toBeVisible();
-      await expect(
-        page.getByTestId("transfer-success-notification-banner"),
-      ).toBeVisible();
-      await expect(
-        page.getByTestId("transfer-success-notification-banner"),
-      ).toContainText("Success");
-      await expect(
-        page.getByTestId("transfer-success-notification-banner"),
-      ).toContainText("Files moved successfully");
-      await expect(
-        page.getByTestId("tab-content-transfer-materials").locator("h2").nth(1),
-      ).toHaveText(
-        "Transfer folders and files between egress and shared drive",
-      );
-      await expect(page.getByTestId("egress-table-wrapper")).toBeVisible();
-      await expect(page.getByTestId("netapp-table-wrapper")).toBeVisible();
+      await expect(page.getByTestId("egress-inset-text")).not.toBeVisible();
     });
   });
 
-  test("Should show the egress to netapp transfer loading screen, if the same user come back to the application after triggering transfer and should show completion as it happens", async ({
+  test("Should show the netapp to egress transfer loading screen, if the same user comes back to the application after triggering transfer and should show completion as it happens", async ({
     page,
     worker,
   }) => {
@@ -490,7 +375,7 @@ test.describe("egress-netapp-transfer", () => {
           return HttpResponse.json({
             status: "Initiated",
             transferType: "Copy",
-            direction: "EgressToNetApp",
+            direction: "NetAppToEgress",
             completedAt: null,
             failedItems: [],
             userName: "dev_user@example.org",
@@ -513,7 +398,7 @@ test.describe("egress-netapp-transfer", () => {
     await expect(page.getByTestId("netapp-table-wrapper")).not.toBeVisible();
     await expect(
       page.getByTestId("tab-content-transfer-materials"),
-    ).toContainText("Completing transfer from egress to shared drive...");
+    ).toContainText("Completing transfer from shared drive to egress...");
     await worker.use(
       http.get(
         "https://mocked-out-api/api/v1/filetransfer/mock-transfer-id/status",
@@ -522,7 +407,7 @@ test.describe("egress-netapp-transfer", () => {
           return HttpResponse.json({
             status: "InProgress",
             transferType: "Copy",
-            direction: "EgressToNetApp",
+            direction: "NetAppToEgress",
             completedAt: null,
             failedItems: [],
             userName: "dev_user@example.org",
@@ -533,14 +418,14 @@ test.describe("egress-netapp-transfer", () => {
     await expect(page.getByTestId("transfer-spinner")).toBeVisible();
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2", {
-        hasText: "Transfer folders and files between egress and shared drive",
+        hasText: "Transfer folders and files between shared drive and egress",
       }),
     ).not.toBeVisible();
     await expect(page.getByTestId("egress-table-wrapper")).not.toBeVisible();
     await expect(page.getByTestId("netapp-table-wrapper")).not.toBeVisible();
     await expect(
       page.getByTestId("tab-content-transfer-materials"),
-    ).toContainText("Completing transfer from egress to shared drive...");
+    ).toContainText("Completing transfer from shared drive to egress...");
     await worker.use(
       http.get(
         "https://mocked-out-api/api/v1/filetransfer/mock-transfer-id/status",
@@ -549,7 +434,7 @@ test.describe("egress-netapp-transfer", () => {
           return HttpResponse.json({
             status: "Completed",
             transferType: "Copy",
-            direction: "EgressToNetApp",
+            direction: "NetAppToEgress",
             completedAt: null,
             failedItems: [],
             userName: "dev_user@example.org",
@@ -574,7 +459,7 @@ test.describe("egress-netapp-transfer", () => {
     await expect(page.getByTestId("egress-table-wrapper")).toBeVisible();
     await expect(page.getByTestId("netapp-table-wrapper")).toBeVisible();
   });
-  test("Should show the egress to netapp transfer loading screen, if another user come to the application when an active transfer is happening and show the transfer tables once the transfer has completed", async ({
+  test("Should show the netapp to egress transfer loading screen, if another user come to the application when an active transfer is happening and show the transfer tables once the transfer has completed", async ({
     page,
     worker,
   }) => {
@@ -599,7 +484,7 @@ test.describe("egress-netapp-transfer", () => {
           return HttpResponse.json({
             status: "Initiated",
             transferType: "Copy",
-            direction: "EgressToNetApp",
+            direction: "NetAppToEgress",
             completedAt: null,
             failedItems: [],
             userName: "abc@example.org",
@@ -615,7 +500,7 @@ test.describe("egress-netapp-transfer", () => {
     await expect(page.getByTestId("transfer-spinner")).toBeVisible();
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2", {
-        hasText: "Transfer folders and files between egress and shared drive",
+        hasText: "Transfer folders and files between shared drive and egress",
       }),
     ).not.toBeVisible();
     await expect(page.getByTestId("egress-table-wrapper")).not.toBeVisible();
@@ -631,7 +516,7 @@ test.describe("egress-netapp-transfer", () => {
           return HttpResponse.json({
             status: "InProgress",
             transferType: "Copy",
-            direction: "EgressToNetApp",
+            direction: "NetAppToEgress",
             completedAt: null,
             failedItems: [],
             userName: "abc@example.org",
@@ -642,7 +527,7 @@ test.describe("egress-netapp-transfer", () => {
     await expect(page.getByTestId("transfer-spinner")).toBeVisible();
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2", {
-        hasText: "Transfer folders and files between egress and shared drive",
+        hasText: "Transfer folders and files between shared drive and egress",
       }),
     ).not.toBeVisible();
     await expect(page.getByTestId("egress-table-wrapper")).not.toBeVisible();
@@ -657,7 +542,7 @@ test.describe("egress-netapp-transfer", () => {
           return HttpResponse.json({
             status: "Completed",
             transferType: "Copy",
-            direction: "EgressToNetApp",
+            direction: "NetAppToEgress",
             completedAt: null,
             failedItems: [],
             userName: "abc@example.org",
