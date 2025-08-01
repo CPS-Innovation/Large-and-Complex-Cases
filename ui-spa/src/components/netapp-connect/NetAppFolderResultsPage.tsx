@@ -6,7 +6,7 @@ import { sortByStringProperty } from "../../common/utils/sortUtils";
 import { getFolderNameFromPath } from "../../common/utils/getFolderNameFromPath";
 import FolderNavigationTable from "../common/FolderNavigationTable";
 import FolderIcon from "../../components/svgs/folder.svg?react";
-import styles from "./netAppFolderResultsPage.module.scss";
+import styles from "./NetAppFolderResultsPage.module.scss";
 
 type NetAppFolderResultsPageProps = {
   backLinkUrl: string;

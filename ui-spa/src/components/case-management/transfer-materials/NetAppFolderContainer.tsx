@@ -13,7 +13,7 @@ import FileIcon from "../../../components/svgs/file.svg?react";
 import { formatDate } from "../../../common/utils/formatDate";
 import { DropdownButton } from "../../common/DropdownButton";
 import { TransferAction } from "../../../common/types/TransferAction";
-import styles from "./netAppFolderContainer.module.scss";
+import styles from "./NetAppFolderContainer.module.scss";
 
 type NetAppFolderContainerProps = {
   transferSource: "egress" | "netapp";

@@ -4,7 +4,7 @@ import FileIcon from "../../../components/svgs/file.svg?react";
 import { Tag } from "../../govuk";
 import { getGroupedActvityFilePaths } from "../../../common/utils/getGroupedActivityFilePaths";
 import { sortRelativePaths } from "../../../common/utils/sortRelativePaths";
-import styles from "./relativePathFiles.module.scss";
+import styles from "./RelativePathFiles.module.scss";
 type RelativePathFilesProps = {
   successFiles: { path: string }[];
   errorFiles: { path: string }[];

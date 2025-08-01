@@ -661,6 +661,7 @@ test.describe("activity log", () => {
       "activity-log-files-Thunderstruck-18-01-2024-1-50-PM.csv",
     );
     await sections.nth(0).locator("button").click();
+    await delay(500);
     await expect(page.getByTestId("activity-download-tooltip")).toBeVisible();
     await expect(page.getByTestId("activity-download-tooltip")).toHaveText(
       "File list successfully downloaded",

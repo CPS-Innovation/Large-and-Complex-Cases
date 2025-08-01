@@ -1,6 +1,6 @@
 import LicenceLogo from "./svgs/footerlicencelogo.svg?react";
 import { useUserDetails } from "../auth";
-import styles from "./layout.module.scss";
+import styles from "./Layout.module.scss";
 
 export default function Footer() {
   const { username } = useUserDetails();

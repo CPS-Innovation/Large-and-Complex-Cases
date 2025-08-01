@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useCallback } from "react";
 import { Button, LinkButton, BackLink } from "../../govuk";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import styles from "./metaDataErrorPage.module.scss";
+import styles from "./MetaDataErrorPage.module.scss";
 
 const MetaDataErrorPage = () => {
   const navigate = useNavigate();

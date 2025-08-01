@@ -1,6 +1,6 @@
 import { Button, BackLink } from "../../govuk";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
-import styles from "./transferErrorPage.module.scss";
+import styles from "./TransferErrorPage.module.scss";
 
 const TransferErrorPage: React.FC = () => {
   const { state }: { state: { transferId: string } } = useLocation();
