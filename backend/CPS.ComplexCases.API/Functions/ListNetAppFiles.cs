@@ -1,6 +1,5 @@
 using System.Net;
 using CPS.ComplexCases.API.Constants;
-using CPS.ComplexCases.Common.OpenApi;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
@@ -23,7 +22,6 @@ public class ListNetAppFiles(ILogger<ListNetAppFiles> logger, INetAppClient netA
 
     [Function(nameof(ListNetAppFiles))]
     [OpenApiOperation(operationId: nameof(ListNetAppFiles), tags: ["NetApp"], Description = "Lists files in a NetApp bucket.")]
-    [OpenApiSecurity("implicit_auth", SecuritySchemeType.OAuth2, Flows = typeof(ImplicitAuthFlow))]
     [OpenApiParameter(name: InputParameters.Path, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The path to the destination folder.")]
     [OpenApiParameter(name: InputParameters.Take, In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The number of items to take.")]
     [OpenApiParameter(name: InputParameters.ContinuationToken, In = ParameterLocation.Query, Type = typeof(string), Description = "The continuation token for pagination.")]

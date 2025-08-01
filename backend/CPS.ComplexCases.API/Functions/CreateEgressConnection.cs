@@ -29,7 +29,9 @@ public class CreateEgressConnection(ICaseMetadataService caseMetadataService, IE
 
   [Function(nameof(CreateEgressConnection))]
   [OpenApiOperation(operationId: nameof(CreateEgressConnection), tags: ["Egress"], Description = "Connect an Egress workspace to a case.")]
-  [OpenApiSecurity("implicit_auth", SecuritySchemeType.OAuth2, Flows = typeof(ImplicitAuthFlow))]
+  [OpenApiSecurity("auth_code_flow",
+                 SecuritySchemeType.OAuth2,
+                 Flows = typeof(AuthorizationCodeFlow))]
   [OpenApiRequestBody(ContentType.ApplicationJson, typeof(CreateEgressConnectionDto), Description = "Body containing the Egress connection to create")]
   [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]
   [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]

@@ -30,7 +30,6 @@ public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorage
 
     [Function(nameof(ListFilesForTransfer))]
     [OpenApiOperation(operationId: nameof(ListFilesForTransfer), tags: ["FileTransfer"], Description = "Lists all files that will be included in a transfer operation based on the selected source paths.")]
-    [OpenApiSecurity("FunctionKey", Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey, Name = "x-functions-key", In = Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Enums.OpenApiSecurityLocationType.Header)]
     [OpenApiParameter(name: HttpHeaderKeys.CorrelationId, In = Microsoft.OpenApi.Models.ParameterLocation.Header, Required = true, Type = typeof(string), Description = "Correlation identifier for tracking the request.")]
     [OpenApiRequestBody(contentType: ContentType.ApplicationJson, bodyType: typeof(ListFilesForTransferRequest), Required = true, Description = "Request containing transfer direction, source paths, and destination information.")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(FilesForTransferResult), Description = ApiResponseDescriptions.Success)]

@@ -1,9 +1,20 @@
+using CPS.ComplexCases.Common.OpenApi.Filters;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Abstractions;
 using Microsoft.OpenApi.Models;
 
 namespace CPS.ComplexCases.Common.OpenApi;
 
 public class FileTransferApiOpenApiConfigurationOptions : BaseOpenApiConfigurationOptions
 {
+    public override List<IDocumentFilter> DocumentFilters { get; set; } = new List<IDocumentFilter>
+    {
+        new EnumDocumentFilter(),
+        new MultiTypeDocumentFilter(),
+        new DateOnlyDocumentFilter(),
+        new OrderByTagsDocumentFilter(),
+        new FunctionKeySecurityDocumentFilter()
+    };
+
     public override OpenApiInfo Info { get; set; } = new OpenApiInfo
     {
         Version = "1.0.0",

@@ -2,7 +2,6 @@ using System.Net;
 using System.Text;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Constants;
-using CPS.ComplexCases.Common.OpenApi;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
@@ -19,7 +18,6 @@ public class DownloadActivityLog(ILogger<DownloadActivityLog> logger, IActivityL
 
     [Function(nameof(DownloadActivityLog))]
     [OpenApiOperation(operationId: nameof(DownloadActivityLog), tags: ["ActivityLog"], Description = "Download activity log data in CSV format.")]
-    [OpenApiSecurity("implicit_auth", SecuritySchemeType.OAuth2, Flows = typeof(ImplicitAuthFlow))]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "text/csv", bodyType: typeof(byte[]), Description = "CSV file containing activity log file paths")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]

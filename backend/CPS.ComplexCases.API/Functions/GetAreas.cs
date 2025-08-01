@@ -9,7 +9,6 @@ using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
 using Microsoft.OpenApi.Models;
-using CPS.ComplexCases.Common.OpenApi;
 
 namespace CPS.ComplexCases.API.Functions;
 
@@ -23,7 +22,6 @@ public class GetAreas(ILogger<GetAreas> logger,
 
   [Function(nameof(GetAreas))]
   [OpenApiOperation(operationId: nameof(GetAreas), tags: ["CMS"], Description = "Gets the list of CPS areas from CMS.")]
-  [OpenApiSecurity("implicit_auth", SecuritySchemeType.OAuth2, Flows = typeof(ImplicitAuthFlow))]
   [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]
   [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
   [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]
