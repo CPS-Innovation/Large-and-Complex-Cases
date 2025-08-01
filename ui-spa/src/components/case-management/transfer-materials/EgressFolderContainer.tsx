@@ -16,7 +16,7 @@ import { DropdownButton } from "../../common/DropdownButton";
 import { TransferAction } from "../../../common/types/TransferAction";
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
 
-import styles from "./egressFolderContainer.module.scss";
+import styles from "./EgressFolderContainer.module.scss";
 
 type EgressFolderContainerProps = {
   transferSource: "egress" | "netapp";

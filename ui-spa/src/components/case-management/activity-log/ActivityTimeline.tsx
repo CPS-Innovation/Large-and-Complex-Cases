@@ -10,7 +10,7 @@ import { formatInTimeZone } from "date-fns-tz";
 import { getCleanPath } from "../../../common/utils/getCleanPath";
 import { getTransferActivityStatusTagData } from "../../../common/utils/getTransferActivityStatusTagData";
 import { downloadActivityLog } from "../../../apis/gateway-api";
-import styles from "./activityTimeline.module.scss";
+import styles from "./ActivityTimeline.module.scss";
 
 type ActivityTimelineProps = {
   operationName: string;

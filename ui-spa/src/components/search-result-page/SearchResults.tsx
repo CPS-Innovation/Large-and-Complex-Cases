@@ -7,7 +7,7 @@ import { Table, Tag } from "../govuk";
 import { Link } from "react-router";
 import { SearchFromData } from "../../common/hooks/useCaseSearchForm";
 import { formatDate } from "../../common/utils/formatDate";
-import styles from "./searchResults.module.scss";
+import styles from "./SearchResults.module.scss";
 
 type SearchResultsProps = {
   searchQueryString: string;

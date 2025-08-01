@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Table } from "./Table";
 import ArrowDownIcon from "../../components/svgs/arrowDown.svg?react";
 import TableSortIcon from "../../components/svgs/table-sort.svg?react";
-import styles from "./sortableTable.module.scss";
+import styles from "./SortableTable.module.scss";
 
 export type SortableTableProps = {
   className?: string;

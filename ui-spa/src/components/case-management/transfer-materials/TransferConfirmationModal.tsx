@@ -2,7 +2,7 @@ import { Checkboxes, Button, LinkButton } from "../../govuk";
 import { useState } from "react";
 import { Modal } from "../../common/Modal";
 import { TransferAction } from "../../../common/types/TransferAction";
-import styles from "./transferConfirmationModal.module.scss";
+import styles from "./TransferConfirmationModal.module.scss";
 
 type TransferConfirmationModalProps = {
   transferAction: TransferAction;

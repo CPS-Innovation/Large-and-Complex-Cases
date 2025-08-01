@@ -8,7 +8,7 @@ import {
   sortByStringProperty,
   sortByDateProperty,
 } from "../../common/utils/sortUtils";
-import styles from "./egressSearchResults.module.scss";
+import styles from "./EgressSearchResults.module.scss";
 
 type EgressSearchResultsProps = {
   workspaceName: string;

@@ -1,6 +1,6 @@
 import { BackLink } from "../../govuk";
 import { useLocation } from "react-router-dom";
-import styles from "./folderAccessErrorPage.module.scss";
+import styles from "./FolderAccessErrorPage.module.scss";
 
 const FolderAccessErrorPage = () => {
   const location = useLocation();
