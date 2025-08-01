@@ -1,7 +1,7 @@
 import { expect, test } from "../utils/test";
 import { delay, HttpResponse, http } from "msw";
 test.describe("netapp-egress-transfer", () => {
-  test.describe("netapp to egress, transfer selection, confirmation and happy path", () => {
+  test.describe("netapp to egress : transfer selection, confirmation and happy path", () => {
     test.beforeEach(async ({ page }) => {
       await page.goto("/case/12/case-management");
       await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
@@ -350,7 +350,7 @@ test.describe("netapp-egress-transfer", () => {
     });
   });
 
-  test("Should show the neatpp to egress transfer loading screen if the same user comes back to the application after triggering transfer and should show completion as it happens", async ({
+  test("Should show the netapp to egress transfer loading screen, if the same user comes back to the application after triggering transfer and should show completion as it happens", async ({
     page,
     worker,
   }) => {
@@ -459,7 +459,7 @@ test.describe("netapp-egress-transfer", () => {
     await expect(page.getByTestId("egress-table-wrapper")).toBeVisible();
     await expect(page.getByTestId("netapp-table-wrapper")).toBeVisible();
   });
-  test("Should show the netapp to egress transfer loading screen if the another user come to the application when a active transfer is happening and show the transfer tables once the transfer has completed", async ({
+  test("Should show the netapp to egress transfer loading screen, if another user come to the application when an active transfer is happening and show the transfer tables once the transfer has completed", async ({
     page,
     worker,
   }) => {

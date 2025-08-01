@@ -1,7 +1,7 @@
 import { expect, test } from "../utils/test";
 import { delay, HttpResponse, http } from "msw";
 test.describe("egress-netapp-transfer", () => {
-  test.describe("transfer selection, confirmation and happy path", () => {
+  test.describe("egress-netapp: transfer selection, confirmation and happy path", () => {
     test.beforeEach(async ({ page }) => {
       await page.goto("/case/12/case-management");
       await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
@@ -94,7 +94,7 @@ test.describe("egress-netapp-transfer", () => {
       ).not.toBeVisible();
       await expect(page.getByTestId("netapp-inset-text")).not.toBeVisible();
     });
-    test("Should show the transfer confirmation pop up with correct texts when user chooses copy operation from inset text", async ({
+    test("Should show the egress to netapp transfer confirmation pop up with correct texts when user chooses copy operation from inset text", async ({
       page,
     }) => {
       const checkboxes = page
@@ -155,7 +155,7 @@ test.describe("egress-netapp-transfer", () => {
       await confirmationModal.getByRole("button", { name: "Cancel" }).click();
       await expect(confirmationModal).not.toBeVisible();
     });
-    test("Should show the transfer confirmation pop up with correct texts when user chooses move operation from inset text", async ({
+    test("Should show the  egress to netapp transfer confirmation pop up with correct texts when user chooses move operation from inset text", async ({
       page,
     }) => {
       const checkboxes = page
@@ -233,7 +233,7 @@ test.describe("egress-netapp-transfer", () => {
         ),
       ).toBeVisible();
     });
-    test("Should show the transfer confirmation pop up with correct texts when user chooses copy/move operation from the action dropdown", async ({
+    test("Should show the egress to netapp transfer confirmation pop up with correct texts when user chooses copy/move operation from the action dropdown", async ({
       page,
     }) => {
       const checkboxes = page
@@ -465,7 +465,7 @@ test.describe("egress-netapp-transfer", () => {
     });
   });
 
-  test("Should show the egress to netapp transfer loading screen if the same user come back to the application after trigering transfer and should show completion as it happens", async ({
+  test("Should show the egress to netapp transfer loading screen, if the same user come back to the application after triggering transfer and should show completion as it happens", async ({
     page,
     worker,
   }) => {
@@ -574,7 +574,7 @@ test.describe("egress-netapp-transfer", () => {
     await expect(page.getByTestId("egress-table-wrapper")).toBeVisible();
     await expect(page.getByTestId("netapp-table-wrapper")).toBeVisible();
   });
-  test("Should show the egress to netapp transfer loading screen if the another user come to the application when a active transfer is happening and show the transfer tables once the transfer has completed", async ({
+  test("Should show the egress to netapp transfer loading screen, if another user come to the application when an active transfer is happening and show the transfer tables once the transfer has completed", async ({
     page,
     worker,
   }) => {
