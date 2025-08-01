@@ -335,6 +335,19 @@ test.describe("netapp-egress-transfer", () => {
       await expect(page.getByTestId("egress-table-wrapper")).toBeVisible();
       await expect(page.getByTestId("netapp-table-wrapper")).toBeVisible();
     });
+    test("Should not allow copying to root egress folder", async ({ page }) => {
+      const checkboxes = page
+        .getByTestId("netapp-table-wrapper")
+        .locator('input[type="checkbox"]');
+      await checkboxes.nth(0).check();
+      await expect(
+        page.getByTestId("transfer-actions-dropdown-0"),
+      ).toBeVisible();
+      await expect(
+        page.getByTestId("transfer-actions-dropdown-1"),
+      ).toBeVisible();
+      await expect(page.getByTestId("egress-inset-text")).not.toBeVisible();
+    });
   });
 
   test("Should show the neatpp to egress transfer loading screen if the same user comes back to the application after triggering transfer and should show completion as it happens", async ({
