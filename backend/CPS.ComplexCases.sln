@@ -45,6 +45,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.Common.Tes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPS.ComplexCases.FileTransfer.API.Tests", "CPS.ComplexCases.FileTransfer.API.Tests\CPS.ComplexCases.FileTransfer.API.Tests.csproj", "{90E65C97-F7AF-4A67-9C22-CD1191CAA40A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cps.ComplexCases.Data.Tests", "Cps.ComplexCases.Data.Tests\Cps.ComplexCases.Data.Tests.csproj", "{2AA7639D-71D3-49EB-A4AD-EE48A1B90C59}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -307,6 +309,18 @@ Global
 		{90E65C97-F7AF-4A67-9C22-CD1191CAA40A}.Release|x64.Build.0 = Release|Any CPU
 		{90E65C97-F7AF-4A67-9C22-CD1191CAA40A}.Release|x86.ActiveCfg = Release|Any CPU
 		{90E65C97-F7AF-4A67-9C22-CD1191CAA40A}.Release|x86.Build.0 = Release|Any CPU
+		{2AA7639D-71D3-49EB-A4AD-EE48A1B90C59}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2AA7639D-71D3-49EB-A4AD-EE48A1B90C59}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2AA7639D-71D3-49EB-A4AD-EE48A1B90C59}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2AA7639D-71D3-49EB-A4AD-EE48A1B90C59}.Debug|x64.Build.0 = Debug|Any CPU
+		{2AA7639D-71D3-49EB-A4AD-EE48A1B90C59}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2AA7639D-71D3-49EB-A4AD-EE48A1B90C59}.Debug|x86.Build.0 = Debug|Any CPU
+		{2AA7639D-71D3-49EB-A4AD-EE48A1B90C59}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2AA7639D-71D3-49EB-A4AD-EE48A1B90C59}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2AA7639D-71D3-49EB-A4AD-EE48A1B90C59}.Release|x64.ActiveCfg = Release|Any CPU
+		{2AA7639D-71D3-49EB-A4AD-EE48A1B90C59}.Release|x64.Build.0 = Release|Any CPU
+		{2AA7639D-71D3-49EB-A4AD-EE48A1B90C59}.Release|x86.ActiveCfg = Release|Any CPU
+		{2AA7639D-71D3-49EB-A4AD-EE48A1B90C59}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
