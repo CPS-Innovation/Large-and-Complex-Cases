@@ -54,4 +54,6 @@ public class TransferEntityState : TaskEntity<TransferEntity>
         State.DeletionErrors.AddRange(failedToDeleteItems);
         State.UpdatedAt = DateTime.UtcNow;
     }
+    public TransferEntity CurrentState => State;
+
 }

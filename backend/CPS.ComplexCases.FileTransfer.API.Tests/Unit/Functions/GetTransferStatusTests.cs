@@ -10,6 +10,7 @@ using CPS.ComplexCases.FileTransfer.API.Tests.Unit.Stubs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.DurableTask.Client.Entities;
+using Microsoft.DurableTask.Entities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Moq;
@@ -60,7 +61,7 @@ public class GetTransferStatusTests
 
         var stub = new DurableEntityClientStub("FileTransferEntities")
         {
-            OnGetEntityAsync = (id, _) => Task.FromResult(new EntityMetadata<TransferEntity>(id, transferEntity))
+            OnGetEntityAsync = (id, _) => Task.FromResult<EntityMetadata<TransferEntity>?>(new EntityMetadata<TransferEntity>(id, transferEntity))
         };
 
         var durableTaskClientStub = new DurableTaskClientStub(stub);
@@ -122,7 +123,7 @@ public class GetTransferStatusTests
 
             var stub = new DurableEntityClientStub("FileTransferEntities")
             {
-                OnGetEntityAsync = (id, _) => Task.FromResult(new EntityMetadata<TransferEntity>(id, entity))
+                OnGetEntityAsync = (id, _) => Task.FromResult<EntityMetadata<TransferEntity>?>(new EntityMetadata<TransferEntity>(id, entity))
             };
             var durableTaskClientStub = new DurableTaskClientStub(stub);
 
@@ -143,13 +144,32 @@ public class GetTransferStatusTests
 
         var stub = new DurableEntityClientStub("FileTransferEntities")
         {
-            OnGetEntityAsync = (id, _) => Task.FromResult(new EntityMetadata<TransferEntity>(id, transferEntity))
+            OnGetEntityAsync = (id, _) => Task.FromResult<EntityMetadata<TransferEntity>?>(new EntityMetadata<TransferEntity>(id, transferEntity))
         };
         var durableTaskClientStub = new DurableTaskClientStub(stub);
 
         await _function.Run(_httpRequestMock.Object, durableTaskClientStub, _transferId);
 
         _httpRequestMock.Verify(r => r.Headers, Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public async Task Run_EntityNotFound_ReturnsNotFoundObjectResult()
+    {
+        // Arrange
+        var stub = new DurableEntityClientStub("FileTransferEntities")
+        {
+            OnGetEntityAsync = (_, _) => Task.FromResult<EntityMetadata<TransferEntity>?>(null)
+        };
+
+        var durableTaskClientStub = new DurableTaskClientStub(stub);
+
+        // Act
+        var result = await _function.Run(_httpRequestMock.Object, durableTaskClientStub, _transferId);
+
+        // Assert
+        var notFound = Assert.IsType<NotFoundObjectResult>(result);
+        Assert.NotNull(notFound.Value);
     }
 
     private TransferEntity CreateValidTransferEntity()

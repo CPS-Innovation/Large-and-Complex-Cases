@@ -7,7 +7,20 @@ public class ListFilesForTransferValidator : AbstractValidator<ListFilesForTrans
 {
     public ListFilesForTransferValidator()
     {
-        RuleFor(x => x.TransferDirection).IsInEnum().WithMessage("TransferDirection must be either EgressToNetApp or NetAppToEgress.");
-        RuleFor(x => x.SourcePaths).Must(x => x.Count > 0).WithMessage("At least one SourcePath is required.");
+        RuleFor(x => x.TransferDirection)
+            .IsInEnum()
+            .WithMessage("TransferDirection must be either EgressToNetApp or NetAppToEgress.");
+
+        RuleFor(x => x.SourcePaths)
+            .NotEmpty()
+            .WithMessage("At least one SourcePath is required.");
+
+        RuleForEach(x => x.SourcePaths)
+            .ChildRules(path =>
+            {
+                path.RuleFor(p => p.Path)
+                    .NotEmpty()
+                    .WithMessage("Source path must not be empty.");
+            });
     }
 }

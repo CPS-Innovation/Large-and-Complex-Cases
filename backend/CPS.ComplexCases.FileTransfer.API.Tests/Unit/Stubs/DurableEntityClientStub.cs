@@ -11,9 +11,16 @@ public class DurableEntityClientStub : DurableEntityClient
     {
     }
 
-    public Func<EntityInstanceId, CancellationToken, Task<EntityMetadata<TransferEntity>>>? OnGetEntityAsync { get; set; }
+    public Func<EntityInstanceId, CancellationToken, Task<EntityMetadata<TransferEntity>?>>? OnGetEntityAsync { get; set; }
 
-    public override Task<CleanEntityStorageResult> CleanEntityStorageAsync(CleanEntityStorageRequest? request = null, bool continueUntilComplete = true, CancellationToken cancellation = default)
+    public EntityInstanceId? SignaledEntityId { get; private set; }
+    public string? SignaledOperationName { get; private set; }
+    public bool SignalEntityAsyncCalled { get; private set; } = false;
+
+    public override Task<CleanEntityStorageResult> CleanEntityStorageAsync(
+        CleanEntityStorageRequest? request = null,
+        bool continueUntilComplete = true,
+        CancellationToken cancellation = default)
     {
         throw new NotImplementedException();
     }
@@ -28,7 +35,9 @@ public class DurableEntityClientStub : DurableEntityClient
         throw new NotImplementedException();
     }
 
-    public override Task<EntityMetadata<T>?> GetEntityAsync<T>(EntityInstanceId id, CancellationToken cancellationToken = default)
+    public override Task<EntityMetadata<T>?> GetEntityAsync<T>(
+        EntityInstanceId id,
+        CancellationToken cancellationToken = default)
     {
         if (typeof(T) == typeof(TransferEntity))
         {
@@ -36,19 +45,25 @@ public class DurableEntityClientStub : DurableEntityClient
             {
                 throw new InvalidOperationException("OnGetEntityAsync delegate is not set.");
             }
+
             return (Task<EntityMetadata<T>?>)(object)OnGetEntityAsync(id, cancellationToken);
         }
 
         throw new NotSupportedException("Only TransferEntity is supported in the stub.");
     }
 
-    public override Task<EntityMetadata?> GetEntityAsync(EntityInstanceId id, bool includeState = true, CancellationToken cancellation = default)
+    public override Task<EntityMetadata?> GetEntityAsync(
+        EntityInstanceId id,
+        bool includeState = true,
+        CancellationToken cancellation = default)
     {
         throw new NotImplementedException();
     }
 
     public override Task<EntityMetadata<T>?> GetEntityAsync<T>(
-        EntityInstanceId id, bool includeState = true, CancellationToken cancellation = default)
+        EntityInstanceId id,
+        bool includeState = true,
+        CancellationToken cancellation = default)
     {
         if (typeof(T) == typeof(TransferEntity))
         {
@@ -56,15 +71,23 @@ public class DurableEntityClientStub : DurableEntityClient
             {
                 throw new InvalidOperationException("OnGetEntityAsync delegate is not set.");
             }
+
             return (Task<EntityMetadata<T>?>)(object)OnGetEntityAsync(id, cancellation);
         }
 
         throw new NotSupportedException("Only TransferEntity is supported in the stub.");
     }
 
-    public override Task SignalEntityAsync(EntityInstanceId id, string operationName, object? input = null, SignalEntityOptions? options = null, CancellationToken cancellation = default)
+    public override Task SignalEntityAsync(
+        EntityInstanceId id,
+        string operationName,
+        object? input = null,
+        SignalEntityOptions? options = null,
+        CancellationToken cancellation = default)
     {
-        throw new NotImplementedException();
+        SignalEntityAsyncCalled = true;
+        SignaledEntityId = id;
+        SignaledOperationName = operationName;
+        return Task.CompletedTask;
     }
-
 }
