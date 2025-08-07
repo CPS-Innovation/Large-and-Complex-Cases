@@ -97,7 +97,7 @@ const CaseSearchPage = () => {
             <Radios
               aria-label="choose search type"
               hint={{
-                children: "Select one option",
+                children: <>Select how you want to find a case.<br/>For operation name and defendant name you will also need to select an area.</>,
               }}
               items={[
                 {
@@ -166,7 +166,7 @@ const CaseSearchPage = () => {
                 },
 
                 {
-                  children: "Defendant surname",
+                  children: "Defendant last name",
                   conditional: {
                     children: [
                       <Input
@@ -174,7 +174,7 @@ const CaseSearchPage = () => {
                         data-testid="search-defendant-name"
                         className="govuk-input--width-20"
                         label={{
-                          children: "Defendant surname",
+                          children: "Defendant last name",
                         }}
                         errorMessage={
                           formDataErrors[SearchFormField.defendantName]

@@ -156,7 +156,7 @@ public class DDEIMappings : IWireMockMapping
                     .WithRandomDelay(_minDelayMs, _maxDelayMs)
                 );
 
-            // Defendant search: if we have two cases with the same lead defendant surname, we will register two mappings
+            // Defendant search: if we have two cases with the same lead defendant last name, we will register two mappings
             //  but there is no harm in that
             server
                 .Given(Request.Create()

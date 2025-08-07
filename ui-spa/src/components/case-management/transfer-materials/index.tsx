@@ -199,7 +199,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         data-testid="egress-container"
       >
         <div className={styles.titleWrapper}>
-          <h3>Egress Inbound documents</h3>
+          <h3 className={styles.inlineHeading}>Egress</h3>- <span>{transferSource === "egress" ? "Source" : "Destination"}</span>
         </div>
         <div className={styles.tableContainer}>
           {
@@ -241,7 +241,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         data-testid="netapp-container"
       >
         <div className={styles.titleWrapper}>
-          <h3>Shared drive</h3>
+          <h3 className={styles.inlineHeading}>Shared drive</h3>- <span>{transferSource === "egress" ?  "Destination" : "Source"}</span>
         </div>
         <div className={styles.tableContainer}>
           {netAppPath && (
@@ -606,18 +606,18 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
 
     if (transferStatusData?.direction === "EgressToNetApp")
       return {
-        ariaLabelText: "Completing transfer from egress to shared drive",
+        ariaLabelText: "Completing transfer from Egress to Shared Drive",
         spinnerTextContent: (
           <span>
-            Completing transfer from <b>egress to shared drive...</b>
+            Completing transfer from <b>Egress to Shared Drive...</b>
           </span>
         ),
       };
     return {
-      ariaLabelText: "Completing transfer from shared drive to egress",
+      ariaLabelText: "Completing transfer from Shared Drive to Egress",
       spinnerTextContent: (
         <span>
-          Completing transfer from <b>shared drive to egress...</b>
+          Completing transfer from <b>Shared Drive to Egress...</b>
         </span>
       ),
     };
@@ -650,18 +650,18 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
             diameterPx={50}
             ariaLabel={
               transferSource === "egress"
-                ? "Indexing transfer from egress to shared drive"
-                : "Indexing transfer from shared drive to egress"
+                ? "Indexing transfer from Egress to Shared Drive"
+                : "Indexing transfer from Shared Drive to Egress"
             }
           />
           <div className={styles.spinnerText}>
             {transferSource === "egress" ? (
               <span>
-                Indexing transfer from <b>egress to shared drive...</b>
+                Indexing transfer from <b>Egress to Shared Drive...</b>
               </span>
             ) : (
               <span>
-                Indexing transfer from <b>shared drive to egress...</b>
+                Indexing transfer from <b>Shared Drive to Egress...</b>
               </span>
             )}
           </div>
@@ -692,13 +692,11 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       {!transferId && (
         <div>
           <div className={styles.headerText}>
-            <h2>{`${transferSource === "egress" ? "Transfer folders and files between egress and shared drive" : "Transfer folders and files between shared drive and egress"}`}</h2>
+            <h2>{`${transferSource === "egress" ? "Transfer between Egress and Shared Drive" : "Transfer between Shared Drive and Egress"}`}</h2>
             <InsetText>
-              Select the folders and files you want to transfer, then choose a
-              destination. You can switch the source and destination if needed.{" "}
+              <>Select the files or folders you want to transfer and where you want to put them.<br/>You can also transfer</>
               <LinkButton onClick={handleSwitchSource}>
-                {" "}
-                Switch source
+                {`${transferSource === "egress" ? "from the Shared Drive to Egress" : "from Egress to the Shared Drive"}`}
               </LinkButton>
             </InsetText>
           </div>

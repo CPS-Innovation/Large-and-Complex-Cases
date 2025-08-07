@@ -125,7 +125,6 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
         Select a network shared drive folder to link to the case
       </h1>
       <InsetText>
-        <p>Select a folder from the list to link it to this case.</p>
         <p>
           If the folder you need is not listed, check that you have the correct
           permissions or contact the product team for support.

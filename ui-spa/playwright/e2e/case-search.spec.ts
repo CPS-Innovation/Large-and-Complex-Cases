@@ -10,7 +10,7 @@ test.describe("Case Search/Results", async () => {
     expect(tableHeadValues).toEqual([
       "Defendant or Operation name",
       "URN",
-      "Lead defendant",
+      "Lead defendant(s)",
       "Egress",
       "Shared Drive",
       "Case created",
@@ -89,11 +89,11 @@ test.describe("Case Search/Results", async () => {
         /\/search-results\?operation-name=thunder&area=1057708/,
       );
       await expect(page.locator("h1")).toHaveText(
-        `Search results for operation "thunder"`,
+        `Search results`,
       );
       await expect(
         page.getByText(
-          "4 cases found in Organised Crime Division. Select a case to view more details.",
+          "4 cases found in Organised Crime Division. Select view to transfer files or folders or connect to setup storage locations.",
         ),
       ).toBeVisible();
 
@@ -106,12 +106,12 @@ test.describe("Case Search/Results", async () => {
       await verifyTableValues(page);
     });
 
-    test("Should successfully complete the case search case search by defendant surname and area and see the results", async ({
+    test("Should successfully complete the case search case search by defendant last name and area and see the results", async ({
       page,
     }) => {
-      await page.getByRole("radio", { name: "Defendant surname" }).check();
+      await page.getByRole("radio", { name: "Defendant last name" }).check();
       await expect(
-        page.getByRole("radio", { name: "Defendant surname" }),
+        page.getByRole("radio", { name: "Defendant last name" }),
       ).toBeChecked();
       const input = await page.getByTestId("search-defendant-name");
       await expect(input).toBeVisible();
@@ -128,11 +128,11 @@ test.describe("Case Search/Results", async () => {
         "search-results?defendant-name=thunder&area=1057708",
       );
       await expect(page.locator("h1")).toHaveText(
-        `Search results for defendant surname "thunder"`,
+        "Search results",
       );
       await expect(
         page.getByText(
-          "4 cases found in Organised Crime Division. Select a case to view more details.",
+          "4 cases found in Organised Crime Division. Select view to transfer files or folders or connect to setup storage locations.",
         ),
       ).toBeVisible();
 
@@ -160,10 +160,10 @@ test.describe("Case Search/Results", async () => {
       await page.locator('button:text("search")').click();
       await expect(page).toHaveURL("search-results?urn=11AA2222233");
       await expect(page.locator("h1")).toHaveText(
-        `Search results for URN "11AA2222233"`,
+        "Search results",
       );
       await expect(
-        page.getByText("4 cases found. Select a case to view more details."),
+        page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
       ).toBeVisible();
 
       await expect(page.getByTestId("search-urn")).toHaveValue("11AA2222233");
@@ -173,7 +173,7 @@ test.describe("Case Search/Results", async () => {
       expect(tableHeadValues).toEqual([
         "Defendant or Operation name",
         "URN",
-        "Lead defendant",
+        "Lead defendant(s)",
         "Egress",
         "Shared Drive",
         "Case created",
@@ -256,7 +256,7 @@ test.describe("Case Search/Results", async () => {
       await expect(page.getByTestId("search-operation-area")).toBeFocused();
     });
 
-    test("should show validation error for search by defendant surname in the case search page", async ({
+    test("should show validation error for search by defendant last name in the case search page", async ({
       page,
       worker,
     }) => {
@@ -268,7 +268,7 @@ test.describe("Case Search/Results", async () => {
         }),
       );
       await page.goto("/");
-      await page.getByRole("radio", { name: "Defendant surname" }).check();
+      await page.getByRole("radio", { name: "Defendant last name" }).check();
       await expect(page.getByTestId("search-error-summary")).not.toBeVisible();
       await page.locator('button:text("search")').click();
       await expect(page.getByTestId("search-error-summary")).toBeVisible();
@@ -280,7 +280,7 @@ test.describe("Case Search/Results", async () => {
       await expect(
         page
           .getByTestId("search-defendant-name-link")
-          .getByText("Defendant surname should not be empty"),
+          .getByText("Defendant last name should not be empty"),
       ).toBeVisible();
       await expect(
         page
@@ -301,7 +301,7 @@ test.describe("Case Search/Results", async () => {
       await expect(page).toHaveURL("search-results?urn=11AA2222233");
     });
 
-    test("Should disable the search by operation name and search by defendant surname options if areas api failed but users should be able to do the URN search", async ({
+    test("Should disable the search by operation name and search by defendant last name options if areas api failed but users should be able to do the URN search", async ({
       page,
       worker,
     }) => {
@@ -316,7 +316,7 @@ test.describe("Case Search/Results", async () => {
         page.getByRole("radio", { name: "Operation name" }),
       ).toBeDisabled();
       await expect(
-        page.getByRole("radio", { name: "Defendant surname" }),
+        page.getByRole("radio", { name: "Defendant last name" }),
       ).toBeDisabled();
       await expect(page.locator("#case-search-types-3")).toBeChecked();
       await page.getByTestId("search-urn").fill("11AA2222233");
@@ -324,10 +324,10 @@ test.describe("Case Search/Results", async () => {
       await expect(page).toHaveURL("search-results?urn=11AA2222233");
       await expect(page).toHaveURL("search-results?urn=11AA2222233");
       await expect(page.locator("h1")).toHaveText(
-        `Search results for URN "11AA2222233"`,
+        "Search results",
       );
       await expect(
-        page.getByText("4 cases found. Select a case to view more details."),
+        page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
       ).toBeVisible();
     });
   });
@@ -343,11 +343,11 @@ test.describe("Case Search/Results", async () => {
       const options = await areaSelect.locator("option").allTextContents();
       expect(options).toHaveLength(51);
       await expect(page.locator("h1")).toHaveText(
-        `Search results for operation "thunder"`,
+        "Search results",
       );
       await expect(
         page.getByText(
-          "4 cases found in Sussex. Select a case to view more details.",
+          "4 cases found in Sussex. Select view to transfer files or folders or connect to setup storage locations.",
         ),
       ).toBeVisible();
 
@@ -360,7 +360,7 @@ test.describe("Case Search/Results", async () => {
       await verifyTableValues(page);
     });
 
-    test("should show the search results if user lands directly on the search results page with valid search by defendant surname params", async ({
+    test("should show the search results if user lands directly on the search results page with valid search by defendant last name params", async ({
       page,
     }) => {
       await page.goto("/search-results?defendant-name=thunder&area=1057708");
@@ -370,11 +370,11 @@ test.describe("Case Search/Results", async () => {
       const options = await areaSelect.locator("option").allTextContents();
       expect(options).toHaveLength(51);
       await expect(page.locator("h1")).toHaveText(
-        `Search results for defendant surname "thunder"`,
+        "Search results",
       );
       await expect(
         page.getByText(
-          "4 cases found in Organised Crime Division. Select a case to view more details.",
+          "4 cases found in Organised Crime Division. Select view to transfer files or folders or connect to setup storage locations.",
         ),
       ).toBeVisible();
 
@@ -393,10 +393,10 @@ test.describe("Case Search/Results", async () => {
       await page.goto("/search-results?urn=11AA2222233");
       await page.waitForResponse(`https://mocked-out-api/api/v1/case-search?*`);
       await expect(page.locator("h1")).toHaveText(
-        `Search results for URN "11AA2222233"`,
+        "Search results",
       );
       await expect(
-        page.getByText("4 cases found. Select a case to view more details."),
+        page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
       ).toBeVisible();
 
       await expect(page.getByTestId("search-urn")).toHaveValue("11AA2222233");
@@ -417,7 +417,7 @@ test.describe("Case Search/Results", async () => {
       await page.waitForResponse(`https://mocked-out-api/api/v1/case-search?*`);
 
       await expect(page.locator("h1")).toHaveText(
-        `Search results for URN "11AA2222233"`,
+        "Search results",
       );
       await expect(
         page.getByText("There are no cases matching the urn."),
@@ -426,9 +426,9 @@ test.describe("Case Search/Results", async () => {
       const listItems = page.locator("ul > li");
       await expect(listItems).toHaveCount(3);
       await expect(listItems).toHaveText([
-        "check for spelling mistakes in the urn.",
-        "check the Case Management System to make sure the case exists and that you have access.",
-        "contact the product team if you need further help.",
+        "check for spelling or typing errors",
+        "check the case exists and you have access on the Case Management System",
+        "contact the product team if you need help",
       ]);
     });
 
@@ -507,16 +507,16 @@ test.describe("Case Search/Results", async () => {
         "search-results?operation-name=abc&area=1001",
       );
       await expect(page.locator("h1")).toHaveText(
-        `Search results for operation  "abc"`,
+        "Search results",
       );
       await expect(
         page.getByText(
-          "4 cases found in Surrey. Select a case to view more details.",
+          "4 cases found in Surrey. Select view to transfer files or folders or connect to setup storage locations.",
         ),
       ).toBeVisible();
     });
 
-    test("should show validation error for search by defendant surname in the search result page", async ({
+    test("should show validation error for search by defendant last name in the search result page", async ({
       page,
       worker,
     }) => {
@@ -538,7 +538,7 @@ test.describe("Case Search/Results", async () => {
       await expect(
         page
           .getByTestId("search-defendant-name-link")
-          .getByText("Defendant surname should not be empty"),
+          .getByText("Defendant last name should not be empty"),
       ).toBeVisible();
       await expect(
         page
@@ -556,11 +556,11 @@ test.describe("Case Search/Results", async () => {
         "search-results?defendant-name=abc&area=1001",
       );
       await expect(page.locator("h1")).toHaveText(
-        `Search results for defendant surname  "abc"`,
+        "Search results",
       );
       await expect(
         page.getByText(
-          "4 cases found in Surrey. Select a case to view more details.",
+          "4 cases found in Surrey. Select view to transfer files or folders or connect to setup storage locations.",
         ),
       ).toBeVisible();
     });
@@ -574,7 +574,7 @@ test.describe("Case Search/Results", async () => {
       await expect(page).toHaveURL("search-results?urn=11AA2222231");
     });
 
-    test("Should show the error if the user lands on the search results page for defendant surname search and the area api failed", async ({
+    test("Should show the error if the user lands on the search results page for defendant last name search and the area api failed", async ({
       page,
       worker,
     }) => {

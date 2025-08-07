@@ -55,11 +55,11 @@ const MetaDataErrorPage = () => {
       <div className={styles.contentWrapper}>
         <h1 className="govuk-heading-xl">
           There was a problem connecting to{" "}
-          {errorType === "shareddrive" ? "shared drive" : "egress"}
+          {errorType === "shareddrive" ? "Shared Drive" : "Egress"}
         </h1>
         <p>
           The connection to{" "}
-          {errorType === "shareddrive" ? "shared drive" : "egress"} folder for{" "}
+          {errorType === "shareddrive" ? "Shared Drive" : "Egress"} folder for{" "}
           <b>{operationName}</b> case has stopped working.
         </p>
         <div className={styles.btnWrapper}>

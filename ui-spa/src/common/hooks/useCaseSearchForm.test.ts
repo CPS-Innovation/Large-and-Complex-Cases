@@ -222,7 +222,7 @@ describe("useCaseSearchForm", () => {
         errorSummaryText: "Defendant area should not be empty",
       },
       defendantName: {
-        errorSummaryText: "Defendant surname should not be empty",
+        errorSummaryText: "Defendant last name should not be empty",
       },
     };
 
@@ -234,7 +234,7 @@ describe("useCaseSearchForm", () => {
         reactListKey: "0",
       },
       {
-        children: "Defendant surname should not be empty",
+        children: "Defendant last name should not be empty",
         "data-testid": "search-defendant-name-link",
         href: "#search-defendant-name",
         reactListKey: "1",
@@ -267,7 +267,7 @@ describe("useCaseSearchForm", () => {
         errorSummaryText: "Defendant area should not be empty",
       },
       defendantName: {
-        errorSummaryText: "Defendant surname should be less than 50 characters",
+        errorSummaryText: "Defendant last name should be less than 50 characters",
       },
     };
 
@@ -279,7 +279,7 @@ describe("useCaseSearchForm", () => {
         reactListKey: "0",
       },
       {
-        children: "Defendant surname should be less than 50 characters",
+        children: "Defendant last name should be less than 50 characters",
         "data-testid": "search-defendant-name-link",
         href: "#search-defendant-name",
         reactListKey: "1",

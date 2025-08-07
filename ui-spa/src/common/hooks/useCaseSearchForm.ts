@@ -121,13 +121,13 @@ export const useCaseSearchForm = (initialData: SearchFromData) => {
         }
         if (!formData[SearchFormField.defendantName]) {
           errorTexts[SearchFormField.defendantName] = {
-            errorSummaryText: "Defendant surname should not be empty",
+            errorSummaryText: "Defendant last name should not be empty",
           };
           break;
         }
         if (formData[SearchFormField.defendantName].length > MAX_CHARACTERS) {
           errorTexts[SearchFormField.defendantName] = {
-            errorSummaryText: `Defendant surname should be less than ${MAX_CHARACTERS} characters`,
+            errorSummaryText: `Defendant last name should be less than ${MAX_CHARACTERS} characters`,
           };
         }
         break;
