@@ -4,6 +4,7 @@ using CPS.ComplexCases.API.Attributes;
 using CPS.ComplexCases.Common.Constants;
 using CPS.ComplexCases.Common.Functions;
 using CPS.ComplexCases.Common.Models.Domain;
+using CPS.ComplexCases.Common.OpenApi.Filters;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
@@ -15,6 +16,7 @@ public static class Status
 {
   [Function(nameof(Status))]
   [OpenApiOperation(operationId: nameof(Status), tags: ["Health"], Description = "Gets the current status of the function app.")]
+  [OpenApiNoSecurity]
   [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(AssemblyStatus), Description = ApiResponseDescriptions.Success)]
   [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
   [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.InternalServerError)]

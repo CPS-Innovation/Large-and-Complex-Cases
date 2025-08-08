@@ -45,7 +45,7 @@ public sealed partial class RequestValidationMiddleware(IAuthorizationValidator 
 
   private static Guid EstablishCorrelation(HttpRequestData httpRequestData)
   {
-    if (httpRequestData.Headers.TryGetValues(HttpHeaderKeys.CorrelationId, out var correlationIds)
+    if (httpRequestData.Headers.TryGetValues(Common.Constants.HttpHeaderKeys.CorrelationId, out var correlationIds)
       && correlationIds.Any()
       && Guid.TryParse(correlationIds.First(), out var parsedCorrelationId))
     {

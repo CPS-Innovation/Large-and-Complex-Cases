@@ -13,6 +13,7 @@ using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models.Requests;
+using Microsoft.OpenApi.Models;
 
 namespace CPS.ComplexCases.API.Functions.Transfer;
 

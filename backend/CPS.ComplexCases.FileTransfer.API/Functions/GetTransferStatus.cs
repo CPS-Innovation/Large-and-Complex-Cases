@@ -24,7 +24,9 @@ public class GetTransferStatus
 
     [Function(nameof(GetTransferStatus))]
     [OpenApiOperation(operationId: nameof(GetTransferStatus), tags: ["FileTransfer"], Description = "Retrieves the current status and details of a file transfer operation by transfer ID.")]
+    [OpenApiSecurity("FunctionKey", Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey, Name = "x-functions-key", In = Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Enums.OpenApiSecurityLocationType.Header)]
     [OpenApiParameter(name: "transferId", In = Microsoft.OpenApi.Models.ParameterLocation.Path, Required = true, Type = typeof(string), Description = "The unique identifier of the transfer to retrieve status for.")]
+    [OpenApiParameter(name: HttpHeaderKeys.CorrelationId, In = Microsoft.OpenApi.Models.ParameterLocation.Header, Required = true, Type = typeof(string), Description = "Correlation identifier for tracking the request.")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(TransferEntity), Description = "Transfer status retrieved successfully.")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.NotFound, contentType: ContentType.ApplicationJson, bodyType: typeof(object), Description = ApiResponseDescriptions.NotFound)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, bodyType: typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
