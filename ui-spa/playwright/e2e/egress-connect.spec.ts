@@ -16,10 +16,10 @@ test.describe("egress connect", () => {
     await page.locator('button:text("search")').click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
     await expect(page.locator("h1")).toHaveText(
-      `Search results for URN "11AA2222233"`,
+      "Search results",
     );
     await expect(
-      page.getByText("4 cases found. Select a case to view more details."),
+      page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
     ).toBeVisible();
     await page.locator('role=link[name="Connect"]').nth(1).click();
 
@@ -92,10 +92,10 @@ test.describe("egress connect", () => {
     await page.locator('button:text("search")').click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
     await expect(page.locator("h1")).toHaveText(
-      `Search results for URN "11AA2222233"`,
+      "Search results",
     );
     await expect(
-      page.getByText("4 cases found. Select a case to view more details."),
+      page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
     ).toBeVisible();
     await page.locator('role=link[name="Connect"]').nth(1).click();
 
@@ -123,13 +123,13 @@ test.describe("egress connect", () => {
     await page.locator('button:text("Continue")').click();
     await expect(page).toHaveURL("/case/13/egress-connect/error");
     await expect(page.locator("h1")).toHaveText(
-      "Sorry, there was a problem connecting to egress",
+      "Sorry, there was a problem connecting to Egress",
     );
     const listItems = page.locator("ul > li");
     await expect(listItems).toHaveCount(2);
     await expect(listItems).toHaveText([
-      "check the Case Management System to make sure the case exists and that you have access.",
-      "contact the product team if you need further help.",
+      "check the case exists and you have access on the Case Management System",
+      "contact the product team if you need help",
     ]);
     await page.getByRole("link", { name: "Search for another case" }).click();
     await expect(page).toHaveURL("/");
@@ -147,10 +147,10 @@ test.describe("egress connect", () => {
     await page.locator('button:text("search")').click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
     await expect(page.locator("h1")).toHaveText(
-      `Search results for URN "11AA2222233"`,
+      "Search results",
     );
     await expect(
-      page.getByText("4 cases found. Select a case to view more details."),
+      page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
     ).toBeVisible();
     await page.locator('role=link[name="Connect"]').nth(1).click();
 
@@ -211,10 +211,10 @@ test.describe("egress connect", () => {
     await page.locator('button:text("search")').click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
     await expect(page.locator("h1")).toHaveText(
-      `Search results for URN "11AA2222233"`,
+      "Search results",
     );
     await expect(
-      page.getByText("4 cases found. Select a case to view more details."),
+      page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
     ).toBeVisible();
     await page.locator('role=link[name="Connect"]').nth(1).click();
 
@@ -233,9 +233,9 @@ test.describe("egress connect", () => {
     const listItems = page.locator("ul > li");
     await expect(listItems).toHaveCount(3);
     await expect(listItems).toHaveText([
-      "check for spelling mistakes in the egress folder name.",
-      "check the Case Management System to make sure the case exists and that you have access.",
-      "contact the product team if you need further help.",
+      "check for spelling or typing errors",
+      "check the case exists and you have access on the Case Management System",
+      "contact the product team if you need help",
     ]);
   });
 
@@ -257,10 +257,10 @@ test.describe("egress connect", () => {
     await page.locator('button:text("search")').click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
     await expect(page.locator("h1")).toHaveText(
-      `Search results for URN "11AA2222233"`,
+      "Search results",
     );
     await expect(
-      page.getByText("4 cases found. Select a case to view more details."),
+      page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
     ).toBeVisible();
     await page.locator('role=link[name="Connect"]').nth(1).click();
 
@@ -293,10 +293,10 @@ test.describe("egress connect", () => {
     await page.locator('button:text("search")').click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
     await expect(page.locator("h1")).toHaveText(
-      `Search results for URN "11AA2222233"`,
+      "Search results",
     );
     await expect(
-      page.getByText("4 cases found. Select a case to view more details."),
+      page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
     ).toBeVisible();
     await page.locator('role=link[name="Connect"]').nth(1).click();
 
@@ -307,9 +307,6 @@ test.describe("egress connect", () => {
     await expect(page.locator("h1")).toHaveText(
       `Select an Egress folder to link to the case`,
     );
-    await expect(
-      page.getByText("Select a folder from the list to link it to this case."),
-    ).toBeVisible();
     await expect(
       page.getByText(
         "If the folder you need is not listed, check that you have the correct permissions in Egress or contact the product team for support.",
@@ -327,7 +324,7 @@ test.describe("egress connect", () => {
       .locator("table thead tr:nth-child(1) th")
       .allTextContents();
     expect(tableHeadValues).toEqual([
-      " Operation or defendant surname",
+      " Operation or defendant last name",
       " Status",
       " Date created",
       "",
@@ -392,7 +389,7 @@ test.describe("egress connect", () => {
     await expect(
       page.locator("h1", {
         hasText:
-          "Sorry, there was a problem connecting to network shared drive",
+          "Sorry, there was a problem connecting to network Shared Drive",
       }),
     ).not.toBeVisible();
     await expect(page).toHaveURL("/");
@@ -409,10 +406,10 @@ test.describe("egress connect", () => {
     await page.locator('button:text("search")').click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
     await expect(page.locator("h1")).toHaveText(
-      `Search results for URN "11AA2222233"`,
+      "Search results",
     );
     await expect(
-      page.getByText("4 cases found. Select a case to view more details."),
+      page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
     ).toBeVisible();
     await page.locator('role=link[name="Connect"]').nth(1).click();
 
@@ -453,10 +450,10 @@ test.describe("egress connect", () => {
     await page.getByRole("link", { name: "Back" }).click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
     await expect(page.locator("h1")).toHaveText(
-      `Search results for URN "11AA2222233"`,
+      "Search results",
     );
     await expect(
-      page.getByText("4 cases found. Select a case to view more details."),
+      page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
     ).toBeVisible();
     await page.getByRole("link", { name: "Back" }).click();
     await expect(page.locator("h1")).toHaveText(`Find a case`);

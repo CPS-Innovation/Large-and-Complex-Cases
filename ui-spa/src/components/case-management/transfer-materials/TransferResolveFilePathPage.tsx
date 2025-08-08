@@ -179,25 +179,23 @@ const TransferResolveFilePathPage = () => {
             type="success"
             data-testid="resolve-path-success-notification-banner"
           >
-            All file are now under the {MAX_FILE_PATH_CHARACTERS} character
-            limit
+            Your { resolvePathFiles.length === 1 ? "file" : "files" } can now be transferred.
           </NotificationBanner>
         </div>
       )}
       <div className={styles.contentWrapper}>
-        <h1 className="govuk-heading-xl">File paths are too long</h1>
+        <h1 className="govuk-heading-xl">File structure is too long</h1>
         <InsetText data-testId="resolve-file-path-inset-text">
           <p>
-            You cannot complete the transfer because{" "}
-            <b>{resolvePathFiles.length} file paths </b>
-            are longer than the shared drive limit of {
+            There { resolvePathFiles.length === 1 ? "is" : "are" }{" "}
+            <b>{resolvePathFiles.length} { resolvePathFiles.length === 1 ? "file" : "files" } </b>
+            with { resolvePathFiles.length === 1 ? "a name" : "names" } longer than {
               MAX_FILE_PATH_CHARACTERS
             }{" "}
             characters.
           </p>
           <p>
-            You can fix this by choosing a different destination folder with
-            smaller file path or renaming the file name.
+            You need to rename the { resolvePathFiles.length === 1 ? "file" : "files" } or change the folder structure.
           </p>
         </InsetText>
 

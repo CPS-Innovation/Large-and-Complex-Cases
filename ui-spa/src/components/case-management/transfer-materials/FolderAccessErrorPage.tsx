@@ -13,17 +13,16 @@ const FolderAccessErrorPage = () => {
       <div className={styles.contentWrapper}>
         <h1 className="govuk-heading-xl">
           Sorry, there was a problem connecting to{" "}
-          {folderType === "shareddrive" ? "shared drive" : "egress"}
+          {folderType === "shareddrive" ? "Shared Drive" : "Egress"}
         </h1>
         <div>
           <span>You can:</span>
         </div>
         <ul className="govuk-list govuk-list--bullet">
           <li>
-            check the Case Management System to make sure the case exists and
-            that you have access.
+            check the case exists and you have access on the Case Management System
           </li>
-          <li>contact the product team if you need further help.</li>
+          <li>contact the product team if you need help</li>
         </ul>
       </div>
     </div>

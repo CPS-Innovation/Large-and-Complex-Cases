@@ -16,13 +16,8 @@ type SearchResultsProps = {
 };
 const SearchResults: React.FC<SearchResultsProps> = ({
   searchQueryString,
-  searchApiResults,
-  searchType,
+  searchApiResults
 }) => {
-  const getSearchTypeText = () => {
-    if (searchType === "defendant name") return "defendant surname";
-    return searchType;
-  };
   const getConnectOrViewUrl = (data: SearchResult, operationName: string) => {
     if (!data.egressWorkspaceId)
       return `/case/${data.caseId}/egress-connect?workspace-name=${operationName}`;
@@ -105,7 +100,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                 children: "URN",
               },
               {
-                children: "Lead defendant",
+                children: "Lead defendant(s)",
               },
               {
                 children: "Egress",
@@ -130,12 +125,11 @@ const SearchResults: React.FC<SearchResultsProps> = ({
               <span>You can:</span>
             </div>
             <ul className="govuk-list govuk-list--bullet">
-              <li>check for spelling mistakes in the {getSearchTypeText()}.</li>
+              <li>check for spelling or typing errors</li>
               <li>
-                check the Case Management System to make sure the case exists
-                and that you have access.
+                check the case exists and you have access on the Case Management System
               </li>
-              <li>contact the product team if you need further help.</li>
+              <li>contact the product team if you need help</li>
             </ul>
           </div>
         )}

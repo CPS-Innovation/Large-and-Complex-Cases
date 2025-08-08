@@ -25,7 +25,7 @@ test.describe("egress meta data issues", () => {
       "/case/12/case-management/egress-connection-error?operation-name=Thunderstruck",
     );
     await expect(page.locator("h1")).toHaveText(
-      "There was a problem connecting to egress",
+      "There was a problem connecting to Egress",
     );
     await expect(
       page.getByText(
@@ -83,7 +83,7 @@ test.describe("egress meta data issues", () => {
       "/case/12/case-management/egress-connection-error?operation-name=Thunderstruck",
     );
     await expect(page.locator("h1")).toHaveText(
-      "There was a problem connecting to egress",
+      "There was a problem connecting to Egress",
     );
     await expect(
       page.getByText(
@@ -121,13 +121,13 @@ test.describe("egress meta data issues", () => {
       "/case/12/case-management/connection-error?type=egress",
     );
     await expect(page.locator("h1")).toHaveText(
-      "Sorry, there was a problem connecting to egress",
+      "Sorry, there was a problem connecting to Egress",
     );
     const listItems = page.locator("ul > li");
     await expect(listItems).toHaveCount(2);
     await expect(listItems).toHaveText([
-      "check the Case Management System to make sure the case exists and that you have access.",
-      "contact the product team if you need further help.",
+      "check the case exists and you have access on the Case Management System",
+      "contact the product team if you need help",
     ]);
     await expect(page.getByRole("link", { name: "Back" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Back" })).toHaveAttribute(
@@ -219,7 +219,7 @@ test.describe("netapp meta data issues", () => {
       "/case/12/case-management/shared-drive-connection-error?operation-name=Thunderstruck",
     );
     await expect(page.locator("h1")).toHaveText(
-      "There was a problem connecting to shared drive",
+      "There was a problem connecting to Shared Drive",
     );
     await expect(
       page.getByText(
@@ -251,7 +251,7 @@ test.describe("netapp meta data issues", () => {
       "/case/12/case-management/shared-drive-connection-error?operation-name=Thunderstruck",
     );
     await expect(page.locator("h1")).toHaveText(
-      "There was a problem connecting to shared drive",
+      "There was a problem connecting to Shared Drive",
     );
     await expect(
       page.getByText(
@@ -286,13 +286,13 @@ test.describe("netapp meta data issues", () => {
       "/case/12/case-management/connection-error?type=shareddrive",
     );
     await expect(page.locator("h1")).toHaveText(
-      "Sorry, there was a problem connecting to shared drive",
+      "Sorry, there was a problem connecting to Shared Drive",
     );
     const listItems = page.locator("ul > li");
     await expect(listItems).toHaveCount(2);
     await expect(listItems).toHaveText([
-      "check the Case Management System to make sure the case exists and that you have access.",
-      "contact the product team if you need further help.",
+      "check the case exists and you have access on the Case Management System",
+      "contact the product team if you need help",
     ]);
     await expect(page.getByRole("link", { name: "Back" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Back" })).toHaveAttribute(

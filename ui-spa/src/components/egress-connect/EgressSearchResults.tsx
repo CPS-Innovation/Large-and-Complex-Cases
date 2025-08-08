@@ -122,19 +122,19 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
             {egressSearchResultsData.length > 1 ? (
               <>
                 There are <b>{egressSearchResultsData.length} folders </b>
-                matching the case <b>{workspaceName}</b> on egress.
+                matching the case <b>{workspaceName}</b> on Egress.
               </>
             ) : (
               <>
                 There is <b>{egressSearchResultsData.length} folder </b>
-                matching the case <b>{workspaceName}</b> on egress.
+                matching the case <b>{workspaceName}</b> on Egress.
               </>
             )}
           </div>
           <SortableTable
             head={[
               {
-                children: "Operation or defendant surname",
+                children: "Operation or defendant last name",
                 sortable: true,
                 sortName: "workspace-name",
               },
@@ -163,19 +163,18 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
         <>
           <div className={styles.searchResultsCount}>
             There are <b>no folders </b>matching the case <b>Thunderstruck</b>{" "}
-            on egress.
+            on Egress.
           </div>
           <div className={styles.noResultsContent}>
             <div>
               <span>You can:</span>
             </div>
             <ul className="govuk-list govuk-list--bullet">
-              <li>check for spelling mistakes in the egress folder name.</li>
+              <li>check for spelling or typing errors</li>
               <li>
-                check the Case Management System to make sure the case exists
-                and that you have access.
+                check the case exists and you have access on the Case Management System
               </li>
-              <li>contact the product team if you need further help.</li>
+              <li>contact the product team if you need help</li>
             </ul>
           </div>
         </>

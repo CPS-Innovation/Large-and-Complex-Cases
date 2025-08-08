@@ -18,10 +18,10 @@ const TransferMovePermissionsErrorPage = () => {
         Back
       </BackLink>
       <div className={styles.contentWrapper}>
-        <h1>You do not have permission to transfer these files from egress</h1>
+        <h1>You do not have permission to transfer these files from Egress</h1>
         <div>
           <p>
-            If you think you should have access, contact the egress
+            If you think you should have access, contact the Egress
             administrator for the case.
           </p>
           <Button

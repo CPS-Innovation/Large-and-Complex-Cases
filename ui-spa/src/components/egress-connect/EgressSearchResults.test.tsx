@@ -64,12 +64,12 @@ describe("EgressSearchResults", () => {
 
     const headers = screen.getAllByRole("columnheader");
     expect(headers).toHaveLength(4);
-    expect(headers[0]).toHaveTextContent("Operation or defendant surname");
+    expect(headers[0]).toHaveTextContent("Operation or defendant last name");
     expect(headers[1]).toHaveTextContent("Status");
     expect(headers[2]).toHaveTextContent("Date created");
     expect(headers[3]).toHaveTextContent("");
     expect(
-      screen.getByRole("button", { name: "Operation or defendant surname" }),
+      screen.getByRole("button", { name: "Operation or defendant last name" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Status" })).toBeInTheDocument();
     expect(
@@ -120,7 +120,7 @@ describe("EgressSearchResults", () => {
     ]);
   });
 
-  it("Should sort the egress search result content based column header Operation or defendant surname", async () => {
+  it("Should sort the egress search result content based column header Operation or defendant last name", async () => {
     render(
       <EgressSearchResults
         workspaceName="thunder"
@@ -133,12 +133,12 @@ describe("EgressSearchResults", () => {
 
     const headers = screen.getAllByRole("columnheader");
     expect(headers).toHaveLength(4);
-    expect(headers[0]).toHaveTextContent("Operation or defendant surname");
+    expect(headers[0]).toHaveTextContent("Operation or defendant last name");
     expect(headers[1]).toHaveTextContent("Status");
     expect(headers[2]).toHaveTextContent("Date created");
     expect(headers[3]).toHaveTextContent("");
     const btnOperationName = screen.getByRole("button", {
-      name: "Operation or defendant surname",
+      name: "Operation or defendant last name",
     });
     expect(btnOperationName).toBeInTheDocument();
 
@@ -202,7 +202,7 @@ describe("EgressSearchResults", () => {
 
     const headers = screen.getAllByRole("columnheader");
     expect(headers).toHaveLength(4);
-    expect(headers[0]).toHaveTextContent("Operation or defendant surname");
+    expect(headers[0]).toHaveTextContent("Operation or defendant last name");
     expect(headers[1]).toHaveTextContent("Status");
     expect(headers[2]).toHaveTextContent("Date created");
     expect(headers[3]).toHaveTextContent("");
@@ -273,7 +273,7 @@ describe("EgressSearchResults", () => {
 
     const headers = screen.getAllByRole("columnheader");
     expect(headers).toHaveLength(4);
-    expect(headers[0]).toHaveTextContent("Operation or defendant surname");
+    expect(headers[0]).toHaveTextContent("Operation or defendant last name");
     expect(headers[1]).toHaveTextContent("Status");
     expect(headers[2]).toHaveTextContent("Date created");
     expect(headers[3]).toHaveTextContent("");

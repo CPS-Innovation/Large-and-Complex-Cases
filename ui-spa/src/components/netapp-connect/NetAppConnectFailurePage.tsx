@@ -13,15 +13,14 @@ const NetAppConnectFailurePage: React.FC<NetAppConnectFailurePageProps> = ({
 
       <div className={styles.contentWrapper}>
         <h1 className="govuk-heading-xl">
-          Sorry, there was a problem connecting to network shared drive
+          Sorry, there was a problem connecting to network Shared Drive
         </h1>
         <p>You can:</p>
         <ul className="govuk-list govuk-list--bullet">
           <li>
-            check the Case Management System to make sure the case exists and
-            that you have access.
+            check the case exists and you have access on the Case Management System
           </li>
-          <li>contact the product team if you need further help.</li>
+          <li>contact the product team if you need help</li>
         </ul>
 
         <Link className={styles.link} to="/">

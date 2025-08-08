@@ -21,10 +21,10 @@ test.describe("netapp connect", () => {
     await page.locator('button:text("search")').click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
     await expect(page.locator("h1")).toHaveText(
-      `Search results for URN "11AA2222233"`,
+      "Search results",
     );
     await expect(
-      page.getByText("4 cases found. Select a case to view more details."),
+      page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
     ).toBeVisible();
     await page.locator('role=link[name="Connect"]').nth(2).click();
 
@@ -104,10 +104,10 @@ test.describe("netapp connect", () => {
     await page.locator('button:text("search")').click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
     await expect(page.locator("h1")).toHaveText(
-      `Search results for URN "11AA2222233"`,
+      "Search results",
     );
     await expect(
-      page.getByText("4 cases found. Select a case to view more details."),
+      page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
     ).toBeVisible();
 
     await page.locator('role=link[name="Connect"]').nth(2).click();
@@ -143,13 +143,13 @@ test.describe("netapp connect", () => {
     await page.locator('button:text("Continue")').click();
     await expect(page).toHaveURL("/case/14/netapp-connect/error");
     await expect(page.locator("h1")).toHaveText(
-      "Sorry, there was a problem connecting to network shared drive",
+      "Sorry, there was a problem connecting to network Shared Drive",
     );
     const listItems = page.locator("ul > li");
     await expect(listItems).toHaveCount(2);
     await expect(listItems).toHaveText([
-      "check the Case Management System to make sure the case exists and that you have access.",
-      "contact the product team if you need further help.",
+      "check the case exists and you have access on the Case Management System",
+      "contact the product team if you need help",
     ]);
     await page.getByRole("link", { name: "Search for another case" }).click();
     await expect(page).toHaveURL("/");
@@ -185,10 +185,10 @@ test.describe("netapp connect", () => {
     await page.locator('button:text("search")').click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
     await expect(page.locator("h1")).toHaveText(
-      `Search results for URN "11AA2222233"`,
+      "Search results",
     );
     await expect(
-      page.getByText("4 cases found. Select a case to view more details."),
+      page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
     ).toBeVisible();
     await page.locator('role=link[name="Connect"]').nth(2).click();
 
@@ -224,10 +224,10 @@ test.describe("netapp connect", () => {
     await page.locator('button:text("search")').click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
     await expect(page.locator("h1")).toHaveText(
-      `Search results for URN "11AA2222233"`,
+      "Search results",
     );
     await expect(
-      page.getByText("4 cases found. Select a case to view more details."),
+      page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
     ).toBeVisible();
     await page.locator('role=link[name="Connect"]').nth(2).click();
 
@@ -258,10 +258,10 @@ test.describe("netapp connect", () => {
     await page.locator('button:text("search")').click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
     await expect(page.locator("h1")).toHaveText(
-      `Search results for URN "11AA2222233"`,
+      "Search results",
     );
     await expect(
-      page.getByText("4 cases found. Select a case to view more details."),
+      page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
     ).toBeVisible();
     await page.locator('role=link[name="Connect"]').nth(2).click();
 
@@ -272,9 +272,6 @@ test.describe("netapp connect", () => {
     await expect(page.locator("h1")).toHaveText(
       `Select a network shared drive folder to link to the case`,
     );
-    await expect(
-      page.getByText("Select a folder from the list to link it to this case."),
-    ).toBeVisible();
     await expect(
       page.getByText(
         "If the folder you need is not listed, check that you have the correct permissions or contact the product team for support.",
@@ -341,7 +338,7 @@ test.describe("netapp connect", () => {
     await expect(
       page.locator("h1", {
         hasText:
-          "Sorry, there was a problem connecting to network shared drive",
+          "Sorry, there was a problem connecting to network Shared Drive",
       }),
     ).not.toBeVisible();
     await expect(page).toHaveURL("/");
@@ -357,10 +354,10 @@ test.describe("netapp connect", () => {
     await page.locator('button:text("search")').click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
     await expect(page.locator("h1")).toHaveText(
-      `Search results for URN "11AA2222233"`,
+      "Search results",
     );
     await expect(
-      page.getByText("4 cases found. Select a case to view more details."),
+      page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
     ).toBeVisible();
     await page.locator('role=link[name="Connect"]').nth(2).click();
 
@@ -385,10 +382,10 @@ test.describe("netapp connect", () => {
     await page.getByRole("link", { name: "Back" }).click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
     await expect(page.locator("h1")).toHaveText(
-      `Search results for URN "11AA2222233"`,
+      "Search results",
     );
     await expect(
-      page.getByText("4 cases found. Select a case to view more details."),
+      page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
     ).toBeVisible();
     await page.getByRole("link", { name: "Back" }).click();
     await expect(page.locator("h1")).toHaveText(`Find a case`);
@@ -406,10 +403,10 @@ test.describe("netapp connect", () => {
     await page.locator('button:text("search")').click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
     await expect(page.locator("h1")).toHaveText(
-      `Search results for URN "11AA2222233"`,
+      "Search results",
     );
     await expect(
-      page.getByText("4 cases found. Select a case to view more details."),
+      page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
     ).toBeVisible();
     await page.locator('role=link[name="Connect"]').nth(2).click();
 

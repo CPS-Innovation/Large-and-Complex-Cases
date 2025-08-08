@@ -11,7 +11,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
     );
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2"),
-    ).toHaveText("Transfer folders and files between egress and shared drive");
+    ).toHaveText("Transfer between Egress and Shared Drive");
   };
   const startEgressToNetAppTransfer = async (
     page: Page,
@@ -34,15 +34,11 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       .click();
     const confirmationModal = await page.getByTestId("div-modal");
     await expect(confirmationModal).toBeVisible();
-    const modaltText =
-      transferType === "Copy"
-        ? "Copy files to: netapp"
-        : "Move files to: netapp";
-    await expect(confirmationModal).toContainText(modaltText);
+    await expect(confirmationModal).toContainText("Confirm");
     const modalLabelText =
       transferType === "Copy"
-        ? "I confirm I want to copy 2 folders and 1 file to netapp"
-        : "I confirm I want to move 2 folders and 1 file to netapp";
+        ? "I want to copy 2 folders and 1 file to netapp"
+        : "I want to move 2 folders and 1 file to netapp";
     await expect(confirmationModal.getByLabel(modalLabelText)).toBeVisible();
     await expect(
       confirmationModal.getByRole("button", { name: "Continue" }),
@@ -56,14 +52,14 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
     await expect(page.getByTestId("transfer-spinner")).toBeVisible();
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2", {
-        hasText: "Transfer folders and files between egress and shared drive",
+        hasText: "Transfer between Egress and Shared Drive",
       }),
     ).not.toBeVisible();
     await expect(page.getByTestId("egress-table-wrapper")).not.toBeVisible();
     await expect(page.getByTestId("netapp-table-wrapper")).not.toBeVisible();
     await expect(
       page.getByTestId("tab-content-transfer-materials"),
-    ).toContainText("Indexing transfer from egress to shared drive...");
+    ).toContainText("Indexing transfer from Egress to Shared Drive...");
   };
   test.describe("Long file path issue", () => {
     const validateFilePathErrorSection = async (
@@ -154,7 +150,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
       );
-      await expect(page.locator("h1")).toHaveText("File paths are too long");
+      await expect(page.locator("h1")).toHaveText("File structure is too long");
       await expect(
         page.getByTestId("resolve-file-path-inset-text"),
       ).toBeVisible();
@@ -162,14 +158,14 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
         page
           .getByTestId("resolve-file-path-inset-text")
           .getByText(
-            "You cannot complete the transfer because 2 file paths are longer than the shared drive limit of 260 characters.",
+            "There are 2 files with names longer than 260 characters.",
           ),
       ).toBeVisible();
       await expect(
         page
           .getByTestId("resolve-file-path-inset-text")
           .getByText(
-            "You can fix this by choosing a different destination folder with smaller file path or renaming the file name.",
+            "You need to rename the files or change the folder structure.",
           ),
       ).toBeVisible();
       await expect(page.locator("section")).toHaveCount(2);
@@ -342,7 +338,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       ).toContainText("Success");
       await expect(
         page.getByTestId("resolve-path-success-notification-banner"),
-      ).toContainText("All file are now under the 260 character limit");
+      ).toContainText("Your files can now be transferred.");
       await page.getByRole("button", { name: "Start transfer" }).click();
       await expect(
         page.getByRole("button", { name: "Start transfer" }),
@@ -358,7 +354,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL("/case/12/case-management");
       await expect(
         page.getByTestId("tab-content-transfer-materials"),
-      ).toContainText("Completing transfer from egress to shared drive...");
+      ).toContainText("Completing transfer from Egress to Shared Drive...");
       await worker.use(
         http.get(
           "https://mocked-out-api/api/v1/filetransfer/transfer-id-egress-to-netapp/status",
@@ -389,7 +385,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(
         page.getByTestId("tab-content-transfer-materials").locator("h2").nth(1),
       ).toHaveText(
-        "Transfer folders and files between egress and shared drive",
+        "Transfer between Egress and Shared Drive",
       );
       await expect(page.getByTestId("egress-table-wrapper")).toBeVisible();
       await expect(page.getByTestId("netapp-table-wrapper")).toBeVisible();
@@ -435,7 +431,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
       );
-      await expect(page.locator("h1")).toHaveText("File paths are too long");
+      await expect(page.locator("h1")).toHaveText("File structure is too long");
       await expect(
         page.getByRole("button", { name: "Start transfer" }),
       ).toBeDisabled();
@@ -449,7 +445,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
       );
-      await expect(page.locator("h1")).toHaveText("File paths are too long");
+      await expect(page.locator("h1")).toHaveText("File structure is too long");
       await expect(
         page.getByRole("button", { name: "Start transfer" }),
       ).toBeDisabled();
@@ -501,7 +497,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
       );
-      await expect(page.locator("h1")).toHaveText("File paths are too long");
+      await expect(page.locator("h1")).toHaveText("File structure is too long");
       const renameBtns = await page
         .getByRole("button", { name: "Rename" })
         .all();
@@ -521,7 +517,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
       );
-      await expect(page.locator("h1")).toHaveText("File paths are too long");
+      await expect(page.locator("h1")).toHaveText("File structure is too long");
       await renameBtns[1].click();
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-rename-file",
@@ -538,7 +534,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
       );
-      await expect(page.locator("h1")).toHaveText("File paths are too long");
+      await expect(page.locator("h1")).toHaveText("File structure is too long");
       await page.getByRole("link", { name: "Back" }).click();
       await expect(page).toHaveURL("/case/12/case-management");
     });
@@ -607,7 +603,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
       );
-      await expect(page.locator("h1")).toHaveText("File paths are too long");
+      await expect(page.locator("h1")).toHaveText("File structure is too long");
 
       const sections = await page.locator("section").all();
       await validateFilePathErrorSection(sections[0], {
@@ -704,7 +700,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
         "/case/12/case-management/transfer-permissions-error",
       );
       await expect(page.locator("h1")).toHaveText(
-        "You do not have permission to transfer these files from egress",
+        "You do not have permission to transfer these files from Egress",
       );
 
       await expect(

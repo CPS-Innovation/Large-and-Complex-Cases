@@ -70,7 +70,6 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
           Select an Egress folder to link to the case
         </h1>
         <InsetText>
-          <p>Select a folder from the list to link it to this case.</p>
           <p>
             If the folder you need is not listed, check that you have the
             correct permissions in Egress or contact the product team for

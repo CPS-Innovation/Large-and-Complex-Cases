@@ -183,7 +183,7 @@ const CaseSearchResultPage = () => {
               data-testid="search-defendant-name"
               className="govuk-input--width-20"
               label={{
-                children: "Defendant surname",
+                children: "Defendant last name",
               }}
               errorMessage={
                 formDataErrors[SearchFormField.defendantName]
@@ -267,29 +267,7 @@ const CaseSearchResultPage = () => {
   };
 
   const getTitleText = () => {
-    switch (formData[SearchFormField.searchType]) {
-      case "operation name":
-        return (
-          <>
-            Search results for operation{" "}
-            <b>{`"${searchParams["operation-name"]}"`}</b>
-          </>
-        );
-      case "defendant name":
-        return (
-          <>
-            Search results for defendant surname{" "}
-            <b>{`"${searchParams["defendant-name"]}"`}</b>
-          </>
-        );
-      default:
-        return (
-          <>
-            Search results for URN{" "}
-            <b>{searchParams["urn"] ? `"${searchParams["urn"]}"` : ""}</b>
-          </>
-        );
-    }
+    return "Search results";
   };
 
   const getAreaTextFromValue = (value: string | undefined) => {
@@ -302,6 +280,7 @@ const CaseSearchResultPage = () => {
 
   const getResultsCountText = (resultsCount: number) => {
     const resultString = resultsCount < 2 ? "case" : "cases";
+    const instructionText = <>Select <b>view</b> to transfer files or folders      or <b>connect</b> to setup storage locations.</>
 
     const resultHtml = (
       <>
@@ -310,26 +289,18 @@ const CaseSearchResultPage = () => {
     );
     switch (formData[SearchFormField.searchType]) {
       case "operation name":
-        return (
-          <>
-            {resultHtml}
-            found in <b>{getAreaTextFromValue(searchParams["area"])}</b>. Select
-            a case to view more details.
-          </>
-        );
       case "defendant name":
         return (
           <>
             {resultHtml}
-            found in <b>{getAreaTextFromValue(searchParams["area"])}</b>. Select
-            a case to view more details.
+            found in <b>{getAreaTextFromValue(searchParams["area"])}</b>. {instructionText}
           </>
         );
       default:
         return (
           <>
             {resultHtml}
-            found. Select a case to view more details.
+            found. {instructionText}
           </>
         );
     }
@@ -347,7 +318,7 @@ const CaseSearchResultPage = () => {
       case "defendant name":
         return (
           <>
-            There are <b>no cases</b> matching the defendant surname in{" "}
+            There are <b>no cases</b> matching the defendant last name in{" "}
             <b>{getAreaTextFromValue(searchParams["area"])}</b>.
           </>
         );

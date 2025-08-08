@@ -35,7 +35,7 @@ const TransferConfirmationModal: React.FC<TransferConfirmationModalProps> = ({
     if (folderText && fileText)
       return (
         <div>
-          I confirm I want to{" "}
+          I want to{" "}
           <b>
             {transferAction.actionType} {folderText}
           </b>{" "}
@@ -45,7 +45,7 @@ const TransferConfirmationModal: React.FC<TransferConfirmationModalProps> = ({
       );
     return (
       <div>
-        I confirm I want to{" "}
+        I want to{" "}
         <b>
           {transferAction.actionType} {folderText}
           {fileText}
@@ -61,14 +61,10 @@ const TransferConfirmationModal: React.FC<TransferConfirmationModalProps> = ({
       handleClose={handleCloseModal}
       type="alert"
       ariaLabel="Transfer confirmation alert modal"
-      ariaDescription={` ${transferAction.actionType === "copy" ? "Copy" : "Move"} files to:{" "}
-          ${transferAction.destinationFolder.name}`}
+      ariaDescription="Confirm"
     >
       <div>
-        <div className={styles.modalHeader}>
-          {transferAction.actionType === "copy" ? "Copy" : "Move"} files to:{" "}
-          {transferAction.destinationFolder.name}
-        </div>
+        <div className={styles.modalHeader}>Confirm</div>
         <div className={styles.modalContent}>
           <Checkboxes
             className="govuk-checkboxes--small"

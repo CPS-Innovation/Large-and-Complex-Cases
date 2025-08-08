@@ -9,7 +9,7 @@ test.describe("transfer-error-handling", () => {
     );
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2", {
-        hasText: "Transfer folders and files between egress and shared drive",
+        hasText: "Transfer between Egress and Shared Drive",
       }),
     ).toBeVisible();
     await page
@@ -43,17 +43,17 @@ test.describe("transfer-error-handling", () => {
       .click();
     const confirmationModal = await page.getByTestId("div-modal");
     await expect(confirmationModal).toBeVisible();
-    await expect(confirmationModal).toContainText("Copy files to: netapp");
+    await expect(confirmationModal).toContainText("Confirm");
     await expect(
       confirmationModal.getByLabel(
-        "I confirm I want to copy 2 folders and 1 file to netapp",
+        "I want to copy 2 folders and 1 file to netapp",
       ),
     ).toBeVisible();
     await expect(
       confirmationModal.getByRole("button", { name: "Continue" }),
     ).toBeDisabled();
     await confirmationModal
-      .getByLabel("I confirm I want to copy 2 folders and 1 file to netapp")
+      .getByLabel("I want to copy 2 folders and 1 file to netapp")
       .click();
     await expect(
       confirmationModal.getByRole("button", { name: "Continue" }),
@@ -100,17 +100,17 @@ test.describe("transfer-error-handling", () => {
       .click();
     const confirmationModal = await page.getByTestId("div-modal");
     await expect(confirmationModal).toBeVisible();
-    await expect(confirmationModal).toContainText("Copy files to: netapp");
+    await expect(confirmationModal).toContainText("Confirm");
     await expect(
       confirmationModal.getByLabel(
-        "I confirm I want to copy 2 folders and 1 file to netapp",
+        "I want to copy 2 folders and 1 file to netapp",
       ),
     ).toBeVisible();
     await expect(
       confirmationModal.getByRole("button", { name: "Continue" }),
     ).toBeDisabled();
     await confirmationModal
-      .getByLabel("I confirm I want to copy 2 folders and 1 file to netapp")
+      .getByLabel("I want to copy 2 folders and 1 file to netapp")
       .click();
     await expect(
       confirmationModal.getByRole("button", { name: "Continue" }),
@@ -157,17 +157,17 @@ test.describe("transfer-error-handling", () => {
       .click();
     const confirmationModal = await page.getByTestId("div-modal");
     await expect(confirmationModal).toBeVisible();
-    await expect(confirmationModal).toContainText("Copy files to: netapp");
+    await expect(confirmationModal).toContainText("Confirm");
     await expect(
       confirmationModal.getByLabel(
-        "I confirm I want to copy 2 folders and 1 file to netapp",
+        "I want to copy 2 folders and 1 file to netapp",
       ),
     ).toBeVisible();
     await expect(
       confirmationModal.getByRole("button", { name: "Continue" }),
     ).toBeDisabled();
     await confirmationModal
-      .getByLabel("I confirm I want to copy 2 folders and 1 file to netapp")
+      .getByLabel("I want to copy 2 folders and 1 file to netapp")
       .click();
     await expect(
       confirmationModal.getByRole("button", { name: "Continue" }),
@@ -179,7 +179,7 @@ test.describe("transfer-error-handling", () => {
     await expect(page.getByTestId("netapp-table-wrapper")).not.toBeVisible();
     await expect(
       page.getByTestId("tab-content-transfer-materials"),
-    ).toContainText("Indexing transfer from egress to shared drive...");
+    ).toContainText("Indexing transfer from Egress to Shared Drive...");
     await expect(page.locator("h1")).toHaveText(
       "Sorry, there is a problem with the service",
     );
@@ -220,17 +220,17 @@ test.describe("transfer-error-handling", () => {
       .click();
     const confirmationModal = await page.getByTestId("div-modal");
     await expect(confirmationModal).toBeVisible();
-    await expect(confirmationModal).toContainText("Copy files to: netapp");
+    await expect(confirmationModal).toContainText("Confirm");
     await expect(
       confirmationModal.getByLabel(
-        "I confirm I want to copy 2 folders and 1 file to netapp",
+        "I want to copy 2 folders and 1 file to netapp",
       ),
     ).toBeVisible();
     await expect(
       confirmationModal.getByRole("button", { name: "Continue" }),
     ).toBeDisabled();
     await confirmationModal
-      .getByLabel("I confirm I want to copy 2 folders and 1 file to netapp")
+      .getByLabel("I want to copy 2 folders and 1 file to netapp")
       .click();
     await expect(
       confirmationModal.getByRole("button", { name: "Continue" }),
@@ -242,7 +242,7 @@ test.describe("transfer-error-handling", () => {
     await expect(page.getByTestId("netapp-table-wrapper")).not.toBeVisible();
     await expect(
       page.getByTestId("tab-content-transfer-materials"),
-    ).toContainText("Indexing transfer from egress to shared drive...");
+    ).toContainText("Indexing transfer from Egress to Shared Drive...");
     await expect(page.locator("h1")).toHaveText(
       "Sorry, there is a problem with the service",
     );
@@ -283,17 +283,17 @@ test.describe("transfer-error-handling", () => {
       .click();
     const confirmationModal = await page.getByTestId("div-modal");
     await expect(confirmationModal).toBeVisible();
-    await expect(confirmationModal).toContainText("Copy files to: netapp");
+    await expect(confirmationModal).toContainText("Confirm");
     await expect(
       confirmationModal.getByLabel(
-        "I confirm I want to copy 2 folders and 1 file to netapp",
+        "I want to copy 2 folders and 1 file to netapp",
       ),
     ).toBeVisible();
     await expect(
       confirmationModal.getByRole("button", { name: "Continue" }),
     ).toBeDisabled();
     await confirmationModal
-      .getByLabel("I confirm I want to copy 2 folders and 1 file to netapp")
+      .getByLabel("I want to copy 2 folders and 1 file to netapp")
       .click();
     await expect(
       confirmationModal.getByRole("button", { name: "Continue" }),
@@ -305,10 +305,10 @@ test.describe("transfer-error-handling", () => {
     await expect(page.getByTestId("netapp-table-wrapper")).not.toBeVisible();
     await expect(
       page.getByTestId("tab-content-transfer-materials"),
-    ).toContainText("Indexing transfer from egress to shared drive...");
+    ).toContainText("Indexing transfer from Egress to Shared Drive...");
     await expect(
       page.getByTestId("tab-content-transfer-materials"),
-    ).toContainText("Completing transfer from egress to shared drive...");
+    ).toContainText("Completing transfer from Egress to Shared Drive...");
     await expect(page.locator("h1")).toHaveText(
       "Sorry, there is a problem with the service",
     );
