@@ -119,17 +119,7 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
             className={styles.searchResultsCount}
             data-testid="egress-results-count"
           >
-            {egressSearchResultsData.length > 1 ? (
-              <>
-                There are <b>{egressSearchResultsData.length} folders </b>
-                matching the case <b>{workspaceName}</b> on Egress.
-              </>
-            ) : (
-              <>
-                There is <b>{egressSearchResultsData.length} folder </b>
-                matching the case <b>{workspaceName}</b> on Egress.
-              </>
-            )}
+            There {egressSearchResultsData.length > 1 ? "are" : "is"} <b>{egressSearchResultsData.length} {egressSearchResultsData.length > 1 ? "folders" : "folder"}</b> matching <b>{workspaceName}</b>.
           </div>
           <SortableTable
             head={[
@@ -162,8 +152,7 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
       {!egressSearchResultsData.length && (
         <>
           <div className={styles.searchResultsCount}>
-            There are <b>no folders </b>matching the case <b>Thunderstruck</b>{" "}
-            on Egress.
+            There are <b>no folders </b>matching  <b>{workspaceName}</b>.
           </div>
           <div className={styles.noResultsContent}>
             <div>

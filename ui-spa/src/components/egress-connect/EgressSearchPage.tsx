@@ -67,7 +67,7 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
         )}
 
         <h1 className="govuk-heading-xl govuk-!-margin-bottom-0">
-          Select an Egress folder to link to the case
+          Link an Egress folder to the case
         </h1>
         <InsetText>
           <p>
@@ -84,7 +84,7 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
             data-testid="search-folder-name"
             className="govuk-input--width-20"
             label={{
-              children: "Egress folder name",
+              children: "Search for an Egress folder",
             }}
             errorMessage={
               formDataErrorText
@@ -93,7 +93,7 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
                   }
                 : undefined
             }
-            name="Egress folder name"
+            name="Search for an Egress folder"
             type="text"
             value={searchValue}
             onChange={(value: string) => {

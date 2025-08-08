@@ -28,20 +28,20 @@ const EgressConnectConfirmationPage: React.FC<
               children: (
                 <>
                   <h1 className="govuk-fieldset__legend--xl">
-                    Confirm folder link
+                    Are you sure?
                   </h1>{" "}
                   <span>
-                    {`Are you sure you want to link "${selectedWorkspaceName}" Egress folder to
+                    {`Confirm you want to link "${selectedWorkspaceName}" Egress folder to
               the case?`}
                   </span>
                 </>
               ),
             },
           }}
-          name="confirm folder link"
+          name="Are you sure?"
           hint={{
             children:
-              "Once linked, this folder will be used for transferring files related to the case. You can update the linked folder later if needed.",
+              "You can change the linked folder later if needed.",
           }}
           items={[
             {
