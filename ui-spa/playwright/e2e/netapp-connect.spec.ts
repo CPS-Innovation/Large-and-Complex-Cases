@@ -32,7 +32,7 @@ test.describe("netapp connect", () => {
       "/case/14/netapp-connect?operation-name=Thunderstruck3_pl",
     );
     await expect(page.locator("h1")).toHaveText(
-      `Select a network shared drive folder to link to the case`,
+      `Link a network shared drive folder to the case`,
     );
 
     await expect(page.getByTestId("netapp-folder-table-loader")).toBeVisible();
@@ -45,15 +45,15 @@ test.describe("netapp connect", () => {
 
     await page.getByRole("button", { name: "Connect folder" }).first().click();
     await expect(page).toHaveURL("/case/14/netapp-connect/confirmation");
-    await expect(page.locator("h1")).toHaveText(`Confirm folder link`);
+    await expect(page.locator("h1")).toHaveText(`Are you sure?`);
     await expect(
       page.getByText(
-        `Are you sure you want to link "thunderstrike" network shared drive folder to the case?`,
+        `Confirm you want to link "thunderstrike" network shared drive folder to the case?`,
       ),
     ).toBeVisible();
     await expect(
       page.getByText(
-        `Once linked, this folder will be used for transferring files related to the case. You can update the linked folder later if needed.`,
+        `You can change the linked folder later if needed.`,
       ),
     ).toBeVisible();
 
@@ -63,22 +63,22 @@ test.describe("netapp connect", () => {
       "/case/14/netapp-connect?operation-name=Thunderstruck3_pl",
     );
     await expect(page.locator("h1")).toHaveText(
-      `Select a network shared drive folder to link to the case`,
+      `Link a network shared drive folder to the case`,
     );
     await page.getByRole("button", { name: "Connect folder" }).first().click();
     await expect(page).toHaveURL("/case/14/netapp-connect/confirmation");
-    await expect(page.locator("h1")).toHaveText(`Confirm folder link`);
+    await expect(page.locator("h1")).toHaveText(`Are you sure?`);
     await page.getByTestId("radio-netapp-connect-no").click();
     await page.locator('button:text("Continue")').click();
     await expect(page).toHaveURL(
       "/case/14/netapp-connect?operation-name=Thunderstruck3_pl",
     );
     await expect(page.locator("h1")).toHaveText(
-      `Select a network shared drive folder to link to the case`,
+      `Link a network shared drive folder to the case`,
     );
     await page.getByRole("button", { name: "Connect folder" }).first().click();
     await expect(page).toHaveURL("/case/14/netapp-connect/confirmation");
-    await expect(page.locator("h1")).toHaveText(`Confirm folder link`);
+    await expect(page.locator("h1")).toHaveText(`Are you sure?`);
     page.getByTestId("radio-netapp-connect-yes").click();
     await page.locator('button:text("Continue")').click();
     await expect(page).toHaveURL(
@@ -116,7 +116,7 @@ test.describe("netapp connect", () => {
       "/case/14/netapp-connect?operation-name=Thunderstruck3_pl",
     );
     await expect(page.locator("h1")).toHaveText(
-      `Select a network shared drive folder to link to the case`,
+      `Link a network shared drive folder to the case`,
     );
     await expect(page.getByTestId("netapp-folder-table-loader")).toBeVisible();
     await expect(
@@ -127,7 +127,7 @@ test.describe("netapp connect", () => {
     ).not.toBeVisible();
     await page.getByRole("button", { name: "Connect folder" }).first().click();
     await expect(page).toHaveURL("/case/14/netapp-connect/confirmation");
-    await expect(page.locator("h1")).toHaveText(`Confirm folder link`);
+    await expect(page.locator("h1")).toHaveText(`Are you sure?`);
     await page.locator('button:text("Continue")').click();
     await expect(page).toHaveURL("/case/14/netapp-connect/error");
     await page.getByRole("link", { name: "Back" }).click();
@@ -135,11 +135,11 @@ test.describe("netapp connect", () => {
       "/case/14/netapp-connect?operation-name=Thunderstruck3_pl",
     );
     await expect(page.locator("h1")).toHaveText(
-      `Select a network shared drive folder to link to the case`,
+      `Link a network shared drive folder to the case`,
     );
     await page.getByRole("button", { name: "Connect folder" }).first().click();
     await expect(page).toHaveURL("/case/14/netapp-connect/confirmation");
-    await expect(page.locator("h1")).toHaveText(`Confirm folder link`);
+    await expect(page.locator("h1")).toHaveText(`Are you sure?`);
     await page.locator('button:text("Continue")').click();
     await expect(page).toHaveURL("/case/14/netapp-connect/error");
     await expect(page.locator("h1")).toHaveText(
@@ -196,7 +196,7 @@ test.describe("netapp connect", () => {
       "/case/14/netapp-connect?operation-name=Thunderstruck3_pl",
     );
     await expect(page.locator("h1")).toHaveText(
-      "Select a network shared drive folder to link to the case",
+      "Link a network shared drive folder to the case",
     );
     await expect(
       page.getByTestId("netapp-folder-table-loader"),
@@ -270,7 +270,7 @@ test.describe("netapp connect", () => {
     );
 
     await expect(page.locator("h1")).toHaveText(
-      `Select a network shared drive folder to link to the case`,
+      `Link a network shared drive folder to the case`,
     );
     await expect(
       page.getByText(
@@ -311,7 +311,7 @@ test.describe("netapp connect", () => {
     await page.goto("/case/14/netapp-connect?operation-name=Thunderstruck3_pl");
     await expect(
       page.locator("h1", {
-        hasText: "Select a network shared drive folder to link to the case",
+        hasText: "Link a network shared drive folder to the case",
       }),
     ).not.toBeVisible();
     await expect(page).toHaveURL("/");
@@ -324,7 +324,7 @@ test.describe("netapp connect", () => {
     await page.goto("/case/14/netapp-connect/confirmation");
     await expect(
       page.locator("h1", {
-        hasText: "Confirm folder link",
+        hasText: "Are you sure?",
       }),
     ).not.toBeVisible();
     await expect(page).toHaveURL("/");
@@ -365,18 +365,18 @@ test.describe("netapp connect", () => {
       "/case/14/netapp-connect?operation-name=Thunderstruck3_pl",
     );
     await expect(page.locator("h1")).toHaveText(
-      `Select a network shared drive folder to link to the case`,
+      `Link a network shared drive folder to the case`,
     );
 
     await page.getByRole("button", { name: "Connect folder" }).first().click();
     await expect(page).toHaveURL("/case/14/netapp-connect/confirmation");
-    await expect(page.locator("h1")).toHaveText(`Confirm folder link`);
+    await expect(page.locator("h1")).toHaveText(`Are you sure?`);
     await page.getByRole("link", { name: "Back" }).click();
     await expect(page).toHaveURL(
       "/case/14/netapp-connect?operation-name=Thunderstruck3_pl",
     );
     await expect(page.locator("h1")).toHaveText(
-      `Select a network shared drive folder to link to the case`,
+      `Link a network shared drive folder to the case`,
     );
 
     await page.getByRole("link", { name: "Back" }).click();
@@ -414,7 +414,7 @@ test.describe("netapp connect", () => {
       "/case/14/netapp-connect?operation-name=Thunderstruck3_pl",
     );
     await expect(page.locator("h1")).toHaveText(
-      `Select a network shared drive folder to link to the case`,
+      `Link a network shared drive folder to the case`,
     );
     await validateFolderPath(page, ["Home"]);
     await page.locator('role=button[name="thunderstrike"]').click();
@@ -446,7 +446,7 @@ test.describe("netapp connect", () => {
     await validateFolderPath(page, ["Home", "thunderstrike"]);
     await page.locator('role=button[name="Connect folder"]').nth(0).click();
     await expect(page).toHaveURL("/case/14/netapp-connect/confirmation");
-    await expect(page.locator("h1")).toHaveText(`Confirm folder link`);
+    await expect(page.locator("h1")).toHaveText(`Are you sure?`);
     await page.getByTestId("radio-netapp-connect-no").click();
     await page.locator('button:text("Continue")').click();
     await expect(page).toHaveURL(
@@ -458,7 +458,7 @@ test.describe("netapp connect", () => {
     await validateFolderPath(page, ["Home", "thunderstrike"]);
     await page.locator('role=button[name="Connect folder"]').nth(0).click();
     await expect(page).toHaveURL("/case/14/netapp-connect/confirmation");
-    await expect(page.locator("h1")).toHaveText(`Confirm folder link`);
+    await expect(page.locator("h1")).toHaveText(`Are you sure?`);
     await page.getByRole("link", { name: "Back" }).click();
     await expect(
       page.getByTestId("netapp-folder-table-loader"),

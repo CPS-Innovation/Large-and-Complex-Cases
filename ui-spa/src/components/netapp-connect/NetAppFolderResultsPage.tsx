@@ -122,7 +122,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
     <div className={`govuk-width-container ${styles.mainContainer}`}>
       <BackLink to={backLinkUrl}>Back</BackLink>
       <h1 className="govuk-heading-xl govuk-!-margin-bottom-0">
-        Select a network shared drive folder to link to the case
+        Link a network shared drive folder to the case
       </h1>
       <InsetText>
         <p>
