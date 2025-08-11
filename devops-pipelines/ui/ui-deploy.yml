@@ -15,7 +15,7 @@ parameters:
       - true
   - name: slotName
     type: string
-    default: ''
+    default: null
 
 resources:
   pipelines:
