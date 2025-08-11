@@ -86,21 +86,22 @@ stages:
                       bash '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/installAzureCli.sh'
 
                 - task: AzureCLI@2
-                  displayName: 'Verify Web App Deployment'
+                  displayName: 'Verify Function App Deployment'
                   inputs:
                     azureSubscription: ${{ parameters.azureSubscription }}
                     scriptType: 'bash'
                     scriptLocation: 'inlineScript'
                     inlineScript: |
-                      APP_STATE_CMD="az app show --name $(webAppName) --resource-group ${{ parameters.resourceGroupName }} --query "state" -o tsv"
+                      bash '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/verifyDeployment.sh'
+                  env:
+                    APP_TYPE: webapp
+                    APP_NAME: $(webAppName)
+                    RG:  $(resourceGroupName)
+                    USE_SLOT: ${{ lower(parameters.deployToSlot) }}}
+                    SLOT_NAME: ${{ parameters.slotName }}
 
-                      if [ "$USE_SLOT" = "true" ]; then
-                        APP_STATE_CMD+=" --slot ${{ parameters.slotName }}"
-                        INSTANCE_NAME="$(webAppName)-${{ parameters.slotName }}"
-                      else
-                        INSTANCE_NAME="$(webAppName)"
-                      fi
-
+# TODO: add step to run E2E tests on the live app / slot before swap
+                
                 - template: ../templates/runner-cleanup.yml
                   parameters:
                     buildArtifactDir: 'build'

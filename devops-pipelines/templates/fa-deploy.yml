@@ -65,7 +65,7 @@ steps:
       inlineScript: |
         bash '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/verifyDeployment.sh'
     env:
-      APP_TYPE: functionApp
+      APP_TYPE: functionapp
       APP_NAME: ${{ parameters.functionAppName }}
       RG: ${{ parameters.resourceGroupName }}
       USE_SLOT: ${{ lower(parameters.deployToSlot) }}}

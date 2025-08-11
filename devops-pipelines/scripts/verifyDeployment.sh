@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ "$APP_TYPE" != "functionApp" ] && [ "$APP_TYPE" != "webapp" ]; then
+if [ "$APP_TYPE" != "functionapp" ] && [ "$APP_TYPE" != "webapp" ]; then
     echo "##[error]❌ The value '$APP_TYPE' is invalid input for \$APP_TYPE. The value must be either 'functionapp' or 'webapp'."
     exit 1
 fi
