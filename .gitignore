@@ -1,6 +1,3 @@
-# TEMP
-testscript.sh
-
 # ignore azurite bits
 __azurite*
 __blobstorage__

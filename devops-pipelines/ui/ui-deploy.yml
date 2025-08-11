@@ -7,6 +7,15 @@ parameters:
       - dev
       - stage
       - prod
+  - name: deployToSlot
+    type: boolean
+    default: false
+    values:
+      - false
+      - true
+  - name: slotName
+    type: string
+    default: ''
 
 resources:
   pipelines:
@@ -48,10 +57,49 @@ stages:
                     resourceGroupName: $(resourceGroupName)
                     appType: 'webAppLinux'
                     WebAppName: '$(webAppName)'
+                    deployToSlotOrASE: ${{ parameters.deployToSlot }}
+                    slotName: ${{ parameters.slotName }}
                     packageForLinux: '$(Pipeline.Workspace)/build/lacc-ui-${{ parameters.environment }}-drop'
                     RuntimeStack: 'NODE|20-lts'
                     StartupCommand: 'pm2 serve /home/site/wwwroot/ --no-daemon --spa'   
                   displayName: 'Deploy LACC UI to ${{ parameters.environment }}'
+
+                - checkout: self
+                  sparseCheckoutDirectories: devops-pipelines/scripts
+                  fetchDepth: 1
+
+                - task: Bash@3
+                  displayName: 'Ensure Azure CLI'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      echo "Checking if Azure CLI is installed..."
+                      
+                      # Check if az command exists
+                      if command -v az &> /dev/null; then
+                        echo "Azure CLI is already installed"
+                        az --version
+                        exit 0
+                      fi
+
+                      echo "Azure CLI not found, installing..."
+                      bash '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/installAzureCli.sh'
+
+                - task: AzureCLI@2
+                  displayName: 'Verify Web App Deployment'
+                  inputs:
+                    azureSubscription: ${{ parameters.azureSubscription }}
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      APP_STATE_CMD="az app show --name $(webAppName) --resource-group ${{ parameters.resourceGroupName }} --query "state" -o tsv"
+
+                      if [ "$USE_SLOT" = "true" ]; then
+                        APP_STATE_CMD+=" --slot ${{ parameters.slotName }}"
+                        INSTANCE_NAME="$(webAppName)-${{ parameters.slotName }}"
+                      else
+                        INSTANCE_NAME="$(webAppName)"
+                      fi
 
                 - template: ../templates/runner-cleanup.yml
                   parameters:

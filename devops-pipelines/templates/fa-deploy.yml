@@ -63,56 +63,22 @@ steps:
       scriptType: 'bash'
       scriptLocation: 'inlineScript'
       inlineScript: |
-        APP_STATE_CMD="az functionapp show --name ${{ parameters.functionAppName }} --resource-group ${{ parameters.resourceGroupName }} --query "state" -o tsv"
+        bash '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/verifyDeployment.sh'
+    env:
+      APP_TYPE: functionApp
+      APP_NAME: ${{ parameters.functionAppName }}
+      RG: ${{ parameters.resourceGroupName }}
+      USE_SLOT: ${{ lower(parameters.deployToSlot) }}}
+      SLOT_NAME: ${{ parameters.slotName }}
 
-        if [ "$USE_SLOT" = "true" ]; then
-          APP_STATE_CMD+=" --slot ${{ parameters.slotName }}"
-          INSTANCE_NAME="${{ parameters.functionAppName }}-${{ parameters.slotName }}"
-        else
-          INSTANCE_NAME="${{ parameters.functionAppName }}"
-        fi
-
-        check_function_app_state() {
-          local max_retries=3
-          local attempt=1
-          local sleep=5
-
-          while [ $attempt -le $max_retries ]; do
-            echo "Attempt $attempt/$max_retries: Waiting $sleep seconds for the deployment to stabilize..."
-            sleep $sleep
-
-            echo "Running command: "$APP_STATE_CMD""
-            APP_STATE=$(eval "$APP_STATE_CMD" 2>&1)
-            EXIT_CODE=$?
-
-            if [ $EXIT_CODE -ne 0 ]; then
-              echo "##[error]❌ The command failed. $APP_STATE"
-              exit 1
-            fi
-
-            echo "Function app state: $APP_STATE"
-
-            if [ "$APP_STATE" == "Running" ]; then
-              echo "✅ Function app is in a Running state."
-              return 0
-            else
-              echo "##vso[task.logissue type=warning]⚠️ Function app is not in Running state."
-            fi
-
-            attempt=$((attempt + 1))
-            sleep=$((sleep + 5))
-          done
-
-          echo "❌ Function app did not reach 'Running' state after $max_retries attempts."
-          exit 1
-        }
-
-        echo "Verifying deployment to $INSTANCE_NAME..."
-        check_function_app_state
-
+  - task: Bash@3
+    displayName: 'Check Function App Health'
+    inputs:
+      targetType: 'inline'
+      script: |
         # Curl the app's Health API endpoint
         echo "CURLing the live instance's Health API endpoint..."
-        HTTP_CODE=$(curl -X GET -s -o /dev/null -I -w "%{http_code}" "https://"$INSTANCE_NAME".azurewebsites.net/api/status")
+        HTTP_CODE=$(curl -X GET -s -o /dev/null -I -w "%{http_code}" "https://$(instanceName).azurewebsites.net/api/status")
         
         if [ "$HTTP_CODE" != "200" ]; then
           echo "##[error]The endpoint did not return a 200 response."
@@ -122,8 +88,6 @@ steps:
         fi
 
         echo "✅ Function app is responsive and in a healthy state."
-    env:
-      USE_SLOT: ${{ lower(parameters.deployToSlot) }}
 
   - task: AzureAppServiceManage@0
     condition: ${{ eq(parameters.deployToSlot, true) }}
