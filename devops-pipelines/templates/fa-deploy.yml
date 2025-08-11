@@ -90,7 +90,7 @@ steps:
         echo "✅ Function app is responsive and in a healthy state."
 
   - task: AzureAppServiceManage@0
-    condition: ${{ eq(parameters.deployToSlot, true) }}
+    condition: and(succeeded(), ${{ eq(parameters.deployToSlot, true) }})
     displayName: "Perform Slot Swap"
     inputs:
       azureSubscription: ${{ parameters.azureSubscription }}

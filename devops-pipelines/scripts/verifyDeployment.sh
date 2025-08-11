@@ -36,7 +36,7 @@ check_app_state() {
 
     if [ "$APP_STATE" = "Running" ]; then
         echo "✅ The app is in a Running state."
-        echo "##vso[task.setvariable variable=$INSTANCE_NAME;]instanceName"
+        echo "##vso[task.setvariable variable=instanceName;]$INSTANCE_NAME"
         return 0
     else
         echo "App state is: "$APP_STATE""
