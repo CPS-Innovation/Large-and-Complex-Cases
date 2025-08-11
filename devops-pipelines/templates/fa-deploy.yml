@@ -63,53 +63,67 @@ steps:
       scriptType: 'bash'
       scriptLocation: 'inlineScript'
       inlineScript: |
-        DEPLOYMENT_STATE_CMD="az functionapp log deployment list --name ${{ parameters.functionAppName }} --resource-group ${{ parameters.resourceGroupName }} --query "[0].provisioningState" -o tsv"
         APP_STATE_CMD="az functionapp show --name ${{ parameters.functionAppName }} --resource-group ${{ parameters.resourceGroupName }} --query "state" -o tsv"
 
         if [ "$USE_SLOT" = "true" ]; then
-          DEPLOYMENT_STATE_CMD+=" --slot ${{ parameters.slotName }}"
           APP_STATE_CMD+=" --slot ${{ parameters.slotName }}"
-          echo "Verifying deployment to ${{ parameters.functionAppName }}/${{ parameters.slotName }}..."
+          INSTANCE_NAME="${{ parameters.functionAppName }}-${{ parameters.slotName }}"
         else
-          echo "Verifying deployment to ${{ parameters.functionAppName }}..."
+          INSTANCE_NAME="${{ parameters.functionAppName }}"
         fi
 
-        # Check if deployment completed successfully
-        DEPLOYMENT_STATE=$(eval "$DEPLOYMENT_STATE_CMD" 2>&1)
-        EXIT_CODE=$?
+        check_function_app_state() {
+          local max_retries=3
+          local attempt=1
+          local sleep=5
 
-        if [ $EXIT_CODE -ne 0 ]; then
-          echo "$DEPLOYMENT_STATE"
+          while [ $attempt -le $max_retries ]; do
+            echo "Attempt $attempt/$max_retries: Waiting $sleep seconds for the deployment to stabilize..."
+            sleep $sleep
+
+            echo "Running "$APP_STATE_CMD""
+            APP_STATE=$(eval "$APP_STATE_CMD" 2>&1)
+            EXIT_CODE=$?
+
+            if [ $EXIT_CODE -ne 0 ]; then
+              echo "##[error]❌ The command failed. $APP_STATE"
+              exit 1
+            fi
+
+            echo "Function app state: $APP_STATE"
+
+            if [ "$APP_STATE" == "Running" ]; then
+              echo "✅ Function app is in a Running state."
+              return 0
+            else
+              echo "##vso[task.logissue type=warning]⚠️ Function app is not in Running state."
+            fi
+
+            attempt=$((attempt + 1))
+            sleep=$((sleep + 5))
+          done
+
+          echo "❌ Function app did not reach 'Running' state after $max_retries attempts."
+          exit 1
+        }
+
+        echo "Verifying deployment to $INSTANCE_NAME..."
+        check_function_app_state
+
+        # Curl the app's Health API endpoint
+        echo "CURLing the live instance's Health API endpoint..."
+        HTTP_CODE=$(curl -X GET -s -o /dev/null -I -w "%{http_code}" "https://"$INSTANCE_NAME".azurewebsites.net/api/status")
+        
+        if [ "$HTTP_CODE" != "200"]; then
+          echo "##[error]The endpoint did not return a 200 response."
+          echo "##[error]The HTTP code recieved was: "$HTTP_CODE"."
+          echo "##vso[task.logissue type=error]❌ The function app is not operational. A rollback may be required."
           exit 1
         fi
 
-        echo "Latest deployment status: "$DEPLOYMENT_STATE""
-        
-        # Wait a moment for extraction to complete
-        echo "Waiting for deployment to stabilize..."
-        sleep 10
-        
-        # Check if function app is running
-        APP_STATE=$(eval "$APP_STATE_CMD" 2>&1)
-        EXIT_CODE=$?
-
-        if [ $EXIT_CODE -ne 0 ]; then
-          echo "$APP_STATE"
-          exit 1
-        fi
-
-        echo "Function app state: "$APP_STATE""
-        
-        if [ "$APP_STATE" != "Running" ]; then
-          echo "##vso[task.logissue type=warning]⚠️ Function app is not in Running state."
-        else
-          echo "✅ Function app is running."
-        fi
+        echo "✅ Function app is responsive and in a healthy state."
     env:
       USE_SLOT: ${{ lower(parameters.deployToSlot) }}
-
-#  TODO: The above check does not provide real confirmation that the app is working as expected.
-#         A more robust way needs to be found to verify the app is operational.
 
   - task: AzureAppServiceManage@0
     condition: ${{ eq(parameters.deployToSlot, true) }}
