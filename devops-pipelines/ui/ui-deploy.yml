@@ -13,9 +13,6 @@ parameters:
     values:
       - false
       - true
-  - name: slotName
-    type: string
-    default: null
 
 resources:
   pipelines:
@@ -27,6 +24,8 @@ resources:
          - main
 
 variables:
+  - name: slotName
+    value: ''
   - name: resourceGroupName
     value: 'rg-lacc-${{ parameters.environment }}'
   - name: webAppName
@@ -58,7 +57,7 @@ stages:
                     appType: 'webAppLinux'
                     WebAppName: '$(webAppName)'
                     deployToSlotOrASE: ${{ parameters.deployToSlot }}
-                    slotName: ${{ parameters.slotName }}
+                    slotName: $(slotName)
                     packageForLinux: '$(Pipeline.Workspace)/build/lacc-ui-${{ parameters.environment }}-drop'
                     RuntimeStack: 'NODE|20-lts'
                     StartupCommand: 'pm2 serve /home/site/wwwroot/ --no-daemon --spa'   
@@ -88,7 +87,7 @@ stages:
                 - task: AzureCLI@2
                   displayName: 'Verify Function App Deployment'
                   inputs:
-                    azureSubscription: ${{ parameters.azureSubscription }}
+                    azureSubscription: $(azureSubscription)
                     scriptType: 'bash'
                     scriptLocation: 'inlineScript'
                     inlineScript: |
@@ -96,9 +95,9 @@ stages:
                   env:
                     APP_TYPE: webapp
                     APP_NAME: $(webAppName)
-                    RG:  $(resourceGroupName)
+                    RG: $(resourceGroupName)
                     USE_SLOT: ${{ lower(parameters.deployToSlot) }}}
-                    SLOT_NAME: ${{ parameters.slotName }}
+                    SLOT_NAME: $(slotName)
 
 # TODO: add step to run E2E tests on the live app / slot before swap
                 
