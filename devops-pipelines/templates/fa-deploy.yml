@@ -81,7 +81,7 @@ steps:
             echo "Attempt $attempt/$max_retries: Waiting $sleep seconds for the deployment to stabilize..."
             sleep $sleep
 
-            echo "Running "$APP_STATE_CMD""
+            echo "Running command: "$APP_STATE_CMD""
             APP_STATE=$(eval "$APP_STATE_CMD" 2>&1)
             EXIT_CODE=$?
 
@@ -114,7 +114,7 @@ steps:
         echo "CURLing the live instance's Health API endpoint..."
         HTTP_CODE=$(curl -X GET -s -o /dev/null -I -w "%{http_code}" "https://"$INSTANCE_NAME".azurewebsites.net/api/status")
         
-        if [ "$HTTP_CODE" != "200"]; then
+        if [ "$HTTP_CODE" != "200" ]; then
           echo "##[error]The endpoint did not return a 200 response."
           echo "##[error]The HTTP code recieved was: "$HTTP_CODE"."
           echo "##vso[task.logissue type=error]❌ The function app is not operational. A rollback may be required."
