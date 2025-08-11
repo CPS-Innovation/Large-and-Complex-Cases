@@ -68,7 +68,6 @@ stages:
               command: 'custom'
               customCommand: 'run coverage'
               workingDir: '$(workingDir)'
-            continueOnError: true
 
           - task: PublishTestResults@2
             displayName: 'Publish UI Test Results'
