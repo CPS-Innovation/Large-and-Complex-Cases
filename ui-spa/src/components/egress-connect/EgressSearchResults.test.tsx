@@ -89,7 +89,7 @@ describe("EgressSearchResults", () => {
       ["ahunderstrikeabcd", "Inactive", "28/01/2000", "Connect folder"],
     ]);
     expect(screen.queryByTestId("egress-results-count")).toHaveTextContent(
-      "There are 4 folders matching the case thunder on egress.",
+      "There are 4 folders matching thunder.",
     );
 
     const newResults = {
@@ -105,7 +105,7 @@ describe("EgressSearchResults", () => {
       />,
     );
     expect(screen.queryByTestId("egress-results-count")).toHaveTextContent(
-      "There is 1 folder matching the case thunder on egress.",
+      "There is 1 folder matching thunder.",
     );
     const newRows = screen.getAllByRole("row");
     const newDataRows = newRows.slice(1);
@@ -189,7 +189,7 @@ describe("EgressSearchResults", () => {
     ]);
   });
 
-  it("Should  sort the egress search result content based column header Status", async () => {
+  it("Should sort the egress search result content based column header Status", async () => {
     render(
       <EgressSearchResults
         workspaceName="thunder"
