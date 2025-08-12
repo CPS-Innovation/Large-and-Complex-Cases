@@ -1,11 +1,11 @@
 using AutoFixture;
 using AutoFixture.AutoMoq;
 using CPS.ComplexCases.API.Services;
-using CPS.ComplexCases.Common.Models.Domain.Dto;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.DDEI.Models.Dto;
 using CPS.ComplexCases.Egress.Models.Dto;
+using CPS.ComplexCases.NetApp.Models.Dto;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -31,6 +31,7 @@ public class CaseEnrichmentServiceTests
         _loggerMock.Object
     );
   }
+
 
   [Fact]
   public async Task EnrichCasesWithMetadataAsync_WhenCasesProvided_EnrichesWithMetadata()
@@ -77,7 +78,6 @@ public class CaseEnrichmentServiceTests
     var cases = _fixture.CreateMany<CaseDto>(3).ToList();
     var caseIds = cases.Select(c => c.CaseId).ToList();
 
-    // Only create metadata for the first case
     var metadata = new List<CaseMetadata>
         {
             new CaseMetadata
@@ -184,6 +184,31 @@ public class CaseEnrichmentServiceTests
   }
 
   [Fact]
+  public async Task EnrichCasesWithMetadataAsync_LogsInformationWhenEnrichingCases()
+  {
+    // Arrange
+    var cases = _fixture.CreateMany<CaseDto>(3).ToList();
+
+    _caseMetadataServiceMock
+        .Setup(s => s.GetCaseMetadataForCaseIdsAsync(It.IsAny<IEnumerable<int>>()))
+        .ReturnsAsync(new List<CaseMetadata>());
+
+    // Act
+    await _service.EnrichCasesWithMetadataAsync(cases);
+
+    // Assert
+    _loggerMock.Verify(
+        x => x.Log(
+            LogLevel.Information,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Enriching 3 cases with metadata")),
+            It.IsAny<Exception>(),
+            It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+        Times.Once);
+  }
+
+
+  [Fact]
   public async Task EnrichEgressWorkspacesWithMetadataAsync_WhenWorkspacesProvided_EnrichesWithMetadata()
   {
     // Arrange
@@ -232,7 +257,6 @@ public class CaseEnrichmentServiceTests
     var workspaces = CreateSampleWorkspaces(3);
     var workspaceIds = workspaces.Data.Select(w => w.Id).ToList();
 
-    // Only create metadata for the first workspace
     var metadata = new List<CaseMetadata>
         {
             new CaseMetadata
@@ -333,6 +357,324 @@ public class CaseEnrichmentServiceTests
     Assert.Equal(workspace.DateCreated, workspaceResponse.DateCreated);
     Assert.Null(workspaceResponse.CaseId);
   }
+
+  [Fact]
+  public async Task EnrichEgressWorkspacesWithMetadataAsync_WhenMetadataHasNullEgressWorkspaceId_FiltersCorrectly()
+  {
+    // Arrange
+    var workspaces = CreateSampleWorkspaces(2);
+    var workspaceIds = workspaces.Data.Select(w => w.Id).ToList();
+
+    var metadata = new List<CaseMetadata>
+    {
+        new CaseMetadata { CaseId = 1, EgressWorkspaceId = workspaceIds.First(), NetappFolderPath = "path1" },
+        new CaseMetadata { CaseId = 2, EgressWorkspaceId = null, NetappFolderPath = "path2" }, // Should be filtered out
+        new CaseMetadata { CaseId = 3, EgressWorkspaceId = workspaceIds.Last(), NetappFolderPath = "path3" }
+    };
+
+    _caseMetadataServiceMock
+        .Setup(s => s.GetCaseMetadataForEgressWorkspaceIdsAsync(It.IsAny<IEnumerable<string>>()))
+        .ReturnsAsync(metadata);
+
+    // Act
+    var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces);
+
+    // Assert
+    var firstWorkspace = result.Data.First(w => w.Id == workspaceIds.First());
+    var lastWorkspace = result.Data.First(w => w.Id == workspaceIds.Last());
+
+    Assert.Equal(1, firstWorkspace.CaseId);
+    Assert.Equal(3, lastWorkspace.CaseId);
+  }
+
+  [Fact]
+  public async Task EnrichEgressWorkspacesWithMetadataAsync_LogsInformationWhenEnrichingWorkspaces()
+  {
+    // Arrange
+    var workspaces = CreateSampleWorkspaces(2);
+
+    _caseMetadataServiceMock
+        .Setup(s => s.GetCaseMetadataForEgressWorkspaceIdsAsync(It.IsAny<IEnumerable<string>>()))
+        .ReturnsAsync(new List<CaseMetadata>());
+
+    // Act
+    await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces);
+
+    // Assert
+    _loggerMock.Verify(
+        x => x.Log(
+            LogLevel.Information,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Enriching 2 workspaces with metadata")),
+            It.IsAny<Exception>(),
+            It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+        Times.Once);
+  }
+
+  [Fact]
+  public async Task EnrichNetAppFoldersWithMetadataAsync_WhenFoldersProvided_EnrichesWithMetadata()
+  {
+    // Arrange
+    var folders = CreateSampleNetAppFolders(3);
+    var folderPaths = folders.Data.FolderData
+        .Where(d => d.Path != null)
+        .Select(d => $"{folders.Data.BucketName}:{d.Path}")
+        .ToList();
+
+    var metadata = folderPaths.Select(path => new CaseMetadata
+    {
+      CaseId = _fixture.Create<int>(),
+      EgressWorkspaceId = _fixture.Create<string>(),
+      NetappFolderPath = path
+    }).ToList();
+
+    _caseMetadataServiceMock
+        .Setup(s => s.GetCaseMetadataForNetAppFolderPathsAsync(It.Is<IEnumerable<string>>(paths =>
+            paths.All(p => folderPaths.Contains(p)) && paths.Count() == folderPaths.Count)))
+        .ReturnsAsync(metadata);
+
+    // Act
+    var result = await _service.EnrichNetAppFoldersWithMetadataAsync(folders);
+
+    // Assert
+    Assert.Equal(folderPaths.Count, result.Data.Folders.Count());
+
+    foreach (var folderResponse in result.Data.Folders)
+    {
+      var expectedPath = $"{folders.Data.BucketName}:{folderResponse.FolderPath}";
+      var expectedMetadata = metadata.First(m => m.NetappFolderPath == expectedPath);
+      Assert.Equal(expectedMetadata.CaseId, folderResponse.CaseId);
+    }
+
+    Assert.Equal(folders.Data.RootPath, result.Data.RootPath);
+    Assert.Empty(result.Data.Files);
+
+    _caseMetadataServiceMock.Verify(
+        s => s.GetCaseMetadataForNetAppFolderPathsAsync(It.Is<IEnumerable<string>>(paths =>
+            paths.All(p => folderPaths.Contains(p)) && paths.Count() == folderPaths.Count)),
+        Times.Once);
+  }
+
+  [Fact]
+  public async Task EnrichNetAppFoldersWithMetadataAsync_WhenMetadataNotFoundForSomeFolders_ReturnsEnrichedFoldersWithAvailableMetadata()
+  {
+    // Arrange
+    var folders = CreateSampleNetAppFolders(3);
+    var folderPaths = folders.Data.FolderData
+        .Where(d => d.Path != null)
+        .Select(d => $"{folders.Data.BucketName}:{d.Path}")
+        .ToList();
+
+    var metadata = new List<CaseMetadata>
+    {
+        new CaseMetadata
+        {
+            CaseId = _fixture.Create<int>(),
+            EgressWorkspaceId = _fixture.Create<string>(),
+            NetappFolderPath = folderPaths.First()
+        }
+    };
+
+    _caseMetadataServiceMock
+        .Setup(s => s.GetCaseMetadataForNetAppFolderPathsAsync(It.IsAny<IEnumerable<string>>()))
+        .ReturnsAsync(metadata);
+
+    // Act
+    var result = await _service.EnrichNetAppFoldersWithMetadataAsync(folders);
+
+    // Assert
+    Assert.Equal(folderPaths.Count, result.Data.Folders.Count());
+
+    var firstFolderResponse = result.Data.Folders.First();
+    Assert.Equal(metadata.First().CaseId, firstFolderResponse.CaseId);
+
+    foreach (var folderResponse in result.Data.Folders.Skip(1))
+    {
+      Assert.Null(folderResponse.CaseId);
+    }
+  }
+
+  [Fact]
+  public async Task EnrichNetAppFoldersWithMetadataAsync_WhenNoFoldersProvided_ReturnsEmptyCollection()
+  {
+    // Arrange
+    var folders = CreateEmptyNetAppFolders();
+
+    // Act
+    var result = await _service.EnrichNetAppFoldersWithMetadataAsync(folders);
+
+    // Assert
+    Assert.Empty(result.Data.Folders);
+    Assert.Empty(result.Data.Files);
+
+    _caseMetadataServiceMock.Verify(
+        s => s.GetCaseMetadataForNetAppFolderPathsAsync(It.IsAny<IEnumerable<string>>()),
+        Times.Never);
+  }
+
+  [Fact]
+  public async Task EnrichNetAppFoldersWithMetadataAsync_WhenMetadataServiceThrowsException_LogsWarningAndReturnsUnmodifiedFolders()
+  {
+    // Arrange
+    var folders = CreateSampleNetAppFolders(3);
+    var expectedException = new Exception("NetApp metadata service error");
+
+    _caseMetadataServiceMock
+        .Setup(s => s.GetCaseMetadataForNetAppFolderPathsAsync(It.IsAny<IEnumerable<string>>()))
+        .ThrowsAsync(expectedException);
+
+    // Act
+    var result = await _service.EnrichNetAppFoldersWithMetadataAsync(folders);
+
+    // Assert
+    Assert.Equal(folders.Data.FolderData.Count(), result.Data.Folders.Count());
+
+    foreach (var folderResponse in result.Data.Folders)
+    {
+      Assert.Null(folderResponse.CaseId);
+    }
+
+    _loggerMock.Verify(
+        x => x.Log(
+            LogLevel.Warning,
+            It.IsAny<EventId>(),
+            It.IsAny<It.IsAnyType>(),
+            It.Is<Exception>(ex => ex == expectedException),
+            It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+        Times.Once);
+  }
+
+  [Fact]
+  public async Task EnrichNetAppFoldersWithMetadataAsync_WhenFoldersHaveNullPaths_HandlesGracefully()
+  {
+    // Arrange
+    var folderData = new List<ListNetAppFolderDataDto>
+    {
+        new ListNetAppFolderDataDto { Path = null },
+        new ListNetAppFolderDataDto { Path = "valid-path" },
+        new ListNetAppFolderDataDto { Path = null }
+    };
+
+    var folders = new ListNetAppObjectsDto
+    {
+      Data = new ListNetAppDataDto
+      {
+        BucketName = "test-bucket",
+        FolderData = folderData,
+        RootPath = "/root",
+        FileData = new List<ListNetAppFileDataDto>()
+      },
+      Pagination = new NetApp.Models.Dto.PaginationDto
+      {
+        MaxKeys = 10,
+        NextContinuationToken = null
+      }
+    };
+
+    _caseMetadataServiceMock
+        .Setup(s => s.GetCaseMetadataForNetAppFolderPathsAsync(It.IsAny<IEnumerable<string>>()))
+        .ReturnsAsync(new List<CaseMetadata>());
+
+    // Act
+    var result = await _service.EnrichNetAppFoldersWithMetadataAsync(folders);
+
+    // Assert
+    Assert.Single(result.Data.Folders);
+    Assert.Equal("valid-path", result.Data.Folders.First().FolderPath);
+  }
+
+  [Fact]
+  public async Task EnrichNetAppFoldersWithMetadataAsync_VerifiesPaginationMapping()
+  {
+    // Arrange
+    var folders = CreateSampleNetAppFolders(1);
+
+    _caseMetadataServiceMock
+        .Setup(s => s.GetCaseMetadataForNetAppFolderPathsAsync(It.IsAny<IEnumerable<string>>()))
+        .ReturnsAsync(new List<CaseMetadata>());
+
+    // Act
+    var result = await _service.EnrichNetAppFoldersWithMetadataAsync(folders);
+
+    // Assert
+    Assert.Equal(folders.Pagination.MaxKeys, result.Pagination.MaxKeys);
+    Assert.Equal(folders.Pagination.NextContinuationToken, result.Pagination.NextContinuationToken);
+  }
+
+  [Fact]
+  public async Task EnrichNetAppFoldersWithMetadataAsync_WhenMetadataHasNullNetappFolderPath_FiltersCorrectly()
+  {
+    // Arrange
+    var folders = CreateSampleNetAppFolders(2);
+    var folderPaths = folders.Data.FolderData
+        .Where(d => d.Path != null)
+        .Select(d => $"{folders.Data.BucketName}:{d.Path}")
+        .ToList();
+
+    var metadata = new List<CaseMetadata>
+    {
+        new CaseMetadata { CaseId = 1, EgressWorkspaceId = "ws1", NetappFolderPath = folderPaths.First() },
+        new CaseMetadata { CaseId = 2, EgressWorkspaceId = "ws2", NetappFolderPath = null }, // Should be filtered out
+        new CaseMetadata { CaseId = 3, EgressWorkspaceId = "ws3", NetappFolderPath = folderPaths.Last() }
+    };
+
+    _caseMetadataServiceMock
+        .Setup(s => s.GetCaseMetadataForNetAppFolderPathsAsync(It.IsAny<IEnumerable<string>>()))
+        .ReturnsAsync(metadata);
+
+    // Act
+    var result = await _service.EnrichNetAppFoldersWithMetadataAsync(folders);
+
+    // Assert
+    var enrichedFolders = result.Data.Folders.Where(f => f.CaseId.HasValue).ToList();
+    Assert.Equal(2, enrichedFolders.Count);
+    Assert.Contains(enrichedFolders, f => f.CaseId == 1);
+    Assert.Contains(enrichedFolders, f => f.CaseId == 3);
+  }
+
+  [Fact]
+  public async Task EnrichNetAppFoldersWithMetadataAsync_LogsInformationWhenEnrichingFolders()
+  {
+    // Arrange
+    var folders = CreateSampleNetAppFolders(4);
+
+    _caseMetadataServiceMock
+        .Setup(s => s.GetCaseMetadataForNetAppFolderPathsAsync(It.IsAny<IEnumerable<string>>()))
+        .ReturnsAsync(new List<CaseMetadata>());
+
+    // Act
+    await _service.EnrichNetAppFoldersWithMetadataAsync(folders);
+
+    // Assert
+    _loggerMock.Verify(
+        x => x.Log(
+            LogLevel.Information,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Enriching 4 workspaces with metadata")),
+            It.IsAny<Exception>(),
+            It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+        Times.Once);
+  }
+
+  [Fact]
+  public async Task EnrichNetAppFoldersWithMetadataAsync_VerifiesFolderPathExtraction()
+  {
+    // Arrange
+    var folders = CreateSampleNetAppFolders(1);
+    var expectedPath = folders.Data.FolderData.First().Path;
+
+    _caseMetadataServiceMock
+        .Setup(s => s.GetCaseMetadataForNetAppFolderPathsAsync(It.IsAny<IEnumerable<string>>()))
+        .ReturnsAsync(new List<CaseMetadata>());
+
+    // Act
+    var result = await _service.EnrichNetAppFoldersWithMetadataAsync(folders);
+
+    // Assert
+    var folderResponse = result.Data.Folders.Single();
+    Assert.Equal(expectedPath, folderResponse.FolderPath);
+  }
+
   private ListWorkspacesDto CreateSampleWorkspaces(int count)
   {
     var workspaceData = _fixture.CreateMany<ListWorkspaceDataDto>(count).ToList();
@@ -340,7 +682,7 @@ public class CaseEnrichmentServiceTests
     return new ListWorkspacesDto
     {
       Data = workspaceData,
-      Pagination = new PaginationDto
+      Pagination = new Common.Models.Domain.Dto.PaginationDto
       {
         Count = count,
         Take = count,
@@ -355,12 +697,54 @@ public class CaseEnrichmentServiceTests
     return new ListWorkspacesDto
     {
       Data = new List<ListWorkspaceDataDto>(),
-      Pagination = new PaginationDto
+      Pagination = new Common.Models.Domain.Dto.PaginationDto
       {
         Count = 0,
         Take = 0,
         Skip = 0,
         TotalResults = 0
+      }
+    };
+  }
+
+  private ListNetAppObjectsDto CreateSampleNetAppFolders(int count)
+  {
+    var folderData = Enumerable.Range(1, count)
+        .Select(i => new ListNetAppFolderDataDto { Path = $"folder-{i}" })
+        .ToList();
+
+    return new ListNetAppObjectsDto
+    {
+      Data = new ListNetAppDataDto
+      {
+        BucketName = "test-bucket",
+        FolderData = folderData,
+        RootPath = "/root/path",
+        FileData = new List<ListNetAppFileDataDto>()
+      },
+      Pagination = new NetApp.Models.Dto.PaginationDto
+      {
+        MaxKeys = count,
+        NextContinuationToken = count > 10 ? "next-token" : null
+      }
+    };
+  }
+
+  private ListNetAppObjectsDto CreateEmptyNetAppFolders()
+  {
+    return new ListNetAppObjectsDto
+    {
+      Data = new ListNetAppDataDto
+      {
+        BucketName = "test-bucket",
+        FolderData = new List<ListNetAppFolderDataDto>(),
+        RootPath = "/root/path",
+        FileData = new List<ListNetAppFileDataDto>()
+      },
+      Pagination = new NetApp.Models.Dto.PaginationDto
+      {
+        MaxKeys = 0,
+        NextContinuationToken = null
       }
     };
   }
