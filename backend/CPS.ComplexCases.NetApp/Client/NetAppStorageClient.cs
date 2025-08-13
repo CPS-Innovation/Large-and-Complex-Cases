@@ -59,7 +59,7 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
         return response?.ResponseStream ?? throw new InvalidOperationException("Failed to get object stream.");
     }
 
-    public async Task<UploadChunkResult> UploadChunkAsync(UploadSession session, int chunkNumber, byte[] chunkData, string? contentRange = null)
+    public async Task<UploadChunkResult> UploadChunkAsync(UploadSession session, int chunkNumber, byte[] chunkData, long? start = null, long? end = null, long? totalSize = null)
     {
         var arg = _netAppArgFactory.CreateUploadPartArg(
             _options.BucketName,

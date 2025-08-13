@@ -1,21 +1,19 @@
-using System.Security.Cryptography;
 using System.Text;
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.Common.Storage;
-using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
-using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using Xunit;
+
+namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Durable.Activity;
 
 public class TransferFileTests
 {
@@ -69,10 +67,10 @@ public class TransferFileTests
         _destinationClientMock.Setup(x => x.InitiateUploadAsync(payload.DestinationPath, content.Length, payload.SourcePath.Path, payload.WorkspaceId, payload.SourcePath.RelativePath))
             .ReturnsAsync(session);
 
-        _destinationClientMock.Setup(x => x.UploadChunkAsync(session, 1, It.IsAny<byte[]>(), It.IsAny<string>()))
+        _destinationClientMock.Setup(x => x.UploadChunkAsync(session, 1, It.IsAny<byte[]>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<long>()))
             .ReturnsAsync(new UploadChunkResult(TransferDirection.EgressToNetApp, "etag1", 1));
 
-        _destinationClientMock.Setup(x => x.UploadChunkAsync(session, 2, It.IsAny<byte[]>(), It.IsAny<string>()))
+        _destinationClientMock.Setup(x => x.UploadChunkAsync(session, 2, It.IsAny<byte[]>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<long>()))
             .ReturnsAsync(new UploadChunkResult(TransferDirection.EgressToNetApp, "etag2", 2));
 
         _destinationClientMock.Setup(x => x.CompleteUploadAsync(session, null, It.IsAny<Dictionary<int, string>>()))

@@ -154,27 +154,29 @@ public class EgressStorageClientTests : IDisposable
         };
         var chunkNumber = _fixture.Create<int>();
         var chunkData = Encoding.UTF8.GetBytes("test chunk data");
-        var contentRange = _fixture.Create<string>();
+        var start = _fixture.Create<long>();
+        var end = start + chunkData.Length - 1;
+        var totalSize = _fixture.Create<long>();
         var token = _fixture.Create<string>();
 
         var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
 
         SetupTokenRequest(token);
-        SetupUploadChunkRequest(uploadId, workspaceId, contentRange, chunkData, token);
+        SetupUploadChunkRequest(uploadId, workspaceId, start, end, totalSize, chunkData, token);
         SetupHttpMockResponses(
             ("token", tokenResponse),
             ("chunk", new { Success = true })
         );
 
         // Act
-        var result = await _client.UploadChunkAsync(session, chunkNumber, chunkData, contentRange);
+        var result = await _client.UploadChunkAsync(session, chunkNumber, chunkData, start, end, totalSize);
 
         // Assert
         Assert.NotNull(result);
         Assert.Equal(TransferDirection.NetAppToEgress, result.TransferDirection);
 
         VerifyTokenRequest();
-        VerifyUploadChunkRequest(uploadId, workspaceId, contentRange, chunkData, token);
+        VerifyUploadChunkRequest(uploadId, workspaceId, start, end, totalSize, chunkData, token);
     }
 
     [Fact]
@@ -651,14 +653,16 @@ public class EgressStorageClientTests : IDisposable
             .Returns(() => new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/workspaces/{workspaceId}/documents/{fileId}"));
     }
 
-    private void SetupUploadChunkRequest(string uploadId, string workspaceId, string contentRange, byte[] chunkData, string token)
+    private void SetupUploadChunkRequest(string uploadId, string workspaceId, long start, long end, long totalSize, byte[] chunkData, string token)
     {
         _requestFactoryMock
             .Setup(f => f.UploadChunkRequest(
                 It.Is<UploadChunkArg>(arg =>
                     arg.UploadId == uploadId &&
                     arg.WorkspaceId == workspaceId &&
-                    arg.ContentRange == contentRange &&
+                    arg.Start == start &&
+                    arg.End == end &&
+                    arg.TotalSize == totalSize &&
                     arg.ChunkData == chunkData),
                 token))
             .Returns(() => new HttpRequestMessage(HttpMethod.Put, $"{TestUrl}/api/v1/uploads/{uploadId}/chunks"));
@@ -731,14 +735,16 @@ public class EgressStorageClientTests : IDisposable
             Times.Once);
     }
 
-    private void VerifyUploadChunkRequest(string uploadId, string workspaceId, string contentRange, byte[] chunkData, string token)
+    private void VerifyUploadChunkRequest(string uploadId, string workspaceId, long start, long end, long totalSize, byte[] chunkData, string token)
     {
         _requestFactoryMock.Verify(
             f => f.UploadChunkRequest(
                 It.Is<UploadChunkArg>(arg =>
                     arg.UploadId == uploadId &&
                     arg.WorkspaceId == workspaceId &&
-                    arg.ContentRange == contentRange &&
+                    arg.Start == start &&
+                    arg.End == end &&
+                    arg.TotalSize == totalSize &&
                     arg.ChunkData == chunkData),
                 token),
             Times.Once);

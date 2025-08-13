@@ -185,10 +185,12 @@ public class EgressStorageClientTests : IDisposable
         };
         const int chunkNumber = 1;
         var chunkData = new byte[] { 1, 2, 3, 4, 5 };
-        const string contentRange = "bytes 0-4/5";
+        const long start = 0;
+        const long end = 4;
+        const long totalSize = 5;
 
         // Act
-        var result = await _client.UploadChunkAsync(session, chunkNumber, chunkData, contentRange);
+        var result = await _client.UploadChunkAsync(session, chunkNumber, chunkData, start, end, totalSize);
 
         // Assert
         Assert.NotNull(result);
@@ -275,7 +277,9 @@ public class EgressStorageClientTests : IDisposable
         const string sourcePath = "/local/test-file.txt";
         const string relativePath = "test-file.txt";
         var chunkData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-        const string contentRange = "bytes 0-9/10";
+        const long start = 0;
+        const long end = 9;
+        const long totalSize = 10;
         const string md5Hash = "d41d8cd98f00b204e9800998ecf8427e";
 
         // Act
@@ -285,7 +289,7 @@ public class EgressStorageClientTests : IDisposable
         Assert.NotNull(session.UploadId);
 
         // Step 2: Upload chunk
-        var chunkResult = await _client.UploadChunkAsync(session, 1, chunkData, contentRange);
+        var chunkResult = await _client.UploadChunkAsync(session, 1, chunkData, start, end, totalSize);
         Assert.NotNull(chunkResult);
         Assert.Equal(TransferDirection.NetAppToEgress, chunkResult.TransferDirection);
 
@@ -403,8 +407,10 @@ public class EgressStorageClientTests : IDisposable
             int size = Math.Min(chunkSize, largeFileSize - offset);
             var chunk = new byte[size];
             Array.Copy(largeData, offset, chunk, 0, size);
-            var contentRange = $"bytes {offset}-{offset + size - 1}/{largeFileSize}";
-            var result = await _client.UploadChunkAsync(session, i + 1, chunk, contentRange);
+            var start = (long)offset;
+            var end = (long)(offset + size - 1);
+            var totalSize = (long)largeFileSize;
+            var result = await _client.UploadChunkAsync(session, i + 1, chunk, start, end, totalSize);
             Assert.NotNull(result);
         }
 
