@@ -13,7 +13,7 @@ steps:
     displayName: 'Run E2E Tests in CI Mode'
     inputs:
       command: 'custom'
-      customCommand: 'run ui:e2e:ci'
+      customCommand: 'run e2e:test:ci'
       workingDir: ${{ parameters.workingDir }}
 
   - task: PublishBuildArtifacts@1
@@ -29,3 +29,8 @@ steps:
       testResultsFiles: '${{ parameters.workingDir }}/playwright/e2e-test-results.xml'
       publishRunAttachments: true
     condition: always()
+
+  - script: |
+      npx nyc merge playwright/.nyc_output coverage/reports/coverage-pw.json
+    displayName: 'Create Unified E2E Coverage Report'
+    workingDirectory: ${{ parameters.workingDir }}
