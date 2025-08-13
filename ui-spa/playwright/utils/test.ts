@@ -2,6 +2,7 @@ import { test as base, expect } from "@playwright/test";
 import { http } from "msw";
 import type { MockServiceWorker } from "playwright-msw";
 import { createWorkerFixture } from "playwright-msw";
+import type { CoverageMapData } from "istanbul-lib-coverage";
 import fs from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
@@ -21,7 +22,7 @@ const test = base.extend<{
 const nycOutputDir = path.join(process.cwd(), "playwright", ".nyc_output")
 
 test.afterEach(async ({ page }) => {
-  const cov = await page.evaluate(() => (globalThis as any).__coverage__);
+  const cov = await page.evaluate(() => (globalThis as CoverageMapData | undefined).__coverage__);
   if (cov) {
     fs.mkdirSync(nycOutputDir, { recursive: true });
     fs.writeFileSync(
