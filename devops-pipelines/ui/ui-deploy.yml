@@ -7,6 +7,12 @@ parameters:
       - dev
       - stage
       - prod
+  - name: deployToSlot
+    type: boolean
+    default: false
+    values:
+      - false
+      - true
 
 resources:
   pipelines:
@@ -18,6 +24,8 @@ resources:
          - main
 
 variables:
+  - name: slotName
+    value: ''
   - name: resourceGroupName
     value: 'rg-lacc-${{ parameters.environment }}'
   - name: webAppName
@@ -48,11 +56,51 @@ stages:
                     resourceGroupName: $(resourceGroupName)
                     appType: 'webAppLinux'
                     WebAppName: '$(webAppName)'
+                    deployToSlotOrASE: ${{ parameters.deployToSlot }}
+                    slotName: $(slotName)
                     packageForLinux: '$(Pipeline.Workspace)/build/lacc-ui-${{ parameters.environment }}-drop'
                     RuntimeStack: 'NODE|20-lts'
                     StartupCommand: 'pm2 serve /home/site/wwwroot/ --no-daemon --spa'   
                   displayName: 'Deploy LACC UI to ${{ parameters.environment }}'
 
+                - checkout: self
+                  sparseCheckoutDirectories: devops-pipelines/scripts
+                  fetchDepth: 1
+
+                - task: Bash@3
+                  displayName: 'Ensure Azure CLI'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      echo "Checking if Azure CLI is installed..."
+                      
+                      # Check if az command exists
+                      if command -v az &> /dev/null; then
+                        echo "Azure CLI is already installed"
+                        az --version
+                        exit 0
+                      fi
+
+                      echo "Azure CLI not found, installing..."
+                      bash '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/installAzureCli.sh'
+
+                - task: AzureCLI@2
+                  displayName: 'Verify Function App Deployment'
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      bash '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/verifyDeployment.sh'
+                  env:
+                    APP_TYPE: webapp
+                    APP_NAME: $(webAppName)
+                    RG: $(resourceGroupName)
+                    USE_SLOT: ${{ lower(parameters.deployToSlot) }}}
+                    SLOT_NAME: $(slotName)
+
+# TODO: add step to run E2E tests on the live app / slot before swap
+                
                 - template: ../templates/runner-cleanup.yml
                   parameters:
                     buildArtifactDir: 'build'
