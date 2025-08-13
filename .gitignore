@@ -304,6 +304,7 @@ ui-spa/blob-report/
 ui-spa/playwright/.cache/
 ui-spa/playwright-report/
 ui-spa/playwright/e2e-test-results.xml
+ui-spa/playwright/.nyc_output
 
 # Vite
 ui-spa/.vite/deps/

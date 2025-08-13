@@ -566,7 +566,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     return () => {
       unMounting.current = true;
     };
-  }, []);
+  }, [location.pathname, location.search, location.state]);
 
   useEffect(() => {
     if (!transferId) {

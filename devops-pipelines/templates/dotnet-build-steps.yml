@@ -95,7 +95,7 @@ steps:
     - task: PublishCodeCoverageResults@2
       displayName: 'Publish Code Coverage'
       inputs:
-        summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+        summaryFileLocation: '$(Agent.TempDirectory)/coverage/unit/coverage.cobertura.xml'
         failIfCoverageEmpty: true
       condition: succeededOrFailed()
 
