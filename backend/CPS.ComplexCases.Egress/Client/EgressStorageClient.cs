@@ -79,7 +79,7 @@ public class EgressStorageClient(
         }
     }
 
-    public async Task<UploadChunkResult> UploadChunkAsync(UploadSession session, int chunkNumber, byte[] chunkData, string? contentRange = null)
+    public async Task<UploadChunkResult> UploadChunkAsync(UploadSession session, int chunkNumber, byte[] chunkData, long? start = null, long? end = null, long? totalSize = null)
     {
         var token = await GetWorkspaceToken();
 
@@ -87,8 +87,10 @@ public class EgressStorageClient(
         {
             UploadId = session.UploadId ?? throw new ArgumentNullException(nameof(session.UploadId), "Upload ID cannot be null."),
             WorkspaceId = session.WorkspaceId ?? throw new ArgumentNullException(nameof(session.WorkspaceId), "Workspace ID cannot be null."),
-            ContentRange = contentRange,
             ChunkData = chunkData,
+            Start = start,
+            End = end,
+            TotalSize = totalSize
         };
 
         await SendRequestAsync(_egressRequestFactory.UploadChunkRequest(uploadArg, token));

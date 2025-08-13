@@ -57,11 +57,11 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
 
                 long start = position;
                 long end = start + bytesRead - 1;
-                string contentRange = $"{start}-{end}/{totalSize}";
+                // string contentRange = $"{start}-{end}/{totalSize}";
 
                 md5.TransformBlock(buffer, 0, bytesRead, null, 0);
 
-                var result = await destinationClient.UploadChunkAsync(session, chunkNumber, buffer[..bytesRead], contentRange);
+                var result = await destinationClient.UploadChunkAsync(session, chunkNumber, buffer[..bytesRead], start, end, totalSize);
 
                 if (result.TransferDirection == TransferDirection.EgressToNetApp && result.PartNumber.HasValue && result.ETag != null)
                 {
