@@ -15,6 +15,8 @@ variables:
     value: '20.x'
   - name: workingDir
     value: ui-spa
+  - name: covDir
+    value: 'coverage'
 
 stages:
   - stage: Build_and_Test_UI
@@ -62,7 +64,7 @@ stages:
             displayName: 'Publish UI Test Results'
             inputs:
               testResultsFormat: 'JUnit'
-              testResultsFiles: 'ui-spa/coverage/unit-test-results.xml'
+              testResultsFiles: 'ui-spa/$(covDir)/unit-test-results.xml'
               publishRunAttachments: true
             condition: always()
           
@@ -71,6 +73,20 @@ stages:
             inputs:
               packageType: 'sdk'
               version: '8.x'
+
+          - template: ../templates/test-e2e.yml
+
+          - script: |
+              covDir="coverage"
+              
+              # Combine the coverage reports for unit and E2E tests
+              npx nyc merge $(covDir)/reports $(covDir)/temp/coverage-combined.json
+
+              # Generate a Cobertura coverage report
+              npx nyc report --temp-dir $(covDir)/temp --reporter cobertura --report-dir $(covDir)
+            displayName: 'Generate Combined Coverage Report'
+            workingDirectory: '$(workingDir)'
+            condition: always()
 
           - task: PublishCodeCoverageResults@2
             displayName: 'Publish UI Code Coverage'
