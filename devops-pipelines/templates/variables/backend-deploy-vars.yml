@@ -1,0 +1,14 @@
+variables:
+  - group: lacc-backend-secrets-${{ parameters.environment }}
+  - group: lacc-backend-config-${{ parameters.environment }}
+  - name: resourceGroupName
+    value: 'rg-lacc-${{ parameters.environment }}' 
+  - name: keyVaultName
+    value: 'kv-lacc-${{ parameters.environment }}'
+  - name: scripts_directory
+    value: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts'
+  - name: azureSubscription
+    ${{ if ne(parameters.environment, 'prod') }}:
+      value: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
+    ${{ else }}:
+      value: 'Azure Pipeline: Large and Complex Cases - Prod'

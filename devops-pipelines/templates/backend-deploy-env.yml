@@ -37,27 +37,28 @@ parameters:
   - name: approvers
     type: string
 
-variables:
-  - group: lacc-backend-secrets-${{ parameters.environment }}
-  - group: lacc-backend-config-${{ parameters.environment }}
-  - name: resourceGroupName
-    value: 'rg-lacc-${{ parameters.environment }}' 
-  - name: keyVaultName
-    value: 'kv-lacc-${{ parameters.environment }}'
-  - name: scripts_directory
-    value: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts'
-  - name: azureSubscription
-    ${{ if ne(parameters.environment, 'prod') }}:
-      value: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
-    ${{ else }}:
-      value: 'Azure Pipeline: Large and Complex Cases - Prod'
+# variables:
+#   - group: lacc-backend-secrets-${{ parameters.environment }}
+#   - group: lacc-backend-config-${{ parameters.environment }}
+#   - name: resourceGroupName
+#     value: 'rg-lacc-${{ parameters.environment }}' 
+#   - name: keyVaultName
+#     value: 'kv-lacc-${{ parameters.environment }}'
+#   - name: scripts_directory
+#     value: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts'
+#   - name: azureSubscription
+#     ${{ if ne(parameters.environment, 'prod') }}:
+#       value: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
+#     ${{ else }}:
+#       value: 'Azure Pipeline: Large and Complex Cases - Prod'
     
-pool: ${{ parameters.agentPool }}
+# pool: ${{ parameters.agentPool }}
 
 stages:
   - stage: ManualValidation
     displayName: 'LACC ${{ parameters.environment }} - Approve Deployment'
     condition: ${{ eq(parameterts.requireValidation, true) }}
+    variables:
     jobs:
     - job: Approve_Deployment
       displayName: 'Require Manual Validation'
@@ -77,6 +78,9 @@ stages:
     ${{ if eq(parameters.requireValidation, true) }}:
       dependsOn: 
         - Approve_Deployment
+    variables:
+      - template: ./variables/backend-deploy-vars.yml
+    pool: ${{ parameters.agentPool }}
     jobs:
       - job: Populate_KV
         displayName: 'LACC ${{ parameters.environment }} - Validate Target Environment'
@@ -125,10 +129,13 @@ stages:
     ${{ if eq(parameters.updateKeyVault, true) }}:
       dependsOn: 
         - Update_Key_Vault
-    ${{ elif eq(parameters.requireValidation, true) }}:
+    ${{ elseif eq(parameters.requireValidation, true) }}:
       dependsOn: 
         - Approve_Deployment
     condition: ${{ eq(parameters.runDatabaseMigration, true) }}
+    variables:
+      - template: ./variables/backend-deploy-vars.yml
+    pool: ${{ parameters.agentPool }}
     jobs:
       - deployment: Deploy_Database_Changes
         displayName: 'LACC ${{ parameters.environment }} - Deploy Database Changes'
@@ -192,6 +199,9 @@ stages:
 
   - stage: Deploy_Function_Apps
     displayName: 'LACC ${{ parameters.environment }} - Deploy Function Apps'
+    variables:
+      - template: ./variables/backend-deploy-vars.yml
+    pool: ${{ parameters.agentPool }}
     jobs:
       - deployment: Deploy_Main_API
         displayName: 'LACC ${{ parameters.environment }} - Deploy Main API Function App'
