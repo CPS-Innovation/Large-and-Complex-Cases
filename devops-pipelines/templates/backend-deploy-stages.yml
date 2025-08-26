@@ -59,7 +59,7 @@ parameters:
 stages:
   - stage: ManualValidation
     displayName: 'LACC ${{ parameters.environment }} - Approve Deployment'
-    condition: ${{ eq(parameterts.requireValidation, true) }}
+    condition: ${{ eq(parameters.requireValidation, true) }}
     jobs:
     - job: Approve_Deployment
       displayName: 'Require Manual Validation'
