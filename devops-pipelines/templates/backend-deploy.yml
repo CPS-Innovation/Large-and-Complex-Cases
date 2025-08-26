@@ -5,8 +5,14 @@ parameters:
     default: 'dev'
     values:
       - dev
-      - stage
+      - staging
       - prod
+  - name: agentPool
+    type: string
+    default: 'LACC PreProd Pool'
+    values:
+      - 'LACC PreProd Pool'
+      - 'LACC Prod Pool'
   - name: updateKeyVault
     displayName: 'Update Key Vault Secrets'
     type: boolean
@@ -24,15 +30,6 @@ parameters:
     type: boolean
     default: true
 
-resources:
-  pipelines:
-  - pipeline: build
-    source: 'LACC-BE-dev-build'
-    trigger: 
-      branches:
-        include:
-          - main
-
 variables:
   - group: lacc-backend-secrets-${{ parameters.environment }}
   - group: lacc-backend-config-${{ parameters.environment }}
@@ -47,17 +44,16 @@ variables:
       value: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
     ${{ else }}:
       value: 'Azure Pipeline: Large and Complex Cases - Prod'
-
-# TODO: conditionally use prod pool for prod      
-pool: 'LACC PreProd Pool'
+    
+pool: ${{ parameters.agentPool }}
 
 stages:
   - stage: Update_Key_Vault
-    displayName: 'LACC - Update Key Vault'
+    displayName: 'LACC ${{ parameters.environment }} - Update Key Vault'
     condition: ${{ eq(parameters.updateKeyVault, true) }}
     jobs:
       - job: Populate_KV
-        displayName: 'LACC - Validate Target Environment'
+        displayName: 'LACC ${{ parameters.environment }} - Validate Target Environment'
         steps:
           - checkout: self
             sparseCheckoutDirectories: devops-pipelines/scripts
@@ -81,7 +77,7 @@ stages:
                 bash $(scripts_directory)/installAzureCli.sh   
 
           - task: AzureCLI@2
-            displayName: 'LACC - Initialize Key Vault Secrets from Variable Groups'
+            displayName: 'LACC ${{ parameters.environment }} - Initialize Key Vault Secrets from Variable Groups'
             inputs:
               azureSubscription: $(azureSubscription)
               scriptType: 'bash'
@@ -99,14 +95,14 @@ stages:
               FILE_TRANSFER_API_OPTIONS_ACCESS_KEY: $(FileTransferApiOptionsAccessKey)
 
   - stage: Database_Migration
-    displayName: 'LACC - Database Migration'
+    displayName: 'LACC ${{ parameters.environment }} - Database Migration'
     ${{ if eq(parameters.updateKeyVault, true) }}:
       dependsOn: 
         - Update_Key_Vault
     condition: ${{ eq(parameters.runDatabaseMigration, true) }}
     jobs:
       - deployment: Deploy_Database_Changes
-        displayName: 'LACC - Deploy Database Changes'
+        displayName: 'LACC ${{ parameters.environment }} - Deploy Database Changes'
         environment: 'LACC-Backend-${{ parameters.environment }}'
         strategy:
           runOnce:
@@ -161,47 +157,47 @@ stages:
                     KEY_VAULT_NAME: $(keyVaultName)
                     MIGRATION_SCRIPT_PATH: '$(Pipeline.Workspace)/build/database-scripts/migration-script.sql'
                 
-                - template: ../templates/runner-cleanup.yml
+                - template: ./runner-cleanup.yml
                   parameters:
                     buildArtifactDir: 'build'
 
   - stage: Deploy_Function_Apps
-    displayName: 'LACC - Deploy Function Apps'
+    displayName: 'LACC ${{ parameters.environment }} - Deploy Function Apps'
     jobs:
       - deployment: Deploy_Main_API
-        displayName: 'LACC - Deploy Main API Function App'
+        displayName: 'LACC ${{ parameters.environment }} - Deploy Main API Function App'
         condition: ${{ eq(parameters.deployMainAPI, true) }}
         environment: 'LACC-Backend-${{ parameters.environment }}'
         strategy:
           runOnce:
             deploy:
               steps:
-                - template: ../templates/fa-deploy.yml
+                - template: ./fa-deploy.yml
                   parameters:
                     environment: ${{ parameters.environment }}
                     functionAppName: 'fa-lacc-api-${{ parameters.environment }}'
                     pipelineResourceAlias: 'build'
                     buildArtifactName: 'lacc-main-api-drop'
                 
-                - template: ../templates/runner-cleanup.yml
+                - template: ./runner-cleanup.yml
                   parameters:
                     buildArtifactDir: 'build'
 
       - deployment: Deploy_FileTransfer_API
-        displayName: 'LACC - Deploy FileTransfer API Function App'
+        displayName: 'LACC ${{ parameters.environment }} - Deploy FileTransfer API Function App'
         condition: ${{ eq(parameters.deployFileTransferAPI, true) }}
         environment: 'LACC-Backend-${{ parameters.environment }}'
         strategy:
           runOnce:
             deploy:
               steps:
-                - template: ../templates/fa-deploy.yml
+                - template: ./fa-deploy.yml
                   parameters:
                     environment: ${{ parameters.environment }}
                     functionAppName: 'fa-lacc-filetransfer-api-${{ parameters.environment }}'
                     pipelineResourceAlias: 'build'
                     buildArtifactName: 'lacc-filetransfer-api-drop'
                 
-                - template: ../templates/runner-cleanup.yml
+                - template: ./runner-cleanup.yml
                   parameters:
                     buildArtifactDir: 'build'

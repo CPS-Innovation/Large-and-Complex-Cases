@@ -5,7 +5,7 @@ parameters:
     default: 'dev'
     values:
       - dev
-      - stage
+      - staging
       - prod
 
 resources:

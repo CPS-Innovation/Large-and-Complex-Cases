@@ -1,0 +1,33 @@
+resources:
+  pipelines:
+  - pipeline: build
+    source: 'LACC-BE-dev-build'
+    trigger: 
+      branches:
+        include:
+          - main
+
+parameters:
+  - name: manualValidationNotify
+    displayName: 'Users/groups to notify of pending manual validation'
+    type: string
+    default: 'Hasan Ahmed (I-10)'
+  - name: manualValidationApprovers
+    displayName: 'Users/groups/project teams permitted to act on a manual validation'
+    type: string
+    default: 'Hasan Ahmed (Admin), Hasan Ahmed (I-10)'
+
+stages:
+  - template: ../templates/backend-deploy.yml
+
+  - task: ManualValidation@1
+    inputs:
+      notifyUsers: ${{ parameters.manualValidationNotify }}
+      approvers: ${{ parameters.manualValidationApprovers }}
+      allowApproversToApproveTheirOwnRuns: true
+      instructions: 'Approve backend deployment to the staging environment. Please make sure all changes are working as expected in dev first.'
+      onTimeout: 'reject'
+
+  - template: ../templates/backend-deploy.yml
+    parameters:
+      environment: staging
