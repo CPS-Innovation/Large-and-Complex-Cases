@@ -34,8 +34,10 @@ parameters:
     default: false
   - name: notifyUsers
     type: string
+    default: ''
   - name: approvers
     type: string
+    default: ''
 
 # variables:
 #   - group: lacc-backend-secrets-${{ parameters.environment }}
