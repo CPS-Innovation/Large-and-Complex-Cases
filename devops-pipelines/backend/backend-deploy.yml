@@ -9,16 +9,17 @@ resources:
 
 parameters:
   - name: notifyUsers
-    displayName: 'Users/groups to notify be email of pending manual validation'
+    displayName: 'Users to notify be email of pending manual validation'
     type: string
-    default: 'Hasan Ahmed (I-10)'
+    default: 'Hasan.Ahmed@cps.gov.uk'
   - name: approvers
-    displayName: 'Users/groups/project teams permitted to act on a manual validation'
+    displayName: 'Users permitted to act on a manual validation'
     type: string
-    default: 'Hasan Ahmed (Admin), Hasan Ahmed (I-10)'
+    default: 'Hasan.Ahmed@cps.gov.uk'
 
 stages:
   - template: ../templates/backend-deploy-stages.yml
+    parameters:
 
   - template: ../templates/backend-deploy-stages.yml
     parameters:

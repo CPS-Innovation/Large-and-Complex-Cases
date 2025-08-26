@@ -4,7 +4,7 @@ parameters:
   buildArtifactName: ''
   pipelineResourceAlias: ''
   keyVaultName: $(keyVaultName)
-  azureSubscription: $(azureSubscription)
+  azureSubscription: ''
   resourceGroupName: $(resourceGroupName)
 
 steps:
