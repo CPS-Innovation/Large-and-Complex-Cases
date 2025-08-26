@@ -18,9 +18,9 @@ parameters:
     default: 'Hasan Ahmed (Admin), Hasan Ahmed (I-10)'
 
 stages:
-  - template: ../templates/backend-deploy-env.yml
+  - template: ../templates/backend-deploy-stages.yml
 
-  - template: ../templates/backend-deploy-env.yml
+  - template: ../templates/backend-deploy-stages.yml
     parameters:
       environment: staging
       requireValidation: true
