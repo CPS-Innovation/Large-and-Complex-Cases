@@ -18,7 +18,7 @@ parameters:
     default: 'Hasan Ahmed (Admin), Hasan Ahmed (I-10)'
 
 stages:
-  - template: ../templates/backend-deploy.yml
+  - template: ../templates/backend-deploy-env.yml
 
   - task: ManualValidation@1
     inputs:
@@ -28,6 +28,6 @@ stages:
       instructions: 'Approve backend deployment to the staging environment. Please make sure all changes are working as expected in dev first.'
       onTimeout: 'reject'
 
-  - template: ../templates/backend-deploy.yml
+  - template: ../templates/backend-deploy-env.yml
     parameters:
       environment: staging
