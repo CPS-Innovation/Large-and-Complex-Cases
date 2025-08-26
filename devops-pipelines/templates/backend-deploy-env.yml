@@ -29,6 +29,13 @@ parameters:
     displayName: 'Deploy FileTransfer API'
     type: boolean
     default: true
+  - name: requireValidation
+    type: boolean
+    default: false
+  - name: notifyUsers
+    type: string
+  - name: approvers
+    type: string
 
 variables:
   - group: lacc-backend-secrets-${{ parameters.environment }}
@@ -48,9 +55,28 @@ variables:
 pool: ${{ parameters.agentPool }}
 
 stages:
+  - stage: ManualValidation
+    displayName: 'LACC ${{ parameters.environment }} - Approve Deployment'
+    condition: ${{ eq(parameterts.requireValidation, true) }}
+    jobs:
+    - job: Approve_Deployment
+      displayName: 'Require Manual Validation'
+      steps:
+      - task: ManualValidation@1
+        displayName: 'Require Validation'
+        inputs:
+          notifyUsers: ${{ parameters.notifyUsers }}
+          approvers: ${{ parameters.approvers }}
+          allowApproversToApproveTheirOwnRuns: true
+          instructions: 'Approve backend deployment to the ${{ parameters.environment }} environment. Please make sure all changes are working as expected in a lower environment.'
+          onTimeout: 'reject'
+
   - stage: Update_Key_Vault
     displayName: 'LACC ${{ parameters.environment }} - Update Key Vault'
     condition: ${{ eq(parameters.updateKeyVault, true) }}
+    ${{ if eq(parameters.requireValidation, true) }}:
+      dependsOn: 
+        - Approve_Deployment
     jobs:
       - job: Populate_KV
         displayName: 'LACC ${{ parameters.environment }} - Validate Target Environment'
@@ -99,6 +125,9 @@ stages:
     ${{ if eq(parameters.updateKeyVault, true) }}:
       dependsOn: 
         - Update_Key_Vault
+    ${{ elif eq(parameters.requireValidation, true) }}:
+      dependsOn: 
+        - Approve_Deployment
     condition: ${{ eq(parameters.runDatabaseMigration, true) }}
     jobs:
       - deployment: Deploy_Database_Changes
