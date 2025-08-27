@@ -199,7 +199,8 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         data-testid="egress-container"
       >
         <div className={styles.titleWrapper}>
-          <h3 className={styles.inlineHeading}>Egress</h3>- <span>{transferSource === "egress" ? "Source" : "Destination"}</span>
+          <h3 className={styles.inlineHeading}>Egress</h3>-{" "}
+          <span>{transferSource === "egress" ? "Source" : "Destination"}</span>
         </div>
         <div className={styles.tableContainer}>
           {
@@ -241,7 +242,8 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         data-testid="netapp-container"
       >
         <div className={styles.titleWrapper}>
-          <h3 className={styles.inlineHeading}>Shared drive</h3>- <span>{transferSource === "egress" ?  "Destination" : "Source"}</span>
+          <h3 className={styles.inlineHeading}>Shared drive</h3>-{" "}
+          <span>{transferSource === "egress" ? "Destination" : "Source"}</span>
         </div>
         <div className={styles.tableContainer}>
           {netAppPath && (
@@ -566,6 +568,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     return () => {
       unMounting.current = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -694,7 +697,12 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           <div className={styles.headerText}>
             <h2>{`${transferSource === "egress" ? "Transfer between Egress and Shared Drive" : "Transfer between Shared Drive and Egress"}`}</h2>
             <InsetText>
-              <>Select the files or folders you want to transfer and where you want to put them.<br/>You can also transfer</>
+              <>
+                Select the files or folders you want to transfer and where you
+                want to put them.
+                <br />
+                You can also transfer
+              </>
               <LinkButton onClick={handleSwitchSource}>
                 {`${transferSource === "egress" ? "from the Shared Drive to Egress" : "from Egress to the Shared Drive"}`}
               </LinkButton>
