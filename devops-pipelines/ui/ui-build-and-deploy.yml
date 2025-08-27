@@ -1,11 +1,12 @@
-resources:
-  pipelines:
-  - pipeline: build
-    source: 'LACC-BE-dev-build'
-    trigger: 
-      branches:
-        include:
-          - main
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - ui-spa/*
+
+pr: none
 
 parameters:
   - name: notifyUsers
@@ -18,16 +19,16 @@ parameters:
     default: 'Hasan.Ahmed@cps.gov.uk'
 
 stages:
-  - template: ../templates/backend-deploy-stages.yml
+  - template: ../templates/ui-build-and-deploy-stages.yml
 
-  - template: ../templates/backend-deploy-stages.yml
+  - template: ../templates/ui-build-and-deploy-stages.yml
     parameters:
       environment: staging
       requireValidation: true
       notifyUsers: ${{ parameters.notifyUsers }}
       approvers: ${{ parameters.approvers }}
 
-  # - template: ../templates/backend-deploy-stages.yml
+  # - template: ../templates/ui-build-and-deploy-stages.yml
   #   parameters:
   #     environment: prod
   #     requireValidation: true

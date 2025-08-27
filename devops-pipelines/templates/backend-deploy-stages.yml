@@ -37,55 +37,11 @@ stages:
   displayName: 'LACC ${{ parameters.environment }} - Approve Deployment'
   condition: ${{ eq(parameters.requireValidation, true) }}
   jobs:
-  - job: Set_Flag
-    displayName: "Set the 'isFriday' Flag"
-    pool:
-      vmImage: ubuntu-latest
-    steps:
-    - script: |
-        isFriday=false
-        
-        echo "Fetching the day of the week. This will determine which Manual_Validation job to run..."
-        dayOfWeek=$(date +%A)
-      
-        if [ "$dayOfWeek" == "Friday" ]; then
-          isFriday=true
-        fi
-
-        echo "Today is $dayOfWeek. Setting isFriday to $isFriday."
-        echo "##vso[task.setVariable variable=isFriday;isOutput=true]$isFriday"
-      name: SetFlag
-      displayName: 'Determine if Today is Friday'
-
-  - job: Manual_Validation_Weekday
-    dependsOn: Set_Flag
-    condition: eq(dependencies.Set_Flag.outputs['SetFlag.isFriday'], 'false')
-    pool: server
-    timeoutInMinutes: 1500
-    steps:
-    - task: ManualValidation@1
-      timeoutInMinutes: 1440
-      inputs:
-        notifyUsers: ${{ parameters.notifyUsers }}
-        approvers: ${{ parameters.approvers }}
-        allowApproversToApproveTheirOwnRuns: true
-        instructions: 'Approve backend deployment to the ${{ parameters.environment }} environment.'
-        onTimeout: 'reject'
-
-  - job: Manual_Validation_Friday
-    dependsOn: Set_Flag
-    condition: eq(dependencies.Set_Flag.outputs['SetFlag.isFriday'], 'true')
-    pool: server
-    timeoutInMinutes: 4380
-    steps:
-    - task: ManualValidation@1
-      timeoutInMinutes: 4320
-      inputs:
-        notifyUsers: ${{ parameters.notifyUsers }}
-        approvers: ${{ parameters.approvers }}
-        allowApproversToApproveTheirOwnRuns: true
-        instructions: 'Approve backend deployment to the ${{ parameters.environment }} environment.'
-        onTimeout: 'reject'
+  - template: ./manual-validation-jobs.yml
+    parameters:
+      instructions: 'Please verify the deployment to the lower environment worked as expected before approving deployment to ${{parameters.environment}}.'
+      notifyUsers: ${{ parameters.notifyUsers }}
+      approvers: ${{ parameters.approvers }}
 
 - stage:  Update_Key_Vault_${{ parameters.environment }}
   displayName: 'LACC ${{ parameters.environment }} - Update Key Vault'
@@ -206,9 +162,9 @@ stages:
                   KEY_VAULT_NAME: $(keyVaultName)
                   MIGRATION_SCRIPT_PATH: '$(Pipeline.Workspace)/build/database-scripts/migration-script.sql'
               
-              - template: ./runner-cleanup.yml
+              - template: ./runner-cleanup-steps.yml
                 parameters:
-                  buildArtifactDir: 'build'
+                  buildArtifact: 'build'
 
 - stage:  Deploy_Function_Apps_${{ parameters.environment }}
   displayName: 'LACC ${{ parameters.environment }} - Deploy Function Apps'
@@ -227,7 +183,7 @@ stages:
         runOnce:
           deploy:
             steps:
-              - template: ./fa-deploy.yml
+              - template: ./fa-deploy-steps.yml
                 parameters:
                   environment: ${{ parameters.environment }}
                   azureSubscription: ${{ parameters.azureSubscription }}
@@ -235,9 +191,9 @@ stages:
                   pipelineResourceAlias: 'build'
                   buildArtifactName: 'lacc-main-api-drop'
               
-              - template: ./runner-cleanup.yml
+              - template: ./runner-cleanup-steps.yml
                 parameters:
-                  buildArtifactDir: 'build'
+                  buildArtifact: 'build'
 
     - deployment: Deploy_FileTransfer_API
       displayName: 'LACC ${{ parameters.environment }} - Deploy FileTransfer API Function App'
@@ -247,7 +203,7 @@ stages:
         runOnce:
           deploy:
             steps:
-              - template: ./fa-deploy.yml
+              - template: ./fa-deploy-steps.yml
                 parameters:
                   environment: ${{ parameters.environment }}
                   azureSubscription: ${{ parameters.azureSubscription }}
@@ -255,6 +211,6 @@ stages:
                   pipelineResourceAlias: 'build'
                   buildArtifactName: 'lacc-filetransfer-api-drop'
               
-              - template: ./runner-cleanup.yml
+              - template: ./runner-cleanup-steps.yml
                 parameters:
-                  buildArtifactDir: 'build'
+                  buildArtifact: 'build'
