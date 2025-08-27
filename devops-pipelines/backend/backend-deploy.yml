@@ -9,11 +9,11 @@ resources:
 
 parameters:
   - name: notifyUsers
-    displayName: 'Users to notify be email of pending manual validation'
+    displayName: 'Users to notify by email of pending manual validation'
     type: string
     default: 'Hasan.Ahmed@cps.gov.uk'
   - name: approvers
-    displayName: 'Users permitted to act on a manual validation'
+    displayName: 'Users permitted to approve or reject the manual validation request'
     type: string
     default: 'Hasan.Ahmed@cps.gov.uk'
 
