@@ -11,13 +11,13 @@ function App() {
   return (
     <BrowserRouter>
       <ErrorBoundary fallbackRender={ErrorBoundaryFallback}>
-        <Layout>
-          <Auth>
-            <MainStateProvider>
+        <Auth>
+          <MainStateProvider>
+            <Layout>
               <AppRoutes />
-            </MainStateProvider>
-          </Auth>
-        </Layout>
+            </Layout>
+          </MainStateProvider>
+        </Auth>
       </ErrorBoundary>
     </BrowserRouter>
   );

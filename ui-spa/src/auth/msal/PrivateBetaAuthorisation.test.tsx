@@ -6,7 +6,7 @@ import { render, screen } from "@testing-library/react";
 const PRIVATE_BETA_USER_GROUP_VALUE = "foo";
 const EXPECTED_APP_TEXT = "app_text";
 
-vi.mock("./../../config", () => ({}));
+vi.mock("../../config");
 
 const mockConfig = config as {
   PRIVATE_BETA_USER_GROUP: string | null;
