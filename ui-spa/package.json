@@ -2,7 +2,6 @@
   "name": "ui-spa",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -12,8 +11,8 @@
     "prettier:format": "prettier --write ./src",
     "test": "vitest",
     "coverage": "vitest run --coverage",
-    "ui:e2e": "npx playwright   test --ui",
-    "ui:e2e:ci": "tsc -b && vite build --mode playwright && CI=true npx playwright test",
+    "ui:e2e": "npx playwright test --ui",
+    "ui:e2e:ci": "tsc -b && vite build --mode playwright && cross-env CI=true npx playwright test",
     "ui:e2e:report": "npx playwright show-report ./playwright/playwright-report"
   },
   "dependencies": {
@@ -44,6 +43,7 @@
     "@types/styled-components": "^5.1.34",
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/coverage-v8": "^3.0.6",
+    "cross-env": "^10.0.0",
     "eslint": "^9.19.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-react-hooks": "^5.0.0",
