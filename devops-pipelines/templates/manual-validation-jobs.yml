@@ -19,7 +19,7 @@ jobs:
       isFriday=false
       
       echo "Fetching the day of the week. This will determine which Manual_Validation job to run..."
-      dayOfWeek=$(date +%A)
+      dayOfWeek=$(TZ=Europe/London date +%A)
     
       if [ "$dayOfWeek" == "Friday" ]; then
         isFriday=true
