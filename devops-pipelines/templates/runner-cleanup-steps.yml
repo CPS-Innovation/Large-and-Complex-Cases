@@ -1,6 +1,6 @@
 parameters:
   workingDirectory: $(Pipeline.Workspace)
-  buildArtifactDir: ''
+  buildArtifact: ''
 
 steps:
   - task: bash@3
@@ -9,18 +9,18 @@ steps:
       targetType: 'inline'
       workingDirectory: ${{ parameters.workingDirectory }}
       script: |
-        echo "Attempting to clean up downloaded artifact directory ${{ parameters.buildArtifactDir }}..."
+        echo "Attempting to clean up downloaded artifact directory ${{ parameters.buildArtifact }}..."
 
-        if [ -d "${{ parameters.buildArtifactDir }}" ]; then
-            if ! rm -r "${{ parameters.buildArtifactDir }}" 2>err.log; then
+        if [ -d "${{ parameters.buildArtifact }}" ]; then
+            if ! rm -r "${{ parameters.buildArtifact }}" 2>err.log; then
                 cat err.log >&2
                 exit 1
             fi
 
-            echo "The directory ${{ parameters.buildArtifactDir }} was removed successfully."
+            echo "The directory ${{ parameters.buildArtifact }} was removed successfully."
             exit 0
         else
-            echo "The directory ${{ parameters.buildArtifactDir }} was not found in the working directory."
+            echo "The directory ${{ parameters.buildArtifact }} was not found in the working directory."
             echo "The working directory is $(pwd)."
             echo "Listing the contents of the working directory:"
             ls
