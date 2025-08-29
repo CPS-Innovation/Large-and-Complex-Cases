@@ -7,6 +7,9 @@ resources:
         include:
           - main
 
+variables:
+  - group: lacc-deployment-global
+
 stages:
   - template: ../templates/backend-deploy-stages.yml
     parameters:
@@ -17,14 +20,14 @@ stages:
     parameters:
       environment: staging
       requireValidation: true
-      notifyUsers: $(notifyUsers) #defined via Azure Pipelines UI
-      approvers: $(approvers) #defined via Azure Pipelines UI
+      notifyUsers: $(notifyUsers)
+      approvers: $(approvers)
 
   # - template: ../templates/backend-deploy-stages.yml
   #   parameters:
   #     environment: prod
   #     requireValidation: true
-  #     notifyUsers: $(notifyUsers) #defined via Azure Pipelines UI
-  #     approvers: $(approvers) #defined via Azure Pipelines UI
+  #     notifyUsers: $(notifyUsers)
+  #     approvers: $(approvers)
   #     agentPool: 'LACC Production Pool'
   #     azureSubscription: 'Azure Pipeline: Large and Complex Cases - Prod'
