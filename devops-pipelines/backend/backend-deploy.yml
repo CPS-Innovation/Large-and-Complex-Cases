@@ -7,6 +7,16 @@ resources:
         include:
           - main
 
+variables:
+  - name: notifyUsers
+    displayName: 'Users to notify by email of pending manual validation'
+    type: string
+    default: ${{ variables.notifyUsers }}
+  - name: approvers
+    displayName: 'Users permitted to approve or reject the manual validation request'
+    type: string
+    default: ${{ variables.approvers }}
+
 stages:
   - template: ../templates/backend-deploy-stages.yml
     parameters:
@@ -17,14 +27,14 @@ stages:
     parameters:
       environment: staging
       requireValidation: true
-      notifyUsers: ${{ variables.notifyUsers }}
-      approvers: ${{ variables.approvers }}
+      notifyUsers: ${{ parameters.notifyUsers }}
+      approvers: ${{ parameters.approvers }}
 
   # - template: ../templates/backend-deploy-stages.yml
   #   parameters:
   #     environment: prod
   #     requireValidation: true
-  #     notifyUsers: ${{ variables.notifyUsers }}
-  #     approvers: ${{ variables.approvers }}
+  #     notifyUsers: ${{ parameters.notifyUsers }}
+  #     approvers: ${{ parameters.approvers }}
   #     agentPool: 'LACC Production Pool'
   #     azureSubscription: 'Azure Pipeline: Large and Complex Cases - Prod'
