@@ -4,7 +4,7 @@ import { getCookieValue } from "../../common/utils/getCookieValue";
 import { useMemo } from "react";
 
 export const useUserDetails = () => {
-  const [{ name, username }] = msalInstance.getAllAccounts();
+  const [{ name, username } = {}] = msalInstance.getAllAccounts();
 
   const cmsUserID = getCookieValue("UID");
 

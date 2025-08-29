@@ -1,6 +1,7 @@
 import { MsalProvider } from "@azure/msal-react";
 import React, { FC, useEffect, useState } from "react";
 import { msalInstance } from "./msalInstance";
+import PrivateBetaAuthorisation from "./PrivateBetaAuthorisation";
 
 export const Auth: FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>();
@@ -35,7 +36,11 @@ export const Auth: FC<{ children: React.ReactNode }> = ({ children }) => {
   }, []);
 
   return isLoggedIn ? (
-    <MsalProvider instance={msalInstance}>{children}</MsalProvider>
+    <MsalProvider instance={msalInstance}>
+      <PrivateBetaAuthorisation msalInstance={msalInstance}>
+        {children}
+      </PrivateBetaAuthorisation>
+    </MsalProvider>
   ) : (
     <></>
   );

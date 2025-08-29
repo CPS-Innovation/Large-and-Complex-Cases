@@ -59,7 +59,8 @@ stages:
               VITE_GATEWAY_BASE_URL: $(VITE_GATEWAY_BASE_URL)
               VITE_GATEWAY_SCOPE: $(VITE_GATEWAY_SCOPE)
               VITE_CLIENT_ID: $(VITE_CLIENT_ID)
-              VITE_TENANT_ID: $(VITE_TENANT_ID) 
+              VITE_TENANT_ID: $(VITE_TENANT_ID)
+              VITE_PRIVATE_BETA_USER_GROUP: $(VITE_PRIVATE_BETA_USER_GROUP)
 
           - task: PublishPipelineArtifact@1
             displayName: 'Publish Web App Package'
