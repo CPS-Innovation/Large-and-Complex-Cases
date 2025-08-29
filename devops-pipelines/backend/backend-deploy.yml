@@ -7,7 +7,7 @@ resources:
         include:
           - main
 
-variables:
+parameters:
   - name: notifyUsers
     displayName: 'Users to notify by email of pending manual validation'
     type: string
