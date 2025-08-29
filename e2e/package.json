@@ -1,0 +1,21 @@
+{
+  "name": "e2e",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "e2e": "npx playwright test --ui",
+    "e2e:ci": "npx playwright test"
+  },
+  "keywords": [],
+  "author": "Stef Stachow",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.51.1",
+    "@types/node": "^22.13.13"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "path": "^0.12.7"
+  }
+}

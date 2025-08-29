@@ -8,16 +8,6 @@ trigger:
 
 pr: none
 
-parameters:
-  - name: notifyUsers
-    displayName: 'Users to notify by email of pending manual validation'
-    type: string
-    default: 'Hasan.Ahmed@cps.gov.uk'
-  - name: approvers
-    displayName: 'Users permitted to approve or reject the manual validation request'
-    type: string
-    default: 'Hasan.Ahmed@cps.gov.uk'
-
 stages:
   - template: ../templates/ui-build-and-deploy-stages.yml
     parameters:
@@ -28,14 +18,14 @@ stages:
     parameters:
       environment: staging
       requireValidation: true
-      notifyUsers: ${{ parameters.notifyUsers }}
-      approvers: ${{ parameters.approvers }}
+      notifyUsers: $(notifyUsers) #defined via Azure Pipelines UI
+      approvers: $(approvers) #defined via Azure Pipelines UI
 
   # - template: ../templates/ui-build-and-deploy-stages.yml
   #   parameters:
   #     environment: prod
   #     requireValidation: true
-  #     notifyUsers: ${{ parameters.notifyUsers }}
-  #     approvers: ${{ parameters.approvers }}
+  #     notifyUsers: $(notifyUsers) #defined via Azure Pipelines UI
+  #     approvers: $(approvers) #defined via Azure Pipelines UI
   #     agentPool: 'LACC Production Pool'
   #     azureSubscription: 'Azure Pipeline: Large and Complex Cases - Prod'
