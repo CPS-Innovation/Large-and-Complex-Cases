@@ -7,16 +7,6 @@ resources:
         include:
           - main
 
-parameters:
-  - name: notifyUsers
-    displayName: 'Users to notify by email of pending manual validation'
-    type: string
-    default: ${{ variables.notifyUsers }}
-  - name: approvers
-    displayName: 'Users permitted to approve or reject the manual validation request'
-    type: string
-    default: ${{ variables.approvers }}
-
 stages:
   - template: ../templates/backend-deploy-stages.yml
     parameters:
@@ -27,8 +17,8 @@ stages:
     parameters:
       environment: staging
       requireValidation: true
-      notifyUsers: ${{ parameters.notifyUsers }}
-      approvers: ${{ parameters.approvers }}
+      notifyUsers: $(notifyUsers)
+      approvers: $(approvers)
 
   # - template: ../templates/backend-deploy-stages.yml
   #   parameters:
