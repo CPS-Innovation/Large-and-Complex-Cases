@@ -7,31 +7,24 @@ resources:
         include:
           - main
 
-parameters:
-  - name: notifyUsers
-    displayName: 'Users to notify by email of pending manual validation'
-    type: string
-    default: 'Hasan.Ahmed@cps.gov.uk'
-  - name: approvers
-    displayName: 'Users permitted to approve or reject the manual validation request'
-    type: string
-    default: 'Hasan.Ahmed@cps.gov.uk'
-
 stages:
   - template: ../templates/backend-deploy-stages.yml
+    parameters:
+      environment: dev
+      requireValidation: false
 
   - template: ../templates/backend-deploy-stages.yml
     parameters:
       environment: staging
       requireValidation: true
-      notifyUsers: ${{ parameters.notifyUsers }}
-      approvers: ${{ parameters.approvers }}
+      notifyUsers: ${{ variables.notifyUsers }}
+      approvers: ${{ variables.approvers }}
 
   # - template: ../templates/backend-deploy-stages.yml
   #   parameters:
   #     environment: prod
   #     requireValidation: true
-  #     notifyUsers: ${{ parameters.notifyUsers }}
-  #     approvers: ${{ parameters.approvers }}
+  #     notifyUsers: ${{ variables.notifyUsers }}
+  #     approvers: ${{ variables.approvers }}
   #     agentPool: 'LACC Production Pool'
   #     azureSubscription: 'Azure Pipeline: Large and Complex Cases - Prod'

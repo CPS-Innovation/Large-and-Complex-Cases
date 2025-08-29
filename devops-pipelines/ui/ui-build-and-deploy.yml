@@ -20,6 +20,9 @@ parameters:
 
 stages:
   - template: ../templates/ui-build-and-deploy-stages.yml
+    parameters:
+      environment: dev
+      requireValidation: false
 
   - template: ../templates/ui-build-and-deploy-stages.yml
     parameters:
