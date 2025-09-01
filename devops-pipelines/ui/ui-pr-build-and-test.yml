@@ -83,4 +83,4 @@ stages:
               summaryFileLocation: 'ui-spa/coverage/cobertura-coverage.xml'
             condition: always()
 
-          - template: ../templates/test-e2e.yml
+          - template: ../templates/test-e2e-steps.yml

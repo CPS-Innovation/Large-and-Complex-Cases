@@ -33,20 +33,40 @@ Each script provides options for running tests, generating coverage reports, and
 ### CI/CD Pipelines
 The project uses Azure Pipelines for automated build, test, and deployment. Key pipeline definitions:
 
-- **Backend Build & Test:** [`backend-build-pipeline.yml`](devops-pipelines/deployments/application/build/backend-build-pipeline.yml)
-  - Restores, builds, and tests all backend projects
-  - Publishes code coverage and build artifacts
-  - Packages and publishes Main API and FileTransfer API for deployment
-- **UI Build & Test:** [`ui-build-pipeline.yml`](devops-pipelines/deployments/application/build/ui-build-pipeline.yml)
-  - Installs dependencies, lints, tests, and builds the React SPA
-  - Publishes code coverage and build artifacts
-  - Optionally runs E2E tests with Playwright
-- **UI Deploy:** [`ui-deploy-pipeline.yml`](devops-pipelines/deployments/application/ui-deploy-pipeline.yml)
-  - Deploys the UI build artifact to the target Azure App Service instance
-- **Backend Deploy:** [`backend-deploy-pipeline.yml`](devops-pipelines/deployments/application/backend-deploy-pipeline.yml)
-  - Deploys backend build artifacts to Azure Function Apps and manages database migration scripts
+#### Backend
+The following are triggered in response to any changes pushed to the [`backend`](backend) directory.
 
-> **Note:** The current deployment pipelines (`backend-deploy-pipeline.yml` and `ui-deploy-pipeline.yml`) are temporary solutions. Deployment automation and infrastructure provisioning are actively being improved and will be finalized using Terraform and more robust processes. Expect changes to these pipelines as the deployment approach is stabilized.
+- **Backend Build & Test:** [`backend-pr-build-and-test.yml`](devops-pipelines/backend/backend-pr-build-and-test.yml)
+  - Trigger: PR against main.
+  - Restores, builds, and tests all backend projects.
+  - Publishes test results and code coverage.
+- **Backend Build & Publish:** [`backend-build-and-publish.yml`](devops-pipelines/backend/backend-build-and-publish.yml)
+  - Trigger: Merge to main branch.
+  - Packages and publishes Main API and FileTransfer API for deployment.
+  - Generates and publishes database migration scripts for deployment.
+- **Backend Deploy:** [`backend-deploy.yml`](devops-pipelines/backend/backend-deploy.yml)
+  - Trigger: A successful run of the build and punlish pipeline above.
+  - Runs the following stages in the dev environment:
+    - Updates the Key Vault with configuration values for the function apps.
+    - Runs the migration scripts against the database.
+    - Deploys build artifacts to Azure Function Apps.
+  - Pauses for manual validation before repeating the process in staging.
+
+#### UI
+The following are triggered in response to any changes pushed to the [`ui`](ui) directory.
+
+- **UI Build & Test:** [`ui-pr-build-and-test.yml`](devops-pipelines/ui/ui-pr-build-and-test.yml)
+  - Trigger: PR against main.
+  - Installs dependencies, lints, builds and runs unit tests for the React SPA.
+  - Runs E2E tests with Playwright.
+  - Publishes code coverage and test results.
+- **UI Build & Deploy:** [`ui-build-and-deploy.yml`](devops-pipelines/ui/ui-build-and-deploy.yml)
+  - Trigger: Merge to Main branch.
+  - Runs the following jobs for the dev environment:
+    - Builds the SPA using environment-specific VITE variables.
+    - Publishes the build artifact.
+    - Deploys the build artifact to the target Azure App Service instance.
+  - Pauses for manual validation before repeating the process for staging.
 
 ## Build and Test
 
