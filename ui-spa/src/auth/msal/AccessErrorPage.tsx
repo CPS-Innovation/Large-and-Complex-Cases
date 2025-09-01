@@ -1,3 +1,4 @@
+import { PRIVATE_BETA_CONTACT_EMAIL } from "../../config";
 import Layout from "../../components/Layout";
 import styles from "./AccessErrorPage.module.scss";
 
@@ -12,8 +13,8 @@ const AccessErrorPage: React.FC = () => {
           </p>
           <p>
             If you think this is a mistake, contact{" "}
-            <a href="mailto:meadhbh.major@cps.gov.uk">
-              meadhbh.major@cps.gov.uk
+            <a href={`mailto:${PRIVATE_BETA_CONTACT_EMAIL}`}>
+              {PRIVATE_BETA_CONTACT_EMAIL}
             </a>{" "}
             for assistance.
           </p>

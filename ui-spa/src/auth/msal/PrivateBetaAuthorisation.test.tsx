@@ -10,6 +10,7 @@ vi.mock("../../config");
 
 const mockConfig = config as {
   PRIVATE_BETA_USER_GROUP: string | null;
+  PRIVATE_BETA_CONTACT_EMAIL: string | null;
 };
 
 let mockAccounts = [] as AccountInfo[];
@@ -67,6 +68,7 @@ describe("PrivateBetaAuthorisation", () => {
 
   it("will not allow the user to access the app if the user is not in the private beta group", () => {
     mockConfig.PRIVATE_BETA_USER_GROUP = PRIVATE_BETA_USER_GROUP_VALUE;
+    mockConfig.PRIVATE_BETA_CONTACT_EMAIL = "abc@email.com";
     mockAccounts = [
       {
         idTokenClaims: {
@@ -84,6 +86,9 @@ describe("PrivateBetaAuthorisation", () => {
       screen.queryByText(
         "You cannot access this page. You are not a member of this group.",
       ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /abc@email.com/i }),
     ).toBeInTheDocument();
   });
 
