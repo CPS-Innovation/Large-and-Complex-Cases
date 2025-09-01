@@ -1,0 +1,10 @@
+.contentWrapper {
+  margin-top: 3rem;
+  width: 66%;
+  & :global(.govuk-heading-xl) {
+    margin-bottom: 1.875rem;
+  }
+  & a {
+    color: #1d70b8;
+  }
+}

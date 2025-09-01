@@ -80,6 +80,7 @@ stages:
             VITE_CLIENT_ID: $(VITE_CLIENT_ID)
             VITE_TENANT_ID: $(VITE_TENANT_ID) 
             VITE_PRIVATE_BETA_USER_GROUP: $(VITE_PRIVATE_BETA_USER_GROUP)
+            VITE_PRIVATE_BETA_CONTACT_EMAIL: $(VITE_PRIVATE_BETA_CONTACT_EMAIL)
 
         - task: PublishPipelineArtifact@1
           displayName: 'Publish Web App Package'
