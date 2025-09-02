@@ -10,6 +10,7 @@ import { getCaseMetaData } from "../../apis/gateway-api";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import TransferErrorPage from "./transfer-materials/TransferErrorPage";
 import TransferMovePermissionsErrorPage from "./transfer-materials/TransferMovePermissionsErrorPage";
+import { useUserGroupsFeatureFlag } from "../../common/hooks/useUserGroupsFeatureFlag";
 
 import styles from "./index.module.scss";
 
@@ -22,6 +23,8 @@ const CaseManagementPage = () => {
   const caseMetaData = useApi(getCaseMetaData, [caseId], true);
 
   const [activeTabId, setActiveTabId] = useState<TabId>("transfer-materials");
+
+  const featurFlags = useUserGroupsFeatureFlag();
   const handleTabSelection = (tabId: TabId) => {
     setActiveTabId(tabId);
   };
@@ -135,6 +138,16 @@ const CaseManagementPage = () => {
       },
     },
   ];
+
+  if (featurFlags.caseDetails) {
+    items.push({
+      id: "case-details",
+      label: "Case Details",
+      panel: {
+        children: caseMetaData?.data ? <div> Case Details</div> : <></>,
+      },
+    });
+  }
   if (caseMetaData.status === "loading" || caseMetaData.status === "initial") {
     return <div className="govuk-width-container">loading...</div>;
   }
