@@ -15,4 +15,5 @@ public class TransferPayload
     public required string WorkspaceId { get; set; }
     public bool? IsRetry { get; set; } = false;
     public Guid? CorrelationId { get; set; } = null;
+    public string? SourceRootFolder { get; set; } = null;
 }

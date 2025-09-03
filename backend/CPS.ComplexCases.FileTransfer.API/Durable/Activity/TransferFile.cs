@@ -68,7 +68,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                     uploadedChunks.Add(result.PartNumber.Value, result.ETag);
                 }
 
-                _logger.LogDebug("Transfer Id: {TransferId} Uploaded chunk: {ChunkNumber} ({Start}-{End})", payload.TransferId, chunkNumber, start, end);
+                _logger.LogDebug("Transfer Id: {TransferId} Uploaded chunk: {ChunkNumber} ({Start}-{End}/{TotalSize})", payload.TransferId, chunkNumber, start, end, totalSize);
 
                 position += bytesRead;
                 chunkNumber++;
