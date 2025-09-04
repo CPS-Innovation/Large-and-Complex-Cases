@@ -31,6 +31,9 @@ parameters:
   - name: azureSubscription
     type: string
     default: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
+  # - name: deployToSlot
+  #   type: boolean
+  #   default: true
 
 stages:
 - stage: Approve_Deployment_${{ parameters.environment }}
@@ -190,6 +193,8 @@ stages:
                   functionAppName: 'fa-lacc-api-${{ parameters.environment }}'
                   pipelineResourceAlias: 'build'
                   buildArtifactName: 'lacc-main-api-drop'
+                  deployToSlot: true
+                  slotName: 'stg'
               
               - template: ./runner-cleanup-steps.yml
                 parameters:
@@ -210,6 +215,7 @@ stages:
                   functionAppName: 'fa-lacc-filetransfer-api-${{ parameters.environment }}'
                   pipelineResourceAlias: 'build'
                   buildArtifactName: 'lacc-filetransfer-api-drop'
+                  slotName: 'stg'
               
               - template: ./runner-cleanup-steps.yml
                 parameters:
