@@ -15,7 +15,6 @@ test.describe("Case Details", () => {
     await goToCaseManagement(page);
     await page.getByTestId("tab-2").click();
     await expect(page.getByTestId("tab-active")).toHaveText("Case Details");
-    await expect(page.locator("h2")).toHaveText(`Case Details`);
   });
 
   test("Should not show the case details tab if the feature is turned off", async ({
