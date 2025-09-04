@@ -144,7 +144,13 @@ const CaseManagementPage = () => {
       id: "case-details",
       label: "Case Details",
       panel: {
-        children: caseMetaData?.data ? <div> Case Details</div> : <></>,
+        children: caseMetaData?.data ? (
+          <div>
+            <h2> Case Details</h2>
+          </div>
+        ) : (
+          <></>
+        ),
       },
     });
   }

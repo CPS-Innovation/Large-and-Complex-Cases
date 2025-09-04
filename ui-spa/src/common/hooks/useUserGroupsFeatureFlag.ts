@@ -3,26 +3,34 @@ import {
   FEATURE_FLAG_CASE_DETAILS,
   PRIVATE_BETA_FEATURE_USER_GROUP2,
 } from "../../config";
-
+import { useUserDetails } from "../../auth";
 import { FeatureFlagData } from "../types/FeatureFlagData";
 import { useCallback, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
+
+const automationTestUsers = ["dev_user@example.org"];
 
 const shouldShowFeature = (
-  isFeatureFlagOnInApp: boolean,
+  username: string,
+  isUIFeatureFlagOn: boolean,
+  searchParam: string | null,
   groupClaims?: { groupKey: string; groups: string[] },
 ) => {
-  if (!isFeatureFlagOnInApp) {
-    return false;
-  }
-  const shouldConsiderGroupClaims = !!groupClaims;
+  const isAutomationTestUser = automationTestUsers.includes(username);
 
-  return shouldConsiderGroupClaims
-    ? groupClaims.groups.includes(groupClaims.groupKey)
-    : true;
+  if (isAutomationTestUser) {
+    return searchParam ? searchParam === "true" : isUIFeatureFlagOn;
+  }
+
+  return groupClaims
+    ? groupClaims.groups.includes(groupClaims.groupKey) && isUIFeatureFlagOn
+    : isUIFeatureFlagOn;
 };
 
 export const useUserGroupsFeatureFlag = (): FeatureFlagData => {
   const [account] = msalInstance.getAllAccounts();
+  const userDetails = useUserDetails();
+  const [searchParams] = useSearchParams();
 
   const groups = useMemo(
     () => (account?.idTokenClaims?.groups as string[]) ?? [],
@@ -31,12 +39,17 @@ export const useUserGroupsFeatureFlag = (): FeatureFlagData => {
 
   const getFeatureFlags = useCallback(
     () => ({
-      caseDetails: shouldShowFeature(FEATURE_FLAG_CASE_DETAILS, {
-        groups: groups,
-        groupKey: PRIVATE_BETA_FEATURE_USER_GROUP2,
-      }),
+      caseDetails: shouldShowFeature(
+        userDetails.username,
+        FEATURE_FLAG_CASE_DETAILS,
+        searchParams?.get("case-details"),
+        {
+          groups: groups,
+          groupKey: PRIVATE_BETA_FEATURE_USER_GROUP2,
+        },
+      ),
     }),
-    [groups],
+    [groups, searchParams, userDetails.username],
   );
   return useMemo(() => getFeatureFlags(), [getFeatureFlags]);
 };
