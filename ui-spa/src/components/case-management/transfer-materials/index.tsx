@@ -19,12 +19,14 @@ import { getFormatedEgressFolderData } from "../../../common/utils/getFormatedEg
 import { mapToNetAppFolderData } from "../../../common/utils/mapToNetAppFolderData";
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
 import { InitiateFileTransferPayload } from "../../../common/types/InitiateFileTransferPayload";
+import { IndexingFileTransferPayload } from "../../../common/types/IndexingFileTransferPayload";
 import { TransferStatusResponse } from "../../../common/types/TransferStatusResponse";
 import { IndexingFileTransferResponse } from "../../../common/types/IndexingFileTransferResponse";
 import { InitiateFileTransferResponse } from "../../../common/types/InitiateFileTransferResponse";
 import { useUserDetails } from "../../../auth";
 import { ApiError } from "../../../common/errors/ApiError";
 import { pollTransferStatus } from "../../../common/utils/pollTransferStatus";
+import commonPathPrefix from "common-path-prefix";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
@@ -354,7 +356,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     }
   }, [netAppFolderPath, netAppRefetch, transferId]);
 
-  const getValidateTransferPayload = () => {
+  const getIndexingFileTransferPayload = (): IndexingFileTransferPayload => {
     if (!selectedTransferAction) {
       throw new Error(
         "selected transfer destination details should not be null",
@@ -375,7 +377,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       }));
     }
 
-    const validationPayload = {
+    const payload = {
       caseId: parseInt(caseId),
       transferDirection:
         selectedTransferAction.destinationFolder.sourceType === "egress"
@@ -389,7 +391,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       destinationPath: selectedTransferAction.destinationFolder.path,
       workspaceId: egressWorkspaceId,
     };
-    return validationPayload;
+    return payload;
   };
 
   const getInitiateTransferPayload = (
@@ -406,6 +408,8 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       relativePath: data.relativePath,
       fullFilePath: data.fullFilePath,
     }));
+
+    const relativePaths = sourcePaths.map((data) => data.relativePath!);
 
     const payload = {
       caseId: parseInt(caseId),
@@ -425,6 +429,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         : {
             transferType: "Copy" as const,
             transferDirection: "NetAppToEgress" as const,
+            sourceRootFolderPath: commonPathPrefix(relativePaths, "/"),
           };
 
     return { ...payload, ...uniquePayload };
@@ -440,7 +445,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     setSelectedTransferAction(null);
 
     let response: IndexingFileTransferResponse;
-    const validationPayload = getValidateTransferPayload();
+    const validationPayload = getIndexingFileTransferPayload();
     try {
       setTransferStatus("validating");
       response = await indexingFileTransfer(validationPayload);
