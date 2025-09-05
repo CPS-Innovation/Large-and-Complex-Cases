@@ -34,7 +34,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             var sourceFilePath = string.IsNullOrEmpty(payload.SourcePath.ModifiedPath) ? payload.SourcePath.Path : payload.SourcePath.ModifiedPath;
 
             using var sourceStream = await sourceClient.OpenReadStreamAsync(payload.SourcePath.Path, payload.WorkspaceId, payload.SourcePath.FileId);
-            var session = await destinationClient.InitiateUploadAsync(payload.DestinationPath, sourceStream.Length, sourceFilePath, payload.WorkspaceId, payload.SourcePath.RelativePath);
+            var session = await destinationClient.InitiateUploadAsync(payload.DestinationPath, sourceStream.Length, sourceFilePath, payload.WorkspaceId, payload.SourcePath.RelativePath, payload.SourceRootFolderPath);
 
             long totalSize = sourceStream.Length;
             long position = 0;

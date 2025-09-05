@@ -31,7 +31,7 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
             throw new InvalidOperationException("Failed to complete multipart upload.");
     }
 
-    public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string sourcePath, string? workspaceId = null, string? relativePath = null, string? sourceRootFolder = null)
+    public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string sourcePath, string? workspaceId = null, string? relativePath = null, string? sourceRootFolderPath = null)
     {
         var fullDestinationPath = Path.Combine(destinationPath, sourcePath).Replace('\\', '/');
 

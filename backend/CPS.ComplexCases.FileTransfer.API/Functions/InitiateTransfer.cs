@@ -107,7 +107,7 @@ public class InitiateTransfer
                 WorkspaceId = transferRequest.Value.Metadata.WorkspaceId,
                 CorrelationId = currentCorrelationId,
                 TransferDirection = transferRequest.Value.TransferDirection,
-                SourceRootFolder = transferRequest.Value.SourceRootFolder
+                SourceRootFolderPath = transferRequest.Value.SourceRootFolderPath
             },
             new StartOrchestrationOptions
             {

@@ -64,7 +64,7 @@ public class TransferFileTests
         _sourceClientMock.Setup(x => x.OpenReadStreamAsync(payload.SourcePath.Path, payload.WorkspaceId, payload.SourcePath.FileId))
             .ReturnsAsync(stream);
 
-        _destinationClientMock.Setup(x => x.InitiateUploadAsync(payload.DestinationPath, content.Length, payload.SourcePath.Path, payload.WorkspaceId, payload.SourcePath.RelativePath, payload.SourceRootFolder))
+        _destinationClientMock.Setup(x => x.InitiateUploadAsync(payload.DestinationPath, content.Length, payload.SourcePath.Path, payload.WorkspaceId, payload.SourcePath.RelativePath, payload.SourceRootFolderPath))
             .ReturnsAsync(session);
 
         _destinationClientMock.Setup(x => x.UploadChunkAsync(session, 1, It.IsAny<byte[]>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<long>()))

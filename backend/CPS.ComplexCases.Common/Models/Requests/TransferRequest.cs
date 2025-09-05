@@ -7,7 +7,7 @@ public class TransferRequest
     public TransferType TransferType { get; set; }
     public TransferDirection TransferDirection { get; set; }
     public required List<TransferSourcePath> SourcePaths { get; set; }
-    public string? SourceRootFolder { get; set; }
+    public string? SourceRootFolderPath { get; set; }
     public required string DestinationPath { get; set; }
     public required TransferMetadata Metadata { get; set; }
 }
