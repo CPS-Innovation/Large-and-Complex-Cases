@@ -26,7 +26,7 @@ import { InitiateFileTransferResponse } from "../../../common/types/InitiateFile
 import { useUserDetails } from "../../../auth";
 import { ApiError } from "../../../common/errors/ApiError";
 import { pollTransferStatus } from "../../../common/utils/pollTransferStatus";
-import commonPathPrefix from "common-path-prefix";
+import { getCommonPath } from "../../../common/utils/getCommonPath";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
@@ -429,7 +429,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         : {
             transferType: "Copy" as const,
             transferDirection: "NetAppToEgress" as const,
-            sourceRootFolderPath: commonPathPrefix(relativePaths, "/"),
+            sourceRootFolderPath: getCommonPath(relativePaths),
           };
 
     return { ...payload, ...uniquePayload };
