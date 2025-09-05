@@ -86,6 +86,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
                     TransferType = transferEntity.TransferType,
                     TransferDirection = transferEntity.Direction,
                     WorkspaceId = input.WorkspaceId,
+                    SourceRootFolderPath = input.SourceRootFolderPath
                 };
 
                 // Activity now returns TransferResult instead of void

@@ -18,6 +18,7 @@
   "dependencies": {
     "@azure/msal-browser": "^4.4.0",
     "@azure/msal-react": "^3.0.5",
+    "common-path-prefix": "^3.0.0",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
     "dotenv": "^16.4.7",

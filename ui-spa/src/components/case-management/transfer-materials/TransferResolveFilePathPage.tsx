@@ -17,7 +17,7 @@ import {
 import { getMappedResolvePathFiles } from "../../../common/utils/getMappedResolvePathFiles";
 import { RenameTransferFilePage } from "./RenameTransferFilePage";
 import { initiateFileTransfer } from "../../../apis/gateway-api";
-import { EgressTranferPayloadSourcePath } from "../../../common/types/InitiateFileTransferPayload";
+import { EgressTransferPayloadSourcePath } from "../../../common/types/InitiateFileTransferPayload";
 import { TransferResolvePageLocationState } from "../../../common/types/TransferResolvePageLocationState";
 import styles from "./TransferResolveFilePathPage.module.scss";
 
@@ -120,7 +120,7 @@ const TransferResolveFilePathPage = () => {
       return;
     }
     setDisableBtns(true);
-    const resolvedFiles: EgressTranferPayloadSourcePath[] =
+    const resolvedFiles: EgressTransferPayloadSourcePath[] =
       resolvePathFiles.map((file) => ({
         fileId: file.id,
         path: file.relativeSourcePath
@@ -179,7 +179,8 @@ const TransferResolveFilePathPage = () => {
             type="success"
             data-testid="resolve-path-success-notification-banner"
           >
-            Your { resolvePathFiles.length === 1 ? "file" : "files" } can now be transferred.
+            Your {resolvePathFiles.length === 1 ? "file" : "files"} can now be
+            transferred.
           </NotificationBanner>
         </div>
       )}
@@ -187,15 +188,18 @@ const TransferResolveFilePathPage = () => {
         <h1 className="govuk-heading-xl">File structure is too long</h1>
         <InsetText data-testId="resolve-file-path-inset-text">
           <p>
-            There { resolvePathFiles.length === 1 ? "is" : "are" }{" "}
-            <b>{resolvePathFiles.length} { resolvePathFiles.length === 1 ? "file" : "files" } </b>
-            with { resolvePathFiles.length === 1 ? "a name" : "names" } longer than {
-              MAX_FILE_PATH_CHARACTERS
-            }{" "}
-            characters.
+            There {resolvePathFiles.length === 1 ? "is" : "are"}{" "}
+            <b>
+              {resolvePathFiles.length}{" "}
+              {resolvePathFiles.length === 1 ? "file" : "files"}{" "}
+            </b>
+            with {resolvePathFiles.length === 1 ? "a name" : "names"} longer
+            than {MAX_FILE_PATH_CHARACTERS} characters.
           </p>
           <p>
-            You need to rename the { resolvePathFiles.length === 1 ? "file" : "files" } or change the folder structure.
+            You need to rename the{" "}
+            {resolvePathFiles.length === 1 ? "file" : "files"} or change the
+            folder structure.
           </p>
         </InsetText>
 
