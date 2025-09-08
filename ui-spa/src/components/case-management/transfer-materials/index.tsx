@@ -25,10 +25,6 @@ import { InitiateFileTransferResponse } from "../../../common/types/InitiateFile
 import { useUserDetails } from "../../../auth";
 import { ApiError } from "../../../common/errors/ApiError";
 import { pollTransferStatus } from "../../../common/utils/pollTransferStatus";
-<<<<<<< Updated upstream
-=======
-import { getCommonPath } from "../../../common/utils/getCommonPath";
->>>>>>> Stashed changes
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
@@ -429,10 +425,6 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         : {
             transferType: "Copy" as const,
             transferDirection: "NetAppToEgress" as const,
-<<<<<<< Updated upstream
-=======
-            sourceRootFolderPath: getCommonPath(relativePaths),
->>>>>>> Stashed changes
           };
 
     return { ...payload, ...uniquePayload };
