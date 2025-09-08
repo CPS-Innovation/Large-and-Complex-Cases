@@ -5,6 +5,7 @@ import FolderPath, { Folder } from "../common/FolderPath";
 import styles from "./FolderNavigationTable.module.scss";
 
 type FolderNavigationTableProps = {
+  caption: string;
   tableName: string;
   folders: Folder[];
   folderResultsStatus: "loading" | "succeeded" | "failed" | "initial";
@@ -30,6 +31,7 @@ type FolderNavigationTableProps = {
 };
 
 const FolderNavigationTable: React.FC<FolderNavigationTableProps> = ({
+  caption,
   tableName,
   folders,
   loaderText,
@@ -61,6 +63,8 @@ const FolderNavigationTable: React.FC<FolderNavigationTableProps> = ({
         {folderResultsStatus === "succeeded" && (
           <>
             <SortableTable
+              captionClassName="govuk-visually-hidden"
+              caption={caption}
               head={getTableHeadData()}
               rows={getTableRowData()}
               handleTableSort={handleTableSort}

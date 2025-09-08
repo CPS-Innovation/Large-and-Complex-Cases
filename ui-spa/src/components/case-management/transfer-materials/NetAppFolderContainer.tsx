@@ -80,14 +80,12 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
     const tableHeadData = [
       {
         children: (
-          <>
-            <Checkbox
-              id={"all-folders"}
-              checked={isSourceFolderChecked("all-folders")}
-              onChange={handleCheckboxChange}
-              ariaLabel="Select all folders"
-            />
-          </>
+          <Checkbox
+            id={"all-folders"}
+            checked={isSourceFolderChecked("all-folders")}
+            onChange={handleCheckboxChange}
+            ariaLabel="Select folders and files"
+          />
         ),
         sortable: false,
       },
@@ -146,14 +144,16 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
         cells: [
           {
             children: (
-              <>
-                <Checkbox
-                  id={data.path}
-                  checked={isSourceFolderChecked(data.path)}
-                  onChange={handleCheckboxChange}
-                  ariaLabel="select folder"
-                />
-              </>
+              <Checkbox
+                id={data.path}
+                checked={isSourceFolderChecked(data.path)}
+                onChange={handleCheckboxChange}
+                ariaLabel={
+                  data.isFolder
+                    ? `select folder ${getFolderNameFromPath(data.path)}`
+                    : `select file ${getFileNameFromPath(data.path)}`
+                }
+              />
             ),
           },
           {
@@ -336,6 +336,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
     <div>
       <div>
         <FolderNavigationTable
+          caption="network shared drive folders and files table, column headers with buttons are sortable"
           tableName={"netapp"}
           folders={folders}
           loaderText="Loading folders from Shared drive"

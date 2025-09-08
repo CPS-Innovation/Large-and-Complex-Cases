@@ -88,7 +88,7 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
             id={"all-folders"}
             checked={isSourceFolderChecked("all-folders")}
             onChange={handleCheckboxChange}
-            ariaLabel="Select all folders"
+            ariaLabel="Select folders and files"
           />
         ),
         sortable: false,
@@ -153,7 +153,11 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
                 id={data.path}
                 checked={isSourceFolderChecked(data.path)}
                 onChange={handleCheckboxChange}
-                ariaLabel="select folder"
+                ariaLabel={
+                  data.isFolder
+                    ? `select folder ${data.name}`
+                    : `select file ${data.name}`
+                }
               />
             ),
           },
@@ -315,6 +319,7 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
   return (
     <div className={hideFirstColumn ? styles.hideFirstColumn : ""}>
       <FolderNavigationTable
+        caption="egress folders and files table, column headers with buttons are sortable"
         tableName="egress"
         folders={egressPathFolders}
         loaderText="Loading folders from Egress"
