@@ -16,6 +16,8 @@ stages:
     parameters:
       environment: dev
       requireValidation: false
+      deployToSlot: true
+      slotName: 'stg'
 
   - template: ../templates/ui-build-and-deploy-stages.yml
     parameters:

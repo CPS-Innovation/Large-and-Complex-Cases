@@ -22,9 +22,12 @@ parameters:
   - name: approvers
     type: string
     default: ''  
-  # - name: deployToSlot
-  #   type: boolean
-  #   default: true
+  - name: deployToSlot
+    type: boolean
+    default: false
+  - name: slotName
+    type: string
+    default: ''
 
 stages:
 - stage: Approve_Deployment_${{ parameters.environment }}
@@ -101,8 +104,6 @@ stages:
           value: 'rg-lacc-${{ parameters.environment }}'
         - name: webAppName
           value: 'lacc-app-ui-spa-${{ parameters.environment }}'
-        - name: slotName
-          value: 'stg'
       strategy:
         runOnce:
           deploy:
@@ -114,8 +115,8 @@ stages:
                   resourceGroupName: $(resourceGroupName)
                   appType: 'webAppLinux'
                   WebAppName: '$(webAppName)'
-                  deployToSlotOrASE: true
-                  slotName: $(slotName)
+                  deployToSlotOrASE: ${{ parameters.deployToSlot }}
+                  slotName: ${{ parameters.slotName }}
                   packageForLinux: '$(Pipeline.Workspace)/$(buildArtifact)'
                   RuntimeStack: 'NODE|20-lts'
                   StartupCommand: 'pm2 serve /home/site/wwwroot/ --no-daemon --spa'   

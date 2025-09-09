@@ -15,6 +15,8 @@ stages:
     parameters:
       environment: dev
       requireValidation: false
+      deployToSlot: true
+      slotName: 'stg'
 
   - template: ../templates/backend-deploy-stages.yml
     parameters:
