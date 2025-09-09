@@ -190,17 +190,20 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
 
   const renderEgressContainer = () => {
     return (
-      <div
+      <section
         className={
           transferSource === "egress"
             ? styles.sourceContainer
             : styles.destinationContainer
         }
         data-testid="egress-container"
+        aria-labelledby="egress-region"
+        tabIndex={0}
       >
-        <div className={styles.titleWrapper}>
-          <h3 className={styles.inlineHeading}>Egress</h3>-{" "}
+        <div id="egress-region" className={styles.titleWrapper}>
+          <span className={styles.regionHead}>Egress</span>-{" "}
           <span>{transferSource === "egress" ? "Source" : "Destination"}</span>
+          <span className="govuk-visually-hidden">region</span>
         </div>
         <div className={styles.tableContainer}>
           {
@@ -218,7 +221,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
             />
           }
         </div>
-      </div>
+      </section>
     );
   };
 
@@ -233,17 +236,21 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
 
   const renderNetappContainer = () => {
     return (
-      <div
+      <section
         className={
           transferSource === "netapp"
             ? styles.sourceContainer
             : styles.destinationContainer
         }
         data-testid="netapp-container"
+        aria-role="region"
+        aria-labelledby="shared-drive-region"
+        tabIndex={0}
       >
-        <div className={styles.titleWrapper}>
-          <h3 className={styles.inlineHeading}>Shared drive</h3>-{" "}
+        <div id="shared-drive-region" className={styles.titleWrapper}>
+          <span className={styles.regionHead}>Shared drive</span>-{" "}
           <span>{transferSource === "egress" ? "Destination" : "Source"}</span>
+          <span className="govuk-visually-hidden">region</span>
         </div>
         <div className={styles.tableContainer}>
           {netAppPath && (
@@ -261,7 +268,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
             />
           )}
         </div>
-      </div>
+      </section>
     );
   };
 
@@ -703,7 +710,10 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
                 <br />
                 You can also transfer
               </>
-              <LinkButton onClick={handleSwitchSource}>
+              <LinkButton
+                onClick={handleSwitchSource}
+                ariaLabel={`${transferSource === "egress" ? "transfer from the Shared Drive to Egress" : "transfer from Egress to the Shared Drive"}`}
+              >
                 {`${transferSource === "egress" ? "from the Shared Drive to Egress" : "from Egress to the Shared Drive"}`}
               </LinkButton>
             </InsetText>
