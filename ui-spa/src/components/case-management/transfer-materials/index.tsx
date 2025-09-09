@@ -362,7 +362,13 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         "selected transfer destination details should not be null",
       );
     }
-    let sourcePaths = [];
+    let sourcePaths:
+      | {
+          fileId: string;
+          path: string;
+          isFolder: boolean;
+        }[]
+      | { path: string }[] = [];
     if (selectedTransferAction.destinationFolder.sourceType === "egress") {
       sourcePaths = egressFolderData
         .filter((data) => selectedSourceFoldersOrFiles.includes(data.path))
@@ -377,6 +383,8 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       }));
     }
 
+    const paths = sourcePaths.map(({ path }) => path);
+
     const payload = {
       caseId: parseInt(caseId),
       transferDirection:
@@ -390,6 +398,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       sourcePaths: sourcePaths,
       destinationPath: selectedTransferAction.destinationFolder.path,
       workspaceId: egressWorkspaceId,
+      sourceRootFolderPath: getCommonPath(paths),
     };
     return payload;
   };
@@ -409,8 +418,6 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       fullFilePath: data.fullFilePath,
     }));
 
-    const relativePaths = sourcePaths.map((data) => data.relativePath!);
-
     const payload = {
       caseId: parseInt(caseId),
       sourcePaths: sourcePaths,
@@ -429,7 +436,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         : {
             transferType: "Copy" as const,
             transferDirection: "NetAppToEgress" as const,
-            sourceRootFolderPath: getCommonPath(relativePaths),
+            sourceRootFolderPath: response.sourceRootFolderPath,
           };
 
     return { ...payload, ...uniquePayload };
