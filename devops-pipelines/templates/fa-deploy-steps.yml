@@ -6,7 +6,7 @@ parameters:
   keyVaultName: $(keyVaultName)
   azureSubscription: $(azureSubscription)
   resourceGroupName: $(resourceGroupName)
-  deployToSlot: true
+  deployToSlot: false
   slotName: ''
 
 steps:
