@@ -16,8 +16,6 @@ stages:
     parameters:
       environment: dev
       requireValidation: false
-      deployToSlot: true
-      slotName: 'stg'
 
   - template: ../templates/ui-build-and-deploy-stages.yml
     parameters:
@@ -25,7 +23,9 @@ stages:
       requireValidation: true
       notifyUsers: $(notifyUsers)
       approvers: $(approvers)
-
+      deployToSlot: true
+      slotName: 'stg'
+      
   # - template: ../templates/ui-build-and-deploy-stages.yml
   #   parameters:
   #     environment: prod
