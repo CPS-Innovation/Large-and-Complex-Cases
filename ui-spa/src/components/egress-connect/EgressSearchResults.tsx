@@ -127,7 +127,7 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
             matching <b>{workspaceName}</b>.
           </div>
           <SortableTable
-            caption="egress folders and files table, column headers with buttons are sortable"
+            caption="egress files and folders table, column headers with buttons are sortable"
             captionClassName="govuk-visually-hidden"
             head={[
               {

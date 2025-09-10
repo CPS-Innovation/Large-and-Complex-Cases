@@ -35,16 +35,15 @@ test.describe("transfer material egress list", () => {
 
     await expect(page.getByTestId("egress-container")).toBeVisible();
     await expect(page.getByTestId("netapp-container")).toBeVisible();
-    await expect(
-      page
-        .getByTestId("egress-container")
-        .locator("h3", { hasText: "Egress" }),
-    ).toBeVisible();
-    await expect(
-      page
-        .getByTestId("netapp-container")
-        .locator("h3", { hasText: "Shared drive" }),
-    ).toBeVisible();
+    await expect(page.getByTestId("egress-region-title")).toBeVisible();
+    await expect(page.getByTestId("egress-region-title")).toHaveText(
+      "Egress- Source region",
+    );
+
+    await expect(page.getByTestId("shared-drive-region-title")).toBeVisible();
+    await expect(page.getByTestId("shared-drive-region-title")).toHaveText(
+      "Shared drive- Destination region",
+    );
   });
 
   test("Should show the egress folders results correctly when egress is the source table", async ({
@@ -89,7 +88,9 @@ test.describe("transfer material egress list", () => {
     await expect(
       page.getByTestId("egress-folder-table-loader"),
     ).not.toBeVisible();
-    await page.getByRole("button", { name: "from the Shared Drive to Egress" }).click();
+    await page
+      .getByRole("button", { name: "from the Shared Drive to Egress" })
+      .click();
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2"),
     ).toHaveText("Transfer between Shared Drive and Egress");
@@ -211,11 +212,13 @@ test.describe("transfer material egress list", () => {
       page.getByTestId("egress-folder-table-loader"),
     ).not.toBeVisible();
     await validateFolderPath(page, ["Home"]);
+
     await expect(
-      page
-        .getByTestId("egress-container")
-        .getByText("There are no documents currently in this folder"),
+      page.getByTestId("egress-container").getByTestId("no-documents-text"),
     ).toBeVisible();
+    await expect(
+      page.getByTestId("egress-container").getByTestId("no-documents-text"),
+    ).toHaveText("There are no documents currently in this folder");
   });
 
   test("Should hide checkboxes from the root egress folders and show checkboxes for the rest of the folders, when the egress is the source table", async ({
@@ -295,10 +298,12 @@ test.describe("transfer material egress list", () => {
       "folder-2-0",
       "folder-3-0",
     ]);
+
     await expect(
-      page
-        .getByTestId("egress-container")
-        .getByText("There are no documents currently in this folder"),
+      page.getByTestId("egress-container").getByTestId("no-documents-text"),
     ).toBeVisible();
+    await expect(
+      page.getByTestId("egress-container").getByTestId("no-documents-text"),
+    ).toHaveText("There are no documents currently in this folder");
   });
 });

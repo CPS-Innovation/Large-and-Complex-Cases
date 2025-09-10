@@ -336,7 +336,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
     <div>
       <div>
         <FolderNavigationTable
-          caption="network shared drive folders and files table, column headers with buttons are sortable"
+          caption="shared drive files and folders table, column headers with buttons are sortable"
           tableName={"netapp"}
           folders={folders}
           loaderText="Loading folders from Shared drive"

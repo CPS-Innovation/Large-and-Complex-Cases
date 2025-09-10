@@ -197,13 +197,17 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
             : styles.destinationContainer
         }
         data-testid="egress-container"
-        aria-labelledby="egress-region"
+        aria-labelledby="egress-region-title"
         tabIndex={0}
       >
-        <div id="egress-region" className={styles.titleWrapper}>
+        <div
+          id="egress-region-title"
+          data-testid="egress-region-title"
+          className={styles.titleWrapper}
+        >
           <span className={styles.regionHead}>Egress</span>-{" "}
           <span>{transferSource === "egress" ? "Source" : "Destination"}</span>
-          <span className="govuk-visually-hidden">region</span>
+          <span className="govuk-visually-hidden"> region</span>
         </div>
         <div className={styles.tableContainer}>
           {
@@ -244,13 +248,17 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         }
         data-testid="netapp-container"
         aria-role="region"
-        aria-labelledby="shared-drive-region"
+        aria-labelledby="shared-drive-region-title"
         tabIndex={0}
       >
-        <div id="shared-drive-region" className={styles.titleWrapper}>
+        <div
+          id="shared-drive-region-title"
+          data-testid="shared-drive-region-title"
+          className={styles.titleWrapper}
+        >
           <span className={styles.regionHead}>Shared drive</span>-{" "}
           <span>{transferSource === "egress" ? "Destination" : "Source"}</span>
-          <span className="govuk-visually-hidden">region</span>
+          <span className="govuk-visually-hidden"> region</span>
         </div>
         <div className={styles.tableContainer}>
           {netAppPath && (
@@ -638,11 +646,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     return (
       <div className={styles.transferContent}>
         <div className={styles.spinnerWrapper}>
-          <Spinner
-            data-testid="transfer-spinner"
-            diameterPx={50}
-            ariaLabel={activeTransferMessage.ariaLabelText}
-          />
+          <Spinner data-testid="transfer-spinner" diameterPx={50} />
           <div className={styles.spinnerText}>
             {activeTransferMessage.spinnerTextContent}
           </div>
@@ -655,15 +659,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     return (
       <div className={styles.transferContent}>
         <div className={styles.spinnerWrapper}>
-          <Spinner
-            data-testid="transfer-spinner"
-            diameterPx={50}
-            ariaLabel={
-              transferSource === "egress"
-                ? "Indexing transfer from Egress to Shared Drive"
-                : "Indexing transfer from Shared Drive to Egress"
-            }
-          />
+          <Spinner data-testid="transfer-spinner" diameterPx={50} />
           <div className={styles.spinnerText}>
             {transferSource === "egress" ? (
               <span>

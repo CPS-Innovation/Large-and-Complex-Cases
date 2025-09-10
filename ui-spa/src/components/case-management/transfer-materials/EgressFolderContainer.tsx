@@ -319,7 +319,7 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
   return (
     <div className={hideFirstColumn ? styles.hideFirstColumn : ""}>
       <FolderNavigationTable
-        caption="egress folders and files table, column headers with buttons are sortable"
+        caption="egress files and folders table, column headers with buttons are sortable"
         tableName="egress"
         folders={egressPathFolders}
         loaderText="Loading folders from Egress"

@@ -30,7 +30,9 @@ test.describe("transfer material netapp list", () => {
     await expect(
       page.getByTestId("netapp-folder-table-loader"),
     ).not.toBeVisible();
-    await page.getByRole("button", { name: "from the Shared Drive to Egress" }).click();
+    await page
+      .getByRole("button", { name: "from the Shared Drive to Egress" })
+      .click();
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2"),
     ).toHaveText("Transfer between Shared Drive and Egress");
@@ -231,10 +233,12 @@ test.describe("transfer material netapp list", () => {
       page.getByTestId("netapp-folder-table-loader"),
     ).not.toBeVisible();
     await validateFolderPath(page, ["netapp"]);
+
     await expect(
-      page
-        .getByTestId("netapp-container")
-        .getByText("There are no documents currently in this folder"),
+      page.getByTestId("netapp-container").getByTestId("no-documents-text"),
     ).toBeVisible();
+    await expect(
+      page.getByTestId("netapp-container").getByTestId("no-documents-text"),
+    ).toHaveText("There are no documents currently in this folder");
   });
 });

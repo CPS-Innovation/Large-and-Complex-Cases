@@ -133,7 +133,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
 
       <div className={"govuk-grid-column-two-thirds"}>
         <FolderNavigationTable
-          caption="network shared drive folders table, column headers with buttons are sortable"
+          caption="shared drive folders table, column headers with buttons are sortable"
           tableName={"netapp"}
           folders={folders}
           loaderText="Loading folders from Network Shared Drive"
