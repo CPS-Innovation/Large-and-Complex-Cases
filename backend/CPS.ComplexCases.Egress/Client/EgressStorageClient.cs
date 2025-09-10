@@ -41,9 +41,7 @@ public class EgressStorageClient(
             throw new ArgumentNullException(nameof(relativePath), "Relative path cannot be null or empty.");
 
         var fileName = Path.GetFileName(relativePath);
-        var relativePathFromSourceRoot = !string.IsNullOrEmpty(sourceRootFolderPath) && relativePath.StartsWith(sourceRootFolderPath) ?
-            relativePath.Substring(sourceRootFolderPath.Length).TrimStart('/', '\\') :
-            relativePath;
+        var relativePathFromSourceRoot = GetRelativePathFromSourceRoot(relativePath, sourceRootFolderPath);
         var sourceDirectory = Path.GetDirectoryName(relativePathFromSourceRoot) ?? string.Empty;
         var fullDestinationPath = Path.Combine(destinationPath, sourceDirectory).Replace('\\', '/');
 
@@ -228,6 +226,8 @@ public class EgressStorageClient(
             Path = parentPath
         };
 
+        if (string.IsNullOrEmpty(arg.Path)) return false;
+
         try
         {
             var request = _egressRequestFactory.CreateFolderRequest(arg, token);
@@ -360,5 +360,12 @@ public class EgressStorageClient(
         }
 
         return allData;
+    }
+
+    internal static string GetRelativePathFromSourceRoot(string relativePath, string? sourceRootFolderPath)
+    {
+        return !string.IsNullOrEmpty(sourceRootFolderPath) && relativePath.StartsWith(sourceRootFolderPath) ?
+            relativePath.Substring(sourceRootFolderPath.Length).TrimStart('/', '\\') :
+            relativePath;
     }
 }

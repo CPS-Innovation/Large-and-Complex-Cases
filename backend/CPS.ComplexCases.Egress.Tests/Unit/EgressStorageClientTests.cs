@@ -634,6 +634,23 @@ public class EgressStorageClientTests : IDisposable
             Times.Never);
     }
 
+    [Theory]
+    [InlineData("root/folder/file.txt", "root/", "folder/file.txt")]
+    [InlineData("root\\folder\\file.txt", "root\\", "folder\\file.txt")]
+    [InlineData("root/folder/file.txt", "root/folder/", "file.txt")]
+    [InlineData("root/folder/file.txt", "root/folder", "file.txt")]
+    [InlineData("folder/file.txt", "folder/", "file.txt")]
+    [InlineData("folder/file.txt", null, "folder/file.txt")]
+    [InlineData("folder/file.txt", "", "folder/file.txt")]
+    [InlineData("root/folder/file.txt", "notmatching/", "root/folder/file.txt")]
+    [InlineData("/root/folder/file.txt", "/root/", "folder/file.txt")]
+    [InlineData("root/folder/file.txt", "root", "folder/file.txt")]
+    public void GetRelativePathFromSourceRoot_ReturnsExpected(string relativePath, string? sourceRootFolderPath, string expected)
+    {
+        var result = EgressStorageClient.GetRelativePathFromSourceRoot(relativePath, sourceRootFolderPath);
+        Assert.Equal(expected, result);
+    }
+
     #region Setup Methods
 
     private void SetupTokenRequest(string token)

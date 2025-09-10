@@ -115,6 +115,14 @@ public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorage
             result.ValidationErrors = failedFiles;
             result.IsInvalid = failedFiles.Any();
         }
+        else if (request.Value != null && request.Value.TransferDirection == TransferDirection.NetAppToEgress)
+        {
+            if (!string.IsNullOrEmpty(request.Value.SourceRootFolderPath))
+            {
+                var operationName = request.Value.SourceRootFolderPath.Substring(0, request.Value.SourceRootFolderPath.IndexOf('/'));
+                result.SourceRootFolderPath = request.Value.SourceRootFolderPath.RemovePathPrefix(operationName);
+            }
+        }
 
         return new OkObjectResult(result);
     }
