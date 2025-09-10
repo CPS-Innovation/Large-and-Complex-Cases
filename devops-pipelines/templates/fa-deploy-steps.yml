@@ -4,7 +4,7 @@ parameters:
   buildArtifactName: ''
   pipelineResourceAlias: ''
   keyVaultName: $(keyVaultName)
-  azureSubscription: $(azureSubscription)
+  azureSubscription: ''
   resourceGroupName: $(resourceGroupName)
   deployToSlot: false
   slotName: ''
@@ -13,7 +13,7 @@ steps:
   - download: '${{ parameters.pipelineResourceAlias}}'
     artifact: '${{ parameters.buildArtifactName }}'
 
-  - template: ../templates/fa-config.yml
+  - template: ../templates/fa-config-steps.yml
     parameters:
       environment: ${{ parameters.environment }}
       functionAppName: ${{ parameters.functionAppName }}
