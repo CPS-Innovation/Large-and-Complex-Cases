@@ -267,13 +267,13 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
       {
         id: `${path}:move`,
         label: "Move",
-        ariaLabel: "move",
+        ariaLabel: `move to ${getFolderNameFromPath(path)}`,
         disabled: false,
       },
       {
         id: `${path}:copy`,
         label: "Copy",
-        ariaLabel: "copy",
+        ariaLabel: `copy to  ${getFolderNameFromPath(path)}`,
         disabled: false,
       },
     ];
@@ -305,6 +305,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
           onClick={() => {
             handleTransferAction(`${curentFolder.folderPath}:copy`);
           }}
+          ariaLabel={`Copy to ${curentFolder.folderName}`}
         >
           Copy
         </LinkButton>{" "}
@@ -314,6 +315,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
           onClick={() => {
             handleTransferAction(`${curentFolder.folderPath}:move`);
           }}
+          ariaLabel={`Move to ${curentFolder.folderName}`}
         >
           Move
         </LinkButton>

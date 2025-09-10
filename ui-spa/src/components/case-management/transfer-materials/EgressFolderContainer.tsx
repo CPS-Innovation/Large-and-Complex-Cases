@@ -241,7 +241,10 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
               <div>
                 <DropdownButton
                   name="Actions"
-                  dropDownItems={getDestinationDropdownItems(data.path)}
+                  dropDownItems={getDestinationDropdownItems(
+                    data.path,
+                    data.name,
+                  )}
                   callBackFn={handleTransferAction}
                   ariaLabel="transfer actions dropdown"
                   dataTestId={`transfer-actions-dropdown-${index}`}
@@ -266,12 +269,12 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
     return getTableDestinationRowData();
   };
 
-  const getDestinationDropdownItems = (id: string) => {
+  const getDestinationDropdownItems = (id: string, folderName: string) => {
     return [
       {
         id: `${id}:copy`,
         label: "Copy",
-        ariaLabel: "copy",
+        ariaLabel: `copy to ${folderName}`,
         disabled: false,
       },
     ];
@@ -297,6 +300,7 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
         Transfer to {curentFolder.folderName}
         <LinkButton
           type="button"
+          ariaLabel={`Copy to ${curentFolder.folderName}`}
           onClick={() => {
             handleTransferAction(`${curentFolder.folderPath}:copy`);
           }}
