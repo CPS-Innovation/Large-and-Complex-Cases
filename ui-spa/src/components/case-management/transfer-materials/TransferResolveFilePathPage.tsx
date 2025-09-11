@@ -19,6 +19,7 @@ import { RenameTransferFilePage } from "./RenameTransferFilePage";
 import { initiateFileTransfer } from "../../../apis/gateway-api";
 import { EgressTranferPayloadSourcePath } from "../../../common/types/InitiateFileTransferPayload";
 import { TransferResolvePageLocationState } from "../../../common/types/TransferResolvePageLocationState";
+import { PageContentWrapper } from "../../govuk/PageContentWrapper";
 import styles from "./TransferResolveFilePathPage.module.scss";
 
 const MAX_FILE_PATH_CHARACTERS = 260;
@@ -173,91 +174,97 @@ const TransferResolveFilePathPage = () => {
       <BackLink to={`/case/${caseId}/case-management`} replace>
         Back
       </BackLink>
-      {!largePathFiles && (
-        <div className={styles.successBanner}>
-          <NotificationBanner
-            type="success"
-            data-testid="resolve-path-success-notification-banner"
-          >
-            Your { resolvePathFiles.length === 1 ? "file" : "files" } can now be transferred.
-          </NotificationBanner>
-        </div>
-      )}
-      <div className={styles.contentWrapper}>
-        <h1 className="govuk-heading-xl">File structure is too long</h1>
-        <InsetText data-testId="resolve-file-path-inset-text">
-          <p>
-            There { resolvePathFiles.length === 1 ? "is" : "are" }{" "}
-            <b>{resolvePathFiles.length} { resolvePathFiles.length === 1 ? "file" : "files" } </b>
-            with { resolvePathFiles.length === 1 ? "a name" : "names" } longer than {
-              MAX_FILE_PATH_CHARACTERS
-            }{" "}
-            characters.
-          </p>
-          <p>
-            You need to rename the { resolvePathFiles.length === 1 ? "file" : "files" } or change the folder structure.
-          </p>
-        </InsetText>
-
-        <div>
-          <div>
-            {Object.keys(groupedResolvedPathFiles).map((key) => {
-              return (
-                <section key={key} className={styles.errorWrapper}>
-                  <div className={styles.relativePathWrapper}>
-                    <FolderIcon />
-                    <h2 className={styles.relativePathText}>{key}</h2>
-                  </div>
-                  <ul className={styles.errorList}>
-                    {groupedResolvedPathFiles[key].map((file) => {
-                      return (
-                        <li
-                          key={file.sourceName}
-                          className={styles.errorListItem}
-                        >
-                          <div data-testid="file-name-wrapper">
-                            <FileIcon />
-                            <span className={styles.fileNameText}>
-                              {file.sourceName}
-                            </span>
-                          </div>
-                          <div data-testid="character-tag">
-                            {getCharactersTag(
-                              `${file.relativeFinalPath}/${file.sourceName}`,
-                            )}
-                          </div>
-                          <div className={styles.renameButton}>
-                            <Button
-                              name="secondary"
-                              className="govuk-button--secondary"
-                              disabled={disableBtns}
-                              onClick={() => handleRenameButtonClick(file.id)}
-                            >
-                              Rename
-                            </Button>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </section>
-              );
-            })}
-          </div>
-          <div className={styles.btnWrapper}>
-            <Button
-              className={styles.btnStartTransfer}
-              disabled={disableBtns || !!largePathFiles}
-              onClick={handleStartTransferBtnClick}
+      <PageContentWrapper>
+        {!largePathFiles && (
+          <div className={styles.successBanner}>
+            <NotificationBanner
+              type="success"
+              data-testid="resolve-path-success-notification-banner"
             >
-              Start transfer
-            </Button>
-            <LinkButton onClick={handleCancel} disabled={disableBtns}>
-              Cancel
-            </LinkButton>
+              Your {resolvePathFiles.length === 1 ? "file" : "files"} can now be
+              transferred.
+            </NotificationBanner>
+          </div>
+        )}
+        <div className={styles.contentWrapper}>
+          <h1 className="govuk-heading-xl">File structure is too long</h1>
+          <InsetText data-testId="resolve-file-path-inset-text">
+            <p>
+              There {resolvePathFiles.length === 1 ? "is" : "are"}{" "}
+              <b>
+                {resolvePathFiles.length}{" "}
+                {resolvePathFiles.length === 1 ? "file" : "files"}{" "}
+              </b>
+              with {resolvePathFiles.length === 1 ? "a name" : "names"} longer
+              than {MAX_FILE_PATH_CHARACTERS} characters.
+            </p>
+            <p>
+              You need to rename the{" "}
+              {resolvePathFiles.length === 1 ? "file" : "files"} or change the
+              folder structure.
+            </p>
+          </InsetText>
+
+          <div>
+            <div>
+              {Object.keys(groupedResolvedPathFiles).map((key) => {
+                return (
+                  <section key={key} className={styles.errorWrapper}>
+                    <div className={styles.relativePathWrapper}>
+                      <FolderIcon />
+                      <h2 className={styles.relativePathText}>{key}</h2>
+                    </div>
+                    <ul className={styles.errorList}>
+                      {groupedResolvedPathFiles[key].map((file) => {
+                        return (
+                          <li
+                            key={file.sourceName}
+                            className={styles.errorListItem}
+                          >
+                            <div data-testid="file-name-wrapper">
+                              <FileIcon />
+                              <span className={styles.fileNameText}>
+                                {file.sourceName}
+                              </span>
+                            </div>
+                            <div data-testid="character-tag">
+                              {getCharactersTag(
+                                `${file.relativeFinalPath}/${file.sourceName}`,
+                              )}
+                            </div>
+                            <div className={styles.renameButton}>
+                              <Button
+                                name="secondary"
+                                className="govuk-button--secondary"
+                                disabled={disableBtns}
+                                onClick={() => handleRenameButtonClick(file.id)}
+                              >
+                                Rename
+                              </Button>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </section>
+                );
+              })}
+            </div>
+            <div className={styles.btnWrapper}>
+              <Button
+                className={styles.btnStartTransfer}
+                disabled={disableBtns || !!largePathFiles}
+                onClick={handleStartTransferBtnClick}
+              >
+                Start transfer
+              </Button>
+              <LinkButton onClick={handleCancel} disabled={disableBtns}>
+                Cancel
+              </LinkButton>
+            </div>
           </div>
         </div>
-      </div>
+      </PageContentWrapper>
     </div>
   );
 };

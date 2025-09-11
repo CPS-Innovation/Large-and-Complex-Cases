@@ -6,6 +6,7 @@ import { sortByStringProperty } from "../../common/utils/sortUtils";
 import { getFolderNameFromPath } from "../../common/utils/getFolderNameFromPath";
 import FolderNavigationTable from "../common/FolderNavigationTable";
 import FolderIcon from "../../components/svgs/folder.svg?react";
+import { PageContentWrapper } from "../govuk/PageContentWrapper";
 import styles from "./NetAppFolderResultsPage.module.scss";
 
 type NetAppFolderResultsPageProps = {
@@ -121,30 +122,32 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
   return (
     <div className={`govuk-width-container ${styles.mainContainer}`}>
       <BackLink to={backLinkUrl}>Back</BackLink>
-      <h1 className="govuk-heading-xl govuk-!-margin-bottom-0">
-        Link a network shared drive folder to the case
-      </h1>
-      <InsetText>
-        <p>
-          If the folder you need is not listed, check that you have the correct
-          permissions or contact the product team for support.
-        </p>
-      </InsetText>
+      <PageContentWrapper>
+        <h1 className="govuk-heading-xl govuk-!-margin-bottom-0">
+          Link a network shared drive folder to the case
+        </h1>
+        <InsetText>
+          <p>
+            If the folder you need is not listed, check that you have the
+            correct permissions or contact the product team for support.
+          </p>
+        </InsetText>
 
-      <div className={"govuk-grid-column-two-thirds"}>
-        <FolderNavigationTable
-          caption="shared drive folders table, column headers with buttons are sortable"
-          tableName={"netapp"}
-          folders={folders}
-          loaderText="Loading folders from Network Shared Drive"
-          folderResultsStatus={netAppFolderApiResults.status}
-          folderResultsLength={netappFolderData.length}
-          handleFolderPathClick={handleFolderPathClick}
-          getTableRowData={getTableRowData}
-          getTableHeadData={getTableHeadData}
-          handleTableSort={handleTableSort}
-        />
-      </div>
+        <div className={"govuk-grid-column-two-thirds"}>
+          <FolderNavigationTable
+            caption="shared drive folders table, column headers with buttons are sortable"
+            tableName={"netapp"}
+            folders={folders}
+            loaderText="Loading folders from Network Shared Drive"
+            folderResultsStatus={netAppFolderApiResults.status}
+            folderResultsLength={netappFolderData.length}
+            handleFolderPathClick={handleFolderPathClick}
+            getTableRowData={getTableRowData}
+            getTableHeadData={getTableHeadData}
+            handleTableSort={handleTableSort}
+          />
+        </div>
+      </PageContentWrapper>
     </div>
   );
 };
