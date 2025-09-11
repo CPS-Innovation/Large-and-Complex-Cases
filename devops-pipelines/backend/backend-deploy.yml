@@ -31,5 +31,7 @@ stages:
   #     requireValidation: true
   #     notifyUsers: $(notifyUsers)
   #     approvers: $(approvers)
-  #     agentPool: 'LACC Production Pool'
+  #     agentPool: 'LACC Prod Pool'
   #     azureSubscription: 'Azure Pipeline: Large and Complex Cases - Prod'
+  #     deployToSlot: true
+  #     slotName: 'stg'
