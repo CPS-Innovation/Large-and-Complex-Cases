@@ -9,4 +9,5 @@ public class FilesForTransferResult
     public IEnumerable<FileTransferFailedInfo>? ValidationErrors { get; set; }
     public bool IsInvalid { get; set; } = false;
     public required string DestinationPath { get; set; }
+    public string? SourceRootFolderPath { get; set; }
 }

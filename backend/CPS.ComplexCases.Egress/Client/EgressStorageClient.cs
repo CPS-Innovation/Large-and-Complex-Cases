@@ -33,7 +33,7 @@ public class EgressStorageClient(
         return await response.Content.ReadAsStreamAsync();
     }
 
-    public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string sourcePath, string? workspaceId = null, string? relativePath = null)
+    public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string sourcePath, string? workspaceId = null, string? relativePath = null, string? sourceRootFolderPath = null)
     {
         var token = await GetWorkspaceToken();
 
@@ -41,7 +41,8 @@ public class EgressStorageClient(
             throw new ArgumentNullException(nameof(relativePath), "Relative path cannot be null or empty.");
 
         var fileName = Path.GetFileName(relativePath);
-        var sourceDirectory = Path.GetDirectoryName(relativePath) ?? string.Empty;
+        var relativePathFromSourceRoot = GetRelativePathFromSourceRoot(relativePath, sourceRootFolderPath);
+        var sourceDirectory = Path.GetDirectoryName(relativePathFromSourceRoot) ?? string.Empty;
         var fullDestinationPath = Path.Combine(destinationPath, sourceDirectory).Replace('\\', '/');
 
         var arg = new CreateUploadArg
@@ -225,6 +226,8 @@ public class EgressStorageClient(
             Path = parentPath
         };
 
+        if (string.IsNullOrEmpty(arg.Path)) return false;
+
         try
         {
             var request = _egressRequestFactory.CreateFolderRequest(arg, token);
@@ -357,5 +360,12 @@ public class EgressStorageClient(
         }
 
         return allData;
+    }
+
+    internal static string GetRelativePathFromSourceRoot(string relativePath, string? sourceRootFolderPath)
+    {
+        return !string.IsNullOrEmpty(sourceRootFolderPath) && relativePath.StartsWith(sourceRootFolderPath) ?
+            relativePath.Substring(sourceRootFolderPath.Length).TrimStart('/', '\\') :
+            relativePath;
     }
 }

@@ -15,9 +15,9 @@ using CPS.ComplexCases.Egress.Models.Args;
 using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Functions;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain;
+using CPS.ComplexCases.FileTransfer.API.Models.Results;
 using CPS.ComplexCases.FileTransfer.API.Validators;
 using Moq;
-using CPS.ComplexCases.FileTransfer.API.Models.Results;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Functions;
 

@@ -8,5 +8,6 @@ export type IndexingFileTransferPayload = {
     isFolder?: boolean;
   }[];
   destinationPath: string;
+  sourceRootFolderPath: string;
   workspaceId?: string;
 };

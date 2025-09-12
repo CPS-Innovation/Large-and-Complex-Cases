@@ -13,6 +13,8 @@ public class GetFilesForTransferRequest
     public TransferType TransferType { get; set; }
     [JsonPropertyName("sourcePaths")]
     public required List<SourcePath> SourcePaths { get; set; }
+    [JsonPropertyName("sourceRootFolderPath")]
+    public string? SourceRootFolderPath { get; set; }
     [JsonPropertyName("destinationPath")]
     public required string DestinationPath { get; set; }
     [JsonPropertyName("workspaceId")]
