@@ -28,7 +28,7 @@ const TransferResolveFilePathPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { caseId } = useParams();
-
+  const [ariaLiveText, setAriaLiveText] = useState("");
   const [locationState, setLocationState] =
     useState<TransferResolvePageLocationState>();
 
@@ -48,15 +48,21 @@ const TransferResolveFilePathPage = () => {
       );
     }, [resolvePathFiles, locationState]);
 
-  const largePathFiles = useMemo(
-    () =>
-      resolvePathFiles.find(
-        (file) =>
-          `${file.relativeFinalPath}/${file.sourceName}`.length >
-          MAX_FILE_PATH_CHARACTERS,
-      ),
-    [resolvePathFiles],
-  );
+  const largePathFiles = useMemo(() => {
+    if (!resolvePathFiles.length) {
+      return true;
+    }
+    const longPathFile = resolvePathFiles.find(
+      (file) =>
+        `${file.relativeFinalPath}/${file.sourceName}`.length >
+        MAX_FILE_PATH_CHARACTERS,
+    );
+    return !!longPathFile;
+  }, [resolvePathFiles]);
+
+  useEffect(() => {
+    setAriaLiveText("indexing transfer error, file structure is too long");
+  }, []);
 
   useEffect(() => {
     const initialValue = getMappedResolvePathFiles(
@@ -174,6 +180,11 @@ const TransferResolveFilePathPage = () => {
       <BackLink to={`/case/${caseId}/case-management`} replace>
         Back
       </BackLink>
+      {largePathFiles && (
+        <span role="alert" aria-live="polite" className="govuk-visually-hidden">
+          {ariaLiveText}
+        </span>
+      )}
       <PageContentWrapper>
         {!largePathFiles && (
           <div className={styles.successBanner}>
@@ -238,6 +249,7 @@ const TransferResolveFilePathPage = () => {
                                 className="govuk-button--secondary"
                                 disabled={disableBtns}
                                 onClick={() => handleRenameButtonClick(file.id)}
+                                aria-label={`rename file ${file.sourceName}`}
                               >
                                 Rename
                               </Button>
@@ -253,7 +265,7 @@ const TransferResolveFilePathPage = () => {
             <div className={styles.btnWrapper}>
               <Button
                 className={styles.btnStartTransfer}
-                disabled={disableBtns || !!largePathFiles}
+                disabled={disableBtns || largePathFiles}
                 onClick={handleStartTransferBtnClick}
               >
                 Start transfer

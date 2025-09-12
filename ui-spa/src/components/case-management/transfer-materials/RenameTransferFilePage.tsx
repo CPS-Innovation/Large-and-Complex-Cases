@@ -27,30 +27,25 @@ export const RenameTransferFilePage: React.FC<RenameTransferFilePageProps> = ({
 
   const getCharactersText = useCallback(() => {
     const characterCount = `${relativeFilePath}/${inputValue}`.length;
-    if (characterCount > MAX_FILE_PATH_CHARACTERS)
-      return (
+    const tagColor =
+      characterCount > MAX_FILE_PATH_CHARACTERS ? "red" : "green";
+
+    return (
+      <>
+        <output className="govuk-visually-hidden" aria-live="polite">
+          File path length: {characterCount} characters
+        </output>
         <p>
           File path length:
           <Tag
-            gdsTagColour="red"
+            gdsTagColour={tagColor}
             className={styles.statusTag}
             data-testid="character-tag"
           >
             {characterCount} characters
           </Tag>
         </p>
-      );
-    return (
-      <p>
-        File path length:
-        <Tag
-          gdsTagColour="green"
-          className={styles.statusTag}
-          data-testid="character-tag"
-        >
-          {characterCount} characters
-        </Tag>
-      </p>
+      </>
     );
   }, [relativeFilePath, inputValue]);
   return (
