@@ -10,6 +10,7 @@ import {
 } from "../../common/hooks/useCaseSearchForm";
 import SearchResults from "./SearchResults";
 import { useFormattedAreaValues } from "../../common/hooks/useFormattedAreaValues";
+import { PageContentWrapper } from "../govuk/PageContentWrapper";
 import styles from "./index.module.scss";
 
 const CaseSearchResultPage = () => {
@@ -280,7 +281,12 @@ const CaseSearchResultPage = () => {
 
   const getResultsCountText = (resultsCount: number) => {
     const resultString = resultsCount < 2 ? "case" : "cases";
-    const instructionText = <>Select <b>view</b> to transfer files or folders      or <b>connect</b> to setup storage locations.</>
+    const instructionText = (
+      <>
+        Select <b>view</b> to transfer files or folders or <b>connect</b> to
+        setup storage locations.
+      </>
+    );
 
     const resultHtml = (
       <>
@@ -293,7 +299,8 @@ const CaseSearchResultPage = () => {
         return (
           <>
             {resultHtml}
-            found in <b>{getAreaTextFromValue(searchParams["area"])}</b>. {instructionText}
+            found in <b>{getAreaTextFromValue(searchParams["area"])}</b>.{" "}
+            {instructionText}
           </>
         );
       default:
@@ -345,42 +352,44 @@ const CaseSearchResultPage = () => {
       <BackLink to="/" state={{ ...formData }}>
         Back
       </BackLink>
-      <div className={styles.contentTop}>
-        {!!errorList.length && (
-          <div
-            ref={errorSummaryRef}
-            tabIndex={-1}
-            className={styles.errorSummaryWrapper}
-          >
-            <ErrorSummary
-              data-testid={"search-error-summary"}
-              errorList={errorList}
-              titleChildren="There is a problem"
-            />
-          </div>
-        )}
-        <h1>{getTitleText()}</h1>
-        <form onSubmit={handleSearch}>
-          <div className={styles.inputWrapper}>
-            {renderSearchForm()}
-            <div className={styles.btnWrapper}>
-              <Button type="submit">Search</Button>
+      <PageContentWrapper>
+        <div className={styles.contentTop}>
+          {!!errorList.length && (
+            <div
+              ref={errorSummaryRef}
+              tabIndex={-1}
+              className={styles.errorSummaryWrapper}
+            >
+              <ErrorSummary
+                data-testid={"search-error-summary"}
+                errorList={errorList}
+                titleChildren="There is a problem"
+              />
             </div>
-          </div>
-        </form>
-        {!!caseSearchApi.data?.length && (
-          <div className={styles.searchResultsCount}>
-            {getResultsCountText(caseSearchApi.data.length)}
-          </div>
-        )}
-        {!caseSearchApi.data?.length && <div>{getNoResultsText()}</div>}
-      </div>
+          )}
+          <h1>{getTitleText()}</h1>
+          <form onSubmit={handleSearch}>
+            <div className={styles.inputWrapper}>
+              {renderSearchForm()}
+              <div className={styles.btnWrapper}>
+                <Button type="submit">Search</Button>
+              </div>
+            </div>
+          </form>
+          {!!caseSearchApi.data?.length && (
+            <div className={styles.searchResultsCount}>
+              {getResultsCountText(caseSearchApi.data.length)}
+            </div>
+          )}
+          {!caseSearchApi.data?.length && <div>{getNoResultsText()}</div>}
+        </div>
 
-      <SearchResults
-        searchQueryString={queryString}
-        searchApiResults={caseSearchApi}
-        searchType={formData[SearchFormField.searchType]}
-      />
+        <SearchResults
+          searchQueryString={queryString}
+          searchApiResults={caseSearchApi}
+          searchType={formData[SearchFormField.searchType]}
+        />
+      </PageContentWrapper>
     </div>
   );
 };

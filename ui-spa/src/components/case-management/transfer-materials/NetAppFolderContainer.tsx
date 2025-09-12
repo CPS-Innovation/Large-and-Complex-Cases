@@ -80,14 +80,12 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
     const tableHeadData = [
       {
         children: (
-          <>
-            <Checkbox
-              id={"all-folders"}
-              checked={isSourceFolderChecked("all-folders")}
-              onChange={handleCheckboxChange}
-              ariaLabel="Select all folders"
-            />
-          </>
+          <Checkbox
+            id={"all-folders"}
+            checked={isSourceFolderChecked("all-folders")}
+            onChange={handleCheckboxChange}
+            ariaLabel="Select folders and files"
+          />
         ),
         sortable: false,
       },
@@ -127,7 +125,9 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
       return [
         ...tableHeadData,
         {
-          children: <></>,
+          children: (
+            <span className="govuk-visually-hidden">Transfer Actions</span>
+          ),
           sortable: false,
         },
       ];
@@ -146,14 +146,16 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
         cells: [
           {
             children: (
-              <>
-                <Checkbox
-                  id={data.path}
-                  checked={isSourceFolderChecked(data.path)}
-                  onChange={handleCheckboxChange}
-                  ariaLabel="select folder"
-                />
-              </>
+              <Checkbox
+                id={data.path}
+                checked={isSourceFolderChecked(data.path)}
+                onChange={handleCheckboxChange}
+                ariaLabel={
+                  data.isFolder
+                    ? `select folder ${getFolderNameFromPath(data.path)}`
+                    : `select file ${getFileNameFromPath(data.path)}`
+                }
+              />
             ),
           },
           {
@@ -267,13 +269,13 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
       {
         id: `${path}:move`,
         label: "Move",
-        ariaLabel: "move",
+        ariaLabel: `move to ${getFolderNameFromPath(path)}`,
         disabled: false,
       },
       {
         id: `${path}:copy`,
         label: "Copy",
-        ariaLabel: "copy",
+        ariaLabel: `copy to  ${getFolderNameFromPath(path)}`,
         disabled: false,
       },
     ];
@@ -305,6 +307,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
           onClick={() => {
             handleTransferAction(`${curentFolder.folderPath}:copy`);
           }}
+          ariaLabel={`Copy to ${curentFolder.folderName}`}
         >
           Copy
         </LinkButton>{" "}
@@ -314,6 +317,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
           onClick={() => {
             handleTransferAction(`${curentFolder.folderPath}:move`);
           }}
+          ariaLabel={`Move to ${curentFolder.folderName}`}
         >
           Move
         </LinkButton>
@@ -336,6 +340,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
     <div>
       <div>
         <FolderNavigationTable
+          caption="shared drive files and folders table, column headers with buttons are sortable"
           tableName={"netapp"}
           folders={folders}
           loaderText="Loading folders from Shared drive"

@@ -38,6 +38,8 @@ describe("Sortable Table Component", () => {
 
     render(
       <SortableTable
+        caption="Case search result table"
+        captionClassName="govuk-visually-hidden"
         head={[
           {
             children: "Name",
