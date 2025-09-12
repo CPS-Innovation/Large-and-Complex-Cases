@@ -130,7 +130,9 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
       return [
         ...tableHeadData,
         {
-          children: <></>,
+          children: (
+            <span className="govuk-visually-hidden">Transfer Actions</span>
+          ),
           sortable: false,
         },
       ];
