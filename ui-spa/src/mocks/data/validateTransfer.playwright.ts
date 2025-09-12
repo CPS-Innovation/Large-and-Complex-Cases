@@ -5,6 +5,7 @@ export const egressToNetAppIndexingTransferPlaywright: IndexingFileTransferRespo
     caseId: 12,
     isInvalid: false,
     destinationPath: "abc/",
+    sourceRootFolderPath: "egress/",
     validationErrors: [],
     files: [
       { id: "id_1", sourcePath: "egress/folder1" },
@@ -17,6 +18,7 @@ export const netAppToEgressIndexingTransferPlaywright: IndexingFileTransferRespo
     caseId: 12,
     isInvalid: false,
     destinationPath: "abc/",
+    sourceRootFolderPath: "netapp/",
     validationErrors: [],
     files: [
       { sourcePath: "netapp/folder1" },

@@ -64,7 +64,7 @@ public class TransferFileTests
         _sourceClientMock.Setup(x => x.OpenReadStreamAsync(payload.SourcePath.Path, payload.WorkspaceId, payload.SourcePath.FileId))
             .ReturnsAsync(stream);
 
-        _destinationClientMock.Setup(x => x.InitiateUploadAsync(payload.DestinationPath, content.Length, payload.SourcePath.Path, payload.WorkspaceId, payload.SourcePath.RelativePath))
+        _destinationClientMock.Setup(x => x.InitiateUploadAsync(payload.DestinationPath, content.Length, payload.SourcePath.Path, payload.WorkspaceId, payload.SourcePath.RelativePath, payload.SourceRootFolderPath))
             .ReturnsAsync(session);
 
         _destinationClientMock.Setup(x => x.UploadChunkAsync(session, 1, It.IsAny<byte[]>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<long>()))
@@ -151,7 +151,7 @@ public class TransferFileTests
             .ReturnsAsync(stream);
 
         _destinationClientMock.Setup(x =>
-                x.InitiateUploadAsync(It.IsAny<string>(), It.IsAny<long>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>()))
+                x.InitiateUploadAsync(It.IsAny<string>(), It.IsAny<long>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>()))
             .ReturnsAsync(new UploadSession { UploadId = Guid.NewGuid().ToString() });
 
         // Act & Assert

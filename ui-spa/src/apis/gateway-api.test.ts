@@ -998,6 +998,7 @@ describe("gateway apis", () => {
             isFolder: true,
           },
         ],
+        sourceRootFolderPath: "abc/",
         destinationPath: "netapp/",
       };
       const result = await indexingFileTransfer(payload);
@@ -1035,6 +1036,7 @@ describe("gateway apis", () => {
             isFolder: true,
           },
         ],
+        sourceRootFolderPath: "abc/",
         destinationPath: "netapp/",
       };
 
