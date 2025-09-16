@@ -5,23 +5,14 @@ if [ "$APP_TYPE" != "functionapp" ] && [ "$APP_TYPE" != "webapp" ]; then
     exit 1
 fi
 
-echo "DEBUG: use_slot = $USE_SLOT"
 APP_STATE_CMD="az $APP_TYPE show --name $APP_NAME --resource-group $RG --query "state" -o tsv"
-echo "DEBUG: app_state_cmd = $APP_STATE_CMD"
 
 if [ "$USE_SLOT" = "true" ]; then
     APP_STATE_CMD+=" --slot $SLOT_NAME"
     INSTANCE_NAME="$APP_NAME-$SLOT_NAME"
-    echo "DEBUG: We've entered the first part of the IF block."
-    echo "DEBUG: app_state_cmd = $APP_STATE_CMD"
-    echo "DEBUG: instance_name = $INSTANCE_NAME"
 else
     INSTANCE_NAME="$APP_NAME"
-    echo "DEBUG: We've entered the second part of the IF block."
-    echo "DEBUG: instance_name = $INSTANCE_NAME"
 fi
-
-echo "DEBUG: After IF block: app_state_cmd = $APP_STATE_CMD"
 
 check_app_state() {
     local max_retries=3
@@ -29,11 +20,6 @@ check_app_state() {
     local sleep=5
 
     while [ $attempt -le $max_retries ]; do
-
-    echo "DEBUG: We've entered the function's while loop."
-    echo "DEBUG: app_state_cmd = $APP_STATE_CMD"
-    echo "DEBUG: instance_name = $INSTANCE_NAME"
-
     echo "Attempt $attempt/$max_retries: Waiting $sleep seconds for the deployment to stabilize..."
     sleep $sleep
 
