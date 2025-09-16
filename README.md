@@ -61,7 +61,7 @@ The following are triggered in response to any changes pushed to the [`ui`](ui) 
   - Runs E2E tests with Playwright.
   - Publishes code coverage and test results.
 - **UI Build & Deploy:** [`ui-build-and-deploy.yml`](devops-pipelines/ui/ui-build-and-deploy.yml)
-  - Trigger: Merge to Main branch.
+  - Trigger: Merge to main branch.
   - Runs the following jobs for the dev environment:
     - Builds the SPA using environment-specific VITE variables.
     - Publishes the build artifact.
