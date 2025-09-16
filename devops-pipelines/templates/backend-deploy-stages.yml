@@ -181,28 +181,42 @@ stages:
       environment: ${{ parameters.environment }}
   pool: ${{ parameters.agentPool }}
   jobs:
-    - deployment: Deploy_Fuction_Apps
-      displayName: 'LACC ${{ parameters.environment }} - Deploy Function App'
+    - deployment: Deploy_Main_API
+      displayName: 'LACC ${{ parameters.environment }} - Deploy Main API Function App'
+      condition: ${{ eq(parameters.deployMainAPI, true) }}
       environment: 'LACC-Backend-${{ parameters.environment }}'
       strategy:
-        matrix:
-          mainApi:
-            functionAppName: 'fa-lacc-api-${{ parameters.environment }}'
-            buildArtifactName: 'lacc-main-api-drop'
-          fileTransfer:
-            functionAppName: 'fa-lacc-filetransfer-api-${{ parameters.environment }}'
-            buildArtifactName: 'lacc-filetransfer-api-drop'
-        steps:
-          - template: ./fa-deploy-steps.yml
-            parameters:
-              environment: ${{ parameters.environment }}
-              azureSubscription: ${{ parameters.azureSubscription }}
-              functionAppName: $(functionAppName)
-              pipelineResourceAlias: 'build'
-              buildArtifactName: $(buildArtifactName)
-              deployToSlot: ${{ parameters.deployToSlot }}
-              slotName: ${{ parameters.slotName }}
-          
-          - template: ./runner-cleanup-steps.yml
-            parameters:
-              buildArtifact: 'build'
+        runOnce:
+          deploy:
+            steps:
+              - template: ./fa-deploy-steps.yml
+                parameters:
+                  environment: ${{ parameters.environment }}
+                  azureSubscription: ${{ parameters.azureSubscription }}
+                  functionAppName: 'fa-lacc-api-${{ parameters.environment }}'
+                  pipelineResourceAlias: 'build'
+                  buildArtifactName: 'lacc-main-api-drop'
+              
+              - template: ./runner-cleanup-steps.yml
+                parameters:
+                  buildArtifact: 'build'
+
+    - deployment: Deploy_FileTransfer_API
+      displayName: 'LACC ${{ parameters.environment }} - Deploy FileTransfer API Function App'
+      condition: ${{ eq(parameters.deployFileTransferAPI, true) }}
+      environment: 'LACC-Backend-${{ parameters.environment }}'
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              - template: ./fa-deploy-steps.yml
+                parameters:
+                  environment: ${{ parameters.environment }}
+                  azureSubscription: ${{ parameters.azureSubscription }}
+                  functionAppName: 'fa-lacc-filetransfer-api-${{ parameters.environment }}'
+                  pipelineResourceAlias: 'build'
+                  buildArtifactName: 'lacc-filetransfer-api-drop'
+              
+              - template: ./runner-cleanup-steps.yml
+                parameters:
+                  buildArtifact: 'build'
