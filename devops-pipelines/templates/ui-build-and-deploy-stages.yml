@@ -154,7 +154,7 @@ stages:
                   APP_TYPE: webapp
                   APP_NAME: $(webAppName)
                   RG: $(resourceGroupName)
-                  USE_SLOT: ${{ lower(parameters.deployToSlot) }}}
+                  USE_SLOT: ${{ lower(parameters.deployToSlot) }}
                   SLOT_NAME: ${{ parameters.slotName }}
 
     # ADD step to verify deployment in the staging slot e.g health check, smoke test etc.

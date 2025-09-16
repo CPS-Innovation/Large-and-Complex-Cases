@@ -68,7 +68,7 @@ steps:
       APP_TYPE: functionapp
       APP_NAME: ${{ parameters.functionAppName }}
       RG: ${{ parameters.resourceGroupName }}
-      USE_SLOT: ${{ lower(parameters.deployToSlot) }}}
+      USE_SLOT: ${{ lower(parameters.deployToSlot) }}
       SLOT_NAME: ${{ parameters.slotName }}
 
   - task: Bash@3
