@@ -155,7 +155,7 @@ stages:
                   APP_NAME: $(webAppName)
                   RG: $(resourceGroupName)
                   USE_SLOT: ${{ lower(parameters.deployToSlot) }}}
-                  SLOT_NAME: $(slotName)
+                  SLOT_NAME: ${{ parameters.slotName }}
 
     # ADD step to verify deployment in the staging slot e.g health check, smoke test etc.
 
@@ -166,7 +166,7 @@ stages:
                   azureSubscription: ${{ parameters.azureSubscription }}
                   WebAppName: $(webAppName)
                   ResourceGroupName: $(resourceGroupName)
-                  SourceSlot: $(slotName)
+                  SourceSlot: ${{ parameters.slotName }}
                   SwapWithProduction: true 
 
               - template: ../templates/runner-cleanup-steps.yml
