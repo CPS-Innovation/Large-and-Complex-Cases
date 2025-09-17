@@ -56,7 +56,6 @@ export const SortableTable: React.FC<SortableTableProps> = ({
   };
 
   const getTableHeads = () => {
-    // if (!head) return;
     return head.map((item) => {
       if (item.sortName) {
         return {
