@@ -6,6 +6,8 @@ import styles from "./SortableTable.module.scss";
 
 export type SortableTableProps = {
   className?: string;
+  caption: string;
+  captionClassName: string;
   head: {
     children: React.ReactNode;
     sortable: boolean;
@@ -21,6 +23,8 @@ export type SortableTableProps = {
 
 export const SortableTable: React.FC<SortableTableProps> = ({
   head,
+  caption,
+  captionClassName,
   handleTableSort,
   ...props
 }) => {
@@ -46,20 +50,20 @@ export const SortableTable: React.FC<SortableTableProps> = ({
   };
 
   const getAriaSort = (columnName: string) => {
-    if (sortState?.sortName === columnName) return sortState?.sortType;
-    return "none";
+    if (sortState?.sortName === columnName)
+      return `${sortState?.sortType}` as const;
+    return "none" as const;
   };
 
   const getTableHeads = () => {
-    if (!head) return;
     return head.map((item) => {
       if (item.sortName) {
         return {
+          ariaSort: getAriaSort(item.sortName),
           children: (
             <button
               className={`${styles.sortColumnBtn}`}
               onClick={() => handleTableSortBtnClick(item.sortName!)}
-              aria-sort={getAriaSort(item.sortName)}
             >
               <span> {item.children}</span>
               {sortState?.sortName === item.sortName && (
@@ -86,5 +90,12 @@ export const SortableTable: React.FC<SortableTableProps> = ({
       return { children: item.children };
     });
   };
-  return <Table head={getTableHeads()} {...props}></Table>;
+  return (
+    <Table
+      caption={caption}
+      captionClassName={captionClassName}
+      head={getTableHeads()}
+      {...props}
+    ></Table>
+  );
 };

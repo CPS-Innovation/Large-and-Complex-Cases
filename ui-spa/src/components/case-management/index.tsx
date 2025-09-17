@@ -11,6 +11,7 @@ import { useNavigate, useLocation, useParams } from "react-router-dom";
 import TransferErrorPage from "./transfer-materials/TransferErrorPage";
 import TransferMovePermissionsErrorPage from "./transfer-materials/TransferMovePermissionsErrorPage";
 import { useUserGroupsFeatureFlag } from "../../common/hooks/useUserGroupsFeatureFlag";
+import { PageContentWrapper } from "../govuk/PageContentWrapper";
 
 import styles from "./index.module.scss";
 
@@ -155,7 +156,11 @@ const CaseManagementPage = () => {
     });
   }
   if (caseMetaData.status === "loading" || caseMetaData.status === "initial") {
-    return <div className="govuk-width-container">loading...</div>;
+    return (
+      <div className="govuk-width-container">
+        <PageContentWrapper>loading...</PageContentWrapper>
+      </div>
+    );
   }
   if (
     location.pathname.endsWith("/transfer-resolve-file-path") ||
@@ -167,24 +172,25 @@ const CaseManagementPage = () => {
   if (location.pathname.endsWith("/transfer-permissions-error"))
     return <TransferMovePermissionsErrorPage />;
   return (
-    <div className="govuk-width-container">
-      <h1 className={styles.workspaceName}>
-        {caseMetaData?.data?.operationName}
-      </h1>
-      <div className={styles.urnText}>
-        <span>{caseMetaData?.data?.urn}</span>
+    <PageContentWrapper>
+      <div className="govuk-width-container">
+        <h1 className={styles.workspaceName}>
+          {caseMetaData?.data?.operationName}
+        </h1>
+        <div className={styles.urnText}>
+          <span>{caseMetaData?.data?.urn}</span>
+        </div>
+        <Tabs
+          items={items.map((item) => ({
+            id: item.id,
+            label: item.label,
+            panel: item.panel,
+          }))}
+          activeTabId={activeTabId}
+          handleTabSelection={handleTabSelection}
+        />
       </div>
-
-      <Tabs
-        items={items.map((item) => ({
-          id: item.id,
-          label: item.label,
-          panel: item.panel,
-        }))}
-        activeTabId={activeTabId}
-        handleTabSelection={handleTabSelection}
-      />
-    </div>
+    </PageContentWrapper>
   );
 };
 

@@ -20,11 +20,11 @@ test.describe("netapp connect", () => {
     await input.fill("11AA2222233");
     await page.locator('button:text("search")').click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
-    await expect(page.locator("h1")).toHaveText(
-      "Search results",
-    );
+    await expect(page.locator("h1")).toHaveText("Search results");
     await expect(
-      page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
+      page.getByText(
+        "4 cases found. Select view to transfer files or folders or connect to setup storage locations.",
+      ),
     ).toBeVisible();
     await page.locator('role=link[name="Connect"]').nth(2).click();
 
@@ -52,9 +52,7 @@ test.describe("netapp connect", () => {
       ),
     ).toBeVisible();
     await expect(
-      page.getByText(
-        `You can change the linked folder later if needed.`,
-      ),
+      page.getByText(`You can change the linked folder later if needed.`),
     ).toBeVisible();
 
     await page.getByRole("link", { name: "Back" }).click();
@@ -91,10 +89,13 @@ test.describe("netapp connect", () => {
     worker,
   }) => {
     await worker.use(
-      http.post("https://mocked-out-api/api/v1/netapp/connections", async () => {
-        await delay(10);
-        return new HttpResponse(null, { status: 500 });
-      }),
+      http.post(
+        "https://mocked-out-api/api/v1/netapp/connections",
+        async () => {
+          await delay(10);
+          return new HttpResponse(null, { status: 500 });
+        },
+      ),
     );
     await expect(page.locator("h1")).toHaveText(`Find a case`);
     await expect(page.locator("#case-search-types-3")).toBeChecked();
@@ -103,11 +104,11 @@ test.describe("netapp connect", () => {
     await input.fill("11AA2222233");
     await page.locator('button:text("search")').click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
-    await expect(page.locator("h1")).toHaveText(
-      "Search results",
-    );
+    await expect(page.locator("h1")).toHaveText("Search results");
     await expect(
-      page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
+      page.getByText(
+        "4 cases found. Select view to transfer files or folders or connect to setup storage locations.",
+      ),
     ).toBeVisible();
 
     await page.locator('role=link[name="Connect"]').nth(2).click();
@@ -184,11 +185,11 @@ test.describe("netapp connect", () => {
     await input.fill("11AA2222233");
     await page.locator('button:text("search")').click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
-    await expect(page.locator("h1")).toHaveText(
-      "Search results",
-    );
+    await expect(page.locator("h1")).toHaveText("Search results");
     await expect(
-      page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
+      page.getByText(
+        "4 cases found. Select view to transfer files or folders or connect to setup storage locations.",
+      ),
     ).toBeVisible();
     await page.locator('role=link[name="Connect"]').nth(2).click();
 
@@ -201,9 +202,10 @@ test.describe("netapp connect", () => {
     await expect(
       page.getByTestId("netapp-folder-table-loader"),
     ).not.toBeVisible();
-    await expect(
-      page.getByText("There are no documents currently in this folder"),
-    ).toBeVisible();
+    await expect(page.getByTestId("no-documents-text")).toBeVisible();
+    await expect(page.getByTestId("no-documents-text")).toHaveText(
+      "There are no documents currently in this folder",
+    );
   });
 
   test("Should show error page if the netapp folders api failed", async ({
@@ -223,11 +225,11 @@ test.describe("netapp connect", () => {
     await input.fill("11AA2222233");
     await page.locator('button:text("search")').click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
-    await expect(page.locator("h1")).toHaveText(
-      "Search results",
-    );
+    await expect(page.locator("h1")).toHaveText("Search results");
     await expect(
-      page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
+      page.getByText(
+        "4 cases found. Select view to transfer files or folders or connect to setup storage locations.",
+      ),
     ).toBeVisible();
     await page.locator('role=link[name="Connect"]').nth(2).click();
 
@@ -257,11 +259,11 @@ test.describe("netapp connect", () => {
     await input.fill("11AA2222233");
     await page.locator('button:text("search")').click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
-    await expect(page.locator("h1")).toHaveText(
-      "Search results",
-    );
+    await expect(page.locator("h1")).toHaveText("Search results");
     await expect(
-      page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
+      page.getByText(
+        "4 cases found. Select view to transfer files or folders or connect to setup storage locations.",
+      ),
     ).toBeVisible();
     await page.locator('role=link[name="Connect"]').nth(2).click();
 
@@ -353,11 +355,11 @@ test.describe("netapp connect", () => {
     await input.fill("11AA2222233");
     await page.locator('button:text("search")').click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
-    await expect(page.locator("h1")).toHaveText(
-      "Search results",
-    );
+    await expect(page.locator("h1")).toHaveText("Search results");
     await expect(
-      page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
+      page.getByText(
+        "4 cases found. Select view to transfer files or folders or connect to setup storage locations.",
+      ),
     ).toBeVisible();
     await page.locator('role=link[name="Connect"]').nth(2).click();
 
@@ -381,11 +383,11 @@ test.describe("netapp connect", () => {
 
     await page.getByRole("link", { name: "Back" }).click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
-    await expect(page.locator("h1")).toHaveText(
-      "Search results",
-    );
+    await expect(page.locator("h1")).toHaveText("Search results");
     await expect(
-      page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
+      page.getByText(
+        "4 cases found. Select view to transfer files or folders or connect to setup storage locations.",
+      ),
     ).toBeVisible();
     await page.getByRole("link", { name: "Back" }).click();
     await expect(page.locator("h1")).toHaveText(`Find a case`);
@@ -402,11 +404,11 @@ test.describe("netapp connect", () => {
     await input.fill("11AA2222233");
     await page.locator('button:text("search")').click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
-    await expect(page.locator("h1")).toHaveText(
-      "Search results",
-    );
+    await expect(page.locator("h1")).toHaveText("Search results");
     await expect(
-      page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
+      page.getByText(
+        "4 cases found. Select view to transfer files or folders or connect to setup storage locations.",
+      ),
     ).toBeVisible();
     await page.locator('role=link[name="Connect"]').nth(2).click();
 
