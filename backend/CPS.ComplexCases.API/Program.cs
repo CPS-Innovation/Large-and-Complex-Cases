@@ -19,6 +19,7 @@ using CPS.ComplexCases.DDEI.Extensions;
 using CPS.ComplexCases.DDEI.Tactical.Extensions;
 using CPS.ComplexCases.Egress.Extensions;
 using CPS.ComplexCases.NetApp.Extensions;
+using Microsoft.ApplicationInsights.WorkerService;
 
 // Create a temporary logger for configuration phase
 using var loggerFactory = LoggerFactory.Create(configure => configure.AddConsole());
@@ -69,7 +70,10 @@ var host = new HostBuilder()
         var configuration = context.Configuration;
 
         services
-            .AddApplicationInsightsTelemetryWorkerService()
+            .AddApplicationInsightsTelemetryWorkerService(new ApplicationInsightsServiceOptions
+            {
+                EnableAdaptiveSampling = false,
+            })
             .ConfigureFunctionsApplicationInsights();
 
         services.AddSingleton<IAuthorizationValidator, AuthorizationValidator>();

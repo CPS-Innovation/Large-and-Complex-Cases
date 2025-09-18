@@ -16,6 +16,7 @@ using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.NetApp.Extensions;
 using CPS.ComplexCases.FileTransfer.API.Middleware;
+using Microsoft.ApplicationInsights.WorkerService;
 
 // Create a temporary logger for configuration phase
 using var loggerFactory = LoggerFactory.Create(configure => configure.AddConsole());
@@ -64,7 +65,10 @@ var host = new HostBuilder()
         var configuration = context.Configuration;
 
         services
-            .AddApplicationInsightsTelemetryWorkerService()
+            .AddApplicationInsightsTelemetryWorkerService(new ApplicationInsightsServiceOptions
+            {
+                EnableAdaptiveSampling = false,
+            })
             .ConfigureFunctionsApplicationInsights();
 
         // ✅ Add services with configuration
