@@ -18,7 +18,7 @@ pr:
     include:
       - ui-spa/*
 
-pool: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
+pool: 'LACC PreProd Pool'
 
 variables:
   - name: nodeVersion

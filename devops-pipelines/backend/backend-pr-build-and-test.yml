@@ -14,7 +14,7 @@ variables:
   testResultsDirectory: '$(Agent.TempDirectory)/TestResults'
   coverageReportsDirectory: '$(Agent.TempDirectory)/CoverageReports'
 
-pool: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
+pool: 'LACC PreProd Pool'
 
 stages:
   - stage: Build_And_Test_Backend
