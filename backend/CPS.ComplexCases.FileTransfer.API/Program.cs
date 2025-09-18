@@ -64,7 +64,10 @@ var host = new HostBuilder()
         var configuration = context.Configuration;
 
         services
-            .AddApplicationInsightsTelemetryWorkerService()
+            .AddApplicationInsightsTelemetryWorkerService(new ApplicationInsightsServiceOptions
+            {
+                EnableAdaptiveSampling = false,
+            })
             .ConfigureFunctionsApplicationInsights();
 
         // ✅ Add services with configuration
