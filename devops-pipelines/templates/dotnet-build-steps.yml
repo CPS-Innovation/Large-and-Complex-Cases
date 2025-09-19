@@ -44,6 +44,8 @@ steps:
         artifact: '${{ parameters.nugetArtifact }}'
         path: '${{ parameters.nugetArtifactDownloadPath }}'
 
+# <add key="local-packages" value="${{ parameters.nugetArtifactDownloadPath }}" />
+
     - task: Bash@3
       displayName: 'Create NuGet.Config'
       inputs:
@@ -54,7 +56,6 @@ steps:
           <configuration>
             <packageSources>
               <clear />
-              <add key="local-packages" value="${{ parameters.nugetArtifactDownloadPath }}" />
               <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
             </packageSources>
             <packageSourceMapping>
@@ -75,9 +76,6 @@ steps:
             </packageRestore>
           </configuration>
           EOF
-  
-  # - script: dotnet restore '${{ parameters.projectPath }}' -v diag --force-evaluate
-  #   displayName: 'DEBUG dotnet restore'
 
   # Restore packages
   - task: DotNetCoreCLI@2
