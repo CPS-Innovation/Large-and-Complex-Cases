@@ -20,48 +20,45 @@ stages:
   - stage: Build_And_Test_Backend
     displayName: 'LACC Backend - Build, Test & Package'
     jobs:
-      - job: Package_NuGet
-        displayName: 'Pack and Publish NuGet Package'
-        steps:
-          - checkout: self
-            sparseCheckoutDirectories: backend devops-pipelines/templates
+      # - job: Package_NuGet
+      #   displayName: 'Pack and Publish NuGet Package'
+      #   steps:
+      #     - checkout: self
+      #       sparseCheckoutDirectories: backend devops-pipelines/templates
 
-          - template: ../templates/dotnet-build-steps.yml
-            parameters:
-              projectPath: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-              projectName: 'HttpTelemetry'
-              buildConfiguration: $(buildConfiguration)
-              dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: false
-              publishOutput: false
-              runTests: false
+      #     - template: ../templates/dotnet-build-steps.yml
+      #       parameters:
+      #         projectPath: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+      #         projectName: 'HttpTelemetry'
+      #         buildConfiguration: $(buildConfiguration)
+      #         dotNetVersion: $(dotNetVersion)
+      #         useLocalNuGet: false
+      #         publishOutput: false
+      #         runTests: false
 
-          - script: |
-              mkdir -p $(Build.SourcesDirectory)/localnuget
-              rm -f $(Build.SourcesDirectory)/localnuget/*.nupkg
-            displayName: 'Prepare local NuGet directory'
+      #     - script: |
+      #         mkdir -p $(Build.SourcesDirectory)/localnuget
+      #         rm -f $(Build.SourcesDirectory)/localnuget/*.nupkg
+      #       displayName: 'Prepare local NuGet directory'
 
-          - task: DotNetCoreCLI@2
-            displayName: 'Pack HttpTelemetry'
-            inputs:
-              command: 'pack'
-              packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-              outputDir: '$(Build.SourcesDirectory)/localnuget'
-              arguments: '--configuration $(buildConfiguration) --no-build'
+      #     - task: DotNetCoreCLI@2
+      #       displayName: 'Pack HttpTelemetry'
+      #       inputs:
+      #         command: 'pack'
+      #         packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+      #         outputDir: '$(Build.SourcesDirectory)/localnuget'
+      #         arguments: '--configuration $(buildConfiguration) --no-build'
 
-          - task: PublishPipelineArtifact@1
-            displayName: 'Publish HttpTelemetry Package'
-            inputs:
-              targetPath: '$(Build.SourcesDirectory)/localnuget'
-              artifact: 'localnuget'
+      #     - task: PublishPipelineArtifact@1
+      #       displayName: 'Publish HttpTelemetry Package'
+      #       inputs:
+      #         targetPath: '$(Build.SourcesDirectory)/localnuget'
+      #         artifact: 'localnuget'
 
       - job: Build_And_Test_Solution
         displayName: 'Build & Test Solution'
-        dependsOn: Package_NuGet
+        # dependsOn: Package_NuGet
         steps:
-          # - checkout: self
-          #   sparseCheckoutDirectories: backend devops-pipelines/templates
-
           - template: ../templates/dotnet-build-steps.yml
             parameters:
               projectPath: 'backend/CPS.ComplexCases.sln'
