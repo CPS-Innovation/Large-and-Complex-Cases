@@ -25,7 +25,6 @@ public class Status(ILogger<Status> logger)
   [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
   public IActionResult Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "status")] HttpRequest req, [HttpTelemetry] object leaveThisInPlace)
   {
-    _logger.LogWarning("PROBE: category check"); 
     _logger.LogInformation("Calling the Status EndPoint");
     return StatusFunction.GetStatus(Assembly.GetExecutingAssembly());
   }
