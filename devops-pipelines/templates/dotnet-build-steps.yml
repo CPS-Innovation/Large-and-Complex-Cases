@@ -2,7 +2,7 @@ parameters:
   projectPath: ''
   projectName: ''
   buildConfiguration: 'Release'
-  dotNetVersion: '8.x'
+  # dotNetVersion: '8.x'
   useLocalNuGet: false
   nugetArtifact: 'localnuget'
   nugetArtifactDownloadPath: '$(Build.SourcesDirectory)/localnuget'
@@ -12,11 +12,28 @@ parameters:
   coverageReportsDirectory: ''
 
 steps:
-  - task: UseDotNet@2
-    displayName: 'Use .NET SDK'
+  - task: CmdLine@2
+    displayName: 'Dotnet Install'
     inputs:
-      packageType: 'sdk'
-      version: ${{ parameters.dotNetVersion }}
+      script: |     
+        if ! command -v dotnet &> /dev/null; then
+          echo ".NET is not installed."
+          echo "Installing .NET SDK..."
+          wget https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+          sudo dpkg -i packages-microsoft-prod.deb
+          sudo apt-get update
+          sudo apt-get install -y dotnet-sdk-8.0
+          sudo apt-get install -y aspnetcore-runtime-8.0
+          sudo apt-get install -y dotnet-runtime-8.0
+        else
+          echo ".NET is already installed."
+        fi 
+        
+  # - task: UseDotNet@2
+  #   displayName: 'Use .NET SDK'
+  #   inputs:
+  #     packageType: 'sdk'
+  #     version: ${{ parameters.dotNetVersion }}
 
   # Download local NuGet package if needed
   - ${{ if eq(parameters.useLocalNuGet, true) }}:
@@ -50,6 +67,7 @@ steps:
             </packageSourceMapping>
             <config>
               <add key="globalPackagesFolder" value="$(Build.SourcesDirectory)/packages" />
+              <add key="httpProtocolVersion" value="2.0" />
             </config>
             <packageRestore>
               <add key="enabled" value="True" />
@@ -58,8 +76,8 @@ steps:
           </configuration>
           EOF
   
-  - script: dotnet restore '${{ parameters.projectPath }}' -v diag --force-evaluate
-    displayName: 'DEBUG dotnet restore'
+  # - script: dotnet restore '${{ parameters.projectPath }}' -v diag --force-evaluate
+  #   displayName: 'DEBUG dotnet restore'
 
   # Restore packages
   - task: DotNetCoreCLI@2
