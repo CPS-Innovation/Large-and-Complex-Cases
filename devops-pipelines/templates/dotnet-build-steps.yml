@@ -37,12 +37,12 @@ steps:
 
   # Download local NuGet package if needed
   - ${{ if eq(parameters.useLocalNuGet, true) }}:
-    - task: DownloadPipelineArtifact@2
-      displayName: 'Download Local NuGet Package'
-      inputs:
-        buildType: 'current'
-        artifact: '${{ parameters.nugetArtifact }}'
-        path: '${{ parameters.nugetArtifactDownloadPath }}'
+    # - task: DownloadPipelineArtifact@2
+    #   displayName: 'Download Local NuGet Package'
+    #   inputs:
+    #     buildType: 'current'
+    #     artifact: '${{ parameters.nugetArtifact }}'
+    #     path: '${{ parameters.nugetArtifactDownloadPath }}'
 
 # <add key="local-packages" value="${{ parameters.nugetArtifactDownloadPath }}" />
 
