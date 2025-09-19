@@ -2,7 +2,7 @@ parameters:
   projectPath: ''
   projectName: ''
   buildConfiguration: 'Release'
-  dotNetVersion: '8.x'
+  # dotNetVersion: '8.x'
   useLocalNuGet: false
   nugetArtifact: 'localnuget'
   nugetArtifactDownloadPath: '$(Build.SourcesDirectory)/localnuget'
@@ -12,32 +12,50 @@ parameters:
   coverageReportsDirectory: ''
 
 steps:
-  - task: UseDotNet@2
-    displayName: 'Use .NET SDK'
+  - task: CmdLine@2
+    displayName: 'Dotnet Install'
     inputs:
-      packageType: 'sdk'
-      version: ${{ parameters.dotNetVersion }}
+      script: |     
+        if ! command -v dotnet &> /dev/null; then
+          echo ".NET is not installed."
+          echo "Installing .NET SDK..."
+          wget https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+          sudo dpkg -i packages-microsoft-prod.deb
+          sudo apt-get update
+          sudo apt-get install -y dotnet-sdk-8.0
+          sudo apt-get install -y aspnetcore-runtime-8.0
+          sudo apt-get install -y dotnet-runtime-8.0
+        else
+          echo ".NET is already installed."
+        fi 
+        
+  # - task: UseDotNet@2
+  #   displayName: 'Use .NET SDK'
+  #   inputs:
+  #     packageType: 'sdk'
+  #     version: ${{ parameters.dotNetVersion }}
 
   # Download local NuGet package if needed
   - ${{ if eq(parameters.useLocalNuGet, true) }}:
-    - task: DownloadPipelineArtifact@2
-      displayName: 'Download Local NuGet Package'
-      inputs:
-        buildType: 'current'
-        artifact: '${{ parameters.nugetArtifact }}'
-        path: '${{ parameters.nugetArtifactDownloadPath }}'
+    # - task: DownloadPipelineArtifact@2
+    #   displayName: 'Download Local NuGet Package'
+    #   inputs:
+    #     buildType: 'current'
+    #     artifact: '${{ parameters.nugetArtifact }}'
+    #     path: '${{ parameters.nugetArtifactDownloadPath }}'
 
-    - task: PowerShell@2
+# <add key="local-packages" value="${{ parameters.nugetArtifactDownloadPath }}" />
+
+    - task: Bash@3
       displayName: 'Create NuGet.Config'
       inputs:
         targetType: 'inline'
         script: |
-          $nugetConfigContent = @"
+          cat <<EOF > "$(Build.SourcesDirectory)/NuGet.Config"
           <?xml version="1.0" encoding="utf-8"?>
           <configuration>
             <packageSources>
               <clear />
-              <add key="local-packages" value="${{ parameters.nugetArtifactDownloadPath }}" />
               <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
             </packageSources>
             <packageSourceMapping>
@@ -50,14 +68,14 @@ steps:
             </packageSourceMapping>
             <config>
               <add key="globalPackagesFolder" value="$(Build.SourcesDirectory)/packages" />
+              <add key="httpProtocolVersion" value="2.0" />
             </config>
             <packageRestore>
               <add key="enabled" value="True" />
               <add key="automatic" value="True" />
             </packageRestore>
           </configuration>
-          "@
-          Set-Content -Path "$(Build.SourcesDirectory)/NuGet.Config" -Value $nugetConfigContent -Encoding UTF8
+          EOF
 
   # Restore packages
   - task: DotNetCoreCLI@2
