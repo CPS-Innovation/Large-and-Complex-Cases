@@ -58,13 +58,7 @@ steps:
           </configuration>
           EOF
   
-  - script: |
-      echo "verify connectivity to nuget.org"
-      curl -I "https://api.nuget.org/v3/index.json"
-      dig +short "https://api.nuget.org/v3/index.json"openssl s_client -connect api.nuget.org:443 -servername api.nuget.org -brief
-
-      echo "See what's hanging..."
-      dotnet restore -v diag --force-evaluate
+  - script: dotnet restore -v diag --force-evaluate
     displayName: 'DEBUG dotnet restore'
 
   # Restore packages
