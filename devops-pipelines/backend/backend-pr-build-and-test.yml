@@ -65,7 +65,8 @@ stages:
               projectName: 'Backend Solution'
               buildConfiguration: '$(buildConfiguration)'
               dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: true
+              useLocalNuGet: false
+              # useLocalNuGet: true
               publishOutput: false
               runTests: true
               testResultsDirectory: $(testResultsDirectory)
