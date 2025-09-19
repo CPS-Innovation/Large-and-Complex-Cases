@@ -59,8 +59,8 @@ stages:
         displayName: 'Build & Test Solution'
         dependsOn: Package_NuGet
         steps:
-          - checkout: self
-            sparseCheckoutDirectories: backend devops-pipelines/templates
+          # - checkout: self
+          #   sparseCheckoutDirectories: backend devops-pipelines/templates
 
           - template: ../templates/dotnet-build-steps.yml
             parameters:

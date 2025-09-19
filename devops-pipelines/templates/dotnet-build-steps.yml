@@ -27,12 +27,12 @@ steps:
         artifact: '${{ parameters.nugetArtifact }}'
         path: '${{ parameters.nugetArtifactDownloadPath }}'
 
-    - task: PowerShell@2
+    - task: Bash@3
       displayName: 'Create NuGet.Config'
       inputs:
         targetType: 'inline'
         script: |
-          $nugetConfigContent = @"
+          cat <<EOF > "$(Build.SourcesDirectory)/NuGet.Config"
           <?xml version="1.0" encoding="utf-8"?>
           <configuration>
             <packageSources>
@@ -56,8 +56,7 @@ steps:
               <add key="automatic" value="True" />
             </packageRestore>
           </configuration>
-          "@
-          Set-Content -Path "$(Build.SourcesDirectory)/NuGet.Config" -Value $nugetConfigContent -Encoding UTF8
+          EOF
 
   # Restore packages
   - task: DotNetCoreCLI@2
