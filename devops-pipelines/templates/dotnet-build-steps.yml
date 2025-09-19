@@ -58,7 +58,7 @@ steps:
           </configuration>
           EOF
   
-  - script: dotnet restore -v diag --force-evaluate
+  - script: dotnet restore '${{ parameters.projectPath }}' -v diag --force-evaluate
     displayName: 'DEBUG dotnet restore'
 
   # Restore packages
