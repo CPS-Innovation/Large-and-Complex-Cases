@@ -36,7 +36,6 @@ public class InitiateTransfer(ILogger<InitiateTransfer> logger, IFileTransferCli
     {
         var correlationId = req.Headers.GetCorrelationId();
 
-        _logger.LogWarning("PROBE: category check 1");
         _logger.LogInformation("Initiating file transfer with CorrelationId: {CorrelationId}", correlationId);
         var context = functionContext.GetRequestContext();
 
