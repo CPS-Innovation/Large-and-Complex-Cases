@@ -85,7 +85,7 @@ steps:
       command: 'restore'
       projects: '${{ parameters.projectPath }}'
       feedsToUse: 'select'
-      vstsFeed: '[Information Management/]LACC-backend'
+      vstsFeed: 'Information Management/LACC-backend'
       # ${{ if eq(parameters.useLocalNuGet, true) }}:
       # nugetConfigPath: '$(Build.SourcesDirectory)/NuGet.Config'
       # feedsToUse: 'config'

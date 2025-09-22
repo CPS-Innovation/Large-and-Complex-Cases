@@ -61,7 +61,7 @@ stages:
             inputs:
               command: 'push'
               packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg;$(Build.ArtifactStagingDirectory)/*.symbols.nupkg'
-              publishVstsFeed: '[Information Management/]LACC-backend'
+              publishVstsFeed: 'Information Management/LACC-backend'
               arguments: '--skip-duplicate'
 
           # - task: PublishPipelineArtifact@1
