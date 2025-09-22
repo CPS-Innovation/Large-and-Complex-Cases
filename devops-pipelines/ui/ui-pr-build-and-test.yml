@@ -26,6 +26,9 @@ stages:
           - checkout: self
             sparseCheckoutDirectories: ui-spa devops-pipelines/scripts
 
+          - script: curl https://nodejs.org/dist/index.json
+            displayName: 'Debug UseNode'
+
           - task: UseNode@1
             displayName: 'Use Node.js'
             inputs:
