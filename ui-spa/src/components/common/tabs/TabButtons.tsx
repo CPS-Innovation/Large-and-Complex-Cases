@@ -17,15 +17,20 @@ const TabButtons = <T extends string>({
   activeTabIndex,
   handleTabSelection,
 }: TabButtonProps<T>) => {
+  const hasMounted = useRef(false);
   const activeTabRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      return;
+    }
     activeTabRef.current?.focus();
     activeTabRef.current?.parentElement?.scrollIntoView({
       behavior: "smooth",
       block: "nearest",
     });
-  }, [activeTabIndex, items.length]);
+  }, [activeTabIndex]);
 
   const handleKeyPressOnTab: React.KeyboardEventHandler<HTMLButtonElement> = (
     ev,

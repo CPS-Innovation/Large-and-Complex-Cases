@@ -8,6 +8,7 @@ import {
 } from "../../common/hooks/useCaseSearchForm";
 import { useLocation } from "react-router";
 import { useFormattedAreaValues } from "../../common/hooks/useFormattedAreaValues";
+import { PageContentWrapper } from "../govuk/PageContentWrapper";
 
 import styles from "./index.module.scss";
 
@@ -75,210 +76,231 @@ const CaseSearchPage = () => {
 
   return (
     <div className={`govuk-width-container ${styles.pageWrapper}`}>
-      <div>
-        <h1 className="govuk-heading-xl govuk-!-margin-bottom-4">
-          Find a case
-        </h1>
-        {!!errorList.length && (
-          <div
-            ref={errorSummaryRef}
-            tabIndex={-1}
-            className={styles.errorSummaryWrapper}
-          >
-            <ErrorSummary
-              data-testid={"search-error-summary"}
-              errorList={errorList}
-              titleChildren="There is a problem"
-            />
-          </div>
-        )}
-        <form onSubmit={handleSearch}>
-          <div className={styles.inputWrapper}>
-            <Radios
-              aria-label="choose search type"
-              hint={{
-                children: <>Select how you want to find a case.<br/>For operation name and defendant name you will also need to select an area.</>,
-              }}
-              items={[
-                {
-                  children: "Operation name",
-                  conditional: {
-                    children: [
-                      <Input
-                        id="search-operation-name"
-                        data-testid="search-operation-name"
-                        className="govuk-input--width-20"
-                        label={{
-                          children: "Operation name",
-                        }}
-                        errorMessage={
-                          formDataErrors[SearchFormField.operationName]
-                            ? {
-                                children:
-                                  formDataErrors[SearchFormField.operationName]
-                                    .errorSummaryText,
-                              }
-                            : undefined
-                        }
-                        name="operation-name"
-                        type="text"
-                        value={formData[SearchFormField.operationName]}
-                        onChange={(value: string) =>
-                          handleFormChange(SearchFormField.operationName, value)
-                        }
-                        disabled={false}
-                      />,
+      <PageContentWrapper>
+        <div>
+          <h1 className="govuk-heading-xl govuk-!-margin-bottom-4">
+            Find a case
+          </h1>
+          {!!errorList.length && (
+            <div
+              ref={errorSummaryRef}
+              tabIndex={-1}
+              className={styles.errorSummaryWrapper}
+            >
+              <ErrorSummary
+                data-testid={"search-error-summary"}
+                errorList={errorList}
+                titleChildren="There is a problem"
+              />
+            </div>
+          )}
+          <form onSubmit={handleSearch}>
+            <div className={styles.inputWrapper}>
+              <Radios
+                aria-label="choose search type"
+                hint={{
+                  children: (
+                    <>
+                      Select how you want to find a case.
+                      <br />
+                      For operation name and defendant name you will also need
+                      to select an area.
+                    </>
+                  ),
+                }}
+                items={[
+                  {
+                    children: "Operation name",
+                    conditional: {
+                      children: [
+                        <Input
+                          id="search-operation-name"
+                          data-testid="search-operation-name"
+                          className="govuk-input--width-20"
+                          label={{
+                            children: "Operation name",
+                          }}
+                          errorMessage={
+                            formDataErrors[SearchFormField.operationName]
+                              ? {
+                                  children:
+                                    formDataErrors[
+                                      SearchFormField.operationName
+                                    ].errorSummaryText,
+                                }
+                              : undefined
+                          }
+                          name="operation-name"
+                          type="text"
+                          value={formData[SearchFormField.operationName]}
+                          onChange={(value: string) =>
+                            handleFormChange(
+                              SearchFormField.operationName,
+                              value,
+                            )
+                          }
+                          disabled={false}
+                        />,
 
-                      <Select
-                        label={{
-                          htmlFor: "search-operation-area",
-                          children: "Select Area",
-                          className: styles.areaSelectLabel,
-                        }}
-                        id="search-operation-area"
-                        data-testid="search-operation-area"
-                        value={formData.operationArea}
-                        items={formattedAreaValues.options}
-                        formGroup={{
-                          className: styles.select,
-                        }}
-                        onChange={(ev) =>
-                          handleFormChange(
-                            SearchFormField.operationArea,
-                            ev.target.value,
-                          )
-                        }
-                        errorMessage={
-                          formDataErrors[SearchFormField.operationArea]
-                            ? {
-                                children:
-                                  formDataErrors[SearchFormField.operationArea]
-                                    .errorSummaryText,
-                              }
-                            : undefined
-                        }
-                      />,
-                    ],
+                        <Select
+                          label={{
+                            htmlFor: "search-operation-area",
+                            children: "Select Area",
+                            className: styles.areaSelectLabel,
+                          }}
+                          id="search-operation-area"
+                          data-testid="search-operation-area"
+                          value={formData.operationArea}
+                          items={formattedAreaValues.options}
+                          formGroup={{
+                            className: styles.select,
+                          }}
+                          onChange={(ev) =>
+                            handleFormChange(
+                              SearchFormField.operationArea,
+                              ev.target.value,
+                            )
+                          }
+                          errorMessage={
+                            formDataErrors[SearchFormField.operationArea]
+                              ? {
+                                  children:
+                                    formDataErrors[
+                                      SearchFormField.operationArea
+                                    ].errorSummaryText,
+                                }
+                              : undefined
+                          }
+                        />,
+                      ],
+                    },
+                    value: "operation name",
+                    "data-testid": "radio-search-operation-name",
+                    disabled: !formattedAreaValues.options.length,
                   },
-                  value: "operation name",
-                  "data-testid": "radio-search-operation-name",
-                  disabled: !formattedAreaValues.options.length,
-                },
 
-                {
-                  children: "Defendant last name",
-                  conditional: {
-                    children: [
-                      <Input
-                        id="search-defendant-name"
-                        data-testid="search-defendant-name"
-                        className="govuk-input--width-20"
-                        label={{
-                          children: "Defendant last name",
-                        }}
-                        errorMessage={
-                          formDataErrors[SearchFormField.defendantName]
-                            ? {
-                                children:
-                                  formDataErrors[SearchFormField.defendantName]
-                                    .errorSummaryText,
-                              }
-                            : undefined
-                        }
-                        name="defendant-name"
-                        type="text"
-                        value={formData[SearchFormField.defendantName]}
-                        onChange={(value: string) =>
-                          handleFormChange(SearchFormField.defendantName, value)
-                        }
-                        disabled={false}
-                      />,
+                  {
+                    children: "Defendant last name",
+                    conditional: {
+                      children: [
+                        <Input
+                          key="1"
+                          id="search-defendant-name"
+                          data-testid="search-defendant-name"
+                          className="govuk-input--width-20"
+                          label={{
+                            children: "Defendant last name",
+                          }}
+                          errorMessage={
+                            formDataErrors[SearchFormField.defendantName]
+                              ? {
+                                  children:
+                                    formDataErrors[
+                                      SearchFormField.defendantName
+                                    ].errorSummaryText,
+                                }
+                              : undefined
+                          }
+                          name="defendant-name"
+                          type="text"
+                          value={formData[SearchFormField.defendantName]}
+                          onChange={(value: string) =>
+                            handleFormChange(
+                              SearchFormField.defendantName,
+                              value,
+                            )
+                          }
+                          disabled={false}
+                        />,
 
-                      <Select
-                        key="2"
-                        label={{
-                          htmlFor: "search-defendant-area",
-                          children: "Select Area",
-                          className: styles.areaSelectLabel,
-                        }}
-                        id="search-defendant-area"
-                        data-testid="search-defendant-area"
-                        items={formattedAreaValues.options}
-                        formGroup={{
-                          className: styles.select,
-                        }}
-                        onChange={(ev) =>
-                          handleFormChange(
-                            SearchFormField.defendantArea,
-                            ev.target.value,
-                          )
-                        }
-                        value={formData[SearchFormField.defendantArea]}
-                        errorMessage={
-                          formDataErrors[SearchFormField.defendantArea]
-                            ? {
-                                children:
-                                  formDataErrors[SearchFormField.defendantArea]
-                                    .errorSummaryText,
-                              }
-                            : undefined
-                        }
-                      />,
-                    ],
+                        <Select
+                          key="2"
+                          label={{
+                            htmlFor: "search-defendant-area",
+                            children: "Select Area",
+                            className: styles.areaSelectLabel,
+                          }}
+                          id="search-defendant-area"
+                          data-testid="search-defendant-area"
+                          items={formattedAreaValues.options}
+                          formGroup={{
+                            className: styles.select,
+                          }}
+                          onChange={(ev) =>
+                            handleFormChange(
+                              SearchFormField.defendantArea,
+                              ev.target.value,
+                            )
+                          }
+                          value={formData[SearchFormField.defendantArea]}
+                          errorMessage={
+                            formDataErrors[SearchFormField.defendantArea]
+                              ? {
+                                  children:
+                                    formDataErrors[
+                                      SearchFormField.defendantArea
+                                    ].errorSummaryText,
+                                }
+                              : undefined
+                          }
+                        />,
+                      ],
+                    },
+                    value: "defendant name",
+                    "data-testid": "radio-search-defendant-name",
+                    disabled: !formattedAreaValues.options.length,
                   },
-                  value: "defendant name",
-                  "data-testid": "radio-search-defendant-name",
-                  disabled: !formattedAreaValues.options.length,
-                },
-                {
-                  children: "URN",
-                  conditional: {
-                    children: [
-                      <Input
-                        id="search-urn"
-                        data-testid="search-urn"
-                        className="govuk-input--width-20"
-                        label={{
-                          children: "URN",
-                        }}
-                        errorMessage={
-                          formDataErrors[SearchFormField.urn]
-                            ? {
-                                children:
-                                  formDataErrors[SearchFormField.urn]
-                                    .inputErrorText ??
-                                  formDataErrors[SearchFormField.urn]
-                                    .errorSummaryText,
-                              }
-                            : undefined
-                        }
-                        name="urn"
-                        type="text"
-                        value={formData[SearchFormField.urn]}
-                        onChange={(value: string) =>
-                          handleFormChange(
-                            SearchFormField.urn,
-                            value.toUpperCase(),
-                          )
-                        }
-                        disabled={false}
-                      />,
-                    ],
+                  {
+                    children: "URN",
+                    conditional: {
+                      children: [
+                        <Input
+                          id="search-urn"
+                          data-testid="search-urn"
+                          className="govuk-input--width-20"
+                          label={{
+                            children: "URN",
+                          }}
+                          errorMessage={
+                            formDataErrors[SearchFormField.urn]
+                              ? {
+                                  children:
+                                    formDataErrors[SearchFormField.urn]
+                                      .inputErrorText ??
+                                    formDataErrors[SearchFormField.urn]
+                                      .errorSummaryText,
+                                }
+                              : undefined
+                          }
+                          name="urn"
+                          type="text"
+                          value={formData[SearchFormField.urn]}
+                          onChange={(value: string) =>
+                            handleFormChange(
+                              SearchFormField.urn,
+                              value.toUpperCase(),
+                            )
+                          }
+                          disabled={false}
+                        />,
+                      ],
+                    },
+                    value: "urn",
+                    "data-testid": "radio-search-urn",
                   },
-                  value: "urn",
-                  "data-testid": "radio-search-urn",
-                },
-              ]}
-              name="case-search-types"
-              value={formData.searchType}
-              onChange={(value) => {
-                if (value) handleFormChange(SearchFormField.searchType, value);
-              }}
-            />
-          </div>
-          <Button type={"submit"}>Search</Button>
-        </form>
-      </div>
+                ]}
+                name="case-search-types"
+                value={formData.searchType}
+                onChange={(value) => {
+                  if (value)
+                    handleFormChange(SearchFormField.searchType, value);
+                }}
+              />
+            </div>
+            <Button type={"submit"}>Search</Button>
+          </form>
+        </div>
+      </PageContentWrapper>
     </div>
   );
 };

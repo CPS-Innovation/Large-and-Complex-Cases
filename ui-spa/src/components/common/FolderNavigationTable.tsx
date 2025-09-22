@@ -5,6 +5,7 @@ import FolderPath, { Folder } from "../common/FolderPath";
 import styles from "./FolderNavigationTable.module.scss";
 
 type FolderNavigationTableProps = {
+  caption: string;
   tableName: string;
   folders: Folder[];
   folderResultsStatus: "loading" | "succeeded" | "failed" | "initial";
@@ -30,6 +31,7 @@ type FolderNavigationTableProps = {
 };
 
 const FolderNavigationTable: React.FC<FolderNavigationTableProps> = ({
+  caption,
   tableName,
   folders,
   loaderText,
@@ -47,8 +49,28 @@ const FolderNavigationTable: React.FC<FolderNavigationTableProps> = ({
       folderResultsStatus === "succeeded" && showInsetElement && getInsetElement
     );
   }, [folderResultsStatus, showInsetElement, getInsetElement]);
+
+  const statusText = useMemo(() => {
+    const tableType = tableName === "egress" ? "egress" : "shared drive";
+    const folderText =
+      folders.length > 1
+        ? `folder ${folders[folders.length - 1].folderName}`
+        : "";
+    if (folderResultsStatus === "loading") {
+      return `loading files and folders from ${tableType}  ${folderText}`;
+    }
+    if (folderResultsStatus === "succeeded") {
+      return folderResultsLength
+        ? "files and folders loaded successfully"
+        : "There are no documents currently in this folder";
+    }
+    return "";
+  }, [folderResultsStatus, folders, tableName, folderResultsLength]);
   return (
     <div className={styles.results} data-testid={`${tableName}-table-wrapper`}>
+      <div aria-live="polite" className="govuk-visually-hidden">
+        {statusText}
+      </div>
       <div>
         {
           <FolderPath
@@ -61,12 +83,16 @@ const FolderNavigationTable: React.FC<FolderNavigationTableProps> = ({
         {folderResultsStatus === "succeeded" && (
           <>
             <SortableTable
+              captionClassName="govuk-visually-hidden"
+              caption={caption}
               head={getTableHeadData()}
               rows={getTableRowData()}
               handleTableSort={handleTableSort}
             />
             {!folderResultsLength && (
-              <p>There are no documents currently in this folder</p>
+              <p data-testid="no-documents-text">
+                There are no documents currently in this folder
+              </p>
             )}
           </>
         )}
@@ -75,9 +101,10 @@ const FolderNavigationTable: React.FC<FolderNavigationTableProps> = ({
             <Spinner
               data-testid={`${tableName}-folder-table-loader`}
               diameterPx={50}
-              ariaLabel={loaderText}
             />
-            <div className={styles.spinnerText}>{loaderText}</div>
+            <div className={styles.spinnerText} aria-live="polite">
+              {loaderText}
+            </div>
           </div>
         )}
       </div>

@@ -192,17 +192,24 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
 
   const renderEgressContainer = () => {
     return (
-      <div
+      <section
         className={
           transferSource === "egress"
             ? styles.sourceContainer
             : styles.destinationContainer
         }
         data-testid="egress-container"
+        aria-labelledby="egress-region-title"
+        tabIndex={0}
       >
-        <div className={styles.titleWrapper}>
-          <h3 className={styles.inlineHeading}>Egress</h3>-{" "}
+        <div
+          id="egress-region-title"
+          data-testid="egress-region-title"
+          className={styles.titleWrapper}
+        >
+          <span className={styles.regionHead}>Egress</span>-{" "}
           <span>{transferSource === "egress" ? "Source" : "Destination"}</span>
+          <span className="govuk-visually-hidden"> region</span>
         </div>
         <div className={styles.tableContainer}>
           {
@@ -220,7 +227,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
             />
           }
         </div>
-      </div>
+      </section>
     );
   };
 
@@ -235,17 +242,25 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
 
   const renderNetappContainer = () => {
     return (
-      <div
+      <section
         className={
           transferSource === "netapp"
             ? styles.sourceContainer
             : styles.destinationContainer
         }
         data-testid="netapp-container"
+        aria-role="region"
+        aria-labelledby="shared-drive-region-title"
+        tabIndex={0}
       >
-        <div className={styles.titleWrapper}>
-          <h3 className={styles.inlineHeading}>Shared drive</h3>-{" "}
+        <div
+          id="shared-drive-region-title"
+          data-testid="shared-drive-region-title"
+          className={styles.titleWrapper}
+        >
+          <span className={styles.regionHead}>Shared drive</span>-{" "}
           <span>{transferSource === "egress" ? "Destination" : "Source"}</span>
+          <span className="govuk-visually-hidden"> region</span>
         </div>
         <div className={styles.tableContainer}>
           {netAppPath && (
@@ -263,7 +278,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
             />
           )}
         </div>
-      </div>
+      </section>
     );
   };
 
@@ -602,91 +617,92 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   ]);
 
   const activeTransferMessage = useMemo(() => {
-    if (!transferStatusData) {
-      return {
-        ariaLabelText: "",
-        spinnerTextContent: <span> Completing transfer</span>,
-      };
-    }
-    if (transferStatusData?.username !== username) {
-      return {
-        ariaLabelText: `${transferStatusData?.username} is currently transferring`,
-        spinnerTextContent: (
-          <span>
-            <b>{transferStatusData?.username}</b> is currently transferring
-          </span>
-        ),
-      };
-    }
+    if (transferStatus === "transferring") {
+      if (!transferStatusData) {
+        return {
+          ariaLabelText: "",
+          spinnerTextContent: <span> Completing transfer</span>,
+        };
+      }
+      if (transferStatusData?.username !== username) {
+        return {
+          ariaLabelText: `${transferStatusData?.username} is currently transferring`,
+          spinnerTextContent: (
+            <span>
+              <b>{transferStatusData?.username}</b> is currently transferring
+            </span>
+          ),
+        };
+      }
 
-    if (transferStatusData?.direction === "EgressToNetApp")
+      if (transferStatusData?.direction === "EgressToNetApp")
+        return {
+          ariaLabelText: "Completing transfer from Egress to Shared Drive",
+          spinnerTextContent: (
+            <span>
+              Completing transfer from <b>Egress to Shared Drive...</b>
+            </span>
+          ),
+        };
       return {
-        ariaLabelText: "Completing transfer from Egress to Shared Drive",
+        ariaLabelText: "Completing transfer from Shared Drive to Egress",
         spinnerTextContent: (
           <span>
-            Completing transfer from <b>Egress to Shared Drive...</b>
+            Completing transfer from <b>Shared Drive to Egress...</b>
           </span>
         ),
       };
-    return {
-      ariaLabelText: "Completing transfer from Shared Drive to Egress",
-      spinnerTextContent: (
-        <span>
-          Completing transfer from <b>Shared Drive to Egress...</b>
-        </span>
-      ),
-    };
-  }, [transferStatusData, username]);
+    }
+    if (transferStatus === "validating") {
+      if (transferSource === "egress") {
+        return {
+          ariaLabelText: "Indexing transfer from egress to shared drive",
+          spinnerTextContent: (
+            <span>
+              Indexing transfer from <b>Egress to Shared Drive...</b>
+            </span>
+          ),
+        };
+      }
+      return {
+        ariaLabelText: "Indexing transfer from shared drive to egress",
+        spinnerTextContent: (
+          <span>
+            Indexing transfer from <b>Shared Drive to Egress...</b>
+          </span>
+        ),
+      };
+    }
+  }, [transferStatusData, username, transferStatus, transferSource]);
 
   if (!isTabActive) return <> </>;
-  if (transferStatus === "transferring") {
-    return (
-      <div className={styles.transferContent}>
-        <div className={styles.spinnerWrapper}>
-          <Spinner
-            data-testid="transfer-spinner"
-            diameterPx={50}
-            ariaLabel={activeTransferMessage.ariaLabelText}
-          />
-          <div className={styles.spinnerText}>
-            {activeTransferMessage.spinnerTextContent}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (transferStatus === "validating") {
-    return (
-      <div className={styles.transferContent}>
-        <div className={styles.spinnerWrapper}>
-          <Spinner
-            data-testid="transfer-spinner"
-            diameterPx={50}
-            ariaLabel={
-              transferSource === "egress"
-                ? "Indexing transfer from Egress to Shared Drive"
-                : "Indexing transfer from Shared Drive to Egress"
-            }
-          />
-          <div className={styles.spinnerText}>
-            {transferSource === "egress" ? (
-              <span>
-                Indexing transfer from <b>Egress to Shared Drive...</b>
-              </span>
-            ) : (
-              <span>
-                Indexing transfer from <b>Shared Drive to Egress...</b>
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div>
+      <output aria-live="polite" className="govuk-visually-hidden">
+        {activeTransferMessage?.ariaLabelText}
+      </output>
+      {transferStatus === "validating" && (
+        <div className={styles.transferContent}>
+          <div className={styles.spinnerWrapper}>
+            <Spinner data-testid="transfer-spinner" diameterPx={50} />
+            <div className={styles.spinnerText}>
+              {activeTransferMessage?.spinnerTextContent}
+            </div>
+          </div>
+        </div>
+      )}
+      {transferStatus === "transferring" && (
+        <div className={styles.transferContent}>
+          <div className={styles.spinnerWrapper}>
+            <Spinner data-testid="transfer-spinner" diameterPx={50} />
+            <div className={styles.spinnerText}>
+              {activeTransferMessage?.spinnerTextContent}
+            </div>
+          </div>
+        </div>
+      )}
+
       {transferStatus === "completed" &&
         transferStatusData?.username === username && (
           <div className={styles.successBanner}>
@@ -704,40 +720,45 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
             </NotificationBanner>
           </div>
         )}
-      {!transferId && (
-        <div>
-          <div className={styles.headerText}>
-            <h2>{`${transferSource === "egress" ? "Transfer between Egress and Shared Drive" : "Transfer between Shared Drive and Egress"}`}</h2>
-            <InsetText>
-              <>
-                Select the files or folders you want to transfer and where you
-                want to put them.
-                <br />
-                You can also transfer
-              </>
-              <LinkButton onClick={handleSwitchSource}>
-                {`${transferSource === "egress" ? "from the Shared Drive to Egress" : "from Egress to the Shared Drive"}`}
-              </LinkButton>
-            </InsetText>
+      {!transferId &&
+        transferStatus !== "validating" &&
+        transferStatus !== "transferring" && (
+          <div>
+            <div className={styles.headerText}>
+              <h2>{`${transferSource === "egress" ? "Transfer between Egress and Shared Drive" : "Transfer between Shared Drive and Egress"}`}</h2>
+              <InsetText>
+                <>
+                  Select the files or folders you want to transfer and where you
+                  want to put them.
+                  <br />
+                  You can also transfer
+                </>
+                <LinkButton
+                  onClick={handleSwitchSource}
+                  ariaLabel={`${transferSource === "egress" ? "transfer from the Shared Drive to Egress" : "transfer from Egress to the Shared Drive"}`}
+                >
+                  {`${transferSource === "egress" ? "from the Shared Drive to Egress" : "from Egress to the Shared Drive"}`}
+                </LinkButton>
+              </InsetText>
+            </div>
+            <div
+              className={styles.mainContainer}
+              data-testid="transfer-main-container"
+            >
+              {transferSource === "egress" ? (
+                <>
+                  {renderEgressContainer()}
+                  {renderNetappContainer()}
+                </>
+              ) : (
+                <>
+                  {renderNetappContainer()}
+                  {renderEgressContainer()}
+                </>
+              )}
+            </div>
           </div>
-          <div
-            className={styles.mainContainer}
-            data-testid="transfer-main-container"
-          >
-            {transferSource === "egress" ? (
-              <>
-                {renderEgressContainer()}
-                {renderNetappContainer()}
-              </>
-            ) : (
-              <>
-                {renderNetappContainer()}
-                {renderEgressContainer()}
-              </>
-            )}
-          </div>
-        </div>
-      )}
+        )}
       {showTransferConfirmationModal && selectedTransferAction && (
         <TransferConfirmationModal
           transferAction={selectedTransferAction}

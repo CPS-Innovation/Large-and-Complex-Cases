@@ -16,7 +16,7 @@ type SearchResultsProps = {
 };
 const SearchResults: React.FC<SearchResultsProps> = ({
   searchQueryString,
-  searchApiResults
+  searchApiResults,
 }) => {
   const getConnectOrViewUrl = (data: SearchResult, operationName: string) => {
     if (!data.egressWorkspaceId)
@@ -92,6 +92,8 @@ const SearchResults: React.FC<SearchResultsProps> = ({
       {searchApiResults.status === "succeeded" &&
         !!searchApiResults.data?.length && (
           <Table
+            caption="Case search result table"
+            captionClassName="govuk-visually-hidden"
             head={[
               {
                 children: "Defendant or Operation name",
@@ -127,7 +129,8 @@ const SearchResults: React.FC<SearchResultsProps> = ({
             <ul className="govuk-list govuk-list--bullet">
               <li>check for spelling or typing errors</li>
               <li>
-                check the case exists and you have access on the Case Management System
+                check the case exists and you have access on the Case Management
+                System
               </li>
               <li>contact the product team if you need help</li>
             </ul>

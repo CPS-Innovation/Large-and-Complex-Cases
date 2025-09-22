@@ -119,9 +119,16 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
             className={styles.searchResultsCount}
             data-testid="egress-results-count"
           >
-            There {egressSearchResultsData.length > 1 ? "are" : "is"} <b>{egressSearchResultsData.length} {egressSearchResultsData.length > 1 ? "folders" : "folder"}</b> matching <b>{workspaceName}</b>.
+            There {egressSearchResultsData.length > 1 ? "are" : "is"}{" "}
+            <b>
+              {egressSearchResultsData.length}{" "}
+              {egressSearchResultsData.length > 1 ? "folders" : "folder"}
+            </b>{" "}
+            matching <b>{workspaceName}</b>.
           </div>
           <SortableTable
+            caption="egress files and folders table, column headers with buttons are sortable"
+            captionClassName="govuk-visually-hidden"
             head={[
               {
                 children: "Operation or defendant last name",
@@ -152,7 +159,7 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
       {!egressSearchResultsData.length && (
         <>
           <div className={styles.searchResultsCount}>
-            There are <b>no folders </b>matching  <b>{workspaceName}</b>.
+            There are <b>no folders </b>matching <b>{workspaceName}</b>.
           </div>
           <div className={styles.noResultsContent}>
             <div>
@@ -161,7 +168,8 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
             <ul className="govuk-list govuk-list--bullet">
               <li>check for spelling or typing errors</li>
               <li>
-                check the case exists and you have access on the Case Management System
+                check the case exists and you have access on the Case Management
+                System
               </li>
               <li>contact the product team if you need help</li>
             </ul>

@@ -13,3 +13,4 @@ export { LinkButton } from "./LinkButton";
 export { Checkboxes } from "./Checkboxes";
 export { NotificationBanner } from "./NotificationBanner";
 export { Details } from "./Details";
+export { SkipLink } from "./SkipLink";

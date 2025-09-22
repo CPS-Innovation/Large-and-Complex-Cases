@@ -88,7 +88,7 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
             id={"all-folders"}
             checked={isSourceFolderChecked("all-folders")}
             onChange={handleCheckboxChange}
-            ariaLabel="Select all folders"
+            ariaLabel="Select folders and files"
           />
         ),
         sortable: false,
@@ -130,7 +130,9 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
       return [
         ...tableHeadData,
         {
-          children: <></>,
+          children: (
+            <span className="govuk-visually-hidden">Transfer Actions</span>
+          ),
           sortable: false,
         },
       ];
@@ -153,7 +155,11 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
                 id={data.path}
                 checked={isSourceFolderChecked(data.path)}
                 onChange={handleCheckboxChange}
-                ariaLabel="select folder"
+                ariaLabel={
+                  data.isFolder
+                    ? `select folder ${data.name}`
+                    : `select file ${data.name}`
+                }
               />
             ),
           },
@@ -237,7 +243,10 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
               <div>
                 <DropdownButton
                   name="Actions"
-                  dropDownItems={getDestinationDropdownItems(data.path)}
+                  dropDownItems={getDestinationDropdownItems(
+                    data.path,
+                    data.name,
+                  )}
                   callBackFn={handleTransferAction}
                   ariaLabel="transfer actions dropdown"
                   dataTestId={`transfer-actions-dropdown-${index}`}
@@ -262,12 +271,12 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
     return getTableDestinationRowData();
   };
 
-  const getDestinationDropdownItems = (id: string) => {
+  const getDestinationDropdownItems = (id: string, folderName: string) => {
     return [
       {
         id: `${id}:copy`,
         label: "Copy",
-        ariaLabel: "copy",
+        ariaLabel: `copy to ${folderName}`,
         disabled: false,
       },
     ];
@@ -293,6 +302,7 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
         Transfer to {curentFolder.folderName}
         <LinkButton
           type="button"
+          ariaLabel={`Copy to ${curentFolder.folderName}`}
           onClick={() => {
             handleTransferAction(`${curentFolder.folderPath}:copy`);
           }}
@@ -315,6 +325,7 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
   return (
     <div className={hideFirstColumn ? styles.hideFirstColumn : ""}>
       <FolderNavigationTable
+        caption="egress files and folders table, column headers with buttons are sortable"
         tableName="egress"
         folders={egressPathFolders}
         loaderText="Loading folders from Egress"
