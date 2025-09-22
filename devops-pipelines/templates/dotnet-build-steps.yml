@@ -45,7 +45,6 @@ steps:
         path: '${{ parameters.nugetArtifactDownloadPath }}'
 
     - task: Bash@3
-# <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
       displayName: 'Create NuGet.Config'
       inputs:
         targetType: 'inline'
@@ -56,6 +55,7 @@ steps:
             <packageSources>
               <clear />
               <add key="local-packages" value="${{ parameters.nugetArtifactDownloadPath }}" />
+              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
             </packageSources>
             <packageSourceMapping>
               <packageSource key="local-packages">
