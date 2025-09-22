@@ -62,6 +62,9 @@ steps:
               <packageSource key="local-packages">
                 <package pattern="CPS.ComplexCases.*" />
               </packageSource>
+                  <packageSource key="cps-fct-feed">
+                <package pattern="microsoft.extensions.*" />
+              </packageSource>
               <packageSource key="nuget.org">
                 <package pattern="*" />
               </packageSource>
