@@ -11,27 +11,29 @@ parameters:
   coverageReportsDirectory: ''
 
 steps:
-  - template: ../templates/ensure-mono-steps.yml
-  # - task: CmdLine@2
-  #   displayName: 'Dotnet Install'
-  #   inputs:
-  #     script: |     
-  #       if ! command -v dotnet &> /dev/null; then
-  #         echo ".NET is not installed."
-  #         echo "Installing .NET SDK..."
-  #         wget https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-  #         sudo dpkg -i packages-microsoft-prod.deb
-  #         sudo apt-get update
-  #         sudo apt-get install -y dotnet-sdk-8.0
-  #         sudo apt-get install -y aspnetcore-runtime-8.0
-  #         sudo apt-get install -y dotnet-runtime-8.0
-  #       else
-  #         echo ".NET is already installed."
-  #       fi 
-  
-  # - task: NuGetToolInstaller@1
-  #   name: 'NuGetToolInstaller'
-  #   displayName: 'NuGet tool installer'
+  - task: CmdLine@2
+    displayName: 'Dotnet Install'
+    inputs:
+      script: |     
+        if ! command -v dotnet &> /dev/null; then
+          echo ".NET is not installed."
+          echo "Installing .NET SDK..."
+          wget https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+          sudo dpkg -i packages-microsoft-prod.deb
+          sudo apt-get update
+          sudo apt-get install -y dotnet-sdk-8.0
+          sudo apt-get install -y aspnetcore-runtime-8.0
+          sudo apt-get install -y dotnet-runtime-8.0
+        else
+          echo ".NET is already installed."
+        fi 
+
+  - task: NuGetToolInstaller@1
+    name: 'NuGetToolInstaller'
+    displayName: 'NuGet tool installer'
+
+  - task: NuGetAuthenticate@1
+    displayName: 'NuGet Authenticate'
 
   # Download local NuGet package if needed
   - ${{ if eq(parameters.useLocalNuGet, true) }}:
@@ -54,6 +56,7 @@ steps:
               <clear />
               <add key="local-packages" value="${{ parameters.nugetArtifactDownloadPath }}" />
               <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+              <add key="cps-fct-feed" value="https://pkgs.dev.azure.com/CPSDTS/_packaging/cps-fct-feed/nuget/v3/index.json" />
             </packageSources>
             <packageSourceMapping>
               <packageSource key="local-packages">
@@ -74,25 +77,15 @@ steps:
           EOF
 
   # Restore packages
-  - task: NuGetCommand@2
+  - task: DotNetCoreCLI@2
     displayName: 'Restore ${{ parameters.projectName }}'
     inputs:
       command: 'restore'
-      restoreSolution: '${{ parameters.projectPath }}'
-      disableParallelProcessing: true
+      projects: '${{ parameters.projectPath }}'
+      restoreArguments: '--disable-parallel'
       ${{ if eq(parameters.useLocalNuGet, true) }}:
         nugetConfigPath: '$(Build.SourcesDirectory)/NuGet.Config'
         feedsToUse: 'config'
-
-  # - task: DotNetCoreCLI@2
-  #   displayName: 'Restore ${{ parameters.projectName }}'
-  #   inputs:
-  #     command: 'restore'
-  #     projects: '${{ parameters.projectPath }}'
-  #     restoreArguments: '--disable-parallel'
-  #     ${{ if eq(parameters.useLocalNuGet, true) }}:
-  #       nugetConfigPath: '$(Build.SourcesDirectory)/NuGet.Config'
-  #       feedsToUse: 'config'
 
   # Build project
   - task: DotNetCoreCLI@2
