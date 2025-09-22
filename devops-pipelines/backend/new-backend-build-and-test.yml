@@ -44,7 +44,7 @@ stages:
       displayName: 'NuGet Authenticate'
     
     - script: |
-        dotnet restore $(solution) --configfile nuget.config
+        dotnet restore $(solution) --configfile backend/nuget.config
       displayName: 'DotNet restore packages'
 
     - task: DotNetCoreCLI@2
