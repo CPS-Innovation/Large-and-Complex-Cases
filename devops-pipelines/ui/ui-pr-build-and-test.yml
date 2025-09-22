@@ -1,13 +1,3 @@
-parameters:
-  - name: environment
-    displayName: 'Target Environment'
-    type: string
-    default: 'dev'
-    values:
-      - dev
-      - stage
-      - prod
-
 trigger: none
 
 pr:
