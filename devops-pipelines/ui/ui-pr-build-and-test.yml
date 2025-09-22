@@ -18,8 +18,7 @@ pr:
     include:
       - ui-spa/*
 
-pool:
-  vmImage: ubuntu-latest
+pool: 'LACC PreProd Pool'
 
 variables:
   - name: nodeVersion
