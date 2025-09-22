@@ -37,16 +37,15 @@ steps:
 
   # Download local NuGet package if needed
   - ${{ if eq(parameters.useLocalNuGet, true) }}:
-    # - task: DownloadPipelineArtifact@2
-    #   displayName: 'Download Local NuGet Package'
-    #   inputs:
-    #     buildType: 'current'
-    #     artifact: '${{ parameters.nugetArtifact }}'
-    #     path: '${{ parameters.nugetArtifactDownloadPath }}'
-
-# <add key="local-packages" value="${{ parameters.nugetArtifactDownloadPath }}" />
+    - task: DownloadPipelineArtifact@2
+      displayName: 'Download Local NuGet Package'
+      inputs:
+        buildType: 'current'
+        artifact: '${{ parameters.nugetArtifact }}'
+        path: '${{ parameters.nugetArtifactDownloadPath }}'
 
     - task: Bash@3
+# <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
       displayName: 'Create NuGet.Config'
       inputs:
         targetType: 'inline'
@@ -56,7 +55,7 @@ steps:
           <configuration>
             <packageSources>
               <clear />
-              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+              <add key="local-packages" value="${{ parameters.nugetArtifactDownloadPath }}" />
             </packageSources>
             <packageSourceMapping>
               <packageSource key="local-packages">
