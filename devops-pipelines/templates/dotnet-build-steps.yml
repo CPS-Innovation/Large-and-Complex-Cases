@@ -11,7 +11,7 @@ parameters:
   coverageReportsDirectory: ''
 
 steps:
-  - template: ../templates/ensure-mom-steps.yml
+  - template: ../templates/ensure-mono-steps.yml
   # - task: CmdLine@2
   #   displayName: 'Dotnet Install'
   #   inputs:
