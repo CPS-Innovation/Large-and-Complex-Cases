@@ -10,16 +10,9 @@ pr:
 
 variables:
   buildConfiguration: 'Release'
-  solution: 'Cps.Fct.Djb.TransferToolApi.sln'
-  project: '**/src/Cps.Fct.Djb.TransferToolApi/Cps.Fct.Djb.TransferToolApi.csproj'
-  testProject: '**/test/**/*Tests.csproj'
-####### Uncomment and complete when integration tests available #######
-  # integrationTestProject: ''
-  buildArtifact: 'transfer-tool-api'
-  appName: 'Cps.Fct.Djb.TransferToolApi'
-  resourceName: 'fa-djb-transfer-tool'
-  buildAgentPool: 'DJB PreProd Pool'
-  buildAgentPoolProduction: 'DJB Production Pool'
+  solution: 'backend/CPS.ComplexCases.sln'
+  project: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
+  buildAgentPool: 'LACC PreProd Pool'
  
 stages:
 - stage: Build
@@ -65,7 +58,7 @@ stages:
       displayName: Run tests
       inputs:
         command: test
-        projects: '$(testProject)'
+        projects: '$(project)'
         arguments: '--configuration debug'
 
 ####### Uncomment when integration tests available #######
@@ -86,151 +79,10 @@ stages:
         arguments: '--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory)/Output'
         zipAfterPublish: false
     
-    - task: PublishBuildArtifacts@1
-      name: 'PublishBuildArtifacts'
-      displayName: 'Publish build artifacts'
-      inputs:
-        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-        ArtifactName: '$(buildArtifact)'
-        publishLocation: 'Container'
-
-- stage: Dev
-  displayName: Deploy Dev
-  dependsOn: Build
-  condition: and(succeeded(), or(eq(${{ parameters.deployToDev }}, 'true'), eq(variables['Build.SourceBranch'], 'refs/heads/main')))
-  jobs:
-    - deployment: Deploy
-      displayName: Deploy
-      environment: 'DJB-transfer-tool-dev'
-      pool:
-        name: $(buildAgentPool)
-      strategy:
-        runOnce:
-          deploy:
-            steps:
-            - task: AzureFunctionApp@1
-              inputs:
-                azureSubscription: 'sc-djb-preprod'
-                resourceGroupName: 'rg-djb-dev'
-                appType: 'functionAppLinux'
-                appName: '$(resourceName)-dev'
-                package: '$(Pipeline.Workspace)/$(buildArtifact)/Output/$(appName)'
-                deploymentMethod: runFromPackage
-                ConfigurationSettings: '-ApplicationName "$(appName)" ' 
-                appSettings:
-                  -Environment "dev"
-                  -Application__AppName "DJB Tranfer Tool API"
-                  -Application__AppVersion "1.0.0"
-                  -WEBSITE_ENABLE_SYNC_UPDATE_SITE "true"
-                  -WEBSITE_USE_PLACEHOLDER_DOTNETISOLATED "1"
-                  -WEBSITES_ENABLE_APP_SERVICE_STORAGE "true"
-                  -FUNCTIONS_EXTENSION_VERSION "4"
-                  -FUNCTIONS_WORKER_RUNTIME "dotnet-isolated"
-                  -DDEIClient__BaseAddress "https://fa-wm-app-ddei-dev.azurewebsites.net/api/"
-                  -DDEIClient__FunctionKey "@Microsoft.KeyVault(SecretUri=https://kv-djb-dev.vault.azure.net/secrets/ddeiClient-fuctionKey)"
-                  -CaseCenterApiClient__BaseAddress "https://beta.casecenter.thomsonreuters.com/LegacyAppApi/"
-                  -CaseCenterApiClient__CredentialName "@Microsoft.KeyVault(SecretUri=https://kv-djb-dev.vault.azure.net/secrets/ccClient-CredentialName)"
-                  -CaseCenterApiClient__CredentialPassword "@Microsoft.KeyVault(SecretUri=https://kv-djb-dev.vault.azure.net/secrets/ccClient-CredentialPassword)"
-                  -CaseCenterApiClient__RelativePath__GetToken "Token/GetToken"
-                  -CaseCenterApiClient__RelativePath__CreateCase "OutBundle/CreateCase?caseid={0}&casecreator={1}&organisationId={2}&casetitle={3}&templateId={4}&type={5}&sourceSystemCaseId={6}&departmentId={7}"
-                  -CaseCenterApiClient__RelativePath__GetCaseCenterCaseId "OutBundle/GetCasekey?sourceSystemCaseId={0}"
-                  -CaseCenterApiClient__RelativePath__GetTemplateCases "OutBundle/GetTemplateCases"
-                  -CaseCenterApiClient__RelativePath__GetBundlesInCase "OutBundle/GetBundlesInfo?caseid={0}"
-                  -CaseCenterApiClient__RelativePath__GetSectionsInBundle "OutBundle/GetSectionListForBundle?caseid={0}&bundleid={1}"
-                  -CaseCenterApiClient__RelativePath__AddUserToCase "OutBundle/AddUserToCase?caseKey={0}&userName={1}&bundleid={2}"
-                  -CaseCenterApiClient__RelativePath__UploadDocumentToCase "OutBundle/UploadDocument"
-                  -CaseCenter__OrganisationId "d1bc65066f7a4e19aa2de2c8245d66ec2f645a709ddb4151bceb414399c78f70"
-                  -CaseCenter__OrganisationType "Beta"
-                  -CaseCenter__MasterBundleName "Master Bundle"   
-                  -CaseCenter__IndictmentSectionName "Indictment"   
-                  -CaseCenter__ExhibitsSectionName "Exhibits"   
-                  -CaseCenter__AreaCaseTemplateGroups__templateId  "4425c1da76a3410e8932bf998bb06d41",
-                  -CaseCenter__AreaCaseTemplateGroups__courtCodes ["HULLCC"]
-                  -CaseCenterApiClient__RelativePath__ApiTest "OutBundle/ApiTest"
-
-- stage: Staging
-  displayName: Deploy Staging
-  dependsOn: Dev
-  condition: and(succeeded('Dev'), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
-  jobs:
-    - deployment: Deploy
-      environment: 'DJB-transfer-tool-staging'
-      displayName: Deploy
-      pool:
-        name: $(buildAgentPool)
-      strategy:
-        runOnce:
-          deploy:
-            steps:
-            - task: AzureFunctionApp@1
-              inputs:
-                azureSubscription: 'DJB PreProd (via service principal)'
-                resourceGroupName: 'rg-djb-staging'
-                appType: 'functionAppLinux'
-                appName: '$(resourceName)-staging'
-                package: '$(Pipeline.Workspace)/$(buildArtifact)/Output/$(appName)'
-                deploymentMethod: runFromPackage
-                ConfigurationSettings: '-ApplicationName "$(appName)" ' 
-                appSettings:
-                      -Environment "staging"
-                      -Application__AppName "DJB Tranfer Tool API"
-                      -Application__AppVersion "1.0.0"
-                      -WEBSITE_ENABLE_SYNC_UPDATE_SITE "true"
-                      -WEBSITE_USE_PLACEHOLDER_DOTNETISOLATED "1"
-                      -WEBSITES_ENABLE_APP_SERVICE_STORAGE "true"
-                      -FUNCTIONS_EXTENSION_VERSION "4"
-                      -FUNCTIONS_WORKER_RUNTIME "dotnet-isolated"
-                      -DDEIClient__BaseAddress "https://fa-wm-app-ddei-staging.azurewebsites.net/api/"
-                      -DDEIClient__FunctionKey "@Microsoft.KeyVault(SecretUri=https://kv-djb-staging.vault.azure.net/secrets/ddeiClient-fuctionKey)"
-                      -CaseCenterApiClient_BaseAddress "https://beta.casecenter.thomsonreuters.com/LegacyAppApi/"
-                      -CaseCenterApiClient__CredentialName "@Microsoft.KeyVault(SecretUri=https://kv-djb-staging.vault.azure.net/secrets/ccClient-CredentialName)"
-                      -CaseCenterApiClient__CredentialPassword "@Microsoft.KeyVault(SecretUri=https://kv-djb-staging.vault.azure.net/secrets/ccClient-CredentialPassword)"
-                      -CaseCenterApiClient__RelativePath__GetToken "Token/GetToken"
-                      -CaseCenterApiClient__RelativePath__CreateCase "OutBundle/CreateCase?caseid={0}&casecreator={1}&organisationId={2}&casetitle={3}&templateId={4}&type={5}&sourceSystemCaseId={6}&departmentId={7}"
-                      -CaseCenterApiClient__RelativePath__GetCaseCenterCaseId "OutBundle/GetCasekey?sourceSystemCaseId={0}"
-                      -CaseCenterApiClient__RelativePath__GetTemplateCases "OutBundle/GetTemplateCases"
-                      -CaseCenterApiClient__RelativePath__GetBundlesInCase "OutBundle/GetBundlesInfo?caseid={0}"
-                      -CaseCenterApiClient__RelativePath__GetSectionsInBundle "OutBundle/GetSectionListForBundle?caseid={0}&bundleid={1}"
-                      -CaseCenterApiClient__RelativePath__AddUserToCase "OutBundle/AddUserToCase?caseKey={0}&userName={1}&bundleid={2}"
-                      -CaseCenterApiClient__RelativePath__UploadDocumentToCase "OutBundle/UploadDocument"
-                      -CaseCenter__OrganisationId "d1bc65066f7a4e19aa2de2c8245d66ec2f645a709ddb4151bceb414399c78f70"
-                      -CaseCenter__OrganisationType "Beta"
-                      -CaseCenter__MasterBundleName "Master Bundle"   
-                      -CaseCenter__IndictmentSectionName "Indictment"   
-                      -CaseCenter__ExhibitsSectionName "Exhibits"   
-                      -CaseCenter__AreaCaseTemplateGroups__templateId  "4425c1da76a3410e8932bf998bb06d41",
-                      -CaseCenter__AreaCaseTemplateGroups__courtCodes ["HULLCC"]
-                      -CaseCenterApiClient__RelativePath__ApiTest "OutBundle/ApiTest"
-                      
-# - stage: Production
-#   displayName: Deploy Production
-#   dependsOn: Staging
-#   condition: and(succeeded('Staging'), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
-#   jobs:
-#     - deployment: Deploy
-#       environment: 'DJB-transfer-tool-prod'
-#       displayName: Deploy
-#       pool:
-#         name: $(buildAgentPoolProduction)
-#       strategy:
-#         runOnce:
-#           deploy:
-#             steps:
-#             - task: AzureFunctionApp@1
-#               inputs:
-#                 azureSubscription: 'DJB Prod (via service principal)'
-#                 resourceGroupName: 'rg-djb-prod'
-#                 appType: 'functionAppLinux'
-#                 appName: '$(resourceName)-prod'
-#                 package: '$(Pipeline.Workspace)/$(buildArtifact)/Output/$(appName)'
-#                 deploymentMethod: runFromPackage
-#                 ConfigurationSettings: '-ApplicationName "$(appName)" ' 
-#                 appSettings:
-#                       -Environment "production"
-#                       -Application__AppName "DJB Tranfer Tool API"
-#                       -Application__AppVersion "1.0.0"
-#                       -WEBSITE_ENABLE_SYNC_UPDATE_SITE "true"
-#                       -WEBSITE_USE_PLACEHOLDER_DOTNETISOLATED "1"
-#                       -WEBSITES_ENABLE_APP_SERVICE_STORAGE "true"
-#                       -FUNCTIONS_EXTENSION_VERSION "4"
-#                       -FUNCTIONS_WORKER_RUNTIME "dotnet-isolated"
+#     - task: PublishBuildArtifacts@1
+#       name: 'PublishBuildArtifacts'
+#       displayName: 'Publish build artifacts'
+#       inputs:
+#         PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+#         ArtifactName: '$(buildArtifact)'
+#         publishLocation: 'Container'
