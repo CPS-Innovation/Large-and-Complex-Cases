@@ -28,6 +28,13 @@ steps:
         else
           echo ".NET is already installed."
         fi 
+    
+  - task: NuGetToolInstaller@1
+    name: 'NuGetToolInstaller'
+    displayName: 'NuGet tool installer'
+
+  - task: NuGetAuthenticate@1
+    displayName: 'NuGet Authenticate'
         
   # - task: UseDotNet@2
   #   displayName: 'Use .NET SDK'
@@ -67,7 +74,6 @@ steps:
             </packageSourceMapping>
             <config>
               <add key="globalPackagesFolder" value="$(Build.SourcesDirectory)/packages" />
-              <add key="httpProtocolVersion" value="2.0" />
             </config>
             <packageRestore>
               <add key="enabled" value="True" />
