@@ -88,6 +88,7 @@ steps:
     inputs:
       command: 'restore'
       projects: '${{ parameters.projectPath }}'
+      restoreArguments: '--disable-parallel'
       ${{ if eq(parameters.useLocalNuGet, true) }}:
         nugetConfigPath: '$(Build.SourcesDirectory)/NuGet.Config'
         feedsToUse: 'config'
