@@ -35,49 +35,48 @@ steps:
   - task: NuGetAuthenticate@1
     displayName: 'NuGet Authenticate'
 
-  # Download local NuGet package if needed
-  - ${{ if eq(parameters.useLocalNuGet, true) }}:
-    - task: DownloadPipelineArtifact@2
-      displayName: 'Download Local NuGet Package'
-      inputs:
-        buildType: 'current'
-        artifact: '${{ parameters.nugetArtifact }}'
-        path: '${{ parameters.nugetArtifactDownloadPath }}'
+  # # Download local NuGet package if needed
+  # - ${{ if eq(parameters.useLocalNuGet, true) }}:
+  #   - task: DownloadPipelineArtifact@2
+  #     displayName: 'Download Local NuGet Package'
+  #     inputs:
+  #       buildType: 'current'
+  #       artifact: '${{ parameters.nugetArtifact }}'
+  #       path: '${{ parameters.nugetArtifactDownloadPath }}'
 
-    - task: Bash@3
-      displayName: 'Create NuGet.Config'
-      inputs:
-        targetType: 'inline'
-        script: |
-          cat <<EOF > "$(Build.SourcesDirectory)/NuGet.Config"
-          <?xml version="1.0" encoding="utf-8"?>
-          <configuration>
-            <packageSources>
-              <clear />
-              <add key="local-packages" value="${{ parameters.nugetArtifactDownloadPath }}" />
-              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
-              <add key="cps-fct-feed" value="https://pkgs.dev.azure.com/CPSDTS/_packaging/cps-fct-feed/nuget/v3/index.json" />
-            </packageSources>
-            <packageSourceMapping>
-              <packageSource key="local-packages">
-                <package pattern="CPS.ComplexCases.*" />
-              </packageSource>
-                  <packageSource key="cps-fct-feed">
-                <package pattern="microsoft.extensions.*" />
-              </packageSource>
-              <packageSource key="nuget.org">
-                <package pattern="*" />
-              </packageSource>
-            </packageSourceMapping>
-            <config>
-              <add key="globalPackagesFolder" value="$(Build.SourcesDirectory)/packages" />
-            </config>
-            <packageRestore>
-              <add key="enabled" value="True" />
-              <add key="automatic" value="True" />
-            </packageRestore>
-          </configuration>
-          EOF
+  #   - task: Bash@3
+  #     displayName: 'Create NuGet.Config'
+  #     inputs:
+  #       targetType: 'inline'
+  #       script: |
+  #         cat <<EOF > "$(Build.SourcesDirectory)/NuGet.Config"
+  #         <?xml version="1.0" encoding="utf-8"?>
+  #         <configuration>
+  #           <packageSources>
+  #             <clear />
+  #             <add key="local-packages" value="${{ parameters.nugetArtifactDownloadPath }}" />
+  #             <add key="LACC-backend" value="https://pkgs.dev.azure.com/CPSDTS/b22de6aa-9da5-4bf2-afb5-c15f5f9cb3bf/_packaging/LACC-backend/nuget/v3/index.json" />
+  #           </packageSources>
+  #           <packageSourceMapping>
+  #             <packageSource key="local-packages">
+  #               <package pattern="CPS.ComplexCases.*" />
+  #             </packageSource>
+  #                 <packageSource key="cps-fct-feed">
+  #               <package pattern="microsoft.extensions.*" />
+  #             </packageSource>
+  #             <packageSource key="nuget.org">
+  #               <package pattern="*" />
+  #             </packageSource>
+  #           </packageSourceMapping>
+  #           <config>
+  #             <add key="globalPackagesFolder" value="$(Build.SourcesDirectory)/packages" />
+  #           </config>
+  #           <packageRestore>
+  #             <add key="enabled" value="True" />
+  #             <add key="automatic" value="True" />
+  #           </packageRestore>
+  #         </configuration>
+  #         EOF
 
   # Restore packages
   - task: DotNetCoreCLI@2
@@ -85,10 +84,11 @@ steps:
     inputs:
       command: 'restore'
       projects: '${{ parameters.projectPath }}'
-      restoreArguments: '--disable-parallel'
-      ${{ if eq(parameters.useLocalNuGet, true) }}:
-        nugetConfigPath: '$(Build.SourcesDirectory)/NuGet.Config'
-        feedsToUse: 'config'
+      feedsToUse: 'select'
+      vstsFeed: 'https://pkgs.dev.azure.com/CPSDTS/b22de6aa-9da5-4bf2-afb5-c15f5f9cb3bf/_packaging/LACC-backend/nuget/v3/index.json'
+      # ${{ if eq(parameters.useLocalNuGet, true) }}:
+      # nugetConfigPath: '$(Build.SourcesDirectory)/NuGet.Config'
+      # feedsToUse: 'config'
 
   # Build project
   - task: DotNetCoreCLI@2

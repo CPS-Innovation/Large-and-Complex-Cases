@@ -46,14 +46,30 @@ stages:
             inputs:
               command: 'pack'
               packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-              outputDir: '$(Build.SourcesDirectory)/localnuget'
-              arguments: '--configuration $(buildConfiguration) --no-build'
+              # outputDir: '$(Build.SourcesDirectory)/localnuget'
+              outputDir: '$(Build.SourcesDirectory)/HttpTelemetryPackage'
+              # arguments: '--configuration $(buildConfiguration) --no-build'
+              arguments: >
+                -p:ContinuousIntegrationBuild=true
+                -p:SymbolPackageFormat=snupkg
+                -p:VersionSuffix=ci.$(Build.Build.Id)
+              configuration: 'Release'
+              includeSymbols: true
+              includeSources: true
 
-          - task: PublishPipelineArtifact@1
-            displayName: 'Publish HttpTelemetry Package'
+          - task: DotNetCoreCLI@2
+            displayName: 'Push HttpTelemetry package'
             inputs:
-              targetPath: '$(Build.SourcesDirectory)/localnuget'
-              artifact: 'localnuget'
+              command: 'push'
+              packagesToPush: '$(Build.ArtifactStagingDirectory)/HttpTelemetryPackage/*.nupkg;!$(Build.ArtifactStagingDirectory)/HttpTelemetryPackage/*.symbols.nupkg'
+              publishVstsFeed: 'https://pkgs.dev.azure.com/CPSDTS/b22de6aa-9da5-4bf2-afb5-c15f5f9cb3bf/_packaging/LACC-backend/nuget/v3/index.json'
+              arguments: '--skip-duplicate'
+
+          # - task: PublishPipelineArtifact@1
+          #   displayName: 'Publish HttpTelemetry Package'
+          #   inputs:
+          #     targetPath: '$(Build.SourcesDirectory)/localnuget'
+          #     artifact: 'localnuget'
 
       - job: Build_And_Test_Solution
         displayName: 'Build & Test Solution'
