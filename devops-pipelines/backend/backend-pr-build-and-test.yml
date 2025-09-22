@@ -61,7 +61,7 @@ stages:
             inputs:
               command: 'push'
               packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg;$(Build.ArtifactStagingDirectory)/*.symbols.nupkg'
-              publishVstsFeed: 'https://pkgs.dev.azure.com/CPSDTS/b22de6aa-9da5-4bf2-afb5-c15f5f9cb3bf/_packaging/LACC-backend/nuget/v3/index.json'
+              publishVstsFeed: '[Information Management/]LACC-backend'
               arguments: '--skip-duplicate'
 
           # - task: PublishPipelineArtifact@1
