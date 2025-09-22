@@ -57,6 +57,10 @@ stages:
               includeSymbols: true
               includeSources: true
 
+          - script: |
+              echo "show contents of $(Build.SourcesDirectory)/HttpTelemetryPackage..."
+              ls -a $(Build.SourcesDirectory)/HttpTelemetryPackage
+
           - task: DotNetCoreCLI@2
             displayName: 'Push HttpTelemetry package'
             inputs:
