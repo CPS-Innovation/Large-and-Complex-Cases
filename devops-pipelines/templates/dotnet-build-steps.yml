@@ -2,7 +2,6 @@ parameters:
   projectPath: ''
   projectName: ''
   buildConfiguration: 'Release'
-  # dotNetVersion: '8.x'
   useLocalNuGet: false
   nugetArtifact: 'localnuget'
   nugetArtifactDownloadPath: '$(Build.SourcesDirectory)/localnuget'
@@ -28,12 +27,10 @@ steps:
         else
           echo ".NET is already installed."
         fi 
-        
-  # - task: UseDotNet@2
-  #   displayName: 'Use .NET SDK'
-  #   inputs:
-  #     packageType: 'sdk'
-  #     version: ${{ parameters.dotNetVersion }}
+  
+  - task: NuGetToolInstaller@1
+    name: 'NuGetToolInstaller'
+    displayName: 'NuGet tool installer'
 
   # Download local NuGet package if needed
   - ${{ if eq(parameters.useLocalNuGet, true) }}:
@@ -76,15 +73,25 @@ steps:
           EOF
 
   # Restore packages
-  - task: DotNetCoreCLI@2
+  - task: NuGetCommand@2
     displayName: 'Restore ${{ parameters.projectName }}'
     inputs:
       command: 'restore'
-      projects: '${{ parameters.projectPath }}'
-      restoreArguments: '--disable-parallel'
+      restoreSolution: '${{ parameters.projectPath }}'
+      disableParallelProcessing: true
       ${{ if eq(parameters.useLocalNuGet, true) }}:
         nugetConfigPath: '$(Build.SourcesDirectory)/NuGet.Config'
         feedsToUse: 'config'
+
+  # - task: DotNetCoreCLI@2
+  #   displayName: 'Restore ${{ parameters.projectName }}'
+  #   inputs:
+  #     command: 'restore'
+  #     projects: '${{ parameters.projectPath }}'
+  #     restoreArguments: '--disable-parallel'
+  #     ${{ if eq(parameters.useLocalNuGet, true) }}:
+  #       nugetConfigPath: '$(Build.SourcesDirectory)/NuGet.Config'
+  #       feedsToUse: 'config'
 
   # Build project
   - task: DotNetCoreCLI@2
