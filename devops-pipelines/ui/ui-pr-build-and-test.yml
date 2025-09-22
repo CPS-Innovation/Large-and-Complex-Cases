@@ -1,13 +1,3 @@
-parameters:
-  - name: environment
-    displayName: 'Target Environment'
-    type: string
-    default: 'dev'
-    values:
-      - dev
-      - stage
-      - prod
-
 trigger: none
 
 pr:
@@ -18,8 +8,7 @@ pr:
     include:
       - ui-spa/*
 
-pool:
-  vmImage: ubuntu-latest
+pool: 'LACC PreProd Pool'
 
 variables:
   - name: nodeVersion
@@ -43,7 +32,7 @@ stages:
               version: '$(nodeVersion)'
 
           - task: Npm@1
-            displayName: 'Install NPM Dependencies'
+            displayName: 'Clean Install NPM Dependencies'
             inputs:
               command: 'ci'
               workingDir: '$(workingDir)'
