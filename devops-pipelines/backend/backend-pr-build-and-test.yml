@@ -19,9 +19,9 @@ variables:
 pool: 'LACC PreProd Pool'
 
 stages:
-  # - stage: Build_And_Test_Backend
-  #   displayName: 'LACC Backend - Build, Test & Package'
-  #   jobs:
+  - stage: Build_And_Test_Backend
+    displayName: 'LACC Backend - Build, Test & Package'
+    jobs:
   #     - job: Package_NuGet
   #       displayName: 'Pack and Publish NuGet Package'
   #       steps:
