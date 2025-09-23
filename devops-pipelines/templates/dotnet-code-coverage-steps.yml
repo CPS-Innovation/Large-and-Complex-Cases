@@ -3,19 +3,25 @@ parameters:
   projectName: ''
 
 steps:
-  - task: DotNetCoreCLI@2
-    displayName: 'Install ReportGenerator Tool'
-    inputs:
-      command: 'custom'
-      custom: 'tool'
-      arguments: 'install --global dotnet-reportgenerator-globaltool'
-    condition: always()
+  # - task: DotNetCoreCLI@2
+  #   displayName: 'Install ReportGenerator Tool'
+  #   inputs:
+  #     command: 'custom'
+  #     custom: 'tool'
+  #     arguments: 'install --global dotnet-reportgenerator-globaltool'
+  #   condition: always()
 
   - task: Bash@3
     displayName: 'Generate HTML Coverage Report'
     inputs:
       targetType: 'inline'
       script: |
+        export PATH="$PATH:$HOME/.dotnet/tools"
+
+        if ! command -v reportgenerator &> /dev/null; then
+          dotnet tool install --global dotnet-reportgenerator-globaltool
+        fi
+
         coverageFiles=$(find "$AGENT_TEMPDIRECTORY" -type f -name "coverage.cobertura.xml")
 
         if [ -n "$coverageFiles" ]; then
