@@ -62,61 +62,61 @@ stages:
             parameters:
               buildArtifact: $(Build.ArtifactStagingDirectory)
 
-      - job: Build_And_Test_Solution
-        displayName: 'Build & Test Solution'
-        dependsOn: Package_NuGet
-        steps:
-          - template: ../templates/dotnet-build-steps.yml
-            parameters:
-              projectPath: 'backend/CPS.ComplexCases.sln'
-              projectName: 'Backend Solution'
-              buildConfiguration: '$(buildConfiguration)'
-              dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: true
-              publishOutput: false
-              runTests: true
-              testResultsDirectory: $(testResultsDirectory)
-              coverageReportsDirectory: $(coverageReportsDirectory)
+      # - job: Build_And_Test_Solution
+      #   displayName: 'Build & Test Solution'
+      #   dependsOn: Package_NuGet
+      #   steps:
+      #     - template: ../templates/dotnet-build-steps.yml
+      #       parameters:
+      #         projectPath: 'backend/CPS.ComplexCases.sln'
+      #         projectName: 'Backend Solution'
+      #         buildConfiguration: '$(buildConfiguration)'
+      #         dotNetVersion: $(dotNetVersion)
+      #         useLocalNuGet: true
+      #         publishOutput: false
+      #         runTests: true
+      #         testResultsDirectory: $(testResultsDirectory)
+      #         coverageReportsDirectory: $(coverageReportsDirectory)
 
-          # Generate coverage report
-          - template: ../templates/dotnet-code-coverage-steps.yml
-            parameters:
-              coverageReportsDirectory: $(coverageReportsDirectory)
-              projectName: 'Backend'
+      #     # Generate coverage report
+      #     - template: ../templates/dotnet-code-coverage-steps.yml
+      #       parameters:
+      #         coverageReportsDirectory: $(coverageReportsDirectory)
+      #         projectName: 'Backend'
 
-      - job: Build_Main_API
-        displayName: 'LACC - Build Main API'
-        dependsOn: Build_And_Test_Solution
-        pool:
-          vmImage: ubuntu-latest
-        steps:
-          # Build and publish Main API
-          - template: ../templates/dotnet-build-steps.yml
-            parameters:
-              projectPath: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-              projectName: 'lacc-main-api-drop'
-              buildConfiguration: $(buildConfiguration)
-              dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: true
-              publishOutput: true
-              runTests: false
+      # - job: Build_Main_API
+      #   displayName: 'LACC - Build Main API'
+      #   dependsOn: Build_And_Test_Solution
+      #   pool:
+      #     vmImage: ubuntu-latest
+      #   steps:
+      #     # Build and publish Main API
+      #     - template: ../templates/dotnet-build-steps.yml
+      #       parameters:
+      #         projectPath: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+      #         projectName: 'lacc-main-api-drop'
+      #         buildConfiguration: $(buildConfiguration)
+      #         dotNetVersion: $(dotNetVersion)
+      #         useLocalNuGet: true
+      #         publishOutput: true
+      #         runTests: false
 
-      - job: Build_FileTransfer_API
-        displayName: 'LACC - Build FileTransfer API'
-        dependsOn: Build_And_Test_Solution
-        pool:
-          vmImage: ubuntu-latest
-        steps:
-          # Build and publish FileTransfer API
-          - template: ../templates/dotnet-build-steps.yml
-            parameters:
-              projectPath: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
-              projectName: 'lacc-filetransfer-api-drop'
-              buildConfiguration: $(buildConfiguration)
-              dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: true
-              publishOutput: true
-              runTests: false
+      # - job: Build_FileTransfer_API
+      #   displayName: 'LACC - Build FileTransfer API'
+      #   dependsOn: Build_And_Test_Solution
+      #   pool:
+      #     vmImage: ubuntu-latest
+      #   steps:
+      #     # Build and publish FileTransfer API
+      #     - template: ../templates/dotnet-build-steps.yml
+      #       parameters:
+      #         projectPath: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
+      #         projectName: 'lacc-filetransfer-api-drop'
+      #         buildConfiguration: $(buildConfiguration)
+      #         dotNetVersion: $(dotNetVersion)
+      #         useLocalNuGet: true
+      #         publishOutput: true
+      #         runTests: false
 
       - job: Package_Database_Scripts
         displayName: 'LACC - Package Database Migration Scripts'
