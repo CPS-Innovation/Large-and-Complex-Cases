@@ -36,3 +36,5 @@ export const Select = React.forwardRef<HTMLSelectElement | null, SelectProps>(
     return <GDS.Select {...props} ref={ref} />;
   },
 );
+
+Select.displayName = "Select";

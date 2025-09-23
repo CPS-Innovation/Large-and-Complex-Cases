@@ -20,3 +20,5 @@ export const Button = forwardRef<HTMLButtonElement | null, ButtonProps>(
     return <GDS.Button {...props} ref={ref} />;
   },
 );
+
+Button.displayName = "Button";
