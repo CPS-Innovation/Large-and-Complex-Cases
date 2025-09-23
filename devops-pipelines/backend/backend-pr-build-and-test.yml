@@ -129,53 +129,6 @@ stages:
           - script: mkdir -p '$(Pipeline.Workspace)/db-migration'
             displayName: 'Create directory for migration files'
 
-          - task: DotNetCoreCLI@2
-            displayName: 'Install EF Core Tools'
-            inputs:
-              command: 'custom'
-              custom: 'tool'
-              arguments: 'install --global dotnet-ef'
-          
-          # - task: DotNetCoreCLI@2
-          #   displayName: 'Generate Migration Scripts'
-          #   inputs:
-          #     command: 'custom'
-          #     custom: 'ef'
-          #     arguments: 'migrations script --idempotent --output $(Pipeline.Workspace)/db-migration/migration-script.sql --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-
-          # - task: CmdLine@2
-          #   displayName: 'Dotnet Install'
-          #   inputs:
-          #     script: |     
-          #       if ! command -v dotnet &> /dev/null; then
-          #         echo ".NET is not installed."
-          #         echo "Installing .NET SDK..."
-          #         wget https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-          #         sudo dpkg -i packages-microsoft-prod.deb
-          #         sudo apt-get update
-          #         sudo apt-get install -y dotnet-sdk-8.0
-          #         sudo apt-get install -y aspnetcore-runtime-8.0
-          #         sudo apt-get install -y dotnet-runtime-8.0
-          #       else
-          #         echo ".NET is already installed."
-          #       fi 
-
-          # - task: NuGetToolInstaller@1
-          #   name: 'NuGetToolInstaller'
-          #   displayName: 'NuGet tool installer'
-
-          # - task: NuGetAuthenticate@1
-          #   displayName: 'NuGet Authenticate'
-
-          # # Restore packages
-          # - task: DotNetCoreCLI@2
-          #   displayName: 'Restore Database'
-          #   inputs:
-          #     command: 'restore'
-          #     projects: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
-          #     feedsToUse: 'select'
-          #     vstsFeed: 'Information Management/LACC-backend'
-
           - task: Bash@3
             displayName: 'Generate Migration Scripts'
             inputs:
@@ -183,15 +136,13 @@ stages:
               script: |
                 export PATH="$PATH:$HOME/.dotnet/tools"
                 
-                # if ! dotnet ef --version &> /dev/null; then
-                #   dotnet tool install --global dotnet-ef
-                # fi
-
-                # dotnet build backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj --configuration $(buildConfiguration) --no-restore
+                if ! dotnet ef --version &> /dev/null; then
+                  dotnet tool install --global dotnet-ef
+                fi
 
                 dotnet ef migrations script \
                 --idempotent \
-                --output $(Pipeline.Workspace)/db-migration/migration-script.sql \
+                --output $(Pipeline.ArtifactStagingDirectory)/migration-script.sql \
                 --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
                 --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
 
@@ -200,7 +151,7 @@ stages:
             inputs:
               sourceFolder: 'backend/CPS.ComplexCases.Data/Migrations'
               contents: '**'
-              targetFolder: '$(Pipeline.Workspace)/db-migration/migrations'
+              targetFolder: '$(Pipeline.ArtifactStagingDirectory)/migrations'
           
           - script: |
               echo "Installing the zip package..."
@@ -211,14 +162,14 @@ stages:
           - task: ArchiveFiles@2
             displayName: 'Archive Database Scripts'
             inputs:
-              rootFolderOrFile: '$(Pipeline.Workspace)/db-migration'
+              rootFolderOrFile: '$(Pipeline.ArtifactStagingDirectory)'
               includeRootFolder: false
               archiveType: 'zip'
-              archiveFile: '$(Pipeline.Workspace)/db-migration/database-scripts.zip'
+              archiveFile: '$(Pipeline.ArtifactStagingDirectory)/database-scripts.zip'
               replaceExistingArchive: true
 
           - task: PublishBuildArtifacts@1
             displayName: 'Publish Database Scripts'
             inputs:
-              pathtoPublish: '$(Pipeline.Workspace)/db-migration/database-scripts.zip'
+              pathtoPublish: '$(Pipeline.ArtifactStagingDirectory)/database-scripts.zip'
               artifactName: 'database-scripts-drop'
