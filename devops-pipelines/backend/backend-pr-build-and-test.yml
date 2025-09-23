@@ -59,7 +59,8 @@ stages:
               publishVstsFeed: 'Information Management/LACC-backend'
           
           - template: ../templates/runner-cleanup-steps.yml
-            buildArtifact: $(Build.ArtifactStagingDirectory)
+            parameters:
+              buildArtifact: $(Build.ArtifactStagingDirectory)
 
           # - task: PublishPipelineArtifact@1
           #   displayName: 'Publish HttpTelemetry Package'
