@@ -17,6 +17,7 @@ using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.NetApp.Extensions;
 using CPS.ComplexCases.FileTransfer.API.Middleware;
 using Microsoft.ApplicationInsights.WorkerService;
+using Microsoft.Extensions.Logging.ApplicationInsights;
 
 // Create a temporary logger for configuration phase
 using var loggerFactory = LoggerFactory.Create(configure => configure.AddConsole());
@@ -27,33 +28,7 @@ var host = new HostBuilder()
     {
         webApp.UseMiddleware<RequestValidationMiddleware>();
     }) // ✅ Adds ASP.NET Core integration
-    .ConfigureLogging((context, logging) =>
-    {
-        // Clear providers to avoid conflicts with default filtering
-        logging.ClearProviders();
-
-        var connectionString = context.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
-        if (!string.IsNullOrEmpty(connectionString))
-        {
-            logging.AddApplicationInsights(
-                configureTelemetryConfiguration: (config) => config.ConnectionString = connectionString,
-                configureApplicationInsightsLoggerOptions: (options) => { }
-            );
-        }
-
-        if (context.HostingEnvironment.IsDevelopment())
-        {
-            logging.AddConsole();
-        }
-
-        // Read minimum log level from configuration, fallback to Information if not set or invalid
-        var logLevelString = context.Configuration["Logging:LogLevel:Default"];
-        if (!Enum.TryParse<LogLevel>(logLevelString, true, out var minLevel))
-        {
-            minLevel = LogLevel.Information;
-        }
-        logging.SetMinimumLevel(minLevel);
-    })
+    .ConfigureLogging(options => options.AddApplicationInsights())
     .ConfigureAppConfiguration((context, config) =>
     {
         // ✅ Configure Azure Key Vault if KeyVaultUri is provided
@@ -70,6 +45,20 @@ var host = new HostBuilder()
                 EnableAdaptiveSampling = false,
             })
             .ConfigureFunctionsApplicationInsights();
+        services.Configure<LoggerFilterOptions>(options =>
+        {
+            // See: https://learn.microsoft.com/en-us/azure/azure-functions/dotnet-isolated-process-guide?tabs=windows#managing-log-levels
+            // The Application Insights SDK adds a default logging filter that instructs ILogger to capture only Warning and more severe logs. Application Insights requires an explicit override.
+            // Log levels can also be configured using appsettings.json. For more information, see https://learn.microsoft.com/en-us/azure/azure-monitor/app/worker-service#ilogger-logs
+            var toRemove = options.Rules
+                .FirstOrDefault(rule =>
+                    string.Equals(rule.ProviderName, typeof(ApplicationInsightsLoggerProvider).FullName));
+
+            if (toRemove is not null)
+            {
+                options.Rules.Remove(toRemove);
+            }
+        });
 
         // ✅ Add services with configuration
         services.AddActivityLog();
