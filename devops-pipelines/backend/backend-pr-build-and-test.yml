@@ -187,7 +187,7 @@ stages:
                 #   dotnet tool install --global dotnet-ef
                 # fi
 
-                # dotnet build backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj --configuration $(buildConfiguration) --no-restore
+                dotnet build backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj --configuration $(buildConfiguration) --no-restore
 
                 dotnet ef migrations script \
                 --idempotent \
