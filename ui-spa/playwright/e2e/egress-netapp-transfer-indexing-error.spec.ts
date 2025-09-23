@@ -80,7 +80,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(section2ListItems).toHaveLength(
         expectedData.filePaths.length,
       );
-      await expectedData.filePaths.forEach(async (data, index) => {
+      await expectedData.filePaths.forEach(async (_data, index) => {
         await expect(
           section2ListItems[index].getByTestId("file-name-wrapper"),
         ).toHaveText(expectedData.filePaths[index].fileName);
@@ -384,9 +384,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       ).toContainText("Files copied successfully");
       await expect(
         page.getByTestId("tab-content-transfer-materials").locator("h2").nth(1),
-      ).toHaveText(
-        "Transfer between Egress and Shared Drive",
-      );
+      ).toHaveText("Transfer between Egress and Shared Drive");
       await expect(page.getByTestId("egress-table-wrapper")).toBeVisible();
       await expect(page.getByTestId("netapp-table-wrapper")).toBeVisible();
     });

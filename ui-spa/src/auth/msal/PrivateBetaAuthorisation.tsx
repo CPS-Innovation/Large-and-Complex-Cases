@@ -15,6 +15,7 @@ const PrivateBetaAuthorisation: FC<Props> = ({ msalInstance, children }) => {
   const canProceedOnGroupMembership = !!groupClaims?.includes(
     PRIVATE_BETA_USER_GROUP,
   );
+  if (!account) return <></>;
 
   return canProceedOnNoGroupInConfig || canProceedOnGroupMembership ? (
     <>{children}</>

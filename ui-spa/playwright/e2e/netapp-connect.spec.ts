@@ -1,5 +1,6 @@
 import { delay, HttpResponse, http } from "msw";
 import { expect, test } from "../utils/test";
+import { Page } from "@playwright/test";
 
 test.describe("netapp connect", () => {
   test.beforeEach(async ({ page }) => {
@@ -7,7 +8,7 @@ test.describe("netapp connect", () => {
     await page.waitForResponse(`https://mocked-out-api/api/v1/areas`);
   });
 
-  const validateFolderPath = async (page, expectedResult: string[]) => {
+  const validateFolderPath = async (page: Page, expectedResult: string[]) => {
     const texts = await page.locator("ol>li").allTextContents();
     expect(texts).toEqual(expectedResult);
   };

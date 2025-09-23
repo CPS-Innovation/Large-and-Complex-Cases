@@ -1,11 +1,12 @@
 import { delay, HttpResponse, http } from "msw";
 import { expect, test } from "../utils/test";
+import { Page } from "@playwright/test";
 
 test.describe("transfer material netapp list", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/case/12/case-management");
   });
-  const validateFolderPath = async (page, expectedResult: string[]) => {
+  const validateFolderPath = async (page: Page, expectedResult: string[]) => {
     const texts = await page
       .getByTestId("netapp-table-wrapper")
       .locator("ol>li")
