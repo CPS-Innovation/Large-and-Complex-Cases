@@ -126,7 +126,7 @@ stages:
               publishOutput: false
               runTests: false
 
-          - script: mkdir '$(Pipeline.Workspace)/db-migration'
+          - script: mkdir -p '$(Pipeline.Workspace)/db-migration'
             displayName: 'Create directory for migration files'
 
           - task: DotNetCoreCLI@2
