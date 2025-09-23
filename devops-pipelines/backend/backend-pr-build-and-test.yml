@@ -176,24 +176,24 @@ stages:
           #     feedsToUse: 'select'
           #     vstsFeed: 'Information Management/LACC-backend'
 
-          # - task: Bash@3
-          #   displayName: 'Generate Migration Scripts'
-          #   inputs:
-          #     targetType: 'inline'
-          #     script: |
-          #       export PATH="$PATH:$HOME/.dotnet/tools"
+          - task: Bash@3
+            displayName: 'Generate Migration Scripts'
+            inputs:
+              targetType: 'inline'
+              script: |
+                export PATH="$PATH:$HOME/.dotnet/tools"
                 
-          #       if ! dotnet ef --version &> /dev/null; then
-          #         dotnet tool install --global dotnet-ef
-          #       fi
+                # if ! dotnet ef --version &> /dev/null; then
+                #   dotnet tool install --global dotnet-ef
+                # fi
 
-          #       dotnet build backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj --configuration $(buildConfiguration) --no-restore
+                # dotnet build backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj --configuration $(buildConfiguration) --no-restore
 
-          #       dotnet ef migrations script \
-          #       --idempotent \
-          #       --output $(Pipeline.Workspace)/db-migration/migration-script.sql \
-          #       --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
-          #       --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
+                dotnet ef migrations script \
+                --idempotent \
+                --output $(Pipeline.Workspace)/db-migration/migration-script.sql \
+                --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
+                --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
 
           - task: CopyFiles@2
             displayName: 'Copy Migration Files'
