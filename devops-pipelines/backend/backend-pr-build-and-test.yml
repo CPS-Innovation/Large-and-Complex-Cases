@@ -120,7 +120,7 @@ stages:
 
       - job: Package_Database_Scripts
         displayName: 'LACC - Package Database Migration Scripts'
-        dependsOn: Build_And_Test_Solution
+        # dependsOn: Build_And_Test_Solution
         pool:
           vmImage: ubuntu-latest
         variables:
