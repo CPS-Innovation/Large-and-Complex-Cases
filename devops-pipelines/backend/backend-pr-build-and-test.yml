@@ -1,3 +1,5 @@
+name: $(BuildDefinitionName)_$(Year:yyyy).$(Month).$(DayOfMonth)$(Rev:.r)
+
 trigger: none
 
 pr:
@@ -46,23 +48,18 @@ stages:
             inputs:
               command: 'pack'
               packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-              # outputDir: '$(Build.SourcesDirectory)/localnuget'
-              # arguments: '--configuration $(buildConfiguration) --no-build'
-              arguments: >
-                -p:ContinuousIntegrationBuild=true
-                -p:SymbolPackageFormat=snupkg
-                -p:VersionSuffix=ci.$(Build.Build.Id)
               configuration: 'Release'
-              includeSymbols: true
-              includeSources: true
+              versioningScheme: 'byBuildNumber'
 
           - task: DotNetCoreCLI@2
             displayName: 'Push HttpTelemetry package'
             inputs:
               command: 'push'
-              packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg;$(Build.ArtifactStagingDirectory)/*.symbols.nupkg'
+              packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
               publishVstsFeed: 'Information Management/LACC-backend'
-              arguments: '--skip-duplicate'
+          
+          - template: ../templates/runner-cleanup-steps.yml
+            buildArtifact: $(Build.ArtifactStagingDirectory)
 
           # - task: PublishPipelineArtifact@1
           #   displayName: 'Publish HttpTelemetry Package'
