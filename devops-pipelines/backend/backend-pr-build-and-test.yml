@@ -87,8 +87,6 @@ stages:
       # - job: Build_Main_API
       #   displayName: 'LACC - Build Main API'
       #   dependsOn: Build_And_Test_Solution
-      #   pool:
-      #     vmImage: ubuntu-latest
       #   steps:
       #     # Build and publish Main API
       #     - template: ../templates/dotnet-build-steps.yml
@@ -104,8 +102,6 @@ stages:
       # - job: Build_FileTransfer_API
       #   displayName: 'LACC - Build FileTransfer API'
       #   dependsOn: Build_And_Test_Solution
-      #   pool:
-      #     vmImage: ubuntu-latest
       #   steps:
       #     # Build and publish FileTransfer API
       #     - template: ../templates/dotnet-build-steps.yml
@@ -121,8 +117,6 @@ stages:
       - job: Package_Database_Scripts
         displayName: 'LACC - Package Database Migration Scripts'
         # dependsOn: Build_And_Test_Solution
-        pool:
-          vmImage: ubuntu-latest
         variables:
           system.debug: 'true'
         steps:
@@ -150,7 +144,9 @@ stages:
           #     command: 'custom'
           #     custom: 'ef'
           #     arguments: 'migrations script --idempotent --output $(Build.ArtifactStagingDirectory)/migration-script.sql --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-          
+          - script: ls -a $(Build.ArtifactStagingDirectory)
+            displayName: debug
+
           - task: CmdLine@2
             displayName: 'Dotnet Install'
             inputs:
@@ -199,7 +195,7 @@ stages:
 
                 dotnet ef migrations script \
                 --idempotent \
-                --output $(Build.ArtifactStagingDirectory)/migration-script.sql \
+                --output $(Pipeline.Workspace)/migration-script.sql \
                 --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
                 --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
 
@@ -208,19 +204,19 @@ stages:
             inputs:
               sourceFolder: 'backend/CPS.ComplexCases.Data/Migrations'
               contents: '**'
-              targetFolder: '$(Build.ArtifactStagingDirectory)/migrations'
+              targetFolder: '$(Pipeline.Workspace)/migrations'
 
           - task: ArchiveFiles@2
             displayName: 'Archive Database Scripts'
             inputs:
-              rootFolderOrFile: '$(Build.ArtifactStagingDirectory)'
+              rootFolderOrFile: '$(Pipeline.Workspace)'
               includeRootFolder: false
               archiveType: 'zip'
-              archiveFile: '$(Build.ArtifactStagingDirectory)/database-scripts.zip'
+              archiveFile: '$(Pipeline.Workspace)/database-scripts.zip'
               replaceExistingArchive: true
 
           - task: PublishBuildArtifacts@1
             displayName: 'Publish Database Scripts'
             inputs:
-              pathtoPublish: '$(Build.ArtifactStagingDirectory)/database-scripts.zip'
+              pathtoPublish: '$(Pipeline.Workspace)/database-scripts.zip'
               artifactName: 'database-scripts-drop'
