@@ -135,9 +135,11 @@ stages:
                   dotnet tool install --global dotnet-ef
                 fi
 
+                dotnet build backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj --configuration $(buildConfiguration) --no-restore
+
                 dotnet ef migrations script \
                 --idempotent \
-                --output $(Pipeline.Workspace)/db-migration/migration-script.sql \
+                --output $(Build.ArtifactStagingDirectory)/migration-script.sql \
                 --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
                 --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
 
@@ -146,7 +148,7 @@ stages:
             inputs:
               sourceFolder: 'backend/CPS.ComplexCases.Data/Migrations'
               contents: '**'
-              targetFolder: '$(Pipeline.Workspace)/db-migration/migrations'
+              targetFolder: '$(Build.ArtifactStagingDirectory)/migrations'
           
           - script: |
               echo "Installing the zip package..."
@@ -157,14 +159,14 @@ stages:
           - task: ArchiveFiles@2
             displayName: 'Archive Database Scripts'
             inputs:
-              rootFolderOrFile: '$(Pipeline.Workspace)/db-migration'
+              rootFolderOrFile: '$(Build.ArtifactStagingDirectory)'
               includeRootFolder: false
               archiveType: 'zip'
-              archiveFile: '$(Pipeline.Workspace)/db-migration/database-scripts.zip'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/database-scripts.zip'
               replaceExistingArchive: true
 
           - task: PublishBuildArtifacts@1
             displayName: 'Publish Database Scripts'
             inputs:
-              pathtoPublish: '$(Pipeline.Workspace)/db-migration/database-scripts.zip'
+              pathtoPublish: '$(Build.ArtifactStagingDirectory)/database-scripts.zip'
               artifactName: 'database-scripts-drop'
