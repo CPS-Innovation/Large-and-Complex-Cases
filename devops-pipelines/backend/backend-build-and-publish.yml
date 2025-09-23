@@ -1,3 +1,5 @@
+name: $(BuildDefinitionName)_$(Year:yyyy).$(Month).$(DayOfMonth)$(Rev:.r)
+
 trigger:
   batch: true
   branches:
@@ -30,28 +32,23 @@ stages:
             projectName: 'HttpTelemetry'
             buildConfiguration: $(buildConfiguration)
             dotNetVersion: $(dotNetVersion)
-            useLocalNuGet: false
             publishOutput: false
             runTests: false
-
-        - script: |
-            mkdir -p $(Build.SourcesDirectory)/localnuget
-            rm -f $(Build.SourcesDirectory)/localnuget/*.nupkg
-          displayName: 'Prepare local NuGet directory'
 
         - task: DotNetCoreCLI@2
           displayName: 'Pack HttpTelemetry'
           inputs:
             command: 'pack'
             packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-            outputDir: '$(Build.SourcesDirectory)/localnuget'
-            arguments: '--configuration $(buildConfiguration) --no-build'
+            configuration: 'Release'
+            versioningScheme: 'byBuildNumber'
 
-        - task: PublishPipelineArtifact@1
-          displayName: 'Publish HttpTelemetry Package'
+        - task: DotNetCoreCLI@2
+          displayName: 'Push HttpTelemetry package'
           inputs:
-            targetPath: '$(Build.SourcesDirectory)/localnuget'
-            artifact: 'localnuget'
+            command: 'push'
+            packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
+            publishVstsFeed: 'Information Management/LACC-backend'
     
   - stage: Build_Main_API
     displayName: 'LACC Backend - Build Main API'
@@ -66,7 +63,6 @@ stages:
               projectName: 'lacc-main-api-drop'
               buildConfiguration: $(buildConfiguration)
               dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: true
               publishOutput: true
               runTests: false
 
@@ -83,7 +79,6 @@ stages:
               projectName: 'lacc-filetransfer-api-drop'
               buildConfiguration: $(buildConfiguration)
               dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: true
               publishOutput: true
               runTests: false
 
@@ -103,23 +98,25 @@ stages:
               projectName: 'Database'
               buildConfiguration: $(buildConfiguration)
               dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: true
               publishOutput: false
               runTests: false
 
-          - task: DotNetCoreCLI@2
-            displayName: 'Install EF Core Tools'
-            inputs:
-              command: 'custom'
-              custom: 'tool'
-              arguments: 'install --global dotnet-ef'
-
-          - task: DotNetCoreCLI@2
+          - task: Bash@3
             displayName: 'Generate Migration Scripts'
             inputs:
-              command: 'custom'
-              custom: 'ef'
-              arguments: 'migrations script --idempotent --output $(Build.ArtifactStagingDirectory)/migration-script.sql --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+              targetType: 'inline'
+              script: |
+                export PATH="$PATH:$HOME/.dotnet/tools"
+                
+                if ! dotnet ef --version &> /dev/null; then
+                  dotnet tool install --global dotnet-ef
+                fi
+
+                dotnet ef migrations script \
+                --idempotent \
+                --output $(Build.ArtifactStagingDirectory)/migration-script.sql \
+                --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
+                --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
 
           - task: CopyFiles@2
             displayName: 'Copy Migration Files'

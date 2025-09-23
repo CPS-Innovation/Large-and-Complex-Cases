@@ -2,7 +2,6 @@ parameters:
   projectPath: ''
   projectName: ''
   buildConfiguration: 'Release'
-  useLocalNuGet: false
   nugetArtifact: 'localnuget'
   nugetArtifactDownloadPath: '$(Build.SourcesDirectory)/localnuget'
   publishOutput: false
