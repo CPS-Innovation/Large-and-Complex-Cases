@@ -62,12 +62,6 @@ stages:
             parameters:
               buildArtifact: $(Build.ArtifactStagingDirectory)
 
-          # - task: PublishPipelineArtifact@1
-          #   displayName: 'Publish HttpTelemetry Package'
-          #   inputs:
-          #     targetPath: '$(Build.SourcesDirectory)/localnuget'
-          #     artifact: 'localnuget'
-
       - job: Build_And_Test_Solution
         displayName: 'Build & Test Solution'
         dependsOn: Package_NuGet
@@ -141,19 +135,36 @@ stages:
               publishOutput: false
               runTests: false
 
-          - task: DotNetCoreCLI@2
-            displayName: 'Install EF Core Tools'
-            inputs:
-              command: 'custom'
-              custom: 'tool'
-              arguments: 'install --global dotnet-ef'
-
-          - task: DotNetCoreCLI@2
+          # - task: DotNetCoreCLI@2
+          #   displayName: 'Install EF Core Tools'
+          #   inputs:
+          #     command: 'custom'
+          #     custom: 'tool'
+          #     arguments: 'install --global dotnet-ef'
+          
+          - task: Bash@3
             displayName: 'Generate Migration Scripts'
             inputs:
-              command: 'custom'
-              custom: 'ef'
-              arguments: 'migrations script --idempotent --output $(Build.ArtifactStagingDirectory)/migration-script.sql --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+              targetType: 'inline'
+              script: |
+                export PATH="$PATH:$HOME/.dotnet/tools"
+                
+                if ! dotnet ef --version &> /dev/null; then
+                  dotnet tool install --global dotnet-ef
+                fi
+
+                dotnet ef migrations script \
+                --idempotent \
+                --output $(Build.ArtifactStagingDirectory)/migration-script.sql \
+                --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
+                --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
+
+          # - task: DotNetCoreCLI@2
+          #   displayName: 'Generate Migration Scripts'
+          #   inputs:
+          #     command: 'custom'
+          #     custom: 'ef'
+          #     arguments: 'migrations script --idempotent --output $(Build.ArtifactStagingDirectory)/migration-script.sql --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
 
           - task: CopyFiles@2
             displayName: 'Copy Migration Files'

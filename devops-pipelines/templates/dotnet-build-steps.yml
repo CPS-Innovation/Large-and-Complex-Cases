@@ -53,8 +53,7 @@ steps:
       arguments: '--configuration ${{ parameters.buildConfiguration }} --no-restore'
 
   # Run tests if enabled
-  - ${{ if eq(parameters.runTests, true) }}:
-    
+  - ${{ if eq(parameters.runTests, true) }}:    
     - task: DotNetCoreCLI@2
       displayName: 'Run Tests'
       inputs:

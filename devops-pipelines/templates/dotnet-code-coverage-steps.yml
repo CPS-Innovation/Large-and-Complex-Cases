@@ -3,14 +3,6 @@ parameters:
   projectName: ''
 
 steps:
-  # - task: DotNetCoreCLI@2
-  #   displayName: 'Install ReportGenerator Tool'
-  #   inputs:
-  #     command: 'custom'
-  #     custom: 'tool'
-  #     arguments: 'install --global dotnet-reportgenerator-globaltool'
-  #   condition: always()
-
   - task: Bash@3
     displayName: 'Generate HTML Coverage Report'
     inputs:
