@@ -41,8 +41,8 @@ steps:
     inputs:
       command: 'restore'
       projects: '${{ parameters.projectPath }}'
-      # feedsToUse: 'select'
-      # vstsFeed: 'Information Management/LACC-backend'
+      feedsToUse: 'select'
+      vstsFeed: 'Information Management/LACC-backend'
 
   # Build project
   - task: DotNetCoreCLI@2

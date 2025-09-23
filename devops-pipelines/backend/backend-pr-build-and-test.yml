@@ -19,24 +19,24 @@ variables:
 pool: 'LACC PreProd Pool'
 
 stages:
-  - stage: Build_And_Test_Backend
-    displayName: 'LACC Backend - Build, Test & Package'
-    jobs:
-      - job: Package_NuGet
-        displayName: 'Pack and Publish NuGet Package'
-        steps:
-          - checkout: self
-            sparseCheckoutDirectories: backend devops-pipelines/templates
+  # - stage: Build_And_Test_Backend
+  #   displayName: 'LACC Backend - Build, Test & Package'
+  #   jobs:
+  #     - job: Package_NuGet
+  #       displayName: 'Pack and Publish NuGet Package'
+  #       steps:
+  #         - checkout: self
+  #           sparseCheckoutDirectories: backend devops-pipelines/templates
 
-          - template: ../templates/dotnet-build-steps.yml
-            parameters:
-              projectPath: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-              projectName: 'HttpTelemetry'
-              buildConfiguration: $(buildConfiguration)
-              dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: false
-              publishOutput: false
-              runTests: false
+  #         - template: ../templates/dotnet-build-steps.yml
+  #           parameters:
+  #             projectPath: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+  #             projectName: 'HttpTelemetry'
+  #             buildConfiguration: $(buildConfiguration)
+  #             dotNetVersion: $(dotNetVersion)
+  #             useLocalNuGet: false
+  #             publishOutput: false
+  #             runTests: false
 
           # - task: DotNetCoreCLI@2
           #   displayName: 'Pack HttpTelemetry'
@@ -115,91 +115,92 @@ stages:
         variables:
           system.debug: 'true'
         steps:
-          # # Build Data project with dependencies
-          # - template: ../templates/dotnet-build-steps.yml
-          #   parameters:
-          #     projectPath: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
-          #     projectName: 'Database'
-          #     buildConfiguration: $(buildConfiguration)
-          #     dotNetVersion: $(dotNetVersion)
-          #     useLocalNuGet: true
-          #     publishOutput: false
-          #     runTests: false
+          # Build Data project with dependencies
+          - template: ../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
+              projectName: 'Database'
+              buildConfiguration: $(buildConfiguration)
+              dotNetVersion: $(dotNetVersion)
+              useLocalNuGet: true
+              publishOutput: false
+              runTests: false
 
-          # - task: DotNetCoreCLI@2
-          #   displayName: 'Install EF Core Tools'
-          #   inputs:
-          #     command: 'custom'
-          #     custom: 'tool'
-          #     arguments: 'install --global dotnet-ef'
-          
-          # - task: DotNetCoreCLI@2
-          #   displayName: 'Generate Migration Scripts'
-          #   inputs:
-          #     command: 'custom'
-          #     custom: 'ef'
-          #     arguments: 'migrations script --idempotent --output $(Build.ArtifactStagingDirectory)/migration-script.sql --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-          - script: ls -a $(Build.ArtifactStagingDirectory)
-            displayName: debug
+          - script: mkdir '$(Pipeline.Workspace)/db-migration'
+            displayName: 'Create directory for migration files'
 
-          - task: CmdLine@2
-            displayName: 'Dotnet Install'
-            inputs:
-              script: |     
-                if ! command -v dotnet &> /dev/null; then
-                  echo ".NET is not installed."
-                  echo "Installing .NET SDK..."
-                  wget https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-                  sudo dpkg -i packages-microsoft-prod.deb
-                  sudo apt-get update
-                  sudo apt-get install -y dotnet-sdk-8.0
-                  sudo apt-get install -y aspnetcore-runtime-8.0
-                  sudo apt-get install -y dotnet-runtime-8.0
-                else
-                  echo ".NET is already installed."
-                fi 
-
-          - task: NuGetToolInstaller@1
-            name: 'NuGetToolInstaller'
-            displayName: 'NuGet tool installer'
-
-          - task: NuGetAuthenticate@1
-            displayName: 'NuGet Authenticate'
-
-          # Restore packages
           - task: DotNetCoreCLI@2
-            displayName: 'Restore Database'
+            displayName: 'Install EF Core Tools'
             inputs:
-              command: 'restore'
-              projects: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
-              feedsToUse: 'select'
-              vstsFeed: 'Information Management/LACC-backend'
-
-          - task: Bash@3
+              command: 'custom'
+              custom: 'tool'
+              arguments: 'install --global dotnet-ef'
+          
+          - task: DotNetCoreCLI@2
             displayName: 'Generate Migration Scripts'
             inputs:
-              targetType: 'inline'
-              script: |
-                export PATH="$PATH:$HOME/.dotnet/tools"
+              command: 'custom'
+              custom: 'ef'
+              arguments: 'migrations script --idempotent --output $(Pipeline.Workspace)/db-migration/migration-script.sql --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+
+          # - task: CmdLine@2
+          #   displayName: 'Dotnet Install'
+          #   inputs:
+          #     script: |     
+          #       if ! command -v dotnet &> /dev/null; then
+          #         echo ".NET is not installed."
+          #         echo "Installing .NET SDK..."
+          #         wget https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+          #         sudo dpkg -i packages-microsoft-prod.deb
+          #         sudo apt-get update
+          #         sudo apt-get install -y dotnet-sdk-8.0
+          #         sudo apt-get install -y aspnetcore-runtime-8.0
+          #         sudo apt-get install -y dotnet-runtime-8.0
+          #       else
+          #         echo ".NET is already installed."
+          #       fi 
+
+          # - task: NuGetToolInstaller@1
+          #   name: 'NuGetToolInstaller'
+          #   displayName: 'NuGet tool installer'
+
+          # - task: NuGetAuthenticate@1
+          #   displayName: 'NuGet Authenticate'
+
+          # # Restore packages
+          # - task: DotNetCoreCLI@2
+          #   displayName: 'Restore Database'
+          #   inputs:
+          #     command: 'restore'
+          #     projects: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
+          #     feedsToUse: 'select'
+          #     vstsFeed: 'Information Management/LACC-backend'
+
+          # - task: Bash@3
+          #   displayName: 'Generate Migration Scripts'
+          #   inputs:
+          #     targetType: 'inline'
+          #     script: |
+          #       export PATH="$PATH:$HOME/.dotnet/tools"
                 
-                if ! dotnet ef --version &> /dev/null; then
-                  dotnet tool install --global dotnet-ef
-                fi
+          #       if ! dotnet ef --version &> /dev/null; then
+          #         dotnet tool install --global dotnet-ef
+          #       fi
 
-                dotnet build backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj --configuration $(buildConfiguration) --no-restore
+          #       dotnet build backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj --configuration $(buildConfiguration) --no-restore
 
-                dotnet ef migrations script \
-                --idempotent \
-                --output $(Build.ArtifactStagingDirectory)/migration-script.sql \
-                --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
-                --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
+          #       dotnet ef migrations script \
+          #       --idempotent \
+          #       --output $(Pipeline.Workspace)/db-migration/migration-script.sql \
+          #       --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
+          #       --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
 
           - task: CopyFiles@2
             displayName: 'Copy Migration Files'
             inputs:
               sourceFolder: 'backend/CPS.ComplexCases.Data/Migrations'
               contents: '**'
-              targetFolder: '$(Build.ArtifactStagingDirectory)/migrations'
+              targetFolder: '$(Pipeline.Workspace)/db-migration/migrations'
           
           - script: |
               echo "Installing the zip package..."
@@ -210,14 +211,14 @@ stages:
           - task: ArchiveFiles@2
             displayName: 'Archive Database Scripts'
             inputs:
-              rootFolderOrFile: '$(Build.ArtifactStagingDirectory)'
+              rootFolderOrFile: '$(Pipeline.Workspace)/db-migration'
               includeRootFolder: false
               archiveType: 'zip'
-              archiveFile: '$(Build.ArtifactStagingDirectory)/database-scripts.zip'
+              archiveFile: '$(Pipeline.Workspace)/db-migration/database-scripts.zip'
               replaceExistingArchive: true
 
           - task: PublishBuildArtifacts@1
             displayName: 'Publish Database Scripts'
             inputs:
-              pathtoPublish: '$(Build.ArtifactStagingDirectory)/database-scripts.zip'
+              pathtoPublish: '$(Pipeline.Workspace)/db-migration/database-scripts.zip'
               artifactName: 'database-scripts-drop'
