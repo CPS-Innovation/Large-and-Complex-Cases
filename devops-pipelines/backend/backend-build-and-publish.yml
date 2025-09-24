@@ -12,7 +12,9 @@ trigger:
 pr: none
 
 parameters:
-  buildDatabase: true
+- name: buildDatabase
+  type: boolean
+  default: true
 
 variables:
   buildConfiguration: 'Release'
@@ -71,7 +73,7 @@ stages:
               publishOutput: true
               runTests: false
           
-          - ${{ if eq(lower('parameters.deployDatabase'), 'true')}}:
+          - ${{ if eq(lower('parameters.buildDatabase'), 'true')}}:
             # Build Data project with dependencies
             - template: ../templates/dotnet-build-steps.yml
               parameters:
