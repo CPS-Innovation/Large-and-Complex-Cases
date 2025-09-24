@@ -15,7 +15,6 @@ variables:
   dotNetVersion: '8.x'
   testResultsDirectory: '$(Agent.TempDirectory)/TestResults'
   coverageReportsDirectory: '$(Agent.TempDirectory)/CoverageReports'
-  packageVersion: '$(Year:yy).$(Month).$(DayOfMonth).$(Rev:r)'
 
 pool: 'LACC PreProd Pool'
 
