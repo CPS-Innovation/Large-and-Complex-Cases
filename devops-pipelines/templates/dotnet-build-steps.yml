@@ -41,7 +41,6 @@ steps:
             <packageSources>
               <clear />
               <add key="local-packages" value="${{ parameters.nugetArtifactDownloadPath }}" />
-              <add key="LACC-backend" value="https://pkgs.dev.azure.com/CPSDTS/b22de6aa-9da5-4bf2-afb5-c15f5f9cb3bf/_packaging/LACC-backend/nuget/v3/index.json" />
               <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
             </packageSources>
             <config>
@@ -72,46 +71,46 @@ steps:
       projects: '${{ parameters.projectPath }}'
       arguments: '--configuration ${{ parameters.buildConfiguration }} --no-restore'
 
-  # # Run tests if enabled
-  # - ${{ if eq(parameters.runTests, true) }}:
-  #   - task: DotNetCoreCLI@2
-  #     displayName: 'Run Tests'
-  #     inputs:
-  #       command: 'test'
-  #       projects: '${{ parameters.projectPath }}'
-  #       arguments: '--configuration ${{ parameters.buildConfiguration }} --no-build --collect:"XPlat Code Coverage;Format=cobertura" --settings backend/CodeCoverage.runsettings'
-  #       publishTestResults: true
-  #       testResultsFormat: 'VSTest'
-  #       testResultsFiles: '**/*.trx'
-  #       testRunTitle: '${{ parameters.projectName }} Tests'
-  #       workingDirectory: '$(Build.SourcesDirectory)'
-  #       resultsDirectory: '${{ parameters.testResultsDirectory }}'
+  # Run tests if enabled
+  - ${{ if eq(parameters.runTests, true) }}:
+    - task: DotNetCoreCLI@2
+      displayName: 'Run Tests'
+      inputs:
+        command: 'test'
+        projects: '${{ parameters.projectPath }}'
+        arguments: '--configuration ${{ parameters.buildConfiguration }} --no-build --collect:"XPlat Code Coverage;Format=cobertura" --settings backend/CodeCoverage.runsettings'
+        publishTestResults: true
+        testResultsFormat: 'VSTest'
+        testResultsFiles: '**/*.trx'
+        testRunTitle: '${{ parameters.projectName }} Tests'
+        workingDirectory: '$(Build.SourcesDirectory)'
+        resultsDirectory: '${{ parameters.testResultsDirectory }}'
 
-  #   - task: PublishCodeCoverageResults@2
-  #     displayName: 'Publish Code Coverage'
-  #     inputs:
-  #       summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
-  #       failIfCoverageEmpty: true
-  #     condition: succeededOrFailed()
+    - task: PublishCodeCoverageResults@2
+      displayName: 'Publish Code Coverage'
+      inputs:
+        summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+        failIfCoverageEmpty: true
+      condition: succeededOrFailed()
 
-  #   # Generate detailed HTML coverage report
-  #   - template: dotnet-code-coverage-steps.yml
-  #     parameters:
-  #       coverageReportsDirectory: ${{ parameters.coverageReportsDirectory }}
-  #       projectName: ${{ parameters.projectName }}
+    # Generate detailed HTML coverage report
+    - template: dotnet-code-coverage-steps.yml
+      parameters:
+        coverageReportsDirectory: ${{ parameters.coverageReportsDirectory }}
+        projectName: ${{ parameters.projectName }}
 
-  # # Publish if enabled
-  # - ${{ if eq(parameters.publishOutput, true) }}:
-  #   - task: DotNetCoreCLI@2
-  #     displayName: 'Publish ${{ parameters.projectName }}'
-  #     inputs:
-  #       command: 'publish'
-  #       projects: '${{ parameters.projectPath }}'
-  #       publishWebProjects: false
-  #       arguments: '--configuration ${{ parameters.buildConfiguration }} --output $(Build.ArtifactStagingDirectory)/${{ parameters.projectName }} --no-restore --self-contained false /p:PublishReadyToRun=false /p:SourceRevisionId=$(Build.SourceVersion)'
+  # Publish if enabled
+  - ${{ if eq(parameters.publishOutput, true) }}:
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish ${{ parameters.projectName }}'
+      inputs:
+        command: 'publish'
+        projects: '${{ parameters.projectPath }}'
+        publishWebProjects: false
+        arguments: '--configuration ${{ parameters.buildConfiguration }} --output $(Build.ArtifactStagingDirectory)/${{ parameters.projectName }} --no-restore --self-contained false /p:PublishReadyToRun=false /p:SourceRevisionId=$(Build.SourceVersion)'
 
-  #   - task: PublishBuildArtifacts@1
-  #     displayName: 'Publish ${{ parameters.projectName }} Artifact'
-  #     inputs:
-  #       pathtoPublish: '$(Build.ArtifactStagingDirectory)/${{ parameters.projectName }}'
-  #       artifactName: '${{ parameters.projectName }}' 
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish ${{ parameters.projectName }} Artifact'
+      inputs:
+        pathtoPublish: '$(Build.ArtifactStagingDirectory)/${{ parameters.projectName }}'
+        artifactName: '${{ parameters.projectName }}' 
