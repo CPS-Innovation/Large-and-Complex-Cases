@@ -4,8 +4,7 @@
     "applicationInsights": {
       "samplingSettings": {
         "isEnabled": false,
-        "maxTelemetryItemsPerSecond": 5000,
-        "excludedTypes": "Request; Dependency"
+        "excludedTypes": "Request"
       },
       "enableLiveMetricsFilters": true
     },
