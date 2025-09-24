@@ -72,8 +72,10 @@ stages:
               dotNetVersion: $(dotNetVersion)
               publishOutput: true
               runTests: false
+
+          - script: echo lower(${{(parameters.buildDatabase}})
           
-          - ${{ if eq(lower('parameters.buildDatabase'), 'true')}}:
+          - ${{ if eq(lower(parameters.buildDatabase), 'true')}}:
             # Build Data project with dependencies
             - template: ../templates/dotnet-build-steps.yml
               parameters:
