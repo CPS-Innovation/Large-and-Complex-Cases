@@ -1,5 +1,3 @@
-name: Build-$(Year:yyyy).$(Month).$(DayOfMonth).$(Rev:r)
-
 trigger: none
 
 pr:
