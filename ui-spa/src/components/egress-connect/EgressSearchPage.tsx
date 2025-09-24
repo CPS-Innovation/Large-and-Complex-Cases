@@ -38,11 +38,10 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
     if (formDataErrorText) errorSummaryRef.current?.focus();
   }, [formDataErrorText]);
 
-  if (egressSearchApi.status === "loading")
-    return <div className="govuk-width-container">Loading...</div>;
+  if (egressSearchApi.status === "loading") return <div>Loading...</div>;
 
   return (
-    <div className="govuk-width-container">
+    <div>
       <BackLink to={backLinkUrl}>Back</BackLink>
       <PageContentWrapper>
         <div>

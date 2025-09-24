@@ -345,10 +345,10 @@ const CaseSearchResultPage = () => {
     (formData[SearchFormField.searchType] !== "urn" &&
       !formattedAreaValues.options.length)
   ) {
-    return <div className="govuk-width-container">Loading...</div>;
+    return <div>Loading...</div>;
   }
   return (
-    <div className="govuk-width-container">
+    <div>
       <BackLink to="/" state={{ ...formData }}>
         Back
       </BackLink>

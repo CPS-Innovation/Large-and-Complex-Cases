@@ -8,7 +8,7 @@ const FolderAccessErrorPage = () => {
   const folderType = searchParams.get("type");
 
   return (
-    <div className="govuk-width-container">
+    <div>
       <BackLink to={"/"}>Back</BackLink>
       <div className={styles.contentWrapper}>
         <h1 className="govuk-heading-xl">
@@ -20,7 +20,8 @@ const FolderAccessErrorPage = () => {
         </div>
         <ul className="govuk-list govuk-list--bullet">
           <li>
-            check the case exists and you have access on the Case Management System
+            check the case exists and you have access on the Case Management
+            System
           </li>
           <li>contact the product team if you need help</li>
         </ul>

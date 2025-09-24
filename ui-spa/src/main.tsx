@@ -5,6 +5,7 @@ import { MOCK_API_SOURCE } from "./config.ts";
 import "./index.scss";
 
 async function enableMocking() {
+  // playwright test mock is handled separately through "playwright-msw"
   if (MOCK_API_SOURCE !== "dev") {
     return;
   }

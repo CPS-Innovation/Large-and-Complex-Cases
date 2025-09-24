@@ -25,8 +25,8 @@ UI is a vite react typescript project
 ### To run tests:
 
 1. To run unit tests: use `npm run test`
-2. To run playwright ui integration test in browser mode: use `ui:integration`
-3. To run playwright ui integration test in ci mode: use `ui:integration:ci`
+2. To run playwright ui integration test in browser mode: use `ui:e2e`
+3. To run playwright ui integration test in ci mode: use `ui:e2e:ci`
 
 ## Getting Started
 

@@ -75,7 +75,7 @@ const CaseSearchPage = () => {
   };
 
   return (
-    <div className={`govuk-width-container ${styles.pageWrapper}`}>
+    <div className={styles.pageWrapper}>
       <PageContentWrapper>
         <div>
           <h1 className="govuk-heading-xl govuk-!-margin-bottom-4">
