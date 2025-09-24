@@ -28,7 +28,6 @@ steps:
         fi 
 
   - task: NuGetToolInstaller@1
-    name: 'NuGetToolInstaller'
     displayName: 'NuGet tool installer'
 
   - task: NuGetAuthenticate@1
