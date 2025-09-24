@@ -30,6 +30,9 @@ public class DdeiRequestFactory(IMockSwitch mockSwitch) : IDdeiRequestFactory
   public HttpRequestMessage CreateListUnitsRequest(DdeiBaseArgDto arg) =>
     BuildRequest(HttpMethod.Get, "api/units", arg);
 
+  public HttpRequestMessage CreateGetCmsModernTokenRequest(DdeiBaseArgDto arg) =>
+    BuildRequest(HttpMethod.Get, "api/user/cms-modern-token", arg);
+
   private HttpRequestMessage BuildRequest(HttpMethod httpMethod, string path, DdeiBaseArgDto arg)
   {
     var request = new HttpRequestMessage(httpMethod, _mockSwitch.BuildUri(arg.CmsAuthValues, path));

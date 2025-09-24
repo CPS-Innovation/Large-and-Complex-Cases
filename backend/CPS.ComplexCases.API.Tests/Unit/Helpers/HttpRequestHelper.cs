@@ -1,6 +1,8 @@
 using CPS.ComplexCases.Common.Constants;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Primitives;
+using Moq;
 using System.Text;
 using System.Text.Json;
 
@@ -87,6 +89,40 @@ public static class HttpRequestStubHelper
 
         request.Query = new QueryCollection(queryCollection);
         request.Headers[HttpHeaderKeys.CorrelationId] = correlationId.ToString();
+        return request;
+    }
+
+    /// <summary>
+    /// Creates a stub HttpRequest with optional query parameters, correlationId, and mockable cookies.
+    /// </summary>
+    public static HttpRequest CreateHttpRequestWithQueryParameters(
+        Dictionary<string, string> queryParams,
+        Guid correlationId,
+        Mock<IResponseCookies>? cookiesMock = null)
+    {
+        var context = new DefaultHttpContext();
+        var request = context.Request;
+
+        request.Scheme = "https";
+
+        var queryCollection = new Dictionary<string, StringValues>();
+        foreach (var param in queryParams)
+        {
+            queryCollection[param.Key] = new StringValues(param.Value);
+        }
+        request.Query = new QueryCollection(queryCollection);
+
+        // Add correlationId header
+        request.Headers[HttpHeaderKeys.CorrelationId] = correlationId.ToString();
+
+        // Inject mocked cookies if provided
+        if (cookiesMock != null)
+        {
+            var cookiesFeature = new Mock<IResponseCookiesFeature>();
+            cookiesFeature.Setup(f => f.Cookies).Returns(cookiesMock.Object);
+            context.Features.Set(cookiesFeature.Object);
+        }
+
         return request;
     }
 

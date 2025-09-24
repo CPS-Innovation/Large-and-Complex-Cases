@@ -10,4 +10,5 @@ public interface IDdeiClient
   Task<IEnumerable<CaseDto>> ListCasesByDefendantNameAsync(DdeiDefendantNameArgDto arg);
   Task<AreasDto> GetAreasAsync(DdeiBaseArgDto arg);
   Task<CaseDto> GetCaseAsync(DdeiCaseIdArgDto arg);
+  Task<string?> GetCmsModernTokenAsync(DdeiBaseArgDto arg);
 }

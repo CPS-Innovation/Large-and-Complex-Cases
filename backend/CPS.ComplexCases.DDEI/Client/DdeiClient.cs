@@ -93,6 +93,12 @@ public class DdeiClient(ILogger<DdeiClient> logger,
     return _caseDetailsMapper.MapCaseDetails(caseSummary);
   }
 
+  public async Task<string?> GetCmsModernTokenAsync(DdeiBaseArgDto arg)
+  {
+    var response = await CallDdei<DdeiCmsModernTokenDto>(_ddeiRequestFactory.CreateGetCmsModernTokenRequest(arg));
+    return response.CmsModernToken;
+  }
+
   private async Task<DdeiCaseSummaryDto> GetCaseInternalAsync(DdeiCaseIdArgDto arg) =>
       await CallDdei<DdeiCaseSummaryDto>(_ddeiRequestFactory.CreateGetCaseRequest(arg));
 

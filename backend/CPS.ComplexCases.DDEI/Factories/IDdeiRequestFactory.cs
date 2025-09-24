@@ -11,4 +11,5 @@ public interface IDdeiRequestFactory
   HttpRequestMessage CreateUserFilteredDataRequest(DdeiBaseArgDto arg);
   HttpRequestMessage CreateUserDataRequest(DdeiBaseArgDto arg);
   HttpRequestMessage CreateListUnitsRequest(DdeiBaseArgDto arg);
+  HttpRequestMessage CreateGetCmsModernTokenRequest(DdeiBaseArgDto arg);
 }
