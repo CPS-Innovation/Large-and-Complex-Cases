@@ -42,15 +42,8 @@ steps:
               <clear />
               <add key="local-packages" value="${{ parameters.nugetArtifactDownloadPath }}" />
               <add key="LACC-backend" value="https://pkgs.dev.azure.com/CPSDTS/b22de6aa-9da5-4bf2-afb5-c15f5f9cb3bf/_packaging/LACC-backend/nuget/v3/index.json" />
+              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
             </packageSources>
-            <packageSourceMapping>
-              <packageSource key="local-packages">
-                <package pattern="CPS.ComplexCases.*" />
-              </packageSource>
-              <packageSource key="LACC-backend">
-                <package pattern="*" />
-              </packageSource>
-            </packageSourceMapping>
             <config>
               <add key="globalPackagesFolder" value="$(Build.SourcesDirectory)/packages" />
             </config>
@@ -60,9 +53,6 @@ steps:
             </packageRestore>
           </configuration>
           EOF
-
-  - script: ls -a $(Build.SourcesDirectory)
-    displayName: debug
 
   # Restore packages
   - task: DotNetCoreCLI@2
