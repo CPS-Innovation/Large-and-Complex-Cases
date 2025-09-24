@@ -1,3 +1,5 @@
+name: $(Year:yyyy).$(Month).$(DayOfMonth).$(Rev:r)
+
 trigger: none
 
 pr:
@@ -26,8 +28,6 @@ stages:
         steps:
           - checkout: self
             sparseCheckoutDirectories: backend devops-pipelines/templates
-          
-          - script: echo "$(packageVersion)"
 
           - template: ../templates/dotnet-build-steps.yml
             parameters:
@@ -46,15 +46,6 @@ stages:
               configuration: '$(buildConfiguration)'
               versioningScheme: 'byEnvVar'
               versionEnvVar: packageVersion
-
-          # - task: DotNetCoreCLI@2
-          #   displayName: 'Pack HttpTelemetry'
-          #   inputs:
-          #     command: 'custom'
-          #     projects: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-          #     custom: 'pack'
-          #     arguments: '--configuration $(buildConfiguration) --no-restore --no-build -p:PackageVersion=$(packageVersion) --output $(Build.ArtifactStagingDirectory)'
-
 
           - task: DotNetCoreCLI@2
             displayName: 'Push HttpTelemetry package'
