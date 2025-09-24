@@ -15,6 +15,7 @@ variables:
   dotNetVersion: '8.x'
   testResultsDirectory: '$(Agent.TempDirectory)/TestResults'
   coverageReportsDirectory: '$(Agent.TempDirectory)/CoverageReports'
+  packageVersion: '$(Build.BuildNumber)-pr'
 
 pool: 'LACC PreProd Pool'
 
@@ -46,7 +47,7 @@ stages:
               packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
               configuration: '$(buildConfiguration)'
               versioningScheme: 'byEnvVar'
-              versionEnvVar: '$(Build.BuildNumber)-pr'
+              versionEnvVar: packageVersion
 
           # - task: DotNetCoreCLI@2
           #   displayName: 'Pack HttpTelemetry'
