@@ -90,8 +90,6 @@ stages:
     jobs:
       - job: Package_Database_Scripts
         displayName: 'Package Database Migration Scripts'
-        pool:
-          vmImage: ubuntu-latest
         steps:
           # Build Data project with dependencies
           - template: ../templates/dotnet-build-steps.yml
