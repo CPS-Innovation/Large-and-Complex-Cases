@@ -15,8 +15,7 @@ variables:
   testResultsDirectory: '$(Agent.TempDirectory)/TestResults'
   coverageReportsDirectory: '$(Agent.TempDirectory)/CoverageReports'
 
-pool:
-  vmImage: ubuntu-latest
+pool: 'LACC PreProd Pool'
 
 stages:
   - stage: Package_NuGet
@@ -94,8 +93,6 @@ stages:
     jobs:
       - job: Package_Database_Scripts
         displayName: 'Package Database Migration Scripts'
-        pool:
-          vmImage: ubuntu-latest
         steps:
           # Build Data project with dependencies
           - template: ../templates/dotnet-build-steps.yml
@@ -108,19 +105,22 @@ stages:
               publishOutput: false
               runTests: false
 
-          - task: DotNetCoreCLI@2
-            displayName: 'Install EF Core Tools'
-            inputs:
-              command: 'custom'
-              custom: 'tool'
-              arguments: 'install --global dotnet-ef'
-
-          - task: DotNetCoreCLI@2
+          - task: Bash@3
             displayName: 'Generate Migration Scripts'
             inputs:
-              command: 'custom'
-              custom: 'ef'
-              arguments: 'migrations script --idempotent --output $(Build.ArtifactStagingDirectory)/migration-script.sql --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+              targetType: 'inline'
+              script: |
+                export PATH="$PATH:$HOME/.dotnet/tools"
+                
+                if ! dotnet ef --version &> /dev/null; then
+                  dotnet tool install --global dotnet-ef
+                fi
+
+                dotnet ef migrations script \
+                --idempotent \
+                --output $(Build.ArtifactStagingDirectory)/migration-script.sql \
+                --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
+                --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
 
           - task: CopyFiles@2
             displayName: 'Copy Migration Files'
@@ -128,6 +128,17 @@ stages:
               sourceFolder: 'backend/CPS.ComplexCases.Data/Migrations'
               contents: '**'
               targetFolder: '$(Build.ArtifactStagingDirectory)/migrations'
+
+          - script: |
+              echo "Checking for the zip package is installed..."
+              if command -v zip &> /dev/null; then
+                echo "Zip command not found. Installing the zip package..."
+                sudo apt-get update
+                sudo apt-get install zip -y
+              else
+                echo "Zip is already installed."
+              fi
+            displayName: 'Ensure zip'
 
           - task: ArchiveFiles@2
             displayName: 'Archive Database Scripts'

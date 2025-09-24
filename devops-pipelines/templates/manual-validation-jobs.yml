@@ -12,8 +12,7 @@ parameters:
 jobs:
 - job: Set_Flag
   displayName: "Set the 'isFriday' Flag"
-  pool:
-    vmImage: ubuntu-latest
+  pool: 'LACC PreProd Pool'
   steps:
   - script: |
       isFriday=false

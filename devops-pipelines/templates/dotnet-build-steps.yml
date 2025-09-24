@@ -27,24 +27,27 @@ steps:
         artifact: '${{ parameters.nugetArtifact }}'
         path: '${{ parameters.nugetArtifactDownloadPath }}'
 
-    - task: PowerShell@2
+    - task: NuGetAuthenticate@1
+      displayName: 'NuGet Authenticate'
+
+    - task: Bash@3
       displayName: 'Create NuGet.Config'
       inputs:
         targetType: 'inline'
         script: |
-          $nugetConfigContent = @"
+          cat <<EOF > "$(Build.SourcesDirectory)/NuGet.Config"
           <?xml version="1.0" encoding="utf-8"?>
           <configuration>
             <packageSources>
               <clear />
               <add key="local-packages" value="${{ parameters.nugetArtifactDownloadPath }}" />
-              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+              <add key="LACC-backend" value="https://pkgs.dev.azure.com/CPSDTS/b22de6aa-9da5-4bf2-afb5-c15f5f9cb3bf/_packaging/LACC-backend/nuget/v3/index.json" />
             </packageSources>
             <packageSourceMapping>
               <packageSource key="local-packages">
                 <package pattern="CPS.ComplexCases.*" />
               </packageSource>
-              <packageSource key="nuget.org">
+              <packageSource key="LACC-backend">
                 <package pattern="*" />
               </packageSource>
             </packageSourceMapping>
@@ -56,8 +59,7 @@ steps:
               <add key="automatic" value="True" />
             </packageRestore>
           </configuration>
-          "@
-          Set-Content -Path "$(Build.SourcesDirectory)/NuGet.Config" -Value $nugetConfigContent -Encoding UTF8
+          EOF
 
   # Restore packages
   - task: DotNetCoreCLI@2
