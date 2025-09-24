@@ -1,4 +1,4 @@
-name: $(BuildDefinitionName)_$(Year:yyyy).$(Month).$(DayOfMonth).$(Rev:r)-alpha
+name: $(BuildDefinitionName)_$(Year:yyyy).$(Month).$(DayOfMonth).$(Rev:r).$(Rev:r)
 
 trigger: none
 
