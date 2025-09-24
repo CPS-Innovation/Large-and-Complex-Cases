@@ -76,7 +76,7 @@ stages:
               coverageReportsDirectory: $(coverageReportsDirectory)
               projectName: 'Backend'
 
-      - job: Build_Main_API
+      - job: Build_Main_API_And_Package_Database
         displayName: 'LACC - Build Main API and Database'
         dependsOn: Build_And_Test_Solution
         steps:
@@ -129,36 +129,3 @@ stages:
               dotNetVersion: $(dotNetVersion)
               publishOutput: true
               runTests: false
-
-      # - job: Package_Database_Scripts
-      #   displayName: 'LACC - Package Database Migration Scripts'
-      #   dependsOn: Build_And_Test_Solution
-      #   steps:
-      #     # Build Data project with dependencies
-      #     - template: ../templates/dotnet-build-steps.yml
-      #       parameters:
-      #         projectPath: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
-      #         projectName: 'Database'
-      #         buildConfiguration: $(buildConfiguration)
-      #         dotNetVersion: $(dotNetVersion)
-      #         publishOutput: false
-      #         runTests: false
-
-      #     - task: Bash@3
-      #       displayName: 'Generate Migration Scripts'
-      #       inputs:
-      #         targetType: 'inline'
-      #         script: |
-      #           export PATH="$PATH:$HOME/.dotnet/tools"
-                
-      #           if ! dotnet ef --version &> /dev/null; then
-      #             dotnet tool install --global dotnet-ef
-      #           fi
-
-      #           dotnet build backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj --configuration $(buildConfiguration) --source
-
-      #           dotnet ef migrations script \
-      #           --idempotent \
-      #           --output $(Build.ArtifactStagingDirectory)/migration-script.sql \
-      #           --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
-      #           --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj

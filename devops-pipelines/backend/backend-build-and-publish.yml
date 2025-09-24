@@ -57,8 +57,8 @@ stages:
             packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
             publishVstsFeed: 'Information Management/LACC-backend'
     
-  - stage: Build_Main_API
-    displayName: 'LACC Backend - Build Main API and Database'
+  - stage: Build_Main_API_And_Package_Database
+    displayName: 'LACC Backend - Build Main API and Package DB'
     dependsOn: Package_NuGet
     jobs:
       - job: Build_Main_API
@@ -72,8 +72,6 @@ stages:
               dotNetVersion: $(dotNetVersion)
               publishOutput: true
               runTests: false
-
-          - script: echo '#{{ lower(parameters.buildDatabase) }}'
           
           - ${{ if eq(lower(parameters.buildDatabase), 'true')}}:
             # Build Data project with dependencies
@@ -140,59 +138,3 @@ stages:
               dotNetVersion: $(dotNetVersion)
               publishOutput: true
               runTests: false
-
-  # - stage: Package_Database
-  #   displayName: 'LACC Backend - Build Database Migration Scripts'
-  #   dependsOn: Package_NuGet
-  #   jobs:
-  #     - job: Package_Database_Scripts
-  #       displayName: 'Package Database Migration Scripts'
-  #       steps:
-  #         # Build Data project with dependencies
-  #         - template: ../templates/dotnet-build-steps.yml
-  #           parameters:
-  #             projectPath: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
-  #             projectName: 'Database'
-  #             buildConfiguration: $(buildConfiguration)
-  #             dotNetVersion: $(dotNetVersion)
-  #             publishOutput: false
-  #             runTests: false
-
-  #         - task: Bash@3
-  #           displayName: 'Generate Migration Scripts'
-  #           inputs:
-  #             targetType: 'inline'
-  #             script: |
-  #               export PATH="$PATH:$HOME/.dotnet/tools"
-                
-  #               if ! dotnet ef --version &> /dev/null; then
-  #                 dotnet tool install --global dotnet-ef
-  #               fi
-
-  #               dotnet ef migrations script \
-  #               --idempotent \
-  #               --output $(Build.ArtifactStagingDirectory)/migration-script.sql \
-  #               --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
-  #               --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
-
-  #         - task: CopyFiles@2
-  #           displayName: 'Copy Migration Files'
-  #           inputs:
-  #             sourceFolder: 'backend/CPS.ComplexCases.Data/Migrations'
-  #             contents: '**'
-  #             targetFolder: '$(Build.ArtifactStagingDirectory)/migrations'
-
-  #         - task: ArchiveFiles@2
-  #           displayName: 'Archive Database Scripts'
-  #           inputs:
-  #             rootFolderOrFile: '$(Build.ArtifactStagingDirectory)'
-  #             includeRootFolder: false
-  #             archiveType: 'zip'
-  #             archiveFile: '$(Build.ArtifactStagingDirectory)/database-scripts.zip'
-  #             replaceExistingArchive: true
-
-  #         - task: PublishBuildArtifacts@1
-  #           displayName: 'Publish Database Scripts'
-  #           inputs:
-  #             pathtoPublish: '$(Build.ArtifactStagingDirectory)/database-scripts.zip'
-  #             artifactName: 'database-scripts-drop'
