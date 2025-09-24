@@ -31,116 +31,117 @@ stages:
           
           - script: echo "$(packageVersion)"
 
-      #     - template: ../templates/dotnet-build-steps.yml
-      #       parameters:
-      #         projectPath: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-      #         projectName: 'HttpTelemetry'
-      #         buildConfiguration: $(buildConfiguration)
-      #         dotNetVersion: $(dotNetVersion)
-      #         publishOutput: false
-      #         runTests: false
+          - template: ../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+              projectName: 'HttpTelemetry'
+              buildConfiguration: $(buildConfiguration)
+              dotNetVersion: $(dotNetVersion)
+              publishOutput: false
+              runTests: false
 
-      #     # - task: DotNetCoreCLI@2
-      #     #   displayName: 'Pack HttpTelemetry'
-      #     #   inputs:
-      #     #     command: 'pack'
-      #     #     packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-      #     #     configuration: '$(buildConfiguration)'
-      #     #     versioningScheme: 'byBuildNumber'
+          - task: DotNetCoreCLI@2
+            displayName: 'Pack HttpTelemetry'
+            inputs:
+              command: 'pack'
+              packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+              configuration: '$(buildConfiguration)'
+              versioningScheme: 'byEnvVar'
+              versionEnvVar: '$(Build.BuildNumber)-pr'
 
-      #     - task: DotNetCoreCLI@2
-      #       displayName: 'Pack HttpTelemetry'
-      #       inputs:
-      #         command: 'custom'
-      #         projects: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-      #         custom: 'pack'
-      #         arguments: '--configuration $(buildConfiguration) --no-restore --no-build -p:PackageVersion=$(packageVersion) --output $(Build.ArtifactStagingDirectory)'
-
-
-      #     - task: DotNetCoreCLI@2
-      #       displayName: 'Push HttpTelemetry package'
-      #       inputs:
-      #         command: 'push'
-      #         packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
-      #         publishVstsFeed: 'Information Management/LACC-backend'
+          # - task: DotNetCoreCLI@2
+          #   displayName: 'Pack HttpTelemetry'
+          #   inputs:
+          #     command: 'custom'
+          #     projects: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+          #     custom: 'pack'
+          #     arguments: '--configuration $(buildConfiguration) --no-restore --no-build -p:PackageVersion=$(packageVersion) --output $(Build.ArtifactStagingDirectory)'
 
 
-      # - job: Build_And_Test_Solution
-      #   displayName: 'Build & Test Solution'
-      #   dependsOn: Package_NuGet
-      #   steps:
-      #     - template: ../templates/dotnet-build-steps.yml
-      #       parameters:
-      #         projectPath: 'backend/CPS.ComplexCases.sln'
-      #         projectName: 'Backend Solution'
-      #         buildConfiguration: '$(buildConfiguration)'
-      #         dotNetVersion: $(dotNetVersion)
-      #         publishOutput: false
-      #         runTests: true
-      #         testResultsDirectory: $(testResultsDirectory)
-      #         coverageReportsDirectory: $(coverageReportsDirectory)
+          - task: DotNetCoreCLI@2
+            displayName: 'Push HttpTelemetry package'
+            inputs:
+              command: 'push'
+              packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
+              publishVstsFeed: 'Information Management/LACC-backend'
 
-      #     # Generate coverage report
-      #     - template: ../templates/dotnet-code-coverage-steps.yml
-      #       parameters:
-      #         coverageReportsDirectory: $(coverageReportsDirectory)
-      #         projectName: 'Backend'
 
-      # - job: Build_Main_API
-      #   displayName: 'LACC - Build Main API'
-      #   dependsOn: Build_And_Test_Solution
-      #   steps:
-      #     # Build and publish Main API
-      #     - template: ../templates/dotnet-build-steps.yml
-      #       parameters:
-      #         projectPath: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-      #         projectName: 'lacc-main-api-drop'
-      #         buildConfiguration: $(buildConfiguration)
-      #         dotNetVersion: $(dotNetVersion)
-      #         publishOutput: true
-      #         runTests: false
+      - job: Build_And_Test_Solution
+        displayName: 'Build & Test Solution'
+        dependsOn: Package_NuGet
+        steps:
+          - template: ../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.sln'
+              projectName: 'Backend Solution'
+              buildConfiguration: '$(buildConfiguration)'
+              dotNetVersion: $(dotNetVersion)
+              publishOutput: false
+              runTests: true
+              testResultsDirectory: $(testResultsDirectory)
+              coverageReportsDirectory: $(coverageReportsDirectory)
 
-      # - job: Build_FileTransfer_API
-      #   displayName: 'LACC - Build FileTransfer API'
-      #   dependsOn: Build_And_Test_Solution
-      #   steps:
-      #     # Build and publish FileTransfer API
-      #     - template: ../templates/dotnet-build-steps.yml
-      #       parameters:
-      #         projectPath: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
-      #         projectName: 'lacc-filetransfer-api-drop'
-      #         buildConfiguration: $(buildConfiguration)
-      #         dotNetVersion: $(dotNetVersion)
-      #         publishOutput: true
-      #         runTests: false
+          # Generate coverage report
+          - template: ../templates/dotnet-code-coverage-steps.yml
+            parameters:
+              coverageReportsDirectory: $(coverageReportsDirectory)
+              projectName: 'Backend'
 
-      # - job: Package_Database_Scripts
-      #   displayName: 'LACC - Package Database Migration Scripts'
-      #   dependsOn: Build_And_Test_Solution
-      #   steps:
-      #     # Build Data project with dependencies
-      #     - template: ../templates/dotnet-build-steps.yml
-      #       parameters:
-      #         projectPath: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
-      #         projectName: 'Database'
-      #         buildConfiguration: $(buildConfiguration)
-      #         dotNetVersion: $(dotNetVersion)
-      #         publishOutput: false
-      #         runTests: false
+      - job: Build_Main_API
+        displayName: 'LACC - Build Main API'
+        dependsOn: Build_And_Test_Solution
+        steps:
+          # Build and publish Main API
+          - template: ../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+              projectName: 'lacc-main-api-drop'
+              buildConfiguration: $(buildConfiguration)
+              dotNetVersion: $(dotNetVersion)
+              publishOutput: true
+              runTests: false
 
-      #     - task: Bash@3
-      #       displayName: 'Generate Migration Scripts'
-      #       inputs:
-      #         targetType: 'inline'
-      #         script: |
-      #           export PATH="$PATH:$HOME/.dotnet/tools"
+      - job: Build_FileTransfer_API
+        displayName: 'LACC - Build FileTransfer API'
+        dependsOn: Build_And_Test_Solution
+        steps:
+          # Build and publish FileTransfer API
+          - template: ../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
+              projectName: 'lacc-filetransfer-api-drop'
+              buildConfiguration: $(buildConfiguration)
+              dotNetVersion: $(dotNetVersion)
+              publishOutput: true
+              runTests: false
+
+      - job: Package_Database_Scripts
+        displayName: 'LACC - Package Database Migration Scripts'
+        dependsOn: Build_And_Test_Solution
+        steps:
+          # Build Data project with dependencies
+          - template: ../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
+              projectName: 'Database'
+              buildConfiguration: $(buildConfiguration)
+              dotNetVersion: $(dotNetVersion)
+              publishOutput: false
+              runTests: false
+
+          - task: Bash@3
+            displayName: 'Generate Migration Scripts'
+            inputs:
+              targetType: 'inline'
+              script: |
+                export PATH="$PATH:$HOME/.dotnet/tools"
                 
-      #           if ! dotnet ef --version &> /dev/null; then
-      #             dotnet tool install --global dotnet-ef
-      #           fi
+                if ! dotnet ef --version &> /dev/null; then
+                  dotnet tool install --global dotnet-ef
+                fi
 
-      #           dotnet ef migrations script \
-      #           --idempotent \
-      #           --output $(Build.ArtifactStagingDirectory)/migration-script.sql \
-      #           --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
-      #           --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
+                dotnet ef migrations script \
+                --idempotent \
+                --output $(Build.ArtifactStagingDirectory)/migration-script.sql \
+                --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
+                --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
