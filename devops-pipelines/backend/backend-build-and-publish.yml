@@ -129,6 +129,8 @@ stages:
               targetFolder: '$(Build.ArtifactStagingDirectory)/migrations'
 
           - script: |
+              zip --version
+              zip -v
               echo "Checking for the zip package is installed..."
               if command -v zip &> /dev/null; then
                 echo "Zip command not found. Installing the zip package..."
@@ -136,6 +138,8 @@ stages:
                 sudo apt-get install zip -y
               else
                 echo "Zip is already installed."
+                zip -v
+                zip --version
               fi
             displayName: 'Ensure zip'
 
