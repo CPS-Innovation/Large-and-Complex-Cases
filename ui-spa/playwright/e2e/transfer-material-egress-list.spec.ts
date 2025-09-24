@@ -1,5 +1,6 @@
 import { delay, HttpResponse, http } from "msw";
 import { expect, test } from "../utils/test";
+import { Page } from "@playwright/test";
 
 test.describe("transfer material egress list", () => {
   test.beforeEach(async ({ page }) => {
@@ -12,7 +13,7 @@ test.describe("transfer material egress list", () => {
       page.getByTestId("tab-content-transfer-materials").locator("h2"),
     ).toHaveText("Transfer between Egress and Shared Drive");
   });
-  const validateFolderPath = async (page, expectedResult: string[]) => {
+  const validateFolderPath = async (page: Page, expectedResult: string[]) => {
     const texts = await page
       .getByTestId("egress-table-wrapper")
       .locator("ol>li")

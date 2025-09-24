@@ -15,7 +15,7 @@ const TransferErrorPage: React.FC = () => {
   };
 
   return (
-    <div className="govuk-width-container">
+    <div>
       <BackLink to={`/case/${caseId}/case-management`} replace>
         Back
       </BackLink>
@@ -38,8 +38,8 @@ const TransferErrorPage: React.FC = () => {
 
           <p data-testid="contact-information">
             To get help, call the Service Desk{" "}
-            <a href="tel:08006926996">0800 692 6996</a>. Tell them you're seeing
-            error code: <b>{state.transferId}</b>.
+            <a href="tel:08006926996">0800 692 6996</a>. Tell them you&#39;re
+            seeing error code: <b>{state.transferId}</b>.
           </p>
         </div>
       </PageContentWrapper>

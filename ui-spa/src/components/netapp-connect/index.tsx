@@ -126,21 +126,17 @@ const NetAppPage = () => {
 
   if (location.pathname.endsWith("/error"))
     return (
-      <div className="govuk-width-container">
-        <NetAppConnectFailurePage
-          backLinkUrl={`/case/${caseId}/netapp-connect?operation-name=${operationName}`}
-        />
-      </div>
+      <NetAppConnectFailurePage
+        backLinkUrl={`/case/${caseId}/netapp-connect?operation-name=${operationName}`}
+      />
     );
   if (location.pathname.endsWith("/confirmation"))
     return (
-      <div className="govuk-width-container">
-        <NetAppConnectConfirmationPage
-          selectedFolderName={getFolderNameFromPath(selectedFolderPath)}
-          backLinkUrl={`/case/${caseId}/netapp-connect?operation-name=${operationName}`}
-          handleContinue={handleContinue}
-        />
-      </div>
+      <NetAppConnectConfirmationPage
+        selectedFolderName={getFolderNameFromPath(selectedFolderPath)}
+        backLinkUrl={`/case/${caseId}/netapp-connect?operation-name=${operationName}`}
+        handleContinue={handleContinue}
+      />
     );
 
   return (

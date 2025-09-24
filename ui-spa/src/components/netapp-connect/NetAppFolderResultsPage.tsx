@@ -120,7 +120,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
   };
 
   return (
-    <div className={`govuk-width-container ${styles.mainContainer}`}>
+    <div className={styles.mainContainer}>
       <BackLink to={backLinkUrl}>Back</BackLink>
       <PageContentWrapper>
         <h1 className="govuk-heading-xl govuk-!-margin-bottom-0">

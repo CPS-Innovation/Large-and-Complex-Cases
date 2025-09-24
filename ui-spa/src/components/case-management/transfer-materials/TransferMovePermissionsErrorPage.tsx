@@ -14,7 +14,7 @@ const TransferMovePermissionsErrorPage = () => {
   };
 
   return (
-    <div className="govuk-width-container">
+    <div>
       <BackLink to={`/case/${caseId}/case-management`} replace>
         Back
       </BackLink>

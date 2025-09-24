@@ -75,7 +75,7 @@ const CaseSearchPage = () => {
   };
 
   return (
-    <div className={`govuk-width-container ${styles.pageWrapper}`}>
+    <div className={styles.pageWrapper}>
       <PageContentWrapper>
         <div>
           <h1 className="govuk-heading-xl govuk-!-margin-bottom-4">
@@ -114,6 +114,7 @@ const CaseSearchPage = () => {
                     conditional: {
                       children: [
                         <Input
+                          key="search-operation-name"
                           id="search-operation-name"
                           data-testid="search-operation-name"
                           className="govuk-input--width-20"
@@ -143,6 +144,7 @@ const CaseSearchPage = () => {
                         />,
 
                         <Select
+                          key="search-operation-area"
                           label={{
                             htmlFor: "search-operation-area",
                             children: "Select Area",
@@ -255,6 +257,7 @@ const CaseSearchPage = () => {
                     conditional: {
                       children: [
                         <Input
+                          key="search-urn"
                           id="search-urn"
                           data-testid="search-urn"
                           className="govuk-input--width-20"

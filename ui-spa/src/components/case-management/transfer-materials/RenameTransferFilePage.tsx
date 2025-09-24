@@ -49,7 +49,7 @@ export const RenameTransferFilePage: React.FC<RenameTransferFilePageProps> = ({
     );
   }, [relativeFilePath, inputValue]);
   return (
-    <div className="govuk-width-container">
+    <div>
       <BackLink to={backLinkUrl} replace state={{ isRouteValid: true }}>
         Back
       </BackLink>

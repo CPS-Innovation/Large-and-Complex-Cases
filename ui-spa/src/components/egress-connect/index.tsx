@@ -151,39 +151,33 @@ const EgressPage = () => {
 
   if (location.pathname.endsWith("/error"))
     return (
-      <div className="govuk-width-container">
-        <EgressConnectFailurePage
-          backLinkUrl={`/case/${caseId}/egress-connect?workspace-name=${workspaceName}`}
-        />
-      </div>
+      <EgressConnectFailurePage
+        backLinkUrl={`/case/${caseId}/egress-connect?workspace-name=${workspaceName}`}
+      />
     );
   if (location.pathname.endsWith("/confirmation"))
     return (
-      <div className="govuk-width-container">
-        <EgressConnectConfirmationPage
-          selectedWorkspaceName={selectedWorkSpaceName}
-          backLinkUrl={`/case/${caseId}/egress-connect?workspace-name=${workspaceName}`}
-          handleContinue={handleContinue}
-        />
-      </div>
+      <EgressConnectConfirmationPage
+        selectedWorkspaceName={selectedWorkSpaceName}
+        backLinkUrl={`/case/${caseId}/egress-connect?workspace-name=${workspaceName}`}
+        handleContinue={handleContinue}
+      />
     );
   return (
-    <div className="govuk-width-container">
-      <EgressSearchPage
-        backLinkUrl={
-          initialLocationState?.searchQueryString
-            ? `/search-results?${initialLocationState?.searchQueryString}`
-            : "/search-results"
-        }
-        workspaceName={workspaceName}
-        searchValue={formValue}
-        formDataErrorText={formDataErrorText}
-        egressSearchApi={egressSearchApi}
-        handleFormChange={handleFormChange}
-        handleSearch={handleSearch}
-        handleConnectFolder={handleConnectFolder}
-      />
-    </div>
+    <EgressSearchPage
+      backLinkUrl={
+        initialLocationState?.searchQueryString
+          ? `/search-results?${initialLocationState?.searchQueryString}`
+          : "/search-results"
+      }
+      workspaceName={workspaceName}
+      searchValue={formValue}
+      formDataErrorText={formDataErrorText}
+      egressSearchApi={egressSearchApi}
+      handleFormChange={handleFormChange}
+      handleSearch={handleSearch}
+      handleConnectFolder={handleConnectFolder}
+    />
   );
 };
 
