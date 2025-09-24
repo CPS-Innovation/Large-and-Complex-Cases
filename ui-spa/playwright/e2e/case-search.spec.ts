@@ -1,9 +1,10 @@
 import { delay, HttpResponse, http } from "msw";
 import { expect, test } from "../utils/test";
 import { caseAreasPlaywright } from "../../src/mocks/data";
+import { Page } from "@playwright/test";
 
 test.describe("Case Search/Results", async () => {
-  const verifyTableValues = async (page) => {
+  const verifyTableValues = async (page: Page) => {
     const tableHeadValues = await page
       .locator("table thead tr:nth-child(1) th")
       .allTextContents();
@@ -88,9 +89,7 @@ test.describe("Case Search/Results", async () => {
       await expect(page).toHaveURL(
         /\/search-results\?operation-name=thunder&area=1057708/,
       );
-      await expect(page.locator("h1")).toHaveText(
-        `Search results`,
-      );
+      await expect(page.locator("h1")).toHaveText(`Search results`);
       await expect(
         page.getByText(
           "4 cases found in Organised Crime Division. Select view to transfer files or folders or connect to setup storage locations.",
@@ -127,9 +126,7 @@ test.describe("Case Search/Results", async () => {
       await expect(page).toHaveURL(
         "search-results?defendant-name=thunder&area=1057708",
       );
-      await expect(page.locator("h1")).toHaveText(
-        "Search results",
-      );
+      await expect(page.locator("h1")).toHaveText("Search results");
       await expect(
         page.getByText(
           "4 cases found in Organised Crime Division. Select view to transfer files or folders or connect to setup storage locations.",
@@ -159,11 +156,11 @@ test.describe("Case Search/Results", async () => {
 
       await page.locator('button:text("search")').click();
       await expect(page).toHaveURL("search-results?urn=11AA2222233");
-      await expect(page.locator("h1")).toHaveText(
-        "Search results",
-      );
+      await expect(page.locator("h1")).toHaveText("Search results");
       await expect(
-        page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
+        page.getByText(
+          "4 cases found. Select view to transfer files or folders or connect to setup storage locations.",
+        ),
       ).toBeVisible();
 
       await expect(page.getByTestId("search-urn")).toHaveValue("11AA2222233");
@@ -323,11 +320,11 @@ test.describe("Case Search/Results", async () => {
       await page.getByTestId("search-urn").press("Enter");
       await expect(page).toHaveURL("search-results?urn=11AA2222233");
       await expect(page).toHaveURL("search-results?urn=11AA2222233");
-      await expect(page.locator("h1")).toHaveText(
-        "Search results",
-      );
+      await expect(page.locator("h1")).toHaveText("Search results");
       await expect(
-        page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
+        page.getByText(
+          "4 cases found. Select view to transfer files or folders or connect to setup storage locations.",
+        ),
       ).toBeVisible();
     });
   });
@@ -342,9 +339,7 @@ test.describe("Case Search/Results", async () => {
       const areaSelect = await page.getByTestId("search-operation-area");
       const options = await areaSelect.locator("option").allTextContents();
       expect(options).toHaveLength(51);
-      await expect(page.locator("h1")).toHaveText(
-        "Search results",
-      );
+      await expect(page.locator("h1")).toHaveText("Search results");
       await expect(
         page.getByText(
           "4 cases found in Sussex. Select view to transfer files or folders or connect to setup storage locations.",
@@ -369,9 +364,7 @@ test.describe("Case Search/Results", async () => {
       const areaSelect = await page.getByTestId("search-defendant-area");
       const options = await areaSelect.locator("option").allTextContents();
       expect(options).toHaveLength(51);
-      await expect(page.locator("h1")).toHaveText(
-        "Search results",
-      );
+      await expect(page.locator("h1")).toHaveText("Search results");
       await expect(
         page.getByText(
           "4 cases found in Organised Crime Division. Select view to transfer files or folders or connect to setup storage locations.",
@@ -392,11 +385,11 @@ test.describe("Case Search/Results", async () => {
     }) => {
       await page.goto("/search-results?urn=11AA2222233");
       await page.waitForResponse(`https://mocked-out-api/api/v1/case-search?*`);
-      await expect(page.locator("h1")).toHaveText(
-        "Search results",
-      );
+      await expect(page.locator("h1")).toHaveText("Search results");
       await expect(
-        page.getByText("4 cases found. Select view to transfer files or folders or connect to setup storage locations."),
+        page.getByText(
+          "4 cases found. Select view to transfer files or folders or connect to setup storage locations.",
+        ),
       ).toBeVisible();
 
       await expect(page.getByTestId("search-urn")).toHaveValue("11AA2222233");
@@ -416,9 +409,7 @@ test.describe("Case Search/Results", async () => {
       await page.goto("/search-results?urn=11AA2222233");
       await page.waitForResponse(`https://mocked-out-api/api/v1/case-search?*`);
 
-      await expect(page.locator("h1")).toHaveText(
-        "Search results",
-      );
+      await expect(page.locator("h1")).toHaveText("Search results");
       await expect(
         page.getByText("There are no cases matching the urn."),
       ).toBeVisible();
@@ -506,9 +497,7 @@ test.describe("Case Search/Results", async () => {
       await expect(page).toHaveURL(
         "search-results?operation-name=abc&area=1001",
       );
-      await expect(page.locator("h1")).toHaveText(
-        "Search results",
-      );
+      await expect(page.locator("h1")).toHaveText("Search results");
       await expect(
         page.getByText(
           "4 cases found in Surrey. Select view to transfer files or folders or connect to setup storage locations.",
@@ -555,9 +544,7 @@ test.describe("Case Search/Results", async () => {
       await expect(page).toHaveURL(
         "search-results?defendant-name=abc&area=1001",
       );
-      await expect(page.locator("h1")).toHaveText(
-        "Search results",
-      );
+      await expect(page.locator("h1")).toHaveText("Search results");
       await expect(
         page.getByText(
           "4 cases found in Surrey. Select view to transfer files or folders or connect to setup storage locations.",
