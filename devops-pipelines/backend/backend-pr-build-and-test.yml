@@ -68,12 +68,6 @@ stages:
               testResultsDirectory: $(testResultsDirectory)
               coverageReportsDirectory: $(coverageReportsDirectory)
 
-          # Generate coverage report
-          - template: ../templates/dotnet-code-coverage-steps.yml
-            parameters:
-              coverageReportsDirectory: $(coverageReportsDirectory)
-              projectName: 'Backend'
-
       - job: Build_Main_API
         displayName: 'LACC - Build Main API'
         dependsOn: Build_And_Test_Solution

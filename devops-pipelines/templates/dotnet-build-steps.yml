@@ -43,6 +43,14 @@ steps:
               <add key="local-packages" value="${{ parameters.nugetArtifactDownloadPath }}" />
               <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
             </packageSources>
+            <packageSourceMapping>
+              <packageSource key="local-packages">
+                <package pattern="CPS.ComplexCases.*" />
+              </packageSource>
+              <packageSource key="nuget.org">
+                <package pattern="*" />
+              </packageSource>
+            </packageSourceMapping>
             <config>
               <add key="globalPackagesFolder" value="$(Build.SourcesDirectory)/packages" />
             </config>
@@ -93,11 +101,11 @@ steps:
         failIfCoverageEmpty: true
       condition: succeededOrFailed()
 
-    # Generate detailed HTML coverage report
-    - template: dotnet-code-coverage-steps.yml
-      parameters:
-        coverageReportsDirectory: ${{ parameters.coverageReportsDirectory }}
-        projectName: ${{ parameters.projectName }}
+    # # Generate detailed HTML coverage report
+    # - template: dotnet-code-coverage-steps.yml
+    #   parameters:
+    #     coverageReportsDirectory: ${{ parameters.coverageReportsDirectory }}
+    #     projectName: ${{ parameters.projectName }}
 
   # Publish if enabled
   - ${{ if eq(parameters.publishOutput, true) }}:
