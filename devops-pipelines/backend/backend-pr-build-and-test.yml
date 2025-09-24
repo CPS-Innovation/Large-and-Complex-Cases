@@ -12,7 +12,6 @@ variables:
   buildConfiguration: 'Release'
   dotNetVersion: '8.x'
   testResultsDirectory: '$(Agent.TempDirectory)/TestResults'
-  coverageReportsDirectory: '$(Agent.TempDirectory)/CoverageReports'
 
 pool: 'LACC PreProd Pool'
 
@@ -66,7 +65,6 @@ stages:
               publishOutput: false
               runTests: true
               testResultsDirectory: $(testResultsDirectory)
-              coverageReportsDirectory: $(coverageReportsDirectory)
 
       - job: Build_Main_API
         displayName: 'LACC - Build Main API'

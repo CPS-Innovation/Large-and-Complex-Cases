@@ -9,7 +9,6 @@ parameters:
   publishOutput: false
   runTests: false
   testResultsDirectory: ''
-  coverageReportsDirectory: ''
 
 steps:
   - task: UseDotNet@2
@@ -26,9 +25,6 @@ steps:
         buildType: 'current'
         artifact: '${{ parameters.nugetArtifact }}'
         path: '${{ parameters.nugetArtifactDownloadPath }}'
-
-    - task: NuGetAuthenticate@1
-      displayName: 'NuGet Authenticate'
 
     - task: Bash@3
       displayName: 'Create NuGet.Config'
@@ -100,12 +96,6 @@ steps:
         summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
         failIfCoverageEmpty: true
       condition: succeededOrFailed()
-
-    # # Generate detailed HTML coverage report
-    # - template: dotnet-code-coverage-steps.yml
-    #   parameters:
-    #     coverageReportsDirectory: ${{ parameters.coverageReportsDirectory }}
-    #     projectName: ${{ parameters.projectName }}
 
   # Publish if enabled
   - ${{ if eq(parameters.publishOutput, true) }}:
