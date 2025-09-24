@@ -1,4 +1,4 @@
-name: $(BuildDefinitionName)_$(Year:yyyy).$(Month).$(DayOfMonth).$(Rev:r).$(Rev:r)
+name: Build-$(Year:yyyy).$(Month).$(DayOfMonth).$(Rev:r)
 
 trigger: none
 
@@ -15,6 +15,7 @@ variables:
   dotNetVersion: '8.x'
   testResultsDirectory: '$(Agent.TempDirectory)/TestResults'
   coverageReportsDirectory: '$(Agent.TempDirectory)/CoverageReports'
+  packageVersion: '$(Year:yy)$(Month)$(DayOfMonth).$(Rev:r)-pr'
 
 pool: 'LACC PreProd Pool'
 
@@ -37,13 +38,22 @@ stages:
               publishOutput: false
               runTests: false
 
+          # - task: DotNetCoreCLI@2
+          #   displayName: 'Pack HttpTelemetry'
+          #   inputs:
+          #     command: 'pack'
+          #     packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+          #     configuration: '$(buildConfiguration)'
+          #     versioningScheme: 'byBuildNumber'
+
           - task: DotNetCoreCLI@2
             displayName: 'Pack HttpTelemetry'
             inputs:
-              command: 'pack'
-              packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-              configuration: 'Release'
-              versioningScheme: 'byBuildNumber'
+              command: 'custom'
+              projects: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+              custom: 'pack'
+              arguments: '--configuration $(buildConfiguration) --no-restore --no-build -p:PackageVersion=$(packageVersion) --output $(Build.ArtifactStagingDirectory)'
+
 
           - task: DotNetCoreCLI@2
             displayName: 'Push HttpTelemetry package'
