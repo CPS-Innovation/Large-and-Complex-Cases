@@ -73,7 +73,7 @@ stages:
               publishOutput: true
               runTests: false
 
-          - script: echo lower(${{(parameters.buildDatabase}})
+          - script: echo '#{{ lower(parameters.buildDatabase) }}'
           
           - ${{ if eq(lower(parameters.buildDatabase), 'true')}}:
             # Build Data project with dependencies
