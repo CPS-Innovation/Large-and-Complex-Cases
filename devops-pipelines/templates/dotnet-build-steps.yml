@@ -9,7 +9,6 @@ parameters:
   publishOutput: false
   runTests: false
   testResultsDirectory: ''
-  coverageReportsDirectory: ''
 
 steps:
   - task: UseDotNet@2
@@ -27,18 +26,18 @@ steps:
         artifact: '${{ parameters.nugetArtifact }}'
         path: '${{ parameters.nugetArtifactDownloadPath }}'
 
-    - task: PowerShell@2
+    - task: Bash@3
       displayName: 'Create NuGet.Config'
       inputs:
         targetType: 'inline'
         script: |
-          $nugetConfigContent = @"
+          cat <<EOF > "$(Build.SourcesDirectory)/NuGet.Config"
           <?xml version="1.0" encoding="utf-8"?>
           <configuration>
             <packageSources>
               <clear />
               <add key="local-packages" value="${{ parameters.nugetArtifactDownloadPath }}" />
-              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
             </packageSources>
             <packageSourceMapping>
               <packageSource key="local-packages">
@@ -56,8 +55,7 @@ steps:
               <add key="automatic" value="True" />
             </packageRestore>
           </configuration>
-          "@
-          Set-Content -Path "$(Build.SourcesDirectory)/NuGet.Config" -Value $nugetConfigContent -Encoding UTF8
+          EOF
 
   # Restore packages
   - task: DotNetCoreCLI@2
@@ -98,12 +96,6 @@ steps:
         summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
         failIfCoverageEmpty: true
       condition: succeededOrFailed()
-
-    # Generate detailed HTML coverage report
-    - template: dotnet-code-coverage-steps.yml
-      parameters:
-        coverageReportsDirectory: ${{ parameters.coverageReportsDirectory }}
-        projectName: ${{ parameters.projectName }}
 
   # Publish if enabled
   - ${{ if eq(parameters.publishOutput, true) }}:

@@ -40,7 +40,7 @@ parameters:
 
 stages:
 - stage: Approve_Deployment_${{ parameters.environment }}
-  displayName: 'LACC ${{ parameters.environment }} - Approve Deployment'
+  displayName: '${{ parameters.environment }} - Approve Deployment'
   condition: ${{ eq(parameters.requireValidation, true) }}
   jobs:
   - template: ./manual-validation-jobs.yml
@@ -50,7 +50,7 @@ stages:
       approvers: ${{ parameters.approvers }}
 
 - stage:  Update_Key_Vault_${{ parameters.environment }}
-  displayName: 'LACC ${{ parameters.environment }} - Update Key Vault'
+  displayName: '${{ parameters.environment }} - Update Key Vault'
   ${{ if eq(parameters.requireValidation, true) }}:
     dependsOn: Approve_Deployment_${{ parameters.environment }}
   ${{ else }}:
@@ -62,7 +62,7 @@ stages:
   pool: ${{ parameters.agentPool }}
   jobs:
     - job: Populate_KV
-      displayName: 'LACC ${{ parameters.environment }} - Update Key Vault'
+      displayName: '${{ parameters.environment }} - Update Key Vault'
       steps:
         - checkout: self
           sparseCheckoutDirectories: devops-pipelines/scripts
@@ -86,7 +86,7 @@ stages:
               bash $(scripts_directory)/installAzureCli.sh   
 
         - task: AzureCLI@2
-          displayName: 'LACC ${{ parameters.environment }} - Initialize Key Vault Secrets from Variable Groups'
+          displayName: '${{ parameters.environment }} - Initialize Key Vault Secrets from Variable Groups'
           inputs:
             azureSubscription: ${{ parameters.azureSubscription }}
             scriptType: 'bash'
@@ -104,7 +104,7 @@ stages:
             FILE_TRANSFER_API_OPTIONS_ACCESS_KEY: $(FileTransferApiOptionsAccessKey)
 
 - stage:  Database_Migration_${{ parameters.environment }}
-  displayName: 'LACC ${{ parameters.environment }} - Database Migration'
+  displayName: '${{ parameters.environment }} - Database Migration'
   dependsOn: Update_Key_Vault_${{ parameters.environment }}
   variables:
   - template: ./variables/backend-deploy-vars.yml
@@ -113,7 +113,7 @@ stages:
   pool: ${{ parameters.agentPool }}
   jobs:
     - deployment: Deploy_Database_Changes
-      displayName: 'LACC ${{ parameters.environment }} - Deploy Database Changes'
+      displayName: '${{ parameters.environment }} - Deploy Database Changes'
       environment: 'LACC-Backend-${{ parameters.environment }}'
       strategy:
         runOnce:
@@ -173,7 +173,7 @@ stages:
                   buildArtifact: 'build'
 
 - stage:  Deploy_Function_Apps_${{ parameters.environment }}
-  displayName: 'LACC ${{ parameters.environment }} - Deploy Function Apps'
+  displayName: '${{ parameters.environment }} - Deploy Function Apps'
   dependsOn: Database_Migration_${{ parameters.environment }}
   variables:
   - template: ./variables/backend-deploy-vars.yml
@@ -182,7 +182,7 @@ stages:
   pool: ${{ parameters.agentPool }}
   jobs:
     - deployment: Deploy_Main_API
-      displayName: 'LACC ${{ parameters.environment }} - Deploy Main API Function App'
+      displayName: '${{ parameters.environment }} - Deploy Main API Function App'
       condition: ${{ eq(parameters.deployMainAPI, true) }}
       environment: 'LACC-Backend-${{ parameters.environment }}'
       strategy:
@@ -204,7 +204,7 @@ stages:
                   buildArtifact: 'build'
 
     - deployment: Deploy_FileTransfer_API
-      displayName: 'LACC ${{ parameters.environment }} - Deploy FileTransfer API Function App'
+      displayName: '${{ parameters.environment }} - Deploy FileTransfer API Function App'
       condition: ${{ eq(parameters.deployFileTransferAPI, true) }}
       environment: 'LACC-Backend-${{ parameters.environment }}'
       strategy:

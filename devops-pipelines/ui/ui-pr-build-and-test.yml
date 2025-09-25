@@ -18,7 +18,7 @@ variables:
 
 stages:
   - stage: Build_and_Test_UI
-    displayName: 'LACC UI - Build & Test'
+    displayName: 'Build & Test UI SPA'
     jobs:
       - job: Build_and_Test
         displayName: 'Build & Test App'

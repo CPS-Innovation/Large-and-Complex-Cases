@@ -41,7 +41,7 @@ stages:
       approvers: ${{ parameters.approvers }}
 
 - stage: Build_Deploy_${{ parameters.environment }}
-  displayName: 'LACC UI ${{ parameters.environment }} - Build & Deploy Web App'
+  displayName: '${{ parameters.environment }} - Build & Deploy Web App'
   ${{ if eq(parameters.requireValidation, true) }}:
     dependsOn: Approve_Deployment_${{ parameters.environment }}
   ${{ else }}:
@@ -51,8 +51,7 @@ stages:
   jobs:
     - job: Build_and_Publish_Artifact
       displayName: 'Build UI SPA for the ${{ parameters.environment}} environment'
-      pool: 
-        vmImage: ubuntu-latest
+      pool: ${{ parameters.agentPool }}
       variables:
       - group: lacc-ui-config-${{ parameters.environment }}
       - name: nodeVersion
