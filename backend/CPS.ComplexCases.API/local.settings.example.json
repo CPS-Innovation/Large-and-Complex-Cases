@@ -25,7 +25,9 @@
     "ConnectionStrings__CaseManagementDatastoreConnection": "Your postgres connection string",
     "ApiTaskHub": "mytaskhub",
     "FileTransferApiOptions__BaseUrl": "http://localhost:7072/api/",
-    "FileTransferApiOptions__AccessKey": "mock_access_key"
+    "FileTransferApiOptions__AccessKey": "mock_access_key",
+    "RedirectUrl__CaseworkApp": "*** Placeholder: Casework App cookie handoff endpoint ***",
+    "RedirectUrl__LccUi": "http://localhost:5174"
   },
   "Host": {
     "LocalHttpPort": 7071,
