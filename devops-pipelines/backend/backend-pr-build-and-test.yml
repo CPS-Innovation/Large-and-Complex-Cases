@@ -17,7 +17,7 @@ pool: 'LACC PreProd Pool'
 
 stages:
   - stage: Build_And_Test_Backend
-    displayName: 'LACC Backend - Build, Test & Package'
+    displayName: 'Build, Test & Package'
     jobs:
       - job: Package_NuGet
         displayName: 'Pack and Publish NuGet Package'
@@ -67,7 +67,7 @@ stages:
               testResultsDirectory: $(testResultsDirectory)
 
       - job: Build_Main_API
-        displayName: 'LACC - Build Main API'
+        displayName: 'Build Main API'
         dependsOn: Build_And_Test_Solution
         steps:
           # Build and publish Main API
@@ -78,11 +78,11 @@ stages:
               buildConfiguration: $(buildConfiguration)
               dotNetVersion: $(dotNetVersion)
               useLocalNuGet: true
-              publishOutput: true
+              publishOutput: false
               runTests: false
 
       - job: Build_FileTransfer_API
-        displayName: 'LACC - Build FileTransfer API'
+        displayName: 'Build FileTransfer API'
         dependsOn: Build_And_Test_Solution
         steps:
           # Build and publish FileTransfer API
@@ -92,12 +92,12 @@ stages:
               projectName: 'lacc-filetransfer-api-drop'
               buildConfiguration: $(buildConfiguration)
               dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: true
-              publishOutput: true
+              useLocalNuGet: false
+              publishOutput: false
               runTests: false
 
       - job: Package_Database_Scripts
-        displayName: 'LACC - Package Database Migration Scripts'
+        displayName: 'Package Database Migration Scripts'
         dependsOn: Build_And_Test_Solution
         steps:
           # Build Data project with dependencies

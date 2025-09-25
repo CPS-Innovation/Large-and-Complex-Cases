@@ -18,7 +18,7 @@ pool: 'LACC PreProd Pool'
 
 stages:
   - stage: Package_NuGet
-    displayName: 'LACC Backend - Produce Nuget Package'
+    displayName: 'Produce Nuget Package'
     jobs: 
     - job: Package_NuGet
       displayName: 'Pack and Publish NuGet Package'
@@ -53,7 +53,7 @@ stages:
             artifact: 'localnuget'
     
   - stage: Build_Main_API
-    displayName: 'LACC Backend - Build Main API'
+    displayName: 'Build Main API'
     dependsOn: Package_NuGet
     jobs:
       - job: Build_Main_API
@@ -70,7 +70,7 @@ stages:
               runTests: false
 
   - stage: Build_Filetransfer_API
-    displayName: 'LACC Backend - Build Main API'
+    displayName: 'Build Transfer API'
     dependsOn: Package_NuGet
     jobs:
       - job: Build_FileTransfer_API
@@ -87,7 +87,7 @@ stages:
               runTests: false
 
   - stage: Package_Database
-    displayName: 'LACC Backend - Build Database Migration Scripts'
+    displayName: 'Build Database Migration Scripts'
     dependsOn: Package_NuGet
     jobs:
       - job: Package_Database_Scripts
