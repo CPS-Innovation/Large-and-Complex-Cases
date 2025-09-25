@@ -22,7 +22,11 @@ const mockMsalInstance = {
   getAllAccounts: () => mockAccounts,
 } as IPublicClientApplication;
 
-const actFn = () => {
+interface ActFnResult {
+  container: HTMLElement;
+}
+
+const actFn: () => ActFnResult = () => {
   return render(
     <PrivateBetaAuthorisation msalInstance={mockMsalInstance}>
       <div>{EXPECTED_APP_TEXT}</div>
@@ -32,23 +36,22 @@ const actFn = () => {
 
 describe("PrivateBetaAuthorisation", () => {
   it("will allow the user to access the app if no private beta group is configured", () => {
+    mockAccounts = [
+      {
+        idTokenClaims: {},
+      } as AccountInfo,
+    ];
     mockConfig.PRIVATE_BETA_USER_GROUP = null;
     actFn();
     expect(screen.queryByText(EXPECTED_APP_TEXT)).toBeInTheDocument();
   });
 
-  it("will not allow the user to access the app if the user has no account", () => {
+  it("Should return empty container if no account is found", () => {
+    mockAccounts = [];
     mockConfig.PRIVATE_BETA_USER_GROUP = PRIVATE_BETA_USER_GROUP_VALUE;
-    actFn();
+    const { container } = actFn();
     expect(screen.queryByText(EXPECTED_APP_TEXT)).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("heading", { level: 1, name: /Access Error/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByText(
-        "You cannot access this page. You are not a member of this group.",
-      ),
-    ).toBeInTheDocument();
+    expect(container).toBeEmptyDOMElement();
   });
 
   it("will not allow the user to access the app if the user has no groups claims object", () => {

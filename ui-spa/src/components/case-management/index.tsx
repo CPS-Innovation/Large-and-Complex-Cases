@@ -156,11 +156,7 @@ const CaseManagementPage = () => {
     });
   }
   if (caseMetaData.status === "loading" || caseMetaData.status === "initial") {
-    return (
-      <div className="govuk-width-container">
-        <PageContentWrapper>loading...</PageContentWrapper>
-      </div>
-    );
+    return <PageContentWrapper>loading...</PageContentWrapper>;
   }
   if (
     location.pathname.endsWith("/transfer-resolve-file-path") ||
@@ -173,23 +169,21 @@ const CaseManagementPage = () => {
     return <TransferMovePermissionsErrorPage />;
   return (
     <PageContentWrapper>
-      <div className="govuk-width-container">
-        <h1 className={styles.workspaceName}>
-          {caseMetaData?.data?.operationName}
-        </h1>
-        <div className={styles.urnText}>
-          <span>{caseMetaData?.data?.urn}</span>
-        </div>
-        <Tabs
-          items={items.map((item) => ({
-            id: item.id,
-            label: item.label,
-            panel: item.panel,
-          }))}
-          activeTabId={activeTabId}
-          handleTabSelection={handleTabSelection}
-        />
+      <h1 className={styles.workspaceName}>
+        {caseMetaData?.data?.operationName}
+      </h1>
+      <div className={styles.urnText}>
+        <span>{caseMetaData?.data?.urn}</span>
       </div>
+      <Tabs
+        items={items.map((item) => ({
+          id: item.id,
+          label: item.label,
+          panel: item.panel,
+        }))}
+        activeTabId={activeTabId}
+        handleTabSelection={handleTabSelection}
+      />
     </PageContentWrapper>
   );
 };

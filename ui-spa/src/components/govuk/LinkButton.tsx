@@ -49,3 +49,5 @@ export const LinkButton = forwardRef<HTMLButtonElement | null, LinkButtonProps>(
     );
   },
 );
+
+LinkButton.displayName = "LinkButton";

@@ -249,7 +249,6 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
             : styles.destinationContainer
         }
         data-testid="netapp-container"
-        aria-role="region"
         aria-labelledby="shared-drive-region-title"
         tabIndex={0}
       >

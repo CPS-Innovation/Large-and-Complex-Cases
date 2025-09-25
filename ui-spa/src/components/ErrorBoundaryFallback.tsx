@@ -5,7 +5,7 @@ import styles from "./ErrorBoundaryFallback.module.scss";
 export const ErrorBoundaryFallback = ({ error }: FallbackProps) => {
   return (
     <Layout>
-      <div role="alert" className={`govuk-width-container ${styles.content}`}>
+      <div role="alert" className={styles.content}>
         <h1 className="govuk-heading-l" data-testid="txt-error-page-heading">
           Sorry, there is a problem with the service
         </h1>
