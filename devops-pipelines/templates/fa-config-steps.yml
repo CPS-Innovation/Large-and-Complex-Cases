@@ -104,6 +104,16 @@ steps:
             "slotSetting": false
           },
           {
+            "name": "RedirectUrl__CaseworkApp",
+            "value": "$(RedirectUrlCaseworkApp)",
+            "slotSetting": false
+          },
+          {
+            "name": "RedirectUrl__LccUi",
+            "value": "$(RedirectUrlLccUi)",
+            "slotSetting": false
+          },
+          {
             "name": "SizeConfig__BatchSize",
             "value": "$(SizeConfigBatchSize)",
             "slotSetting": false

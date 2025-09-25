@@ -42,7 +42,7 @@ public class AuthenticationContext
     /// Gets the authentication expiry time.
     /// </summary>
     [JsonPropertyName(nameof(ExpiryTime))]
-    public virtual DateTimeOffset ExpiryTime { get; init; }
+    public DateTimeOffset ExpiryTime { get; init; }
 
     /// <inheritdoc/>
     public override string ToString()
