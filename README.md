@@ -4,30 +4,6 @@
 
 The Large and Complex Cases (LACC) project aims to deliver a secure, auditable, and performant solution for managing complex cases. The system is designed to increase user productivity by centralising access to case material (including correspondence), providing powerful search capabilities, and integrating with other systems of record to reduce data re-keying.
 
-## UI
-
-UI is a vite react typescript project
-
-### For fresh install:
-
-1. Go to ui-spa folder
-2. Use `npm CI` for clean install to stick with the exact packages in the package-lock.json. NOTE: dont use `npm install`
-
-### To run locally:
-
-1. Create and .env.local file under ui-spa and copy the contents from .env.local.example
-2. make sure you have the correct env values
-3. for dev build, use `npm run dev` for running the ui and you will have the dev server up and running at http://localhost:5173/
-4. for prod build , use `npm run build` or building the project, then use `npm run start` and you will have the dev server up and running at http://localhost:5173/
-5. to use msw and mock all the server requests when running locally, VITE_MOCK_API_SOURCE=dev,
-6. to use mock auth when running localy, VITE_MOCK_AUTH=true
-
-### To run tests:
-
-1. To run unit tests: use `npm run test`
-2. To run playwright ui integration test in browser mode: use `ui:e2e`
-3. To run playwright ui integration test in ci mode: use `ui:e2e:ci`
-
 ## Getting Started
 
 ### Prerequisites
@@ -57,6 +33,30 @@ Each script provides options for running tests, generating coverage reports, and
 - The Main API orchestrates business logic and integrates with other backend services, including the **FileTransfer API** (`CPS.ComplexCases.FileTransfer.API`).
 - The Main API uses a dedicated HTTP client to call the FileTransfer API for all file transfer operations (upload, list, status, etc.).
 - **Both the Main API and FileTransfer API must be running locally for the application to function end-to-end.** If the FileTransfer API is not running, any file transfer features in the UI or Main API will not work.
+
+### UI
+
+UI is a vite react typescript project
+
+### For fresh install:
+
+1. Go to ui-spa folder
+2. Use `npm CI` for clean install to stick with the exact packages in the package-lock.json. NOTE: dont use `npm install`
+
+### To run locally:
+
+1. Create and .env.local file under ui-spa and copy the contents from .env.local.example
+2. make sure you have the correct env values
+3. for dev build, use `npm run dev` for running the ui and you will have the dev server up and running at http://localhost:5173/
+4. for prod build , use `npm run build` or building the project, then use `npm run start` and you will have the dev server up and running at http://localhost:5173/
+5. to use msw and mock all the server requests when running locally, VITE_MOCK_API_SOURCE=dev,
+6. to use mock auth when running localy, VITE_MOCK_AUTH=true
+
+### To run tests:
+
+1. To run unit tests: use `npm run test`
+2. To run playwright ui integration test in browser mode: use `ui:e2e`
+3. To run playwright ui integration test in ci mode: use `ui:e2e:ci`
 
 ### CI/CD Pipelines
 
