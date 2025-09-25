@@ -17,12 +17,21 @@ public class InitTests
     private readonly Mock<IInitService> _initServiceMock;
     private readonly Fixture _fixture;
     private readonly Init _function;
+    private readonly Guid _correlationId;
+    private readonly string _cc;
+    private readonly string _ct;
+    private readonly string _redirectUrl;
 
     public InitTests()
     {
         _loggerMock = new Mock<ILogger<Init>>();
         _initServiceMock = new Mock<IInitService>();
         _fixture = new Fixture();
+        _correlationId = _fixture.Create<Guid>();
+        _cc = _fixture.Create<string>();
+        _ct = _fixture.Create<string>();
+        _redirectUrl = _fixture.Create<string>();
+
         _function = new Init(
             _loggerMock.Object,
             _initServiceMock.Object);
@@ -32,40 +41,36 @@ public class InitTests
     public async Task Run_ReturnsRedirectResult_WhenInitServiceReturnsRedirectStatus()
     {
         // Arrange
-        var correlationId = _fixture.Create<Guid>();
-        var cc = _fixture.Create<string>();
-        var redirectUrl = _fixture.Create<string>();
-
         var initResult = new InitResult
         {
             Status = InitResultStatus.Redirect,
-            RedirectUrl = redirectUrl,
+            RedirectUrl = _redirectUrl,
             ShouldSetCookie = false
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), correlationId, cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", cc } }, correlationId);
+            new Dictionary<string, string> { { "cc", _cc } }, _correlationId);
 
         // Act
         var result = await _function.Run(httpRequest, functionContext);
 
         // Assert
         var redirectResult = Assert.IsType<RedirectResult>(result);
-        Assert.Equal(redirectUrl, redirectResult.Url);
+        Assert.Equal(_redirectUrl, redirectResult.Url);
         Assert.False(redirectResult.Permanent);
 
-        _initServiceMock.Verify(s => s.ProcessRequest(httpRequest, correlationId, cc), Times.Once);
+        _initServiceMock.Verify(s => s.ProcessRequest(httpRequest, _correlationId, _cc), Times.Once);
 
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Init function processed a request with correlation ID: {correlationId}")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Init function processed a request with correlation ID: {_correlationId}")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
@@ -75,35 +80,31 @@ public class InitTests
     public async Task Run_ReturnsRedirectResultWithCookie_WhenInitServiceReturnsRedirectWithCookieData()
     {
         // Arrange
-        var correlationId = _fixture.Create<Guid>();
-        var cc = _fixture.Create<string>();
-        var ct = _fixture.Create<string>();
-        var redirectUrl = _fixture.Create<string>();
         var cookiesMock = new Mock<IResponseCookies>();
 
         var initResult = new InitResult
         {
             Status = InitResultStatus.Redirect,
-            RedirectUrl = redirectUrl,
+            RedirectUrl = _redirectUrl,
             ShouldSetCookie = true,
-            Cc = cc,
-            Ct = ct
+            Cc = _cc,
+            Ct = _ct
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), correlationId, cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", cc } }, correlationId, cookiesMock);
+            new Dictionary<string, string> { { "cc", _cc } }, _correlationId, cookiesMock);
 
         // Act
         var result = await _function.Run(httpRequest, functionContext);
 
         // Assert
         var redirectResult = Assert.IsType<RedirectResult>(result);
-        Assert.Equal(redirectUrl, redirectResult.Url);
+        Assert.Equal(_redirectUrl, redirectResult.Url);
 
         cookiesMock.Verify(
             c => c.Append(
@@ -116,36 +117,32 @@ public class InitTests
                     options.Path == "/api/")),
             Times.Once);
 
-        _initServiceMock.Verify(s => s.ProcessRequest(httpRequest, correlationId, cc), Times.Once);
+        _initServiceMock.Verify(s => s.ProcessRequest(httpRequest, _correlationId, _cc), Times.Once);
     }
 
     [Fact]
     public async Task Run_ReturnsRedirectResultWithHttpCookie_WhenRequestIsHttp()
     {
         // Arrange
-        var correlationId = _fixture.Create<Guid>();
-        var cc = _fixture.Create<string>();
-        var ct = _fixture.Create<string>();
-        var redirectUrl = _fixture.Create<string>();
         var cookiesMock = new Mock<IResponseCookies>();
 
         var initResult = new InitResult
         {
             Status = InitResultStatus.Redirect,
-            RedirectUrl = redirectUrl,
+            RedirectUrl = _redirectUrl,
             ShouldSetCookie = true,
-            Cc = cc,
-            Ct = ct
+            Cc = _cc,
+            Ct = _ct
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), correlationId, cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
 
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", cc } }, correlationId, cookiesMock);
+            new Dictionary<string, string> { { "cc", _cc } }, _correlationId, cookiesMock);
 
         // Force HTTP
         httpRequest.Scheme = "http";
@@ -155,7 +152,7 @@ public class InitTests
 
         // Assert
         var redirectResult = Assert.IsType<RedirectResult>(result);
-        Assert.Equal(redirectUrl, redirectResult.Url);
+        Assert.Equal(_redirectUrl, redirectResult.Url);
 
         cookiesMock.Verify(
             c => c.Append(
@@ -172,32 +169,29 @@ public class InitTests
     public async Task Run_DoesNotSetCookie_WhenShouldSetCookieIsFalse()
     {
         // Arrange
-        var correlationId = _fixture.Create<Guid>();
-        var cc = _fixture.Create<string>();
-        var redirectUrl = _fixture.Create<string>();
         var cookiesMock = new Mock<IResponseCookies>();
 
         var initResult = new InitResult
         {
             Status = InitResultStatus.Redirect,
-            RedirectUrl = redirectUrl,
+            RedirectUrl = _redirectUrl,
             ShouldSetCookie = false
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), correlationId, cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", cc } }, correlationId, cookiesMock);
+            new Dictionary<string, string> { { "cc", _cc } }, _correlationId, cookiesMock);
 
         // Act
         var result = await _function.Run(httpRequest, functionContext);
 
         // Assert
         var redirectResult = Assert.IsType<RedirectResult>(result);
-        Assert.Equal(redirectUrl, redirectResult.Url);
+        Assert.Equal(_redirectUrl, redirectResult.Url);
 
         cookiesMock.Verify(
             c => c.Append(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CookieOptions>()),
@@ -208,34 +202,31 @@ public class InitTests
     public async Task Run_DoesNotSetCookie_WhenCcIsEmpty()
     {
         // Arrange
-        var correlationId = _fixture.Create<Guid>();
-        var ct = _fixture.Create<string>();
-        var redirectUrl = _fixture.Create<string>();
         var cookiesMock = new Mock<IResponseCookies>();
 
         var initResult = new InitResult
         {
             Status = InitResultStatus.Redirect,
-            RedirectUrl = redirectUrl,
+            RedirectUrl = _redirectUrl,
             ShouldSetCookie = true,
             Cc = string.Empty,
-            Ct = ct
+            Ct = _ct
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), correlationId, string.Empty))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, string.Empty))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", string.Empty } }, correlationId, cookiesMock);
+            new Dictionary<string, string> { { "cc", string.Empty } }, _correlationId, cookiesMock);
 
         // Act
         var result = await _function.Run(httpRequest, functionContext);
 
         // Assert
         var redirectResult = Assert.IsType<RedirectResult>(result);
-        Assert.Equal(redirectUrl, redirectResult.Url);
+        Assert.Equal(_redirectUrl, redirectResult.Url);
 
         cookiesMock.Verify(
             c => c.Append(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CookieOptions>()),
@@ -246,34 +237,31 @@ public class InitTests
     public async Task Run_DoesNotSetCookie_WhenCtIsEmpty()
     {
         // Arrange
-        var correlationId = _fixture.Create<Guid>();
-        var cc = _fixture.Create<string>();
-        var redirectUrl = _fixture.Create<string>();
         var cookiesMock = new Mock<IResponseCookies>();
 
         var initResult = new InitResult
         {
             Status = InitResultStatus.Redirect,
-            RedirectUrl = redirectUrl,
+            RedirectUrl = _redirectUrl,
             ShouldSetCookie = true,
-            Cc = cc,
+            Cc = _cc,
             Ct = string.Empty
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), correlationId, cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", cc } }, correlationId, cookiesMock);
+            new Dictionary<string, string> { { "cc", _cc } }, _correlationId, cookiesMock);
 
         // Act
         var result = await _function.Run(httpRequest, functionContext);
 
         // Assert
         var redirectResult = Assert.IsType<RedirectResult>(result);
-        Assert.Equal(redirectUrl, redirectResult.Url);
+        Assert.Equal(_redirectUrl, redirectResult.Url);
 
         cookiesMock.Verify(
             c => c.Append(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CookieOptions>()),
@@ -284,9 +272,6 @@ public class InitTests
     public async Task Run_Returns500_WhenRedirectResultHasNullRedirectUrl()
     {
         // Arrange
-        var correlationId = _fixture.Create<Guid>();
-        var cc = _fixture.Create<string>();
-
         var initResult = new InitResult
         {
             Status = InitResultStatus.Redirect,
@@ -295,12 +280,12 @@ public class InitTests
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), correlationId, cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", cc } }, correlationId);
+            new Dictionary<string, string> { { "cc", _cc } }, _correlationId);
 
         // Act
         var result = await _function.Run(httpRequest, functionContext);
@@ -314,9 +299,6 @@ public class InitTests
     public async Task Run_Returns500_WhenRedirectResultHasEmptyRedirectUrl()
     {
         // Arrange
-        var correlationId = _fixture.Create<Guid>();
-        var cc = _fixture.Create<string>();
-
         var initResult = new InitResult
         {
             Status = InitResultStatus.Redirect,
@@ -325,12 +307,12 @@ public class InitTests
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), correlationId, cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", cc } }, correlationId);
+            new Dictionary<string, string> { { "cc", _cc } }, _correlationId);
 
         // Act
         var result = await _function.Run(httpRequest, functionContext);
@@ -344,8 +326,6 @@ public class InitTests
     public async Task Run_ReturnsBadRequest_WhenInitServiceReturnsBadRequestStatus()
     {
         // Arrange
-        var correlationId = _fixture.Create<Guid>();
-        var cc = _fixture.Create<string>();
         var errorMessage = _fixture.Create<string>();
 
         var initResult = new InitResult
@@ -355,12 +335,12 @@ public class InitTests
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), correlationId, cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", cc } }, correlationId);
+            new Dictionary<string, string> { { "cc", _cc } }, _correlationId);
 
         // Act
         var result = await _function.Run(httpRequest, functionContext);
@@ -374,21 +354,18 @@ public class InitTests
     public async Task Run_Returns500_WhenInitServiceReturnsServerErrorStatus()
     {
         // Arrange
-        var correlationId = _fixture.Create<Guid>();
-        var cc = _fixture.Create<string>();
-
         var initResult = new InitResult
         {
             Status = InitResultStatus.ServerError
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), correlationId, cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", cc } }, correlationId);
+            new Dictionary<string, string> { { "cc", _cc } }, _correlationId);
 
         // Act
         var result = await _function.Run(httpRequest, functionContext);
@@ -402,8 +379,6 @@ public class InitTests
     public async Task Run_Returns500_WhenInitServiceReturnsUnhandledStatus()
     {
         // Arrange
-        var correlationId = _fixture.Create<Guid>();
-        var cc = _fixture.Create<string>();
 
         var initResult = new InitResult
         {
@@ -411,12 +386,12 @@ public class InitTests
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), correlationId, cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", cc } }, correlationId);
+            new Dictionary<string, string> { { "cc", _cc } }, _correlationId);
 
         // Act
         var result = await _function.Run(httpRequest, functionContext);
@@ -430,54 +405,48 @@ public class InitTests
     public async Task Run_HandlesNullCcParameter_PassesNullToService()
     {
         // Arrange
-        var correlationId = _fixture.Create<Guid>();
-        var redirectUrl = _fixture.Create<string>();
-
         var initResult = new InitResult
         {
             Status = InitResultStatus.Redirect,
-            RedirectUrl = redirectUrl,
+            RedirectUrl = _redirectUrl,
             ShouldSetCookie = false
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), correlationId, null))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, null))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
-        var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(new Dictionary<string, string>(), correlationId);
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(new Dictionary<string, string>(), _correlationId);
 
         // Act
         var result = await _function.Run(httpRequest, functionContext);
 
         // Assert
         var redirectResult = Assert.IsType<RedirectResult>(result);
-        Assert.Equal(redirectUrl, redirectResult.Url);
+        Assert.Equal(_redirectUrl, redirectResult.Url);
     }
 
     [Fact]
     public async Task Run_DeletesCmsAuthValuesCookie_OnEveryRequest()
     {
         // Arrange
-        var correlationId = _fixture.Create<Guid>();
-        var cc = _fixture.Create<string>();
-        var redirectUrl = _fixture.Create<string>();
         var cookiesMock = new Mock<IResponseCookies>();
 
         var initResult = new InitResult
         {
             Status = InitResultStatus.Redirect,
-            RedirectUrl = redirectUrl,
+            RedirectUrl = _redirectUrl,
             ShouldSetCookie = false
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), correlationId, cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", cc } }, correlationId, cookiesMock);
+            new Dictionary<string, string> { { "cc", _cc } }, _correlationId, cookiesMock);
 
         // Act
         await _function.Run(httpRequest, functionContext);
@@ -490,24 +459,20 @@ public class InitTests
     public async Task Run_LogsInformationMessage_OnEveryRequest()
     {
         // Arrange
-        var correlationId = _fixture.Create<Guid>();
-        var cc = _fixture.Create<string>();
-        var redirectUrl = _fixture.Create<string>();
-
         var initResult = new InitResult
         {
             Status = InitResultStatus.Redirect,
-            RedirectUrl = redirectUrl,
+            RedirectUrl = _redirectUrl,
             ShouldSetCookie = false
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), correlationId, cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", cc } }, correlationId);
+            new Dictionary<string, string> { { "cc", _cc } }, _correlationId);
 
         // Act
         await _function.Run(httpRequest, functionContext);
@@ -517,7 +482,7 @@ public class InitTests
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Init function processed a request with correlation ID: {correlationId}")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Init function processed a request with correlation ID: {_correlationId}")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
@@ -527,28 +492,24 @@ public class InitTests
     public async Task Run_VerifiesAuthenticationContextCreation_WhenSettingCookie()
     {
         // Arrange
-        var correlationId = _fixture.Create<Guid>();
-        var cc = _fixture.Create<string>();
-        var ct = _fixture.Create<string>();
-        var redirectUrl = _fixture.Create<string>();
         var cookiesMock = new Mock<IResponseCookies>();
 
         var initResult = new InitResult
         {
             Status = InitResultStatus.Redirect,
-            RedirectUrl = redirectUrl,
+            RedirectUrl = _redirectUrl,
             ShouldSetCookie = true,
-            Cc = cc,
-            Ct = ct
+            Cc = _cc,
+            Ct = _ct
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), correlationId, cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", cc } }, correlationId, cookiesMock);
+            new Dictionary<string, string> { { "cc", _cc } }, _correlationId, cookiesMock);
 
         // Act
         await _function.Run(httpRequest, functionContext);

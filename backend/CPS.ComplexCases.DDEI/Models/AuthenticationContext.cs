@@ -29,19 +29,19 @@ public class AuthenticationContext
     /// <summary>
     /// Gets the CMS classic authentication cookies.
     /// </summary>
-    [JsonPropertyName(nameof(AuthenticationContext.Cookies))]
+    [JsonPropertyName(nameof(Cookies))]
     public string Cookies { get; init; }
 
     /// <summary>
     /// Gets the CMS modern authentication token.
     /// </summary>
-    [JsonPropertyName(nameof(AuthenticationContext.Token))]
+    [JsonPropertyName(nameof(Token))]
     public string Token { get; init; }
 
     /// <summary>
     /// Gets the authentication expiry time.
     /// </summary>
-    [JsonPropertyName(nameof(AuthenticationContext.ExpiryTime))]
+    [JsonPropertyName(nameof(ExpiryTime))]
     public virtual DateTimeOffset ExpiryTime { get; init; }
 
     /// <inheritdoc/>

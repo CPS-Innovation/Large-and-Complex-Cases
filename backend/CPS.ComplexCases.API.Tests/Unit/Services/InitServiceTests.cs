@@ -20,6 +20,11 @@ public class InitServiceTests
     private readonly Mock<IDdeiClient> _ddeiClientMock;
     private readonly Mock<IDdeiArgFactory> _ddeiArgFactoryMock;
     private readonly InitService _service;
+    private readonly Guid _correlationId;
+    private readonly string _cc;
+    private readonly string _ct;
+    private readonly string _redirectUrlLccUi = "https://lccui.example.com";
+    private readonly string _redirectUrlCwa = "https://casework.example.com?r=";
 
     public InitServiceTests()
     {
@@ -30,6 +35,9 @@ public class InitServiceTests
         _configurationMock = _fixture.Freeze<Mock<IConfiguration>>();
         _ddeiClientMock = _fixture.Freeze<Mock<IDdeiClient>>();
         _ddeiArgFactoryMock = _fixture.Freeze<Mock<IDdeiArgFactory>>();
+        _correlationId = _fixture.Create<Guid>();
+        _cc = _fixture.Create<string>();
+        _ct = _fixture.Create<string>();
 
         _service = new InitService(
             _loggerMock.Object,
@@ -43,14 +51,12 @@ public class InitServiceTests
     {
         // Arrange
         var request = CreateMockHttpRequest();
-        var correlationId = Guid.NewGuid();
-        var cc = _fixture.Create<string>();
 
         _configurationMock.Setup(c => c["RedirectUrl:CaseworkApp"]).Returns(string.Empty);
         _configurationMock.Setup(c => c["RedirectUrl:LccUi"]).Returns(_fixture.Create<string>());
 
         // Act
-        var result = await _service.ProcessRequest(request.Object, correlationId, cc);
+        var result = await _service.ProcessRequest(request.Object, _correlationId, _cc);
 
         // Assert
         Assert.Equal(InitResultStatus.ServerError, result.Status);
@@ -73,14 +79,12 @@ public class InitServiceTests
     {
         // Arrange
         var request = CreateMockHttpRequest();
-        var correlationId = Guid.NewGuid();
-        var cc = _fixture.Create<string>();
 
         _configurationMock.Setup(c => c["RedirectUrl:CaseworkApp"]).Returns(_fixture.Create<string>());
         _configurationMock.Setup(c => c["RedirectUrl:LccUi"]).Returns(string.Empty);
 
         // Act
-        var result = await _service.ProcessRequest(request.Object, correlationId, cc);
+        var result = await _service.ProcessRequest(request.Object, _correlationId, _cc);
 
         // Assert
         Assert.Equal(InitResultStatus.ServerError, result.Status);
@@ -92,14 +96,12 @@ public class InitServiceTests
     {
         // Arrange
         var request = CreateMockHttpRequest();
-        var correlationId = Guid.NewGuid();
-        var cc = _fixture.Create<string>();
 
         _configurationMock.Setup(c => c["RedirectUrl:CaseworkApp"]).Returns(string.Empty);
         _configurationMock.Setup(c => c["RedirectUrl:LccUi"]).Returns(string.Empty);
 
         // Act
-        var result = await _service.ProcessRequest(request.Object, correlationId, cc);
+        var result = await _service.ProcessRequest(request.Object, _correlationId, _cc);
 
         // Assert
         Assert.Equal(InitResultStatus.ServerError, result.Status);
@@ -111,35 +113,31 @@ public class InitServiceTests
     {
         // Arrange
         var request = CreateMockHttpRequest();
-        var correlationId = Guid.NewGuid();
-        var cc = _fixture.Create<string>();
-        var ct = _fixture.Create<string>();
-        var redirectUrlLccUi = _fixture.Create<string>();
         var baseArg = _fixture.Create<DdeiBaseArgDto>();
 
-        _configurationMock.Setup(c => c["RedirectUrl:CaseworkApp"]).Returns(_fixture.Create<string>());
-        _configurationMock.Setup(c => c["RedirectUrl:LccUi"]).Returns(redirectUrlLccUi);
+        _configurationMock.Setup(c => c["RedirectUrl:CaseworkApp"]).Returns(_redirectUrlCwa);
+        _configurationMock.Setup(c => c["RedirectUrl:LccUi"]).Returns(_redirectUrlLccUi);
 
         _ddeiArgFactoryMock
-            .Setup(f => f.CreateBaseArg(It.IsAny<string>(), correlationId))
+            .Setup(f => f.CreateBaseArg(It.IsAny<string>(), _correlationId))
             .Returns(baseArg);
 
         _ddeiClientMock
             .Setup(c => c.GetCmsModernTokenAsync(baseArg))
-            .ReturnsAsync(ct);
+            .ReturnsAsync(_ct);
 
         // Act
-        var result = await _service.ProcessRequest(request.Object, correlationId, cc);
+        var result = await _service.ProcessRequest(request.Object, _correlationId, _cc);
 
         // Assert
         Assert.Equal(InitResultStatus.Redirect, result.Status);
-        Assert.Equal(redirectUrlLccUi, result.RedirectUrl);
+        Assert.Equal(_redirectUrlLccUi, result.RedirectUrl);
         Assert.True(result.ShouldSetCookie);
-        Assert.Equal(cc, result.Cc);
-        Assert.Equal(ct, result.Ct);
+        Assert.Equal(_cc, result.Cc);
+        Assert.Equal(_ct, result.Ct);
 
         _ddeiArgFactoryMock.Verify(
-            f => f.CreateBaseArg(It.IsAny<string>(), correlationId),
+            f => f.CreateBaseArg(It.IsAny<string>(), _correlationId),
             Times.Once);
 
         _ddeiClientMock.Verify(
@@ -150,7 +148,7 @@ public class InitServiceTests
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Redirecting to {redirectUrlLccUi} with correlationId {correlationId}")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Redirecting to {_redirectUrlLccUi} with correlationId {_correlationId}")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
@@ -161,17 +159,14 @@ public class InitServiceTests
     {
         // Arrange
         var request = CreateMockHttpRequest();
-        var correlationId = Guid.NewGuid();
-        var cc = _fixture.Create<string>();
-        var redirectUrlLccUi = _fixture.Create<string>();
         var baseArg = _fixture.Create<DdeiBaseArgDto>();
         var expectedException = new Exception("DDEI client error");
 
-        _configurationMock.Setup(c => c["RedirectUrl:CaseworkApp"]).Returns(_fixture.Create<string>());
-        _configurationMock.Setup(c => c["RedirectUrl:LccUi"]).Returns(redirectUrlLccUi);
+        _configurationMock.Setup(c => c["RedirectUrl:CaseworkApp"]).Returns(_redirectUrlCwa);
+        _configurationMock.Setup(c => c["RedirectUrl:LccUi"]).Returns(_redirectUrlLccUi);
 
         _ddeiArgFactoryMock
-            .Setup(f => f.CreateBaseArg(It.IsAny<string>(), correlationId))
+            .Setup(f => f.CreateBaseArg(It.IsAny<string>(), _correlationId))
             .Returns(baseArg);
 
         _ddeiClientMock
@@ -179,13 +174,13 @@ public class InitServiceTests
             .ThrowsAsync(expectedException);
 
         // Act
-        var result = await _service.ProcessRequest(request.Object, correlationId, cc);
+        var result = await _service.ProcessRequest(request.Object, _correlationId, _cc);
 
         // Assert
         Assert.Equal(InitResultStatus.Redirect, result.Status);
-        Assert.Equal(redirectUrlLccUi, result.RedirectUrl);
+        Assert.Equal(_redirectUrlLccUi, result.RedirectUrl);
         Assert.True(result.ShouldSetCookie);
-        Assert.Equal(cc, result.Cc);
+        Assert.Equal(_cc, result.Cc);
         Assert.Null(result.Ct);
 
         _loggerMock.Verify(
@@ -203,15 +198,13 @@ public class InitServiceTests
     {
         // Arrange
         var request = CreateMockHttpRequest();
-        var correlationId = Guid.NewGuid();
-        var redirectUrlCwa = _fixture.Create<string>();
-        var expectedBuiltRedirectUrl = $"{redirectUrlCwa}https://localhost/api/v1/init";
+        var expectedBuiltRedirectUrl = $"{_redirectUrlCwa}https://localhost/api/v1/init";
 
-        _configurationMock.Setup(c => c["RedirectUrl:CaseworkApp"]).Returns(redirectUrlCwa);
-        _configurationMock.Setup(c => c["RedirectUrl:LccUi"]).Returns(_fixture.Create<string>());
+        _configurationMock.Setup(c => c["RedirectUrl:CaseworkApp"]).Returns(_redirectUrlCwa);
+        _configurationMock.Setup(c => c["RedirectUrl:LccUi"]).Returns(_redirectUrlLccUi);
 
         // Act
-        var result = await _service.ProcessRequest(request.Object, correlationId, string.Empty);
+        var result = await _service.ProcessRequest(request.Object, _correlationId, string.Empty);
 
         // Assert
         Assert.Equal(InitResultStatus.Redirect, result.Status);
@@ -232,7 +225,7 @@ public class InitServiceTests
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Redirecting to {redirectUrlCwa} with correlationId {correlationId}")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Redirecting to {_redirectUrlCwa} with correlationId {_correlationId}")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
@@ -243,14 +236,12 @@ public class InitServiceTests
     {
         // Arrange
         var request = CreateMockHttpRequest();
-        var correlationId = Guid.NewGuid();
-        var redirectUrlCwa = _fixture.Create<string>();
 
-        _configurationMock.Setup(c => c["RedirectUrl:CaseworkApp"]).Returns(redirectUrlCwa);
-        _configurationMock.Setup(c => c["RedirectUrl:LccUi"]).Returns(_fixture.Create<string>());
+        _configurationMock.Setup(c => c["RedirectUrl:CaseworkApp"]).Returns(_redirectUrlCwa);
+        _configurationMock.Setup(c => c["RedirectUrl:LccUi"]).Returns(_redirectUrlLccUi);
 
         // Act
-        var result = await _service.ProcessRequest(request.Object, correlationId, null);
+        var result = await _service.ProcessRequest(request.Object, _correlationId, null);
 
         // Assert
         Assert.Equal(InitResultStatus.Redirect, result.Status);
@@ -264,13 +255,12 @@ public class InitServiceTests
     {
         // Arrange
         var request = CreateMockHttpRequest();
-        var redirectUrlCwa = "https://casework.example.com?r=";
 
         // Act
-        var result = _service.BuildRedirectUrl(request.Object, redirectUrlCwa);
+        var result = _service.BuildRedirectUrl(request.Object, _redirectUrlCwa);
 
         // Assert
-        var expectedUrl = $"{redirectUrlCwa}https://localhost/api/v1/init";
+        var expectedUrl = $"{_redirectUrlCwa}https://localhost/api/v1/init";
         Assert.Equal(expectedUrl, result);
 
         _loggerMock.Verify(
@@ -288,13 +278,12 @@ public class InitServiceTests
     {
         // Arrange
         var request = CreateMockHttpRequest("http", "example.com", 80);
-        var redirectUrlCwa = "https://casework.example.com?r=";
 
         // Act
-        var result = _service.BuildRedirectUrl(request.Object, redirectUrlCwa);
+        var result = _service.BuildRedirectUrl(request.Object, _redirectUrlCwa);
 
         // Assert
-        var expectedUrl = $"{redirectUrlCwa}http://example.com/api/v1/init";
+        var expectedUrl = $"{_redirectUrlCwa}http://example.com/api/v1/init";
         Assert.Equal(expectedUrl, result);
     }
 
@@ -303,13 +292,12 @@ public class InitServiceTests
     {
         // Arrange
         var request = CreateMockHttpRequest("https", "api.example.com", 8443);
-        var redirectUrlCwa = "https://casework.example.com?r=";
 
         // Act
-        var result = _service.BuildRedirectUrl(request.Object, redirectUrlCwa);
+        var result = _service.BuildRedirectUrl(request.Object, _redirectUrlCwa);
 
         // Assert
-        var expectedUrl = $"{redirectUrlCwa}https://api.example.com:8443/api/v1/init";
+        var expectedUrl = $"{_redirectUrlCwa}https://api.example.com:8443/api/v1/init";
         Assert.Equal(expectedUrl, result);
     }
 
@@ -318,14 +306,12 @@ public class InitServiceTests
     {
         // Arrange
         var request = CreateMockHttpRequest();
-        var correlationId = Guid.NewGuid();
-        var cc = _fixture.Create<string>();
 
         _configurationMock.Setup(c => c["RedirectUrl:CaseworkApp"]).Returns((string?)null);
         _configurationMock.Setup(c => c["RedirectUrl:LccUi"]).Returns((string?)null);
 
         // Act
-        var result = await _service.ProcessRequest(request.Object, correlationId, cc);
+        var result = await _service.ProcessRequest(request.Object, _correlationId, _cc);
 
         // Assert
         Assert.Equal(InitResultStatus.ServerError, result.Status);
@@ -337,15 +323,13 @@ public class InitServiceTests
     {
         // Arrange
         var request = CreateMockHttpRequest();
-        var correlationId = Guid.NewGuid();
-        var cc = _fixture.Create<string>();
         var baseArg = _fixture.Create<DdeiBaseArgDto>();
 
-        _configurationMock.Setup(c => c["RedirectUrl:CaseworkApp"]).Returns(_fixture.Create<string>());
-        _configurationMock.Setup(c => c["RedirectUrl:LccUi"]).Returns(_fixture.Create<string>());
+        _configurationMock.Setup(c => c["RedirectUrl:CaseworkApp"]).Returns(_redirectUrlCwa);
+        _configurationMock.Setup(c => c["RedirectUrl:LccUi"]).Returns(_redirectUrlLccUi);
 
         _ddeiArgFactoryMock
-            .Setup(f => f.CreateBaseArg(It.IsAny<string>(), correlationId))
+            .Setup(f => f.CreateBaseArg(It.IsAny<string>(), _correlationId))
             .Returns(baseArg);
 
         _ddeiClientMock
@@ -353,17 +337,17 @@ public class InitServiceTests
             .ReturnsAsync(_fixture.Create<string>());
 
         // Act
-        await _service.ProcessRequest(request.Object, correlationId, cc);
+        await _service.ProcessRequest(request.Object, _correlationId, _cc);
 
         // Assert
         _ddeiArgFactoryMock.Verify(
             f => f.CreateBaseArg(
                 It.Is<string>(authContext => !string.IsNullOrEmpty(authContext)),
-                correlationId),
+                _correlationId),
             Times.Once);
     }
 
-    private Mock<HttpRequest> CreateMockHttpRequest(string scheme = "https", string host = "localhost", int? port = null)
+    private static Mock<HttpRequest> CreateMockHttpRequest(string scheme = "https", string host = "localhost", int? port = null)
     {
         var request = new Mock<HttpRequest>();
         var hostString = port.HasValue &&
