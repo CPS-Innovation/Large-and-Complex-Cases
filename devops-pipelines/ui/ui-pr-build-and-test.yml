@@ -65,6 +65,12 @@ stages:
               testResultsFiles: 'ui-spa/coverage/unit-test-results.xml'
               publishRunAttachments: true
             condition: always()
+          
+          - task: UseDotNet@2
+            displayName: 'Use .NET SDK'
+            inputs:
+              packageType: 'sdk'
+              version: '8.x'
 
           - task: PublishCodeCoverageResults@2
             displayName: 'Publish UI Code Coverage'
