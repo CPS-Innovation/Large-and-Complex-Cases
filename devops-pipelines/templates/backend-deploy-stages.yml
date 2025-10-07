@@ -92,25 +92,16 @@ stages:
             scriptType: 'bash'
             scriptLocation: 'inlineScript'
             inlineScript: |
-              declare -A secrets=(
-                ["ConnectionStrings--CaseManagementDatastoreConnection"]="$(CaseManagementDatastoreConnection)"
-                ["EgressOptions--Username"]="$(EgressOptionsUsername)" 
-                ["EgressOptions--Password"]="$(EgressOptionsPassword)"
-                ["DDEIOptions--AccessKey"]="$(DDEIOptionsAccessKey)"
-                ["NetAppOptions--AccessKey"]="$(NetAppOptionsAccessKey)"
-                ["NetAppOptions--SecretKey"]="$(NetAppOptionsSecretKey)"
-                ["FileTransferApiOptions--AccessKey"]="$(FileTransferApiOptionsAccessKey)"
-              )
-              bash $(scripts_directory)/refactored-populateKV.sh $(keyVaultName) secrets
-          # env:
-          #   KEY_VAULT_NAME: $(keyVaultName)
-          #   CASE_MANAGEMENT_DATASTORE_CONNECTION: $(CaseManagementDatastoreConnection)
-          #   EGRESS_OPTIONS_USERNAME: $(EgressOptionsUsername)
-          #   EGRESS_OPTIONS_PASSWORD: $(EgressOptionsPassword)
-          #   DDEI_OPTIONS_ACCESS_KEY: $(DDEIOptionsAccessKey)
-          #   NET_APP_OPTIONS_ACCESS_KEY: $(NetAppOptionsAccessKey)
-          #   NET_APP_OPTIONS_SECRET_KEY: $(NetAppOptionsSecretKey)
-          #   FILE_TRANSFER_API_OPTIONS_ACCESS_KEY: $(FileTransferApiOptionsAccessKey)
+              bash $(scripts_directory)/refactored-populateKV.sh
+          env:
+            KEY_VAULT_NAME: $(keyVaultName)
+            CASE_MANAGEMENT_DATASTORE_CONNECTION: $(CaseManagementDatastoreConnection)
+            EGRESS_OPTIONS_USERNAME: $(EgressOptionsUsername)
+            EGRESS_OPTIONS_PASSWORD: $(EgressOptionsPassword)
+            DDEI_OPTIONS_ACCESS_KEY: $(DDEIOptionsAccessKey)
+            NET_APP_OPTIONS_ACCESS_KEY: $(NetAppOptionsAccessKey)
+            NET_APP_OPTIONS_SECRET_KEY: $(NetAppOptionsSecretKey)
+            FILE_TRANSFER_API_OPTIONS_ACCESS_KEY: $(FileTransferApiOptionsAccessKey)
 
 - stage:  Database_Migration_${{ parameters.environment }}
   displayName: '${{ parameters.environment }} - Database Migration'
