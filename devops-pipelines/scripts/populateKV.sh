@@ -29,7 +29,6 @@ set_kv_secret() {
 }
 
 echo "📋 Setting storage connection secrets..."
-
 # Database Connection String
 set_kv_secret "ConnectionStrings--CaseManagementDatastoreConnection" "$CASE_MANAGEMENT_DATASTORE_CONNECTION" "connection string"
 
