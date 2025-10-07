@@ -92,7 +92,7 @@ stages:
             scriptType: 'bash'
             scriptLocation: 'inlineScript'
             inlineScript: |
-              bash $(scripts_directory)/refactored-populateKV.sh
+              bash $(scripts_directory)/populateKV.sh
           env:
             KEY_VAULT_NAME: $(keyVaultName)
             CASE_MANAGEMENT_DATASTORE_CONNECTION: $(CaseManagementDatastoreConnection)
