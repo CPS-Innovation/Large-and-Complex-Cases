@@ -55,3 +55,27 @@ if [ "$exit_code" -eq 1 ]; then
     echo "Some secrets were not set: $exit_message"
     exit 1
 fi
+
+# Verify PostgreSQL connection string was set correctly (SECURELY)
+echo "🔍 Verifying PostgreSQL connection string secret..."
+POSTGRES_SECRET_EXISTS=$(az keyvault secret show --vault-name "$KEY_VAULT_NAME" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query "id" -o tsv 2>/dev/null || echo "")
+
+if [ -n "$POSTGRES_SECRET_EXISTS" ]; then
+    echo "✅ PostgreSQL connection string secret exists in Key Vault"
+    
+    # Test if we can retrieve the value WITHOUT storing it in a variable (for security)
+    # We only check if the secret can be retrieved, not store its content
+    if az keyvault secret show --vault-name "$KEY_VAULT_NAME" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv >/dev/null 2>&1; then
+    # Get just the length without storing the actual secret
+        SECRET_LENGTH=$(az keyvault secret show --vault-name "$KEY_VAULT_NAME" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | wc -c)
+        echo "✅ PostgreSQL connection string value is accessible (length: $SECRET_LENGTH characters)"
+    else
+        echo "❌ PostgreSQL connection string secret exists but value is empty or inaccessible"
+        exit 1
+    fi
+else
+    echo "❌ PostgreSQL connection string secret was not created in Key Vault"
+    echo "This indicates the variable 'CaseManagementDatastoreConnection' was empty or not provided"
+    echo "Check variable group: lacc-backend-config-${{ lower(parameters.environment) }}"
+    exit 1
+fi
