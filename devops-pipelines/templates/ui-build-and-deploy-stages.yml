@@ -142,7 +142,7 @@ stages:
                     bash '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/installAzureCli.sh'
 
               - task: AzureCLI@2
-                displayName: 'Verify Function App Deployment'
+                displayName: 'Verify App Deployment'
                 inputs:
                   azureSubscription: ${{ parameters.azureSubscription }}
                   scriptType: 'bash'
