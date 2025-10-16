@@ -68,7 +68,7 @@ stages:
               publishRunAttachments: true
             condition: always()
 
-          - template: ../templates/test-e2e.yml
+          - template: ../templates/test-e2e-steps.yml
 
           - script: |
               # Combine the coverage reports for unit and E2E tests
