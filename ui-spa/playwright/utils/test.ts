@@ -22,7 +22,7 @@ const test = base.extend<{
 const nycOutputDir = path.join(process.cwd(), "playwright", ".nyc_output")
 
 test.afterEach(async ({ page }) => {
-  const cov = await page.evaluate(() => (globalThis as CoverageMapData | undefined).__coverage__);
+  const cov = await page.evaluate(() => (globalThis as unknown as CoverageMapData | undefined)?.__coverage__);
   if (cov) {
     fs.mkdirSync(nycOutputDir, { recursive: true });
     fs.writeFileSync(
