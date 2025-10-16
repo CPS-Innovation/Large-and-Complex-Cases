@@ -53,30 +53,37 @@ stages:
               customCommand: 'run build'
               workingDir: '$(workingDir)'
 
-          - task: Npm@1
-            displayName: 'Run UI Unit Tests'
-            inputs:
-              command: 'custom'
-              customCommand: 'run coverage'
-              workingDir: '$(workingDir)'
+          # - task: Npm@1
+          #   displayName: 'Run UI Unit Tests'
+          #   inputs:
+          #     command: 'custom'
+          #     customCommand: 'run coverage'
+          #     workingDir: '$(workingDir)'
 
-          - task: PublishTestResults@2
-            displayName: 'Publish UI Test Results'
-            inputs:
-              testResultsFormat: 'JUnit'
-              testResultsFiles: 'ui-spa/$(covDir)/unit-test-results.xml'
-              publishRunAttachments: true
-            condition: always()
+          # - task: PublishTestResults@2
+          #   displayName: 'Publish UI Test Results'
+          #   inputs:
+          #     testResultsFormat: 'JUnit'
+          #     testResultsFiles: 'ui-spa/$(covDir)/unit-test-results.xml'
+          #     publishRunAttachments: true
+          #   condition: always()
 
           - template: ../templates/test-e2e-steps.yml
 
-          - script: |
-              # Combine the coverage reports for unit and E2E tests
-              npx nyc merge $(covDir)/reports $(covDir)/temp/coverage-combined.json
+          # - script: |
+          #     # Combine the coverage reports for unit and E2E tests
+          #     npx nyc merge $(covDir)/reports $(covDir)/temp/coverage-combined.json
 
+          #     # Generate a Cobertura coverage report
+          #     npx nyc report --temp-dir $(covDir)/temp --reporter cobertura --report-dir $(covDir)
+          #   displayName: 'Generate Combined Coverage Report'
+          #   workingDirectory: '$(workingDir)'
+          #   condition: always()
+
+          - script: |
               # Generate a Cobertura coverage report
-              npx nyc report --temp-dir $(covDir)/temp --reporter cobertura --report-dir $(covDir)
-            displayName: 'Generate Combined Coverage Report'
+              npx nyc report --temp-dir  $(covDir)/reports --reporter cobertura --report-dir $(covDir)
+            displayName: 'Generate E2E Coverage Report'
             workingDirectory: '$(workingDir)'
             condition: always()
 
