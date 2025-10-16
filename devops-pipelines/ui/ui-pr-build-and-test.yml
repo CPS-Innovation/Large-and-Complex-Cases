@@ -67,18 +67,10 @@ stages:
               testResultsFiles: 'ui-spa/$(covDir)/unit-test-results.xml'
               publishRunAttachments: true
             condition: always()
-          
-          - task: UseDotNet@2
-            displayName: 'Use .NET SDK'
-            inputs:
-              packageType: 'sdk'
-              version: '8.x'
 
           - template: ../templates/test-e2e.yml
 
           - script: |
-              covDir="coverage"
-              
               # Combine the coverage reports for unit and E2E tests
               npx nyc merge $(covDir)/reports $(covDir)/temp/coverage-combined.json
 
@@ -88,10 +80,14 @@ stages:
             workingDirectory: '$(workingDir)'
             condition: always()
 
+          - task: UseDotNet@2
+            displayName: 'Use .NET SDK'
+            inputs:
+              packageType: 'sdk'
+              version: '8.x'
+
           - task: PublishCodeCoverageResults@2
             displayName: 'Publish UI Code Coverage'
             inputs:
-              summaryFileLocation: 'ui-spa/coverage/cobertura-coverage.xml'
+              summaryFileLocation: 'ui-spa/$(covDir)/cobertura-coverage.xml'
             condition: always()
-
-          - template: ../templates/test-e2e-steps.yml
