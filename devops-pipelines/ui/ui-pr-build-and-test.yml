@@ -97,8 +97,10 @@ stages:
 
           - script: |
               export PATH="$PATH:$HOME/.dotnet/tools"
-                
-              dotnet tool install --global dotnet-reportgenerator-globaltool
+              
+              if ! dotnet reportgenerator --version &> /dev/null; then
+                dotnet tool install --global dotnet-reportgenerator-globaltool
+              fi
 
               reportgenerator \
                 -reports:"$(covDir)/unit/cobertura-coverage.xml;$(covDir)/e2e/cobertura-coverage.xml" \
