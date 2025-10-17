@@ -25,9 +25,6 @@ stages:
       - job: Build_and_Test
         displayName: 'Build & Test App'
         steps:
-          - checkout: self
-            sparseCheckoutDirectories: ui-spa devops-pipelines/scripts
-
           - task: UseNode@1
             displayName: 'Use Node.js'
             inputs:
@@ -53,38 +50,43 @@ stages:
               customCommand: 'run build'
               workingDir: '$(workingDir)'
 
-          # - task: Npm@1
-          #   displayName: 'Run UI Unit Tests'
-          #   inputs:
-          #     command: 'custom'
-          #     customCommand: 'run coverage'
-          #     workingDir: '$(workingDir)'
+# ---------- UNIT TESTS (Vitest) ----------
+          - task: Npm@1
+            displayName: 'Run UI Unit Tests with Coverage'
+            inputs:
+              command: 'custom'
+              customCommand: 'run unit:coverage'
+              workingDir: '$(workingDir)'
 
-          # - task: PublishTestResults@2
-          #   displayName: 'Publish UI Test Results'
-          #   inputs:
-          #     testResultsFormat: 'JUnit'
-          #     testResultsFiles: 'ui-spa/$(covDir)/unit-test-results.xml'
-          #     publishRunAttachments: true
-          #   condition: always()
+          - task: PublishTestResults@2
+            displayName: 'Publish Unit Test Results (JUnit)'
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: '$(workingDir)/$(covDir)/unit-test-results.xml'
+              publishRunAttachments: true
+            condition: always()
 
-          - template: ../templates/test-e2e-steps.yml
+# ---------- E2E TESTS (Playwright) ----------
+          - task: Npm@1
+            displayName: 'Install Playwright Browsers'
+            inputs:
+              command: 'custom'
+              customCommand: 'exec playwright install -- --with-deps'
+              workingDir: '$(workingDir)'
 
-          # - script: |
-          #     # Combine the coverage reports for unit and E2E tests
-          #     npx nyc merge $(covDir)/reports $(covDir)/temp/coverage-combined.json
-
-          #     # Generate a Cobertura coverage report
-          #     npx nyc report --temp-dir $(covDir)/temp --reporter cobertura --report-dir $(covDir)
-          #   displayName: 'Generate Combined Coverage Report'
-          #   workingDirectory: '$(workingDir)'
-          #   condition: always()
-
-          - script: |
-              # Generate a Cobertura coverage report
-              npx nyc report --temp-dir  $(covDir)/reports --reporter cobertura --report-dir $(covDir)
-            displayName: 'Generate E2E Coverage Report'
-            workingDirectory: '$(workingDir)'
+          - task: Npm@1
+            displayName: 'Run E2E Tests with Coverage'
+            inputs:
+              command: 'custom'
+              customCommand: 'run e2e:coverage'
+              workingDir: '$(workingDir)'
+          
+          - task: PublishTestResults@2
+            displayName: 'Publish E2E Test Results (JUnit)'
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: '$(workingDir)/playwright/e2e-test-results.xml'
+              publishRunAttachments: true
             condition: always()
 
           - task: UseDotNet@2
@@ -93,8 +95,25 @@ stages:
               packageType: 'sdk'
               version: '8.x'
 
+          - script: |
+              export PATH="$PATH:$HOME/.dotnet/tools"
+                
+              dotnet tool install --global dotnet-reportgenerator-globaltool
+
+              reportgenerator \
+                -reports:"$(covDir)/unit/cobertura-coverage.xml;$(covDir)/e2e/cobertura-coverage.xml" \
+                -targetdir:"$(covDir)/merged" \
+                -reporttypes:"Cobertura;HtmlInline_AzurePipelines"
+            displayName: 'Generate Combined Coverage Report'
+            workingDirectory: '$(workingDir)'
+
           - task: PublishCodeCoverageResults@2
-            displayName: 'Publish UI Code Coverage'
+            displayName: 'Publish Combined Code Coverage'
             inputs:
-              summaryFileLocation: 'ui-spa/$(covDir)/cobertura-coverage.xml'
-            condition: always()
+              summaryFileLocation: '$(workingDir)/$(covDir)/merged/Cobertura.xml'
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Upload merged coverage HTML'
+            inputs:
+              pathtoPublish: '$(workingDir)/coverage/merged'
+              artifactName: 'coverage-merged-html'
