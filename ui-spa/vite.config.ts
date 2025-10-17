@@ -16,7 +16,7 @@ export default defineConfig(({ command, mode }) => {
       svgr(),
       isE2ECoverage &&
         istanbul({
-          include: ["src/**/*"],
+          include: ["src/*"],
           exclude: [
             "src/**/*.{test,spec}.{ts,tsx}",
             "src/tests/*",
