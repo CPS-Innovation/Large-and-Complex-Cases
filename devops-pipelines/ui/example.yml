@@ -1,0 +1,110 @@
+something like the below:
+ 
+trigger:
+- main
+pool:
+  vmImage: 'ubuntu-latest'
+variables:
+  workingDir: 'ui-spa'
+  covDir: 'coverage'   # relative to workingDir
+steps:
+# Node + restore
+- task: NodeTool@0
+  inputs:
+    versionSpec: '20.x'
+  displayName: 'Use Node 20'
+- script: npm ci
+  workingDirectory: '$(workingDir)'
+  displayName: 'Install dependencies'
+# ---------- UNIT TESTS (Vitest) ----------
+- task: Npm@1
+  displayName: 'Run UI Unit Tests (with coverage)'
+  inputs:
+    command: 'custom'
+    customCommand: 'run coverage:unit'
+    workingDir: '$(workingDir)'
+- task: PublishTestResults@2
+  displayName: 'Publish Unit Test Results (JUnit)'
+  inputs:
+    testResultsFormat: 'JUnit'
+    testResultsFiles: '$(workingDir)/coverage/unit-test-results.xml'  # produced by our vitest config
+    publishRunAttachments: true
+  condition: always()
+# Produce Cobertura XML for UNIT from Vitest JSON
+- task: Npm@1
+  displayName: 'Build Cobertura for Unit'
+  inputs:
+    command: 'custom'
+    customCommand: 'run coverage:unit:cobertura'
+    workingDir: '$(workingDir)'
+# ---------- E2E TESTS (Playwright) ----------
+# Install browsers
+- task: Npm@1
+  displayName: 'Install Playwright browsers'
+  inputs:
+    command: 'custom'
+    customCommand: 'exec playwright install -- --with-deps'
+    workingDir: '$(workingDir)'
+# Run Playwright with instrumentation ON
+- task: Npm@1
+  displayName: 'Run E2E tests (instrumented for coverage)'
+  inputs:
+    command: 'custom'
+    customCommand: 'run e2e:test:ci'
+    workingDir: '$(workingDir)'
+  env:
+    E2E_COVERAGE: '1'    # <— IMPORTANT: turns on vite-plugin-istanbul during E2E
+# Publish E2E JUnit
+- task: PublishTestResults@2
+  displayName: 'Publish E2E Test Results (JUnit)'
+  inputs:
+    testResultsFormat: 'JUnit'
+    testResultsFiles: '$(workingDir)/playwright/e2e-test-results.xml'
+    publishRunAttachments: true
+  condition: always()
+# Optional: keep Playwright HTML report
+- task: PublishBuildArtifacts@1
+  displayName: 'Upload Playwright HTML report'
+  inputs:
+    pathtoPublish: '$(workingDir)/playwright/playwright-report'
+    artifactName: 'e2e-test-report'
+  condition: always()
+# Produce Cobertura XML for E2E from .nyc_output JSONs
+- task: Npm@1
+  displayName: 'Build Cobertura for E2E'
+  inputs:
+    command: 'custom'
+    customCommand: 'run coverage:e2e:cobertura'
+    workingDir: '$(workingDir)'
+# ---------- MERGE WITH REPORTGENERATOR ----------
+# Install ReportGenerator (global tool)
+- task: UseDotNet@2
+  displayName: 'Use .NET SDK'
+  inputs:
+    packageType: 'sdk'
+    version: '8.x'
+- script: dotnet tool install --global dotnet-reportgenerator-globaltool
+  displayName: 'Install ReportGenerator'
+# Merge UNIT + E2E Cobertura -> ONE report + HTML
+- script: |
+    reportgenerator \
+      -reports:"$(workingDir)/coverage/unit/cobertura-coverage.xml;$(workingDir)/coverage/e2e/cobertura-coverage.xml" \
+      -targetdir:"$(workingDir)/coverage/merged" \
+      -reporttypes:"Cobertura;HtmlInline_AzurePipelines"
+  displayName: 'Merge coverage with ReportGenerator'
+# Publish COMBINED coverage (single tab in ADO)
+- task: PublishCodeCoverageResults@2
+  displayName: 'Publish combined UI code coverage'
+  inputs:
+    summaryFileLocation: '$(workingDir)/coverage/merged/Cobertura.xml'
+    # Optional: help ADO map file paths to repo browser
+    # pathToSources: '$(Build.SourcesDirectory)/ui-spa'
+  condition: always()
+# Optional: upload merged HTML report
+- task: PublishBuildArtifacts@1
+  displayName: 'Upload merged coverage HTML'
+  inputs:
+    pathtoPublish: '$(workingDir)/coverage/merged'
+    artifactName: 'coverage-merged-html'
+  condition: always()
+ 

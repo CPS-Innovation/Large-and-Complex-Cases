@@ -11,7 +11,11 @@
     "prettier": "prettier --check ./src",
     "prettier:format": "prettier --write ./src",
     "test": "vitest",
+<<<<<<< HEAD
     "unit:coverage": "vitest run --coverage",
+=======
+    "unit:coverage": "vitest run --coverage && npx nyc report -t coverage/reports -r cobertura --report-dir coverage/unit",
+>>>>>>> 449203e (Use reportGenerator)
     "e2e:test": "playwright test --ui",
     "e2e:report": "playwright show-report ./playwright/playwright-report",
     "e2e:build": "tsc -b && vite build --mode playwright",

@@ -143,6 +143,18 @@ stages:
               packageType: 'sdk'
               version: '8.x'
 
+          - script: |
+              export PATH="$PATH:$HOME/.dotnet/tools"
+                
+              dotnet tool install --global dotnet-reportgenerator-globaltool
+
+              reportgenerator \
+                -reports:"$(covDir)/unit/cobertura-coverage.xml;$(covDir)/e2e/cobertura-coverage.xml" \
+                -targetdir:"$(covDir)/merged" \
+                -reporttypes:"Cobertura;HtmlInline_AzurePipelines"
+            displayName: 'Generate Combined Coverage Report'
+            workingDirectory: '$(workingDir)'
+
           - task: PublishCodeCoverageResults@2
             displayName: 'Publish Combined Code Coverage'
             inputs:
