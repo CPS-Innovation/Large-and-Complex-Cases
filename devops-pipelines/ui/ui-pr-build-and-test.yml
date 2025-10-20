@@ -133,7 +133,7 @@ stages:
               reportgenerator \
                 -reports:"$(covDir)/unit/cobertura-coverage.xml;$(covDir)/e2e/cobertura-coverage.xml" \
                 -targetdir:"$(covDir)/merged" \
-                -reporttypes:"Cobertura;HtmlInline_AzurePipelines"
+                -reporttypes:"Cobertura"
             displayName: 'Generate Combined Coverage Report'
             workingDirectory: '$(workingDir)'
 
@@ -142,7 +142,3 @@ stages:
             inputs:
               summaryFileLocation: '$(workingDir)/$(covDir)/merged/Cobertura.xml'
               failIfCoverageEmpty: true
-
-          - publish: '$(workingDir)/$(covDir)/merged'
-            artifact: 'coverage-merged'
-            displayName: 'Upload merged coverage HTML'
