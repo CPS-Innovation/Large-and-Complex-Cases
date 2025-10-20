@@ -35,6 +35,12 @@ stages:
             inputs:
               command: 'ci'
               workingDir: '$(workingDir)'
+          
+          - task: UseDotNet@2
+            displayName: 'Use .NET SDK to publish Code Coverage'
+            inputs:
+              packageType: 'sdk'
+              version: '8.x'
 
           - task: Npm@1
             displayName: 'Lint Code'
@@ -93,12 +99,6 @@ stages:
               testResultsFiles: '$(workingDir)/playwright/e2e-test-results.xml'
               publishRunAttachments: false
             condition: always()
-
-          - task: UseDotNet@2
-            displayName: 'Use .NET SDK'
-            inputs:
-              packageType: 'sdk'
-              version: '8.x'
 
           - script: |
               export PATH="$PATH:$HOME/.dotnet/tools"
