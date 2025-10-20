@@ -47,7 +47,7 @@ export default defineConfig(({ command, mode }) => {
       },
       coverage: {
         enabled: true,
-        reporter: ["json", "html", "cobertura"],
+        reporter: ["json", "cobertura"],
         provider: "v8",
         reportsDirectory: "coverage/unit",
         include: ["src/*"],

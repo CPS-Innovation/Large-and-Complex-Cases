@@ -66,37 +66,6 @@ stages:
               publishRunAttachments: false
             condition: always()
           
-          - publish: '$(workingDir)/$(covDir)/unit'
-            artifact: 'unit-coverage-report'
-            displayName: 'Publish Unit Test Coverage Report as Pipeline Artifact'
-
-# ---------- E2E TESTS (Playwright) ----------
-          - task: Npm@1
-            displayName: 'Install Playwright Browsers'
-            inputs:
-              command: 'custom'
-              customCommand: 'exec playwright install -- --with-deps'
-              workingDir: '$(workingDir)'
-
-          - task: Npm@1
-            displayName: 'Run E2E Tests with Coverage'
-            inputs:
-              command: 'custom'
-              customCommand: 'run e2e:coverage'
-              workingDir: '$(workingDir)'
-          
-          - task: PublishTestResults@2
-            displayName: 'Publish E2E Test Results (JUnit)'
-            inputs:
-              testResultsFormat: 'JUnit'
-              testResultsFiles: '$(workingDir)/playwright/e2e-test-results.xml'
-              publishRunAttachments: false
-            condition: always()
-          
-          - publish: '$(workingDir)/$(covDir)/e2e'
-            artifact: 'e2e-coverage-report'
-            displayName: 'Publish E2E Coverage Report as Pipeline Artifact'
-
           - task: UseDotNet@2
             displayName: 'Use .NET SDK to publish Code Coverage'
             inputs:
@@ -111,19 +80,70 @@ stages:
               fi
 
               reportgenerator \
-                -reports:"$(covDir)/unit/cobertura-coverage.xml;$(covDir)/e2e/cobertura-coverage.xml" \
-                -targetdir:"$(covDir)/merged" \
-                -reporttypes:"Cobertura;HtmlInline_AzurePipelines"
-            displayName: 'Generate Combined Coverage Report'
+                -reports:"$(covDir)/unit/cobertura-coverage.xml \
+                -targetdir:"$(covDir)/unit" \
+                -reporttypes:"HtmlInline_AzurePipelines"
+            displayName: 'Generate Unit HTML Coverage Report'
             workingDirectory: '$(workingDir)'
+          
+          - publish: '$(workingDir)/$(covDir)/unit/*.html'
+            artifact: 'unit-coverage-report'
+            displayName: 'Publish Unit Test Coverage Report as Pipeline Artifact'
 
-          - task: PublishCodeCoverageResults@2
-            displayName: 'Publish Combined Code Coverage'
-            inputs:
-              summaryFileLocation: '$(workingDir)/$(covDir)/merged/Cobertura.xml'
+# # ---------- E2E TESTS (Playwright) ----------
+#           - task: Npm@1
+#             displayName: 'Install Playwright Browsers'
+#             inputs:
+#               command: 'custom'
+#               customCommand: 'exec playwright install -- --with-deps'
+#               workingDir: '$(workingDir)'
 
-          - task: PublishBuildArtifacts@1
-            displayName: 'Upload merged coverage HTML'
-            inputs:
-              pathtoPublish: '$(workingDir)/coverage/merged'
-              artifactName: 'coverage-merged'
+#           - task: Npm@1
+#             displayName: 'Run E2E Tests with Coverage'
+#             inputs:
+#               command: 'custom'
+#               customCommand: 'run e2e:coverage'
+#               workingDir: '$(workingDir)'
+          
+#           - task: PublishTestResults@2
+#             displayName: 'Publish E2E Test Results (JUnit)'
+#             inputs:
+#               testResultsFormat: 'JUnit'
+#               testResultsFiles: '$(workingDir)/playwright/e2e-test-results.xml'
+#               publishRunAttachments: false
+#             condition: always()
+          
+#           - publish: '$(workingDir)/$(covDir)/e2e'
+#             artifact: 'e2e-coverage-report'
+#             displayName: 'Publish E2E Coverage Report as Pipeline Artifact'
+
+#           - task: UseDotNet@2
+#             displayName: 'Use .NET SDK to publish Code Coverage'
+#             inputs:
+#               packageType: 'sdk'
+#               version: '8.x'
+
+#           - script: |
+#               export PATH="$PATH:$HOME/.dotnet/tools"
+              
+#               if ! dotnet reportgenerator --version &> /dev/null; then
+#                 dotnet tool install --global dotnet-reportgenerator-globaltool
+#               fi
+
+#               reportgenerator \
+#                 -reports:"$(covDir)/unit/cobertura-coverage.xml;$(covDir)/e2e/cobertura-coverage.xml" \
+#                 -targetdir:"$(covDir)/merged" \
+#                 -reporttypes:"Cobertura;HtmlInline_AzurePipelines"
+#             displayName: 'Generate Combined Coverage Report'
+#             workingDirectory: '$(workingDir)'
+
+#           - task: PublishCodeCoverageResults@2
+#             displayName: 'Publish Combined Code Coverage'
+#             inputs:
+#               summaryFileLocation: '$(workingDir)/$(covDir)/merged/Cobertura.xml'
+
+#           - task: PublishBuildArtifacts@1
+#             displayName: 'Upload merged coverage HTML'
+#             inputs:
+#               pathtoPublish: '$(workingDir)/coverage/merged'
+#               artifactName: 'coverage-merged'
