@@ -86,7 +86,7 @@ stages:
             displayName: 'Generate Unit HTML Coverage Report'
             workingDirectory: '$(workingDir)'
           
-          - publish: '$(workingDir)/$(covDir)/unit/*.html'
+          - publish: '$(workingDir)/$(covDir)/unit/index.html'
             artifact: 'unit-coverage-report'
             displayName: 'Publish Unit Test Coverage Report as Pipeline Artifact'
 
