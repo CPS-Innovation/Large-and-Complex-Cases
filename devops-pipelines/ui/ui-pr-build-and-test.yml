@@ -80,7 +80,7 @@ stages:
               fi
 
               reportgenerator \
-                -reports:"$(covDir)/unit/cobertura-coverage.xml \
+                -reports:"$(covDir)/unit/cobertura-coverage.xml" \
                 -targetdir:"$(covDir)/unit" \
                 -reporttypes:"HtmlInline_AzurePipelines"
             displayName: 'Generate Unit HTML Coverage Report'
