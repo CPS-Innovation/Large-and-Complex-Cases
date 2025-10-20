@@ -66,7 +66,7 @@ stages:
               publishRunAttachments: false
             condition: always()
           
-          - publish: '$(workingDir)/$(covDir)/unit/cobertura-coverage.xml'
+          - publish: '$(workingDir)/$(covDir)/unit'
             artifact: 'unit-coverage-report'
             displayName: 'Publish Unit Test Coverage Report as Pipeline Artifact'
 
@@ -93,7 +93,7 @@ stages:
               publishRunAttachments: false
             condition: always()
           
-          - publish: '$(workingDir)/$(covDir)/e2e/cobertura-coverage.xml'
+          - publish: '$(workingDir)/$(covDir)/e2e'
             artifact: 'e2e-coverage-report'
             displayName: 'Publish E2E Coverage Report as Pipeline Artifact'
 
@@ -122,8 +122,8 @@ stages:
             inputs:
               summaryFileLocation: '$(workingDir)/$(covDir)/merged/Cobertura.xml'
 
-          # - task: PublishBuildArtifacts@1
-          #   displayName: 'Upload merged coverage HTML'
-          #   inputs:
-          #     pathtoPublish: '$(workingDir)/coverage/merged'
-          #     artifactName: 'coverage-merged-html'
+          - task: PublishBuildArtifacts@1
+            displayName: 'Upload merged coverage HTML'
+            inputs:
+              pathtoPublish: '$(workingDir)/coverage/merged'
+              artifactName: 'coverage-merged'
