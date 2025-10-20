@@ -47,10 +47,17 @@ export default defineConfig(({ command, mode }) => {
       },
       coverage: {
         enabled: true,
+<<<<<<< HEAD
         reporter: ["json", "cobertura"],
         provider: "v8",
         reportsDirectory: "coverage/unit",
         include: ["src/**/*.{ts,tsx,js,jsx}"],
+=======
+        reporter: ["json", "html", "cobertura"],
+        provider: "v8",
+        reportsDirectory: "coverage/unit",
+        include: ["src/*"],
+>>>>>>> c29642b (upload separate code coverage reports as pipeline artifacts)
         exclude: [
           "src/**/*.{test,spec}.ts",
           "src/**/*.{test,spec}.tsx",

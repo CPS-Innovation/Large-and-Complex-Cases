@@ -12,15 +12,19 @@
     "prettier:format": "prettier --write ./src",
     "test": "vitest",
 <<<<<<< HEAD
+<<<<<<< HEAD
     "unit:coverage": "vitest run --coverage",
 =======
     "unit:coverage": "vitest run --coverage && npx nyc report -t coverage/reports -r cobertura --report-dir coverage/unit",
 >>>>>>> 449203e (Use reportGenerator)
+=======
+    "unit:coverage": "vitest run --coverage",
+>>>>>>> c29642b (upload separate code coverage reports as pipeline artifacts)
     "e2e:test": "playwright test --ui",
     "e2e:report": "playwright show-report ./playwright/playwright-report",
     "e2e:build": "tsc -b && vite build --mode playwright",
     "e2e:test:ci": "npm run e2e:build && cross-env CI=true playwright test",
-    "e2e:coverage": "rimraf playwright/.nyc_output && cross-env E2E_COVERAGE=1 npm run e2e:test:ci && npx nyc report -t playwright/.nyc_output -r cobertura --report-dir coverage/e2e"
+    "e2e:coverage": "rimraf playwright/.nyc_output && cross-env E2E_COVERAGE=1 npm run e2e:test:ci && npx nyc report -t playwright/.nyc_output -r cobertura -r html --report-dir coverage/e2e"
   },
   "dependencies": {
     "@azure/msal-browser": "^4.4.0",

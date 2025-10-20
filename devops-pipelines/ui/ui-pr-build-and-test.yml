@@ -113,7 +113,7 @@ stages:
               publishRunAttachments: false
             condition: always()
           
-          - publish: '$(workingDir)/$(covDir)/e2e/cobertura-coverage.xml'
+          - publish: '$(workingDir)/$(covDir)/e2e'
             artifact: 'e2e-coverage-report'
             displayName: 'Publish E2E Coverage Report as Pipeline Artifact'
 
