@@ -72,10 +72,8 @@ stages:
               publishRunAttachments: false
             condition: always()
           
-          - task: PublishCodeCoverageResults@2
-            displayName: 'Publish Unit Test Code Coverage'
-            inputs:
-              summaryFileLocation: '$(workingDir)/$(covDir)/unit/cobertura-coverage.xml'
+          - publish: '$(workingDir)/$(covDir)/unit/cobertura-coverage.xml'
+            artifact: 'unit-coverage-report'
 
 # ---------- E2E TESTS (Playwright) ----------
           - task: Npm@1
@@ -114,15 +112,13 @@ stages:
             displayName: 'Generate Combined Coverage Report'
             workingDirectory: '$(workingDir)'
 
-          - task: PublishCodeCoverageResults@2
-            displayName: 'Publish E2E Test Code Coverage'
-            inputs:
-              summaryFileLocation: '$(workingDir)/$(covDir)/e2e/cobertura-coverage.xml'
+          - publish: '$(workingDir)/$(covDir)/unit/cobertura-coverage.xml'
+            artifact: 'unit-coverage-report'
 
-          # - task: PublishCodeCoverageResults@2
-          #   displayName: 'Publish Combined Code Coverage'
-          #   inputs:
-          #     summaryFileLocation: '$(workingDir)/$(covDir)/merged/Cobertura.xml'
+          - task: PublishCodeCoverageResults@2
+            displayName: 'Publish Combined Code Coverage'
+            inputs:
+              summaryFileLocation: '$(workingDir)/$(covDir)/merged/Cobertura.xml'
 
           # - task: PublishBuildArtifacts@1
           #   displayName: 'Upload merged coverage HTML'
