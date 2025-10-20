@@ -69,7 +69,7 @@ stages:
           - task: PublishCodeCoverageResults@2
             displayName: 'Publish Unit Test Code Coverage'
             inputs:
-              summaryFileLocation: '$(covDir)/unit/cobertura-coverage.xml'
+              summaryFileLocation: '$(workingDir)/$(covDir)/unit/cobertura-coverage.xml'
 
 # ---------- E2E TESTS (Playwright) ----------
           - task: Npm@1
@@ -117,7 +117,7 @@ stages:
           - task: PublishCodeCoverageResults@2
             displayName: 'Publish E2E Test Code Coverage'
             inputs:
-              summaryFileLocation: '$(covDir)/e2e/cobertura-coverage.xml'
+              summaryFileLocation: '$(workingDir)/$(covDir)/e2e/cobertura-coverage.xml'
 
           # - task: PublishCodeCoverageResults@2
           #   displayName: 'Publish Combined Code Coverage'
