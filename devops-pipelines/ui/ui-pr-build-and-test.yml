@@ -161,11 +161,15 @@ stages:
               fi
 
               reportgenerator \
-                -reports:"$(covDir)/unit/cobertura-coverage.xml;$(covDir)/e2e/cobertura-coverage.xml" \
-                -targetdir:"$(covDir)/merged" \
-                -reporttypes:"Cobertura;HtmlInline_AzurePipelines"
-            displayName: 'Generate Combined Coverage Report'
+                -reports:"$(covDir)/unit/cobertura-coverage.xml \
+                -targetdir:"$(covDir)/unit" \
+                -reporttypes:"HtmlInline_AzurePipelines"
+            displayName: 'Generate Unit HTML Coverage Report'
             workingDirectory: '$(workingDir)'
+          
+          - publish: '$(workingDir)/$(covDir)/unit/*.html'
+            artifact: 'unit-coverage-report'
+            displayName: 'Publish Unit Test Coverage Report as Pipeline Artifact'
 
           - task: PublishCodeCoverageResults@2
             displayName: 'Publish E2E Test Code Coverage'

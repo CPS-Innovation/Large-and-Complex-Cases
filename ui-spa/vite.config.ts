@@ -48,12 +48,16 @@ export default defineConfig(({ command, mode }) => {
       coverage: {
         enabled: true,
 <<<<<<< HEAD
+<<<<<<< HEAD
         reporter: ["json", "cobertura"],
         provider: "v8",
         reportsDirectory: "coverage/unit",
         include: ["src/**/*.{ts,tsx,js,jsx}"],
 =======
         reporter: ["json", "html", "cobertura"],
+=======
+        reporter: ["json", "cobertura"],
+>>>>>>> 1307b3f (upload separate code coverage reports as pipeline artifacts)
         provider: "v8",
         reportsDirectory: "coverage/unit",
         include: ["src/*"],
