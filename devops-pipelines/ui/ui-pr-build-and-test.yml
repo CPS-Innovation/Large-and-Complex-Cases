@@ -158,7 +158,7 @@ stages:
             workingDirectory: '$(workingDir)'
 
           - task: PublishCodeCoverageResults@2
-            displayName: 'Publish Combined Code Coverage'
+            displayName: 'Publish E2E Test Code Coverage'
             inputs:
               summaryFileLocation: '$(workingDir)/$(covDir)/merged/Cobertura.xml'
               failIfCoverageEmpty: true
