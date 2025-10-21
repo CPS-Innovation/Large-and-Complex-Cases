@@ -22,7 +22,6 @@ export default defineConfig(({ command, mode }) => {
             "src/tests/*",
             "src/mocks",
             "src/common/types",
-            "src/components",
             "src/auth/mock",
             "src/auth/no-auth",
             "src/auth/index.ts",
