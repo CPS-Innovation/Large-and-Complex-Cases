@@ -16,9 +16,10 @@ export default defineConfig(({ command, mode }) => {
       svgr(),
       isE2ECoverage &&
         istanbul({
-          include: ["src/*"],
+          include: ["src/**/*.{ts,tsx,js,jsx}"],
           exclude: [
-            "src/**/*.{test,spec}.{ts,tsx}",
+            "src/**/*.{test,spec}.ts",
+            "src/**/*.{test,spec}.tsx",
             "src/tests/*",
             "src/mocks",
             "src/common/types",
@@ -49,8 +50,10 @@ export default defineConfig(({ command, mode }) => {
         reporter: ["json", "cobertura"],
         provider: "v8",
         reportsDirectory: "coverage/unit",
-        include: ["src/*"],
+        include: ["src/**/*.{ts,tsx,js,jsx}"],
         exclude: [
+          "src/**/*.{test,spec}.ts",
+          "src/**/*.{test,spec}.tsx",
           "src/mocks",
           "src/common/types",
           "src/components",
