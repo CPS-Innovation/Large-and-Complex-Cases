@@ -2,7 +2,6 @@ import { test as base, expect } from "@playwright/test";
 import { http } from "msw";
 import type { MockServiceWorker } from "playwright-msw";
 import { createWorkerFixture } from "playwright-msw";
-// import type { CoverageMapData } from "istanbul-lib-coverage";
 import fs from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
@@ -28,7 +27,7 @@ const test = base.extend<{
     );
     await fs.promises.mkdir(istanbulCLIOutput, { recursive: true });
     await context.exposeFunction("collectIstanbulCoverage", (coverageJSON: string) => {
-      if (coverageJSON)
+      if (coverageJSON) 
         fs.writeFileSync(path.join(istanbulCLIOutput, `playwright_coverage_${randomUUID()}.json`), coverageJSON);
     });
     await use(context);
