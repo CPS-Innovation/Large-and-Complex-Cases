@@ -43,7 +43,7 @@ export default defineConfig(({ command, mode }) => {
       include: ["src/**/*.{test,spec}.{ts,tsx}"],
       reporters: ["default", "junit"],
       outputFile: {
-        junit: "./coverage/unit-test-results.xml",
+        junit: "./unit-test-results.xml",
       },
       coverage: {
         enabled: true,

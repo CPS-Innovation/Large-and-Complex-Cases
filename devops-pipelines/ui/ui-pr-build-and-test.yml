@@ -62,7 +62,7 @@ stages:
             displayName: 'Publish Unit Test Results (JUnit)'
             inputs:
               testResultsFormat: 'JUnit'
-              testResultsFiles: '$(workingDir)/$(covDir)/unit-test-results.xml'
+              testResultsFiles: '$(workingDir)/unit-test-results.xml'
               publishRunAttachments: false
             condition: always()
           
