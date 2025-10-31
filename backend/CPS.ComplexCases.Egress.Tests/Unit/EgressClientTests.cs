@@ -159,6 +159,194 @@ public class EgressClientTests
         VerifyRequestFactoryCalls(arg, workspaceId, token);
     }
 
+    [Fact]
+    public async Task CreateWorkspaceAsync_ReturnsWorkspaceResponse()
+    {
+        // Arrange
+        var name = _fixture.Create<string>();
+        var description = _fixture.Create<string>();
+        var templateId = _fixture.Create<string>();
+        var workspaceId = _fixture.Create<string>();
+        var token = _fixture.Create<string>();
+
+        var arg = new CreateEgressWorkspaceArg
+        {
+            Name = name,
+            Description = description,
+            TemplateId = templateId
+        };
+
+        var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
+        var workspaceResponse = new CreateWorkspaceResponse
+        {
+            Id = workspaceId,
+            Name = name,
+            Description = description
+        };
+
+        _requestFactoryMock
+            .Setup(f => f.GetWorkspaceTokenRequest(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/auth"));
+
+        _requestFactoryMock
+            .Setup(f => f.CreateWorkspaceRequest(arg, token))
+            .Returns(new HttpRequestMessage(HttpMethod.Post, $"{TestUrl}/api/v1/workspaces"));
+
+        SetupHttpMockResponses(
+            ("token", tokenResponse),
+            ("workspace", workspaceResponse)
+        );
+
+        // Act
+        var result = await _client.CreateWorkspaceAsync(arg);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(workspaceId, result.Id);
+        Assert.Equal(name, result.Name);
+        Assert.Equal(description, result.Description);
+
+        _requestFactoryMock.Verify(f => f.GetWorkspaceTokenRequest(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+        _requestFactoryMock.Verify(f => f.CreateWorkspaceRequest(arg, token), Times.Once);
+    }
+
+    [Fact]
+    public async Task GrantWorkspacePermission_CompletesSuccessfully()
+    {
+        // Arrange
+        var workspaceId = _fixture.Create<string>();
+        var email = _fixture.Create<string>();
+        var roleId = _fixture.Create<string>();
+        var token = _fixture.Create<string>();
+
+        var arg = new GrantWorkspacePermissionArg
+        {
+            WorkspaceId = workspaceId,
+            Username = email,
+            RoleId = roleId
+        };
+
+        var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
+
+        _requestFactoryMock
+            .Setup(f => f.GetWorkspaceTokenRequest(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/auth"));
+
+        _requestFactoryMock
+            .Setup(f => f.GrantWorkspacePermissionRequest(arg, token))
+            .Returns(new HttpRequestMessage(HttpMethod.Post, $"{TestUrl}/api/v1/workspaces/{workspaceId}/permissions"));
+
+        SetupHttpMockResponses(
+            ("token", tokenResponse),
+            ("permission", new { })
+        );
+
+        // Act
+        await _client.GrantWorkspacePermission(arg);
+
+        // Assert
+        _requestFactoryMock.Verify(f => f.GetWorkspaceTokenRequest(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+        _requestFactoryMock.Verify(f => f.GrantWorkspacePermissionRequest(arg, token), Times.Once);
+    }
+
+    [Fact]
+    public async Task ListWorkspaceRolesAsync_ReturnsRoles()
+    {
+        // Arrange
+        var workspaceId = _fixture.Create<string>();
+        var roleId1 = _fixture.Create<string>();
+        var roleId2 = _fixture.Create<string>();
+        var roleName1 = "Administrator";
+        var roleName2 = "Viewer";
+        var token = _fixture.Create<string>();
+
+        var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
+        var rolesResponse = new ListWorkspaceRolesResponse
+        {
+            Data = new[]
+            {
+                new WorkspaceRole
+                {
+                    RoleId = roleId1,
+                    RoleName = roleName1
+                },
+                new WorkspaceRole
+                {
+                    RoleId = roleId2,
+                    RoleName = roleName2
+                }
+            },
+            DataInfo = _fixture.Create<DataInfoResponse>()
+        };
+
+        _requestFactoryMock
+            .Setup(f => f.GetWorkspaceTokenRequest(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/auth"));
+
+        _requestFactoryMock
+            .Setup(f => f.ListWorkspaceRolesRequest(
+                It.Is<ListWorkspaceRolesArg>(a => a.WorkspaceId == workspaceId && a.Take == 100 && a.Skip == 0),
+                token))
+            .Returns(new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/workspaces/{workspaceId}/roles"));
+
+        SetupHttpMockResponses(
+            ("token", tokenResponse),
+            ("roles", rolesResponse)
+        );
+
+        // Act
+        var result = await _client.ListWorkspaceRolesAsync(workspaceId);
+
+        // Assert
+        var roles = result.ToArray();
+        Assert.Equal(2, roles.Length);
+        Assert.Contains(roles, r => r.RoleId == roleId1 && r.RoleName == roleName1);
+        Assert.Contains(roles, r => r.RoleId == roleId2 && r.RoleName == roleName2);
+
+        _requestFactoryMock.Verify(f => f.GetWorkspaceTokenRequest(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+        _requestFactoryMock.Verify(f => f.ListWorkspaceRolesRequest(
+            It.Is<ListWorkspaceRolesArg>(a => a.WorkspaceId == workspaceId && a.Take == 100 && a.Skip == 0),
+            token), Times.Once);
+    }
+
+    [Fact]
+    public async Task ListWorkspaceRolesAsync_ReturnsEmptyList_WhenNoRoles()
+    {
+        // Arrange
+        var workspaceId = _fixture.Create<string>();
+        var token = _fixture.Create<string>();
+
+        var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
+        var rolesResponse = new ListWorkspaceRolesResponse
+        {
+            Data = Array.Empty<WorkspaceRole>(),
+            DataInfo = _fixture.Create<DataInfoResponse>()
+        };
+
+        _requestFactoryMock
+            .Setup(f => f.GetWorkspaceTokenRequest(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/auth"));
+
+        _requestFactoryMock
+            .Setup(f => f.ListWorkspaceRolesRequest(
+                It.Is<ListWorkspaceRolesArg>(a => a.WorkspaceId == workspaceId),
+                token))
+            .Returns(new HttpRequestMessage(HttpMethod.Get, $"{TestUrl}/api/v1/workspaces/{workspaceId}/roles"));
+
+        SetupHttpMockResponses(
+            ("token", tokenResponse),
+            ("roles", rolesResponse)
+        );
+
+        // Act
+        var result = await _client.ListWorkspaceRolesAsync(workspaceId);
+
+        // Assert
+        Assert.Empty(result);
+
+        _requestFactoryMock.Verify(f => f.GetWorkspaceTokenRequest(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+    }
+
     private void SetupRequestFactory(string workspaceId, string token, ListEgressWorkspacesArg arg)
     {
         _requestFactoryMock
