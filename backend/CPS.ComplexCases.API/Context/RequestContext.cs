@@ -1,4 +1,6 @@
-﻿namespace CPS.ComplexCases.API.Context;
+﻿using CPS.ComplexCases.API.Exceptions;
+
+namespace CPS.ComplexCases.API.Context;
 
 public class RequestContext(Guid correlationId, string? cmsAuthValues, string? username)
 {
@@ -15,9 +17,10 @@ public class RequestContext(Guid correlationId, string? cmsAuthValues, string? u
 
     public string CmsAuthValues
     {
+
         get => InternalCmsAuthValues
-            // If the calling code is asking for CmsAuthValues and it isn't there then they are doing something wrong
-            ?? throw new ArgumentNullException(nameof(CmsAuthValues), "CmsAuthValues is not set");
+            // If the calling code is asking for CmsAuthValues and it isn't there then they've not logged into CMS
+            ?? throw new CpsAuthenticationException();
     }
 }
 
