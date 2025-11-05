@@ -95,8 +95,16 @@ public class DdeiClient(ILogger<DdeiClient> logger,
 
   public async Task<string?> GetCmsModernTokenAsync(DdeiBaseArgDto arg)
   {
-    var response = await CallDdei<DdeiCmsModernTokenDto>(_ddeiRequestFactory.CreateGetCmsModernTokenRequest(arg));
-    return response.CmsModernToken;
+    try
+    {
+      var response = await CallDdei<DdeiCmsModernTokenDto>(_ddeiRequestFactory.CreateGetCmsModernTokenRequest(arg));
+      return response.CmsModernToken;
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, $"Error in {nameof(GetCmsModernTokenAsync)}) - Correlation {arg.CorrelationId}");
+      throw;
+    }
   }
 
   private async Task<DdeiCaseSummaryDto> GetCaseInternalAsync(DdeiCaseIdArgDto arg) =>
