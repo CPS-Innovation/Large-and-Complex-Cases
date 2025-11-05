@@ -16,6 +16,8 @@ using Microsoft.OpenApi.Models;
 using CPS.ComplexCases.Common.OpenApi;
 using CPS.ComplexCases.API.Domain.Request;
 using CPS.ComplexCases.Data.Models.Requests;
+using CPS.ComplexCases.DDEI.Client;
+using CPS.ComplexCases.DDEI.Factories;
 
 namespace CPS.ComplexCases.API.Functions;
 
@@ -23,6 +25,8 @@ public class CreateEgressWorkspace(
     ICaseMetadataService caseMetadataService,
     IEgressClient egressClient,
     IEgressArgFactory egressArgFactory,
+    IDdeiClient ddeiClient,
+    IDdeiArgFactory ddeiArgFactory,
     ILogger<CreateEgressWorkspace> logger,
     IActivityLogService activityLogService,
     IRequestValidator requestValidator)
@@ -33,6 +37,8 @@ public class CreateEgressWorkspace(
     private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
     private readonly IEgressClient _egressClient = egressClient;
     private readonly IEgressArgFactory _egressArgFactory = egressArgFactory;
+    private readonly IDdeiClient _ddeiClient = ddeiClient;
+    private readonly IDdeiArgFactory _ddeiArgFactory = ddeiArgFactory;
 
     [Function(nameof(CreateEgressWorkspace))]
     [OpenApiOperation(operationId: nameof(CreateEgressWorkspace), tags: ["Egress"], Description = "Create an egress workspace")]
@@ -56,8 +62,21 @@ public class CreateEgressWorkspace(
             return new BadRequestObjectResult(request.ValidationErrors);
         }
 
+        var cmsArg = _ddeiArgFactory.CreateCaseArg(functionContext.GetRequestContext().CmsAuthValues, functionContext.GetRequestContext().CorrelationId, request.Value.CaseId);
+        var cmsResponse = await _ddeiClient.GetCaseAsync(cmsArg);
+
+        string workspaceName;
+        if (!string.IsNullOrWhiteSpace(cmsResponse.OperationName))
+        {
+            workspaceName = $"{cmsResponse.OperationName}-{cmsResponse.Urn}";
+        }
+        else
+        {
+            workspaceName = $"{cmsResponse.LeadDefendantName}-{cmsResponse.Urn}";
+        }
+
         var arg = _egressArgFactory.CreateEgressWorkspaceArg(
-            request.Value.Name,
+            workspaceName,
             request.Value.Description,
             request.Value.TemplateId);
 

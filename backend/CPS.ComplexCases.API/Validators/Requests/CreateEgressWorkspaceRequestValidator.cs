@@ -8,7 +8,6 @@ public class CreateEgressWorkspaceRequestValidator : AbstractValidator<CreateEgr
     public CreateEgressWorkspaceRequestValidator()
     {
         RuleFor(x => x.CaseId).NotEmpty().WithMessage("CaseId is required.");
-        RuleFor(x => x.Name).NotEmpty().WithMessage("Name is required.");
         RuleFor(x => x.TemplateId).NotEmpty().WithMessage("TemplateId is required.");
     }
 }
