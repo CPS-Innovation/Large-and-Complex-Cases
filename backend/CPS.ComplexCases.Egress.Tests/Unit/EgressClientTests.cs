@@ -345,6 +345,9 @@ public class EgressClientTests
         Assert.Empty(result);
 
         _requestFactoryMock.Verify(f => f.GetWorkspaceTokenRequest(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+        _requestFactoryMock.Verify(f => f.ListWorkspaceRolesRequest(
+            It.Is<ListWorkspaceRolesArg>(a => a.WorkspaceId == workspaceId),
+            token), Times.Once);
     }
 
     private void SetupRequestFactory(string workspaceId, string token, ListEgressWorkspacesArg arg)
