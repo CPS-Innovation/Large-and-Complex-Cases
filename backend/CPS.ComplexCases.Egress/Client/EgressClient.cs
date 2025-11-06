@@ -132,6 +132,70 @@ public class EgressClient(
     }
   }
 
+  public async Task<ListTemplatesDto> ListTemplatesAsync(PaginationArg arg)
+  {
+    var token = await GetWorkspaceToken();
+    var response = await SendRequestAsync<ListEgressTemplatesResponse>(_egressRequestFactory.ListTemplatesRequest(arg, token));
+
+    var templates = response.Data
+        .Select(data => new ListTemplateDataDto
+        {
+          Id = data.Id,
+          Name = data.Name,
+          Description = data.Description,
+          Priority = data.Priority
+        })
+        .ToArray();
+
+    return new ListTemplatesDto
+    {
+      Data = templates,
+      Pagination = new PaginationDto
+      {
+        Count = response.DataInfo.NumReturned,
+        Take = response.DataInfo.Limit,
+        Skip = response.DataInfo.Skip,
+        TotalResults = response.DataInfo.TotalResults
+      }
+    };
+  }
+
+  public async Task<CreateWorkspaceResponse> CreateWorkspaceAsync(CreateEgressWorkspaceArg arg)
+  {
+    var token = await GetWorkspaceToken();
+    return await SendRequestAsync<CreateWorkspaceResponse>(_egressRequestFactory.CreateWorkspaceRequest(arg, token));
+  }
+
+  public async Task GrantWorkspacePermission(GrantWorkspacePermissionArg arg)
+  {
+    var token = await GetWorkspaceToken();
+    await SendRequestAsync(_egressRequestFactory.GrantWorkspacePermissionRequest(arg, token));
+  }
+
+  public async Task<IEnumerable<ListWorkspaceRoleDto>> ListWorkspaceRolesAsync(string workspaceId)
+  {
+    var token = await GetWorkspaceToken();
+
+    // paginated in Egress but doesn't need to be here (never more than a few roles)
+    var arg = new ListWorkspaceRolesArg
+    {
+      WorkspaceId = workspaceId,
+      Take = 100,
+      Skip = 0
+    };
+
+    var response = await SendRequestAsync<ListWorkspaceRolesResponse>(_egressRequestFactory.ListWorkspaceRolesRequest(arg, token));
+
+    return response.Data
+        .Select(role => new ListWorkspaceRoleDto
+        {
+          RoleId = role.RoleId,
+          RoleName = role.RoleName
+        })
+        .ToArray();
+
+  }
+
   private async Task<IEnumerable<string>> GetPermissionsByRoleId(string roleId, string workspaceId, string token)
   {
     var arg = new GetWorkspacePermissionsByRoleIdArg

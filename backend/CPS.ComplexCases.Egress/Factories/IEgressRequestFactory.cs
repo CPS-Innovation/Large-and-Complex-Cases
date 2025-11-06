@@ -15,4 +15,8 @@ public interface IEgressRequestFactory
   HttpRequestMessage CompleteUploadRequest(CompleteUploadArg arg, string token);
   HttpRequestMessage CreateFolderRequest(CreateFolderArg arg, string token);
   HttpRequestMessage DeleteFilesRequest(DeleteFilesArg arg, string token);
+  HttpRequestMessage ListTemplatesRequest(PaginationArg arg, string token);
+  HttpRequestMessage CreateWorkspaceRequest(CreateEgressWorkspaceArg arg, string token);
+  HttpRequestMessage GrantWorkspacePermissionRequest(GrantWorkspacePermissionArg arg, string token);
+  HttpRequestMessage ListWorkspaceRolesRequest(ListWorkspaceRolesArg arg, string token);
 }
