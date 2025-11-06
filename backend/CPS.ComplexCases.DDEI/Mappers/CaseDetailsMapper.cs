@@ -12,6 +12,7 @@ public class CaseDetailsMapper : ICaseDetailsMapper
       CaseId = caseDetails.Id,
       Urn = caseDetails.Urn,
       LeadDefendantName = $"{caseDetails.LeadDefendantFirstNames} {caseDetails.LeadDefendantSurname}",
+      LeadDefendantSurname = caseDetails.LeadDefendantSurname,
       OperationName = caseDetails.Operation,
       RegistrationDate = caseDetails.RegistrationDate
     };

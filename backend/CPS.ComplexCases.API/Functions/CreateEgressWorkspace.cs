@@ -72,7 +72,7 @@ public class CreateEgressWorkspace(
         }
         else
         {
-            workspaceName = $"{cmsResponse.LeadDefendantName}-{cmsResponse.Urn}";
+            workspaceName = $"{cmsResponse.LeadDefendantSurname}-{cmsResponse.Urn}";
         }
 
         var arg = _egressArgFactory.CreateEgressWorkspaceArg(

@@ -105,7 +105,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             {
                 OperationName = _operationName,
                 Urn = _urn,
-                LeadDefendantName = _leadDefendantName
+                LeadDefendantSurname = _leadDefendantName
             };
 
             var expectedWorkspaceName = $"{_operationName}-{_urn}";
@@ -224,7 +224,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             {
                 OperationName = string.Empty,
                 Urn = _urn,
-                LeadDefendantName = _leadDefendantName
+                LeadDefendantSurname = _leadDefendantName
             };
 
             var expectedWorkspaceName = $"{_leadDefendantName}-{_urn}";
@@ -358,7 +358,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             {
                 OperationName = _operationName,
                 Urn = _urn,
-                LeadDefendantName = _leadDefendantName
+                LeadDefendantSurname = _leadDefendantName
             };
 
             var expectedWorkspaceName = $"{_operationName}-{_urn}";
