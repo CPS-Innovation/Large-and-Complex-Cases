@@ -119,6 +119,11 @@ steps:
             "slotSetting": false
           },
           {
+            "name": "Postgres__AuthMode",
+            "value": "$(PostgresAuthMode)",
+            "slotSetting": false
+          },
+          {
             "name": "WEBSITE_USE_PLACEHOLDER_DOTNETISOLATED",
             "value": "1",
             "slotSetting": false
