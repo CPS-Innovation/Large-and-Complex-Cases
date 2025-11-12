@@ -1,0 +1,8 @@
+root = true
+
+[*.cs]
+# Your normal rules apply to all C# files in this project
+
+# Exclude Migrations folder from IDE0005
+[Migrations/**.cs]
+dotnet_diagnostic.IDE0005.severity = none

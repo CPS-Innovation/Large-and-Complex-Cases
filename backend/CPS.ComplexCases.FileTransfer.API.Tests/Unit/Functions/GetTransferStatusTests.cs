@@ -10,7 +10,6 @@ using CPS.ComplexCases.FileTransfer.API.Tests.Unit.Stubs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.DurableTask.Client.Entities;
-using Microsoft.DurableTask.Entities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Moq;

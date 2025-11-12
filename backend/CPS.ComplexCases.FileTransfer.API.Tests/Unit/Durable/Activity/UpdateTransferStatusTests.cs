@@ -2,7 +2,6 @@ using AutoFixture;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.State;
-using CPS.ComplexCases.FileTransfer.API.Models.Domain;
 using CPS.ComplexCases.FileTransfer.API.Tests.Unit.Stubs;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Durable.Activity;
