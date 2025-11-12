@@ -112,7 +112,7 @@ stages:
                 export PATH="$PATH:$HOME/.dotnet/tools"
                 
                 if ! dotnet ef --version &> /dev/null; then
-                  dotnet tool install --global dotnet-ef
+                  dotnet tool install --global dotnet-ef --version $(dotNetVersion)
                 fi
 
                 dotnet ef migrations script \
