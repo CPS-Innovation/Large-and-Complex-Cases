@@ -1,4 +1,3 @@
-using System.Net;
 using System.Text;
 using AutoFixture;
 using CPS.ComplexCases.ActivityLog.Services;

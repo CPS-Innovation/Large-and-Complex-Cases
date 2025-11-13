@@ -1,6 +1,3 @@
-using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Abstractions;
-using Microsoft.OpenApi.Models;
-
 namespace CPS.ComplexCases.Common.OpenApi.Filters;
 
 public static class DocumentFilterHelper

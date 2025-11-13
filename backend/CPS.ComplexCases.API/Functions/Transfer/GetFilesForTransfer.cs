@@ -11,7 +11,6 @@ using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Domain.Request;
 using CPS.ComplexCases.API.Extensions;
 using CPS.ComplexCases.API.Validators.Requests;
-using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models.Requests;
 

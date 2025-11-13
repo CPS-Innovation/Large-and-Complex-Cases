@@ -1,17 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Suppress IDE0005 for this project since it has migrations -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);IDE0005</WarningsNotAsErrors>
   </PropertyGroup>
-
   <ItemGroup>
     
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.5">
@@ -23,11 +22,9 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
     <PackageReference Include="System.Text.Json" Version="9.0.5" />
   </ItemGroup>
-
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
       <_Parameter1>CPS.ComplexCases.ActivityLog.Tests</_Parameter1>
     </AssemblyAttribute>
-</ItemGroup>
-
+  </ItemGroup>
 </Project>
