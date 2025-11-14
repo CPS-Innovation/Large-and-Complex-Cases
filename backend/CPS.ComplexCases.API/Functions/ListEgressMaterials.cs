@@ -4,6 +4,7 @@
 using System.Net;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
+using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
 using Microsoft.AspNetCore.Http;
@@ -24,6 +25,9 @@ public class ListEgressMaterials(ILogger<ListEgressMaterials> logger,
     private readonly IEgressArgFactory _egressArgFactory = egressArgFactory;
     [Function(nameof(ListEgressMaterials))]
     [OpenApiOperation(operationId: nameof(ListEgressMaterials), tags: ["Egress"], Description = "Lists files and folders in Egress for a workspace.")]
+    [FunctionKeyAuth]
+    [CmsAuthValuesAuth]
+    [BearerTokenAuth]
     [OpenApiParameter(name: InputParameters.FolderId, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The folder-id to search for files/folders within.")]
     [OpenApiParameter(name: InputParameters.Skip, In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The number of items to skip.")]
     [OpenApiParameter(name: InputParameters.Take, In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The number of items to take.")]

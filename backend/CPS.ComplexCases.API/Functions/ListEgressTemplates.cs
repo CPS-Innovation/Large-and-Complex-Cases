@@ -1,5 +1,6 @@
 using System.Net;
 using CPS.ComplexCases.API.Constants;
+using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
 using Microsoft.AspNetCore.Http;
@@ -20,6 +21,9 @@ public class ListEgressTemplates(ILogger<ListEgressTemplates> logger,
     private readonly IEgressArgFactory _egressArgFactory = egressArgFactory;
     [Function(nameof(ListEgressTemplates))]
     [OpenApiOperation(operationId: nameof(ListEgressTemplates), tags: ["Egress"], Description = "Paginated list of workspace templates from Egress")]
+    [FunctionKeyAuth]
+    [CmsAuthValuesAuth]
+    [BearerTokenAuth]
     [OpenApiParameter(name: InputParameters.Skip, In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The number of items to skip.")]
     [OpenApiParameter(name: InputParameters.Take, In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The number of items to take.")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]
