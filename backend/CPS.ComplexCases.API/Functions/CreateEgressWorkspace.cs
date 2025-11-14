@@ -13,11 +13,11 @@ using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.ActivityLog.Services;
 using Microsoft.OpenApi.Models;
-using CPS.ComplexCases.Common.OpenApi;
 using CPS.ComplexCases.API.Domain.Request;
 using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
+using CPS.ComplexCases.Common.Attributes;
 
 namespace CPS.ComplexCases.API.Functions;
 
@@ -42,9 +42,9 @@ public class CreateEgressWorkspace(
 
     [Function(nameof(CreateEgressWorkspace))]
     [OpenApiOperation(operationId: nameof(CreateEgressWorkspace), tags: ["Egress"], Description = "Create an egress workspace")]
-    [OpenApiSecurity("auth_code_flow",
-                   SecuritySchemeType.OAuth2,
-                   Flows = typeof(AuthorizationCodeFlow))]
+    [FunctionKeyAuth]
+    [CmsAuthValuesAuth]
+    [BearerTokenAuth]
     [OpenApiRequestBody(ContentType.ApplicationJson, typeof(CreateEgressWorkspaceRequest), Description = "Body containing the workspace details to create")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]

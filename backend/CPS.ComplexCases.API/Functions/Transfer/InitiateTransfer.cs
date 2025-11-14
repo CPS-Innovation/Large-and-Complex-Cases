@@ -14,6 +14,7 @@ using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models.Requests;
 using Microsoft.OpenApi.Models;
+using CPS.ComplexCases.Common.Attributes;
 
 namespace CPS.ComplexCases.API.Functions.Transfer;
 
@@ -25,6 +26,9 @@ public class InitiateTransfer(ILogger<InitiateTransfer> logger, IFileTransferCli
 
     [Function(nameof(InitiateTransfer))]
     [OpenApiOperation(operationId: nameof(Run), tags: ["FileTransfer"], Description = "Initiate a file transfer.")]
+    [FunctionKeyAuth]
+    [CmsAuthValuesAuth]
+    [BearerTokenAuth]
     [OpenApiRequestBody(ContentType.ApplicationJson, typeof(InitiateTransferRequest), Description = "Body containing the file transfer request")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]

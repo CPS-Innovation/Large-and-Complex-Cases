@@ -11,6 +11,7 @@ using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
 using CPS.ComplexCases.DDEI.Models.Dto;
 using CPS.ComplexCases.API.Services;
+using CPS.ComplexCases.Common.Attributes;
 
 namespace CPS.ComplexCases.API.Functions;
 
@@ -26,11 +27,14 @@ public class FindCmsCase(ILogger<FindCmsCase> logger,
 
   [Function(nameof(FindCmsCase))]
   [OpenApiOperation(operationId: nameof(FindCmsCase), tags: ["CMS"], Description = "Finds a case in CMS based on operation name, URN, defendant name, and area.")]
+  [FunctionKeyAuth]
+  [CmsAuthValuesAuth]
+  [BearerTokenAuth]
   [OpenApiParameter(name: InputParameters.OperationName, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The operation name to search for.")]
   [OpenApiParameter(name: InputParameters.Urn, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The URN to search for.")]
   [OpenApiParameter(name: InputParameters.DefendantName, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The defendant name to search for.")]
   [OpenApiParameter(name: InputParameters.Area, In = ParameterLocation.Query, Required = true, Type = typeof(string), Description = "The area code to search for.")]
-  [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]
+  [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(IEnumerable<Domain.Response.CaseWithMetadataResponse>), Description = ApiResponseDescriptions.Success)]
   [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
   [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]
   [OpenApiResponseWithBody(statusCode: HttpStatusCode.Forbidden, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Forbidden)]
