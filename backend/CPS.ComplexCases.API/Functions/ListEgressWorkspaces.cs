@@ -1,6 +1,7 @@
 using System.Net;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
+using CPS.ComplexCases.API.Domain.Response;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Egress.Client;
@@ -32,7 +33,7 @@ public class ListEgressWorkspaces(ILogger<ListEgressWorkspaces> logger,
   [OpenApiParameter(name: InputParameters.WorkspaceName, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The workspace name to search for.")]
   [OpenApiParameter(name: InputParameters.Skip, In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The number of items to skip.")]
   [OpenApiParameter(name: InputParameters.Take, In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The number of items to take.")]
-  [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]
+  [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(ListWorkspacesResponse), Description = ApiResponseDescriptions.Success)]
   [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
   [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]
   [OpenApiResponseWithBody(statusCode: HttpStatusCode.Forbidden, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Forbidden)]
