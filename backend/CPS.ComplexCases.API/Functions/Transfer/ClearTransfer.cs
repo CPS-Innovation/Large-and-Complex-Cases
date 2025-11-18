@@ -1,5 +1,6 @@
 using System.Net;
 using CPS.ComplexCases.API.Constants;
+using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Common.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +18,9 @@ public class ClearTransfer(ICaseMetadataService caseMetadataService, ILogger<Cle
 
     [Function(nameof(ClearTransfer))]
     [OpenApiOperation(operationId: nameof(ClearTransfer), tags: ["FileTransfer"], Description = "Clear file transfer notification.")]
+    [OpenApiParameter(name: "transferId", In = ParameterLocation.Path, Required = true, Type = typeof(string), Description = "The Id of the transfer.")]
+    [CmsAuthValuesAuth]
+    [BearerTokenAuth]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]
