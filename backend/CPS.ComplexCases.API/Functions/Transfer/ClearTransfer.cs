@@ -18,7 +18,7 @@ public class ClearTransfer(ICaseMetadataService caseMetadataService, ILogger<Cle
 
     [Function(nameof(ClearTransfer))]
     [OpenApiOperation(operationId: nameof(ClearTransfer), tags: ["FileTransfer"], Description = "Clear file transfer notification.")]
-    [FunctionKeyAuth]
+    [OpenApiParameter(name: "transferId", In = ParameterLocation.Path, Required = true, Type = typeof(string), Description = "The Id of the transfer.")]
     [CmsAuthValuesAuth]
     [BearerTokenAuth]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]

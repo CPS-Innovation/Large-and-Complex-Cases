@@ -19,7 +19,6 @@ public class DownloadActivityLog(ILogger<DownloadActivityLog> logger, IActivityL
 
     [Function(nameof(DownloadActivityLog))]
     [OpenApiOperation(operationId: nameof(DownloadActivityLog), tags: ["ActivityLog"], Description = "Download activity log data in CSV format.")]
-    [FunctionKeyAuth]
     [CmsAuthValuesAuth]
     [BearerTokenAuth]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "text/csv", bodyType: typeof(byte[]), Description = "CSV file containing activity log file paths")]

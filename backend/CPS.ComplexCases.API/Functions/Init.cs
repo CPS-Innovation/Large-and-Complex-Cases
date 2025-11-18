@@ -5,7 +5,6 @@ using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Domain.Response;
 using CPS.ComplexCases.API.Services;
-using CPS.ComplexCases.Common.Attributes;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
@@ -22,7 +21,6 @@ public class Init(ILogger<Init> logger, IInitService initService)
 
     [Function(nameof(Init))]
     [OpenApiOperation(operationId: nameof(Init), tags: ["Authentication"], Description = "Represents a function that is the entry point for the LCC application")]
-    [FunctionKeyAuth]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]

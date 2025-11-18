@@ -42,7 +42,6 @@ public class CreateEgressWorkspace(
 
     [Function(nameof(CreateEgressWorkspace))]
     [OpenApiOperation(operationId: nameof(CreateEgressWorkspace), tags: ["Egress"], Description = "Create an egress workspace")]
-    [FunctionKeyAuth]
     [CmsAuthValuesAuth]
     [BearerTokenAuth]
     [OpenApiRequestBody(ContentType.ApplicationJson, typeof(CreateEgressWorkspaceRequest), Description = "Body containing the workspace details to create")]

@@ -29,7 +29,6 @@ public class CreateEgressConnection(ICaseMetadataService caseMetadataService, IE
 
   [Function(nameof(CreateEgressConnection))]
   [OpenApiOperation(operationId: nameof(CreateEgressConnection), tags: ["Egress"], Description = "Connect an Egress workspace to a case.")]
-  [FunctionKeyAuth]
   [CmsAuthValuesAuth]
   [BearerTokenAuth]
   [OpenApiRequestBody(ContentType.ApplicationJson, typeof(CreateEgressConnectionDto), Description = "Body containing the Egress connection to create")]

@@ -30,7 +30,6 @@ public class ListNetAppFolders(ILogger<ListNetAppFolders> logger,
 
     [Function(nameof(ListNetAppFolders))]
     [OpenApiOperation(operationId: nameof(ListNetAppFolders), tags: ["NetApp"], Description = "Lists folders in NetApp, initially based on operation name.")]
-    [FunctionKeyAuth]
     [CmsAuthValuesAuth]
     [BearerTokenAuth]
     [OpenApiParameter(name: InputParameters.OperationName, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The operation name to search for.")]

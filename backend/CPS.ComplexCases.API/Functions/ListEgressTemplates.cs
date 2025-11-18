@@ -22,7 +22,6 @@ public class ListEgressTemplates(ILogger<ListEgressTemplates> logger,
     private readonly IEgressArgFactory _egressArgFactory = egressArgFactory;
     [Function(nameof(ListEgressTemplates))]
     [OpenApiOperation(operationId: nameof(ListEgressTemplates), tags: ["Egress"], Description = "Paginated list of workspace templates from Egress")]
-    [FunctionKeyAuth]
     [CmsAuthValuesAuth]
     [BearerTokenAuth]
     [OpenApiParameter(name: InputParameters.Skip, In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The number of items to skip.")]

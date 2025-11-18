@@ -28,7 +28,6 @@ public class GetCase(ILogger<GetCase> logger,
 
     [Function(nameof(GetCase))]
     [OpenApiOperation(operationId: nameof(GetCase), tags: ["Cases"], Description = "Gets a case by ID from metadata service.")]
-    [FunctionKeyAuth]
     [CmsAuthValuesAuth]
     [BearerTokenAuth]
     [OpenApiParameter(name: "caseId", In = ParameterLocation.Path, Required = true, Type = typeof(string), Description = "The CMS case ID.")]

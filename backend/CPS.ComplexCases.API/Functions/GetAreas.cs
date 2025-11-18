@@ -24,7 +24,6 @@ public class GetAreas(ILogger<GetAreas> logger,
 
   [Function(nameof(GetAreas))]
   [OpenApiOperation(operationId: nameof(GetAreas), tags: ["CMS"], Description = "Gets the list of CPS areas from CMS.")]
-  [FunctionKeyAuth]
   [CmsAuthValuesAuth]
   [BearerTokenAuth]
   [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(AreasDto), Description = ApiResponseDescriptions.Success)]

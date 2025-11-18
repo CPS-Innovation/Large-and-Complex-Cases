@@ -24,7 +24,6 @@ public class ListNetAppFiles(ILogger<ListNetAppFiles> logger, INetAppClient netA
 
     [Function(nameof(ListNetAppFiles))]
     [OpenApiOperation(operationId: nameof(ListNetAppFiles), tags: ["NetApp"], Description = "Lists files in a NetApp bucket.")]
-    [FunctionKeyAuth]
     [CmsAuthValuesAuth]
     [BearerTokenAuth]
     [OpenApiParameter(name: InputParameters.Path, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The path to the destination folder.")]

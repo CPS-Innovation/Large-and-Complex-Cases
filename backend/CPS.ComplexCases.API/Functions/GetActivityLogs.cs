@@ -20,7 +20,6 @@ public class GetActivityLogs(ILogger<GetActivityLogs> logger, IActivityLogServic
 
     [Function(nameof(GetActivityLogs))]
     [OpenApiOperation(operationId: nameof(GetActivityLogs), tags: ["ActivityLog"], Description = "Lists filtered activity logs.")]
-    [FunctionKeyAuth]
     [CmsAuthValuesAuth]
     [BearerTokenAuth]
     [OpenApiParameter(name: InputParameters.FromDate, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The start date for filtering activity logs.")]

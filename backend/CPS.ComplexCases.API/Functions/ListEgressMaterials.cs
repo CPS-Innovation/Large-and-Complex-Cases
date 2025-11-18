@@ -26,7 +26,6 @@ public class ListEgressMaterials(ILogger<ListEgressMaterials> logger,
     private readonly IEgressArgFactory _egressArgFactory = egressArgFactory;
     [Function(nameof(ListEgressMaterials))]
     [OpenApiOperation(operationId: nameof(ListEgressMaterials), tags: ["Egress"], Description = "Lists files and folders in Egress for a workspace.")]
-    [FunctionKeyAuth]
     [CmsAuthValuesAuth]
     [BearerTokenAuth]
     [OpenApiParameter(name: InputParameters.FolderId, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The folder-id to search for files/folders within.")]

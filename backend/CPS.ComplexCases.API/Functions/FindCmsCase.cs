@@ -27,7 +27,6 @@ public class FindCmsCase(ILogger<FindCmsCase> logger,
 
   [Function(nameof(FindCmsCase))]
   [OpenApiOperation(operationId: nameof(FindCmsCase), tags: ["CMS"], Description = "Finds a case in CMS based on operation name, URN, defendant name, and area.")]
-  [FunctionKeyAuth]
   [CmsAuthValuesAuth]
   [BearerTokenAuth]
   [OpenApiParameter(name: InputParameters.OperationName, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The operation name to search for.")]

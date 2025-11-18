@@ -20,7 +20,6 @@ public class GetTransferStatus(ILogger<GetTransferStatus> logger, IFileTransferC
 
     [Function(nameof(GetTransferStatus))]
     [OpenApiOperation(operationId: nameof(Run), tags: ["FileTransfer"], Description = "Get status of a file transfer.")]
-    [FunctionKeyAuth]
     [CmsAuthValuesAuth]
     [BearerTokenAuth]
     [OpenApiParameter(name: "transferId", In = ParameterLocation.Path, Required = true, Type = typeof(string), Description = "The Id of the transfer.")]

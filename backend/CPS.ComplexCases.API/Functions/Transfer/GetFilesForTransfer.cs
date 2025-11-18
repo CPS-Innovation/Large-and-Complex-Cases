@@ -25,7 +25,6 @@ public class GetFilesForTransfer(IFileTransferClient transferClient, ILogger<Get
 
     [Function(nameof(GetFilesForTransfer))]
     [OpenApiOperation(operationId: nameof(GetFilesForTransfer), tags: ["FileTransfer"], Description = "Gets the complete list of files to be transferred from the source storage.")]
-    [FunctionKeyAuth]
     [CmsAuthValuesAuth]
     [BearerTokenAuth]
     [OpenApiRequestBody(ContentType.ApplicationJson, typeof(GetFilesForTransferRequest), Description = "Body containing the list of files or folders to be transferred from the source storage")]

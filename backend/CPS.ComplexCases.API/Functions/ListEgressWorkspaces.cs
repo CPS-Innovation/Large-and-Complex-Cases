@@ -27,7 +27,6 @@ public class ListEgressWorkspaces(ILogger<ListEgressWorkspaces> logger,
 
   [Function(nameof(ListEgressWorkspaces))]
   [OpenApiOperation(operationId: nameof(ListEgressWorkspaces), tags: ["Egress"], Description = "Lists workspaces in Egress based on name.")]
-  [FunctionKeyAuth]
   [CmsAuthValuesAuth]
   [BearerTokenAuth]
   [OpenApiParameter(name: InputParameters.WorkspaceName, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The workspace name to search for.")]

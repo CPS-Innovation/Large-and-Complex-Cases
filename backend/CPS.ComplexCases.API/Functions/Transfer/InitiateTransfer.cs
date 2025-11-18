@@ -26,7 +26,6 @@ public class InitiateTransfer(ILogger<InitiateTransfer> logger, IFileTransferCli
 
     [Function(nameof(InitiateTransfer))]
     [OpenApiOperation(operationId: nameof(Run), tags: ["FileTransfer"], Description = "Initiate a file transfer.")]
-    [FunctionKeyAuth]
     [CmsAuthValuesAuth]
     [BearerTokenAuth]
     [OpenApiRequestBody(ContentType.ApplicationJson, typeof(InitiateTransferRequest), Description = "Body containing the file transfer request")]

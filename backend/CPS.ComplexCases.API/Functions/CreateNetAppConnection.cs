@@ -38,7 +38,6 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
 
     [Function(nameof(CreateNetAppConnection))]
     [OpenApiOperation(operationId: nameof(CreateEgressConnection), tags: ["NetApp"], Description = "Connect an NetApp folder to a case.")]
-    [FunctionKeyAuth]
     [CmsAuthValuesAuth]
     [BearerTokenAuth]
     [OpenApiRequestBody(ContentType.ApplicationJson, typeof(CreateNetAppConnectionDto), Description = "Body containing the NetApp connection to create")]
