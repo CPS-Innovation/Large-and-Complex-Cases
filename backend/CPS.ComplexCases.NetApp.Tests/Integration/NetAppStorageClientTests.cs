@@ -62,6 +62,7 @@ public class NetAppStorageClientTests : IDisposable
         _netAppRequestFactoryMock = new Mock<INetAppRequestFactory>();
         _caseMetadataServiceMock = new Mock<ICaseMetadataService>();
         _s3ClientFactoryMock = new Mock<IS3ClientFactory>();
+        _s3ClientFactoryMock.Setup(f => f.GetS3ClientAsync()).ReturnsAsync(new AmazonS3Client(credentials, s3ClientConfig));
 
         var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<NetAppClient>();
 

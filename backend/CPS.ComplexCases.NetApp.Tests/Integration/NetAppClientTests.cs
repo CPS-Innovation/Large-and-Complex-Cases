@@ -1,16 +1,16 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Amazon.Runtime;
 using Amazon.S3;
+using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
+using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.WireMock.Mappings;
 using CPS.ComplexCases.NetApp.Wrappers;
 using CPS.ComplexCases.WireMock.Core;
 using WireMock.Server;
-using Microsoft.Extensions.Options;
-using CPS.ComplexCases.NetApp.Models;
-using CPS.ComplexCases.Common.Services;
 
 namespace CPS.ComplexCases.NetApp.Tests.Integration
 {
@@ -20,7 +20,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
         private readonly NetAppClient _client;
         private readonly NetAppArgFactory _netAppArgFactory;
         private readonly INetAppRequestFactory _netAppRequestFactory;
-        // private readonly AmazonS3Client _s3Client;
+        private readonly AmazonS3Client _s3Client;
         private readonly IAmazonS3UtilsWrapper _amazonS3UtilsWrapper;
         private readonly IS3ClientFactory _s3ClientFactory;
 
@@ -40,7 +40,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             };
 
             var credentials = new BasicAWSCredentials("fakeAccessKey", "fakeSecretKey");
-            // _s3Client = new AmazonS3Client(credentials, s3ClientConfig);
+            _s3Client = new AmazonS3Client(credentials, s3ClientConfig);
             _amazonS3UtilsWrapper = new AmazonS3UtilsWrapper();
             _netAppArgFactory = new NetAppArgFactory();
             _netAppRequestFactory = new NetAppRequestFactory();
@@ -61,6 +61,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
                     RegionName = "us-east-1"
                 }),
                 new UserService());
+            _s3ClientFactory.SetS3ClientAsync(_s3Client);
 
             var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<NetAppClient>();
 

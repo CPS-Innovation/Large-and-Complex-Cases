@@ -19,8 +19,24 @@ public class S3ClientFactory(INetAppHttpClient netAppHttpClient, INetAppArgFacto
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
     private readonly NetAppOptions _options = options.Value;
     private readonly IUserService _userService = userService;
+    private IAmazonS3? _s3Client;
 
-    public async Task<IAmazonS3> CreateS3ClientAsync()
+    public async Task<IAmazonS3> GetS3ClientAsync()
+    {
+        if (_s3Client == null)
+        {
+            _s3Client = await CreateS3Client();
+        }
+
+        return _s3Client;
+    }
+
+    public void SetS3ClientAsync(IAmazonS3 s3Client)
+    {
+        _s3Client = s3Client;
+    }
+
+    private async Task<IAmazonS3> CreateS3Client()
     {
         var bearerToken = await _userService.GetUserBearerTokenAsync();
         var (accessKey, secretKey) = await GetCredentialKeysAsync(bearerToken!);

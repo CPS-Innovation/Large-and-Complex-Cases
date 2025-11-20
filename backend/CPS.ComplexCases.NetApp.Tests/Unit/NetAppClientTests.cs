@@ -49,6 +49,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             _netAppRequestFactoryMock = _fixture.Freeze<Mock<INetAppRequestFactory>>();
             _amazonS3Mock = _fixture.Freeze<Mock<IAmazonS3>>();
             _s3ClientFactoryMock = _fixture.Freeze<Mock<IS3ClientFactory>>();
+            _s3ClientFactoryMock.Setup(x => x.GetS3ClientAsync()).ReturnsAsync(_amazonS3Mock.Object);
 
             _client = new NetAppClient(_loggerMock.Object, _amazonS3UtilsWrapperMock.Object, _netAppRequestFactoryMock.Object, _s3ClientFactoryMock.Object);
         }
