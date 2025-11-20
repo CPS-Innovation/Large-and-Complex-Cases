@@ -1,7 +1,7 @@
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Models.NetApp;
 
-namespace CPS.ComplexCases.NetApp.Factories;
+namespace CPS.ComplexCases.NetApp.Client;
 
 public interface INetAppHttpClient
 {
