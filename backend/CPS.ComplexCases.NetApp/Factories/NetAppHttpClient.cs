@@ -46,6 +46,11 @@ public class NetAppHttpClient(HttpClient httpClient, INetAppRequestFactory netAp
                 throw new NetAppUnauthorizedException();
             }
 
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                throw new NetAppNotFoundException(response.ReasonPhrase ?? "User not found.");
+            }
+
             if (response.StatusCode == HttpStatusCode.Conflict)
             {
                 throw new NetAppConflictException();

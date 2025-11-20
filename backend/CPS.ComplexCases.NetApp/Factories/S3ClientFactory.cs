@@ -70,7 +70,7 @@ public class S3ClientFactory(INetAppHttpClient netAppHttpClient, INetAppArgFacto
         {
             userResponse = await _netAppHttpClient.RegenerateUserKeysAsync(_netAppArgFactory.CreateRegenerateUserKeysArg(username, bearerToken, _options.SecurityGroupId));
         }
-        catch (NetAppUnauthorizedException)
+        catch (NetAppNotFoundException)
         {
             userResponse = await _netAppHttpClient.RegisterUserAsync(_netAppArgFactory.CreateRegisterUserArg(username, bearerToken, _options.SecurityGroupId));
         }
