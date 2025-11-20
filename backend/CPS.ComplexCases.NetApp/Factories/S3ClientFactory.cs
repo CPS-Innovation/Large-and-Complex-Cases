@@ -4,12 +4,11 @@ using Microsoft.Extensions.Options;
 using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
-using Amazon.SecurityToken;
-using Amazon.SecurityToken.Model;
+using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Exceptions;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.NetApp;
-using CPS.ComplexCases.Common.Services;
 
 namespace CPS.ComplexCases.NetApp.Factories;
 
@@ -41,7 +40,6 @@ public class S3ClientFactory(INetAppHttpClient netAppHttpClient, INetAppArgFacto
         var bearerToken = await _userService.GetUserBearerTokenAsync();
         var (accessKey, secretKey) = await GetCredentialKeysAsync(bearerToken!);
         var credentials = new BasicAWSCredentials(accessKey, secretKey);
-        //var credentials = await GetTemporaryCredentialsAsync(accessKey!, secretKey!);
 
         ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
@@ -96,26 +94,6 @@ public class S3ClientFactory(INetAppHttpClient netAppHttpClient, INetAppArgFacto
         }
 
         return (userResponse.Records.FirstOrDefault()?.AccessKey, userResponse.Records.FirstOrDefault()?.SecretKey);
-    }
-
-    private async Task<SessionAWSCredentials> GetTemporaryCredentialsAsync(string accessKey, string secretKey)
-    {
-        using var stsClient = new AmazonSecurityTokenServiceClient(accessKey, secretKey);
-        var getSessionTokenRequest = new GetSessionTokenRequest
-        {
-            DurationSeconds = _options.SessionDurationSeconds
-        };
-
-        GetSessionTokenResponse sessionTokenResponse =
-                      await stsClient.GetSessionTokenAsync(getSessionTokenRequest);
-
-        Credentials credentials = sessionTokenResponse.Credentials;
-
-        var sessionCredentials =
-            new SessionAWSCredentials(credentials.AccessKeyId,
-                                      credentials.SecretAccessKey,
-                                      credentials.SessionToken);
-        return sessionCredentials;
     }
 }
 
