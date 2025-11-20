@@ -28,6 +28,7 @@ public class NetAppStorageClientTests : IDisposable
     private readonly Mock<INetAppArgFactory> _netAppArgFactoryMock;
     private readonly Mock<INetAppRequestFactory> _netAppRequestFactoryMock;
     private readonly Mock<ICaseMetadataService> _caseMetadataServiceMock;
+    private readonly Mock<IS3ClientFactory> _s3ClientFactoryMock;
     private const string BucketName = "test-bucket";
     private const string ObjectKey = "test-document.pdf";
     private const string UploadId = "upload-id-49e18525de9c";
@@ -56,15 +57,15 @@ public class NetAppStorageClientTests : IDisposable
         };
 
         var credentials = new Amazon.Runtime.BasicAWSCredentials("fakeAccessKey", "fakeSecretKey");
-        var s3Client = new AmazonS3Client(credentials, s3ClientConfig);
         var amazonS3UtilsWrapper = new AmazonS3UtilsWrapper();
         _netAppArgFactoryMock = new Mock<INetAppArgFactory>();
         _netAppRequestFactoryMock = new Mock<INetAppRequestFactory>();
         _caseMetadataServiceMock = new Mock<ICaseMetadataService>();
+        _s3ClientFactoryMock = new Mock<IS3ClientFactory>();
 
         var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<NetAppClient>();
 
-        _netAppClient = new NetAppClient(logger, s3Client, amazonS3UtilsWrapper, _netAppRequestFactoryMock.Object);
+        _netAppClient = new NetAppClient(logger, amazonS3UtilsWrapper, _netAppRequestFactoryMock.Object, _s3ClientFactoryMock.Object);
         _client = new NetAppStorageClient(_netAppClient, _netAppArgFactoryMock.Object, _netAppOptions, _caseMetadataServiceMock.Object);
     }
 

@@ -61,6 +61,8 @@ public class ListNetAppFilesTests
 
         var arg = _fixture.Create<ListObjectsInBucketArg>();
         var response = _fixture.Create<ListNetAppObjectsDto>();
+        var correlationId = _fixture.Create<Guid>();
+        var username = _fixture.Create<string>();
 
         _netAppArgFactoryMock
             .Setup(f => f.CreateListObjectsInBucketArg(
@@ -75,8 +77,10 @@ public class ListNetAppFilesTests
             .Setup(c => c.ListObjectsInBucketAsync(arg))
             .ReturnsAsync(response);
 
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), username);
+
         // Act
-        var result = await _function.Run(httpRequest);
+        var result = await _function.Run(httpRequest, functionContext);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
@@ -105,6 +109,8 @@ public class ListNetAppFilesTests
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(queryParams);
 
         var arg = _fixture.Create<ListObjectsInBucketArg>();
+        var correlationId = _fixture.Create<Guid>();
+        var username = _fixture.Create<string>();
 
         _netAppArgFactoryMock
             .Setup(f => f.CreateListObjectsInBucketArg(
@@ -119,9 +125,10 @@ public class ListNetAppFilesTests
             .Setup(c => c.ListObjectsInBucketAsync(arg))
             .ReturnsAsync((ListNetAppObjectsDto?)null);
 
-        // Act
-        var result = await _function.Run(httpRequest);
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), username);
 
+        // Act
+        var result = await _function.Run(httpRequest, functionContext);
         // Assert
         Assert.IsType<BadRequestResult>(result);
     }

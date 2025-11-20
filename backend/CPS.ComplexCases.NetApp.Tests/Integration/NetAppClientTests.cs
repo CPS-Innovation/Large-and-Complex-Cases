@@ -8,6 +8,9 @@ using CPS.ComplexCases.NetApp.WireMock.Mappings;
 using CPS.ComplexCases.NetApp.Wrappers;
 using CPS.ComplexCases.WireMock.Core;
 using WireMock.Server;
+using Microsoft.Extensions.Options;
+using CPS.ComplexCases.NetApp.Models;
+using CPS.ComplexCases.Common.Services;
 
 namespace CPS.ComplexCases.NetApp.Tests.Integration
 {
@@ -17,8 +20,9 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
         private readonly NetAppClient _client;
         private readonly NetAppArgFactory _netAppArgFactory;
         private readonly INetAppRequestFactory _netAppRequestFactory;
-        private readonly AmazonS3Client _s3Client;
+        // private readonly AmazonS3Client _s3Client;
         private readonly IAmazonS3UtilsWrapper _amazonS3UtilsWrapper;
+        private readonly IS3ClientFactory _s3ClientFactory;
 
         public NetAppClientTests()
         {
@@ -36,14 +40,31 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             };
 
             var credentials = new BasicAWSCredentials("fakeAccessKey", "fakeSecretKey");
-            _s3Client = new AmazonS3Client(credentials, s3ClientConfig);
+            // _s3Client = new AmazonS3Client(credentials, s3ClientConfig);
             _amazonS3UtilsWrapper = new AmazonS3UtilsWrapper();
             _netAppArgFactory = new NetAppArgFactory();
             _netAppRequestFactory = new NetAppRequestFactory();
+            _s3ClientFactory = new S3ClientFactory(
+                new NetAppHttpClient(
+                    new HttpClient
+                    {
+                        BaseAddress = new Uri(_server.Urls[0])
+                    },
+                    _netAppRequestFactory),
+                _netAppArgFactory,
+                Options.Create(new NetAppOptions
+                {
+                    AccessKey = "fakeAccessKey",
+                    SecretKey = "fakeSecretKey",
+                    BucketName = "test-bucket",
+                    Url = _server.Urls[0],
+                    RegionName = "us-east-1"
+                }),
+                new UserService());
 
             var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<NetAppClient>();
 
-            _client = new NetAppClient(logger, _s3Client, _amazonS3UtilsWrapper, _netAppRequestFactory);
+            _client = new NetAppClient(logger, _amazonS3UtilsWrapper, _netAppRequestFactory, _s3ClientFactory);
             _netAppArgFactory = new NetAppArgFactory();
         }
 

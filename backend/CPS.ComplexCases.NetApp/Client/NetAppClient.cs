@@ -11,25 +11,27 @@ using CPS.ComplexCases.NetApp.Wrappers;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
-public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazonS3UtilsWrapper amazonS3UtilsWrapper, INetAppRequestFactory netAppRequestFactory) : INetAppClient
+public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3UtilsWrapper amazonS3UtilsWrapper, INetAppRequestFactory netAppRequestFactory, IS3ClientFactory s3ClientFactory) : INetAppClient
 {
     private readonly ILogger<NetAppClient> _logger = logger;
-    private readonly IAmazonS3 _client = client;
     private readonly IAmazonS3UtilsWrapper _amazonS3UtilsWrapper = amazonS3UtilsWrapper;
     private readonly INetAppRequestFactory _netAppRequestFactory = netAppRequestFactory;
+    private readonly IS3ClientFactory _s3ClientFactory = s3ClientFactory;
 
     public async Task<bool> CreateBucketAsync(CreateBucketArg arg)
     {
+        var s3Client = await _s3ClientFactory.CreateS3ClientAsync();
+
         try
         {
-            var bucketExists = await _amazonS3UtilsWrapper.DoesS3BucketExistV2Async(_client, arg.BucketName);
+            var bucketExists = await _amazonS3UtilsWrapper.DoesS3BucketExistV2Async(s3Client, arg.BucketName);
             if (bucketExists)
             {
                 _logger.LogInformation("Bucket with name {BucketName} already exists.", arg.BucketName);
                 return false;
             }
 
-            var response = await _client.PutBucketAsync(_netAppRequestFactory.CreateBucketRequest(arg));
+            var response = await s3Client.PutBucketAsync(_netAppRequestFactory.CreateBucketRequest(arg));
             return response.HttpStatusCode == System.Net.HttpStatusCode.OK;
         }
         catch (AmazonS3Exception ex)
@@ -41,9 +43,11 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
 
     public async Task<IEnumerable<S3Bucket>> ListBucketsAsync(ListBucketsArg arg)
     {
+        var s3Client = await _s3ClientFactory.CreateS3ClientAsync();
+
         try
         {
-            var response = await _client.ListBucketsAsync(_netAppRequestFactory.ListBucketsRequest(arg));
+            var response = await s3Client.ListBucketsAsync(_netAppRequestFactory.ListBucketsRequest(arg));
             return response.Buckets;
         }
         catch (AmazonS3Exception ex)
@@ -68,29 +72,13 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
         }
     }
 
-    public async Task<S3AccessControlList?> GetACLForBucketAsync(string bucketName)
-    {
-        try
-        {
-            var response = await _client.GetACLAsync(new GetACLRequest
-            {
-                BucketName = bucketName
-            });
-
-            return response.AccessControlList;
-        }
-        catch (AmazonS3Exception ex)
-        {
-            _logger.LogError(ex, ex.Message, "Failed to get ACL for bucket {BucketName}", bucketName);
-            return null;
-        }
-    }
-
     public async Task<GetObjectResponse?> GetObjectAsync(GetObjectArg arg)
     {
+        var s3Client = await _s3ClientFactory.CreateS3ClientAsync();
+
         try
         {
-            var response = await _client.GetObjectAsync(_netAppRequestFactory.GetObjectRequest(arg));
+            var response = await s3Client.GetObjectAsync(_netAppRequestFactory.GetObjectRequest(arg));
 
             return response;
         }
@@ -109,9 +97,11 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
 
     public async Task<bool> UploadObjectAsync(UploadObjectArg arg)
     {
+        var s3Client = await _s3ClientFactory.CreateS3ClientAsync();
+
         try
         {
-            var response = await _client.PutObjectAsync(_netAppRequestFactory.UploadObjectRequest(arg));
+            var response = await s3Client.PutObjectAsync(_netAppRequestFactory.UploadObjectRequest(arg));
             return response.HttpStatusCode == System.Net.HttpStatusCode.OK;
         }
         catch (AmazonS3Exception ex)
@@ -123,10 +113,12 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
 
     public async Task<ListNetAppObjectsDto?> ListObjectsInBucketAsync(ListObjectsInBucketArg arg)
     {
+        var s3Client = await _s3ClientFactory.CreateS3ClientAsync();
+
         try
         {
             var request = _netAppRequestFactory.ListObjectsInBucketRequest(arg);
-            var response = await _client.ListObjectsV2Async(request);
+            var response = await s3Client.ListObjectsV2Async(request);
 
             var folders = response.CommonPrefixes.Select(data => new ListNetAppFolderDataDto
             {
@@ -170,9 +162,10 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
 
     public async Task<ListNetAppObjectsDto?> ListFoldersInBucketAsync(ListFoldersInBucketArg arg)
     {
+        var s3Client = await _s3ClientFactory.CreateS3ClientAsync();
         try
         {
-            var response = await _client.ListObjectsV2Async(_netAppRequestFactory.ListFoldersInBucketRequest(arg));
+            var response = await s3Client.ListObjectsV2Async(_netAppRequestFactory.ListFoldersInBucketRequest(arg));
             var folders = response.CommonPrefixes.Select(data => new ListNetAppFolderDataDto
             {
                 Path = data
@@ -207,9 +200,10 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
 
     public async Task<InitiateMultipartUploadResponse?> InitiateMultipartUploadAsync(InitiateMultipartUploadArg arg)
     {
+        var s3Client = await _s3ClientFactory.CreateS3ClientAsync();
         try
         {
-            return await _client.InitiateMultipartUploadAsync(_netAppRequestFactory.CreateMultipartUploadRequest(arg));
+            return await s3Client.InitiateMultipartUploadAsync(_netAppRequestFactory.CreateMultipartUploadRequest(arg));
         }
         catch (AmazonS3Exception ex)
         {
@@ -220,9 +214,10 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
 
     public async Task<UploadPartResponse?> UploadPartAsync(UploadPartArg arg)
     {
+        var s3Client = await _s3ClientFactory.CreateS3ClientAsync();
         try
         {
-            return await _client.UploadPartAsync(_netAppRequestFactory.UploadPartRequest(arg));
+            return await s3Client.UploadPartAsync(_netAppRequestFactory.UploadPartRequest(arg));
         }
         catch (AmazonS3Exception ex)
         {
@@ -233,9 +228,10 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
 
     public async Task<CompleteMultipartUploadResponse?> CompleteMultipartUploadAsync(CompleteMultipartUploadArg arg)
     {
+        var s3Client = await _s3ClientFactory.CreateS3ClientAsync();
         try
         {
-            return await _client.CompleteMultipartUploadAsync(_netAppRequestFactory.CompleteMultipartUploadRequest(arg));
+            return await s3Client.CompleteMultipartUploadAsync(_netAppRequestFactory.CompleteMultipartUploadRequest(arg));
         }
         catch (AmazonS3Exception ex)
         {
@@ -246,9 +242,10 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
 
     public async Task<bool> DoesObjectExistAsync(GetObjectArg arg)
     {
+        var s3Client = await _s3ClientFactory.CreateS3ClientAsync();
         try
         {
-            var response = await _client.GetObjectAttributesAsync(_netAppRequestFactory.GetObjectAttributesRequest(arg));
+            var response = await s3Client.GetObjectAttributesAsync(_netAppRequestFactory.GetObjectAttributesRequest(arg));
             return response.HttpStatusCode == System.Net.HttpStatusCode.OK;
         }
         catch (AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
@@ -264,23 +261,21 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3 client, IAmazo
 
     private static async Task<SessionAWSCredentials> GetTemporaryCredentialsAsync(string accessKey, string secretKey)
     {
-        using (var stsClient = new AmazonSecurityTokenServiceClient(accessKey, secretKey))
+        using var stsClient = new AmazonSecurityTokenServiceClient(accessKey, secretKey);
+        var getSessionTokenRequest = new GetSessionTokenRequest
         {
-            var getSessionTokenRequest = new GetSessionTokenRequest
-            {
-                DurationSeconds = 7200
-            };
+            DurationSeconds = 7200
+        };
 
-            GetSessionTokenResponse sessionTokenResponse =
-                          await stsClient.GetSessionTokenAsync(getSessionTokenRequest);
+        GetSessionTokenResponse sessionTokenResponse =
+                      await stsClient.GetSessionTokenAsync(getSessionTokenRequest);
 
-            Credentials credentials = sessionTokenResponse.Credentials;
+        Credentials credentials = sessionTokenResponse.Credentials;
 
-            var sessionCredentials =
-                new SessionAWSCredentials(credentials.AccessKeyId,
-                                          credentials.SecretAccessKey,
-                                          credentials.SessionToken);
-            return sessionCredentials;
-        }
+        var sessionCredentials =
+            new SessionAWSCredentials(credentials.AccessKeyId,
+                                      credentials.SecretAccessKey,
+                                      credentials.SessionToken);
+        return sessionCredentials;
     }
 }

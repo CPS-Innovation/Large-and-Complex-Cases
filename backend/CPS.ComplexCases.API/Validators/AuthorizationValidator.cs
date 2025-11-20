@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using CPS.ComplexCases.Common.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
@@ -7,10 +8,11 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace CPS.ComplexCases.API.Validators;
 
-public class AuthorizationValidator(ILogger<AuthorizationValidator> logger, ConfigurationManager<OpenIdConnectConfiguration> configurationManager) : IAuthorizationValidator
+public class AuthorizationValidator(ILogger<AuthorizationValidator> logger, ConfigurationManager<OpenIdConnectConfiguration> configurationManager, IUserService userService) : IAuthorizationValidator
 {
   private readonly ILogger<AuthorizationValidator> _logger = logger;
   private readonly ConfigurationManager<OpenIdConnectConfiguration> _configurationManager = configurationManager;
+  private readonly IUserService _userService = userService;
   private const string ScopeType = @"http://schemas.microsoft.com/identity/claims/scope";
 
   public async Task<ValidateTokenResult> ValidateTokenAsync(string token, string? requiredScopes = null, string? requiredRoles = null)
@@ -46,6 +48,8 @@ public class AuthorizationValidator(ILogger<AuthorizationValidator> logger, Conf
 
       var isValid = IsValid(claimsPrincipal, requiredScopes, requiredRoles);
       var username = claimsPrincipal?.Identity?.Name;
+
+      await _userService.SetUserBearerTokenAsync(tokenString);
 
       return new ValidateTokenResult
       {

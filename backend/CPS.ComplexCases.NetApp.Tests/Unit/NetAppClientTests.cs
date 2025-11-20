@@ -19,8 +19,9 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         private readonly Mock<ILogger<NetAppClient>> _loggerMock;
         private readonly Mock<IOptions<NetAppOptions>> _optionsMock;
         private readonly Mock<IAmazonS3UtilsWrapper> _amazonS3UtilsWrapperMock;
-        private readonly Mock<IAmazonS3> _amazonS3Mock;
         private readonly Mock<INetAppRequestFactory> _netAppRequestFactoryMock;
+        private readonly Mock<IAmazonS3> _amazonS3Mock;
+        private readonly Mock<IS3ClientFactory> _s3ClientFactoryMock;
         private readonly NetAppClient _client;
         private const string _testUrl = "https://netapp.com";
         private const string _accessKey = "accessKey";
@@ -45,10 +46,11 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             _optionsMock = new Mock<IOptions<NetAppOptions>>();
             _optionsMock.Setup(x => x.Value).Returns(options);
             _amazonS3UtilsWrapperMock = _fixture.Freeze<Mock<IAmazonS3UtilsWrapper>>();
-            _amazonS3Mock = _fixture.Freeze<Mock<IAmazonS3>>();
             _netAppRequestFactoryMock = _fixture.Freeze<Mock<INetAppRequestFactory>>();
+            _amazonS3Mock = _fixture.Freeze<Mock<IAmazonS3>>();
+            _s3ClientFactoryMock = _fixture.Freeze<Mock<IS3ClientFactory>>();
 
-            _client = new NetAppClient(_loggerMock.Object, _amazonS3Mock.Object, _amazonS3UtilsWrapperMock.Object, _netAppRequestFactoryMock.Object);
+            _client = new NetAppClient(_loggerMock.Object, _amazonS3UtilsWrapperMock.Object, _netAppRequestFactoryMock.Object, _s3ClientFactoryMock.Object);
         }
 
         [Fact]

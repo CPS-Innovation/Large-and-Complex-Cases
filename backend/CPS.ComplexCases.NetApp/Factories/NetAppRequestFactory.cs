@@ -1,7 +1,12 @@
+using System.Text;
+using System.Text.Json;
+using System.Web;
 using Amazon.S3;
 using Amazon.S3.Model;
+using CPS.ComplexCases.Common.Constants;
 using CPS.ComplexCases.NetApp.Constants;
 using CPS.ComplexCases.NetApp.Models.Args;
+using CPS.ComplexCases.NetApp.Models.Dto;
 
 namespace CPS.ComplexCases.NetApp.Factories;
 
@@ -16,6 +21,11 @@ public class NetAppRequestFactory : INetAppRequestFactory
             UploadId = arg.UploadId,
             PartETags = arg.CompletedParts
         };
+    }
+
+    public HttpRequestMessage CreateRegisterUserRequest(RegisterUserArg arg)
+    {
+        return BuildRequest<object>(HttpMethod.Post, $"api/protocols/s3/services/{arg.SecurityGroupId}/users/{EncodedValue(arg.Username)}", arg.AccessToken);
     }
 
     public PutBucketRequest CreateBucketRequest(CreateBucketArg arg)
@@ -34,6 +44,16 @@ public class NetAppRequestFactory : INetAppRequestFactory
             BucketName = arg.BucketName,
             Key = arg.ObjectKey,
         };
+    }
+
+    public HttpRequestMessage CreateRegenerateUserKeysRequest(RegenerateUserKeysArg arg)
+    {
+        var regenerateKeys = new RegenerateKeysDto
+        {
+            RegenerateKeys = "True"
+        };
+
+        return BuildRequest(HttpMethod.Patch, $"api/protocols/s3/services/{arg.SecurityGroupId}/users/{EncodedValue(arg.Username)}", arg.AccessToken, regenerateKeys);
     }
 
     public GetObjectAttributesRequest GetObjectAttributesRequest(GetObjectArg arg)
@@ -111,5 +131,22 @@ public class NetAppRequestFactory : INetAppRequestFactory
             UploadId = arg.UploadId,
             InputStream = new MemoryStream(arg.PartData)
         };
+    }
+
+    private static HttpRequestMessage BuildRequest<T>(HttpMethod method, string path, string accessToken, T? body = default)
+    {
+        var request = new HttpRequestMessage(method, path);
+        request.Headers.Add(HttpHeaderKeys.Authorization, $"Bearer {accessToken}");
+        request.Headers.Add(HttpHeaderKeys.Accept, ContentType.ApplicationJson);
+        if (body != null)
+        {
+            request.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, ContentType.ApplicationJson);
+        }
+        return request;
+    }
+
+    private static string EncodedValue(string value)
+    {
+        return HttpUtility.UrlEncode(value);
     }
 }

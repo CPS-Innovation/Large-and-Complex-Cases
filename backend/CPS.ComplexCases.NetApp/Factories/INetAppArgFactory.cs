@@ -14,5 +14,7 @@ namespace CPS.ComplexCases.NetApp.Factories
         InitiateMultipartUploadArg CreateInitiateMultipartUploadArg(string bucketName, string objectName);
         UploadPartArg CreateUploadPartArg(string bucketName, string objectName, byte[] partData, int partNumber, string uploadId);
         CompleteMultipartUploadArg CreateCompleteMultipartUploadArg(string bucketName, string objectName, string uploadId, Dictionary<int, string> parts);
+        RegisterUserArg CreateRegisterUserArg(string username, string accessToken, Guid securityGroupId);
+        RegenerateUserKeysArg CreateRegenerateUserKeysArg(string username, string accessToken, Guid securityGroupId);
     }
 }

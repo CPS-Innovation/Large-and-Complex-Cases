@@ -10,7 +10,7 @@ namespace CPS.ComplexCases.NetApp.Factories
         {
             return new CreateBucketArg
             {
-                BucketName = bucketName.ToLowerInvariant()
+                BucketName = bucketName.ToLowerInvariant(),
             };
         }
 
@@ -118,6 +118,26 @@ namespace CPS.ComplexCases.NetApp.Factories
                     PartNumber = part.Key,
                     ETag = part.Value
                 }).ToList()
+            };
+        }
+
+        public RegisterUserArg CreateRegisterUserArg(string username, string accessToken, Guid securityGroupId)
+        {
+            return new RegisterUserArg
+            {
+                Username = username,
+                AccessToken = accessToken,
+                SecurityGroupId = securityGroupId
+            };
+        }
+
+        public RegenerateUserKeysArg CreateRegenerateUserKeysArg(string username, string accessToken, Guid securityGroupId)
+        {
+            return new RegenerateUserKeysArg
+            {
+                Username = username,
+                AccessToken = accessToken,
+                SecurityGroupId = securityGroupId
             };
         }
     }
