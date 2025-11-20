@@ -12,6 +12,8 @@ public class CaseDto
   public string? OperationName { get; set; }
   [JsonPropertyName("leadDefendantName")]
   public string? LeadDefendantName { get; set; }
+  [JsonPropertyName("leadDefendantSurname")]
+  public string? LeadDefendantSurname { get; set; }
   [JsonPropertyName("registrationDate")]
   public string? RegistrationDate { get; set; }
 }

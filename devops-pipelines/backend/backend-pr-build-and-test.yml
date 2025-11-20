@@ -11,6 +11,7 @@ pr:
 variables:
   buildConfiguration: 'Release'
   dotNetVersion: '8.x'
+  efVersion: '8.0.*'
   testResultsDirectory: '$(Agent.TempDirectory)/TestResults'
 
 pool: 'LACC PreProd Pool'
@@ -119,7 +120,7 @@ stages:
                 export PATH="$PATH:$HOME/.dotnet/tools"
                 
                 if ! dotnet ef --version &> /dev/null; then
-                  dotnet tool install --global dotnet-ef
+                  dotnet tool install --global dotnet-ef --version $(efVersion)
                 fi
 
                 dotnet ef migrations script \

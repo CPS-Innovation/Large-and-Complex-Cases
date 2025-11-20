@@ -1,5 +1,4 @@
 using AutoFixture;
-using Xunit;
 using CPS.ComplexCases.DDEI.Mappers;
 using CPS.ComplexCases.DDEI.Models.Response;
 

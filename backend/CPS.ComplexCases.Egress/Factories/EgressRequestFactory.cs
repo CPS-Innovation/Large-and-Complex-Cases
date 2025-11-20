@@ -181,6 +181,59 @@ public class EgressRequestFactory : IEgressRequestFactory
     return request;
   }
 
+  public HttpRequestMessage ListTemplatesRequest(PaginationArg arg, string token)
+  {
+    var relativeUrl = new StringBuilder($"/api/v1/templates?skip={arg.Skip}&limit={arg.Take}");
+
+    var request = new HttpRequestMessage(HttpMethod.Get, relativeUrl.ToString());
+
+    AppendToken(request, token);
+
+    return request;
+  }
+
+  public HttpRequestMessage CreateWorkspaceRequest(CreateEgressWorkspaceArg arg, string token)
+  {
+
+    var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/workspaces?view=full")
+    {
+      Content = new StringContent(JsonSerializer.Serialize(arg), Encoding.UTF8, "application/json")
+    };
+
+    AppendToken(request, token);
+
+    return request;
+  }
+
+  public HttpRequestMessage GrantWorkspacePermissionRequest(GrantWorkspacePermissionArg arg, string token)
+  {
+    var permissionData = new
+    {
+      switch_ids = new[] { arg.Username },
+      role_id = arg.RoleId
+    };
+
+    var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/workspaces/{arg.WorkspaceId}/users")
+    {
+      Content = new StringContent(JsonSerializer.Serialize(permissionData), Encoding.UTF8, "application/json")
+    };
+
+    AppendToken(request, token);
+
+    return request;
+  }
+
+  public HttpRequestMessage ListWorkspaceRolesRequest(ListWorkspaceRolesArg arg, string token)
+  {
+    var relativeUrl = new StringBuilder($"/api/v1/workspaces/{arg.WorkspaceId}/roles?skip={arg.Skip}&limit={arg.Take}");
+
+    var request = new HttpRequestMessage(HttpMethod.Get, relativeUrl.ToString());
+
+    AppendToken(request, token);
+
+    return request;
+  }
+
   private static void AppendToken(HttpRequestMessage request, string token)
   {
     var basicAuthValue = Convert.ToBase64String(Encoding.UTF8.GetBytes(token));

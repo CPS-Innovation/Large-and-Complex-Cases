@@ -34,4 +34,33 @@ public class EgressArgFactory : IEgressArgFactory
       Email = email
     };
   }
+
+  public PaginationArg CreatePaginationArg(int skip, int take)
+  {
+    return new PaginationArg
+    {
+      Skip = skip,
+      Take = take
+    };
+  }
+
+  public CreateEgressWorkspaceArg CreateEgressWorkspaceArg(string name, string? description, string templateId)
+  {
+    return new CreateEgressWorkspaceArg
+    {
+      Name = name,
+      Description = description,
+      TemplateId = templateId
+    };
+  }
+
+  public GrantWorkspacePermissionArg CreateGrantWorkspacePermissionArg(string workspaceId, string email, string roleId)
+  {
+    return new GrantWorkspacePermissionArg
+    {
+      WorkspaceId = workspaceId,
+      Username = email,
+      RoleId = roleId
+    };
+  }
 }

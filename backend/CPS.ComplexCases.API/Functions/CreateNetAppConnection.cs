@@ -16,6 +16,7 @@ using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.Common.Services;
 using Microsoft.OpenApi.Models;
+using CPS.ComplexCases.Common.Attributes;
 
 namespace CPS.ComplexCases.API.Functions;
 
@@ -37,6 +38,8 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
 
     [Function(nameof(CreateNetAppConnection))]
     [OpenApiOperation(operationId: nameof(CreateEgressConnection), tags: ["NetApp"], Description = "Connect an NetApp folder to a case.")]
+    [CmsAuthValuesAuth]
+    [BearerTokenAuth]
     [OpenApiRequestBody(ContentType.ApplicationJson, typeof(CreateNetAppConnectionDto), Description = "Body containing the NetApp connection to create")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]

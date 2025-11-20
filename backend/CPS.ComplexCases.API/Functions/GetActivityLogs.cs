@@ -1,6 +1,8 @@
 using System.Net;
+using CPS.ComplexCases.ActivityLog.Models.Responses;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Constants;
+using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Data.Dtos;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -18,6 +20,8 @@ public class GetActivityLogs(ILogger<GetActivityLogs> logger, IActivityLogServic
 
     [Function(nameof(GetActivityLogs))]
     [OpenApiOperation(operationId: nameof(GetActivityLogs), tags: ["ActivityLog"], Description = "Lists filtered activity logs.")]
+    [CmsAuthValuesAuth]
+    [BearerTokenAuth]
     [OpenApiParameter(name: InputParameters.FromDate, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The start date for filtering activity logs.")]
     [OpenApiParameter(name: InputParameters.ToDate, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The end date for filtering activity logs.")]
     [OpenApiParameter(name: InputParameters.UserId, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The user ID for filtering activity logs.")]
@@ -26,7 +30,7 @@ public class GetActivityLogs(ILogger<GetActivityLogs> logger, IActivityLogServic
     [OpenApiParameter(name: InputParameters.ResourceId, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The resource ID for filtering activity logs.")]
     [OpenApiParameter(name: InputParameters.Skip, In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The number of items to skip.")]
     [OpenApiParameter(name: InputParameters.Take, In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The number of items to take.")]
-    [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(ActivityLogsResponse), Description = ApiResponseDescriptions.Success)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Forbidden, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Forbidden)]
