@@ -82,11 +82,11 @@ public class S3ClientFactory(INetAppHttpClient netAppHttpClient, INetAppArgFacto
 
         try
         {
-            userResponse = await _netAppHttpClient.RegenerateUserKeysAsync(_netAppArgFactory.CreateRegenerateUserKeysArg(username, bearerToken, _options.SecurityGroupId));
+            userResponse = await _netAppHttpClient.RegenerateUserKeysAsync(_netAppArgFactory.CreateRegenerateUserKeysArg(username, bearerToken, _options.S3ServiceUuid));
         }
         catch (NetAppNotFoundException)
         {
-            userResponse = await _netAppHttpClient.RegisterUserAsync(_netAppArgFactory.CreateRegisterUserArg(username, bearerToken, _options.SecurityGroupId));
+            userResponse = await _netAppHttpClient.RegisterUserAsync(_netAppArgFactory.CreateRegisterUserArg(username, bearerToken, _options.S3ServiceUuid));
         }
         catch (NetAppClientException)
         {

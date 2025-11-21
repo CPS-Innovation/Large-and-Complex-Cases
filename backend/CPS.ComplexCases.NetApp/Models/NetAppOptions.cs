@@ -7,7 +7,7 @@ namespace CPS.ComplexCases.NetApp.Models
         public required string SecretKey { get; set; }
         public required string RegionName { get; set; }
         public required string BucketName { get; set; }
-        public Guid SecurityGroupId { get; set; } = Guid.Empty;
+        public Guid S3ServiceUuid { get; set; } = Guid.Empty;
         public int SessionDurationSeconds { get; set; } = 1800;
     }
 }
