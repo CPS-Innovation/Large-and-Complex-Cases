@@ -34,7 +34,7 @@ public class ListNetAppFiles(ILogger<ListNetAppFiles> logger, INetAppClient netA
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Forbidden, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Forbidden)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/netapp/files")] HttpRequest req, FunctionContext context)
+    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/netapp/files")] HttpRequest req)
     {
         var continuationToken = req.Query[InputParameters.ContinuationToken];
         var take = int.TryParse(req.Query[InputParameters.Take], out var takeValue) ? takeValue : 100;

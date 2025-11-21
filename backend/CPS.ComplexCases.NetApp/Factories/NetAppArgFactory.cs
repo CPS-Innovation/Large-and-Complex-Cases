@@ -121,23 +121,23 @@ namespace CPS.ComplexCases.NetApp.Factories
             };
         }
 
-        public RegisterUserArg CreateRegisterUserArg(string username, string accessToken, Guid securityGroupId)
+        public RegisterUserArg CreateRegisterUserArg(string username, string accessToken, Guid s3ServiceUuid)
         {
             return new RegisterUserArg
             {
                 Username = username,
                 AccessToken = accessToken,
-                SecurityGroupId = securityGroupId
+                S3ServiceUuid = s3ServiceUuid
             };
         }
 
-        public RegenerateUserKeysArg CreateRegenerateUserKeysArg(string username, string accessToken, Guid securityGroupId)
+        public RegenerateUserKeysArg CreateRegenerateUserKeysArg(string username, string accessToken, Guid s3ServiceUuid)
         {
             return new RegenerateUserKeysArg
             {
                 Username = username,
                 AccessToken = accessToken,
-                SecurityGroupId = securityGroupId
+                S3ServiceUuid = s3ServiceUuid
             };
         }
     }

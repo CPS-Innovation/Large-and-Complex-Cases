@@ -25,7 +25,7 @@ public class NetAppRequestFactory : INetAppRequestFactory
 
     public HttpRequestMessage CreateRegisterUserRequest(RegisterUserArg arg)
     {
-        return BuildRequest<object>(HttpMethod.Post, $"api/protocols/s3/services/{arg.SecurityGroupId}/users/{EncodedValue(arg.Username)}", arg.AccessToken);
+        return BuildRequest<object>(HttpMethod.Post, $"api/protocols/s3/services/{arg.S3ServiceUuid}/users/{EncodedValue(arg.Username)}", arg.AccessToken);
     }
 
     public PutBucketRequest CreateBucketRequest(CreateBucketArg arg)
@@ -53,7 +53,7 @@ public class NetAppRequestFactory : INetAppRequestFactory
             RegenerateKeys = "True"
         };
 
-        return BuildRequest(HttpMethod.Patch, $"api/protocols/s3/services/{arg.SecurityGroupId}/users/{EncodedValue(arg.Username)}", arg.AccessToken, regenerateKeys);
+        return BuildRequest(HttpMethod.Patch, $"api/protocols/s3/services/{arg.S3ServiceUuid}/users/{EncodedValue(arg.Username)}", arg.AccessToken, regenerateKeys);
     }
 
     public GetObjectAttributesRequest GetObjectAttributesRequest(GetObjectArg arg)

@@ -77,10 +77,8 @@ public class ListNetAppFilesTests
             .Setup(c => c.ListObjectsInBucketAsync(arg))
             .ReturnsAsync(response);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), username);
-
         // Act
-        var result = await _function.Run(httpRequest, functionContext);
+        var result = await _function.Run(httpRequest);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
@@ -125,10 +123,8 @@ public class ListNetAppFilesTests
             .Setup(c => c.ListObjectsInBucketAsync(arg))
             .ReturnsAsync((ListNetAppObjectsDto?)null);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), username);
-
         // Act
-        var result = await _function.Run(httpRequest, functionContext);
+        var result = await _function.Run(httpRequest);
         // Assert
         Assert.IsType<BadRequestResult>(result);
     }
