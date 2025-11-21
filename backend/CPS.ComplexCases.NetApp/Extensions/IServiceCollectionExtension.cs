@@ -36,7 +36,7 @@ public static class IServiceCollectionExtension
 			services.AddTransient<INetAppRequestFactory, NetAppRequestFactory>();
 			services.AddTransient<INetAppClient, NetAppClient>();
 			services.AddSingleton<IAmazonS3UtilsWrapper, AmazonS3UtilsWrapper>();
-			services.AddSingleton<IS3ClientFactory, S3ClientFactory>();
+			services.AddScoped<IS3ClientFactory, S3ClientFactory>();
 
 			services.AddHttpClient<INetAppHttpClient, NetAppHttpClient>(client =>
 			{
