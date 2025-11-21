@@ -86,6 +86,7 @@ var host = new HostBuilder()
         services.AddScoped<ICaseMetadataService, CaseMetadataService>();
         services.AddScoped<ICaseEnrichmentService, CaseEnrichmentService>();
         services.AddScoped<IInitService, InitService>();
+        services.AddSingleton<IUserService, UserService>();
         services.AddSingleton<IOpenApiConfigurationOptions, OpenApiConfigurationOptions>();
         services.AddSingleton<IRequestValidator, RequestValidator>();
     })

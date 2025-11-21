@@ -15,4 +15,6 @@ public interface INetAppRequestFactory
     UploadPartRequest UploadPartRequest(UploadPartArg arg);
     CompleteMultipartUploadRequest CompleteMultipartUploadRequest(CompleteMultipartUploadArg arg);
     GetObjectAttributesRequest GetObjectAttributesRequest(GetObjectArg arg);
+    HttpRequestMessage CreateRegisterUserRequest(RegisterUserArg arg);
+    HttpRequestMessage CreateRegenerateUserKeysRequest(RegenerateUserKeysArg arg);
 }

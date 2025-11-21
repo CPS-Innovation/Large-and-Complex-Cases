@@ -61,6 +61,8 @@ public class ListNetAppFilesTests
 
         var arg = _fixture.Create<ListObjectsInBucketArg>();
         var response = _fixture.Create<ListNetAppObjectsDto>();
+        var correlationId = _fixture.Create<Guid>();
+        var username = _fixture.Create<string>();
 
         _netAppArgFactoryMock
             .Setup(f => f.CreateListObjectsInBucketArg(
@@ -105,6 +107,8 @@ public class ListNetAppFilesTests
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(queryParams);
 
         var arg = _fixture.Create<ListObjectsInBucketArg>();
+        var correlationId = _fixture.Create<Guid>();
+        var username = _fixture.Create<string>();
 
         _netAppArgFactoryMock
             .Setup(f => f.CreateListObjectsInBucketArg(
@@ -121,7 +125,6 @@ public class ListNetAppFilesTests
 
         // Act
         var result = await _function.Run(httpRequest);
-
         // Assert
         Assert.IsType<BadRequestResult>(result);
     }
