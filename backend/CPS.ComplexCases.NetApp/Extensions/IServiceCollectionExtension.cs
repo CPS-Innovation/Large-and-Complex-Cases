@@ -1,9 +1,11 @@
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
+using CPS.ComplexCases.NetApp.Services;
 using CPS.ComplexCases.NetApp.Wrappers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace CPS.ComplexCases.NetApp.Extensions;
 
@@ -37,7 +39,15 @@ public static class IServiceCollectionExtension
 			services.AddTransient<INetAppClient, NetAppClient>();
 			services.AddSingleton<IAmazonS3UtilsWrapper, AmazonS3UtilsWrapper>();
 			services.AddScoped<IS3ClientFactory, S3ClientFactory>();
+			services.AddSingleton<IS3CredentialService, S3CredentialService>();
 
+			services.AddSingleton<IKeyVaultService>(sp =>
+			{
+				var logger = sp.GetRequiredService<ILogger<KeyVaultService>>();
+				var keyVaultUrl = configuration["KeyVault:Url"]
+					?? throw new InvalidOperationException("KeyVault:Url not configured");
+				return new KeyVaultService(keyVaultUrl, logger);
+			});
 			services.AddHttpClient<INetAppHttpClient, NetAppHttpClient>(client =>
 			{
 				var netAppServiceUrl = configuration["NetAppOptions:ClusterUrl"];
@@ -53,6 +63,8 @@ public static class IServiceCollectionExtension
 				ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; }
 			})
 			.SetHandlerLifetime(TimeSpan.FromMinutes(5));
+
+
 		}
 		services.AddTransient<NetAppStorageClient>();
 	}
