@@ -4,7 +4,8 @@ namespace CPS.ComplexCases.NetApp.Services;
 
 public interface IKeyVaultService
 {
-    Task StoreCredentialsAsync(string key, S3Credentials credentials);
-    Task<S3Credentials?> GetCredentialsAsync(string key);
+    Task StoreCredentialsAsync(string key, S3CredentialsEncrypted credentials);
+    Task<S3CredentialsEncrypted?> GetCredentialsAsync(string key);
     Task<CredentialStatus> CheckCredentialStatusAsync(string key);
+    Task<string> GetPepperAsync(string pepperVersion);
 }

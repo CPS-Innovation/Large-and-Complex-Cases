@@ -1,3 +1,5 @@
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
@@ -40,14 +42,22 @@ public static class IServiceCollectionExtension
 			services.AddSingleton<IAmazonS3UtilsWrapper, AmazonS3UtilsWrapper>();
 			services.AddScoped<IS3ClientFactory, S3ClientFactory>();
 			services.AddSingleton<IS3CredentialService, S3CredentialService>();
+			services.AddSingleton<ICryptographyService, CryptographyService>();
 
 			services.AddSingleton<IKeyVaultService>(sp =>
 			{
 				var logger = sp.GetRequiredService<ILogger<KeyVaultService>>();
 				var keyVaultUrl = configuration["KeyVault:Url"]
-					?? throw new InvalidOperationException("KeyVault:Url not configured");
-				return new KeyVaultService(keyVaultUrl, logger);
+					?? throw new ArgumentNullException("KeyVault:Url", "KeyVault:Url configuration is missing or empty.");
+
+				var secretClient = new SecretClient(
+					new Uri(keyVaultUrl),
+					new DefaultAzureCredential()
+				);
+
+				return new KeyVaultService(secretClient, logger);
 			});
+
 			services.AddHttpClient<INetAppHttpClient, NetAppHttpClient>(client =>
 			{
 				var netAppServiceUrl = configuration["NetAppOptions:ClusterUrl"];

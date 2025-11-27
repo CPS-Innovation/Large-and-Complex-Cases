@@ -64,6 +64,11 @@ steps:
             "slotSetting": false
           },
           {
+            "name": "NetAppOptions__PepperVersion",
+            "value": "$(NetAppOptionsPepperVersion)",
+            "slotSetting": false
+          },
+          {
             "name": "EgressOptions__Url",
             "value": "$(EgressOptionsUrl)",
             "slotSetting": false
@@ -121,6 +126,16 @@ steps:
           {
             "name": "Postgres__AuthMode",
             "value": "$(PostgresAuthMode)",
+            "slotSetting": false
+          },
+          {
+            "name": "AZURE_TENANT_ID",
+            "value": "$(AzureTenantId)",
+            "slotSetting": false
+          },
+          {
+            "name": "AZURE_CLIENT_ID",
+            "value": "$(AzureClientId)",
             "slotSetting": false
           },
           {

@@ -86,7 +86,7 @@ public class S3ClientFactory(INetAppHttpClient netAppHttpClient, INetAppArgFacto
 
         var credentials = await _s3CredentialsService.GetCredentialsAsync(oid, username, bearerToken);
 
-        return (credentials.EncryptedAccessKey, credentials.EncryptedSecretKey);
+        return (credentials.AccessKey, credentials.SecretKey);
     }
 }
 
