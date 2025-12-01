@@ -3,7 +3,6 @@ namespace CPS.ComplexCases.API.Tests.Unit.Validators;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using CPS.ComplexCases.API.Validators;
-using CPS.ComplexCases.Common.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
@@ -15,7 +14,6 @@ public class AuthorizationValidatorTests
 {
     private readonly Mock<ILogger<AuthorizationValidator>> _mockLogger;
     private readonly TestConfigurationManager _configManager;
-    private readonly Mock<IUserService> _mockUserService;
     private readonly AuthorizationValidator _validator;
     private readonly string _validAudience = "test-audience";
     private readonly string _validIssuer = "https://login.microsoftonline.com/test-tenant/v2.0";
@@ -26,11 +24,10 @@ public class AuthorizationValidatorTests
     {
         _mockLogger = new Mock<ILogger<AuthorizationValidator>>();
         _configManager = new TestConfigurationManager();
-        _mockUserService = new Mock<IUserService>();
 
         Environment.SetEnvironmentVariable("CallingAppValidAudience", _validAudience);
 
-        _validator = new AuthorizationValidator(_mockLogger.Object, _configManager, _mockUserService.Object);
+        _validator = new AuthorizationValidator(_mockLogger.Object, _configManager);
     }
 
     [Fact]

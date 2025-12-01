@@ -19,7 +19,7 @@ public class EgressStorageClient(
     HttpClient httpClient,
     IEgressRequestFactory egressRequestFactory) : BaseEgressClient(logger, egressOptions, httpClient, egressRequestFactory), IStorageClient
 {
-    public async Task<Stream> OpenReadStreamAsync(string path, string? workspaceId, string? fileId)
+    public async Task<Stream> OpenReadStreamAsync(string path, string? workspaceId, string? fileId, string? BearerToken = null)
     {
         var token = await GetWorkspaceToken();
 
@@ -33,7 +33,7 @@ public class EgressStorageClient(
         return await response.Content.ReadAsStreamAsync();
     }
 
-    public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string sourcePath, string? workspaceId = null, string? relativePath = null, string? sourceRootFolderPath = null)
+    public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string sourcePath, string? workspaceId = null, string? relativePath = null, string? sourceRootFolderPath = null, string? BearerToken = null)
     {
         var token = await GetWorkspaceToken();
 
@@ -80,7 +80,7 @@ public class EgressStorageClient(
         }
     }
 
-    public async Task<UploadChunkResult> UploadChunkAsync(UploadSession session, int chunkNumber, byte[] chunkData, long? start = null, long? end = null, long? totalSize = null)
+    public async Task<UploadChunkResult> UploadChunkAsync(UploadSession session, int chunkNumber, byte[] chunkData, long? start = null, long? end = null, long? totalSize = null, string? BearerToken = null)
     {
         var token = await GetWorkspaceToken();
 
@@ -99,7 +99,7 @@ public class EgressStorageClient(
         return new UploadChunkResult(TransferDirection.NetAppToEgress);
     }
 
-    public async Task CompleteUploadAsync(UploadSession session, string? md5hash = null, Dictionary<int, string>? etags = null)
+    public async Task CompleteUploadAsync(UploadSession session, string? md5hash = null, Dictionary<int, string>? etags = null, string? BearerToken = null)
     {
         var token = await GetWorkspaceToken();
 
@@ -113,7 +113,7 @@ public class EgressStorageClient(
         await SendRequestAsync(_egressRequestFactory.CompleteUploadRequest(completeArg, token));
     }
 
-    public async Task<IEnumerable<FileTransferInfo>> ListFilesForTransferAsync(List<TransferEntityDto> selectedEntities, string? workspaceId = null, int? caseId = null)
+    public async Task<IEnumerable<FileTransferInfo>> ListFilesForTransferAsync(List<TransferEntityDto> selectedEntities, string? workspaceId = null, int? caseId = null, string? BearerToken = null)
     {
         if (selectedEntities == null || selectedEntities.Count == 0)
             throw new ArgumentException("Selected entities cannot be null or empty", nameof(selectedEntities));
@@ -149,7 +149,7 @@ public class EgressStorageClient(
         return results.SelectMany(files => files);
     }
 
-    public async Task<DeleteFilesResult> DeleteFilesAsync(List<DeletionEntityDto> filesToDelete, string? workspaceId = null)
+    public async Task<DeleteFilesResult> DeleteFilesAsync(List<DeletionEntityDto> filesToDelete, string? workspaceId = null, string? BearerToken = null)
     {
         if (filesToDelete == null || filesToDelete.Count == 0)
             throw new ArgumentException("Selected entities cannot be null or empty", nameof(filesToDelete));

@@ -20,10 +20,15 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3UtilsWrapper am
 
     public async Task<bool> CreateBucketAsync(CreateBucketArg arg)
     {
-        var s3Client = await _s3ClientFactory.GetS3ClientAsync();
+        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
 
         try
         {
+            if (string.IsNullOrEmpty(arg.BucketName))
+            {
+                _logger.LogWarning("Bucket name is null or empty.");
+                return false;
+            }
             var bucketExists = await _amazonS3UtilsWrapper.DoesS3BucketExistV2Async(s3Client, arg.BucketName);
             if (bucketExists)
             {
@@ -43,7 +48,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3UtilsWrapper am
 
     public async Task<IEnumerable<S3Bucket>> ListBucketsAsync(ListBucketsArg arg)
     {
-        var s3Client = await _s3ClientFactory.GetS3ClientAsync();
+        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
 
         try
         {
@@ -61,7 +66,11 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3UtilsWrapper am
     {
         try
         {
-            var buckets = await ListBucketsAsync(new ListBucketsArg());
+            var buckets = await ListBucketsAsync(new ListBucketsArg
+            {
+                BearerToken = arg.BearerToken,
+                BucketName = arg.BucketName
+            });
 
             return buckets?.SingleOrDefault(x => x.BucketName == arg.BucketName);
         }
@@ -74,7 +83,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3UtilsWrapper am
 
     public async Task<GetObjectResponse?> GetObjectAsync(GetObjectArg arg)
     {
-        var s3Client = await _s3ClientFactory.GetS3ClientAsync();
+        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
 
         try
         {
@@ -97,7 +106,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3UtilsWrapper am
 
     public async Task<bool> UploadObjectAsync(UploadObjectArg arg)
     {
-        var s3Client = await _s3ClientFactory.GetS3ClientAsync();
+        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
 
         try
         {
@@ -113,7 +122,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3UtilsWrapper am
 
     public async Task<ListNetAppObjectsDto?> ListObjectsInBucketAsync(ListObjectsInBucketArg arg)
     {
-        var s3Client = await _s3ClientFactory.GetS3ClientAsync();
+        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
 
         try
         {
@@ -162,7 +171,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3UtilsWrapper am
 
     public async Task<ListNetAppObjectsDto?> ListFoldersInBucketAsync(ListFoldersInBucketArg arg)
     {
-        var s3Client = await _s3ClientFactory.GetS3ClientAsync();
+        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
         try
         {
             var response = await s3Client.ListObjectsV2Async(_netAppRequestFactory.ListFoldersInBucketRequest(arg));
@@ -200,7 +209,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3UtilsWrapper am
 
     public async Task<InitiateMultipartUploadResponse?> InitiateMultipartUploadAsync(InitiateMultipartUploadArg arg)
     {
-        var s3Client = await _s3ClientFactory.GetS3ClientAsync();
+        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
         try
         {
             return await s3Client.InitiateMultipartUploadAsync(_netAppRequestFactory.CreateMultipartUploadRequest(arg));
@@ -214,7 +223,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3UtilsWrapper am
 
     public async Task<UploadPartResponse?> UploadPartAsync(UploadPartArg arg)
     {
-        var s3Client = await _s3ClientFactory.GetS3ClientAsync();
+        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
         try
         {
             return await s3Client.UploadPartAsync(_netAppRequestFactory.UploadPartRequest(arg));
@@ -228,7 +237,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3UtilsWrapper am
 
     public async Task<CompleteMultipartUploadResponse?> CompleteMultipartUploadAsync(CompleteMultipartUploadArg arg)
     {
-        var s3Client = await _s3ClientFactory.GetS3ClientAsync();
+        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
         try
         {
             return await s3Client.CompleteMultipartUploadAsync(_netAppRequestFactory.CompleteMultipartUploadRequest(arg));
@@ -242,7 +251,7 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3UtilsWrapper am
 
     public async Task<bool> DoesObjectExistAsync(GetObjectArg arg)
     {
-        var s3Client = await _s3ClientFactory.GetS3ClientAsync();
+        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
         try
         {
             var response = await s3Client.GetObjectAttributesAsync(_netAppRequestFactory.GetObjectAttributesRequest(arg));

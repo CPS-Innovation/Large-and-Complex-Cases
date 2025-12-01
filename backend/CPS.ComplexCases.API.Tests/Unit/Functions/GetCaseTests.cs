@@ -1,16 +1,16 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Moq;
 using AutoFixture;
+using CPS.ComplexCases.API.Domain.Response;
 using CPS.ComplexCases.API.Functions;
+using CPS.ComplexCases.API.Tests.Unit.Helpers;
 using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
-using CPS.ComplexCases.API.Domain.Response;
-using CPS.ComplexCases.API.Tests.Unit.Helpers;
-using CPS.ComplexCases.DDEI.Models.Dto;
 using CPS.ComplexCases.DDEI.Models.Args;
-using CPS.ComplexCases.Data.Entities;
+using CPS.ComplexCases.DDEI.Models.Dto;
+using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions
 {
@@ -62,7 +62,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .Setup(c => c.GetCaseAsync(caseArg))
                 .ReturnsAsync(cmsResponse);
 
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, cmsAuthValues, _fixture.Create<string>());
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, cmsAuthValues, _fixture.Create<string>(), _fixture.Create<string>());
             var httpRequest = HttpRequestStubHelper.CreateHttpRequest(correlationId);
 
             // Act
@@ -95,7 +95,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .Setup(c => c.GetCaseMetadataForCaseIdAsync(caseId))
                 .ReturnsAsync((CaseMetadata?)null);
 
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>(), _fixture.Create<string>());
             var httpRequest = HttpRequestStubHelper.CreateHttpRequest(correlationId);
 
             // Act

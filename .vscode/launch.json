@@ -12,5 +12,8 @@
       "request": "attach",
       "processId": "${command:azureFunctions.pickProcess}"
     }
-  ]
+  ],
+  "env": {
+    "ASPNETCORE_ENVIRONMENT": "Development"
+  }
 }

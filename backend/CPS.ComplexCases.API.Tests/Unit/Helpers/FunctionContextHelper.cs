@@ -5,10 +5,10 @@ namespace CPS.ComplexCases.API.Tests.Unit.Helpers;
 
 public static class FunctionContextStubHelper
 {
-    public static FunctionContext CreateFunctionContextStub(Guid correlationId, string cmsAuthValues, string username)
+    public static FunctionContext CreateFunctionContextStub(Guid correlationId, string cmsAuthValues, string username, string bearerToken)
     {
         var functionContext = new TestFunctionContext();
-        var requestContext = new RequestContext(correlationId, cmsAuthValues, username);
+        var requestContext = new RequestContext(correlationId, cmsAuthValues, username, bearerToken);
 
         // Store the request context in Items dictionary (this is how the extension method retrieves it)
         functionContext.Items["RequestContext"] = requestContext;

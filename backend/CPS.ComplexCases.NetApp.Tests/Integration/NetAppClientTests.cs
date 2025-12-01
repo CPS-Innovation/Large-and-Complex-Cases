@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Amazon.Runtime;
 using Amazon.S3;
-using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
@@ -23,6 +22,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
         private readonly AmazonS3Client _s3Client;
         private readonly IAmazonS3UtilsWrapper _amazonS3UtilsWrapper;
         private readonly IS3ClientFactory _s3ClientFactory;
+        private const string BearerToken = "fakeBearerToken";
 
         public NetAppClientTests()
         {
@@ -59,8 +59,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
                     BucketName = "test-bucket",
                     Url = _server.Urls[0],
                     RegionName = "us-east-1"
-                }),
-                new UserService());
+                }));
             _s3ClientFactory.SetS3ClientAsync(_s3Client);
 
             var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<NetAppClient>();
@@ -74,7 +73,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
         {
             // Arrange
             var bucketName = "test-bucket";
-            var arg = _netAppArgFactory.CreateCreateBucketArg(bucketName);
+            var arg = _netAppArgFactory.CreateCreateBucketArg(BearerToken, bucketName);
 
             // Act
             var result = await _client.CreateBucketAsync(arg);
@@ -88,7 +87,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
         {
             // Arrange
             var bucketName = "test-bucket";
-            var arg = _netAppArgFactory.CreateFindBucketArg(bucketName);
+            var arg = _netAppArgFactory.CreateFindBucketArg(BearerToken, bucketName);
 
             // Act
             var result = await _client.FindBucketAsync(arg);
@@ -102,7 +101,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
         public async Task ListBuckets_WhenBucketsExist_ReturnsBuckets()
         {
             // Act
-            var result = await _client.ListBucketsAsync(_netAppArgFactory.CreateListBucketsArg());
+            var result = await _client.ListBucketsAsync(_netAppArgFactory.CreateListBucketsArg(BearerToken));
 
             // Assert
             Assert.NotNull(result);
@@ -116,7 +115,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             var bucketName = "test-bucket";
             var objectName = "test-file.txt";
             var stream = new MemoryStream(Encoding.UTF8.GetBytes("Test upload!"));
-            var arg = _netAppArgFactory.CreateUploadObjectArg(bucketName, objectName, stream);
+            var arg = _netAppArgFactory.CreateUploadObjectArg(BearerToken, bucketName, objectName, stream);
 
             // Act
             var result = await _client.UploadObjectAsync(arg);
@@ -131,7 +130,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             // Arrange
             var bucketName = "test-bucket";
             var objectName = "test-file.txt";
-            var arg = _netAppArgFactory.CreateListObjectsInBucketArg(bucketName);
+            var arg = _netAppArgFactory.CreateListObjectsInBucketArg(BearerToken, bucketName);
 
             // Act
             var result = await _client.ListObjectsInBucketAsync(arg);
@@ -149,7 +148,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             // Arrange
             var bucketName = "test-bucket";
             var objectName = "test-document.pdf";
-            var arg = _netAppArgFactory.CreateGetObjectArg(bucketName, objectName);
+            var arg = _netAppArgFactory.CreateGetObjectArg(BearerToken, bucketName, objectName);
 
             // Act
             var result = await _client.GetObjectAsync(arg);
@@ -165,7 +164,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
         {
             // Arrange
             var bucketName = "nested-objects";
-            var arg = _netAppArgFactory.CreateListFoldersInBucketArg(bucketName);
+            var arg = _netAppArgFactory.CreateListFoldersInBucketArg(BearerToken, bucketName);
 
             // Act
             var result = await _client.ListFoldersInBucketAsync(arg);

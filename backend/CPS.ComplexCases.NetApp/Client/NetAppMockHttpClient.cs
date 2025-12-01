@@ -19,7 +19,11 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
     {
         try
         {
-            var findExistingBucketArg = new FindBucketArg { BucketName = arg.BucketName };
+            var findExistingBucketArg = new FindBucketArg
+            {
+                BearerToken = arg.BearerToken,
+                BucketName = arg.BucketName
+            };
             var existingBucket = await FindBucketAsync(findExistingBucketArg);
 
             if (existingBucket != null)
@@ -49,7 +53,11 @@ public class NetAppMockHttpClient(ILogger<NetAppMockHttpClient> logger, HttpClie
 
     public async Task<S3Bucket?> FindBucketAsync(FindBucketArg arg)
     {
-        var buckets = await ListBucketsAsync(new ListBucketsArg());
+        var buckets = await ListBucketsAsync(new ListBucketsArg
+        {
+            BearerToken = arg.BearerToken,
+            BucketName = arg.BucketName
+        });
 
         var response = buckets.FirstOrDefault(x => x.BucketName.Equals(arg.BucketName, StringComparison.OrdinalIgnoreCase));
         return response;

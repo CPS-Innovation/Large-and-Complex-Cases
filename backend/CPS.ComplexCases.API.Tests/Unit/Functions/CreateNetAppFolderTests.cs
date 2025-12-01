@@ -1,6 +1,7 @@
 using Amazon.S3.Model;
 using AutoFixture;
 using CPS.ComplexCases.API.Functions;
+using CPS.ComplexCases.API.Tests.Unit.Helpers;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
@@ -18,6 +19,10 @@ public class CreateNetAppFolderTests
     private readonly Mock<INetAppArgFactory> _netAppArgFactoryMock;
     private readonly CreateNetAppFolder _function;
     private readonly Fixture _fixture;
+    private readonly string _testBearerToken;
+    private readonly Guid _testCorrelationId;
+    private readonly string _testUsername;
+    private readonly string _testCmsAuthValues;
 
     public CreateNetAppFolderTests()
     {
@@ -31,6 +36,10 @@ public class CreateNetAppFolderTests
             _netAppArgFactoryMock.Object);
 
         _fixture = new Fixture();
+        _testBearerToken = _fixture.Create<string>();
+        _testCorrelationId = _fixture.Create<Guid>();
+        _testUsername = _fixture.Create<string>();
+        _testCmsAuthValues = _fixture.Create<string>();
     }
 
     [Fact]
@@ -46,7 +55,7 @@ public class CreateNetAppFolderTests
         };
 
         _netAppArgFactoryMock
-            .Setup(f => f.CreateFindBucketArg(operationName))
+            .Setup(f => f.CreateFindBucketArg(_testBearerToken, operationName))
             .Returns(arg);
 
         _netAppClientMock
@@ -54,9 +63,10 @@ public class CreateNetAppFolderTests
             .ReturnsAsync(bucketResult);
 
         var httpRequest = new DefaultHttpContext().Request;
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
         // Act
-        var result = await _function.Run(httpRequest, operationName);
+        var result = await _function.Run(httpRequest, operationName, functionContext);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
@@ -74,7 +84,7 @@ public class CreateNetAppFolderTests
         var arg = _fixture.Create<FindBucketArg>();
 
         _netAppArgFactoryMock
-            .Setup(f => f.CreateFindBucketArg(operationName))
+            .Setup(f => f.CreateFindBucketArg(_testBearerToken, operationName))
             .Returns(arg);
 
         _netAppClientMock
@@ -82,9 +92,10 @@ public class CreateNetAppFolderTests
             .ReturnsAsync((S3Bucket?)null);
 
         var httpRequest = new DefaultHttpContext().Request;
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
         // Act
-        var result = await _function.Run(httpRequest, operationName);
+        var result = await _function.Run(httpRequest, operationName, functionContext);
 
         // Assert
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
