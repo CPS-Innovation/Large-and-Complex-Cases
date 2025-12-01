@@ -44,7 +44,7 @@ public class NetAppHttpClient(HttpClient httpClient, INetAppRequestFactory netAp
 
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
-                throw new NetAppUnauthorizedException();
+                throw new NetAppUnauthorizedException(response.ReasonPhrase ?? "Unauthorized access to NetApp.");
             }
 
             if (response.StatusCode == HttpStatusCode.NotFound)
@@ -54,7 +54,7 @@ public class NetAppHttpClient(HttpClient httpClient, INetAppRequestFactory netAp
 
             if (response.StatusCode == HttpStatusCode.Conflict)
             {
-                throw new NetAppConflictException();
+                throw new NetAppConflictException(response.ReasonPhrase ?? "Conflict occurred while accessing NetApp API.");
             }
 
             var content = await response.Content.ReadAsStringAsync();

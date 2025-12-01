@@ -224,4 +224,56 @@ public class NetAppHttpClientTests
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() => _client.RegisterUserAsync(arg));
     }
+
+    [Fact]
+    public async Task RegisterUserAsync_ShouldThrowJsonException_WhenResponseIsInvalidJson()
+    {
+        // Arrange
+        var arg = new RegisterUserArg { Username = "Test User" };
+        var request = new HttpRequestMessage();
+        var responseContent = "invalid-json{]";
+
+        _requestFactoryMock.Setup(f => f.CreateRegisterUserRequest(arg)).Returns(request);
+
+        _httpMessageHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent(responseContent, Encoding.UTF8, "application/json")
+            });
+
+        // Act & Assert
+        await Assert.ThrowsAsync<JsonException>(() => _client.RegisterUserAsync(arg));
+    }
+
+    [Fact]
+    public async Task RegisterUserAsync_ShouldThrowJsonException_WhenResponseIsMalformedJson()
+    {
+        // Arrange
+        var arg = new RegisterUserArg { Username = "Test User" };
+        var request = new HttpRequestMessage();
+        var responseContent = "{\"username\":\"Test User\"";
+
+        _requestFactoryMock.Setup(f => f.CreateRegisterUserRequest(arg)).Returns(request);
+
+        _httpMessageHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent(responseContent, Encoding.UTF8, "application/json")
+            });
+
+        // Act & Assert
+        await Assert.ThrowsAsync<JsonException>(() => _client.RegisterUserAsync(arg));
+    }
 }
