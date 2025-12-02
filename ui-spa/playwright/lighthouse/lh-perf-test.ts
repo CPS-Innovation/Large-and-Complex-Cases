@@ -12,15 +12,20 @@
  * - Playwright metrics are more reliable for this use case
  */
 
-import { chromium, Browser, BrowserContext, Page } from 'playwright';
+import { chromium} from 'playwright';
+import type { Browser, BrowserContext, Page } from 'playwright';
 import * as lighthouse from 'lighthouse';
 import * as chromeLauncher from 'chrome-launcher';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import chalk from 'chalk';
 import moment from 'moment';
-import { createAuthManager, validateAuthEnvironment } from './auth-utils';
-import { Config, validateConfig } from './config';
+import { fileURLToPath } from 'url'
+import { createAuthManager, validateAuthEnvironment } from './auth-utils.ts';
+import { Config, validateConfig } from './config.ts';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 interface PerformanceResult {
   caseId: string;
@@ -78,6 +83,7 @@ class SimpleLighthouseTest {
         // Authenticate
         const tokens = await authManager.authenticate();
         
+        
         // Apply authentication to browser context
         if (this.context) {
           await authManager.setAuthContext(this.context, tokens);
@@ -129,7 +135,6 @@ class SimpleLighthouseTest {
     
     const startTime = Date.now();
     
-    // Navigate to page with authentication
     await this.page.goto(testUrl, { waitUntil: 'networkidle' });
     
     // Wait for key elements
@@ -189,7 +194,7 @@ class SimpleLighthouseTest {
     
     // Run Lighthouse audit (Note: This launches a new browser without auth)
     console.log('→ Running Lighthouse audit...');
-    console.log('   ⚠ Note: Lighthouse runs in a separate browser instance without authentication');
+    console.log('⚠ Note: Lighthouse runs in a separate browser instance without authentication');
     const lighthouseResults = await this.runLighthouseAudit(testUrl);
     
     const result: PerformanceResult = {
@@ -343,8 +348,7 @@ ${results.map(result => `
   }
 }
 
-// Run if executed directly
-if (require.main === module) {
+if (process.argv[1] === __filename) {
   const test = new SimpleLighthouseTest();
   test.run().catch(error => {
     console.error('Test execution failed:', error);
