@@ -7,6 +7,7 @@ using CPS.ComplexCases.NetApp.Exceptions;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Models.NetApp;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;
 
@@ -17,6 +18,7 @@ public class NetAppHttpClientTests
     private readonly Fixture _fixture;
     private readonly Mock<HttpMessageHandler> _httpMessageHandlerMock = new();
     private readonly Mock<INetAppRequestFactory> _requestFactoryMock = new();
+    private readonly Mock<ILogger<NetAppHttpClient>> _loggerMock = new();
     private readonly NetAppHttpClient _client;
 
     public NetAppHttpClientTests()
@@ -25,7 +27,8 @@ public class NetAppHttpClientTests
         {
             httpClient.BaseAddress = new Uri("http://localhost/");
         }
-        _client = new NetAppHttpClient(httpClient, _requestFactoryMock.Object);
+        _loggerMock = new Mock<ILogger<NetAppHttpClient>>();
+        _client = new NetAppHttpClient(httpClient, _requestFactoryMock.Object, _loggerMock.Object);
         _fixture = new Fixture();
     }
 
@@ -248,7 +251,7 @@ public class NetAppHttpClientTests
             });
 
         // Act & Assert
-        await Assert.ThrowsAsync<JsonException>(() => _client.RegisterUserAsync(arg));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _client.RegisterUserAsync(arg));
     }
 
     [Fact]
@@ -274,6 +277,6 @@ public class NetAppHttpClientTests
             });
 
         // Act & Assert
-        await Assert.ThrowsAsync<JsonException>(() => _client.RegisterUserAsync(arg));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _client.RegisterUserAsync(arg));
     }
 }

@@ -44,13 +44,15 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             _amazonS3UtilsWrapper = new AmazonS3UtilsWrapper();
             _netAppArgFactory = new NetAppArgFactory();
             _netAppRequestFactory = new NetAppRequestFactory();
+            var netAppHttpClientLogger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<NetAppHttpClient>();
             _s3ClientFactory = new S3ClientFactory(
                 new NetAppHttpClient(
                     new HttpClient
                     {
                         BaseAddress = new Uri(_server.Urls[0])
                     },
-                    _netAppRequestFactory),
+                    _netAppRequestFactory,
+                    netAppHttpClientLogger),
                 _netAppArgFactory,
                 Options.Create(new NetAppOptions
                 {

@@ -28,7 +28,7 @@ public class RequestContext(Guid correlationId, string? cmsAuthValues, string? u
     {
         get => InternalBearerToken
             // If the calling code is asking for a BearerToken and it isn't there then they've not logged in properly
-            ?? throw new CpsAuthenticationException();
+            ?? throw new CpsAuthenticationException("Bearer token missing in RequestContext");
     }
 }
 
