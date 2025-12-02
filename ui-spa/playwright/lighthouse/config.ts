@@ -1,5 +1,3 @@
-import * as path from 'path';
-
 export interface TestConfig {
   baseUrl: string;
   headless: boolean;
@@ -49,7 +47,7 @@ export const Config: TestConfig = {
       scope: process.env.AZURE_AD_SCOPE || 'api://user_impersonation'
     },
     cms: {
-      baseUrl: process.env.CMS_BASE_URL || process.env.BASE_URL || '',
+      baseUrl: process.env.CMS_BASE_URL || '',
       accessKey: process.env.CMS_ACCESS_KEY || ''
     }
   },

@@ -1,7 +1,12 @@
-import { Page, BrowserContext, expect } from '@playwright/test';
-import * as fs from 'fs-extra';
+import { expect } from '@playwright/test';
+import type { Page, BrowserContext } from 'playwright';
+import fs from 'fs-extra';
 import * as path from 'path';
-import { Config } from './config';
+import { Config } from './config.ts';
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Authentication utilities for Lighthouse and Playwright tests
@@ -83,21 +88,23 @@ export class AuthenticationManager {
 
     const tokenUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
     
+    const form = new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      scope: scope,
+      grant_type: 'client_credentials'
+    });
+
     const response = await fetch(tokenUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        scope: scope,
-        grant_type: 'client_credentials'
-      })
+      body: form
     });
 
     if (!response.ok) {
-      throw new Error(`Azure AD authentication failed: ${response.statusText}`);
+      throw new Error(`Azure AD authentication failed: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
