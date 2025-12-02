@@ -1,0 +1,297 @@
+import { Page, BrowserContext, expect } from '@playwright/test';
+import * as fs from 'fs-extra';
+import * as path from 'path';
+import { Config } from './config';
+
+/**
+ * Authentication utilities for Lighthouse and Playwright tests
+ * Handles both Azure AD authentication and CMS authentication with cookies
+ */
+
+export interface AuthConfig {
+  azureAd: {
+    tenantId: string;
+    clientId: string;
+    clientSecret: string;
+    scope: string;
+  };
+  cms: {
+    baseUrl: string;
+    username: string;
+    password: string;
+    accessKey: string;
+  };
+}
+
+export interface AuthTokens {
+  azureAdToken: string;
+  cmsAuthCookie: string;
+  expiryTime: Date;
+}
+
+export class AuthenticationManager {
+  private config: AuthConfig;
+  private authFile: string;
+
+  constructor(config: AuthConfig) {
+    this.config = config;
+    this.authFile = path.join(__dirname, '../test-results/auth-tokens.json');
+  }
+
+  /**
+   * Authenticate using Azure AD and CMS authentication
+   * Returns tokens that can be used for API calls and browser context
+   */
+  async authenticate(): Promise<AuthTokens> {
+    console.log('=== Starting Authentication Process ===');
+
+    // Try to load cached tokens first
+    const cachedTokens = await this.loadCachedTokens();
+    if (cachedTokens && !this.isTokenExpired(cachedTokens)) {
+      console.log('✓ Using cached authentication tokens');
+      return cachedTokens;
+    }
+
+    // Perform fresh authentication
+    const azureAdToken = await this.authenticateAzureAd();
+    const cmsAuthCookie = await this.authenticateCMS(azureAdToken);
+    
+    const tokens: AuthTokens = {
+      azureAdToken,
+      cmsAuthCookie,
+      expiryTime: new Date(Date.now() + 55 * 60 * 1000) // 55 minutes expiry
+    };
+
+    // Cache the tokens
+    await this.cacheTokens(tokens);
+    
+    console.log('✓ Authentication completed successfully');
+    return tokens;
+  }
+
+  /**
+   * Authenticate using Azure AD client credentials flow
+   */
+  private async authenticateAzureAd(): Promise<string> {
+    console.log('→ Authenticating with Azure AD...');
+
+    const { tenantId, clientId, clientSecret, scope } = this.config.azureAd;
+    
+    if (!tenantId || !clientId || !clientSecret || !scope) {
+      throw new Error('Missing required Azure AD configuration');
+    }
+
+    const tokenUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
+    
+    const response = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        scope: scope,
+        grant_type: 'client_credentials'
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Azure AD authentication failed: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.access_token) {
+      throw new Error('No access token received from Azure AD');
+    }
+
+    console.log('✓ Azure AD authentication successful');
+    return data.access_token;
+  }
+
+  /**
+   * Authenticate with CMS using Azure AD token
+   */
+  private async authenticateCMS(azureAdToken: string): Promise<string> {
+    console.log('→ Authenticating with CMS...');
+
+    const { baseUrl, accessKey } = this.config.cms;
+    
+    const authUrl = `${baseUrl}/authenticate`;
+    
+    const response = await fetch(authUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Bearer ${azureAdToken}`,
+        'x-functions-key': accessKey
+      },
+      body: new URLSearchParams({
+        username: this.config.cms.username,
+        password: this.config.cms.password
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`CMS authentication failed: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    // URL-encode the authentication response for cookie usage
+    const cmsAuthCookie = encodeURIComponent(JSON.stringify(data));
+    
+    console.log('✓ CMS authentication successful');
+    return cmsAuthCookie;
+  }
+
+  /**
+   * Set authentication headers and cookies on browser context
+   */
+  async setAuthContext(context: BrowserContext, tokens: AuthTokens): Promise<void> {
+    // Set default headers for all requests
+    await context.setExtraHTTPHeaders({
+      'Authorization': `Bearer ${tokens.azureAdToken}`,
+    });
+
+    // Set CMS authentication cookie
+    const cookies = [
+      {
+        name: 'Cms-Auth-Values',
+        value: tokens.cmsAuthCookie,
+        domain: new URL(Config.baseUrl).hostname,
+        path: '/',
+        httpOnly: true,
+        secure: Config.baseUrl.startsWith('https://')
+      }
+    ];
+
+    await context.addCookies(cookies);
+    console.log('✓ Authentication context set on browser');
+  }
+
+  /**
+   * Perform interactive authentication for Playwright tests
+   * This simulates the real user login flow
+   */
+  async interactiveAuth(page: Page): Promise<void> {
+    console.log('→ Starting interactive authentication...');
+
+    // Navigate to the application
+    await page.goto(Config.baseUrl);
+    
+    // Wait for redirect to Azure AD login
+    await page.waitForURL('**/login.microsoftonline.com/**', { timeout: 10000 });
+    
+    // Fill in Azure AD credentials
+    await page.locator('input[type="email"]').fill(this.config.cms.username);
+    await page.locator('input[type="submit"]').click();
+    
+    await page.waitForSelector('input[type="password"]', { timeout: 5000 });
+    await page.locator('input[type="password"]').fill(this.config.cms.password);
+    await page.locator('input[type="submit"]').click();
+    
+    // Handle "Stay signed in?" prompt if it appears
+    try {
+      await page.locator('input[type="submit"][value="Yes"]').click({ timeout: 3000 });
+    } catch {
+      // Ignore if the prompt doesn't appear
+    }
+    
+    // Wait for redirect back to application
+    await page.waitForURL(Config.baseUrl, { timeout: 15000 });
+    
+    // Verify successful login
+    await expect(page.locator('[data-testid="user-info"]')).toBeVisible({ timeout: 10000 });
+    
+    console.log('✓ Interactive authentication completed');
+  }
+
+  /**
+   * Cache authentication tokens to file
+   */
+  private async cacheTokens(tokens: AuthTokens): Promise<void> {
+    await fs.ensureDir(path.dirname(this.authFile));
+    await fs.writeJson(this.authFile, tokens, { spaces: 2 });
+  }
+
+  /**
+   * Load cached authentication tokens from file
+   */
+  private async loadCachedTokens(): Promise<AuthTokens | null> {
+    try {
+      if (await fs.pathExists(this.authFile)) {
+        const tokens = await fs.readJson(this.authFile);
+        return tokens;
+      }
+    } catch (error) {
+      console.warn('Failed to load cached tokens:', error);
+    }
+    return null;
+  }
+
+  /**
+   * Check if authentication tokens are expired
+   */
+  private isTokenExpired(tokens: AuthTokens): boolean {
+    return new Date() >= tokens.expiryTime;
+  }
+
+  /**
+   * Clear cached authentication tokens
+   */
+  async clearCache(): Promise<void> {
+    try {
+      await fs.remove(this.authFile);
+      console.log('✓ Authentication cache cleared');
+    } catch (error) {
+      console.warn('Failed to clear auth cache:', error);
+    }
+  }
+}
+
+/**
+ * Create authentication manager with environment configuration
+ */
+export function createAuthManager(): AuthenticationManager {
+  const authConfig: AuthConfig = {
+    azureAd: {
+      tenantId: process.env.AZURE_AD_TENANT_ID || '',
+      clientId: process.env.AZURE_AD_CLIENT_ID || '',
+      clientSecret: process.env.AZURE_AD_CLIENT_SECRET || '',
+      scope: process.env.AZURE_AD_SCOPE || 'api://user_impersonation'
+    },
+    cms: {
+      baseUrl: process.env.CMS_BASE_URL || Config.baseUrl,
+      username: process.env.CMS_USERNAME || '',
+      password: process.env.CMS_PASSWORD || '',
+      accessKey: process.env.CMS_ACCESS_KEY || ''
+    }
+  };
+
+  return new AuthenticationManager(authConfig);
+}
+
+/**
+ * Environment variable validation
+ */
+export function validateAuthEnvironment(): void {
+  const requiredVars = [
+    'AZURE_AD_TENANT_ID',
+    'AZURE_AD_CLIENT_ID', 
+    'AZURE_AD_CLIENT_SECRET',
+    'CMS_USERNAME',
+    'CMS_PASSWORD',
+    'CMS_ACCESS_KEY'
+  ];
+
+  const missing = requiredVars.filter(varName => !process.env[varName]);
+  
+  if (missing.length > 0) {
+    throw new Error(
+      `Missing required environment variables for authentication: ${missing.join(', ')}\n` +
+      'Please set these variables in your .env file or environment.'
+    );
+  }
+}
