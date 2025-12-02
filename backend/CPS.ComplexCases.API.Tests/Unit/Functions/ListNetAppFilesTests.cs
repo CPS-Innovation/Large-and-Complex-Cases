@@ -22,6 +22,10 @@ public class ListNetAppFilesTests
     private readonly Mock<IOptions<NetAppOptions>> _optionsMock;
     private readonly ListNetAppFiles _function;
     private readonly Fixture _fixture;
+    private readonly string _testBearerToken;
+    private readonly Guid _testCorrelationId;
+    private readonly string _testUsername;
+    private readonly string _testCmsAuthValues;
 
     public ListNetAppFilesTests()
     {
@@ -30,6 +34,11 @@ public class ListNetAppFilesTests
         _netAppArgFactoryMock = new Mock<INetAppArgFactory>();
         _optionsMock = new Mock<IOptions<NetAppOptions>>();
         _fixture = new Fixture();
+
+        _testBearerToken = _fixture.Create<string>();
+        _testCorrelationId = _fixture.Create<Guid>();
+        _testUsername = _fixture.Create<string>();
+        _testCmsAuthValues = _fixture.Create<string>();
 
         _optionsMock.Setup(o => o.Value).Returns(new NetAppOptions
         {
@@ -66,6 +75,7 @@ public class ListNetAppFilesTests
 
         _netAppArgFactoryMock
             .Setup(f => f.CreateListObjectsInBucketArg(
+                _testBearerToken,
                 "test-bucket",
                 queryParams[InputParameters.ContinuationToken],
                 50,
@@ -77,14 +87,17 @@ public class ListNetAppFilesTests
             .Setup(c => c.ListObjectsInBucketAsync(arg))
             .ReturnsAsync(response);
 
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
         // Act
-        var result = await _function.Run(httpRequest);
+        var result = await _function.Run(httpRequest, functionContext);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
         Assert.Equal(response, okResult.Value);
 
         _netAppArgFactoryMock.Verify(f => f.CreateListObjectsInBucketArg(
+            _testBearerToken,
             "test-bucket",
             queryParams[InputParameters.ContinuationToken],
             50,
@@ -113,6 +126,7 @@ public class ListNetAppFilesTests
         _netAppArgFactoryMock
             .Setup(f => f.CreateListObjectsInBucketArg(
                 It.IsAny<string>(),
+                It.IsAny<string>(),
                 It.IsAny<string?>(),
                 It.IsAny<int>(),
                 It.IsAny<string?>(),
@@ -123,8 +137,10 @@ public class ListNetAppFilesTests
             .Setup(c => c.ListObjectsInBucketAsync(arg))
             .ReturnsAsync((ListNetAppObjectsDto?)null);
 
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
         // Act
-        var result = await _function.Run(httpRequest);
+        var result = await _function.Run(httpRequest, functionContext);
         // Assert
         Assert.IsType<BadRequestResult>(result);
     }

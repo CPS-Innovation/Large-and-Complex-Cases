@@ -25,6 +25,10 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         private readonly Mock<IOptions<NetAppOptions>> _optionsMock;
         private readonly Fixture _fixture;
         private readonly ListNetAppFolders _function;
+        private readonly string _testBearerToken;
+        private readonly Guid _testCorrelationId;
+        private readonly string _testUsername;
+        private readonly string _testCmsAuthValues;
 
         public ListNetAppFoldersTests()
         {
@@ -34,6 +38,11 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _caseEnrichmentServiceMock = new Mock<ICaseEnrichmentService>();
             _optionsMock = new Mock<IOptions<NetAppOptions>>();
             _fixture = new Fixture();
+
+            _testBearerToken = _fixture.Create<string>();
+            _testCorrelationId = _fixture.Create<Guid>();
+            _testUsername = _fixture.Create<string>();
+            _testCmsAuthValues = _fixture.Create<string>();
 
             _optionsMock.Setup(o => o.Value).Returns(new NetAppOptions
             {
@@ -72,6 +81,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
 
             _netAppArgFactoryMock
                 .Setup(f => f.CreateListFoldersInBucketArg(
+                    _testBearerToken,
                     "test-bucket",
                     queryParams[InputParameters.OperationName],
                     queryParams[InputParameters.ContinuationToken],
@@ -87,14 +97,17 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .Setup(s => s.EnrichNetAppFoldersWithMetadataAsync(response))
                 .ReturnsAsync(enrichedResponse);
 
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
             // Act
-            var result = await _function.Run(httpRequest);
+            var result = await _function.Run(httpRequest, functionContext);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
             Assert.Equal(enrichedResponse, okResult.Value);
 
             _netAppArgFactoryMock.Verify(f => f.CreateListFoldersInBucketArg(
+                _testBearerToken,
                 "test-bucket",
                 queryParams[InputParameters.OperationName],
                 queryParams[InputParameters.ContinuationToken],
@@ -126,6 +139,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
+                    It.IsAny<string>(),
                     It.IsAny<int>(),
                     It.IsAny<string>()))
                 .Returns(arg);
@@ -134,8 +148,10 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .Setup(c => c.ListFoldersInBucketAsync(arg))
                 .ReturnsAsync((ListNetAppObjectsDto?)null);
 
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
             // Act
-            var result = await _function.Run(httpRequest);
+            var result = await _function.Run(httpRequest, functionContext);
 
             // Assert
             Assert.IsType<BadRequestResult>(result);

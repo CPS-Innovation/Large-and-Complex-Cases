@@ -4,27 +4,22 @@ using Microsoft.Extensions.Options;
 using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
-using CPS.ComplexCases.Common.Services;
-using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Services;
 
 namespace CPS.ComplexCases.NetApp.Factories;
 
-public class S3ClientFactory(INetAppHttpClient netAppHttpClient, INetAppArgFactory netAppArgFactory, IOptions<NetAppOptions> options, IUserService userService, IS3CredentialService s3CredentialService) : IS3ClientFactory
+public class S3ClientFactory(IOptions<NetAppOptions> options, IS3CredentialService s3CredentialService) : IS3ClientFactory
 {
-    private readonly INetAppHttpClient _netAppHttpClient = netAppHttpClient;
-    private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
     private readonly NetAppOptions _options = options.Value;
-    private readonly IUserService _userService = userService;
     private readonly IS3CredentialService _s3CredentialsService = s3CredentialService;
     private IAmazonS3? _s3Client;
 
-    public async Task<IAmazonS3> GetS3ClientAsync()
+    public async Task<IAmazonS3> GetS3ClientAsync(string bearerToken)
     {
         if (_s3Client == null)
         {
-            _s3Client = await CreateS3Client();
+            _s3Client = await CreateS3Client(bearerToken);
         }
 
         return _s3Client;
@@ -35,13 +30,15 @@ public class S3ClientFactory(INetAppHttpClient netAppHttpClient, INetAppArgFacto
         _s3Client = s3Client;
     }
 
-    private async Task<IAmazonS3> CreateS3Client()
+    private async Task<IAmazonS3> CreateS3Client(string bearerToken)
     {
-        var bearerToken = await _userService.GetUserBearerTokenAsync();
-        var (accessKey, secretKey) = await GetCredentialKeysAsync(bearerToken!);
+        var (accessKey, secretKey) = await GetCredentialKeysAsync(bearerToken);
         var credentials = new BasicAWSCredentials(accessKey, secretKey);
 
-        ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
+        if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+        {
+            ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
+        }
         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
         var handler = new HttpClientHandler

@@ -1,6 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using CPS.ComplexCases.Common.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
@@ -8,11 +7,10 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace CPS.ComplexCases.API.Validators;
 
-public class AuthorizationValidator(ILogger<AuthorizationValidator> logger, ConfigurationManager<OpenIdConnectConfiguration> configurationManager, IUserService userService) : IAuthorizationValidator
+public class AuthorizationValidator(ILogger<AuthorizationValidator> logger, ConfigurationManager<OpenIdConnectConfiguration> configurationManager) : IAuthorizationValidator
 {
   private readonly ILogger<AuthorizationValidator> _logger = logger;
   private readonly ConfigurationManager<OpenIdConnectConfiguration> _configurationManager = configurationManager;
-  private readonly IUserService _userService = userService;
   private const string ScopeType = @"http://schemas.microsoft.com/identity/claims/scope";
   private const string RolesType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
 
@@ -51,8 +49,6 @@ public class AuthorizationValidator(ILogger<AuthorizationValidator> logger, Conf
 
       // For app tokens, use app name or object ID; for user tokens, use preferred_username
       var username = GetIdentifier(claimsPrincipal);
-
-      await _userService.SetUserBearerTokenAsync(tokenString);
 
       return new ValidateTokenResult
       {

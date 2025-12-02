@@ -184,7 +184,8 @@ public class DeleteFilesTests
         _storageClientMock
             .Setup(c => c.DeleteFilesAsync(
                 It.IsAny<List<DeletionEntityDto>>(),
-                payload.WorkspaceId))
+                payload.WorkspaceId,
+                null))
             .ReturnsAsync(new DeleteFilesResult());
 
         // Act
@@ -197,7 +198,8 @@ public class DeleteFilesTests
                     l.Count == 2 &&
                     l.Any(x => x.Path == "file1.txt" && x.FileId == "f1") &&
                     l.Any(x => x.Path == "file2.txt" && x.FileId == "f2")),
-                payload.WorkspaceId),
+                payload.WorkspaceId,
+                null),
             Times.Once);
     }
 
@@ -249,7 +251,7 @@ public class DeleteFilesTests
 
         var exception = new Exception("delete failed");
         _storageClientMock
-            .Setup(x => x.DeleteFilesAsync(It.IsAny<List<DeletionEntityDto>>(), payload.WorkspaceId))
+            .Setup(x => x.DeleteFilesAsync(It.IsAny<List<DeletionEntityDto>>(), payload.WorkspaceId, null))
             .ThrowsAsync(exception);
 
         var sut = new DeleteFiles(_transferEntityHelperMock.Object, _storageClientFactoryMock.Object, _loggerMock.Object);

@@ -1,20 +1,20 @@
-using CPS.ComplexCases.API.Domain.Request;
-using CPS.ComplexCases.API.Functions.Transfer;
-using CPS.ComplexCases.API.Validators.Requests;
-using CPS.ComplexCases.Common.Models.Requests;
-using CPS.ComplexCases.Common.Models.Domain;
+using System.Net;
+using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Moq;
 using AutoFixture;
-using System.Net;
-using System.Text.Json;
 using CPS.ComplexCases.API.Clients.FileTransfer;
-using CPS.ComplexCases.Common.Models.Domain.Enums;
+using CPS.ComplexCases.API.Domain.Request;
+using CPS.ComplexCases.API.Functions.Transfer;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
-using CPS.ComplexCases.Common.Models;
+using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Helpers;
+using CPS.ComplexCases.Common.Models;
+using CPS.ComplexCases.Common.Models.Domain;
+using CPS.ComplexCases.Common.Models.Domain.Enums;
+using CPS.ComplexCases.Common.Models.Requests;
+using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
 {
@@ -45,7 +45,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
             // Arrange
             var httpRequestMock = new Mock<HttpRequest>();
 
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>(), _fixture.Create<string>());
 
             var validRequest = new ValidatableRequest<GetFilesForTransferRequest>
             {
@@ -124,7 +124,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
             // Arrange
             var httpRequestMock = new Mock<HttpRequest>();
 
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>(), _fixture.Create<string>());
 
             var invalidRequest = new ValidatableRequest<GetFilesForTransferRequest>
             {

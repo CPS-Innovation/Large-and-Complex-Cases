@@ -1,5 +1,6 @@
 using System.Net;
 using CPS.ComplexCases.API.Constants;
+using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
@@ -34,13 +35,14 @@ public class ListNetAppFiles(ILogger<ListNetAppFiles> logger, INetAppClient netA
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Forbidden, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Forbidden)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/netapp/files")] HttpRequest req)
+    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/netapp/files")] HttpRequest req, FunctionContext functionContext)
     {
+        var context = functionContext.GetRequestContext();
         var continuationToken = req.Query[InputParameters.ContinuationToken];
         var take = int.TryParse(req.Query[InputParameters.Take], out var takeValue) ? takeValue : 100;
         var path = req.Query[InputParameters.Path];
 
-        var arg = _netAppArgFactory.CreateListObjectsInBucketArg(_netAppOptions.BucketName, continuationToken, take, path, true);
+        var arg = _netAppArgFactory.CreateListObjectsInBucketArg(context.BearerToken, _netAppOptions.BucketName, continuationToken, take, path, true);
         var response = await _netAppClient.ListObjectsInBucketAsync(arg);
 
         if (response == null)

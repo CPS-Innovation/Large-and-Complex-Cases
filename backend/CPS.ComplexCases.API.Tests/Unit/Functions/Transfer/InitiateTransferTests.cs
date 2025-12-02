@@ -1,5 +1,8 @@
 using System.Net;
 using System.Text;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using AutoFixture;
 using CPS.ComplexCases.API.Clients.FileTransfer;
 using CPS.ComplexCases.API.Domain.Request;
@@ -7,13 +10,10 @@ using CPS.ComplexCases.API.Functions.Transfer;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
 using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Helpers;
-using CPS.ComplexCases.Common.Models.Requests;
-using CPS.ComplexCases.Common.Models.Domain.Enums;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Moq;
 using CPS.ComplexCases.Common.Models;
+using CPS.ComplexCases.Common.Models.Domain.Enums;
+using CPS.ComplexCases.Common.Models.Requests;
+using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
 {
@@ -27,6 +27,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
         private readonly Guid _testCorrelationId;
         private readonly string _testUsername;
         private readonly string _testCmsAuthValues;
+        private readonly string _testBearerToken;
 
         public InitiateTransferTests()
         {
@@ -38,6 +39,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
             _testCorrelationId = _fixture.Create<Guid>();
             _testUsername = _fixture.Create<string>();
             _testCmsAuthValues = _fixture.Create<string>();
+            _testBearerToken = _fixture.Create<string>();
 
             _function = new InitiateTransfer(
                 _loggerMock.Object,
@@ -63,7 +65,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
                 });
 
             var request = HttpRequestStubHelper.CreateHttpRequestFor(initiateRequest);
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
             var result = await _function.Run(request, functionContext);
@@ -113,7 +115,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
                 .ReturnsAsync(httpResponse);
 
             var request = HttpRequestStubHelper.CreateHttpRequestFor(initiateRequest);
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
             var result = await _function.Run(request, functionContext);
