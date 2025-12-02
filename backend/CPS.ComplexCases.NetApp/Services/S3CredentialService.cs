@@ -44,7 +44,7 @@ public class S3CredentialService : IS3CredentialService
         {
             // Credentials exist and are still valid (> 5 min remaining)
             _logger.LogInformation(
-                "Found valid credentials for {oid} (expires in {RemainingMinutes:F1} minutes)",
+                "Found valid credentials for {oid} (expires in {RemainingMinutes} minutes)",
                 oid,
                 status.RemainingMinutes);
 
