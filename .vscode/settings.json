@@ -16,8 +16,5 @@
   "appService.zipIgnorePattern": [
     "node_modules{,/**}",
     ".vscode{,/**}"
-  ],
-  "[json]": {
-    "editor.defaultFormatter": "vscode.json-language-features"
-  }
+  ]
 }
