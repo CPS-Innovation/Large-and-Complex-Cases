@@ -22,9 +22,9 @@ namespace CPS.ComplexCases.API.Context
             return rc;
         }
 
-        public static void SetRequestContext(this FunctionContext context, Guid correlationId, string? cmsAuthValues, string? username)
+        public static void SetRequestContext(this FunctionContext context, Guid correlationId, string? cmsAuthValues, string? username, string? bearerToken)
         {
-            context.Items[RequestContextKey] = new RequestContext(correlationId, cmsAuthValues, username);
+            context.Items[RequestContextKey] = new RequestContext(correlationId, cmsAuthValues, username, bearerToken);
         }
     }
 }

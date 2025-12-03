@@ -34,6 +34,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         private readonly Guid _testCorrelationId;
         private readonly string _testUsername;
         private readonly string _testCmsAuthValues;
+        private readonly string _testBearerToken;
         private readonly NetAppOptions _netAppOptions;
 
         public CreateNetAppConnectionTests()
@@ -50,6 +51,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _testCorrelationId = _fixture.Create<Guid>();
             _testUsername = _fixture.Create<string>();
             _testCmsAuthValues = _fixture.Create<string>();
+            _testBearerToken = _fixture.Create<string>();
             _netAppOptions = _fixture.Create<NetAppOptions>();
 
             _optionsMock.Setup(x => x.Value).Returns(_netAppOptions);
@@ -81,7 +83,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 });
 
             var request = HttpRequestStubHelper.CreateHttpRequestFor(netAppConnectionRequest);
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
             var result = await _function.Run(request, functionContext);
@@ -109,6 +111,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
 
             _netAppArgFactoryMock
                 .Setup(x => x.CreateListFoldersInBucketArg(
+                    _testBearerToken,
                     _netAppOptions.BucketName,
                     netAppConnectionRequest.OperationName,
                     null,
@@ -121,7 +124,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .ReturnsAsync((ListNetAppObjectsDto?)null);
 
             var request = HttpRequestStubHelper.CreateHttpRequestFor(netAppConnectionRequest);
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
             var result = await _function.Run(request, functionContext);
@@ -147,7 +150,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 });
 
             _netAppArgFactoryMock
-                .Setup(x => x.CreateListFoldersInBucketArg(_netAppOptions.BucketName, netAppConnectionRequest.OperationName, null, 1, null))
+                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _netAppOptions.BucketName, netAppConnectionRequest.OperationName, null, 1, null))
                 .Returns(netAppArg);
 
             _netAppClientMock
@@ -169,7 +172,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .Returns(Task.CompletedTask);
 
             var request = HttpRequestStubHelper.CreateHttpRequestFor(netAppConnectionRequest);
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
             var result = await _function.Run(request, functionContext);
@@ -203,7 +206,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 });
 
             _netAppArgFactoryMock
-                .Setup(x => x.CreateListFoldersInBucketArg(_netAppOptions.BucketName, netAppConnectionRequest.OperationName, null, 1, null))
+                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _netAppOptions.BucketName, netAppConnectionRequest.OperationName, null, 1, null))
                 .Returns(netAppArg);
 
             _netAppClientMock
@@ -211,13 +214,14 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .ReturnsAsync((ListNetAppObjectsDto?)null);
 
             var request = HttpRequestStubHelper.CreateHttpRequestFor(netAppConnectionRequest);
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
             await _function.Run(request, functionContext);
 
             // Assert
             _netAppArgFactoryMock.Verify(x => x.CreateListFoldersInBucketArg(
+                _testBearerToken,
                 _netAppOptions.BucketName,
                 netAppConnectionRequest.OperationName,
                 null,
@@ -241,7 +245,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 });
 
             _netAppArgFactoryMock
-                .Setup(x => x.CreateListFoldersInBucketArg(_netAppOptions.BucketName, netAppConnectionRequest.OperationName, null, 1, null))
+                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _netAppOptions.BucketName, netAppConnectionRequest.OperationName, null, 1, null))
                 .Returns(netAppArg);
 
             _netAppClientMock
@@ -249,7 +253,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .ReturnsAsync((ListNetAppObjectsDto?)null);
 
             var request = HttpRequestStubHelper.CreateHttpRequestFor(netAppConnectionRequest);
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
             await _function.Run(request, functionContext);
@@ -274,7 +278,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 });
 
             _netAppArgFactoryMock
-                .Setup(x => x.CreateListFoldersInBucketArg(_netAppOptions.BucketName, netAppConnectionRequest.OperationName, null, 1, null))
+                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _netAppOptions.BucketName, netAppConnectionRequest.OperationName, null, 1, null))
                 .Returns(netAppArg);
 
             _netAppClientMock
@@ -282,7 +286,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .ReturnsAsync((ListNetAppObjectsDto?)null);
 
             var request = HttpRequestStubHelper.CreateHttpRequestFor(netAppConnectionRequest);
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
             await _function.Run(request, functionContext);
@@ -335,7 +339,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 });
 
             _netAppArgFactoryMock
-                .Setup(x => x.CreateListFoldersInBucketArg(expectedBucketName, netAppConnectionRequest.OperationName, null, 1, null))
+                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, expectedBucketName, netAppConnectionRequest.OperationName, null, 1, null))
                 .Returns(netAppArg);
 
             _netAppClientMock
@@ -343,13 +347,14 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .ReturnsAsync((ListNetAppObjectsDto?)null);
 
             var request = HttpRequestStubHelper.CreateHttpRequestFor(netAppConnectionRequest);
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
             await customFunction.Run(request, functionContext);
 
             // Assert
             _netAppArgFactoryMock.Verify(x => x.CreateListFoldersInBucketArg(
+                _testBearerToken,
                 expectedBucketName,
                 netAppConnectionRequest.OperationName,
                 null,

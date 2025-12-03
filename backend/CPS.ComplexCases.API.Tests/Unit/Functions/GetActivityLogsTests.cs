@@ -1,12 +1,12 @@
-using AutoFixture;
-using CPS.ComplexCases.API.Constants;
-using CPS.ComplexCases.API.Functions;
-using CPS.ComplexCases.ActivityLog.Models.Responses;
-using CPS.ComplexCases.ActivityLog.Services;
-using CPS.ComplexCases.Data.Dtos;
-using CPS.ComplexCases.API.Tests.Unit.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using AutoFixture;
+using CPS.ComplexCases.ActivityLog.Models.Responses;
+using CPS.ComplexCases.ActivityLog.Services;
+using CPS.ComplexCases.API.Constants;
+using CPS.ComplexCases.API.Functions;
+using CPS.ComplexCases.API.Tests.Unit.Helpers;
+using CPS.ComplexCases.Data.Dtos;
 using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions
@@ -20,6 +20,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         private readonly Guid _testCorrelationId;
         private readonly string _testUsername;
         private readonly string _testCmsAuthValues;
+        private readonly string _testBearerToken;
 
         public GetActivityLogsTestsTest()
         {
@@ -38,6 +39,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _testCorrelationId = _fixture.Create<Guid>();
             _testUsername = _fixture.Create<string>();
             _testCmsAuthValues = _fixture.Create<string>();
+            _testBearerToken = _fixture.Create<string>();
         }
 
         [Fact]
@@ -74,7 +76,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .ReturnsAsync(response);
 
             var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(queryParams);
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
             var result = await _function.Run(request, functionContext);
@@ -108,7 +110,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .ReturnsAsync(response);
 
             var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(queryParams);
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
             var result = await _function.Run(request, functionContext);
@@ -140,7 +142,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .ReturnsAsync(response);
 
             var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(queryParams);
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
             var result = await _function.Run(request, functionContext);

@@ -7,12 +7,13 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using CPS.ComplexCases.API.Constants;
+using CPS.ComplexCases.API.Context;
+using CPS.ComplexCases.API.Domain.Response;
 using CPS.ComplexCases.API.Services;
+using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
-using CPS.ComplexCases.Common.Attributes;
-using CPS.ComplexCases.API.Domain.Response;
 
 namespace CPS.ComplexCases.API.Functions;
 
@@ -41,14 +42,15 @@ public class ListNetAppFolders(ILogger<ListNetAppFolders> logger,
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Forbidden, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Forbidden)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/netapp/folders")] HttpRequest req)
+    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/netapp/folders")] HttpRequest req, FunctionContext functionContext)
     {
+        var context = functionContext.GetRequestContext();
         var operationName = req.Query[InputParameters.OperationName];
         var continuationToken = req.Query[InputParameters.ContinuationToken];
         var take = int.TryParse(req.Query[InputParameters.Take], out var takeValue) ? takeValue : 100;
         var path = req.Query[InputParameters.Path];
 
-        var arg = _netAppArgFactory.CreateListFoldersInBucketArg(_netAppOptions.BucketName, operationName, continuationToken, take, path);
+        var arg = _netAppArgFactory.CreateListFoldersInBucketArg(context.BearerToken, _netAppOptions.BucketName, operationName, continuationToken, take, path);
         var response = await _netAppClient.ListFoldersInBucketAsync(arg);
 
         if (response == null)

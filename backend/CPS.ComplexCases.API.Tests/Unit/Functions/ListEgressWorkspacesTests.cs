@@ -1,16 +1,16 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Moq;
 using AutoFixture;
+using CPS.ComplexCases.API.Constants;
+using CPS.ComplexCases.API.Domain.Response;
 using CPS.ComplexCases.API.Functions;
-using CPS.ComplexCases.Egress.Client;
-using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
-using CPS.ComplexCases.API.Constants;
+using CPS.ComplexCases.Egress.Client;
+using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models.Args;
 using CPS.ComplexCases.Egress.Models.Dto;
-using CPS.ComplexCases.API.Domain.Response;
+using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions
 {
@@ -71,7 +71,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .Setup(s => s.EnrichEgressWorkspacesWithMetadataAsync(egressResponse))
                 .ReturnsAsync(enrichedResponse);
 
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), username);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), username, _fixture.Create<string>());
             var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(queryParams, correlationId);
 
             // Act

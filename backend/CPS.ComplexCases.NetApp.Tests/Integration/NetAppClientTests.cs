@@ -1,9 +1,11 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Amazon.Runtime;
 using Amazon.S3;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
+using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.WireMock.Mappings;
 using CPS.ComplexCases.NetApp.Wrappers;
 using CPS.ComplexCases.WireMock.Core;
@@ -19,6 +21,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
         private readonly INetAppRequestFactory _netAppRequestFactory;
         private readonly AmazonS3Client _s3Client;
         private readonly IAmazonS3UtilsWrapper _amazonS3UtilsWrapper;
+        private readonly IS3ClientFactory _s3ClientFactory;
+        private const string BearerToken = "fakeBearerToken";
 
         public NetAppClientTests()
         {
@@ -40,10 +44,29 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             _amazonS3UtilsWrapper = new AmazonS3UtilsWrapper();
             _netAppArgFactory = new NetAppArgFactory();
             _netAppRequestFactory = new NetAppRequestFactory();
+            var netAppHttpClientLogger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<NetAppHttpClient>();
+            _s3ClientFactory = new S3ClientFactory(
+                new NetAppHttpClient(
+                    new HttpClient
+                    {
+                        BaseAddress = new Uri(_server.Urls[0])
+                    },
+                    _netAppRequestFactory,
+                    netAppHttpClientLogger),
+                _netAppArgFactory,
+                Options.Create(new NetAppOptions
+                {
+                    AccessKey = "fakeAccessKey",
+                    SecretKey = "fakeSecretKey",
+                    BucketName = "test-bucket",
+                    Url = _server.Urls[0],
+                    RegionName = "us-east-1"
+                }));
+            _s3ClientFactory.SetS3ClientAsync(_s3Client);
 
             var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<NetAppClient>();
 
-            _client = new NetAppClient(logger, _s3Client, _amazonS3UtilsWrapper, _netAppRequestFactory);
+            _client = new NetAppClient(logger, _amazonS3UtilsWrapper, _netAppRequestFactory, _s3ClientFactory);
             _netAppArgFactory = new NetAppArgFactory();
         }
 
@@ -52,7 +75,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
         {
             // Arrange
             var bucketName = "test-bucket";
-            var arg = _netAppArgFactory.CreateCreateBucketArg(bucketName);
+            var arg = _netAppArgFactory.CreateCreateBucketArg(BearerToken, bucketName);
 
             // Act
             var result = await _client.CreateBucketAsync(arg);
@@ -66,7 +89,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
         {
             // Arrange
             var bucketName = "test-bucket";
-            var arg = _netAppArgFactory.CreateFindBucketArg(bucketName);
+            var arg = _netAppArgFactory.CreateFindBucketArg(BearerToken, bucketName);
 
             // Act
             var result = await _client.FindBucketAsync(arg);
@@ -80,7 +103,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
         public async Task ListBuckets_WhenBucketsExist_ReturnsBuckets()
         {
             // Act
-            var result = await _client.ListBucketsAsync(_netAppArgFactory.CreateListBucketsArg());
+            var result = await _client.ListBucketsAsync(_netAppArgFactory.CreateListBucketsArg(BearerToken));
 
             // Assert
             Assert.NotNull(result);
@@ -94,7 +117,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             var bucketName = "test-bucket";
             var objectName = "test-file.txt";
             var stream = new MemoryStream(Encoding.UTF8.GetBytes("Test upload!"));
-            var arg = _netAppArgFactory.CreateUploadObjectArg(bucketName, objectName, stream);
+            var arg = _netAppArgFactory.CreateUploadObjectArg(BearerToken, bucketName, objectName, stream);
 
             // Act
             var result = await _client.UploadObjectAsync(arg);
@@ -109,7 +132,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             // Arrange
             var bucketName = "test-bucket";
             var objectName = "test-file.txt";
-            var arg = _netAppArgFactory.CreateListObjectsInBucketArg(bucketName);
+            var arg = _netAppArgFactory.CreateListObjectsInBucketArg(BearerToken, bucketName);
 
             // Act
             var result = await _client.ListObjectsInBucketAsync(arg);
@@ -127,7 +150,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             // Arrange
             var bucketName = "test-bucket";
             var objectName = "test-document.pdf";
-            var arg = _netAppArgFactory.CreateGetObjectArg(bucketName, objectName);
+            var arg = _netAppArgFactory.CreateGetObjectArg(BearerToken, bucketName, objectName);
 
             // Act
             var result = await _client.GetObjectAsync(arg);
@@ -143,7 +166,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
         {
             // Arrange
             var bucketName = "nested-objects";
-            var arg = _netAppArgFactory.CreateListFoldersInBucketArg(bucketName);
+            var arg = _netAppArgFactory.CreateListFoldersInBucketArg(BearerToken, bucketName);
 
             // Act
             var result = await _client.ListFoldersInBucketAsync(arg);

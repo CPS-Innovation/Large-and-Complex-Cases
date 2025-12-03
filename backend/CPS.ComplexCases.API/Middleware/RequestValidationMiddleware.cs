@@ -31,9 +31,9 @@ public sealed partial class RequestValidationMiddleware(IAuthorizationValidator 
 
     var correlationId = EstablishCorrelation(httpRequestData);
     var cmsAuthValues = EstablishCmsAuthValues(httpRequestData);
-    var (isAuthenticated, username) = await Authenticate(httpRequestData);
+    var (isAuthenticated, username, token) = await Authenticate(httpRequestData);
 
-    context.SetRequestContext(correlationId, cmsAuthValues, username);
+    context.SetRequestContext(correlationId, cmsAuthValues, username, token);
 
     if (!isAuthenticated && !_unauthenticatedRoutes.Contains(httpRequestData.Url.AbsolutePath))
     {
@@ -61,26 +61,26 @@ public sealed partial class RequestValidationMiddleware(IAuthorizationValidator 
     return cmsAuthValues?.Value;
   }
 
-  private async Task<(bool, string?)> Authenticate(HttpRequestData req)
+  private async Task<(bool, string?, string?)> Authenticate(HttpRequestData req)
   {
     try
     {
       if (!req.Headers.TryGetValues(HttpHeaderKeys.Authorization, out var accessTokenValues) ||
           string.IsNullOrWhiteSpace(accessTokenValues.First()))
       {
-        return (false, null);
+        return (false, null, null);
       }
 
       var validateTokenResult = await authorizationValidator.ValidateTokenAsync(accessTokenValues.First(), "user_impersonation");
 
       if (validateTokenResult == null || validateTokenResult.Username == null)
       {
-        return (false, null);
+        return (false, null, null);
       }
 
       return validateTokenResult.IsValid
-          ? (true, validateTokenResult.Username)
-          : (false, null);
+          ? (true, validateTokenResult.Username, validateTokenResult.Token)
+          : (false, null, null);
     }
     catch (Exception)
     {
