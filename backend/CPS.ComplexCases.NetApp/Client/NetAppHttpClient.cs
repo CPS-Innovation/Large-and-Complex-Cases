@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.NetApp.Exceptions;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
@@ -7,10 +8,11 @@ using CPS.ComplexCases.NetApp.Models.NetApp;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
-public class NetAppHttpClient(HttpClient httpClient, INetAppRequestFactory netAppRequestFactory) : INetAppHttpClient
+public class NetAppHttpClient(HttpClient httpClient, INetAppRequestFactory netAppRequestFactory, ILogger<NetAppHttpClient> logger) : INetAppHttpClient
 {
     private readonly HttpClient _httpClient = httpClient;
     private readonly INetAppRequestFactory _netAppRequestFactory = netAppRequestFactory;
+    private readonly ILogger<NetAppHttpClient> _logger = logger;
 
     public Task<NetAppUserResponse> RegisterUserAsync(RegisterUserArg arg)
     {
@@ -28,7 +30,23 @@ public class NetAppHttpClient(HttpClient httpClient, INetAppRequestFactory netAp
     {
         using var response = await CallNetApp(request);
         var content = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<T>(content) ?? throw new InvalidOperationException("Deserialization returned null.");
+
+        T? result;
+        try
+        {
+            result = JsonSerializer.Deserialize<T>(content);
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Failed to deserialize NetApp response to {TypeName}. Content: {Content}", typeof(T).Name, content);
+            throw new InvalidOperationException($"Failed to deserialize response to {typeof(T).Name}", ex);
+        }
+
+        if (result == null)
+        {
+            _logger.LogError("Deserialization of NetApp response to {TypeName} returned null. Content: {Content}", typeof(T).Name, content);
+            throw new InvalidOperationException($"Deserialization to {typeof(T).Name} returned null.");
+        }
         return result;
     }
 

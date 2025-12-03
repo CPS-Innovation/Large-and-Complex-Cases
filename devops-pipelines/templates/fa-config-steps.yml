@@ -49,6 +49,16 @@ steps:
             "slotSetting": false
           },
           {
+            "name": "NetAppOptions__MockUrl",
+            "value": "$(NetAppOptionsMockUrl)",
+            "slotSetting": false
+          },
+          {
+            "name": "NetAppOptions__ClusterUrl",
+            "value": "$(NetAppOptionsClusterUrl)",
+            "slotSetting": false
+          },
+          {
             "name": "NetAppOptions__EnableMock",
             "value": "$(NetAppOptionsEnableMock)",
             "slotSetting": false
@@ -66,6 +76,16 @@ steps:
           {
             "name": "NetAppOptions__PepperVersion",
             "value": "$(NetAppOptionsPepperVersion)",
+            "slotSetting": false
+          },
+          {
+            "name": "NetAppOptions__SessionDurationSeconds",
+            "value": "$(NetAppOptionsSessionDurationSeconds)",
+            "slotSetting": false
+          },
+          {
+            "name": "NetAppOptions__S3ServiceUuid",
+            "value": "$(NetAppOptionsS3ServiceUuid)",
             "slotSetting": false
           },
           {
