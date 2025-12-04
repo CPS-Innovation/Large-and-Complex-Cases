@@ -31,7 +31,13 @@
     "FileTransferApiOptions__BaseUrl": "http://localhost:<port>/api/",
     "FileTransferApiOptions__AccessKey": "mock_access_key",
     "RedirectUrl__CaseworkApp": "*** Placeholder: Casework App cookie handoff endpoint ***",
-    "RedirectUrl__LccUi": "http://localhost:<port>"
+    "RedirectUrl__LccUi": "http://localhost:<port>",
+    "CryptoOptions__SaltSizeBytes": 32,
+    "CryptoOptions__KeySizeBytes": 32,
+    "CryptoOptions__NonceSizeBytes": 12,
+    "CryptoOptions__TagSizeBytes": 16,
+    "CryptoOptions__HkdfInfo": "S3CredentialEncryption",
+    "CryptoOptions__HashAlgorithm": "SHA256"
   },
   "Host": {
     "LocalHttpPort": 7071,

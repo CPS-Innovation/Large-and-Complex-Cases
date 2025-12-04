@@ -105,8 +105,8 @@ public class S3CredentialService : IS3CredentialService
                 userResponse = await _netAppHttpClient.RegisterUserAsync(_netAppArgFactory.CreateRegisterUserArg(userPrincipalName, bearerToken, _options.S3ServiceUuid));
             }
 
-            var accessKey = userResponse.Records.FirstOrDefault()?.AccessKey ?? string.Empty;
-            var secretKey = userResponse.Records.FirstOrDefault()?.SecretKey ?? string.Empty;
+            var accessKey = userResponse.Records.First().AccessKey ?? throw new S3CredentialException($"NetApp returned a record with null AccessKey for user: {oid}");
+            var secretKey = userResponse.Records.First().SecretKey ?? throw new S3CredentialException($"NetApp returned a record with null SecretKey for user: {oid}");
 
             var saltBytes = _cryptographyService.CreateSalt();
             var saltBase64 = Convert.ToBase64String(saltBytes);

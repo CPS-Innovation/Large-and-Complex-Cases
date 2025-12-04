@@ -5,18 +5,27 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using AutoFixture;
 using AutoFixture.AutoMoq;
+using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Services;
+using Microsoft.Extensions.Options;
 using Xunit;
 
 public class CryptographyServiceTests
 {
     private readonly IFixture _fixture;
     private readonly CryptographyService _sut;
+    private readonly CryptoOptions _cryptoOptions;
 
     public CryptographyServiceTests()
     {
         _fixture = new Fixture().Customize(new AutoMoqCustomization());
-        _sut = new CryptographyService();
+
+        // Initialize with default crypto options
+        _cryptoOptions = new CryptoOptions();
+        _cryptoOptions.Validate();
+
+        var options = Options.Create(_cryptoOptions);
+        _sut = new CryptographyService(options);
     }
 
     [Fact]
@@ -28,9 +37,9 @@ public class CryptographyServiceTests
 
         // Assert
         Assert.NotNull(salt1);
-        Assert.Equal(32, salt1.Length); // SaltSizeBytes = 32
+        Assert.Equal(_cryptoOptions.SaltSizeBytes, salt1.Length);
         Assert.NotNull(salt2);
-        Assert.Equal(32, salt2.Length);
+        Assert.Equal(_cryptoOptions.SaltSizeBytes, salt2.Length);
 
         Assert.NotEqual(Convert.ToBase64String(salt1), Convert.ToBase64String(salt2));
     }

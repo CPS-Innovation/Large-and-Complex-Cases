@@ -49,6 +49,7 @@ public static class IServiceCollectionExtension
 			services.AddSingleton<IAmazonS3UtilsWrapper, AmazonS3UtilsWrapper>();
 			services.AddScoped<IS3ClientFactory, S3ClientFactory>();
 			services.AddSingleton<IS3CredentialService, S3CredentialService>();
+			services.Configure<CryptoOptions>(configuration.GetSection("CryptoOptions"));
 			services.AddSingleton<ICryptographyService, CryptographyService>();
 
 			services.AddSingleton<IKeyVaultService>(sp =>

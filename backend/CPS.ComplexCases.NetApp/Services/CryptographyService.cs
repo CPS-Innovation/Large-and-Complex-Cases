@@ -1,18 +1,23 @@
 using System.Security.Cryptography;
 using System.Text;
+using CPS.ComplexCases.NetApp.Models;
+using Microsoft.Extensions.Options;
 
 namespace CPS.ComplexCases.NetApp.Services;
 
 public class CryptographyService : ICryptographyService
 {
-    private const int SaltSizeBytes = 32;
-    private const int KeySizeBytes = 32;
-    private const int NonceSizeBytes = 12;
-    private const int TagSizeBytes = 16;
+    private readonly CryptoOptions _cryptoOptions;
+
+    public CryptographyService(IOptions<CryptoOptions> cryptoOptions)
+    {
+        _cryptoOptions = cryptoOptions.Value;
+        _cryptoOptions.Validate();
+    }
 
     public byte[] CreateSalt()
     {
-        var salt = new byte[SaltSizeBytes];
+        var salt = new byte[_cryptoOptions.SaltSizeBytes];
         RandomNumberGenerator.Fill(salt);
         return salt;
     }
@@ -20,21 +25,18 @@ public class CryptographyService : ICryptographyService
     public Task<string> EncryptAsync(string plaintext, string objectId, byte[] salt, string pepper)
     {
         var key = DeriveKey(pepper, objectId, salt);
-
-        var nonce = new byte[NonceSizeBytes];
+        var nonce = new byte[_cryptoOptions.NonceSizeBytes];
         RandomNumberGenerator.Fill(nonce);
 
         var plaintextBytes = Encoding.UTF8.GetBytes(plaintext);
-
         var ciphertext = new byte[plaintextBytes.Length];
-        var tag = new byte[TagSizeBytes];
+        var tag = new byte[_cryptoOptions.TagSizeBytes];
 
-        using var aesGcm = new AesGcm(key, TagSizeBytes);
-
+        using var aesGcm = new AesGcm(key, _cryptoOptions.TagSizeBytes);
         // Use salt as Additional Authenticated Data (AAD) for integrity
         aesGcm.Encrypt(nonce, plaintextBytes, ciphertext, tag, salt);
 
-        // nonce + ciphertext + tag
+        // Ciphertext layout: [ nonce | ciphertext | tag ]
         var result = new byte[nonce.Length + ciphertext.Length + tag.Length];
         Buffer.BlockCopy(nonce, 0, result, 0, nonce.Length);
         Buffer.BlockCopy(ciphertext, 0, result, nonce.Length, ciphertext.Length);
@@ -50,22 +52,22 @@ public class CryptographyService : ICryptographyService
             var encryptedBytes = Convert.FromBase64String(encryptedData);
             var salt = Convert.FromBase64String(saltBase64);
 
-            if (encryptedBytes.Length < NonceSizeBytes + TagSizeBytes)
+            if (encryptedBytes.Length < _cryptoOptions.NonceSizeBytes + _cryptoOptions.TagSizeBytes)
                 throw new CryptographicException("Invalid encrypted data format");
 
-            var nonce = new byte[NonceSizeBytes];
-            var tag = new byte[TagSizeBytes];
-            var ciphertext = new byte[encryptedBytes.Length - NonceSizeBytes - TagSizeBytes];
+            // Parse ciphertext layout: [ nonce | ciphertext | tag ]
+            var nonce = new byte[_cryptoOptions.NonceSizeBytes];
+            var tag = new byte[_cryptoOptions.TagSizeBytes];
+            var ciphertext = new byte[encryptedBytes.Length - _cryptoOptions.NonceSizeBytes - _cryptoOptions.TagSizeBytes];
 
-            Buffer.BlockCopy(encryptedBytes, 0, nonce, 0, NonceSizeBytes);
-            Buffer.BlockCopy(encryptedBytes, NonceSizeBytes, ciphertext, 0, ciphertext.Length);
-            Buffer.BlockCopy(encryptedBytes, NonceSizeBytes + ciphertext.Length, tag, 0, TagSizeBytes);
+            Buffer.BlockCopy(encryptedBytes, 0, nonce, 0, _cryptoOptions.NonceSizeBytes);
+            Buffer.BlockCopy(encryptedBytes, _cryptoOptions.NonceSizeBytes, ciphertext, 0, ciphertext.Length);
+            Buffer.BlockCopy(encryptedBytes, _cryptoOptions.NonceSizeBytes + ciphertext.Length, tag, 0, _cryptoOptions.TagSizeBytes);
 
             var key = DeriveKey(pepper, objectId, salt);
-
             var plaintext = new byte[ciphertext.Length];
-            using var aesGcm = new AesGcm(key, TagSizeBytes);
 
+            using var aesGcm = new AesGcm(key, _cryptoOptions.TagSizeBytes);
             // Use salt as AAD - will throw if AAD doesn't match (integrity check)
             aesGcm.Decrypt(nonce, ciphertext, tag, plaintext, salt);
 
@@ -77,7 +79,7 @@ public class CryptographyService : ICryptographyService
         }
     }
 
-    private static byte[] DeriveKey(string pepper, string objectId, byte[] salt)
+    private byte[] DeriveKey(string pepper, string objectId, byte[] salt)
     {
         // Input Key Material (IKM): pepper + objectId
         var pepperBytes = Encoding.UTF8.GetBytes(pepper);
@@ -88,11 +90,11 @@ public class CryptographyService : ICryptographyService
         Buffer.BlockCopy(pepperBytes, 0, ikm, 0, pepperBytes.Length);
         Buffer.BlockCopy(objectIdBytes, 0, ikm, pepperBytes.Length, objectIdBytes.Length);
 
-        var info = Encoding.UTF8.GetBytes("S3CredentialEncryption");
+        var info = Encoding.UTF8.GetBytes(_cryptoOptions.HkdfInfo);
+        var key = new byte[_cryptoOptions.KeySizeBytes];
 
-        var key = new byte[KeySizeBytes];
         HKDF.DeriveKey(
-            HashAlgorithmName.SHA256,
+            _cryptoOptions.HashAlgorithm,
             ikm,
             key,
             salt,
