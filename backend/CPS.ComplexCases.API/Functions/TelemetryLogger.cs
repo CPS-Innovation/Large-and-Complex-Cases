@@ -19,7 +19,7 @@ public class TelemetryLogger(ITelemetryClient telemetryClient)
     [Function(nameof(TelemetryLogger))]
     [OpenApiOperation(operationId: nameof(TelemetryLogger), tags: ["Logging"], Description = "Logs telemetry from the UI.")]
     [OpenApiParameter(name: HttpHeaderKeys.CorrelationId, In = Microsoft.OpenApi.Models.ParameterLocation.Header, Required = true, Type = typeof(string), Description = "Correlation identifier for tracking the request.")]
-    [OpenApiRequestBody(ContentType.ApplicationJson, typeof(UiTelemetry), Description = "Body containing the telemetry data from the UI.")]
+    [OpenApiRequestBody(ContentType.ApplicationJson, typeof(Stream), Description = "Body containing the telemetry data from the UI.")]
     [OpenApiResponseWithoutBody(statusCode: HttpStatusCode.OK, Description = ApiResponseDescriptions.Success)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]
