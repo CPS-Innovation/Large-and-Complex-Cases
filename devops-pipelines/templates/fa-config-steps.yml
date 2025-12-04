@@ -149,16 +149,6 @@ steps:
             "slotSetting": false
           },
           {
-            "name": "AZURE_TENANT_ID",
-            "value": "$(AzureTenantId)",
-            "slotSetting": false
-          },
-          {
-            "name": "AZURE_CLIENT_ID",
-            "value": "$(AzureClientId)",
-            "slotSetting": false
-          },
-          {
             "name": "WEBSITE_USE_PLACEHOLDER_DOTNETISOLATED",
             "value": "1",
             "slotSetting": false
