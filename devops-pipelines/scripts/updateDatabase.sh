@@ -57,6 +57,8 @@ echo "Host: $DB_HOST"
 echo "Database: $DB_NAME"
 echo "User: $DB_USER"
 
+export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query "[accessToken]" -o tsv)
+
 # First test server connectivity
 echo "Testing server connectivity..."
 psql -h "$DB_HOST" -U "$DB_USER" -d "postgres" -c "SELECT 'Server connection successful' as status;" -t
