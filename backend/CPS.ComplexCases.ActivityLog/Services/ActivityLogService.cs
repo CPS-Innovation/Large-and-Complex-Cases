@@ -10,13 +10,16 @@ using CPS.ComplexCases.Data.Dtos;
 using CPS.ComplexCases.Data.Repositories;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.ActivityLog.Extensions;
+using CPS.ComplexCases.Common.TelemetryEvents;
+using CPS.ComplexCases.Common.Telemetry;
 
 namespace CPS.ComplexCases.ActivityLog.Services;
 
-public class ActivityLogService(IActivityLogRepository activityLogRepository, ILogger<ActivityLogService> logger) : IActivityLogService
+public class ActivityLogService(IActivityLogRepository activityLogRepository, ILogger<ActivityLogService> logger, ITelemetryClient telemetryClient) : IActivityLogService
 {
     private readonly IActivityLogRepository _activityLogRepository = activityLogRepository;
     private readonly ILogger<ActivityLogService> _logger = logger;
+    private readonly ITelemetryClient _telemetryClient = telemetryClient;
     private const string EgressResource = "Egress";
     private const string SharedDriveResource = "Shared Drive";
 
@@ -50,6 +53,8 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
         };
 
         await _activityLogRepository.AddAsync(activityLog);
+
+        _ = TrackActivityLogEventAsync(activityLog, transferDetails);
     }
 
     public Task<Data.Entities.ActivityLog?> GetActivityLogByIdAsync(Guid id)
@@ -141,6 +146,65 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
         return CsvGeneratorHelper.GenerateCsv(fileRecords);
     }
 
+    private async Task TrackActivityLogEventAsync(Data.Entities.ActivityLog activityLog, FileTransferDetails? transferDetails)
+    {
+        try
+        {
+            var telemetryEvent = new ActivityLogTelemetryEvent
+            {
+                CorrelationId = activityLog.Id,
+                EventTimestamp = DateTime.UtcNow,
+                ActionType = activityLog.ActionType,
+                ResourceType = activityLog.ResourceType,
+                CaseId = activityLog.CaseId,
+                ResourceId = activityLog.ResourceId,
+                UserName = activityLog.UserName
+            };
+
+            if (transferDetails != null)
+            {
+                telemetryEvent.TransferId = transferDetails.TransferId;
+                telemetryEvent.TransferType = transferDetails.TransferType;
+                telemetryEvent.TransferDirection = transferDetails.TransferDirection;
+                telemetryEvent.SourcePath = transferDetails.SourcePath;
+                telemetryEvent.DestinationPath = transferDetails.DestinationPath;
+
+                telemetryEvent.TotalFiles = transferDetails.TotalFiles;
+                telemetryEvent.TransferredFiles = transferDetails.TransferedFileCount;
+                telemetryEvent.ErrorFiles = transferDetails.ErrorFileCount;
+                telemetryEvent.TotalBytes = transferDetails.TotalBytesTransferred;
+
+                // telemetryEvent.StartTime = transferDetails.StartTime;
+                // telemetryEvent.EndTime = transferDetails.EndTime;
+
+                var fileDetails = transferDetails.Files.Select(f => new
+                {
+                    path = f.Path,
+                    startTime = f.StartTime?.ToString("o"),
+                    endTime = f.EndTime?.ToString("o")
+                });
+
+                telemetryEvent.FileDetailsJson = JsonSerializer.Serialize(
+                    fileDetails,
+                    new JsonSerializerOptions
+                    {
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+                        WriteIndented = false // keep telemetry compact
+                    });
+            }
+
+            // Track the event asynchronously
+            await Task.Run(() => _telemetryClient.TrackEvent(telemetryEvent));
+
+            _logger.LogDebug("Successfully tracked ActivityLog event to Application Insights for ResourceId: {ResourceId}", activityLog.ResourceId);
+        }
+        catch (Exception ex)
+        {
+            // Log the error but don't throw - telemetry failures should not impact the application
+            _logger.LogError(ex, "Failed to track ActivityLog event to Application Insights for ResourceId: {ResourceId}", activityLog.ResourceId);
+        }
+    }
     private List<FileRecordCsvDto> ExtractFileRecordsFromDetails(JsonDocument? details)
     {
         var fileRecords = new List<FileRecordCsvDto>();

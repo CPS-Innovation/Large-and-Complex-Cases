@@ -1,4 +1,4 @@
-namespace CPS.ComplexCases.API.Telemetry;
+namespace CPS.ComplexCases.Common.Telemetry;
 
 public abstract class BaseTelemetryEvent
 {

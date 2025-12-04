@@ -47,6 +47,9 @@ public class FileTransferItem
     public required string Path { get; set; }
     public required bool IsRenamed { get; set; }
     public required long Size { get; set; }
+    public DateTime? StartTime { get; set; }
+    public DateTime? EndTime { get; set; }
+    public string? MD5Hash { get; set; }
 }
 
 public class FileTransferError
