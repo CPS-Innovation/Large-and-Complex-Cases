@@ -152,7 +152,6 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
         {
             var telemetryEvent = new ActivityLogTelemetryEvent
             {
-                CorrelationId = activityLog.Id,
                 EventTimestamp = DateTime.UtcNow,
                 ActionType = activityLog.ActionType,
                 ResourceType = activityLog.ResourceType,
@@ -174,27 +173,10 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
                 telemetryEvent.ErrorFiles = transferDetails.ErrorFileCount;
                 telemetryEvent.TotalBytes = transferDetails.TotalBytesTransferred;
 
-                // telemetryEvent.StartTime = transferDetails.StartTime;
-                // telemetryEvent.EndTime = transferDetails.EndTime;
-
-                var fileDetails = transferDetails.Files.Select(f => new
-                {
-                    path = f.Path,
-                    startTime = f.StartTime?.ToString("o"),
-                    endTime = f.EndTime?.ToString("o")
-                });
-
-                telemetryEvent.FileDetailsJson = JsonSerializer.Serialize(
-                    fileDetails,
-                    new JsonSerializerOptions
-                    {
-                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
-                        WriteIndented = false // keep telemetry compact
-                    });
+                telemetryEvent.StartTime = transferDetails.StartTime;
+                telemetryEvent.EndTime = transferDetails.EndTime;
             }
 
-            // Track the event asynchronously
             await Task.Run(() => _telemetryClient.TrackEvent(telemetryEvent));
 
             _logger.LogDebug("Successfully tracked ActivityLog event to Application Insights for ResourceId: {ResourceId}", activityLog.ResourceId);

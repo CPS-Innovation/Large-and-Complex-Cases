@@ -16,12 +16,10 @@ public class ActivityLogTelemetryEvent : BaseTelemetryEvent
     public string? DestinationPath { get; set; }
     public DateTime? StartTime { get; set; }
     public DateTime? EndTime { get; set; }
-
     public double? TotalFiles { get; set; }
     public double? TransferredFiles { get; set; }
     public double? ErrorFiles { get; set; }
     public double? TotalBytes { get; set; }
-    public string? FileDetailsJson { get; set; }
 
     public override (IDictionary<string, string> Properties, IDictionary<string, double?> Metrics) ToTelemetryEventProps()
     {
@@ -64,8 +62,11 @@ public class ActivityLogTelemetryEvent : BaseTelemetryEvent
         if (EndTime.HasValue)
             properties["EndTime"] = EndTime.Value.ToString("o");
 
-        if (!string.IsNullOrEmpty(FileDetailsJson))
-            properties["FileDetails"] = FileDetailsJson;
+        if (StartTime.HasValue && EndTime.HasValue && EndTime > StartTime)
+        {
+            var duration = (EndTime.Value - StartTime.Value).TotalSeconds;
+            metrics["DurationSeconds"] = duration;
+        }
 
         metrics["TotalFiles"] = TotalFiles;
         metrics["TransferredFiles"] = TransferredFiles;

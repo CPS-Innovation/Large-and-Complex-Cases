@@ -23,6 +23,8 @@ public class FileTransferDetails
     public required List<FileTransferError> Errors { get; set; } = [];
     public List<FileTransferError> DeletionErrors { get; set; } = [];
     public string? ExceptionMessage { get; set; }
+    public DateTime? StartTime { get; set; }
+    public DateTime? EndTime { get; set; }
 
     private string GetTotalSizeTransferred()
     {
