@@ -29,7 +29,7 @@ public class TelemetryLoggerTests
     {
         // Arrange
         var correlationId = _fixture.Create<Guid>();
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequest(correlationId);
 
         var uiTelemetry = new UiTelemetry
@@ -61,7 +61,7 @@ public class TelemetryLoggerTests
     {
         // Arrange
         var correlationId = _fixture.Create<Guid>();
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequest(correlationId);
 
         var uiTelemetry = new UiTelemetry
@@ -97,7 +97,7 @@ public class TelemetryLoggerTests
     {
         // Arrange
         var correlationId = _fixture.Create<Guid>();
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequest(correlationId);
 
         var uiTelemetry = new UiTelemetry
@@ -132,7 +132,7 @@ public class TelemetryLoggerTests
     {
         // Arrange
         var correlationId = _fixture.Create<Guid>();
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequest(correlationId);
 
         var uiTelemetry = new UiTelemetry
@@ -163,7 +163,7 @@ public class TelemetryLoggerTests
     {
         // Arrange
         var correlationId = _fixture.Create<Guid>();
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequest(correlationId);
 
         var uiTelemetry = new UiTelemetry
@@ -198,7 +198,7 @@ public class TelemetryLoggerTests
     {
         // Arrange
         var correlationId = _fixture.Create<Guid>();
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequest(correlationId);
 
         // Act
@@ -217,7 +217,7 @@ public class TelemetryLoggerTests
     {
         // Arrange
         var correlationId = _fixture.Create<Guid>();
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequest(correlationId);
 
         httpRequest.Body = new MemoryStream(Encoding.UTF8.GetBytes("{ invalid json }"));
@@ -232,7 +232,7 @@ public class TelemetryLoggerTests
     {
         // Arrange
         var correlationId = _fixture.Create<Guid>();
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequest(correlationId);
 
         var uiTelemetry = new UiTelemetry
@@ -256,7 +256,7 @@ public class TelemetryLoggerTests
     {
         // Arrange
         var correlationId = Guid.NewGuid();
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequest(correlationId);
 
         var uiTelemetry = new UiTelemetry
@@ -285,7 +285,7 @@ public class TelemetryLoggerTests
     {
         // Arrange
         var correlationId = Guid.NewGuid();
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequest(correlationId);
 
         var uiTelemetry = new UiTelemetry
@@ -318,7 +318,7 @@ public class TelemetryLoggerTests
     {
         // Arrange
         var expectedCorrelationId = Guid.NewGuid();
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(expectedCorrelationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(expectedCorrelationId, _fixture.Create<string>(), _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequest(expectedCorrelationId);
 
         var uiTelemetry = new UiTelemetry
@@ -346,7 +346,7 @@ public class TelemetryLoggerTests
         // Arrange
         var expectedTimestamp = new DateTime(2025, 11, 5, 10, 30, 0, DateTimeKind.Utc);
         var correlationId = Guid.NewGuid();
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequest(correlationId);
 
         var uiTelemetry = new UiTelemetry
@@ -378,7 +378,7 @@ public class TelemetryLoggerTests
     {
         // Arrange
         var correlationId = Guid.NewGuid();
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequest(correlationId);
 
         var uiTelemetry = new UiTelemetry
@@ -402,7 +402,7 @@ public class TelemetryLoggerTests
     {
         // Arrange
         var correlationId = _fixture.Create<Guid>();
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>(), _fixture.Create<string>());
         var httpRequest = HttpRequestStubHelper.CreateHttpRequest(correlationId);
 
         var json = @"{
