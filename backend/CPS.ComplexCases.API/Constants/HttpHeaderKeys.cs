@@ -4,4 +4,5 @@ public static class HttpHeaderKeys
 {
   public const string CmsAuthValues = "Cms-Auth-Values";
   public const string Authorization = "Authorization";
+  public const string CorrelationId = "Correlation-Id";
 }

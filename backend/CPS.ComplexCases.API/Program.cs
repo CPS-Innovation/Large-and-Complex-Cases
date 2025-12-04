@@ -21,6 +21,8 @@ using CPS.ComplexCases.DDEI.Extensions;
 using CPS.ComplexCases.DDEI.Tactical.Extensions;
 using CPS.ComplexCases.Egress.Extensions;
 using CPS.ComplexCases.NetApp.Extensions;
+using Microsoft.ApplicationInsights.Extensibility;
+using CPS.ComplexCases.API.Telemetry;
 
 // Create a temporary logger for configuration phase
 using var loggerFactory = LoggerFactory.Create(configure => configure.AddConsole());
@@ -48,6 +50,7 @@ var host = new HostBuilder()
             .AddApplicationInsightsTelemetryWorkerService(new ApplicationInsightsServiceOptions
             {
                 EnableAdaptiveSampling = false,
+                ConnectionString = context.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]
             })
             .ConfigureFunctionsApplicationInsights();
         services.Configure<LoggerFilterOptions>(options =>
@@ -82,6 +85,10 @@ var host = new HostBuilder()
         services.AddEgressClient(configuration);
         services.AddFileTransferClient(configuration);
         services.AddNetAppClient(configuration);
+
+        services.AddSingleton<ITelemetryInitializer, TelemetryInitializer>();
+        services.AddSingleton<IAppInsightsTelemetryClient, AppInsightsTelemetryClientWrapper>();
+        services.AddSingleton<ITelemetryClient, TelemetryClient>();
 
         services.AddScoped<ICaseMetadataService, CaseMetadataService>();
         services.AddScoped<ICaseEnrichmentService, CaseEnrichmentService>();
