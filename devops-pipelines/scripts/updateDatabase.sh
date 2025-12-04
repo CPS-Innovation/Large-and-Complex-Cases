@@ -17,10 +17,9 @@ for attempt in {1..3}; do
     # Extract components directly from Key Vault command output without storing full connection string
     DB_HOST=$(az keyvault secret show --vault-name "$KEY_VAULT_NAME" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=Host=)[^;]+' | head -1)
     DB_NAME=$(az keyvault secret show --vault-name "$KEY_VAULT_NAME" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=Database=)[^;]+' | head -1)
-    DB_USER=$(az keyvault secret show --vault-name "$KEY_VAULT_NAME" --name "ConnectionStrings--CaseManagementDatastoreConnection" --query value -o tsv 2>/dev/null | grep -oP '(?<=Username=)[^;]+' | head -1)
 
     # Check if we successfully retrieved all components
-    if [ -n "$DB_HOST" ] && [ -n "$DB_NAME" ] && [ -n "$DB_USER" ]; then
+    if [ -n "$DB_HOST" ] && [ -n "$DB_NAME" ]; then
         echo "✅ Successfully retrieved connection string components on attempt $attempt"
         break
     else
@@ -47,15 +46,14 @@ if [ -z "$DB_NAME" ]; then
     echo "❌ Could not parse PostgreSQL database name from connection string"
     exit 1
 fi
-if [ -z "$DB_USER" ]; then
-    echo "❌ Could not parse PostgreSQL username from connection string"
-    exit 1
-fi
 
+DB_USER='Azure Pipeline: LaCC-PreProd'
 echo "Testing database connection..."
 echo "Host: $DB_HOST"
 echo "Database: $DB_NAME"
 echo "User: $DB_USER"
+
+export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query "[accessToken]" -o tsv)
 
 # First test server connectivity
 echo "Testing server connectivity..."
