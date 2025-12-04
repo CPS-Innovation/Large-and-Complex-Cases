@@ -469,7 +469,7 @@ public class S3CredentialServiceTests
     }
 
     [Fact]
-    public async Task GetCredentialsAsync_WithEmptyNetAppResponse_HandlesGracefully()
+    public async Task GetCredentialsAsync_WithEmptyNetAppResponse_ThrowsInvalidOperationException()
     {
         // Arrange
         var status = new CredentialStatus
@@ -497,12 +497,8 @@ public class S3CredentialServiceTests
         _cryptographyServiceMock.Setup(x => x.EncryptAsync(It.IsAny<string>(), _oid, _saltBytes, _pepper))
             .ReturnsAsync("encrypted-value");
 
-        // Act
-        var result = await _sut.GetCredentialsAsync(_oid, _userName, _bearerToken);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(string.Empty, result.AccessKey);
-        Assert.Equal(string.Empty, result.SecretKey);
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _sut.GetCredentialsAsync(_oid, _userName, _bearerToken));
     }
 }
