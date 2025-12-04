@@ -1,15 +1,15 @@
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Moq;
 using AutoFixture;
+using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Functions;
+using CPS.ComplexCases.API.Tests.Unit.Helpers;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
-using CPS.ComplexCases.API.Tests.Unit.Helpers;
 using CPS.ComplexCases.Egress.Models.Args;
 using CPS.ComplexCases.Egress.Models.Dto;
-using CPS.ComplexCases.API.Constants;
+using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions
 {
@@ -20,6 +20,10 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         private readonly Mock<IEgressArgFactory> _egressArgFactoryMock;
         private readonly Fixture _fixture;
         private readonly ListEgressMaterials _function;
+        private readonly Guid _testCorrelationId;
+        private readonly string _testUsername;
+        private readonly string _testCmsAuthValues;
+        private readonly string _testBearerToken;
 
         public ListEgressMaterialsTests()
         {
@@ -28,6 +32,10 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _egressArgFactoryMock = new Mock<IEgressArgFactory>();
             _fixture = new Fixture();
             _function = new ListEgressMaterials(_loggerMock.Object, _egressClientMock.Object, _egressArgFactoryMock.Object);
+            _testCorrelationId = _fixture.Create<Guid>();
+            _testUsername = _fixture.Create<string>();
+            _testCmsAuthValues = _fixture.Create<string>();
+            _testBearerToken = _fixture.Create<string>();
         }
 
         [Fact]
@@ -35,7 +43,6 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         {
             // Arrange
             var workspaceId = _fixture.Create<string>();
-            var correlationId = _fixture.Create<Guid>();
             var username = _fixture.Create<string>();
 
             var folderId = _fixture.Create<string>();
@@ -63,14 +70,14 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .Setup(c => c.ListCaseMaterialAsync(listMaterialsArg))
                 .ReturnsAsync(listMaterialsResponse);
 
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), username);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, username, _testBearerToken);
             var queryParams = new Dictionary<string, string>
             {
                 [InputParameters.FolderId] = folderId,
                 [InputParameters.Skip] = skip.ToString(),
                 [InputParameters.Take] = take.ToString()
             };
-            var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(queryParams, correlationId);
+            var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(queryParams, _testCorrelationId);
 
             // Act
             var result = await _function.Run(httpRequest, functionContext, workspaceId);
@@ -103,8 +110,8 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .Setup(c => c.GetWorkspacePermission(permissionsArg))
                 .ReturnsAsync(false);
 
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), username);
-            var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(new Dictionary<string, string>(), correlationId);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, username, _testBearerToken);
+            var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(new Dictionary<string, string>(), _testCorrelationId);
 
             // Act
             var result = await _function.Run(httpRequest, functionContext, workspaceId);
@@ -135,7 +142,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .Setup(c => c.GetWorkspacePermission(permissionsArg))
                 .ThrowsAsync(new HttpRequestException("Not Found", null, HttpStatusCode.NotFound));
 
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), username);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _testCmsAuthValues, username, _testBearerToken);
             var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(new Dictionary<string, string>(), correlationId);
 
             // Act

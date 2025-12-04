@@ -1,58 +1,94 @@
-using Amazon.S3;
+using System.Net;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Wrappers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Polly;
+using Polly.Contrib.WaitAndRetry;
+using Polly.Wrap;
 
 namespace CPS.ComplexCases.NetApp.Extensions;
 
 public static class IServiceCollectionExtension
 {
-  public static void AddNetAppClient(this IServiceCollection services, IConfiguration configuration)
-  {
+	private const int RetryAttempts = 3;
+	private const int FirstRetryDelaySeconds = 1;
 
-    services.AddDefaultAWSOptions(configuration.GetAWSOptions());
-    //services.AddAWSService<IAmazonS3>();
-    services.Configure<NetAppOptions>(configuration.GetSection("NetAppOptions"));
+	public static void AddNetAppClient(this IServiceCollection services, IConfiguration configuration)
+	{
+		services.AddDefaultAWSOptions(configuration.GetAWSOptions());
+		services.Configure<NetAppOptions>(configuration.GetSection("NetAppOptions"));
+		services.AddTransient<INetAppArgFactory, NetAppArgFactory>();
 
-    var enableMock = configuration.GetValue<bool>("NetAppOptions:EnableMock");
+		var enableMock = configuration.GetValue<bool>("NetAppOptions:EnableMock");
 
-    services.AddTransient<INetAppArgFactory, NetAppArgFactory>();
-    if (enableMock)
-    {
-      services.AddSingleton<INetAppMockHttpRequestFactory, NetAppMockHttpRequestFactory>();
-      services.AddHttpClient<INetAppClient, NetAppMockHttpClient>(client =>
-    {
-      var netAppServiceUrl = configuration["NetAppOptions:Url"];
-      if (string.IsNullOrEmpty(netAppServiceUrl))
-      {
-        throw new ArgumentNullException(nameof(netAppServiceUrl), "NetAppOptions:Url configuration is missing or empty.");
-      }
-      client.BaseAddress = new Uri(netAppServiceUrl);
-    })
-    .SetHandlerLifetime(TimeSpan.FromMinutes(5));
-    }
-    else
-    {
-      services.AddTransient<INetAppRequestFactory, NetAppRequestFactory>();
-      services.AddTransient<INetAppClient, NetAppClient>();
-      services.AddSingleton<IAmazonS3UtilsWrapper, AmazonS3UtilsWrapper>();
+		if (enableMock)
+		{
+			services.AddSingleton<INetAppMockHttpRequestFactory, NetAppMockHttpRequestFactory>();
+			services.AddHttpClient<INetAppClient, NetAppMockHttpClient>(client =>
+			{
+				var netAppServiceUrl = configuration["NetAppOptions:MockUrl"];
+				if (string.IsNullOrEmpty(netAppServiceUrl))
+				{
+					throw new ArgumentNullException(nameof(netAppServiceUrl), "NetAppOptions:MockUrl configuration is missing or empty.");
+				}
+				client.BaseAddress = new Uri(netAppServiceUrl);
+			})
+			.SetHandlerLifetime(TimeSpan.FromMinutes(5));
+		}
+		else
+		{
+			services.AddTransient<INetAppRequestFactory, NetAppRequestFactory>();
+			services.AddTransient<INetAppClient, NetAppClient>();
+			services.AddSingleton<IAmazonS3UtilsWrapper, AmazonS3UtilsWrapper>();
+			services.AddScoped<IS3ClientFactory, S3ClientFactory>();
 
-      services.AddTransient<IAmazonS3, AmazonS3Client>(client =>
-      {
-        var s3ClientConfig = new AmazonS3Config
-        {
-          ServiceURL = configuration["NetAppOptions:Url"],
-          ForcePathStyle = true,
-          RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(configuration["NetAppOptions:RegionName"])
-        };
+			services.AddHttpClient<INetAppHttpClient, NetAppHttpClient>(client =>
+			{
+				var netAppServiceUrl = configuration["NetAppOptions:ClusterUrl"];
+				if (string.IsNullOrEmpty(netAppServiceUrl))
+				{
+					throw new ArgumentNullException(nameof(netAppServiceUrl), "NetAppOptions:ClusterUrl configuration is missing or empty.");
+				}
+				client.BaseAddress = new Uri(netAppServiceUrl);
 
-        var credentials = new Amazon.Runtime.BasicAWSCredentials(configuration["NetAppOptions:AccessKey"], configuration["NetAppOptions:SecretKey"]);
-        return new AmazonS3Client(credentials, s3ClientConfig);
-      });
-    }
-    services.AddTransient<NetAppStorageClient>();
-  }
+			})
+			.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+			{
+				ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; }
+			})
+			.SetHandlerLifetime(TimeSpan.FromMinutes(5))
+			.AddPolicyHandler(GetRetryPolicy());
+		}
+		services.AddTransient<NetAppStorageClient>();
+	}
+
+	private static AsyncPolicyWrap<HttpResponseMessage> GetRetryPolicy()
+	{
+		var bulkheadPolicy = Policy.BulkheadAsync<HttpResponseMessage>(
+			maxParallelization: 30,
+			maxQueuingActions: int.MaxValue
+		);
+
+		// https://learn.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/implement-http-call-retries-exponential-backoff-polly#add-a-jitter-strategy-to-the-retry-policy
+		var delay = Backoff.DecorrelatedJitterBackoffV2(
+			medianFirstRetryDelay: TimeSpan.FromSeconds(FirstRetryDelaySeconds),
+			retryCount: RetryAttempts);
+
+		static bool responseStatusCodePredicate(HttpResponseMessage response) =>
+			response.StatusCode >= HttpStatusCode.InternalServerError
+			|| response.StatusCode == HttpStatusCode.TooManyRequests;
+
+		static bool methodPredicate(HttpResponseMessage response) =>
+			response.RequestMessage?.Method != HttpMethod.Post
+			&& response.RequestMessage?.Method != HttpMethod.Put;
+
+		var retryPolicy = Policy<HttpResponseMessage>
+			.HandleResult(r => responseStatusCodePredicate(r) && methodPredicate(r))
+			.WaitAndRetryAsync(delay);
+
+		return Policy.WrapAsync(bulkheadPolicy, retryPolicy);
+	}
 }

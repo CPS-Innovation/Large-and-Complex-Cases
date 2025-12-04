@@ -30,6 +30,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         private readonly Guid _testCorrelationId;
         private readonly string _testUsername;
         private readonly string _testCmsAuthValues;
+        private readonly string _testBearerToken;
 
         public CreateEgressConnectionTests()
         {
@@ -44,6 +45,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _testCorrelationId = _fixture.Create<Guid>();
             _testUsername = _fixture.Create<string>();
             _testCmsAuthValues = _fixture.Create<string>();
+            _testBearerToken = _fixture.Create<string>();
 
             _function = new CreateEgressConnection(
                 _caseMetadataServiceMock.Object,
@@ -71,7 +73,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 });
 
             var request = HttpRequestStubHelper.CreateHttpRequestFor(egressConnectionRequest);
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
             var result = await _function.Run(request, functionContext);
@@ -106,7 +108,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .ReturnsAsync(false);
 
             var request = HttpRequestStubHelper.CreateHttpRequestFor(egressConnectionRequest);
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
             var result = await _function.Run(request, functionContext);
@@ -154,7 +156,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .Returns(Task.CompletedTask);
 
             var request = HttpRequestStubHelper.CreateHttpRequestFor(egressConnectionRequest);
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
             var result = await _function.Run(request, functionContext);
@@ -197,7 +199,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .ReturnsAsync(false);
 
             var request = HttpRequestStubHelper.CreateHttpRequestFor(egressConnectionRequest);
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
             await _function.Run(request, functionContext);
@@ -232,7 +234,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .ReturnsAsync(false);
 
             var request = HttpRequestStubHelper.CreateHttpRequestFor(egressConnectionRequest);
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
             await _function.Run(request, functionContext);
@@ -265,7 +267,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .ReturnsAsync(false);
 
             var request = HttpRequestStubHelper.CreateHttpRequestFor(egressConnectionRequest);
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
             await _function.Run(request, functionContext);

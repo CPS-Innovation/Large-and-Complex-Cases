@@ -42,7 +42,6 @@ public static class IServiceCollectionExtension
     })
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
     .AddPolicyHandler(GetRetryPolicy());
-
   }
 
   private static AsyncPolicyWrap<HttpResponseMessage> GetRetryPolicy()

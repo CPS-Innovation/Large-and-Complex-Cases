@@ -1,27 +1,27 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Moq;
 using AutoFixture;
-using CPS.ComplexCases.API.Functions;
-using CPS.ComplexCases.Egress.Client;
-using CPS.ComplexCases.Egress.Factories;
-using CPS.ComplexCases.API.Tests.Unit.Helpers;
-using CPS.ComplexCases.Egress.Models.Args;
-using CPS.ComplexCases.Egress.Models.Dto;
-using CPS.ComplexCases.Common.Services;
-using CPS.ComplexCases.ActivityLog.Services;
-using CPS.ComplexCases.API.Validators.Requests;
-using CPS.ComplexCases.API.Domain.Request;
-using CPS.ComplexCases.Data.Models.Requests;
-using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.ActivityLog.Enums;
+using CPS.ComplexCases.ActivityLog.Services;
+using CPS.ComplexCases.API.Domain.Request;
+using CPS.ComplexCases.API.Functions;
+using CPS.ComplexCases.API.Tests.Unit.Helpers;
+using CPS.ComplexCases.API.Validators.Requests;
+using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models;
-using CPS.ComplexCases.Egress.Models.Response;
-using Microsoft.AspNetCore.Http;
+using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
-using CPS.ComplexCases.DDEI.Models.Dto;
 using CPS.ComplexCases.DDEI.Models.Args;
+using CPS.ComplexCases.DDEI.Models.Dto;
+using CPS.ComplexCases.Egress.Client;
+using CPS.ComplexCases.Egress.Factories;
+using CPS.ComplexCases.Egress.Models.Args;
+using CPS.ComplexCases.Egress.Models.Dto;
+using CPS.ComplexCases.Egress.Models.Response;
+using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions
 {
@@ -40,6 +40,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         private readonly Guid _correlationId;
         private readonly string _username;
         private readonly string _cmsAuthValues;
+        private readonly string _bearerToken;
         private readonly int _caseId;
         private readonly string _description;
         private readonly string _templateId;
@@ -74,6 +75,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _correlationId = _fixture.Create<Guid>();
             _cmsAuthValues = _fixture.Create<string>();
             _username = _fixture.Create<string>();
+            _bearerToken = _fixture.Create<string>();
             _caseId = _fixture.Create<int>();
             _description = _fixture.Create<string>();
             _templateId = _fixture.Create<string>();
@@ -173,7 +175,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                     _username, null))
                 .Returns(Task.CompletedTask);
 
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
             var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(new Dictionary<string, string>(), _correlationId);
 
             // Act
@@ -292,7 +294,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                     _username, null))
                 .Returns(Task.CompletedTask);
 
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
             var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(new Dictionary<string, string>(), _correlationId);
 
             // Act
@@ -322,7 +324,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .Setup(v => v.GetJsonBody<CreateEgressWorkspaceRequest, CreateEgressWorkspaceRequestValidator>(It.IsAny<HttpRequest>()))
                 .ReturnsAsync(validationResult);
 
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _username);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _username, _bearerToken);
             var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(new Dictionary<string, string>(), _correlationId);
 
             // Act
@@ -402,7 +404,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .Setup(c => c.ListWorkspaceRolesAsync(_workspaceId))
                 .ReturnsAsync(roles);
 
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
             var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(new Dictionary<string, string>(), _correlationId);
 
             // Act & Assert

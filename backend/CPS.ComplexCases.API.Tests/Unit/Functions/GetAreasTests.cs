@@ -45,7 +45,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .Setup(c => c.GetAreasAsync(baseArg))
                 .ReturnsAsync(expectedAreasDto);
 
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, _fixture.Create<string>(), _fixture.Create<string>(), _fixture.Create<string>());
             var httpRequest = HttpRequestStubHelper.CreateHttpRequest(correlationId);
 
             // Act

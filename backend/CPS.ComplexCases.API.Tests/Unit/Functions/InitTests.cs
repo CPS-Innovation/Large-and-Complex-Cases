@@ -17,7 +17,10 @@ public class InitTests
     private readonly Mock<IInitService> _initServiceMock;
     private readonly Fixture _fixture;
     private readonly Init _function;
-    private readonly Guid _correlationId;
+    private readonly Guid _testCorrelationId;
+    private readonly string _testUsername;
+    private readonly string _testCmsAuthValues;
+    private readonly string _testBearerToken;
     private readonly string _cc;
     private readonly string _ct;
     private readonly string _redirectUrl;
@@ -27,7 +30,10 @@ public class InitTests
         _loggerMock = new Mock<ILogger<Init>>();
         _initServiceMock = new Mock<IInitService>();
         _fixture = new Fixture();
-        _correlationId = _fixture.Create<Guid>();
+        _testCorrelationId = _fixture.Create<Guid>();
+        _testUsername = _fixture.Create<string>();
+        _testCmsAuthValues = _fixture.Create<string>();
+        _testBearerToken = _fixture.Create<string>();
         _cc = _fixture.Create<string>();
         _ct = _fixture.Create<string>();
         _redirectUrl = _fixture.Create<string>();
@@ -49,12 +55,12 @@ public class InitTests
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _testCorrelationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testUsername, _testCmsAuthValues, _testBearerToken);
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", _cc } }, _correlationId);
+            new Dictionary<string, string> { { "cc", _cc } }, _testCorrelationId);
 
         // Act
         var result = await _function.Run(httpRequest, functionContext);
@@ -64,13 +70,13 @@ public class InitTests
         Assert.Equal(_redirectUrl, redirectResult.Url);
         Assert.False(redirectResult.Permanent);
 
-        _initServiceMock.Verify(s => s.ProcessRequest(httpRequest, _correlationId, _cc), Times.Once);
+        _initServiceMock.Verify(s => s.ProcessRequest(httpRequest, _testCorrelationId, _cc), Times.Once);
 
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Init function processed a request with correlation ID: {_correlationId}")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Init function processed a request with correlation ID: {_testCorrelationId}")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
@@ -92,12 +98,12 @@ public class InitTests
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _testCorrelationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testUsername, _testCmsAuthValues, _testBearerToken);
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", _cc } }, _correlationId, cookiesMock);
+            new Dictionary<string, string> { { "cc", _cc } }, _testCorrelationId, cookiesMock);
 
         // Act
         var result = await _function.Run(httpRequest, functionContext);
@@ -117,7 +123,7 @@ public class InitTests
                     options.Path == "/api/")),
             Times.Once);
 
-        _initServiceMock.Verify(s => s.ProcessRequest(httpRequest, _correlationId, _cc), Times.Once);
+        _initServiceMock.Verify(s => s.ProcessRequest(httpRequest, _testCorrelationId, _cc), Times.Once);
     }
 
     [Fact]
@@ -136,13 +142,13 @@ public class InitTests
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _testCorrelationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testUsername, _testCmsAuthValues, _testBearerToken);
 
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", _cc } }, _correlationId, cookiesMock);
+            new Dictionary<string, string> { { "cc", _cc } }, _testCorrelationId, cookiesMock);
 
         // Force HTTP
         httpRequest.Scheme = "http";
@@ -179,12 +185,12 @@ public class InitTests
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _testCorrelationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testUsername, _testCmsAuthValues, _testBearerToken);
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", _cc } }, _correlationId, cookiesMock);
+            new Dictionary<string, string> { { "cc", _cc } }, _testCorrelationId, cookiesMock);
 
         // Act
         var result = await _function.Run(httpRequest, functionContext);
@@ -214,12 +220,12 @@ public class InitTests
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, string.Empty))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _testCorrelationId, string.Empty))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testUsername, _testCmsAuthValues, _testBearerToken);
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", string.Empty } }, _correlationId, cookiesMock);
+            new Dictionary<string, string> { { "cc", string.Empty } }, _testCorrelationId, cookiesMock);
 
         // Act
         var result = await _function.Run(httpRequest, functionContext);
@@ -249,12 +255,12 @@ public class InitTests
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _testCorrelationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testUsername, _testCmsAuthValues, _testBearerToken);
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", _cc } }, _correlationId, cookiesMock);
+            new Dictionary<string, string> { { "cc", _cc } }, _testCorrelationId, cookiesMock);
 
         // Act
         var result = await _function.Run(httpRequest, functionContext);
@@ -280,12 +286,12 @@ public class InitTests
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _testCorrelationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testUsername, _testCmsAuthValues, _testBearerToken);
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", _cc } }, _correlationId);
+            new Dictionary<string, string> { { "cc", _cc } }, _testCorrelationId);
 
         // Act
         var result = await _function.Run(httpRequest, functionContext);
@@ -307,12 +313,12 @@ public class InitTests
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _testCorrelationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testUsername, _testCmsAuthValues, _testBearerToken);
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", _cc } }, _correlationId);
+            new Dictionary<string, string> { { "cc", _cc } }, _testCorrelationId);
 
         // Act
         var result = await _function.Run(httpRequest, functionContext);
@@ -335,12 +341,12 @@ public class InitTests
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _testCorrelationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testUsername, _testCmsAuthValues, _testBearerToken);
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", _cc } }, _correlationId);
+            new Dictionary<string, string> { { "cc", _cc } }, _testCorrelationId);
 
         // Act
         var result = await _function.Run(httpRequest, functionContext);
@@ -360,12 +366,12 @@ public class InitTests
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _testCorrelationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testUsername, _testCmsAuthValues, _testBearerToken);
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", _cc } }, _correlationId);
+            new Dictionary<string, string> { { "cc", _cc } }, _testCorrelationId);
 
         // Act
         var result = await _function.Run(httpRequest, functionContext);
@@ -386,12 +392,12 @@ public class InitTests
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _testCorrelationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testUsername, _testCmsAuthValues, _testBearerToken);
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", _cc } }, _correlationId);
+            new Dictionary<string, string> { { "cc", _cc } }, _testCorrelationId);
 
         // Act
         var result = await _function.Run(httpRequest, functionContext);
@@ -413,11 +419,11 @@ public class InitTests
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, null))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _testCorrelationId, null))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
-        var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(new Dictionary<string, string>(), _correlationId);
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testUsername, _testCmsAuthValues, _testBearerToken);
+        var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(new Dictionary<string, string>(), _testCorrelationId);
 
         // Act
         var result = await _function.Run(httpRequest, functionContext);
@@ -441,12 +447,12 @@ public class InitTests
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _testCorrelationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testUsername, _testCmsAuthValues, _testBearerToken);
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", _cc } }, _correlationId, cookiesMock);
+            new Dictionary<string, string> { { "cc", _cc } }, _testCorrelationId, cookiesMock);
 
         // Act
         await _function.Run(httpRequest, functionContext);
@@ -467,12 +473,12 @@ public class InitTests
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _testCorrelationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testUsername, _testCmsAuthValues, _testBearerToken);
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", _cc } }, _correlationId);
+            new Dictionary<string, string> { { "cc", _cc } }, _testCorrelationId);
 
         // Act
         await _function.Run(httpRequest, functionContext);
@@ -482,7 +488,7 @@ public class InitTests
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Init function processed a request with correlation ID: {_correlationId}")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Init function processed a request with correlation ID: {_testCorrelationId}")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
@@ -504,12 +510,12 @@ public class InitTests
         };
 
         _initServiceMock
-            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _correlationId, _cc))
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _testCorrelationId, _cc))
             .ReturnsAsync(initResult);
 
-        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _fixture.Create<string>(), _fixture.Create<string>());
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testUsername, _testCmsAuthValues, _testBearerToken);
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
-            new Dictionary<string, string> { { "cc", _cc } }, _correlationId, cookiesMock);
+            new Dictionary<string, string> { { "cc", _cc } }, _testCorrelationId, cookiesMock);
 
         // Act
         await _function.Run(httpRequest, functionContext);

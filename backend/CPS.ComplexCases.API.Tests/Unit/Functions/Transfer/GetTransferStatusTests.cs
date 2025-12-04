@@ -29,7 +29,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
             // Arrange
             var transferId = "transfer-123";
             var httpRequestMock = new Mock<HttpRequest>();
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, "cmsAuthValues", "testUser");
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, "cmsAuthValues", "testUser", "bearerToken");
 
             var transferEntity = new
             {
@@ -74,7 +74,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
             // Arrange
             var transferId = "transfer-404";
             var httpRequestMock = new Mock<HttpRequest>();
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, "cmsAuthValues", "testUser");
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, "cmsAuthValues", "testUser", "bearerToken");
 
             var response = new HttpResponseMessage(HttpStatusCode.NotFound)
             {

@@ -1,13 +1,6 @@
-using System.Text.Json.Serialization;
+namespace CPS.ComplexCases.NetApp.Models.Args;
 
-namespace CPS.ComplexCases.NetApp.Models.Args
+public class GetObjectArg : BaseNetAppArg
 {
-    public class GetObjectArg
-    {
-        [JsonPropertyName("bucketName")]
-        public required string BucketName { get; set; }
-
-        [JsonPropertyName("objectName")]
-        public required string ObjectKey { get; set; }
-    }
+    public required string ObjectKey { get; set; }
 }

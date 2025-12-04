@@ -17,6 +17,7 @@ public class NetAppMockHttpClientTests
     private readonly Mock<HttpMessageHandler> _httpMessageHandlerMock;
     private readonly Mock<INetAppMockHttpRequestFactory> _requestFactoryMock;
     private readonly NetAppMockHttpClient _client;
+    private const string BearerToken = "fakeBearerToken";
 
     public NetAppMockHttpClientTests()
     {
@@ -36,8 +37,8 @@ public class NetAppMockHttpClientTests
     {
         // Arrange
         var bucketName = "existing-bucket";
-        var createBucketArg = new CreateBucketArg { BucketName = bucketName };
-        var findBucketArg = new FindBucketArg { BucketName = bucketName };
+        var createBucketArg = new CreateBucketArg { BearerToken = BearerToken, BucketName = bucketName };
+        var findBucketArg = new FindBucketArg { BearerToken = BearerToken, BucketName = bucketName };
         var expectedExceptionMessage = $"A bucket with the name {bucketName} already exists.";
 
         _requestFactoryMock
@@ -94,7 +95,7 @@ public class NetAppMockHttpClientTests
                 Content = new StringContent(serializedResponse, Encoding.UTF8, "application/xml")
             });
 
-        var arg = new ListFoldersInBucketArg { BucketName = bucketName };
+        var arg = new ListFoldersInBucketArg { BearerToken = BearerToken, BucketName = bucketName };
 
         // Act
         var result = await _client.ListFoldersInBucketAsync(arg);
