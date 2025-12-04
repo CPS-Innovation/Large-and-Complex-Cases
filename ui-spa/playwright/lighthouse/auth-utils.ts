@@ -179,11 +179,11 @@ export class AuthenticationManager {
   }
 
   /**
-   * Perform interactive authentication for Playwright tests
+   * Perform interactive authentication to Azure AD for Playwright tests
    * This simulates the real user login flow
    */
-  async interactiveAuth(page: Page): Promise<void> {
-    console.log('→ Starting interactive authentication...');
+  async interactiveAdAuth(page: Page): Promise<void> {
+    console.log('→ Starting interactive authentication to Azure AD...');
 
     // Navigate to the application
     await page.goto(Config.baseUrl);
