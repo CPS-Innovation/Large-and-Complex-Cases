@@ -1,5 +1,5 @@
-import { expect } from '@playwright/test';
-import type { Page, BrowserContext } from 'playwright';
+import { chromium } from 'playwright';
+import type { BrowserContext } from 'playwright';
 import fs from 'fs-extra';
 import * as path from 'path';
 import { Config } from './config.ts';
@@ -12,6 +12,23 @@ const __dirname = path.dirname(__filename);
  * Authentication utilities for Lighthouse and Playwright tests
  * Handles both Azure AD authentication and CMS authentication with cookies
  */
+
+type StorageState = Awaited<ReturnType<BrowserContext['storageState']>>;
+
+type UiAuthOptions = {
+  baseUrl: string;
+  username: string;
+  password: string;
+  headless?: boolean;
+  screenSize?: { width: number; height: number };
+  userAgent?: string;
+  timeouts?: {
+    loginUrl?: number;        // default 15000
+    passwordField?: number;   // default 10000
+    redirectBack?: number;    // default 20000
+    userInfoVisible?: number; // default 10000
+  };
+};
 
 export interface AuthConfig {
   azureAd: {
@@ -179,43 +196,6 @@ export class AuthenticationManager {
   }
 
   /**
-   * Perform interactive authentication to Azure AD for Playwright tests
-   * This simulates the real user login flow
-   */
-  async interactiveAdAuth(page: Page): Promise<void> {
-    console.log('→ Starting interactive authentication to Azure AD...');
-
-    // Navigate to the application
-    await page.goto(Config.baseUrl);
-    
-    // Wait for redirect to Azure AD login
-    await page.waitForURL('**/login.microsoftonline.com/**', { timeout: 10000 });
-    
-    // Fill in Azure AD credentials
-    await page.locator('input[type="email"]').fill(this.config.cms.username);
-    await page.locator('input[type="submit"]').click();
-    
-    await page.waitForSelector('input[type="password"]', { timeout: 5000 });
-    await page.locator('input[type="password"]').fill(this.config.cms.password);
-    await page.locator('input[type="submit"]').click();
-    
-    // Handle "Stay signed in?" prompt if it appears
-    try {
-      await page.locator('input[type="submit"][value="Yes"]').click({ timeout: 3000 });
-    } catch {
-      // Ignore if the prompt doesn't appear
-    }
-    
-    // Wait for redirect back to application
-    await page.waitForURL(Config.baseUrl, { timeout: 15000 });
-    
-    // Verify successful login
-    await expect(page.locator('[data-testid="user-info"]')).toBeVisible({ timeout: 10000 });
-    
-    console.log('✓ Interactive authentication completed');
-  }
-
-  /**
    * Cache authentication tokens to file
    */
   private async cacheTokens(tokens: AuthTokens): Promise<void> {
@@ -270,7 +250,7 @@ export function createAuthManager(): AuthenticationManager {
       scope: process.env.AZURE_AD_SCOPE || 'api://user_impersonation'
     },
     cms: {
-      baseUrl: process.env.CMS_BASE_URL || Config.baseUrl,
+      baseUrl: process.env.CMS_BASE_URL || '',
       username: process.env.CMS_USERNAME || '',
       password: process.env.CMS_PASSWORD || '',
       accessKey: process.env.CMS_ACCESS_KEY || ''
@@ -300,5 +280,115 @@ export function validateAuthEnvironment(): void {
       `Missing required environment variables for authentication: ${missing.join(', ')}\n` +
       'Please set these variables in your .env file or environment.'
     );
+  }
+}
+
+/**
+ * Perform interactive authentication to Azure AD for Playwright tests
+ * This simulates the real user login flow
+ */
+
+// export async function interactiveAdAuth(): Promise<StorageState> {
+//   console.log('→ Starting interactive authentication to Azure AD...');
+
+//   const browser = await chromium.launch({ headless: Config.headless });
+//   const context = await browser.newContext({ viewport: Config.screenSize, userAgent });
+//   const page = await context.newPage();
+
+//   // Navigate to the application
+//   await page.goto(Config.baseUrl);
+  
+//   // Wait for redirect to Azure AD login
+//   await page.waitForURL('**/login.microsoftonline.com/**', { timeout: 10000 });
+  
+//   // Fill in Azure AD credentials
+//   await page.locator('input[type="email"]').fill(Config.adUsername);
+//   await page.locator('input[type="submit"]').click();
+  
+//   await page.waitForSelector('input[type="password"]', { timeout: 5000 });
+//   await page.locator('input[type="password"]').fill(Config.adPassword);
+//   await page.locator('input[type="submit"]').click();
+  
+//   // Handle "Stay signed in?" prompt if it appears
+//   try {
+//     await page.locator('input[type="submit"][value="Yes"]').click({ timeout: 3000 });
+//   } catch {
+//     // Ignore if the prompt doesn't appear
+//   }
+  
+//   // Wait for redirect back to application
+//   await page.waitForURL(Config.baseUrl, { timeout: 15000 });
+  
+//   // Verify successful login
+//   await expect(page.locator('[data-testid="user-info"]')).toBeVisible({ timeout: 10000 });
+  
+//   const storageState = await page.context().storageState();
+  
+//   console.log('✓ Interactive authentication completed');
+
+//   return storageState;
+// }
+
+
+export async function interactiveAdAuth(options: UiAuthOptions): Promise<StorageState> {
+  const {
+    baseUrl,
+    username,
+    password,
+    headless = true,
+    screenSize = { width: 1280, height: 800 },
+    userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    timeouts = {},
+  } = options;
+
+  const {
+    loginUrl = 15000,
+    passwordField = 10000,
+    redirectBack = 20000,
+    userInfoVisible = 10000,
+  } = timeouts;
+
+  console.log('→ Starting interactive authentication to Azure AD...');
+
+  // 1) Launch a temporary browser & context
+  const browser = await chromium.launch({ headless });
+  const context = await browser.newContext({ viewport: screenSize, userAgent });
+  const page = await context.newPage();
+
+  try {
+    // 2) Navigate to your app → AAD login
+    await page.goto(baseUrl);
+    await page.waitForURL('**/login.microsoftonline.com/**', { timeout: loginUrl });
+
+    // 3) Username + Next
+    await page.locator('input[type="email"]').fill(username);
+    await page.locator('input[type="submit"]').click();
+
+    // 4) Password + Sign in
+    await page.waitForSelector('input[type="password"]', { timeout: passwordField });
+    await page.locator('input[type="password"]').fill(password);
+    await page.locator('input[type="submit"]').click();
+
+    // 5) Optional: “Stay signed in?”
+    try {
+      await page.locator('input[type="submit"][value="Yes"]').click({ timeout: 3000 });
+    } catch {
+      // ignore if not shown
+    }
+
+    // 6) Wait for redirect back to your app
+    await page.waitForURL(baseUrl, { timeout: redirectBack });
+
+    // 7) Verify login
+    const userInfo = page.locator('[data-testid="user-info"]');
+    const visible = await userInfo.isVisible({ timeout: userInfoVisible });
+    if (!visible) throw new Error('User info not visible after login');
+
+    // 8) Capture storageState (cookies + localStorage)
+    const storageState = await context.storageState();
+    console.log('✓ Interactive authentication completed');
+    return storageState;
+  } finally {
+    await context.close();
   }
 }
