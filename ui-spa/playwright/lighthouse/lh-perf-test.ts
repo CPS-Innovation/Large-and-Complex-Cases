@@ -21,7 +21,7 @@ import * as path from 'path';
 import chalk from 'chalk';
 import moment from 'moment';
 import { fileURLToPath } from 'url'
-import { createAuthManager, validateAuthEnvironment } from './auth-utils.ts';
+import { createAuthManager, validateAuthEnvironment, interactiveAdAuth } from './auth-utils.ts';
 import { Config, validateConfig } from './config.ts';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -87,6 +87,8 @@ class SimpleLighthouseTest {
         if (this.context) {
           await authManager.setAuthContext(this.context, tokens);
         }
+
+        this.context
         
         // Run performance test for this case
         const result = await this.testCasePerformance(caseId, tokens);
@@ -108,26 +110,38 @@ class SimpleLighthouseTest {
 
   private async initializeBrowser(): Promise<void> {
     console.log('→ Launching browser...');
+
+    const storageState = await interactiveAdAuth({
+      baseUrl: Config.baseUrl,
+      username: Config.aadUsername,
+      password: Config.aadPassword,
+      headless: Config.headless,
+      screenSize: Config.screenSize,
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    });
+
     this.browser = await chromium.launch({
       headless: Config.headless,
       args: [
         '--no-sandbox',
         '--disable-dev-shm-usage',
         '--disable-gpu'
-      ]
+      ],
     });
 
     this.context = await this.browser.newContext({
       viewport: Config.screenSize,
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      storageState
     });
 
     this.page = await this.context.newPage();
     console.log('✓ Browser initialized');
   }
 
-  private async testCasePerformance(caseId: string, tokens: any): Promise<PerformanceResult> {
+  private async testCasePerformance(caseId: string): Promise<PerformanceResult> {
     if (!this.page) throw new Error('Page not initialized');
+
 
     const testUrl = `${Config.baseUrl}/case/${caseId}/case-management/transfer-materials`;
     console.log(`→ Testing URL: ${testUrl}`);
