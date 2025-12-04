@@ -83,7 +83,6 @@ class SimpleLighthouseTest {
         // Authenticate
         const tokens = await authManager.authenticate();
         
-        
         // Apply authentication to browser context
         if (this.context) {
           await authManager.setAuthContext(this.context, tokens);
