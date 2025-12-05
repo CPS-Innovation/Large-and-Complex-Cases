@@ -368,4 +368,9 @@ public class EgressStorageClient(
             relativePath.Substring(sourceRootFolderPath.Length).TrimStart('/', '\\') :
             relativePath;
     }
+
+    public Task UploadFileAsync(string destinationPath, Stream fileStream, string? workspaceId = null, string? relativePath = null, string? sourceRootFolderPath = null, string? bearerToken = null)
+    {
+        throw new NotImplementedException();
+    }
 }

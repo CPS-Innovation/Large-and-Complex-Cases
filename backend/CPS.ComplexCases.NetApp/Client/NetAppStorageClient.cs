@@ -148,4 +148,20 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
     {
         throw new NotImplementedException();
     }
+
+    public async Task UploadFileAsync(string destinationPath, Stream fileStream, string? workspaceId = null, string? relativePath = null, string? sourceRootFolderPath = null, string? bearerToken = null)
+    {
+        var objectName = Path.Combine(destinationPath, relativePath ?? string.Empty).Replace('\\', '/');
+
+        var arg = _netAppArgFactory.CreateUploadObjectArg(
+            bearerToken!,
+            _options.BucketName,
+            objectName,
+            fileStream);
+
+        var result = await _netAppClient.UploadObjectAsync(arg);
+
+        if (!result)
+            throw new InvalidOperationException($"Failed to upload {objectName} to NetApp.");
+    }
 }
