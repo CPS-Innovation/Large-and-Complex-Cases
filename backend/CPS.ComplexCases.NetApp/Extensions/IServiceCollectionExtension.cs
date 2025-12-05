@@ -1,10 +1,14 @@
 using System.Net;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
+using CPS.ComplexCases.NetApp.Services;
 using CPS.ComplexCases.NetApp.Wrappers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Polly.Wrap;
@@ -44,6 +48,23 @@ public static class IServiceCollectionExtension
 			services.AddTransient<INetAppClient, NetAppClient>();
 			services.AddSingleton<IAmazonS3UtilsWrapper, AmazonS3UtilsWrapper>();
 			services.AddScoped<IS3ClientFactory, S3ClientFactory>();
+			services.AddSingleton<IS3CredentialService, S3CredentialService>();
+			services.Configure<CryptoOptions>(configuration.GetSection("CryptoOptions"));
+			services.AddSingleton<ICryptographyService, CryptographyService>();
+
+			services.AddSingleton<IKeyVaultService>(sp =>
+			{
+				var logger = sp.GetRequiredService<ILogger<KeyVaultService>>();
+				var keyVaultUrl = configuration["KeyVault:Url"]
+					?? throw new ArgumentNullException("KeyVault:Url", "KeyVault:Url configuration is missing or empty.");
+
+				var secretClient = new SecretClient(
+					new Uri(keyVaultUrl),
+					new DefaultAzureCredential()
+				);
+
+				return new KeyVaultService(secretClient, logger);
+			});
 
 			services.AddHttpClient<INetAppHttpClient, NetAppHttpClient>(client =>
 			{

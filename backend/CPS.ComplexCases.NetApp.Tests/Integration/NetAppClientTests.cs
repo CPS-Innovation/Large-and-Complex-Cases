@@ -6,10 +6,13 @@ using Amazon.S3;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
+using CPS.ComplexCases.NetApp.Models.S3.Credentials;
+using CPS.ComplexCases.NetApp.Services;
 using CPS.ComplexCases.NetApp.WireMock.Mappings;
 using CPS.ComplexCases.NetApp.Wrappers;
 using CPS.ComplexCases.WireMock.Core;
 using WireMock.Server;
+using Moq;
 
 namespace CPS.ComplexCases.NetApp.Tests.Integration
 {
@@ -22,7 +25,10 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
         private readonly AmazonS3Client _s3Client;
         private readonly IAmazonS3UtilsWrapper _amazonS3UtilsWrapper;
         private readonly IS3ClientFactory _s3ClientFactory;
+        private readonly Mock<IS3CredentialService> _mockCredentialService;
         private const string BearerToken = "fakeBearerToken";
+        private const string TestOid = "test-oid-12345";
+        private const string TestUserName = "testuser@example.com";
 
         public NetAppClientTests()
         {
@@ -45,15 +51,10 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             _netAppArgFactory = new NetAppArgFactory();
             _netAppRequestFactory = new NetAppRequestFactory();
             var netAppHttpClientLogger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<NetAppHttpClient>();
+
+            // Setup mock credential service
+            _mockCredentialService = new Mock<IS3CredentialService>();
             _s3ClientFactory = new S3ClientFactory(
-                new NetAppHttpClient(
-                    new HttpClient
-                    {
-                        BaseAddress = new Uri(_server.Urls[0])
-                    },
-                    _netAppRequestFactory,
-                    netAppHttpClientLogger),
-                _netAppArgFactory,
                 Options.Create(new NetAppOptions
                 {
                     AccessKey = "fakeAccessKey",
@@ -61,13 +62,47 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
                     BucketName = "test-bucket",
                     Url = _server.Urls[0],
                     RegionName = "us-east-1"
-                }));
+                }),
+                _mockCredentialService.Object);
+            _s3ClientFactory.SetS3ClientAsync(_s3Client);
+
+            var fakeCredentials = new S3CredentialsDecrypted
+            {
+                AccessKey = "fakeAccessKey",
+                SecretKey = "fakeSecretKey",
+                Metadata = new S3CredentialsMetadata
+                {
+                    UserPrincipalName = TestUserName,
+                    Salt = "fakeSalt",
+                    CreatedAt = DateTime.UtcNow,
+                    LastRotated = null,
+                    PepperVersion = "v1"
+                }
+            };
+
+            _mockCredentialService
+                .Setup(x => x.GetCredentialsAsync(
+                    TestOid,
+                    TestUserName,
+                    BearerToken))
+                .ReturnsAsync(fakeCredentials);
+
+            _s3ClientFactory = new S3ClientFactory(
+                Options.Create(new NetAppOptions
+                {
+                    AccessKey = "fakeAccessKey",
+                    SecretKey = "fakeSecretKey",
+                    BucketName = "test-bucket",
+                    Url = _server.Urls[0],
+                    RegionName = "us-east-1"
+                }),
+                _mockCredentialService.Object
+            );
             _s3ClientFactory.SetS3ClientAsync(_s3Client);
 
             var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<NetAppClient>();
 
             _client = new NetAppClient(logger, _amazonS3UtilsWrapper, _netAppRequestFactory, _s3ClientFactory);
-            _netAppArgFactory = new NetAppArgFactory();
         }
 
         [Fact]
