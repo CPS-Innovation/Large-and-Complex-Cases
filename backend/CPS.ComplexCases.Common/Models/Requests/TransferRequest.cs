@@ -17,6 +17,7 @@ public class TransferMetadata
     public int CaseId { get; set; }
     public required string UserName { get; set; }
     public required string WorkspaceId { get; set; }
+    public required string BearerToken { get; set; }
 }
 
 public class TransferSourcePath

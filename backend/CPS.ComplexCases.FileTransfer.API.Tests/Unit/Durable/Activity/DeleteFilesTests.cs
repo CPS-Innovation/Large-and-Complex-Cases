@@ -28,6 +28,7 @@ public class DeleteFilesTests
     private readonly DeleteFiles _activity;
     private readonly string _workspaceId;
     private readonly string _destinationPath;
+    private readonly string _bearerToken;
 
     public DeleteFilesTests()
     {
@@ -41,6 +42,7 @@ public class DeleteFilesTests
 
         _workspaceId = _fixture.Create<string>();
         _destinationPath = _fixture.Create<string>();
+        _bearerToken = _fixture.Create<string>();
 
         _activity = new DeleteFiles(_transferEntityHelperMock.Object, _storageClientFactoryMock.Object, _loggerMock.Object);
     }
@@ -107,6 +109,7 @@ public class DeleteFilesTests
              {
                  SuccessfulItems = [],
                  DestinationPath = _destinationPath,
+                 BearerToken = _bearerToken
              }
          );
 
@@ -164,6 +167,7 @@ public class DeleteFilesTests
             {
                 SuccessfulItems = successfulItems,
                 DestinationPath = _destinationPath,
+                BearerToken = _bearerToken
             }
         );
 
@@ -238,6 +242,7 @@ public class DeleteFilesTests
             {
                 SuccessfulItems = successfulItems,
                 DestinationPath = _destinationPath,
+                BearerToken = _bearerToken
             }
         );
 

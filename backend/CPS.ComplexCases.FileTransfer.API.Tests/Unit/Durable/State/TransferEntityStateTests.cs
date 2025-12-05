@@ -18,6 +18,7 @@ public class TransferEntityStateTests
             DeletionErrors = new List<DeletionError>(),
             SourcePaths = new List<TransferSourcePath>(),
             DestinationPath = "dest",
+            BearerToken = "fakeBearerToken"
         };
 
         var state = new TransferEntityState();
@@ -34,7 +35,7 @@ public class TransferEntityStateTests
     {
         // Arrange
         var state = new TransferEntityState();
-        state.Initialize(new TransferEntity { DestinationPath = "dest" });
+        state.Initialize(new TransferEntity { DestinationPath = "dest", BearerToken = "fakeBearerToken" });
 
         var item = new TransferItem
         {
@@ -60,7 +61,7 @@ public class TransferEntityStateTests
     {
         // Arrange
         var state = new TransferEntityState();
-        state.Initialize(new TransferEntity { DestinationPath = "dest" });
+        state.Initialize(new TransferEntity { DestinationPath = "dest", BearerToken = "fakeBearerToken" });
 
         var item = new TransferFailedItem
         {
@@ -87,6 +88,7 @@ public class TransferEntityStateTests
         state.Initialize(new TransferEntity
         {
             DestinationPath = "dest",
+            BearerToken = "fakeBearerToken",
             SuccessfulItems = new List<TransferItem>
             {
                 new TransferItem { SourcePath = "file1", Status = TransferItemStatus.Completed, IsRenamed = false, Size = 0 }
@@ -111,6 +113,7 @@ public class TransferEntityStateTests
         state.Initialize(new TransferEntity
         {
             DestinationPath = "dest",
+            BearerToken = "fakeBearerToken",
             SuccessfulItems = new List<TransferItem>
             {
                 new TransferItem { SourcePath = "file1", Status = TransferItemStatus.Completed, IsRenamed = false, Size = 0 }
@@ -134,7 +137,7 @@ public class TransferEntityStateTests
     {
         // Arrange
         var state = new TransferEntityState();
-        state.Initialize(new TransferEntity { DestinationPath = "dest" });
+        state.Initialize(new TransferEntity { DestinationPath = "dest", BearerToken = "fakeBearerToken" });
 
         var errors = new List<DeletionError>
         {
@@ -154,7 +157,7 @@ public class TransferEntityStateTests
     {
         // Arrange
         var state = new TransferEntityState();
-        state.Initialize(new TransferEntity { DestinationPath = "dest" });
+        state.Initialize(new TransferEntity { DestinationPath = "dest", BearerToken = "fakeBearerToken" });
 
         var errors = new List<DeletionError>();
 

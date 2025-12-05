@@ -66,6 +66,7 @@ public class InitiateTransfer(ILogger<InitiateTransfer> logger, IFileTransferCli
                 UserName = context.Username,
                 CaseId = transferRequest.Value.CaseId,
                 WorkspaceId = transferRequest.Value.WorkspaceId,
+                BearerToken = context.BearerToken
             },
             TransferDirection = transferRequest.Value.TransferDirection,
             SourceRootFolderPath = transferRequest.Value.SourceRootFolderPath

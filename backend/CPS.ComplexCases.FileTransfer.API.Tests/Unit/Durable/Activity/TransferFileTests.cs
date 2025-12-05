@@ -44,7 +44,8 @@ public class TransferFileTests
                 FileId = "file-1"
             },
             DestinationPath = "dest",
-            TransferDirection = TransferDirection.EgressToNetApp
+            TransferDirection = TransferDirection.EgressToNetApp,
+            BearerToken = "fakeBearerToken",
         };
     }
 

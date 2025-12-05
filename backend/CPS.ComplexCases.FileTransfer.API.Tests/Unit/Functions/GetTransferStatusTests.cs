@@ -185,7 +185,8 @@ public class GetTransferStatusTests
             TotalFiles = _fixture.Create<int>(),
             IsRetry = _fixture.Create<bool>(),
             CreatedAt = _fixture.Create<DateTime>(),
-            UpdatedAt = _fixture.Create<DateTime>()
+            UpdatedAt = _fixture.Create<DateTime>(),
+            BearerToken = _fixture.Create<string>()
         };
     }
 }

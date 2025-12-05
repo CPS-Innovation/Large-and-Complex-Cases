@@ -130,6 +130,7 @@ namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Functions
                 Status = TransferStatus.InProgress,
                 CreatedAt = DateTime.UtcNow.AddMinutes(-5),
                 DestinationPath = transferRequest.DestinationPath,
+                BearerToken = "fakeBearerToken"
             };
 
             _entityClientStub.OnGetEntityAsync = (entityId, ct) =>

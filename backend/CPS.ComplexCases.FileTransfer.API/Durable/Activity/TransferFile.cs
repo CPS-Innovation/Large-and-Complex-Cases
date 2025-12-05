@@ -34,7 +34,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             var sourceFilePath = string.IsNullOrEmpty(payload.SourcePath.ModifiedPath) ? payload.SourcePath.Path : payload.SourcePath.ModifiedPath;
 
             using var sourceStream = await sourceClient.OpenReadStreamAsync(payload.SourcePath.Path, payload.WorkspaceId, payload.SourcePath.FileId);
-            var session = await destinationClient.InitiateUploadAsync(payload.DestinationPath, sourceStream.Length, sourceFilePath, payload.WorkspaceId, payload.SourcePath.RelativePath, payload.SourceRootFolderPath);
+            var session = await destinationClient.InitiateUploadAsync(payload.DestinationPath, sourceStream.Length, sourceFilePath, payload.WorkspaceId, payload.SourcePath.RelativePath, payload.SourceRootFolderPath, payload.BearerToken);
 
             long totalSize = sourceStream.Length;
             long position = 0;
@@ -61,7 +61,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
 
                 md5.TransformBlock(buffer, 0, bytesRead, null, 0);
 
-                var result = await destinationClient.UploadChunkAsync(session, chunkNumber, buffer[..bytesRead], start, end, totalSize);
+                var result = await destinationClient.UploadChunkAsync(session, chunkNumber, buffer[..bytesRead], start, end, totalSize, payload.BearerToken);
 
                 if (result.TransferDirection == TransferDirection.EgressToNetApp && result.PartNumber.HasValue && result.ETag != null)
                 {
@@ -85,7 +85,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             }
             else
             {
-                await destinationClient.CompleteUploadAsync(session, etags: uploadedChunks);
+                await destinationClient.CompleteUploadAsync(session, null, etags: uploadedChunks, payload.BearerToken);
             }
 
             _logger.LogInformation("File transfer completed: {SourcePath} -> {DestinationPath}", payload.SourcePath.Path, payload.DestinationPath);
