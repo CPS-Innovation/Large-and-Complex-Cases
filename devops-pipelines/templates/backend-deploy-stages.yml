@@ -103,78 +103,78 @@ stages:
             NET_APP_OPTIONS_SECRET_KEY: $(NetAppOptionsSecretKey)
             FILE_TRANSFER_API_OPTIONS_ACCESS_KEY: $(FileTransferApiOptionsAccessKey)
 
-- stage:  Database_Migration_${{ parameters.environment }}
-  displayName: '${{ parameters.environment }} - Database Migration'
-  dependsOn: Update_Key_Vault_${{ parameters.environment }}
-  variables:
-  - template: ./variables/backend-deploy-vars.yml
-    parameters: 
-      environment: ${{ parameters.environment }}
-  pool: ${{ parameters.agentPool }}
-  jobs:
-    - deployment: Deploy_Database_Changes
-      displayName: '${{ parameters.environment }} - Deploy Database Changes'
-      environment: 'LACC-Backend-${{ parameters.environment }}'
-      strategy:
-        runOnce:
-          deploy:
-            steps:
-              - checkout: self
-                sparseCheckoutDirectories: devops-pipelines/scripts
-                fetchDepth: 1
+# - stage:  Database_Migration_${{ parameters.environment }}
+#   displayName: '${{ parameters.environment }} - Database Migration'
+#   dependsOn: Update_Key_Vault_${{ parameters.environment }}
+#   variables:
+#   - template: ./variables/backend-deploy-vars.yml
+#     parameters: 
+#       environment: ${{ parameters.environment }}
+#   pool: ${{ parameters.agentPool }}
+#   jobs:
+#     - deployment: Deploy_Database_Changes
+#       displayName: '${{ parameters.environment }} - Deploy Database Changes'
+#       environment: 'LACC-Backend-${{ parameters.environment }}'
+#       strategy:
+#         runOnce:
+#           deploy:
+#             steps:
+#               - checkout: self
+#                 sparseCheckoutDirectories: devops-pipelines/scripts
+#                 fetchDepth: 1
 
-              - task: Bash@3
-                displayName: 'Ensure Azure CLI'
-                inputs:
-                  targetType: 'inline'
-                  script: |
-                    echo "Checking if Azure CLI is installed..."
+#               - task: Bash@3
+#                 displayName: 'Ensure Azure CLI'
+#                 inputs:
+#                   targetType: 'inline'
+#                   script: |
+#                     echo "Checking if Azure CLI is installed..."
                     
-                    # Check if az command exists
-                    if command -v az &> /dev/null; then
-                      echo "Azure CLI is already installed"
-                      az --version
-                      exit 0
-                    fi
+#                     # Check if az command exists
+#                     if command -v az &> /dev/null; then
+#                       echo "Azure CLI is already installed"
+#                       az --version
+#                       exit 0
+#                     fi
 
-                    echo "Azure CLI not found, installing..."
-                    bash $(scripts_directory)/installAzureCli.sh 
+#                     echo "Azure CLI not found, installing..."
+#                     bash $(scripts_directory)/installAzureCli.sh 
 
-              - download: build
-                artifact: 'database-scripts-drop'
+#               - download: build
+#                 artifact: 'database-scripts-drop'
 
-              - script: |
-                  echo "Installing the unzip package..."
-                  sudo apt-get update
-                  sudo apt-get install unzip -y
-                displayName: 'Install unzip'
+#               - script: |
+#                   echo "Installing the unzip package..."
+#                   sudo apt-get update
+#                   sudo apt-get install unzip -y
+#                 displayName: 'Install unzip'
 
-              - task: ExtractFiles@1
-                displayName: 'Extract Database Scripts'
-                inputs:
-                  archiveFilePatterns: '$(Pipeline.Workspace)/build/database-scripts-drop/*.zip'
-                  destinationFolder: '$(Pipeline.Workspace)/build/database-scripts'
-                  cleanDestinationFolder: true
+#               - task: ExtractFiles@1
+#                 displayName: 'Extract Database Scripts'
+#                 inputs:
+#                   archiveFilePatterns: '$(Pipeline.Workspace)/build/database-scripts-drop/*.zip'
+#                   destinationFolder: '$(Pipeline.Workspace)/build/database-scripts'
+#                   cleanDestinationFolder: true
 
-              - task: AzureCLI@2
-                displayName: 'Run Database Migration'
-                inputs:
-                  azureSubscription: ${{ parameters.azureSubscription }}
-                  scriptType: 'bash'
-                  scriptLocation: 'inlineScript'
-                  inlineScript: |
-                    bash $(scripts_directory)/updateDatabase.sh
-                env:
-                  KEY_VAULT_NAME: $(keyVaultName)
-                  MIGRATION_SCRIPT_PATH: '$(Pipeline.Workspace)/build/database-scripts/migration-script.sql'
+#               - task: AzureCLI@2
+#                 displayName: 'Run Database Migration'
+#                 inputs:
+#                   azureSubscription: ${{ parameters.azureSubscription }}
+#                   scriptType: 'bash'
+#                   scriptLocation: 'inlineScript'
+#                   inlineScript: |
+#                     bash $(scripts_directory)/updateDatabase.sh
+#                 env:
+#                   KEY_VAULT_NAME: $(keyVaultName)
+#                   MIGRATION_SCRIPT_PATH: '$(Pipeline.Workspace)/build/database-scripts/migration-script.sql'
               
-              - template: ./runner-cleanup-steps.yml
-                parameters:
-                  buildArtifact: 'build'
+#               - template: ./runner-cleanup-steps.yml
+#                 parameters:
+#                   buildArtifact: 'build'
 
 - stage:  Deploy_Function_Apps_${{ parameters.environment }}
   displayName: '${{ parameters.environment }} - Deploy Function Apps'
-  dependsOn: Database_Migration_${{ parameters.environment }}
+  # dependsOn: Database_Migration_${{ parameters.environment }}
   variables:
   - template: ./variables/backend-deploy-vars.yml
     parameters: 

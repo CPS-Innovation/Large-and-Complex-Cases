@@ -74,6 +74,11 @@ steps:
             "slotSetting": false
           },
           {
+            "name": "NetAppOptions__PepperVersion",
+            "value": "$(NetAppOptionsPepperVersion)",
+            "slotSetting": false
+          },
+          {
             "name": "NetAppOptions__SessionDurationSeconds",
             "value": "$(NetAppOptionsSessionDurationSeconds)",
             "slotSetting": false
@@ -151,6 +156,36 @@ steps:
           {
             "name": "WEBSITE_RUN_FROM_PACKAGE",
             "value": "1",
+            "slotSetting": false
+          },
+          {
+            "name": "CryptoOptions__SaltSizeBytes",
+            "value": "$(CryptoOptionsSaltSizeBytes)",
+            "slotSetting": false
+          },
+          {
+            "name": "CryptoOptions__KeySizeBytes",
+            "value": "$(CryptoOptionsKeySizeBytes)",
+            "slotSetting": false
+          },
+          {
+            "name": "CryptoOptions__NonceSizeBytes",
+            "value": "$(CryptoOptionsNonceSizeBytes)",
+            "slotSetting": false
+          },
+          {
+            "name": "CryptoOptions__TagSizeBytes",
+            "value": "$(CryptoOptionsTagSizeBytes)",
+            "slotSetting": false
+          },
+          {
+            "name": "CryptoOptions__HkdfInfo",
+            "value": "$(CryptoOptionsHkdfInfo)",
+            "slotSetting": false
+          },
+          {
+            "name": "CryptoOptions__HashAlgorithm",
+            "value": "$(CryptoOptionsHashAlgorithm)",
             "slotSetting": false
           }
         ]

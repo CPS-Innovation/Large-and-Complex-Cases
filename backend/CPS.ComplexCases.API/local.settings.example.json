@@ -5,6 +5,9 @@
     "APPLICATIONINSIGHTS_CONNECTION_STRING": "<Your Application Insights connection string>",
     "AppName": "Cps.ComplexCases",
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "AZURE_TENANT_ID": "00dd0d1d-d7e6-4338-ac51-565339c7088c",
+    "AZURE_CLIENT_ID": "57c88580-01d4-477d-9b1d-ebb22c8d05af",
+    "AZURE_CLIENT_SECRET": "client_secret",
     "Storage": "UseDevelopmentStorage=true",
     "TenantId": "00dd0d1d-d7e6-4338-ac51-565339c7088c",
     "CallingAppValidAudience": "57c88580-01d4-477d-9b1d-ebb22c8d05af",
@@ -20,6 +23,7 @@
     "NetAppOptions__BucketName": "<Your NetApp bucket name>",
     "NetAppOptions__SessionDurationSeconds": "1800",
     "NetAppOptions__S3ServiceUuid": "<Your NetApp S3 service UUID>",
+    "NetAppOptions__PepperVersion": "v1",
     "DDEIOptions__BaseUrl": "http://localhost:<port>",
     "DDEIOptions__AccessKey": "xxx",
     "ConnectionStrings__CaseManagementDatastoreConnection": "Your postgres connection string",
@@ -27,7 +31,13 @@
     "FileTransferApiOptions__BaseUrl": "http://localhost:<port>/api/",
     "FileTransferApiOptions__AccessKey": "mock_access_key",
     "RedirectUrl__CaseworkApp": "*** Placeholder: Casework App cookie handoff endpoint ***",
-    "RedirectUrl__LccUi": "http://localhost:<port>"
+    "RedirectUrl__LccUi": "http://localhost:<port>",
+    "CryptoOptions__SaltSizeBytes": 32,
+    "CryptoOptions__KeySizeBytes": 32,
+    "CryptoOptions__NonceSizeBytes": 12,
+    "CryptoOptions__TagSizeBytes": 16,
+    "CryptoOptions__HkdfInfo": "S3CredentialEncryption",
+    "CryptoOptions__HashAlgorithm": "SHA256"
   },
   "Host": {
     "LocalHttpPort": 7071,
