@@ -4,18 +4,15 @@ using Microsoft.Extensions.Options;
 using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
-using CPS.ComplexCases.NetApp.Client;
-using CPS.ComplexCases.NetApp.Exceptions;
 using CPS.ComplexCases.NetApp.Models;
-using CPS.ComplexCases.NetApp.Models.NetApp;
+using CPS.ComplexCases.NetApp.Services;
 
 namespace CPS.ComplexCases.NetApp.Factories;
 
-public class S3ClientFactory(INetAppHttpClient netAppHttpClient, INetAppArgFactory netAppArgFactory, IOptions<NetAppOptions> options) : IS3ClientFactory
+public class S3ClientFactory(IOptions<NetAppOptions> options, IS3CredentialService s3CredentialService) : IS3ClientFactory
 {
-    private readonly INetAppHttpClient _netAppHttpClient = netAppHttpClient;
-    private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
     private readonly NetAppOptions _options = options.Value;
+    private readonly IS3CredentialService _s3CredentialsService = s3CredentialService;
     private IAmazonS3? _s3Client;
 
     public async Task<IAmazonS3> GetS3ClientAsync(string bearerToken)
@@ -72,28 +69,21 @@ public class S3ClientFactory(INetAppHttpClient netAppHttpClient, INetAppArgFacto
         var jwt = handler.ReadJwtToken(bearerToken);
 
         var username = jwt.Claims.FirstOrDefault(c => c.Type == "preferred_username")?.Value.ToLowerInvariant();
+        var oid = jwt.Claims.FirstOrDefault(c => c.Type == "oid")?.Value;
 
         if (string.IsNullOrEmpty(username))
         {
             throw new ArgumentNullException(nameof(username), "preferred_username claim is missing in the bearer token.");
         }
 
-        NetAppUserResponse userResponse = new();
-
-        try
+        if (string.IsNullOrEmpty(oid))
         {
-            userResponse = await _netAppHttpClient.RegenerateUserKeysAsync(_netAppArgFactory.CreateRegenerateUserKeysArg(username, bearerToken, _options.S3ServiceUuid));
-        }
-        catch (NetAppNotFoundException)
-        {
-            userResponse = await _netAppHttpClient.RegisterUserAsync(_netAppArgFactory.CreateRegisterUserArg(username, bearerToken, _options.S3ServiceUuid));
-        }
-        catch (NetAppClientException)
-        {
-            throw;
+            throw new ArgumentNullException(nameof(oid), "oid claim is missing in the bearer token.");
         }
 
-        return (userResponse.Records.FirstOrDefault()?.AccessKey, userResponse.Records.FirstOrDefault()?.SecretKey);
+        var credentials = await _s3CredentialsService.GetCredentialsAsync(oid, username, bearerToken);
+
+        return (credentials.AccessKey, credentials.SecretKey);
     }
 }
 
