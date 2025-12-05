@@ -23,6 +23,8 @@ public class FileTransferDetails
     public required List<FileTransferError> Errors { get; set; } = [];
     public List<FileTransferError> DeletionErrors { get; set; } = [];
     public string? ExceptionMessage { get; set; }
+    public DateTime? StartTime { get; set; }
+    public DateTime? EndTime { get; set; }
 
     private string GetTotalSizeTransferred()
     {
@@ -47,6 +49,9 @@ public class FileTransferItem
     public required string Path { get; set; }
     public required bool IsRenamed { get; set; }
     public required long Size { get; set; }
+    public DateTime? StartTime { get; set; }
+    public DateTime? EndTime { get; set; }
+    public string? MD5Hash { get; set; }
 }
 
 public class FileTransferError

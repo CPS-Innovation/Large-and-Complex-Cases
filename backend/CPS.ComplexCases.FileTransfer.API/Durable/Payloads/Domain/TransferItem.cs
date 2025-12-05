@@ -9,4 +9,6 @@ public class TransferItem
     public required bool IsRenamed { get; set; }
     public required long Size { get; set; }
     public string? FileId { get; set; }
+    public DateTime? StartTime { get; set; }
+    public DateTime? EndTime { get; set; }
 }

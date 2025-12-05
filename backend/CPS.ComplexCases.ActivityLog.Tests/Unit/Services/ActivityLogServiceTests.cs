@@ -4,6 +4,7 @@ using AutoFixture.AutoMoq;
 using CPS.ComplexCases.ActivityLog.Enums;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.Data.Dtos;
 using CPS.ComplexCases.Data.Repositories;
 using Microsoft.Extensions.Logging;
@@ -16,6 +17,7 @@ public class ActivityLogServiceTests
     private readonly Fixture _fixture;
     private readonly Mock<IActivityLogRepository> _repositoryMock;
     private readonly Mock<ILogger<ActivityLogService>> _loggerMock;
+    private readonly Mock<ITelemetryClient> _telemetryClientMock;
     private readonly ActivityLogService _service;
 
     private readonly int _testCaseId;
@@ -30,13 +32,14 @@ public class ActivityLogServiceTests
 
         _repositoryMock = _fixture.Freeze<Mock<IActivityLogRepository>>();
         _loggerMock = _fixture.Freeze<Mock<ILogger<ActivityLogService>>>();
+        _telemetryClientMock = _fixture.Freeze<Mock<ITelemetryClient>>();
 
         _testCaseId = _fixture.Create<int>();
         _testResourceId = _fixture.Create<string>();
         _testResourceName = _fixture.Create<string>();
         _testUserName = _fixture.Create<string>();
 
-        _service = new ActivityLogService(_repositoryMock.Object, _loggerMock.Object);
+        _service = new ActivityLogService(_repositoryMock.Object, _loggerMock.Object, _telemetryClientMock.Object);
     }
 
     [Fact]
@@ -50,7 +53,7 @@ public class ActivityLogServiceTests
             _testResourceId,
             _testUserName);
         _repositoryMock
-            .Setup(r => r.AddAsync(activityLog))
+            .Setup(r => r.AddAsync(It.IsAny<Data.Entities.ActivityLog>()))
             .Returns(Task.FromResult(activityLog))
             .Verifiable();
 
@@ -59,10 +62,10 @@ public class ActivityLogServiceTests
 
         // Assert
         _repositoryMock.Verify(r => r.AddAsync(It.Is<Data.Entities.ActivityLog>(a =>
-            a.ActionType == activityLog.ActionType &&
-            a.ResourceType == activityLog.ResourceType &&
-            a.ResourceId == activityLog.ResourceId &&
-            a.UserName == activityLog.UserName)), Times.Once);
+            a.ActionType == ActionType.TransferInitiated.GetAlternateValue() &&
+            a.ResourceType == ResourceType.FileTransfer.ToString() &&
+            a.ResourceId == _testResourceId &&
+            a.UserName == _testUserName)), Times.Once);
     }
 
     [Fact]

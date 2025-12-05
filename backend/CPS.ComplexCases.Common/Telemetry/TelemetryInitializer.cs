@@ -1,4 +1,4 @@
-namespace CPS.ComplexCases.API.Telemetry;
+namespace CPS.ComplexCases.Common.Telemetry;
 
 using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.Extensibility;
