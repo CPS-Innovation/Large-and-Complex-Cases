@@ -19,4 +19,5 @@ public interface IEgressRequestFactory
   HttpRequestMessage CreateWorkspaceRequest(CreateEgressWorkspaceArg arg, string token);
   HttpRequestMessage GrantWorkspacePermissionRequest(GrantWorkspacePermissionArg arg, string token);
   HttpRequestMessage ListWorkspaceRolesRequest(ListWorkspaceRolesArg arg, string token);
+  HttpRequestMessage UploadFileRequest(UploadFileArg arg, string token);
 }

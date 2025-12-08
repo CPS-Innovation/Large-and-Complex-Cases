@@ -234,6 +234,26 @@ public class EgressRequestFactory : IEgressRequestFactory
     return request;
   }
 
+  public HttpRequestMessage UploadFileRequest(UploadFileArg arg, string token)
+  {
+    var content = new MultipartFormDataContent();
+
+    var streamContent = new StreamContent(arg.FileStream);
+    streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+
+    // Use "file" as the key for direct file upload (not "file_content" which is for chunks)
+    content.Add(streamContent, "file", arg.FileName);
+
+    var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/workspaces/{arg.WorkspaceId}/files?path={Uri.EscapeDataString(arg.FolderPath)}")
+    {
+      Content = content
+    };
+
+    AppendToken(request, token);
+
+    return request;
+  }
+
   private static void AppendToken(HttpRequestMessage request, string token)
   {
     var basicAuthValue = Convert.ToBase64String(Encoding.UTF8.GetBytes(token));

@@ -190,6 +190,45 @@ public class EgressStorageClient(
         };
     }
 
+    public async Task UploadFileAsync(string destinationPath, Stream fileStream, string? workspaceId = null, string? relativePath = null, string? sourceRootFolderPath = null, string? bearerToken = null)
+    {
+        var token = await GetWorkspaceToken();
+
+        if (string.IsNullOrEmpty(relativePath))
+            throw new ArgumentNullException(nameof(relativePath), "Relative path cannot be null or empty.");
+
+        if (string.IsNullOrEmpty(workspaceId))
+            throw new ArgumentNullException(nameof(workspaceId), "Workspace ID cannot be null.");
+
+        var fileName = Path.GetFileName(relativePath);
+        var relativePathFromSourceRoot = GetRelativePathFromSourceRoot(relativePath, sourceRootFolderPath);
+        var sourceDirectory = Path.GetDirectoryName(relativePathFromSourceRoot) ?? string.Empty;
+        var fullDestinationPath = Path.Combine(destinationPath, sourceDirectory).Replace('\\', '/');
+
+        var uploadArg = new UploadFileArg
+        {
+            WorkspaceId = workspaceId,
+            FolderPath = fullDestinationPath,
+            FileName = fileName,
+            FileStream = fileStream
+        };
+
+        try
+        {
+            await SendRequestAsync(_egressRequestFactory.UploadFileRequest(uploadArg, token));
+            _logger.LogInformation("Successfully uploaded file {FileName} to {FolderPath}", fileName, fullDestinationPath);
+        }
+        catch (HttpRequestException ex) when (ex.Message.Contains("404"))
+        {
+            _logger.LogInformation("Folder structure doesn't exist for path {FolderPath}, creating it", fullDestinationPath);
+
+            await CreateFolderStructureAsync(fullDestinationPath, workspaceId, token);
+
+            await SendRequestAsync(_egressRequestFactory.UploadFileRequest(uploadArg, token));
+            _logger.LogInformation("Successfully uploaded file {FileName} to {FolderPath} after creating folder structure", fileName, fullDestinationPath);
+        }
+    }
+
     private async Task CreateFolderStructureAsync(string folderPath, string workspaceId, string token)
     {
         if (string.IsNullOrEmpty(folderPath) || folderPath == "/" || folderPath == "\\")
@@ -367,10 +406,5 @@ public class EgressStorageClient(
         return !string.IsNullOrEmpty(sourceRootFolderPath) && relativePath.StartsWith(sourceRootFolderPath) ?
             relativePath.Substring(sourceRootFolderPath.Length).TrimStart('/', '\\') :
             relativePath;
-    }
-
-    public Task UploadFileAsync(string destinationPath, Stream fileStream, string? workspaceId = null, string? relativePath = null, string? sourceRootFolderPath = null, string? bearerToken = null)
-    {
-        throw new NotImplementedException();
     }
 }
