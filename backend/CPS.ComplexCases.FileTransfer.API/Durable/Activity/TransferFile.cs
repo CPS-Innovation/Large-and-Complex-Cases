@@ -33,7 +33,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         {
             var sourceFilePath = string.IsNullOrEmpty(payload.SourcePath.ModifiedPath) ? payload.SourcePath.Path : payload.SourcePath.ModifiedPath;
             using var sourceStream = await sourceClient.OpenReadStreamAsync(
-                payload.SourcePath.Path, payload.WorkspaceId, payload.SourcePath.FileId);
+                payload.SourcePath.Path, payload.WorkspaceId, payload.SourcePath.FileId, payload.BearerToken);
 
             long totalSize = sourceStream.Length;
             const int oneMb = 1024 * 1024;
