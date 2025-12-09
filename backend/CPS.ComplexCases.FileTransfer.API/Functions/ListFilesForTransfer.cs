@@ -67,7 +67,7 @@ public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorage
             }
         }
 
-        var filesForTransfer = await sourceClient.ListFilesForTransferAsync(selectedEntities, request.Value?.WorkspaceId, request.Value?.CaseId);
+        var filesForTransfer = await sourceClient.ListFilesForTransferAsync(selectedEntities, request.Value?.WorkspaceId, request.Value?.CaseId, request.Value?.BearerToken);
 
         var result = new FilesForTransferResult
         {

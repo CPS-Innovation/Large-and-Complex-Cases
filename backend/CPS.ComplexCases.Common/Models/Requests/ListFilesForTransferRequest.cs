@@ -23,6 +23,8 @@ public class ListFilesForTransferRequest
     public Guid? CorrelationId { get; set; }
     [JsonPropertyName("username")]
     public string? Username { get; set; }
+    [JsonPropertyName("bearerToken")]
+    public string? BearerToken { get; set; }
 }
 
 public class SelectedSourcePath
