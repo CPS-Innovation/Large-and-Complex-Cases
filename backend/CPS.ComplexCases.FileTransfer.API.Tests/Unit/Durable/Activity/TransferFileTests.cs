@@ -54,27 +54,51 @@ public class TransferFileTests
     {
         // Arrange
         var payload = CreatePayload();
-        var content = Encoding.UTF8.GetBytes("testdata"); // 8 bytes -> 2 chunks
+        var content = Encoding.UTF8.GetBytes("testdata"); // 8 bytes => fits in one chunk
         var stream = new MemoryStream(content);
 
         var session = new UploadSession { UploadId = Guid.NewGuid().ToString() };
 
-        _storageClientFactoryMock.Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
             .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
 
-        _sourceClientMock.Setup(x => x.OpenReadStreamAsync(payload.SourcePath.Path, payload.WorkspaceId, payload.SourcePath.FileId, null))
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(payload.SourcePath.Path,
+                                              payload.WorkspaceId,
+                                              payload.SourcePath.FileId,
+                                              payload.BearerToken))
             .ReturnsAsync(stream);
 
-        _destinationClientMock.Setup(x => x.InitiateUploadAsync(payload.DestinationPath, content.Length, payload.SourcePath.Path, payload.WorkspaceId, payload.SourcePath.RelativePath, payload.SourceRootFolderPath, null))
+        _destinationClientMock
+            .Setup(x => x.InitiateUploadAsync(
+                payload.DestinationPath,
+                content.Length,
+                payload.SourcePath.Path,
+                payload.WorkspaceId,
+                payload.SourcePath.RelativePath,
+                payload.SourceRootFolderPath,
+                payload.BearerToken
+            ))
             .ReturnsAsync(session);
 
-        _destinationClientMock.Setup(x => x.UploadChunkAsync(session, 1, It.IsAny<byte[]>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<long>(), null))
-            .ReturnsAsync(new UploadChunkResult(TransferDirection.EgressToNetApp, "etag1", 1));
+        _destinationClientMock
+            .Setup(x => x.UploadChunkAsync(
+                session,
+                1,
+                It.IsAny<byte[]>(),
+                It.IsAny<long>(),
+                It.IsAny<long>(),
+                It.IsAny<long>(),
+                payload.BearerToken))
+            .ReturnsAsync(new UploadChunkResult(payload.TransferDirection, "etag1", 1));
 
-        _destinationClientMock.Setup(x => x.UploadChunkAsync(session, 2, It.IsAny<byte[]>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<long>(), null))
-            .ReturnsAsync(new UploadChunkResult(TransferDirection.EgressToNetApp, "etag2", 2));
-
-        _destinationClientMock.Setup(x => x.CompleteUploadAsync(session, null, It.IsAny<Dictionary<int, string>>(), null))
+        _destinationClientMock
+            .Setup(x => x.CompleteUploadAsync(
+                session,
+                null,
+                It.IsAny<Dictionary<int, string>>(),
+                payload.BearerToken))
             .Returns(Task.CompletedTask);
 
         // Act
@@ -94,11 +118,12 @@ public class TransferFileTests
         // Arrange
         var payload = CreatePayload();
 
-        _storageClientFactoryMock.Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
             .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
 
-        _sourceClientMock.Setup(x =>
-                x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), null))
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>()))
             .ThrowsAsync(new FileExistsException("File already exists."));
 
         // Act
@@ -116,11 +141,12 @@ public class TransferFileTests
         // Arrange
         var payload = CreatePayload();
 
-        _storageClientFactoryMock.Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
             .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
 
-        _sourceClientMock.Setup(x =>
-                x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), null))
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>()))
             .ThrowsAsync(new InvalidOperationException("Something went wrong"));
 
         // Act
@@ -144,18 +170,30 @@ public class TransferFileTests
         var content = Encoding.UTF8.GetBytes("testdata");
         var stream = new MemoryStream(content);
 
-        _storageClientFactoryMock.Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
             .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
 
-        _sourceClientMock.Setup(x =>
-                x.OpenReadStreamAsync(payload.SourcePath.Path, payload.WorkspaceId, payload.SourcePath.FileId, null))
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(payload.SourcePath.Path,
+                                              payload.WorkspaceId,
+                                              payload.SourcePath.FileId,
+                                              payload.BearerToken))
             .ReturnsAsync(stream);
 
-        _destinationClientMock.Setup(x =>
-                x.InitiateUploadAsync(It.IsAny<string>(), It.IsAny<long>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>(), null))
+        _destinationClientMock
+            .Setup(x => x.InitiateUploadAsync(
+                It.IsAny<string>(),
+                It.IsAny<long>(),
+                It.IsAny<string>(),
+                It.IsAny<string?>(),
+                It.IsAny<string>(),
+                It.IsAny<string?>(),
+                payload.BearerToken))
             .ReturnsAsync(new UploadSession { UploadId = Guid.NewGuid().ToString() });
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(() => _activity.Run(payload, cts.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            _activity.Run(payload, cts.Token));
     }
 }
