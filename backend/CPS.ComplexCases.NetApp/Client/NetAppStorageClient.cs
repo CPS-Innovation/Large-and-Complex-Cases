@@ -7,6 +7,7 @@ using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
+using CPS.ComplexCases.NetApp.Streams;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
@@ -57,7 +58,10 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
     {
         var arg = _netAppArgFactory.CreateGetObjectArg(bearerToken!, _options.BucketName, path); // Bucket will need to be passed in as argument if we support multiple buckets
         var response = await _netAppClient.GetObjectAsync(arg);
-        return response?.ResponseStream ?? throw new InvalidOperationException("Failed to get object stream.");
+        var responseStream = response?.ResponseStream ?? throw new InvalidOperationException("Failed to get object stream.");
+
+        // Wrap the stream to safely handle AWS SDK's hash validation exception on disposal
+        return new HashValidationIgnoringStream(responseStream);
     }
 
     public async Task<UploadChunkResult> UploadChunkAsync(UploadSession session, int chunkNumber, byte[] chunkData, long? start = null, long? end = null, long? totalSize = null, string? bearerToken = null)
