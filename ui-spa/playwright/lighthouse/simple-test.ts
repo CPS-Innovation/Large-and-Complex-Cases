@@ -4,6 +4,7 @@ import fs from 'fs-extra';
 import * as chromeLauncher from 'chrome-launcher';
 import { createAuthManager } from './auth-utils.ts';
 
+
 const baseUrl = process.env.BASE_URL || 'http://localhost:5173';
 const aadUsername = process.env.AZURE_AD_USERNAME || '';
 const aadPassword = process.env.AZURE_AD_PASSWORD || '';
@@ -48,14 +49,18 @@ const aadPassword = process.env.AZURE_AD_PASSWORD || '';
 
   const chrome = await chromeLauncher.launch({ port: 9222 });
 
-  const result = await lighthouse(page.url(), { 
+  const options =  { 
     port: chrome.port, 
     disableStorageReset: true, 
     onlyCategories: ['performance', 'accessibility', 'best-practices'],
     output: 'html',
-  });
+  }
 
-  fs.writeFileSync('lh-report.html', result?.report);
+  const result = await lighthouse(page.url(), options);
+
+  const reportHtml = result?.report;
+
+  fs.writeFileSync('lh-report.html', reportHtml);
   console.log('Performance Score:', result?.lhr.categories.performance.score);
   console.log('Accessibility Score:', result?.lhr.categories.accessibility.score);
   console.log('Best Practice Score:', result?.lhr.categories['best-practices'].score);
