@@ -9,6 +9,7 @@ using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
+using CPS.ComplexCases.NetApp.Client;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 
@@ -43,8 +44,8 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             // Determine if we need MD5 computation (only for EgressStorageClient)
             bool needsMd5 = destinationClient is EgressStorageClient;
 
-            // If the file is small enough, avoid multipart entirely
-            if (totalSize <= minMultipartSize)
+            // if the destination is NetApp we should avoid chunked upload for small files
+            if (destinationClient is NetAppStorageClient && totalSize <= minMultipartSize)
             {
                 _logger.LogInformation("File size {TotalSize} <= {MinMultipartSize} bytes, using single PUT.",
                     totalSize, minMultipartSize);
