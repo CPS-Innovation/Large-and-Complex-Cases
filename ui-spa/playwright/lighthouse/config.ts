@@ -55,7 +55,7 @@ export const Config: TestConfig = {
       accessKey: process.env.CMS_ACCESS_KEY || ''
     }
   },
-  cases: (process.env.TEST_CASE_IDS || '123,456,789').split(',').map(id => id.trim()), // Multiple case IDs
+  cases: (process.env.TEST_CASE_OPERATION_NAMES || 'Capricorn').split(',').map(id => id.trim()), // Multiple case IDs
   performanceBudget: {
     lcp: parseInt(process.env.LH_LCP_BUDGET || '2500'),
     fid: parseInt(process.env.LH_FID_BUDGET || '100'),
@@ -91,6 +91,6 @@ export function validateConfig(): void {
   }
 
   if (Config.cases.length === 0) {
-    throw new Error('No case IDs configured. Please set TEST_CASE_IDS environment variable.');
+    throw new Error('No case IDs configured. Please set TEST_CASE_OPERATION_NAMES environment variable.');
   }
 }
