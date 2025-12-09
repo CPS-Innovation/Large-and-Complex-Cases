@@ -247,7 +247,6 @@ public class S3CredentialServiceTests
         Assert.NotNull(result);
         Assert.Equal(newAccessKey, result.AccessKey);
         Assert.Equal(newSecretKey, result.SecretKey);
-        // CreatedAt is now set to current time, not preserved
         Assert.NotEqual(createdAt, result.Metadata.CreatedAt);
         Assert.NotNull(result.Metadata.LastRotated);
 
