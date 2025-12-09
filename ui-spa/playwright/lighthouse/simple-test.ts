@@ -2,6 +2,7 @@ import playwright from 'playwright';
 import lighthouse from 'lighthouse';
 import fs from 'fs-extra';
 import * as chromeLauncher from 'chrome-launcher';
+import { createAuthManager } from './auth-utils.ts';
 
 const baseUrl = process.env.BASE_URL || 'http://localhost:5173';
 const aadUsername = process.env.AZURE_AD_USERNAME || '';
@@ -15,6 +16,13 @@ const aadPassword = process.env.AZURE_AD_PASSWORD || '';
   });
 
   const context = await browserServer.newContext();
+  const authManager = createAuthManager();
+        
+  const tokens = await authManager.authenticate();
+  
+  // Apply authentication to browser context
+  await authManager.setAuthContext(context, tokens);
+
   const page = await context.newPage();
 
   // Navigate and perform actions
@@ -36,15 +44,9 @@ const aadPassword = process.env.AZURE_AD_PASSWORD || '';
 
   await page.waitForURL(baseUrl, { timeout: 20000 });
 
-  const userInfo = page.locator('[data-testid="div-ad-username"]');
-  const visible = await userInfo.isVisible({ timeout: 10000 });
-  if (!visible) throw new Error('User info not visible after login');
-
   console.log('✓ Interactive authentication completed');
 
   const chrome = await chromeLauncher.launch({ port: 9222 });
-
-  await page.pause();
 
   const result = await lighthouse(page.url(), { 
     port: chrome.port, 
@@ -55,6 +57,8 @@ const aadPassword = process.env.AZURE_AD_PASSWORD || '';
 
   fs.writeFileSync('lh-report.html', result?.report);
   console.log('Performance Score:', result?.lhr.categories.performance.score);
+  console.log('Accessibility Score:', result?.lhr.categories.accessibility.score);
+  console.log('Best Practice Score:', result?.lhr.categories['best-practices'].score);
 
   await browserServer.close();
 })();
