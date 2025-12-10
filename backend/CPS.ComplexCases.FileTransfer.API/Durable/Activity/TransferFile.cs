@@ -16,7 +16,7 @@ using CPS.ComplexCases.Common.Models.Domain;
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 
 /// <summary>
-/// Optimized durable activity for transferring files between storage endpoints.
+/// Durable activity for transferring files between storage endpoints.
 /// Handles chunked uploads, computes MD5 hashes for integrity, and returns transfer results.
 /// </summary>
 public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<TransferFile> logger, IOptions<SizeConfig> sizeConfig)
@@ -127,76 +127,69 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         }
 
         var buffer = new byte[OneMb];
-        try
-        {
-            var uploadedChunks = new Dictionary<int, string>();
-            System.Security.Cryptography.MD5? md5 = needsMd5
-                ? System.Security.Cryptography.MD5.Create()
-                : null;
+        var uploadedChunks = new Dictionary<int, string>();
+        System.Security.Cryptography.MD5? md5 = needsMd5
+            ? System.Security.Cryptography.MD5.Create()
+            : null;
 
-            using (md5)
+        using (md5)
+        {
+            using var partBuffer = new MemoryStream(TargetPartSize);
+
+            long bytesProcessed = 0;
+            long bytesUploaded = 0;
+            int chunkNumber = 1;
+
+            while (bytesProcessed < totalSize)
             {
-                using var partBuffer = new MemoryStream(TargetPartSize);
+                cancellationToken.ThrowIfCancellationRequested();
 
-                long bytesProcessed = 0;
-                long bytesUploaded = 0;
-                int chunkNumber = 1;
+                int bytesToRead = (int)Math.Min(buffer.Length, totalSize - bytesProcessed);
+                int bytesRead = await sourceStream.ReadAsync(
+                    buffer.AsMemory(0, bytesToRead), cancellationToken);
 
-                while (bytesProcessed < totalSize)
+                if (bytesRead <= 0)
+                    break;
+
+                partBuffer.Write(buffer, 0, bytesRead);
+
+                md5?.TransformBlock(buffer, 0, bytesRead, null, 0);
+
+                bytesProcessed += bytesRead;
+                long remaining = totalSize - bytesProcessed;
+                bool isLastPart = remaining == 0;
+
+                if (ShouldUploadPart(partBuffer.Length, remaining, isLastPart))
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
+                    await UploadPart(
+                        destinationClient,
+                        session,
+                        partBuffer,
+                        chunkNumber,
+                        bytesUploaded,
+                        totalSize,
+                        payload,
+                        uploadedChunks);
 
-                    int bytesToRead = (int)Math.Min(buffer.Length, totalSize - bytesProcessed);
-                    int bytesRead = await sourceStream.ReadAsync(
-                        buffer.AsMemory(0, bytesToRead), cancellationToken);
-
-                    if (bytesRead <= 0)
-                        break;
-
-                    partBuffer.Write(buffer, 0, bytesRead);
-
-                    md5?.TransformBlock(buffer, 0, bytesRead, null, 0);
-
-                    bytesProcessed += bytesRead;
-                    long remaining = totalSize - bytesProcessed;
-                    bool isLastPart = remaining == 0;
-
-                    if (ShouldUploadPart(partBuffer.Length, remaining, isLastPart))
-                    {
-                        await UploadPart(
-                            destinationClient,
-                            session,
-                            partBuffer,
-                            chunkNumber,
-                            bytesUploaded,
-                            totalSize,
-                            payload,
-                            uploadedChunks);
-
-                        bytesUploaded += partBuffer.Length;
-                        chunkNumber++;
-                        partBuffer.SetLength(0);
-                    }
+                    bytesUploaded += partBuffer.Length;
+                    chunkNumber++;
+                    partBuffer.SetLength(0);
                 }
-
-                string md5Hash = string.Empty;
-                if (md5 != null)
-                {
-                    md5.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-                    md5Hash = md5.Hash != null ? Convert.ToBase64String(md5.Hash) : string.Empty;
-                }
-
-                await CompleteUpload(destinationClient, session, md5Hash, uploadedChunks, payload.BearerToken);
-
-                _logger.LogInformation("File transfer completed: {SourcePath} -> {DestinationPath}",
-                    payload.SourcePath.Path, payload.DestinationPath);
-
-                return CreateSuccessResult(payload, totalSize);
             }
-        }
-        finally
-        {
-            System.Buffers.ArrayPool<byte>.Shared.Return(buffer);
+
+            string md5Hash = string.Empty;
+            if (md5 != null)
+            {
+                md5.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+                md5Hash = md5.Hash != null ? Convert.ToBase64String(md5.Hash) : string.Empty;
+            }
+
+            await CompleteUpload(destinationClient, session, md5Hash, uploadedChunks, payload.BearerToken);
+
+            _logger.LogInformation("File transfer completed: {SourcePath} -> {DestinationPath}",
+                payload.SourcePath.Path, payload.DestinationPath);
+
+            return CreateSuccessResult(payload, totalSize);
         }
     }
 
