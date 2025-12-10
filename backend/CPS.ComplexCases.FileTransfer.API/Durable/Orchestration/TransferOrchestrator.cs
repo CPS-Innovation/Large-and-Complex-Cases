@@ -47,6 +47,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
                 IsRetry = input.IsRetry ?? false,
                 UserName = input.UserName,
                 CorrelationId = input.CorrelationId,
+                BearerToken = input.BearerToken
             };
 
             var entityId = new EntityInstanceId(nameof(TransferEntityState), input.TransferId.ToString());
@@ -86,7 +87,8 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
                     TransferType = transferEntity.TransferType,
                     TransferDirection = transferEntity.Direction,
                     WorkspaceId = input.WorkspaceId,
-                    SourceRootFolderPath = input.SourceRootFolderPath
+                    SourceRootFolderPath = input.SourceRootFolderPath,
+                    BearerToken = input.BearerToken
                 };
 
                 // Activity now returns TransferResult instead of void

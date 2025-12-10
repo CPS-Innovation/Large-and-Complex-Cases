@@ -49,7 +49,7 @@ public class TransferEntityHelperTests
         var transferId = Guid.NewGuid();
         var expectedEntityMetadata = new EntityMetadata<TransferEntity>(
             new EntityInstanceId(nameof(TransferEntityState), transferId.ToString()),
-            new TransferEntity { DestinationPath = "some/path" });
+            new TransferEntity { DestinationPath = "some/path", BearerToken = "fakeBearerToken" });
         _entityClientStub.OnGetEntityAsync = (id, cancellation) =>
         {
             Assert.Equal(nameof(TransferEntityState), id.Name, ignoreCase: true);

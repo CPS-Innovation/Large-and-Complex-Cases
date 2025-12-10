@@ -370,6 +370,7 @@ public class TransferOrchestratorTests
         {
             TransferId = _fixture.Create<Guid>(),
             DestinationPath = _fixture.Create<string>(),
+            BearerToken = _fixture.Create<string>(),
             SourcePaths = new List<TransferSourcePath>
             {
                 new TransferSourcePath
@@ -391,6 +392,7 @@ public class TransferOrchestratorTests
         {
             TransferId = _fixture.Create<Guid>(),
             DestinationPath = _fixture.Create<string>(),
+            BearerToken = _fixture.Create<string>(),
             SourcePaths = new List<TransferSourcePath>
         {
             new TransferSourcePath

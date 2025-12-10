@@ -247,13 +247,12 @@ public class S3CredentialServiceTests
         Assert.NotNull(result);
         Assert.Equal(newAccessKey, result.AccessKey);
         Assert.Equal(newSecretKey, result.SecretKey);
-        Assert.Equal(createdAt, result.Metadata.CreatedAt);
+        Assert.NotEqual(createdAt, result.Metadata.CreatedAt);
         Assert.NotNull(result.Metadata.LastRotated);
 
         _netAppHttpClientMock.Verify(x => x.RegenerateUserKeysAsync(It.IsAny<RegenerateUserKeysArg>()), Times.Once);
         _keyVaultServiceMock.Verify(x => x.StoreCredentialsAsync(_oid,
             It.Is<S3CredentialsEncrypted>(c =>
-                c.Metadata.CreatedAt == createdAt &&
                 c.Metadata.LastRotated != null)), Times.Once);
     }
 

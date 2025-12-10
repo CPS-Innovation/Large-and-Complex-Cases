@@ -226,7 +226,19 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3UtilsWrapper am
         var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
         try
         {
-            return await s3Client.UploadPartAsync(_netAppRequestFactory.UploadPartRequest(arg));
+            using var partStream = new MemoryStream(arg.PartData, writable: false);
+
+            var request = new UploadPartRequest
+            {
+                BucketName = arg.BucketName,
+                Key = arg.ObjectKey,
+                UploadId = arg.UploadId,
+                PartNumber = arg.PartNumber,
+                PartSize = arg.PartData.Length,
+                InputStream = partStream,
+                DisablePayloadSigning = true
+            };
+            return await s3Client.UploadPartAsync(request);
         }
         catch (AmazonS3Exception ex)
         {

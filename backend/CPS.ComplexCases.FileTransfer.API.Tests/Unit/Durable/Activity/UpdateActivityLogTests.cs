@@ -24,6 +24,7 @@ public class UpdateActivityLogTests
     private readonly DurableEntityClientStub _durableEntityClientStub;
     private readonly DurableTaskClientStub _durableTaskClientStub;
     private readonly UpdateActivityLog _activity;
+    private readonly string _bearerToken;
 
     public UpdateActivityLogTests()
     {
@@ -37,6 +38,7 @@ public class UpdateActivityLogTests
         _durableTaskClientStub = new DurableTaskClientStub(_durableEntityClientStub);
 
         _activity = new UpdateActivityLog(_activityLogServiceMock.Object, _loggerMock.Object);
+        _bearerToken = _fixture.Create<string>();
     }
 
     [Fact]
@@ -86,6 +88,7 @@ public class UpdateActivityLogTests
             TransferType = TransferType.Copy,
             TotalFiles = 2,
             DestinationPath = "/dest/path",
+            BearerToken = _bearerToken,
             SourcePaths =
             [
                 new TransferSourcePath
@@ -155,6 +158,7 @@ public class UpdateActivityLogTests
             Direction = TransferDirection.EgressToNetApp,
             TransferType = TransferType.Copy,
             TotalFiles = 1,
+            BearerToken = _bearerToken,
             SourcePaths = [new TransferSourcePath
             {
                 FullFilePath = null!,
@@ -197,6 +201,7 @@ public class UpdateActivityLogTests
             Direction = TransferDirection.EgressToNetApp,
             TransferType = TransferType.Move,
             TotalFiles = 1,
+            BearerToken = _bearerToken,
             SourcePaths = [new TransferSourcePath { FullFilePath = @"C:\source\file.txt", Path = "/source" }],
             DeletionErrors = [new DeletionError
             {
@@ -248,6 +253,7 @@ public class UpdateActivityLogTests
             Direction = TransferDirection.EgressToNetApp,
             TransferType = TransferType.Copy,
             TotalFiles = 1,
+            BearerToken = _bearerToken,
             SourcePaths = [new TransferSourcePath { FullFilePath = @"C:\test.txt", Path = "/source" }],
             DeletionErrors = [new DeletionError { FileId = "/source/test.txt", ErrorMessage = "Should be ignored" }],
             DestinationPath = "/dest/path",

@@ -28,4 +28,5 @@ public class TransferEntity
     public bool? MovedFilesDeletedSuccessfully { get; set; } = false;
     public string? UserName { get; set; }
     public Guid? CorrelationId { get; set; } = null;
+    public required string BearerToken { get; set; }
 }

@@ -12,4 +12,5 @@ public class TransferFilePayload
     public required string DestinationPath { get; set; }
     public required string WorkspaceId { get; set; }
     public string? SourceRootFolderPath { get; set; } = null;
+    public required string BearerToken { get; set; }
 }

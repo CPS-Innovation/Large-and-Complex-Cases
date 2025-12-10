@@ -56,6 +56,7 @@ public class GetFilesForTransfer(IFileTransferClient transferClient, ILogger<Get
             DestinationPath = request.Value.DestinationPath,
             WorkspaceId = request.Value.WorkspaceId,
             Username = context.Username,
+            BearerToken = context.BearerToken,
             SourceRootFolderPath = request.Value.SourceRootFolderPath,
             SourcePaths = request.Value.SourcePaths.Select(path => new SelectedSourcePath
             {

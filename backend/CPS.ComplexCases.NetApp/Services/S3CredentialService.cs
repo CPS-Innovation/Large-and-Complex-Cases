@@ -126,7 +126,7 @@ public class S3CredentialService : IS3CredentialService
                 {
                     UserPrincipalName = userPrincipalName,
                     Salt = saltBase64,
-                    CreatedAt = existingCredentials?.Metadata?.CreatedAt ?? now,
+                    CreatedAt = now,
                     LastRotated = isRotation ? now : null,
                     PepperVersion = _options.PepperVersion
                 }

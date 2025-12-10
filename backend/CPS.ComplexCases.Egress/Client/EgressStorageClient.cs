@@ -190,6 +190,13 @@ public class EgressStorageClient(
         };
     }
 
+    public Task UploadFileAsync(string destinationPath, Stream fileStream, string? workspaceId = null, string? relativePath = null, string? sourceRootFolderPath = null, string? bearerToken = null)
+    {
+        // This shares an interface with NetAppStorageClient but isn't required for Egress
+        // Egress always uses chunked uploads via InitiateUploadAsync, UploadChunkAsync, and CompleteUploadAsync
+        throw new NotImplementedException();
+    }
+
     private async Task CreateFolderStructureAsync(string folderPath, string workspaceId, string token)
     {
         if (string.IsNullOrEmpty(folderPath) || folderPath == "/" || folderPath == "\\")

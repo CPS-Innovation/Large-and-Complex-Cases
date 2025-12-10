@@ -16,4 +16,5 @@ public class TransferPayload
     public bool? IsRetry { get; set; } = false;
     public Guid? CorrelationId { get; set; } = null;
     public string? SourceRootFolderPath { get; set; } = null;
+    public required string BearerToken { get; set; }
 }
