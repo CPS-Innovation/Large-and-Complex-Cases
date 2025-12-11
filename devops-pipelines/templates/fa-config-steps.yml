@@ -44,6 +44,11 @@ steps:
             "slotSetting": false
           },
           {
+            "name": "KeyVault__Url",
+            "value": "https://${{ parameters.keyVaultName }}.vault.azure.net/",
+            "slotSetting": false
+          },
+          {
             "name": "NetAppOptions__Url",
             "value": "$(NetAppOptionsUrl)",
             "slotSetting": false
