@@ -3,10 +3,6 @@ export interface TestConfig {
   aadUsername: string;
   aadPassword: string;
   headless: boolean;
-  screenSize: {
-    width: number;
-    height: number;
-  };
   auth: {
     azureAdApi: {
       tenantId: string;
@@ -39,10 +35,6 @@ export const Config: TestConfig = {
   aadUsername: process.env.AZURE_AD_USERNAME || '',
   aadPassword: process.env.AZURE_AD_PASSWORD || '',
   headless: process.env.HEADLESS === 'true' || true, // Default to headless for CI
-  screenSize: {
-    width: parseInt(process.env.SCREEN_WIDTH || '1920'),
-    height: parseInt(process.env.SCREEN_HEIGHT || '1080'),
-  },
   auth: {
     azureAdApi: {
       tenantId: process.env.AZURE_AD_TENANT_ID || '',

@@ -3,7 +3,7 @@ import type { BrowserContext } from 'playwright';
 import fs from 'fs-extra';
 import * as path from 'path';
 import { Config } from './config.ts';
-import { fileURLToPath } from 'url'
+import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -284,75 +284,5 @@ export function validateAuthEnvironment(): void {
       `Missing required environment variables for authentication: ${missing.join(', ')}\n` +
       'Please set these variables in your .env file or environment.'
     );
-  }
-}
-
-/**
- * Perform interactive authentication to Azure AD for Playwright tests
- * This simulates the real user login flow
- */
-export async function interactiveAdAuth(options: UiAuthOptions): Promise<StorageState> {
-  const {
-    baseUrl,
-    username,
-    password,
-    headless = true,
-    screenSize,
-    userAgent,
-    timeouts = {},
-  } = options;
-
-  const {
-    loginUrl = 15000,
-    passwordField = 10000,
-    redirectBack = 20000,
-    userInfoVisible = 10000,
-  } = timeouts;
-
-  console.log('→ Starting interactive authentication to Azure AD...');
-
-  // 1) Launch a temporary browser & context
-  const browser = await chromium.launch({ headless });
-  const context = await browser.newContext({ viewport: screenSize, userAgent });
-  const page = await context.newPage();
-
-  try {
-    // 2) Navigate to your app → AAD login
-    await page.goto(baseUrl);
-    await page.waitForURL('**/login.microsoftonline.com/**', { timeout: loginUrl });
-
-    // 3) Username + Next
-    await page.locator('input[type="email"]').fill(username);
-    await page.locator('input[type="submit"]').click();
-
-    // 4) Password + Sign in
-    await page.waitForSelector('input[type="password"]', { timeout: passwordField });
-    await page.locator('input[type="password"]').fill(password);
-    await page.locator('input[type="submit"]').click();
-
-    // 5) Optional: “Stay signed in?”
-    try {
-      await page.locator('input[type="submit"][value="Yes"]').click({ timeout: 3000 });
-    } catch {
-      // ignore if not shown
-    }
-
-    // 6) Wait for redirect back to your app
-    await page.waitForURL(baseUrl, { timeout: redirectBack });
-
-    await page.pause();
-
-    // 7) Verify login 
-    const userInfo = page.locator('[data-testid="div-ad-username"]');
-    const visible = await userInfo.isVisible({ timeout: userInfoVisible });
-    if (!visible) throw new Error('User info not visible after login');
-
-    // 8) Capture storageState (cookies + localStorage)
-    const storageState = await context.storageState();
-    console.log('✓ Interactive authentication completed');
-    return storageState;
-  } finally {
-    await context.close();
-    await browser.close();
   }
 }
