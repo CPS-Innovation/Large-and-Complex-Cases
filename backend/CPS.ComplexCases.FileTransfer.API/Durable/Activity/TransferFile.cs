@@ -28,6 +28,8 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
     [Function(nameof(TransferFile))]
     public async Task<TransferResult> Run([ActivityTrigger] TransferFilePayload payload, CancellationToken cancellationToken = default)
     {
+        var startTime = DateTime.UtcNow;
+
         var (sourceClient, destinationClient) = _storageClientFactory.GetClientsForDirection(payload.TransferDirection);
 
         try
@@ -173,13 +175,17 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             _logger.LogInformation("File transfer completed: {SourcePath} -> {DestinationPath}",
                 payload.SourcePath.Path, payload.DestinationPath);
 
+            var endTime = DateTime.UtcNow;
+
             var successfulItem = new TransferItem
             {
                 SourcePath = payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
                 Status = TransferItemStatus.Completed,
                 Size = totalSize,
                 IsRenamed = payload.SourcePath.ModifiedPath != null,
-                FileId = payload.SourcePath.FileId
+                FileId = payload.SourcePath.FileId,
+                StartTime = startTime,
+                EndTime = endTime,
             };
 
             return new TransferResult

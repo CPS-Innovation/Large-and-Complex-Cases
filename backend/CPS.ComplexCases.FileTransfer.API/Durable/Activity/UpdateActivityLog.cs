@@ -38,7 +38,9 @@ public class UpdateActivityLog(IActivityLogService activityLogService, ILogger<U
         {
             Path = x.SourcePath,
             Size = x.Size,
-            IsRenamed = x.IsRenamed
+            IsRenamed = x.IsRenamed,
+            StartTime = x.StartTime,
+            EndTime = x.EndTime,
         }).ToList();
 
         var errorItems = entity.State.FailedItems.Select(x => new FileTransferError
@@ -74,7 +76,9 @@ public class UpdateActivityLog(IActivityLogService activityLogService, ILogger<U
             Files = successfulItems,
             Errors = errorItems,
             DeletionErrors = deletionErrors,
-            ExceptionMessage = payload.ExceptionMessage
+            ExceptionMessage = payload.ExceptionMessage,
+            StartTime = entity.State.StartedAt,
+            EndTime = entity.State.CompletedAt
         };
 
         await _activityLogService.CreateActivityLogAsync(

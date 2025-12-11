@@ -1,9 +1,9 @@
 using AutoFixture;
-using CPS.ComplexCases.API.Telemetry;
+using CPS.ComplexCases.Common.Telemetry;
 using Microsoft.ApplicationInsights.DataContracts;
 using Moq;
 
-namespace CPS.ComplexCases.API.Tests.Unit.Clients;
+namespace CPS.ComplexCases.Common.Tests.Unit.Telemetry;
 
 public class TelemetryClientTest
 {
