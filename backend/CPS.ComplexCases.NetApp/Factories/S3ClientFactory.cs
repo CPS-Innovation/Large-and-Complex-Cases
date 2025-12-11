@@ -58,9 +58,9 @@ public class S3ClientFactory(IOptions<NetAppOptions> options, IS3CredentialServi
             s3Config.HttpClientFactory = new CustomHttpClientFactory(handler);
         }
         
-        var s3Client = new AmazonS3Client(credentials, s3Config);
-        
         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+        
+        var s3Client = new AmazonS3Client(credentials, s3Config);
         
         return s3Client;
     }
