@@ -35,31 +35,33 @@ public class S3ClientFactory(IOptions<NetAppOptions> options, IS3CredentialServi
         var (accessKey, secretKey) = await GetCredentialKeysAsync(bearerToken);
         var credentials = new BasicAWSCredentials(accessKey, secretKey);
 
-        if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
-        {
-            ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
-        }
-        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-
-        var handler = new HttpClientHandler
-        {
-            ServerCertificateCustomValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true
-        };
-
-        var customHttpClientFactory = new CustomHttpClientFactory(handler);
-
-        var s3Client = new AmazonS3Client(credentials, new AmazonS3Config
+        var s3Config = new AmazonS3Config
         {
             RegionEndpoint = RegionEndpoint.GetBySystemName(_options.RegionName),
             ServiceURL = _options.Url,
             ForcePathStyle = true,
             LogMetrics = true,
             LogResponse = true,
-            HttpClientFactory = customHttpClientFactory, // Remove?
             RequestChecksumCalculation = RequestChecksumCalculation.WHEN_REQUIRED,
             ResponseChecksumValidation = ResponseChecksumValidation.WHEN_REQUIRED,
-        });
+        };
 
+        if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+        {
+            ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
+            
+            var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true
+            };
+            
+            s3Config.HttpClientFactory = new CustomHttpClientFactory(handler);
+        }
+        
+        var s3Client = new AmazonS3Client(credentials, s3Config);
+        
+        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+        
         return s3Client;
     }
 
