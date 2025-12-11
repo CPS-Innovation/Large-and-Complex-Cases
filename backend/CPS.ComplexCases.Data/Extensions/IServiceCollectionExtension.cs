@@ -25,7 +25,7 @@ public static class IServiceCollectionExtension
       {
         var dbUserName = configuration["Postgres:DbUserName"];
         
-        if (string.IsNullOrEmpty(dbUserName))
+        if (!string.IsNullOrEmpty(dbUserName))
         {
            dataSourceBuilder.ConnectionStringBuilder.Username = dbUserName;
         }
