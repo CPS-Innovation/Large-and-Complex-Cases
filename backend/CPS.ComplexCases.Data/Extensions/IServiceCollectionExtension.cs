@@ -23,6 +23,12 @@ public static class IServiceCollectionExtension
 
       if (dataSourceBuilder.ConnectionStringBuilder.Password is null) // allows password override locally
       {
+        var dbUserName = configuration["Postgres:DbUserName"];
+        
+        if (string.IsNullOrEmpty(dbUserName))
+        {
+           dataSourceBuilder.ConnectionStringBuilder.Username = dbUserName;
+        }
         var credentials = new DefaultAzureCredential();
         dataSourceBuilder.UsePeriodicPasswordProvider(
             async (_, ct) =>
