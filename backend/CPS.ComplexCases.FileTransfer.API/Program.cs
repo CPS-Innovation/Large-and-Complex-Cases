@@ -18,6 +18,8 @@ using CPS.ComplexCases.NetApp.Extensions;
 using CPS.ComplexCases.FileTransfer.API.Middleware;
 using Microsoft.ApplicationInsights.WorkerService;
 using Microsoft.Extensions.Logging.ApplicationInsights;
+using Microsoft.ApplicationInsights.Extensibility;
+using CPS.ComplexCases.Common.Telemetry;
 
 // Create a temporary logger for configuration phase
 using var loggerFactory = LoggerFactory.Create(configure => configure.AddConsole());
@@ -27,11 +29,11 @@ var host = new HostBuilder()
     .ConfigureFunctionsWebApplication(webApp =>
     {
         webApp.UseMiddleware<RequestValidationMiddleware>();
-    }) // ✅ Adds ASP.NET Core integration
+    }) // Adds ASP.NET Core integration
     .ConfigureLogging(options => options.AddApplicationInsights())
     .ConfigureAppConfiguration((context, config) =>
     {
-        // ✅ Configure Azure Key Vault if KeyVaultUri is provided
+        // Configure Azure Key Vault if KeyVaultUri is provided
         config.AddKeyVaultIfConfigured(config.Build(), logger);
     })
     .ConfigureServices((context, services) =>
@@ -60,11 +62,16 @@ var host = new HostBuilder()
             }
         });
 
-        // ✅ Add services with configuration
+        // Add services with configuration
         services.AddActivityLog();
         services.AddEgressClient(configuration);
         services.AddNetAppClient(configuration);
         services.AddDataClient(configuration);
+
+        // Add telemetry services (required by ActivityLogService)
+        services.AddSingleton<ITelemetryInitializer, TelemetryInitializer>();
+        services.AddSingleton<IAppInsightsTelemetryClient, AppInsightsTelemetryClientWrapper>();
+        services.AddSingleton<ITelemetryClient, TelemetryClient>();
 
         services.AddScoped<ICaseMetadataService, CaseMetadataService>();
 
@@ -75,10 +82,7 @@ var host = new HostBuilder()
         services.AddScoped<IRequestValidator, RequestValidator>();
         services.AddScoped<ITransferEntityHelper, TransferEntityHelper>();
 
-        services.AddDurableTaskClient(x =>
-        {
-            x.UseGrpc();
-        });
+        services.AddDurableTaskClient(x => { x.UseGrpc(); });
         // Configure OpenAPI
         services.AddSingleton<IOpenApiConfigurationOptions, FileTransferApiOpenApiConfigurationOptions>();
     })
