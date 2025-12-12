@@ -57,11 +57,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             _s3ClientFactory = new S3ClientFactory(
                 Options.Create(new NetAppOptions
                 {
-                    AccessKey = "fakeAccessKey",
-                    SecretKey = "fakeSecretKey",
-                    BucketName = "test-bucket",
                     Url = _server.Urls[0],
-                    RegionName = "us-east-1"
+                    RegionName = "eu-west-1"
                 }),
                 _mockCredentialService.Object);
             _s3ClientFactory.SetS3ClientAsync(_s3Client);
@@ -90,11 +87,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             _s3ClientFactory = new S3ClientFactory(
                 Options.Create(new NetAppOptions
                 {
-                    AccessKey = "fakeAccessKey",
-                    SecretKey = "fakeSecretKey",
-                    BucketName = "test-bucket",
                     Url = _server.Urls[0],
-                    RegionName = "us-east-1"
+                    RegionName = "eu-west-1"
                 }),
                 _mockCredentialService.Object
             );

@@ -34,7 +34,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         {
             var sourceFilePath = string.IsNullOrEmpty(payload.SourcePath.ModifiedPath) ? payload.SourcePath.Path : payload.SourcePath.ModifiedPath;
             using var sourceStream = await sourceClient.OpenReadStreamAsync(
-                payload.SourcePath.Path, payload.WorkspaceId, payload.SourcePath.FileId, payload.BearerToken);
+                payload.SourcePath.Path, payload.WorkspaceId, payload.SourcePath.FileId, payload.BearerToken, payload.BucketName);
 
             long totalSize = sourceStream.Length;
             const int oneMb = 1024 * 1024;
@@ -55,7 +55,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 }
 
                 await destinationClient.UploadFileAsync(payload.DestinationPath, sourceStream,
-                    payload.WorkspaceId, sourceFilePath, payload.SourceRootFolderPath, payload.BearerToken);
+                    payload.WorkspaceId, sourceFilePath, payload.SourceRootFolderPath, payload.BearerToken, payload.BucketName);
 
                 var singleUpload = new TransferItem
                 {
@@ -76,7 +76,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             // Multipart upload
             var session = await destinationClient.InitiateUploadAsync(
                 payload.DestinationPath, totalSize, sourceFilePath, payload.WorkspaceId,
-                payload.SourcePath.RelativePath, payload.SourceRootFolderPath, payload.BearerToken);
+                payload.SourcePath.RelativePath, payload.SourceRootFolderPath, payload.BearerToken, payload.BucketName);
 
             if (sourceStream.CanSeek)
             {
@@ -132,7 +132,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                         chunkNumber, start, end, totalSize);
 
                     var result = await destinationClient.UploadChunkAsync(
-                        session, chunkNumber, partBytes, start, end, totalSize, payload.BearerToken);
+                        session, chunkNumber, partBytes, start, end, totalSize, payload.BearerToken, payload.BucketName);
 
                     _logger.LogInformation("Uploaded part {ChunkNumber} with ETag {ETag} was successful.",
                         chunkNumber, result.ETag);
@@ -167,7 +167,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             }
             else
             {
-                await destinationClient.CompleteUploadAsync(session, null, etags: uploadedChunks, payload.BearerToken);
+                await destinationClient.CompleteUploadAsync(session, null, etags: uploadedChunks, payload.BearerToken, payload.BucketName);
             }
 
             _logger.LogInformation("File transfer completed: {SourcePath} -> {DestinationPath}",

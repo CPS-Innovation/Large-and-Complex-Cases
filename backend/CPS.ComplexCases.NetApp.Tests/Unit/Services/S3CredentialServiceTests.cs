@@ -49,11 +49,8 @@ public class S3CredentialServiceTests
         {
             S3ServiceUuid = _fixture.Create<Guid>(),
             Url = "https://netapp.example.com",
-            RegionName = "us-west-2",
-            BucketName = "test-bucket",
-            PepperVersion = "v1",
-            AccessKey = _fixture.Create<string>(),
-            SecretKey = _fixture.Create<string>()
+            RegionName = "eu-west-1",
+            PepperVersion = "v1"
         };
 
         var optionsMock = new Mock<IOptions<NetAppOptions>>();
