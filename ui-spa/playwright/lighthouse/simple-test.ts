@@ -12,15 +12,17 @@ const __dirname = path.dirname(__filename);
 const baseUrl = process.env.BASE_URL || 'http://localhost:5173';
 const aadUsername = process.env.AZURE_AD_USERNAME || '';
 const aadPassword = process.env.AZURE_AD_PASSWORD || '';
+const headless: boolean = process.env.HEADLESS?.trim().toLowerCase() !== 'false'; 
 
 const userDataDir = path.resolve('.tmp/lh-profile');
 
 (async () => {
 
-  console.log("headless:", Boolean(process.env.HEADLESS));
+  console.log("env:", process.env.BASE_URL)
+  
   const browser = await playwright.chromium.launchPersistentContext(userDataDir, {
     channel: 'chrome',
-    headless: Boolean(process.env.HEADLESS),
+    headless,
     args: ['--remote-debugging-port=9222'],
   });
 
