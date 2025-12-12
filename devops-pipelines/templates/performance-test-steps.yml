@@ -35,7 +35,7 @@ steps:
 - script: |
     npx playwright install
     npx ts-node --esm playwright/lighthouse/simple-test.ts
-  workingDir: $(workingDir)
+  workingDirectory: $(workingDir)
   displayName: 'Run Lighthouse Test'
   env:
     BASE_URL: 'https://$(webAppName).azurewebsites.net'
