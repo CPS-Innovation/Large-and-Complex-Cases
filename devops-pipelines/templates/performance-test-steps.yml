@@ -4,16 +4,21 @@ trigger:
     include:
       - task/FCT2-12115_Lighthouse-Performance-Testing-in-CICD
 
+parameters:
+- name: environment
+  type: string
+  default: 'dev'
+
 variables:
 - group: lacc-automated-testing
-- group: lacc-backend-config-dev
-- group: lacc-backend-secrest-dev
+- group: lacc-backend-config-${{ parameters.environment }}
+- group: lacc-backend-secrets-${{ parameters.environment }}
 - name: nodeVersion
   value: '20.x'
 - name: workingDir
   value: 'ui-spa'
 - name: webAppName
-  value: 'lacc-app-ui-spa-dev'
+  value: 'lacc-app-ui-spa-${{ parameters.environment }}'
 
 steps:
 - task: UseNode@1
