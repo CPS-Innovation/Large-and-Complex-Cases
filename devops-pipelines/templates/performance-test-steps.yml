@@ -34,7 +34,7 @@ steps:
 
 - script: |
     npx playwright install chrome --with-deps
-    npx ts-node --esm playwright/lighthouse/simple-test.ts
+    npx tsx playwright/lighthouse/simple-test.ts
   workingDirectory: $(workingDir)
   displayName: 'Run Lighthouse Test'
   env:
