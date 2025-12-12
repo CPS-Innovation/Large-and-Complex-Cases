@@ -1,4 +1,3 @@
-import { chromium } from 'playwright';
 import type { BrowserContext } from 'playwright';
 import fs from 'fs-extra';
 import * as path from 'path';
@@ -12,23 +11,6 @@ const __dirname = path.dirname(__filename);
  * Authentication utilities for Lighthouse and Playwright tests
  * Handles both Azure AD authentication and CMS authentication with cookies
  */
-
-type StorageState = Awaited<ReturnType<BrowserContext['storageState']>>;
-
-type UiAuthOptions = {
-  baseUrl: string;
-  username: string;
-  password: string;
-  headless?: boolean;
-  screenSize?: { width: number; height: number };
-  userAgent?: string;
-  timeouts?: {
-    loginUrl?: number;        // default 15000
-    passwordField?: number;   // default 10000
-    redirectBack?: number;    // default 20000
-    userInfoVisible?: number; // default 10000
-  };
-};
 
 export interface AuthConfig {
   azureAd: {
