@@ -33,7 +33,7 @@ steps:
     workingDir: '$(workingDir)'
 
 - script: |
-    npx playwright install Chromium --with-deps
+    npx playwright install chrome --with-deps
     npx ts-node --esm playwright/lighthouse/simple-test.ts
   workingDirectory: $(workingDir)
   displayName: 'Run Lighthouse Test'
