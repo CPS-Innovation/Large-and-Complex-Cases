@@ -85,19 +85,20 @@ public class TransferFileTests
         _destinationClientMock
             .Setup(x => x.UploadChunkAsync(
                 session,
-                1,
+                It.IsAny<int>(),
                 It.IsAny<byte[]>(),
                 It.IsAny<long>(),
                 It.IsAny<long>(),
                 It.IsAny<long>(),
                 payload.BearerToken))
-            .ReturnsAsync(new UploadChunkResult(payload.TransferDirection, "etag1", 1));
+            .ReturnsAsync((UploadSession s, int partNum, byte[] data, long start, long end, long total, string token)
+                => new UploadChunkResult(payload.TransferDirection, $"etag{partNum}", partNum));
 
         _destinationClientMock
             .Setup(x => x.CompleteUploadAsync(
                 session,
                 null,
-                It.IsAny<Dictionary<int, string>>(),
+                It.Is<Dictionary<int, string>>(d => d.Count > 0 && d.ContainsKey(1)), // Verify etags were collected
                 payload.BearerToken))
             .Returns(Task.CompletedTask);
 
@@ -110,6 +111,13 @@ public class TransferFileTests
         Assert.Equal(TransferItemStatus.Completed, result.SuccessfulItem.Status);
         Assert.Equal(payload.SourcePath.FileId, result.SuccessfulItem.FileId);
         Assert.Equal(content.Length, result.SuccessfulItem.Size);
+
+        // Verify CompleteUploadAsync was called with proper etags
+        _destinationClientMock.Verify(x => x.CompleteUploadAsync(
+            session,
+            null,
+            It.Is<Dictionary<int, string>>(d => d.ContainsKey(1)),
+            payload.BearerToken), Times.Once);
     }
 
     [Fact]
