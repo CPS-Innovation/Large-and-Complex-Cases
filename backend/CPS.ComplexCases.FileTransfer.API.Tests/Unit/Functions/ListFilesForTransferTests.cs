@@ -107,7 +107,7 @@ public class ListFilesForTransferTests
             .Returns(_storageClientMock.Object);
 
         _storageClientMock.Setup(c => c.ListFilesForTransferAsync(
-            It.IsAny<List<TransferEntityDto>>(), _testWorkspaceId, _testCaseId, null))
+            It.IsAny<List<TransferEntityDto>>(), _testWorkspaceId, _testCaseId, null, null))
             .ReturnsAsync(filesForTransfer);
 
         // Act
@@ -150,7 +150,7 @@ public class ListFilesForTransferTests
             .Returns(_storageClientMock.Object);
 
         _storageClientMock.Setup(c => c.ListFilesForTransferAsync(
-            It.IsAny<List<TransferEntityDto>>(), _testWorkspaceId, _testCaseId, null))
+            It.IsAny<List<TransferEntityDto>>(), _testWorkspaceId, _testCaseId, null, null))
             .ReturnsAsync(filesForTransfer);
 
         var destinationPaths = filesForTransfer.Select(x => new DestinationPath
@@ -204,7 +204,7 @@ public class ListFilesForTransferTests
             .Returns(_storageClientMock.Object);
 
         _storageClientMock.Setup(c => c.ListFilesForTransferAsync(
-            It.IsAny<List<TransferEntityDto>>(), _testWorkspaceId, _testCaseId, null))
+            It.IsAny<List<TransferEntityDto>>(), _testWorkspaceId, _testCaseId, null, null))
             .ReturnsAsync(filesForTransfer);
 
         // Act
@@ -276,7 +276,7 @@ public class ListFilesForTransferTests
             .Returns(_storageClientMock.Object);
 
         _storageClientMock.Setup(c => c.ListFilesForTransferAsync(
-            It.IsAny<List<TransferEntityDto>>(), _testWorkspaceId, _testCaseId, null))
+            It.IsAny<List<TransferEntityDto>>(), _testWorkspaceId, _testCaseId, null, null))
             .ReturnsAsync(filesForTransfer);
 
         // Act
@@ -306,7 +306,7 @@ public class ListFilesForTransferTests
             .Returns(_storageClientMock.Object);
 
         _storageClientMock.Setup(c => c.ListFilesForTransferAsync(
-            It.IsAny<List<TransferEntityDto>>(), _testWorkspaceId, _testCaseId, null))
+            It.IsAny<List<TransferEntityDto>>(), _testWorkspaceId, _testCaseId, null, null))
             .ReturnsAsync(new List<FileTransferInfo>());
 
         // Act
@@ -355,12 +355,11 @@ public class ListFilesForTransferTests
                 RelativePath = "folder1/file2.txt"
              }
         };
-
         _storageClientFactoryMock.Setup(f => f.GetSourceClientForDirection(TransferDirection.EgressToNetApp))
             .Returns(_storageClientMock.Object);
 
         _storageClientMock.Setup(c => c.ListFilesForTransferAsync(
-            It.IsAny<List<TransferEntityDto>>(), _testWorkspaceId, _testCaseId, null))
+            It.IsAny<List<TransferEntityDto>>(), _testWorkspaceId, _testCaseId, null, null))
             .ReturnsAsync(filesForTransfer);
 
         // Act

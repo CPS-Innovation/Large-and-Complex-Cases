@@ -1,6 +1,7 @@
 using System.Net;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
+using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
@@ -16,11 +17,12 @@ using Microsoft.OpenApi.Models;
 
 namespace CPS.ComplexCases.API.Functions;
 
-public class ListNetAppFiles(ILogger<ListNetAppFiles> logger, INetAppClient netAppClient, INetAppArgFactory netAppArgFactory, IOptions<NetAppOptions> options)
+public class ListNetAppFiles(ILogger<ListNetAppFiles> logger, INetAppClient netAppClient, INetAppArgFactory netAppArgFactory, IOptions<NetAppOptions> options, ISecurityGroupMetadataService securityGroupMetadataService)
 {
     private readonly ILogger<ListNetAppFiles> _logger = logger;
     private readonly INetAppClient _netAppClient = netAppClient;
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
+    private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
     private readonly NetAppOptions _netAppOptions = options.Value;
 
     [Function(nameof(ListNetAppFiles))]
@@ -42,7 +44,9 @@ public class ListNetAppFiles(ILogger<ListNetAppFiles> logger, INetAppClient netA
         var take = int.TryParse(req.Query[InputParameters.Take], out var takeValue) ? takeValue : 100;
         var path = req.Query[InputParameters.Path];
 
-        var arg = _netAppArgFactory.CreateListObjectsInBucketArg(context.BearerToken, _netAppOptions.BucketName, continuationToken, take, path, true);
+        var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
+
+        var arg = _netAppArgFactory.CreateListObjectsInBucketArg(context.BearerToken, securityGroups.First().BucketName, continuationToken, take, path, true);
         var response = await _netAppClient.ListObjectsInBucketAsync(arg);
 
         if (response == null)

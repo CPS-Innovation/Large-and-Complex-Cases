@@ -1,6 +1,8 @@
 using AutoFixture;
 using CPS.ComplexCases.API.Constants;
+using CPS.ComplexCases.API.Domain.Models;
 using CPS.ComplexCases.API.Functions;
+using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
@@ -20,9 +22,11 @@ public class ListNetAppFilesTests
     private readonly Mock<INetAppClient> _netAppClientMock;
     private readonly Mock<INetAppArgFactory> _netAppArgFactoryMock;
     private readonly Mock<IOptions<NetAppOptions>> _optionsMock;
+    private readonly Mock<ISecurityGroupMetadataService> _securityGroupMetadataServiceMock;
     private readonly ListNetAppFiles _function;
     private readonly Fixture _fixture;
     private readonly string _testBearerToken;
+    private readonly string _testBucketName;
     private readonly Guid _testCorrelationId;
     private readonly string _testUsername;
     private readonly string _testCmsAuthValues;
@@ -33,19 +37,29 @@ public class ListNetAppFilesTests
         _netAppClientMock = new Mock<INetAppClient>();
         _netAppArgFactoryMock = new Mock<INetAppArgFactory>();
         _optionsMock = new Mock<IOptions<NetAppOptions>>();
+        _securityGroupMetadataServiceMock = new Mock<ISecurityGroupMetadataService>();
         _fixture = new Fixture();
 
         _testBearerToken = _fixture.Create<string>();
+        _testBucketName = _fixture.Create<string>();
         _testCorrelationId = _fixture.Create<Guid>();
         _testUsername = _fixture.Create<string>();
         _testCmsAuthValues = _fixture.Create<string>();
 
+        _securityGroupMetadataServiceMock
+                .Setup(s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()))
+                .ReturnsAsync([
+                    new SecurityGroup
+                    {
+                        Id = _fixture.Create<Guid>(),
+                        BucketName = _testBucketName,
+                        DisplayName = "Test Security Group"
+                    }
+                ]);
+
         _optionsMock.Setup(o => o.Value).Returns(new NetAppOptions
         {
-            BucketName = "test-bucket",
             Url = "https://example.com",
-            AccessKey = "test-access-key",
-            SecretKey = "test-secret-key",
             RegionName = "test-region"
         });
 
@@ -53,7 +67,8 @@ public class ListNetAppFilesTests
             _loggerMock.Object,
             _netAppClientMock.Object,
             _netAppArgFactoryMock.Object,
-            _optionsMock.Object);
+            _optionsMock.Object,
+            _securityGroupMetadataServiceMock.Object);
     }
 
     [Fact]
@@ -76,7 +91,7 @@ public class ListNetAppFilesTests
         _netAppArgFactoryMock
             .Setup(f => f.CreateListObjectsInBucketArg(
                 _testBearerToken,
-                "test-bucket",
+                _testBucketName,
                 queryParams[InputParameters.ContinuationToken],
                 50,
                 queryParams[InputParameters.Path],
@@ -98,7 +113,7 @@ public class ListNetAppFilesTests
 
         _netAppArgFactoryMock.Verify(f => f.CreateListObjectsInBucketArg(
             _testBearerToken,
-            "test-bucket",
+            _testBucketName,
             queryParams[InputParameters.ContinuationToken],
             50,
             queryParams[InputParameters.Path],

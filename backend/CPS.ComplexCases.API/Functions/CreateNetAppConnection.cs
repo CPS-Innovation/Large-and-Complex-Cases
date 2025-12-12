@@ -4,19 +4,18 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using Microsoft.OpenApi.Models;
+using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Constants;
+using CPS.ComplexCases.API.Context;
+using CPS.ComplexCases.API.Services;
+using CPS.ComplexCases.API.Validators.Requests;
+using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.Common.Helpers;
+using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
-using CPS.ComplexCases.Data.Models.Requests;
-using CPS.ComplexCases.API.Validators.Requests;
-using CPS.ComplexCases.NetApp.Models;
-using CPS.ComplexCases.Common.Helpers;
-using CPS.ComplexCases.ActivityLog.Services;
-using CPS.ComplexCases.API.Context;
-using CPS.ComplexCases.Common.Services;
-using Microsoft.OpenApi.Models;
-using CPS.ComplexCases.Common.Attributes;
 
 namespace CPS.ComplexCases.API.Functions;
 
@@ -24,9 +23,9 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
     ICaseMetadataService caseMetadataService,
     INetAppClient netAppClient,
     INetAppArgFactory netAppArgFactory,
-    IOptions<NetAppOptions> options,
     IActivityLogService activityLogService,
-    IRequestValidator requestValidator)
+    IRequestValidator requestValidator,
+    ISecurityGroupMetadataService securityGroupMetadataService)
 {
     private readonly ILogger<CreateNetAppConnection> _logger = logger;
     private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
@@ -34,7 +33,7 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
     private readonly IActivityLogService _activityLogService = activityLogService;
     private readonly IRequestValidator _requestValidator = requestValidator;
-    private readonly NetAppOptions _netAppOptions = options.Value;
+    private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
 
     [Function(nameof(CreateNetAppConnection))]
     [OpenApiOperation(operationId: nameof(CreateEgressConnection), tags: ["NetApp"], Description = "Connect an NetApp folder to a case.")]
@@ -57,7 +56,9 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
             return new BadRequestObjectResult(netAppConnectionRequest.ValidationErrors);
         }
 
-        var netAppArg = _netAppArgFactory.CreateListFoldersInBucketArg(context.BearerToken, _netAppOptions.BucketName, netAppConnectionRequest.Value.OperationName, null, 1, null);
+        var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
+
+        var netAppArg = _netAppArgFactory.CreateListFoldersInBucketArg(context.BearerToken, securityGroups.First().BucketName, netAppConnectionRequest.Value.OperationName, null, 1, null);
         var hasNetAppPermission = await _netAppClient.ListFoldersInBucketAsync(netAppArg);
 
         if (hasNetAppPermission == null)

@@ -83,7 +83,8 @@ public class TransferRequestValidatorTests
                 CaseId = 1234,
                 UserName = "user@example.com",
                 WorkspaceId = "ws-5678",
-                BearerToken = "fakeBearerToken"
+                BearerToken = "fakeBearerToken",
+                BucketName = "test-bucket"
             }
         };
     }

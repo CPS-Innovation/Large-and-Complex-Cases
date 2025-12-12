@@ -14,6 +14,8 @@ using CPS.ComplexCases.Common.Models;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Requests;
 using Moq;
+using CPS.ComplexCases.API.Services;
+using CPS.ComplexCases.API.Domain.Models;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
 {
@@ -22,6 +24,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
         private readonly Mock<ILogger<InitiateTransfer>> _loggerMock;
         private readonly Mock<IFileTransferClient> _fileTransferClientMock;
         private readonly Mock<IRequestValidator> _requestValidatorMock;
+        private readonly Mock<ISecurityGroupMetadataService> _securityGroupMetadataServiceMock;
         private readonly InitiateTransfer _function;
         private readonly Fixture _fixture;
         private readonly Guid _testCorrelationId;
@@ -35,16 +38,29 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
             _loggerMock = new Mock<ILogger<InitiateTransfer>>();
             _fileTransferClientMock = new Mock<IFileTransferClient>();
             _requestValidatorMock = new Mock<IRequestValidator>();
+            _securityGroupMetadataServiceMock = new Mock<ISecurityGroupMetadataService>();
 
             _testCorrelationId = _fixture.Create<Guid>();
             _testUsername = _fixture.Create<string>();
             _testCmsAuthValues = _fixture.Create<string>();
             _testBearerToken = _fixture.Create<string>();
 
+            _securityGroupMetadataServiceMock
+                .Setup(s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()))
+                .ReturnsAsync([
+                    new SecurityGroup
+                    {
+                        Id = _fixture.Create<Guid>(),
+                        BucketName = "test-bucket",
+                        DisplayName = "Test Security Group"
+                    }
+                ]);
+
             _function = new InitiateTransfer(
                 _loggerMock.Object,
                 _fileTransferClientMock.Object,
-                _requestValidatorMock.Object
+                _requestValidatorMock.Object,
+                _securityGroupMetadataServiceMock.Object
             );
         }
 

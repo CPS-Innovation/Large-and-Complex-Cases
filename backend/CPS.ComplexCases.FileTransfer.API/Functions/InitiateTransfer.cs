@@ -108,7 +108,8 @@ public class InitiateTransfer
                 CorrelationId = currentCorrelationId,
                 TransferDirection = transferRequest.Value.TransferDirection,
                 SourceRootFolderPath = transferRequest.Value.SourceRootFolderPath,
-                BearerToken = transferRequest.Value.Metadata.BearerToken
+                BearerToken = transferRequest.Value.Metadata.BearerToken,
+                BucketName = transferRequest.Value.Metadata.BucketName
             },
             new StartOrchestrationOptions
             {

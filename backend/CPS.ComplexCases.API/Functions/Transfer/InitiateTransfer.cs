@@ -15,14 +15,16 @@ using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models.Requests;
 using Microsoft.OpenApi.Models;
 using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.API.Services;
 
 namespace CPS.ComplexCases.API.Functions.Transfer;
 
-public class InitiateTransfer(ILogger<InitiateTransfer> logger, IFileTransferClient transferClient, IRequestValidator requestValidator)
+public class InitiateTransfer(ILogger<InitiateTransfer> logger, IFileTransferClient transferClient, IRequestValidator requestValidator, ISecurityGroupMetadataService securityGroupMetadataService)
 {
     private readonly ILogger<InitiateTransfer> _logger = logger;
     private readonly IFileTransferClient _transferClient = transferClient;
     private readonly IRequestValidator _requestValidator = requestValidator;
+    private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
 
     [Function(nameof(InitiateTransfer))]
     [OpenApiOperation(operationId: nameof(Run), tags: ["FileTransfer"], Description = "Initiate a file transfer.")]
@@ -50,6 +52,8 @@ public class InitiateTransfer(ILogger<InitiateTransfer> logger, IFileTransferCli
             return new BadRequestObjectResult(transferRequest.ValidationErrors);
         }
 
+        var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
+
         var request = new TransferRequest
         {
             TransferType = transferRequest.Value.TransferType,
@@ -66,7 +70,8 @@ public class InitiateTransfer(ILogger<InitiateTransfer> logger, IFileTransferCli
                 UserName = context.Username,
                 CaseId = transferRequest.Value.CaseId,
                 WorkspaceId = transferRequest.Value.WorkspaceId,
-                BearerToken = context.BearerToken
+                BearerToken = context.BearerToken,
+                BucketName = securityGroups.First().BucketName
             },
             TransferDirection = transferRequest.Value.TransferDirection,
             SourceRootFolderPath = transferRequest.Value.SourceRootFolderPath

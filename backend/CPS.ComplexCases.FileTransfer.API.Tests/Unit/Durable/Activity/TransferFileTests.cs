@@ -46,6 +46,7 @@ public class TransferFileTests
             DestinationPath = "dest",
             TransferDirection = TransferDirection.EgressToNetApp,
             BearerToken = "fakeBearerToken",
+            BucketName = "test-bucket",
         };
     }
 
@@ -67,7 +68,8 @@ public class TransferFileTests
             .Setup(x => x.OpenReadStreamAsync(payload.SourcePath.Path,
                                               payload.WorkspaceId,
                                               payload.SourcePath.FileId,
-                                              payload.BearerToken))
+                                              payload.BearerToken,
+                                              payload.BucketName))
             .ReturnsAsync(stream);
 
         _destinationClientMock
@@ -78,7 +80,8 @@ public class TransferFileTests
                 payload.WorkspaceId,
                 payload.SourcePath.RelativePath,
                 payload.SourceRootFolderPath,
-                payload.BearerToken
+                payload.BearerToken,
+                payload.BucketName
             ))
             .ReturnsAsync(session);
 
@@ -90,7 +93,8 @@ public class TransferFileTests
                 It.IsAny<long>(),
                 It.IsAny<long>(),
                 It.IsAny<long>(),
-                payload.BearerToken))
+                payload.BearerToken,
+                payload.BucketName))
             .ReturnsAsync(new UploadChunkResult(payload.TransferDirection, "etag1", 1));
 
         _destinationClientMock
@@ -98,7 +102,8 @@ public class TransferFileTests
                 session,
                 null,
                 It.IsAny<Dictionary<int, string>>(),
-                payload.BearerToken))
+                payload.BearerToken,
+                payload.BucketName))
             .Returns(Task.CompletedTask);
 
         // Act
@@ -123,7 +128,7 @@ public class TransferFileTests
             .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
 
         _sourceClientMock
-            .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>()))
+            .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>()))
             .ThrowsAsync(new FileExistsException("File already exists."));
 
         // Act
@@ -146,7 +151,7 @@ public class TransferFileTests
             .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
 
         _sourceClientMock
-            .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>()))
+            .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>()))
             .ThrowsAsync(new InvalidOperationException("Something went wrong"));
 
         // Act
@@ -178,7 +183,8 @@ public class TransferFileTests
             .Setup(x => x.OpenReadStreamAsync(payload.SourcePath.Path,
                                               payload.WorkspaceId,
                                               payload.SourcePath.FileId,
-                                              payload.BearerToken))
+                                              payload.BearerToken,
+                                              payload.BucketName))
             .ReturnsAsync(stream);
 
         _destinationClientMock
@@ -189,7 +195,8 @@ public class TransferFileTests
                 It.IsAny<string?>(),
                 It.IsAny<string>(),
                 It.IsAny<string?>(),
-                payload.BearerToken))
+                payload.BearerToken,
+                payload.BucketName))
             .ReturnsAsync(new UploadSession { UploadId = Guid.NewGuid().ToString() });
 
         // Act & Assert
