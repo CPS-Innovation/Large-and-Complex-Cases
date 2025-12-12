@@ -27,6 +27,8 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
     [Function(nameof(TransferFile))]
     public async Task<TransferResult> Run([ActivityTrigger] TransferFilePayload payload, CancellationToken cancellationToken = default)
     {
+        var startTime = DateTime.UtcNow;
+
         var (sourceClient, destinationClient) = _storageClientFactory.GetClientsForDirection(payload.TransferDirection);
 
         try
@@ -45,12 +47,12 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             // Handle small files with single PUT for NetApp
             if (isNetApp && totalSize <= _sizeConfig.MinMultipartSizeBytes)
             {
-                return await HandleSingleUpload(sourceStream, destinationClient, payload, sourceFilePath, totalSize);
+                return await HandleSingleUpload(sourceStream, destinationClient, payload, sourceFilePath, totalSize, startTime);
             }
 
             // All Egress files and large NetApp files use multipart upload
             return await HandleMultipartUpload(
-                sourceStream, destinationClient, payload, sourceFilePath, totalSize, needsMd5, cancellationToken);
+                sourceStream, destinationClient, payload, sourceFilePath, totalSize, needsMd5, cancellationToken, startTime);
         }
         catch (FileExistsException ex)
         {
@@ -73,7 +75,8 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         IStorageClient destinationClient,
         TransferFilePayload payload,
         string sourceFilePath,
-        long totalSize)
+        long totalSize,
+        DateTime startTime)
     {
         _logger.LogInformation("File size {TotalSize} <= {MinMultipartSize} bytes, using single PUT.",
             totalSize, _sizeConfig.MinMultipartSizeBytes);
@@ -91,16 +94,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             payload.SourceRootFolderPath,
             payload.BearerToken);
 
-        var item = new TransferItem
-        {
-            SourcePath = payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
-            Status = TransferItemStatus.Completed,
-            Size = totalSize,
-            IsRenamed = payload.SourcePath.ModifiedPath != null,
-            FileId = payload.SourcePath.FileId
-        };
-
-        return new TransferResult { IsSuccess = true, SuccessfulItem = item };
+        return CreateSuccessResult(payload, totalSize, startTime);
     }
 
     private async Task<TransferResult> HandleMultipartUpload(
@@ -110,7 +104,8 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         string sourceFilePath,
         long totalSize,
         bool needsMd5,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        DateTime startTime)
     {
         var session = await destinationClient.InitiateUploadAsync(
             payload.DestinationPath, totalSize, sourceFilePath, payload.WorkspaceId,
@@ -209,7 +204,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 payload.SourcePath.Path, payload.DestinationPath
             );
 
-            return CreateSuccessResult(payload, totalSize);
+            return CreateSuccessResult(payload, totalSize, startTime);
         }
     }
 
@@ -230,15 +225,19 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         }
     }
 
-    private TransferResult CreateSuccessResult(TransferFilePayload payload, long totalSize)
+    private TransferResult CreateSuccessResult(TransferFilePayload payload, long totalSize, DateTime startTime)
     {
+        var endTime = DateTime.UtcNow;
+
         var item = new TransferItem
         {
             SourcePath = payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
             Status = TransferItemStatus.Completed,
             Size = totalSize,
             IsRenamed = payload.SourcePath.ModifiedPath != null,
-            FileId = payload.SourcePath.FileId
+            FileId = payload.SourcePath.FileId,
+            StartTime = startTime,
+            EndTime = endTime
         };
 
         return new TransferResult { IsSuccess = true, SuccessfulItem = item };

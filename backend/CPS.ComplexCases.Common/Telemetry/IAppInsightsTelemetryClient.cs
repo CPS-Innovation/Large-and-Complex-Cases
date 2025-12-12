@@ -1,6 +1,6 @@
 using Microsoft.ApplicationInsights.DataContracts;
 
-namespace CPS.ComplexCases.API.Telemetry;
+namespace CPS.ComplexCases.Common.Telemetry;
 
 public interface IAppInsightsTelemetryClient
 {

@@ -37,7 +37,8 @@
     "CryptoOptions__NonceSizeBytes": 12,
     "CryptoOptions__TagSizeBytes": 16,
     "CryptoOptions__HkdfInfo": "S3CredentialEncryption",
-    "CryptoOptions__HashAlgorithm": "SHA256"
+    "CryptoOptions__HashAlgorithm": "SHA256",
+    "KeyVault__Url": "https://<kvname>.vault.azure.net/"
   },
   "Host": {
     "LocalHttpPort": 7071,

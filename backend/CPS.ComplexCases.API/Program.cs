@@ -22,7 +22,7 @@ using CPS.ComplexCases.DDEI.Tactical.Extensions;
 using CPS.ComplexCases.Egress.Extensions;
 using CPS.ComplexCases.NetApp.Extensions;
 using Microsoft.ApplicationInsights.Extensibility;
-using CPS.ComplexCases.API.Telemetry;
+using CPS.ComplexCases.Common.Telemetry;
 
 // Create a temporary logger for configuration phase
 using var loggerFactory = LoggerFactory.Create(configure => configure.AddConsole());
