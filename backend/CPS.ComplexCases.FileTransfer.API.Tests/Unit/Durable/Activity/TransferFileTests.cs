@@ -57,6 +57,7 @@ public class TransferFileTests
         var payload = CreatePayload();
         var content = Encoding.UTF8.GetBytes("testdata"); // 8 bytes => fits in one chunk
         var stream = new MemoryStream(content);
+        var contentLength = content.Length;
 
         var session = new UploadSession { UploadId = Guid.NewGuid().ToString() };
 
@@ -70,12 +71,12 @@ public class TransferFileTests
                                               payload.SourcePath.FileId,
                                               payload.BearerToken,
                                               payload.BucketName))
-            .ReturnsAsync(stream);
+            .ReturnsAsync((stream, contentLength));
 
         _destinationClientMock
             .Setup(x => x.InitiateUploadAsync(
                 payload.DestinationPath,
-                content.Length,
+                contentLength,
                 payload.SourcePath.Path,
                 payload.WorkspaceId,
                 payload.SourcePath.RelativePath,
@@ -114,7 +115,7 @@ public class TransferFileTests
         Assert.NotNull(result.SuccessfulItem);
         Assert.Equal(TransferItemStatus.Completed, result.SuccessfulItem.Status);
         Assert.Equal(payload.SourcePath.FileId, result.SuccessfulItem.FileId);
-        Assert.Equal(content.Length, result.SuccessfulItem.Size);
+        Assert.Equal(contentLength, result.SuccessfulItem.Size);
     }
 
     [Fact]
@@ -174,6 +175,7 @@ public class TransferFileTests
 
         var content = Encoding.UTF8.GetBytes("testdata");
         var stream = new MemoryStream(content);
+        var contentLength = content.Length;
 
         _storageClientFactoryMock
             .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
@@ -185,7 +187,7 @@ public class TransferFileTests
                                               payload.SourcePath.FileId,
                                               payload.BearerToken,
                                               payload.BucketName))
-            .ReturnsAsync(stream);
+            .ReturnsAsync((stream, contentLength));
 
         _destinationClientMock
             .Setup(x => x.InitiateUploadAsync(

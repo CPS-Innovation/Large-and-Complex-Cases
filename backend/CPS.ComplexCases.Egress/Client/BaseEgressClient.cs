@@ -43,9 +43,14 @@ public abstract class BaseEgressClient
         return result;
     }
 
-    protected async Task<HttpResponseMessage> SendRequestAsync(HttpRequestMessage request)
+    protected async Task<HttpResponseMessage> SendRequestAsync(HttpRequestMessage request, bool streamResponse = false)
     {
-        var response = await _httpClient.SendAsync(request);
+        var completionOption = streamResponse
+            ? HttpCompletionOption.ResponseHeadersRead
+            : HttpCompletionOption.ResponseContentRead;
+
+        var response = await _httpClient.SendAsync(request, completionOption);
+
         try
         {
             response.EnsureSuccessStatusCode();

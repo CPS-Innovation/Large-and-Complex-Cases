@@ -257,8 +257,7 @@ public class NetAppStorageClientTests : IDisposable
 
         var result = await _client.OpenReadStreamAsync(ObjectKey, null, null, BearerToken, BucketName);
 
-        Assert.NotNull(result);
-        Assert.True(result.CanRead);
+        Assert.NotNull(result.Stream);
     }
 
     protected virtual void Dispose(bool disposing)

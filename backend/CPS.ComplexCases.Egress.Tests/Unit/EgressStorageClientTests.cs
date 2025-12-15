@@ -66,7 +66,7 @@ public class EgressStorageClientTests : IDisposable
     }
 
     [Fact]
-    public async Task OpenReadStreamAsync_WithValidParameters_ReturnsStream()
+    public async Task OpenReadStreamAsync_WithValidParameters_ReturnsStreamAndContentLength()
     {
         // Arrange
         var path = _fixture.Create<string>();
@@ -74,25 +74,29 @@ public class EgressStorageClientTests : IDisposable
         var fileId = _fixture.Create<string>();
         var token = _fixture.Create<string>();
         var fileContent = "Test file content";
+        var expectedContentLength = Encoding.UTF8.GetByteCount(fileContent);
 
         var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
-
         SetupTokenRequest(token);
         SetupDocumentRequest(workspaceId, fileId, token);
-        SetupHttpMockResponses(
-            ("token", tokenResponse, false),
-            ("document", fileContent, isStream: true)
-        );
+        SetupHttpMockResponsesWithContentLength(
+                ("token", tokenResponse, null),
+                ("document", fileContent, expectedContentLength)
+            );
 
         // Act
-        await using var result = await _client.OpenReadStreamAsync(path, workspaceId, fileId);
+        var (stream, contentLength) = await _client.OpenReadStreamAsync(path, workspaceId, fileId);
 
         // Assert
-        Assert.NotNull(result);
+        await using (stream)
+        {
+            Assert.NotNull(stream);
+            Assert.Equal(expectedContentLength, contentLength);
 
-        using var reader = new StreamReader(result);
-        var content = await reader.ReadToEndAsync();
-        Assert.Equal(fileContent, content);
+            using var reader = new StreamReader(stream);
+            var content = await reader.ReadToEndAsync();
+            Assert.Equal(fileContent, content);
+        }
 
         VerifyTokenRequest();
         VerifyDocumentRequest(workspaceId, fileId, token);
@@ -834,6 +838,52 @@ public class EgressStorageClientTests : IDisposable
             {
                 var jsonContent = JsonSerializer.Serialize(response);
                 content = new StringContent(jsonContent);
+            }
+
+            sequence = sequence.ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = content
+            });
+        }
+    }
+
+    private void SetupHttpMockResponsesWithContentLength(params (string type, object response, long? contentLength)[] responses)
+    {
+        var sequence = _httpMessageHandlerMock
+            .Protected()
+            .SetupSequence<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            );
+
+        foreach (var (_, response, contentLength) in responses)
+        {
+            HttpContent content;
+
+            if (response is string stringContent)
+            {
+                // For stream responses, use StreamContent
+                var bytes = Encoding.UTF8.GetBytes(stringContent);
+                var stream = new MemoryStream(bytes);
+                content = new StreamContent(stream);
+
+                // Set Content-Length header
+                if (contentLength.HasValue)
+                {
+                    content.Headers.ContentLength = contentLength.Value;
+                }
+                else
+                {
+                    content.Headers.ContentLength = bytes.Length;
+                }
+            }
+            else
+            {
+                // For JSON responses
+                var jsonContent = JsonSerializer.Serialize(response);
+                content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
             }
 
             sequence = sequence.ReturnsAsync(new HttpResponseMessage
