@@ -382,6 +382,7 @@ public class TransferOrchestratorTests
             TransferType = _fixture.Create<TransferType>(),
             TransferDirection = _fixture.Create<TransferDirection>(),
             WorkspaceId = _fixture.Create<string>(),
+            BucketName = _fixture.Create<string>(),
             UserName = _fixture.Create<string>(),
             IsRetry = _fixture.Create<bool>()
         };
@@ -409,6 +410,7 @@ public class TransferOrchestratorTests
             TransferType = _fixture.Create<TransferType>(),
             TransferDirection = _fixture.Create<TransferDirection>(),
             WorkspaceId = _fixture.Create<string>(),
+            BucketName = _fixture.Create<string>(),
             UserName = _fixture.Create<string>(),
             IsRetry = _fixture.Create<bool>()
         };

@@ -1,6 +1,11 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using AutoFixture;
 using CPS.ComplexCases.ActivityLog.Services;
+using CPS.ComplexCases.API.Domain.Models;
 using CPS.ComplexCases.API.Functions;
+using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
 using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Helpers;
@@ -9,13 +14,8 @@ using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
-using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Models.Dto;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions
@@ -26,16 +26,16 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         private readonly Mock<ICaseMetadataService> _caseMetadataServiceMock;
         private readonly Mock<INetAppClient> _netAppClientMock;
         private readonly Mock<INetAppArgFactory> _netAppArgFactoryMock;
-        private readonly Mock<IOptions<NetAppOptions>> _optionsMock;
         private readonly Mock<IActivityLogService> _activityLogServiceMock;
         private readonly Mock<IRequestValidator> _requestValidatorMock;
+        private readonly Mock<ISecurityGroupMetadataService> _securityGroupMetadataServiceMock;
         private readonly CreateNetAppConnection _function;
         private readonly Fixture _fixture;
         private readonly Guid _testCorrelationId;
         private readonly string _testUsername;
         private readonly string _testCmsAuthValues;
         private readonly string _testBearerToken;
-        private readonly NetAppOptions _netAppOptions;
+        private readonly string _testBucketName = "test-bucket";
 
         public CreateNetAppConnectionTests()
         {
@@ -44,26 +44,35 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _caseMetadataServiceMock = new Mock<ICaseMetadataService>();
             _netAppClientMock = new Mock<INetAppClient>();
             _netAppArgFactoryMock = new Mock<INetAppArgFactory>();
-            _optionsMock = new Mock<IOptions<NetAppOptions>>();
             _activityLogServiceMock = new Mock<IActivityLogService>();
             _requestValidatorMock = new Mock<IRequestValidator>();
+            _securityGroupMetadataServiceMock = new Mock<ISecurityGroupMetadataService>();
 
             _testCorrelationId = _fixture.Create<Guid>();
             _testUsername = _fixture.Create<string>();
             _testCmsAuthValues = _fixture.Create<string>();
             _testBearerToken = _fixture.Create<string>();
-            _netAppOptions = _fixture.Create<NetAppOptions>();
 
-            _optionsMock.Setup(x => x.Value).Returns(_netAppOptions);
+            _securityGroupMetadataServiceMock
+                .Setup(s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()))
+                .ReturnsAsync([
+                    new SecurityGroup
+                    {
+                        Id = _fixture.Create<Guid>(),
+                        BucketName = _testBucketName,
+                        DisplayName = "Test Security Group"
+                    }
+                ]);
 
             _function = new CreateNetAppConnection(
                 _loggerMock.Object,
                 _caseMetadataServiceMock.Object,
                 _netAppClientMock.Object,
                 _netAppArgFactoryMock.Object,
-                _optionsMock.Object,
                 _activityLogServiceMock.Object,
-                _requestValidatorMock.Object);
+                _requestValidatorMock.Object,
+                _securityGroupMetadataServiceMock.Object
+                );
         }
 
         [Fact]
@@ -112,7 +121,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _netAppArgFactoryMock
                 .Setup(x => x.CreateListFoldersInBucketArg(
                     _testBearerToken,
-                    _netAppOptions.BucketName,
+                    _testBucketName,
                     netAppConnectionRequest.OperationName,
                     null,
                     1,
@@ -150,7 +159,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 });
 
             _netAppArgFactoryMock
-                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _netAppOptions.BucketName, netAppConnectionRequest.OperationName, null, 1, null))
+                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, netAppConnectionRequest.OperationName, null, 1, null))
                 .Returns(netAppArg);
 
             _netAppClientMock
@@ -206,7 +215,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 });
 
             _netAppArgFactoryMock
-                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _netAppOptions.BucketName, netAppConnectionRequest.OperationName, null, 1, null))
+                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, netAppConnectionRequest.OperationName, null, 1, null))
                 .Returns(netAppArg);
 
             _netAppClientMock
@@ -222,7 +231,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             // Assert
             _netAppArgFactoryMock.Verify(x => x.CreateListFoldersInBucketArg(
                 _testBearerToken,
-                _netAppOptions.BucketName,
+                _testBucketName,
                 netAppConnectionRequest.OperationName,
                 null,
                 1,
@@ -245,7 +254,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 });
 
             _netAppArgFactoryMock
-                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _netAppOptions.BucketName, netAppConnectionRequest.OperationName, null, 1, null))
+                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, netAppConnectionRequest.OperationName, null, 1, null))
                 .Returns(netAppArg);
 
             _netAppClientMock
@@ -278,7 +287,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 });
 
             _netAppArgFactoryMock
-                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _netAppOptions.BucketName, netAppConnectionRequest.OperationName, null, 1, null))
+                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, netAppConnectionRequest.OperationName, null, 1, null))
                 .Returns(netAppArg);
 
             _netAppClientMock
@@ -300,67 +309,6 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(), null), Times.Never);
-        }
-
-        [Fact]
-        public async Task Run_UsesCorrectNetAppOptionsFromConfiguration()
-        {
-            // Arrange
-            var netAppConnectionRequest = _fixture.Create<CreateNetAppConnectionDto>();
-            var netAppArg = _fixture.Create<ListFoldersInBucketArg>();
-            var expectedBucketName = _fixture.Create<string>();
-            var customNetAppOptions = new NetAppOptions
-            {
-                BucketName = expectedBucketName,
-                Url = _fixture.Create<string>(),
-                AccessKey = _fixture.Create<string>(),
-                SecretKey = _fixture.Create<string>(),
-                RegionName = _fixture.Create<string>()
-            };
-
-            var customOptionsMock = new Mock<IOptions<NetAppOptions>>();
-            customOptionsMock.Setup(x => x.Value).Returns(customNetAppOptions);
-
-            var customFunction = new CreateNetAppConnection(
-                _loggerMock.Object,
-                _caseMetadataServiceMock.Object,
-                _netAppClientMock.Object,
-                _netAppArgFactoryMock.Object,
-                customOptionsMock.Object,
-                _activityLogServiceMock.Object,
-                _requestValidatorMock.Object);
-
-            _requestValidatorMock
-                .Setup(x => x.GetJsonBody<CreateNetAppConnectionDto, CreateNetAppConnectionValidator>(It.IsAny<HttpRequest>()))
-                .ReturnsAsync(new ValidatableRequest<CreateNetAppConnectionDto>
-                {
-                    IsValid = true,
-                    Value = netAppConnectionRequest
-                });
-
-            _netAppArgFactoryMock
-                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, expectedBucketName, netAppConnectionRequest.OperationName, null, 1, null))
-                .Returns(netAppArg);
-
-            _netAppClientMock
-                .Setup(x => x.ListFoldersInBucketAsync(netAppArg))
-                .ReturnsAsync((ListNetAppObjectsDto?)null);
-
-            var request = HttpRequestStubHelper.CreateHttpRequestFor(netAppConnectionRequest);
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
-
-            // Act
-            await customFunction.Run(request, functionContext);
-
-            // Assert
-            _netAppArgFactoryMock.Verify(x => x.CreateListFoldersInBucketArg(
-                _testBearerToken,
-                expectedBucketName,
-                netAppConnectionRequest.OperationName,
-                null,
-                1,
-                null
-            ), Times.Once);
         }
     }
 }
