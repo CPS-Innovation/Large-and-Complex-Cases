@@ -75,19 +75,19 @@ async function run() {
     
     const lhr = result?.lhr;
 
-    if (lhr?.runtimeError) {
-      throw new Error(`runtimeError: ${JSON.stringify(lhr.runtimeError)}`);
-    }
-    if (lhr?.runWarnings?.length) {
-      throw new Error(`runWarnings: ${JSON.stringify(lhr.runWarnings)}`);
-    }
-
     const reportHtml = result?.report as string;
 
     fs.writeFileSync(path.join(__dirname, '../test-results/lh-report.html'), reportHtml);
     console.log('Performance Score:', lhr?.categories.performance.score);
     console.log('Accessibility Score:', lhr?.categories.accessibility.score);
     console.log('Best Practice Score:', lhr?.categories['best-practices'].score);
+
+    if (lhr?.runtimeError) {
+      throw new Error(`runtimeError: ${JSON.stringify(lhr.runtimeError)}`);
+    }
+    if (lhr?.runWarnings?.length) {
+      throw new Error(`runWarnings: ${JSON.stringify(lhr.runWarnings)}`);
+    }
   } catch (err: any) {
     const msg = String(err?.stack || err?.message || err);
     console.error('❌ Lighthouse failed:', msg);
