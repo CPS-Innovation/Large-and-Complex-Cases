@@ -9,7 +9,7 @@ parameters:
   type: string
   default: 'dev'
 
-pool: 'CM PreProd Pool'
+pool: 'LACC PreProd Pool'
 
 variables:
 - group: lacc-automated-testing
