@@ -39,7 +39,6 @@ const userDataDir = path.resolve('.tmp/lh-profile');
   await page.goto(baseUrl);
   try {
     // Check if userDataDir contains an authenticated context
-    await page.pause();
     await page.waitForSelector('[data-testid="div-ad-username"]', { timeout: 10000 });
     console.log('✓ User already authenticated. Skipping interactive authentication');
   } catch {
@@ -67,20 +66,32 @@ const userDataDir = path.resolve('.tmp/lh-profile');
   const options =  { 
     port: 9222, 
     disableStorageReset: true, 
-    logLevel: 'info' as const,
+    logLevel: 'error' as const,
     onlyCategories: ['performance', 'accessibility', 'best-practices'],
     output: 'html' as const,
-    chromeFlags: ['--auto-select-certificate-for-urls'],
+    chromeFlags: ['--auto-select-certificate-for-urls']
   }
 
   const result = await lighthouse(baseUrl, options);
+  
+  const lhr = result?.lhr;
+  let failed = false;
+
+  if (lhr?.runtimeError) {
+    console.error('❌ runtimeError:', lhr.runtimeError);
+    failed = true;
+  }
+  if (lhr?.runWarnings?.length) {
+    console.error('❌ runWarnings:', lhr.runWarnings);
+    failed = true;
+  }
 
   const reportHtml = result?.report as string;
 
   fs.writeFileSync(path.join(__dirname, '../test-results/lh-report.html'), reportHtml);
-  console.log('Performance Score:', result?.lhr.categories.performance.score);
-  console.log('Accessibility Score:', result?.lhr.categories.accessibility.score);
-  console.log('Best Practice Score:', result?.lhr.categories['best-practices'].score);
+  console.log('Performance Score:', lhr?.categories.performance.score);
+  console.log('Accessibility Score:', lhr?.categories.accessibility.score);
+  console.log('Best Practice Score:', lhr?.categories['best-practices'].score);
 
   await browser.close();
 })();
