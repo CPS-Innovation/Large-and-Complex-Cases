@@ -79,16 +79,19 @@ public class EgressStorageClientTests : IDisposable
         const string path = "/test/file.txt";
 
         // Act
-        var result = await _client.OpenReadStreamAsync(path, workspaceId, fileId);
+        var (stream, contentLength) = await _client.OpenReadStreamAsync(path, workspaceId, fileId);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.True(result.CanRead);
+        await using (stream)
+        {
+            Assert.NotNull(stream);
+            Assert.True(stream.CanRead);
 
-        // Verify we can read content from the stream
-        using var reader = new StreamReader(result);
-        var content = await reader.ReadToEndAsync();
-        Assert.NotNull(content);
+            // Verify we can read content from the stream
+            using var reader = new StreamReader(stream);
+            var content = await reader.ReadToEndAsync();
+            Assert.NotNull(content);
+        }
     }
 
     [Fact]

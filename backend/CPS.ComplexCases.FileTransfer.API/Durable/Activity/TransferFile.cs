@@ -37,22 +37,41 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 ? payload.SourcePath.Path
                 : payload.SourcePath.ModifiedPath;
 
-            using var sourceStream = await sourceClient.OpenReadStreamAsync(
-                payload.SourcePath.Path, payload.WorkspaceId, payload.SourcePath.FileId, payload.BearerToken);
+            var (sourceStream, totalSize) = await sourceClient.OpenReadStreamAsync(
+                payload.SourcePath.Path,
+                payload.WorkspaceId,
+                payload.SourcePath.FileId,
+                payload.BearerToken,
+                payload.BucketName);
 
-            long totalSize = sourceStream.Length;
-            bool needsMd5 = destinationClient is EgressStorageClient;
-            bool isNetApp = destinationClient is NetAppStorageClient;
-
-            // Handle small files with single PUT for NetApp
-            if (isNetApp && totalSize <= _sizeConfig.MinMultipartSizeBytes)
+            using (sourceStream)
             {
-                return await HandleSingleUpload(sourceStream, destinationClient, payload, sourceFilePath, totalSize, startTime);
-            }
+                bool needsMd5 = destinationClient is EgressStorageClient;
+                bool isNetApp = destinationClient is NetAppStorageClient;
 
-            // All Egress files and large NetApp files use multipart upload
-            return await HandleMultipartUpload(
-                sourceStream, destinationClient, payload, sourceFilePath, totalSize, needsMd5, cancellationToken, startTime);
+                // Small NetApp files use single PUT
+                if (isNetApp && totalSize <= _sizeConfig.MinMultipartSizeBytes)
+                {
+                    return await HandleSingleUpload(
+                        sourceStream,
+                        destinationClient,
+                        payload,
+                        sourceFilePath,
+                        totalSize,
+                        startTime);
+                }
+
+                // All Egress + large NetApp files use multipart upload
+                return await HandleMultipartUpload(
+                    sourceStream,
+                    destinationClient,
+                    payload,
+                    sourceFilePath,
+                    totalSize,
+                    needsMd5,
+                    cancellationToken,
+                    startTime);
+            }
         }
         catch (FileExistsException ex)
         {
@@ -65,8 +84,11 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         }
         catch (Exception ex)
         {
-            return CreateFailureResult(payload.SourcePath.Path, TransferErrorCode.GeneralError,
-                $"Exception: {ex.GetType().FullName}: {ex.Message}{Environment.NewLine}StackTrace: {ex.StackTrace}", ex);
+            return CreateFailureResult(
+                payload.SourcePath.Path,
+                TransferErrorCode.GeneralError,
+                $"Exception: {ex.GetType().FullName}: {ex.Message}{Environment.NewLine}StackTrace: {ex.StackTrace}",
+                ex);
         }
     }
 
@@ -78,8 +100,10 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         long totalSize,
         DateTime startTime)
     {
-        _logger.LogInformation("File size {TotalSize} <= {MinMultipartSize} bytes, using single PUT.",
-            totalSize, _sizeConfig.MinMultipartSizeBytes);
+        _logger.LogInformation(
+            "File size {TotalSize} <= {MinMultipartSize} bytes, using single PUT.",
+            totalSize,
+            _sizeConfig.MinMultipartSizeBytes);
 
         if (sourceStream.CanSeek)
         {
@@ -92,7 +116,8 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             payload.WorkspaceId,
             sourceFilePath,
             payload.SourceRootFolderPath,
-            payload.BearerToken);
+            payload.BearerToken,
+            payload.BucketName);
 
         return CreateSuccessResult(payload, totalSize, startTime);
     }
@@ -108,11 +133,14 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         DateTime startTime)
     {
         var session = await destinationClient.InitiateUploadAsync(
-            payload.DestinationPath, totalSize, sourceFilePath, payload.WorkspaceId,
-            payload.SourcePath.RelativePath, payload.SourceRootFolderPath, payload.BearerToken);
-
-        if (sourceStream.CanSeek)
-            sourceStream.Position = 0;
+            payload.DestinationPath,
+            totalSize,
+            sourceFilePath,
+            payload.WorkspaceId,
+            payload.SourcePath.RelativePath,
+            payload.SourceRootFolderPath,
+            payload.BearerToken,
+            payload.BucketName);
 
         var buffer = new byte[_sizeConfig.ChunkSizeBytes];
         var partList = new List<(int PartNumber, byte[] Data, long Start, long End)>();
@@ -125,7 +153,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
 
         using (md5)
         {
-            // STEP 1 — Sequentially READ & buffer all parts
+            // STEP 1 — Sequential read & buffer
             while (bytesProcessed < totalSize)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -161,7 +189,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
 
             _logger.LogInformation("Buffered {Count} parts for parallel upload.", partList.Count);
 
-            // STEP 2 — Parallel upload using limited concurrency
+            // STEP 2 — Parallel upload
             var semaphore = new SemaphoreSlim(_sizeConfig.MaxConcurrentPartUploads);
             var uploadedEtags = new Dictionary<int, string>();
 
@@ -172,11 +200,21 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 {
                     var (num, data, start, end) = part;
 
-                    _logger.LogInformation("Parallel upload: part {Part}, bytes {Start}-{End}",
-                        num, start, end);
+                    _logger.LogInformation(
+                        "Parallel upload: part {Part}, bytes {Start}-{End}",
+                        num,
+                        start,
+                        end);
 
                     var result = await destinationClient.UploadChunkAsync(
-                        session, num, data, start, end, totalSize, payload.BearerToken);
+                        session,
+                        num,
+                        data,
+                        start,
+                        end,
+                        totalSize,
+                        payload.BearerToken,
+                        payload.BucketName);
 
                     if (result.PartNumber.HasValue && result.ETag != null)
                     {
@@ -197,12 +235,18 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             // STEP 3 — Complete upload
             string md5Hash = md5?.Hash != null ? Convert.ToBase64String(md5.Hash) : string.Empty;
 
-            await CompleteUpload(destinationClient, session, md5Hash, uploadedEtags, payload.BearerToken);
+            await CompleteUpload(
+                destinationClient,
+                session,
+                md5Hash,
+                uploadedEtags,
+                payload.BearerToken,
+                payload.BucketName);
 
             _logger.LogInformation(
                 "Completed parallel multipart transfer for {Source} -> {Dest}",
-                payload.SourcePath.Path, payload.DestinationPath
-            );
+                payload.SourcePath.Path,
+                payload.DestinationPath);
 
             return CreateSuccessResult(payload, totalSize, startTime);
         }
@@ -213,7 +257,8 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         UploadSession session,
         string md5Hash,
         Dictionary<int, string> uploadedChunks,
-        string bearerToken)
+        string bearerToken,
+        string? bucketName)
     {
         if (destinationClient is EgressStorageClient)
         {
@@ -221,7 +266,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         }
         else
         {
-            await destinationClient.CompleteUploadAsync(session, null, etags: uploadedChunks, bearerToken);
+            await destinationClient.CompleteUploadAsync(session, null, etags: uploadedChunks, bearerToken, bucketName);
         }
     }
 

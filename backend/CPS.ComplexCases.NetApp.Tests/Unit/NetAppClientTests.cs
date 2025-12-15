@@ -24,8 +24,6 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         private readonly Mock<IS3ClientFactory> _s3ClientFactoryMock;
         private readonly NetAppClient _client;
         private const string TestUrl = "https://netapp.com";
-        private const string AccessKey = "accessKey";
-        private const string SecretKey = "secretKey";
         private const string RegionName = "eu-west-2";
         private const string BucketName = "test-bucket";
         private const string BearerToken = "fakeBearerToken";
@@ -39,10 +37,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             var options = new NetAppOptions
             {
                 Url = TestUrl,
-                AccessKey = AccessKey,
-                SecretKey = SecretKey,
-                RegionName = RegionName,
-                BucketName = BucketName
+                RegionName = RegionName
             };
             _optionsMock = new Mock<IOptions<NetAppOptions>>();
             _optionsMock.Setup(x => x.Value).Returns(options);

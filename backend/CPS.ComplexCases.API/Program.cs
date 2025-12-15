@@ -95,6 +95,7 @@ var host = new HostBuilder()
         services.AddScoped<IInitService, InitService>();
         services.AddSingleton<IOpenApiConfigurationOptions, OpenApiConfigurationOptions>();
         services.AddSingleton<IRequestValidator, RequestValidator>();
+        services.AddSingleton<ISecurityGroupMetadataService, SecurityGroupMetadataService>();
     })
     .Build();
 

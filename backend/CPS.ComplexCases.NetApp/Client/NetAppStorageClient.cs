@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
@@ -6,23 +5,21 @@ using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.NetApp.Factories;
-using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Streams;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
-public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory netAppArgFactory, IOptions<NetAppOptions> options, ICaseMetadataService caseMetadataService) : IStorageClient
+public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory netAppArgFactory, ICaseMetadataService caseMetadataService) : IStorageClient
 {
     private readonly INetAppClient _netAppClient = netAppClient;
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
     private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
-    private readonly NetAppOptions _options = options.Value;
 
-    public async Task CompleteUploadAsync(UploadSession session, string? md5hash = null, Dictionary<int, string>? etags = null, string? bearerToken = null)
+    public async Task CompleteUploadAsync(UploadSession session, string? md5hash = null, Dictionary<int, string>? etags = null, string? bearerToken = null, string? bucketName = null)
     {
         var arg = _netAppArgFactory.CreateCompleteMultipartUploadArg(
-            bearerToken!,
-            _options.BucketName, // Bucket will need to be passed in as argument if we support multiple buckets
+            bearerToken ?? throw new ArgumentNullException(nameof(bearerToken), "Bearer token cannot be null."),
+            bucketName ?? throw new ArgumentNullException(nameof(bucketName), "Bucket name cannot be null."),
             session.WorkspaceId ?? throw new ArgumentNullException(nameof(session.WorkspaceId), "session.WorkspaceId cannot be null."),
             session.UploadId ?? throw new ArgumentNullException(nameof(session.UploadId), "Upload ID cannot be null."),
             etags ?? throw new ArgumentNullException(nameof(etags), "ETags cannot be null."));
@@ -33,11 +30,14 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
             throw new InvalidOperationException("Failed to complete multipart upload.");
     }
 
-    public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string sourcePath, string? workspaceId = null, string? relativePath = null, string? sourceRootFolderPath = null, string? bearerToken = null)
+    public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string sourcePath, string? workspaceId = null, string? relativePath = null, string? sourceRootFolderPath = null, string? bearerToken = null, string? bucketName = null)
     {
         var fullDestinationPath = Path.Combine(destinationPath, sourcePath).Replace('\\', '/');
 
-        var arg = _netAppArgFactory.CreateInitiateMultipartUploadArg(bearerToken!, _options.BucketName, fullDestinationPath);
+        var arg = _netAppArgFactory.CreateInitiateMultipartUploadArg(
+            bearerToken ?? throw new ArgumentNullException(nameof(bearerToken), "Bearer token cannot be null."),
+            bucketName ?? throw new ArgumentNullException(nameof(bucketName), "Bucket name cannot be null."),
+            fullDestinationPath);
 
         var response = await _netAppClient.InitiateMultipartUploadAsync(arg);
 
@@ -54,21 +54,30 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
         };
     }
 
-    public async Task<Stream> OpenReadStreamAsync(string path, string? workspaceId = null, string? fileId = null, string? bearerToken = null)
+    public async Task<(Stream Stream, long ContentLength)> OpenReadStreamAsync(string path, string? workspaceId = null, string? fileId = null, string? bearerToken = null, string? bucketName = null)
     {
-        var arg = _netAppArgFactory.CreateGetObjectArg(bearerToken!, _options.BucketName, path); // Bucket will need to be passed in as argument if we support multiple buckets
+        var arg = _netAppArgFactory.CreateGetObjectArg(
+            bearerToken ?? throw new ArgumentNullException(nameof(bearerToken), "Bearer token cannot be null."),
+            bucketName ?? throw new ArgumentNullException(nameof(bucketName), "Bucket name cannot be null."),
+            path);
+
         var response = await _netAppClient.GetObjectAsync(arg);
-        var responseStream = response?.ResponseStream ?? throw new InvalidOperationException("Failed to get object stream.");
+
+        if (response?.ResponseStream == null)
+            throw new InvalidOperationException("Failed to get object stream.");
+
+        long contentLength = response.ContentLength;
 
         // Wrap the stream to safely handle AWS SDK's hash validation exception on disposal
-        return new HashValidationIgnoringStream(responseStream);
+        var stream = new HashValidationIgnoringStream(response.ResponseStream);
+        return (stream, contentLength);
     }
 
-    public async Task<UploadChunkResult> UploadChunkAsync(UploadSession session, int chunkNumber, byte[] chunkData, long? start = null, long? end = null, long? totalSize = null, string? bearerToken = null)
+    public async Task<UploadChunkResult> UploadChunkAsync(UploadSession session, int chunkNumber, byte[] chunkData, long? start = null, long? end = null, long? totalSize = null, string? bearerToken = null, string? bucketName = null)
     {
         var arg = _netAppArgFactory.CreateUploadPartArg(
-            bearerToken!,
-            _options.BucketName, // Bucket will need to be passed in as argument if we support multiple buckets
+            bearerToken ?? throw new ArgumentNullException(nameof(bearerToken), "Bearer token cannot be null."),
+            bucketName ?? throw new ArgumentNullException(nameof(bucketName), "Bucket name cannot be null."),
             session.WorkspaceId ?? throw new ArgumentNullException(nameof(session.WorkspaceId), "Workspace ID cannot be null."),
             chunkData,
             chunkNumber,
@@ -82,7 +91,7 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
         return new UploadChunkResult(TransferDirection.EgressToNetApp, result?.ETag, result?.PartNumber);
     }
 
-    public async Task<IEnumerable<FileTransferInfo>> ListFilesForTransferAsync(List<TransferEntityDto> selectedEntities, string? workspaceId = null, int? caseId = null, string? bearerToken = null)
+    public async Task<IEnumerable<FileTransferInfo>> ListFilesForTransferAsync(List<TransferEntityDto> selectedEntities, string? workspaceId = null, int? caseId = null, string? bearerToken = null, string? bucketName = null)
     {
         List<FileTransferInfo> filesForTransfer = [];
 
@@ -104,7 +113,11 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
             }
             else
             {
-                var files = await ListFilesInFolder(path, bearerToken!);
+                var files = await ListFilesInFolder(
+                    path,
+                    bearerToken ?? throw new ArgumentNullException(nameof(bearerToken), "Bearer token cannot be null."),
+                    bucketName ?? throw new ArgumentNullException(nameof(bucketName), "Bucket name cannot be null."));
+
                 if (files != null)
                     filesForTransfer.AddRange(files.Select(file => new FileTransferInfo
                     {
@@ -117,7 +130,7 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
         return filesForTransfer;
     }
 
-    public async Task<IEnumerable<FileTransferInfo>?> ListFilesInFolder(string path, string bearerToken)
+    public async Task<IEnumerable<FileTransferInfo>?> ListFilesInFolder(string path, string bearerToken, string bucketName)
     {
         var filesForTransfer = new List<FileTransferInfo>();
 
@@ -126,7 +139,7 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
         {
             var arg = _netAppArgFactory.CreateListObjectsInBucketArg(
                 bearerToken,
-                _options.BucketName, // Bucket will need to be passed in as argument if we support multiple buckets
+                bucketName,
                 continuationToken,
                 1000, path);
             var response = await _netAppClient.ListObjectsInBucketAsync(arg);
@@ -148,18 +161,18 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
         return filesForTransfer;
     }
 
-    public Task<DeleteFilesResult> DeleteFilesAsync(List<DeletionEntityDto> filesToDelete, string? workspaceId = null, string? BearerToken = null)
+    public Task<DeleteFilesResult> DeleteFilesAsync(List<DeletionEntityDto> filesToDelete, string? workspaceId = null, string? BearerToken = null, string? bucketName = null)
     {
         throw new NotImplementedException();
     }
 
-    public async Task UploadFileAsync(string destinationPath, Stream fileStream, string? workspaceId = null, string? relativePath = null, string? sourceRootFolderPath = null, string? bearerToken = null)
+    public async Task UploadFileAsync(string destinationPath, Stream fileStream, string? workspaceId = null, string? relativePath = null, string? sourceRootFolderPath = null, string? bearerToken = null, string? bucketName = null)
     {
         var objectName = Path.Combine(destinationPath, relativePath ?? string.Empty).Replace('\\', '/');
 
         var arg = _netAppArgFactory.CreateUploadObjectArg(
-            bearerToken!,
-            _options.BucketName,
+            bearerToken ?? throw new ArgumentNullException(nameof(bearerToken), "Bearer token cannot be null."),
+            bucketName ?? throw new ArgumentNullException(nameof(bucketName), "Bucket name cannot be null."),
             objectName,
             fileStream);
 

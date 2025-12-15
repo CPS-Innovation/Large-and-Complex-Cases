@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
@@ -13,7 +12,6 @@ using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
-using CPS.ComplexCases.NetApp.Models;
 
 namespace CPS.ComplexCases.API.Functions;
 
@@ -21,13 +19,13 @@ public class ListNetAppFolders(ILogger<ListNetAppFolders> logger,
     INetAppClient netAppClient,
     INetAppArgFactory netAppArgFactory,
     ICaseEnrichmentService caseEnrichmentService,
-    IOptions<NetAppOptions> options)
+    ISecurityGroupMetadataService securityGroupMetadataService)
 {
     private readonly ILogger<ListNetAppFolders> _logger = logger;
     private readonly INetAppClient _netAppClient = netAppClient;
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
     private readonly ICaseEnrichmentService _caseEnrichmentService = caseEnrichmentService;
-    private readonly NetAppOptions _netAppOptions = options.Value;
+    private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
 
     [Function(nameof(ListNetAppFolders))]
     [OpenApiOperation(operationId: nameof(ListNetAppFolders), tags: ["NetApp"], Description = "Lists folders in NetApp, initially based on operation name.")]
@@ -50,7 +48,9 @@ public class ListNetAppFolders(ILogger<ListNetAppFolders> logger,
         var take = int.TryParse(req.Query[InputParameters.Take], out var takeValue) ? takeValue : 100;
         var path = req.Query[InputParameters.Path];
 
-        var arg = _netAppArgFactory.CreateListFoldersInBucketArg(context.BearerToken, _netAppOptions.BucketName, operationName, continuationToken, take, path);
+        var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
+
+        var arg = _netAppArgFactory.CreateListFoldersInBucketArg(context.BearerToken, securityGroups.First().BucketName, operationName, continuationToken, take, path);
         var response = await _netAppClient.ListFoldersInBucketAsync(arg);
 
         if (response == null)
