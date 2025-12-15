@@ -58,3 +58,4 @@ steps:
 - publish: '$(workingDir)/playwright/test-results/lh-report.html'
   artifact: 'lighthouse-report'
   displayName: 'Publish Lighthouse Report'
+  condition: succeededOrFailed()
