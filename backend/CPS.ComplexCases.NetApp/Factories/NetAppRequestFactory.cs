@@ -118,6 +118,10 @@ public class NetAppRequestFactory : INetAppRequestFactory
             BucketName = arg.BucketName,
             Key = arg.ObjectKey,
             InputStream = arg.Stream,
+            Headers =
+            {
+                ContentLength = arg.ContentLength
+            }
         };
     }
 
