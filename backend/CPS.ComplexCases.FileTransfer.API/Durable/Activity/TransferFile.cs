@@ -54,13 +54,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                     _logger.LogInformation("File size {TotalSize} <= {MinMultipartSize} bytes, using single PUT.",
                         totalSize, minMultipartSize);
 
-                    // Buffer small files (≤5MB) into memory - acceptable overhead
-                    // prevents Amazon.S3.AmazonS3Exception: Could not determine content length
-                    using var seekableStream = new MemoryStream((int)totalSize);
-                    await sourceStream.CopyToAsync(seekableStream, cancellationToken);
-                    seekableStream.Position = 0;
-
-                    await destinationClient.UploadFileAsync(payload.DestinationPath, seekableStream,
+                    await destinationClient.UploadFileAsync(payload.DestinationPath, sourceStream, totalSize,
                         payload.WorkspaceId, sourceFilePath, payload.SourceRootFolderPath, payload.BearerToken, payload.BucketName);
 
                     var singleUpload = new TransferItem

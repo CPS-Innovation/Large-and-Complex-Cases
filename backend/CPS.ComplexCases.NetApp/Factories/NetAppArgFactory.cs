@@ -46,14 +46,15 @@ public class NetAppArgFactory : INetAppArgFactory
         };
     }
 
-    public UploadObjectArg CreateUploadObjectArg(string bearerToken, string bucketName, string objectName, Stream stream)
+    public UploadObjectArg CreateUploadObjectArg(string bearerToken, string bucketName, string objectName, Stream stream, long contentLength)
     {
         return new UploadObjectArg
         {
             BearerToken = bearerToken,
             BucketName = bucketName.ToLowerInvariant(),
             ObjectKey = objectName,
-            Stream = stream
+            Stream = stream,
+            ContentLength = contentLength
         };
     }
 
