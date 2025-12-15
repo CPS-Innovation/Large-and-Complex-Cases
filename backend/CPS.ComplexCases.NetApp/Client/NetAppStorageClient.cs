@@ -54,18 +54,21 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
         };
     }
 
-    public async Task<Stream> OpenReadStreamAsync(string path, string? workspaceId = null, string? fileId = null, string? bearerToken = null, string? bucketName = null)
+    public async Task<(Stream Stream, long ContentLength)> OpenReadStreamAsync(string path, string? workspaceId = null, string? fileId = null, string? bearerToken = null, string? bucketName = null)
     {
         var arg = _netAppArgFactory.CreateGetObjectArg(
             bearerToken ?? throw new ArgumentNullException(nameof(bearerToken), "Bearer token cannot be null."),
             bucketName ?? throw new ArgumentNullException(nameof(bucketName), "Bucket name cannot be null."),
-            path);
+            path); var response = await _netAppClient.GetObjectAsync(arg);
 
-        var response = await _netAppClient.GetObjectAsync(arg);
-        var responseStream = response?.ResponseStream ?? throw new InvalidOperationException("Failed to get object stream.");
+        if (response?.ResponseStream == null)
+            throw new InvalidOperationException("Failed to get object stream.");
+
+        long contentLength = response.ContentLength;
 
         // Wrap the stream to safely handle AWS SDK's hash validation exception on disposal
-        return new HashValidationIgnoringStream(responseStream);
+        var stream = new HashValidationIgnoringStream(response.ResponseStream);
+        return (stream, contentLength);
     }
 
     public async Task<UploadChunkResult> UploadChunkAsync(UploadSession session, int chunkNumber, byte[] chunkData, long? start = null, long? end = null, long? totalSize = null, string? bearerToken = null, string? bucketName = null)

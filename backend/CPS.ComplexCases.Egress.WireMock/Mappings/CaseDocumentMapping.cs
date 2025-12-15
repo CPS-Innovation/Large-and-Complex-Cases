@@ -9,8 +9,8 @@ public class CaseDocumentMapping : IWireMockMapping
 {
   public void Configure(WireMockServer server)
   {
-    var filePath = Path.Combine(AppContext.BaseDirectory, "files", "example.pdf");
-    var fileContent = File.ReadAllBytes(filePath);
+    var testContent = "Test file content from WireMock";
+    var contentBytes = System.Text.Encoding.UTF8.GetBytes(testContent);
 
     server
         .Given(Request.Create()
@@ -18,8 +18,8 @@ public class CaseDocumentMapping : IWireMockMapping
             .UsingGet())
         .RespondWith(Response.Create()
             .WithStatusCode(200)
-            .WithHeader("Content-Type", "application/pdf")
-            .WithHeader("Content-Disposition", "attachment; filename=\"example.pdf\"")
-            .WithBody(fileContent));
+            .WithHeader("Content-Type", "application/octet-stream")
+            .WithHeader("Content-Length", contentBytes.Length.ToString())
+            .WithBody(contentBytes));
   }
 }
