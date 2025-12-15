@@ -16,10 +16,7 @@ const headless: boolean = process.env.HEADLESS?.trim().toLowerCase() !== 'false'
 
 const userDataDir = path.resolve('.tmp/lh-profile');
 
-(async () => {
-
-  console.log("env:", process.env.BASE_URL)
-  
+async function run() {
   const browser = await playwright.chromium.launchPersistentContext(userDataDir, {
     channel: 'chrome',
     headless,
@@ -63,35 +60,42 @@ const userDataDir = path.resolve('.tmp/lh-profile');
 
   await new Promise(r => setTimeout(r, 2000));
 
-  const options =  { 
-    port: 9222, 
-    disableStorageReset: true, 
-    logLevel: 'error' as const,
-    onlyCategories: ['performance', 'accessibility', 'best-practices'],
-    output: 'html' as const,
-    chromeFlags: ['--auto-select-certificate-for-urls']
+  let exitCode = 0;
+  try {
+    const options =  { 
+      port: 9222, 
+      disableStorageReset: true, 
+      logLevel: 'error' as const,
+      onlyCategories: ['performance', 'accessibility', 'best-practices'],
+      output: 'html' as const,
+      chromeFlags: ['--auto-select-certificate-for-urls']
+    }
+
+    const result = await lighthouse(baseUrl, options);
+    
+    const lhr = result?.lhr;
+
+    if (lhr?.runtimeError) {
+      throw new Error(`runtimeError: ${JSON.stringify(lhr.runtimeError)}`);
+    }
+    if (lhr?.runWarnings?.length) {
+      throw new Error(`runWarnings: ${JSON.stringify(lhr.runWarnings)}`);
+    }
+
+    const reportHtml = result?.report as string;
+
+    fs.writeFileSync(path.join(__dirname, '../test-results/lh-report.html'), reportHtml);
+    console.log('Performance Score:', lhr?.categories.performance.score);
+    console.log('Accessibility Score:', lhr?.categories.accessibility.score);
+    console.log('Best Practice Score:', lhr?.categories['best-practices'].score);
+  } catch (err: any) {
+    const msg = String(err?.stack || err?.message || err);
+    console.error('❌ Lighthouse failed:', msg);
+    exitCode = 1;
+  } finally {
+    await browser.close();
   }
+  process.exit(exitCode);
+}
 
-  const result = await lighthouse(baseUrl, options);
-  
-  const lhr = result?.lhr;
-  let failed = false;
-
-  if (lhr?.runtimeError) {
-    console.error('❌ runtimeError:', lhr.runtimeError);
-    failed = true;
-  }
-  if (lhr?.runWarnings?.length) {
-    console.error('❌ runWarnings:', lhr.runWarnings);
-    failed = true;
-  }
-
-  const reportHtml = result?.report as string;
-
-  fs.writeFileSync(path.join(__dirname, '../test-results/lh-report.html'), reportHtml);
-  console.log('Performance Score:', lhr?.categories.performance.score);
-  console.log('Accessibility Score:', lhr?.categories.accessibility.score);
-  console.log('Best Practice Score:', lhr?.categories['best-practices'].score);
-
-  await browser.close();
-})();
+run();
