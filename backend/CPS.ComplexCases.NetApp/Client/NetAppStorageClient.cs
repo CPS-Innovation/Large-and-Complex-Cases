@@ -59,7 +59,9 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
         var arg = _netAppArgFactory.CreateGetObjectArg(
             bearerToken ?? throw new ArgumentNullException(nameof(bearerToken), "Bearer token cannot be null."),
             bucketName ?? throw new ArgumentNullException(nameof(bucketName), "Bucket name cannot be null."),
-            path); var response = await _netAppClient.GetObjectAsync(arg);
+            path);
+
+        var response = await _netAppClient.GetObjectAsync(arg);
 
         if (response?.ResponseStream == null)
             throw new InvalidOperationException("Failed to get object stream.");
