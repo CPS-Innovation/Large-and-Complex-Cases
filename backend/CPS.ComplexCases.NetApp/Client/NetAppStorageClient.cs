@@ -166,7 +166,7 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
         throw new NotImplementedException();
     }
 
-    public async Task UploadFileAsync(string destinationPath, Stream fileStream, string? workspaceId = null, string? relativePath = null, string? sourceRootFolderPath = null, string? bearerToken = null, string? bucketName = null)
+    public async Task UploadFileAsync(string destinationPath, Stream fileStream, long contentLength, string? workspaceId = null, string? relativePath = null, string? sourceRootFolderPath = null, string? bearerToken = null, string? bucketName = null)
     {
         var objectName = Path.Combine(destinationPath, relativePath ?? string.Empty).Replace('\\', '/');
 
@@ -174,7 +174,8 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
             bearerToken ?? throw new ArgumentNullException(nameof(bearerToken), "Bearer token cannot be null."),
             bucketName ?? throw new ArgumentNullException(nameof(bucketName), "Bucket name cannot be null."),
             objectName,
-            fileStream);
+            fileStream,
+            contentLength);
 
         var result = await _netAppClient.UploadObjectAsync(arg);
 
