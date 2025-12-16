@@ -154,33 +154,55 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                using var partBuffer = new MemoryStream(_sizeConfig.ChunkSizeBytes);
+                long remainingBytes = totalSize - bytesProcessed;
+                int targetPartSize = (int)Math.Min(_sizeConfig.ChunkSizeBytes, remainingBytes);
 
-                while (partBuffer.Length < _sizeConfig.ChunkSizeBytes && bytesProcessed < totalSize)
+                var partData = new byte[targetPartSize];
+                int partOffset = 0;
+
+                // Read EXACTLY targetPartSize bytes (critical for all parts except the last)
+                while (partOffset < targetPartSize)
                 {
-                    int bytesToRead = (int)Math.Min(buffer.Length, totalSize - bytesProcessed);
-                    int bytesRead = await sourceStream.ReadAsync(buffer.AsMemory(0, bytesToRead), cancellationToken);
+                    int bytesToRead = targetPartSize - partOffset;
+                    int bytesRead = await sourceStream.ReadAsync(
+                        partData.AsMemory(partOffset, bytesToRead),
+                        cancellationToken);
 
                     if (bytesRead == 0)
+                    {
+                        // Only acceptable if we're at the end of the file
+                        if (bytesProcessed + partOffset < totalSize)
+                        {
+                            throw new InvalidOperationException(
+                                $"Unexpected end of stream at position {bytesProcessed + partOffset} " +
+                                $"(expected {totalSize} total bytes)");
+                        }
                         break;
+                    }
 
-                    partBuffer.Write(buffer, 0, bytesRead);
-                    md5?.TransformBlock(buffer, 0, bytesRead, null, 0);
-
-                    bytesProcessed += bytesRead;
+                    partOffset += bytesRead;
                 }
 
-                var arr = partBuffer.ToArray();
+                // Update MD5 hash
+                if (md5 != null)
+                {
+                    if (bytesProcessed + partOffset == totalSize)
+                    {
+                        // Final block
+                        md5.TransformFinalBlock(partData, 0, partOffset);
+                    }
+                    else
+                    {
+                        md5.TransformBlock(partData, 0, partOffset, null, 0);
+                    }
+                }
+
                 long start = absolutePosition;
-                long end = start + arr.Length - 1;
-                absolutePosition += arr.Length;
+                long end = start + partOffset - 1;
+                absolutePosition += partOffset;
+                bytesProcessed += partOffset;
 
-                partList.Add((partNumber++, arr, start, end));
-            }
-
-            if (md5 != null)
-            {
-                md5.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+                partList.Add((partNumber++, partData.AsMemory(0, partOffset).ToArray(), start, end));
             }
 
             _logger.LogInformation("Buffered {Count} parts for parallel upload.", partList.Count);
