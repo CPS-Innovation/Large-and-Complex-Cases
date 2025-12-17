@@ -8,8 +8,9 @@ declare -A secrets_array=(
 [EgressOptions--Username]=$EGRESS_OPTIONS_USERNAME 
 [EgressOptions--Password]=$EGRESS_OPTIONS_PASSWORD
 [DDEIOptions--AccessKey]=$DDEI_OPTIONS_ACCESS_KEY
-[NetAppOptions--AccessKey]=$NET_APP_OPTIONS_ACCESS_KEY
-[NetAppOptions--SecretKey]=$NET_APP_OPTIONS_SECRET_KEY
+[NetAppOptions--RootCaCert]=$NET_APP_OPTIONS_ROOT_CA_CERT
+[NetAppOptions--IssuingCaCert]=$NET_APP_OPTIONS_ISSUING_CA_CERT
+[NetAppOptions--IssuingCaCert2]=$NET_APP_OPTIONS_ISSUING_CA_CERT2
 [FileTransferApiOptions--AccessKey]=$FILE_TRANSFER_API_OPTIONS_ACCESS_KEY
 )
 
