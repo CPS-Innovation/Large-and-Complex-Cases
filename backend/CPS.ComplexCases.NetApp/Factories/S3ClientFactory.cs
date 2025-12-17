@@ -14,7 +14,7 @@ namespace CPS.ComplexCases.NetApp.Factories;
 
 public class S3ClientFactory(IOptions<NetAppOptions> options, IS3CredentialService s3CredentialService, ILogger<S3ClientFactory> logger) : IS3ClientFactory
 {
-    private readonly ILogger<S3ClientFactory> _logger  = logger;
+    private readonly ILogger<S3ClientFactory> _logger = logger;
     private readonly NetAppOptions _options = options.Value;
     private readonly IS3CredentialService _s3CredentialsService = s3CredentialService;
     private IAmazonS3? _s3Client;
