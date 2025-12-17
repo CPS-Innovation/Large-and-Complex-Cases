@@ -99,8 +99,9 @@ stages:
             EGRESS_OPTIONS_USERNAME: $(EgressOptionsUsername)
             EGRESS_OPTIONS_PASSWORD: $(EgressOptionsPassword)
             DDEI_OPTIONS_ACCESS_KEY: $(DDEIOptionsAccessKey)
-            NET_APP_OPTIONS_ACCESS_KEY: $(NetAppOptionsAccessKey)
-            NET_APP_OPTIONS_SECRET_KEY: $(NetAppOptionsSecretKey)
+            NET_APP_OPTIONS_ROOT_CA_CERT: $(NetAppOptionsRootCaCert)
+            NET_APP_OPTIONS_ISSUING_CA_CERT: $(NetAppOptionsIssuingCaCert)
+            NET_APP_OPTIONS_ISSUING_CA_CERT2: $(NetAppOptionsIssuingCaCert2)
             FILE_TRANSFER_API_OPTIONS_ACCESS_KEY: $(FileTransferApiOptionsAccessKey)
 
 - stage:  Database_Migration_${{ parameters.environment }}
