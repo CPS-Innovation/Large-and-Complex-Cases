@@ -14,7 +14,7 @@ namespace CPS.ComplexCases.NetApp.Factories;
 
 public class S3ClientFactory(IOptions<NetAppOptions> options, IS3CredentialService s3CredentialService, ILogger<S3ClientFactory> logger) : IS3ClientFactory
 {
-    private readonly ILogger<S3ClientFactory> _logger  = logger;
+    private readonly ILogger<S3ClientFactory> _logger = logger;
     private readonly NetAppOptions _options = options.Value;
     private readonly IS3CredentialService _s3CredentialsService = s3CredentialService;
     private IAmazonS3? _s3Client;
@@ -68,6 +68,7 @@ public class S3ClientFactory(IOptions<NetAppOptions> options, IS3CredentialServi
         else
         {
             // In non-Development environments, load and trust the custom CA certificates
+            _logger.LogInformation("Using custom CA certificate validation (non-Development mode).");
             var trustedCerts = GetTrustedCaCertificates();
             if (trustedCerts.Count > 0)
             {
@@ -148,7 +149,7 @@ public class S3ClientFactory(IOptions<NetAppOptions> options, IS3CredentialServi
         return _trustedCaCertificates;
     }
 
-    private static bool ValidateCertificateWithCustomCa(
+    private bool ValidateCertificateWithCustomCa(
         X509Certificate2? certificate,
         X509Chain? chain,
         SslPolicyErrors sslPolicyErrors,
@@ -160,21 +161,41 @@ public class S3ClientFactory(IOptions<NetAppOptions> options, IS3CredentialServi
             return true;
         }
 
+        _logger.LogInformation("SSL policy errors detected: {SslPolicyErrors}. Attempting custom CA validation.", sslPolicyErrors);
+
         // If the only error is untrusted root, try validating with our custom CAs
         if (certificate == null || chain == null)
         {
+            _logger.LogError("Certificate or chain is null. Cannot validate.");
             return false;
         }
 
+        _logger.LogInformation("Validating certificate: Subject={Subject}, Issuer={Issuer}",
+            certificate.Subject, certificate.Issuer);
+        _logger.LogInformation("Trusted CA certificates count: {Count}", trustedCaCerts.Count);
+
         // Create a new chain with custom trust settings
         using var customChain = new X509Chain();
-        customChain.ChainPolicy.RevocationMode = X509RevocationMode.Offline;
-        customChain.ChainPolicy.RevocationFlag = X509RevocationFlag.EntireChain;
-        customChain.ChainPolicy.VerificationFlags = X509VerificationFlags.AllowUnknownCertificateAuthority;
+
+        // SECURITY NOTE: Revocation checking is disabled for the following reasons:
+        // 1. Internal CA certificates typically do not have publicly accessible CRL/OCSP endpoints
+        // 2. The NetApp storage service uses an internal CA without revocation infrastructure
+        // COMPENSATING CONTROLS:
+        // - Explicit thumbprint verification against known trusted CA certificates (lines 214-221)
+        // - CA certificates are securely stored in Azure Key Vault
+        // - Connection restricted to specific internal service endpoint via _options.Url
+        customChain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+        customChain.ChainPolicy.VerificationFlags = X509VerificationFlags.AllowUnknownCertificateAuthority
+            | X509VerificationFlags.IgnoreEndRevocationUnknown
+            | X509VerificationFlags.IgnoreCtlSignerRevocationUnknown
+            | X509VerificationFlags.IgnoreCertificateAuthorityRevocationUnknown
+            | X509VerificationFlags.IgnoreRootRevocationUnknown;
 
         // Add our trusted CA certificates to the extra store
         foreach (var caCert in trustedCaCerts)
         {
+            _logger.LogInformation("Adding trusted CA to chain: Subject={Subject}, Thumbprint={Thumbprint}",
+                caCert.Subject, caCert.Thumbprint);
             customChain.ChainPolicy.ExtraStore.Add(caCert);
         }
 
@@ -183,19 +204,30 @@ public class S3ClientFactory(IOptions<NetAppOptions> options, IS3CredentialServi
 
         if (!isChainValid)
         {
+            foreach (var status in customChain.ChainStatus)
+            {
+                _logger.LogError("Chain validation failed: Status={Status}, StatusInformation={StatusInformation}",
+                    status.Status, status.StatusInformation);
+            }
             return false;
         }
 
         // Verify that the chain ends with one of our trusted CAs
         var chainRoot = customChain.ChainElements[^1].Certificate;
+        _logger.LogInformation("Chain root certificate: Subject={Subject}, Thumbprint={Thumbprint}",
+            chainRoot.Subject, chainRoot.Thumbprint);
+
         foreach (var trustedCa in trustedCaCerts)
         {
             if (chainRoot.Thumbprint == trustedCa.Thumbprint)
             {
+                _logger.LogInformation("Certificate validated successfully against trusted CA: {Subject}", trustedCa.Subject);
                 return true;
             }
         }
 
+        _logger.LogError("Chain root thumbprint {ChainRootThumbprint} did not match any trusted CA thumbprints.",
+            chainRoot.Thumbprint);
         return false;
     }
 
