@@ -86,6 +86,7 @@ public class InitTests
     public async Task Run_ReturnsRedirectResultWithCookie_WhenInitServiceReturnsRedirectWithCookieData()
     {
         // Arrange
+        Environment.SetEnvironmentVariable("SessionTimeoutMinutes", "60");
         var cookiesMock = new Mock<IResponseCookies>();
 
         var initResult = new InitResult
@@ -127,9 +128,88 @@ public class InitTests
     }
 
     [Fact]
+    public async Task Run_UsesDefaultTimeoutOf60Minutes_WhenSessionTimeoutMinutesNotSet()
+    {
+        // Arrange
+        Environment.SetEnvironmentVariable("SessionTimeoutMinutes", null);
+        var cookiesMock = new Mock<IResponseCookies>();
+
+        var initResult = new InitResult
+        {
+            Status = InitResultStatus.Redirect,
+            RedirectUrl = _redirectUrl,
+            ShouldSetCookie = true,
+            Cc = _cc,
+            Ct = _ct
+        };
+
+        _initServiceMock
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _testCorrelationId, _cc))
+            .ReturnsAsync(initResult);
+
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testUsername, _testCmsAuthValues, _testBearerToken);
+        var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
+            new Dictionary<string, string> { { "cc", _cc } }, _testCorrelationId, cookiesMock);
+
+        // Act
+        var result = await _function.Run(httpRequest, functionContext);
+
+        // Assert
+        var redirectResult = Assert.IsType<RedirectResult>(result);
+        Assert.Equal(_redirectUrl, redirectResult.Url);
+
+        cookiesMock.Verify(
+            c => c.Append(
+                HttpHeaderKeys.CmsAuthValues,
+                It.Is<string>(value => !string.IsNullOrEmpty(value)),
+                It.IsAny<CookieOptions>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_UsesCustomTimeout_WhenSessionTimeoutMinutesIsSet()
+    {
+        // Arrange
+        Environment.SetEnvironmentVariable("SessionTimeoutMinutes", "120");
+        var cookiesMock = new Mock<IResponseCookies>();
+
+        var initResult = new InitResult
+        {
+            Status = InitResultStatus.Redirect,
+            RedirectUrl = _redirectUrl,
+            ShouldSetCookie = true,
+            Cc = _cc,
+            Ct = _ct
+        };
+
+        _initServiceMock
+            .Setup(s => s.ProcessRequest(It.IsAny<HttpRequest>(), _testCorrelationId, _cc))
+            .ReturnsAsync(initResult);
+
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testUsername, _testCmsAuthValues, _testBearerToken);
+        var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(
+            new Dictionary<string, string> { { "cc", _cc } }, _testCorrelationId, cookiesMock);
+
+        // Act
+        var result = await _function.Run(httpRequest, functionContext);
+
+        // Assert
+        var redirectResult = Assert.IsType<RedirectResult>(result);
+        Assert.Equal(_redirectUrl, redirectResult.Url);
+
+        cookiesMock.Verify(
+            c => c.Append(
+                HttpHeaderKeys.CmsAuthValues,
+                It.Is<string>(value => !string.IsNullOrEmpty(value)),
+                It.IsAny<CookieOptions>()),
+            Times.Once);
+    }
+
+    [Fact]
     public async Task Run_ReturnsRedirectResultWithHttpCookie_WhenRequestIsHttp()
     {
         // Arrange
+        Environment.SetEnvironmentVariable("SessionTimeoutMinutes", "60");
         var cookiesMock = new Mock<IResponseCookies>();
 
         var initResult = new InitResult
@@ -498,6 +578,7 @@ public class InitTests
     public async Task Run_VerifiesAuthenticationContextCreation_WhenSettingCookie()
     {
         // Arrange
+        Environment.SetEnvironmentVariable("SessionTimeoutMinutes", "60");
         var cookiesMock = new Mock<IResponseCookies>();
 
         var initResult = new InitResult
