@@ -81,7 +81,7 @@ public class S3ClientFactory(IOptions<NetAppOptions> options, IS3CredentialServi
             }
         }
 
-        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
 
         var s3Client = new AmazonS3Client(credentials, s3Config);
 
@@ -168,7 +168,8 @@ public class S3ClientFactory(IOptions<NetAppOptions> options, IS3CredentialServi
 
         // Create a new chain with custom trust settings
         using var customChain = new X509Chain();
-        customChain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+        customChain.ChainPolicy.RevocationMode = X509RevocationMode.Offline;
+        customChain.ChainPolicy.RevocationFlag = X509RevocationFlag.EntireChain;
         customChain.ChainPolicy.VerificationFlags = X509VerificationFlags.AllowUnknownCertificateAuthority;
 
         // Add our trusted CA certificates to the extra store
