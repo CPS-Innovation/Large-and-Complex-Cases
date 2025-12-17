@@ -63,7 +63,10 @@ public class Init(ILogger<Init> logger, IInitService initService)
 
     private static void AppendAuthCookie(HttpRequest req, string cc, string ct)
     {
-        string cookieValue = new AuthenticationContext(cc, ct, DateTime.UtcNow.AddHours(1)).ToString();
+        var timeoutMinutes = int.Parse(Environment.GetEnvironmentVariable("SessionTimeoutMinutes") ?? "60");
+        var expiryTime = DateTime.UtcNow.AddMinutes(timeoutMinutes);
+
+        string cookieValue = new AuthenticationContext(cc, ct, expiryTime).ToString();
 
         var cookieOptions = req.IsHttps
         ? new CookieOptions

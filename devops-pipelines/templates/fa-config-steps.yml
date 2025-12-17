@@ -192,5 +192,10 @@ steps:
             "name": "CryptoOptions__HashAlgorithm",
             "value": "$(CryptoOptionsHashAlgorithm)",
             "slotSetting": false
+          },
+          {
+            "name": "SessionTimeoutMinutes",
+            "value": "$(SessionTimeoutMinutes)",
+            "slotSetting": false
           }
         ]
