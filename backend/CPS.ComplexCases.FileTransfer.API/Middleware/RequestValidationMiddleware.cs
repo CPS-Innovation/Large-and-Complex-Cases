@@ -14,8 +14,8 @@ public sealed partial class RequestValidationMiddleware() : IFunctionsWorkerMidd
 
     if (httpRequestData != null)
     {
-      // Only block Swagger in production
-      if (SwaggerRouteHelper.IsProduction && SwaggerRouteHelper.IsSwaggerRoute(httpRequestData.Url.AbsolutePath))
+      // Block requests to certain routes in production
+      if (RouteBlockerHelper.ShouldBlockRoute(httpRequestData.Url.AbsolutePath))
       {
         var response = httpRequestData.CreateResponse(HttpStatusCode.NotFound);
         await response.WriteStringAsync("Not Found");

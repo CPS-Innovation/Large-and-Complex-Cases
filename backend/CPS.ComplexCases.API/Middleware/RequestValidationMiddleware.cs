@@ -20,8 +20,8 @@ public sealed partial class RequestValidationMiddleware(IAuthorizationValidator 
   {
     var httpRequestData = await context.GetHttpRequestDataAsync() ?? throw new ArgumentNullException(nameof(context), "Context does not contains HttpRequestData");
 
-    // Only block Swagger in production
-    if (SwaggerRouteHelper.IsProduction && SwaggerRouteHelper.IsSwaggerRoute(httpRequestData.Url.AbsolutePath))
+    // Block requests to certain routes in production
+    if (RouteBlockerHelper.ShouldBlockRoute(httpRequestData.Url.AbsolutePath))
     {
       var response = httpRequestData.CreateResponse(HttpStatusCode.NotFound);
       await response.WriteStringAsync("Not Found");
