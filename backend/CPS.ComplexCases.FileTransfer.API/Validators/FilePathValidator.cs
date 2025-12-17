@@ -23,7 +23,9 @@ public class FilePathValidator : AbstractValidator<IList<DestinationPath>>
                     .MaximumLength(260)
                     .WithMessage(x => $"{x.Path}: exceeds the 260 characters limit.")
                     .Must(pathValue => !HasInvalidPathChars(pathValue))
-                    .WithMessage(x => $"{x.Path}: contains invalid characters.");
+                    .WithMessage(x => $"{x.Path}: contains invalid characters.")
+                    .Must(p => !p.Contains(".."))
+                    .WithMessage(x => $"{x.Path}: Path traversal sequences are not permitted ('..').");
             });
     }
 

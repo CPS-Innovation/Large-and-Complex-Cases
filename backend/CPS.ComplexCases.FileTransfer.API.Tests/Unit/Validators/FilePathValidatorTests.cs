@@ -47,6 +47,16 @@ public class FilePathValidatorTests
     }
 
     [Fact]
+    public void Should_Have_Error_When_FilePath_Has_Path_Traversal()
+    {
+        var traversalPath = "folder/../file.txt";
+        var paths = new List<DestinationPath> { new() { Path = traversalPath } };
+        var result = _validator.TestValidate(paths);
+        result.ShouldHaveValidationErrorFor("paths[0].Path")
+            .WithErrorMessage($"{traversalPath}: Path traversal sequences are not permitted ('..').");
+    }
+
+    [Fact]
     public void Should_Not_Have_Error_For_Valid_Paths()
     {
         var paths = new List<DestinationPath>
