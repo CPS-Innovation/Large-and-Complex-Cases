@@ -51,6 +51,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             _netAppArgFactory = new NetAppArgFactory();
             _netAppRequestFactory = new NetAppRequestFactory();
             var netAppHttpClientLogger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<NetAppHttpClient>();
+            var s3ClientFactoryLogger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<S3ClientFactory>();
 
             // Setup mock credential service
             _mockCredentialService = new Mock<IS3CredentialService>();
@@ -60,7 +61,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
                     Url = _server.Urls[0],
                     RegionName = "eu-west-1"
                 }),
-                _mockCredentialService.Object);
+                _mockCredentialService.Object,
+                s3ClientFactoryLogger);
             _s3ClientFactory.SetS3ClientAsync(_s3Client);
 
             var fakeCredentials = new S3CredentialsDecrypted
@@ -90,10 +92,11 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
                     Url = _server.Urls[0],
                     RegionName = "eu-west-1"
                 }),
-                _mockCredentialService.Object
+                _mockCredentialService.Object,
+                s3ClientFactoryLogger
             );
             _s3ClientFactory.SetS3ClientAsync(_s3Client);
-
+            
             var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<NetAppClient>();
 
             _client = new NetAppClient(logger, _amazonS3UtilsWrapper, _netAppRequestFactory, _s3ClientFactory);
