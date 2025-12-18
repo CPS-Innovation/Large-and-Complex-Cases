@@ -724,7 +724,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         transferStatus !== "transferring" && (
           <div>
             <div className={styles.headerText}>
-              <h2>{`${transferSource === "egress" ? "Transfer between Egress and Shared Drive" : "Transfer between Shared Drive and Egress"}`}</h2>
+              <h2>{`${transferSource === "egress" ? "Transfer materials to the Shared Drive" : "Transfer materials to Egress"}`}</h2>
               <InsetText>
                 <>
                   Select the files or folders you want to transfer and where you

@@ -16,14 +16,14 @@ describe("Sortable Table Component", () => {
       {
         cells: [
           { children: <span>bob</span> },
-          { children: <span>inactive</span> },
+          { children: <span>Not connected</span> },
           { children: <span>879</span> },
         ],
       },
       {
         cells: [
           { children: <span>eric</span> },
-          { children: <span>inactive</span> },
+          { children: <span>Not connected</span> },
           { children: <span>567</span> },
         ],
       },
@@ -91,8 +91,8 @@ describe("Sortable Table Component", () => {
 
     expect(rowValues).toEqual([
       ["alex", "active", "1234"],
-      ["bob", "inactive", "879"],
-      ["eric", "inactive", "567"],
+      ["bob", "Not connected", "879"],
+      ["eric", "Not connected", "567"],
       ["supra", "active", "467"],
     ]);
   });

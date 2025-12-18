@@ -11,7 +11,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
     );
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2"),
-    ).toHaveText("Transfer between Egress and Shared Drive");
+    ).toHaveText("Transfer materials to the Shared Drive");
   };
   const startEgressToNetAppTransfer = async (
     page: Page,
@@ -52,7 +52,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
     await expect(page.getByTestId("transfer-spinner")).toBeVisible();
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2", {
-        hasText: "Transfer between Egress and Shared Drive",
+        hasText: "Transfer materials to the Shared Drive",
       }),
     ).not.toBeVisible();
     await expect(page.getByTestId("egress-table-wrapper")).not.toBeVisible();
@@ -382,7 +382,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       ).toContainText("Files copied successfully");
       await expect(
         page.getByTestId("tab-content-transfer-materials").locator("h2").nth(1),
-      ).toHaveText("Transfer between Egress and Shared Drive");
+      ).toHaveText("Transfer materials to the Shared Drive");
       await expect(page.getByTestId("egress-table-wrapper")).toBeVisible();
       await expect(page.getByTestId("netapp-table-wrapper")).toBeVisible();
     });

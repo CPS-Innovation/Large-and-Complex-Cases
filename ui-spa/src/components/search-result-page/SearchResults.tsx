@@ -49,7 +49,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
               </Tag>
             ) : (
               <Tag gdsTagColour="grey" className={styles.statusTag}>
-                Inactive
+                Not connected
               </Tag>
             ),
           },
@@ -60,7 +60,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
               </Tag>
             ) : (
               <Tag gdsTagColour="grey" className={styles.statusTag}>
-                Inactive
+                Not connected
               </Tag>
             ),
           },
@@ -96,13 +96,13 @@ const SearchResults: React.FC<SearchResultsProps> = ({
             captionClassName="govuk-visually-hidden"
             head={[
               {
-                children: "Defendant or Operation name",
+                children: "Defendant or operation name",
               },
               {
                 children: "URN",
               },
               {
-                children: "Lead defendant(s)",
+                children: "Lead defendants",
               },
               {
                 children: "Egress",

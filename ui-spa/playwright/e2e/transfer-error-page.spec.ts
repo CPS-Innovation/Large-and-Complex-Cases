@@ -15,7 +15,7 @@ test.describe("transfer-error-page", () => {
     );
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2"),
-    ).toHaveText("Transfer between Egress and Shared Drive");
+    ).toHaveText("Transfer materials to the Shared Drive");
     await page
       .getByTestId("egress-table-wrapper")
       .locator('role=button[name="folder-1-0"]')
@@ -76,7 +76,7 @@ test.describe("transfer-error-page", () => {
     await expect(page.getByTestId("transfer-spinner")).toBeVisible();
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2", {
-        hasText: "Transfer between Egress and Shared Drive",
+        hasText: "Transfer materials to the Shared Drive",
       }),
     ).not.toBeVisible();
     await expect(page.getByTestId("egress-table-wrapper")).not.toBeVisible();
@@ -135,7 +135,7 @@ test.describe("transfer-error-page", () => {
     await expect(page.getByTestId("transfer-spinner")).toBeVisible();
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2", {
-        hasText: "Transfer between Egress and Shared Drive",
+        hasText: "Transfer materials to the Shared Drive",
       }),
     ).not.toBeVisible();
     await expect(page.getByTestId("egress-table-wrapper")).not.toBeVisible();

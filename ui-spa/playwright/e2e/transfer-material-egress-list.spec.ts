@@ -11,7 +11,7 @@ test.describe("transfer material egress list", () => {
     );
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2"),
-    ).toHaveText("Transfer between Egress and Shared Drive");
+    ).toHaveText("Transfer materials to the Shared Drive");
   });
   const validateFolderPath = async (page: Page, expectedResult: string[]) => {
     const texts = await page
@@ -94,7 +94,7 @@ test.describe("transfer material egress list", () => {
       .click();
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2"),
-    ).toHaveText("Transfer between Shared Drive and Egress");
+    ).toHaveText("Transfer materials to Egress");
     const egressTableWrapper = page.getByTestId("egress-table-wrapper");
     await validateFolderPath(page, ["Home"]);
     const tableHeadValues = await egressTableWrapper

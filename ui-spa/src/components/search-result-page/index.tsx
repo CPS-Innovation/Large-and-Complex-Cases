@@ -134,6 +134,8 @@ const CaseSearchResultPage = () => {
                   ? {
                       children:
                         formDataErrors[SearchFormField.operationName]
+                          .inputErrorText ??
+                        formDataErrors[SearchFormField.operationName]
                           .errorSummaryText,
                     }
                   : undefined
@@ -168,6 +170,8 @@ const CaseSearchResultPage = () => {
                   ? {
                       children:
                         formDataErrors[SearchFormField.operationArea]
+                          .inputErrorText ??
+                        formDataErrors[SearchFormField.operationArea]
                           .errorSummaryText,
                     }
                   : undefined
@@ -190,6 +194,8 @@ const CaseSearchResultPage = () => {
                 formDataErrors[SearchFormField.defendantName]
                   ? {
                       children:
+                        formDataErrors[SearchFormField.defendantName]
+                          .inputErrorText ??
                         formDataErrors[SearchFormField.defendantName]
                           .errorSummaryText,
                     }
@@ -225,6 +231,8 @@ const CaseSearchResultPage = () => {
                 formDataErrors[SearchFormField.defendantArea]
                   ? {
                       children:
+                        formDataErrors[SearchFormField.defendantArea]
+                          .inputErrorText ??
                         formDataErrors[SearchFormField.defendantArea]
                           .errorSummaryText,
                     }

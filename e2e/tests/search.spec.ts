@@ -15,12 +15,12 @@ test.describe("Search", () => {
     await homePage.button.click();
 
     const results = await resultsPage.results(
-      "Defendant or Operation name",
+      "Defendant or operation name",
       "URN"
     );
 
     expect(results).toEqual([
-      { "Defendant or Operation name": "Alpha", URN: urn },
+      { "Defendant or operation name": "Alpha", URN: urn },
     ]);
   });
 
@@ -36,13 +36,13 @@ test.describe("Search", () => {
     await homePage.button.click();
 
     const results = await resultsPage.results(
-      "Defendant or Operation name",
+      "Defendant or operation name",
       "URN"
     );
 
     expect(results).toEqual([
-      { "Defendant or Operation name": "Charlie", URN: "03CC0303030" },
-      { "Defendant or Operation name": "Hotel", URN: "08HH0808080" },
+      { "Defendant or operation name": "Charlie", URN: "03CC0303030" },
+      { "Defendant or operation name": "Hotel", URN: "08HH0808080" },
     ]);
   });
 
@@ -58,12 +58,12 @@ test.describe("Search", () => {
     await homePage.button.click();
 
     const results = await resultsPage.results(
-      "Defendant or Operation name",
+      "Defendant or operation name",
       "URN"
     );
 
     expect(results).toEqual([
-      { "Defendant or Operation name": operationName, URN: "06FF0606060" },
+      { "Defendant or operation name": operationName, URN: "06FF0606060" },
     ]);
   });
 });

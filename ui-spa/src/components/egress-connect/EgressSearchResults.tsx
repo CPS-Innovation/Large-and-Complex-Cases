@@ -76,7 +76,7 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
               </Tag>
             ) : (
               <Tag gdsTagColour="grey" className={styles.statusTag}>
-                Inactive
+                Not connected
               </Tag>
             ),
           },
@@ -168,8 +168,7 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
             <ul className="govuk-list govuk-list--bullet">
               <li>check for spelling or typing errors</li>
               <li>
-                check the case exists and you have access on the Case Management
-                System
+                check the folder exists and you have the correct permissions
               </li>
               <li>contact the product team if you need help</li>
             </ul>

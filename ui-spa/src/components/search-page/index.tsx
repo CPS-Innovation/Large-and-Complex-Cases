@@ -127,6 +127,9 @@ const CaseSearchPage = () => {
                                   children:
                                     formDataErrors[
                                       SearchFormField.operationName
+                                    ].inputErrorText ??
+                                    formDataErrors[
+                                      SearchFormField.operationName
                                     ].errorSummaryText,
                                 }
                               : undefined
@@ -169,6 +172,9 @@ const CaseSearchPage = () => {
                                   children:
                                     formDataErrors[
                                       SearchFormField.operationArea
+                                    ].inputErrorText ??
+                                    formDataErrors[
+                                      SearchFormField.operationArea
                                     ].errorSummaryText,
                                 }
                               : undefined
@@ -197,6 +203,9 @@ const CaseSearchPage = () => {
                             formDataErrors[SearchFormField.defendantName]
                               ? {
                                   children:
+                                    formDataErrors[
+                                      SearchFormField.defendantName
+                                    ].inputErrorText ??
                                     formDataErrors[
                                       SearchFormField.defendantName
                                     ].errorSummaryText,
@@ -241,6 +250,9 @@ const CaseSearchPage = () => {
                                   children:
                                     formDataErrors[
                                       SearchFormField.defendantArea
+                                    ].inputErrorText ??
+                                    formDataErrors[
+                                      SearchFormField.defendantArea
                                     ].errorSummaryText,
                                 }
                               : undefined
@@ -253,7 +265,7 @@ const CaseSearchPage = () => {
                     disabled: !formattedAreaValues.options.length,
                   },
                   {
-                    children: "URN",
+                    children: "URN (Unique Reference Number)",
                     conditional: {
                       children: [
                         <Input
