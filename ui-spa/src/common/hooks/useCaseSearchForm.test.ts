@@ -55,13 +55,14 @@ describe("useCaseSearchForm", () => {
     expect(isValid).toEqual(false);
     const expectedFormDataErrors = {
       urn: {
-        errorSummaryText: "URN should not be empty",
+        errorSummaryText: "You must enter a URN",
+        inputErrorText: "Enter a URN",
       },
     };
 
     const expectedErrorList = [
       {
-        children: "URN should not be empty",
+        children: "You must enter a URN",
         "data-testid": "search-urn-link",
         href: "#search-urn",
         reactListKey: "0",
@@ -131,21 +132,23 @@ describe("useCaseSearchForm", () => {
     expect(isValid).toEqual(false);
     const expectedFormDataErrors = {
       operationArea: {
-        errorSummaryText: "Operation area should not be empty",
+        errorSummaryText: "You must enter an operation area",
+        inputErrorText: "Enter an operation area",
       },
       operationName: {
-        errorSummaryText: "Operation name should not be empty",
+        errorSummaryText: "You must enter an operation name",
+        inputErrorText: "Enter an operation name",
       },
     };
     const expectedErrorList = [
       {
-        children: "Operation area should not be empty",
+        children: "You must enter an operation area",
         "data-testid": "search-operation-area-link",
         href: "#search-operation-area",
         reactListKey: "0",
       },
       {
-        children: "Operation name should not be empty",
+        children: "You must enter an operation name",
         "data-testid": "search-operation-name-link",
         href: "#search-operation-name",
         reactListKey: "1",
@@ -175,7 +178,8 @@ describe("useCaseSearchForm", () => {
     expect(isValid).toEqual(false);
     const expectedFormDataErrors = {
       operationArea: {
-        errorSummaryText: "Operation area should not be empty",
+        errorSummaryText: "You must enter an operation area",
+        inputErrorText: "Enter an operation area",
       },
       operationName: {
         errorSummaryText: "Operation name should be less than 50 characters",
@@ -183,7 +187,7 @@ describe("useCaseSearchForm", () => {
     };
     const expectedErrorList = [
       {
-        children: "Operation area should not be empty",
+        children: "You must enter an operation area",
         "data-testid": "search-operation-area-link",
         href: "#search-operation-area",
         reactListKey: "0",
@@ -219,22 +223,24 @@ describe("useCaseSearchForm", () => {
     expect(isValid).toEqual(false);
     const expectedFormDataErrors = {
       defendantArea: {
-        errorSummaryText: "Defendant area should not be empty",
+        errorSummaryText: "You must enter a defendant area",
+        inputErrorText: "Enter a defendant area",
       },
       defendantName: {
-        errorSummaryText: "Defendant last name should not be empty",
+        errorSummaryText: "You must enter a defendant last name",
+        inputErrorText: "Enter a defendant last name",
       },
     };
 
     const expectedErrorList = [
       {
-        children: "Defendant area should not be empty",
+        children: "You must enter a defendant area",
         "data-testid": "search-defendant-area-link",
         href: "#search-defendant-area",
         reactListKey: "0",
       },
       {
-        children: "Defendant last name should not be empty",
+        children: "You must enter a defendant last name",
         "data-testid": "search-defendant-name-link",
         href: "#search-defendant-name",
         reactListKey: "1",
@@ -264,16 +270,18 @@ describe("useCaseSearchForm", () => {
     expect(isValid).toEqual(false);
     const expectedFormDataErrors = {
       defendantArea: {
-        errorSummaryText: "Defendant area should not be empty",
+        errorSummaryText: "You must enter a defendant area",
+        inputErrorText: "Enter a defendant area",
       },
       defendantName: {
-        errorSummaryText: "Defendant last name should be less than 50 characters",
+        errorSummaryText:
+          "Defendant last name should be less than 50 characters",
       },
     };
 
     const expectedErrorList = [
       {
-        children: "Defendant area should not be empty",
+        children: "You must enter a defendant area",
         "data-testid": "search-defendant-area-link",
         href: "#search-defendant-area",
         reactListKey: "0",

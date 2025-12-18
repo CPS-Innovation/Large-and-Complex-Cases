@@ -9,9 +9,9 @@ test.describe("Case Search/Results", async () => {
       .locator("table thead tr:nth-child(1) th")
       .allTextContents();
     expect(tableHeadValues).toEqual([
-      "Defendant or Operation name",
+      "Defendant or operation name",
       "URN",
-      "Lead defendant(s)",
+      "Lead defendants",
       "Egress",
       "Shared Drive",
       "Case created",
@@ -24,8 +24,8 @@ test.describe("Case Search/Results", async () => {
       "Thunderstruck1_pl",
       "ABCDEF1",
       "abc1",
-      "Inactive",
-      "Inactive",
+      "Not connected",
+      "Not connected",
       "02/01/2000",
       "Connect",
     ]);
@@ -36,7 +36,7 @@ test.describe("Case Search/Results", async () => {
       "Thunderstruck2_pl",
       "ABCDEF2",
       "abc2",
-      "Inactive",
+      "Not connected",
       "Connected",
       "03/01/2000",
       "Connect",
@@ -49,7 +49,7 @@ test.describe("Case Search/Results", async () => {
       "ABCDEF3",
       "abc3",
       "Connected",
-      "Inactive",
+      "Not connected",
       "04/01/2000",
       "Connect",
     ]);
@@ -168,9 +168,9 @@ test.describe("Case Search/Results", async () => {
         .locator("table thead tr:nth-child(1) th")
         .allTextContents();
       expect(tableHeadValues).toEqual([
-        "Defendant or Operation name",
+        "Defendant or operation name",
         "URN",
-        "Lead defendant(s)",
+        "Lead defendants",
         "Egress",
         "Shared Drive",
         "Case created",
@@ -192,9 +192,7 @@ test.describe("Case Search/Results", async () => {
           .getByText("There is a problem"),
       ).toBeVisible();
       await expect(
-        page
-          .getByTestId("search-urn-link")
-          .getByText("URN should not be empty"),
+        page.getByTestId("search-urn-link").getByText("You must enter a URN"),
       ).toBeVisible();
 
       page.getByTestId("search-urn-link").click();
@@ -240,12 +238,12 @@ test.describe("Case Search/Results", async () => {
       await expect(
         page
           .getByTestId("search-operation-name-link")
-          .getByText("Operation name should not be empty"),
+          .getByText("You must enter an operation name"),
       ).toBeVisible();
       await expect(
         page
           .getByTestId("search-operation-area-link")
-          .getByText("Operation area should not be empty"),
+          .getByText("You must enter an operation area"),
       ).toBeVisible();
       page.getByTestId("search-operation-name-link").click();
       await expect(page.getByTestId("search-operation-name")).toBeFocused();
@@ -277,12 +275,12 @@ test.describe("Case Search/Results", async () => {
       await expect(
         page
           .getByTestId("search-defendant-name-link")
-          .getByText("Defendant last name should not be empty"),
+          .getByText("You must enter a defendant last name"),
       ).toBeVisible();
       await expect(
         page
           .getByTestId("search-defendant-area-link")
-          .getByText("Defendant area should not be empty"),
+          .getByText("You must enter a defendant area"),
       ).toBeVisible();
       page.getByTestId("search-defendant-name-link").click();
       await expect(page.getByTestId("search-defendant-name")).toBeFocused();
@@ -450,9 +448,7 @@ test.describe("Case Search/Results", async () => {
           .getByText("There is a problem"),
       ).toBeVisible();
       await expect(
-        page
-          .getByTestId("search-urn-link")
-          .getByText("URN should not be empty"),
+        page.getByTestId("search-urn-link").getByText("You must enter a URN"),
       ).toBeVisible();
       page.getByTestId("search-urn-link").click();
       await expect(page.getByTestId("search-urn")).toBeFocused();
@@ -480,12 +476,12 @@ test.describe("Case Search/Results", async () => {
       await expect(
         page
           .getByTestId("search-operation-name-link")
-          .getByText("Operation name should not be empty"),
+          .getByText("You must enter an operation name"),
       ).toBeVisible();
       await expect(
         page
           .getByTestId("search-operation-area-link")
-          .getByText("Operation area should not be empty"),
+          .getByText("You must enter an operation area"),
       ).toBeVisible();
       page.getByTestId("search-operation-name-link").click();
       await expect(page.getByTestId("search-operation-name")).toBeFocused();
@@ -527,12 +523,12 @@ test.describe("Case Search/Results", async () => {
       await expect(
         page
           .getByTestId("search-defendant-name-link")
-          .getByText("Defendant last name should not be empty"),
+          .getByText("You must enter a defendant last name"),
       ).toBeVisible();
       await expect(
         page
           .getByTestId("search-defendant-area-link")
-          .getByText("Defendant area should not be empty"),
+          .getByText("You must enter a defendant area"),
       ).toBeVisible();
       page.getByTestId("search-defendant-name-link").click();
       await expect(page.getByTestId("search-defendant-name")).toBeFocused();

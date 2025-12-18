@@ -83,10 +83,10 @@ describe("EgressSearchResults", () => {
         .map((cell) => cell.textContent),
     );
     expect(rowValues).toEqual([
-      ["thunderstrike", "Inactive", "25/01/2000", "Connect folder"],
+      ["thunderstrike", "Not connected", "25/01/2000", "Connect folder"],
       ["thunderstrikeab", "Connected", "26/01/2000", "Connect folder"],
-      ["thunderstrikeabc", "Inactive", "27/01/2000", "Connect folder"],
-      ["ahunderstrikeabcd", "Inactive", "28/01/2000", "Connect folder"],
+      ["thunderstrikeabc", "Not connected", "27/01/2000", "Connect folder"],
+      ["ahunderstrikeabcd", "Not connected", "28/01/2000", "Connect folder"],
     ]);
     expect(screen.queryByTestId("egress-results-count")).toHaveTextContent(
       "There are 4 folders matching thunder.",
@@ -116,7 +116,7 @@ describe("EgressSearchResults", () => {
     );
 
     expect(newRowValues).toEqual([
-      ["thunderstrike", "Inactive", "25/01/2000", "Connect folder"],
+      ["thunderstrike", "Not connected", "25/01/2000", "Connect folder"],
     ]);
   });
 
@@ -152,10 +152,10 @@ describe("EgressSearchResults", () => {
     );
 
     expect(rowValues).toEqual([
-      ["thunderstrike", "Inactive", "25/01/2000", "Connect folder"],
+      ["thunderstrike", "Not connected", "25/01/2000", "Connect folder"],
       ["thunderstrikeab", "Connected", "26/01/2000", "Connect folder"],
-      ["thunderstrikeabc", "Inactive", "27/01/2000", "Connect folder"],
-      ["ahunderstrikeabcd", "Inactive", "28/01/2000", "Connect folder"],
+      ["thunderstrikeabc", "Not connected", "27/01/2000", "Connect folder"],
+      ["ahunderstrikeabcd", "Not connected", "28/01/2000", "Connect folder"],
     ]);
 
     fireEvent.click(btnOperationName);
@@ -167,10 +167,10 @@ describe("EgressSearchResults", () => {
     );
 
     expect(newRowValuesAscending).toEqual([
-      ["ahunderstrikeabcd", "Inactive", "28/01/2000", "Connect folder"],
-      ["thunderstrike", "Inactive", "25/01/2000", "Connect folder"],
+      ["ahunderstrikeabcd", "Not connected", "28/01/2000", "Connect folder"],
+      ["thunderstrike", "Not connected", "25/01/2000", "Connect folder"],
       ["thunderstrikeab", "Connected", "26/01/2000", "Connect folder"],
-      ["thunderstrikeabc", "Inactive", "27/01/2000", "Connect folder"],
+      ["thunderstrikeabc", "Not connected", "27/01/2000", "Connect folder"],
     ]);
 
     fireEvent.click(btnOperationName);
@@ -182,10 +182,10 @@ describe("EgressSearchResults", () => {
     );
 
     expect(newRowValuesDescending).toEqual([
-      ["thunderstrikeabc", "Inactive", "27/01/2000", "Connect folder"],
+      ["thunderstrikeabc", "Not connected", "27/01/2000", "Connect folder"],
       ["thunderstrikeab", "Connected", "26/01/2000", "Connect folder"],
-      ["thunderstrike", "Inactive", "25/01/2000", "Connect folder"],
-      ["ahunderstrikeabcd", "Inactive", "28/01/2000", "Connect folder"],
+      ["thunderstrike", "Not connected", "25/01/2000", "Connect folder"],
+      ["ahunderstrikeabcd", "Not connected", "28/01/2000", "Connect folder"],
     ]);
   });
 
@@ -223,10 +223,10 @@ describe("EgressSearchResults", () => {
     );
 
     expect(rowValues).toEqual([
-      ["thunderstrike", "Inactive", "25/01/2000", "Connect folder"],
+      ["thunderstrike", "Not connected", "25/01/2000", "Connect folder"],
       ["thunderstrikeab", "Connected", "26/01/2000", "Connect folder"],
-      ["thunderstrikeabc", "Inactive", "27/01/2000", "Connect folder"],
-      ["ahunderstrikeabcd", "Inactive", "28/01/2000", "Connect folder"],
+      ["thunderstrikeabc", "Not connected", "27/01/2000", "Connect folder"],
+      ["ahunderstrikeabcd", "Not connected", "28/01/2000", "Connect folder"],
     ]);
 
     fireEvent.click(btnStatus);
@@ -239,9 +239,9 @@ describe("EgressSearchResults", () => {
 
     expect(newRowValuesAscending).toEqual([
       ["thunderstrikeab", "Connected", "26/01/2000", "Connect folder"],
-      ["thunderstrike", "Inactive", "25/01/2000", "Connect folder"],
-      ["thunderstrikeabc", "Inactive", "27/01/2000", "Connect folder"],
-      ["ahunderstrikeabcd", "Inactive", "28/01/2000", "Connect folder"],
+      ["thunderstrike", "Not connected", "25/01/2000", "Connect folder"],
+      ["thunderstrikeabc", "Not connected", "27/01/2000", "Connect folder"],
+      ["ahunderstrikeabcd", "Not connected", "28/01/2000", "Connect folder"],
     ]);
 
     fireEvent.click(btnStatus);
@@ -253,9 +253,9 @@ describe("EgressSearchResults", () => {
     );
 
     expect(newRowValuesDescending).toEqual([
-      ["thunderstrike", "Inactive", "25/01/2000", "Connect folder"],
-      ["thunderstrikeabc", "Inactive", "27/01/2000", "Connect folder"],
-      ["ahunderstrikeabcd", "Inactive", "28/01/2000", "Connect folder"],
+      ["thunderstrike", "Not connected", "25/01/2000", "Connect folder"],
+      ["thunderstrikeabc", "Not connected", "27/01/2000", "Connect folder"],
+      ["ahunderstrikeabcd", "Not connected", "28/01/2000", "Connect folder"],
       ["thunderstrikeab", "Connected", "26/01/2000", "Connect folder"],
     ]);
   });
@@ -294,10 +294,10 @@ describe("EgressSearchResults", () => {
     );
 
     expect(rowValues).toEqual([
-      ["thunderstrike", "Inactive", "25/01/2000", "Connect folder"],
+      ["thunderstrike", "Not connected", "25/01/2000", "Connect folder"],
       ["thunderstrikeab", "Connected", "26/01/2000", "Connect folder"],
-      ["thunderstrikeabc", "Inactive", "27/01/2000", "Connect folder"],
-      ["ahunderstrikeabcd", "Inactive", "28/01/2000", "Connect folder"],
+      ["thunderstrikeabc", "Not connected", "27/01/2000", "Connect folder"],
+      ["ahunderstrikeabcd", "Not connected", "28/01/2000", "Connect folder"],
     ]);
 
     fireEvent.click(btnDateCreated);
@@ -309,10 +309,10 @@ describe("EgressSearchResults", () => {
     );
 
     expect(newRowValuesAscending).toEqual([
-      ["thunderstrike", "Inactive", "25/01/2000", "Connect folder"],
+      ["thunderstrike", "Not connected", "25/01/2000", "Connect folder"],
       ["thunderstrikeab", "Connected", "26/01/2000", "Connect folder"],
-      ["thunderstrikeabc", "Inactive", "27/01/2000", "Connect folder"],
-      ["ahunderstrikeabcd", "Inactive", "28/01/2000", "Connect folder"],
+      ["thunderstrikeabc", "Not connected", "27/01/2000", "Connect folder"],
+      ["ahunderstrikeabcd", "Not connected", "28/01/2000", "Connect folder"],
     ]);
 
     fireEvent.click(btnDateCreated);
@@ -324,10 +324,10 @@ describe("EgressSearchResults", () => {
     );
 
     expect(newRowValuesDescending).toEqual([
-      ["ahunderstrikeabcd", "Inactive", "28/01/2000", "Connect folder"],
-      ["thunderstrikeabc", "Inactive", "27/01/2000", "Connect folder"],
+      ["ahunderstrikeabcd", "Not connected", "28/01/2000", "Connect folder"],
+      ["thunderstrikeabc", "Not connected", "27/01/2000", "Connect folder"],
       ["thunderstrikeab", "Connected", "26/01/2000", "Connect folder"],
-      ["thunderstrike", "Inactive", "25/01/2000", "Connect folder"],
+      ["thunderstrike", "Not connected", "25/01/2000", "Connect folder"],
     ]);
   });
 

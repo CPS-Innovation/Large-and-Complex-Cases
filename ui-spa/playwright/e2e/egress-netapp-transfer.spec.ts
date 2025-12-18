@@ -10,9 +10,7 @@ test.describe("egress-netapp-transfer", () => {
       );
       await expect(
         page.getByTestId("tab-content-transfer-materials").locator("h2"),
-      ).toHaveText(
-        "Transfer between Egress and Shared Drive",
-      );
+      ).toHaveText("Transfer materials to the Shared Drive");
       await page
         .getByTestId("egress-table-wrapper")
         .locator('role=button[name="folder-1-0"]')
@@ -136,9 +134,7 @@ test.describe("egress-netapp-transfer", () => {
         .click();
       await expect(confirmationModal).toBeVisible();
       await expect(
-        confirmationModal.getByLabel(
-          "I want to copy 1 folder to netapp",
-        ),
+        confirmationModal.getByLabel("I want to copy 1 folder to netapp"),
       ).toBeVisible();
       await confirmationModal.getByRole("button", { name: "Cancel" }).click();
       await checkboxes.nth(2).check();
@@ -148,9 +144,7 @@ test.describe("egress-netapp-transfer", () => {
         .click();
       await expect(confirmationModal).toBeVisible();
       await expect(
-        confirmationModal.getByLabel(
-          "I want to copy 2 folders to netapp",
-        ),
+        confirmationModal.getByLabel("I want to copy 2 folders to netapp"),
       ).toBeVisible();
       await confirmationModal.getByRole("button", { name: "Cancel" }).click();
       await expect(confirmationModal).not.toBeVisible();
@@ -197,9 +191,7 @@ test.describe("egress-netapp-transfer", () => {
         .click();
       await expect(confirmationModal).toBeVisible();
       await expect(
-        confirmationModal.getByLabel(
-          "I want to move 1 folder to netapp",
-        ),
+        confirmationModal.getByLabel("I want to move 1 folder to netapp"),
       ).toBeVisible();
       await confirmationModal.getByRole("button", { name: "Cancel" }).click();
       await checkboxes.nth(2).check();
@@ -209,9 +201,7 @@ test.describe("egress-netapp-transfer", () => {
         .click();
       await expect(confirmationModal).toBeVisible();
       await expect(
-        confirmationModal.getByLabel(
-          "I want to move 2 folders to netapp",
-        ),
+        confirmationModal.getByLabel("I want to move 2 folders to netapp"),
       ).toBeVisible();
       await confirmationModal.getByRole("button", { name: "Cancel" }).click();
       await expect(confirmationModal).not.toBeVisible();
@@ -226,9 +216,7 @@ test.describe("egress-netapp-transfer", () => {
       await expect(confirmationModal).toBeVisible();
       await expect(confirmationModal).toContainText("Confirm");
       await expect(
-        confirmationModal.getByLabel(
-          "I want to move 2 folders to folder-1-1",
-        ),
+        confirmationModal.getByLabel("I want to move 2 folders to folder-1-1"),
       ).toBeVisible();
     });
     test("Should show the egress to netapp transfer confirmation pop up with correct texts when user chooses copy/move operation from the action dropdown", async ({
@@ -275,9 +263,7 @@ test.describe("egress-netapp-transfer", () => {
         .getByRole("button", { name: "Copy" })
         .click();
       await expect(confirmationModal).toBeVisible();
-      await expect(confirmationModal).toContainText(
-        "Confirm",
-      );
+      await expect(confirmationModal).toContainText("Confirm");
       await expect(
         confirmationModal.getByLabel(
           "I want to copy 2 folders and 1 file to folder-1-1",
@@ -342,7 +328,7 @@ test.describe("egress-netapp-transfer", () => {
       await expect(page.getByTestId("transfer-spinner")).toBeVisible();
       await expect(
         page.getByTestId("tab-content-transfer-materials").locator("h2", {
-          hasText: "Transfer between Egress and Shared Drive",
+          hasText: "Transfer materials to the Shared Drive",
         }),
       ).not.toBeVisible();
       await expect(page.getByTestId("egress-table-wrapper")).not.toBeVisible();
@@ -365,9 +351,7 @@ test.describe("egress-netapp-transfer", () => {
       ).toContainText("Files copied successfully");
       await expect(
         page.getByTestId("tab-content-transfer-materials").locator("h2").nth(1),
-      ).toHaveText(
-        "Transfer between Egress and Shared Drive",
-      );
+      ).toHaveText("Transfer materials to the Shared Drive");
       await expect(page.getByTestId("egress-table-wrapper")).toBeVisible();
       await expect(page.getByTestId("netapp-table-wrapper")).toBeVisible();
     });
@@ -428,7 +412,7 @@ test.describe("egress-netapp-transfer", () => {
       await expect(page.getByTestId("transfer-spinner")).toBeVisible();
       await expect(
         page.getByTestId("tab-content-transfer-materials").locator("h2", {
-          hasText: "Transfer between Egress and Shared Drive",
+          hasText: "Transfer materials to the Shared Drive",
         }),
       ).not.toBeVisible();
       await expect(page.getByTestId("egress-table-wrapper")).not.toBeVisible();
@@ -451,9 +435,7 @@ test.describe("egress-netapp-transfer", () => {
       ).toContainText("Files moved successfully");
       await expect(
         page.getByTestId("tab-content-transfer-materials").locator("h2").nth(1),
-      ).toHaveText(
-        "Transfer between Egress and Shared Drive",
-      );
+      ).toHaveText("Transfer materials to the Shared Drive");
       await expect(page.getByTestId("egress-table-wrapper")).toBeVisible();
       await expect(page.getByTestId("netapp-table-wrapper")).toBeVisible();
     });
@@ -500,7 +482,7 @@ test.describe("egress-netapp-transfer", () => {
     await expect(page.getByTestId("transfer-spinner")).toBeVisible();
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2", {
-        hasText: "Transfer between Egress and Shared Drive",
+        hasText: "Transfer materials to the Shared Drive",
       }),
     ).not.toBeVisible();
     await expect(page.getByTestId("egress-table-wrapper")).not.toBeVisible();
@@ -527,7 +509,7 @@ test.describe("egress-netapp-transfer", () => {
     await expect(page.getByTestId("transfer-spinner")).toBeVisible();
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2", {
-        hasText: "Transfer between Egress and Shared Drive",
+        hasText: "Transfer materials to the Shared Drive",
       }),
     ).not.toBeVisible();
     await expect(page.getByTestId("egress-table-wrapper")).not.toBeVisible();
@@ -564,7 +546,7 @@ test.describe("egress-netapp-transfer", () => {
     ).toContainText("Files copied successfully");
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2").nth(1),
-    ).toHaveText("Transfer between Egress and Shared Drive");
+    ).toHaveText("Transfer materials to the Shared Drive");
     await expect(page.getByTestId("egress-table-wrapper")).toBeVisible();
     await expect(page.getByTestId("netapp-table-wrapper")).toBeVisible();
   });
@@ -609,7 +591,7 @@ test.describe("egress-netapp-transfer", () => {
     await expect(page.getByTestId("transfer-spinner")).toBeVisible();
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2", {
-        hasText: "Transfer between Egress and Shared Drive",
+        hasText: "Transfer materials to the Shared Drive",
       }),
     ).not.toBeVisible();
     await expect(page.getByTestId("egress-table-wrapper")).not.toBeVisible();
@@ -636,7 +618,7 @@ test.describe("egress-netapp-transfer", () => {
     await expect(page.getByTestId("transfer-spinner")).toBeVisible();
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2", {
-        hasText: "Transfer between Egress and Shared Drive",
+        hasText: "Transfer materials to the Shared Drive",
       }),
     ).not.toBeVisible();
     await expect(page.getByTestId("egress-table-wrapper")).not.toBeVisible();
@@ -666,7 +648,7 @@ test.describe("egress-netapp-transfer", () => {
     ).not.toBeVisible();
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2").nth(0),
-    ).toHaveText("Transfer between Egress and Shared Drive");
+    ).toHaveText("Transfer materials to the Shared Drive");
     await expect(page.getByTestId("egress-table-wrapper")).toBeVisible();
     await expect(page.getByTestId("netapp-table-wrapper")).toBeVisible();
   });

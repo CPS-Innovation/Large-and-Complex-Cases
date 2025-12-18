@@ -9,7 +9,7 @@ test.describe("transfer-error-handling", () => {
     );
     await expect(
       page.getByTestId("tab-content-transfer-materials").locator("h2", {
-        hasText: "Transfer between Egress and Shared Drive",
+        hasText: "Transfer materials to the Shared Drive",
       }),
     ).toBeVisible();
     await page

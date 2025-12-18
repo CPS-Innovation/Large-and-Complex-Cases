@@ -96,12 +96,14 @@ export const useCaseSearchForm = (initialData: SearchFromData) => {
       case "operation name": {
         if (!formData[SearchFormField.operationArea]) {
           errorTexts[SearchFormField.operationArea] = {
-            errorSummaryText: "Operation area should not be empty",
+            errorSummaryText: "You must enter an operation area",
+            inputErrorText: "Enter an operation area",
           };
         }
         if (!formData[SearchFormField.operationName]) {
           errorTexts[SearchFormField.operationName] = {
-            errorSummaryText: "Operation name should not be empty",
+            errorSummaryText: "You must enter an operation name",
+            inputErrorText: "Enter an operation name",
           };
           break;
         }
@@ -116,12 +118,14 @@ export const useCaseSearchForm = (initialData: SearchFromData) => {
       case "defendant name": {
         if (!formData[SearchFormField.defendantArea]) {
           errorTexts[SearchFormField.defendantArea] = {
-            errorSummaryText: "Defendant area should not be empty",
+            errorSummaryText: "You must enter a defendant area",
+            inputErrorText: "Enter a defendant area",
           };
         }
         if (!formData[SearchFormField.defendantName]) {
           errorTexts[SearchFormField.defendantName] = {
-            errorSummaryText: "Defendant last name should not be empty",
+            errorSummaryText: "You must enter a defendant last name",
+            inputErrorText: "Enter a defendant last name",
           };
           break;
         }
@@ -136,7 +140,8 @@ export const useCaseSearchForm = (initialData: SearchFromData) => {
         const { isValid } = validateUrn(formData[SearchFormField.urn]);
         if (!formData[SearchFormField.urn]) {
           errorTexts[SearchFormField.urn] = {
-            errorSummaryText: "URN should not be empty",
+            errorSummaryText: "You must enter a URN",
+            inputErrorText: "Enter a URN",
           };
           break;
         }
