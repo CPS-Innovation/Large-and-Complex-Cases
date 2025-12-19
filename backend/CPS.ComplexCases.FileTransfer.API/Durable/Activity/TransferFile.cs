@@ -138,29 +138,25 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             payload.BearerToken,
             payload.BucketName);
 
-        var buffer = new byte[_sizeConfig.ChunkSizeBytes];
-        var partList = new List<(int PartNumber, byte[] Data, long Start, long End)>();
+        var uploadSemaphore = new SemaphoreSlim(_sizeConfig.MaxConcurrentPartUploads);
+        var uploadedEtags = new Dictionary<int, string>();
+        var uploadTasks = new List<Task>();
 
         System.Security.Cryptography.MD5? md5 = needsMd5 ? System.Security.Cryptography.MD5.Create() : null;
-
         long bytesProcessed = 0;
-        long absolutePosition = 0;
         int partNumber = 1;
 
         using (md5)
         {
-            // STEP 1 — Sequential read & buffer
             while (bytesProcessed < totalSize)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 long remainingBytes = totalSize - bytesProcessed;
                 int targetPartSize = (int)Math.Min(_sizeConfig.ChunkSizeBytes, remainingBytes);
-
                 var partData = new byte[targetPartSize];
                 int partOffset = 0;
 
-                // Read EXACTLY targetPartSize bytes (critical for all parts except the last)
                 while (partOffset < targetPartSize)
                 {
                     int bytesToRead = targetPartSize - partOffset;
@@ -170,101 +166,74 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
 
                     if (bytesRead == 0)
                     {
-                        // Only acceptable if we're at the end of the file
                         if (bytesProcessed + partOffset < totalSize)
                         {
                             throw new InvalidOperationException(
-                                $"Unexpected end of stream at position {bytesProcessed + partOffset} " +
-                                $"(expected {totalSize} total bytes)");
+                                $"Unexpected end of stream at position {bytesProcessed + partOffset}");
                         }
                         break;
                     }
-
                     partOffset += bytesRead;
                 }
 
-                // Update MD5 hash
                 if (md5 != null)
                 {
                     if (bytesProcessed + partOffset == totalSize)
-                    {
-                        // Final block
                         md5.TransformFinalBlock(partData, 0, partOffset);
-                    }
                     else
-                    {
                         md5.TransformBlock(partData, 0, partOffset, null, 0);
-                    }
                 }
 
-                long start = absolutePosition;
+                long start = bytesProcessed;
                 long end = start + partOffset - 1;
-                absolutePosition += partOffset;
                 bytesProcessed += partOffset;
+                int currentPartNumber = partNumber++;
 
-                partList.Add((partNumber++, partData.AsMemory(0, partOffset).ToArray(), start, end));
-            }
+                // Wait for upload slot BEFORE copying data
+                await uploadSemaphore.WaitAsync(cancellationToken);
 
-            _logger.LogInformation("Buffered {Count} parts for parallel upload.", partList.Count);
+                // Copy part data for the upload task
+                var partDataCopy = partData.AsMemory(0, partOffset).ToArray();
 
-            // STEP 2 — Parallel upload
-            var semaphore = new SemaphoreSlim(_sizeConfig.MaxConcurrentPartUploads);
-            var uploadedEtags = new Dictionary<int, string>();
-
-            var tasks = partList.Select(async part =>
-            {
-                await semaphore.WaitAsync(cancellationToken);
-                try
+                // Fire and forget upload (semaphore already acquired)
+                var uploadTask = Task.Run(async () =>
                 {
-                    var (num, data, start, end) = part;
-
-                    _logger.LogInformation(
-                        "Parallel upload: part {Part}, bytes {Start}-{End}",
-                        num,
-                        start,
-                        end);
-
-                    var result = await destinationClient.UploadChunkAsync(
-                        session,
-                        num,
-                        data,
-                        start,
-                        end,
-                        totalSize,
-                        payload.BearerToken,
-                        payload.BucketName);
-
-                    if (result.PartNumber.HasValue && result.ETag != null)
+                    try
                     {
-                        lock (uploadedEtags)
+                        _logger.LogInformation(
+                            "Uploading part {Part}, bytes {Start}-{End}/{Total}",
+                            currentPartNumber, start, end, totalSize);
+
+                        var result = await destinationClient.UploadChunkAsync(
+                            session, currentPartNumber, partDataCopy,
+                            start, end, totalSize,
+                            payload.BearerToken, payload.BucketName);
+
+                        if (result.PartNumber.HasValue && result.ETag != null)
                         {
-                            uploadedEtags[result.PartNumber.Value] = result.ETag;
+                            lock (uploadedEtags)
+                            {
+                                uploadedEtags[result.PartNumber.Value] = result.ETag;
+                            }
                         }
                     }
-                }
-                finally
-                {
-                    semaphore.Release();
-                }
-            });
+                    finally
+                    {
+                        uploadSemaphore.Release();
+                    }
+                }, cancellationToken);
 
-            await Task.WhenAll(tasks);
+                uploadTasks.Add(uploadTask);
+            }
 
-            // STEP 3 — Complete upload
+            await Task.WhenAll(uploadTasks);
+
             string md5Hash = md5?.Hash != null ? Convert.ToBase64String(md5.Hash) : string.Empty;
+            await CompleteUpload(destinationClient, session, md5Hash, uploadedEtags,
+                payload.BearerToken, payload.BucketName);
 
-            await CompleteUpload(
-                destinationClient,
-                session,
-                md5Hash,
-                uploadedEtags,
-                payload.BearerToken,
-                payload.BucketName);
-
-            _logger.LogInformation(
-                "Completed parallel multipart transfer for {Source} -> {Dest}",
-                payload.SourcePath.Path,
-                payload.DestinationPath);
+            _logger.LogInformation("Completed parallel multipart transfer for {Source} -> {Dest}",
+                payload.SourcePath.Path, payload.DestinationPath);
 
             return CreateSuccessResult(payload, totalSize, startTime);
         }
