@@ -1,5 +1,5 @@
 import playwright from 'playwright';
-import lighthouse from 'lighthouse';
+import lighthouse, { Config } from 'lighthouse';
 import fs from 'fs-extra';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -16,11 +16,12 @@ const headless: boolean = process.env.HEADLESS?.trim().toLowerCase() !== 'false'
 
 const userDataDir = path.resolve('.tmp/lh-profile');
 
+
 async function run() {
   const browser = await playwright.chromium.launchPersistentContext(userDataDir, {
     channel: 'chrome',
     headless,
-    args: ['--remote-debugging-port=9222'],
+    args: ['--remote-debugging-port=9222', '--no-sandbox']
   });
 
   const authManager = createAuthManager();
@@ -62,16 +63,24 @@ async function run() {
 
   let exitCode = 0;
   try {
-    const options =  { 
-      port: 9222, 
-      disableStorageReset: true, 
+    const flags = {
+      port: 9222,
+      disableStorageReset: true,
       logLevel: 'error' as const,
-      onlyCategories: ['performance', 'accessibility', 'best-practices'],
       output: 'html' as const,
-      chromeFlags: ['--auto-select-certificate-for-urls']
-    }
+    };
 
-    const result = await lighthouse(baseUrl, options);
+    const config: Config = {
+      extends: 'lighthouse:default',
+      settings: {
+        onlyCategories: ['performance', 'accessibility', 'best-practices'],
+        formFactor: 'desktop',
+        screenEmulation: { mobile: false, disabled: true },
+        emulatedUserAgent: false,
+      },
+    };
+
+    const result = await lighthouse(baseUrl, flags, config);
     
     const lhr = result?.lhr;
 
