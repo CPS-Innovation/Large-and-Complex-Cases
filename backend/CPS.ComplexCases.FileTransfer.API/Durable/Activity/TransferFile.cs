@@ -1,7 +1,6 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
@@ -10,14 +9,14 @@ using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 using CPS.ComplexCases.NetApp.Client;
+using CPS.ComplexCases.Common.Storage;
+using CPS.ComplexCases.Common.Models.Domain;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
-
 
 /// <summary>
 /// Durable activity for transferring files between storage endpoints.
 /// Handles chunked uploads, computes MD5 hashes for integrity, and returns transfer results.
-/// No longer directly signals the entity - results are handled by the orchestrator.
 /// </summary>
 public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<TransferFile> logger, IOptions<SizeConfig> sizeConfig)
 {
@@ -34,200 +33,302 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
 
         try
         {
-            var sourceFilePath = string.IsNullOrEmpty(payload.SourcePath.ModifiedPath) ? payload.SourcePath.Path : payload.SourcePath.ModifiedPath;
+            var sourceFilePath = string.IsNullOrEmpty(payload.SourcePath.ModifiedPath)
+                ? payload.SourcePath.Path
+                : payload.SourcePath.ModifiedPath;
 
             var (sourceStream, totalSize) = await sourceClient.OpenReadStreamAsync(
-                payload.SourcePath.Path, payload.WorkspaceId, payload.SourcePath.FileId, payload.BearerToken, payload.BucketName);
+                payload.SourcePath.Path,
+                payload.WorkspaceId,
+                payload.SourcePath.FileId,
+                payload.BearerToken,
+                payload.BucketName);
 
             using (sourceStream)
             {
-                const int oneMb = 1024 * 1024;
-                const int minMultipartSize = 5 * oneMb;
-                const int targetPartSize = 8 * oneMb;
-
-                // Determine if we need MD5 computation (only for EgressStorageClient)
                 bool needsMd5 = destinationClient is EgressStorageClient;
+                bool isNetApp = destinationClient is NetAppStorageClient;
 
-                // if the destination is NetApp we should avoid chunked upload for small files
-                if (destinationClient is NetAppStorageClient && totalSize <= minMultipartSize)
+                // Small NetApp files use single PUT
+                if (isNetApp && totalSize <= _sizeConfig.MinMultipartSizeBytes)
                 {
-                    _logger.LogInformation("File size {TotalSize} <= {MinMultipartSize} bytes, using single PUT.",
-                        totalSize, minMultipartSize);
-
-                    await destinationClient.UploadFileAsync(payload.DestinationPath, sourceStream, totalSize,
-                        payload.WorkspaceId, sourceFilePath, payload.SourceRootFolderPath, payload.BearerToken, payload.BucketName);
-
-                    var singleUpload = new TransferItem
-                    {
-                        SourcePath = payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
-                        Status = TransferItemStatus.Completed,
-                        Size = totalSize,
-                        IsRenamed = payload.SourcePath.ModifiedPath != null,
-                        FileId = payload.SourcePath.FileId
-                    };
-
-                    return new TransferResult
-                    {
-                        IsSuccess = true,
-                        SuccessfulItem = singleUpload
-                    };
+                    return await HandleSingleUpload(
+                        sourceStream,
+                        destinationClient,
+                        payload,
+                        sourceFilePath,
+                        totalSize,
+                        startTime);
                 }
 
-                // Multipart upload
-                var session = await destinationClient.InitiateUploadAsync(
-                    payload.DestinationPath, totalSize, sourceFilePath, payload.WorkspaceId,
-                    payload.SourcePath.RelativePath, payload.SourceRootFolderPath, payload.BearerToken, payload.BucketName);
-
-                long bytesProcessed = 0;
-                long bytesUploaded = 0;
-                int chunkNumber = 1;
-                Dictionary<int, string> uploadedChunks = [];
-
-                // Only initialize MD5 if needed
-                System.Security.Cryptography.MD5? md5 = needsMd5 ? System.Security.Cryptography.MD5.Create() : null;
-                byte[] buffer = new byte[oneMb];
-                using var partBuffer = new MemoryStream(targetPartSize);
-
-                while (bytesProcessed < totalSize)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    int bytesToRead = (int)Math.Min(buffer.Length, totalSize - bytesProcessed);
-                    int bytesRead = await sourceStream.ReadAsync(buffer.AsMemory(0, bytesToRead), cancellationToken);
-
-                    if (bytesRead <= 0)
-                        break;
-
-                    partBuffer.Write(buffer, 0, bytesRead);
-
-                    // Update MD5 hash as we read (only if needed)
-                    if (md5 != null)
-                    {
-                        md5.TransformBlock(buffer, 0, bytesRead, null, 0);
-                    }
-
-                    bytesProcessed += bytesRead;
-
-                    long remaining = totalSize - bytesProcessed;
-                    bool isLastPart = remaining == 0;
-
-                    bool alignedToOneMb = partBuffer.Length % oneMb == 0;
-                    bool readyAtTarget = partBuffer.Length >= targetPartSize && alignedToOneMb;
-                    bool readyAtEnd = isLastPart && partBuffer.Length > 0;
-                    bool preventTinyRemainder = partBuffer.Length >= minMultipartSize && remaining > 0 &&
-                                                remaining < minMultipartSize && alignedToOneMb;
-
-                    if (readyAtTarget || readyAtEnd || preventTinyRemainder)
-                    {
-                        var partBytes = partBuffer.ToArray();
-                        long start = bytesUploaded;
-                        long end = start + partBytes.Length - 1;
-
-                        _logger.LogInformation("Uploading part {ChunkNumber}, bytes {Start}-{End} of {TotalSize}.",
-                            chunkNumber, start, end, totalSize);
-
-                        var result = await destinationClient.UploadChunkAsync(
-                            session, chunkNumber, partBytes, start, end, totalSize, payload.BearerToken, payload.BucketName);
-
-                        _logger.LogInformation("Uploaded part {ChunkNumber} with ETag {ETag} was successful.",
-                            chunkNumber, result.ETag);
-
-                        if (result.TransferDirection == TransferDirection.EgressToNetApp &&
-                            result.PartNumber.HasValue && result.ETag != null)
-                        {
-                            uploadedChunks.Add(result.PartNumber.Value, result.ETag);
-                        }
-
-                        _logger.LogDebug("Transfer Id: {TransferId} Uploaded chunk: {ChunkNumber} ({Start}-{End}/{TotalSize})",
-                            payload.TransferId, chunkNumber, start, end, totalSize);
-
-                        bytesUploaded += partBytes.Length;
-                        chunkNumber++;
-                        partBuffer.SetLength(0);
-                    }
-                }
-
-                // Finalize MD5 hash (only if we computed it)
-                string md5Hash = string.Empty;
-                if (md5 != null)
-                {
-                    md5.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-                    md5Hash = md5.Hash != null ? Convert.ToBase64String(md5.Hash) : string.Empty;
-                }
-
-                // Complete the upload
-                if (destinationClient is EgressStorageClient)
-                {
-                    await destinationClient.CompleteUploadAsync(session, md5hash: md5Hash);
-                }
-                else
-                {
-                    await destinationClient.CompleteUploadAsync(session, null, etags: uploadedChunks, payload.BearerToken, payload.BucketName);
-                }
-
-                _logger.LogInformation("File transfer completed: {SourcePath} -> {DestinationPath}",
-                    payload.SourcePath.Path, payload.DestinationPath);
-
-                var endTime = DateTime.UtcNow;
-
-                var successfulItem = new TransferItem
-                {
-                    SourcePath = payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
-                    Status = TransferItemStatus.Completed,
-                    Size = totalSize,
-                    IsRenamed = payload.SourcePath.ModifiedPath != null,
-                    FileId = payload.SourcePath.FileId,
-                    StartTime = startTime,
-                    EndTime = endTime,
-                };
-
-                return new TransferResult
-                {
-                    IsSuccess = true,
-                    SuccessfulItem = successfulItem
-                };
+                // All Egress + large NetApp files use multipart upload
+                return await HandleMultipartUpload(
+                    sourceStream,
+                    destinationClient,
+                    payload,
+                    sourceFilePath,
+                    totalSize,
+                    needsMd5,
+                    cancellationToken,
+                    startTime);
             }
         }
         catch (FileExistsException ex)
         {
-            _logger.LogWarning(ex, "File already exists: {Path}", payload.SourcePath.Path);
-
-            var failedItem = new TransferFailedItem
-            {
-                SourcePath = payload.SourcePath.Path,
-                Status = TransferItemStatus.Failed,
-                ErrorCode = TransferErrorCode.FileExists,
-                ErrorMessage = ex.Message
-            };
-
-            return new TransferResult
-            {
-                IsSuccess = false,
-                FailedItem = failedItem
-            };
+            return CreateFailureResult(payload.SourcePath.Path, TransferErrorCode.FileExists, ex.Message, ex);
         }
         catch (OperationCanceledException)
         {
             _logger.LogInformation("Transfer cancelled: {Path}", payload.SourcePath.Path);
-            throw; // Re-throw cancellation exceptions
+            throw;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Transfer failed: {Path}", payload.SourcePath.Path);
-
-            var failedItem = new TransferFailedItem
-            {
-                SourcePath = payload.SourcePath.Path,
-                Status = TransferItemStatus.Failed,
-                ErrorCode = TransferErrorCode.GeneralError,
-                ErrorMessage = $"Exception: {ex.GetType().FullName}: {ex.Message}{Environment.NewLine}StackTrace: {ex.StackTrace}"
-            };
-
-            return new TransferResult
-            {
-                IsSuccess = false,
-                FailedItem = failedItem
-            };
+            return CreateFailureResult(
+                payload.SourcePath.Path,
+                TransferErrorCode.GeneralError,
+                $"Exception: {ex.GetType().FullName}: {ex.Message}{Environment.NewLine}StackTrace: {ex.StackTrace}",
+                ex);
         }
+    }
+
+    private async Task<TransferResult> HandleSingleUpload(
+        Stream sourceStream,
+        IStorageClient destinationClient,
+        TransferFilePayload payload,
+        string sourceFilePath,
+        long totalSize,
+        DateTime startTime)
+    {
+        _logger.LogInformation(
+            "File size {TotalSize} <= {MinMultipartSize} bytes, using single PUT.",
+            totalSize,
+            _sizeConfig.MinMultipartSizeBytes);
+
+        await destinationClient.UploadFileAsync(
+            payload.DestinationPath,
+            sourceStream,
+            totalSize,
+            payload.WorkspaceId,
+            sourceFilePath,
+            payload.SourceRootFolderPath,
+            payload.BearerToken,
+            payload.BucketName);
+
+        return CreateSuccessResult(payload, totalSize, startTime);
+    }
+
+    private async Task<TransferResult> HandleMultipartUpload(
+        Stream sourceStream,
+        IStorageClient destinationClient,
+        TransferFilePayload payload,
+        string sourceFilePath,
+        long totalSize,
+        bool needsMd5,
+        CancellationToken cancellationToken,
+        DateTime startTime)
+    {
+        var session = await destinationClient.InitiateUploadAsync(
+            payload.DestinationPath,
+            totalSize,
+            sourceFilePath,
+            payload.WorkspaceId,
+            payload.SourcePath.RelativePath,
+            payload.SourceRootFolderPath,
+            payload.BearerToken,
+            payload.BucketName);
+
+        var buffer = new byte[_sizeConfig.ChunkSizeBytes];
+        var partList = new List<(int PartNumber, byte[] Data, long Start, long End)>();
+
+        System.Security.Cryptography.MD5? md5 = needsMd5 ? System.Security.Cryptography.MD5.Create() : null;
+
+        long bytesProcessed = 0;
+        long absolutePosition = 0;
+        int partNumber = 1;
+
+        using (md5)
+        {
+            // STEP 1 — Sequential read & buffer
+            while (bytesProcessed < totalSize)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                long remainingBytes = totalSize - bytesProcessed;
+                int targetPartSize = (int)Math.Min(_sizeConfig.ChunkSizeBytes, remainingBytes);
+
+                var partData = new byte[targetPartSize];
+                int partOffset = 0;
+
+                // Read EXACTLY targetPartSize bytes (critical for all parts except the last)
+                while (partOffset < targetPartSize)
+                {
+                    int bytesToRead = targetPartSize - partOffset;
+                    int bytesRead = await sourceStream.ReadAsync(
+                        partData.AsMemory(partOffset, bytesToRead),
+                        cancellationToken);
+
+                    if (bytesRead == 0)
+                    {
+                        // Only acceptable if we're at the end of the file
+                        if (bytesProcessed + partOffset < totalSize)
+                        {
+                            throw new InvalidOperationException(
+                                $"Unexpected end of stream at position {bytesProcessed + partOffset} " +
+                                $"(expected {totalSize} total bytes)");
+                        }
+                        break;
+                    }
+
+                    partOffset += bytesRead;
+                }
+
+                // Update MD5 hash
+                if (md5 != null)
+                {
+                    if (bytesProcessed + partOffset == totalSize)
+                    {
+                        // Final block
+                        md5.TransformFinalBlock(partData, 0, partOffset);
+                    }
+                    else
+                    {
+                        md5.TransformBlock(partData, 0, partOffset, null, 0);
+                    }
+                }
+
+                long start = absolutePosition;
+                long end = start + partOffset - 1;
+                absolutePosition += partOffset;
+                bytesProcessed += partOffset;
+
+                partList.Add((partNumber++, partData.AsMemory(0, partOffset).ToArray(), start, end));
+            }
+
+            _logger.LogInformation("Buffered {Count} parts for parallel upload.", partList.Count);
+
+            // STEP 2 — Parallel upload
+            var semaphore = new SemaphoreSlim(_sizeConfig.MaxConcurrentPartUploads);
+            var uploadedEtags = new Dictionary<int, string>();
+
+            var tasks = partList.Select(async part =>
+            {
+                await semaphore.WaitAsync(cancellationToken);
+                try
+                {
+                    var (num, data, start, end) = part;
+
+                    _logger.LogInformation(
+                        "Parallel upload: part {Part}, bytes {Start}-{End}",
+                        num,
+                        start,
+                        end);
+
+                    var result = await destinationClient.UploadChunkAsync(
+                        session,
+                        num,
+                        data,
+                        start,
+                        end,
+                        totalSize,
+                        payload.BearerToken,
+                        payload.BucketName);
+
+                    if (result.PartNumber.HasValue && result.ETag != null)
+                    {
+                        lock (uploadedEtags)
+                        {
+                            uploadedEtags[result.PartNumber.Value] = result.ETag;
+                        }
+                    }
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            });
+
+            await Task.WhenAll(tasks);
+
+            // STEP 3 — Complete upload
+            string md5Hash = md5?.Hash != null ? Convert.ToBase64String(md5.Hash) : string.Empty;
+
+            await CompleteUpload(
+                destinationClient,
+                session,
+                md5Hash,
+                uploadedEtags,
+                payload.BearerToken,
+                payload.BucketName);
+
+            _logger.LogInformation(
+                "Completed parallel multipart transfer for {Source} -> {Dest}",
+                payload.SourcePath.Path,
+                payload.DestinationPath);
+
+            return CreateSuccessResult(payload, totalSize, startTime);
+        }
+    }
+
+    private async Task CompleteUpload(
+        IStorageClient destinationClient,
+        UploadSession session,
+        string md5Hash,
+        Dictionary<int, string> uploadedChunks,
+        string bearerToken,
+        string? bucketName)
+    {
+        if (destinationClient is EgressStorageClient)
+        {
+            await destinationClient.CompleteUploadAsync(session, md5hash: md5Hash);
+        }
+        else
+        {
+            await destinationClient.CompleteUploadAsync(session, null, etags: uploadedChunks, bearerToken, bucketName);
+        }
+    }
+
+    private TransferResult CreateSuccessResult(TransferFilePayload payload, long totalSize, DateTime startTime)
+    {
+        var endTime = DateTime.UtcNow;
+
+        var item = new TransferItem
+        {
+            SourcePath = payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
+            Status = TransferItemStatus.Completed,
+            Size = totalSize,
+            IsRenamed = payload.SourcePath.ModifiedPath != null,
+            FileId = payload.SourcePath.FileId,
+            StartTime = startTime,
+            EndTime = endTime
+        };
+
+        return new TransferResult { IsSuccess = true, SuccessfulItem = item };
+    }
+
+    private TransferResult CreateFailureResult(
+        string sourcePath,
+        TransferErrorCode errorCode,
+        string errorMessage,
+        Exception? ex = null)
+    {
+        if (ex != null)
+        {
+            _logger.LogError(ex, "Transfer failed: {Path}", sourcePath);
+        }
+        else
+        {
+            _logger.LogWarning("Transfer failed: {Path} - {ErrorMessage}", sourcePath, errorMessage);
+        }
+
+        var failedItem = new TransferFailedItem
+        {
+            SourcePath = sourcePath,
+            Status = TransferItemStatus.Failed,
+            ErrorCode = errorCode,
+            ErrorMessage = errorMessage
+        };
+
+        return new TransferResult { IsSuccess = false, FailedItem = failedItem };
     }
 }

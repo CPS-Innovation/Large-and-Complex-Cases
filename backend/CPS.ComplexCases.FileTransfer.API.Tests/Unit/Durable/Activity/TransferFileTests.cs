@@ -53,9 +53,8 @@ public class TransferFileTests
     [Fact]
     public async Task Run_SuccessfulTransfer_ReturnsSuccessResult()
     {
-        // Arrange
         var payload = CreatePayload();
-        var content = Encoding.UTF8.GetBytes("testdata"); // 8 bytes => fits in one chunk
+        var content = Encoding.UTF8.GetBytes("testdata");
         var stream = new MemoryStream(content);
         var contentLength = content.Length;
 
@@ -82,21 +81,22 @@ public class TransferFileTests
                 payload.SourcePath.RelativePath,
                 payload.SourceRootFolderPath,
                 payload.BearerToken,
-                payload.BucketName
-            ))
+                payload.BucketName))
             .ReturnsAsync(session);
 
         _destinationClientMock
             .Setup(x => x.UploadChunkAsync(
-                session,
-                1,
+                It.IsAny<UploadSession>(),
+                It.IsAny<int>(),
                 It.IsAny<byte[]>(),
                 It.IsAny<long>(),
                 It.IsAny<long>(),
                 It.IsAny<long>(),
-                payload.BearerToken,
-                payload.BucketName))
-            .ReturnsAsync(new UploadChunkResult(payload.TransferDirection, "etag1", 1));
+                It.IsAny<string>(),
+                It.IsAny<string?>()))
+            .ReturnsAsync((UploadSession session, int partNum, byte[] data, long start, long end, long total, string token, string? bucket) =>
+                new UploadChunkResult(TransferDirection.EgressToNetApp, $"etag{partNum}", partNum));
+
 
         _destinationClientMock
             .Setup(x => x.CompleteUploadAsync(
@@ -107,10 +107,8 @@ public class TransferFileTests
                 payload.BucketName))
             .Returns(Task.CompletedTask);
 
-        // Act
         var result = await _activity.Run(payload);
 
-        // Assert
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.SuccessfulItem);
         Assert.Equal(TransferItemStatus.Completed, result.SuccessfulItem.Status);
@@ -121,7 +119,6 @@ public class TransferFileTests
     [Fact]
     public async Task Run_FileExistsException_ReturnsFailedResultWithFileExistsCode()
     {
-        // Arrange
         var payload = CreatePayload();
 
         _storageClientFactoryMock
@@ -132,10 +129,8 @@ public class TransferFileTests
             .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>()))
             .ThrowsAsync(new FileExistsException("File already exists."));
 
-        // Act
         var result = await _activity.Run(payload);
 
-        // Assert
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.FileExists, result.FailedItem.ErrorCode);
@@ -144,7 +139,6 @@ public class TransferFileTests
     [Fact]
     public async Task Run_UnexpectedException_ReturnsFailedResultWithGeneralError()
     {
-        // Arrange
         var payload = CreatePayload();
 
         _storageClientFactoryMock
@@ -155,10 +149,8 @@ public class TransferFileTests
             .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>()))
             .ThrowsAsync(new InvalidOperationException("Something went wrong"));
 
-        // Act
         var result = await _activity.Run(payload);
 
-        // Assert
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.GeneralError, result.FailedItem.ErrorCode);
@@ -168,7 +160,6 @@ public class TransferFileTests
     [Fact]
     public async Task Run_Cancelled_ThrowsOperationCanceledException()
     {
-        // Arrange
         var payload = CreatePayload();
         var cts = new CancellationTokenSource();
         cts.Cancel();
@@ -201,8 +192,6 @@ public class TransferFileTests
                 payload.BucketName))
             .ReturnsAsync(new UploadSession { UploadId = Guid.NewGuid().ToString() });
 
-        // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(() =>
-            _activity.Run(payload, cts.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => _activity.Run(payload, cts.Token));
     }
 }
