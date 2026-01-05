@@ -14,14 +14,16 @@ using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.API.Services;
 
 namespace CPS.ComplexCases.API.Functions.Transfer;
 
-public class GetFilesForTransfer(IFileTransferClient transferClient, ILogger<GetFilesForTransfer> logger, IRequestValidator requestValidator)
+public class GetFilesForTransfer(IFileTransferClient transferClient, ILogger<GetFilesForTransfer> logger, IRequestValidator requestValidator, ISecurityGroupMetadataService securityGroupMetadataService)
 {
     private readonly IFileTransferClient _transferClient = transferClient;
     private readonly ILogger<GetFilesForTransfer> _logger = logger;
     private readonly IRequestValidator _requestValidator = requestValidator;
+    private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
 
     [Function(nameof(GetFilesForTransfer))]
     [OpenApiOperation(operationId: nameof(GetFilesForTransfer), tags: ["FileTransfer"], Description = "Gets the complete list of files to be transferred from the source storage.")]
@@ -47,6 +49,8 @@ public class GetFilesForTransfer(IFileTransferClient transferClient, ILogger<Get
             return new BadRequestObjectResult(request.ValidationErrors);
         }
 
+        var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
+
         var listFilesForTransferRequest = new ListFilesForTransferRequest
         {
             CaseId = request.Value.CaseId,
@@ -57,6 +61,7 @@ public class GetFilesForTransfer(IFileTransferClient transferClient, ILogger<Get
             WorkspaceId = request.Value.WorkspaceId,
             Username = context.Username,
             BearerToken = context.BearerToken,
+            BucketName = securityGroups.First().BucketName,
             SourceRootFolderPath = request.Value.SourceRootFolderPath,
             SourcePaths = request.Value.SourcePaths.Select(path => new SelectedSourcePath
             {

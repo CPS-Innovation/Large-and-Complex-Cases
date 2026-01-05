@@ -15,6 +15,8 @@ using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Requests;
 using Moq;
+using CPS.ComplexCases.API.Services;
+using CPS.ComplexCases.API.Domain.Models;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
 {
@@ -23,20 +25,39 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
         private readonly Mock<IFileTransferClient> _transferClientMock;
         private readonly Mock<ILogger<GetFilesForTransfer>> _loggerMock;
         private readonly Mock<IRequestValidator> _requestValidatorMock;
+        private readonly Mock<ISecurityGroupMetadataService> _securityGroupMetadataServiceMock;
+        private readonly string _testBucketName;
         private readonly GetFilesForTransfer _function;
         private readonly Guid _correlationId;
         private readonly Fixture _fixture;
 
         public GetFilesForTransferTests()
         {
+            _fixture = new Fixture();
+            _correlationId = _fixture.Create<Guid>();
+
             _transferClientMock = new Mock<IFileTransferClient>();
             _loggerMock = new Mock<ILogger<GetFilesForTransfer>>();
             _requestValidatorMock = new Mock<IRequestValidator>();
+            _securityGroupMetadataServiceMock = new Mock<ISecurityGroupMetadataService>();
+            _testBucketName = _fixture.Create<string>();
 
-            _function = new GetFilesForTransfer(_transferClientMock.Object, _loggerMock.Object, _requestValidatorMock.Object);
+            _securityGroupMetadataServiceMock
+                .Setup(s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()))
+                .ReturnsAsync([
+                    new SecurityGroup
+            {
+                Id = _fixture.Create<Guid>(),
+                BucketName = _testBucketName,
+                DisplayName = "Test Security Group"
+            }
+                ]);
 
-            _fixture = new Fixture();
-            _correlationId = _fixture.Create<Guid>();
+            _function = new GetFilesForTransfer(
+                _transferClientMock.Object,
+                _loggerMock.Object,
+                _requestValidatorMock.Object,
+                _securityGroupMetadataServiceMock.Object);
         }
 
         [Fact]

@@ -25,6 +25,8 @@ public class ListFilesForTransferRequest
     public string? Username { get; set; }
     [JsonPropertyName("bearerToken")]
     public string? BearerToken { get; set; }
+    [JsonPropertyName("bucketName")]
+    public string? BucketName { get; set; }
 }
 
 public class SelectedSourcePath
