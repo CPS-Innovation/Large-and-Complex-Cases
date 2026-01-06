@@ -1,8 +1,4 @@
-trigger: 
-  batch: true
-  branches:
-    include:
-      - task/FCT2-12115_Lighthouse-Performance-Testing-in-CICD
+trigger: none
 
 parameters:
 - name: environment
@@ -39,7 +35,7 @@ steps:
   workingDirectory: $(workingDir)
 
 - script: |
-    npx tsx playwright/lighthouse/simple-test.ts
+    npx tsx playwright/lighthouse/basic-test.ts
   workingDirectory: $(workingDir)
   displayName: 'Run Lighthouse Test'
   env:

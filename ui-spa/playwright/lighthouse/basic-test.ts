@@ -3,7 +3,6 @@ import lighthouse, { Config } from 'lighthouse';
 import fs from 'fs-extra';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import * as chromeLauncher from 'chrome-launcher';
 import { createAuthManager } from './auth-utils.ts';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -57,15 +56,17 @@ async function run() {
 
     await page.waitForURL(baseUrl, { timeout: 20000 });
     console.log('✓ Interactive authentication completed');
+
+    await page.pause();  
   }
 
   await new Promise(r => setTimeout(r, 2000));
 
   let exitCode = 0;
+
   try {
     const flags = {
       port: 9222,
-      disableStorageReset: true,
       logLevel: 'error' as const,
       output: 'html' as const,
     };
@@ -74,13 +75,36 @@ async function run() {
       extends: 'lighthouse:default',
       settings: {
         onlyCategories: ['performance', 'accessibility', 'best-practices'],
+        disableStorageReset: true,
         formFactor: 'desktop',
-        screenEmulation: { mobile: false, disabled: true },
-        emulatedUserAgent: false,
+        screenEmulation: {
+          mobile: false,
+          width: 1366,
+          height: 768,
+          deviceScaleFactor: 1,
+          disabled: false
+        },
+        throttlingMethod: 'simulate',
+        emulatedUserAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
       },
     };
 
-    const result = await lighthouse(baseUrl, flags, config);
+    const flow = await startFlow(page);
+
+    // Navigate with a URL
+    await flow.navigate('https://example.com');
+
+    // Interaction-initiated navigation via a callback function
+    await flow.navigate(async () => {
+      await page.click('a.link');
+    });
+
+    // Navigate with startNavigation/endNavigation
+    await flow.startNavigation();
+    await page.click('a.link');
+    await flow.endNavigation();
+
+    const result = await lighthouse(page.url(), flags, config);
     
     const lhr = result?.lhr;
 
