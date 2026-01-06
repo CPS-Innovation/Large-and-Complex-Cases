@@ -89,21 +89,6 @@ async function run() {
       },
     };
 
-    const flow = await startFlow(page);
-
-    // Navigate with a URL
-    await flow.navigate('https://example.com');
-
-    // Interaction-initiated navigation via a callback function
-    await flow.navigate(async () => {
-      await page.click('a.link');
-    });
-
-    // Navigate with startNavigation/endNavigation
-    await flow.startNavigation();
-    await page.click('a.link');
-    await flow.endNavigation();
-
     const result = await lighthouse(page.url(), flags, config);
     
     const lhr = result?.lhr;
