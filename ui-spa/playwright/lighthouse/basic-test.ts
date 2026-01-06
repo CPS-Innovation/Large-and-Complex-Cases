@@ -56,8 +56,6 @@ async function run() {
 
     await page.waitForURL(baseUrl, { timeout: 20000 });
     console.log('✓ Interactive authentication completed');
-
-    await page.pause();  
   }
 
   await new Promise(r => setTimeout(r, 2000));
@@ -106,8 +104,20 @@ async function run() {
     if (lhr?.runWarnings?.length) {
       throw new Error(`runWarnings: ${JSON.stringify(lhr.runWarnings)}`);
     }
-  } catch (err: any) {
-    const msg = String(err?.stack || err?.message || err);
+  } catch (err) {
+    const msg =
+      err instanceof Error
+        ? String(err.stack ?? err.message)
+        : typeof err === 'string'
+        ? err
+        : (() => {
+            try {
+              return JSON.stringify(err);
+            } catch {
+              return String(err);
+            }
+          })();
+
     console.error('❌ Lighthouse failed:', msg);
     exitCode = 1;
   } finally {
