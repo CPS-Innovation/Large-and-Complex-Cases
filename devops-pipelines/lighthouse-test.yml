@@ -1,0 +1,57 @@
+trigger: none
+
+parameters:
+- name: environment
+  type: string
+  default: 'dev'
+
+pool: 'LACC PreProd Pool'
+
+variables:
+- group: lacc-automated-testing
+- group: lacc-backend-config-${{ parameters.environment }}
+- group: lacc-backend-secrets-${{ parameters.environment }}
+- name: nodeVersion
+  value: '20.x'
+- name: workingDir
+  value: 'ui-spa'
+- name: webAppName
+  value: 'lacc-app-ui-spa-${{ parameters.environment }}'
+
+steps:
+- task: UseNode@1
+  displayName: 'Use Node.js'
+  inputs:
+    version: '$(nodeVersion)'
+
+- task: Npm@1
+  displayName: 'Install NPM Dependencies'
+  inputs:
+    command: 'ci'
+    workingDir: '$(workingDir)'
+
+- script: npx playwright install chrome chromium --with-deps
+  displayName: 'Install Browsers'
+  workingDirectory: $(workingDir)
+
+- script: |
+    npx tsx playwright/lighthouse/basic-test.ts
+  workingDirectory: $(workingDir)
+  displayName: 'Run Lighthouse Test'
+  env:
+    BASE_URL: 'https://$(webAppName).azurewebsites.net'
+    AZURE_AD_USERNAME: $(AadUserName)
+    AZURE_AD_PASSWORD: $(AadUserPassword)
+    AZURE_AD_TENANT_ID: $(TenantId)
+    AZURE_AD_CLIENT_ID: $(CallingAppValidAudience)
+    AZURE_AD_CLIENT_SECRET: $(DevAccessClientSecret)
+    AZURE_AD_SCOPE: 'api://$(CallingAppValidAudience)/.default'
+    CMS_USERNAME: $(CmsUserName)
+    CMS_PASSWORD: $(CmsUserPassword)
+    CMS_ACCESS_KEY: $(DDEIOptionsAccessKey)
+    CMS_BASE_URL: $(DDEIOptionsBaseUrl)
+
+- publish: '$(workingDir)/playwright/test-results/lh-report.html'
+  artifact: 'lighthouse-report'
+  displayName: 'Publish Lighthouse Report'
+  condition: succeededOrFailed()

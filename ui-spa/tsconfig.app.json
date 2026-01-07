@@ -23,5 +23,5 @@
     "noUncheckedSideEffectImports": true,
     "types": ["vitest/globals"]
   },
-  "include": ["src", "playwright/e2e/**/*.ts", "playwright.config.ts"]
+  "include": ["src", "playwright/e2e/**/*.ts", "playwright.config.ts", "playwright/lighthouse"]
 }
