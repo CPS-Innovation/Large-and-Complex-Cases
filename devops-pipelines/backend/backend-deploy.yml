@@ -20,18 +20,18 @@ stages:
     parameters:
       environment: staging
       requireValidation: true
-      notifyUsers: $(notifyUsers)
-      approvers: $(approvers)
+      notifyUsers: $(preprodNotifyUsers)
+      approvers: $(preprodApprovers)
       deployToSlot: true
       slotName: 'stg'
 
-  # - template: ../templates/backend-deploy-stages.yml
-  #   parameters:
-  #     environment: prod
-  #     requireValidation: true
-  #     notifyUsers: $(notifyUsers)
-  #     approvers: $(approvers)
-  #     agentPool: 'LACC Prod Pool'
-  #     azureSubscription: 'Azure Pipeline: Large and Complex Cases - Prod'
-  #     deployToSlot: true
-  #     slotName: 'stg'
+  - template: ../templates/backend-deploy-stages.yml
+    parameters:
+      environment: prod
+      requireValidation: true
+      notifyUsers: $(prodNotifyUsers)
+      approvers: $(prodApprovers)
+      agentPool: 'LACC Prod Pool'
+      azureSubscription: 'Azure Pipeline: Large and Complex Cases - Prod'
+      deployToSlot: true
+      slotName: 'stg'
