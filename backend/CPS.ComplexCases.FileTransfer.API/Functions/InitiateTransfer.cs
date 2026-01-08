@@ -2,38 +2,33 @@ using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.DurableTask.Client;
-using Microsoft.Extensions.Logging;
-using Microsoft.DurableTask;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
+using Microsoft.DurableTask;
+using Microsoft.DurableTask.Client;
+using Microsoft.DurableTask.Entities;
+using Microsoft.Extensions.Logging;
+using CPS.ComplexCases.Common.Constants;
+using CPS.ComplexCases.Common.Extensions;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models.Requests;
-using CPS.ComplexCases.Common.Constants;
-using CPS.ComplexCases.FileTransfer.API.Validators;
-using CPS.ComplexCases.Common.Extensions;
+using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.FileTransfer.API.Durable.Orchestration;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
-using CPS.ComplexCases.FileTransfer.API.Models.Responses;
-using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
-using CPS.ComplexCases.Common.Services;
-using Microsoft.DurableTask.Entities;
-using CPS.ComplexCases.FileTransfer.API.Durable.State;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
+using CPS.ComplexCases.FileTransfer.API.Durable.State;
+using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
+using CPS.ComplexCases.FileTransfer.API.Models.Responses;
+using CPS.ComplexCases.FileTransfer.API.Validators;
 
 namespace CPS.ComplexCases.FileTransfer.API.Functions;
 
-public class InitiateTransfer
+public class InitiateTransfer(ILogger<InitiateTransfer> logger, ICaseMetadataService caseMetadataService, IRequestValidator requestValidator, IInitializationHandler initializationHandler)
 {
-    private readonly ILogger<InitiateTransfer> _logger;
-    private readonly ICaseMetadataService _caseMetadataService;
-    private readonly IRequestValidator _requestValidator;
-
-    public InitiateTransfer(ILogger<InitiateTransfer> logger, ICaseMetadataService caseMetadataService, IRequestValidator requestValidator)
-    {
-        _logger = logger;
-        _caseMetadataService = caseMetadataService;
-        _requestValidator = requestValidator;
-    }
+    private readonly ILogger<InitiateTransfer> _logger = logger;
+    private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
+    private readonly IRequestValidator _requestValidator = requestValidator;
+    private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
     [Function(nameof(InitiateTransfer))]
     [OpenApiOperation(operationId: nameof(InitiateTransfer), tags: ["FileTransfer"], Description = "Initiates a new file transfer operation. If a transfer is already in progress for the case, returns the current transfer status.")]
@@ -61,6 +56,8 @@ public class InitiateTransfer
             _logger.LogWarning("Transfer request missing Metadata with CorrelationId: {CorrelationId}.", currentCorrelationId);
             return new BadRequestObjectResult("Metadata is required.");
         }
+
+        _initializationHandler.Initialize(transferRequest.Value.Metadata.UserName, currentCorrelationId);
 
         var caseMetadata = await _caseMetadataService.GetCaseMetadataForCaseIdAsync(transferRequest.Value.Metadata.CaseId);
 

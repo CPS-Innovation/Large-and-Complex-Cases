@@ -5,6 +5,7 @@ using AutoFixture;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Functions;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models.Args;
@@ -18,6 +19,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         private readonly Mock<ILogger<ListEgressMaterials>> _loggerMock;
         private readonly Mock<IEgressClient> _egressClientMock;
         private readonly Mock<IEgressArgFactory> _egressArgFactoryMock;
+        private readonly Mock<IInitializationHandler> _initializationHandlerMock;
         private readonly Fixture _fixture;
         private readonly ListEgressMaterials _function;
         private readonly Guid _testCorrelationId;
@@ -30,8 +32,9 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _loggerMock = new Mock<ILogger<ListEgressMaterials>>();
             _egressClientMock = new Mock<IEgressClient>();
             _egressArgFactoryMock = new Mock<IEgressArgFactory>();
+            _initializationHandlerMock = new Mock<IInitializationHandler>();
             _fixture = new Fixture();
-            _function = new ListEgressMaterials(_loggerMock.Object, _egressClientMock.Object, _egressArgFactoryMock.Object);
+            _function = new ListEgressMaterials(_loggerMock.Object, _egressClientMock.Object, _egressArgFactoryMock.Object, _initializationHandlerMock.Object);
             _testCorrelationId = _fixture.Create<Guid>();
             _testUsername = _fixture.Create<string>();
             _testCmsAuthValues = _fixture.Create<string>();

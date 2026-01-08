@@ -3,10 +3,12 @@ using Microsoft.DurableTask.Entities;
 using Microsoft.Extensions.Logging;
 using AutoFixture;
 using AutoFixture.AutoMoq;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Storage;
+using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
@@ -25,10 +27,13 @@ public class DeleteFilesTests
     private readonly Mock<IStorageClient> _storageClientMock;
     private readonly Mock<ILogger<DeleteFiles>> _loggerMock;
     private readonly Mock<ITransferEntityHelper> _transferEntityHelperMock;
+    private readonly Mock<IInitializationHandler> _initializationHandlerMock;
+    private readonly Mock<ITelemetryClient> _telemetryClientMock;
     private readonly DeleteFiles _activity;
     private readonly string _workspaceId;
     private readonly string _destinationPath;
     private readonly string _bearerToken;
+    private readonly string _testUser = "testuser";
 
     public DeleteFilesTests()
     {
@@ -39,12 +44,14 @@ public class DeleteFilesTests
         _storageClientMock = new Mock<IStorageClient>();
         _loggerMock = new Mock<ILogger<DeleteFiles>>();
         _transferEntityHelperMock = new Mock<ITransferEntityHelper>();
+        _initializationHandlerMock = new Mock<IInitializationHandler>();
+        _telemetryClientMock = new Mock<ITelemetryClient>();
 
         _workspaceId = _fixture.Create<string>();
         _destinationPath = _fixture.Create<string>();
         _bearerToken = _fixture.Create<string>();
 
-        _activity = new DeleteFiles(_transferEntityHelperMock.Object, _storageClientFactoryMock.Object, _loggerMock.Object);
+        _activity = new DeleteFiles(_transferEntityHelperMock.Object, _storageClientFactoryMock.Object, _loggerMock.Object, _initializationHandlerMock.Object, _telemetryClientMock.Object);
     }
 
     [Fact]
@@ -62,7 +69,8 @@ public class DeleteFilesTests
         var payload = new DeleteFilesPayload
         {
             TransferDirection = TransferDirection.NetAppToEgress,
-            TransferId = Guid.NewGuid()
+            TransferId = Guid.NewGuid(),
+            UserName = _testUser,
         };
 
         // Act and Assert
@@ -77,7 +85,8 @@ public class DeleteFilesTests
         var payload = new DeleteFilesPayload
         {
             TransferDirection = TransferDirection.EgressToNetApp,
-            TransferId = Guid.NewGuid()
+            TransferId = Guid.NewGuid(),
+            UserName = _testUser,
         };
 
         _transferEntityHelperMock
@@ -100,7 +109,8 @@ public class DeleteFilesTests
         var payload = new DeleteFilesPayload
         {
             TransferDirection = TransferDirection.EgressToNetApp,
-            TransferId = transferId
+            TransferId = transferId,
+            UserName = _testUser,
         };
 
         var entity = new EntityMetadata<TransferEntity>(
@@ -140,7 +150,8 @@ public class DeleteFilesTests
         {
             TransferDirection = TransferDirection.EgressToNetApp,
             TransferId = Guid.NewGuid(),
-            WorkspaceId = _workspaceId
+            WorkspaceId = _workspaceId,
+            UserName = _testUser
         };
 
         var successfulItems = new List<TransferItem>
@@ -217,7 +228,8 @@ public class DeleteFilesTests
         {
             TransferId = Guid.NewGuid(),
             TransferDirection = TransferDirection.EgressToNetApp,
-            WorkspaceId = _workspaceId
+            WorkspaceId = _workspaceId,
+            UserName = _testUser
         };
 
         var successfulItems = new List<TransferItem>
@@ -261,7 +273,7 @@ public class DeleteFilesTests
             .Setup(x => x.DeleteFilesAsync(It.IsAny<List<DeletionEntityDto>>(), payload.WorkspaceId, null, null))
             .ThrowsAsync(exception);
 
-        var sut = new DeleteFiles(_transferEntityHelperMock.Object, _storageClientFactoryMock.Object, _loggerMock.Object);
+        var sut = new DeleteFiles(_transferEntityHelperMock.Object, _storageClientFactoryMock.Object, _loggerMock.Object, _initializationHandlerMock.Object, _telemetryClientMock.Object);
 
         // Act
         await sut.Run(payload, CancellationToken.None);

@@ -6,6 +6,7 @@ using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Storage;
+using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
 using CPS.ComplexCases.Egress.Models.Args;
@@ -17,7 +18,8 @@ public class EgressStorageClient(
     ILogger<EgressStorageClient> logger,
     IOptions<EgressOptions> egressOptions,
     HttpClient httpClient,
-    IEgressRequestFactory egressRequestFactory) : BaseEgressClient(logger, egressOptions, httpClient, egressRequestFactory), IStorageClient
+    IEgressRequestFactory egressRequestFactory,
+    ITelemetryClient telemetryClient) : BaseEgressClient(logger, egressOptions, httpClient, egressRequestFactory, telemetryClient), IStorageClient
 {
     public async Task<(Stream Stream, long ContentLength)> OpenReadStreamAsync(string path, string? workspaceId, string? fileId, string? BearerToken = null, string? bucketName = null)
     {

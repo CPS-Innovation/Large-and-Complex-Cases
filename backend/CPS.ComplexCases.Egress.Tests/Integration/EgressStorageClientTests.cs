@@ -1,6 +1,7 @@
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
+using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
@@ -43,7 +44,7 @@ public class EgressStorageClientTests : IDisposable
         };
         var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<EgressStorageClient>();
 
-        _client = new EgressStorageClient(logger, new OptionsWrapper<EgressOptions>(egressOptions), _httpClient, new EgressRequestFactory());
+        _client = new EgressStorageClient(logger, new OptionsWrapper<EgressOptions>(egressOptions), _httpClient, new EgressRequestFactory(), new TelemetryClientStub());
     }
 
     protected virtual void Dispose(bool disposing)

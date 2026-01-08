@@ -1,28 +1,37 @@
 using System.Net;
-using CPS.ComplexCases.API.Constants;
-using CPS.ComplexCases.API.Context;
-using CPS.ComplexCases.API.Validators.Requests;
-using CPS.ComplexCases.Common.Helpers;
-using CPS.ComplexCases.Common.Services;
-using CPS.ComplexCases.Data.Models.Requests;
-using CPS.ComplexCases.Egress.Client;
-using CPS.ComplexCases.Egress.Factories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
-using CPS.ComplexCases.ActivityLog.Services;
 using Microsoft.OpenApi.Models;
+using CPS.ComplexCases.ActivityLog.Services;
+using CPS.ComplexCases.API.Constants;
+using CPS.ComplexCases.API.Context;
+using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.Common.Handlers;
+using CPS.ComplexCases.Common.Helpers;
+using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.Data.Models.Requests;
+using CPS.ComplexCases.Egress.Client;
+using CPS.ComplexCases.Egress.Factories;
 
 namespace CPS.ComplexCases.API.Functions;
 
-public class CreateEgressConnection(ICaseMetadataService caseMetadataService, IEgressClient egressClient, IEgressArgFactory egressArgFactory, ILogger<CreateEgressConnection> logger, IActivityLogService activityLogService, IRequestValidator requestValidator)
+public class CreateEgressConnection(
+  ICaseMetadataService caseMetadataService,
+  IEgressClient egressClient,
+  IEgressArgFactory egressArgFactory,
+  ILogger<CreateEgressConnection> logger,
+  IActivityLogService activityLogService,
+  IRequestValidator requestValidator,
+  IInitializationHandler initializationHandler)
 {
   private readonly ILogger<CreateEgressConnection> _logger = logger;
   private readonly IActivityLogService _activityLogService = activityLogService;
   private readonly IRequestValidator _requestValidator = requestValidator;
+  private readonly IInitializationHandler _initializationHandler = initializationHandler;
   private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
   private readonly IEgressClient _egressClient = egressClient;
   private readonly IEgressArgFactory _egressArgFactory = egressArgFactory;
@@ -40,6 +49,7 @@ public class CreateEgressConnection(ICaseMetadataService caseMetadataService, IE
   public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "v1/egress/connections")] HttpRequest req, FunctionContext functionContext)
   {
     var context = functionContext.GetRequestContext();
+    _initializationHandler.Initialize(context.Username, context.CorrelationId);
 
     var egressConnectionRequest = await _requestValidator.GetJsonBody<CreateEgressConnectionDto, CreateEgressConnectionValidator>(req);
 

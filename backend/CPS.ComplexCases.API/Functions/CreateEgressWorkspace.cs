@@ -1,23 +1,24 @@
 using System.Net;
-using CPS.ComplexCases.API.Constants;
-using CPS.ComplexCases.API.Context;
-using CPS.ComplexCases.API.Validators.Requests;
-using CPS.ComplexCases.Common.Helpers;
-using CPS.ComplexCases.Common.Services;
-using CPS.ComplexCases.Egress.Client;
-using CPS.ComplexCases.Egress.Factories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
-using CPS.ComplexCases.ActivityLog.Services;
 using Microsoft.OpenApi.Models;
+using CPS.ComplexCases.ActivityLog.Services;
+using CPS.ComplexCases.API.Constants;
+using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Domain.Request;
+using CPS.ComplexCases.API.Validators.Requests;
+using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.Common.Handlers;
+using CPS.ComplexCases.Common.Helpers;
+using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
-using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.Egress.Client;
+using CPS.ComplexCases.Egress.Factories;
 
 namespace CPS.ComplexCases.API.Functions;
 
@@ -29,11 +30,13 @@ public class CreateEgressWorkspace(
     IDdeiArgFactory ddeiArgFactory,
     ILogger<CreateEgressWorkspace> logger,
     IActivityLogService activityLogService,
-    IRequestValidator requestValidator)
+    IRequestValidator requestValidator,
+    IInitializationHandler initializationHandler)
 {
     private readonly ILogger<CreateEgressWorkspace> _logger = logger;
     private readonly IActivityLogService _activityLogService = activityLogService;
     private readonly IRequestValidator _requestValidator = requestValidator;
+    private readonly IInitializationHandler _initializationHandler = initializationHandler;
     private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
     private readonly IEgressClient _egressClient = egressClient;
     private readonly IEgressArgFactory _egressArgFactory = egressArgFactory;
@@ -53,6 +56,7 @@ public class CreateEgressWorkspace(
     public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "v1/egress/workspaces")] HttpRequest req, FunctionContext functionContext)
     {
         var context = functionContext.GetRequestContext();
+        _initializationHandler.Initialize(context.Username, context.CorrelationId);
 
         var request = await _requestValidator.GetJsonBody<CreateEgressWorkspaceRequest, CreateEgressWorkspaceRequestValidator>(req);
 

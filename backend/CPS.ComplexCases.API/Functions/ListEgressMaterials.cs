@@ -1,29 +1,30 @@
-
-
-
 using System.Net;
-using CPS.ComplexCases.API.Constants;
-using CPS.ComplexCases.API.Context;
-using CPS.ComplexCases.Common.Attributes;
-using CPS.ComplexCases.Egress.Client;
-using CPS.ComplexCases.Egress.Factories;
-using CPS.ComplexCases.Egress.Models.Dto;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using CPS.ComplexCases.API.Constants;
+using CPS.ComplexCases.API.Context;
+using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.Common.Handlers;
+using CPS.ComplexCases.Egress.Client;
+using CPS.ComplexCases.Egress.Factories;
+using CPS.ComplexCases.Egress.Models.Dto;
 
 namespace CPS.ComplexCases.API.Functions;
 
 public class ListEgressMaterials(ILogger<ListEgressMaterials> logger,
     IEgressClient egressClient,
-    IEgressArgFactory egressArgFactory)
+    IEgressArgFactory egressArgFactory,
+    IInitializationHandler initializationHandler)
 {
     private readonly ILogger<ListEgressMaterials> _logger = logger;
     private readonly IEgressClient _egressClient = egressClient;
     private readonly IEgressArgFactory _egressArgFactory = egressArgFactory;
+    private readonly IInitializationHandler _initializationHandler = initializationHandler;
+
     [Function(nameof(ListEgressMaterials))]
     [OpenApiOperation(operationId: nameof(ListEgressMaterials), tags: ["Egress"], Description = "Lists files and folders in Egress for a workspace.")]
     [CmsAuthValuesAuth]
@@ -36,14 +37,17 @@ public class ListEgressMaterials(ILogger<ListEgressMaterials> logger,
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Forbidden, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Forbidden)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/egress/workspaces/{workspaceId}/files")] HttpRequest req, FunctionContext context, string workspaceId)
+    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/egress/workspaces/{workspaceId}/files")] HttpRequest req, FunctionContext functionContext, string workspaceId)
     {
+        var context = functionContext.GetRequestContext();
+        _initializationHandler.Initialize(context.Username, context.CorrelationId);
+
         var folderId = req.Query[InputParameters.FolderId];
         var skip = int.TryParse(req.Query[InputParameters.Skip], out var skipValue) ? skipValue : 0;
         var take = int.TryParse(req.Query[InputParameters.Take], out var takeValue) ? takeValue : 100;
 
         var listMaterialsArg = _egressArgFactory.CreateListWorkspaceMaterialArg(workspaceId, skip, take, folderId, null);
-        var permissionsArg = _egressArgFactory.CreateGetWorkspacePermissionArg(workspaceId, context.GetRequestContext().Username);
+        var permissionsArg = _egressArgFactory.CreateGetWorkspacePermissionArg(workspaceId, context.Username);
 
         try
         {

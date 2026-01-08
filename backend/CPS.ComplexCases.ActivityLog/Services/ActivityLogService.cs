@@ -155,7 +155,7 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
                 EventTimestamp = DateTime.UtcNow,
                 ActionType = activityLog.ActionType,
                 ResourceType = activityLog.ResourceType,
-                CaseId = activityLog.CaseId,
+                CaseId = activityLog.CaseId ?? 0,
                 ResourceId = activityLog.ResourceId,
                 UserName = activityLog.UserName
             };

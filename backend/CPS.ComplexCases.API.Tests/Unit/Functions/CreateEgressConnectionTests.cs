@@ -1,8 +1,12 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using AutoFixture;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Functions;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
 using CPS.ComplexCases.API.Validators.Requests;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models;
 using CPS.ComplexCases.Common.Services;
@@ -10,9 +14,6 @@ using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models.Args;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions
@@ -25,6 +26,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         private readonly Mock<IEgressArgFactory> _egressArgFactoryMock;
         private readonly Mock<IActivityLogService> _activityLogServiceMock;
         private readonly Mock<IRequestValidator> _requestValidatorMock;
+        private readonly Mock<IInitializationHandler> _initializationHandlerMock;
         private readonly CreateEgressConnection _function;
         private readonly Fixture _fixture;
         private readonly Guid _testCorrelationId;
@@ -41,6 +43,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _egressArgFactoryMock = new Mock<IEgressArgFactory>();
             _activityLogServiceMock = new Mock<IActivityLogService>();
             _requestValidatorMock = new Mock<IRequestValidator>();
+            _initializationHandlerMock = new Mock<IInitializationHandler>();
 
             _testCorrelationId = _fixture.Create<Guid>();
             _testUsername = _fixture.Create<string>();
@@ -53,7 +56,8 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 _egressArgFactoryMock.Object,
                 _loggerMock.Object,
                 _activityLogServiceMock.Object,
-                _requestValidatorMock.Object);
+                _requestValidatorMock.Object,
+                _initializationHandlerMock.Object);
         }
 
         [Fact]

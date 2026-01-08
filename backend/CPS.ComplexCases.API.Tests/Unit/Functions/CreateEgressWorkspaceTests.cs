@@ -8,6 +8,7 @@ using CPS.ComplexCases.API.Domain.Request;
 using CPS.ComplexCases.API.Functions;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
 using CPS.ComplexCases.API.Validators.Requests;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models;
 using CPS.ComplexCases.Common.Services;
@@ -33,6 +34,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         private readonly Mock<ICaseMetadataService> _caseMetadataServiceMock;
         private readonly Mock<IActivityLogService> _activityLogServiceMock;
         private readonly Mock<IRequestValidator> _requestValidatorMock;
+        private readonly Mock<IInitializationHandler> _initializationHandlerMock;
         private readonly Fixture _fixture;
         private readonly CreateEgressWorkspace _function;
         private readonly Mock<IDdeiClient> _ddeiClientMock;
@@ -60,6 +62,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _requestValidatorMock = new Mock<IRequestValidator>();
             _ddeiClientMock = new Mock<IDdeiClient>();
             _ddeiArgFactoryMock = new Mock<IDdeiArgFactory>();
+            _initializationHandlerMock = new Mock<IInitializationHandler>();
 
             _fixture = new Fixture();
             _function = new CreateEgressWorkspace(
@@ -70,7 +73,8 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 _ddeiArgFactoryMock.Object,
                 _loggerMock.Object,
                 _activityLogServiceMock.Object,
-                _requestValidatorMock.Object);
+                _requestValidatorMock.Object,
+                _initializationHandlerMock.Object);
 
             _correlationId = _fixture.Create<Guid>();
             _cmsAuthValues = _fixture.Create<string>();

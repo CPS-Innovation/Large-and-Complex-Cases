@@ -1,10 +1,13 @@
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
+using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Durable.State;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
+using CPS.ComplexCases.FileTransfer.API.Telemetry;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask;
 using Microsoft.DurableTask.Entities;
@@ -13,9 +16,11 @@ using Microsoft.Extensions.Options;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Orchestration;
 
-public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
+public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryClient telemetryClient, IInitializationHandler initializationHandler)
 {
     private readonly SizeConfig _sizeConfig = sizeConfig.Value;
+    private readonly ITelemetryClient _telemetryClient = telemetryClient;
+    private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
     [Function(nameof(TransferOrchestrator))]
     public async Task RunOrchestrator(
@@ -30,6 +35,16 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
             logger.LogError("TransferOrchestrator input is null.");
             throw new ArgumentNullException(nameof(input));
         }
+
+        _initializationHandler.Initialize(input.UserName!, input.CorrelationId);
+
+        var transferOrchestrationEvent = new TransferOrchestrationEvent
+        {
+            TransferDirection = input.TransferDirection.ToString(),
+            TotalFiles = input.SourcePaths.Count,
+            BucketName = input.BucketName,
+            CaseId = input.CaseId
+        };
 
         try
         {
@@ -63,6 +78,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
                     ActionType = ActivityLog.Enums.ActionType.TransferInitiated,
                     TransferId = input.TransferId.ToString(),
                     UserName = input.UserName,
+                    CorrelationId = input.CorrelationId
                 });
 
             // 2. Fan-out: TransferFileActivity for each item, throttled in batches
@@ -89,7 +105,9 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
                     WorkspaceId = input.WorkspaceId,
                     SourceRootFolderPath = input.SourceRootFolderPath,
                     BearerToken = input.BearerToken,
-                    BucketName = input.BucketName
+                    BucketName = input.BucketName,
+                    UserName = input.UserName!,
+                    CorrelationId = input.CorrelationId!
                 };
 
                 // Activity now returns TransferResult instead of void
@@ -101,7 +119,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
                 {
                     // Process batch results and update entity synchronously
                     var batchResults = await Task.WhenAll(batch);
-                    await ProcessTransferResults(context, entityId, batchResults);
+                    await ProcessTransferResults(context, entityId, batchResults, transferOrchestrationEvent);
                     batch.Clear();
                 }
             }
@@ -110,7 +128,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
             if (batch.Count > 0)
             {
                 var remainingResults = await Task.WhenAll(batch);
-                await ProcessTransferResults(context, entityId, remainingResults);
+                await ProcessTransferResults(context, entityId, remainingResults, transferOrchestrationEvent);
             }
 
             // 3. Delete files if transfer direction is EgressToNetApp and transfer type is Move
@@ -123,6 +141,8 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
                         TransferId = input.TransferId,
                         TransferDirection = input.TransferDirection,
                         WorkspaceId = input.WorkspaceId,
+                        UserName = input.UserName!,
+                        CorrelationId = input.CorrelationId
                     });
             }
 
@@ -134,6 +154,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
                     ActionType = ActivityLog.Enums.ActionType.TransferCompleted,
                     TransferId = input.TransferId.ToString(),
                     UserName = input.UserName,
+                    CorrelationId = input.CorrelationId
                 });
 
             // 5. Finalize
@@ -143,6 +164,8 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
                 {
                     TransferId = input.TransferId,
                 });
+
+            _telemetryClient.TrackEvent(transferOrchestrationEvent);
         }
         catch (Exception ex)
         {
@@ -163,6 +186,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
                     ActionType = ActivityLog.Enums.ActionType.TransferFailed,
                     TransferId = input.TransferId.ToString(),
                     UserName = input.UserName,
+                    CorrelationId = input.CorrelationId,
                     ExceptionMessage = ex.Message
                 });
 
@@ -178,7 +202,8 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
     private static async Task ProcessTransferResults(
         TaskOrchestrationContext context,
         EntityInstanceId entityId,
-        TransferResult[] results)
+        TransferResult[] results,
+        TransferOrchestrationEvent telemetryEvent)
     {
         foreach (var result in results)
         {
@@ -189,6 +214,10 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
                     entityId,
                     nameof(TransferEntityState.AddSuccessfulItem),
                     result.SuccessfulItem);
+
+                // Update telemetry event
+                telemetryEvent.TotalFilesTransferred++;
+                telemetryEvent.TotalBytesTransferred += result.SuccessfulItem.Size;
             }
             else if (result != null && !result.IsSuccess && result.FailedItem != null)
             {
@@ -197,7 +226,13 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig)
                     entityId,
                     nameof(TransferEntityState.AddFailedItem),
                     result.FailedItem);
+
+                // Update telemetry event
+                telemetryEvent.TotalFilesFailed++;
             }
         }
+        telemetryEvent.OrchestrationDurationInMilliseconds = results
+            .Where(r => r?.SuccessfulItem?.EndTime != null && r.SuccessfulItem?.StartTime != null)
+            .Sum(r => (long)(r.SuccessfulItem!.EndTime!.Value - r.SuccessfulItem.StartTime!.Value).TotalMilliseconds);
     }
 }

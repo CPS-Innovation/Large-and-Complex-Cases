@@ -14,4 +14,6 @@ public class TransferFilePayload
     public string? SourceRootFolderPath { get; set; } = null;
     public required string BearerToken { get; set; }
     public required string BucketName { get; set; }
+    public required string UserName { get; set; }
+    public Guid? CorrelationId { get; set; }
 }

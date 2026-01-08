@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using AutoFixture;
+using CPS.ComplexCases.Common.Constants;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models;
 using CPS.ComplexCases.Common.Models.Domain;
@@ -29,6 +31,7 @@ public class ListFilesForTransferTests
     private readonly Mock<IStorageClient> _storageClientMock;
     private readonly Mock<IRequestValidator> _requestValidatorMock;
     private readonly Mock<IEgressClient> _egressClientMock;
+    private readonly Mock<IInitializationHandler> _initializationHandlerMock;
     private readonly ListFilesForTransfer _function;
     private readonly int _testCaseId;
     private readonly string _testWorkspaceId;
@@ -42,19 +45,20 @@ public class ListFilesForTransferTests
         _storageClientMock = new Mock<IStorageClient>();
         _requestValidatorMock = new Mock<IRequestValidator>();
         _egressClientMock = new Mock<IEgressClient>();
+        _initializationHandlerMock = new Mock<IInitializationHandler>();
 
         _testWorkspaceId = _fixture.Create<string>();
         _testCaseId = _fixture.Create<int>();
         _testCorrelationId = _fixture.Create<Guid>();
 
-        _function = new ListFilesForTransfer(_loggerMock.Object, _storageClientFactoryMock.Object, _requestValidatorMock.Object, _egressClientMock.Object);
+        _function = new ListFilesForTransfer(_loggerMock.Object, _storageClientFactoryMock.Object, _requestValidatorMock.Object, _egressClientMock.Object, _initializationHandlerMock.Object);
     }
 
     [Fact]
     public async Task Run_ReturnsBadRequest_WhenRequestIsInvalid()
     {
         // Arrange
-        var reqMock = new Mock<HttpRequest>();
+        var reqMock = CreateHttpRequestMock();
         var context = new Mock<FunctionContext>().Object;
 
         reqMock.Setup(r => r.Body).Returns(new MemoryStream());
@@ -83,7 +87,7 @@ public class ListFilesForTransferTests
     public async Task Run_ReturnsOk_WithFilesForTransferResult()
     {
         // Arrange
-        var reqMock = new Mock<HttpRequest>();
+        var reqMock = CreateHttpRequestMock();
         var context = new Mock<FunctionContext>().Object;
 
         var validationResult = new ValidatableRequest<ListFilesForTransferRequest>
@@ -124,7 +128,7 @@ public class ListFilesForTransferTests
     public async Task Run_EgressToNetApp_WithInvalidPaths_SetsIsInvalidCorrectly()
     {
         // Arrange
-        var reqMock = new Mock<HttpRequest>();
+        var reqMock = CreateHttpRequestMock();
         var context = new Mock<FunctionContext>().Object;
         var destinationPath = new string('a', 261);
         var sourcePath = "file1.txt";
@@ -178,7 +182,7 @@ public class ListFilesForTransferTests
     public async Task Run_NetAppToEgress_SkipsPathValidation()
     {
         // Arrange
-        var reqMock = new Mock<HttpRequest>();
+        var reqMock = CreateHttpRequestMock();
         var context = new Mock<FunctionContext>().Object;
         var destinationPath = new string('a', 256);
         var relativePath = "file1.txt";
@@ -221,7 +225,7 @@ public class ListFilesForTransferTests
     public async Task Run_MoveFrom_EgressToNetApp_WithUserPermissionCheck_ReturnsEgressPermissionExceptionResult_WhenUserLacksPermission()
     {
         // Arrange
-        var reqMock = new Mock<HttpRequest>();
+        var reqMock = CreateHttpRequestMock();
         var context = new Mock<FunctionContext>().Object;
 
         var validationResult = new ValidatableRequest<ListFilesForTransferRequest>
@@ -248,7 +252,7 @@ public class ListFilesForTransferTests
     public async Task Run_MoveFrom_EgressToNetApp_WithUserPermissionCheck_DoesNotReturnEgressPermissionExceptionResult_WhenUserHasPermission()
     {
         // Arrange
-        var reqMock = new Mock<HttpRequest>();
+        var reqMock = CreateHttpRequestMock();
         var context = new Mock<FunctionContext>().Object;
         var relativePath = "file1.txt";
 
@@ -290,7 +294,7 @@ public class ListFilesForTransferTests
     public async Task Run_WithEmptySourcePaths_HandlesGracefully()
     {
         // Arrange
-        var reqMock = new Mock<HttpRequest>();
+        var reqMock = CreateHttpRequestMock();
         var context = new Mock<FunctionContext>().Object;
 
         var validationResult = new ValidatableRequest<ListFilesForTransferRequest>
@@ -322,7 +326,7 @@ public class ListFilesForTransferTests
     public async Task Run_MapsTransferEntityDtoCorrectly()
     {
         // Arrange
-        var reqMock = new Mock<HttpRequest>();
+        var reqMock = CreateHttpRequestMock();
         var context = new Mock<FunctionContext>().Object;
 
         var validationResult = new ValidatableRequest<ListFilesForTransferRequest>
@@ -389,6 +393,15 @@ public class ListFilesForTransferTests
             WorkspaceId = _testWorkspaceId,
             SourcePaths = _fixture.Create<List<SelectedSourcePath>>()
         };
+    }
+
+    private Mock<HttpRequest> CreateHttpRequestMock()
+    {
+        var reqMock = new Mock<HttpRequest>();
+        reqMock.Setup(r => r.Headers).Returns(new HeaderDictionary() {
+            { HttpHeaderKeys.CorrelationId, _testCorrelationId.ToString() }
+        });
+        return reqMock;
     }
 }
 

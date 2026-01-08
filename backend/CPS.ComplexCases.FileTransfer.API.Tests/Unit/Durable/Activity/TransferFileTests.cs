@@ -1,9 +1,11 @@
 using System.Text;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.Common.Storage;
+using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Factories;
@@ -21,13 +23,15 @@ public class TransferFileTests
     private readonly Mock<IStorageClient> _sourceClientMock = new();
     private readonly Mock<IStorageClient> _destinationClientMock = new();
     private readonly Mock<ILogger<TransferFile>> _loggerMock = new();
+    private readonly Mock<IInitializationHandler> _initializationHandlerMock = new();
+    private readonly Mock<ITelemetryClient> _telemetryClientMock = new();
     private readonly IOptions<SizeConfig> _sizeConfig = Options.Create(new SizeConfig { ChunkSizeBytes = 4 });
 
     private readonly TransferFile _activity;
 
     public TransferFileTests()
     {
-        _activity = new TransferFile(_storageClientFactoryMock.Object, _loggerMock.Object, _sizeConfig);
+        _activity = new TransferFile(_storageClientFactoryMock.Object, _loggerMock.Object, _sizeConfig, _initializationHandlerMock.Object, _telemetryClientMock.Object);
     }
 
     private static TransferFilePayload CreatePayload()
@@ -47,6 +51,8 @@ public class TransferFileTests
             TransferDirection = TransferDirection.EgressToNetApp,
             BearerToken = "fakeBearerToken",
             BucketName = "test-bucket",
+            UserName = "testuser",
+            CorrelationId = Guid.NewGuid()
         };
     }
 

@@ -6,6 +6,7 @@ using AutoFixture.AutoMoq;
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
+using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
@@ -26,6 +27,7 @@ public class EgressStorageClientTests : IDisposable
     private readonly Mock<HttpMessageHandler> _httpMessageHandlerMock;
     private readonly HttpClient _httpClient;
     private readonly Mock<IEgressRequestFactory> _requestFactoryMock;
+    private readonly Mock<ITelemetryClient> _telemtryClientMock;
     private readonly EgressStorageClient _client;
     private const string TestUrl = "https://example.com";
 
@@ -43,6 +45,7 @@ public class EgressStorageClientTests : IDisposable
         _optionsMock = _fixture.Freeze<Mock<IOptions<EgressOptions>>>();
         _requestFactoryMock = _fixture.Freeze<Mock<IEgressRequestFactory>>();
         _httpMessageHandlerMock = new Mock<HttpMessageHandler>();
+        _telemtryClientMock = _fixture.Freeze<Mock<ITelemetryClient>>();
 
         _httpClient = new HttpClient(_httpMessageHandlerMock.Object)
         {
@@ -61,7 +64,8 @@ public class EgressStorageClientTests : IDisposable
             _loggerMock.Object,
             _optionsMock.Object,
             _httpClient,
-            _requestFactoryMock.Object
+            _requestFactoryMock.Object,
+            _telemtryClientMock.Object
         );
     }
 

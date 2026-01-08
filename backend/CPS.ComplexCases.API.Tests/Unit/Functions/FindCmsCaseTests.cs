@@ -1,15 +1,16 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using AutoFixture;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Domain.Response;
 using CPS.ComplexCases.API.Functions;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
 using CPS.ComplexCases.DDEI.Models.Args;
 using CPS.ComplexCases.DDEI.Models.Dto;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions
@@ -20,6 +21,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         private readonly Mock<IDdeiClient> _ddeiClientMock;
         private readonly Mock<IDdeiArgFactory> _ddeiArgFactoryMock;
         private readonly Mock<ICaseEnrichmentService> _caseEnrichmentServiceMock;
+        private readonly Mock<IInitializationHandler> _initializationHandlerMock;
         private readonly FindCmsCase _function;
         private readonly Fixture _fixture;
         private readonly Guid _testCorrelationId;
@@ -34,6 +36,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _ddeiClientMock = new Mock<IDdeiClient>();
             _ddeiArgFactoryMock = new Mock<IDdeiArgFactory>();
             _caseEnrichmentServiceMock = new Mock<ICaseEnrichmentService>();
+            _initializationHandlerMock = new Mock<IInitializationHandler>();
 
             _testCorrelationId = _fixture.Create<Guid>();
             _testUsername = _fixture.Create<string>();
@@ -44,7 +47,8 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 _loggerMock.Object,
                 _ddeiClientMock.Object,
                 _ddeiArgFactoryMock.Object,
-                _caseEnrichmentServiceMock.Object);
+                _caseEnrichmentServiceMock.Object,
+                _initializationHandlerMock.Object);
         }
 
         [Fact]

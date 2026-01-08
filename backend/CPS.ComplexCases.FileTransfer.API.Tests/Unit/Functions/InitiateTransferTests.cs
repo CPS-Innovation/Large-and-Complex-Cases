@@ -1,23 +1,24 @@
-using CPS.ComplexCases.Common.Constants;
-using CPS.ComplexCases.Common.Models.Requests;
-using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
-using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
-using CPS.ComplexCases.FileTransfer.API.Models.Responses;
-using CPS.ComplexCases.FileTransfer.API.Functions;
-using CPS.ComplexCases.FileTransfer.API.Tests.Unit.Stubs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.DurableTask;
+using Microsoft.DurableTask.Client.Entities;
 using Microsoft.Extensions.Logging;
-using Moq;
-using CPS.ComplexCases.Common.Services;
+using AutoFixture;
+using CPS.ComplexCases.Common.Constants;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
-using CPS.ComplexCases.FileTransfer.API.Validators;
+using CPS.ComplexCases.Common.Models;
+using CPS.ComplexCases.Common.Models.Requests;
+using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
-using CPS.ComplexCases.Common.Models;
-using AutoFixture;
-using Microsoft.DurableTask.Client.Entities;
+using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
+using CPS.ComplexCases.FileTransfer.API.Functions;
+using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
+using CPS.ComplexCases.FileTransfer.API.Models.Responses;
+using CPS.ComplexCases.FileTransfer.API.Tests.Unit.Stubs;
+using CPS.ComplexCases.FileTransfer.API.Validators;
+using Moq;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Functions
 {
@@ -26,6 +27,7 @@ namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Functions
         private readonly Mock<ILogger<InitiateTransfer>> _loggerMock;
         private readonly Mock<ICaseMetadataService> _caseMetadataServiceMock;
         private readonly Mock<IRequestValidator> _requestValidatorMock;
+        private readonly Mock<IInitializationHandler> _initializationHandlerMock;
         private readonly DurableEntityClientStub _entityClientStub;
         private readonly DurableTaskClientStub _durableClientStub;
         private readonly InitiateTransfer _function;
@@ -38,6 +40,7 @@ namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Functions
             _loggerMock = new Mock<ILogger<InitiateTransfer>>();
             _caseMetadataServiceMock = new Mock<ICaseMetadataService>();
             _requestValidatorMock = new Mock<IRequestValidator>();
+            _initializationHandlerMock = new Mock<IInitializationHandler>();
 
             _entityClientStub = new DurableEntityClientStub("TestEntityClient");
             _durableClientStub = new DurableTaskClientStub(_entityClientStub);
@@ -46,7 +49,8 @@ namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Functions
             _function = new InitiateTransfer(
                 _loggerMock.Object,
                 _caseMetadataServiceMock.Object,
-                _requestValidatorMock.Object);
+                _requestValidatorMock.Object,
+                _initializationHandlerMock.Object);
         }
 
         [Fact]

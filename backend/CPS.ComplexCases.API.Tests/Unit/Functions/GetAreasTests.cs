@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Moq;
 using AutoFixture;
 using CPS.ComplexCases.API.Functions;
+using CPS.ComplexCases.API.Tests.Unit.Helpers;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
-using CPS.ComplexCases.API.Tests.Unit.Helpers;
 using CPS.ComplexCases.DDEI.Models.Args;
 using CPS.ComplexCases.DDEI.Models.Dto;
+using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions
 {
@@ -16,6 +17,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         private readonly Mock<ILogger<GetAreas>> _loggerMock;
         private readonly Mock<IDdeiClient> _ddeiClientMock;
         private readonly Mock<IDdeiArgFactory> _ddeiArgFactoryMock;
+        private readonly Mock<IInitializationHandler> _initializationHandlerMock;
         private readonly Fixture _fixture;
         private readonly GetAreas _function;
 
@@ -24,8 +26,9 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _loggerMock = new Mock<ILogger<GetAreas>>();
             _ddeiClientMock = new Mock<IDdeiClient>();
             _ddeiArgFactoryMock = new Mock<IDdeiArgFactory>();
+            _initializationHandlerMock = new Mock<IInitializationHandler>();
             _fixture = new Fixture();
-            _function = new GetAreas(_loggerMock.Object, _ddeiClientMock.Object, _ddeiArgFactoryMock.Object);
+            _function = new GetAreas(_loggerMock.Object, _ddeiClientMock.Object, _ddeiArgFactoryMock.Object, _initializationHandlerMock.Object);
         }
 
         [Fact]

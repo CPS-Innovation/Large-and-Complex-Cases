@@ -6,6 +6,7 @@ using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Functions;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Data.Dtos;
 using Moq;
 
@@ -16,6 +17,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         private readonly Fixture _fixture;
         private readonly Mock<ILogger<GetActivityLogs>> _loggerMock;
         private readonly Mock<IActivityLogService> _activityLogServiceMock;
+        private readonly Mock<IInitializationHandler> _initializationHandlerMock;
         private readonly GetActivityLogs _function;
         private readonly Guid _testCorrelationId;
         private readonly string _testUsername;
@@ -27,13 +29,15 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _fixture = new Fixture();
             _loggerMock = new Mock<ILogger<GetActivityLogs>>();
             _activityLogServiceMock = new Mock<IActivityLogService>();
+            _initializationHandlerMock = new Mock<IInitializationHandler>();
 
             _fixture.Customize<Data.Entities.ActivityLog>(composer =>
                 composer.Without(x => x.Details));
 
             _function = new GetActivityLogs(
                 _loggerMock.Object,
-                _activityLogServiceMock.Object
+                _activityLogServiceMock.Object,
+                _initializationHandlerMock.Object
             );
 
             _testCorrelationId = _fixture.Create<Guid>();

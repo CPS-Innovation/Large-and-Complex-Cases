@@ -8,6 +8,7 @@ using CPS.ComplexCases.API.Functions;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
 using CPS.ComplexCases.API.Validators.Requests;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models;
 using CPS.ComplexCases.Common.Services;
@@ -29,6 +30,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         private readonly Mock<IActivityLogService> _activityLogServiceMock;
         private readonly Mock<IRequestValidator> _requestValidatorMock;
         private readonly Mock<ISecurityGroupMetadataService> _securityGroupMetadataServiceMock;
+        private readonly Mock<IInitializationHandler> _initializationHandlerMock;
         private readonly CreateNetAppConnection _function;
         private readonly Fixture _fixture;
         private readonly Guid _testCorrelationId;
@@ -47,6 +49,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _activityLogServiceMock = new Mock<IActivityLogService>();
             _requestValidatorMock = new Mock<IRequestValidator>();
             _securityGroupMetadataServiceMock = new Mock<ISecurityGroupMetadataService>();
+            _initializationHandlerMock = new Mock<IInitializationHandler>();
 
             _testCorrelationId = _fixture.Create<Guid>();
             _testUsername = _fixture.Create<string>();
@@ -71,7 +74,8 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 _netAppArgFactoryMock.Object,
                 _activityLogServiceMock.Object,
                 _requestValidatorMock.Object,
-                _securityGroupMetadataServiceMock.Object
+                _securityGroupMetadataServiceMock.Object,
+                _initializationHandlerMock.Object
                 );
         }
 

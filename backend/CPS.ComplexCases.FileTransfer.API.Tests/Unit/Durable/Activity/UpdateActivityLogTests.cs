@@ -1,18 +1,19 @@
+using Microsoft.DurableTask.Client.Entities;
+using Microsoft.DurableTask.Entities;
 using Microsoft.Extensions.Logging;
 using AutoFixture;
 using AutoFixture.AutoMoq;
 using CPS.ComplexCases.ActivityLog.Enums;
 using CPS.ComplexCases.ActivityLog.Services;
+using CPS.ComplexCases.Common.Handlers;
+using CPS.ComplexCases.Common.Models.Domain.Enums;
+using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
+using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 using CPS.ComplexCases.FileTransfer.API.Tests.Unit.Stubs;
 using Moq;
-using Microsoft.DurableTask.Client.Entities;
-using CPS.ComplexCases.Common.Models.Domain.Enums;
-using CPS.ComplexCases.Common.Models.Requests;
-using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
-using Microsoft.DurableTask.Entities;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Durable.Activity;
 
@@ -21,6 +22,7 @@ public class UpdateActivityLogTests
     private readonly Fixture _fixture;
     private readonly Mock<IActivityLogService> _activityLogServiceMock;
     private readonly Mock<ILogger<UpdateActivityLog>> _loggerMock;
+    private readonly Mock<IInitializationHandler> _initializationHandlerMock;
     private readonly DurableEntityClientStub _durableEntityClientStub;
     private readonly DurableTaskClientStub _durableTaskClientStub;
     private readonly UpdateActivityLog _activity;
@@ -33,11 +35,12 @@ public class UpdateActivityLogTests
 
         _activityLogServiceMock = new Mock<IActivityLogService>();
         _loggerMock = new Mock<ILogger<UpdateActivityLog>>();
+        _initializationHandlerMock = new Mock<IInitializationHandler>();
 
         _durableEntityClientStub = new DurableEntityClientStub("TestClient");
         _durableTaskClientStub = new DurableTaskClientStub(_durableEntityClientStub);
 
-        _activity = new UpdateActivityLog(_activityLogServiceMock.Object, _loggerMock.Object);
+        _activity = new UpdateActivityLog(_activityLogServiceMock.Object, _loggerMock.Object, _initializationHandlerMock.Object);
         _bearerToken = _fixture.Create<string>();
     }
 

@@ -1,30 +1,32 @@
-
 using System.Net;
-using CPS.ComplexCases.API.Constants;
-using CPS.ComplexCases.API.Context;
-using CPS.ComplexCases.API.Domain.Response;
-using CPS.ComplexCases.Common.Attributes;
-using CPS.ComplexCases.Common.Services;
-using CPS.ComplexCases.DDEI.Client;
-using CPS.ComplexCases.DDEI.Factories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using CPS.ComplexCases.API.Constants;
+using CPS.ComplexCases.API.Context;
+using CPS.ComplexCases.API.Domain.Response;
+using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.Common.Handlers;
+using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.DDEI.Client;
+using CPS.ComplexCases.DDEI.Factories;
 
 namespace CPS.ComplexCases.API.Functions;
 
 public class GetCase(ILogger<GetCase> logger,
   ICaseMetadataService caseClient,
   IDdeiClient ddeiClient,
-  IDdeiArgFactory ddeiArgFactory)
+  IDdeiArgFactory ddeiArgFactory,
+  IInitializationHandler initializationHandler)
 {
     private readonly ILogger<GetCase> _logger = logger;
     private readonly ICaseMetadataService _caseClient = caseClient;
     private readonly IDdeiClient _ddeiClient = ddeiClient;
     private readonly IDdeiArgFactory _ddeiArgFactory = ddeiArgFactory;
+    private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
     [Function(nameof(GetCase))]
     [OpenApiOperation(operationId: nameof(GetCase), tags: ["Cases"], Description = "Gets a case by ID from metadata service.")]
@@ -37,8 +39,11 @@ public class GetCase(ILogger<GetCase> logger,
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Forbidden, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Forbidden)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
 
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/cases/{caseId}")] HttpRequest req, FunctionContext context, int caseId)
+    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/cases/{caseId}")] HttpRequest req, FunctionContext functionContext, int caseId)
     {
+        var context = functionContext.GetRequestContext();
+        _initializationHandler.Initialize(context.Username, context.CorrelationId);
+
         var caseResponse = await _caseClient.GetCaseMetadataForCaseIdAsync(caseId);
 
         if (caseResponse == null)
@@ -46,7 +51,7 @@ public class GetCase(ILogger<GetCase> logger,
             return new NotFoundObjectResult($"Case with ID {caseId} not found.");
         }
 
-        var cmsArg = _ddeiArgFactory.CreateCaseArg(context.GetRequestContext().CmsAuthValues, context.GetRequestContext().CorrelationId, caseId);
+        var cmsArg = _ddeiArgFactory.CreateCaseArg(context.CmsAuthValues, context.CorrelationId, caseId);
         var cmsResponse = await _ddeiClient.GetCaseAsync(cmsArg);
 
         var response = new CaseWithMetadataResponse

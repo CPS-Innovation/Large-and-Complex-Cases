@@ -8,6 +8,7 @@ using Microsoft.OpenApi.Models;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 
@@ -15,11 +16,13 @@ namespace CPS.ComplexCases.API.Functions;
 
 public class CreateNetAppFolder(ILogger<CreateNetAppFolder> logger,
     INetAppClient netAppClient,
-    INetAppArgFactory netAppArgFactory)
+    INetAppArgFactory netAppArgFactory,
+    IInitializationHandler initializationHandler)
 {
     private readonly ILogger<CreateNetAppFolder> _logger = logger;
     private readonly INetAppClient _netAppClient = netAppClient;
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
+    private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
     [Function(nameof(CreateNetAppFolder))]
     [OpenApiOperation(operationId: nameof(CreateEgressConnection), tags: ["NetApp"], Description = "Create a folder in NetApp.")]
@@ -33,6 +36,8 @@ public class CreateNetAppFolder(ILogger<CreateNetAppFolder> logger,
     public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "v1/cases/{operationName}/netapp")] HttpRequest req, string operationName, FunctionContext functionContext)
     {
         var context = functionContext.GetRequestContext();
+        _initializationHandler.Initialize(context.Username, context.CorrelationId);
+
         var arg = _netAppArgFactory.CreateFindBucketArg(context.BearerToken, operationName!);
         var result = await _netAppClient.FindBucketAsync(arg);
 
