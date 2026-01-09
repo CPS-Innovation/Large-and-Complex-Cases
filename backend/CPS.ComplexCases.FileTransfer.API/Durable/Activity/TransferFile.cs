@@ -38,6 +38,12 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
 
         var (sourceClient, destinationClient) = _storageClientFactory.GetClientsForDirection(payload.TransferDirection);
 
+        var telemetryEvent = new FileTransferEvent
+        {
+            CaseId = payload.CaseId,
+            TransferStartTime = startTime,
+        };
+
         try
         {
             var sourceFilePath = string.IsNullOrEmpty(payload.SourcePath.ModifiedPath)
@@ -69,27 +75,26 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                         totalSize,
                         startTime);
                 }
-
-                // All Egress + large NetApp files use multipart upload
-                result = await HandleMultipartUpload(
-                    sourceStream,
-                    destinationClient,
-                    payload,
-                    sourceFilePath,
-                    totalSize,
-                    needsMd5,
-                    cancellationToken,
-                    startTime);
-
-                var telemetryEvent = new FileTransferEvent
+                else
                 {
-                    FileSizeInBytes = totalSize,
-                    TransferStartTime = result.SuccessfulItem?.StartTime ?? startTime,
-                    TransferEndTime = result.SuccessfulItem?.EndTime ?? DateTime.UtcNow,
-                    IsSuccessful = result.IsSuccess,
-                    IsMultipart = result.IsSuccess && result.SuccessfulItem!.TotalPartsCount > 1,
-                    TotalPartsCount = result.IsSuccess ? result.SuccessfulItem!.TotalPartsCount : 0
-                };
+                    // All Egress + large NetApp files use multipart upload
+                    result = await HandleMultipartUpload(
+                        sourceStream,
+                        destinationClient,
+                        payload,
+                        sourceFilePath,
+                        totalSize,
+                        needsMd5,
+                        cancellationToken,
+                        startTime);
+                }
+
+                telemetryEvent.FileSizeInBytes = totalSize;
+                telemetryEvent.TransferEndTime = result.SuccessfulItem?.EndTime ?? DateTime.UtcNow;
+                telemetryEvent.IsSuccessful = result.IsSuccess;
+                telemetryEvent.IsMultipart = result.IsSuccess && result.SuccessfulItem!.TotalPartsCount > 1;
+                telemetryEvent.TotalPartsCount = result.IsSuccess ? result.SuccessfulItem!.TotalPartsCount : 0;
+
                 _telemetryClient.TrackEvent(telemetryEvent);
 
                 return result;
@@ -111,6 +116,11 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 TransferErrorCode.GeneralError,
                 $"Exception: {ex.GetType().FullName}: {ex.Message}{Environment.NewLine}StackTrace: {ex.StackTrace}",
                 ex);
+        }
+        finally
+        {
+            telemetryEvent.TransferEndTime = DateTime.UtcNow;
+            _telemetryClient.TrackEvent(telemetryEvent);
         }
     }
 

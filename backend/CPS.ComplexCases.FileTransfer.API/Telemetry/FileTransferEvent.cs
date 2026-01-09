@@ -21,7 +21,7 @@ public class FileTransferEvent : BaseTelemetryEvent
         }, new Dictionary<string, double?>
         {
             { nameof(FileSizeInBytes), FileSizeInBytes },
-            { nameof(TelemetryConstants.DurationCustomDimensionName), GetDurationInMilliseconds(TransferStartTime, TransferEndTime) },
+            { TelemetryConstants.DurationCustomDimensionName, GetDurationInMilliseconds(TransferStartTime, TransferEndTime) },
             { nameof(TotalPartsCount), IsMultipart ? TotalPartsCount : 1 }
         });
     }

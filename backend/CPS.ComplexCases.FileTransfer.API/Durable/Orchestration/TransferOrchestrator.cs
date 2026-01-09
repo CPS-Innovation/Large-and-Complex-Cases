@@ -43,7 +43,8 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
             TransferDirection = input.TransferDirection.ToString(),
             TotalFiles = input.SourcePaths.Count,
             BucketName = input.BucketName,
-            CaseId = input.CaseId
+            CaseId = input.CaseId,
+            OrchestrationStartTime = DateTime.UtcNow
         };
 
         try
@@ -97,6 +98,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
             {
                 var transferFilePayload = new TransferFilePayload
                 {
+                    CaseId = input.CaseId,
                     SourcePath = sourcePath,
                     DestinationPath = transferEntity.DestinationPath,
                     TransferId = transferEntity.Id,
@@ -165,6 +167,8 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                     TransferId = input.TransferId,
                 });
 
+            transferOrchestrationEvent.IsSuccessful = transferOrchestrationEvent.TotalFilesFailed == 0;
+            transferOrchestrationEvent.OrchestrationEndTime = DateTime.UtcNow;
             _telemetryClient.TrackEvent(transferOrchestrationEvent);
         }
         catch (Exception ex)
@@ -191,6 +195,11 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                 });
 
             throw;
+        }
+        finally
+        {
+            transferOrchestrationEvent.OrchestrationEndTime = DateTime.UtcNow;
+            _telemetryClient.TrackEvent(transferOrchestrationEvent);
         }
     }
 
@@ -231,8 +240,5 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                 telemetryEvent.TotalFilesFailed++;
             }
         }
-        telemetryEvent.OrchestrationDurationInMilliseconds = results
-            .Where(r => r?.SuccessfulItem?.EndTime != null && r.SuccessfulItem?.StartTime != null)
-            .Sum(r => (long)(r.SuccessfulItem!.EndTime!.Value - r.SuccessfulItem.StartTime!.Value).TotalMilliseconds);
     }
 }

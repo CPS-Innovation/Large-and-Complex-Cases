@@ -1,9 +1,12 @@
 using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 
 namespace CPS.ComplexCases.Common.Telemetry;
 
-public class TelemetryAugmentationWrapper : ITelemetryAugmentationWrapper
+public class TelemetryAugmentationWrapper(ILogger<TelemetryAugmentationWrapper> logger) : ITelemetryAugmentationWrapper
 {
+    private readonly ILogger<TelemetryAugmentationWrapper> _logger = logger;
+
     public void RegisterUsername(string username)
     {
         RegisterCustomDimension(TelemetryConstants.UserCustomDimensionName, username);
@@ -19,10 +22,14 @@ public class TelemetryAugmentationWrapper : ITelemetryAugmentationWrapper
         RegisterCustomDimension(TelemetryConstants.CmsUserIdCustomDimensionName, cmsUserId.ToString());
     }
 
-    private static void RegisterCustomDimension(string key, string value)
+    private void RegisterCustomDimension(string key, string value)
     {
-        var activity = Activity.Current
-            ?? throw new CriticalTelemetryException("System.Diagnostics.Activity.Current was expected but was null.", new InvalidOperationException());
+        var activity = Activity.Current;
+        if (activity == null)
+        {
+            _logger.LogWarning("No current activity found when attempting to register custom dimension {Key}.", key);
+            return;
+        }
 
         try
         {

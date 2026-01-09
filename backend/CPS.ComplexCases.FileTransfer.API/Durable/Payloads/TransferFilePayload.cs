@@ -5,6 +5,7 @@ namespace CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 
 public class TransferFilePayload
 {
+    public required int CaseId { get; set; }
     public Guid TransferId { get; set; }
     public TransferType TransferType { get; set; }
     public TransferDirection TransferDirection { get; set; }
