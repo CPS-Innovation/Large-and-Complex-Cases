@@ -5,6 +5,7 @@ using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Services;
+using CPS.ComplexCases.NetApp.Telemetry;
 using CPS.ComplexCases.NetApp.Wrappers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -51,6 +52,7 @@ public static class IServiceCollectionExtension
 			services.AddSingleton<IS3CredentialService, S3CredentialService>();
 			services.Configure<CryptoOptions>(configuration.GetSection("CryptoOptions"));
 			services.AddSingleton<ICryptographyService, CryptographyService>();
+			services.AddSingleton<IS3TelemetryHandler, S3TelemetryHandler>();
 
 			services.AddSingleton<IKeyVaultService>(sp =>
 			{

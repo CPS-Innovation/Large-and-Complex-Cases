@@ -144,7 +144,8 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                         TransferDirection = input.TransferDirection,
                         WorkspaceId = input.WorkspaceId,
                         UserName = input.UserName!,
-                        CorrelationId = input.CorrelationId
+                        CorrelationId = input.CorrelationId,
+                        CaseId = input.CaseId
                     });
             }
 

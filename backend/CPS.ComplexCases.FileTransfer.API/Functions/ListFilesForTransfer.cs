@@ -53,7 +53,7 @@ public class ListFilesForTransfer(
             return new BadRequestObjectResult(request.ValidationErrors);
         }
 
-        _initializationHandler.Initialize(request.Value.Username!, req.Headers.GetCorrelationId());
+        _initializationHandler.Initialize(request.Value.Username!, req.Headers.GetCorrelationId(), request.Value.CaseId);
 
         var sourceClient = _storageClientFactory.GetSourceClientForDirection(request.Value.TransferDirection);
         var selectedEntities = request.Value.SourcePaths.Select(path => new TransferEntityDto

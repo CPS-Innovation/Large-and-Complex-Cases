@@ -22,6 +22,11 @@ public class TelemetryAugmentationWrapper(ILogger<TelemetryAugmentationWrapper> 
         RegisterCustomDimension(TelemetryConstants.CmsUserIdCustomDimensionName, cmsUserId.ToString());
     }
 
+    public void RegisterCaseId(int caseId)
+    {
+        RegisterCustomDimension(TelemetryConstants.CaseIdCustomDimensionName, caseId.ToString());
+    }
+
     private void RegisterCustomDimension(string key, string value)
     {
         var activity = Activity.Current;

@@ -56,7 +56,6 @@ public class CreateEgressWorkspace(
     public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "v1/egress/workspaces")] HttpRequest req, FunctionContext functionContext)
     {
         var context = functionContext.GetRequestContext();
-        _initializationHandler.Initialize(context.Username, context.CorrelationId);
 
         var request = await _requestValidator.GetJsonBody<CreateEgressWorkspaceRequest, CreateEgressWorkspaceRequestValidator>(req);
 
@@ -64,6 +63,8 @@ public class CreateEgressWorkspace(
         {
             return new BadRequestObjectResult(request.ValidationErrors);
         }
+
+        _initializationHandler.Initialize(context.Username, context.CorrelationId, request.Value.CaseId);
 
         var cmsArg = _ddeiArgFactory.CreateCaseArg(functionContext.GetRequestContext().CmsAuthValues, functionContext.GetRequestContext().CorrelationId, request.Value.CaseId);
         var cmsResponse = await _ddeiClient.GetCaseAsync(cmsArg);

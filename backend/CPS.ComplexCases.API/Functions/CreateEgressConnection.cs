@@ -49,7 +49,6 @@ public class CreateEgressConnection(
   public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "v1/egress/connections")] HttpRequest req, FunctionContext functionContext)
   {
     var context = functionContext.GetRequestContext();
-    _initializationHandler.Initialize(context.Username, context.CorrelationId);
 
     var egressConnectionRequest = await _requestValidator.GetJsonBody<CreateEgressConnectionDto, CreateEgressConnectionValidator>(req);
 
@@ -57,6 +56,8 @@ public class CreateEgressConnection(
     {
       return new BadRequestObjectResult(egressConnectionRequest.ValidationErrors);
     }
+
+    _initializationHandler.Initialize(context.Username, context.CorrelationId, egressConnectionRequest.Value.CaseId);
 
     var egressArg = _egressArgFactory.CreateGetWorkspacePermissionArg(egressConnectionRequest.Value.EgressWorkspaceId, context.Username);
     var hasEgressPermission = await _egressClient.GetWorkspacePermission(egressArg);

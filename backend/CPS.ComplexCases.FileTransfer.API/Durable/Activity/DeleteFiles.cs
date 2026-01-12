@@ -24,7 +24,7 @@ public class DeleteFiles(ITransferEntityHelper transferEntityHelper, IStorageCli
     [Function(nameof(DeleteFiles))]
     public async Task Run([ActivityTrigger] DeleteFilesPayload? payload, CancellationToken cancellationToken = default)
     {
-        _initializationHandler.Initialize(payload?.UserName!, payload?.CorrelationId);
+        _initializationHandler.Initialize(payload?.UserName!, payload?.CorrelationId, payload?.CaseId);
 
         var telemetryEvent = new FilesDeletedEvent
         {

@@ -42,7 +42,7 @@ public class GetCase(ILogger<GetCase> logger,
     public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/cases/{caseId}")] HttpRequest req, FunctionContext functionContext, int caseId)
     {
         var context = functionContext.GetRequestContext();
-        _initializationHandler.Initialize(context.Username, context.CorrelationId);
+        _initializationHandler.Initialize(context.Username, context.CorrelationId, caseId);
 
         var caseResponse = await _caseClient.GetCaseMetadataForCaseIdAsync(caseId);
 

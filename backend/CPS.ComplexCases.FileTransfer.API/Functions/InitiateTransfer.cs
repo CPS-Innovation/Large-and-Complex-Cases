@@ -57,7 +57,7 @@ public class InitiateTransfer(ILogger<InitiateTransfer> logger, ICaseMetadataSer
             return new BadRequestObjectResult("Metadata is required.");
         }
 
-        _initializationHandler.Initialize(transferRequest.Value.Metadata.UserName, currentCorrelationId);
+        _initializationHandler.Initialize(transferRequest.Value.Metadata.UserName, currentCorrelationId, transferRequest.Value.Metadata.CaseId);
 
         var caseMetadata = await _caseMetadataService.GetCaseMetadataForCaseIdAsync(transferRequest.Value.Metadata.CaseId);
 

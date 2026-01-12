@@ -9,4 +9,5 @@ public class DeleteFilesPayload
     public string? WorkspaceId { get; set; } = null;
     public required string UserName { get; set; }
     public Guid? CorrelationId { get; set; } = null;
+    public int? CaseId { get; set; } = null;
 }

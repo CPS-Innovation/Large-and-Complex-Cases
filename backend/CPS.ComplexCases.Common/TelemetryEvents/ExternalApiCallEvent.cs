@@ -13,6 +13,15 @@ public class ExternalApiCallEvent : BaseTelemetryEvent
         CallStartTime = DateTime.UtcNow;
     }
 
+    public ExternalApiCallEvent(string apiName, string operation)
+    {
+        ApiName = apiName;
+        Operation = operation;
+        RequestUri = string.Empty;
+        HttpMethod = string.Empty;
+        CallStartTime = DateTime.UtcNow;
+    }
+
     public string ApiName { get; set; }
     public string RequestUri { get; set; }
     public string HttpMethod { get; set; }
@@ -23,15 +32,21 @@ public class ExternalApiCallEvent : BaseTelemetryEvent
 
     public override (IDictionary<string, string> Properties, IDictionary<string, double?> Metrics) ToTelemetryEventProps()
     {
-        return (new Dictionary<string, string>
+        var properties = new Dictionary<string, string>
         {
-            { nameof(CaseId), CaseId.ToString() },
             { nameof(ApiName), ApiName },
             { nameof(RequestUri), RequestUri },
             { nameof(HttpMethod), HttpMethod },
             { nameof(Operation), Operation },
             { nameof(ResponseStatusCode), ResponseStatusCode.HasValue ? ((int)ResponseStatusCode.Value).ToString() : "N/A" }
-        }, new Dictionary<string, double?>
+        };
+
+        if (CaseId > 0)
+        {
+            properties.Add(nameof(CaseId), CaseId.ToString());
+        }
+
+        return (properties, new Dictionary<string, double?>
         {
             { TelemetryConstants.DurationCustomDimensionName, GetDurationInMilliseconds(CallStartTime, CallEndTime) },
         });

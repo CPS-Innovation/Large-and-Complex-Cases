@@ -6,7 +6,7 @@ public class InitializationHandler(ITelemetryAugmentationWrapper telemetryAugmen
 {
     private readonly ITelemetryAugmentationWrapper _telemetryAugmentationWrapper = telemetryAugmentationWrapper;
 
-    public void Initialize(string username, Guid? correlationId)
+    public void Initialize(string username, Guid? correlationId, int? caseId = null)
     {
         if (!string.IsNullOrEmpty(username))
         {
@@ -15,6 +15,10 @@ public class InitializationHandler(ITelemetryAugmentationWrapper telemetryAugmen
         if (correlationId != null)
         {
             _telemetryAugmentationWrapper.RegisterCorrelationId(correlationId.Value);
+        }
+        if (caseId != null)
+        {
+            _telemetryAugmentationWrapper.RegisterCaseId(caseId.Value);
         }
     }
 }

@@ -51,7 +51,6 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
     public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "v1/netapp/connections")] HttpRequest req, FunctionContext functionContext)
     {
         var context = functionContext.GetRequestContext();
-        _initializationHandler.Initialize(context.Username, context.CorrelationId);
 
         var netAppConnectionRequest = await _requestValidator.GetJsonBody<CreateNetAppConnectionDto, CreateNetAppConnectionValidator>(req);
 
@@ -59,6 +58,8 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
         {
             return new BadRequestObjectResult(netAppConnectionRequest.ValidationErrors);
         }
+
+        _initializationHandler.Initialize(context.Username, context.CorrelationId, netAppConnectionRequest.Value.CaseId);
 
         var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
 

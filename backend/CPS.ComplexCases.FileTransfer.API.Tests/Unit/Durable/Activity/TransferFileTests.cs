@@ -38,6 +38,7 @@ public class TransferFileTests
     {
         return new TransferFilePayload
         {
+            CaseId = 123,
             TransferId = Guid.NewGuid(),
             WorkspaceId = Guid.NewGuid().ToString(),
             SourcePath = new TransferSourcePath
