@@ -47,7 +47,7 @@ if [ -z "$DB_NAME" ]; then
     exit 1
 fi
 
-DB_USER='Azure Pipeline: LaCC-PreProd'
+DB_USER=$SERVICE_PRINCIPAL
 echo "Testing database connection..."
 echo "Host: $DB_HOST"
 echo "Database: $DB_NAME"
