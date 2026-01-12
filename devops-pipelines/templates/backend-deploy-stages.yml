@@ -180,7 +180,7 @@ stages:
                     bash $(scripts_directory)/updateDatabase.sh
                 env:
                   KEY_VAULT_NAME: $(keyVaultName)
-                  MIGRATION_SCRIPT_PATH: '$(Pipeline.Workspace)/build/database-scripts/migration-script.sql' 
+                  MIGRATION_SCRIPT_PATH: '$(Pipeline.Workspace)/build/database-scripts/migration-script.sql'
               
               - template: ./runner-cleanup-steps.yml
                 parameters:
