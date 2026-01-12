@@ -166,12 +166,16 @@ stages:
                   inlineScript: |
                     # Get the clientId of the service principal used for the current deployment 
                     appId=$(az account show --query user.name -o tsv)
-                    echo "Service Principal appId: $appId"
 
                     # Get the service principal's app registration display name
                     export SERVICE_PRINCIPAL=$(az ad app show --id "$appId" --query displayName -o tsv 2>/dev/null || true)
 
-                    echo "Service Principal display name: ${SERVICE_PRINCIPAL:-<not found>}"
+                    if [ -z "$SERVICE_PRINCIPAL" ]; then
+                      echo "Service Principal's display name could not be found."
+                      exit 1
+                    fi
+
+                    echo "Service Principal display name: $SERVICE_PRINCIPAL"
 
                     bash $(scripts_directory)/updateDatabase.sh
                 env:
