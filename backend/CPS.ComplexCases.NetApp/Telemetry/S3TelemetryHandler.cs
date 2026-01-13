@@ -11,11 +11,7 @@ public class S3TelemetryHandler(ITelemetryClient telemetryClient) : IS3Telemetry
     public void InitiateTelemetryEvent(WebServiceRequestEventArgs? args)
     {
         if (args == null) return;
-        _telemetryEvent = new ExternalApiCallEvent(args.ServiceName, "AmazonS3Client Request")
-        {
-            RequestUri = args.Endpoint.AbsoluteUri,
-            Operation = args.Request.GetType().Name
-        };
+        _telemetryEvent = new ExternalApiCallEvent(args.ServiceName, args.Request.GetType().Name, args.Endpoint.AbsoluteUri);
     }
 
     public void CompleteTelemetryEvent(WebServiceResponseEventArgs? args)

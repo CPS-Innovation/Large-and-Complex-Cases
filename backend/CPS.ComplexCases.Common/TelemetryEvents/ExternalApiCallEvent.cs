@@ -13,12 +13,12 @@ public class ExternalApiCallEvent : BaseTelemetryEvent
         CallStartTime = DateTime.UtcNow;
     }
 
-    public ExternalApiCallEvent(string apiName, string operation)
+    public ExternalApiCallEvent(string apiName, string operation, string requestUri)
     {
         ApiName = apiName;
-        Operation = operation;
-        RequestUri = string.Empty;
+        RequestUri = requestUri;
         HttpMethod = string.Empty;
+        Operation = operation;
         CallStartTime = DateTime.UtcNow;
     }
 
