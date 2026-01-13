@@ -1,4 +1,7 @@
 using System.Net;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
 using CPS.ComplexCases.NetApp.Client;
@@ -7,9 +10,6 @@ using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Services;
 using CPS.ComplexCases.NetApp.Telemetry;
 using CPS.ComplexCases.NetApp.Wrappers;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Polly.Wrap;
@@ -26,65 +26,46 @@ public static class IServiceCollectionExtension
 		services.AddDefaultAWSOptions(configuration.GetAWSOptions());
 		services.Configure<NetAppOptions>(configuration.GetSection("NetAppOptions"));
 		services.AddTransient<INetAppArgFactory, NetAppArgFactory>();
+		services.AddTransient<INetAppRequestFactory, NetAppRequestFactory>();
+		services.AddTransient<INetAppClient, NetAppClient>();
+		services.AddSingleton<IAmazonS3UtilsWrapper, AmazonS3UtilsWrapper>();
+		services.AddScoped<IS3ClientFactory, S3ClientFactory>();
+		services.AddSingleton<IS3CredentialService, S3CredentialService>();
+		services.Configure<CryptoOptions>(configuration.GetSection("CryptoOptions"));
+		services.AddSingleton<ICryptographyService, CryptographyService>();
+		services.AddSingleton<IS3TelemetryHandler, S3TelemetryHandler>();
 
-		var enableMock = configuration.GetValue<bool>("NetAppOptions:EnableMock");
-
-		if (enableMock)
+		services.AddSingleton<IKeyVaultService>(sp =>
 		{
-			services.AddSingleton<INetAppMockHttpRequestFactory, NetAppMockHttpRequestFactory>();
-			services.AddHttpClient<INetAppClient, NetAppMockHttpClient>(client =>
-			{
-				var netAppServiceUrl = configuration["NetAppOptions:MockUrl"];
-				if (string.IsNullOrEmpty(netAppServiceUrl))
-				{
-					throw new ArgumentNullException(nameof(netAppServiceUrl), "NetAppOptions:MockUrl configuration is missing or empty.");
-				}
-				client.BaseAddress = new Uri(netAppServiceUrl);
-			})
-			.SetHandlerLifetime(TimeSpan.FromMinutes(5));
-		}
-		else
+			var logger = sp.GetRequiredService<ILogger<KeyVaultService>>();
+			var keyVaultUrl = configuration["KeyVault:Url"]
+				?? throw new ArgumentNullException("KeyVault:Url", "KeyVault:Url configuration is missing or empty.");
+
+			var secretClient = new SecretClient(
+				new Uri(keyVaultUrl),
+				new DefaultAzureCredential()
+			);
+
+			return new KeyVaultService(secretClient, logger);
+		});
+
+		services.AddHttpClient<INetAppHttpClient, NetAppHttpClient>(client =>
 		{
-			services.AddTransient<INetAppRequestFactory, NetAppRequestFactory>();
-			services.AddTransient<INetAppClient, NetAppClient>();
-			services.AddSingleton<IAmazonS3UtilsWrapper, AmazonS3UtilsWrapper>();
-			services.AddScoped<IS3ClientFactory, S3ClientFactory>();
-			services.AddSingleton<IS3CredentialService, S3CredentialService>();
-			services.Configure<CryptoOptions>(configuration.GetSection("CryptoOptions"));
-			services.AddSingleton<ICryptographyService, CryptographyService>();
-			services.AddSingleton<IS3TelemetryHandler, S3TelemetryHandler>();
-
-			services.AddSingleton<IKeyVaultService>(sp =>
+			var netAppServiceUrl = configuration["NetAppOptions:ClusterUrl"];
+			if (string.IsNullOrEmpty(netAppServiceUrl))
 			{
-				var logger = sp.GetRequiredService<ILogger<KeyVaultService>>();
-				var keyVaultUrl = configuration["KeyVault:Url"]
-					?? throw new ArgumentNullException("KeyVault:Url", "KeyVault:Url configuration is missing or empty.");
+				throw new ArgumentNullException(nameof(netAppServiceUrl), "NetAppOptions:ClusterUrl configuration is missing or empty.");
+			}
+			client.BaseAddress = new Uri(netAppServiceUrl);
 
-				var secretClient = new SecretClient(
-					new Uri(keyVaultUrl),
-					new DefaultAzureCredential()
-				);
+		})
+		.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+		{
+			ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; }
+		})
+		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
+		.AddPolicyHandler(GetRetryPolicy());
 
-				return new KeyVaultService(secretClient, logger);
-			});
-
-			services.AddHttpClient<INetAppHttpClient, NetAppHttpClient>(client =>
-			{
-				var netAppServiceUrl = configuration["NetAppOptions:ClusterUrl"];
-				if (string.IsNullOrEmpty(netAppServiceUrl))
-				{
-					throw new ArgumentNullException(nameof(netAppServiceUrl), "NetAppOptions:ClusterUrl configuration is missing or empty.");
-				}
-				client.BaseAddress = new Uri(netAppServiceUrl);
-
-			})
-			.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
-			{
-				ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; }
-			})
-			.SetHandlerLifetime(TimeSpan.FromMinutes(5))
-			.AddPolicyHandler(GetRetryPolicy());
-		}
 		services.AddTransient<NetAppStorageClient>();
 	}
 
