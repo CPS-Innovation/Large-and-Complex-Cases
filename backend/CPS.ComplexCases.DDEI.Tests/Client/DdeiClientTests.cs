@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using AutoFixture;
 using AutoFixture.AutoMoq;
+using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Exceptions;
 using CPS.ComplexCases.DDEI.Factories;
@@ -33,6 +34,7 @@ public class DdeiClientTests
   private readonly DdeiDefendantNameArgDto _ddeiDefendantNameArgDto;
   private readonly Mock<IDdeiRequestFactoryTactical> _ddeiRequestFactoryTactical;
   private readonly Mock<IAuthenticationResponseMapper> _authenticationResponseMapper;
+  private readonly Mock<ITelemetryClient> _telemetryClientMock;
 
   private const string TestUrl = "https://example.com";
 
@@ -49,6 +51,7 @@ public class DdeiClientTests
     _areasMapperMock = new Mock<IAreasMapper>();
     _ddeiRequestFactoryTactical = new Mock<IDdeiRequestFactoryTactical>();
     _authenticationResponseMapper = new Mock<IAuthenticationResponseMapper>();
+    _telemetryClientMock = new Mock<ITelemetryClient>();
 
     _httpClient = new HttpClient(_httpMessageHandlerMock.Object)
     {
@@ -67,7 +70,8 @@ public class DdeiClientTests
       _caseDetailsMapperMock.Object,
       _areasMapperMock.Object,
       _ddeiRequestFactoryTactical.Object,
-      _authenticationResponseMapper.Object
+      _authenticationResponseMapper.Object,
+      _telemetryClientMock.Object
     );
   }
 

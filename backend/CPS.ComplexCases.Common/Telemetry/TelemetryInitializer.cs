@@ -1,8 +1,8 @@
-namespace CPS.ComplexCases.Common.Telemetry;
-
 using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Configuration;
+
+namespace CPS.ComplexCases.Common.Telemetry;
 
 public class TelemetryInitializer(IConfiguration configuration) : ITelemetryInitializer
 {

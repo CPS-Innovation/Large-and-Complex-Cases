@@ -6,6 +6,7 @@ using CPS.ComplexCases.ActivityLog.Enums;
 using CPS.ComplexCases.ActivityLog.Extensions;
 using CPS.ComplexCases.ActivityLog.Models;
 using CPS.ComplexCases.ActivityLog.Services;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
@@ -13,14 +14,17 @@ using CPS.ComplexCases.FileTransfer.API.Durable.State;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 
-public class UpdateActivityLog(IActivityLogService activityLogService, ILogger<UpdateActivityLog> logger)
+public class UpdateActivityLog(IActivityLogService activityLogService, ILogger<UpdateActivityLog> logger, IInitializationHandler initializationHandler)
 {
     private readonly IActivityLogService _activityLogService = activityLogService;
     private readonly ILogger<UpdateActivityLog> _logger = logger;
+    private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
     [Function(nameof(UpdateActivityLog))]
     public async Task Run([ActivityTrigger] UpdateActivityLogPayload payload, [DurableClient] DurableTaskClient client)
     {
+        _initializationHandler.Initialize(payload?.UserName!, payload?.CorrelationId);
+
         if (payload == null)
         {
             throw new ArgumentNullException(nameof(payload), "UpdateActivityLog payload cannot be null.");

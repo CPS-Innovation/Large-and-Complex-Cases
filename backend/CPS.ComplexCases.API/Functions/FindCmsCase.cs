@@ -7,23 +7,26 @@ using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
+using CPS.ComplexCases.API.Services;
+using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
 using CPS.ComplexCases.DDEI.Models.Dto;
-using CPS.ComplexCases.API.Services;
-using CPS.ComplexCases.Common.Attributes;
 
 namespace CPS.ComplexCases.API.Functions;
 
 public class FindCmsCase(ILogger<FindCmsCase> logger,
   IDdeiClient ddeiClient,
   IDdeiArgFactory ddeiArgFactory,
-  ICaseEnrichmentService caseEnrichmentService)
+  ICaseEnrichmentService caseEnrichmentService,
+  IInitializationHandler initializationHandler)
 {
   private readonly ILogger<FindCmsCase> _logger = logger;
   private readonly IDdeiClient _ddeiClient = ddeiClient;
   private readonly IDdeiArgFactory _ddeiArgFactory = ddeiArgFactory;
   private readonly ICaseEnrichmentService _caseEnrichmentService = caseEnrichmentService;
+  private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
   [Function(nameof(FindCmsCase))]
   [OpenApiOperation(operationId: nameof(FindCmsCase), tags: ["CMS"], Description = "Finds a case in CMS based on operation name, URN, defendant name, and area.")]
@@ -41,6 +44,7 @@ public class FindCmsCase(ILogger<FindCmsCase> logger,
   public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/case-search")] HttpRequest req, FunctionContext functionContext)
   {
     var context = functionContext.GetRequestContext();
+    _initializationHandler.Initialize(context.Username, context.CorrelationId);
 
     var operationName = req.Query[InputParameters.OperationName].FirstOrDefault();
     var urn = req.Query[InputParameters.Urn].FirstOrDefault();

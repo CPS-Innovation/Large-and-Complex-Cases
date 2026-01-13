@@ -1,3 +1,4 @@
+using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
@@ -41,7 +42,7 @@ public class EgressClientTests : IDisposable
         };
         var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<EgressClient>();
 
-        _client = new EgressClient(logger, new OptionsWrapper<EgressOptions>(egressOptions), httpClient, new EgressRequestFactory());
+        _client = new EgressClient(logger, new OptionsWrapper<EgressOptions>(egressOptions), httpClient, new EgressRequestFactory(), new TelemetryClientStub());
         _egressArgFactory = new EgressArgFactory();
     }
 

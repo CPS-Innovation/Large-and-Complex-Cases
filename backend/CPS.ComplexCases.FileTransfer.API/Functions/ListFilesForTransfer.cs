@@ -18,15 +18,22 @@ using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain;
 using CPS.ComplexCases.FileTransfer.API.Validators;
 using CPS.ComplexCases.FileTransfer.API.Models.Results;
+using CPS.ComplexCases.Common.Handlers;
 
 namespace CPS.ComplexCases.FileTransfer.API.Functions;
 
-public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorageClientFactory storageClientFactory, IRequestValidator requestValidator, IEgressClient egressClient)
+public class ListFilesForTransfer(
+    ILogger<ListFilesForTransfer> logger,
+    IStorageClientFactory storageClientFactory,
+    IRequestValidator requestValidator,
+    IEgressClient egressClient,
+    IInitializationHandler initializationHandler)
 {
     private readonly ILogger<ListFilesForTransfer> _logger = logger;
     private readonly IStorageClientFactory _storageClientFactory = storageClientFactory;
     private readonly IRequestValidator _requestValidator = requestValidator;
     private readonly IEgressClient _egressClient = egressClient;
+    private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
     [Function(nameof(ListFilesForTransfer))]
     [OpenApiOperation(operationId: nameof(ListFilesForTransfer), tags: ["FileTransfer"], Description = "Lists all files that will be included in a transfer operation based on the selected source paths.")]
@@ -37,12 +44,16 @@ public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorage
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, bodyType: typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
     public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post", Route = "transfer/files")] HttpRequest req, FunctionContext context)
     {
+        _logger.LogInformation("Processing request to list files for transfer with CorrelationId: {CorrelationId}", req.Headers.GetCorrelationId());
+
         var request = await _requestValidator.GetJsonBody<ListFilesForTransferRequest, ListFilesForTransferValidator>(req);
         if (!request.IsValid)
         {
             _logger.LogWarning("Invalid request to get files for transfer with CorrelationId {CorrelationId}: {Errors}", request.Value.CorrelationId, request.ValidationErrors);
             return new BadRequestObjectResult(request.ValidationErrors);
         }
+
+        _initializationHandler.Initialize(request.Value.Username!, req.Headers.GetCorrelationId(), request.Value.CaseId);
 
         var sourceClient = _storageClientFactory.GetSourceClientForDirection(request.Value.TransferDirection);
         var selectedEntities = request.Value.SourcePaths.Select(path => new TransferEntityDto
@@ -123,6 +134,8 @@ public class ListFilesForTransfer(ILogger<ListFilesForTransfer> logger, IStorage
                 result.SourceRootFolderPath = request.Value.SourceRootFolderPath.RemovePathPrefix(operationName);
             }
         }
+
+        _logger.LogInformation("Listed {FileCount} files for transfer with CorrelationId: {CorrelationId}", result.Files.Count(), req.Headers.GetCorrelationId());
 
         return new OkObjectResult(result);
     }

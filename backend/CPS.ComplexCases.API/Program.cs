@@ -1,3 +1,4 @@
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.ApplicationInsights.WorkerService;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Abstractions;
@@ -14,15 +15,15 @@ using CPS.ComplexCases.API.OpenApi;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Validators;
 using CPS.ComplexCases.Common.Extensions;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.Data.Extensions;
 using CPS.ComplexCases.DDEI.Extensions;
 using CPS.ComplexCases.DDEI.Tactical.Extensions;
 using CPS.ComplexCases.Egress.Extensions;
 using CPS.ComplexCases.NetApp.Extensions;
-using Microsoft.ApplicationInsights.Extensibility;
-using CPS.ComplexCases.Common.Telemetry;
 
 // Create a temporary logger for configuration phase
 using var loggerFactory = LoggerFactory.Create(configure => configure.AddConsole());
@@ -89,6 +90,8 @@ var host = new HostBuilder()
         services.AddSingleton<ITelemetryInitializer, TelemetryInitializer>();
         services.AddSingleton<IAppInsightsTelemetryClient, AppInsightsTelemetryClientWrapper>();
         services.AddSingleton<ITelemetryClient, TelemetryClient>();
+        services.AddSingleton<ITelemetryAugmentationWrapper, TelemetryAugmentationWrapper>();
+        services.AddSingleton<IInitializationHandler, InitializationHandler>();
 
         services.AddScoped<ICaseMetadataService, CaseMetadataService>();
         services.AddScoped<ICaseEnrichmentService, CaseEnrichmentService>();

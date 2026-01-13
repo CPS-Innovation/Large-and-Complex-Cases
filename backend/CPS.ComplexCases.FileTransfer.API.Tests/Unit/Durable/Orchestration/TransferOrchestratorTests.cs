@@ -1,16 +1,18 @@
+using Microsoft.DurableTask;
+using Microsoft.DurableTask.Entities;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using AutoFixture;
 using AutoFixture.AutoMoq;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Requests;
+using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.FileTransfer.API.Durable.Orchestration;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
-using Microsoft.DurableTask;
-using Microsoft.DurableTask.Entities;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Durable.Orchestration;
@@ -21,6 +23,8 @@ public class TransferOrchestratorTests
     private readonly Mock<TaskOrchestrationContext> _contextMock;
     private readonly Mock<ILogger> _loggerMock;
     private readonly Mock<IOptions<SizeConfig>> _sizeConfigMock;
+    private readonly Mock<ITelemetryClient> _telemetryClientMock;
+    private readonly Mock<IInitializationHandler> _initializationHandler;
     private readonly TransferOrchestrator _orchestrator;
 
     public TransferOrchestratorTests()
@@ -31,6 +35,8 @@ public class TransferOrchestratorTests
         _contextMock = new Mock<TaskOrchestrationContext>();
         _loggerMock = new Mock<ILogger>();
         _sizeConfigMock = new Mock<IOptions<SizeConfig>>();
+        _telemetryClientMock = new Mock<ITelemetryClient>();
+        _initializationHandler = new Mock<IInitializationHandler>();
 
         // Provide a default SizeConfig for tests
         _sizeConfigMock.Setup(x => x.Value).Returns(new SizeConfig { BatchSize = 10 });
@@ -38,7 +44,7 @@ public class TransferOrchestratorTests
         _contextMock.Setup(c => c.CreateReplaySafeLogger(It.IsAny<string>()))
             .Returns(_loggerMock.Object);
 
-        _orchestrator = new TransferOrchestrator(_sizeConfigMock.Object);
+        _orchestrator = new TransferOrchestrator(_sizeConfigMock.Object, _telemetryClientMock.Object, _initializationHandler.Object);
     }
 
     [Fact]

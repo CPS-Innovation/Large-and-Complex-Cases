@@ -6,7 +6,6 @@ public class ActivityLogTelemetryEvent : BaseTelemetryEvent
 {
     public string? ActionType { get; set; }
     public string? ResourceType { get; set; }
-    public int? CaseId { get; set; }
     public string? ResourceId { get; set; }
     public string? UserName { get; set; }
     public string? TransferId { get; set; }
@@ -26,14 +25,13 @@ public class ActivityLogTelemetryEvent : BaseTelemetryEvent
         var properties = new Dictionary<string, string>();
         var metrics = new Dictionary<string, double?>();
 
+        properties["CaseId"] = CaseId.ToString();
+
         if (!string.IsNullOrEmpty(ActionType))
             properties["ActionType"] = ActionType;
 
         if (!string.IsNullOrEmpty(ResourceType))
             properties["ResourceType"] = ResourceType;
-
-        if (CaseId.HasValue)
-            properties["CaseId"] = CaseId.Value.ToString();
 
         if (!string.IsNullOrEmpty(ResourceId))
             properties["ResourceId"] = ResourceId;

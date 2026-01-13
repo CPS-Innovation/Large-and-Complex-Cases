@@ -1,22 +1,25 @@
 using System.Net;
-using CPS.ComplexCases.ActivityLog.Models.Responses;
-using CPS.ComplexCases.ActivityLog.Services;
-using CPS.ComplexCases.API.Constants;
-using CPS.ComplexCases.Common.Attributes;
-using CPS.ComplexCases.Data.Dtos;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using CPS.ComplexCases.ActivityLog.Models.Responses;
+using CPS.ComplexCases.ActivityLog.Services;
+using CPS.ComplexCases.API.Constants;
+using CPS.ComplexCases.API.Context;
+using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.Common.Handlers;
+using CPS.ComplexCases.Data.Dtos;
 
 namespace CPS.ComplexCases.API.Functions;
 
-public class GetActivityLogs(ILogger<GetActivityLogs> logger, IActivityLogService activityLogService)
+public class GetActivityLogs(ILogger<GetActivityLogs> logger, IActivityLogService activityLogService, IInitializationHandler initializationHandler)
 {
-    private readonly ILogger<GetActivityLogs> logger = logger;
-    private readonly IActivityLogService activityLogService = activityLogService;
+    private readonly ILogger<GetActivityLogs> _logger = logger;
+    private readonly IActivityLogService _activityLogService = activityLogService;
+    private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
     [Function(nameof(GetActivityLogs))]
     [OpenApiOperation(operationId: nameof(GetActivityLogs), tags: ["ActivityLog"], Description = "Lists filtered activity logs.")]
@@ -35,8 +38,11 @@ public class GetActivityLogs(ILogger<GetActivityLogs> logger, IActivityLogServic
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Forbidden, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Forbidden)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/activity/logs")] HttpRequest req, FunctionContext context)
+    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/activity/logs")] HttpRequest req, FunctionContext functionContext)
     {
+        var context = functionContext.GetRequestContext();
+        _initializationHandler.Initialize(context.Username, context.CorrelationId);
+
         var activityLogFilter = new ActivityLogFilterDto
         {
             FromDate = DateTime.TryParse(req.Query[InputParameters.FromDate].FirstOrDefault(), out var fromDate) ? fromDate : null,
@@ -49,7 +55,7 @@ public class GetActivityLogs(ILogger<GetActivityLogs> logger, IActivityLogServic
             Take = int.TryParse(req.Query[InputParameters.Take], out var take) ? take : 100
         };
 
-        var activityLogs = await activityLogService.GetActivityLogsAsync(activityLogFilter);
+        var activityLogs = await _activityLogService.GetActivityLogsAsync(activityLogFilter);
 
         return new OkObjectResult(activityLogs);
     }

@@ -124,14 +124,19 @@ public class TelemetryClient(IAppInsightsTelemetryClient telemetryClient) : ITel
         var nonNullMetrics = metrics.Where(kvp => kvp.Value.HasValue)
                                     .ToDictionary(kvp => kvp.Key, kvp => kvp.Value!.Value);
 
+        if (telemetryEvent.CaseId != 0)
+        {
+            properties[TelemetryConstants.CaseIdCustomDimensionName] = telemetryEvent.CaseId.ToString();
+        }
+
         if (!telemetryEvent.CorrelationId.Equals(Guid.Empty))
         {
-            properties["correlationId"] = telemetryEvent.CorrelationId.ToString();
+            properties[TelemetryConstants.CorrelationIdCustomDimensionName] = telemetryEvent.CorrelationId.ToString();
         }
 
         if (telemetryEvent.EventTimestamp != DateTime.MinValue)
         {
-            properties["eventTimestamp"] = telemetryEvent.EventTimestamp.ToString("dd/MM/yyyy HH:mm:ss.fff");
+            properties[TelemetryConstants.EventTimestampCustomDimensionName] = telemetryEvent.EventTimestamp.ToString("dd/MM/yyyy HH:mm:ss.fff");
         }
 
         if (isFailure)

@@ -1,13 +1,14 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Amazon.S3.Model;
 using AutoFixture;
 using CPS.ComplexCases.API.Functions;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions;
@@ -17,6 +18,7 @@ public class CreateNetAppFolderTests
     private readonly Mock<ILogger<CreateNetAppFolder>> _loggerMock;
     private readonly Mock<INetAppClient> _netAppClientMock;
     private readonly Mock<INetAppArgFactory> _netAppArgFactoryMock;
+    private readonly Mock<IInitializationHandler> _initializationHandlerMock;
     private readonly CreateNetAppFolder _function;
     private readonly Fixture _fixture;
     private readonly string _testBearerToken;
@@ -29,11 +31,13 @@ public class CreateNetAppFolderTests
         _loggerMock = new Mock<ILogger<CreateNetAppFolder>>();
         _netAppClientMock = new Mock<INetAppClient>();
         _netAppArgFactoryMock = new Mock<INetAppArgFactory>();
+        _initializationHandlerMock = new Mock<IInitializationHandler>();
 
         _function = new CreateNetAppFolder(
             _loggerMock.Object,
             _netAppClientMock.Object,
-            _netAppArgFactoryMock.Object);
+            _netAppArgFactoryMock.Object,
+            _initializationHandlerMock.Object);
 
         _fixture = new Fixture();
         _testBearerToken = _fixture.Create<string>();

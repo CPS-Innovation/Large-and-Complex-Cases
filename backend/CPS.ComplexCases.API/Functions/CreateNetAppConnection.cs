@@ -11,6 +11,7 @@ using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Models.Requests;
@@ -25,7 +26,8 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
     INetAppArgFactory netAppArgFactory,
     IActivityLogService activityLogService,
     IRequestValidator requestValidator,
-    ISecurityGroupMetadataService securityGroupMetadataService)
+    ISecurityGroupMetadataService securityGroupMetadataService,
+    IInitializationHandler initializationHandler)
 {
     private readonly ILogger<CreateNetAppConnection> _logger = logger;
     private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
@@ -34,6 +36,7 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
     private readonly IActivityLogService _activityLogService = activityLogService;
     private readonly IRequestValidator _requestValidator = requestValidator;
     private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
+    private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
     [Function(nameof(CreateNetAppConnection))]
     [OpenApiOperation(operationId: nameof(CreateEgressConnection), tags: ["NetApp"], Description = "Connect an NetApp folder to a case.")]
@@ -55,6 +58,8 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
         {
             return new BadRequestObjectResult(netAppConnectionRequest.ValidationErrors);
         }
+
+        _initializationHandler.Initialize(context.Username, context.CorrelationId, netAppConnectionRequest.Value.CaseId);
 
         var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
 

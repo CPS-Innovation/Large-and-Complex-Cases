@@ -9,12 +9,14 @@ using Amazon.S3;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Services;
 using Microsoft.Extensions.Logging;
+using CPS.ComplexCases.NetApp.Telemetry;
 
 namespace CPS.ComplexCases.NetApp.Factories;
 
-public class S3ClientFactory(IOptions<NetAppOptions> options, IS3CredentialService s3CredentialService, ILogger<S3ClientFactory> logger) : IS3ClientFactory
+public class S3ClientFactory(IOptions<NetAppOptions> options, IS3CredentialService s3CredentialService, ILogger<S3ClientFactory> logger, IS3TelemetryHandler telemetryHandler) : IS3ClientFactory
 {
     private readonly ILogger<S3ClientFactory> _logger = logger;
+    private readonly IS3TelemetryHandler _telemetryHandler = telemetryHandler;
     private readonly NetAppOptions _options = options.Value;
     private readonly IS3CredentialService _s3CredentialsService = s3CredentialService;
     private IAmazonS3? _s3Client;
@@ -85,6 +87,18 @@ public class S3ClientFactory(IOptions<NetAppOptions> options, IS3CredentialServi
         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
 
         var s3Client = new AmazonS3Client(credentials, s3Config);
+
+        s3Client.BeforeRequestEvent += (sender, args) =>
+        {
+            var webServiceArgs = args as WebServiceRequestEventArgs;
+            _telemetryHandler.InitiateTelemetryEvent(webServiceArgs);
+        };
+
+        s3Client.AfterResponseEvent += (sender, args) =>
+        {
+            var webServiceArgs = args as WebServiceResponseEventArgs;
+            _telemetryHandler.CompleteTelemetryEvent(webServiceArgs);
+        };
 
         return s3Client;
     }

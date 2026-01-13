@@ -1,25 +1,26 @@
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.ApplicationInsights.WorkerService;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Abstractions;
 using Microsoft.DurableTask.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.ApplicationInsights;
 using CPS.ComplexCases.ActivityLog.Extensions;
 using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.OpenApi;
 using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.Data.Extensions;
 using CPS.ComplexCases.Egress.Extensions;
 using CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
 using CPS.ComplexCases.FileTransfer.API.Factories;
+using CPS.ComplexCases.FileTransfer.API.Middleware;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.NetApp.Extensions;
-using CPS.ComplexCases.FileTransfer.API.Middleware;
-using Microsoft.ApplicationInsights.WorkerService;
-using Microsoft.Extensions.Logging.ApplicationInsights;
-using Microsoft.ApplicationInsights.Extensibility;
-using CPS.ComplexCases.Common.Telemetry;
+using CPS.ComplexCases.Common.Handlers;
 
 // Create a temporary logger for configuration phase
 using var loggerFactory = LoggerFactory.Create(configure => configure.AddConsole());
@@ -72,6 +73,8 @@ var host = new HostBuilder()
         services.AddSingleton<ITelemetryInitializer, TelemetryInitializer>();
         services.AddSingleton<IAppInsightsTelemetryClient, AppInsightsTelemetryClientWrapper>();
         services.AddSingleton<ITelemetryClient, TelemetryClient>();
+        services.AddSingleton<ITelemetryAugmentationWrapper, TelemetryAugmentationWrapper>();
+        services.AddSingleton<IInitializationHandler, InitializationHandler>();
 
         services.AddScoped<ICaseMetadataService, CaseMetadataService>();
 

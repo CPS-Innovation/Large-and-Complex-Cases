@@ -1,29 +1,28 @@
 using System.Net;
-using CPS.ComplexCases.API.Constants;
-using CPS.ComplexCases.API.Context;
-using CPS.ComplexCases.API.Services;
-using CPS.ComplexCases.Common.Attributes;
-using CPS.ComplexCases.NetApp.Client;
-using CPS.ComplexCases.NetApp.Factories;
-using CPS.ComplexCases.NetApp.Models;
-using CPS.ComplexCases.NetApp.Models.Dto;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using CPS.ComplexCases.API.Constants;
+using CPS.ComplexCases.API.Context;
+using CPS.ComplexCases.API.Services;
+using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.Common.Handlers;
+using CPS.ComplexCases.NetApp.Client;
+using CPS.ComplexCases.NetApp.Factories;
+using CPS.ComplexCases.NetApp.Models.Dto;
 
 namespace CPS.ComplexCases.API.Functions;
 
-public class ListNetAppFiles(ILogger<ListNetAppFiles> logger, INetAppClient netAppClient, INetAppArgFactory netAppArgFactory, IOptions<NetAppOptions> options, ISecurityGroupMetadataService securityGroupMetadataService)
+public class ListNetAppFiles(ILogger<ListNetAppFiles> logger, INetAppClient netAppClient, INetAppArgFactory netAppArgFactory, ISecurityGroupMetadataService securityGroupMetadataService, IInitializationHandler initializationHandler)
 {
     private readonly ILogger<ListNetAppFiles> _logger = logger;
     private readonly INetAppClient _netAppClient = netAppClient;
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
     private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
-    private readonly NetAppOptions _netAppOptions = options.Value;
+    private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
     [Function(nameof(ListNetAppFiles))]
     [OpenApiOperation(operationId: nameof(ListNetAppFiles), tags: ["NetApp"], Description = "Lists files in a NetApp bucket.")]
@@ -40,6 +39,8 @@ public class ListNetAppFiles(ILogger<ListNetAppFiles> logger, INetAppClient netA
     public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/netapp/files")] HttpRequest req, FunctionContext functionContext)
     {
         var context = functionContext.GetRequestContext();
+        _initializationHandler.Initialize(context.Username, context.CorrelationId);
+
         var continuationToken = req.Query[InputParameters.ContinuationToken];
         var take = int.TryParse(req.Query[InputParameters.Take], out var takeValue) ? takeValue : 100;
         var path = req.Query[InputParameters.Path];

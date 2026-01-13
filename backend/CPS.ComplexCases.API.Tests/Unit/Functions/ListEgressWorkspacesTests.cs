@@ -6,6 +6,7 @@ using CPS.ComplexCases.API.Domain.Response;
 using CPS.ComplexCases.API.Functions;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models.Args;
@@ -20,6 +21,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         private readonly Mock<IEgressClient> _egressClientMock;
         private readonly Mock<IEgressArgFactory> _egressArgFactoryMock;
         private readonly Mock<ICaseEnrichmentService> _caseEnrichmentServiceMock;
+        private readonly Mock<IInitializationHandler> _initializationHandlerMock;
         private readonly Fixture _fixture;
         private readonly ListEgressWorkspaces _function;
 
@@ -29,12 +31,14 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _egressClientMock = new Mock<IEgressClient>();
             _egressArgFactoryMock = new Mock<IEgressArgFactory>();
             _caseEnrichmentServiceMock = new Mock<ICaseEnrichmentService>();
+            _initializationHandlerMock = new Mock<IInitializationHandler>();
             _fixture = new Fixture();
             _function = new ListEgressWorkspaces(
                 _loggerMock.Object,
                 _egressClientMock.Object,
                 _egressArgFactoryMock.Object,
-                _caseEnrichmentServiceMock.Object);
+                _caseEnrichmentServiceMock.Object,
+                _initializationHandlerMock.Object);
         }
 
         [Fact]

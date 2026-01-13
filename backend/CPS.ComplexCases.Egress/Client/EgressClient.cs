@@ -1,11 +1,12 @@
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using CPS.ComplexCases.Common.Models.Domain.Dto;
+using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
 using CPS.ComplexCases.Egress.Models.Args;
 using CPS.ComplexCases.Egress.Models.Dto;
 using CPS.ComplexCases.Egress.Models.Response;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace CPS.ComplexCases.Egress.Client;
 
@@ -13,7 +14,8 @@ public class EgressClient(
     ILogger<EgressClient> logger,
     IOptions<EgressOptions> egressOptions,
     HttpClient httpClient,
-    IEgressRequestFactory egressRequestFactory) : BaseEgressClient(logger, egressOptions, httpClient, egressRequestFactory), IEgressClient
+    IEgressRequestFactory egressRequestFactory,
+    ITelemetryClient telemetryClient) : BaseEgressClient(logger, egressOptions, httpClient, egressRequestFactory, telemetryClient), IEgressClient
 {
   public async Task<ListWorkspacesDto> ListWorkspacesAsync(ListEgressWorkspacesArg workspace, string email)
   {

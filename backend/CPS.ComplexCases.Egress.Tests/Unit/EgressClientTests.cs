@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using AutoFixture;
 using AutoFixture.AutoMoq;
+using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
@@ -22,6 +23,7 @@ public class EgressClientTests
     private readonly Mock<HttpMessageHandler> _httpMessageHandlerMock;
     private readonly HttpClient _httpClient;
     private readonly Mock<IEgressRequestFactory> _requestFactoryMock;
+    private readonly Mock<ITelemetryClient> _telemetryClientMock;
     private readonly EgressClient _client;
     private const string TestUrl = "https://example.com";
 
@@ -34,7 +36,7 @@ public class EgressClientTests
         _optionsMock = _fixture.Freeze<Mock<IOptions<EgressOptions>>>();
         _requestFactoryMock = _fixture.Freeze<Mock<IEgressRequestFactory>>();
         _httpMessageHandlerMock = new Mock<HttpMessageHandler>();
-
+        _telemetryClientMock = _fixture.Freeze<Mock<ITelemetryClient>>();
 
         _httpClient = new HttpClient(_httpMessageHandlerMock.Object)
         {
@@ -52,7 +54,8 @@ public class EgressClientTests
             _loggerMock.Object,
             _optionsMock.Object,
             _httpClient,
-            _requestFactoryMock.Object
+            _requestFactoryMock.Object,
+            _telemetryClientMock.Object
         );
     }
 

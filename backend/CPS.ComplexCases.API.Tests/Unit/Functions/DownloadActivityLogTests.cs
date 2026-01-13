@@ -1,10 +1,11 @@
 using System.Text;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using AutoFixture;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Functions;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
+using CPS.ComplexCases.Common.Handlers;
 using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions
@@ -13,6 +14,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
     {
         private readonly Mock<ILogger<DownloadActivityLog>> _loggerMock;
         private readonly Mock<IActivityLogService> _activityLogServiceMock;
+        private readonly Mock<IInitializationHandler> _initializationHandlerMock;
         private readonly DownloadActivityLog _function;
         private readonly Fixture _fixture;
         private readonly Guid _testCorrelationId;
@@ -29,6 +31,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
 
             _loggerMock = new Mock<ILogger<DownloadActivityLog>>();
             _activityLogServiceMock = new Mock<IActivityLogService>();
+            _initializationHandlerMock = new Mock<IInitializationHandler>();
 
             _testCorrelationId = _fixture.Create<Guid>();
             _testUsername = _fixture.Create<string>();
@@ -37,7 +40,8 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
 
             _function = new DownloadActivityLog(
                 _loggerMock.Object,
-                _activityLogServiceMock.Object);
+                _activityLogServiceMock.Object,
+                _initializationHandlerMock.Object);
         }
 
         [Fact]

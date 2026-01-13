@@ -7,6 +7,7 @@ using CPS.ComplexCases.API.Domain.Response;
 using CPS.ComplexCases.API.Functions;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
@@ -22,6 +23,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         private readonly Mock<INetAppArgFactory> _netAppArgFactoryMock;
         private readonly Mock<ICaseEnrichmentService> _caseEnrichmentServiceMock;
         private readonly Mock<ISecurityGroupMetadataService> _securityGroupMetadataServiceMock;
+        private readonly Mock<IInitializationHandler> _initializationHandlerMock;
         private readonly Fixture _fixture;
         private readonly ListNetAppFolders _function;
         private readonly string _testBearerToken;
@@ -37,6 +39,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _netAppArgFactoryMock = new Mock<INetAppArgFactory>();
             _caseEnrichmentServiceMock = new Mock<ICaseEnrichmentService>();
             _securityGroupMetadataServiceMock = new Mock<ISecurityGroupMetadataService>();
+            _initializationHandlerMock = new Mock<IInitializationHandler>();
             _fixture = new Fixture();
 
             _testBearerToken = _fixture.Create<string>();
@@ -61,7 +64,8 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 _netAppClientMock.Object,
                 _netAppArgFactoryMock.Object,
                 _caseEnrichmentServiceMock.Object,
-                _securityGroupMetadataServiceMock.Object);
+                _securityGroupMetadataServiceMock.Object,
+                _initializationHandlerMock.Object);
         }
 
         [Fact]

@@ -1,16 +1,19 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using CPS.ComplexCases.Common.Handlers;
+using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Exceptions;
+using CPS.ComplexCases.Common.Storage;
+using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
+using CPS.ComplexCases.FileTransfer.API.Telemetry;
 using CPS.ComplexCases.NetApp.Client;
-using CPS.ComplexCases.Common.Storage;
-using CPS.ComplexCases.Common.Models.Domain;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 
@@ -18,18 +21,28 @@ namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 /// Durable activity for transferring files between storage endpoints.
 /// Handles chunked uploads, computes MD5 hashes for integrity, and returns transfer results.
 /// </summary>
-public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<TransferFile> logger, IOptions<SizeConfig> sizeConfig)
+public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<TransferFile> logger, IOptions<SizeConfig> sizeConfig, IInitializationHandler initializationHandler, ITelemetryClient telemetryClient)
 {
     private readonly IStorageClientFactory _storageClientFactory = storageClientFactory;
     private readonly ILogger<TransferFile> _logger = logger;
     private readonly SizeConfig _sizeConfig = sizeConfig.Value;
+    private readonly IInitializationHandler _initializationHandler = initializationHandler;
+    private readonly ITelemetryClient _telemetryClient = telemetryClient;
 
     [Function(nameof(TransferFile))]
     public async Task<TransferResult> Run([ActivityTrigger] TransferFilePayload payload, CancellationToken cancellationToken = default)
     {
         var startTime = DateTime.UtcNow;
 
+        _initializationHandler.Initialize(payload.UserName, payload.CorrelationId);
+
         var (sourceClient, destinationClient) = _storageClientFactory.GetClientsForDirection(payload.TransferDirection);
+
+        var telemetryEvent = new FileTransferEvent
+        {
+            CaseId = payload.CaseId,
+            TransferStartTime = startTime,
+        };
 
         try
         {
@@ -49,10 +62,12 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 bool needsMd5 = destinationClient is EgressStorageClient;
                 bool isNetApp = destinationClient is NetAppStorageClient;
 
+                TransferResult result;
+
                 // Small NetApp files use single PUT
                 if (isNetApp && totalSize <= _sizeConfig.MinMultipartSizeBytes)
                 {
-                    return await HandleSingleUpload(
+                    result = await HandleSingleUpload(
                         sourceStream,
                         destinationClient,
                         payload,
@@ -60,17 +75,29 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                         totalSize,
                         startTime);
                 }
+                else
+                {
+                    // All Egress + large NetApp files use multipart upload
+                    result = await HandleMultipartUpload(
+                        sourceStream,
+                        destinationClient,
+                        payload,
+                        sourceFilePath,
+                        totalSize,
+                        needsMd5,
+                        cancellationToken,
+                        startTime);
+                }
 
-                // All Egress + large NetApp files use multipart upload
-                return await HandleMultipartUpload(
-                    sourceStream,
-                    destinationClient,
-                    payload,
-                    sourceFilePath,
-                    totalSize,
-                    needsMd5,
-                    cancellationToken,
-                    startTime);
+                telemetryEvent.FileSizeInBytes = totalSize;
+                telemetryEvent.TransferEndTime = result.SuccessfulItem?.EndTime ?? DateTime.UtcNow;
+                telemetryEvent.IsSuccessful = result.IsSuccess;
+                telemetryEvent.IsMultipart = result.IsSuccess && result.SuccessfulItem!.TotalPartsCount > 1;
+                telemetryEvent.TotalPartsCount = result.IsSuccess ? result.SuccessfulItem!.TotalPartsCount : 0;
+
+                _telemetryClient.TrackEvent(telemetryEvent);
+
+                return result;
             }
         }
         catch (FileExistsException ex)
@@ -89,6 +116,11 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 TransferErrorCode.GeneralError,
                 $"Exception: {ex.GetType().FullName}: {ex.Message}{Environment.NewLine}StackTrace: {ex.StackTrace}",
                 ex);
+        }
+        finally
+        {
+            telemetryEvent.TransferEndTime = DateTime.UtcNow;
+            _telemetryClient.TrackEvent(telemetryEvent);
         }
     }
 
@@ -235,11 +267,11 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             _logger.LogInformation("Completed parallel multipart transfer for {Source} -> {Dest}",
                 payload.SourcePath.Path, payload.DestinationPath);
 
-            return CreateSuccessResult(payload, totalSize, startTime);
+            return CreateSuccessResult(payload, totalSize, startTime, partNumber);
         }
     }
 
-    private async Task CompleteUpload(
+    private static async Task CompleteUpload(
         IStorageClient destinationClient,
         UploadSession session,
         string md5Hash,
@@ -257,7 +289,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         }
     }
 
-    private TransferResult CreateSuccessResult(TransferFilePayload payload, long totalSize, DateTime startTime)
+    private static TransferResult CreateSuccessResult(TransferFilePayload payload, long totalSize, DateTime startTime, int totalParts = 1)
     {
         var endTime = DateTime.UtcNow;
 
@@ -269,7 +301,8 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             IsRenamed = payload.SourcePath.ModifiedPath != null,
             FileId = payload.SourcePath.FileId,
             StartTime = startTime,
-            EndTime = endTime
+            EndTime = endTime,
+            TotalPartsCount = totalParts
         };
 
         return new TransferResult { IsSuccess = true, SuccessfulItem = item };

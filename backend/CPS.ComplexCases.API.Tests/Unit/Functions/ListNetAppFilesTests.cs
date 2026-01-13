@@ -1,17 +1,16 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using AutoFixture;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Domain.Models;
 using CPS.ComplexCases.API.Functions;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
-using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Models.Dto;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions;
@@ -21,8 +20,8 @@ public class ListNetAppFilesTests
     private readonly Mock<ILogger<ListNetAppFiles>> _loggerMock;
     private readonly Mock<INetAppClient> _netAppClientMock;
     private readonly Mock<INetAppArgFactory> _netAppArgFactoryMock;
-    private readonly Mock<IOptions<NetAppOptions>> _optionsMock;
     private readonly Mock<ISecurityGroupMetadataService> _securityGroupMetadataServiceMock;
+    private readonly Mock<IInitializationHandler> _initializationHandlerMock;
     private readonly ListNetAppFiles _function;
     private readonly Fixture _fixture;
     private readonly string _testBearerToken;
@@ -36,8 +35,8 @@ public class ListNetAppFilesTests
         _loggerMock = new Mock<ILogger<ListNetAppFiles>>();
         _netAppClientMock = new Mock<INetAppClient>();
         _netAppArgFactoryMock = new Mock<INetAppArgFactory>();
-        _optionsMock = new Mock<IOptions<NetAppOptions>>();
         _securityGroupMetadataServiceMock = new Mock<ISecurityGroupMetadataService>();
+        _initializationHandlerMock = new Mock<IInitializationHandler>();
         _fixture = new Fixture();
 
         _testBearerToken = _fixture.Create<string>();
@@ -57,18 +56,12 @@ public class ListNetAppFilesTests
                     }
                 ]);
 
-        _optionsMock.Setup(o => o.Value).Returns(new NetAppOptions
-        {
-            Url = "https://example.com",
-            RegionName = "test-region"
-        });
-
         _function = new ListNetAppFiles(
             _loggerMock.Object,
             _netAppClientMock.Object,
             _netAppArgFactoryMock.Object,
-            _optionsMock.Object,
-            _securityGroupMetadataServiceMock.Object);
+            _securityGroupMetadataServiceMock.Object,
+            _initializationHandlerMock.Object);
     }
 
     [Fact]

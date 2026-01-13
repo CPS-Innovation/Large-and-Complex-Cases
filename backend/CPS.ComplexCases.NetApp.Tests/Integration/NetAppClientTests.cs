@@ -8,11 +8,12 @@ using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.S3.Credentials;
 using CPS.ComplexCases.NetApp.Services;
+using CPS.ComplexCases.NetApp.Telemetry;
 using CPS.ComplexCases.NetApp.WireMock.Mappings;
 using CPS.ComplexCases.NetApp.Wrappers;
 using CPS.ComplexCases.WireMock.Core;
-using WireMock.Server;
 using Moq;
+using WireMock.Server;
 
 namespace CPS.ComplexCases.NetApp.Tests.Integration
 {
@@ -26,6 +27,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
         private readonly IAmazonS3UtilsWrapper _amazonS3UtilsWrapper;
         private readonly IS3ClientFactory _s3ClientFactory;
         private readonly Mock<IS3CredentialService> _mockCredentialService;
+        private readonly Mock<IS3TelemetryHandler> _mockTelemetryHandler = new();
         private const string BearerToken = "fakeBearerToken";
         private const string TestOid = "test-oid-12345";
         private const string TestUserName = "testuser@example.com";
@@ -55,6 +57,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
 
             // Setup mock credential service
             _mockCredentialService = new Mock<IS3CredentialService>();
+            _mockTelemetryHandler = new Mock<IS3TelemetryHandler>();
             _s3ClientFactory = new S3ClientFactory(
                 Options.Create(new NetAppOptions
                 {
@@ -62,7 +65,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
                     RegionName = "eu-west-1"
                 }),
                 _mockCredentialService.Object,
-                s3ClientFactoryLogger);
+                s3ClientFactoryLogger,
+                _mockTelemetryHandler.Object);
             _s3ClientFactory.SetS3ClientAsync(_s3Client);
 
             var fakeCredentials = new S3CredentialsDecrypted
@@ -93,10 +97,11 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
                     RegionName = "eu-west-1"
                 }),
                 _mockCredentialService.Object,
-                s3ClientFactoryLogger
+                s3ClientFactoryLogger,
+                _mockTelemetryHandler.Object
             );
             _s3ClientFactory.SetS3ClientAsync(_s3Client);
-            
+
             var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<NetAppClient>();
 
             _client = new NetAppClient(logger, _amazonS3UtilsWrapper, _netAppRequestFactory, _s3ClientFactory);

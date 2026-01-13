@@ -1,21 +1,24 @@
 using System.Net;
 using System.Text;
-using CPS.ComplexCases.ActivityLog.Services;
-using CPS.ComplexCases.API.Constants;
-using CPS.ComplexCases.Common.Attributes;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using CPS.ComplexCases.ActivityLog.Services;
+using CPS.ComplexCases.API.Constants;
+using CPS.ComplexCases.API.Context;
+using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.Common.Handlers;
 
 namespace CPS.ComplexCases.API.Functions;
 
-public class DownloadActivityLog(ILogger<DownloadActivityLog> logger, IActivityLogService activityLogService)
+public class DownloadActivityLog(ILogger<DownloadActivityLog> logger, IActivityLogService activityLogService, IInitializationHandler initializationHandler)
 {
     private readonly ILogger<DownloadActivityLog> logger = logger;
     private readonly IActivityLogService activityLogService = activityLogService;
+    private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
     [Function(nameof(DownloadActivityLog))]
     [OpenApiOperation(operationId: nameof(DownloadActivityLog), tags: ["ActivityLog"], Description = "Download activity log data in CSV format.")]
@@ -26,8 +29,10 @@ public class DownloadActivityLog(ILogger<DownloadActivityLog> logger, IActivityL
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Forbidden, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Forbidden)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/activity/{activityId}/logs/download")] HttpRequest req, FunctionContext context, Guid activityId)
+    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/activity/{activityId}/logs/download")] HttpRequest req, FunctionContext functionContext, Guid activityId)
     {
+        var context = functionContext.GetRequestContext();
+        _initializationHandler.Initialize(context.Username, context.CorrelationId);
 
         logger.LogInformation("DownloadActivityLog function triggered for activityId: {ActivityId}", activityId);
 

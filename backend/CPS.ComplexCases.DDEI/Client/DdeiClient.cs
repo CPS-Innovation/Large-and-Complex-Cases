@@ -1,5 +1,7 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
+using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.DDEI.Exceptions;
 using CPS.ComplexCases.DDEI.Factories;
 using CPS.ComplexCases.DDEI.Mappers;
@@ -10,8 +12,9 @@ using CPS.ComplexCases.DDEI.Tactical.Client;
 using CPS.ComplexCases.DDEI.Tactical.Factories;
 using CPS.ComplexCases.DDEI.Tactical.Mappers;
 using CPS.ComplexCases.DDEI.Tactical.Models.Dto;
-using Microsoft.Extensions.Logging;
+
 using TacticalDomain = CPS.ComplexCases.DDEI.Tactical.Models.Response;
+using System.Runtime.CompilerServices;
 
 namespace CPS.ComplexCases.DDEI.Client;
 
@@ -22,7 +25,8 @@ public class DdeiClient(ILogger<DdeiClient> logger,
  ICaseDetailsMapper caseDetailsMapper,
  IAreasMapper areasMapper,
  IDdeiRequestFactoryTactical ddeiRequestFactoryTactical,
- IAuthenticationResponseMapper authenticationResponseMapper) : IDdeiClient, IDdeiClientTactical
+ IAuthenticationResponseMapper authenticationResponseMapper,
+ ITelemetryClient telemetryClient) : IDdeiClient, IDdeiClientTactical
 {
   private readonly HttpClient _httpClient = httpClient;
   private readonly ILogger<DdeiClient> _logger = logger;
@@ -32,6 +36,7 @@ public class DdeiClient(ILogger<DdeiClient> logger,
   private readonly IAreasMapper _areasMapper = areasMapper;
   private readonly IDdeiRequestFactoryTactical _ddeiRequestFactoryTactical = ddeiRequestFactoryTactical;
   private readonly IAuthenticationResponseMapper _authenticationResponseMapper = authenticationResponseMapper;
+  private readonly ITelemetryClient _telemetryClient = telemetryClient;
 
   public async Task<TacticalDomain.AuthenticationResponse> AuthenticateAsync(string username, string password)
   {
@@ -110,9 +115,16 @@ public class DdeiClient(ILogger<DdeiClient> logger,
   private async Task<DdeiCaseSummaryDto> GetCaseInternalAsync(DdeiCaseIdArgDto arg) =>
       await CallDdei<DdeiCaseSummaryDto>(_ddeiRequestFactory.CreateGetCaseRequest(arg));
 
-  private async Task<T> CallDdei<T>(HttpRequestMessage request)
+  private async Task<T> CallDdei<T>(HttpRequestMessage request, [CallerMemberName] string operation = "")
   {
+    var telemetryEvent = new ExternalApiCallEvent(nameof(DdeiClient), request, operation);
+
     using var response = await CallDdei(request);
+
+    telemetryEvent.CallEndTime = DateTime.UtcNow;
+    telemetryEvent.ResponseStatusCode = response.StatusCode;
+    _telemetryClient.TrackEvent(telemetryEvent);
+
     var content = await response.Content.ReadAsStringAsync();
     var result = JsonSerializer.Deserialize<T>(content) ?? throw new InvalidOperationException("Deserialization returned null.");
     return result;
