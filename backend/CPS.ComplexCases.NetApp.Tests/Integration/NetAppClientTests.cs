@@ -155,7 +155,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             var objectName = "test-file.txt";
             var stream = new MemoryStream(Encoding.UTF8.GetBytes("Test upload!"));
             var contentLength = stream.Length;
-            var arg = _netAppArgFactory.CreateUploadObjectArg(BearerToken, bucketName, objectName, stream, contentLength);
+            var arg = _netAppArgFactory.CreateUploadObjectArg(BearerToken, bucketName, objectName, stream, contentLength, false);
 
             // Act
             var result = await _client.UploadObjectAsync(arg);

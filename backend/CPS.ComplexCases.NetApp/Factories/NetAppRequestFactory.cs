@@ -116,7 +116,7 @@ public class NetAppRequestFactory : INetAppRequestFactory
         return new PutObjectRequest
         {
             BucketName = arg.BucketName,
-            DisablePayloadSigning = true,
+            DisablePayloadSigning = arg.DisablePayloadSigning,
             Key = arg.ObjectKey,
             InputStream = arg.Stream,
             Headers =
