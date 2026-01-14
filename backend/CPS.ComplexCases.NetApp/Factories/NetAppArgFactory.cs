@@ -46,7 +46,7 @@ public class NetAppArgFactory : INetAppArgFactory
         };
     }
 
-    public UploadObjectArg CreateUploadObjectArg(string bearerToken, string bucketName, string objectName, Stream stream, long contentLength)
+    public UploadObjectArg CreateUploadObjectArg(string bearerToken, string bucketName, string objectName, Stream stream, long contentLength, bool disablePayloadSigning = true)
     {
         return new UploadObjectArg
         {
@@ -54,7 +54,8 @@ public class NetAppArgFactory : INetAppArgFactory
             BucketName = bucketName.ToLowerInvariant(),
             ObjectKey = objectName,
             Stream = stream,
-            ContentLength = contentLength
+            ContentLength = contentLength,
+            DisablePayloadSigning = disablePayloadSigning
         };
     }
 
