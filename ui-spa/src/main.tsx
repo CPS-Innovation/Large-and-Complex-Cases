@@ -6,8 +6,12 @@ import "./index.scss";
 
 // Initialize CSP
 const cspContent = `default-src 'self';
+                    script-src 'self';
                     connect-src 'self' https://login.microsoftonline.com ${GATEWAY_BASE_URL};
-                    style-src 'self' 'unsafe-inline';`;
+                    style-src 'self' 'unsafe-inline';
+                    img-src 'self' data:;
+                    font-src 'self';
+                    frame-ancestors 'none';`;
 
 const meta = document.createElement('meta');
 meta.httpEquiv = 'Content-Security-Policy';
