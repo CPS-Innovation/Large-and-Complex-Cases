@@ -197,10 +197,10 @@ public class NetAppStorageClientTests : IDisposable
         var maxKeys = 1000;
 
         var selectedEntities = new List<TransferEntityDto>
-        {
-            new() { Path = ObjectKey },
-            new() { Path = folderName }
-        };
+    {
+        new() { Path = ObjectKey },
+        new() { Path = folderName }
+    };
 
         var arg = new ListObjectsInBucketArg
         {
@@ -227,8 +227,42 @@ public class NetAppStorageClientTests : IDisposable
         };
 
         _caseMetadataServiceMock.Setup(s => s.GetCaseMetadataForCaseIdAsync(CaseId)).ReturnsAsync(caseMetadata);
-        _netAppArgFactoryMock.Setup(f => f.CreateListObjectsInBucketArg(BearerToken, BucketName, null, maxKeys, folderName, false)).Returns(arg);
-        _netAppRequestFactoryMock.Setup(f => f.ListObjectsInBucketRequest(arg)).Returns(request);
+
+        _netAppArgFactoryMock
+            .Setup(f => f.CreateListObjectsInBucketArg(BearerToken, BucketName, null, maxKeys, folderName, false))
+            .Returns(arg);
+
+        _netAppRequestFactoryMock
+            .Setup(f => f.ListObjectsInBucketRequest(arg))
+            .Returns(request);
+
+        _netAppArgFactoryMock
+            .Setup(f => f.CreateListObjectsInBucketArg(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<int>(),
+                It.IsAny<string>(),
+                It.IsAny<bool>()))
+            .Returns((string token, string bucket, string continuation, int max, string prefix, bool delimiter) =>
+                new ListObjectsInBucketArg
+                {
+                    BearerToken = token,
+                    BucketName = bucket,
+                    ContinuationToken = continuation,
+                    MaxKeys = max.ToString(),
+                    Prefix = prefix
+                });
+
+        _netAppRequestFactoryMock
+            .Setup(f => f.ListObjectsInBucketRequest(It.IsAny<ListObjectsInBucketArg>()))
+            .Returns((ListObjectsInBucketArg a) => new ListObjectsV2Request
+            {
+                BucketName = a.BucketName,
+                ContinuationToken = a.ContinuationToken,
+                MaxKeys = int.Parse(a.MaxKeys ?? "1000"),
+                Prefix = a.Prefix
+            });
 
         var result = await _client.ListFilesForTransferAsync(selectedEntities, null, CaseId, BearerToken, BucketName);
 

@@ -141,19 +141,41 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
                 bearerToken,
                 bucketName,
                 continuationToken,
-                1000, path);
+                1000,
+                path);
+
             var response = await _netAppClient.ListObjectsInBucketAsync(arg);
 
-            if (response == null || !response.Data.FileData.Any())
+            if (response == null)
             {
                 return filesForTransfer;
             }
 
-            filesForTransfer.AddRange(
-                response.Data.FileData.Select(x => new FileTransferInfo
+            // Add all files from current level
+            if (response.Data.FileData.Any())
+            {
+                filesForTransfer.AddRange(
+                    response.Data.FileData.Select(x => new FileTransferInfo
+                    {
+                        SourcePath = x.Path
+                    }));
+            }
+
+            // Recursively process all subdirectories
+            if (response.Data.FolderData.Any())
+            {
+                foreach (var folder in response.Data.FolderData)
                 {
-                    SourcePath = x.Path
-                }));
+                    if (!string.IsNullOrEmpty(folder.Path))
+                    {
+                        var subFiles = await ListFilesInFolder(folder.Path, bearerToken, bucketName);
+                        if (subFiles != null)
+                        {
+                            filesForTransfer.AddRange(subFiles);
+                        }
+                    }
+                }
+            }
 
             continuationToken = response.Pagination.NextContinuationToken;
         } while (continuationToken != null);

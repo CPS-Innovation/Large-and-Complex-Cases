@@ -20,19 +20,29 @@ export const getGroupedActvityFilePaths = (
       fileName: pathParts[pathParts.length - 1],
     };
   };
-  const sourcePathParts = getCleanPath(sourcePath).split("/");
+
+  const cleanSourcePath = getCleanPath(sourcePath);
+  const sourcePathParts = cleanSourcePath.split("/");
+  
+  const lastPart = sourcePathParts[sourcePathParts.length - 1];
+  const isFile = lastPart.includes(".");
+  const sourceDirParts = isFile 
+    ? sourcePathParts.slice(0, -1) 
+    : sourcePathParts;
+
   const successFilePaths = successFiles.map(({ path }) => ({
     hasFailed: false,
-    ...getRelativePathAndFileName(sourcePathParts.length, path),
+    ...getRelativePathAndFileName(sourceDirParts.length, path),
   }));
+
   const failedFilePaths = failedFiles.map(({ path }) => ({
     hasFailed: true,
-    ...getRelativePathAndFileName(sourcePathParts.length, path),
+    ...getRelativePathAndFileName(sourceDirParts.length, path),
   }));
 
   const groupedFiles = [...failedFilePaths, ...successFilePaths].reduce(
     (acc, curr) => {
-      if (!acc[`${curr.relativePath}`]) {
+      if (!acc[curr.relativePath]) {
         const value: ActivityRelativePathFileType = {
           errors: [],
           success: [],
@@ -50,22 +60,21 @@ export const getGroupedActvityFilePaths = (
             },
           ];
         }
-
-        acc[`${curr.relativePath}`] = value;
+        acc[curr.relativePath] = value;
         return acc;
       }
       if (curr.hasFailed)
-        acc[`${curr.relativePath}`].errors.push({
+        acc[curr.relativePath].errors.push({
           fileName: curr.fileName,
         });
       else
-        acc[`${curr.relativePath}`].success.push({
+        acc[curr.relativePath].success.push({
           fileName: curr.fileName,
         });
-
       return acc;
     },
     {} as Record<string, ActivityRelativePathFileType>,
   );
+
   return groupedFiles;
 };
