@@ -53,39 +53,39 @@ stages:
             targetPath: '$(Build.SourcesDirectory)/localnuget'
             artifact: 'localnuget'
     
-  - stage: Build_Main_API
-    displayName: 'Build Main API'
-    dependsOn: Package_NuGet
-    jobs:
-      - job: Build_Main_API
-        displayName: 'Build Main API'
-        steps:
-          - template: ../templates/dotnet-build-steps.yml
-            parameters:
-              projectPath: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-              projectName: 'lacc-main-api-drop'
-              buildConfiguration: $(buildConfiguration)
-              dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: true
-              publishOutput: true
-              runTests: false
+  # - stage: Build_Main_API
+  #   displayName: 'Build Main API'
+  #   dependsOn: Package_NuGet
+  #   jobs:
+  #     - job: Build_Main_API
+  #       displayName: 'Build Main API'
+  #       steps:
+  #         - template: ../templates/dotnet-build-steps.yml
+  #           parameters:
+  #             projectPath: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+  #             projectName: 'lacc-main-api-drop'
+  #             buildConfiguration: $(buildConfiguration)
+  #             dotNetVersion: $(dotNetVersion)
+  #             useLocalNuGet: true
+  #             publishOutput: true
+  #             runTests: false
 
-  - stage: Build_Filetransfer_API
-    displayName: 'Build Transfer API'
-    dependsOn: Package_NuGet
-    jobs:
-      - job: Build_FileTransfer_API
-        displayName: 'Build FileTransfer API'
-        steps:
-          - template: ../templates/dotnet-build-steps.yml
-            parameters:
-              projectPath: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
-              projectName: 'lacc-filetransfer-api-drop'
-              buildConfiguration: $(buildConfiguration)
-              dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: true
-              publishOutput: true
-              runTests: false
+  # - stage: Build_Filetransfer_API
+  #   displayName: 'Build Transfer API'
+  #   dependsOn: Package_NuGet
+  #   jobs:
+  #     - job: Build_FileTransfer_API
+  #       displayName: 'Build FileTransfer API'
+  #       steps:
+  #         - template: ../templates/dotnet-build-steps.yml
+  #           parameters:
+  #             projectPath: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
+  #             projectName: 'lacc-filetransfer-api-drop'
+  #             buildConfiguration: $(buildConfiguration)
+  #             dotNetVersion: $(dotNetVersion)
+  #             useLocalNuGet: true
+  #             publishOutput: true
+  #             runTests: false
 
   - stage: Package_Database
     displayName: 'Build Database Migration Scripts'
@@ -116,11 +116,17 @@ stages:
                   dotnet tool install --global dotnet-ef --version $(efVersion)
                 fi
 
-                dotnet ef migrations script \
-                --idempotent \
-                --output $(Build.ArtifactStagingDirectory)/migration-script.sql \
+                # dotnet ef migrations script \
+                # --idempotent \
+                # --output $(Build.ArtifactStagingDirectory)/migration-script.sql \
+                # --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
+                # --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
+
+                migrations=$(dotnet ef migrations list \
                 --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
-                --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
+                --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj)
+
+                echo $migrations
 
           - task: CopyFiles@2
             displayName: 'Copy Migration Files'
