@@ -127,7 +127,7 @@ stages:
                 migrations=$(dotnet ef migrations list \
                 --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
                 --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj \
-                --connection '$(CaseManagementDatastoreConnection)')
+                --connection '$(dbconnectiontest)')
 
                 echo $migrations
 
