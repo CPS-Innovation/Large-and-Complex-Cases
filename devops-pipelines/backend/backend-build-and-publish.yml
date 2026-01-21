@@ -110,65 +110,16 @@ stages:
           - task: Bash@3
             displayName: 'Generate Migration Scripts'
             inputs:
-              targetType: 'inline'
-              script: |
-                export PATH="$PATH:$HOME/.dotnet/tools"
-                
-                if ! dotnet ef --version &> /dev/null; then
-                  dotnet tool install --global dotnet-ef --version $(efVersion)
-                fi
-
-                echo "Generating DB forward migration script..."
-                dotnet ef migrations script \
-                --idempotent \
-                --output $(Build.ArtifactStagingDirectory)/migration-script.sql \
-                --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
-                --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
-                
-                echo "Generating DB rollback migration script:"
-                echo "[Step 1/2] Retrieving the last two migrations from the source code..."
-
-                readarray -t migrations < <(dotnet ef migrations list \
-                --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
-                --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj \
-                --no-connect | grep -E '^[0-9]{14}_')
-
-                echo "Generating rollback script..."
-                dotnet ef migrations script "${migrations[-1]}" "${migrations[-2]}" \
-                --idempotent \
-                --output $(Build.ArtifactStagingDirectory)/rollback-migration-script.sql \
-                --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
-                --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
-
-          # - task: CopyFiles@2
-          #   displayName: 'Copy Migration Files'
-          #   inputs:
-          #     sourceFolder: 'backend/CPS.ComplexCases.Data/Migrations'
-          #     contents: '**'
-          #     targetFolder: '$(Build.ArtifactStagingDirectory)/migrations'
-
-          - script: |
-              echo "Checking if the zip package is installed..."
-              if ! zip --version &> /dev/null; then
-                echo "Zip command not found. Installing the zip package..."
-                sudo apt-get update
-                sudo apt-get install zip -y
-              else
-                echo "Zip is already installed."
-              fi
-            displayName: 'Ensure zip'
-
-          - task: ArchiveFiles@2
-            displayName: 'Archive Database Scripts'
-            inputs:
-              rootFolderOrFile: '$(Build.ArtifactStagingDirectory)'
-              includeRootFolder: false
-              archiveType: 'zip'
-              archiveFile: '$(Build.ArtifactStagingDirectory)/database-scripts.zip'
-              replaceExistingArchive: true
+              filePath: '../scripts/generateDBMigrationScripts.sh'
+            env:
+              EF_VERSION: $(efVersion)
+              DATA_PROJECT_PATH: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
+              STARTUP_PROJECT_PATH: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+              MIGRATION_SCRIPT_OUT: '$(Build.ArtifactStagingDirectory)/migration-script.sql'
+              ROLLBACK_SCRIPT_OUT: '$(Build.ArtifactStagingDirectory)/rollback-migration-script.sql'
 
           - task: PublishBuildArtifacts@1
             displayName: 'Publish Database Scripts'
             inputs:
-              pathtoPublish: '$(Build.ArtifactStagingDirectory)/database-scripts.zip'
+              pathtoPublish: '$(Build.ArtifactStagingDirectory)'
               artifactName: 'database-scripts-drop'
