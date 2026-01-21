@@ -125,15 +125,18 @@ stages:
                 --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
                 --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
                 
-                echo "Generating DB rollback migration script..."
-                echo "Retrieving the last two migrations from the source code..."
+                echo "Generating DB rollback migration script:"
+                echo "[Step 1/2] Retrieving the last two migrations from the source code..."
                 readarray -t migrations < <(dotnet ef migrations list \
                 --project CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
                 --startup-project CPS.ComplexCases.API/CPS.ComplexCases.API.csproj \
                 --no-connect | grep -E '^[0-9]{14}_')
 
+                echo "show migrations array:"
+                echo "${migrations[@]}"
+
                 echo "Generating rollback script..."
-                dotnet ef migrations script "${migrations[-1]}" "${migrations[-2]}"\
+                dotnet ef migrations script "${migrations[-1]}" "${migrations[-2]}" \
                 --idempotent \
                 --output $(Build.ArtifactStagingDirectory)/rollback-migration-script.sql \
                 --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
