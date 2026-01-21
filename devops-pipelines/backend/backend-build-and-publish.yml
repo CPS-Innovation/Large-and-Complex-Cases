@@ -127,13 +127,11 @@ stages:
                 
                 echo "Generating DB rollback migration script:"
                 echo "[Step 1/2] Retrieving the last two migrations from the source code..."
-                readarray -t migrations < <(dotnet ef migrations list \
-                --project CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
-                --startup-project CPS.ComplexCases.API/CPS.ComplexCases.API.csproj \
-                --no-connect | grep -E '^[0-9]{14}_')
 
-                echo "show migrations array:"
-                echo "${migrations[@]}"
+                readarray -t migrations < <(dotnet ef migrations list \
+                --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
+                --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj \
+                --no-connect | grep -E '^[0-9]{14}_')
 
                 echo "Generating rollback script..."
                 dotnet ef migrations script "${migrations[-1]}" "${migrations[-2]}" \
