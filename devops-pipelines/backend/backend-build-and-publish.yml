@@ -110,7 +110,7 @@ stages:
           - task: Bash@3
             displayName: 'Generate Migration Scripts'
             inputs:
-              filePath: '../scripts/generateDBMigrationScripts.sh'
+              filePath: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/generateDBMigrationScripts.sh'
             env:
               EF_VERSION: $(efVersion)
               DATA_PROJECT_PATH: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
