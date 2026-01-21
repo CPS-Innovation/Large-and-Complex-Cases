@@ -118,18 +118,26 @@ stages:
                   dotnet tool install --global dotnet-ef --version $(efVersion)
                 fi
 
-                # dotnet ef migrations script \
-                # --idempotent \
-                # --output $(Build.ArtifactStagingDirectory)/migration-script.sql \
-                # --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
-                # --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
-
-                migrations=$(dotnet ef migrations list \
+                echo "Generating DB forward migration script..."
+                dotnet ef migrations script \
+                --idempotent \
+                --output $(Build.ArtifactStagingDirectory)/migration-script.sql \
                 --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
-                --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj \
-                --connection '$(dbconnectiontest)')
+                --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
+                
+                echo "Generating DB rollback migration script..."
+                echo "Retrieving the last two migrations from the source code..."
+                readarray -t migrations < <(dotnet ef migrations list \
+                --project CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
+                --startup-project CPS.ComplexCases.API/CPS.ComplexCases.API.csproj \
+                --no-connect | grep -E '^[0-9]{14}_')
 
-                echo $migrations
+                echo "Generating rollback script..."
+                dotnet ef migrations script "${migrations[-1]}" "${migrations[-2]}"\
+                --idempotent \
+                --output $(Build.ArtifactStagingDirectory)/rollback-migration-script.sql \
+                --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
+                --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
 
           # - task: CopyFiles@2
           #   displayName: 'Copy Migration Files'
@@ -138,28 +146,28 @@ stages:
           #     contents: '**'
           #     targetFolder: '$(Build.ArtifactStagingDirectory)/migrations'
 
-          # - script: |
-          #     echo "Checking if the zip package is installed..."
-          #     if ! zip --version &> /dev/null; then
-          #       echo "Zip command not found. Installing the zip package..."
-          #       sudo apt-get update
-          #       sudo apt-get install zip -y
-          #     else
-          #       echo "Zip is already installed."
-          #     fi
-          #   displayName: 'Ensure zip'
+          - script: |
+              echo "Checking if the zip package is installed..."
+              if ! zip --version &> /dev/null; then
+                echo "Zip command not found. Installing the zip package..."
+                sudo apt-get update
+                sudo apt-get install zip -y
+              else
+                echo "Zip is already installed."
+              fi
+            displayName: 'Ensure zip'
 
-          # - task: ArchiveFiles@2
-          #   displayName: 'Archive Database Scripts'
-          #   inputs:
-          #     rootFolderOrFile: '$(Build.ArtifactStagingDirectory)'
-          #     includeRootFolder: false
-          #     archiveType: 'zip'
-          #     archiveFile: '$(Build.ArtifactStagingDirectory)/database-scripts.zip'
-          #     replaceExistingArchive: true
+          - task: ArchiveFiles@2
+            displayName: 'Archive Database Scripts'
+            inputs:
+              rootFolderOrFile: '$(Build.ArtifactStagingDirectory)'
+              includeRootFolder: false
+              archiveType: 'zip'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/database-scripts.zip'
+              replaceExistingArchive: true
 
-          # - task: PublishBuildArtifacts@1
-          #   displayName: 'Publish Database Scripts'
-          #   inputs:
-          #     pathtoPublish: '$(Build.ArtifactStagingDirectory)/database-scripts.zip'
-          #     artifactName: 'database-scripts-drop'
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Database Scripts'
+            inputs:
+              pathtoPublish: '$(Build.ArtifactStagingDirectory)/database-scripts.zip'
+              artifactName: 'database-scripts-drop'
