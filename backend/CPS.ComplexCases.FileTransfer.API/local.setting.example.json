@@ -12,8 +12,9 @@
     "NetAppOptions__AccessKey": "",
     "NetAppOptions__SecretKey": "",
     "NetAppOptions__RegionName": "",
-    "NetAppOptions__EnableMock": "true",
-    "NetAppOptions__BucketName": "bucket-name",
+    "NetAppOptions__SessionDurationSeconds": "3600",
+    "NetAppOptions__S3ServiceUuid": "895799e5-6c97-11f0-972a-002248c7e77a",
+    "NetAppOptions__PepperVersion": "v1",
     "ConnectionStrings__CaseManagementDatastoreConnection": "Your postgres connection string"
   },
   "Host": {

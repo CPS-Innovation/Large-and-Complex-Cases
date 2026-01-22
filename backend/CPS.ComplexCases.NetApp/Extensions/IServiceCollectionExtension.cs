@@ -46,7 +46,7 @@ public static class IServiceCollectionExtension
 				new DefaultAzureCredential()
 			);
 
-			return new KeyVaultService(secretClient, logger);
+			return new KeyVaultService(secretClient, logger, int.Parse(configuration["NetAppOptions:SessionDurationSeconds"]!));
 		});
 
 		services.AddHttpClient<INetAppHttpClient, NetAppHttpClient>(client =>

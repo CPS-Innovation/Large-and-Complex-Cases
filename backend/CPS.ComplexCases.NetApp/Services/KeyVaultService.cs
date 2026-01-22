@@ -1,23 +1,19 @@
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using Azure.Security.KeyVault.Secrets;
 using CPS.ComplexCases.NetApp.Exceptions;
 using CPS.ComplexCases.NetApp.Models.S3.Credentials;
-using Microsoft.Extensions.Logging;
 
 namespace CPS.ComplexCases.NetApp.Services;
 
-public class KeyVaultService : IKeyVaultService
+public class KeyVaultService(SecretClient secretClient, ILogger<KeyVaultService> logger, int sessionDurationSeconds) : IKeyVaultService
 {
-    private readonly SecretClient _secretClient;
-    private readonly ILogger<KeyVaultService> _logger;
+    private readonly SecretClient _secretClient = secretClient;
+    private readonly ILogger<KeyVaultService> _logger = logger;
+    private readonly int _sessionDurationSeconds = sessionDurationSeconds;
     private const string CredentialSecretPrefix = "s3-creds-";
     private const string PepperSecretPrefix = "app-pepper-";
 
-    public KeyVaultService(SecretClient secretClient, ILogger<KeyVaultService> logger)
-    {
-        _secretClient = secretClient;
-        _logger = logger;
-    }
     public async Task StoreCredentialsAsync(string key, S3CredentialsEncrypted credentials)
     {
         try
@@ -99,7 +95,7 @@ public class KeyVaultService : IKeyVaultService
         }
 
         // Check if credentials are expired (60 minutes TTL from NetApp)
-        var expiresAt = credentials.Metadata.CreatedAt.AddMinutes(60);
+        var expiresAt = credentials.Metadata.CreatedAt.AddSeconds(_sessionDurationSeconds);
         var now = DateTime.UtcNow;
         var remainingMinutes = (expiresAt - now).TotalMinutes;
 

@@ -15,6 +15,6 @@ namespace CPS.ComplexCases.NetApp.Factories
         UploadPartArg CreateUploadPartArg(string bearerToken, string bucketName, string objectName, byte[] partData, int partNumber, string uploadId);
         CompleteMultipartUploadArg CreateCompleteMultipartUploadArg(string bearerToken, string bucketName, string objectName, string uploadId, Dictionary<int, string> parts);
         RegisterUserArg CreateRegisterUserArg(string username, string accessToken, Guid s3ServiceUuid);
-        RegenerateUserKeysArg CreateRegenerateUserKeysArg(string username, string accessToken, Guid s3ServiceUuid);
+        RegenerateUserKeysArg CreateRegenerateUserKeysArg(string username, string accessToken, Guid s3ServiceUuid, int sessionDuration);
     }
 }
