@@ -111,4 +111,4 @@ steps:
       displayName: 'Publish ${{ parameters.projectName }} Artifact'
       inputs:
         pathtoPublish: '$(Build.ArtifactStagingDirectory)/${{ parameters.projectName }}'
-        artifactName: '${{ parameters.projectName }}' 
+        artifactName: '${{ parameters.projectName }}-drop' 

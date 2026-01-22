@@ -18,6 +18,7 @@ fi
 info "Generating DB FORWARD migration script → ${MIGRATION_SCRIPT_OUT}"
 
 if ! dotnet ef migrations script \
+  --no-build \
   --idempotent \
   --output "${MIGRATION_SCRIPT_OUT}" \
   --project "${DATA_PROJECT_PATH}" \
@@ -38,9 +39,10 @@ info "[Step 1/2] Retrieving the last two migrations from source code..."
 # We filter lines that look like migration IDs: 14 digits + underscore
 readarray -t migrations < <(
   dotnet ef migrations list \
+    --no-build \
+    --no-connect \
     --project "${DATA_PROJECT_PATH}" \
     --startup-project "${STARTUP_PROJECT_PATH}" \
-    --no-connect \
   | tr -d '\r' \
   | grep -E '^[0-9]{14}_'
 )
@@ -61,10 +63,11 @@ info "[Step 2/2] Generating idempotent rollback (latest → previous)..."
 # Temporarily allow command to fail without exiting the whole script
 set +e
 dotnet ef migrations script "${latest}" "${previous}" \
+  --no-build \
   --idempotent \
   --output "${ROLLBACK_SCRIPT_OUT}" \
   --project "${DATA_PROJECT_PATH}" \
-  --startup-project "${STARTUP_PROJECT_PATH}"
+  --startup-project "${STARTUP_PROJECT_PATH}" \
 rollback_rc=$?
 set -e
 

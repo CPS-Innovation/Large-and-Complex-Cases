@@ -53,22 +53,22 @@ stages:
             targetPath: '$(Build.SourcesDirectory)/localnuget'
             artifact: 'localnuget'
     
-  # - stage: Build_Main_API
-  #   displayName: 'Build Main API'
-  #   dependsOn: Package_NuGet
-  #   jobs:
-  #     - job: Build_Main_API
-  #       displayName: 'Build Main API'
-  #       steps:
-  #         - template: ../templates/dotnet-build-steps.yml
-  #           parameters:
-  #             projectPath: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-  #             projectName: 'lacc-main-api-drop'
-  #             buildConfiguration: $(buildConfiguration)
-  #             dotNetVersion: $(dotNetVersion)
-  #             useLocalNuGet: true
-  #             publishOutput: true
-  #             runTests: false
+  - stage: Build_Main_API
+    displayName: 'Build Main API'
+    dependsOn: Package_NuGet
+    jobs:
+      - job: Build_Main_API
+        displayName: 'Build Main API'
+        steps:
+          - template: ../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+              projectName: 'lacc-main-api'
+              buildConfiguration: $(buildConfiguration)
+              dotNetVersion: $(dotNetVersion)
+              useLocalNuGet: true
+              publishOutput: true
+              runTests: false
 
   # - stage: Build_Filetransfer_API
   #   displayName: 'Build Transfer API'
@@ -80,7 +80,7 @@ stages:
   #         - template: ../templates/dotnet-build-steps.yml
   #           parameters:
   #             projectPath: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
-  #             projectName: 'lacc-filetransfer-api-drop'
+  #             projectName: 'lacc-filetransfer-api'
   #             buildConfiguration: $(buildConfiguration)
   #             dotNetVersion: $(dotNetVersion)
   #             useLocalNuGet: true
@@ -96,6 +96,10 @@ stages:
         variables: 
         - group: lacc-backend-secrets-dev
         steps:
+          - download: current
+            artifact: 'lacc-main-api'
+            displayName: 'Download Main API package artifact'
+
           # Build Data project with dependencies
           - template: ../templates/dotnet-build-steps.yml
             parameters:
