@@ -46,13 +46,11 @@ stages:
             packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
             outputDir: '$(Build.SourcesDirectory)/localnuget'
             arguments: '--configuration $(buildConfiguration) --no-build'
-
-        - task: PublishPipelineArtifact@1
+          
+        - publish: '$(Build.SourcesDirectory)/localnuget'
+          artifact: 'localnuget'
           displayName: 'Publish HttpTelemetry Package'
-          inputs:
-            targetPath: '$(Build.SourcesDirectory)/localnuget'
-            artifact: 'localnuget'
-    
+  
   - stage: Build_Main_API
     displayName: 'Build Main API'
     dependsOn: Package_NuGet
@@ -122,8 +120,6 @@ stages:
               MIGRATION_SCRIPT_OUT: '$(Build.ArtifactStagingDirectory)/migration-script.sql'
               ROLLBACK_SCRIPT_OUT: '$(Build.ArtifactStagingDirectory)/rollback-migration-script.sql'
 
-          - task: PublishBuildArtifacts@1
+          - publish: '$(Build.ArtifactStagingDirectory)'
+            artifactName: 'database-scripts-drop'
             displayName: 'Publish Database Scripts'
-            inputs:
-              pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-              artifactName: 'database-scripts-drop'

@@ -107,8 +107,7 @@ steps:
         publishWebProjects: false
         arguments: '--configuration ${{ parameters.buildConfiguration }} --output $(Build.ArtifactStagingDirectory)/${{ parameters.projectName }} --no-restore --self-contained false /p:PublishReadyToRun=false /p:SourceRevisionId=$(Build.SourceVersion)'
 
-    - task: PublishBuildArtifacts@1
+    - publish: '$(Build.ArtifactStagingDirectory)/${{ parameters.projectName }}'
+      artifact: '${{ parameters.projectName }}-drop'
       displayName: 'Publish ${{ parameters.projectName }} Artifact'
-      inputs:
-        pathtoPublish: '$(Build.ArtifactStagingDirectory)/${{ parameters.projectName }}'
-        artifactName: '${{ parameters.projectName }}-drop' 
+      
