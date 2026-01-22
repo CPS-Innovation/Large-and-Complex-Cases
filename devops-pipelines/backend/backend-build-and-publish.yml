@@ -100,6 +100,8 @@ stages:
             artifact: 'lacc-main-api-drop'
             displayName: 'Download Main API package artifact'
 
+          - script: dotnet restore backend/CPS.ComplexCases.API
+
           # Build Data project with dependencies
           - template: ../templates/dotnet-build-steps.yml
             parameters:
@@ -118,7 +120,7 @@ stages:
             env:
               EF_VERSION: $(efVersion)
               DATA_PROJECT_PATH: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
-              STARTUP_PROJECT_PATH: '$(Pipeline.Workspace)/lacc-main-api-drop/CPS.ComplexCases.API.dll'
+              STARTUP_PROJECT_PATH: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
               MIGRATION_SCRIPT_OUT: '$(Build.ArtifactStagingDirectory)/migration-script.sql'
               ROLLBACK_SCRIPT_OUT: '$(Build.ArtifactStagingDirectory)/rollback-migration-script.sql'
 

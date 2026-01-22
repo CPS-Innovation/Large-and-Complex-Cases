@@ -67,7 +67,7 @@ dotnet ef migrations script "${latest}" "${previous}" \
   --idempotent \
   --output "${ROLLBACK_SCRIPT_OUT}" \
   --project "${DATA_PROJECT_PATH}" \
-  --startup-project "${STARTUP_PROJECT_PATH}" \
+  --startup-project "${STARTUP_PROJECT_PATH}"
 rollback_rc=$?
 set -e
 
