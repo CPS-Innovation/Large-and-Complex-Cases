@@ -121,5 +121,5 @@ stages:
               ROLLBACK_SCRIPT_OUT: '$(Build.ArtifactStagingDirectory)/rollback-migration-script.sql'
 
           - publish: '$(Build.ArtifactStagingDirectory)'
-            artifactName: 'database-scripts-drop'
+            artifact: 'database-scripts-drop'
             displayName: 'Publish Database Scripts'
