@@ -18,10 +18,11 @@ fi
 info "Generating DB FORWARD migration script → ${MIGRATION_SCRIPT_OUT}"
 
 if ! dotnet ef migrations script \
+  --no-build \
   --idempotent \
   --output "${MIGRATION_SCRIPT_OUT}" \
   --project "${DATA_PROJECT_PATH}" \
-  --startup-project "${STARTUP_PROJECT_PATH}"
+  # --startup-project "${STARTUP_PROJECT_PATH}"
 then
   error "Forward migration script generation FAILED."
   exit 1

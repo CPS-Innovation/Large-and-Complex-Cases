@@ -51,22 +51,22 @@ stages:
           artifact: 'localnuget'
           displayName: 'Publish HttpTelemetry Package'
   
-  - stage: Build_Main_API
-    displayName: 'Build Main API'
-    dependsOn: Package_NuGet
-    jobs:
-      - job: Build_Main_API
-        displayName: 'Build Main API'
-        steps:
-          - template: ../templates/dotnet-build-steps.yml
-            parameters:
-              projectPath: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-              projectName: 'lacc-main-api'
-              buildConfiguration: $(buildConfiguration)
-              dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: true
-              publishOutput: true
-              runTests: false
+  # - stage: Build_Main_API
+  #   displayName: 'Build Main API'
+  #   dependsOn: Package_NuGet
+  #   jobs:
+  #     - job: Build_Main_API
+  #       displayName: 'Build Main API'
+  #       steps:
+  #         - template: ../templates/dotnet-build-steps.yml
+  #           parameters:
+  #             projectPath: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+  #             projectName: 'lacc-main-api'
+  #             buildConfiguration: $(buildConfiguration)
+  #             dotNetVersion: $(dotNetVersion)
+  #             useLocalNuGet: true
+  #             publishOutput: true
+  #             runTests: false
 
   # - stage: Build_Filetransfer_API
   #   displayName: 'Build Transfer API'
@@ -87,8 +87,7 @@ stages:
 
   - stage: Package_Database
     displayName: 'Build Database Migration Scripts'
-    dependsOn: 
-    - Package_NuGet
+    dependsOn: Package_NuGet
     jobs:
       - job: Package_Database_Scripts
         displayName: 'Package Database Migration Scripts'
