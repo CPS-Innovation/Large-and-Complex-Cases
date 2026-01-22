@@ -87,7 +87,9 @@ stages:
 
   - stage: Package_Database
     displayName: 'Build Database Migration Scripts'
-    dependsOn: Package_NuGet
+    dependsOn: 
+    - Package_NuGet
+    - Build_Main_API
     jobs:
       - job: Package_Database_Scripts
         displayName: 'Package Database Migration Scripts'
