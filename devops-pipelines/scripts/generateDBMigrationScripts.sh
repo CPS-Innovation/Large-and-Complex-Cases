@@ -19,10 +19,11 @@ info "Generating DB FORWARD migration script → ${MIGRATION_SCRIPT_OUT}"
 
 if ! dotnet ef migrations script \
   --no-build \
+  --configuration Release \
   --idempotent \
   --output "${MIGRATION_SCRIPT_OUT}" \
   --project "${DATA_PROJECT_PATH}" \
-  # --startup-project "${STARTUP_PROJECT_PATH}"
+  --startup-project "${STARTUP_PROJECT_PATH}"
 then
   error "Forward migration script generation FAILED."
   exit 1
@@ -41,6 +42,7 @@ readarray -t migrations < <(
   dotnet ef migrations list \
     --no-build \
     --no-connect \
+    --configuration Release \
     --project "${DATA_PROJECT_PATH}" \
     --startup-project "${STARTUP_PROJECT_PATH}" \
   | tr -d '\r' \
@@ -64,6 +66,7 @@ info "[Step 2/2] Generating idempotent rollback (latest → previous)..."
 set +e
 dotnet ef migrations script "${latest}" "${previous}" \
   --no-build \
+  --configuration Release \
   --idempotent \
   --output "${ROLLBACK_SCRIPT_OUT}" \
   --project "${DATA_PROJECT_PATH}" \

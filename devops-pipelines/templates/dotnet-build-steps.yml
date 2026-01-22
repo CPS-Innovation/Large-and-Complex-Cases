@@ -100,7 +100,7 @@ steps:
   # Publish if enabled
   - ${{ if eq(parameters.publishOutput, true) }}:
     - task: DotNetCoreCLI@2
-      displayName: 'Publish ${{ parameters.projectName }}'
+      displayName: 'Dotnet Publish ${{ parameters.projectName }}'
       inputs:
         command: 'publish'
         projects: '${{ parameters.projectPath }}'
@@ -109,5 +109,5 @@ steps:
 
     - publish: '$(Build.ArtifactStagingDirectory)/${{ parameters.projectName }}'
       artifact: '${{ parameters.projectName }}-drop'
-      displayName: 'Publish ${{ parameters.projectName }} Artifact'
+      displayName: 'Publish Artifact ${{ parameters.projectName }}'
       
