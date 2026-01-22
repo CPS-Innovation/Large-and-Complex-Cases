@@ -9,11 +9,6 @@ trigger:
 
 pr: none
 
-parameters: 
-- name: packageDatabase
-  type: boolean
-  default: true
-
 variables:
   buildConfiguration: 'Release'
   dotNetVersion: '8.x'
@@ -72,29 +67,6 @@ stages:
               useLocalNuGet: true
               publishOutput: true
               runTests: false
-          
-          - ${{ if eq(parameters.packageDatabase, true) }}:
-            - task: DotNetCoreCLI@2
-              displayName: 'Build Data Project'
-              inputs:
-                command: 'build'
-                projects: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
-                arguments: '--configuration $(buildConfiguration)'
-
-            - task: Bash@3
-              displayName: 'Generate Migration Scripts'
-              inputs:
-                filePath: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/generateDBMigrationScripts.sh'
-              env:
-                EF_VERSION: $(efVersion)
-                DATA_PROJECT_PATH: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
-                STARTUP_PROJECT_PATH: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-                MIGRATION_SCRIPT_OUT: '$(Build.ArtifactStagingDirectory)/migration-script.sql'
-                ROLLBACK_SCRIPT_OUT: '$(Build.ArtifactStagingDirectory)/rollback-migration-script.sql'
-
-            - publish: '$(Build.ArtifactStagingDirectory)'
-              artifact: 'database-scripts-drop'
-              displayName: 'Publish Database Scripts'
 
   # - stage: Build_Filetransfer_API
   #   displayName: 'Build Transfer API'
@@ -113,43 +85,38 @@ stages:
   #             publishOutput: true
   #             runTests: false
 
-  # - stage: Package_Database
-  #   displayName: 'Build Database Migration Scripts'
-  #   dependsOn: 
-  #   - Package_NuGet
-  #   - Build_Main_API
-  #   jobs:
-  #     - job: Package_Database_Scripts
-  #       displayName: 'Package Database Migration Scripts'
-  #       variables: 
-  #       - group: lacc-backend-secrets-dev
-  #       steps:
-  #         - download: current
-  #           artifact: 'lacc-main-api-drop'
-  #           displayName: 'Download Main API package artifact'
+  - stage: Package_Database
+    displayName: 'Build Database Migration Scripts'
+    dependsOn: 
+    - Package_NuGet
+    jobs:
+      - job: Package_Database_Scripts
+        displayName: 'Package Database Migration Scripts'
+        variables: 
+        - group: lacc-backend-secrets-dev
+        steps:
+          # Build Data project with dependencies
+          - template: ../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
+              projectName: 'Database'
+              buildConfiguration: $(buildConfiguration)
+              dotNetVersion: $(dotNetVersion)
+              useLocalNuGet: true
+              publishOutput: false
+              runTests: false
 
-  #         # Build Data project with dependencies
-  #         - template: ../templates/dotnet-build-steps.yml
-  #           parameters:
-  #             projectPath: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
-  #             projectName: 'Database'
-  #             buildConfiguration: $(buildConfiguration)
-  #             dotNetVersion: $(dotNetVersion)
-  #             useLocalNuGet: true
-  #             publishOutput: false
-  #             runTests: false
+          - task: Bash@3
+            displayName: 'Generate Migration Scripts'
+            inputs:
+              filePath: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/generateDBMigrationScripts.sh'
+            env:
+              EF_VERSION: $(efVersion)
+              DATA_PROJECT_PATH: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
+              STARTUP_PROJECT_PATH: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+              MIGRATION_SCRIPT_OUT: '$(Build.ArtifactStagingDirectory)/migration-script.sql'
+              ROLLBACK_SCRIPT_OUT: '$(Build.ArtifactStagingDirectory)/rollback-migration-script.sql'
 
-  #         - task: Bash@3
-  #           displayName: 'Generate Migration Scripts'
-  #           inputs:
-  #             filePath: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/generateDBMigrationScripts.sh'
-  #           env:
-  #             EF_VERSION: $(efVersion)
-  #             DATA_PROJECT_PATH: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
-  #             STARTUP_PROJECT_PATH: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-  #             MIGRATION_SCRIPT_OUT: '$(Build.ArtifactStagingDirectory)/migration-script.sql'
-  #             ROLLBACK_SCRIPT_OUT: '$(Build.ArtifactStagingDirectory)/rollback-migration-script.sql'
-
-  #         - publish: '$(Build.ArtifactStagingDirectory)'
-  #           artifact: 'database-scripts-drop'
-  #           displayName: 'Publish Database Scripts'
+          - publish: '$(Build.ArtifactStagingDirectory)'
+            artifact: 'database-scripts-drop'
+            displayName: 'Publish Database Scripts'
