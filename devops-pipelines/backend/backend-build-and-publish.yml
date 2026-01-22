@@ -97,7 +97,7 @@ stages:
         - group: lacc-backend-secrets-dev
         steps:
           - download: current
-            artifact: 'lacc-main-api'
+            artifact: 'lacc-main-api-drop'
             displayName: 'Download Main API package artifact'
 
           # Build Data project with dependencies
