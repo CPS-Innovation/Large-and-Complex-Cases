@@ -100,8 +100,6 @@ stages:
             artifact: 'lacc-main-api-drop'
             displayName: 'Download Main API package artifact'
 
-          - script: dotnet restore backend/CPS.ComplexCases.API
-
           # Build Data project with dependencies
           - template: ../templates/dotnet-build-steps.yml
             parameters:
@@ -112,6 +110,9 @@ stages:
               useLocalNuGet: true
               publishOutput: false
               runTests: false
+
+          - script: dotnet restore backend/CPS.ComplexCases.API
+            displayName: 'Restore Main API'
 
           - task: Bash@3
             displayName: 'Generate Migration Scripts'
