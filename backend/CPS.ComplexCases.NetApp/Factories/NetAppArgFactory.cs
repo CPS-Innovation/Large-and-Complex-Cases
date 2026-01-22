@@ -157,6 +157,9 @@ public class NetAppArgFactory : INetAppArgFactory
 
     private static string ConvertToIso8601(int durationInSeconds)
     {
+        if (durationInSeconds <= 0)
+            return "PT0S";
+
         TimeSpan timeSpan = TimeSpan.FromSeconds(durationInSeconds);
 
         string duration = "P";
