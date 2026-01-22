@@ -18,13 +18,14 @@ public class KeyVaultServiceTests
     private readonly Mock<ILogger<KeyVaultService>> _loggerMock;
     private readonly KeyVaultService _sut;
     private readonly string _key;
+    private const int SessionDurationSeconds = 3600;
 
     public KeyVaultServiceTests()
     {
         _fixture = new Fixture().Customize(new AutoMoqCustomization());
         _secretClientMock = new Mock<SecretClient>();
         _loggerMock = new Mock<ILogger<KeyVaultService>>();
-        _sut = new KeyVaultService(_secretClientMock.Object, _loggerMock.Object);
+        _sut = new KeyVaultService(_secretClientMock.Object, _loggerMock.Object, SessionDurationSeconds);
 
         _key = "test-user";
     }

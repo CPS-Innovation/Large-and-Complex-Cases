@@ -10,4 +10,6 @@ public class NetAppUserRecord
     public string? AccessKey { get; set; }
     [JsonPropertyName("secret_key")]
     public string? SecretKey { get; set; }
+    [JsonPropertyName("key_expiry_time")]
+    public DateTime? KeyExpiryTime { get; set; }
 }

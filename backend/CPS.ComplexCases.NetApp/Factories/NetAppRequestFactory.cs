@@ -50,7 +50,8 @@ public class NetAppRequestFactory : INetAppRequestFactory
     {
         var regenerateKeys = new RegenerateKeysDto
         {
-            RegenerateKeys = "True"
+            RegenerateKeys = "True",
+            KeyTimeToLive = arg.KeyTimeToLive
         };
 
         return BuildRequest(HttpMethod.Patch, $"api/protocols/s3/services/{arg.S3ServiceUuid}/users/{EncodedValue(arg.Username)}", arg.AccessToken, regenerateKeys);
