@@ -152,7 +152,7 @@ public class S3CredentialServiceTests
         _netAppHttpClientMock.Setup(x => x.RegenerateUserKeysAsync(It.IsAny<RegenerateUserKeysArg>()))
             .ReturnsAsync(netAppResponse);
 
-        _netAppArgFactoryMock.Setup(x => x.CreateRegenerateUserKeysArg(_userName, _bearerToken, _options.S3ServiceUuid))
+        _netAppArgFactoryMock.Setup(x => x.CreateRegenerateUserKeysArg(_userName, _bearerToken, _options.S3ServiceUuid, _options.SessionDurationSeconds))
             .Returns(new RegenerateUserKeysArg());
 
         _cryptographyServiceMock.Setup(x => x.CreateSalt())

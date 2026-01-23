@@ -52,6 +52,12 @@ public class DeleteNetAppFileOrFolder(ILogger<DeleteNetAppFileOrFolder> logger,
             return new BadRequestObjectResult(deleteNetAppFileOrFolderRequest.ValidationErrors);
         }
 
+        if (string.IsNullOrWhiteSpace(operationName))
+            return new BadRequestObjectResult("Operation name cannot be empty");
+
+        if (operationName.Contains("..") || operationName.StartsWith('/'))
+            return new BadRequestObjectResult("Invalid operation name");
+
         var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
 
         var arg = _netAppArgFactory.CreateDeleteFileOrFolderArg(context.BearerToken, securityGroups.First().BucketName, operationName, operationName + "/" + deleteNetAppFileOrFolderRequest.Value.Path);

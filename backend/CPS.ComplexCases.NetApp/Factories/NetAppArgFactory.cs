@@ -36,6 +36,16 @@ public class NetAppArgFactory : INetAppArgFactory
         };
     }
 
+    public CreateFolderArg CreateCreateFolderArg(string bearerToken, string bucketName, string folderKey)
+    {
+        return new CreateFolderArg
+        {
+            BearerToken = bearerToken,
+            BucketName = bucketName.ToLowerInvariant(),
+            FolderKey = folderKey
+        };
+    }
+
     public GetObjectArg CreateGetObjectArg(string bearerToken, string bucketName, string objectName)
     {
         return new GetObjectArg
@@ -134,13 +144,14 @@ public class NetAppArgFactory : INetAppArgFactory
         };
     }
 
-    public RegenerateUserKeysArg CreateRegenerateUserKeysArg(string username, string accessToken, Guid s3ServiceUuid)
+    public RegenerateUserKeysArg CreateRegenerateUserKeysArg(string username, string accessToken, Guid s3ServiceUuid, int sessionDuration)
     {
         return new RegenerateUserKeysArg
         {
             Username = username,
             AccessToken = accessToken,
-            S3ServiceUuid = s3ServiceUuid
+            S3ServiceUuid = s3ServiceUuid,
+            KeyTimeToLive = ConvertToIso8601(sessionDuration)
         };
     }
 
@@ -163,5 +174,40 @@ public class NetAppArgFactory : INetAppArgFactory
         }
 
         return prefix ?? string.Empty;
+    }
+
+    private static string ConvertToIso8601(int durationInSeconds)
+    {
+        if (durationInSeconds <= 0)
+            return "PT0S";
+
+        TimeSpan timeSpan = TimeSpan.FromSeconds(durationInSeconds);
+
+        string duration = "P";
+
+        if (timeSpan.Days > 0)
+        {
+            duration += $"{timeSpan.Days}D";
+        }
+
+        if (timeSpan.Hours > 0 || timeSpan.Minutes > 0 || timeSpan.Seconds > 0)
+        {
+            duration += "T";
+
+            if (timeSpan.Hours > 0)
+            {
+                duration += $"{timeSpan.Hours}H";
+            }
+            if (timeSpan.Minutes > 0)
+            {
+                duration += $"{timeSpan.Minutes}M";
+            }
+            if (timeSpan.Seconds > 0)
+            {
+                duration += $"{timeSpan.Seconds}S";
+            }
+        }
+
+        return duration;
     }
 }

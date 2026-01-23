@@ -1,3 +1,6 @@
+using System.Net;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Amazon.S3;
 using Amazon.S3.Model;
 using AutoFixture;
@@ -7,9 +10,8 @@ using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Wrappers;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
+using CPS.ComplexCases.NetApp.Models.Dto;
 
 namespace CPS.ComplexCases.NetApp.Tests.Unit
 {
@@ -619,6 +621,446 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                     ex,
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateFolderAsync_ShouldReturnTrue_WhenFolderIsCreatedAndDeletedSuccessfully()
+        {
+            // Arrange
+            var arg = new CreateFolderArg
+            {
+                BearerToken = BearerToken,
+                BucketName = "bucket",
+                FolderKey = "test-folder/test.txt"
+            };
+
+            var putRequest = new PutObjectRequest
+            {
+                BucketName = arg.BucketName,
+                Key = arg.FolderKey
+            };
+
+            _netAppRequestFactoryMock
+                .Setup(x => x.CreateFolderRequest(arg))
+                .Returns(putRequest);
+
+            _amazonS3Mock
+                .Setup(x => x.PutObjectAsync(putRequest, default))
+                .ReturnsAsync(new PutObjectResponse { HttpStatusCode = HttpStatusCode.OK });
+
+            _amazonS3Mock
+                .Setup(x => x.DeleteObjectAsync(It.Is<DeleteObjectRequest>(r =>
+                    r.BucketName == arg.BucketName && r.Key == arg.FolderKey), default))
+                .ReturnsAsync(new DeleteObjectResponse { HttpStatusCode = HttpStatusCode.NoContent });
+
+            // Act
+            var result = await _client.CreateFolderAsync(arg);
+
+            // Assert
+            Assert.True(result);
+            _amazonS3Mock.Verify(x => x.PutObjectAsync(putRequest, default), Times.Once);
+            _amazonS3Mock.Verify(x => x.DeleteObjectAsync(It.IsAny<DeleteObjectRequest>(), default), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateFolderAsync_ShouldReturnFalse_WhenPutObjectFails()
+        {
+            // Arrange
+            var arg = new CreateFolderArg
+            {
+                BearerToken = BearerToken,
+                BucketName = "bucket",
+                FolderKey = "test-folder/test.txt"
+            };
+
+            var putRequest = new PutObjectRequest
+            {
+                BucketName = arg.BucketName,
+                Key = arg.FolderKey
+            };
+
+            _netAppRequestFactoryMock
+                .Setup(x => x.CreateFolderRequest(arg))
+                .Returns(putRequest);
+
+            _amazonS3Mock
+                .Setup(x => x.PutObjectAsync(putRequest, default))
+                .ReturnsAsync(new PutObjectResponse { HttpStatusCode = HttpStatusCode.InternalServerError });
+
+            // Act
+            var result = await _client.CreateFolderAsync(arg);
+
+            // Assert
+            Assert.False(result);
+            _amazonS3Mock.Verify(x => x.PutObjectAsync(putRequest, default), Times.Once);
+            _amazonS3Mock.Verify(x => x.DeleteObjectAsync(It.IsAny<DeleteObjectRequest>(), default), Times.Never);
+        }
+
+        [Fact]
+        public async Task CreateFolderAsync_ShouldThrowException_WhenS3ExceptionOccurs()
+        {
+            // Arrange
+            var arg = new CreateFolderArg
+            {
+                BearerToken = BearerToken,
+                BucketName = "bucket",
+                FolderKey = "test-folder/test.txt"
+            };
+
+            var putRequest = new PutObjectRequest
+            {
+                BucketName = arg.BucketName,
+                Key = arg.FolderKey
+            };
+
+            _netAppRequestFactoryMock
+                .Setup(x => x.CreateFolderRequest(arg))
+                .Returns(putRequest);
+
+            _amazonS3Mock
+                .Setup(x => x.PutObjectAsync(putRequest, default))
+                .ThrowsAsync(new AmazonS3Exception("S3 error"));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<AmazonS3Exception>(() => _client.CreateFolderAsync(arg));
+        }
+
+        [Fact]
+        public async Task CreateFolderAsync_ShouldRetryDeleteOperation_WhenFirstDeleteAttemptFails()
+        {
+            // Arrange
+            var arg = new CreateFolderArg
+            {
+                BearerToken = BearerToken,
+                BucketName = "bucket",
+                FolderKey = "test-folder/test.txt"
+            };
+
+            var putRequest = new PutObjectRequest
+            {
+                BucketName = arg.BucketName,
+                Key = arg.FolderKey
+            };
+
+            _netAppRequestFactoryMock
+                .Setup(x => x.CreateFolderRequest(arg))
+                .Returns(putRequest);
+
+            _amazonS3Mock
+                .Setup(x => x.PutObjectAsync(putRequest, default))
+                .ReturnsAsync(new PutObjectResponse { HttpStatusCode = HttpStatusCode.OK });
+
+            var deleteCallCount = 0;
+            _amazonS3Mock
+                .Setup(x => x.DeleteObjectAsync(It.IsAny<DeleteObjectRequest>(), default))
+                .ReturnsAsync(() =>
+                {
+                    deleteCallCount++;
+                    return deleteCallCount == 1
+                        ? new DeleteObjectResponse { HttpStatusCode = HttpStatusCode.InternalServerError }
+                        : new DeleteObjectResponse { HttpStatusCode = HttpStatusCode.NoContent };
+                });
+
+            // Act
+            var result = await _client.CreateFolderAsync(arg);
+
+            // Assert
+            Assert.True(result);
+            _amazonS3Mock.Verify(x => x.DeleteObjectAsync(It.IsAny<DeleteObjectRequest>(), default), Times.AtLeast(2));
+        }
+
+        [Fact]
+        public async Task DeleteFileOrFolderAsync_WhenPathHasExtension_DeletesFileSuccessfully()
+        {
+            // Arrange
+            var filePath = "statement/witness.pdf";
+            var arg = new DeleteFileOrFolderArg
+            {
+                BearerToken = BearerToken,
+                BucketName = BucketName,
+                Path = filePath,
+                OperationName = "test-operation"
+            };
+
+            var deleteRequest = new DeleteObjectRequest
+            {
+                BucketName = arg.BucketName,
+                Key = filePath
+            };
+
+            _netAppRequestFactoryMock
+                .Setup(x => x.DeleteObjectRequest(arg))
+                .Returns(deleteRequest);
+
+            _amazonS3Mock
+                .Setup(x => x.DeleteObjectAsync(deleteRequest, default))
+                .ReturnsAsync(new DeleteObjectResponse { HttpStatusCode = HttpStatusCode.NoContent });
+
+            // Act
+            var result = await _client.DeleteFileOrFolderAsync(arg);
+
+            // Assert
+            Assert.Equal($"Successfully deleted file {filePath} from bucket {BucketName}.", result);
+            _amazonS3Mock.Verify(x => x.DeleteObjectAsync(deleteRequest, default), Times.Once);
+        }
+
+        [Fact]
+        public async Task DeleteFileOrFolderAsync_WhenPathHasNoExtension_DeletesFolderAndAllContents()
+        {
+            // Arrange
+            var folderPath = "statements/witnesses";
+            var arg = new DeleteFileOrFolderArg
+            {
+                BearerToken = BearerToken,
+                BucketName = BucketName,
+                Path = folderPath,
+                OperationName = "test-operation"
+            };
+
+            var filesToDelete = new List<string>
+            {
+                "statements/witnesses/file1.pdf",
+                "statements/witnesses/file2.docx"
+            };
+
+            var listResponse = new ListNetAppObjectsDto
+            {
+                Data = new ListNetAppDataDto
+                {
+                    BucketName = BucketName,
+                    RootPath = folderPath + "/",
+                    FolderData = [],
+                    FileData = filesToDelete.Select(f => new ListNetAppFileDataDto
+                    {
+                        Path = f,
+                        Etag = "etag",
+                        Filesize = 100,
+                        LastModified = DateTime.UtcNow
+                    })
+                },
+                Pagination = new PaginationDto
+                {
+                    ContinuationToken = null,
+                    NextContinuationToken = null,
+                    MaxKeys = 1000,
+                    KeyCount = 2
+                }
+            };
+
+            _netAppRequestFactoryMock
+                .Setup(x => x.ListObjectsInBucketRequest(It.IsAny<ListObjectsInBucketArg>()))
+                .Returns(new ListObjectsV2Request { BucketName = BucketName });
+
+            _amazonS3Mock
+                .Setup(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
+                .ReturnsAsync(new ListObjectsV2Response
+                {
+                    S3Objects = filesToDelete.Select(f => new S3Object { Key = f, Size = 100 }).ToList(),
+                    CommonPrefixes = new List<string>(),
+                    IsTruncated = false
+                });
+
+            foreach (var file in filesToDelete)
+            {
+                _netAppRequestFactoryMock
+                    .Setup(x => x.DeleteObjectRequest(It.Is<DeleteFileOrFolderArg>(a => a.Path == file)))
+                    .Returns(new DeleteObjectRequest { BucketName = BucketName, Key = file });
+
+                _amazonS3Mock
+                    .Setup(x => x.DeleteObjectAsync(It.Is<DeleteObjectRequest>(r => r.Key == file), default))
+                    .ReturnsAsync(new DeleteObjectResponse { HttpStatusCode = HttpStatusCode.NoContent });
+            }
+
+            _netAppRequestFactoryMock
+                .Setup(x => x.DeleteObjectRequest(It.Is<DeleteFileOrFolderArg>(a => a.Path == folderPath)))
+                .Returns(new DeleteObjectRequest { BucketName = BucketName, Key = folderPath });
+
+            _amazonS3Mock
+                .Setup(x => x.DeleteObjectAsync(It.Is<DeleteObjectRequest>(r => r.Key == folderPath), default))
+                .ReturnsAsync(new DeleteObjectResponse { HttpStatusCode = HttpStatusCode.NoContent });
+
+            // Act
+            var result = await _client.DeleteFileOrFolderAsync(arg);
+
+            // Assert
+            Assert.Equal($"Successfully deleted {folderPath} from bucket {BucketName}.", result);
+            Assert.Equal(filesToDelete.Count + 1, _amazonS3Mock.Invocations.Count(i => i.Method.Name == "DeleteObjectAsync"));
+        }
+
+        [Fact]
+        public async Task DeleteFileOrFolderAsync_WhenFolderDeletionHasFailures_ReturnsFailureMessage()
+        {
+            // Arrange
+            var folderPath = "statements/witnesses";
+            var arg = new DeleteFileOrFolderArg
+            {
+                BearerToken = BearerToken,
+                BucketName = BucketName,
+                Path = folderPath,
+                OperationName = "test-operation"
+            };
+
+            var filesToDelete = new List<string>
+            {
+                "statements/witnesses/file1.pdf"
+            };
+
+            _netAppRequestFactoryMock
+                .Setup(x => x.ListObjectsInBucketRequest(It.IsAny<ListObjectsInBucketArg>()))
+                .Returns(new ListObjectsV2Request { BucketName = BucketName });
+
+            _amazonS3Mock
+                .Setup(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
+                .ReturnsAsync(new ListObjectsV2Response
+                {
+                    S3Objects = filesToDelete.Select(f => new S3Object { Key = f, Size = 100 }).ToList(),
+                    CommonPrefixes = [],
+                    IsTruncated = false
+                });
+
+            foreach (var file in filesToDelete)
+            {
+                _netAppRequestFactoryMock
+                    .Setup(x => x.DeleteObjectRequest(It.Is<DeleteFileOrFolderArg>(a => a.Path == file)))
+                    .Returns(new DeleteObjectRequest { BucketName = BucketName, Key = file });
+            }
+
+            _amazonS3Mock
+                .Setup(x => x.DeleteObjectAsync(It.IsAny<DeleteObjectRequest>(), default))
+                .ReturnsAsync(() =>
+                {
+                    return new DeleteObjectResponse { HttpStatusCode = HttpStatusCode.InternalServerError };
+                });
+
+            _netAppRequestFactoryMock
+                .Setup(x => x.DeleteObjectRequest(It.Is<DeleteFileOrFolderArg>(a => a.Path == folderPath)))
+                .Returns(new DeleteObjectRequest { BucketName = BucketName, Key = folderPath });
+
+            // Act
+            var result = await _client.DeleteFileOrFolderAsync(arg);
+
+            // Assert
+            Assert.Contains("Deletion failed for", result);
+            Assert.Contains("files or folders", result);
+        }
+
+        [Fact]
+        public async Task DeleteFileOrFolderAsync_WhenS3ExceptionThrown_RethrowsException()
+        {
+            // Arrange
+            var filePath = "statements/witness.pdf";
+            var arg = new DeleteFileOrFolderArg
+            {
+                BearerToken = BearerToken,
+                BucketName = BucketName,
+                Path = filePath,
+                OperationName = "test-operation"
+            };
+
+            var deleteRequest = new DeleteObjectRequest
+            {
+                BucketName = arg.BucketName,
+                Key = filePath
+            };
+
+            _netAppRequestFactoryMock
+                .Setup(x => x.DeleteObjectRequest(arg))
+                .Returns(deleteRequest);
+
+            _amazonS3Mock
+                .Setup(x => x.DeleteObjectAsync(deleteRequest, default))
+                .ThrowsAsync(new AmazonS3Exception("Access Denied"));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<AmazonS3Exception>(() => _client.DeleteFileOrFolderAsync(arg));
+
+            _loggerMock.Verify(x => x.Log(
+                It.Is<LogLevel>(logLevel => logLevel == LogLevel.Error),
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to delete")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
+        }
+
+        [Theory]
+        [InlineData("file.pdf")]
+        [InlineData("document.docx")]
+        [InlineData("image.png")]
+        [InlineData("archive.zip")]
+        public async Task DeleteFileOrFolderAsync_WithVariousFileExtensions_IdentifiesAsFile(string filePath)
+        {
+            // Arrange
+            var arg = new DeleteFileOrFolderArg
+            {
+                BearerToken = BearerToken,
+                BucketName = BucketName,
+                Path = filePath,
+                OperationName = "test-operation"
+            };
+
+            var deleteRequest = new DeleteObjectRequest
+            {
+                BucketName = arg.BucketName,
+                Key = filePath
+            };
+
+            _netAppRequestFactoryMock
+                .Setup(x => x.DeleteObjectRequest(arg))
+                .Returns(deleteRequest);
+
+            _amazonS3Mock
+                .Setup(x => x.DeleteObjectAsync(deleteRequest, default))
+                .ReturnsAsync(new DeleteObjectResponse { HttpStatusCode = HttpStatusCode.NoContent });
+
+            // Act
+            var result = await _client.DeleteFileOrFolderAsync(arg);
+
+            // Assert
+            Assert.Contains("Successfully deleted file", result);
+            _amazonS3Mock.Verify(x => x.DeleteObjectAsync(deleteRequest, default), Times.Once);
+        }
+
+        [Theory]
+        [InlineData("folder")]
+        [InlineData("path/to/folder")]
+        [InlineData("documents")]
+        public async Task DeleteFileOrFolderAsync_WithoutExtension_IdentifiesAsFolder(string folderPath)
+        {
+            // Arrange
+            var arg = new DeleteFileOrFolderArg
+            {
+                BearerToken = BearerToken,
+                BucketName = BucketName,
+                Path = folderPath,
+                OperationName = "test-operation"
+            };
+
+            _netAppRequestFactoryMock
+                .Setup(x => x.ListObjectsInBucketRequest(It.IsAny<ListObjectsInBucketArg>()))
+                .Returns(new ListObjectsV2Request { BucketName = BucketName });
+
+            _amazonS3Mock
+                .Setup(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
+                .ReturnsAsync(new ListObjectsV2Response
+                {
+                    S3Objects = [],
+                    CommonPrefixes = [],
+                    IsTruncated = false
+                });
+
+            _netAppRequestFactoryMock
+                .Setup(x => x.DeleteObjectRequest(It.Is<DeleteFileOrFolderArg>(a => a.Path == folderPath)))
+                .Returns(new DeleteObjectRequest { BucketName = BucketName, Key = folderPath });
+
+            _amazonS3Mock
+                .Setup(x => x.DeleteObjectAsync(It.Is<DeleteObjectRequest>(r => r.Key == folderPath), default))
+                .ReturnsAsync(new DeleteObjectResponse { HttpStatusCode = HttpStatusCode.NoContent });
+
+            // Act
+            var result = await _client.DeleteFileOrFolderAsync(arg);
+
+            // Assert
+            Assert.Contains("Successfully deleted", result);
         }
     }
 }

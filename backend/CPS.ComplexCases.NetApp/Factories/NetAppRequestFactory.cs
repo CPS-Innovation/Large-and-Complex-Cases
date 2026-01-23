@@ -37,6 +37,18 @@ public class NetAppRequestFactory : INetAppRequestFactory
         };
     }
 
+    public PutObjectRequest CreateFolderRequest(CreateFolderArg arg)
+    {
+        var folderName = arg.FolderKey.EndsWith(S3Constants.Delimiter) ? arg.FolderKey : arg.FolderKey + S3Constants.Delimiter;
+
+        return new PutObjectRequest
+        {
+            BucketName = arg.BucketName,
+            Key = $"{folderName}{S3Constants.TempFileName}",
+            InputStream = new MemoryStream([]),
+        };
+    }
+
     public InitiateMultipartUploadRequest CreateMultipartUploadRequest(InitiateMultipartUploadArg arg)
     {
         return new InitiateMultipartUploadRequest
@@ -50,7 +62,8 @@ public class NetAppRequestFactory : INetAppRequestFactory
     {
         var regenerateKeys = new RegenerateKeysDto
         {
-            RegenerateKeys = "True"
+            RegenerateKeys = "True",
+            KeyTimeToLive = arg.KeyTimeToLive
         };
 
         return BuildRequest(HttpMethod.Patch, $"api/protocols/s3/services/{arg.S3ServiceUuid}/users/{EncodedValue(arg.Username)}", arg.AccessToken, regenerateKeys);

@@ -98,7 +98,7 @@ public class S3CredentialService : IS3CredentialService
 
             try
             {
-                userResponse = await _netAppHttpClient.RegenerateUserKeysAsync(_netAppArgFactory.CreateRegenerateUserKeysArg(userPrincipalName, bearerToken, _options.S3ServiceUuid));
+                userResponse = await _netAppHttpClient.RegenerateUserKeysAsync(_netAppArgFactory.CreateRegenerateUserKeysArg(userPrincipalName, bearerToken, _options.S3ServiceUuid, _options.SessionDurationSeconds));
             }
             catch (NetAppNotFoundException)
             {
