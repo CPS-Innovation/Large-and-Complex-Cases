@@ -33,6 +33,57 @@ using Microsoft.Net.Http.Headers;
 using var loggerFactory = LoggerFactory.Create(configure => configure.AddConsole());
 var logger = loggerFactory.CreateLogger("Configuration");
 
+static string ExtractIdentityFromRequest(IReadOnlyDictionary<string, Microsoft.Extensions.Primitives.StringValues> headers)
+{
+    try
+    {
+        // User identity from Bearer token if available
+        if (headers.TryGetValue("Authorization", out var authHeaders))
+        {
+            var authHeader = authHeaders.FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(authHeader) &&
+                authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                var token = authHeader.Substring("Bearer ".Length);
+
+                var handler = new JwtSecurityTokenHandler();
+                var jwt = handler.ReadJwtToken(token);
+
+                var userId =
+                    jwt.Claims.FirstOrDefault(c => c.Type == "oid")?.Value ??
+                    jwt.Claims.FirstOrDefault(c => c.Type == "appid")?.Value ??
+                    jwt.Claims.FirstOrDefault(c => c.Type == "azp")?.Value ??
+                    jwt.Claims.FirstOrDefault(c => c.Type == "preferred_username")?.Value;
+
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    var prefix = jwt.Claims.Any(c => c.Type == "oid" || c.Type == "preferred_username")
+                        ? "user"
+                        : "app";
+
+                    return $"{prefix}:{userId}";
+                }
+            }
+        }
+
+        // IP fallback
+        if (headers.TryGetValue("X-Forwarded-For", out var forwardedFor))
+        {
+            var ip = forwardedFor.FirstOrDefault()?.Split(',')[0]?.Trim();
+            if (!string.IsNullOrEmpty(ip))
+            {
+                return $"ip:{ip}";
+            }
+        }
+
+        return "unknown";
+    }
+    catch
+    {
+        return "unknown";
+    }
+}
+
 var host = new HostBuilder()
     .ConfigureFunctionsWebApplication((context, webApp) =>
     {
@@ -54,58 +105,9 @@ var host = new HostBuilder()
                         
                         // Exclude the file transfer status endpoint from rate limiting as it is polled frequently
                         UriPattern = "^(?!.*/v1/filetransfer/.*/status).*$",
-                        IdentityIdExtractor = request =>
-                        {
-                            try
-                            {
 
-                                // User identity from Bearer token if available
-                                if (request.Headers.TryGetValue("Authorization", out var authHeaders))
-                                {
-                                    var authHeader = authHeaders.FirstOrDefault();
-                                    if (!string.IsNullOrWhiteSpace(authHeader) &&
-                                        authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        var token = authHeader.Substring("Bearer ".Length);
+                        IdentityIdExtractor = request => ExtractIdentityFromRequest(request.Headers),
 
-                                        var handler = new JwtSecurityTokenHandler();
-                                        var jwt = handler.ReadJwtToken(token);
-
-                                        var userId =
-                                            jwt.Claims.FirstOrDefault(c => c.Type == "oid")?.Value ??
-                                            jwt.Claims.FirstOrDefault(c => c.Type == "appid")?.Value ??
-                                            jwt.Claims.FirstOrDefault(c => c.Type == "azp")?.Value ??
-                                            jwt.Claims.FirstOrDefault(c => c.Type == "preferred_username")?.Value;
-
-                                        if (!string.IsNullOrEmpty(userId))
-                                        {
-                                            var prefix = jwt.Claims.Any(c => c.Type == "oid" || c.Type == "preferred_username")
-                                                ? "user"
-                                                : "app";
-
-                                            return $"{prefix}:{userId}";
-                                        }
-                                    }
-                                }
-
-                                // IP fallback
-                                if (request.Headers.TryGetValue("X-Forwarded-For", out var forwardedFor))
-                                {
-                                    var ip = forwardedFor.FirstOrDefault()?.Split(',')[0]?.Trim();
-                                    if (!string.IsNullOrEmpty(ip))
-                                    {
-                                        return $"ip:{ip}";
-                                    }
-                                }
-
-
-                                return "unknown";
-                            }
-                            catch
-                            {
-                                return "unknown";
-                            }
-                        },
                         ResponseFabric = async (checkResults, requestProxy, responseProxy, requestAborted) =>
                         {
                             var limitExceededResult = checkResults
@@ -114,12 +116,7 @@ var host = new HostBuilder()
 
                             if (limitExceededResult == null) return;
 
-                            // Extract identity (same logic as IdentityIdExtractor)
-                            var identity = "unknown";
-                            if (requestProxy.Headers.TryGetValue("X-Forwarded-For", out var xff))
-                            {
-                                identity = $"ip:{xff.FirstOrDefault()?.Split(',')[0]?.Trim()}";
-                            }
+                            var identity = ExtractIdentityFromRequest(requestProxy.Headers);
 
                             logger.LogWarning(
                                 "Rate limit exceeded for {Identity}. RetryAfter: {RetryAfter}s. Path: {Path}",
