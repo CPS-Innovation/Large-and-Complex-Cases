@@ -26,6 +26,8 @@ using CPS.ComplexCases.DDEI.Tactical.Extensions;
 using CPS.ComplexCases.Egress.Extensions;
 using CPS.ComplexCases.NetApp.Extensions;
 using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Net.Http.Headers;
 
 // Create a temporary logger for configuration phase
 using var loggerFactory = LoggerFactory.Create(configure => configure.AddConsole());
@@ -101,9 +103,34 @@ var host = new HostBuilder()
                             {
                                 return "unknown";
                             }
+                        },
+                        ResponseFabric = async (checkResults, requestProxy, responseProxy, requestAborted) =>
+                        {
+                            var limitExceededResult = checkResults
+                                .OrderByDescending(r => r.RetryAfterInSeconds)
+                                .FirstOrDefault(r => r.RequestsRemaining < 0);
+
+                            if (limitExceededResult == null) return;
+
+                            // Extract identity (same logic as IdentityIdExtractor)
+                            var identity = "unknown";
+                            if (requestProxy.Headers.TryGetValue("X-Forwarded-For", out var xff))
+                            {
+                                identity = $"ip:{xff.FirstOrDefault()?.Split(',')[0]?.Trim()}";
+                            }
+
+                            logger.LogWarning(
+                                "Rate limit exceeded for {Identity}. RetryAfter: {RetryAfter}s. Path: {Path}",
+                                identity,
+                                limitExceededResult.RetryAfterInSeconds,
+                                requestProxy.UriWithoutQueryString);
+
+                            responseProxy.StatusCode = StatusCodes.Status429TooManyRequests;
+                            responseProxy.SetHttpHeader(HeaderNames.RetryAfter, limitExceededResult.RetryAfterHeaderValue);
+                            await responseProxy.WriteAsync("Too many requests. Try again later.");
                         }
                     }
-                    }
+                }
             };
         });
 
