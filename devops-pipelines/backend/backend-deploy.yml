@@ -1,11 +1,11 @@
 resources:
   pipelines:
   - pipeline: build
-    source: 'TEST-lacc-db-rollback'
-    # trigger: 
-    #   branches:
-    #     include:
-    #       - main
+    source: 'LACC-BE-build'
+    trigger: 
+      branches:
+        include:
+          - main
 
 variables:
   - group: lacc-deployment-global
