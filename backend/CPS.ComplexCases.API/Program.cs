@@ -34,8 +34,10 @@ using var loggerFactory = LoggerFactory.Create(configure => configure.AddConsole
 var logger = loggerFactory.CreateLogger("Configuration");
 
 var host = new HostBuilder()
-    .ConfigureFunctionsWebApplication(webApp =>
+    .ConfigureFunctionsWebApplication((context, webApp) =>
     {
+        var configuration = context.Configuration;
+
         webApp.UseThrottlingTroll(options =>
         {
             options.Config = new ThrottlingTrollConfig
@@ -46,8 +48,8 @@ var host = new HostBuilder()
                     {
                         LimitMethod = new SlidingWindowRateLimitMethod
                         {
-                            PermitLimit = 100,
-                            IntervalInSeconds = 60
+                            PermitLimit = int.Parse(configuration["RateLimiting:PermitLimit"] ?? "100"),
+                            IntervalInSeconds = int.Parse(configuration["RateLimiting:IntervalInSeconds"] ?? "60")
                         },
                         
                         // Exclude the file transfer status endpoint from rate limiting as it is polled frequently
@@ -137,7 +139,8 @@ var host = new HostBuilder()
         // note: the order of middleware is important, as it determines the execution flow
         webApp.UseMiddleware<ExceptionHandlingMiddleware>();
         webApp.UseMiddleware<RequestValidationMiddleware>();
-    }) // ✅ Adds ASP.NET Core integration
+    })
+    // ✅ Adds ASP.NET Core integration
     .ConfigureLogging(options => options.AddApplicationInsights())
     .ConfigureAppConfiguration((context, config) =>
     {
