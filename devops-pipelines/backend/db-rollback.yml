@@ -4,11 +4,34 @@ resources:
     source: 'TEST-lacc-db-rollback'
 
 parameters:
+  - name: environment
+    displayName: 'Target Environment'
+    type: string
+    default: 'dev'
+    values:
+      - dev
+      - staging
+      - prod
+  - name: agentPool
+    type: string
+    default: 'LACC PreProd Pool'
+    values:
+      - 'LACC PreProd Pool'
+      - 'LACC Prod Pool'
   - name: azureSubscription
     type: string
     default: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
+    values:
+     - 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
+     - 'Azure Pipeline: Large and Complex Cases - Prod'
 
-pool: 'LACC PreProd Pool'
+pool: ${{ parameters.agentPool }}
+
+variables:
+- name: keyVaultName
+  value: 'kv-lacc-${{ parameters.environment }}'
+- name: scriptsDirectory
+  value: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts'
 
 steps:
   - checkout: self
@@ -30,7 +53,7 @@ steps:
         fi
 
         echo "Azure CLI not found, installing..."
-        bash $(scripts_directory)/installAzureCli.sh 
+        bash $(scriptsDirectory)/installAzureCli.sh 
 
   - download: build
     artifact: 'database-scripts-drop'
@@ -55,9 +78,9 @@ steps:
 
         echo "Service Principal display name: $SERVICE_PRINCIPAL"
 
-        bash $(scripts_directory)/updateDatabase.sh
+        bash $(scriptsDirectory)/updateDatabase.sh
     env:
-      KEY_VAULT_NAME: kv-lacc-dev
+      KEY_VAULT_NAME: $(keyVaultName)
       MIGRATION_SCRIPT_PATH: '$(Pipeline.Workspace)/build/database-scripts-drop/rollback-migration-script.sql'
   
   - template: ../templates/runner-cleanup-steps.yml
