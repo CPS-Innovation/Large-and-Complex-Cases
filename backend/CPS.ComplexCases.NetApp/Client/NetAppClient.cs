@@ -11,7 +11,11 @@ using CPS.ComplexCases.NetApp.Wrappers;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
-public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3UtilsWrapper amazonS3UtilsWrapper, INetAppRequestFactory netAppRequestFactory, IS3ClientFactory s3ClientFactory) : INetAppClient
+public class NetAppClient(
+    ILogger<NetAppClient> logger,
+    IAmazonS3UtilsWrapper amazonS3UtilsWrapper,
+    INetAppRequestFactory netAppRequestFactory,
+    IS3ClientFactory s3ClientFactory) : INetAppClient
 {
     private readonly ILogger<NetAppClient> _logger = logger;
     private readonly IAmazonS3UtilsWrapper _amazonS3UtilsWrapper = amazonS3UtilsWrapper;
@@ -278,6 +282,90 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3UtilsWrapper am
             _logger.LogError(ex, "Failed to check if object {ObjectKey} exists in bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
             return false;
         }
+    }
+
+    public async Task<string> DeleteFileOrFolderAsync(DeleteFileOrFolderArg arg)
+    {
+        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
+        try
+        {
+            if (Path.HasExtension(arg.Path))
+            {
+                var request = _netAppRequestFactory.DeleteObjectRequest(arg);
+                var response = await s3Client.DeleteObjectAsync(request);
+                return $"Successfully deleted file {arg.Path} from bucket {arg.BucketName}.";
+            }
+            else
+            {
+                var filesToDelete = await ListAllObjectKeysForDeletionAsync(arg.BucketName, arg.Path, arg.BearerToken);
+
+                foreach (var filePath in filesToDelete)
+                {
+                    var deleteArg = new DeleteFileOrFolderArg
+                    {
+                        BearerToken = arg.BearerToken,
+                        BucketName = arg.BucketName,
+                        OperationName = arg.OperationName,
+                        Path = filePath
+                    };
+                    var deleteRequest = _netAppRequestFactory.DeleteObjectRequest(deleteArg);
+                    await s3Client.DeleteObjectAsync(deleteRequest);
+                }
+
+                return $"Successfully deleted {arg.Path} from bucket {arg.BucketName}.";
+            }
+        }
+        catch (AmazonS3Exception ex)
+        {
+            _logger.LogError(ex, "Failed to delete file or folder {Path} from bucket {BucketName}.", arg.Path, arg.BucketName);
+            throw;
+        }
+    }
+
+    private async Task<IEnumerable<string>> ListAllObjectKeysForDeletionAsync(string bucketName, string prefix, string bearerToken)
+    {
+        var objectKeys = new List<string>();
+
+        string? continuationToken = null;
+        do
+        {
+            var listArg = new ListObjectsInBucketArg
+            {
+                BearerToken = bearerToken,
+                BucketName = bucketName,
+                Prefix = prefix.EndsWith('/') ? prefix : prefix + "/",
+                ContinuationToken = continuationToken
+            };
+
+            var listResponse = await ListObjectsInBucketAsync(listArg);
+            if (listResponse?.Data.FileData != null)
+            {
+                foreach (var file in listResponse.Data.FileData)
+                {
+                    objectKeys.Add(file.Path);
+                }
+            }
+
+            if (listResponse?.Data.FolderData != null)
+            {
+                foreach (var folder in listResponse.Data.FolderData)
+                {
+                    if (!string.IsNullOrEmpty(folder.Path))
+                    {
+                        var subObjectKeys = await ListAllObjectKeysForDeletionAsync(bucketName, folder.Path, bearerToken);
+                        objectKeys.AddRange(subObjectKeys);
+                        objectKeys.Add(folder.Path);
+                    }
+                }
+            }
+
+            continuationToken = listResponse?.Pagination.NextContinuationToken;
+
+        } while (!string.IsNullOrEmpty(continuationToken));
+
+        objectKeys.Add(prefix);
+
+        return objectKeys;
     }
 
     private static async Task<SessionAWSCredentials> GetTemporaryCredentialsAsync(string accessKey, string secretKey)

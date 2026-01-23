@@ -16,5 +16,6 @@ namespace CPS.ComplexCases.NetApp.Factories
         CompleteMultipartUploadArg CreateCompleteMultipartUploadArg(string bearerToken, string bucketName, string objectName, string uploadId, Dictionary<int, string> parts);
         RegisterUserArg CreateRegisterUserArg(string username, string accessToken, Guid s3ServiceUuid);
         RegenerateUserKeysArg CreateRegenerateUserKeysArg(string username, string accessToken, Guid s3ServiceUuid);
+        DeleteFileOrFolderArg CreateDeleteFileOrFolderArg(string bearerToken, string bucketName, string operationName, string path);
     }
 }
