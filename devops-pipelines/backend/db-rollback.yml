@@ -25,15 +25,16 @@ parameters:
      - 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
      - 'Azure Pipeline: Large and Complex Cases - Prod'
 
-pool: ${{ parameters.agentPool }}
-
-variables:
-- name: keyVaultName
-  value: 'kv-lacc-${{ parameters.environment }}'
-- name: scriptsDirectory
-  value: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts'
-
-steps:
+jobs:
+- job: Rollback_Database
+  displayName: '${{ parameters.environment }} - Rollback Database Migration'
+  pool: ${{ parameters.agentPool }}
+  variables:
+  - name: keyVaultName
+    value: 'kv-lacc-${{ parameters.environment }}'
+  - name: scriptsDirectory
+    value: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts'
+  steps:
   - checkout: self
     sparseCheckoutDirectories: devops-pipelines/scripts
     fetchDepth: 1
