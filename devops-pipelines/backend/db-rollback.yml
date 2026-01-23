@@ -25,7 +25,20 @@ parameters:
      - 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
      - 'Azure Pipeline: Large and Complex Cases - Prod'
 
+variables: 
+- group: lacc-deployment-global
+
 jobs:
+- template: ../templates/manual-validation-jobs.yml
+  parameters:
+    instructions: 'Please verify the deployment to the lower environment worked as expected before approving deployment to ${{parameters.environment}}.'
+    ${{ if eq(parameters.environment, 'prod') }}:
+      notifyUsers: $(prodNotifyUsers)
+      approvers: $(prodApprovers)
+    ${{ else }}:
+      notifyUsers: $(preprodNotifyUsers)
+      approvers: $(preprodApprovers)
+
 - job: Rollback_Database
   displayName: '${{ parameters.environment }} - Rollback Database Migration'
   pool: ${{ parameters.agentPool }}
