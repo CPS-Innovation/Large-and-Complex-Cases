@@ -60,6 +60,6 @@ steps:
       KEY_VAULT_NAME: kv-lacc-dev
       MIGRATION_SCRIPT_PATH: '$(Pipeline.Workspace)/build/database-scripts-drop/rollback-migration-script.sql'
   
-  - template: ./runner-cleanup-steps.yml
+  - template: ./templates/runner-cleanup-steps.yml
     parameters:
       buildArtifact: 'build'
