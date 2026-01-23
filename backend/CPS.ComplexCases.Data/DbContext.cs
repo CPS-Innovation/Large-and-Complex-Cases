@@ -7,7 +7,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 {
   public DbSet<CaseMetadata> CaseMetadata { get; set; }
   public DbSet<ActivityLog> ActivityLogs { get; set; }
-  public DbSet<TestTable> TestTable { get; set; }
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {

@@ -1,7 +1,7 @@
 resources:
   pipelines:
   - pipeline: build
-    source: 'TEST-lacc-db-rollback'
+    source: 'LACC-BE-build'
 
 parameters:
   - name: environment
