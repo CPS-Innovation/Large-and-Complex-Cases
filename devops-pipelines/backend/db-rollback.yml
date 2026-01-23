@@ -36,15 +36,15 @@ jobs:
   - task: ManualValidation@1
     timeoutInMinutes: 1440
     inputs:
-    allowApproversToApproveTheirOwnRuns: true
-    instructions: 'Please check the rollback script before approving its deployment' 
-    onTimeout: 'reject'
-    ${{ if eq(parameters.environment, 'prod') }}:
-      notifyUsers: $(prodNotifyUsers)
-      approvers: $(prodApprovers)
-    ${{ else }}:
-      notifyUsers: $(preprodNotifyUsers)
-      approvers: $(preprodApprovers)
+      allowApproversToApproveTheirOwnRuns: true
+      instructions: 'Please check the rollback script before approving its deployment' 
+      onTimeout: 'reject'
+      ${{ if eq(parameters.environment, 'prod') }}:
+        notifyUsers: $(prodNotifyUsers)
+        approvers: $(prodApprovers)
+      ${{ else }}:
+        notifyUsers: $(preprodNotifyUsers)
+        approvers: $(preprodApprovers)
 
   - job: Rollback_Database
     displayName: '${{ parameters.environment }} - Rollback Database Migration'
