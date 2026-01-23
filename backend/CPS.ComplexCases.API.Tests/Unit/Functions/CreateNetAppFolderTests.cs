@@ -53,6 +53,54 @@ public class CreateNetAppFolderTests
             _initializationHandlerMock.Object);
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task Run_WhenOperationNameIsNullOrWhitespace_ReturnsBadRequestObjectResult(string operationName)
+    {
+        // Arrange
+        var httpRequest = new DefaultHttpContext().Request;
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+        // Act
+        var result = await _function.Run(httpRequest, operationName, functionContext);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal("Operation name cannot be empty", badRequestResult.Value);
+
+        _initializationHandlerMock.Verify(h => h.Initialize(It.IsAny<string>(), It.IsAny<Guid>(), null), Times.Once);
+        _securityGroupMetadataServiceMock.Verify(s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()), Times.Never);
+        _netAppArgFactoryMock.Verify(f => f.CreateCreateFolderArg(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        _netAppClientMock.Verify(c => c.CreateFolderAsync(It.IsAny<CreateFolderArg>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData("..")]
+    [InlineData("../folder")]
+    [InlineData("operation/..")]
+    [InlineData("/operation")]
+    [InlineData("/")]
+    public async Task Run_WhenOperationNameContainsDotDotOrStartsWithSlash_ReturnsBadRequestObjectResult(string operationName)
+    {
+        // Arrange
+        var httpRequest = new DefaultHttpContext().Request;
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+        // Act
+        var result = await _function.Run(httpRequest, operationName, functionContext);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal("Invalid operation name", badRequestResult.Value);
+
+        _initializationHandlerMock.Verify(h => h.Initialize(It.IsAny<string>(), It.IsAny<Guid>(), null), Times.Once);
+        _securityGroupMetadataServiceMock.Verify(s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()), Times.Never);
+        _netAppArgFactoryMock.Verify(f => f.CreateCreateFolderArg(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        _netAppClientMock.Verify(c => c.CreateFolderAsync(It.IsAny<CreateFolderArg>()), Times.Never);
+    }
+
     [Fact]
     public async Task Run_WhenFolderCreatedSuccessfully_ReturnsOkObjectResultWithTrue()
     {

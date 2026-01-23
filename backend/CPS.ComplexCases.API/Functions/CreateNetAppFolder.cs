@@ -28,7 +28,7 @@ public class CreateNetAppFolder(ILogger<CreateNetAppFolder> logger,
     private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
     [Function(nameof(CreateNetAppFolder))]
-    [OpenApiOperation(operationId: nameof(CreateEgressConnection), tags: ["NetApp"], Description = "Create a folder in NetApp.")]
+    [OpenApiOperation(operationId: nameof(CreateNetAppFolder), tags: ["NetApp"], Description = "Create a folder in NetApp.")]
     [CmsAuthValuesAuth]
     [BearerTokenAuth]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]
@@ -40,6 +40,12 @@ public class CreateNetAppFolder(ILogger<CreateNetAppFolder> logger,
     {
         var context = functionContext.GetRequestContext();
         _initializationHandler.Initialize(context.Username, context.CorrelationId);
+
+        if (string.IsNullOrWhiteSpace(operationName))
+            return new BadRequestObjectResult("Operation name cannot be empty");
+
+        if (operationName.Contains("..") || operationName.StartsWith('/'))
+            return new BadRequestObjectResult("Invalid operation name");
 
         var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
 
