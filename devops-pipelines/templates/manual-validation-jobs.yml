@@ -10,6 +10,7 @@ parameters:
   default: ''
 - name: agentPool
   type: string
+  default: 'LACC PreProd Pool'
 
 jobs:
 - job: Set_Flag
