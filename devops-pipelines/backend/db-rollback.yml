@@ -28,76 +28,82 @@ parameters:
 variables: 
 - group: lacc-deployment-global
 
-jobs:
-- template: ../templates/manual-validation-jobs.yml
-  parameters:
-    instructions: 'Please verify the deployment to the lower environment worked as expected before approving deployment to ${{parameters.environment}}.'
-    ${{ if eq(parameters.environment, 'prod') }}:
-      notifyUsers: $(prodNotifyUsers)
-      approvers: $(prodApprovers)
-    ${{ else }}:
-      notifyUsers: $(preprodNotifyUsers)
-      approvers: $(preprodApprovers)
+stages:
+- stage: Approve_Database_Rollback
+  displayName: '${{ parameters.environment }} - Approve DB Rollback'
+  jobs:
+  - template: ../templates/manual-validation-jobs.yml
+    parameters:
+      instructions: 'Please verify the deployment to the lower environment worked as expected before approving deployment to ${{parameters.environment}}.'
+      ${{ if eq(parameters.environment, 'prod') }}:
+        notifyUsers: $(prodNotifyUsers)
+        approvers: $(prodApprovers)
+      ${{ else }}:
+        notifyUsers: $(preprodNotifyUsers)
+        approvers: $(preprodApprovers)
 
-- job: Rollback_Database
+- stage: Deploy_Database_Rollback
   displayName: '${{ parameters.environment }} - Rollback Database Migration'
-  condition: succeeded()
+  dependsOn: Approve_Database_Rollback
   pool: ${{ parameters.agentPool }}
   variables:
   - name: keyVaultName
     value: 'kv-lacc-${{ parameters.environment }}'
   - name: scriptsDirectory
     value: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts'
-  steps:
-  - checkout: self
-    sparseCheckoutDirectories: devops-pipelines/scripts
-    fetchDepth: 1
+  jobs:
+  - job: Rollback_Database
+    displayName: 'Rollback Database Migration'
+    steps:
+    - checkout: self
+      sparseCheckoutDirectories: devops-pipelines/scripts
+      fetchDepth: 1
 
-  # - task: Bash@3
-  #   displayName: 'Ensure Azure CLI'
-  #   inputs:
-  #     targetType: 'inline'
-  #     script: |
-  #       echo "Checking if Azure CLI is installed..."
-        
-  #       # Check if az command exists
-  #       if command -v az &> /dev/null; then
-  #         echo "Azure CLI is already installed"
-  #         az --version
-  #         exit 0
-  #       fi
+    - task: Bash@3
+      displayName: 'Ensure Azure CLI'
+      inputs:
+        targetType: 'inline'
+        script: |
+          echo "Checking if Azure CLI is installed..."
+          
+          # Check if az command exists
+          if command -v az &> /dev/null; then
+            echo "Azure CLI is already installed"
+            az --version
+            exit 0
+          fi
 
-  #       echo "Azure CLI not found, installing..."
-  #       bash $(scriptsDirectory)/installAzureCli.sh 
+          echo "Azure CLI not found, installing..."
+          bash $(scriptsDirectory)/installAzureCli.sh 
 
-  # - download: build
-  #   artifact: 'database-scripts-drop'
+    - download: build
+      artifact: 'database-scripts-drop'
 
-  # - task: AzureCLI@2
-  #   displayName: 'Run Database Rollback'
-  #   inputs:
-  #     azureSubscription: ${{ parameters.azureSubscription }}
-  #     scriptType: 'bash'
-  #     scriptLocation: 'inlineScript'
-  #     inlineScript: |
-  #       # Get the clientId of the service principal used for the current deployment 
-  #       appId=$(az account show --query user.name -o tsv)
+    - task: AzureCLI@2
+      displayName: 'Run Database Rollback'
+      inputs:
+        azureSubscription: ${{ parameters.azureSubscription }}
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          # Get the clientId of the service principal used for the current deployment 
+          appId=$(az account show --query user.name -o tsv)
 
-  #       # Get the service principal's app registration display name
-  #       export SERVICE_PRINCIPAL=$(az ad app show --id "$appId" --query displayName -o tsv 2>/dev/null || true)
+          # Get the service principal's app registration display name
+          export SERVICE_PRINCIPAL=$(az ad app show --id "$appId" --query displayName -o tsv 2>/dev/null || true)
 
-  #       if [ -z "$SERVICE_PRINCIPAL" ]; then
-  #         echo "Service Principal's display name could not be found."
-  #         exit 1
-  #       fi
+          if [ -z "$SERVICE_PRINCIPAL" ]; then
+            echo "Service Principal's display name could not be found."
+            exit 1
+          fi
 
-  #       echo "Service Principal display name: $SERVICE_PRINCIPAL"
+          echo "Service Principal display name: $SERVICE_PRINCIPAL"
 
-  #       bash $(scriptsDirectory)/updateDatabase.sh
-  #   env:
-  #     KEY_VAULT_NAME: $(keyVaultName)
-  #     MIGRATION_SCRIPT_PATH: '$(Pipeline.Workspace)/build/database-scripts-drop/rollback-migration-script.sql'
-  
-  # - template: ../templates/runner-cleanup-steps.yml
-  #   parameters:
-  #     buildArtifact: 'build'
+          bash $(scriptsDirectory)/updateDatabase.sh
+      env:
+        KEY_VAULT_NAME: $(keyVaultName)
+        MIGRATION_SCRIPT_PATH: '$(Pipeline.Workspace)/build/database-scripts-drop/rollback-migration-script.sql'
+    
+    - template: ../templates/runner-cleanup-steps.yml
+      parameters:
+        buildArtifact: 'build'
