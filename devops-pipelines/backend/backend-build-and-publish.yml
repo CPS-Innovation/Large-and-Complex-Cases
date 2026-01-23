@@ -89,10 +89,10 @@ stages:
                 EF_VERSION: $(efVersion)
                 DATA_PROJECT_PATH: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
                 STARTUP_PROJECT_PATH: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-                MIGRATION_SCRIPT_OUT: '$(Build.ArtifactStagingDirectory)/migration-script.sql'
-                ROLLBACK_SCRIPT_OUT: '$(Build.ArtifactStagingDirectory)/rollback-migration-script.sql'
+                MIGRATION_SCRIPT_OUT: 'database-artifact/migration-script.sql'
+                ROLLBACK_SCRIPT_OUT: 'database-artifact/rollback-migration-script.sql'
 
-            - publish: '$(Build.ArtifactStagingDirectory)'
+            - publish: 'database-artifact'
               artifact: 'database-scripts-drop'
               displayName: 'Publish Database Scripts'
 
