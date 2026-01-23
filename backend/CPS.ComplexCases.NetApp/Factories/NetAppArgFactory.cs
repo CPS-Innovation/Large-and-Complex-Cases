@@ -36,6 +36,16 @@ public class NetAppArgFactory : INetAppArgFactory
         };
     }
 
+    public CreateFolderArg CreateCreateFolderArg(string bearerToken, string bucketName, string folderKey)
+    {
+        return new CreateFolderArg
+        {
+            BearerToken = bearerToken,
+            BucketName = bucketName.ToLowerInvariant(),
+            FolderKey = folderKey
+        };
+    }
+
     public GetObjectArg CreateGetObjectArg(string bearerToken, string bucketName, string objectName)
     {
         return new GetObjectArg

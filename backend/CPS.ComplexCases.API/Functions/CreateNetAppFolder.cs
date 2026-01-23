@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
+using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.NetApp.Client;
@@ -17,15 +18,17 @@ namespace CPS.ComplexCases.API.Functions;
 public class CreateNetAppFolder(ILogger<CreateNetAppFolder> logger,
     INetAppClient netAppClient,
     INetAppArgFactory netAppArgFactory,
+    ISecurityGroupMetadataService securityGroupMetadataService,
     IInitializationHandler initializationHandler)
 {
     private readonly ILogger<CreateNetAppFolder> _logger = logger;
     private readonly INetAppClient _netAppClient = netAppClient;
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
+    private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
     private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
     [Function(nameof(CreateNetAppFolder))]
-    [OpenApiOperation(operationId: nameof(CreateEgressConnection), tags: ["NetApp"], Description = "Create a folder in NetApp.")]
+    [OpenApiOperation(operationId: nameof(CreateNetAppFolder), tags: ["NetApp"], Description = "Create a folder in NetApp.")]
     [CmsAuthValuesAuth]
     [BearerTokenAuth]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]
@@ -38,13 +41,16 @@ public class CreateNetAppFolder(ILogger<CreateNetAppFolder> logger,
         var context = functionContext.GetRequestContext();
         _initializationHandler.Initialize(context.Username, context.CorrelationId);
 
-        var arg = _netAppArgFactory.CreateFindBucketArg(context.BearerToken, operationName!);
-        var result = await _netAppClient.FindBucketAsync(arg);
+        if (string.IsNullOrWhiteSpace(operationName))
+            return new BadRequestObjectResult("Operation name cannot be empty");
 
-        if (result == null)
-        {
-            return new NotFoundObjectResult($"Bucket {operationName} not found");
-        }
+        if (operationName.Contains("..") || operationName.StartsWith('/'))
+            return new BadRequestObjectResult("Invalid operation name");
+
+        var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
+
+        var arg = _netAppArgFactory.CreateCreateFolderArg(context.BearerToken, securityGroups.First().BucketName, operationName);
+        var result = await _netAppClient.CreateFolderAsync(arg);
 
         return new OkObjectResult(result);
     }

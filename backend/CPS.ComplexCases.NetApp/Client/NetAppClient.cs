@@ -8,6 +8,8 @@ using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Models.Dto;
 using CPS.ComplexCases.NetApp.Wrappers;
+using Polly;
+using Polly.Contrib.WaitAndRetry;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
@@ -78,6 +80,40 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3UtilsWrapper am
         {
             _logger.LogError(ex, ex.Message, "Failed to find bucket {BucketName}.", arg.BucketName);
             return null;
+        }
+    }
+
+    public async Task<bool> CreateFolderAsync(CreateFolderArg arg)
+    {
+        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
+
+        try
+        {
+            // S3 does not have a native folder concept. Folders are represented by creating a zero-byte object with a key that ends with a "/".
+            // However, doing so results in an rate-limiting issue with NetApp.
+            // As a workaround, to create a folder, we create an empty object and then delete it immediately after to simulate folder creation.
+            var request = _netAppRequestFactory.CreateFolderRequest(arg);
+            var response = await s3Client.PutObjectAsync(request);
+            if (response.HttpStatusCode != System.Net.HttpStatusCode.OK)
+            {
+                _logger.LogWarning("Failed to create folder {FolderKey} in bucket {BucketName}. HTTP Status Code: {StatusCode}", arg.FolderKey, arg.BucketName, response.HttpStatusCode);
+                return false;
+            }
+            var retryPolicy = GetDeleteFileRetryPolicy(request.Key, arg.BucketName);
+
+            var deleteResponse = await retryPolicy.ExecuteAsync(async () =>
+                await s3Client.DeleteObjectAsync(new DeleteObjectRequest
+                {
+                    BucketName = arg.BucketName,
+                    Key = request.Key
+                }));
+
+            return deleteResponse.HttpStatusCode == System.Net.HttpStatusCode.NoContent;
+        }
+        catch (AmazonS3Exception ex)
+        {
+            _logger.LogError(ex, ex.Message, "Failed to create folder {FolderKey} in bucket {BucketName}.", arg.FolderKey, arg.BucketName);
+            throw;
         }
     }
 
@@ -298,5 +334,25 @@ public class NetAppClient(ILogger<NetAppClient> logger, IAmazonS3UtilsWrapper am
                                       credentials.SecretAccessKey,
                                       credentials.SessionToken);
         return sessionCredentials;
+    }
+
+    private Polly.Retry.AsyncRetryPolicy<DeleteObjectResponse> GetDeleteFileRetryPolicy(string objectKey, string bucketName)
+    {
+        return Policy
+                .HandleResult<DeleteObjectResponse>(r => r.HttpStatusCode != System.Net.HttpStatusCode.NoContent)
+                .WaitAndRetryAsync(
+                    Backoff.DecorrelatedJitterBackoffV2(
+                        medianFirstRetryDelay: TimeSpan.FromSeconds(1),
+                        retryCount: 3),
+                    onRetry: (outcome, timespan, retryCount, context) =>
+                    {
+                        _logger.LogWarning(
+                            "Delete object retry attempt {RetryCount} for key {ObjectKey} in bucket {BucketName}. Status: {StatusCode}. Waiting {DelayMs}ms before next retry.",
+                            retryCount,
+                            objectKey,
+                            bucketName,
+                            outcome.Result?.HttpStatusCode,
+                            timespan.TotalMilliseconds);
+                    });
     }
 }

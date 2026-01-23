@@ -1,3 +1,6 @@
+using System.Net;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Amazon.S3;
 using Amazon.S3.Model;
 using AutoFixture;
@@ -7,8 +10,6 @@ using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Wrappers;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
 
 namespace CPS.ComplexCases.NetApp.Tests.Unit
@@ -619,6 +620,152 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                     ex,
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateFolderAsync_ShouldReturnTrue_WhenFolderIsCreatedAndDeletedSuccessfully()
+        {
+            // Arrange
+            var arg = new CreateFolderArg
+            {
+                BearerToken = BearerToken,
+                BucketName = "bucket",
+                FolderKey = "test-folder/test.txt"
+            };
+
+            var putRequest = new PutObjectRequest
+            {
+                BucketName = arg.BucketName,
+                Key = arg.FolderKey
+            };
+
+            _netAppRequestFactoryMock
+                .Setup(x => x.CreateFolderRequest(arg))
+                .Returns(putRequest);
+
+            _amazonS3Mock
+                .Setup(x => x.PutObjectAsync(putRequest, default))
+                .ReturnsAsync(new PutObjectResponse { HttpStatusCode = HttpStatusCode.OK });
+
+            _amazonS3Mock
+                .Setup(x => x.DeleteObjectAsync(It.Is<DeleteObjectRequest>(r =>
+                    r.BucketName == arg.BucketName && r.Key == arg.FolderKey), default))
+                .ReturnsAsync(new DeleteObjectResponse { HttpStatusCode = HttpStatusCode.NoContent });
+
+            // Act
+            var result = await _client.CreateFolderAsync(arg);
+
+            // Assert
+            Assert.True(result);
+            _amazonS3Mock.Verify(x => x.PutObjectAsync(putRequest, default), Times.Once);
+            _amazonS3Mock.Verify(x => x.DeleteObjectAsync(It.IsAny<DeleteObjectRequest>(), default), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateFolderAsync_ShouldReturnFalse_WhenPutObjectFails()
+        {
+            // Arrange
+            var arg = new CreateFolderArg
+            {
+                BearerToken = BearerToken,
+                BucketName = "bucket",
+                FolderKey = "test-folder/test.txt"
+            };
+
+            var putRequest = new PutObjectRequest
+            {
+                BucketName = arg.BucketName,
+                Key = arg.FolderKey
+            };
+
+            _netAppRequestFactoryMock
+                .Setup(x => x.CreateFolderRequest(arg))
+                .Returns(putRequest);
+
+            _amazonS3Mock
+                .Setup(x => x.PutObjectAsync(putRequest, default))
+                .ReturnsAsync(new PutObjectResponse { HttpStatusCode = HttpStatusCode.InternalServerError });
+
+            // Act
+            var result = await _client.CreateFolderAsync(arg);
+
+            // Assert
+            Assert.False(result);
+            _amazonS3Mock.Verify(x => x.PutObjectAsync(putRequest, default), Times.Once);
+            _amazonS3Mock.Verify(x => x.DeleteObjectAsync(It.IsAny<DeleteObjectRequest>(), default), Times.Never);
+        }
+
+        [Fact]
+        public async Task CreateFolderAsync_ShouldThrowException_WhenS3ExceptionOccurs()
+        {
+            // Arrange
+            var arg = new CreateFolderArg
+            {
+                BearerToken = BearerToken,
+                BucketName = "bucket",
+                FolderKey = "test-folder/test.txt"
+            };
+
+            var putRequest = new PutObjectRequest
+            {
+                BucketName = arg.BucketName,
+                Key = arg.FolderKey
+            };
+
+            _netAppRequestFactoryMock
+                .Setup(x => x.CreateFolderRequest(arg))
+                .Returns(putRequest);
+
+            _amazonS3Mock
+                .Setup(x => x.PutObjectAsync(putRequest, default))
+                .ThrowsAsync(new AmazonS3Exception("S3 error"));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<AmazonS3Exception>(() => _client.CreateFolderAsync(arg));
+        }
+
+        [Fact]
+        public async Task CreateFolderAsync_ShouldRetryDeleteOperation_WhenFirstDeleteAttemptFails()
+        {
+            // Arrange
+            var arg = new CreateFolderArg
+            {
+                BearerToken = BearerToken,
+                BucketName = "bucket",
+                FolderKey = "test-folder/test.txt"
+            };
+
+            var putRequest = new PutObjectRequest
+            {
+                BucketName = arg.BucketName,
+                Key = arg.FolderKey
+            };
+
+            _netAppRequestFactoryMock
+                .Setup(x => x.CreateFolderRequest(arg))
+                .Returns(putRequest);
+
+            _amazonS3Mock
+                .Setup(x => x.PutObjectAsync(putRequest, default))
+                .ReturnsAsync(new PutObjectResponse { HttpStatusCode = HttpStatusCode.OK });
+
+            var deleteCallCount = 0;
+            _amazonS3Mock
+                .Setup(x => x.DeleteObjectAsync(It.IsAny<DeleteObjectRequest>(), default))
+                .ReturnsAsync(() =>
+                {
+                    deleteCallCount++;
+                    return deleteCallCount == 1
+                        ? new DeleteObjectResponse { HttpStatusCode = HttpStatusCode.InternalServerError }
+                        : new DeleteObjectResponse { HttpStatusCode = HttpStatusCode.NoContent };
+                });
+
+            // Act
+            var result = await _client.CreateFolderAsync(arg);
+
+            // Assert
+            Assert.True(result);
+            _amazonS3Mock.Verify(x => x.DeleteObjectAsync(It.IsAny<DeleteObjectRequest>(), default), Times.AtLeast(2));
         }
     }
 }

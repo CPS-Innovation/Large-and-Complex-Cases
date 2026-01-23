@@ -37,6 +37,18 @@ public class NetAppRequestFactory : INetAppRequestFactory
         };
     }
 
+    public PutObjectRequest CreateFolderRequest(CreateFolderArg arg)
+    {
+        var folderName = arg.FolderKey.EndsWith(S3Constants.Delimiter) ? arg.FolderKey : arg.FolderKey + S3Constants.Delimiter;
+
+        return new PutObjectRequest
+        {
+            BucketName = arg.BucketName,
+            Key = $"{folderName}{S3Constants.TempFileName}",
+            InputStream = new MemoryStream([]),
+        };
+    }
+
     public InitiateMultipartUploadRequest CreateMultipartUploadRequest(InitiateMultipartUploadArg arg)
     {
         return new InitiateMultipartUploadRequest
