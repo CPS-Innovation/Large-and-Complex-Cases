@@ -33,6 +33,11 @@ jobs:
   pool: server
   timeoutInMinutes: 1500
   steps:
+  - download: build
+    artifact: 'database-scripts-drop'
+
+  - script: cat $(Pipeline.Workspace)/build/database-scripts-drop/rollback-migration-script.sql
+
   - task: ManualValidation@1
     timeoutInMinutes: 1440
     inputs:
