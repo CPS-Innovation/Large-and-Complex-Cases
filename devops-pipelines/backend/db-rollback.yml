@@ -1,7 +1,7 @@
 resources:
   pipelines:
   - pipeline: build
-    source: 'TEST-LACC-DB-rollback'
+    source: 'LACC-BE-build'
 
 parameters:
   - name: environment
@@ -48,9 +48,9 @@ jobs:
           exit 1
         fi
         
-        sudo apt-get install bat
         echo "The following rollback script was found:"
-        bat "$ROLLBACK_SCRIPT"
+        echo "----------------------------------------"
+        cat "$ROLLBACK_SCRIPT"
   
 - job: Manual_Validation
   displayName: Pause for Manual Validation
@@ -62,7 +62,7 @@ jobs:
     timeoutInMinutes: 1440
     inputs:
       allowApproversToApproveTheirOwnRuns: true
-      instructions: 'Please inspect the rollback script printed in the previous job, during the Validate Rollback Script step.'
+      instructions: 'Please inspect the rollback script printed to terminal in the previous job, during the Validate Rollback Script step.'
       onTimeout: 'reject'
       ${{ if eq(parameters.environment, 'prod') }}:
         notifyUsers: $(prodNotifyUsers)
