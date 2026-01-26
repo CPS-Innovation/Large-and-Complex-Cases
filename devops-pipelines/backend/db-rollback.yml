@@ -29,20 +29,36 @@ variables:
 - group: lacc-deployment-global
 
 jobs:
+- job: Validate_Script
+  displayName: Validate Rollback Migration Script
+  pool: ${{ parameters.agentPool }}
+  steps: 
+  - task: Bash@3
+    displayName: 'Validate Rollback Script'
+    inputs:
+      targetType: 'inline'
+      script: |
+        ROLLBACK_SCRIPT="$(Pipeline.Workspace)/build/database-scripts-drop/rollback-migration-script.sql"
+        
+        if [[ ! -f "$ROLLBACK_SCRIPT" ]]; then
+          echo "##vso[task.logissue type=error]Rollback script not found. Was it generated during build?"
+          exit 1
+        fi
+
+        echo "The following rollback script was found:"
+        cat "$ROLLBACK_SCRIPT"
+  
 - job: Manual_Validation
+  displayName: Pause for Manual Validation
+  dependsOn: Validate_Script
   pool: server
   timeoutInMinutes: 1500
   steps:
-  - download: build
-    artifact: 'database-scripts-drop'
-
-  - script: cat $(Pipeline.Workspace)/build/database-scripts-drop/rollback-migration-script.sql
-
   - task: ManualValidation@1
     timeoutInMinutes: 1440
     inputs:
       allowApproversToApproveTheirOwnRuns: true
-      instructions: 'Please check the rollback script before approving its deployment' 
+      instructions: 'Please review the rollback script printed to terminal in the previous job.'
       onTimeout: 'reject'
       ${{ if eq(parameters.environment, 'prod') }}:
         notifyUsers: $(prodNotifyUsers)
