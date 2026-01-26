@@ -100,15 +100,14 @@ steps:
   # Publish if enabled
   - ${{ if eq(parameters.publishOutput, true) }}:
     - task: DotNetCoreCLI@2
-      displayName: 'Publish ${{ parameters.projectName }}'
+      displayName: 'Dotnet Publish ${{ parameters.projectName }}'
       inputs:
         command: 'publish'
         projects: '${{ parameters.projectPath }}'
         publishWebProjects: false
         arguments: '--configuration ${{ parameters.buildConfiguration }} --output $(Build.ArtifactStagingDirectory)/${{ parameters.projectName }} --no-restore --self-contained false /p:PublishReadyToRun=false /p:SourceRevisionId=$(Build.SourceVersion)'
 
-    - task: PublishBuildArtifacts@1
-      displayName: 'Publish ${{ parameters.projectName }} Artifact'
-      inputs:
-        pathtoPublish: '$(Build.ArtifactStagingDirectory)/${{ parameters.projectName }}'
-        artifactName: '${{ parameters.projectName }}' 
+    - publish: '$(Build.ArtifactStagingDirectory)/${{ parameters.projectName }}'
+      artifact: '${{ parameters.projectName }}-drop'
+      displayName: 'Publish Artifact ${{ parameters.projectName }}'
+      

@@ -1,0 +1,135 @@
+resources:
+  pipelines:
+  - pipeline: build
+    source: 'LACC-BE-build'
+
+parameters:
+  - name: environment
+    displayName: 'Target Environment'
+    type: string
+    default: 'dev'
+    values:
+      - dev
+      - staging
+      - prod
+  - name: agentPool
+    type: string
+    default: 'LACC PreProd Pool'
+    values:
+      - 'LACC PreProd Pool'
+      - 'LACC Prod Pool'
+  - name: azureSubscription
+    type: string
+    default: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
+    values:
+     - 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
+     - 'Azure Pipeline: Large and Complex Cases - Prod'
+
+variables: 
+- group: lacc-deployment-global
+
+jobs:
+- job: Validate_Script
+  displayName: Validate Rollback Migration Script
+  pool: ${{ parameters.agentPool }}
+  steps: 
+  - download: build
+    artifact: 'database-scripts-drop'
+
+  - task: Bash@3
+    displayName: 'Validate Rollback Script'
+    inputs:
+      targetType: 'inline'
+      script: |
+        ROLLBACK_SCRIPT="$(Pipeline.Workspace)/build/database-scripts-drop/rollback-migration-script.sql"
+        
+        if [[ ! -f "$ROLLBACK_SCRIPT" ]]; then
+          echo "##vso[task.logissue type=error]Rollback script not found. Was it generated during build?"
+          exit 1
+        fi
+        
+        echo "The following rollback script was found:"
+        echo "----------------------------------------"
+        cat "$ROLLBACK_SCRIPT"
+  
+- job: Manual_Validation
+  displayName: Pause for Manual Validation
+  dependsOn: Validate_Script
+  pool: server
+  timeoutInMinutes: 1500
+  steps:
+  - task: ManualValidation@1
+    timeoutInMinutes: 1440
+    inputs:
+      allowApproversToApproveTheirOwnRuns: true
+      instructions: 'Please inspect the rollback script printed to terminal in the previous job, during the Validate Rollback Script step.'
+      onTimeout: 'reject'
+      ${{ if eq(parameters.environment, 'prod') }}:
+        notifyUsers: $(prodNotifyUsers)
+        approvers: $(prodApprovers)
+      ${{ else }}:
+        notifyUsers: $(preprodNotifyUsers)
+        approvers: $(preprodApprovers)
+
+- job: Rollback_Database
+  displayName: '${{ parameters.environment }} - Rollback Database Migration'
+  dependsOn: Manual_Validation
+  pool: ${{ parameters.agentPool }}
+  variables:
+  - name: keyVaultName
+    value: 'kv-lacc-${{ parameters.environment }}'
+  - name: scriptsDirectory
+    value: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts'
+  steps:
+  - checkout: self
+    sparseCheckoutDirectories: devops-pipelines/scripts
+    fetchDepth: 1
+
+  - task: Bash@3
+    displayName: 'Ensure Azure CLI'
+    inputs:
+      targetType: 'inline'
+      script: |
+        echo "Checking if Azure CLI is installed..."
+        
+        # Check if az command exists
+        if command -v az &> /dev/null; then
+          echo "Azure CLI is already installed"
+          az --version
+          exit 0
+        fi
+
+        echo "Azure CLI not found, installing..."
+        bash $(scriptsDirectory)/installAzureCli.sh 
+
+  - download: build
+    artifact: 'database-scripts-drop'
+
+  - task: AzureCLI@2
+    displayName: 'Run Database Rollback'
+    inputs:
+      azureSubscription: ${{ parameters.azureSubscription }}
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        # Get the clientId of the service principal used for the current deployment 
+        appId=$(az account show --query user.name -o tsv)
+
+        # Get the service principal's app registration display name
+        export SERVICE_PRINCIPAL=$(az ad app show --id "$appId" --query displayName -o tsv 2>/dev/null || true)
+
+        if [ -z "$SERVICE_PRINCIPAL" ]; then
+          echo "Service Principal's display name could not be found."
+          exit 1
+        fi
+
+        echo "Service Principal display name: $SERVICE_PRINCIPAL"
+
+        bash $(scriptsDirectory)/updateDatabase.sh
+    env:
+      KEY_VAULT_NAME: $(keyVaultName)
+      MIGRATION_SCRIPT_PATH: '$(Pipeline.Workspace)/build/database-scripts-drop/rollback-migration-script.sql'
+  
+  - template: ../templates/runner-cleanup-steps.yml
+    parameters:
+      buildArtifact: 'build'
