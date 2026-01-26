@@ -33,6 +33,9 @@ jobs:
   displayName: Validate Rollback Migration Script
   pool: ${{ parameters.agentPool }}
   steps: 
+  - download: build
+    artifact: 'database-scripts-drop'
+    
   - task: Bash@3
     displayName: 'Validate Rollback Script'
     inputs:
