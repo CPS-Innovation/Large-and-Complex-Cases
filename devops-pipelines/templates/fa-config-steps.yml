@@ -197,5 +197,15 @@ steps:
             "name": "SessionTimeoutMinutes",
             "value": "$(SessionTimeoutMinutes)",
             "slotSetting": false
+          },
+          {
+            "name": "RateLimiting__PermitLimit",
+            "value": "$(RateLimitingPermitLimit)",
+            "slotSetting": false
+          },
+          {
+            "name": "RateLimiting__IntervalInSeconds",
+            "value": "$(RateLimitingIntervalInSeconds)",
+            "slotSetting": false
           }
         ]

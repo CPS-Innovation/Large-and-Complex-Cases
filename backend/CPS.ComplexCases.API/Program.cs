@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.ApplicationInsights;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using ThrottlingTroll;
 using CPS.ComplexCases.ActivityLog.Extensions;
 using CPS.ComplexCases.API.Extensions;
 using CPS.ComplexCases.API.Middleware;
@@ -24,18 +25,119 @@ using CPS.ComplexCases.DDEI.Extensions;
 using CPS.ComplexCases.DDEI.Tactical.Extensions;
 using CPS.ComplexCases.Egress.Extensions;
 using CPS.ComplexCases.NetApp.Extensions;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Net.Http.Headers;
 
 // Create a temporary logger for configuration phase
 using var loggerFactory = LoggerFactory.Create(configure => configure.AddConsole());
 var logger = loggerFactory.CreateLogger("Configuration");
 
-var host = new HostBuilder()
-    .ConfigureFunctionsWebApplication(webApp =>
+static string ExtractIdentityFromRequest(IReadOnlyDictionary<string, Microsoft.Extensions.Primitives.StringValues> headers)
+{
+    try
     {
+        // User identity from Bearer token if available
+        if (headers.TryGetValue("Authorization", out var authHeaders))
+        {
+            var authHeader = authHeaders.FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(authHeader) &&
+                authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                var token = authHeader.Substring("Bearer ".Length);
+
+                var handler = new JwtSecurityTokenHandler();
+                var jwt = handler.ReadJwtToken(token);
+
+                var userId =
+                    jwt.Claims.FirstOrDefault(c => c.Type == "oid")?.Value ??
+                    jwt.Claims.FirstOrDefault(c => c.Type == "appid")?.Value ??
+                    jwt.Claims.FirstOrDefault(c => c.Type == "azp")?.Value ??
+                    jwt.Claims.FirstOrDefault(c => c.Type == "preferred_username")?.Value;
+
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    var prefix = jwt.Claims.Any(c => c.Type == "oid" || c.Type == "preferred_username")
+                        ? "user"
+                        : "app";
+
+                    return $"{prefix}:{userId}";
+                }
+            }
+        }
+
+        // IP fallback
+        if (headers.TryGetValue("X-Forwarded-For", out var forwardedFor))
+        {
+            var ip = forwardedFor.FirstOrDefault()?.Split(',')[0]?.Trim();
+            if (!string.IsNullOrEmpty(ip))
+            {
+                return $"ip:{ip}";
+            }
+        }
+
+        return "unknown";
+    }
+    catch
+    {
+        return "unknown";
+    }
+}
+
+var host = new HostBuilder()
+    .ConfigureFunctionsWebApplication((context, webApp) =>
+    {
+        var configuration = context.Configuration;
+
+        webApp.UseThrottlingTroll(options =>
+        {
+            options.Config = new ThrottlingTrollConfig
+            {
+                Rules = new[]
+                {
+                    new ThrottlingTrollRule
+                    {
+                        LimitMethod = new SlidingWindowRateLimitMethod
+                        {
+                            PermitLimit = int.Parse(configuration["RateLimiting:PermitLimit"] ?? "100"),
+                            IntervalInSeconds = int.Parse(configuration["RateLimiting:IntervalInSeconds"] ?? "60")
+                        },
+                        
+                        // Exclude the file transfer status endpoint from rate limiting as it is polled frequently
+                        UriPattern = "^(?!.*/v1/filetransfer/.*/status).*$",
+
+                        IdentityIdExtractor = request => ExtractIdentityFromRequest(request.Headers),
+
+                        ResponseFabric = async (checkResults, requestProxy, responseProxy, requestAborted) =>
+                        {
+                            var limitExceededResult = checkResults
+                                .OrderByDescending(r => r.RetryAfterInSeconds)
+                                .FirstOrDefault(r => r.RequestsRemaining < 0);
+
+                            if (limitExceededResult == null) return;
+
+                            var identity = ExtractIdentityFromRequest(requestProxy.Headers);
+
+                            logger.LogWarning(
+                                "Rate limit exceeded for {Identity}. RetryAfter: {RetryAfter}s. Path: {Path}",
+                                identity,
+                                limitExceededResult.RetryAfterInSeconds,
+                                requestProxy.UriWithoutQueryString);
+
+                            responseProxy.StatusCode = StatusCodes.Status429TooManyRequests;
+                            responseProxy.SetHttpHeader(HeaderNames.RetryAfter, limitExceededResult.RetryAfterHeaderValue);
+                            await responseProxy.WriteAsync("Too many requests. Try again later.");
+                        }
+                    }
+                }
+            };
+        });
+
         // note: the order of middleware is important, as it determines the execution flow
         webApp.UseMiddleware<ExceptionHandlingMiddleware>();
         webApp.UseMiddleware<RequestValidationMiddleware>();
-    }) // ✅ Adds ASP.NET Core integration
+    })
+    // ✅ Adds ASP.NET Core integration
     .ConfigureLogging(options => options.AddApplicationInsights())
     .ConfigureAppConfiguration((context, config) =>
     {

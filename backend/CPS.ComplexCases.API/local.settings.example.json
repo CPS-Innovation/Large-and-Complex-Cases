@@ -36,7 +36,9 @@
     "CryptoOptions__HkdfInfo": "S3CredentialEncryption",
     "CryptoOptions__HashAlgorithm": "SHA256",
     "KeyVault__Url": "https://<kvname>.vault.azure.net/",
-    "SessionTimeoutMinutes": "60"
+    "SessionTimeoutMinutes": "60",
+    "RateLimiting__PermitLimit": "100",
+    "RateLimiting__IntervalInSeconds": "60"
   },
   "Host": {
     "LocalHttpPort": 7071,
