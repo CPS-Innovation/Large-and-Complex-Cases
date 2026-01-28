@@ -6,6 +6,7 @@ using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Services;
+using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Common.Constants;
 using CPS.ComplexCases.Common.Handlers;
@@ -45,6 +46,12 @@ public class DeleteNetAppFileOrFolder(ILogger<DeleteNetAppFileOrFolder> logger,
         var context = functionContext.GetRequestContext();
         _initializationHandler.Initialize(context.Username, context.CorrelationId);
 
+        var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        if (environment == "Production")
+        {
+            return new StatusCodeResult(StatusCodes.Status403Forbidden);
+        }
+
         var deleteNetAppFileOrFolderRequest = await _requestValidator.GetJsonBody<DeleteNetAppFileOrFolderDto, DeleteNetAppFileOrFolderRequestValidator>(req);
 
         if (!deleteNetAppFileOrFolderRequest.IsValid)
@@ -57,6 +64,9 @@ public class DeleteNetAppFileOrFolder(ILogger<DeleteNetAppFileOrFolder> logger,
 
         if (operationName.Contains("..") || operationName.StartsWith('/'))
             return new BadRequestObjectResult("Invalid operation name");
+
+        _logger.LogInformation("Deleting file or folder from NetApp: OperationName={OperationName}, Path={Path}",
+            operationName, deleteNetAppFileOrFolderRequest.Value.Path);
 
         var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
 

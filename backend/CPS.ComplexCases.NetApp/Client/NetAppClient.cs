@@ -334,32 +334,30 @@ public class NetAppClient(
             else
             {
                 var filesToDelete = await ListAllObjectKeysForDeletionAsync(arg.BucketName, arg.Path, arg.BearerToken);
-                var failedDeletionsCount = 0;
 
-                foreach (var filePath in filesToDelete)
+                var deleteObjectsRequest = new DeleteObjectsRequest
                 {
-                    var deleteArg = new DeleteFileOrFolderArg
-                    {
-                        BearerToken = arg.BearerToken,
-                        BucketName = arg.BucketName,
-                        OperationName = arg.OperationName,
-                        Path = filePath
-                    };
+                    BucketName = arg.BucketName,
+                    Objects = filesToDelete.Select(path => new KeyVersion { Key = path }).ToList()
+                };
 
-                    var retryPolicy = GetDeleteFileRetryPolicy(filePath, arg.BucketName);
-                    var deleteRequest = _netAppRequestFactory.DeleteObjectRequest(deleteArg);
+                var response = await s3Client.DeleteObjectsAsync(deleteObjectsRequest);
 
-                    var deleteResponse = await retryPolicy.ExecuteAsync(async () =>
-                        await s3Client.DeleteObjectAsync(deleteRequest));
-
-                    if (deleteResponse.HttpStatusCode != System.Net.HttpStatusCode.NoContent)
-                    {
-                        _logger.LogWarning("Failed to delete {Path} from bucket {BucketName}. HTTP Status Code: {StatusCode}", filePath, arg.BucketName, deleteResponse.HttpStatusCode);
-                        failedDeletionsCount++;
-                    }
+                if (response.HttpStatusCode == System.Net.HttpStatusCode.OK && response.DeleteErrors.Count == 0)
+                {
+                    return $"Successfully deleted folder {arg.Path} and its contents from bucket {arg.BucketName}.";
                 }
 
-                return failedDeletionsCount > 0 ? $"Deletion failed for {failedDeletionsCount} files or folders." : $"Successfully deleted {arg.Path} from bucket {arg.BucketName}.";
+                foreach (var error in response.DeleteErrors)
+                {
+                    _logger.LogError("Failed to delete object {ObjectKey} from bucket {BucketName}. Code: {Code}, Message: {Message}",
+                        error.Key, arg.BucketName, error.Code, error.Message);
+                }
+
+                var successfulDeletionsCount = response.DeletedObjects.Count;
+                var failedDeletionsCount = response.DeleteErrors.Count;
+
+                return $"Successfully deleted {successfulDeletionsCount} files from bucket {arg.BucketName}. Deletion failed for {failedDeletionsCount} files. ";
             }
         }
         catch (AmazonS3Exception ex)
