@@ -1,5 +1,6 @@
 using Azure.Core;
 using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
 using CPS.ComplexCases.API.Integration.Tests.Configuration;
 using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.Data;
@@ -12,6 +13,12 @@ using CPS.ComplexCases.DDEI.Tactical.Mappers;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
+using CPS.ComplexCases.NetApp.Client;
+using CPS.ComplexCases.NetApp.Factories;
+using CPS.ComplexCases.NetApp.Models;
+using CPS.ComplexCases.NetApp.Services;
+using CPS.ComplexCases.NetApp.Telemetry;
+using CPS.ComplexCases.NetApp.Wrappers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -31,6 +38,7 @@ public class IntegrationTestFixture : IAsyncLifetime
     public bool IsDdeiConfigured => Settings.DDEI.IsConfigured;
     public bool IsDdeiAuthConfigured => Settings.DDEI.IsAuthConfigured;
     public bool IsDatabaseConfigured => !string.IsNullOrEmpty(Settings.CaseManagementDatastoreConnection);
+    public bool IsNetAppConfigured => Settings.NetApp.IsConfigured && Settings.KeyVault.IsConfigured && Settings.Azure.IsUserAuthConfigured;
     public bool IsFullyConfigured => IsEgressConfigured && IsDdeiConfigured && IsDatabaseConfigured;
 
     public EgressStorageClient? EgressStorageClient { get; private set; }
@@ -38,9 +46,13 @@ public class IntegrationTestFixture : IAsyncLifetime
     public IDdeiClient? DdeiClient { get; private set; }
     public IDdeiClientTactical? DdeiClientTactical { get; private set; }
     public ApplicationDbContext? DbContext { get; private set; }
+    public INetAppClient? NetAppClient { get; private set; }
+    public INetAppArgFactory? NetAppArgFactory { get; private set; }
 
     public string? EgressWorkspaceId => Settings.Egress.WorkspaceId;
     public int? DdeiTestCaseId => Settings.DDEI.TestCaseId;
+    public string? NetAppBucketName => Settings.NetApp.BucketName;
+    public string? NetAppTestFolderPrefix => Settings.NetApp.TestFolderPrefix;
 
     public IntegrationTestFixture()
     {
@@ -64,6 +76,7 @@ public class IntegrationTestFixture : IAsyncLifetime
         InitializeEgressClients();
         InitializeDdeiClient();
         InitializeDbContext();
+        InitializeNetAppClient();
 
         return Task.CompletedTask;
     }
@@ -75,11 +88,17 @@ public class IntegrationTestFixture : IAsyncLifetime
         return Task.CompletedTask;
     }
 
-    public async Task<string> GetAzureAdBearerTokenAsync()
+    /// <summary>
+    /// Gets a user-delegated bearer token using ROPC (Resource Owner Password Credentials) flow.
+    /// This token contains preferred_username and oid claims required for NetApp S3 credential service.
+    /// Uses UserScope (e.g., api://{client-id}/user_impersonation) instead of .default scope.
+    /// </summary>
+    public async Task<string> GetUserDelegatedBearerTokenAsync()
     {
-        if (!Settings.Azure.IsConfigured)
+        if (!Settings.Azure.IsUserAuthConfigured)
         {
-            throw new InvalidOperationException("Azure AD settings not configured. Set Azure__TenantId, Azure__ClientId, Azure__ClientSecret, and Azure__Scope environment variables.");
+            throw new InvalidOperationException(
+                "Azure AD user auth settings not configured. Set Azure__TenantId, Azure__ClientId, Azure__ClientSecret, Azure__UserScope, Azure__TestUserEmail, and Azure__TestUserPassword environment variables.");
         }
 
         // Return cached token if still valid (with 5 minute buffer)
@@ -88,12 +107,13 @@ public class IntegrationTestFixture : IAsyncLifetime
             return _cachedBearerToken;
         }
 
-        var credential = new ClientSecretCredential(
+        var credential = new UsernamePasswordCredential(
+            Settings.Azure.TestUserEmail,
+            Settings.Azure.TestUserPassword,
             Settings.Azure.TenantId,
-            Settings.Azure.ClientId,
-            Settings.Azure.ClientSecret);
+            Settings.Azure.ClientId);
 
-        var tokenRequestContext = new TokenRequestContext(new[] { Settings.Azure.Scope! });
+        var tokenRequestContext = new TokenRequestContext(new[] { Settings.Azure.UserScope! });
         var token = await credential.GetTokenAsync(tokenRequestContext);
 
         _cachedBearerToken = token.Token;
@@ -217,4 +237,90 @@ public class IntegrationTestFixture : IAsyncLifetime
 
         DbContext = new ApplicationDbContext(optionsBuilder.Options);
     }
+
+    private void InitializeNetAppClient()
+    {
+        if (!IsNetAppConfigured) return;
+
+        // Set Development environment to bypass SSL validation in S3ClientFactory
+        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
+
+        var netAppOptions = new NetAppOptions
+        {
+            Url = Settings.NetApp.Url!,
+            RegionName = Settings.NetApp.RegionName!,
+            S3ServiceUuid = Settings.NetApp.S3ServiceUuid,
+            SessionDurationSeconds = Settings.NetApp.SessionDurationSeconds,
+            PepperVersion = Settings.NetApp.PepperVersion
+        };
+
+        var netAppOptionsWrapper = new OptionsWrapper<NetAppOptions>(netAppOptions);
+
+        var cryptoOptions = new CryptoOptions();
+        var cryptoOptionsWrapper = new OptionsWrapper<CryptoOptions>(cryptoOptions);
+
+        var credential = new ClientSecretCredential(
+            Settings.Azure.TenantId,
+            Settings.Azure.ClientId,
+            Settings.Azure.ClientSecret);
+
+        var secretClient = new SecretClient(new Uri(Settings.KeyVault.Url!), credential);
+
+        var keyVaultServiceLogger = _loggerFactory.CreateLogger<KeyVaultService>();
+        var keyVaultService = new KeyVaultService(secretClient, keyVaultServiceLogger, netAppOptions.SessionDurationSeconds);
+
+        var cryptographyService = new CryptographyService(cryptoOptionsWrapper);
+
+        // Create NetApp HTTP client for user registration/key regeneration
+        // Bypass SSL validation for integration tests (cluster uses self-signed/internal CA certificates)
+        var handler = new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        };
+        var netAppHttpClient = new HttpClient(handler)
+        {
+            BaseAddress = new Uri(Settings.NetApp.ClusterUrl!)
+        };
+        var netAppRequestFactory = new NetAppRequestFactory();
+        var netAppHttpClientLogger = _loggerFactory.CreateLogger<NetAppHttpClient>();
+        var netAppClient = new NetAppHttpClient(netAppHttpClient, netAppRequestFactory, netAppHttpClientLogger);
+
+        NetAppArgFactory = new NetAppArgFactory();
+        var netAppArgFactory = new NetAppArgFactory();
+
+        var s3CredentialServiceLogger = _loggerFactory.CreateLogger<S3CredentialService>();
+        var s3CredentialService = new S3CredentialService(
+            keyVaultService,
+            netAppClient,
+            netAppArgFactory,
+            cryptographyService,
+            netAppOptionsWrapper,
+            s3CredentialServiceLogger);
+
+        var s3ClientFactoryLogger = _loggerFactory.CreateLogger<S3ClientFactory>();
+        var s3TelemetryHandler = new S3TelemetryHandlerStub();
+        var s3ClientFactory = new S3ClientFactory(
+            netAppOptionsWrapper,
+            s3CredentialService,
+            s3ClientFactoryLogger,
+            s3TelemetryHandler);
+
+        var amazonS3UtilsWrapper = new AmazonS3UtilsWrapper();
+
+        var netAppClientLogger = _loggerFactory.CreateLogger<NetAppClient>();
+        NetAppClient = new NetAppClient(
+            netAppClientLogger,
+            amazonS3UtilsWrapper,
+            netAppRequestFactory,
+            s3ClientFactory);
+    }
+}
+
+/// <summary>
+/// Stub implementation of IS3TelemetryHandler for integration tests
+/// </summary>
+public class S3TelemetryHandlerStub : IS3TelemetryHandler
+{
+    public void InitiateTelemetryEvent(Amazon.Runtime.WebServiceRequestEventArgs? args) { }
+    public void CompleteTelemetryEvent(Amazon.Runtime.WebServiceResponseEventArgs? args) { }
 }
