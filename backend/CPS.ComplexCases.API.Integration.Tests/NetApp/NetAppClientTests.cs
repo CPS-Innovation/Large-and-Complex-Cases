@@ -4,7 +4,7 @@ using CPS.ComplexCases.API.Integration.Tests.Fixtures;
 namespace CPS.ComplexCases.API.Integration.Tests.NetApp;
 
 [Collection("Integration Tests")]
-public class NetAppClientTests : IClassFixture<IntegrationTestFixture>
+public class NetAppClientTests : IClassFixture<IntegrationTestFixture>, IAsyncLifetime
 {
     private readonly IntegrationTestFixture _fixture;
     private readonly string _testFolderPrefix;
@@ -14,6 +14,41 @@ public class NetAppClientTests : IClassFixture<IntegrationTestFixture>
         _fixture = fixture;
         _testFolderPrefix = _fixture.NetAppTestFolderPrefix ?? $"integration-tests/{DateTime.UtcNow:yyyyMMdd-HHmmss}";
     }
+
+    public async Task InitializeAsync()
+    {
+        if (!_fixture.IsNetAppConfigured)
+            return;
+
+        var bearerToken = await _fixture.GetUserDelegatedBearerTokenAsync();
+
+        // Create the test folder before tests run
+        var createFolderArg = _fixture.NetAppArgFactory!.CreateCreateFolderArg(
+            bearerToken,
+            _fixture.NetAppBucketName!,
+            _testFolderPrefix);
+
+        await _fixture.NetAppClient!.CreateFolderAsync(createFolderArg);
+
+    }
+
+    public async Task DisposeAsync()
+    {
+        if (!_fixture.IsNetAppConfigured)
+            return;
+
+        var bearerToken = await _fixture.GetUserDelegatedBearerTokenAsync();
+
+        // Delete the entire test folder and its contents
+        var deleteArg = _fixture.NetAppArgFactory!.CreateDeleteFileOrFolderArg(
+            bearerToken,
+            _fixture.NetAppBucketName!,
+            "integration-test-cleanup",
+            _testFolderPrefix);
+
+        await _fixture.NetAppClient!.DeleteFileOrFolderAsync(deleteArg);
+    }
+
     private async Task<bool> ObjectExistsViaListAsync(string bearerToken, string objectKey)
     {
         // Use the parent folder as prefix to list files, then check for exact match
