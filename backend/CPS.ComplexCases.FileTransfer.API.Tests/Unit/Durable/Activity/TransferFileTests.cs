@@ -1,4 +1,5 @@
 using System.Text;
+using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
@@ -104,15 +105,15 @@ public class TransferFileTests
             .ReturnsAsync((UploadSession session, int partNum, byte[] data, long start, long end, long total, string token, string? bucket) =>
                 new UploadChunkResult(TransferDirection.EgressToNetApp, $"etag{partNum}", partNum));
 
-
         _destinationClientMock
             .Setup(x => x.CompleteUploadAsync(
                 session,
                 null,
                 It.IsAny<Dictionary<int, string>>(),
                 payload.BearerToken,
-                payload.BucketName))
-            .Returns(Task.CompletedTask);
+                payload.BucketName,
+                payload.DestinationPath.EnsureTrailingSlash() + payload.SourcePath.Path))
+            .Returns(Task.FromResult(true));
 
         var result = await _activity.Run(payload);
 

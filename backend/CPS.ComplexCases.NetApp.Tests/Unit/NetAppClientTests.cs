@@ -26,7 +26,6 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         private readonly NetAppClient _client;
         private const string TestUrl = "https://netapp.com";
         private const string RegionName = "eu-west-2";
-        private const string BucketName = "test-bucket";
         private const string BearerToken = "fakeBearerToken";
 
         public NetAppClientTests()
@@ -86,7 +85,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             _amazonS3Mock.Setup(x => x.PutBucketAsync(It.IsAny<PutBucketRequest>(), default))
                 .ReturnsAsync(new PutBucketResponse
                 {
-                    HttpStatusCode = System.Net.HttpStatusCode.OK
+                    HttpStatusCode = HttpStatusCode.OK
                 });
 
             // Act
@@ -272,7 +271,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             arg.BearerToken = BearerToken;
             var putObjectResponse = new PutObjectResponse
             {
-                HttpStatusCode = System.Net.HttpStatusCode.OK
+                HttpStatusCode = HttpStatusCode.OK
             };
 
             _amazonS3Mock.Setup(x => x.PutObjectAsync(It.IsAny<PutObjectRequest>(), default))
@@ -293,7 +292,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             arg.BearerToken = BearerToken;
             var putObjectResponse = new PutObjectResponse
             {
-                HttpStatusCode = System.Net.HttpStatusCode.BadRequest
+                HttpStatusCode = HttpStatusCode.BadRequest
             };
 
             _amazonS3Mock.Setup(x => x.PutObjectAsync(It.IsAny<PutObjectRequest>(), default))
@@ -411,7 +410,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             arg.BearerToken = BearerToken;
             var listObjectsResponse = new ListObjectsV2Response
             {
-                CommonPrefixes = new List<string> { "folder1/", "folder2/" }
+                CommonPrefixes = ["folder1/", "folder2/"]
             };
 
             _amazonS3Mock.Setup(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
@@ -577,7 +576,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         public async Task DoesObjectExistAsync_ReturnsTrue_OnSuccess()
         {
             var arg = new GetObjectArg { BearerToken = BearerToken, ObjectKey = "file.txt", BucketName = "bucket" };
-            var response = new GetObjectAttributesResponse { HttpStatusCode = System.Net.HttpStatusCode.OK };
+            var response = new GetObjectAttributesResponse { HttpStatusCode = HttpStatusCode.OK };
 
             _amazonS3Mock.Setup(s => s.GetObjectAttributesAsync(It.IsAny<GetObjectAttributesRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
 
@@ -590,7 +589,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         public async Task DoesObjectExistAsync_ReturnsFalse_OnNotFound()
         {
             var arg = new GetObjectArg { BearerToken = BearerToken, ObjectKey = "file.txt", BucketName = "bucket" };
-            var ex = new AmazonS3Exception("not found") { StatusCode = System.Net.HttpStatusCode.NotFound };
+            var ex = new AmazonS3Exception("not found") { StatusCode = HttpStatusCode.NotFound };
 
             _amazonS3Mock.Setup(s => s.GetObjectAttributesAsync(It.IsAny<GetObjectAttributesRequest>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(ex);
@@ -604,7 +603,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         public async Task DoesObjectExistAsync_ReturnsFalse_AndLogs_OnOtherException()
         {
             var arg = new GetObjectArg { BearerToken = BearerToken, ObjectKey = "file.txt", BucketName = "bucket" };
-            var ex = new AmazonS3Exception("fail") { StatusCode = System.Net.HttpStatusCode.InternalServerError };
+            var ex = new AmazonS3Exception("fail") { StatusCode = HttpStatusCode.InternalServerError };
 
             _amazonS3Mock.Setup(s => s.GetObjectAttributesAsync(It.IsAny<GetObjectAttributesRequest>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(ex);

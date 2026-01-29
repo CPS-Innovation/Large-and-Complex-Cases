@@ -46,13 +46,14 @@ public class NetAppArgFactory : INetAppArgFactory
         };
     }
 
-    public GetObjectArg CreateGetObjectArg(string bearerToken, string bucketName, string objectName)
+    public GetObjectArg CreateGetObjectArg(string bearerToken, string bucketName, string objectName, string? eTag = null)
     {
         return new GetObjectArg
         {
             BearerToken = bearerToken,
             BucketName = bucketName.ToLowerInvariant(),
-            ObjectKey = objectName
+            ObjectKey = objectName,
+            ETag = eTag
         };
     }
 

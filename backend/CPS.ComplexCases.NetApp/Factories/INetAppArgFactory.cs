@@ -8,7 +8,7 @@ namespace CPS.ComplexCases.NetApp.Factories
         ListBucketsArg CreateListBucketsArg(string bearerToken, string? continuationToken = null, int? maxBuckets = null, string? prefix = null);
         FindBucketArg CreateFindBucketArg(string bearerToken, string bucketName);
         CreateFolderArg CreateCreateFolderArg(string bearerToken, string bucketName, string folderKey);
-        GetObjectArg CreateGetObjectArg(string bearerToken, string bucketName, string objectName);
+        GetObjectArg CreateGetObjectArg(string bearerToken, string bucketName, string objectName, string? eTag = null);
         UploadObjectArg CreateUploadObjectArg(string bearerToken, string bucketName, string objectName, Stream stream, long contentLength, bool disablePayloadSigning = true);
         ListObjectsInBucketArg CreateListObjectsInBucketArg(string bearerToken, string bucketName, string? continuationToken = null, int? maxKeys = null, string? prefix = null, bool includeDelimiter = false);
         ListFoldersInBucketArg CreateListFoldersInBucketArg(string bearerToken, string bucketName, string? operationName = null, string? continuationToken = null, int? maxKeys = null, string? prefix = null);

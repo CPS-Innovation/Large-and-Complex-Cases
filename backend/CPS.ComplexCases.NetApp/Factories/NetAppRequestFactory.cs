@@ -84,11 +84,18 @@ public class NetAppRequestFactory : INetAppRequestFactory
 
     public GetObjectRequest GetObjectRequest(GetObjectArg arg)
     {
-        return new GetObjectRequest
+        var request = new GetObjectRequest
         {
             BucketName = arg.BucketName,
             Key = arg.ObjectKey,
         };
+
+        if (!string.IsNullOrEmpty(arg.ETag))
+        {
+            request.EtagToMatch = arg.ETag;
+        }
+
+        return request;
     }
 
     public ListBucketsRequest ListBucketsRequest(ListBucketsArg arg)
