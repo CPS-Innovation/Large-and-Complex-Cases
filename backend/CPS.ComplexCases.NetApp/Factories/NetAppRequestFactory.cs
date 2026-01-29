@@ -151,6 +151,15 @@ public class NetAppRequestFactory : INetAppRequestFactory
         };
     }
 
+    public DeleteObjectRequest DeleteObjectRequest(DeleteFileOrFolderArg arg)
+    {
+        return new DeleteObjectRequest
+        {
+            BucketName = arg.BucketName,
+            Key = arg.Path
+        };
+    }
+
     private static HttpRequestMessage BuildRequest<T>(HttpMethod method, string path, string accessToken, T? body = default)
     {
         var request = new HttpRequestMessage(method, path);
