@@ -9,6 +9,11 @@ trigger:
 
 pr: none
 
+parameters: 
+- name: packageDatabase
+  type: boolean
+  default: true
+
 variables:
   buildConfiguration: 'Release'
   dotNetVersion: '8.x'
@@ -46,29 +51,50 @@ stages:
             packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
             outputDir: '$(Build.SourcesDirectory)/localnuget'
             arguments: '--configuration $(buildConfiguration) --no-build'
-
-        - task: PublishPipelineArtifact@1
+          
+        - publish: '$(Build.SourcesDirectory)/localnuget'
+          artifact: 'localnuget'
           displayName: 'Publish HttpTelemetry Package'
-          inputs:
-            targetPath: '$(Build.SourcesDirectory)/localnuget'
-            artifact: 'localnuget'
-    
+  
   - stage: Build_Main_API
     displayName: 'Build Main API'
     dependsOn: Package_NuGet
     jobs:
       - job: Build_Main_API
-        displayName: 'Build Main API'
+        displayName: 'Build Main API & DB Migration Scripts'
         steps:
           - template: ../templates/dotnet-build-steps.yml
             parameters:
               projectPath: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-              projectName: 'lacc-main-api-drop'
+              projectName: 'lacc-main-api'
               buildConfiguration: $(buildConfiguration)
               dotNetVersion: $(dotNetVersion)
               useLocalNuGet: true
               publishOutput: true
               runTests: false
+          
+          - ${{ if eq(parameters.packageDatabase, true) }}:
+            - task: DotNetCoreCLI@2
+              displayName: 'Build Database Project'
+              inputs:
+                command: 'build'
+                projects: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
+                arguments: '--configuration $(buildConfiguration) '
+
+            - task: Bash@3
+              displayName: 'Generate Migration Scripts'
+              inputs:
+                filePath: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/generateDBMigrationScripts.sh'
+              env:
+                EF_VERSION: $(efVersion)
+                DATA_PROJECT_PATH: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
+                STARTUP_PROJECT_PATH: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+                MIGRATION_SCRIPT_OUT: 'database-artifact/migration-script.sql'
+                ROLLBACK_SCRIPT_OUT: 'database-artifact/rollback-migration-script.sql'
+
+            - publish: 'database-artifact'
+              artifact: 'database-scripts-drop'
+              displayName: 'Publish Database Scripts'
 
   - stage: Build_Filetransfer_API
     displayName: 'Build Transfer API'
@@ -80,77 +106,9 @@ stages:
           - template: ../templates/dotnet-build-steps.yml
             parameters:
               projectPath: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
-              projectName: 'lacc-filetransfer-api-drop'
+              projectName: 'lacc-filetransfer-api'
               buildConfiguration: $(buildConfiguration)
               dotNetVersion: $(dotNetVersion)
               useLocalNuGet: true
               publishOutput: true
               runTests: false
-
-  - stage: Package_Database
-    displayName: 'Build Database Migration Scripts'
-    dependsOn: Package_NuGet
-    jobs:
-      - job: Package_Database_Scripts
-        displayName: 'Package Database Migration Scripts'
-        steps:
-          # Build Data project with dependencies
-          - template: ../templates/dotnet-build-steps.yml
-            parameters:
-              projectPath: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
-              projectName: 'Database'
-              buildConfiguration: $(buildConfiguration)
-              dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: true
-              publishOutput: false
-              runTests: false
-
-          - task: Bash@3
-            displayName: 'Generate Migration Scripts'
-            inputs:
-              targetType: 'inline'
-              script: |
-                export PATH="$PATH:$HOME/.dotnet/tools"
-                
-                if ! dotnet ef --version &> /dev/null; then
-                  dotnet tool install --global dotnet-ef --version $(efVersion)
-                fi
-
-                dotnet ef migrations script \
-                --idempotent \
-                --output $(Build.ArtifactStagingDirectory)/migration-script.sql \
-                --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
-                --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
-
-          - task: CopyFiles@2
-            displayName: 'Copy Migration Files'
-            inputs:
-              sourceFolder: 'backend/CPS.ComplexCases.Data/Migrations'
-              contents: '**'
-              targetFolder: '$(Build.ArtifactStagingDirectory)/migrations'
-
-          - script: |
-              echo "Checking if the zip package is installed..."
-              if ! zip --version &> /dev/null; then
-                echo "Zip command not found. Installing the zip package..."
-                sudo apt-get update
-                sudo apt-get install zip -y
-              else
-                echo "Zip is already installed."
-              fi
-            displayName: 'Ensure zip'
-
-          - task: ArchiveFiles@2
-            displayName: 'Archive Database Scripts'
-            inputs:
-              rootFolderOrFile: '$(Build.ArtifactStagingDirectory)'
-              includeRootFolder: false
-              archiveType: 'zip'
-              archiveFile: '$(Build.ArtifactStagingDirectory)/database-scripts.zip'
-              replaceExistingArchive: true
-
-          - task: PublishBuildArtifacts@1
-            displayName: 'Publish Database Scripts'
-            inputs:
-              pathtoPublish: '$(Build.ArtifactStagingDirectory)/database-scripts.zip'
-              artifactName: 'database-scripts-drop'

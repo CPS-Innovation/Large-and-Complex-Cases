@@ -155,6 +155,17 @@ public class NetAppArgFactory : INetAppArgFactory
         };
     }
 
+    public DeleteFileOrFolderArg CreateDeleteFileOrFolderArg(string bearerToken, string bucketName, string operationName, string path)
+    {
+        return new DeleteFileOrFolderArg
+        {
+            BearerToken = bearerToken,
+            BucketName = bucketName.ToLowerInvariant(),
+            OperationName = operationName,
+            Path = path
+        };
+    }
+
     private static string SetPrefix(string? prefix)
     {
         if (!string.IsNullOrEmpty(prefix))

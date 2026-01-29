@@ -144,19 +144,6 @@ stages:
               - download: build
                 artifact: 'database-scripts-drop'
 
-              - script: |
-                  echo "Installing the unzip package..."
-                  sudo apt-get update
-                  sudo apt-get install unzip -y
-                displayName: 'Install unzip'
-
-              - task: ExtractFiles@1
-                displayName: 'Extract Database Scripts'
-                inputs:
-                  archiveFilePatterns: '$(Pipeline.Workspace)/build/database-scripts-drop/*.zip'
-                  destinationFolder: '$(Pipeline.Workspace)/build/database-scripts'
-                  cleanDestinationFolder: true
-
               - task: AzureCLI@2
                 displayName: 'Run Database Migration'
                 inputs:
@@ -180,7 +167,7 @@ stages:
                     bash $(scripts_directory)/updateDatabase.sh
                 env:
                   KEY_VAULT_NAME: $(keyVaultName)
-                  MIGRATION_SCRIPT_PATH: '$(Pipeline.Workspace)/build/database-scripts/migration-script.sql'
+                  MIGRATION_SCRIPT_PATH: '$(Pipeline.Workspace)/build/database-scripts-drop/migration-script.sql'
               
               - template: ./runner-cleanup-steps.yml
                 parameters:

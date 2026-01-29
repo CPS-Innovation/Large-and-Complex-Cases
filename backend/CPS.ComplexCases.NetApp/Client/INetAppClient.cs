@@ -18,5 +18,6 @@ namespace CPS.ComplexCases.NetApp.Client
         Task<UploadPartResponse?> UploadPartAsync(UploadPartArg arg);
         Task<CompleteMultipartUploadResponse?> CompleteMultipartUploadAsync(CompleteMultipartUploadArg arg);
         Task<bool> DoesObjectExistAsync(GetObjectArg arg);
+        Task<string> DeleteFileOrFolderAsync(DeleteFileOrFolderArg arg);
     }
 }

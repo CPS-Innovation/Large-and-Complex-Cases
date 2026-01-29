@@ -51,8 +51,7 @@ public sealed partial class RequestValidationMiddleware(IAuthorizationValidator 
     {
       return parsedCorrelationId;
     }
-
-    return Guid.Empty;
+    return Guid.NewGuid();
   }
 
   private static string? EstablishCmsAuthValues(HttpRequestData httpRequestData)
