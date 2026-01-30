@@ -1,5 +1,6 @@
 using System.Text;
 using CPS.ComplexCases.API.Integration.Tests.Fixtures;
+using CPS.ComplexCases.API.Integration.Tests.Helpers;
 
 namespace CPS.ComplexCases.API.Integration.Tests.NetApp;
 
@@ -12,7 +13,8 @@ public class NetAppClientTests : IClassFixture<IntegrationTestFixture>, IAsyncLi
     public NetAppClientTests(IntegrationTestFixture fixture)
     {
         _fixture = fixture;
-        _testFolderPrefix = _fixture.NetAppTestFolderPrefix ?? $"integration-tests/{DateTime.UtcNow:yyyyMMdd-HHmmss}";
+        var basePrefix = _fixture.NetAppTestFolderPrefix ?? $"integration-tests/{DateTime.UtcNow:yyyyMMdd-HHmmss}";
+        _testFolderPrefix = $"{basePrefix}/client-{Guid.NewGuid():N}";
     }
 
     public async Task InitializeAsync()
@@ -22,7 +24,6 @@ public class NetAppClientTests : IClassFixture<IntegrationTestFixture>, IAsyncLi
 
         var bearerToken = await _fixture.GetUserDelegatedBearerTokenAsync();
 
-        // Create the test folder before tests run
         var createFolderArg = _fixture.NetAppArgFactory!.CreateCreateFolderArg(
             bearerToken,
             _fixture.NetAppBucketName!,
@@ -39,7 +40,6 @@ public class NetAppClientTests : IClassFixture<IntegrationTestFixture>, IAsyncLi
 
         var bearerToken = await _fixture.GetUserDelegatedBearerTokenAsync();
 
-        // Delete the entire test folder and its contents
         var deleteArg = _fixture.NetAppArgFactory!.CreateDeleteFileOrFolderArg(
             bearerToken,
             _fixture.NetAppBucketName!,
@@ -47,35 +47,6 @@ public class NetAppClientTests : IClassFixture<IntegrationTestFixture>, IAsyncLi
             _testFolderPrefix);
 
         await _fixture.NetAppClient!.DeleteFileOrFolderAsync(deleteArg);
-    }
-
-    private async Task<bool> ObjectExistsViaListAsync(string bearerToken, string objectKey)
-    {
-        // Use the parent folder as prefix to list files, then check for exact match
-        var lastSlashIndex = objectKey.LastIndexOf('/');
-        var prefix = lastSlashIndex > 0 ? objectKey.Substring(0, lastSlashIndex + 1) : string.Empty;
-        var fileName = lastSlashIndex > 0 ? objectKey.Substring(lastSlashIndex + 1) : objectKey;
-
-        var listArg = _fixture.NetAppArgFactory!.CreateListObjectsInBucketArg(
-            bearerToken,
-            _fixture.NetAppBucketName!,
-            prefix: prefix,
-            maxKeys: 100);
-
-        var result = await _fixture.NetAppClient!.ListObjectsInBucketAsync(listArg);
-
-        if (result?.Data?.FileData == null || !result.Data.FileData.Any())
-            return false;
-
-        // Check if any file matches the full object key or ends with the file name
-        return result.Data.FileData.Any(f =>
-        {
-            var path = f.Path ?? string.Empty;
-            return path.Equals(objectKey, StringComparison.OrdinalIgnoreCase) ||
-                   path.TrimStart('/').Equals(objectKey.TrimStart('/'), StringComparison.OrdinalIgnoreCase) ||
-                   path.EndsWith("/" + fileName, StringComparison.OrdinalIgnoreCase) ||
-                   path.Equals(fileName, StringComparison.OrdinalIgnoreCase);
-        });
     }
 
     [SkippableFact]
@@ -270,11 +241,8 @@ public class NetAppClientTests : IClassFixture<IntegrationTestFixture>, IAsyncLi
 
         await _fixture.NetAppClient!.UploadObjectAsync(uploadArg);
 
-        // Small delay to allow for upload to complete
-        await Task.Delay(500);
-
         // Act
-        var exists = await ObjectExistsViaListAsync(bearerToken, objectKey);
+        var exists = await NetAppTestHelper.WaitForObjectExistsAsync(_fixture, bearerToken, objectKey);
 
         // Assert
         Assert.True(exists, "Object should exist after upload");
@@ -290,7 +258,7 @@ public class NetAppClientTests : IClassFixture<IntegrationTestFixture>, IAsyncLi
         var nonExistentKey = $"{_testFolderPrefix}/does-not-exist-{Guid.NewGuid():N}.txt";
 
         // Act
-        var exists = await ObjectExistsViaListAsync(bearerToken, nonExistentKey);
+        var exists = await NetAppTestHelper.ObjectExistsViaListAsync(_fixture, bearerToken, nonExistentKey);
 
         // Assert
         Assert.False(exists, "Object should not exist");
@@ -365,7 +333,7 @@ public class NetAppClientTests : IClassFixture<IntegrationTestFixture>, IAsyncLi
         Assert.NotNull(completeResponse);
         Assert.NotEmpty(completeResponse.ETag);
 
-        var exists = await ObjectExistsViaListAsync(bearerToken, objectKey);
+        var exists = await NetAppTestHelper.ObjectExistsViaListAsync(_fixture, bearerToken, objectKey);
         Assert.True(exists, "Multipart uploaded file should exist");
     }
 
