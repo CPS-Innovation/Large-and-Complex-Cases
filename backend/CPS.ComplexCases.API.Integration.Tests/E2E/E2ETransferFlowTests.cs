@@ -11,7 +11,6 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
 {
     private readonly IntegrationTestFixture _fixture;
     private readonly string _netAppTestFolderPrefix;
-    private readonly List<string> _netAppFilesToCleanup = new();
     private readonly List<(string FileId, string WorkspaceId)> _egressFilesToCleanup = new();
 
     private const int MinimumMultipartChunkSize = 5 * 1024 * 1024; // 5MB - S3 minimum part size
