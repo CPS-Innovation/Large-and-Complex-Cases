@@ -1,3 +1,4 @@
+using System.Net;
 using Azure.Core;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
@@ -23,6 +24,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Polly;
+using Polly.Retry;
 
 namespace CPS.ComplexCases.API.Integration.Tests.Fixtures;
 
@@ -153,7 +156,9 @@ public class IntegrationTestFixture : IAsyncLifetime
         };
 
         var optionsWrapper = new OptionsWrapper<EgressOptions>(egressOptions);
-        var httpClient = new HttpClient
+
+        // Use retry handler to handle 429 (Too Many Requests) from Egress API
+        var httpClient = new HttpClient(new RetryDelegatingHandler())
         {
             BaseAddress = new Uri(egressOptions.Url)
         };
@@ -170,7 +175,7 @@ public class IntegrationTestFixture : IAsyncLifetime
             telemetryClient);
 
         var clientLogger = _loggerFactory.CreateLogger<EgressClient>();
-        var clientHttpClient = new HttpClient
+        var clientHttpClient = new HttpClient(new RetryDelegatingHandler())
         {
             BaseAddress = new Uri(egressOptions.Url)
         };
@@ -323,4 +328,72 @@ public class S3TelemetryHandlerStub : IS3TelemetryHandler
 {
     public void InitiateTelemetryEvent(Amazon.Runtime.WebServiceRequestEventArgs? args) { }
     public void CompleteTelemetryEvent(Amazon.Runtime.WebServiceResponseEventArgs? args) { }
+}
+
+/// <summary>
+/// Delegating handler that retries requests on 429 (Too Many Requests) and 5xx responses
+/// with exponential backoff. Used for integration tests to handle Egress rate limiting.
+/// </summary>
+public class RetryDelegatingHandler : DelegatingHandler
+{
+    private readonly ResiliencePipeline<HttpResponseMessage> _pipeline;
+
+    public RetryDelegatingHandler() : base(new HttpClientHandler())
+    {
+        _pipeline = new ResiliencePipelineBuilder<HttpResponseMessage>()
+            .AddRetry(new RetryStrategyOptions<HttpResponseMessage>
+            {
+                MaxRetryAttempts = 5,
+                BackoffType = DelayBackoffType.Exponential,
+                Delay = TimeSpan.FromSeconds(1),
+                UseJitter = true,
+                ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
+                    .HandleResult(response =>
+                        response.StatusCode == HttpStatusCode.TooManyRequests ||
+                        (int)response.StatusCode >= 500)
+            })
+            .Build();
+    }
+
+    protected override async Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
+    {
+        return await _pipeline.ExecuteAsync(async token =>
+        {
+            var clonedRequest = await CloneHttpRequestMessageAsync(request);
+            return await base.SendAsync(clonedRequest, token);
+        }, cancellationToken);
+    }
+
+    private static async Task<HttpRequestMessage> CloneHttpRequestMessageAsync(HttpRequestMessage request)
+    {
+        var clone = new HttpRequestMessage(request.Method, request.RequestUri)
+        {
+            Version = request.Version
+        };
+
+        if (request.Content != null)
+        {
+            var contentBytes = await request.Content.ReadAsByteArrayAsync();
+            clone.Content = new ByteArrayContent(contentBytes);
+
+            foreach (var header in request.Content.Headers)
+            {
+                clone.Content.Headers.TryAddWithoutValidation(header.Key, header.Value);
+            }
+        }
+
+        foreach (var header in request.Headers)
+        {
+            clone.Headers.TryAddWithoutValidation(header.Key, header.Value);
+        }
+
+        foreach (var property in request.Options)
+        {
+            clone.Options.TryAdd(property.Key, property.Value);
+        }
+
+        return clone;
+    }
 }

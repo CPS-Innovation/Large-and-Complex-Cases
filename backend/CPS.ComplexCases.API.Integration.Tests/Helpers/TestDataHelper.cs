@@ -59,17 +59,6 @@ public static class TestDataHelper
     }
 
     /// <summary>
-    /// Computes MD5 hash of a stream (for large files).
-    /// </summary>
-    public static async Task<string> ComputeMd5HashAsync(Stream stream)
-    {
-        using var md5 = MD5.Create();
-        var hash = await md5.ComputeHashAsync(stream);
-        stream.Position = 0; // Reset stream position
-        return Convert.ToBase64String(hash);
-    }
-
-    /// <summary>
     /// Generates a unique folder path for test isolation.
     /// Note: Uses single-level nesting under basePath because the Egress API
     /// cannot create root-level folders (parent path cannot be empty).
