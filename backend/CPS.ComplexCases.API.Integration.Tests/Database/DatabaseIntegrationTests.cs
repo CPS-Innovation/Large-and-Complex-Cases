@@ -333,7 +333,6 @@ public class DatabaseIntegrationTests : IClassFixture<IntegrationTestFixture>
         if (totalCount > pageSize)
         {
             Assert.NotEmpty(secondPage);
-            // Verify no overlap between pages
             var firstPageIds = firstPage.Select(l => l.Id).ToHashSet();
             Assert.All(secondPage, log => Assert.DoesNotContain(log.Id, firstPageIds));
         }

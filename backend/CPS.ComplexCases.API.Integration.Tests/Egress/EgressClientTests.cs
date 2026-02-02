@@ -199,7 +199,6 @@ public class EgressClientTests : IClassFixture<IntegrationTestFixture>
         Assert.NotNull(roles);
         Assert.NotEmpty(roles);
 
-        // Verify role structure
         foreach (var role in roles)
         {
             Assert.False(string.IsNullOrEmpty(role.RoleId), "Role should have a RoleId");

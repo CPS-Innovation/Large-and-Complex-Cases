@@ -5,6 +5,11 @@ using Polly.Retry;
 namespace CPS.ComplexCases.API.Integration.Tests.Helpers;
 
 /// <summary>
+/// Simple metadata record for NetApp object information.
+/// </summary>
+public record NetAppObjectMetadata(long ContentLength);
+
+/// <summary>
 /// Helper class for NetApp integration test operations.
 /// </summary>
 public static class NetAppTestHelper
@@ -81,5 +86,48 @@ public static class NetAppTestHelper
                    path.EndsWith("/" + fileName, StringComparison.OrdinalIgnoreCase) ||
                    path.Equals(fileName, StringComparison.OrdinalIgnoreCase);
         });
+    }
+
+    /// <summary>
+    /// Gets metadata for an object in NetApp storage by listing objects in the parent folder.
+    /// </summary>
+    /// <param name="fixture">The integration test fixture containing NetApp client and configuration.</param>
+    /// <param name="bearerToken">The bearer token for authentication.</param>
+    /// <param name="objectKey">The full object key to get metadata for.</param>
+    /// <returns>Metadata about the object including content length.</returns>
+    /// <exception cref="FileNotFoundException">Thrown if the object is not found.</exception>
+    public static async Task<NetAppObjectMetadata> GetObjectMetadataAsync(
+        IntegrationTestFixture fixture,
+        string bearerToken,
+        string objectKey)
+    {
+        var lastSlashIndex = objectKey.LastIndexOf('/');
+        var prefix = lastSlashIndex > 0 ? objectKey.Substring(0, lastSlashIndex + 1) : string.Empty;
+        var fileName = lastSlashIndex > 0 ? objectKey.Substring(lastSlashIndex + 1) : objectKey;
+
+        var listArg = fixture.NetAppArgFactory!.CreateListObjectsInBucketArg(
+            bearerToken,
+            fixture.NetAppBucketName!,
+            prefix: prefix,
+            maxKeys: 100);
+
+        var result = await fixture.NetAppClient!.ListObjectsInBucketAsync(listArg);
+
+        if (result?.Data?.FileData == null || !result.Data.FileData.Any())
+            throw new FileNotFoundException($"Object not found: {objectKey}");
+
+        var fileData = result.Data.FileData.FirstOrDefault(f =>
+        {
+            var path = f.Path ?? string.Empty;
+            return path.Equals(objectKey, StringComparison.OrdinalIgnoreCase) ||
+                   path.TrimStart('/').Equals(objectKey.TrimStart('/'), StringComparison.OrdinalIgnoreCase) ||
+                   path.EndsWith("/" + fileName, StringComparison.OrdinalIgnoreCase) ||
+                   path.Equals(fileName, StringComparison.OrdinalIgnoreCase);
+        });
+
+        if (fileData == null)
+            throw new FileNotFoundException($"Object not found: {objectKey}");
+
+        return new NetAppObjectMetadata(fileData.Filesize);
     }
 }
