@@ -2,13 +2,13 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Services;
-using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.NetApp.Telemetry;
 
 namespace CPS.ComplexCases.NetApp.Factories;
@@ -92,6 +92,12 @@ public class S3ClientFactory(IOptions<NetAppOptions> options, IS3CredentialServi
         {
             var webServiceArgs = args as WebServiceRequestEventArgs;
             _telemetryHandler.InitiateTelemetryEvent(webServiceArgs);
+
+            var Headers = webServiceArgs?.Headers;
+            foreach (var header in Headers ?? Enumerable.Empty<KeyValuePair<string, string>>())
+            {
+                _logger.LogInformation("Request Header: {HeaderKey}={HeaderValue}", header.Key, header.Value);
+            }
         };
 
         s3Client.AfterResponseEvent += (sender, args) =>

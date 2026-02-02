@@ -125,6 +125,71 @@ public class TransferFileTests
     }
 
     [Fact]
+    public async Task Run_VerificationFails_ReturnsFailedResultWithIntegrityVerificationFailedCode()
+    {
+        var payload = CreatePayload();
+        var content = Encoding.UTF8.GetBytes("testdata");
+        var stream = new MemoryStream(content);
+        var contentLength = content.Length;
+
+        var session = new UploadSession { UploadId = Guid.NewGuid().ToString() };
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(payload.SourcePath.Path,
+                                              payload.WorkspaceId,
+                                              payload.SourcePath.FileId,
+                                              payload.BearerToken,
+                                              payload.BucketName))
+            .ReturnsAsync((stream, contentLength));
+
+        _destinationClientMock
+            .Setup(x => x.InitiateUploadAsync(
+                payload.DestinationPath,
+                contentLength,
+                payload.SourcePath.Path,
+                payload.WorkspaceId,
+                payload.SourcePath.RelativePath,
+                payload.SourceRootFolderPath,
+                payload.BearerToken,
+                payload.BucketName))
+            .ReturnsAsync(session);
+
+        _destinationClientMock
+            .Setup(x => x.UploadChunkAsync(
+                It.IsAny<UploadSession>(),
+                It.IsAny<int>(),
+                It.IsAny<byte[]>(),
+                It.IsAny<long>(),
+                It.IsAny<long>(),
+                It.IsAny<long>(),
+                It.IsAny<string>(),
+                It.IsAny<string?>()))
+            .ReturnsAsync((UploadSession session, int partNum, byte[] data, long start, long end, long total, string token, string? bucket) =>
+                new UploadChunkResult(TransferDirection.EgressToNetApp, $"etag{partNum}", partNum));
+
+        _destinationClientMock
+            .Setup(x => x.CompleteUploadAsync(
+                session,
+                null,
+                It.IsAny<Dictionary<int, string>>(),
+                payload.BearerToken,
+                payload.BucketName,
+                payload.DestinationPath.EnsureTrailingSlash() + payload.SourcePath.Path))
+            .Returns(Task.FromResult(false));
+
+        var result = await _activity.Run(payload);
+
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.FailedItem);
+        Assert.Equal(TransferErrorCode.IntegrityVerificationFailed, result.FailedItem.ErrorCode);
+        Assert.Equal("Upload completed but failed to verify.", result.FailedItem.ErrorMessage);
+    }
+
+    [Fact]
     public async Task Run_FileExistsException_ReturnsFailedResultWithFileExistsCode()
     {
         var payload = CreatePayload();

@@ -264,18 +264,18 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
 
             string md5Hash = md5?.Hash != null ? Convert.ToBase64String(md5.Hash) : string.Empty;
             string? filePath = payload.TransferDirection == TransferDirection.EgressToNetApp ? payload.DestinationPath.EnsureTrailingSlash() + payload.SourcePath.Path : null;
-            var isCompleted = await CompleteUpload(destinationClient, session, md5Hash, uploadedEtags,
+            var isVerified = await CompleteUpload(destinationClient, session, md5Hash, uploadedEtags,
                 payload.BearerToken, payload.BucketName, filePath);
 
-            if (!isCompleted)
+            if (!isVerified)
             {
-                _logger.LogError("Failed to complete upload for {Source} -> {Dest}",
+                _logger.LogError("Upload completed but failed to verify upload for {Source} -> {Dest}",
                     payload.SourcePath.Path, payload.DestinationPath);
 
                 return CreateFailureResult(
                     payload.SourcePath.Path,
                     TransferErrorCode.IntegrityVerificationFailed,
-                    "Failed to complete multipart upload.");
+                    "Upload completed but failed to verify.");
             }
 
             _logger.LogInformation("Completed parallel multipart transfer for {Source} -> {Dest}",

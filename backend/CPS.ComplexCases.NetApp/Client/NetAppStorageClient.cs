@@ -212,8 +212,11 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
             objectName ?? throw new ArgumentNullException(nameof(objectName), "Object name cannot be null."),
             eTag ?? throw new ArgumentNullException(nameof(eTag), "ETag cannot be null."));
 
-        var response = await _netAppClient.GetObjectAsync(arg);
+        using var response = await _netAppClient.GetObjectAsync(arg);
 
-        return response != null;
+        if (response == null)
+            return false;
+
+        return response.ETag == eTag;
     }
 }

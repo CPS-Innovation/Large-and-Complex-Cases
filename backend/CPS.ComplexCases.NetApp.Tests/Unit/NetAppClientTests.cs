@@ -577,9 +577,9 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         public async Task DoesObjectExistAsync_ReturnsTrue_OnSuccess()
         {
             var arg = new GetObjectArg { BearerToken = BearerToken, ObjectKey = "file.txt", BucketName = "bucket" };
-            var response = new GetObjectAttributesResponse { HttpStatusCode = HttpStatusCode.OK };
+            var response = new GetObjectResponse { HttpStatusCode = HttpStatusCode.OK };
 
-            _amazonS3Mock.Setup(s => s.GetObjectAttributesAsync(It.IsAny<GetObjectAttributesRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
+            _amazonS3Mock.Setup(s => s.GetObjectAsync(It.IsAny<GetObjectRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
 
             var result = await _client.DoesObjectExistAsync(arg);
 
@@ -592,7 +592,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             var arg = new GetObjectArg { BearerToken = BearerToken, ObjectKey = "file.txt", BucketName = "bucket" };
             var ex = new AmazonS3Exception("not found") { StatusCode = HttpStatusCode.NotFound };
 
-            _amazonS3Mock.Setup(s => s.GetObjectAttributesAsync(It.IsAny<GetObjectAttributesRequest>(), It.IsAny<CancellationToken>()))
+            _amazonS3Mock.Setup(s => s.GetObjectAsync(It.IsAny<GetObjectRequest>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(ex);
 
             var result = await _client.DoesObjectExistAsync(arg);
@@ -606,7 +606,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             var arg = new GetObjectArg { BearerToken = BearerToken, ObjectKey = "file.txt", BucketName = "bucket" };
             var ex = new AmazonS3Exception("fail") { StatusCode = HttpStatusCode.InternalServerError };
 
-            _amazonS3Mock.Setup(s => s.GetObjectAttributesAsync(It.IsAny<GetObjectAttributesRequest>(), It.IsAny<CancellationToken>()))
+            _amazonS3Mock.Setup(s => s.GetObjectAsync(It.IsAny<GetObjectRequest>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(ex);
 
             var result = await _client.DoesObjectExistAsync(arg);
