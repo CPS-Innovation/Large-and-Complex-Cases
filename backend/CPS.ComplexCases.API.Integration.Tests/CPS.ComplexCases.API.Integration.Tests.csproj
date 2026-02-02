@@ -13,7 +13,7 @@
     <ProjectReference Include="..\CPS.ComplexCases.Egress\CPS.ComplexCases.Egress.csproj" />
     <ProjectReference Include="..\CPS.ComplexCases.DDEI\CPS.ComplexCases.DDEI.csproj" />
     <ProjectReference Include="..\CPS.ComplexCases.Data\CPS.ComplexCases.Data.csproj" />
-    <ProjectReference Include="..\Cps.ComplexCases.Common\CPS.ComplexCases.Common.csproj" />
+    <ProjectReference Include="..\CPS.ComplexCases.Common\CPS.ComplexCases.Common.csproj" />
     <ProjectReference Include="..\CPS.ComplexCases.NetApp\CPS.ComplexCases.NetApp.csproj" />
   </ItemGroup>
 
