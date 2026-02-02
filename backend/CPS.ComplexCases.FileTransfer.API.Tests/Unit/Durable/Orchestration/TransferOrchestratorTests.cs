@@ -51,6 +51,7 @@ public class TransferOrchestratorTests
     public async Task RunOrchestrator_WithValidInput_ExecutesAllActivitiesInCorrectOrder()
     {
         // Arrange
+        var expectedActivityCount = 5;
         var transferPayload = CreateValidTransferPayload();
         var activityCallOrder = new List<string>();
 
@@ -72,17 +73,16 @@ public class TransferOrchestratorTests
         await _orchestrator.RunOrchestrator(_contextMock.Object);
 
         // Assert
-        Assert.Equal(6, activityCallOrder.Count);
-        Assert.Equal("InitializeTransfer", activityCallOrder[0]);
-        Assert.Equal("UpdateActivityLog", activityCallOrder[1]);
-        Assert.Equal("UpdateTransferStatus", activityCallOrder[2]);
-        Assert.Equal("TransferFile", activityCallOrder[3]);
-        Assert.Equal("UpdateActivityLog", activityCallOrder[4]);
-        Assert.Equal("FinalizeTransfer", activityCallOrder[5]);
+        Assert.Equal(expectedActivityCount, activityCallOrder.Count);
+        Assert.Equal("UpdateActivityLog", activityCallOrder[0]);
+        Assert.Equal("UpdateTransferStatus", activityCallOrder[1]);
+        Assert.Equal("TransferFile", activityCallOrder[2]);
+        Assert.Equal("UpdateActivityLog", activityCallOrder[3]);
+        Assert.Equal("FinalizeTransfer", activityCallOrder[4]);
     }
 
     [Fact]
-    public async Task RunOrchestrator_WithValidInput_CallsInitializeTransferWithCorrectEntity()
+    public async Task RunOrchestrator_WithValidInput_UpdatesEntityWithCorrectData()
     {
         // Arrange
         var transferPayload = CreateValidTransferPayload();
@@ -92,20 +92,20 @@ public class TransferOrchestratorTests
             .Returns(transferPayload);
 
         _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
-            .Returns(Task.CompletedTask)
-            .Callback<TaskName, object, TaskOptions>((taskName, entity, _) =>
-            {
-                if (taskName.Name == "InitializeTransfer")
-                {
-                    capturedEntity = (TransferEntity)entity;
-                }
-            });
+            .Returns(Task.CompletedTask);
 
         _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
             .Returns(Task.FromResult(new TransferResult { IsSuccess = true }));
 
         _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
-            .Returns(Task.CompletedTask);
+            .Returns(Task.CompletedTask)
+            .Callback<EntityInstanceId, string, object, CallEntityOptions>((entityId, operation, entity, _) =>
+            {
+                if (entity is TransferEntity transferEntity)
+                {
+                    capturedEntity = transferEntity;
+                }
+            });
 
         // Act
         await _orchestrator.RunOrchestrator(_contextMock.Object);
