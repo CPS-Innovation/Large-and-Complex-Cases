@@ -223,7 +223,7 @@ const TransferResolveFilePathPage = () => {
                   <section key={key} className={styles.errorWrapper}>
                     <div className={styles.relativePathWrapper}>
                       <FolderIcon />
-                      <h2 className={styles.relativePathText}>{key}</h2>
+                      <span className={styles.relativePathText}>{key}</span>
                     </div>
                     <ul className={styles.errorList}>
                       {groupedResolvedPathFiles[key].map((file) => {
