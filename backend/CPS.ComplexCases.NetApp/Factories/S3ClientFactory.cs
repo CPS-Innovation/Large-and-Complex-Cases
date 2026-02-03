@@ -92,12 +92,6 @@ public class S3ClientFactory(IOptions<NetAppOptions> options, IS3CredentialServi
         {
             var webServiceArgs = args as WebServiceRequestEventArgs;
             _telemetryHandler.InitiateTelemetryEvent(webServiceArgs);
-
-            var Headers = webServiceArgs?.Headers;
-            foreach (var header in Headers ?? Enumerable.Empty<KeyValuePair<string, string>>())
-            {
-                _logger.LogInformation("Request Header: {HeaderKey}={HeaderValue}", header.Key, header.Value);
-            }
         };
 
         s3Client.AfterResponseEvent += (sender, args) =>
