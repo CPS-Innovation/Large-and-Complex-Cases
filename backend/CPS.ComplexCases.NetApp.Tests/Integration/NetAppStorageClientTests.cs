@@ -13,7 +13,6 @@ using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.WireMock.Mappings;
-using CPS.ComplexCases.NetApp.Wrappers;
 using CPS.ComplexCases.WireMock.Core;
 using Moq;
 using WireMock.Server;
@@ -25,7 +24,7 @@ public class NetAppStorageClientTests : IDisposable
 {
     private bool _disposed = false;
     private readonly WireMockServer _server;
-    private readonly NetAppClient _netAppClient;
+    private readonly Mock<INetAppClient> _netAppClient;
     private readonly NetAppStorageClient _client;
     private readonly Mock<INetAppArgFactory> _netAppArgFactoryMock;
     private readonly Mock<INetAppRequestFactory> _netAppRequestFactoryMock;
@@ -83,8 +82,8 @@ public class NetAppStorageClientTests : IDisposable
 
         var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<NetAppClient>();
 
-        _netAppClient = new NetAppClient(logger, new AmazonS3UtilsWrapper(), _netAppRequestFactoryMock.Object, _s3ClientFactoryMock.Object);
-        _client = new NetAppStorageClient(_netAppClient, _netAppArgFactoryMock.Object, _caseMetadataServiceMock.Object);
+        _netAppClient = new Mock<INetAppClient>();
+        _client = new NetAppStorageClient(_netAppClient.Object, _netAppArgFactoryMock.Object, _caseMetadataServiceMock.Object);
     }
 
     [Fact]
@@ -109,6 +108,11 @@ public class NetAppStorageClientTests : IDisposable
 
         _netAppArgFactoryMock.Setup(f => f.CreateInitiateMultipartUploadArg(BearerToken, BucketName, fullPath)).Returns(arg);
         _netAppRequestFactoryMock.Setup(f => f.CreateMultipartUploadRequest(arg)).Returns(request);
+        _netAppClient.Setup(c => c.InitiateMultipartUploadAsync(arg)).ReturnsAsync(new InitiateMultipartUploadResponse
+        {
+            UploadId = UploadId,
+            Key = fullPath
+        });
 
         var result = await _client.InitiateUploadAsync(destinationPath, 123, sourcePath, null, null, null, BearerToken, BucketName);
 
@@ -120,6 +124,8 @@ public class NetAppStorageClientTests : IDisposable
     [Fact]
     public async Task UploadChunkAsync_ReturnsUploadChunkResult()
     {
+        var expectedETag = "etag-12345";
+
         var session = new UploadSession
         {
             WorkspaceId = ObjectKey,
@@ -149,10 +155,14 @@ public class NetAppStorageClientTests : IDisposable
 
         _netAppArgFactoryMock.Setup(f => f.CreateUploadPartArg(BearerToken, BucketName, ObjectKey, chunkData, 2, UploadId)).Returns(arg);
         _netAppRequestFactoryMock.Setup(c => c.UploadPartRequest(arg)).Returns(request);
+        _netAppClient.Setup(c => c.UploadPartAsync(arg)).ReturnsAsync(new UploadPartResponse
+        {
+            ETag = expectedETag
+        });
 
         var result = await _client.UploadChunkAsync(session, 2, chunkData, null, null, null, BearerToken, BucketName);
 
-        Assert.Equal("etag-12345", result.ETag);
+        Assert.Equal(expectedETag, result.ETag);
         Assert.Equal(TransferDirection.EgressToNetApp, result.TransferDirection);
     }
 
@@ -186,8 +196,12 @@ public class NetAppStorageClientTests : IDisposable
 
         _netAppArgFactoryMock.Setup(f => f.CreateCompleteMultipartUploadArg(BearerToken, BucketName, ObjectKey, UploadId, etags)).Returns(arg);
         _netAppRequestFactoryMock.Setup(c => c.CompleteMultipartUploadRequest(arg)).Returns(request);
+        _netAppClient.Setup(c => c.CompleteMultipartUploadAsync(arg)).ReturnsAsync(new CompleteMultipartUploadResponse
+        {
+            ETag = "final-etag-67890"
+        });
 
-        await _client.CompleteUploadAsync(session, null, etags, BearerToken, BucketName);
+        await _client.CompleteUploadAsync(session, null, etags, BearerToken, BucketName, ObjectKey);
     }
 
     [Fact]
@@ -286,8 +300,13 @@ public class NetAppStorageClientTests : IDisposable
             Key = ObjectKey
         };
 
-        _netAppArgFactoryMock.Setup(f => f.CreateGetObjectArg(BearerToken, BucketName, ObjectKey)).Returns(arg);
+        _netAppArgFactoryMock.Setup(f => f.CreateGetObjectArg(BearerToken, BucketName, ObjectKey, null)).Returns(arg);
         _netAppRequestFactoryMock.Setup(f => f.GetObjectRequest(arg)).Returns(request);
+        _netAppClient.Setup(c => c.GetObjectAsync(arg)).ReturnsAsync(new GetObjectResponse
+        {
+            ResponseStream = new MemoryStream([1, 2, 3, 4, 5]),
+            ContentLength = 5
+        });
 
         var result = await _client.OpenReadStreamAsync(ObjectKey, null, null, BearerToken, BucketName);
 
@@ -318,14 +337,9 @@ public class NetAppStorageClientTests : IDisposable
     }
 }
 
-public class HttpClientFactoryWrapper : Amazon.Runtime.HttpClientFactory
+public class HttpClientFactoryWrapper(HttpMessageHandler handler) : Amazon.Runtime.HttpClientFactory
 {
-    private readonly HttpMessageHandler _handler;
-
-    public HttpClientFactoryWrapper(HttpMessageHandler handler)
-    {
-        _handler = handler;
-    }
+    private readonly HttpMessageHandler _handler = handler;
 
     public override HttpClient CreateHttpClient(IClientConfig clientConfig)
     {

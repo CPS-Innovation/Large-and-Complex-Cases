@@ -1,8 +1,10 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Models.Domain;
+using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.Common.Telemetry;
@@ -261,8 +263,20 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             await Task.WhenAll(uploadTasks);
 
             string md5Hash = md5?.Hash != null ? Convert.ToBase64String(md5.Hash) : string.Empty;
-            await CompleteUpload(destinationClient, session, md5Hash, uploadedEtags,
-                payload.BearerToken, payload.BucketName);
+            string? filePath = payload.TransferDirection == TransferDirection.EgressToNetApp ? payload.DestinationPath.EnsureTrailingSlash() + payload.SourcePath.Path : null;
+            var isVerified = await CompleteUpload(destinationClient, session, md5Hash, uploadedEtags,
+                payload.BearerToken, payload.BucketName, filePath);
+
+            if (!isVerified)
+            {
+                _logger.LogError("Upload completed but failed to verify upload for {Source} -> {Dest}",
+                    payload.SourcePath.Path, payload.DestinationPath);
+
+                return CreateFailureResult(
+                    payload.SourcePath.Path,
+                    TransferErrorCode.IntegrityVerificationFailed,
+                    "Upload completed but failed to verify.");
+            }
 
             _logger.LogInformation("Completed parallel multipart transfer for {Source} -> {Dest}",
                 payload.SourcePath.Path, payload.DestinationPath);
@@ -271,21 +285,22 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         }
     }
 
-    private static async Task CompleteUpload(
+    private static async Task<bool> CompleteUpload(
         IStorageClient destinationClient,
         UploadSession session,
         string md5Hash,
         Dictionary<int, string> uploadedChunks,
         string bearerToken,
-        string? bucketName)
+        string? bucketName,
+        string? filePath)
     {
         if (destinationClient is EgressStorageClient)
         {
-            await destinationClient.CompleteUploadAsync(session, md5hash: md5Hash);
+            return await destinationClient.CompleteUploadAsync(session, md5hash: md5Hash);
         }
         else
         {
-            await destinationClient.CompleteUploadAsync(session, null, etags: uploadedChunks, bearerToken, bucketName);
+            return await destinationClient.CompleteUploadAsync(session, null, etags: uploadedChunks, bearerToken, bucketName, filePath);
         }
     }
 

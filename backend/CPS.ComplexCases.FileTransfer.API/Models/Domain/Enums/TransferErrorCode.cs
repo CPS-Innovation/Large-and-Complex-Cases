@@ -6,5 +6,6 @@ namespace CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 public enum TransferErrorCode
 {
     FileExists,
-    GeneralError
+    GeneralError,
+    IntegrityVerificationFailed
 }

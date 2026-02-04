@@ -15,7 +15,7 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
     private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
 
-    public async Task CompleteUploadAsync(UploadSession session, string? md5hash = null, Dictionary<int, string>? etags = null, string? bearerToken = null, string? bucketName = null)
+    public async Task<bool> CompleteUploadAsync(UploadSession session, string? md5hash = null, Dictionary<int, string>? etags = null, string? bearerToken = null, string? bucketName = null, string? filePath = null)
     {
         var arg = _netAppArgFactory.CreateCompleteMultipartUploadArg(
             bearerToken ?? throw new ArgumentNullException(nameof(bearerToken), "Bearer token cannot be null."),
@@ -24,10 +24,9 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
             session.UploadId ?? throw new ArgumentNullException(nameof(session.UploadId), "Upload ID cannot be null."),
             etags ?? throw new ArgumentNullException(nameof(etags), "ETags cannot be null."));
 
-        var result = await _netAppClient.CompleteMultipartUploadAsync(arg);
+        var result = await _netAppClient.CompleteMultipartUploadAsync(arg) ?? throw new InvalidOperationException("Failed to complete multipart upload.");
 
-        if (result == null)
-            throw new InvalidOperationException("Failed to complete multipart upload.");
+        return await VerifyUpload(bearerToken, bucketName, filePath!, result.ETag);
     }
 
     public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string sourcePath, string? workspaceId = null, string? relativePath = null, string? sourceRootFolderPath = null, string? bearerToken = null, string? bucketName = null)
@@ -203,5 +202,21 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
 
         if (!result)
             throw new InvalidOperationException($"Failed to upload {objectName} to NetApp.");
+    }
+
+    public async Task<bool> VerifyUpload(string bearerToken, string bucketName, string objectName, string eTag)
+    {
+        var arg = _netAppArgFactory.CreateGetObjectArg(
+            bearerToken ?? throw new ArgumentNullException(nameof(bearerToken), "Bearer token cannot be null."),
+            bucketName ?? throw new ArgumentNullException(nameof(bucketName), "Bucket name cannot be null."),
+            objectName ?? throw new ArgumentNullException(nameof(objectName), "Object name cannot be null."),
+            eTag ?? throw new ArgumentNullException(nameof(eTag), "ETag cannot be null."));
+
+        using var response = await _netAppClient.GetObjectAsync(arg);
+
+        if (response == null)
+            return false;
+
+        return response.ETag == eTag;
     }
 }
