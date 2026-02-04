@@ -105,7 +105,7 @@ public class EgressStorageClient(
         return new UploadChunkResult(TransferDirection.NetAppToEgress);
     }
 
-    public async Task CompleteUploadAsync(UploadSession session, string? md5hash = null, Dictionary<int, string>? etags = null, string? BearerToken = null, string? bucketName = null)
+    public async Task<bool> CompleteUploadAsync(UploadSession session, string? md5hash = null, Dictionary<int, string>? etags = null, string? BearerToken = null, string? bucketName = null, string? filePath = null)
     {
         var token = await GetWorkspaceToken();
 
@@ -116,7 +116,8 @@ public class EgressStorageClient(
             Md5Hash = md5hash,
         };
 
-        await SendRequestAsync(_egressRequestFactory.CompleteUploadRequest(completeArg, token));
+        var response = await SendRequestAsync(_egressRequestFactory.CompleteUploadRequest(completeArg, token));
+        return response.StatusCode == HttpStatusCode.OK;
     }
 
     public async Task<IEnumerable<FileTransferInfo>> ListFilesForTransferAsync(List<TransferEntityDto> selectedEntities, string? workspaceId = null, int? caseId = null, string? BearerToken = null, string? bucketName = null)

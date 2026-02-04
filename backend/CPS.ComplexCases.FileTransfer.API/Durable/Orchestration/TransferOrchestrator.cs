@@ -68,8 +68,9 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
 
             var entityId = new EntityInstanceId(nameof(TransferEntityState), input.TransferId.ToString());
 
-            await context.CallActivityAsync(
-                nameof(InitializeTransfer),
+            await context.Entities.CallEntityAsync(
+                entityId,
+                nameof(TransferEntityState.Initialize),
                 transferEntity);
 
             await context.CallActivityAsync(

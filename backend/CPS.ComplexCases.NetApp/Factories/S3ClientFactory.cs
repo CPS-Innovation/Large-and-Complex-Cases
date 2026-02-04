@@ -2,13 +2,13 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Services;
-using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.NetApp.Telemetry;
 
 namespace CPS.ComplexCases.NetApp.Factories;
