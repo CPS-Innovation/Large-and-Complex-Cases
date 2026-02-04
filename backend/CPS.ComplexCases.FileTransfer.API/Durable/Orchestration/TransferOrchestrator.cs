@@ -150,7 +150,15 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                     });
             }
 
-            // 4. Update activity log
+            // 4. Finalize transfer
+            await context.CallActivityAsync(
+                nameof(FinalizeTransfer),
+                new FinalizeTransferPayload
+                {
+                    TransferId = input.TransferId,
+                });
+
+            // 5. Update activity log
             await context.CallActivityAsync(
                 nameof(UpdateActivityLog),
                 new UpdateActivityLogPayload
@@ -159,14 +167,6 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                     TransferId = input.TransferId.ToString(),
                     UserName = input.UserName,
                     CorrelationId = input.CorrelationId
-                });
-
-            // 5. Finalize
-            await context.CallActivityAsync(
-                nameof(FinalizeTransfer),
-                new FinalizeTransferPayload
-                {
-                    TransferId = input.TransferId,
                 });
 
             transferOrchestrationEvent.IsSuccessful = transferOrchestrationEvent.TotalFilesFailed == 0;
