@@ -77,8 +77,8 @@ public class TransferOrchestratorTests
         Assert.Equal("UpdateActivityLog", activityCallOrder[1]);
         Assert.Equal("UpdateTransferStatus", activityCallOrder[2]);
         Assert.Equal("TransferFile", activityCallOrder[3]);
-        Assert.Equal("UpdateActivityLog", activityCallOrder[4]);
-        Assert.Equal("FinalizeTransfer", activityCallOrder[5]);
+        Assert.Equal("FinalizeTransfer", activityCallOrder[4]);
+        Assert.Equal("UpdateActivityLog", activityCallOrder[5]);
     }
 
     [Fact]
