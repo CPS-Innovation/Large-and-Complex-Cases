@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Models.Domain;
+using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.Common.Telemetry;
@@ -49,6 +50,19 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             var sourceFilePath = string.IsNullOrEmpty(payload.SourcePath.ModifiedPath)
                 ? payload.SourcePath.Path
                 : payload.SourcePath.ModifiedPath;
+
+            var existingFilepath = GetDestinationPath(payload);
+
+            var fileExists = await destinationClient.FileExistsAsync(
+                existingFilepath,
+                payload.WorkspaceId,
+                payload.BearerToken,
+                payload.BucketName);
+
+            if (fileExists)
+            {
+                throw new FileExistsException($"File already exists at destination path: {payload.DestinationPath + payload.SourcePath.Path}");
+            }
 
             var (sourceStream, totalSize) = await sourceClient.OpenReadStreamAsync(
                 payload.SourcePath.Path,
@@ -104,9 +118,9 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         {
             return CreateFailureResult(payload.SourcePath.Path, TransferErrorCode.FileExists, ex.Message, ex);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
-            _logger.LogInformation("Transfer cancelled: {Path}", payload.SourcePath.Path);
+            _logger.LogInformation(ex, "Transfer cancelled: {Path}", payload.SourcePath.Path);
             throw;
         }
         catch (Exception ex)
@@ -332,5 +346,25 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         };
 
         return new TransferResult { IsSuccess = false, FailedItem = failedItem };
+    }
+
+    private static string GetDestinationPath(TransferFilePayload payload)
+    {
+        if (payload.TransferDirection == TransferDirection.EgressToNetApp)
+        {
+            return payload.DestinationPath + payload.SourcePath.Path;
+        }
+        else
+        {
+            int? index = payload.SourcePath.RelativePath?.IndexOf(payload.SourceRootFolderPath ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+            if (index.HasValue && index.Value == 0 && !string.IsNullOrEmpty(payload.SourceRootFolderPath))
+            {
+                return payload.DestinationPath + payload.SourcePath.RelativePath!.Substring(payload.SourceRootFolderPath.Length).TrimStart('/', '\\');
+            }
+            else
+            {
+                return payload.DestinationPath + payload.SourcePath.RelativePath;
+            }
+        }
     }
 }

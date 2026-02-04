@@ -203,6 +203,19 @@ public class EgressStorageClient(
         throw new NotImplementedException();
     }
 
+    public async Task<bool> FileExistsAsync(string path, string? workspaceId = null, string? bearerToken = null, string? bucketName = null)
+    {
+        var token = await GetWorkspaceToken();
+
+        var existingFiles = await GetAllFilesFromFolderParallel(
+            workspaceId ?? throw new ArgumentNullException(nameof(workspaceId), "Workspace ID cannot be null."),
+            "",
+            "",
+            token);
+
+        return existingFiles.Any(f => !string.IsNullOrEmpty(f.FullFilePath) && f.FullFilePath.Equals(path, StringComparison.OrdinalIgnoreCase));
+    }
+
     private async Task CreateFolderStructureAsync(string folderPath, string workspaceId, string token)
     {
         if (string.IsNullOrEmpty(folderPath) || folderPath == "/" || folderPath == "\\")

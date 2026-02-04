@@ -204,4 +204,14 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
         if (!result)
             throw new InvalidOperationException($"Failed to upload {objectName} to NetApp.");
     }
+
+    public Task<bool> FileExistsAsync(string path, string? workspaceId = null, string? bearerToken = null, string? bucketName = null)
+    {
+        var arg = _netAppArgFactory.CreateGetObjectArg(
+            bearerToken ?? throw new ArgumentNullException(nameof(bearerToken), "Bearer token cannot be null."),
+            bucketName ?? throw new ArgumentNullException(nameof(bucketName), "Bucket name cannot be null."),
+            path);
+
+        return _netAppClient.DoesObjectExistAsync(arg);
+    }
 }

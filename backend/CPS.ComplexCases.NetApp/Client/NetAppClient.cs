@@ -306,7 +306,7 @@ public class NetAppClient(
         var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
         try
         {
-            var response = await s3Client.GetObjectAttributesAsync(_netAppRequestFactory.GetObjectAttributesRequest(arg));
+            var response = await s3Client.GetObjectAsync(_netAppRequestFactory.GetObjectRequest(arg));
             return response.HttpStatusCode == System.Net.HttpStatusCode.OK;
         }
         catch (AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
