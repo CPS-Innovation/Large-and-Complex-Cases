@@ -117,6 +117,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         }
         catch (FileExistsException ex)
         {
+            LogFileConflictTelemetry(payload);
             return CreateFailureResult(payload.SourcePath.Path, TransferErrorCode.FileExists, ex.Message, ex);
         }
         catch (OperationCanceledException ex)
@@ -380,5 +381,20 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 return payload.DestinationPath + payload.SourcePath.RelativePath;
             }
         }
+    }
+
+    private void LogFileConflictTelemetry(TransferFilePayload payload)
+    {
+        var conflictEvent = new DuplicateFileConflictEvent
+        {
+            CaseId = payload.CaseId,
+            SourceFilePath = payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
+            DestinationFilePath = payload.DestinationPath + payload.SourcePath.Path,
+            ConflictingFileName = Path.GetFileName(payload.SourcePath.Path),
+            TransferDirection = payload.TransferDirection.ToString(),
+            TransferId = payload.TransferId.ToString()
+        };
+
+        _telemetryClient.TrackEvent(conflictEvent);
     }
 }
