@@ -1,9 +1,6 @@
 using Microsoft.Extensions.Logging;
-using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
-using Amazon.SecurityToken;
-using Amazon.SecurityToken.Model;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Models.Dto;
@@ -137,6 +134,11 @@ public class NetAppClient(
             {
                 _logger.LogWarning("Object {ObjectKey} not found in bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
                 throw new FileNotFoundException($"Object {arg.ObjectKey} not found in bucket {arg.BucketName}.", ex);
+            }
+            if (ex.StatusCode == System.Net.HttpStatusCode.PreconditionFailed)
+            {
+                _logger.LogWarning("ETag mismatch for object {ObjectKey} in bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
+                return null;
             }
 
             _logger.LogError(ex, ex.Message, "Failed to get file {ObjectKey} from bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
@@ -306,7 +308,7 @@ public class NetAppClient(
         var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
         try
         {
-            var response = await s3Client.GetObjectAsync(_netAppRequestFactory.GetObjectRequest(arg));
+            using var response = await s3Client.GetObjectAsync(_netAppRequestFactory.GetObjectRequest(arg));
             return response.HttpStatusCode == System.Net.HttpStatusCode.OK;
         }
         catch (AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
@@ -411,26 +413,6 @@ public class NetAppClient(
         objectKeys.Add(prefix);
 
         return objectKeys;
-    }
-
-    private static async Task<SessionAWSCredentials> GetTemporaryCredentialsAsync(string accessKey, string secretKey)
-    {
-        using var stsClient = new AmazonSecurityTokenServiceClient(accessKey, secretKey);
-        var getSessionTokenRequest = new GetSessionTokenRequest
-        {
-            DurationSeconds = 7200
-        };
-
-        GetSessionTokenResponse sessionTokenResponse =
-                      await stsClient.GetSessionTokenAsync(getSessionTokenRequest);
-
-        Credentials credentials = sessionTokenResponse.Credentials;
-
-        var sessionCredentials =
-            new SessionAWSCredentials(credentials.AccessKeyId,
-                                      credentials.SecretAccessKey,
-                                      credentials.SessionToken);
-        return sessionCredentials;
     }
 
     private Polly.Retry.AsyncRetryPolicy<DeleteObjectResponse> GetDeleteFileRetryPolicy(string objectKey, string bucketName)
