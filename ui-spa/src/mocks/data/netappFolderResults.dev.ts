@@ -24,6 +24,46 @@ export const netAppRootFolderResultsDev: NetAppFolderResponse = {
       {
         path: "netapp/folder-1-2/",
       },
+      {
+        path: "netapp/folder-1-0/",
+      },
+      {
+        path: "netapp/folder-1-1/",
+      },
+
+      {
+        path: "netapp/folder-1-2/",
+      },
+      {
+        path: "netapp/folder-1-0/",
+      },
+      {
+        path: "netapp/folder-1-1/",
+      },
+
+      {
+        path: "netapp/folder-1-2/",
+      },
+      {
+        path: "netapp/folder-1-0/",
+      },
+      {
+        path: "netapp/folder-1-1/",
+      },
+
+      {
+        path: "netapp/folder-1-2/",
+      },
+      {
+        path: "netapp/folder-1-0/",
+      },
+      {
+        path: "netapp/folder-1-1/",
+      },
+
+      {
+        path: "netapp/folder-1-2/",
+      },
     ],
   },
 

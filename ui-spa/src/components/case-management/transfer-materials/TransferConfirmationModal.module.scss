@@ -19,3 +19,13 @@
     margin: 0;
   }
 }
+.duplicateList {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+.duplicateListItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
