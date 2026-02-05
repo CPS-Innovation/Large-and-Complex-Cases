@@ -133,7 +133,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
           </p>
         </InsetText>
 
-        <div className={"govuk-grid-column-two-thirds"}>
+        <div className={styles.tableContainer}>
           <FolderNavigationTable
             caption="shared drive folders table, column headers with buttons are sortable"
             tableName={"netapp"}
