@@ -121,7 +121,7 @@ const TransferConfirmationModal: React.FC<TransferConfirmationModalProps> = ({
                 data-testid="duplicate-warning-list"
               >
                 <li>new items will be copied</li>
-                <li>items that are duplicated will be not be copied </li>
+                <li>items that are duplicated will not be copied </li>
                 <li>
                   details of the transfer, including items that could not be
                   copied, will be shown in the activity log.
