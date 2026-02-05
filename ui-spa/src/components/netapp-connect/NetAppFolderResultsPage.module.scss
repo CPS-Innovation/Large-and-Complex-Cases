@@ -4,4 +4,7 @@
   & :global(.govuk-table__cell:last-child) {
     text-align: right;
   }
+  .tableContainer {
+    max-width: 66%;
+  }
 }
