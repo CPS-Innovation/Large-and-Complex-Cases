@@ -52,6 +52,22 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 ? payload.SourcePath.Path
                 : payload.SourcePath.ModifiedPath;
 
+            if (payload.TransferDirection == TransferDirection.EgressToNetApp)
+            {
+                var existingFilepath = GetDestinationPath(payload);
+
+                var fileExists = await destinationClient.FileExistsAsync(
+                    existingFilepath,
+                    payload.WorkspaceId,
+                    payload.BearerToken,
+                    payload.BucketName);
+
+                if (fileExists)
+                {
+                    throw new FileExistsException($"File already exists at destination path: {existingFilepath}");
+                }
+            }
+
             var (sourceStream, totalSize) = await sourceClient.OpenReadStreamAsync(
                 payload.SourcePath.Path,
                 payload.WorkspaceId,
@@ -104,11 +120,12 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         }
         catch (FileExistsException ex)
         {
+            LogFileConflictTelemetry(payload);
             return CreateFailureResult(payload.SourcePath.Path, TransferErrorCode.FileExists, ex.Message, ex);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
-            _logger.LogInformation("Transfer cancelled: {Path}", payload.SourcePath.Path);
+            _logger.LogInformation(ex, "Transfer cancelled: {Path}", payload.SourcePath.Path);
             throw;
         }
         catch (Exception ex)
@@ -347,5 +364,40 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         };
 
         return new TransferResult { IsSuccess = false, FailedItem = failedItem };
+    }
+
+    private static string GetDestinationPath(TransferFilePayload payload)
+    {
+        if (payload.TransferDirection == TransferDirection.EgressToNetApp)
+        {
+            return payload.DestinationPath + payload.SourcePath.Path;
+        }
+        else
+        {
+            int? index = payload.SourcePath.RelativePath?.IndexOf(payload.SourceRootFolderPath ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+            if (index.HasValue && index.Value == 0 && !string.IsNullOrEmpty(payload.SourceRootFolderPath))
+            {
+                return payload.DestinationPath + payload.SourcePath.RelativePath!.Substring(payload.SourceRootFolderPath.Length).TrimStart('/', '\\');
+            }
+            else
+            {
+                return payload.DestinationPath + payload.SourcePath.RelativePath;
+            }
+        }
+    }
+
+    private void LogFileConflictTelemetry(TransferFilePayload payload)
+    {
+        var conflictEvent = new DuplicateFileConflictEvent
+        {
+            CaseId = payload.CaseId,
+            SourceFilePath = payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
+            DestinationFilePath = payload.DestinationPath + payload.SourcePath.Path,
+            ConflictingFileName = Path.GetFileName(payload.SourcePath.Path),
+            TransferDirection = payload.TransferDirection.ToString(),
+            TransferId = payload.TransferId.ToString()
+        };
+
+        _telemetryClient.TrackEvent(conflictEvent);
     }
 }
