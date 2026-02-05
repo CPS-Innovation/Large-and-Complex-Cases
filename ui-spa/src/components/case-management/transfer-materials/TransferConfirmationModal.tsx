@@ -74,10 +74,12 @@ const TransferConfirmationModal: React.FC<TransferConfirmationModalProps> = ({
       handleClose={handleCloseModal}
       type="alert"
       ariaLabel="Transfer confirmation alert modal"
-      ariaDescription="Confirm"
+      ariaDescription={duplicateCount > 0 ? "Items already exist" : "Confirm"}
     >
       <div>
-        <div className={styles.modalHeader}>Confirm</div>
+        <div className={styles.modalHeader}>
+          {duplicateCount > 0 ? "Items already exist" : "Confirm"}
+        </div>
         <div className={styles.modalContent}>
           {duplicateCount > 0 && (
             <div
@@ -85,7 +87,8 @@ const TransferConfirmationModal: React.FC<TransferConfirmationModalProps> = ({
               data-testid="duplicate-warning"
             >
               <p className={styles.duplicateWarningText}>
-                You have {duplicateCount} duplicate items.
+                There are some files or folders with the same name already in
+                this location.
               </p>
               <Details summaryChildren="View items">
                 <ul
@@ -112,6 +115,23 @@ const TransferConfirmationModal: React.FC<TransferConfirmationModalProps> = ({
                   ))}
                 </ul>
               </Details>
+              <p>If you continue:</p>
+              <ul
+                className={styles.duplicateWarningList}
+                data-testid="duplicate-warning-list"
+              >
+                <li>new items will be copied</li>
+                <li>items that are duplicated will be not be copied </li>
+                <li>
+                  details of the transfer, including items that could not be
+                  copied, will be shown in the activity log.
+                </li>
+              </ul>
+              <p>
+                {transferAction.actionType === "copy"
+                  ? "If you cancel, nothing will be copied"
+                  : "If you cancel, nothing will be moved"}
+              </p>
             </div>
           )}
           <Checkboxes

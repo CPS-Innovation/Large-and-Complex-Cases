@@ -214,7 +214,6 @@ test.describe("egress-netapp-transfer", () => {
         .getByRole("button", { name: "Move" })
         .click();
       await expect(confirmationModal).toBeVisible();
-      await expect(confirmationModal).toContainText("Confirm");
       await expect(
         confirmationModal.getByLabel("I want to move 2 folders to folder-1-1"),
       ).toBeVisible();
@@ -312,7 +311,7 @@ test.describe("egress-netapp-transfer", () => {
         .click();
       const confirmationModal = await page.getByTestId("div-modal");
       await expect(confirmationModal).toBeVisible();
-      await expect(confirmationModal).toContainText("Confirm");
+      await expect(confirmationModal).toContainText("Items already exist");
       await expect(
         confirmationModal.getByLabel(
           "I want to copy 2 folders and 1 file to folder-1-1",
@@ -342,6 +341,7 @@ test.describe("egress-netapp-transfer", () => {
         .click();
       await expect(confirmationModal).toBeVisible();
       await expect(confirmationModal).toContainText("Confirm");
+      await expect(confirmationModal).not.toContainText("Items already exist");
       await expect(
         confirmationModal.getByLabel(
           "I want to copy 2 folders and 1 file to folder-2-1",
