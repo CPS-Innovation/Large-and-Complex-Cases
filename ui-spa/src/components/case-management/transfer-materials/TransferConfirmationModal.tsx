@@ -80,12 +80,18 @@ const TransferConfirmationModal: React.FC<TransferConfirmationModalProps> = ({
         <div className={styles.modalHeader}>Confirm</div>
         <div className={styles.modalContent}>
           {duplicateCount > 0 && (
-            <div className={styles.duplicateWarning}>
-              <p className="govuk-!-font-weight-bold">
+            <div
+              className={styles.duplicateWarning}
+              data-testid="duplicate-warning"
+            >
+              <p className={styles.duplicateWarningText}>
                 You have {duplicateCount} duplicate items.
               </p>
-              <Details summaryChildren="View Items">
-                <ul className={styles.duplicateList}>
+              <Details summaryChildren="View items">
+                <ul
+                  className={styles.duplicateList}
+                  data-testid="duplicate-folder-file-list"
+                >
                   {duplicateFoldersAndFiles.folders.map((folder) => (
                     <li key={folder} className={styles.duplicateListItem}>
                       <>

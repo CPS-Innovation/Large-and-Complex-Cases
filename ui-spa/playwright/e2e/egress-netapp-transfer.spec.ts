@@ -288,6 +288,72 @@ test.describe("egress-netapp-transfer", () => {
         ),
       ).toBeVisible();
     });
+    test("Shows the duplicate warning in the egress to netapp confirmation modal when there are duplicate file/folders with same name in the destination folder", async ({
+      page,
+    }) => {
+      const checkboxes = page
+        .getByTestId("egress-table-wrapper")
+        .locator('input[type="checkbox"]');
+      await checkboxes.nth(0).check();
+      await expect(
+        page.getByTestId("transfer-actions-dropdown-0"),
+      ).toBeVisible();
+      await expect(
+        page.getByTestId("transfer-actions-dropdown-1"),
+      ).toBeVisible();
+      await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
+      await page
+        .getByTestId("netapp-table-wrapper")
+        .getByRole("button", { name: "folder-1-1" })
+        .click();
+      await page
+        .getByTestId("netapp-inset-text")
+        .getByRole("button", { name: "Copy" })
+        .click();
+      const confirmationModal = await page.getByTestId("div-modal");
+      await expect(confirmationModal).toBeVisible();
+      await expect(confirmationModal).toContainText("Confirm");
+      await expect(
+        confirmationModal.getByLabel(
+          "I want to copy 2 folders and 1 file to folder-1-1",
+        ),
+      ).toBeVisible();
+      await expect(
+        confirmationModal.getByTestId("duplicate-warning"),
+      ).toBeVisible();
+      await expect(
+        confirmationModal.getByTestId("duplicate-folder-file-list"),
+      ).not.toBeVisible();
+      await expect(confirmationModal.locator("details>summary")).toHaveText(
+        "View items",
+      );
+      await confirmationModal.locator("details>summary").click();
+      await expect(
+        confirmationModal.getByTestId("duplicate-folder-file-list"),
+      ).toBeVisible();
+      await confirmationModal.getByRole("button", { name: "Cancel" }).click();
+      await page
+        .getByTestId("netapp-table-wrapper")
+        .getByRole("button", { name: "folder-2-1" })
+        .click();
+      await page
+        .getByTestId("netapp-inset-text")
+        .getByRole("button", { name: "Copy" })
+        .click();
+      await expect(confirmationModal).toBeVisible();
+      await expect(confirmationModal).toContainText("Confirm");
+      await expect(
+        confirmationModal.getByLabel(
+          "I want to copy 2 folders and 1 file to folder-2-1",
+        ),
+      ).toBeVisible();
+      await expect(
+        confirmationModal.getByTestId("duplicate-warning"),
+      ).not.toBeVisible();
+      await expect(
+        confirmationModal.locator("details>summary"),
+      ).not.toBeVisible();
+    });
     test("Should successfully complete egress to netapp transfer, copy operation", async ({
       page,
     }) => {
