@@ -30,11 +30,7 @@
         "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
         "Pragma": "no-cache",
         "Expires": "0",
-<<<<<<< HEAD
         "Content-Security-Policy": "default-src 'self'; script-src 'self' 'sha256-ncLtqGHxHarNkEqAJUbCwLGSrXqPwYudiumEQ4AK8S0=' 'sha256-BPoIjakJkuOIlmzi0q7XeU457LSyZoWa7V21MRUvZBs=' 'sha256-NAryVOgFXVZRlE77JQbWlWTRKukDLUc/p31fT/cijcs=' 'sha256-LdUbbfSdRaeNwMZeIrTTtE6y5jXenF2FSBpK46sNzw0='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'",
-=======
-        "Content-Security-Policy": "default-src 'self'; script-src 'self' 'sha256-ncLtqGHxHarNkEqAJUbCwLGSrXqPwYudiumEQ4AK8S0=' 'sha256-BPoIjakJkuOIlmzi0q7XeU457LSyZoWa7V21MRUvZBs=' 'sha256-NAryVOgFXVZRlE77JQbWlWTRKukDLUc/p31fT/cijcs='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'",
->>>>>>> main
         "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
       }
     }
