@@ -52,17 +52,20 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 ? payload.SourcePath.Path
                 : payload.SourcePath.ModifiedPath;
 
-            var existingFilepath = GetDestinationPath(payload);
-
-            var fileExists = await destinationClient.FileExistsAsync(
-                existingFilepath,
-                payload.WorkspaceId,
-                payload.BearerToken,
-                payload.BucketName);
-
-            if (fileExists)
+            if (payload.TransferDirection == TransferDirection.EgressToNetApp)
             {
-                throw new FileExistsException($"File already exists at destination path: {payload.DestinationPath + payload.SourcePath.Path}");
+                var existingFilepath = GetDestinationPath(payload);
+
+                var fileExists = await destinationClient.FileExistsAsync(
+                    existingFilepath,
+                    payload.WorkspaceId,
+                    payload.BearerToken,
+                    payload.BucketName);
+
+                if (fileExists)
+                {
+                    throw new FileExistsException($"File already exists at destination path: {existingFilepath}");
+                }
             }
 
             var (sourceStream, totalSize) = await sourceClient.OpenReadStreamAsync(

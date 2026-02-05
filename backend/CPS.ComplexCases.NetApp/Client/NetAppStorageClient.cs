@@ -229,4 +229,9 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
 
         return _netAppClient.DoesObjectExistAsync(arg);
     }
+
+    public Task<List<FileTransferInfo>> GetAllFilesFromFolderAsync(string folderPath, string? workspaceId = null)
+    {
+        throw new NotImplementedException();
+    }
 }
