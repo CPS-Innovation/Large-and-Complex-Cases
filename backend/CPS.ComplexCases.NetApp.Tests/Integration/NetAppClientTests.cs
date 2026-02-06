@@ -27,7 +27,9 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
         private readonly IAmazonS3UtilsWrapper _amazonS3UtilsWrapper;
         private readonly IS3ClientFactory _s3ClientFactory;
         private readonly Mock<IS3CredentialService> _mockCredentialService;
-        private readonly Mock<IS3TelemetryHandler> _mockTelemetryHandler = new();
+        private readonly Mock<IS3TelemetryHandler> _mockTelemetryHandler;
+        private readonly INetAppS3HttpClient _netAppS3HttpClient;
+        private readonly NetAppS3HttpArgFactory _netAppS3HttpArgFactory;
         private const string BearerToken = "fakeBearerToken";
         private const string TestOid = "test-oid-12345";
         private const string TestUserName = "testuser@example.com";
@@ -52,7 +54,6 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             _amazonS3UtilsWrapper = new AmazonS3UtilsWrapper();
             _netAppArgFactory = new NetAppArgFactory();
             _netAppRequestFactory = new NetAppRequestFactory();
-            var netAppHttpClientLogger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<NetAppHttpClient>();
             var s3ClientFactoryLogger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<S3ClientFactory>();
 
             // Setup mock credential service
@@ -102,9 +103,21 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             );
             _s3ClientFactory.SetS3ClientAsync(_s3Client);
 
+            _netAppS3HttpClient = new NetAppS3HttpClient(
+                new HttpClient { BaseAddress = new Uri(_server.Urls[0]) },
+                _mockCredentialService.Object,
+                Options.Create(new NetAppOptions
+                {
+                    Url = _server.Urls[0],
+                    RegionName = "eu-west-1"
+                })
+            );
+
+            _netAppS3HttpArgFactory = new NetAppS3HttpArgFactory();
+
             var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<NetAppClient>();
 
-            _client = new NetAppClient(logger, _amazonS3UtilsWrapper, _netAppRequestFactory, _s3ClientFactory);
+            _client = new NetAppClient(logger, _amazonS3UtilsWrapper, _netAppRequestFactory, _s3ClientFactory, _netAppS3HttpClient, _netAppS3HttpArgFactory);
         }
 
         [Fact]

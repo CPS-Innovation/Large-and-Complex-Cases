@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using AutoFixture;
 using AutoFixture.AutoMoq;
 using CPS.ComplexCases.NetApp.Client;
@@ -137,10 +139,10 @@ public class S3CredentialServiceTests
 
         var netAppResponse = new NetAppUserResponse
         {
-            Records = new List<NetAppUserRecord>
-            {
+            Records =
+            [
                 new NetAppUserRecord { AccessKey = _accessKey, SecretKey = _secretKey, Name = _userName }
-            }
+            ]
         };
 
         _keyVaultServiceMock.Setup(x => x.CheckCredentialStatusAsync(_oid))
@@ -208,10 +210,10 @@ public class S3CredentialServiceTests
 
         var netAppResponse = new NetAppUserResponse
         {
-            Records = new List<NetAppUserRecord>
-            {
+            Records =
+            [
                 new NetAppUserRecord { AccessKey = newAccessKey, SecretKey = newSecretKey, Name = _userName }
-            }
+            ]
         };
 
         // Setup CheckCredentialStatusAsync to be called twice due to double-check in lock
@@ -279,10 +281,10 @@ public class S3CredentialServiceTests
 
         var netAppResponse = new NetAppUserResponse
         {
-            Records = new List<NetAppUserRecord>
-            {
+            Records =
+            [
                 new NetAppUserRecord { AccessKey = _accessKey, SecretKey = _secretKey, Name = _userName}
-            }
+            ]
         };
 
         // Setup CheckCredentialStatusAsync to be called twice due to double-check in lock
@@ -331,10 +333,10 @@ public class S3CredentialServiceTests
 
         var netAppResponse = new NetAppUserResponse
         {
-            Records = new List<NetAppUserRecord>
-            {
+            Records =
+            [
                 new NetAppUserRecord { AccessKey = _accessKey, SecretKey = _secretKey, Name = _userName}
-            }
+            ]
         };
 
         _keyVaultServiceMock.Setup(x => x.CheckCredentialStatusAsync(_oid))
@@ -416,10 +418,10 @@ public class S3CredentialServiceTests
 
         var netAppResponse = new NetAppUserResponse
         {
-            Records = new List<NetAppUserRecord>
-            {
+            Records =
+            [
                 new NetAppUserRecord { AccessKey = _accessKey, SecretKey = _secretKey, Name = _userName}
-            }
+            ]
         };
 
         _keyVaultServiceMock.Setup(x => x.CheckCredentialStatusAsync(_oid))
@@ -504,7 +506,7 @@ public class S3CredentialServiceTests
 
         var netAppResponse = new NetAppUserResponse
         {
-            Records = new List<NetAppUserRecord>()
+            Records = []
         };
 
         _keyVaultServiceMock.Setup(x => x.CheckCredentialStatusAsync(_oid))
@@ -548,10 +550,10 @@ public class S3CredentialServiceTests
 
         var netAppResponse = new NetAppUserResponse
         {
-            Records = new List<NetAppUserRecord>
-            {
+            Records =
+            [
                 new NetAppUserRecord { AccessKey = _accessKey, SecretKey = _secretKey, Name = _userName }
-            }
+            ]
         };
 
         var encryptedCreds = new S3CredentialsEncrypted
@@ -624,5 +626,106 @@ public class S3CredentialServiceTests
         // Verify regeneration happened only once despite concurrent requests
         _netAppHttpClientMock.Verify(x => x.RegenerateUserKeysAsync(It.IsAny<RegenerateUserKeysArg>()), Times.Once);
         _keyVaultServiceMock.Verify(x => x.StoreCredentialsAsync(_oid, It.IsAny<S3CredentialsEncrypted>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetCredentialKeysAsync_ShouldThrow_WhenPreferredUsernameMissing()
+    {
+        // Arrange
+        var token = CreateBearerToken(preferredUsername: null, oid: "oid-123");
+
+        // Act
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _sut.GetCredentialKeysAsync(token));
+
+        // Assert
+        Assert.Equal("preferred_username claim is missing in the bearer token.", ex.Message);
+    }
+
+    [Fact]
+    public async Task GetCredentialKeysAsync_ShouldThrow_WhenOidMissing()
+    {
+        // Arrange
+        var token = CreateBearerToken(preferredUsername: "user@cps.gov.uk", oid: null);
+
+        // Act
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _sut.GetCredentialKeysAsync(token));
+
+        // Assert
+        Assert.Equal("oid claim is missing in the bearer token.", ex.Message);
+    }
+
+    [Fact]
+    public async Task GetCredentialKeysAsync_ShouldReturnKeys_WhenValidTokenAndStoredCredentials()
+    {
+        // Arrange
+        var token = CreateBearerToken(preferredUsername: "User@cps.gov.uk", oid: "oid-123");
+
+        var validStatus = new CredentialStatus
+        {
+            Exists = true,
+            IsValid = true,
+            RemainingMinutes = 30
+        };
+
+        var encryptedCreds = new S3CredentialsEncrypted
+        {
+            EncryptedAccessKey = "enc-access",
+            EncryptedSecretKey = "enc-secret",
+            Metadata = new S3CredentialsMetadata
+            {
+                UserPrincipalName = "user@cps.gov.uk",
+                Salt = "salt-base64",
+                CreatedAt = DateTime.UtcNow.AddMinutes(-5),
+                LastRotated = null,
+                PepperVersion = "v1"
+            }
+        };
+
+        _keyVaultServiceMock
+            .Setup(k => k.CheckCredentialStatusAsync("oid-123"))
+            .ReturnsAsync(validStatus);
+
+        _keyVaultServiceMock
+            .Setup(k => k.GetCredentialsAsync("oid-123"))
+            .ReturnsAsync(encryptedCreds);
+
+        _keyVaultServiceMock
+            .Setup(k => k.GetPepperAsync("v1"))
+            .ReturnsAsync("pepper-value");
+
+        _cryptographyServiceMock
+            .Setup(c => c.DecryptAsync("enc-access", "oid-123", "salt-base64", "pepper-value"))
+            .ReturnsAsync("access-key");
+
+        _cryptographyServiceMock
+            .Setup(c => c.DecryptAsync("enc-secret", "oid-123", "salt-base64", "pepper-value"))
+            .ReturnsAsync("secret-key");
+
+        // Act
+        var (accessKey, secretKey) = await _sut.GetCredentialKeysAsync(token);
+
+        // Assert
+        Assert.Equal("access-key", accessKey);
+        Assert.Equal("secret-key", secretKey);
+    }
+
+    private static string CreateBearerToken(string? preferredUsername, string? oid)
+    {
+        var claims = new List<Claim>();
+
+        if (!string.IsNullOrWhiteSpace(preferredUsername))
+        {
+            claims.Add(new Claim("preferred_username", preferredUsername));
+        }
+
+        if (!string.IsNullOrWhiteSpace(oid))
+        {
+            claims.Add(new Claim("oid", oid));
+        }
+
+        var token = new JwtSecurityToken(claims: claims);
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }

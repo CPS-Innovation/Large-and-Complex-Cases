@@ -14,12 +14,16 @@ public class NetAppClient(
     ILogger<NetAppClient> logger,
     IAmazonS3UtilsWrapper amazonS3UtilsWrapper,
     INetAppRequestFactory netAppRequestFactory,
-    IS3ClientFactory s3ClientFactory) : INetAppClient
+    IS3ClientFactory s3ClientFactory,
+    INetAppS3HttpClient netAppS3HttpClient,
+    INetAppS3HttpArgFactory netAppS3HttpArgFactory) : INetAppClient
 {
     private readonly ILogger<NetAppClient> _logger = logger;
     private readonly IAmazonS3UtilsWrapper _amazonS3UtilsWrapper = amazonS3UtilsWrapper;
     private readonly INetAppRequestFactory _netAppRequestFactory = netAppRequestFactory;
     private readonly IS3ClientFactory _s3ClientFactory = s3ClientFactory;
+    private readonly INetAppS3HttpClient _netAppS3HttpClient = netAppS3HttpClient;
+    private readonly INetAppS3HttpArgFactory _netAppS3HttpArgFactory = netAppS3HttpArgFactory;
 
     public async Task<bool> CreateBucketAsync(CreateBucketArg arg)
     {
@@ -305,17 +309,13 @@ public class NetAppClient(
 
     public async Task<bool> DoesObjectExistAsync(GetObjectArg arg)
     {
-        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
         try
         {
-            using var response = await s3Client.GetObjectAsync(_netAppRequestFactory.GetObjectRequest(arg));
-            return response.HttpStatusCode == System.Net.HttpStatusCode.OK;
+            var headObjectArg = _netAppS3HttpArgFactory.CreateGetHeadObjectArg(arg.BearerToken, arg.BucketName, arg.ObjectKey);
+            var response = await _netAppS3HttpClient.GetHeadObjectAsync(headObjectArg);
+            return response.StatusCode == System.Net.HttpStatusCode.OK;
         }
-        catch (AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-        {
-            return false;
-        }
-        catch (AmazonS3Exception ex)
+        catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to check if object {ObjectKey} exists in bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
             return false;
@@ -330,7 +330,7 @@ public class NetAppClient(
             if (Path.HasExtension(arg.Path))
             {
                 var request = _netAppRequestFactory.DeleteObjectRequest(arg);
-                var response = await s3Client.DeleteObjectAsync(request);
+                await s3Client.DeleteObjectAsync(request);
                 return $"Successfully deleted file {arg.Path} from bucket {arg.BucketName}.";
             }
             else

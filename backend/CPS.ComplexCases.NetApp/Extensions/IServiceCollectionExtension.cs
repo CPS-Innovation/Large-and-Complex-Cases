@@ -67,6 +67,23 @@ public static class IServiceCollectionExtension
 		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
 		.AddPolicyHandler(GetRetryPolicy());
 
+		services.AddHttpClient<INetAppS3HttpClient, NetAppS3HttpClient>(client =>
+		{
+			var netAppServiceUrl = configuration["NetAppOptions:Url"];
+			if (string.IsNullOrEmpty(netAppServiceUrl))
+			{
+				throw new ArgumentNullException(nameof(netAppServiceUrl), "NetAppOptions:ClusterUrl configuration is missing or empty.");
+			}
+			client.BaseAddress = new Uri(netAppServiceUrl);
+
+		})
+		.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+		{
+			ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; }
+		})
+		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
+		.AddPolicyHandler(GetRetryPolicy());
+
 		services.AddTransient<NetAppStorageClient>();
 	}
 

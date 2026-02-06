@@ -9,11 +9,18 @@ using CPS.ComplexCases.NetApp.Streams;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
-public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory netAppArgFactory, ICaseMetadataService caseMetadataService) : IStorageClient
+public class NetAppStorageClient(
+    INetAppClient netAppClient,
+    INetAppArgFactory netAppArgFactory,
+    ICaseMetadataService caseMetadataService,
+    INetAppS3HttpClient netAppS3HttpClient,
+    INetAppS3HttpArgFactory netAppS3HttpArgFactory) : IStorageClient
 {
     private readonly INetAppClient _netAppClient = netAppClient;
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
     private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
+    private readonly INetAppS3HttpClient _netAppS3HttpClient = netAppS3HttpClient;
+    private readonly INetAppS3HttpArgFactory _netAppS3HttpArgFactory = netAppS3HttpArgFactory;
 
     public async Task<bool> CompleteUploadAsync(UploadSession session, string? md5hash = null, Dictionary<int, string>? etags = null, string? bearerToken = null, string? bucketName = null, string? filePath = null)
     {
@@ -206,15 +213,14 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
 
     public async Task<bool> VerifyUpload(string bearerToken, string bucketName, string objectName, string eTag)
     {
-        var arg = _netAppArgFactory.CreateGetObjectArg(
+        var arg = _netAppS3HttpArgFactory.CreateGetHeadObjectArg(
             bearerToken ?? throw new ArgumentNullException(nameof(bearerToken), "Bearer token cannot be null."),
             bucketName ?? throw new ArgumentNullException(nameof(bucketName), "Bucket name cannot be null."),
-            objectName ?? throw new ArgumentNullException(nameof(objectName), "Object name cannot be null."),
-            eTag ?? throw new ArgumentNullException(nameof(eTag), "ETag cannot be null."));
+            objectName ?? throw new ArgumentNullException(nameof(objectName), "Object name cannot be null."));
 
-        using var response = await _netAppClient.GetObjectAsync(arg);
+        var response = await _netAppS3HttpClient.GetHeadObjectAsync(arg);
 
-        if (response == null)
+        if (response == null || response.StatusCode != System.Net.HttpStatusCode.OK)
             return false;
 
         return response.ETag == eTag;

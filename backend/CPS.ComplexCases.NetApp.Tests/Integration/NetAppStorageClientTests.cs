@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
@@ -10,7 +8,6 @@ using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
-using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.WireMock.Mappings;
 using CPS.ComplexCases.WireMock.Core;
@@ -30,6 +27,8 @@ public class NetAppStorageClientTests : IDisposable
     private readonly Mock<INetAppRequestFactory> _netAppRequestFactoryMock;
     private readonly Mock<ICaseMetadataService> _caseMetadataServiceMock;
     private readonly Mock<IS3ClientFactory> _s3ClientFactoryMock;
+    private readonly Mock<INetAppS3HttpClient> _netAppS3HttpClientMock;
+    private readonly Mock<INetAppS3HttpArgFactory> _netAppS3HttpArgFactoryMock;
 
     private const string BucketName = "test-bucket";
     private const string ObjectKey = "test-document.pdf";
@@ -48,12 +47,6 @@ public class NetAppStorageClientTests : IDisposable
             new UploadMapping()
         );
 
-        var _netAppOptions = Options.Create(new NetAppOptions
-        {
-            Url = _server.Urls[0].Replace("http://", "https://"),
-            RegionName = "eu-west-2"
-        });
-
         var credentials = new BasicAWSCredentials("fakeAccessKey", "fakeSecretKey");
 
         var httpHandler = new HttpClientHandler
@@ -70,20 +63,19 @@ public class NetAppStorageClientTests : IDisposable
             HttpClientFactory = new HttpClientFactoryWrapper(httpHandler)
         };
 
-
         _netAppArgFactoryMock = new Mock<INetAppArgFactory>();
         _netAppRequestFactoryMock = new Mock<INetAppRequestFactory>();
         _caseMetadataServiceMock = new Mock<ICaseMetadataService>();
         _s3ClientFactoryMock = new Mock<IS3ClientFactory>();
+        _netAppS3HttpClientMock = new Mock<INetAppS3HttpClient>();
+        _netAppS3HttpArgFactoryMock = new Mock<INetAppS3HttpArgFactory>();
 
         _s3ClientFactoryMock
             .Setup(f => f.GetS3ClientAsync(BearerToken))
             .ReturnsAsync(new AmazonS3Client(credentials, s3ClientConfig));
 
-        var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<NetAppClient>();
-
         _netAppClient = new Mock<INetAppClient>();
-        _client = new NetAppStorageClient(_netAppClient.Object, _netAppArgFactoryMock.Object, _caseMetadataServiceMock.Object);
+        _client = new NetAppStorageClient(_netAppClient.Object, _netAppArgFactoryMock.Object, _caseMetadataServiceMock.Object, _netAppS3HttpClientMock.Object, _netAppS3HttpArgFactoryMock.Object);
     }
 
     [Fact]

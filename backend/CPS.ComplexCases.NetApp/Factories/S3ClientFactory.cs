@@ -1,4 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
@@ -39,7 +38,7 @@ public class S3ClientFactory(IOptions<NetAppOptions> options, IS3CredentialServi
 
     private async Task<IAmazonS3> CreateS3Client(string bearerToken)
     {
-        var (accessKey, secretKey) = await GetCredentialKeysAsync(bearerToken);
+        var (accessKey, secretKey) = await _s3CredentialsService.GetCredentialKeysAsync(bearerToken);
         var credentials = new BasicAWSCredentials(accessKey, secretKey);
 
         var s3Config = new AmazonS3Config
@@ -124,7 +123,7 @@ public class S3ClientFactory(IOptions<NetAppOptions> options, IS3CredentialServi
             }
             catch (Exception ex)
             {
-                _logger.LogError("Failed to load Root CA certificate from KV. Error: {Ex}.", ex);
+                _logger.LogError(ex, "Failed to load Root CA certificate from KV. Error: {Message}.", ex.Message);
             }
         }
 
@@ -140,7 +139,7 @@ public class S3ClientFactory(IOptions<NetAppOptions> options, IS3CredentialServi
             }
             catch (Exception ex)
             {
-                _logger.LogError("Failed to load Issuing CA certificate from KV. Error: {Ex}.", ex);
+                _logger.LogError(ex, "Failed to load Issuing CA certificate from KV. Error: {Message}.", ex.Message);
             }
         }
 
@@ -156,7 +155,7 @@ public class S3ClientFactory(IOptions<NetAppOptions> options, IS3CredentialServi
             }
             catch (Exception ex)
             {
-                _logger.LogError("Failed to load Issuing CA certificate 2 from KV. Error: {Ex}.", ex);
+                _logger.LogError(ex, "Failed to load Issuing CA certificate 2 from KV. Error: {Message}.", ex.Message);
             }
         }
 
@@ -243,29 +242,6 @@ public class S3ClientFactory(IOptions<NetAppOptions> options, IS3CredentialServi
         _logger.LogError("Chain root thumbprint {ChainRootThumbprint} did not match any trusted CA thumbprints.",
             chainRoot.Thumbprint);
         return false;
-    }
-
-    private async Task<(string? accessKey, string? secretKey)> GetCredentialKeysAsync(string bearerToken)
-    {
-        var handler = new JwtSecurityTokenHandler();
-        var jwt = handler.ReadJwtToken(bearerToken);
-
-        var username = jwt.Claims.FirstOrDefault(c => c.Type == "preferred_username")?.Value.ToLowerInvariant();
-        var oid = jwt.Claims.FirstOrDefault(c => c.Type == "oid")?.Value;
-
-        if (string.IsNullOrEmpty(username))
-        {
-            throw new ArgumentNullException(nameof(username), "preferred_username claim is missing in the bearer token.");
-        }
-
-        if (string.IsNullOrEmpty(oid))
-        {
-            throw new ArgumentNullException(nameof(oid), "oid claim is missing in the bearer token.");
-        }
-
-        var credentials = await _s3CredentialsService.GetCredentialsAsync(oid, username, bearerToken);
-
-        return (credentials.AccessKey, credentials.SecretKey);
     }
 }
 
