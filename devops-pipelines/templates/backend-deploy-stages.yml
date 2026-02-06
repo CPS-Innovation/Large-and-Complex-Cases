@@ -48,6 +48,7 @@ stages:
       instructions: 'Please verify the deployment to the lower environment worked as expected before approving deployment to ${{parameters.environment}}.'
       notifyUsers: ${{ parameters.notifyUsers }}
       approvers: ${{ parameters.approvers }}
+      agentPool: ${{ parameters.agentPool }}
 
 - stage:  Update_Key_Vault_${{ parameters.environment }}
   displayName: '${{ parameters.environment }} - Update Key Vault'
