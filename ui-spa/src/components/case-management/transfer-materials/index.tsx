@@ -27,6 +27,7 @@ import { useUserDetails } from "../../../auth";
 import { ApiError } from "../../../common/errors/ApiError";
 import { pollTransferStatus } from "../../../common/utils/pollTransferStatus";
 import { getCommonPath } from "../../../common/utils/getCommonPath";
+import { getDuplicateFoldersAndFiles } from "../../../common/utils/getDuplicateFoldersAndFiles";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
@@ -71,6 +72,13 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     useState<TransferAction | null>(null);
   const [showTransferConfirmationModal, setShowTransferConfirmationModal] =
     useState<boolean>(false);
+  const [
+    transferDuplicateFoldersAndFiles,
+    setTransferDuplicateFoldersAndFiles,
+  ] = useState<{ folders: string[]; files: string[] }>({
+    folders: [],
+    files: [],
+  });
 
   const [transferStatus, setTransferStatus] = useState<
     | "validating"
@@ -86,7 +94,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   const currentEgressFolder = useMemo(() => {
     if (egressPathFolders.length)
       return egressPathFolders[egressPathFolders.length - 1];
-    return { folderId: "" };
+    return { folderId: "", folderPath: "", folderName: "" };
   }, [egressPathFolders]);
 
   const {
@@ -232,6 +240,17 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   };
 
   const handleSelectedActionType = (transferAction: TransferAction) => {
+    const duplicateFoldersAndFiles = getDuplicateFoldersAndFiles(
+      transferSource,
+      transferAction,
+      egressFolderData,
+      netAppFolderData,
+      selectedSourceFoldersOrFiles,
+      currentEgressFolder.folderPath,
+      netAppFolderPath,
+    );
+
+    setTransferDuplicateFoldersAndFiles(duplicateFoldersAndFiles);
     setShowTransferConfirmationModal(true);
     setSelectedTransferAction(transferAction);
   };
@@ -772,6 +791,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
                   netAppFolderData,
                 )
           }
+          duplicateFoldersAndFiles={transferDuplicateFoldersAndFiles}
           handleCloseModal={handleCloseTransferConfirmationModal}
           handleContinue={handleTransferConfirmationContinue}
         />

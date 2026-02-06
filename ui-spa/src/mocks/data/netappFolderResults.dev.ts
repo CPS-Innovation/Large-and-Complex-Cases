@@ -20,9 +20,23 @@ export const netAppRootFolderResultsDev: NetAppFolderResponse = {
       {
         path: "netapp/folder-1-1/",
       },
-
       {
         path: "netapp/folder-1-2/",
+      },
+      {
+        path: "netapp/folder-1-3/",
+      },
+      {
+        path: "netapp/folder-1-4/",
+      },
+      {
+        path: "netapp/folder-1-5/",
+      },
+      {
+        path: "netapp/folder-1-6/",
+      },
+      {
+        path: "netapp/folder-1-7/",
       },
     ],
   },
