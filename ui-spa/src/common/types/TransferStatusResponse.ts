@@ -14,5 +14,5 @@ export type TransferStatusResponse = {
 
 export type TransferFailedItem = {
   sourcePath: string;
-  errorCode: "FileExists" | "GeneralError";
+  errorCode: "FileExists" | "GeneralError" | "IntegrityVerificationFailed";
 };
