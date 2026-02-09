@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
@@ -53,7 +54,7 @@ public class S3ClientFactory(
         return _s3Client;
     }
 
-    private string ExtractOidFromToken(string bearerToken)
+    private static string ExtractOidFromToken(string bearerToken)
     {
         var handler = new JwtSecurityTokenHandler();
         var jwt = handler.ReadJwtToken(bearerToken);
