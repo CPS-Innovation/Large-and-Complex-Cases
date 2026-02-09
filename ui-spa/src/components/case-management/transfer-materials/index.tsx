@@ -591,6 +591,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           state: {
             isRouteValid: true,
             transferId: transferId,
+            failedItems: response.failedItems,
           },
         });
         if (response.userName === username)
