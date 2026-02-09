@@ -225,4 +225,19 @@ public class NetAppStorageClient(
 
         return response.ETag == eTag;
     }
+
+    public Task<bool> FileExistsAsync(string path, string? workspaceId = null, string? bearerToken = null, string? bucketName = null)
+    {
+        var arg = _netAppArgFactory.CreateGetObjectArg(
+            bearerToken ?? throw new ArgumentNullException(nameof(bearerToken), "Bearer token cannot be null."),
+            bucketName ?? throw new ArgumentNullException(nameof(bucketName), "Bucket name cannot be null."),
+            path ?? throw new ArgumentNullException(nameof(path), "Path cannot be null."));
+
+        return _netAppClient.DoesObjectExistAsync(arg);
+    }
+
+    public Task<List<FileTransferInfo>> GetAllFilesFromFolderAsync(string folderPath, string? workspaceId = null)
+    {
+        throw new NotImplementedException();
+    }
 }

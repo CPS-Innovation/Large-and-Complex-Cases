@@ -1,5 +1,6 @@
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
+using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
@@ -83,6 +84,43 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                     CorrelationId = input.CorrelationId
                 });
 
+            // Pre-flight: Single Egress listing (NetApp→Egress direction only)
+            var cleanFiles = new List<TransferSourcePath>();
+            if (input.TransferDirection == TransferDirection.NetAppToEgress)
+            {
+                var destinationFiles = await context.CallActivityAsync<HashSet<string>>(
+                    nameof(ListDestinationFilePaths),
+                    new ListDestinationPayload(input.WorkspaceId, input.DestinationPath));
+
+                // Partition files: duplicates vs clean
+                foreach (var sourcePath in input.SourcePaths)
+                {
+                    var destPath = GetEgressDestinationPath(input.DestinationPath, sourcePath.RelativePath, input.SourceRootFolderPath);
+                    if (destinationFiles.Contains(destPath))
+                    {
+                        await context.Entities.CallEntityAsync(
+                            entityId,
+                            nameof(TransferEntityState.AddFailedItem),
+                            new TransferFailedItem
+                            {
+                                SourcePath = sourcePath.Path,
+                                ErrorCode = TransferErrorCode.FileExists,
+                                ErrorMessage = $"File already exists at destination: {destPath}"
+                            });
+
+                        LogFileConflictTelemetry(input.CaseId, sourcePath.Path, destPath, input.TransferDirection, input.TransferId);
+                    }
+                    else
+                    {
+                        cleanFiles.Add(sourcePath);
+                    }
+                }
+            }
+            else
+            {
+                cleanFiles = input.SourcePaths;
+            }
+
             // 2. Fan-out: TransferFileActivity for each item, throttled in batches
             await context.CallActivityAsync(
                 nameof(UpdateTransferStatus),
@@ -95,7 +133,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
             int batchSize = _sizeConfig.BatchSize;
             var batch = new List<Task<TransferResult>>();
 
-            foreach (var sourcePath in input.SourcePaths)
+            foreach (var sourcePath in cleanFiles)
             {
                 var transferFilePayload = new TransferFilePayload
                 {
@@ -150,7 +188,15 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                     });
             }
 
-            // 4. Update activity log
+            // 4. Finalize transfer
+            await context.CallActivityAsync(
+                nameof(FinalizeTransfer),
+                new FinalizeTransferPayload
+                {
+                    TransferId = input.TransferId,
+                });
+
+            // 5. Update activity log
             await context.CallActivityAsync(
                 nameof(UpdateActivityLog),
                 new UpdateActivityLogPayload
@@ -159,14 +205,6 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                     TransferId = input.TransferId.ToString(),
                     UserName = input.UserName,
                     CorrelationId = input.CorrelationId
-                });
-
-            // 5. Finalize
-            await context.CallActivityAsync(
-                nameof(FinalizeTransfer),
-                new FinalizeTransferPayload
-                {
-                    TransferId = input.TransferId,
                 });
 
             transferOrchestrationEvent.IsSuccessful = transferOrchestrationEvent.TotalFilesFailed == 0;
@@ -242,5 +280,33 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                 telemetryEvent.TotalFilesFailed++;
             }
         }
+    }
+
+    private static string GetEgressDestinationPath(string destinationPath, string? sourcePath, string? sourceRootFolderPath)
+    {
+        int? index = sourcePath?.IndexOf(sourceRootFolderPath ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        if (index.HasValue && index.Value == 0 && !string.IsNullOrEmpty(sourceRootFolderPath))
+        {
+            return destinationPath + sourcePath?.Substring(sourceRootFolderPath.Length).TrimStart('/', '\\');
+        }
+        else
+        {
+            return destinationPath + sourcePath;
+        }
+    }
+
+    private void LogFileConflictTelemetry(int caseId, string sourcePath, string destinationPath, TransferDirection transferDirection, Guid transferId)
+    {
+        var conflictEvent = new DuplicateFileConflictEvent
+        {
+            CaseId = caseId,
+            SourceFilePath = sourcePath,
+            DestinationFilePath = destinationPath,
+            ConflictingFileName = Path.GetFileName(sourcePath),
+            TransferDirection = transferDirection.ToString(),
+            TransferId = transferId.ToString()
+        };
+
+        _telemetryClient.TrackEvent(conflictEvent);
     }
 }

@@ -290,4 +290,67 @@ public class UpdateActivityLogTests
                 !doc.RootElement.ToString().Contains("Should be ignored"))
         ), Times.Once);
     }
+
+    [Fact]
+    public async Task Run_TransferCompleted_IncludesEndTime_WhenCompletedAtIsSet()
+    {
+        // Arrange
+        var transferId = Guid.NewGuid();
+        var userName = _fixture.Create<string>();
+        var caseId = _fixture.Create<int>();
+        var startedAt = DateTime.UtcNow.AddMinutes(-5);
+        var completedAt = DateTime.UtcNow;
+
+        var entityState = new TransferEntity
+        {
+            Id = transferId,
+            CaseId = caseId,
+            Direction = TransferDirection.EgressToNetApp,
+            TransferType = TransferType.Copy,
+            TotalFiles = 1,
+            BearerToken = _bearerToken,
+            SourcePaths = [new TransferSourcePath { FullFilePath = @"C:\source\file.txt", Path = "/source" }],
+            DestinationPath = "/dest/path",
+            StartedAt = startedAt,
+            CompletedAt = completedAt,
+            SuccessfulItems =
+            [
+                new TransferItem
+                {
+                    SourcePath = "/source/file.txt",
+                    Size = 1024,
+                    IsRenamed = false,
+                    Status = TransferItemStatus.Completed
+                }
+            ]
+        };
+
+        _durableEntityClientStub.OnGetEntityAsync = (_, _) =>
+            Task.FromResult<EntityMetadata<TransferEntity>?>(new EntityMetadata<TransferEntity>(
+                new EntityInstanceId("TransferEntity", transferId.ToString()),
+                entityState
+            ));
+
+        var payload = new UpdateActivityLogPayload
+        {
+            TransferId = transferId.ToString(),
+            ActionType = ActionType.TransferCompleted,
+            UserName = userName
+        };
+
+        // Act
+        await _activity.Run(payload, _durableTaskClientStub);
+
+        // Assert
+        _activityLogServiceMock.Verify(service => service.CreateActivityLogAsync(
+            payload.ActionType,
+            ResourceType.FileTransfer,
+            caseId,
+            entityState.Id.ToString(),
+            entityState.Direction.ToString(),
+            userName,
+            It.Is<System.Text.Json.JsonDocument>(doc =>
+                doc.RootElement.GetProperty("endTime").ValueKind != System.Text.Json.JsonValueKind.Null)),
+            Times.Once);
+    }
 }

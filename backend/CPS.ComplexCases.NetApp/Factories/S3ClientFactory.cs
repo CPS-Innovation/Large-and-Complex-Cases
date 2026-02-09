@@ -12,23 +12,59 @@ using CPS.ComplexCases.NetApp.Telemetry;
 
 namespace CPS.ComplexCases.NetApp.Factories;
 
-public class S3ClientFactory(IOptions<NetAppOptions> options, IS3CredentialService s3CredentialService, ILogger<S3ClientFactory> logger, IS3TelemetryHandler telemetryHandler) : IS3ClientFactory
+public class S3ClientFactory(
+    IOptions<NetAppOptions> options,
+    IS3CredentialService s3CredentialService,
+    IKeyVaultService keyVaultService,
+    ILogger<S3ClientFactory> logger,
+    IS3TelemetryHandler telemetryHandler) : IS3ClientFactory
 {
     private readonly ILogger<S3ClientFactory> _logger = logger;
     private readonly IS3TelemetryHandler _telemetryHandler = telemetryHandler;
     private readonly NetAppOptions _options = options.Value;
     private readonly IS3CredentialService _s3CredentialsService = s3CredentialService;
+    private readonly IKeyVaultService _keyVaultService = keyVaultService;
     private IAmazonS3? _s3Client;
+    private string? _currentOid;
     private X509Certificate2Collection? _trustedCaCertificates;
 
     public async Task<IAmazonS3> GetS3ClientAsync(string bearerToken)
     {
-        if (_s3Client == null)
+        var oid = ExtractOidFromToken(bearerToken);
+
+        if (_s3Client != null && _currentOid == oid)
         {
-            _s3Client = await CreateS3Client(bearerToken);
+            // Check if credentials are still valid before returning cached client
+            var status = await _keyVaultService.CheckCredentialStatusAsync(oid);
+
+            if (!status.NeedsRegeneration)
+            {
+                return _s3Client;
+            }
+
+            _logger.LogInformation(
+                "Credentials expiring soon for user {Oid} ({RemainingMinutes:F1} minutes remaining) - recreating S3 client",
+                oid,
+                status.RemainingMinutes);
         }
 
+        _currentOid = oid;
+        _s3Client = await CreateS3Client(bearerToken);
         return _s3Client;
+    }
+
+    private string ExtractOidFromToken(string bearerToken)
+    {
+        var handler = new JwtSecurityTokenHandler();
+        var jwt = handler.ReadJwtToken(bearerToken);
+        var oid = jwt.Claims.FirstOrDefault(c => c.Type == "oid")?.Value;
+
+        if (string.IsNullOrEmpty(oid))
+        {
+            throw new ArgumentException("oid claim is missing in the bearer token.", nameof(bearerToken));
+        }
+
+        return oid;
     }
 
     public void SetS3ClientAsync(IAmazonS3 s3Client)

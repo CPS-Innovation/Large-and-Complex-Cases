@@ -1,6 +1,9 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Amazon.Runtime;
 using Amazon.S3;
 using CPS.ComplexCases.NetApp.Client;
@@ -27,12 +30,34 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
         private readonly IAmazonS3UtilsWrapper _amazonS3UtilsWrapper;
         private readonly IS3ClientFactory _s3ClientFactory;
         private readonly Mock<IS3CredentialService> _mockCredentialService;
+        private readonly Mock<IKeyVaultService> _mockKeyVaultService;
         private readonly Mock<IS3TelemetryHandler> _mockTelemetryHandler;
         private readonly INetAppS3HttpClient _netAppS3HttpClient;
-        private readonly NetAppS3HttpArgFactory _netAppS3HttpArgFactory;
-        private const string BearerToken = "fakeBearerToken";
+        private readonly INetAppS3HttpArgFactory _netAppS3HttpArgFactory;
         private const string TestOid = "test-oid-12345";
         private const string TestUserName = "testuser@example.com";
+        private static readonly string BearerToken = GenerateTestJwtToken(TestOid, TestUserName);
+
+        private static string GenerateTestJwtToken(string oid, string preferredUsername)
+        {
+            var claims = new[]
+            {
+                new Claim("oid", oid),
+                new Claim("preferred_username", preferredUsername)
+            };
+
+            var key = new SymmetricSecurityKey("test-signing-key-that-is-at-least-32-bytes-long"u8.ToArray());
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: "test-issuer",
+                audience: "test-audience",
+                claims: claims,
+                expires: DateTime.UtcNow.AddHours(1),
+                signingCredentials: creds);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
 
         public NetAppClientTests()
         {
@@ -55,20 +80,21 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             _netAppArgFactory = new NetAppArgFactory();
             _netAppRequestFactory = new NetAppRequestFactory();
             var s3ClientFactoryLogger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<S3ClientFactory>();
-
-            // Setup mock credential service
-            _mockCredentialService = new Mock<IS3CredentialService>();
-            _mockTelemetryHandler = new Mock<IS3TelemetryHandler>();
-            _s3ClientFactory = new S3ClientFactory(
+            _netAppS3HttpClient = new NetAppS3HttpClient(
+                new HttpClient { BaseAddress = new Uri(_server.Urls[0]) },
+                null!,
                 Options.Create(new NetAppOptions
                 {
                     Url = _server.Urls[0],
                     RegionName = "eu-west-1"
-                }),
-                _mockCredentialService.Object,
-                s3ClientFactoryLogger,
-                _mockTelemetryHandler.Object);
-            _s3ClientFactory.SetS3ClientAsync(_s3Client);
+                })
+            );
+            _netAppS3HttpArgFactory = new NetAppS3HttpArgFactory();
+
+            // Setup mock credential service
+            _mockCredentialService = new Mock<IS3CredentialService>();
+            _mockKeyVaultService = new Mock<IKeyVaultService>();
+            _mockTelemetryHandler = new Mock<IS3TelemetryHandler>();
 
             var fakeCredentials = new S3CredentialsDecrypted
             {
@@ -88,8 +114,21 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
                 .Setup(x => x.GetCredentialsAsync(
                     TestOid,
                     TestUserName,
-                    BearerToken))
+                    It.IsAny<string>()))
                 .ReturnsAsync(fakeCredentials);
+
+            // Setup credential status to return valid credentials (not needing regeneration)
+            _mockKeyVaultService
+                .Setup(x => x.CheckCredentialStatusAsync(It.IsAny<string>()))
+                .ReturnsAsync(new CredentialStatus
+                {
+                    Exists = true,
+                    IsValid = true,
+                    NeedsRegeneration = false,
+                    CreatedAt = DateTime.UtcNow,
+                    ExpiresAt = DateTime.UtcNow.AddMinutes(55),
+                    RemainingMinutes = 55
+                });
 
             _s3ClientFactory = new S3ClientFactory(
                 Options.Create(new NetAppOptions
@@ -98,6 +137,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
                     RegionName = "eu-west-1"
                 }),
                 _mockCredentialService.Object,
+                _mockKeyVaultService.Object,
                 s3ClientFactoryLogger,
                 _mockTelemetryHandler.Object
             );

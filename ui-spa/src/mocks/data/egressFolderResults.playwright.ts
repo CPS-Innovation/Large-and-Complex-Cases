@@ -35,20 +35,31 @@ export const egressRootFolderResultsPlaywright: EgressFolderResponse = {
   },
 };
 
-const getFolderPathFromId = (id: number, index: number) => {
+const getFolderPathFromId = (id: string) => {
+  const ids = id.split(",");
   let path = "";
-  for (let i = 1; i < id; i++) {
-    if (path === "") path = `folder-${i}-${index}`;
-    else path = `${path}/folder-${i}-${index}`;
-  }
+  ids.forEach((id) => {
+    if (path) path += "/";
+    path += `folder-${id}`;
+  });
+
   return path;
 };
+
+export function getLastSegment(input: string): string {
+  if (!input) return "";
+  const parts = input
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
+  return parts.length ? parts[parts.length - 1] : "";
+}
 export const getEgressFolderResultsPlaywright = (
   id: string,
 ): EgressFolderResponse => {
   if (!id) return egressRootFolderResultsPlaywright;
-
-  const newId = parseInt(id.split("-")[0]) + 1;
+  const lastSegment = getLastSegment(id);
+  const newId = parseInt(lastSegment.split("-")[0]) + 1;
   if (newId > 3) {
     return {
       ...egressRootFolderResultsPlaywright,
@@ -59,9 +70,9 @@ export const getEgressFolderResultsPlaywright = (
     (item, index) => {
       return {
         ...item,
-        id: `${newId}-${index}`,
-        name: `folder-${newId}-${index}`,
-        path: getFolderPathFromId(newId, index),
+        id: `${id},${newId}-${index}`,
+        name: index === 8 ? `files-${newId}-0.pdf` : `folder-${newId}-${index}`,
+        path: `${getFolderPathFromId(id)}`,
       };
     },
   );

@@ -60,7 +60,7 @@ public class NetAppClient(
         try
         {
             var response = await s3Client.ListBucketsAsync(_netAppRequestFactory.ListBucketsRequest(arg));
-            return response.Buckets;
+            return response.Buckets ?? [];
         }
         catch (AmazonS3Exception ex)
         {
@@ -175,17 +175,17 @@ public class NetAppClient(
             var request = _netAppRequestFactory.ListObjectsInBucketRequest(arg);
             var response = await s3Client.ListObjectsV2Async(request);
 
-            var folders = response.CommonPrefixes.Select(data => new ListNetAppFolderDataDto
+            var folders = (response.CommonPrefixes ?? []).Select(data => new ListNetAppFolderDataDto
             {
                 Path = data
             });
 
-            var files = response.S3Objects.Select(data => new ListNetAppFileDataDto
+            var files = (response.S3Objects ?? []).Select(data => new ListNetAppFileDataDto
             {
                 Path = data.Key,
                 Etag = data.ETag,
-                Filesize = data.Size,
-                LastModified = data.LastModified
+                Filesize = data.Size ?? 0,
+                LastModified = data.LastModified ?? DateTime.MinValue
             });
 
             var result = new ListNetAppObjectsDto
@@ -202,7 +202,7 @@ public class NetAppClient(
                     ContinuationToken = response.ContinuationToken,
                     NextContinuationToken = response.NextContinuationToken,
                     MaxKeys = response.MaxKeys,
-                    KeyCount = response.KeyCount
+                    KeyCount = response.KeyCount ?? 0
                 }
             };
 
@@ -221,7 +221,7 @@ public class NetAppClient(
         try
         {
             var response = await s3Client.ListObjectsV2Async(_netAppRequestFactory.ListFoldersInBucketRequest(arg));
-            var folders = response.CommonPrefixes.Select(data => new ListNetAppFolderDataDto
+            var folders = (response.CommonPrefixes ?? []).Select(data => new ListNetAppFolderDataDto
             {
                 Path = data
             });
@@ -240,7 +240,7 @@ public class NetAppClient(
                     ContinuationToken = response.ContinuationToken,
                     NextContinuationToken = response.NextContinuationToken,
                     MaxKeys = response.MaxKeys,
-                    KeyCount = response.KeyCount
+                    KeyCount = response.KeyCount ?? 0
                 }
             };
 
@@ -345,19 +345,22 @@ public class NetAppClient(
 
                 var response = await s3Client.DeleteObjectsAsync(deleteObjectsRequest);
 
-                if (response.HttpStatusCode == System.Net.HttpStatusCode.OK && response.DeleteErrors.Count == 0)
+                var deleteErrors = response.DeleteErrors ?? [];
+                var deletedObjects = response.DeletedObjects ?? [];
+
+                if (response.HttpStatusCode == System.Net.HttpStatusCode.OK && deleteErrors.Count == 0)
                 {
                     return $"Successfully deleted folder {arg.Path} and its contents from bucket {arg.BucketName}.";
                 }
 
-                foreach (var error in response.DeleteErrors)
+                foreach (var error in deleteErrors)
                 {
                     _logger.LogError("Failed to delete object {ObjectKey} from bucket {BucketName}. Code: {Code}, Message: {Message}",
                         error.Key, arg.BucketName, error.Code, error.Message);
                 }
 
-                var successfulDeletionsCount = response.DeletedObjects.Count;
-                var failedDeletionsCount = response.DeleteErrors.Count;
+                var successfulDeletionsCount = deletedObjects.Count;
+                var failedDeletionsCount = deleteErrors.Count;
 
                 return $"Successfully deleted {successfulDeletionsCount} files from bucket {arg.BucketName}. Deletion failed for {failedDeletionsCount} files. ";
             }
