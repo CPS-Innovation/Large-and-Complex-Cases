@@ -1,5 +1,8 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using AutoFixture;
 using AutoFixture.AutoMoq;
 using CPS.ComplexCases.NetApp.Factories;
@@ -8,9 +11,6 @@ using CPS.ComplexCases.NetApp.Models.S3.Credentials;
 using CPS.ComplexCases.NetApp.Services;
 using CPS.ComplexCases.NetApp.Telemetry;
 using Moq;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using Microsoft.IdentityModel.Tokens;
 
 namespace CPS.ComplexCases.NetApp.Tests.Unit.Factories;
 
@@ -22,6 +22,7 @@ public class S3ClientFactoryTests
     private readonly Mock<IKeyVaultService> _keyVaultServiceMock;
     private readonly Mock<ILogger<S3ClientFactory>> _loggerMock;
     private readonly Mock<IS3TelemetryHandler> _telemetryHandlerMock;
+    private readonly Mock<INetAppCertFactory> _netAppCertFactoryMock;
     private readonly S3ClientFactory _factory;
     private const string TestOid = "test-oid-12345";
     private const string TestUserName = "testuser@example.com";
@@ -43,13 +44,15 @@ public class S3ClientFactoryTests
         _keyVaultServiceMock = new Mock<IKeyVaultService>();
         _loggerMock = new Mock<ILogger<S3ClientFactory>>();
         _telemetryHandlerMock = new Mock<IS3TelemetryHandler>();
+        _netAppCertFactoryMock = new Mock<INetAppCertFactory>();
 
         _factory = new S3ClientFactory(
             _optionsMock.Object,
             _credentialServiceMock.Object,
             _keyVaultServiceMock.Object,
             _loggerMock.Object,
-            _telemetryHandlerMock.Object);
+            _telemetryHandlerMock.Object,
+            _netAppCertFactoryMock.Object);
     }
 
     private static string GenerateTestJwtToken(string oid, string preferredUsername)

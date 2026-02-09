@@ -315,6 +315,11 @@ public class NetAppClient(
             var response = await _netAppS3HttpClient.GetHeadObjectAsync(headObjectArg);
             return response.StatusCode == System.Net.HttpStatusCode.OK;
         }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "HTTP request failed while checking existence of object {ObjectKey} in bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
+            return false;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to check if object {ObjectKey} exists in bucket {BucketName}.", arg.ObjectKey, arg.BucketName);

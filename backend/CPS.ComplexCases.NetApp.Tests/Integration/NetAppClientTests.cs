@@ -34,6 +34,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
         private readonly Mock<IS3TelemetryHandler> _mockTelemetryHandler;
         private readonly INetAppS3HttpClient _netAppS3HttpClient;
         private readonly INetAppS3HttpArgFactory _netAppS3HttpArgFactory;
+        private readonly Mock<INetAppCertFactory> _mockNetAppCertFactory;
         private const string TestOid = "test-oid-12345";
         private const string TestUserName = "testuser@example.com";
         private static readonly string BearerToken = GenerateTestJwtToken(TestOid, TestUserName);
@@ -95,6 +96,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             _mockCredentialService = new Mock<IS3CredentialService>();
             _mockKeyVaultService = new Mock<IKeyVaultService>();
             _mockTelemetryHandler = new Mock<IS3TelemetryHandler>();
+            _mockNetAppCertFactory = new Mock<INetAppCertFactory>();
 
             var fakeCredentials = new S3CredentialsDecrypted
             {
@@ -139,7 +141,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
                 _mockCredentialService.Object,
                 _mockKeyVaultService.Object,
                 s3ClientFactoryLogger,
-                _mockTelemetryHandler.Object
+                _mockTelemetryHandler.Object,
+                _mockNetAppCertFactory.Object
             );
             _s3ClientFactory.SetS3ClientAsync(_s3Client);
 

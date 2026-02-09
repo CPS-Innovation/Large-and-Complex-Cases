@@ -35,6 +35,7 @@ public static class IServiceCollectionExtension
 		services.Configure<CryptoOptions>(configuration.GetSection("CryptoOptions"));
 		services.AddSingleton<ICryptographyService, CryptographyService>();
 		services.AddSingleton<IS3TelemetryHandler, S3TelemetryHandler>();
+		services.AddSingleton<INetAppCertFactory, NetAppCertFactory>();
 
 		services.AddSingleton<IKeyVaultService>(sp =>
 		{
@@ -50,6 +51,8 @@ public static class IServiceCollectionExtension
 			var sessionDuration = configuration.GetValue<int>("NetAppOptions:SessionDurationSeconds", 3600);
 			return new KeyVaultService(secretClient, logger, sessionDuration);
 		});
+
+		var isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
 
 		services.AddHttpClient<INetAppHttpClient, NetAppHttpClient>(client =>
 		{
@@ -73,15 +76,34 @@ public static class IServiceCollectionExtension
 			var netAppServiceUrl = configuration["NetAppOptions:Url"];
 			if (string.IsNullOrEmpty(netAppServiceUrl))
 			{
-				throw new ArgumentNullException(nameof(netAppServiceUrl), "NetAppOptions:ClusterUrl configuration is missing or empty.");
+				throw new ArgumentNullException(nameof(netAppServiceUrl), "NetAppOptions:Url configuration is missing or empty.");
 			}
 			client.BaseAddress = new Uri(netAppServiceUrl);
 
 		})
-		.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
-		{
-			ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; }
-		})
+		.ConfigurePrimaryHttpMessageHandler(sp =>
+			{
+				var certFactory = sp.GetRequiredService<INetAppCertFactory>();
+				var trustedCerts = certFactory.GetTrustedCaCertificates();
+				if (!isDevelopment && trustedCerts.Count > 0)
+				{
+					var handler = new HttpClientHandler
+					{
+						ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) =>
+							certFactory.ValidateCertificateWithCustomCa(cert, chain, sslPolicyErrors, trustedCerts)
+					};
+					return handler;
+				}
+				else
+				{
+					var handler = new HttpClientHandler
+					{
+						ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; }
+					};
+					return handler;
+				}
+			}
+		)
 		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
 		.AddPolicyHandler(GetRetryPolicy());
 

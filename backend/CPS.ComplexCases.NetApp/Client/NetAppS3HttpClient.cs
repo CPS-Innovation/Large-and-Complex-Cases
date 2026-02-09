@@ -39,15 +39,15 @@ public class NetAppS3HttpClient(HttpClient httpClient, IS3CredentialService s3Cr
         var amzDate = now.ToString("yyyyMMddTHHmmssZ");
         var dateStamp = now.ToString("yyyyMMdd");
         var host = _httpClient.BaseAddress?.Host ?? throw new InvalidOperationException("HttpClient must have a BaseAddress configured.");
+        var payloadHash = Hash(payload);
 
         request.Headers.Add("x-amz-date", amzDate);
-        request.Headers.Add("x-amz-content-sha256", Hash(payload));
+        request.Headers.Add("x-amz-content-sha256", payloadHash);
 
         var canonicalUri = Path.AltDirectorySeparatorChar + key;
         var canonicalQueryString = string.Empty;
-        var canonicalHeaders = $"host:{host}\nx-amz-content-sha256:{Hash(payload)}\nx-amz-date:{amzDate}\n";
+        var canonicalHeaders = $"host:{host}\nx-amz-content-sha256:{payloadHash}\nx-amz-date:{amzDate}\n";
         var signedHeaders = "host;x-amz-content-sha256;x-amz-date";
-        var payloadHash = Hash(payload);
 
         var canonicalRequest = $"{request.Method}\n{canonicalUri}\n{canonicalQueryString}\n{canonicalHeaders}\n{signedHeaders}\n{payloadHash}";
 
