@@ -36,7 +36,7 @@ const TransferErrorPage: React.FC = () => {
         <div className={styles.contentWrapper}>
           <h1>There is a problem transferring files</h1>
           {fileExistsFailedItems.length > 0 && (
-            <div>
+            <div data-testid="file-exists-error-wrapper">
               <h2>Some files already exist in the destination folder</h2>
               <p>You cannot transfer files that already exist.</p>
               <Details summaryChildren="View files">
@@ -47,8 +47,8 @@ const TransferErrorPage: React.FC = () => {
                   {fileExistsFailedItems.map((item) => (
                     <li key={item.sourcePath} className={styles.failedFileItem}>
                       <>
-                        <FileIcon />{" "}
-                        <span className="govuk-visually-hidden">File</span>{" "}
+                        <FileIcon />
+                        <span className="govuk-visually-hidden">File</span>
                         <span>{item.sourcePath}</span>
                       </>
                     </li>
@@ -58,7 +58,7 @@ const TransferErrorPage: React.FC = () => {
             </div>
           )}
           {otherFailedItems.length > 0 && (
-            <div>
+            <div data-testid="other-failed-error-wrapper">
               <h2>Some files could not be transferred</h2>
               <p>Check the activity log for more details.</p>
               <Details summaryChildren="View files">
@@ -69,8 +69,8 @@ const TransferErrorPage: React.FC = () => {
                   {otherFailedItems.map((item) => (
                     <li key={item.sourcePath} className={styles.failedFileItem}>
                       <>
-                        <FileIcon />{" "}
-                        <span className="govuk-visually-hidden">File</span>{" "}
+                        <FileIcon />
+                        <span className="govuk-visually-hidden">File</span>
                         <span>{item.sourcePath}</span>
                       </>
                     </li>
@@ -79,7 +79,7 @@ const TransferErrorPage: React.FC = () => {
               </Details>
             </div>
           )}
-          <div>
+          <div data-testid="user-actions-wrapper">
             <h2>What you can do</h2>
             <ul className={styles.userActionsList}>
               {fileExistsFailedItems.length > 0 && (
