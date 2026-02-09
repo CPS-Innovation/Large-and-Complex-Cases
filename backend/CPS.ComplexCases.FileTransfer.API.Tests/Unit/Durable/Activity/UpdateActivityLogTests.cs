@@ -421,7 +421,7 @@ public class UpdateActivityLogTests
         var transferId = Guid.NewGuid();
         var userName = _fixture.Create<string>();
         var caseId = _fixture.Create<int>();
-        const string expectedPath = "C:/source";
+        const string expectedPath = "egress/source";
 
         var entityState = new TransferEntity
         {
@@ -432,7 +432,7 @@ public class UpdateActivityLogTests
             TotalFiles = 1,
             BearerToken = _bearerToken,
             SourceRootFolderPath = null,
-            SourcePaths = [new TransferSourcePath { FullFilePath = @"C:\source\file.txt", Path = "/source" }],
+            SourcePaths = [new TransferSourcePath { FullFilePath = "egress/source/file.txt", Path = expectedPath }],
             DestinationPath = "/dest/path"
         };
 
