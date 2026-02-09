@@ -57,6 +57,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                 Status = TransferStatus.Initiated,
                 DestinationPath = input.DestinationPath,
                 SourcePaths = input.SourcePaths,
+                SourceRootFolderPath = input.SourceRootFolderPath,
                 CaseId = input.CaseId,
                 TransferType = input.TransferType,
                 Direction = input.TransferDirection,
