@@ -96,7 +96,7 @@ public class UpdateActivityLogTests
             [
                 new TransferSourcePath
             {
-                FullFilePath = @"C:\source\file1.txt",
+                FullFilePath = "C:/source/file1.txt",
                 Path = "/source"
             }
             ],
@@ -205,7 +205,7 @@ public class UpdateActivityLogTests
             TransferType = TransferType.Move,
             TotalFiles = 1,
             BearerToken = _bearerToken,
-            SourcePaths = [new TransferSourcePath { FullFilePath = @"C:\source\file.txt", Path = "/source" }],
+            SourcePaths = [new TransferSourcePath { FullFilePath = "C:/source/file.txt", Path = "/source" }],
             DeletionErrors = [new DeletionError
             {
                 FileId = _fixture.Create<string>(),
@@ -257,7 +257,7 @@ public class UpdateActivityLogTests
             TransferType = TransferType.Copy,
             TotalFiles = 1,
             BearerToken = _bearerToken,
-            SourcePaths = [new TransferSourcePath { FullFilePath = @"C:\test.txt", Path = "/source" }],
+            SourcePaths = [new TransferSourcePath { FullFilePath = "C:/source/test.txt", Path = "/source" }],
             DeletionErrors = [new DeletionError { FileId = "/source/test.txt", ErrorMessage = "Should be ignored" }],
             DestinationPath = "/dest/path",
         };
@@ -309,7 +309,7 @@ public class UpdateActivityLogTests
             TransferType = TransferType.Copy,
             TotalFiles = 1,
             BearerToken = _bearerToken,
-            SourcePaths = [new TransferSourcePath { FullFilePath = @"C:\source\file.txt", Path = "/source" }],
+            SourcePaths = [new TransferSourcePath { FullFilePath = "C:/source/file.txt", Path = "/source" }],
             DestinationPath = "/dest/path",
             StartedAt = startedAt,
             CompletedAt = completedAt,
