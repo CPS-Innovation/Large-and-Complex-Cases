@@ -161,10 +161,11 @@ test.describe("transfer-error-page", () => {
     const listItems2 = page
       .getByTestId("user-actions-wrapper")
       .locator("ul > li");
-    await expect(listItems2).toHaveCount(2);
+    await expect(listItems2).toHaveCount(3);
     await expect(listItems2).toHaveText([
       "remove or rename any duplicate files, then try again",
-      " check the activity log to see if any files transferred successfully",
+      "check the activity log to see if any files transferred successfully",
+      "contact the product team for help and include the error message failed transfer - transfer-id-egress-to-netapp",
     ]);
 
     await expect(page.getByRole("button", { name: "Continue" })).toBeVisible();
@@ -257,10 +258,11 @@ test.describe("transfer-error-page", () => {
     const listItems2 = page
       .getByTestId("user-actions-wrapper")
       .locator("ul > li");
-    await expect(listItems2).toHaveCount(2);
+    await expect(listItems2).toHaveCount(3);
     await expect(listItems2).toHaveText([
       "try again",
-      " check the activity log to see if any files transferred successfully",
+      "check the activity log to see if any files transferred successfully",
+      "contact the product team for help and include the error message failed transfer - transfer-id-egress-to-netapp",
     ]);
     await expect(page.getByRole("link", { name: "Back" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Back" })).toHaveAttribute(
@@ -360,7 +362,7 @@ test.describe("transfer-error-page", () => {
     const listItems2 = page
       .getByTestId("user-actions-wrapper")
       .locator("ul > li");
-    await expect(listItems2).toHaveCount(2);
+    await expect(listItems2).toHaveCount(3);
 
     await expect(page.getByRole("link", { name: "Back" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Back" })).toHaveAttribute(

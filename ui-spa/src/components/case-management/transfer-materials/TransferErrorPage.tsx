@@ -91,6 +91,10 @@ const TransferErrorPage: React.FC = () => {
                 check the activity log to see if any files transferred
                 successfully
               </li>
+              <li>
+                contact the product team for help and include the error message{" "}
+                <b>failed transfer - {state.transferId}</b>
+              </li>
             </ul>
             <Button onClick={handleButtonClick} className={styles.continueBtn}>
               Continue
