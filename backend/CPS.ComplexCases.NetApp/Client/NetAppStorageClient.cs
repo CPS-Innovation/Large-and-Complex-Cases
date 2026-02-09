@@ -223,7 +223,7 @@ public class NetAppStorageClient(
         if (response == null || response.StatusCode != System.Net.HttpStatusCode.OK)
             return false;
 
-        return response.ETag == eTag;
+        return response.ETag == eTag.Unquote();
     }
 
     public Task<bool> FileExistsAsync(string path, string? workspaceId = null, string? bearerToken = null, string? bucketName = null)

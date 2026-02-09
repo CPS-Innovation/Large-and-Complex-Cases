@@ -26,6 +26,7 @@ public static class IServiceCollectionExtension
 		services.AddDefaultAWSOptions(configuration.GetAWSOptions());
 		services.Configure<NetAppOptions>(configuration.GetSection("NetAppOptions"));
 		services.AddTransient<INetAppArgFactory, NetAppArgFactory>();
+		services.AddTransient<INetAppS3HttpArgFactory, NetAppS3HttpArgFactory>();
 		services.AddTransient<INetAppRequestFactory, NetAppRequestFactory>();
 		services.AddTransient<INetAppClient, NetAppClient>();
 		services.AddSingleton<IAmazonS3UtilsWrapper, AmazonS3UtilsWrapper>();
