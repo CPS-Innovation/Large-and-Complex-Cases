@@ -15,7 +15,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import TransferConfirmationModal from "./TransferConfirmationModal";
 import { getGroupedFolderFileData } from "../../../common/utils/getGroupedFolderFileData";
 import { TransferAction } from "../../../common/types/TransferAction";
-import { getFormatedEgressFolderData } from "../../../common/utils/getFormatedEgressFolderData";
+import { getFormattedEgressFolderData } from "../../../common/utils/getFormattedEgressFolderData";
 import { mapToNetAppFolderData } from "../../../common/utils/mapToNetAppFolderData";
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
 import { InitiateFileTransferPayload } from "../../../common/types/InitiateFileTransferPayload";
@@ -115,7 +115,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     error: netAppError,
   } = useApi(getNetAppFolders, [netAppFolderPath], false);
   const egressFolderData = useMemo(
-    () => (egressData ? getFormatedEgressFolderData(egressData) : []),
+    () => (egressData ? getFormattedEgressFolderData(egressData) : []),
     [egressData],
   );
 
