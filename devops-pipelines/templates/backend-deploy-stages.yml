@@ -168,11 +168,7 @@ stages:
                     bash $(scripts_directory)/updateDatabase.sh
                 env:
                   KEY_VAULT_NAME: $(keyVaultName)
-<<<<<<< HEAD
                   MIGRATION_SCRIPT_PATH: '$(Pipeline.Workspace)/build/database-scripts-drop/migration-script.sql'
-=======
-                  MIGRATION_SCRIPT_PATH: '$(Pipeline.Workspace)/build/database-scripts/migration-script.sql'
->>>>>>> a4c0047 (update db migration step)
               
               - template: ./runner-cleanup-steps.yml
                 parameters:
