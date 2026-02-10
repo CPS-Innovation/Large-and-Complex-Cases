@@ -8,7 +8,6 @@ import ActivityLogPage from "./activity-log/index";
 import { useApi } from "../../common/hooks/useApi";
 import { getCaseMetaData } from "../../apis/gateway-api";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
-import TransferMovePermissionsErrorPage from "./transfer-materials/TransferMovePermissionsErrorPage";
 import { useUserGroupsFeatureFlag } from "../../common/hooks/useUserGroupsFeatureFlag";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
 
@@ -77,13 +76,6 @@ const CaseManagementPage = () => {
     }
     if (
       location.pathname.endsWith("/transfer-rename-file") &&
-      !location?.state?.isRouteValid
-    ) {
-      navigate(`/`);
-    }
-
-    if (
-      location.pathname.endsWith("/transfer-permissions-error") &&
       !location?.state?.isRouteValid
     ) {
       navigate(`/`);
@@ -157,8 +149,6 @@ const CaseManagementPage = () => {
   )
     return <TransferResolveFilePathPage />;
 
-  if (location.pathname.endsWith("/transfer-permissions-error"))
-    return <TransferMovePermissionsErrorPage />;
   return (
     <PageContentWrapper>
       <h1 className={styles.workspaceName}>
