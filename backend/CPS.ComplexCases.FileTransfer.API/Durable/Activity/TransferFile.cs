@@ -113,6 +113,12 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 telemetryEvent.IsMultipart = result.IsSuccess && result.SuccessfulItem!.TotalPartsCount > 1;
                 telemetryEvent.TotalPartsCount = result.IsSuccess ? result.SuccessfulItem!.TotalPartsCount : 0;
 
+                if (!result.IsSuccess && result.FailedItem != null)
+                {
+                    telemetryEvent.ErrorCode = result.FailedItem.ErrorCode.ToString();
+                    telemetryEvent.ErrorMessage = result.FailedItem.ErrorMessage;
+                }
+
                 _telemetryClient.TrackEvent(telemetryEvent);
 
                 return result;
@@ -121,6 +127,8 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         catch (FileExistsException ex)
         {
             LogFileConflictTelemetry(payload);
+            telemetryEvent.ErrorCode = TransferErrorCode.FileExists.ToString();
+            telemetryEvent.ErrorMessage = ex.Message;
             return CreateFailureResult(payload.SourcePath.Path, TransferErrorCode.FileExists, ex.Message, ex);
         }
         catch (OperationCanceledException ex)
@@ -130,10 +138,13 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         }
         catch (Exception ex)
         {
+            var errorMessage = $"Exception: {ex.GetType().FullName}: {ex.Message}{Environment.NewLine}StackTrace: {ex.StackTrace}";
+            telemetryEvent.ErrorCode = TransferErrorCode.GeneralError.ToString();
+            telemetryEvent.ErrorMessage = errorMessage;
             return CreateFailureResult(
                 payload.SourcePath.Path,
                 TransferErrorCode.GeneralError,
-                $"Exception: {ex.GetType().FullName}: {ex.Message}{Environment.NewLine}StackTrace: {ex.StackTrace}",
+                errorMessage,
                 ex);
         }
         finally
