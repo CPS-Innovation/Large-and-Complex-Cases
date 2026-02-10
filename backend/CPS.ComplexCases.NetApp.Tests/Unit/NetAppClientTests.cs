@@ -9,6 +9,7 @@ using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
+using CPS.ComplexCases.NetApp.Models.Dto;
 using CPS.ComplexCases.NetApp.Wrappers;
 using Moq;
 
@@ -23,6 +24,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         private readonly Mock<INetAppRequestFactory> _netAppRequestFactoryMock;
         private readonly Mock<IAmazonS3> _amazonS3Mock;
         private readonly Mock<IS3ClientFactory> _s3ClientFactoryMock;
+        private readonly Mock<INetAppS3HttpClient> _netAppS3HttpClientMock;
+        private readonly Mock<INetAppS3HttpArgFactory> _netAppS3HttpArgFactoryMock;
         private readonly NetAppClient _client;
         private const string TestUrl = "https://netapp.com";
         private const string BucketName = "test-bucket";
@@ -47,8 +50,10 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             _amazonS3Mock = _fixture.Freeze<Mock<IAmazonS3>>();
             _s3ClientFactoryMock = _fixture.Freeze<Mock<IS3ClientFactory>>();
             _s3ClientFactoryMock.Setup(x => x.GetS3ClientAsync(BearerToken)).ReturnsAsync(_amazonS3Mock.Object);
+            _netAppS3HttpClientMock = _fixture.Freeze<Mock<INetAppS3HttpClient>>();
+            _netAppS3HttpArgFactoryMock = _fixture.Freeze<Mock<INetAppS3HttpArgFactory>>();
 
-            _client = new NetAppClient(_loggerMock.Object, _amazonS3UtilsWrapperMock.Object, _netAppRequestFactoryMock.Object, _s3ClientFactoryMock.Object);
+            _client = new NetAppClient(_loggerMock.Object, _amazonS3UtilsWrapperMock.Object, _netAppRequestFactoryMock.Object, _s3ClientFactoryMock.Object, _netAppS3HttpClientMock.Object, _netAppS3HttpArgFactoryMock.Object);
         }
 
         [Fact]
@@ -577,9 +582,9 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         public async Task DoesObjectExistAsync_ReturnsTrue_OnSuccess()
         {
             var arg = new GetObjectArg { BearerToken = BearerToken, ObjectKey = "file.txt", BucketName = "bucket" };
-            var response = new GetObjectResponse { HttpStatusCode = HttpStatusCode.OK };
+            var response = new HeadObjectResponseDto { StatusCode = HttpStatusCode.OK };
 
-            _amazonS3Mock.Setup(s => s.GetObjectAsync(It.IsAny<GetObjectRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
+            _netAppS3HttpClientMock.Setup(s => s.GetHeadObjectAsync(It.IsAny<GetHeadObjectArg>())).ReturnsAsync(response);
 
             var result = await _client.DoesObjectExistAsync(arg);
 
@@ -592,7 +597,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             var arg = new GetObjectArg { BearerToken = BearerToken, ObjectKey = "file.txt", BucketName = "bucket" };
             var ex = new AmazonS3Exception("not found") { StatusCode = HttpStatusCode.NotFound };
 
-            _amazonS3Mock.Setup(s => s.GetObjectAsync(It.IsAny<GetObjectRequest>(), It.IsAny<CancellationToken>()))
+            _netAppS3HttpClientMock.Setup(s => s.GetHeadObjectAsync(It.IsAny<GetHeadObjectArg>()))
                 .ThrowsAsync(ex);
 
             var result = await _client.DoesObjectExistAsync(arg);
@@ -604,9 +609,9 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         public async Task DoesObjectExistAsync_ReturnsFalse_AndLogs_OnOtherException()
         {
             var arg = new GetObjectArg { BearerToken = BearerToken, ObjectKey = "file.txt", BucketName = "bucket" };
-            var ex = new AmazonS3Exception("fail") { StatusCode = HttpStatusCode.InternalServerError };
+            var ex = new Exception("fail") { };
 
-            _amazonS3Mock.Setup(s => s.GetObjectAsync(It.IsAny<GetObjectRequest>(), It.IsAny<CancellationToken>()))
+            _netAppS3HttpClientMock.Setup(s => s.GetHeadObjectAsync(It.IsAny<GetHeadObjectArg>()))
                 .ThrowsAsync(ex);
 
             var result = await _client.DoesObjectExistAsync(arg);

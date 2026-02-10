@@ -1,3 +1,4 @@
+using System.Net;
 using Amazon.S3.Model;
 using AutoFixture;
 using AutoFixture.AutoMoq;
@@ -20,6 +21,8 @@ public class NetAppStorageClientTests
     private readonly Mock<INetAppClient> _netAppClientMock;
     private readonly Mock<INetAppArgFactory> _netAppArgFactoryMock;
     private readonly Mock<ICaseMetadataService> _caseMetadataServiceMock;
+    private readonly Mock<INetAppS3HttpClient> _netAppS3HttpClientMock;
+    private readonly Mock<INetAppS3HttpArgFactory> _netAppS3HttpArgFactoryMock;
     private readonly NetAppStorageClient _client;
     private readonly string BearerToken;
     private readonly string BucketName;
@@ -40,11 +43,15 @@ public class NetAppStorageClientTests
         _netAppClientMock = _fixture.Freeze<Mock<INetAppClient>>();
         _netAppArgFactoryMock = _fixture.Freeze<Mock<INetAppArgFactory>>();
         _caseMetadataServiceMock = _fixture.Freeze<Mock<ICaseMetadataService>>();
+        _netAppS3HttpClientMock = _fixture.Freeze<Mock<INetAppS3HttpClient>>();
+        _netAppS3HttpArgFactoryMock = _fixture.Freeze<Mock<INetAppS3HttpArgFactory>>();
 
         _client = new NetAppStorageClient(
             _netAppClientMock.Object,
             _netAppArgFactoryMock.Object,
-            _caseMetadataServiceMock.Object);
+            _caseMetadataServiceMock.Object,
+            _netAppS3HttpClientMock.Object,
+            _netAppS3HttpArgFactoryMock.Object);
     }
 
     [Fact]
@@ -235,9 +242,20 @@ public class NetAppStorageClientTests
             .Setup(c => c.CompleteMultipartUploadAsync(completeArg))
             .ReturnsAsync(new CompleteMultipartUploadResponse { ETag = resultETag });
 
-        _netAppClientMock
-            .Setup(c => c.GetObjectAsync(getArg))
-            .ReturnsAsync(new GetObjectResponse { ETag = resultETag });
+        var arg = new GetHeadObjectArg
+        {
+            BearerToken = BearerToken,
+            BucketName = BucketName,
+            ObjectKey = ObjectKey,
+        };
+
+        _netAppS3HttpArgFactoryMock
+            .Setup(f => f.CreateGetHeadObjectArg(BearerToken, BucketName, ObjectKey))
+            .Returns(arg);
+
+        _netAppS3HttpClientMock
+            .Setup(c => c.GetHeadObjectAsync(arg))
+            .ReturnsAsync(new Models.Dto.HeadObjectResponseDto { ETag = resultETag, StatusCode = HttpStatusCode.OK });
 
         // Act
         var result = await _client.CompleteUploadAsync(session, null, etags, BearerToken, BucketName, ObjectKey);
@@ -289,9 +307,20 @@ public class NetAppStorageClientTests
             .Setup(c => c.CompleteMultipartUploadAsync(completeArg))
             .ReturnsAsync(new CompleteMultipartUploadResponse { ETag = resultETag });
 
-        _netAppClientMock
-            .Setup(c => c.GetObjectAsync(getArg))
-            .ReturnsAsync((GetObjectResponse?)null);
+        var arg = new GetHeadObjectArg
+        {
+            BearerToken = BearerToken,
+            BucketName = BucketName,
+            ObjectKey = ObjectKey,
+        };
+
+        _netAppS3HttpArgFactoryMock
+            .Setup(f => f.CreateGetHeadObjectArg(BearerToken, BucketName, ObjectKey))
+            .Returns(arg);
+
+        _netAppS3HttpClientMock
+            .Setup(c => c.GetHeadObjectAsync(arg))
+            .ReturnsAsync(new Models.Dto.HeadObjectResponseDto { StatusCode = HttpStatusCode.NotFound });
 
         // Act
         var result = await _client.CompleteUploadAsync(session, null, etags, BearerToken, BucketName, ObjectKey);
@@ -503,21 +532,20 @@ public class NetAppStorageClientTests
         // Arrange
         var eTag = _fixture.Create<string>();
 
-        var arg = new GetObjectArg
+        var arg = new GetHeadObjectArg
         {
             BearerToken = BearerToken,
             BucketName = BucketName,
-            ObjectKey = ObjectKey,
-            ETag = eTag
+            ObjectKey = ObjectKey
         };
 
-        _netAppArgFactoryMock
-            .Setup(f => f.CreateGetObjectArg(BearerToken, BucketName, ObjectKey, eTag))
+        _netAppS3HttpArgFactoryMock
+            .Setup(f => f.CreateGetHeadObjectArg(BearerToken, BucketName, ObjectKey))
             .Returns(arg);
 
-        _netAppClientMock
-            .Setup(c => c.GetObjectAsync(arg))
-            .ReturnsAsync(new GetObjectResponse { ETag = eTag });
+        _netAppS3HttpClientMock
+            .Setup(c => c.GetHeadObjectAsync(arg))
+            .ReturnsAsync(new Models.Dto.HeadObjectResponseDto { ETag = eTag, StatusCode = HttpStatusCode.OK });
 
         // Act
         var result = await _client.VerifyUpload(BearerToken, BucketName, ObjectKey, eTag);
@@ -532,21 +560,20 @@ public class NetAppStorageClientTests
         // Arrange
         var eTag = _fixture.Create<string>();
 
-        var arg = new GetObjectArg
+        var arg = new GetHeadObjectArg
         {
             BearerToken = BearerToken,
             BucketName = BucketName,
             ObjectKey = ObjectKey,
-            ETag = eTag
         };
 
-        _netAppArgFactoryMock
-            .Setup(f => f.CreateGetObjectArg(BearerToken, BucketName, ObjectKey, eTag))
+        _netAppS3HttpArgFactoryMock
+            .Setup(f => f.CreateGetHeadObjectArg(BearerToken, BucketName, ObjectKey))
             .Returns(arg);
 
-        _netAppClientMock
-            .Setup(c => c.GetObjectAsync(arg))
-            .ReturnsAsync(new GetObjectResponse { ETag = _fixture.Create<string>() });
+        _netAppS3HttpClientMock
+            .Setup(c => c.GetHeadObjectAsync(arg))
+            .ReturnsAsync(new Models.Dto.HeadObjectResponseDto { ETag = _fixture.Create<string>() });
 
         // Act
         var result = await _client.VerifyUpload(BearerToken, BucketName, ObjectKey, eTag);

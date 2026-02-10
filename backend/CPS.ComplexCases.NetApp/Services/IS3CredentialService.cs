@@ -5,4 +5,5 @@ namespace CPS.ComplexCases.NetApp.Services;
 public interface IS3CredentialService
 {
     Task<S3CredentialsDecrypted> GetCredentialsAsync(string oid, string userName, string bearerToken);
+    Task<(string? accessKey, string? secretKey)> GetCredentialKeysAsync(string bearerToken);
 }
