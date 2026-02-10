@@ -17,6 +17,7 @@ using CPS.ComplexCases.NetApp.Wrappers;
 using CPS.ComplexCases.WireMock.Core;
 using Moq;
 using WireMock.Server;
+using System.Security.Cryptography.X509Certificates;
 
 namespace CPS.ComplexCases.NetApp.Tests.Integration
 {
@@ -157,6 +158,14 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             );
 
             _netAppS3HttpArgFactory = new NetAppS3HttpArgFactory();
+
+            var testCert = new X509Certificate2([]);
+            var testCertCollection = new X509Certificate2Collection { testCert };
+
+            _mockNetAppCertFactory
+                .Setup(x => x.GetTrustedCaCertificates())
+                .Returns(testCertCollection);
+
 
             var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<NetAppClient>();
 

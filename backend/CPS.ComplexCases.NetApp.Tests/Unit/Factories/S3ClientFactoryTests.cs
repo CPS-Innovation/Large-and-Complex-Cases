@@ -11,6 +11,7 @@ using CPS.ComplexCases.NetApp.Models.S3.Credentials;
 using CPS.ComplexCases.NetApp.Services;
 using CPS.ComplexCases.NetApp.Telemetry;
 using Moq;
+using System.Security.Cryptography.X509Certificates;
 
 namespace CPS.ComplexCases.NetApp.Tests.Unit.Factories;
 
@@ -45,6 +46,13 @@ public class S3ClientFactoryTests
         _loggerMock = new Mock<ILogger<S3ClientFactory>>();
         _telemetryHandlerMock = new Mock<IS3TelemetryHandler>();
         _netAppCertFactoryMock = new Mock<INetAppCertFactory>();
+
+        var testCert = new X509Certificate2([]);
+        var testCertCollection = new X509Certificate2Collection { testCert };
+
+        _netAppCertFactoryMock
+            .Setup(x => x.GetTrustedCaCertificates())
+            .Returns(testCertCollection);
 
         _factory = new S3ClientFactory(
             _optionsMock.Object,
