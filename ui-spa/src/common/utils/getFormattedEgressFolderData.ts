@@ -1,5 +1,5 @@
 import { EgressFolderData } from "../types/EgressFolderData";
-export const getFormatedEgressFolderData = (
+export const getFormattedEgressFolderData = (
   data: EgressFolderData,
 ): EgressFolderData => {
   const mapped = data.map((item) => {

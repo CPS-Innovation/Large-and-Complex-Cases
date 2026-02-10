@@ -1,7 +1,7 @@
-import { getFormatedEgressFolderData } from "./getFormatedEgressFolderData";
+import { getFormattedEgressFolderData } from "./getFormattedEgressFolderData";
 import { EgressFolderData } from "../types/EgressFolderData";
 
-describe("getFormatedEgressFolderData", () => {
+describe("getFormattedEgressFolderData", () => {
   it("Should return the formatted egress folder data with new path which appends file and folder name to the end", () => {
     const folderData: EgressFolderData = [
       {
@@ -73,7 +73,7 @@ describe("getFormatedEgressFolderData", () => {
       },
     ];
 
-    const formattedFolderData = getFormatedEgressFolderData(folderData);
+    const formattedFolderData = getFormattedEgressFolderData(folderData);
     expect(formattedFolderData).toEqual(expectedResult);
   });
 
@@ -165,7 +165,7 @@ describe("getFormatedEgressFolderData", () => {
       },
     ];
 
-    const formattedFolderData = getFormatedEgressFolderData(folderData);
+    const formattedFolderData = getFormattedEgressFolderData(folderData);
     expect(formattedFolderData).toEqual(expectedResult);
   });
 });
