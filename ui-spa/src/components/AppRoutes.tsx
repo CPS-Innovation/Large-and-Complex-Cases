@@ -6,6 +6,7 @@ import NetAppPage from "./netapp-connect";
 import CaseManagementPage from "./case-management";
 import MetaDataErrorPage from "./case-management/transfer-materials/MetaDataErrorPage";
 import FolderAccessErrorPage from "./case-management/transfer-materials/FolderAccessErrorPage";
+import TransferErrorPage from "./case-management/transfer-materials/TransferErrorPage";
 
 const AppRoutes = () => {
   return (
@@ -44,7 +45,7 @@ const AppRoutes = () => {
       />
       <Route
         path="/case/:caseId/case-management/transfer-errors"
-        element={<CaseManagementPage />}
+        element={<TransferErrorPage />}
       />
       <Route
         path="/case/:caseId/case-management/transfer-permissions-error"
