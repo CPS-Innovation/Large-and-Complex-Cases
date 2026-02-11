@@ -61,4 +61,7 @@ public class DurableTaskClientStub : DurableTaskClient
     {
         throw new NotImplementedException();
     }
+
+    public override Task<PurgeResult> PurgeAllInstancesAsync(PurgeInstancesFilter filter, CancellationToken cancellation = default)
+        => Task.FromResult(new PurgeResult(0));
 }

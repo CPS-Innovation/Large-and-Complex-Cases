@@ -43,7 +43,7 @@ public class GetTransferStatus
 
         var entityStateResponse = await orchestrationClient.Entities.GetEntityAsync<TransferEntity>(entityId);
 
-        if (entityStateResponse == null)
+        if (entityStateResponse == null || entityStateResponse.State == null)
         {
             _logger.LogWarning("Transfer entity not found for ID: {TransferId}, CorrelationId: {CorrelationId}",
                 transferId, currentCorrelationId);
