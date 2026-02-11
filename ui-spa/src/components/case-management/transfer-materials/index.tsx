@@ -28,6 +28,10 @@ import { ApiError } from "../../../common/errors/ApiError";
 import { pollTransferStatus } from "../../../common/utils/pollTransferStatus";
 import { getCommonPath } from "../../../common/utils/getCommonPath";
 import { getDuplicateFoldersAndFiles } from "../../../common/utils/getDuplicateFoldersAndFiles";
+import {
+  type EgressTransferPayloadSourcePath,
+  type NetAppTransferPayloadSourcePath,
+} from "../../../common/types/InitiateFileTransferPayload";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
@@ -444,35 +448,49 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         "selected transfer destination details should not be null",
       );
     }
-    const sourcePaths = response.files.map((data) => ({
-      fileId: data?.id,
-      path: data.sourcePath,
-      relativePath: data.relativePath,
-      fullFilePath: data.fullFilePath,
-    }));
+
+    if (response.transferDirection === "EgressToNetApp") {
+      const sourcePaths: EgressTransferPayloadSourcePath[] = response.files.map(
+        (data) => ({
+          fileId: data.id,
+          path: data.sourcePath,
+          fullFilePath: data.fullFilePath,
+        }),
+      );
+
+      const payload = {
+        caseId: Number.parseInt(caseId),
+        destinationPath: response.destinationPath,
+        workspaceId: egressWorkspaceId,
+        sourceRootFolderPath: response.sourceRootFolderPath,
+        sourcePaths: sourcePaths,
+        transferType:
+          selectedTransferAction.actionType === "copy"
+            ? ("Copy" as const)
+            : ("Move" as const),
+        transferDirection: response.transferDirection,
+      };
+      return payload;
+    }
+
+    const sourcePaths: NetAppTransferPayloadSourcePath[] = response.files.map(
+      (data) => ({
+        path: data.sourcePath,
+        relativePath: data.relativePath,
+      }),
+    );
 
     const payload = {
-      caseId: parseInt(caseId),
-      sourcePaths: sourcePaths,
+      caseId: Number.parseInt(caseId),
       destinationPath: response.destinationPath,
       workspaceId: egressWorkspaceId,
+      sourceRootFolderPath: response.sourceRootFolderPath,
+      sourcePaths: sourcePaths,
+      transferType: "Copy" as const,
+      transferDirection: response.transferDirection,
     };
-    const uniquePayload =
-      selectedTransferAction.destinationFolder.sourceType === "egress"
-        ? {
-            transferType:
-              selectedTransferAction.actionType === "copy"
-                ? ("Copy" as const)
-                : ("Move" as const),
-            transferDirection: "EgressToNetApp" as const,
-          }
-        : {
-            transferType: "Copy" as const,
-            transferDirection: "NetAppToEgress" as const,
-            sourceRootFolderPath: response.sourceRootFolderPath,
-          };
 
-    return { ...payload, ...uniquePayload };
+    return payload;
   };
 
   const handleTransferConfirmationContinue = () => {

@@ -6,6 +6,7 @@ export const egressToNetAppIndexingTransferDev: IndexingFileTransferResponse = {
   destinationPath: "abc/",
   validationErrors: [],
   sourceRootFolderPath: "egress/",
+  transferDirection: "EgressToNetApp",
   files: [
     {
       id: "id_1",
@@ -21,6 +22,7 @@ export const netAppToEgressIndexingTransferDev: IndexingFileTransferResponse = {
   destinationPath: "abc/",
   validationErrors: [],
   sourceRootFolderPath: "netapp/",
+  transferDirection: "NetAppToEgress",
   files: [
     { sourcePath: "netapp/folder1" },
     { sourcePath: "netapp/folder1/folder2" },
@@ -31,6 +33,7 @@ export const egressToNetAppIndexingErrorDev: IndexingFileTransferResponse = {
   caseId: 12,
   isInvalid: true,
   sourceRootFolderPath: "egress/",
+  transferDirection: "EgressToNetApp",
   destinationPath:
     "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination",
   validationErrors: [
