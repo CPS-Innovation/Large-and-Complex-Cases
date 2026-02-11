@@ -105,6 +105,8 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
             return HttpResponse.json({
               caseId: 12,
               isInvalid: true,
+              sourceRootFolderPath: "egress/",
+              transferDirection: "EgressToNetApp",
               destinationPath:
                 "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination",
               validationErrors: [
