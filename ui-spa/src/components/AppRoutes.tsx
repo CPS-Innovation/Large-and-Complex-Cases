@@ -6,7 +6,8 @@ import NetAppPage from "./netapp-connect";
 import CaseManagementPage from "./case-management";
 import MetaDataErrorPage from "./case-management/transfer-materials/MetaDataErrorPage";
 import FolderAccessErrorPage from "./case-management/transfer-materials/FolderAccessErrorPage";
-
+import TransferErrorPage from "./case-management/transfer-materials/TransferErrorPage";
+import TransferMovePermissionsErrorPage from "./case-management/transfer-materials/TransferMovePermissionsErrorPage";
 const AppRoutes = () => {
   return (
     <Routes>
@@ -44,11 +45,11 @@ const AppRoutes = () => {
       />
       <Route
         path="/case/:caseId/case-management/transfer-errors"
-        element={<CaseManagementPage />}
+        element={<TransferErrorPage />}
       />
       <Route
         path="/case/:caseId/case-management/transfer-permissions-error"
-        element={<CaseManagementPage />}
+        element={<TransferMovePermissionsErrorPage />}
       />
       <Route
         path="/case/:caseId/case-management/egress-connection-error"

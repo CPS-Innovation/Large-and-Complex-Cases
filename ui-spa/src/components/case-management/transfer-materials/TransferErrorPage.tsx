@@ -4,14 +4,32 @@ import { PageContentWrapper } from "../../govuk/PageContentWrapper";
 import FileIcon from "../../../components/svgs/file.svg?react";
 import { type TransferFailedItem } from "../../../common/types/TransferStatusResponse";
 import styles from "./TransferErrorPage.module.scss";
+import { useEffect } from "react";
 
 const TransferErrorPage: React.FC = () => {
   const {
     state,
-  }: { state: { transferId: string; failedItems: TransferFailedItem[] } } =
-    useLocation();
+  }: {
+    state: {
+      transferId: string;
+      failedItems: TransferFailedItem[];
+      isRouteValid: boolean;
+    };
+  } = useLocation();
+
+  const {
+    transferId = "",
+    failedItems = [],
+    isRouteValid = false,
+  } = state || {};
   const { caseId } = useParams();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isRouteValid) {
+      navigate(`/`);
+    }
+  }, []);
 
   const handleButtonClick = () => {
     navigate(`/case/${caseId}/case-management`, {
@@ -19,11 +37,11 @@ const TransferErrorPage: React.FC = () => {
     });
   };
 
-  const fileExistsFailedItems = state.failedItems.filter(
+  const fileExistsFailedItems = failedItems.filter(
     (item) => item.errorCode === "FileExists",
   );
 
-  const otherFailedItems = state.failedItems.filter(
+  const otherFailedItems = failedItems.filter(
     (item) => item.errorCode !== "FileExists",
   );
 
@@ -93,7 +111,7 @@ const TransferErrorPage: React.FC = () => {
               </li>
               <li>
                 contact the product team for help and include the error message{" "}
-                <b>failed transfer - {state.transferId}</b>
+                <b>failed transfer - {transferId}</b>
               </li>
             </ul>
             <Button onClick={handleButtonClick} className={styles.continueBtn}>
