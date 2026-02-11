@@ -90,7 +90,7 @@ steps:
 
         echo "✅ Function app is responsive and in a healthy state."
 
-  - ${{ if eq(parameters.runPostmanSmokeTest)}}:
+  - ${{ if eq(parameters.runPostmanSmokeTest, true) }}:
     - template: ../templates/smoke-test-steps
       parameters:
         environment: ${{parameters.environment}}
