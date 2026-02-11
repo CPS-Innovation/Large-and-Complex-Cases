@@ -21,6 +21,8 @@ public class EgressStorageClient(
     IEgressRequestFactory egressRequestFactory,
     ITelemetryClient telemetryClient) : BaseEgressClient(logger, egressOptions, httpClient, egressRequestFactory, telemetryClient), IStorageClient
 {
+    private const string RootPathValue = ".";
+
     public async Task<(Stream Stream, long ContentLength)> OpenReadStreamAsync(string path, string? workspaceId, string? fileId, string? BearerToken = null, string? bucketName = null)
     {
         var token = await GetWorkspaceToken();
@@ -326,19 +328,19 @@ public class EgressStorageClient(
 
     private static string ConstructRelativePath(string baseFolderPath, string filePath, string fileName)
     {
-        // Get the last folder name from the base path (selected folder)
+        // Get the folder name from the base path (selected folder)
         var baseFolderName = Path.GetFileName(baseFolderPath.TrimEnd('/'));
+        var relativePath = Path.GetRelativePath(baseFolderPath, filePath).Replace('\\', '/');
 
-        var baseFolderIndex = filePath.LastIndexOf(baseFolderName);
-
-        if (baseFolderIndex >= 0)
+        if (relativePath == RootPathValue)
         {
-            var relativePath = filePath.Substring(baseFolderIndex);
-            return Path.Combine(relativePath, fileName).Replace('\\', '/');
+            return Path.Combine(baseFolderName, fileName).Replace('\\', '/');
         }
-
-        // Fallback: if we can't find the base folder in the path, use the original logic
-        return Path.Combine(filePath, fileName).Replace('\\', '/');
+        else
+        {
+            // Combine the selected folder and subfolder structure with the file name
+            return Path.Combine(baseFolderName, relativePath, fileName).Replace('\\', '/');
+        }
     }
 
     private async Task<List<ListCaseMaterialDataResponse>> GetAllPagesInParallel(string workspaceId, string? folderId, string token)
