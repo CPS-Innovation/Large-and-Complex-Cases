@@ -8,6 +8,7 @@ parameters:
   resourceGroupName: $(resourceGroupName)
   deployToSlot: false
   runPostmanSmokeTest: false
+  postmanCollectionPath: ''
   slotName: ''
 
 steps:
@@ -94,9 +95,8 @@ steps:
     - template: ../templates/smoke-test-steps
       parameters:
         environment: ${{parameters.environment}}
-        postmanCollectionPath: "$(System.DefaultWorkingDirectory)/backend/postman/LCCMainAPISmokeTest.postman_collection.json"
+        postmanCollectionPath: ${{parameters.postmanCollectionPath}}
         appInstance: $(instanceName)
-        nodeVersion: '20.x'
 
   - task: AzureAppServiceManage@0
     condition: and(succeeded(), ${{ eq(parameters.deployToSlot, true) }})

@@ -17,7 +17,7 @@ steps:
 - task: UseNode@1
   displayName: 'Use Node.js'
   inputs:
-    version: ${{parameters.nodeVersion}}
+    version: '20.x'
 
 - script: |
     if command -v newman &> /dev/null; then
