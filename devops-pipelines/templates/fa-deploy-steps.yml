@@ -7,6 +7,7 @@ parameters:
   azureSubscription: ''
   resourceGroupName: $(resourceGroupName)
   deployToSlot: false
+  runPostmanSmokeTest: false
   slotName: ''
 
 steps:
@@ -88,6 +89,14 @@ steps:
         fi
 
         echo "✅ Function app is responsive and in a healthy state."
+
+  - ${{ if eq(parameters.runPostmanSmokeTest)}}:
+    - template: ../templates/smoke-test-steps
+      parameters:
+        environment: ${{parameters.environment}}
+        postmanCollectionPath: "$(System.DefaultWorkingDirectory)/backend/postman/LCCMainAPISmokeTest.postman_collection.json"
+        appInstance: $(instanceName)
+        nodeVersion: '20.x'
 
   - task: AzureAppServiceManage@0
     condition: and(succeeded(), ${{ eq(parameters.deployToSlot, true) }})
