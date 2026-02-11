@@ -8,10 +8,12 @@ export type EgreessToNetAppTransferPayload = {
   transferType: "Copy" | "Move";
   transferDirection: "EgressToNetApp";
   sourcePaths: EgressTransferPayloadSourcePath[];
+  sourceRootFolderPath: string;
   destinationPath: string;
 };
 
 export type NetAppToEgressTransferPayload = {
+  workspaceId: string;
   caseId: number;
   transferType: "Copy";
   transferDirection: "NetAppToEgress";
@@ -29,6 +31,5 @@ export type EgressTransferPayloadSourcePath = {
 
 export type NetAppTransferPayloadSourcePath = {
   path: string;
-  modifiedPath?: string;
   relativePath?: string;
 };

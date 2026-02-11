@@ -9,6 +9,7 @@ export type IndexingFileTransferResponse = {
   destinationPath: string;
   validationErrors: IndexingError[];
   sourceRootFolderPath: string;
+  transferDirection: "EgressToNetApp" | "NetAppToEgress";
   files: {
     id?: string;
     sourcePath: string;
