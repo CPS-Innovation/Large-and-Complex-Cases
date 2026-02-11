@@ -1,5 +1,8 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using AutoFixture;
 using AutoFixture.AutoMoq;
 using CPS.ComplexCases.NetApp.Factories;
@@ -8,9 +11,7 @@ using CPS.ComplexCases.NetApp.Models.S3.Credentials;
 using CPS.ComplexCases.NetApp.Services;
 using CPS.ComplexCases.NetApp.Telemetry;
 using Moq;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using Microsoft.IdentityModel.Tokens;
+using System.Security.Cryptography.X509Certificates;
 
 namespace CPS.ComplexCases.NetApp.Tests.Unit.Factories;
 
@@ -22,6 +23,7 @@ public class S3ClientFactoryTests
     private readonly Mock<IKeyVaultService> _keyVaultServiceMock;
     private readonly Mock<ILogger<S3ClientFactory>> _loggerMock;
     private readonly Mock<IS3TelemetryHandler> _telemetryHandlerMock;
+    private readonly Mock<INetAppCertFactory> _netAppCertFactoryMock;
     private readonly S3ClientFactory _factory;
     private const string TestOid = "test-oid-12345";
     private const string TestUserName = "testuser@example.com";
@@ -43,13 +45,22 @@ public class S3ClientFactoryTests
         _keyVaultServiceMock = new Mock<IKeyVaultService>();
         _loggerMock = new Mock<ILogger<S3ClientFactory>>();
         _telemetryHandlerMock = new Mock<IS3TelemetryHandler>();
+        _netAppCertFactoryMock = new Mock<INetAppCertFactory>();
+
+        var testCert = new X509Certificate2([]);
+        var testCertCollection = new X509Certificate2Collection { testCert };
+
+        _netAppCertFactoryMock
+            .Setup(x => x.GetTrustedCaCertificates())
+            .Returns(testCertCollection);
 
         _factory = new S3ClientFactory(
             _optionsMock.Object,
             _credentialServiceMock.Object,
             _keyVaultServiceMock.Object,
             _loggerMock.Object,
-            _telemetryHandlerMock.Object);
+            _telemetryHandlerMock.Object,
+            _netAppCertFactoryMock.Object);
     }
 
     private static string GenerateTestJwtToken(string oid, string preferredUsername)
@@ -95,13 +106,17 @@ public class S3ClientFactoryTests
             .Setup(x => x.GetCredentialsAsync(TestOid, TestUserName, bearerToken))
             .ReturnsAsync(credentials);
 
+        _credentialServiceMock
+            .Setup(x => x.GetCredentialKeysAsync(bearerToken))
+            .ReturnsAsync((credentials.AccessKey, credentials.SecretKey));
+
         // Act
         var client = await _factory.GetS3ClientAsync(bearerToken);
 
         // Assert
         Assert.NotNull(client);
         _credentialServiceMock.Verify(
-            x => x.GetCredentialsAsync(TestOid, TestUserName, bearerToken),
+            x => x.GetCredentialKeysAsync(bearerToken),
             Times.Once);
     }
 
@@ -137,6 +152,10 @@ public class S3ClientFactoryTests
             .Setup(x => x.GetCredentialsAsync(TestOid, TestUserName, bearerToken))
             .ReturnsAsync(credentials);
 
+        _credentialServiceMock
+            .Setup(x => x.GetCredentialKeysAsync(bearerToken))
+            .ReturnsAsync((credentials.AccessKey, credentials.SecretKey));
+
         _keyVaultServiceMock
             .Setup(x => x.CheckCredentialStatusAsync(TestOid))
             .ReturnsAsync(validStatus);
@@ -149,7 +168,7 @@ public class S3ClientFactoryTests
         // Assert
         Assert.Same(firstClient, secondClient);
         _credentialServiceMock.Verify(
-            x => x.GetCredentialsAsync(TestOid, TestUserName, bearerToken),
+            x => x.GetCredentialKeysAsync(bearerToken),
             Times.Once);
         _keyVaultServiceMock.Verify(
             x => x.CheckCredentialStatusAsync(TestOid),
@@ -188,6 +207,10 @@ public class S3ClientFactoryTests
             .Setup(x => x.GetCredentialsAsync(TestOid, TestUserName, bearerToken))
             .ReturnsAsync(credentials);
 
+        _credentialServiceMock
+            .Setup(x => x.GetCredentialKeysAsync(bearerToken))
+            .ReturnsAsync((credentials.AccessKey, credentials.SecretKey));
+
         _keyVaultServiceMock
             .Setup(x => x.CheckCredentialStatusAsync(TestOid))
             .ReturnsAsync(expiringStatus);
@@ -200,7 +223,7 @@ public class S3ClientFactoryTests
         // Assert
         Assert.NotSame(firstClient, secondClient);
         _credentialServiceMock.Verify(
-            x => x.GetCredentialsAsync(TestOid, TestUserName, bearerToken),
+            x => x.GetCredentialKeysAsync(bearerToken),
             Times.Exactly(2)); // Called twice - once for each client creation
         _keyVaultServiceMock.Verify(
             x => x.CheckCredentialStatusAsync(TestOid),
@@ -239,6 +262,10 @@ public class S3ClientFactoryTests
             .Setup(x => x.GetCredentialsAsync(TestOid, TestUserName, bearerToken))
             .ReturnsAsync(credentials);
 
+        _credentialServiceMock
+            .Setup(x => x.GetCredentialKeysAsync(bearerToken))
+            .ReturnsAsync((credentials.AccessKey, credentials.SecretKey));
+
         _keyVaultServiceMock
             .Setup(x => x.CheckCredentialStatusAsync(TestOid))
             .ReturnsAsync(nearExpiryStatus);
@@ -250,7 +277,7 @@ public class S3ClientFactoryTests
 
         // Assert
         _credentialServiceMock.Verify(
-            x => x.GetCredentialsAsync(TestOid, TestUserName, bearerToken),
+            x => x.GetCredentialKeysAsync(bearerToken),
             Times.Exactly(2));
         _loggerMock.Verify(
             x => x.Log(
@@ -298,12 +325,12 @@ public class S3ClientFactoryTests
         };
 
         _credentialServiceMock
-            .Setup(x => x.GetCredentialsAsync(oid1, "user1@example.com", bearerToken1))
-            .ReturnsAsync(credentials1);
+            .Setup(x => x.GetCredentialKeysAsync(bearerToken1))
+            .ReturnsAsync((credentials1.AccessKey, credentials1.SecretKey));
 
         _credentialServiceMock
-            .Setup(x => x.GetCredentialsAsync(oid2, "user2@example.com", bearerToken2))
-            .ReturnsAsync(credentials2);
+            .Setup(x => x.GetCredentialKeysAsync(bearerToken2))
+            .ReturnsAsync((credentials2.AccessKey, credentials2.SecretKey));
 
         // First call for user 1
         var client1 = await _factory.GetS3ClientAsync(bearerToken1);
@@ -314,10 +341,10 @@ public class S3ClientFactoryTests
         // Assert
         Assert.NotSame(client1, client2);
         _credentialServiceMock.Verify(
-            x => x.GetCredentialsAsync(oid1, "user1@example.com", bearerToken1),
+                x => x.GetCredentialKeysAsync(bearerToken1),
             Times.Once);
         _credentialServiceMock.Verify(
-            x => x.GetCredentialsAsync(oid2, "user2@example.com", bearerToken2),
+            x => x.GetCredentialKeysAsync(bearerToken2),
             Times.Once);
     }
 
@@ -393,7 +420,7 @@ public class S3ClientFactoryTests
         // Assert
         Assert.Same(firstClient, secondClient);
         _credentialServiceMock.Verify(
-            x => x.GetCredentialsAsync(TestOid, TestUserName, bearerToken),
+            x => x.GetCredentialKeysAsync(bearerToken),
             Times.Once); // Only called once
     }
 
@@ -455,7 +482,7 @@ public class S3ClientFactoryTests
         Assert.Same(client3, client4); // Cached client returned after regeneration
 
         _credentialServiceMock.Verify(
-            x => x.GetCredentialsAsync(TestOid, TestUserName, bearerToken),
+            x => x.GetCredentialKeysAsync(bearerToken),
             Times.Exactly(2));
     }
 }

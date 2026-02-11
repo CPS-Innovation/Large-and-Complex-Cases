@@ -17,6 +17,7 @@ using CPS.ComplexCases.NetApp.Wrappers;
 using CPS.ComplexCases.WireMock.Core;
 using Moq;
 using WireMock.Server;
+using System.Security.Cryptography.X509Certificates;
 
 namespace CPS.ComplexCases.NetApp.Tests.Integration
 {
@@ -31,7 +32,10 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
         private readonly IS3ClientFactory _s3ClientFactory;
         private readonly Mock<IS3CredentialService> _mockCredentialService;
         private readonly Mock<IKeyVaultService> _mockKeyVaultService;
-        private readonly Mock<IS3TelemetryHandler> _mockTelemetryHandler = new();
+        private readonly Mock<IS3TelemetryHandler> _mockTelemetryHandler;
+        private readonly INetAppS3HttpClient _netAppS3HttpClient;
+        private readonly INetAppS3HttpArgFactory _netAppS3HttpArgFactory;
+        private readonly Mock<INetAppCertFactory> _mockNetAppCertFactory;
         private const string TestOid = "test-oid-12345";
         private const string TestUserName = "testuser@example.com";
         private static readonly string BearerToken = GenerateTestJwtToken(TestOid, TestUserName);
@@ -77,13 +81,23 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
             _amazonS3UtilsWrapper = new AmazonS3UtilsWrapper();
             _netAppArgFactory = new NetAppArgFactory();
             _netAppRequestFactory = new NetAppRequestFactory();
-            var netAppHttpClientLogger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<NetAppHttpClient>();
             var s3ClientFactoryLogger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<S3ClientFactory>();
+            _netAppS3HttpClient = new NetAppS3HttpClient(
+                new HttpClient { BaseAddress = new Uri(_server.Urls[0]) },
+                null!,
+                Options.Create(new NetAppOptions
+                {
+                    Url = _server.Urls[0],
+                    RegionName = "eu-west-1"
+                })
+            );
+            _netAppS3HttpArgFactory = new NetAppS3HttpArgFactory();
 
             // Setup mock credential service
             _mockCredentialService = new Mock<IS3CredentialService>();
             _mockKeyVaultService = new Mock<IKeyVaultService>();
             _mockTelemetryHandler = new Mock<IS3TelemetryHandler>();
+            _mockNetAppCertFactory = new Mock<INetAppCertFactory>();
 
             var fakeCredentials = new S3CredentialsDecrypted
             {
@@ -128,13 +142,34 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
                 _mockCredentialService.Object,
                 _mockKeyVaultService.Object,
                 s3ClientFactoryLogger,
-                _mockTelemetryHandler.Object
+                _mockTelemetryHandler.Object,
+                _mockNetAppCertFactory.Object
             );
             _s3ClientFactory.SetS3ClientAsync(_s3Client);
 
+            _netAppS3HttpClient = new NetAppS3HttpClient(
+                new HttpClient { BaseAddress = new Uri(_server.Urls[0]) },
+                _mockCredentialService.Object,
+                Options.Create(new NetAppOptions
+                {
+                    Url = _server.Urls[0],
+                    RegionName = "eu-west-1"
+                })
+            );
+
+            _netAppS3HttpArgFactory = new NetAppS3HttpArgFactory();
+
+            var testCert = new X509Certificate2([]);
+            var testCertCollection = new X509Certificate2Collection { testCert };
+
+            _mockNetAppCertFactory
+                .Setup(x => x.GetTrustedCaCertificates())
+                .Returns(testCertCollection);
+
+
             var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<NetAppClient>();
 
-            _client = new NetAppClient(logger, _amazonS3UtilsWrapper, _netAppRequestFactory, _s3ClientFactory);
+            _client = new NetAppClient(logger, _amazonS3UtilsWrapper, _netAppRequestFactory, _s3ClientFactory, _netAppS3HttpClient, _netAppS3HttpArgFactory);
         }
 
         [Fact]
