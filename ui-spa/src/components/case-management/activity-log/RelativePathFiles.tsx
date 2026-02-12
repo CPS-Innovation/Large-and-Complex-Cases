@@ -27,11 +27,11 @@ const RelativePathFiles: React.FC<RelativePathFilesProps> = ({
         return (
           <section key={key}>
             <div
-              className={styles.relativePath}
+              className={styles.relativePathWrapper}
               data-testId="activity-relative-path"
             >
               {key && <FolderIcon />}
-              <span>{key}</span>
+              <span className={styles.relativePathText}>{key}</span>
             </div>
 
             {!!groupedFiles[`${key}`].errors.length && (
@@ -46,8 +46,12 @@ const RelativePathFiles: React.FC<RelativePathFilesProps> = ({
                       >
                         Failed
                       </Tag>{" "}
-                      <FileIcon />
-                      <span className={styles.fileName}>{file.fileName}</span>
+                      <div className={styles.fileNameWrapper}>
+                        <FileIcon />
+                        <span className={styles.fileNameText}>
+                          {file.fileName}
+                        </span>
+                      </div>
                     </div>
                   </li>
                 ))}
@@ -62,8 +66,12 @@ const RelativePathFiles: React.FC<RelativePathFilesProps> = ({
                 {groupedFiles[`${key}`].success.map((file) => (
                   <li key={key} className={styles.listItem}>
                     <div className={styles.listContent}>
-                      <FileIcon />
-                      <span className={styles.fileName}>{file.fileName}</span>
+                      <div className={styles.fileNameWrapper}>
+                        <FileIcon />
+                        <span className={styles.fileNameText}>
+                          {file.fileName}
+                        </span>
+                      </div>
                     </div>
                   </li>
                 ))}
