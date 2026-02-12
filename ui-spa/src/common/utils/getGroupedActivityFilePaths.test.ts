@@ -1,6 +1,6 @@
-import { getGroupedActvityFilePaths } from "./getGroupedActivityFilePaths";
+import { getGroupedActivityFilePaths } from "./getGroupedActivityFilePaths";
 
-describe("getGroupedActvityFilePaths", () => {
+describe("getGroupedActivityFilePaths", () => {
   test("should group the successFiles and failedFiles into relevant relative path groups", () => {
     const successFiles = [
       { path: "abc/folder1/file1.pdf" },
@@ -49,7 +49,7 @@ describe("getGroupedActvityFilePaths", () => {
     };
 
     expect(
-      getGroupedActvityFilePaths(successFiles, failedFiles, sourcePath),
+      getGroupedActivityFilePaths(successFiles, failedFiles, sourcePath),
     ).toStrictEqual(expectedResult);
   });
 
@@ -80,7 +80,7 @@ describe("getGroupedActvityFilePaths", () => {
     };
 
     expect(
-      getGroupedActvityFilePaths(successFiles, failedFiles, sourcePath),
+      getGroupedActivityFilePaths(successFiles, failedFiles, sourcePath),
     ).toStrictEqual(expectedResult);
   });
 
@@ -138,7 +138,7 @@ describe("getGroupedActvityFilePaths", () => {
     };
 
     expect(
-      getGroupedActvityFilePaths(successFiles, failedFiles, sourcePath),
+      getGroupedActivityFilePaths(successFiles, failedFiles, sourcePath),
     ).toStrictEqual(expectedResult);
   });
 
@@ -196,7 +196,7 @@ describe("getGroupedActvityFilePaths", () => {
     };
 
     expect(
-      getGroupedActvityFilePaths(successFiles, failedFiles, sourcePath),
+      getGroupedActivityFilePaths(successFiles, failedFiles, sourcePath),
     ).toStrictEqual(expectedResult);
   });
 });

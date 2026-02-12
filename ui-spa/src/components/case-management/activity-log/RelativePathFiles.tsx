@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import FolderIcon from "../../../components/svgs/folder.svg?react";
 import FileIcon from "../../../components/svgs/file.svg?react";
 import { Tag } from "../../govuk";
-import { getGroupedActvityFilePaths } from "../../../common/utils/getGroupedActivityFilePaths";
+import { getGroupedActivityFilePaths } from "../../../common/utils/getGroupedActivityFilePaths";
 import { sortRelativePaths } from "../../../common/utils/sortRelativePaths";
 import styles from "./RelativePathFiles.module.scss";
 type RelativePathFilesProps = {
@@ -17,7 +17,7 @@ const RelativePathFiles: React.FC<RelativePathFilesProps> = ({
   sourcePath,
 }) => {
   const groupedFiles = useMemo(
-    () => getGroupedActvityFilePaths(successFiles, errorFiles, sourcePath),
+    () => getGroupedActivityFilePaths(successFiles, errorFiles, sourcePath),
     [successFiles, errorFiles, sourcePath],
   );
 

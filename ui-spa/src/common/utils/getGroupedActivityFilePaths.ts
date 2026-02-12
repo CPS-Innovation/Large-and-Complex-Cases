@@ -5,7 +5,7 @@ export type ActivityRelativePathFileType = {
   success: { fileName: string }[];
 };
 
-export const getGroupedActvityFilePaths = (
+export const getGroupedActivityFilePaths = (
   successFiles: { path: string }[],
   failedFiles: { path: string }[],
   sourcePath: string,
