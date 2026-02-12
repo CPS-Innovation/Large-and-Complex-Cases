@@ -22,22 +22,16 @@ export const getGroupedActvityFilePaths = (
   };
 
   const cleanSourcePath = getCleanPath(sourcePath);
-  const sourcePathParts = cleanSourcePath.split("/");
-  
-  const lastPart = sourcePathParts[sourcePathParts.length - 1];
-  const isFile = lastPart.includes(".");
-  const sourceDirParts = isFile 
-    ? sourcePathParts.slice(0, -1) 
-    : sourcePathParts;
+  const sourcePathParts = cleanSourcePath ? cleanSourcePath.split("/") : [];
 
   const successFilePaths = successFiles.map(({ path }) => ({
     hasFailed: false,
-    ...getRelativePathAndFileName(sourceDirParts.length, path),
+    ...getRelativePathAndFileName(sourcePathParts.length, path),
   }));
 
   const failedFilePaths = failedFiles.map(({ path }) => ({
     hasFailed: true,
-    ...getRelativePathAndFileName(sourceDirParts.length, path),
+    ...getRelativePathAndFileName(sourcePathParts.length, path),
   }));
 
   const groupedFiles = [...failedFilePaths, ...successFilePaths].reduce(
