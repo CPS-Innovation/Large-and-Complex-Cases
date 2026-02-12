@@ -40,4 +40,3 @@ steps:
     --env-var "cmsPassword=$(CmsUserPassword)" \
     --env-var "egressWorkspaceId=$(EgressWorkspaceId)"
   displayName: 'Run Postman Collection'
-  timeoutInMinutes: 3
