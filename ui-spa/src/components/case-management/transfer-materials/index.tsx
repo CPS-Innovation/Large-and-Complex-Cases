@@ -61,6 +61,12 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     username: string;
     direction: "EgressToNetApp" | "NetAppToEgress";
     transferType: "Move" | "Copy";
+    transferMetrics: {
+      totalFiles: number;
+      processedFiles: number;
+      successfulFiles: number;
+      failedFiles: number;
+    } | null;
   }>(null);
   const [egressPathFolders, setEgressPathFolders] = useState<
     {
@@ -559,6 +565,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       direction:
         transferSource === "egress" ? "EgressToNetApp" : "NetAppToEgress",
       transferType: initiatePayload.transferType,
+      transferMetrics: null,
     });
     let initiateFileTransferResponse: InitiateFileTransferResponse;
     try {
@@ -585,6 +592,12 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           username: response.userName,
           direction: response.direction,
           transferType: response.transferType,
+          transferMetrics: {
+            totalFiles: response.totalFiles,
+            processedFiles: response.processedFiles,
+            successfulFiles: response.successfulFiles,
+            failedFiles: response.failedFiles,
+          },
         });
         return;
       }
@@ -594,6 +607,12 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           username: response.userName,
           direction: response.direction,
           transferType: response.transferType,
+          transferMetrics: {
+            totalFiles: response.totalFiles,
+            processedFiles: response.processedFiles,
+            successfulFiles: response.successfulFiles,
+            failedFiles: response.failedFiles,
+          },
         });
         if (response.userName === username)
           handleFileTransferClear(transferId!);
@@ -653,11 +672,42 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     handleStatusResponse,
   ]);
 
+  const transferProgressMetrics = useMemo(() => {
+    const defaultMetricsData = {
+      progressAriaLiveText: "",
+      progressContent: "",
+    };
+    if (!transferStatusData?.transferMetrics) return defaultMetricsData;
+
+    if (transferStatusData?.transferMetrics?.totalFiles === 0) {
+      return defaultMetricsData;
+    }
+    const progressAriaLiveText = `Transfer progress, ${transferStatusData.transferMetrics.processedFiles} out of ${transferStatusData.transferMetrics.totalFiles} files processed`;
+    const progressContent = (
+      <div
+        className={styles.transferProgressMetrics}
+        data-testid="transfer-progress-metrics"
+      >
+        <span>
+          total files : {transferStatusData?.transferMetrics?.totalFiles}
+        </span>
+        <span>
+          files processed :{" "}
+          {transferStatusData?.transferMetrics?.processedFiles}
+        </span>
+      </div>
+    );
+    return {
+      progressAriaLiveText,
+      progressContent,
+    };
+  }, [transferStatusData]);
+
   const activeTransferMessage = useMemo(() => {
     if (transferStatus === "transferring") {
       if (!transferStatusData) {
         return {
-          ariaLabelText: "",
+          ariaLabelText: "Completing transfer",
           spinnerTextContent: <span> Completing transfer</span>,
         };
       }
@@ -718,6 +768,9 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     <div>
       <output aria-live="polite" className="govuk-visually-hidden">
         {activeTransferMessage?.ariaLabelText}
+        {transferProgressMetrics.progressAriaLiveText && (
+          <>{transferProgressMetrics.progressAriaLiveText}</>
+        )}
       </output>
       {transferStatus === "validating" && (
         <div className={styles.transferContent}>
@@ -735,6 +788,9 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
             <Spinner data-testid="transfer-spinner" diameterPx={50} />
             <div className={styles.spinnerText}>
               {activeTransferMessage?.spinnerTextContent}
+              {transferProgressMetrics.progressContent && (
+                <>{transferProgressMetrics.progressContent}</>
+              )}
             </div>
           </div>
         </div>

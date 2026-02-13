@@ -536,6 +536,10 @@ test.describe("egress-netapp-transfer", () => {
             completedAt: null,
             failedItems: [],
             userName: "dev_user@example.org",
+            totalFiles: 0,
+            processedFiles: 0,
+            successfulFiles: 0,
+            failedFiles: 0,
           });
         },
       ),
@@ -556,6 +560,34 @@ test.describe("egress-netapp-transfer", () => {
     await expect(
       page.getByTestId("tab-content-transfer-materials"),
     ).toContainText("Completing transfer from Egress to Shared Drive...");
+    await expect(
+      page.getByTestId("transfer-progress-metrics"),
+    ).not.toBeVisible();
+
+    await worker.use(
+      http.get(
+        "https://mocked-out-api/api/v1/filetransfer/mock-transfer-id/status",
+        async () => {
+          await delay(10);
+          return HttpResponse.json({
+            status: "Initiated",
+            transferType: "Copy",
+            direction: "EgressToNetApp",
+            completedAt: null,
+            failedItems: [],
+            userName: "dev_user@example.org",
+            totalFiles: 10,
+            processedFiles: 0,
+            successfulFiles: 0,
+            failedFiles: 0,
+          });
+        },
+      ),
+    );
+    await expect(page.getByTestId("transfer-progress-metrics")).toBeVisible();
+    await expect(page.getByTestId("transfer-progress-metrics")).toContainText(
+      "total files : 10files processed : 0",
+    );
     await worker.use(
       http.get(
         "https://mocked-out-api/api/v1/filetransfer/mock-transfer-id/status",
@@ -568,6 +600,10 @@ test.describe("egress-netapp-transfer", () => {
             completedAt: null,
             failedItems: [],
             userName: "dev_user@example.org",
+            totalFiles: 30,
+            processedFiles: 20,
+            successfulFiles: 10,
+            failedFiles: 10,
           });
         },
       ),
@@ -583,6 +619,10 @@ test.describe("egress-netapp-transfer", () => {
     await expect(
       page.getByTestId("tab-content-transfer-materials"),
     ).toContainText("Completing transfer from Egress to Shared Drive...");
+    await expect(page.getByTestId("transfer-progress-metrics")).toBeVisible();
+    await expect(page.getByTestId("transfer-progress-metrics")).toContainText(
+      "total files : 30files processed : 20",
+    );
     await worker.use(
       http.get(
         "https://mocked-out-api/api/v1/filetransfer/mock-transfer-id/status",
