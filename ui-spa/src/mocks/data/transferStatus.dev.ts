@@ -7,9 +7,9 @@ export const egressToNetAppTransferStatusDev: TransferStatusResponse = {
   failedItems: [],
   userName: "dev_user@example.org",
   totalFiles: 30,
-  processedFiles: 20,
-  successfulFiles: 10,
-  failedFiles: 10,
+  processedFiles: 30,
+  successfulFiles: 30,
+  failedFiles: 0,
 };
 
 export const netAppToEgressTransferStatusDev: TransferStatusResponse = {
@@ -20,7 +20,7 @@ export const netAppToEgressTransferStatusDev: TransferStatusResponse = {
   failedItems: [],
   userName: "dev_user@example.org",
   totalFiles: 30,
-  processedFiles: 20,
-  successfulFiles: 10,
-  failedFiles: 10,
+  processedFiles: 30,
+  successfulFiles: 30,
+  failedFiles: 0,
 };
