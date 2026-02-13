@@ -12,8 +12,6 @@ export type TransferStatusResponse = {
   userName: string;
   totalFiles: number;
   processedFiles: number;
-  successfulFiles: number;
-  failedFiles: number;
 };
 
 export type TransferFailedItem = {

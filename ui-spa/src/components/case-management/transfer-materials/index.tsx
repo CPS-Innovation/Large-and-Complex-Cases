@@ -64,8 +64,6 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     transferMetrics: {
       totalFiles: number;
       processedFiles: number;
-      successfulFiles: number;
-      failedFiles: number;
     } | null;
   }>(null);
   const [egressPathFolders, setEgressPathFolders] = useState<
@@ -595,8 +593,6 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           transferMetrics: {
             totalFiles: response.totalFiles,
             processedFiles: response.processedFiles,
-            successfulFiles: response.successfulFiles,
-            failedFiles: response.failedFiles,
           },
         });
         return;
@@ -610,8 +606,6 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           transferMetrics: {
             totalFiles: response.totalFiles,
             processedFiles: response.processedFiles,
-            successfulFiles: response.successfulFiles,
-            failedFiles: response.failedFiles,
           },
         });
         if (response.userName === username)
