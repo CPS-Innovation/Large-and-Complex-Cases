@@ -10,6 +10,7 @@ namespace CPS.ComplexCases.FileTransfer.API.Functions;
 
 public class PurgeTransferHistory(ILogger<PurgeTransferHistory> logger, IOptions<PurgeRetentionConfig> retentionConfig)
 {
+    private const string DeleteOperation = "Delete";
     private readonly ILogger<PurgeTransferHistory> _logger = logger;
     private readonly PurgeRetentionConfig _retentionConfig = retentionConfig.Value;
 
@@ -47,7 +48,7 @@ public class PurgeTransferHistory(ILogger<PurgeTransferHistory> logger, IOptions
             try
             {
                 var entityId = new EntityInstanceId(nameof(TransferEntityState), instance.InstanceId);
-                await client.Entities.SignalEntityAsync(entityId, "Delete", null, null, cancellationToken);
+                await client.Entities.SignalEntityAsync(entityId, DeleteOperation, null, null, cancellationToken);
                 entityDeleteCount++;
             }
             catch (Exception ex)
