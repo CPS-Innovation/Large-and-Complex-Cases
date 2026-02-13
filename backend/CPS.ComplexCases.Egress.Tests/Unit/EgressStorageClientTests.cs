@@ -665,6 +665,7 @@ public class EgressStorageClientTests : IDisposable
     [InlineData("folder", "folder", "file.txt", "folder/file.txt")]
     [InlineData("Statements", "Statements/Witness/Reports", "summary.xlsx", "Statements/Witness/Reports/summary.xlsx")]
     [InlineData("Evidence", "Evidence/Archives", "data.zip", "Evidence/Archives/data.zip")]
+    [InlineData("", "Statements", "witness.pdf", "Statements/witness.pdf")]
     public void ConstructRelativePath_WithVariousPathStructures_ReturnsCorrectCombination(
         string baseFolderPath, string filePath, string fileName, string expected)
     {
