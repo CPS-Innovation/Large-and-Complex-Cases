@@ -1,3 +1,4 @@
+using System.Buffers;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -216,76 +217,94 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
 
                 long remainingBytes = totalSize - bytesProcessed;
                 int targetPartSize = (int)Math.Min(_sizeConfig.ChunkSizeBytes, remainingBytes);
-                var partData = new byte[targetPartSize];
-                int partOffset = 0;
-
-                while (partOffset < targetPartSize)
+                var partData = ArrayPool<byte>.Shared.Rent(targetPartSize);
+                try
                 {
-                    int bytesToRead = targetPartSize - partOffset;
-                    int bytesRead = await sourceStream.ReadAsync(
-                        partData.AsMemory(partOffset, bytesToRead),
-                        cancellationToken);
+                    int partOffset = 0;
 
-                    if (bytesRead == 0)
+                    while (partOffset < targetPartSize)
                     {
-                        if (bytesProcessed + partOffset < totalSize)
+                        int bytesToRead = targetPartSize - partOffset;
+                        int bytesRead = await sourceStream.ReadAsync(
+                            partData.AsMemory(partOffset, bytesToRead),
+                            cancellationToken);
+
+                        if (bytesRead == 0)
                         {
-                            throw new InvalidOperationException(
-                                $"Unexpected end of stream at position {bytesProcessed + partOffset}");
+                            if (bytesProcessed + partOffset < totalSize)
+                            {
+                                throw new InvalidOperationException(
+                                    $"Unexpected end of stream at position {bytesProcessed + partOffset}");
+                            }
+                            break;
                         }
-                        break;
+                        partOffset += bytesRead;
                     }
-                    partOffset += bytesRead;
-                }
 
-                if (md5 != null)
-                {
-                    if (bytesProcessed + partOffset == totalSize)
-                        md5.TransformFinalBlock(partData, 0, partOffset);
-                    else
-                        md5.TransformBlock(partData, 0, partOffset, null, 0);
-                }
+                    if (md5 != null)
+                    {
+                        if (bytesProcessed + partOffset == totalSize)
+                            md5.TransformFinalBlock(partData, 0, partOffset);
+                        else
+                            md5.TransformBlock(partData, 0, partOffset, null, 0);
+                    }
 
-                long start = bytesProcessed;
-                long end = start + partOffset - 1;
-                bytesProcessed += partOffset;
-                int currentPartNumber = partNumber++;
+                    long start = bytesProcessed;
+                    long end = start + partOffset - 1;
+                    bytesProcessed += partOffset;
+                    int currentPartNumber = partNumber++;
 
-                // Wait for upload slot BEFORE copying data
-                await uploadSemaphore.WaitAsync(cancellationToken);
-
-                // Copy part data for the upload task
-                var partDataCopy = partData.AsMemory(0, partOffset).ToArray();
-
-                // Fire and forget upload (semaphore already acquired)
-                var uploadTask = Task.Run(async () =>
-                {
+                    // Wait for upload slot BEFORE copying data
+                    await uploadSemaphore.WaitAsync(cancellationToken);
+                    bool uploadTaskOwnsSemaphore = false;
                     try
                     {
-                        _logger.LogInformation(
-                            "Uploading part {Part}, bytes {Start}-{End}/{Total}",
-                            currentPartNumber, start, end, totalSize);
+                        // Copy part data for the upload task
+                        var partDataCopy = partData.AsMemory(0, partOffset).ToArray();
 
-                        var result = await destinationClient.UploadChunkAsync(
-                            session, currentPartNumber, partDataCopy,
-                            start, end, totalSize,
-                            payload.BearerToken, payload.BucketName);
-
-                        if (result.PartNumber.HasValue && result.ETag != null)
+                        // Fire and forget upload (semaphore already acquired)
+                        var uploadTask = Task.Run(async () =>
                         {
-                            lock (uploadedEtags)
+                            try
                             {
-                                uploadedEtags[result.PartNumber.Value] = result.ETag;
+                                _logger.LogInformation(
+                                    "Uploading part {Part}, bytes {Start}-{End}/{Total}",
+                                    currentPartNumber, start, end, totalSize);
+
+                                var result = await destinationClient.UploadChunkAsync(
+                                    session, currentPartNumber, partDataCopy,
+                                    start, end, totalSize,
+                                    payload.BearerToken, payload.BucketName);
+
+                                if (result.PartNumber.HasValue && result.ETag != null)
+                                {
+                                    lock (uploadedEtags)
+                                    {
+                                        uploadedEtags[result.PartNumber.Value] = result.ETag;
+                                    }
+                                }
                             }
-                        }
+                            finally
+                            {
+                                uploadSemaphore.Release();
+                            }
+                        }, cancellationToken);
+
+                        uploadTaskOwnsSemaphore = true;
+                        uploadTasks.Add(uploadTask);
                     }
                     finally
                     {
-                        uploadSemaphore.Release();
+                        if (!uploadTaskOwnsSemaphore)
+                        {
+                            uploadSemaphore.Release();
+                        }
                     }
-                }, cancellationToken);
-
-                uploadTasks.Add(uploadTask);
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(partData);
+                }
             }
 
             await Task.WhenAll(uploadTasks);
