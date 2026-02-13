@@ -13,6 +13,7 @@ import FileIcon from "../../../components/svgs/file.svg?react";
 import { formatDate } from "../../../common/utils/formatDate";
 import { DropdownButton } from "../../common/DropdownButton";
 import { TransferAction } from "../../../common/types/TransferAction";
+import { useUserGroupsFeatureFlag } from "../../../common/hooks/useUserGroupsFeatureFlag";
 import styles from "./NetAppFolderContainer.module.scss";
 
 type NetAppFolderContainerProps = {
@@ -44,6 +45,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
     name: string;
     type: "ascending" | "descending";
   }>();
+  const featureFlags = useUserGroupsFeatureFlag();
 
   const netAppDataSorted = useMemo(() => {
     if (sortValues?.name === "folder-name")
@@ -265,13 +267,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
   };
 
   const getDestinationDropdownItems = (path: string) => {
-    return [
-      {
-        id: `${path}:move`,
-        label: "Move",
-        ariaLabel: `move to ${getFolderNameFromPath(path)}`,
-        disabled: false,
-      },
+    let items = [
       {
         id: `${path}:copy`,
         label: "Copy",
@@ -279,6 +275,19 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
         disabled: false,
       },
     ];
+
+    if (featureFlags.transferMove) {
+      items = [
+        {
+          id: `${path}:move`,
+          label: "Move",
+          ariaLabel: `move to ${getFolderNameFromPath(path)}`,
+          disabled: false,
+        },
+        ...items,
+      ];
+    }
+    return items;
   };
 
   const getTableRowData = () => {
@@ -298,29 +307,33 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
   };
 
   const getInsetElement = () => {
-    const curentFolder = folders[folders.length - 1];
+    const currentFolder = folders[folders.length - 1];
     return (
       <InsetText data-testid="netapp-inset-text">
-        Transfer to {curentFolder.folderName}
+        Transfer to {currentFolder.folderName}
         <LinkButton
           type="button"
           onClick={() => {
-            handleTransferAction(`${curentFolder.folderPath}:copy`);
+            handleTransferAction(`${currentFolder.folderPath}:copy`);
           }}
-          ariaLabel={`Copy to ${curentFolder.folderName}`}
+          ariaLabel={`Copy to ${currentFolder.folderName}`}
         >
           Copy
-        </LinkButton>{" "}
-        |
-        <LinkButton
-          type="button"
-          onClick={() => {
-            handleTransferAction(`${curentFolder.folderPath}:move`);
-          }}
-          ariaLabel={`Move to ${curentFolder.folderName}`}
-        >
-          Move
         </LinkButton>
+        {featureFlags.transferMove && (
+          <>
+            |
+            <LinkButton
+              type="button"
+              onClick={() => {
+                handleTransferAction(`${currentFolder.folderPath}:move`);
+              }}
+              ariaLabel={`Move to ${currentFolder.folderName}`}
+            >
+              Move
+            </LinkButton>
+          </>
+        )}
       </InsetText>
     );
   };

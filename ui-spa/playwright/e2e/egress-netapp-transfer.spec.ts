@@ -41,7 +41,7 @@ test.describe("egress-netapp-transfer", () => {
       ).toBeVisible();
       await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
       await expect(page.getByTestId("netapp-inset-text")).toHaveText(
-        "Transfer to netappCopy |Move",
+        "Transfer to netappCopy|Move",
       );
       await checkboxes.nth(0).uncheck();
       await expect(
@@ -61,7 +61,7 @@ test.describe("egress-netapp-transfer", () => {
       ).toBeVisible();
       await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
       await expect(page.getByTestId("netapp-inset-text")).toHaveText(
-        "Transfer to netappCopy |Move",
+        "Transfer to netappCopy|Move",
       );
       await checkboxes.nth(1).uncheck();
       await expect(
@@ -81,7 +81,7 @@ test.describe("egress-netapp-transfer", () => {
       ).toBeVisible();
       await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
       await expect(page.getByTestId("netapp-inset-text")).toHaveText(
-        "Transfer to netappCopy |Move",
+        "Transfer to netappCopy|Move",
       );
       await checkboxes.nth(3).uncheck();
       await expect(
