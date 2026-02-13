@@ -1,13 +1,5 @@
 trigger: none
 
-pr:
-  branches:
-    include:
-      - main
-  paths:
-    include:
-      - backend/*
-
 variables:
   buildConfiguration: 'Release'
   dotNetVersion: '8.x'
