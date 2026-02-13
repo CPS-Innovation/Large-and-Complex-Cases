@@ -49,7 +49,14 @@ public class EgressStorageClient(
             throw new ArgumentNullException(nameof(relativePath), "Relative path cannot be null or empty.");
 
         var fileName = Path.GetFileName(relativePath);
-        var relativePathFromSourceRoot = GetRelativePathFromSourceRoot(relativePath, sourceRootFolderPath);
+
+        var sourcePathWithoutOperationName = sourceRootFolderPath;
+        if (!string.IsNullOrEmpty(sourceRootFolderPath))
+        {
+            var operationName = sourceRootFolderPath.Substring(0, sourceRootFolderPath.IndexOf('/'));
+            sourcePathWithoutOperationName = sourceRootFolderPath.RemovePathPrefix(operationName);
+        }
+        var relativePathFromSourceRoot = GetRelativePathFromSourceRoot(relativePath, sourcePathWithoutOperationName);
         var sourceDirectory = Path.GetDirectoryName(relativePathFromSourceRoot) ?? string.Empty;
         var fullDestinationPath = Path.Combine(destinationPath, sourceDirectory).Replace('\\', '/');
 
