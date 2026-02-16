@@ -752,4 +752,84 @@ test.describe("egress-netapp-transfer", () => {
     await expect(page.getByTestId("egress-table-wrapper")).toBeVisible();
     await expect(page.getByTestId("netapp-table-wrapper")).toBeVisible();
   });
+
+  test("Should show the transfer move option if the transferMove feature flag is enabled", async ({
+    page,
+  }) => {
+    await page.goto("/case/12/case-management");
+    await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
+    await expect(page.getByTestId("tab-active")).toHaveText(
+      "Transfer materials",
+    );
+    await expect(
+      page.getByTestId("tab-content-transfer-materials").locator("h2"),
+    ).toHaveText("Transfer materials to the Shared Drive");
+    await page
+      .getByTestId("egress-table-wrapper")
+      .locator('role=button[name="folder-1-0"]')
+      .click();
+
+    const checkboxes = page
+      .getByTestId("egress-table-wrapper")
+      .locator('input[type="checkbox"]');
+    await checkboxes.nth(0).check();
+    await expect(page.getByTestId("transfer-actions-dropdown-0")).toBeVisible();
+    await expect(page.getByTestId("transfer-actions-dropdown-1")).toBeVisible();
+    await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
+    await expect(
+      page
+        .getByTestId("netapp-inset-text")
+        .getByRole("button", { name: "Move" }),
+    ).toBeVisible();
+    await page.getByTestId("transfer-actions-dropdown-0").click();
+    await expect(
+      page.getByTestId("dropdown-panel").getByRole("button", { name: "Move" }),
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    await page.getByTestId("transfer-actions-dropdown-1").click();
+    await expect(
+      page.getByTestId("dropdown-panel").getByRole("button", { name: "Move" }),
+    ).toBeVisible();
+  });
+
+  test("Should not show the transfer move option if the transferMove feature flag is disabled", async ({
+    page,
+  }) => {
+    await page.goto("/case/12/case-management?transfer-move=false");
+    await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
+    await expect(page.getByTestId("tab-active")).toHaveText(
+      "Transfer materials",
+    );
+    await expect(
+      page.getByTestId("tab-content-transfer-materials").locator("h2"),
+    ).toHaveText("Transfer materials to the Shared Drive");
+    await page
+      .getByTestId("egress-table-wrapper")
+      .locator('role=button[name="folder-1-0"]')
+      .click();
+
+    const checkboxes = page
+      .getByTestId("egress-table-wrapper")
+      .locator('input[type="checkbox"]');
+    await checkboxes.nth(0).check();
+    await expect(page.getByTestId("transfer-actions-dropdown-0")).toBeVisible();
+    await expect(page.getByTestId("transfer-actions-dropdown-1")).toBeVisible();
+    await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
+    await expect(
+      page
+        .getByTestId("netapp-inset-text")
+        .getByRole("button", { name: "Move" }),
+    ).not.toBeVisible();
+    await page.getByTestId("transfer-actions-dropdown-0").click();
+    await expect(
+      page.getByTestId("dropdown-panel").getByRole("button", { name: "Move" }),
+    ).not.toBeVisible();
+    await page.keyboard.press("Escape");
+
+    await page.getByTestId("transfer-actions-dropdown-1").click();
+    await expect(
+      page.getByTestId("dropdown-panel").getByRole("button", { name: "Move" }),
+    ).not.toBeVisible();
+  });
 });
