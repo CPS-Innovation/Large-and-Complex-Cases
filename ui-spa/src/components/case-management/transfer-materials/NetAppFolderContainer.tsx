@@ -278,13 +278,13 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
 
     if (featureFlags.transferMove) {
       items = [
+        ...items,
         {
           id: `${path}:move`,
           label: "Move",
           ariaLabel: `move to ${getFolderNameFromPath(path)}`,
           disabled: false,
         },
-        ...items,
       ];
     }
     return items;

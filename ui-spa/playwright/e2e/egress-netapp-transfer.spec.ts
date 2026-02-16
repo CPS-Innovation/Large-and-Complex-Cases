@@ -791,6 +791,12 @@ test.describe("egress-netapp-transfer", () => {
     await expect(
       page.getByTestId("dropdown-panel").getByRole("button", { name: "Move" }),
     ).toBeVisible();
+    await expect(
+      page.getByTestId("dropdown-panel").locator("ul>li").nth(0),
+    ).toHaveText("Copy");
+    await expect(
+      page.getByTestId("dropdown-panel").locator("ul>li").nth(1),
+    ).toHaveText("Move");
   });
 
   test("Should not show the transfer move option if the transferMove feature flag is disabled", async ({
