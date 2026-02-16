@@ -23,7 +23,7 @@ const CaseManagementPage = () => {
 
   const [activeTabId, setActiveTabId] = useState<TabId>("transfer-materials");
 
-  const featurFlags = useUserGroupsFeatureFlag();
+  const featureFlags = useUserGroupsFeatureFlag();
   const handleTabSelection = (tabId: TabId) => {
     setActiveTabId(tabId);
   };
@@ -125,7 +125,7 @@ const CaseManagementPage = () => {
     },
   ];
 
-  if (featurFlags.caseDetails) {
+  if (featureFlags.caseDetails) {
     items.push({
       id: "case-details",
       label: "Case Details",

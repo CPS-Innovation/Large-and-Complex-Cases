@@ -87,6 +87,7 @@ stages:
             VITE_TENANT_ID: $(VITE_TENANT_ID) 
             VITE_PRIVATE_BETA_USER_GROUP: $(VITE_PRIVATE_BETA_USER_GROUP)
             VITE_PRIVATE_BETA_CONTACT_EMAIL: $(VITE_PRIVATE_BETA_CONTACT_EMAIL)
+            VITE_FEATURE_FLAG_TRANSFER_MOVE: $(VITE_FEATURE_FLAG_TRANSFER_MOVE)
 
         - task: PublishPipelineArtifact@1
           displayName: 'Publish Web App Package'
