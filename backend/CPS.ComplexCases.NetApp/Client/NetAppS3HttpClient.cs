@@ -14,6 +14,7 @@ public class NetAppS3HttpClient(HttpClient httpClient, IS3CredentialService s3Cr
     private readonly HttpClient _httpClient = httpClient;
     private readonly IS3CredentialService _s3CredentialService = s3CredentialService;
     private readonly NetAppOptions _options = options.Value;
+    private const string UnsignedPayload = "UNSIGNED-PAYLOAD";
 
     public async Task<HeadObjectResponseDto> GetHeadObjectAsync(GetHeadObjectArg arg)
     {
@@ -36,15 +37,18 @@ public class NetAppS3HttpClient(HttpClient httpClient, IS3CredentialService s3Cr
         var (accessKey, secretKey) = await _s3CredentialService.GetCredentialKeysAsync(bearerToken);
 
         var now = DateTime.UtcNow;
-        var amzDate = now.ToString("yyyyMMddTHHmmssZ");
+        var amzDate = now.ToString("yyyyMMdd'T'HHmmss'Z'");
         var dateStamp = now.ToString("yyyyMMdd");
-        var host = _httpClient.BaseAddress?.Host ?? throw new InvalidOperationException("HttpClient must have a BaseAddress configured.");
-        var payloadHash = Hash(payload);
+        var baseAddress = _httpClient.BaseAddress ?? throw new InvalidOperationException("HttpClient must have a BaseAddress configured.");
+        var host = baseAddress.IsDefaultPort ? baseAddress.Host : baseAddress.Authority;
+        var payloadHash = string.IsNullOrEmpty(payload) ? UnsignedPayload : Hash(payload);
 
+        request.Headers.Add("host", host);
         request.Headers.Add("x-amz-date", amzDate);
         request.Headers.Add("x-amz-content-sha256", payloadHash);
 
-        var canonicalUri = Path.AltDirectorySeparatorChar + key;
+        // Include prefixing slash in canonical URI as per AWS requirements
+        var canonicalUri = "/" + string.Join("/", key.Split('/').Select(Uri.EscapeDataString));
         var canonicalQueryString = string.Empty;
         var canonicalHeaders = $"host:{host}\nx-amz-content-sha256:{payloadHash}\nx-amz-date:{amzDate}\n";
         var signedHeaders = "host;x-amz-content-sha256;x-amz-date";
