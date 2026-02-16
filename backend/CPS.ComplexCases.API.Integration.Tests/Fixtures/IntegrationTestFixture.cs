@@ -243,7 +243,8 @@ public class IntegrationTestFixture : IAsyncLifetime
         if (!IsDatabaseConfigured) return;
 
         var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-        optionsBuilder.UseNpgsql(Settings.CaseManagementDatastoreConnection);
+        optionsBuilder.UseNpgsql(Settings.CaseManagementDatastoreConnection, x =>
+            x.MigrationsHistoryTable("__EFMigrationsHistory", Data.Constants.SchemaNames.Lcc));
 
         DbContext = new ApplicationDbContext(optionsBuilder.Options);
     }
