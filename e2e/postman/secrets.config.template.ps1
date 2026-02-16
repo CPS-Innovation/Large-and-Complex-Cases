@@ -25,7 +25,7 @@ $env:LCC_CMS_USERNAME = "YourName.CIN3"
 $env:LCC_CMS_PASSWORD = "your-cms-password"
 
 # Egress Configuration
-$env:LCC_EGRESS_BASE_URL = "https://your-instance.egresscloud.com"
+$env:LCC_EGRESS_BASE_URL = "your-instance.egress"
 $env:LCC_EGRESS_SERVICE_ACCOUNT_AUTH = "YOUR_BASE64_ENCODED_SERVICE_ACCOUNT_CREDENTIALS"
 $env:LCC_EGRESS_TEMPLATE_ID = "YOUR_EGRESS_TEMPLATE_ID"
 $env:LCC_EGRESS_ADMIN_ROLE_ID = "YOUR_EGRESS_ADMIN_ROLE_ID"
