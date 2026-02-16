@@ -338,13 +338,13 @@ public class EgressStorageClientTests : IDisposable
         const string workspaceId = "workspace-id";
         var selectedEntities = new List<TransferEntityDto>
         {
-        new TransferEntityDto
-        {
-            Id = "folder-id",
-            Path = "/test/folder",
-            IsFolder = true,
-            FileId = "folder-id"
-        }
+            new TransferEntityDto
+            {
+                Id = "folder-id",
+                Path = "folder-id/file-path",
+                IsFolder = true,
+                FileId = "folder-id"
+            }
         };
 
         // Act
@@ -355,7 +355,7 @@ public class EgressStorageClientTests : IDisposable
         var files = result.ToList();
         Assert.Single(files);
         Assert.Equal("nested-file-id", files[0].Id);
-        Assert.Equal("folder-id/file-path/nested-file-name", files[0].SourcePath);
+        Assert.Equal("file-path/nested-file-name", files[0].SourcePath);
     }
 
     [Fact]
@@ -376,7 +376,7 @@ public class EgressStorageClientTests : IDisposable
             {
                 Id = "folder-id",
                 FileId = "folder-id",
-                Path = "/test/folder",
+                Path = "folder-id/file-path",
                 IsFolder = true
             }
         };
@@ -390,8 +390,9 @@ public class EgressStorageClientTests : IDisposable
         Assert.Equal(2, files.Count);
 
         Assert.Contains(files, f => f.Id == "file-id" && f.SourcePath == "standalone-file.txt");
-        Assert.Contains(files, f => f.Id == "nested-file-id" && f.SourcePath == "folder-id/file-path/nested-file-name");
+        Assert.Contains(files, f => f.Id == "nested-file-id" && f.SourcePath == "file-path/nested-file-name");
     }
+
     [Fact]
     public async Task UploadLargeFile_ShouldHandleMultipleChunks()
     {

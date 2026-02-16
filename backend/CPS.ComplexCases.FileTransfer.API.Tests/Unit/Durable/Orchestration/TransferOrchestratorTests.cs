@@ -11,6 +11,7 @@ using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.FileTransfer.API.Durable.Orchestration;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
+using CPS.ComplexCases.FileTransfer.API.Durable.State;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 using Moq;
@@ -51,6 +52,7 @@ public class TransferOrchestratorTests
     public async Task RunOrchestrator_WithValidInput_ExecutesAllActivitiesInCorrectOrder()
     {
         // Arrange
+        var expectedActivityCount = 5;
         var transferPayload = CreateValidTransferPayload();
         var activityCallOrder = new List<string>();
 
@@ -72,17 +74,16 @@ public class TransferOrchestratorTests
         await _orchestrator.RunOrchestrator(_contextMock.Object);
 
         // Assert
-        Assert.Equal(6, activityCallOrder.Count);
-        Assert.Equal("InitializeTransfer", activityCallOrder[0]);
-        Assert.Equal("UpdateActivityLog", activityCallOrder[1]);
-        Assert.Equal("UpdateTransferStatus", activityCallOrder[2]);
-        Assert.Equal("TransferFile", activityCallOrder[3]);
+        Assert.Equal(expectedActivityCount, activityCallOrder.Count);
+        Assert.Equal("UpdateActivityLog", activityCallOrder[0]);
+        Assert.Equal("UpdateTransferStatus", activityCallOrder[1]);
+        Assert.Equal("TransferFile", activityCallOrder[2]);
+        Assert.Equal("FinalizeTransfer", activityCallOrder[3]);
         Assert.Equal("UpdateActivityLog", activityCallOrder[4]);
-        Assert.Equal("FinalizeTransfer", activityCallOrder[5]);
     }
 
     [Fact]
-    public async Task RunOrchestrator_WithValidInput_CallsInitializeTransferWithCorrectEntity()
+    public async Task RunOrchestrator_WithValidInput_UpdatesEntityWithCorrectData()
     {
         // Arrange
         var transferPayload = CreateValidTransferPayload();
@@ -92,20 +93,20 @@ public class TransferOrchestratorTests
             .Returns(transferPayload);
 
         _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
-            .Returns(Task.CompletedTask)
-            .Callback<TaskName, object, TaskOptions>((taskName, entity, _) =>
-            {
-                if (taskName.Name == "InitializeTransfer")
-                {
-                    capturedEntity = (TransferEntity)entity;
-                }
-            });
+            .Returns(Task.CompletedTask);
 
         _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
             .Returns(Task.FromResult(new TransferResult { IsSuccess = true }));
 
         _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
-            .Returns(Task.CompletedTask);
+            .Returns(Task.CompletedTask)
+            .Callback<EntityInstanceId, string, object, CallEntityOptions>((entityId, operation, entity, _) =>
+            {
+                if (entity is TransferEntity transferEntity)
+                {
+                    capturedEntity = transferEntity;
+                }
+            });
 
         // Act
         await _orchestrator.RunOrchestrator(_contextMock.Object);
@@ -370,6 +371,96 @@ public class TransferOrchestratorTests
         await Assert.ThrowsAsync<ArgumentNullException>(() => _orchestrator.RunOrchestrator(_contextMock.Object));
     }
 
+    [Fact]
+    public async Task RunOrchestrator_WhenNetAppToEgress_FiltersDuplicateDestinationFiles()
+    {
+        // Arrange
+        var transferPayload = CreateNetAppToEgressPayloadWithRoot();
+        var destinationFiles = new HashSet<string> { "/dest/a.txt" };
+        var failedItems = new List<TransferFailedItem>();
+        var transferFilePayloads = new List<TransferFilePayload>();
+
+        _contextMock.Setup(c => c.GetInput<TransferPayload>())
+            .Returns(transferPayload);
+
+        _contextMock.Setup(c => c.CallActivityAsync<HashSet<string>>(
+                It.Is<TaskName>(t => t.Name == "ListDestinationFilePaths"),
+                It.IsAny<object>(),
+                It.IsAny<TaskOptions>()))
+            .ReturnsAsync(destinationFiles);
+
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.CompletedTask);
+
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ReturnsAsync(new TransferResult { IsSuccess = true, SuccessfulItem = _fixture.Create<TransferItem>() })
+            .Callback<TaskName, object, TaskOptions>((taskName, payload, _) =>
+            {
+                if (taskName.Name == "TransferFile" && payload is TransferFilePayload transferFilePayload)
+                {
+                    transferFilePayloads.Add(transferFilePayload);
+                }
+            });
+
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask)
+            .Callback<EntityInstanceId, string, object, CallEntityOptions>((_, operation, payload, __) =>
+            {
+                if (operation == nameof(TransferEntityState.AddFailedItem) && payload is TransferFailedItem failedItem)
+                {
+                    failedItems.Add(failedItem);
+                }
+            });
+
+        // Act
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        // Assert
+        _contextMock.Verify(c => c.CallActivityAsync<HashSet<string>>(
+                It.Is<TaskName>(t => t.Name == "ListDestinationFilePaths"),
+                It.IsAny<object>(),
+                It.IsAny<TaskOptions>()),
+            Times.Once);
+
+        Assert.Single(failedItems);
+        Assert.Equal("/root/a.txt", failedItems[0].SourcePath);
+        Assert.Equal(TransferErrorCode.FileExists, failedItems[0].ErrorCode);
+        Assert.Contains("/dest/a.txt", failedItems[0].ErrorMessage);
+
+        Assert.Single(transferFilePayloads);
+        Assert.Equal("/root/b.txt", transferFilePayloads[0].SourcePath.Path);
+    }
+
+    [Fact]
+    public async Task RunOrchestrator_WhenNotNetAppToEgress_SkipsDestinationListing()
+    {
+        // Arrange
+        var transferPayload = CreateValidTransferPayload();
+        transferPayload.TransferDirection = TransferDirection.EgressToNetApp;
+
+        _contextMock.Setup(c => c.GetInput<TransferPayload>())
+            .Returns(transferPayload);
+
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.CompletedTask);
+
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ReturnsAsync(new TransferResult { IsSuccess = true, SuccessfulItem = _fixture.Create<TransferItem>() });
+
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        // Assert
+        _contextMock.Verify(c => c.CallActivityAsync<HashSet<string>>(
+                It.Is<TaskName>(t => t.Name == "ListDestinationFilePaths"),
+                It.IsAny<object>(),
+                It.IsAny<TaskOptions>()),
+            Times.Never);
+    }
+
     private TransferPayload CreateValidTransferPayload()
     {
         return new TransferPayload
@@ -377,16 +468,16 @@ public class TransferOrchestratorTests
             TransferId = _fixture.Create<Guid>(),
             DestinationPath = _fixture.Create<string>(),
             BearerToken = _fixture.Create<string>(),
-            SourcePaths = new List<TransferSourcePath>
-            {
+            SourcePaths =
+            [
                 new TransferSourcePath
                 {
                     Path = _fixture.Create<string>(),
                 }
-            },
+            ],
             CaseId = _fixture.Create<int>(),
             TransferType = _fixture.Create<TransferType>(),
-            TransferDirection = _fixture.Create<TransferDirection>(),
+            TransferDirection = TransferDirection.EgressToNetApp,
             WorkspaceId = _fixture.Create<string>(),
             BucketName = _fixture.Create<string>(),
             UserName = _fixture.Create<string>(),
@@ -400,25 +491,55 @@ public class TransferOrchestratorTests
             TransferId = _fixture.Create<Guid>(),
             DestinationPath = _fixture.Create<string>(),
             BearerToken = _fixture.Create<string>(),
-            SourcePaths = new List<TransferSourcePath>
-        {
-            new TransferSourcePath
-            {
-                Path = _fixture.Create<string>(),
-            },
+            SourcePaths =
+            [
+                new() {
+                    Path = _fixture.Create<string>(),
+                },
 
-            new TransferSourcePath
-            {
-                Path = _fixture.Create<string>(),
-            }
-        },
+                new() {
+                    Path = _fixture.Create<string>(),
+                }
+            ],
             CaseId = _fixture.Create<int>(),
             TransferType = _fixture.Create<TransferType>(),
-            TransferDirection = _fixture.Create<TransferDirection>(),
+            TransferDirection = TransferDirection.EgressToNetApp,
             WorkspaceId = _fixture.Create<string>(),
             BucketName = _fixture.Create<string>(),
             UserName = _fixture.Create<string>(),
             IsRetry = _fixture.Create<bool>()
+        };
+    }
+
+    private TransferPayload CreateNetAppToEgressPayloadWithRoot()
+    {
+        return new TransferPayload
+        {
+            TransferId = _fixture.Create<Guid>(),
+            DestinationPath = "/dest/",
+            BearerToken = _fixture.Create<string>(),
+            SourceRootFolderPath = "/root/",
+            SourcePaths =
+            [
+                new TransferSourcePath
+                {
+                    Path = "/root/a.txt",
+                    RelativePath = "/root/a.txt"
+                },
+                new TransferSourcePath
+                {
+                    Path = "/root/b.txt",
+                    RelativePath = "/root/b.txt"
+                }
+            ],
+            CaseId = _fixture.Create<int>(),
+            TransferType = TransferType.Copy,
+            TransferDirection = TransferDirection.NetAppToEgress,
+            WorkspaceId = _fixture.Create<string>(),
+            BucketName = _fixture.Create<string>(),
+            UserName = _fixture.Create<string>(),
+            IsRetry = _fixture.Create<bool>(),
+            CorrelationId = _fixture.Create<Guid>()
         };
     }
 

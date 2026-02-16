@@ -1,8 +1,10 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Models.Domain;
+using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.Common.Telemetry;
@@ -50,6 +52,22 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 ? payload.SourcePath.Path
                 : payload.SourcePath.ModifiedPath;
 
+            if (payload.TransferDirection == TransferDirection.EgressToNetApp)
+            {
+                var existingFilepath = GetDestinationPath(payload);
+
+                var fileExists = await destinationClient.FileExistsAsync(
+                    existingFilepath,
+                    payload.WorkspaceId,
+                    payload.BearerToken,
+                    payload.BucketName);
+
+                if (fileExists)
+                {
+                    throw new FileExistsException($"File already exists at destination path: {existingFilepath}");
+                }
+            }
+
             var (sourceStream, totalSize) = await sourceClient.OpenReadStreamAsync(
                 payload.SourcePath.Path,
                 payload.WorkspaceId,
@@ -95,6 +113,12 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 telemetryEvent.IsMultipart = result.IsSuccess && result.SuccessfulItem!.TotalPartsCount > 1;
                 telemetryEvent.TotalPartsCount = result.IsSuccess ? result.SuccessfulItem!.TotalPartsCount : 0;
 
+                if (!result.IsSuccess && result.FailedItem != null)
+                {
+                    telemetryEvent.ErrorCode = result.FailedItem.ErrorCode.ToString();
+                    telemetryEvent.ErrorMessage = result.FailedItem.ErrorMessage;
+                }
+
                 _telemetryClient.TrackEvent(telemetryEvent);
 
                 return result;
@@ -102,19 +126,25 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         }
         catch (FileExistsException ex)
         {
+            LogFileConflictTelemetry(payload);
+            telemetryEvent.ErrorCode = TransferErrorCode.FileExists.ToString();
+            telemetryEvent.ErrorMessage = ex.Message;
             return CreateFailureResult(payload.SourcePath.Path, TransferErrorCode.FileExists, ex.Message, ex);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
-            _logger.LogInformation("Transfer cancelled: {Path}", payload.SourcePath.Path);
+            _logger.LogInformation(ex, "Transfer cancelled: {Path}", payload.SourcePath.Path);
             throw;
         }
         catch (Exception ex)
         {
+            var errorMessage = $"Exception: {ex.GetType().FullName}: {ex.Message}{Environment.NewLine}StackTrace: {ex.StackTrace}";
+            telemetryEvent.ErrorCode = TransferErrorCode.GeneralError.ToString();
+            telemetryEvent.ErrorMessage = errorMessage;
             return CreateFailureResult(
                 payload.SourcePath.Path,
                 TransferErrorCode.GeneralError,
-                $"Exception: {ex.GetType().FullName}: {ex.Message}{Environment.NewLine}StackTrace: {ex.StackTrace}",
+                errorMessage,
                 ex);
         }
         finally
@@ -261,8 +291,20 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             await Task.WhenAll(uploadTasks);
 
             string md5Hash = md5?.Hash != null ? Convert.ToBase64String(md5.Hash) : string.Empty;
-            await CompleteUpload(destinationClient, session, md5Hash, uploadedEtags,
-                payload.BearerToken, payload.BucketName);
+            string? filePath = payload.TransferDirection == TransferDirection.EgressToNetApp ? payload.DestinationPath.EnsureTrailingSlash() + payload.SourcePath.Path : null;
+            var isVerified = await CompleteUpload(destinationClient, session, md5Hash, uploadedEtags,
+                payload.BearerToken, payload.BucketName, filePath);
+
+            if (!isVerified)
+            {
+                _logger.LogError("Upload completed but failed to verify upload for {Source} -> {Dest}",
+                    payload.SourcePath.Path, payload.DestinationPath);
+
+                return CreateFailureResult(
+                    payload.SourcePath.Path,
+                    TransferErrorCode.IntegrityVerificationFailed,
+                    "Upload completed but failed to verify.");
+            }
 
             _logger.LogInformation("Completed parallel multipart transfer for {Source} -> {Dest}",
                 payload.SourcePath.Path, payload.DestinationPath);
@@ -271,21 +313,22 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         }
     }
 
-    private static async Task CompleteUpload(
+    private static async Task<bool> CompleteUpload(
         IStorageClient destinationClient,
         UploadSession session,
         string md5Hash,
         Dictionary<int, string> uploadedChunks,
         string bearerToken,
-        string? bucketName)
+        string? bucketName,
+        string? filePath)
     {
         if (destinationClient is EgressStorageClient)
         {
-            await destinationClient.CompleteUploadAsync(session, md5hash: md5Hash);
+            return await destinationClient.CompleteUploadAsync(session, md5hash: md5Hash);
         }
         else
         {
-            await destinationClient.CompleteUploadAsync(session, null, etags: uploadedChunks, bearerToken, bucketName);
+            return await destinationClient.CompleteUploadAsync(session, null, etags: uploadedChunks, bearerToken, bucketName, filePath);
         }
     }
 
@@ -332,5 +375,40 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         };
 
         return new TransferResult { IsSuccess = false, FailedItem = failedItem };
+    }
+
+    private static string GetDestinationPath(TransferFilePayload payload)
+    {
+        if (payload.TransferDirection == TransferDirection.EgressToNetApp)
+        {
+            return payload.DestinationPath + payload.SourcePath.Path;
+        }
+        else
+        {
+            int? index = payload.SourcePath.RelativePath?.IndexOf(payload.SourceRootFolderPath ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+            if (index.HasValue && index.Value == 0 && !string.IsNullOrEmpty(payload.SourceRootFolderPath))
+            {
+                return payload.DestinationPath + payload.SourcePath.RelativePath!.Substring(payload.SourceRootFolderPath.Length).TrimStart('/', '\\');
+            }
+            else
+            {
+                return payload.DestinationPath + payload.SourcePath.RelativePath;
+            }
+        }
+    }
+
+    private void LogFileConflictTelemetry(TransferFilePayload payload)
+    {
+        var conflictEvent = new DuplicateFileConflictEvent
+        {
+            CaseId = payload.CaseId,
+            SourceFilePath = payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
+            DestinationFilePath = payload.DestinationPath + payload.SourcePath.Path,
+            ConflictingFileName = Path.GetFileName(payload.SourcePath.Path),
+            TransferDirection = payload.TransferDirection.ToString(),
+            TransferId = payload.TransferId.ToString()
+        };
+
+        _telemetryClient.TrackEvent(conflictEvent);
     }
 }

@@ -1,6 +1,6 @@
 .listContent {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.5rem;
 }
 .listItem {
@@ -11,6 +11,7 @@
     text-transform: capitalize;
     margin-left: 0.5rem;
     color: #2a0b06;
+    margin-top: 0.1875rem;
   }
 }
 
@@ -18,12 +19,31 @@
   padding-left: 1.3rem;
 }
 
-.relativePath {
+.relativePathWrapper,
+.fileNameWrapper {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.5rem;
+  & svg {
+    min-width: 1.875rem;
+    margin-top: 0.25rem;
+  }
+}
+.relativePathText,
+.fileNameText {
+  margin: 0;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: break-all;
+}
+
+.relativePathText {
   font-weight: bold;
 }
+.fileNameText {
+  margin-top: 0.1875rem;
+}
+
 .seperator {
   border-bottom: 1px solid #b1b4b6;
 }

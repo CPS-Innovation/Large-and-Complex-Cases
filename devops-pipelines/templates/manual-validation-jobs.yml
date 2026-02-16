@@ -8,11 +8,14 @@ parameters:
 - name: approvers
   type: string
   default: ''
+- name: agentPool
+  type: string
+  default: 'LACC PreProd Pool'
 
 jobs:
 - job: Set_Flag
   displayName: "Set the 'isFriday' Flag"
-  pool: 'LACC PreProd Pool'
+  pool: ${{ parameters.agentPool }}
   steps:
   - script: |
       isFriday=false

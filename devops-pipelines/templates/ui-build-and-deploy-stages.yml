@@ -39,6 +39,7 @@ stages:
       instructions: 'Please verify the deployment to the lower environment worked as expected before approving deployment to ${{parameters.environment}}.'
       notifyUsers: ${{ parameters.notifyUsers }}
       approvers: ${{ parameters.approvers }}
+      agentPool: ${{ parameters.agentPool }}
 
 - stage: Build_Deploy_${{ parameters.environment }}
   displayName: '${{ parameters.environment }} - Build & Deploy Web App'
@@ -86,6 +87,7 @@ stages:
             VITE_TENANT_ID: $(VITE_TENANT_ID) 
             VITE_PRIVATE_BETA_USER_GROUP: $(VITE_PRIVATE_BETA_USER_GROUP)
             VITE_PRIVATE_BETA_CONTACT_EMAIL: $(VITE_PRIVATE_BETA_CONTACT_EMAIL)
+            VITE_FEATURE_FLAG_TRANSFER_MOVE: $(VITE_FEATURE_FLAG_TRANSFER_MOVE)
 
         - task: PublishPipelineArtifact@1
           displayName: 'Publish Web App Package'

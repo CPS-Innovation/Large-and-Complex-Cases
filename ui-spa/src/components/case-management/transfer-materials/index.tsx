@@ -15,7 +15,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import TransferConfirmationModal from "./TransferConfirmationModal";
 import { getGroupedFolderFileData } from "../../../common/utils/getGroupedFolderFileData";
 import { TransferAction } from "../../../common/types/TransferAction";
-import { getFormatedEgressFolderData } from "../../../common/utils/getFormatedEgressFolderData";
+import { getFormattedEgressFolderData } from "../../../common/utils/getFormattedEgressFolderData";
 import { mapToNetAppFolderData } from "../../../common/utils/mapToNetAppFolderData";
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
 import { InitiateFileTransferPayload } from "../../../common/types/InitiateFileTransferPayload";
@@ -27,6 +27,11 @@ import { useUserDetails } from "../../../auth";
 import { ApiError } from "../../../common/errors/ApiError";
 import { pollTransferStatus } from "../../../common/utils/pollTransferStatus";
 import { getCommonPath } from "../../../common/utils/getCommonPath";
+import { getDuplicateFoldersAndFiles } from "../../../common/utils/getDuplicateFoldersAndFiles";
+import {
+  type EgressTransferPayloadSourcePath,
+  type NetAppTransferPayloadSourcePath,
+} from "../../../common/types/InitiateFileTransferPayload";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
@@ -56,6 +61,10 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     username: string;
     direction: "EgressToNetApp" | "NetAppToEgress";
     transferType: "Move" | "Copy";
+    transferMetrics: {
+      totalFiles: number;
+      processedFiles: number;
+    } | null;
   }>(null);
   const [egressPathFolders, setEgressPathFolders] = useState<
     {
@@ -71,6 +80,13 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     useState<TransferAction | null>(null);
   const [showTransferConfirmationModal, setShowTransferConfirmationModal] =
     useState<boolean>(false);
+  const [
+    transferDuplicateFoldersAndFiles,
+    setTransferDuplicateFoldersAndFiles,
+  ] = useState<{ folders: string[]; files: string[] }>({
+    folders: [],
+    files: [],
+  });
 
   const [transferStatus, setTransferStatus] = useState<
     | "validating"
@@ -86,7 +102,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   const currentEgressFolder = useMemo(() => {
     if (egressPathFolders.length)
       return egressPathFolders[egressPathFolders.length - 1];
-    return { folderId: "" };
+    return { folderId: "", folderPath: "", folderName: "" };
   }, [egressPathFolders]);
 
   const {
@@ -107,7 +123,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     error: netAppError,
   } = useApi(getNetAppFolders, [netAppFolderPath], false);
   const egressFolderData = useMemo(
-    () => (egressData ? getFormatedEgressFolderData(egressData) : []),
+    () => (egressData ? getFormattedEgressFolderData(egressData) : []),
     [egressData],
   );
 
@@ -232,6 +248,17 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   };
 
   const handleSelectedActionType = (transferAction: TransferAction) => {
+    const duplicateFoldersAndFiles = getDuplicateFoldersAndFiles(
+      transferSource,
+      transferAction,
+      egressFolderData,
+      netAppFolderData,
+      selectedSourceFoldersOrFiles,
+      currentEgressFolder.folderPath,
+      netAppFolderPath,
+    );
+
+    setTransferDuplicateFoldersAndFiles(duplicateFoldersAndFiles);
     setShowTransferConfirmationModal(true);
     setSelectedTransferAction(transferAction);
   };
@@ -425,35 +452,49 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         "selected transfer destination details should not be null",
       );
     }
-    const sourcePaths = response.files.map((data) => ({
-      fileId: data?.id,
-      path: data.sourcePath,
-      relativePath: data.relativePath,
-      fullFilePath: data.fullFilePath,
-    }));
+
+    if (response.transferDirection === "EgressToNetApp") {
+      const sourcePaths: EgressTransferPayloadSourcePath[] = response.files.map(
+        (data) => ({
+          fileId: data.id,
+          path: data.sourcePath,
+          fullFilePath: data.fullFilePath,
+        }),
+      );
+
+      const payload = {
+        caseId: Number.parseInt(caseId),
+        destinationPath: response.destinationPath,
+        workspaceId: egressWorkspaceId,
+        sourceRootFolderPath: response.sourceRootFolderPath,
+        sourcePaths: sourcePaths,
+        transferType:
+          selectedTransferAction.actionType === "copy"
+            ? ("Copy" as const)
+            : ("Move" as const),
+        transferDirection: response.transferDirection,
+      };
+      return payload;
+    }
+
+    const sourcePaths: NetAppTransferPayloadSourcePath[] = response.files.map(
+      (data) => ({
+        path: data.sourcePath,
+        relativePath: data.relativePath,
+      }),
+    );
 
     const payload = {
-      caseId: parseInt(caseId),
-      sourcePaths: sourcePaths,
+      caseId: Number.parseInt(caseId),
       destinationPath: response.destinationPath,
       workspaceId: egressWorkspaceId,
+      sourceRootFolderPath: response.sourceRootFolderPath,
+      sourcePaths: sourcePaths,
+      transferType: "Copy" as const,
+      transferDirection: response.transferDirection,
     };
-    const uniquePayload =
-      selectedTransferAction.destinationFolder.sourceType === "egress"
-        ? {
-            transferType:
-              selectedTransferAction.actionType === "copy"
-                ? ("Copy" as const)
-                : ("Move" as const),
-            transferDirection: "EgressToNetApp" as const,
-          }
-        : {
-            transferType: "Copy" as const,
-            transferDirection: "NetAppToEgress" as const,
-            sourceRootFolderPath: response.sourceRootFolderPath,
-          };
 
-    return { ...payload, ...uniquePayload };
+    return payload;
   };
 
   const handleTransferConfirmationContinue = () => {
@@ -522,6 +563,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       direction:
         transferSource === "egress" ? "EgressToNetApp" : "NetAppToEgress",
       transferType: initiatePayload.transferType,
+      transferMetrics: null,
     });
     let initiateFileTransferResponse: InitiateFileTransferResponse;
     try {
@@ -548,6 +590,10 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           username: response.userName,
           direction: response.direction,
           transferType: response.transferType,
+          transferMetrics: {
+            totalFiles: response.totalFiles,
+            processedFiles: response.processedFiles,
+          },
         });
         return;
       }
@@ -557,6 +603,10 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           username: response.userName,
           direction: response.direction,
           transferType: response.transferType,
+          transferMetrics: {
+            totalFiles: response.totalFiles,
+            processedFiles: response.processedFiles,
+          },
         });
         if (response.userName === username)
           handleFileTransferClear(transferId!);
@@ -572,6 +622,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           state: {
             isRouteValid: true,
             transferId: transferId,
+            failedItems: response.failedItems,
           },
         });
         if (response.userName === username)
@@ -615,11 +666,42 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     handleStatusResponse,
   ]);
 
+  const transferProgressMetrics = useMemo(() => {
+    const defaultMetricsData = {
+      progressAriaLiveText: "",
+      progressContent: "",
+    };
+    if (!transferStatusData?.transferMetrics) return defaultMetricsData;
+
+    if (transferStatusData?.transferMetrics?.totalFiles === 0) {
+      return defaultMetricsData;
+    }
+    const progressAriaLiveText = `Transfer progress, ${transferStatusData.transferMetrics.processedFiles} out of ${transferStatusData.transferMetrics.totalFiles} files processed`;
+    const progressContent = (
+      <div
+        className={styles.transferProgressMetrics}
+        data-testid="transfer-progress-metrics"
+      >
+        <span>
+          total files : {transferStatusData?.transferMetrics?.totalFiles}
+        </span>
+        <span>
+          files processed :{" "}
+          {transferStatusData?.transferMetrics?.processedFiles}
+        </span>
+      </div>
+    );
+    return {
+      progressAriaLiveText,
+      progressContent,
+    };
+  }, [transferStatusData]);
+
   const activeTransferMessage = useMemo(() => {
     if (transferStatus === "transferring") {
       if (!transferStatusData) {
         return {
-          ariaLabelText: "",
+          ariaLabelText: "Completing transfer",
           spinnerTextContent: <span> Completing transfer</span>,
         };
       }
@@ -680,6 +762,9 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     <div>
       <output aria-live="polite" className="govuk-visually-hidden">
         {activeTransferMessage?.ariaLabelText}
+        {transferProgressMetrics.progressAriaLiveText && (
+          <>{transferProgressMetrics.progressAriaLiveText}</>
+        )}
       </output>
       {transferStatus === "validating" && (
         <div className={styles.transferContent}>
@@ -697,6 +782,9 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
             <Spinner data-testid="transfer-spinner" diameterPx={50} />
             <div className={styles.spinnerText}>
               {activeTransferMessage?.spinnerTextContent}
+              {transferProgressMetrics.progressContent && (
+                <>{transferProgressMetrics.progressContent}</>
+              )}
             </div>
           </div>
         </div>
@@ -772,6 +860,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
                   netAppFolderData,
                 )
           }
+          duplicateFoldersAndFiles={transferDuplicateFoldersAndFiles}
           handleCloseModal={handleCloseTransferConfirmationModal}
           handleContinue={handleTransferConfirmationContinue}
         />

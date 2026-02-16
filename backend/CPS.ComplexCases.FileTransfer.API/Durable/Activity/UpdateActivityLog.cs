@@ -54,7 +54,9 @@ public class UpdateActivityLog(IActivityLogService activityLogService, ILogger<U
             ErrorMessage = x.ErrorMessage
         }).ToList();
 
-        var sourcePath = Path.GetDirectoryName(entity.State.SourcePaths[0].FullFilePath) ?? entity.State.SourcePaths[0].Path;
+        var sourcePath = entity.State.SourceRootFolderPath
+            ?? Path.GetDirectoryName(entity.State.SourcePaths[0].FullFilePath)
+            ?? entity.State.SourcePaths[0].Path;
         sourcePath = sourcePath?.Replace('\\', '/') ?? throw new InvalidOperationException("Source path cannot be null or empty.");
 
         var deletionErrors = new List<FileTransferError>();

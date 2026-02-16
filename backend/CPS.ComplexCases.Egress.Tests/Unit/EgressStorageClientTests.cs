@@ -659,6 +659,51 @@ public class EgressStorageClientTests : IDisposable
         Assert.Equal(expected, result);
     }
 
+    [Theory]
+    [InlineData("Statements", "Statements", "report.pdf", "Statements/report.pdf")]
+    [InlineData("Statements", "Statements/Witness", "victim.pdf", "Statements/Witness/victim.pdf")]
+    [InlineData("folder", "folder", "file.txt", "folder/file.txt")]
+    [InlineData("Statements", "Statements/Witness/Reports", "summary.xlsx", "Statements/Witness/Reports/summary.xlsx")]
+    [InlineData("Evidence", "Evidence/Archives", "data.zip", "Evidence/Archives/data.zip")]
+    [InlineData("", "Statements", "witness.pdf", "Statements/witness.pdf")]
+    public void ConstructRelativePath_WithVariousPathStructures_ReturnsCorrectCombination(
+        string baseFolderPath, string filePath, string fileName, string expected)
+    {
+        // Act
+        var result = InvokeConstructRelativePath(baseFolderPath, filePath, fileName);
+
+        // Assert
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData("folder", "folder", "file.txt")]
+    [InlineData("Statements", "Statements/Witness/2026", "witness.pdf")]
+    [InlineData("data", "data/backup/archive", "backup.zip")]
+    public void ConstructRelativePath_AllPathsUseForwardSlashes(string baseFolderPath, string filePath, string fileName)
+    {
+        // Act
+        var result = InvokeConstructRelativePath(baseFolderPath, filePath, fileName);
+
+        // Assert
+        Assert.DoesNotContain("\\", result);
+    }
+
+    [Fact]
+    public void ConstructRelativePath_WhenFilePathEqualsBasePath_CombinesBaseFolderAndFileName()
+    {
+        // Arrange - root path scenario where filePath == baseFolderPath (represented as ".")
+        var baseFolderPath = "Statements";
+        var filePath = "Statements";  // Path.GetRelativePath returns "." for same path
+        var fileName = "document.txt";
+
+        // Act
+        var result = InvokeConstructRelativePath(baseFolderPath, filePath, fileName);
+
+        // Assert
+        Assert.Equal("Statements/document.txt", result);
+    }
+
     #region Setup Methods
 
     private void SetupTokenRequest(string token)
@@ -936,5 +981,24 @@ public class EgressStorageClientTests : IDisposable
 
             sequence = sequence.ReturnsAsync(httpResponse);
         }
+    }
+
+    /// <summary>
+    /// Invokes the private ConstructRelativePath method using reflection for testing.
+    /// </summary>
+    private string InvokeConstructRelativePath(string baseFolderPath, string filePath, string fileName)
+    {
+        var method = typeof(EgressStorageClient).GetMethod(
+            "ConstructRelativePath",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static,
+            null,
+            new[] { typeof(string), typeof(string), typeof(string) },
+            null
+        );
+
+        if (method == null)
+            throw new InvalidOperationException("ConstructRelativePath method not found");
+
+        return (string)method.Invoke(null, new object[] { baseFolderPath, filePath, fileName })!;
     }
 }

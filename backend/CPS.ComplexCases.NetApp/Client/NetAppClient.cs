@@ -1,9 +1,6 @@
 using Microsoft.Extensions.Logging;
-using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
-using Amazon.SecurityToken;
-using Amazon.SecurityToken.Model;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Models.Dto;
@@ -17,12 +14,16 @@ public class NetAppClient(
     ILogger<NetAppClient> logger,
     IAmazonS3UtilsWrapper amazonS3UtilsWrapper,
     INetAppRequestFactory netAppRequestFactory,
-    IS3ClientFactory s3ClientFactory) : INetAppClient
+    IS3ClientFactory s3ClientFactory,
+    INetAppS3HttpClient netAppS3HttpClient,
+    INetAppS3HttpArgFactory netAppS3HttpArgFactory) : INetAppClient
 {
     private readonly ILogger<NetAppClient> _logger = logger;
     private readonly IAmazonS3UtilsWrapper _amazonS3UtilsWrapper = amazonS3UtilsWrapper;
     private readonly INetAppRequestFactory _netAppRequestFactory = netAppRequestFactory;
     private readonly IS3ClientFactory _s3ClientFactory = s3ClientFactory;
+    private readonly INetAppS3HttpClient _netAppS3HttpClient = netAppS3HttpClient;
+    private readonly INetAppS3HttpArgFactory _netAppS3HttpArgFactory = netAppS3HttpArgFactory;
 
     public async Task<bool> CreateBucketAsync(CreateBucketArg arg)
     {
@@ -59,7 +60,7 @@ public class NetAppClient(
         try
         {
             var response = await s3Client.ListBucketsAsync(_netAppRequestFactory.ListBucketsRequest(arg));
-            return response.Buckets;
+            return response.Buckets ?? [];
         }
         catch (AmazonS3Exception ex)
         {
@@ -138,6 +139,11 @@ public class NetAppClient(
                 _logger.LogWarning("Object {ObjectKey} not found in bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
                 throw new FileNotFoundException($"Object {arg.ObjectKey} not found in bucket {arg.BucketName}.", ex);
             }
+            if (ex.StatusCode == System.Net.HttpStatusCode.PreconditionFailed)
+            {
+                _logger.LogWarning("ETag mismatch for object {ObjectKey} in bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
+                return null;
+            }
 
             _logger.LogError(ex, ex.Message, "Failed to get file {ObjectKey} from bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
             throw;
@@ -169,17 +175,17 @@ public class NetAppClient(
             var request = _netAppRequestFactory.ListObjectsInBucketRequest(arg);
             var response = await s3Client.ListObjectsV2Async(request);
 
-            var folders = response.CommonPrefixes.Select(data => new ListNetAppFolderDataDto
+            var folders = (response.CommonPrefixes ?? []).Select(data => new ListNetAppFolderDataDto
             {
                 Path = data
             });
 
-            var files = response.S3Objects.Select(data => new ListNetAppFileDataDto
+            var files = (response.S3Objects ?? []).Select(data => new ListNetAppFileDataDto
             {
                 Path = data.Key,
                 Etag = data.ETag,
-                Filesize = data.Size,
-                LastModified = data.LastModified
+                Filesize = data.Size ?? 0,
+                LastModified = data.LastModified ?? DateTime.MinValue
             });
 
             var result = new ListNetAppObjectsDto
@@ -196,7 +202,7 @@ public class NetAppClient(
                     ContinuationToken = response.ContinuationToken,
                     NextContinuationToken = response.NextContinuationToken,
                     MaxKeys = response.MaxKeys,
-                    KeyCount = response.KeyCount
+                    KeyCount = response.KeyCount ?? 0
                 }
             };
 
@@ -215,7 +221,7 @@ public class NetAppClient(
         try
         {
             var response = await s3Client.ListObjectsV2Async(_netAppRequestFactory.ListFoldersInBucketRequest(arg));
-            var folders = response.CommonPrefixes.Select(data => new ListNetAppFolderDataDto
+            var folders = (response.CommonPrefixes ?? []).Select(data => new ListNetAppFolderDataDto
             {
                 Path = data
             });
@@ -234,7 +240,7 @@ public class NetAppClient(
                     ContinuationToken = response.ContinuationToken,
                     NextContinuationToken = response.NextContinuationToken,
                     MaxKeys = response.MaxKeys,
-                    KeyCount = response.KeyCount
+                    KeyCount = response.KeyCount ?? 0
                 }
             };
 
@@ -303,17 +309,18 @@ public class NetAppClient(
 
     public async Task<bool> DoesObjectExistAsync(GetObjectArg arg)
     {
-        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
         try
         {
-            var response = await s3Client.GetObjectAttributesAsync(_netAppRequestFactory.GetObjectAttributesRequest(arg));
-            return response.HttpStatusCode == System.Net.HttpStatusCode.OK;
+            var headObjectArg = _netAppS3HttpArgFactory.CreateGetHeadObjectArg(arg.BearerToken, arg.BucketName, arg.ObjectKey);
+            var response = await _netAppS3HttpClient.GetHeadObjectAsync(headObjectArg);
+            return response.StatusCode == System.Net.HttpStatusCode.OK;
         }
-        catch (AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        catch (HttpRequestException ex)
         {
+            _logger.LogError(ex, "HTTP request failed while checking existence of object {ObjectKey} in bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
             return false;
         }
-        catch (AmazonS3Exception ex)
+        catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to check if object {ObjectKey} exists in bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
             return false;
@@ -328,7 +335,7 @@ public class NetAppClient(
             if (Path.HasExtension(arg.Path))
             {
                 var request = _netAppRequestFactory.DeleteObjectRequest(arg);
-                var response = await s3Client.DeleteObjectAsync(request);
+                await s3Client.DeleteObjectAsync(request);
                 return $"Successfully deleted file {arg.Path} from bucket {arg.BucketName}.";
             }
             else
@@ -343,19 +350,22 @@ public class NetAppClient(
 
                 var response = await s3Client.DeleteObjectsAsync(deleteObjectsRequest);
 
-                if (response.HttpStatusCode == System.Net.HttpStatusCode.OK && response.DeleteErrors.Count == 0)
+                var deleteErrors = response.DeleteErrors ?? [];
+                var deletedObjects = response.DeletedObjects ?? [];
+
+                if (response.HttpStatusCode == System.Net.HttpStatusCode.OK && deleteErrors.Count == 0)
                 {
                     return $"Successfully deleted folder {arg.Path} and its contents from bucket {arg.BucketName}.";
                 }
 
-                foreach (var error in response.DeleteErrors)
+                foreach (var error in deleteErrors)
                 {
                     _logger.LogError("Failed to delete object {ObjectKey} from bucket {BucketName}. Code: {Code}, Message: {Message}",
                         error.Key, arg.BucketName, error.Code, error.Message);
                 }
 
-                var successfulDeletionsCount = response.DeletedObjects.Count;
-                var failedDeletionsCount = response.DeleteErrors.Count;
+                var successfulDeletionsCount = deletedObjects.Count;
+                var failedDeletionsCount = deleteErrors.Count;
 
                 return $"Successfully deleted {successfulDeletionsCount} files from bucket {arg.BucketName}. Deletion failed for {failedDeletionsCount} files. ";
             }
@@ -411,26 +421,6 @@ public class NetAppClient(
         objectKeys.Add(prefix);
 
         return objectKeys;
-    }
-
-    private static async Task<SessionAWSCredentials> GetTemporaryCredentialsAsync(string accessKey, string secretKey)
-    {
-        using var stsClient = new AmazonSecurityTokenServiceClient(accessKey, secretKey);
-        var getSessionTokenRequest = new GetSessionTokenRequest
-        {
-            DurationSeconds = 7200
-        };
-
-        GetSessionTokenResponse sessionTokenResponse =
-                      await stsClient.GetSessionTokenAsync(getSessionTokenRequest);
-
-        Credentials credentials = sessionTokenResponse.Credentials;
-
-        var sessionCredentials =
-            new SessionAWSCredentials(credentials.AccessKeyId,
-                                      credentials.SecretAccessKey,
-                                      credentials.SessionToken);
-        return sessionCredentials;
     }
 
     private Polly.Retry.AsyncRetryPolicy<DeleteObjectResponse> GetDeleteFileRetryPolicy(string objectKey, string bucketName)

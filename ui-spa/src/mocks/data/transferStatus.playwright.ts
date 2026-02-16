@@ -6,6 +6,8 @@ export const egressToNetAppTransferStatusPlaywright: TransferStatusResponse = {
   completedAt: null,
   failedItems: [],
   userName: "dev_user@example.org",
+  totalFiles: 30,
+  processedFiles: 30,
 };
 
 export const netAppToEgressTransferStatusPlaywright: TransferStatusResponse = {
@@ -15,4 +17,6 @@ export const netAppToEgressTransferStatusPlaywright: TransferStatusResponse = {
   completedAt: null,
   failedItems: [],
   userName: "dev_user@example.org",
+  totalFiles: 30,
+  processedFiles: 30,
 };

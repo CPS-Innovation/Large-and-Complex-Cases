@@ -12,6 +12,7 @@ public class TransferEntity
     public TransferType TransferType { get; set; }
     public TransferDirection Direction { get; set; }
     public List<TransferSourcePath> SourcePaths { get; set; } = new List<TransferSourcePath>();
+    public string? SourceRootFolderPath { get; set; }
     public required string DestinationPath { get; set; }
     public int TotalFiles { get; set; }
     public int ProcessedFiles { get; set; }

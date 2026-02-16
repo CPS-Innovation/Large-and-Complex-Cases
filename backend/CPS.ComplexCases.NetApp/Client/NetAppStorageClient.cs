@@ -9,13 +9,20 @@ using CPS.ComplexCases.NetApp.Streams;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
-public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory netAppArgFactory, ICaseMetadataService caseMetadataService) : IStorageClient
+public class NetAppStorageClient(
+    INetAppClient netAppClient,
+    INetAppArgFactory netAppArgFactory,
+    ICaseMetadataService caseMetadataService,
+    INetAppS3HttpClient netAppS3HttpClient,
+    INetAppS3HttpArgFactory netAppS3HttpArgFactory) : IStorageClient
 {
     private readonly INetAppClient _netAppClient = netAppClient;
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
     private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
+    private readonly INetAppS3HttpClient _netAppS3HttpClient = netAppS3HttpClient;
+    private readonly INetAppS3HttpArgFactory _netAppS3HttpArgFactory = netAppS3HttpArgFactory;
 
-    public async Task CompleteUploadAsync(UploadSession session, string? md5hash = null, Dictionary<int, string>? etags = null, string? bearerToken = null, string? bucketName = null)
+    public async Task<bool> CompleteUploadAsync(UploadSession session, string? md5hash = null, Dictionary<int, string>? etags = null, string? bearerToken = null, string? bucketName = null, string? filePath = null)
     {
         var arg = _netAppArgFactory.CreateCompleteMultipartUploadArg(
             bearerToken ?? throw new ArgumentNullException(nameof(bearerToken), "Bearer token cannot be null."),
@@ -24,10 +31,9 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
             session.UploadId ?? throw new ArgumentNullException(nameof(session.UploadId), "Upload ID cannot be null."),
             etags ?? throw new ArgumentNullException(nameof(etags), "ETags cannot be null."));
 
-        var result = await _netAppClient.CompleteMultipartUploadAsync(arg);
+        var result = await _netAppClient.CompleteMultipartUploadAsync(arg) ?? throw new InvalidOperationException("Failed to complete multipart upload.");
 
-        if (result == null)
-            throw new InvalidOperationException("Failed to complete multipart upload.");
+        return await VerifyUpload(bearerToken, bucketName, filePath!, result.ETag);
     }
 
     public async Task<UploadSession> InitiateUploadAsync(string destinationPath, long fileSize, string sourcePath, string? workspaceId = null, string? relativePath = null, string? sourceRootFolderPath = null, string? bearerToken = null, string? bucketName = null)
@@ -203,5 +209,35 @@ public class NetAppStorageClient(INetAppClient netAppClient, INetAppArgFactory n
 
         if (!result)
             throw new InvalidOperationException($"Failed to upload {objectName} to NetApp.");
+    }
+
+    public async Task<bool> VerifyUpload(string bearerToken, string bucketName, string objectName, string eTag)
+    {
+        var arg = _netAppS3HttpArgFactory.CreateGetHeadObjectArg(
+            bearerToken ?? throw new ArgumentNullException(nameof(bearerToken), "Bearer token cannot be null."),
+            bucketName ?? throw new ArgumentNullException(nameof(bucketName), "Bucket name cannot be null."),
+            objectName ?? throw new ArgumentNullException(nameof(objectName), "Object name cannot be null."));
+
+        var response = await _netAppS3HttpClient.GetHeadObjectAsync(arg);
+
+        if (response == null || response.StatusCode != System.Net.HttpStatusCode.OK)
+            return false;
+
+        return response.ETag == eTag.Unquote();
+    }
+
+    public Task<bool> FileExistsAsync(string path, string? workspaceId = null, string? bearerToken = null, string? bucketName = null)
+    {
+        var arg = _netAppArgFactory.CreateGetObjectArg(
+            bearerToken ?? throw new ArgumentNullException(nameof(bearerToken), "Bearer token cannot be null."),
+            bucketName ?? throw new ArgumentNullException(nameof(bucketName), "Bucket name cannot be null."),
+            path ?? throw new ArgumentNullException(nameof(path), "Path cannot be null."));
+
+        return _netAppClient.DoesObjectExistAsync(arg);
+    }
+
+    public Task<List<FileTransferInfo>> GetAllFilesFromFolderAsync(string folderPath, string? workspaceId = null)
+    {
+        throw new NotImplementedException();
     }
 }

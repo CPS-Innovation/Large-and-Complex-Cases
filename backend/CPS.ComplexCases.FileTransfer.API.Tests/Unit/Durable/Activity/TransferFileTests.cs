@@ -1,4 +1,5 @@
 using System.Text;
+using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
@@ -104,15 +105,15 @@ public class TransferFileTests
             .ReturnsAsync((UploadSession session, int partNum, byte[] data, long start, long end, long total, string token, string? bucket) =>
                 new UploadChunkResult(TransferDirection.EgressToNetApp, $"etag{partNum}", partNum));
 
-
         _destinationClientMock
             .Setup(x => x.CompleteUploadAsync(
                 session,
                 null,
                 It.IsAny<Dictionary<int, string>>(),
                 payload.BearerToken,
-                payload.BucketName))
-            .Returns(Task.CompletedTask);
+                payload.BucketName,
+                payload.DestinationPath.EnsureTrailingSlash() + payload.SourcePath.Path))
+            .Returns(Task.FromResult(true));
 
         var result = await _activity.Run(payload);
 
@@ -121,6 +122,71 @@ public class TransferFileTests
         Assert.Equal(TransferItemStatus.Completed, result.SuccessfulItem.Status);
         Assert.Equal(payload.SourcePath.FileId, result.SuccessfulItem.FileId);
         Assert.Equal(contentLength, result.SuccessfulItem.Size);
+    }
+
+    [Fact]
+    public async Task Run_VerificationFails_ReturnsFailedResultWithIntegrityVerificationFailedCode()
+    {
+        var payload = CreatePayload();
+        var content = Encoding.UTF8.GetBytes("testdata");
+        var stream = new MemoryStream(content);
+        var contentLength = content.Length;
+
+        var session = new UploadSession { UploadId = Guid.NewGuid().ToString() };
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(payload.SourcePath.Path,
+                                              payload.WorkspaceId,
+                                              payload.SourcePath.FileId,
+                                              payload.BearerToken,
+                                              payload.BucketName))
+            .ReturnsAsync((stream, contentLength));
+
+        _destinationClientMock
+            .Setup(x => x.InitiateUploadAsync(
+                payload.DestinationPath,
+                contentLength,
+                payload.SourcePath.Path,
+                payload.WorkspaceId,
+                payload.SourcePath.RelativePath,
+                payload.SourceRootFolderPath,
+                payload.BearerToken,
+                payload.BucketName))
+            .ReturnsAsync(session);
+
+        _destinationClientMock
+            .Setup(x => x.UploadChunkAsync(
+                It.IsAny<UploadSession>(),
+                It.IsAny<int>(),
+                It.IsAny<byte[]>(),
+                It.IsAny<long>(),
+                It.IsAny<long>(),
+                It.IsAny<long>(),
+                It.IsAny<string>(),
+                It.IsAny<string?>()))
+            .ReturnsAsync((UploadSession session, int partNum, byte[] data, long start, long end, long total, string token, string? bucket) =>
+                new UploadChunkResult(TransferDirection.EgressToNetApp, $"etag{partNum}", partNum));
+
+        _destinationClientMock
+            .Setup(x => x.CompleteUploadAsync(
+                session,
+                null,
+                It.IsAny<Dictionary<int, string>>(),
+                payload.BearerToken,
+                payload.BucketName,
+                payload.DestinationPath.EnsureTrailingSlash() + payload.SourcePath.Path))
+            .Returns(Task.FromResult(false));
+
+        var result = await _activity.Run(payload);
+
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.FailedItem);
+        Assert.Equal(TransferErrorCode.IntegrityVerificationFailed, result.FailedItem.ErrorCode);
+        Assert.Equal("Upload completed but failed to verify.", result.FailedItem.ErrorMessage);
     }
 
     [Fact]
@@ -162,6 +228,39 @@ public class TransferFileTests
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.GeneralError, result.FailedItem.ErrorCode);
         Assert.Contains("System.InvalidOperationException", result.FailedItem.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task Run_EgressToNetApp_WhenDestinationFileExists_ReturnsFileExistsFailure()
+    {
+        var payload = CreatePayload();
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _destinationClientMock
+            .Setup(x => x.FileExistsAsync(
+                payload.DestinationPath + payload.SourcePath.Path,
+                payload.WorkspaceId,
+                payload.BearerToken,
+                payload.BucketName))
+            .ReturnsAsync(true);
+
+        var result = await _activity.Run(payload);
+
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.FailedItem);
+        Assert.Equal(TransferErrorCode.FileExists, result.FailedItem.ErrorCode);
+        Assert.Contains(payload.DestinationPath + payload.SourcePath.Path, result.FailedItem.ErrorMessage);
+
+        _sourceClientMock.Verify(x => x.OpenReadStreamAsync(
+                It.IsAny<string>(),
+                It.IsAny<string?>(),
+                It.IsAny<string>(),
+                It.IsAny<string?>(),
+                It.IsAny<string>()),
+            Times.Never);
     }
 
     [Fact]

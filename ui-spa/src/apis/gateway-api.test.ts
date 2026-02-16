@@ -1084,6 +1084,7 @@ describe("gateway apis", () => {
         transferDirection: "EgressToNetApp" as const,
         sourcePaths: [],
         destinationPath: "netapp/",
+        sourceRootFolderPath: "egress/",
       };
       const result = await initiateFileTransfer(payload);
       expect(result).toEqual({ transferId: "12" });
@@ -1117,6 +1118,7 @@ describe("gateway apis", () => {
         transferDirection: "EgressToNetApp" as const,
         sourcePaths: [],
         destinationPath: "netapp/",
+        sourceRootFolderPath: "egress/",
       };
 
       await expect(initiateFileTransfer(payload)).rejects.toThrow(

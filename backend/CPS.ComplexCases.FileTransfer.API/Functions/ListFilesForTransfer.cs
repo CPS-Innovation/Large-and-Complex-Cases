@@ -88,7 +88,8 @@ public class ListFilesForTransfer(
             Files = filesForTransfer,
             IsInvalid = false,
             DestinationPath = request.Value?.DestinationPath ?? string.Empty,
-            ValidationErrors = new List<FileTransferFailedInfo>()
+            ValidationErrors = new List<FileTransferFailedInfo>(),
+            SourceRootFolderPath = request.Value?.SourceRootFolderPath ?? null
         };
 
         if (request.Value != null && request.Value.TransferDirection == TransferDirection.EgressToNetApp)

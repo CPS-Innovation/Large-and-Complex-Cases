@@ -10,9 +10,11 @@ export type TransferStatusResponse = {
   completedAt: null | string;
   failedItems: TransferFailedItem[];
   userName: string;
+  totalFiles: number;
+  processedFiles: number;
 };
 
 export type TransferFailedItem = {
   sourcePath: string;
-  errorCode: "FileExists" | "GeneralError";
+  errorCode: "FileExists" | "GeneralError" | "IntegrityVerificationFailed";
 };

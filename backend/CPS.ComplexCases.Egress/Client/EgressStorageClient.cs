@@ -21,6 +21,8 @@ public class EgressStorageClient(
     IEgressRequestFactory egressRequestFactory,
     ITelemetryClient telemetryClient) : BaseEgressClient(logger, egressOptions, httpClient, egressRequestFactory, telemetryClient), IStorageClient
 {
+    private const string RootPathValue = ".";
+
     public async Task<(Stream Stream, long ContentLength)> OpenReadStreamAsync(string path, string? workspaceId, string? fileId, string? BearerToken = null, string? bucketName = null)
     {
         var token = await GetWorkspaceToken();
@@ -105,7 +107,7 @@ public class EgressStorageClient(
         return new UploadChunkResult(TransferDirection.NetAppToEgress);
     }
 
-    public async Task CompleteUploadAsync(UploadSession session, string? md5hash = null, Dictionary<int, string>? etags = null, string? BearerToken = null, string? bucketName = null)
+    public async Task<bool> CompleteUploadAsync(UploadSession session, string? md5hash = null, Dictionary<int, string>? etags = null, string? BearerToken = null, string? bucketName = null, string? filePath = null)
     {
         var token = await GetWorkspaceToken();
 
@@ -116,7 +118,8 @@ public class EgressStorageClient(
             Md5Hash = md5hash,
         };
 
-        await SendRequestAsync(_egressRequestFactory.CompleteUploadRequest(completeArg, token));
+        var response = await SendRequestAsync(_egressRequestFactory.CompleteUploadRequest(completeArg, token));
+        return response.StatusCode == HttpStatusCode.OK;
     }
 
     public async Task<IEnumerable<FileTransferInfo>> ListFilesForTransferAsync(List<TransferEntityDto> selectedEntities, string? workspaceId = null, int? caseId = null, string? BearerToken = null, string? bucketName = null)
@@ -201,6 +204,28 @@ public class EgressStorageClient(
         // This shares an interface with NetAppStorageClient but isn't required for Egress
         // Egress always uses chunked uploads via InitiateUploadAsync, UploadChunkAsync, and CompleteUploadAsync
         throw new NotImplementedException();
+    }
+
+    public async Task<bool> FileExistsAsync(string path, string? workspaceId = null, string? bearerToken = null, string? bucketName = null)
+    {
+        var token = await GetWorkspaceToken();
+
+        var existingFiles = await GetAllFilesFromFolderParallel(
+            workspaceId ?? throw new ArgumentNullException(nameof(workspaceId), "Workspace ID cannot be null."),
+            "",
+            "",
+            token);
+
+        return existingFiles.Any(f => !string.IsNullOrEmpty(f.FullFilePath) && f.FullFilePath.Equals(path, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public async Task<List<FileTransferInfo>> GetAllFilesFromFolderAsync(string folderPath, string? workspaceId = null)
+    {
+        return await GetAllFilesFromFolderParallel(
+            workspaceId ?? throw new ArgumentNullException(nameof(workspaceId), "Workspace ID cannot be null."),
+            "",
+            folderPath,
+            await GetWorkspaceToken());
     }
 
     private async Task CreateFolderStructureAsync(string folderPath, string workspaceId, string token)
@@ -303,19 +328,25 @@ public class EgressStorageClient(
 
     private static string ConstructRelativePath(string baseFolderPath, string filePath, string fileName)
     {
-        // Get the last folder name from the base path (selected folder)
+        // Get the folder name from the base path (selected folder)
         var baseFolderName = Path.GetFileName(baseFolderPath.TrimEnd('/'));
 
-        var baseFolderIndex = filePath.LastIndexOf(baseFolderName);
-
-        if (baseFolderIndex >= 0)
+        if (string.IsNullOrEmpty(baseFolderName))
         {
-            var relativePath = filePath.Substring(baseFolderIndex);
-            return Path.Combine(relativePath, fileName).Replace('\\', '/');
+            return Path.Combine(filePath, fileName).Replace('\\', '/');
         }
 
-        // Fallback: if we can't find the base folder in the path, use the original logic
-        return Path.Combine(filePath, fileName).Replace('\\', '/');
+        var relativePath = Path.GetRelativePath(baseFolderPath, filePath).Replace('\\', '/');
+
+        if (relativePath == RootPathValue)
+        {
+            return Path.Combine(baseFolderName, fileName).Replace('\\', '/');
+        }
+        else
+        {
+            // Combine the selected folder and subfolder structure with the file name
+            return Path.Combine(baseFolderName, relativePath, fileName).Replace('\\', '/');
+        }
     }
 
     private async Task<List<ListCaseMaterialDataResponse>> GetAllPagesInParallel(string workspaceId, string? folderId, string token)

@@ -72,7 +72,9 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
         }[];
       },
     ) => {
-      await expect(section.locator("h2")).toHaveText(expectedData.relativePath);
+      await expect(section.getByTestId("relative-path")).toHaveText(
+        expectedData.relativePath,
+      );
       await expect(section.locator("ul").locator("li")).toHaveCount(
         expectedData.filePaths.length,
       );
@@ -103,6 +105,8 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
             return HttpResponse.json({
               caseId: 12,
               isInvalid: true,
+              sourceRootFolderPath: "egress/",
+              transferDirection: "EgressToNetApp",
               destinationPath:
                 "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination",
               validationErrors: [
