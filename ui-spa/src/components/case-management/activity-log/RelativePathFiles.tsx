@@ -37,7 +37,10 @@ const RelativePathFiles: React.FC<RelativePathFilesProps> = ({
             {!!groupedFiles[`${key}`].errors.length && (
               <ul className={styles.list}>
                 {groupedFiles[`${key}`].errors.map((file) => (
-                  <li key={key} className={styles.listItem}>
+                  <li
+                    key={`${key}-${file.fileName}`}
+                    className={styles.listItem}
+                  >
                     <div className={styles.listContent}>
                       <Tag
                         gdsTagColour="red"
@@ -64,7 +67,10 @@ const RelativePathFiles: React.FC<RelativePathFilesProps> = ({
             {!!groupedFiles[`${key}`].success.length && (
               <ul className={styles.list}>
                 {groupedFiles[`${key}`].success.map((file) => (
-                  <li key={key} className={styles.listItem}>
+                  <li
+                    key={`${key}-${file.fileName}`}
+                    className={styles.listItem}
+                  >
                     <div className={styles.listContent}>
                       <div className={styles.fileNameWrapper}>
                         <FileIcon />
