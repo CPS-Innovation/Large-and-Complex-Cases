@@ -28,7 +28,7 @@ const RelativePathFiles: React.FC<RelativePathFilesProps> = ({
           <section key={key}>
             <div
               className={styles.relativePathWrapper}
-              data-testId="activity-relative-path"
+              data-testid="activity-relative-path"
             >
               {key && <FolderIcon />}
               <span className={styles.relativePathText}>{key}</span>

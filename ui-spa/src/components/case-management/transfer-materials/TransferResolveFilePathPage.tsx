@@ -199,7 +199,7 @@ const TransferResolveFilePathPage = () => {
         )}
         <div className={styles.contentWrapper}>
           <h1 className="govuk-heading-xl">File structure is too long</h1>
-          <InsetText data-testId="resolve-file-path-inset-text">
+          <InsetText data-testid="resolve-file-path-inset-text">
             <p>
               There {resolvePathFiles.length === 1 ? "is" : "are"}{" "}
               <b>
