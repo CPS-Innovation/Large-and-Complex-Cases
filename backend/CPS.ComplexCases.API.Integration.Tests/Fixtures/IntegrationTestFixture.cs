@@ -41,7 +41,10 @@ public class IntegrationTestFixture : IAsyncLifetime
     public bool IsDdeiConfigured => Settings.DDEI.IsConfigured;
     public bool IsDdeiAuthConfigured => Settings.DDEI.IsAuthConfigured;
     public bool IsDatabaseConfigured => !string.IsNullOrEmpty(Settings.CaseManagementDatastoreConnection);
-    public bool IsNetAppConfigured => Settings.NetApp.IsConfigured && Settings.KeyVault.IsConfigured && Settings.Azure.IsUserAuthConfigured;
+
+    public bool IsNetAppConfigured => Settings.NetApp.IsConfigured && Settings.KeyVault.IsConfigured &&
+                                      Settings.Azure.IsUserAuthConfigured;
+
     public bool IsFullyConfigured => IsEgressConfigured && IsDdeiConfigured && IsDatabaseConfigured;
 
     public EgressStorageClient? EgressStorageClient { get; private set; }
@@ -51,6 +54,8 @@ public class IntegrationTestFixture : IAsyncLifetime
     public ApplicationDbContext? DbContext { get; private set; }
     public INetAppClient? NetAppClient { get; private set; }
     public INetAppArgFactory? NetAppArgFactory { get; private set; }
+    public INetAppS3HttpClient? NetAppS3HttpClient { get; private set; }
+    public INetAppS3HttpArgFactory? NetAppS3HttpArgFactory { get; private set; }
 
     public string? EgressWorkspaceId => Settings.Egress.WorkspaceId;
     public int? DdeiTestCaseId => Settings.DDEI.TestCaseId;
@@ -272,7 +277,8 @@ public class IntegrationTestFixture : IAsyncLifetime
         var secretClient = new SecretClient(new Uri(Settings.KeyVault.Url!), credential);
 
         var keyVaultServiceLogger = _loggerFactory.CreateLogger<KeyVaultService>();
-        var keyVaultService = new KeyVaultService(secretClient, keyVaultServiceLogger, netAppOptions.SessionDurationSeconds);
+        var keyVaultService =
+            new KeyVaultService(secretClient, keyVaultServiceLogger, netAppOptions.SessionDurationSeconds);
 
         var cryptographyService = new CryptographyService(cryptoOptionsWrapper);
 
@@ -302,13 +308,30 @@ public class IntegrationTestFixture : IAsyncLifetime
             netAppOptionsWrapper,
             s3CredentialServiceLogger);
 
+        var netAppCertFactoryLogger = _loggerFactory.CreateLogger<NetAppCertFactory>();
+        var netAppCertFactory = new NetAppCertFactory(netAppCertFactoryLogger, netAppOptionsWrapper);
+
         var s3ClientFactoryLogger = _loggerFactory.CreateLogger<S3ClientFactory>();
         var s3TelemetryHandler = new S3TelemetryHandlerStub();
         var s3ClientFactory = new S3ClientFactory(
             netAppOptionsWrapper,
             s3CredentialService,
+            keyVaultService,
             s3ClientFactoryLogger,
-            s3TelemetryHandler);
+            s3TelemetryHandler,
+            netAppCertFactory);
+
+        // Create NetApp S3 HTTP client for HeadObject/verify operations
+        var netAppS3HttpHandler = new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        };
+        var netAppS3HttpClientHttp = new HttpClient(netAppS3HttpHandler)
+        {
+            BaseAddress = new Uri(Settings.NetApp.Url!)
+        };
+        NetAppS3HttpClient = new NetAppS3HttpClient(netAppS3HttpClientHttp, s3CredentialService, netAppOptionsWrapper);
+        NetAppS3HttpArgFactory = new NetAppS3HttpArgFactory();
 
         var amazonS3UtilsWrapper = new AmazonS3UtilsWrapper();
 
@@ -317,7 +340,9 @@ public class IntegrationTestFixture : IAsyncLifetime
             netAppClientLogger,
             amazonS3UtilsWrapper,
             netAppRequestFactory,
-            s3ClientFactory);
+            s3ClientFactory,
+            NetAppS3HttpClient,
+            NetAppS3HttpArgFactory);
     }
 }
 
@@ -326,8 +351,13 @@ public class IntegrationTestFixture : IAsyncLifetime
 /// </summary>
 public class S3TelemetryHandlerStub : IS3TelemetryHandler
 {
-    public void InitiateTelemetryEvent(Amazon.Runtime.WebServiceRequestEventArgs? args) { }
-    public void CompleteTelemetryEvent(Amazon.Runtime.WebServiceResponseEventArgs? args) { }
+    public void InitiateTelemetryEvent(Amazon.Runtime.WebServiceRequestEventArgs? args)
+    {
+    }
+
+    public void CompleteTelemetryEvent(Amazon.Runtime.WebServiceResponseEventArgs? args)
+    {
+    }
 }
 
 /// <summary>

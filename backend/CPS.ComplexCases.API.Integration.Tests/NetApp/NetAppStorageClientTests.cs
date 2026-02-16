@@ -35,7 +35,9 @@ public class NetAppStorageClientTests : IClassFixture<IntegrationTestFixture>, I
         _storageClient = new NetAppStorageClient(
             _fixture.NetAppClient!,
             _fixture.NetAppArgFactory!,
-            _caseMetadataServiceMock.Object);
+            _caseMetadataServiceMock.Object,
+            _fixture.NetAppS3HttpClient!,
+            _fixture.NetAppS3HttpArgFactory!);
 
         var bearerToken = await _fixture.GetUserDelegatedBearerTokenAsync();
 
