@@ -386,16 +386,16 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   }, [apiRequestError]);
 
   useEffect(() => {
-    if (egressWorkspaceId && !transferId) {
+    if (egressWorkspaceId) {
       egressRefetch();
     }
-  }, [egressWorkspaceId, egressRefetch, transferId]);
+  }, [egressWorkspaceId, egressRefetch]);
 
   useEffect(() => {
-    if (netAppFolderPath && !transferId) {
+    if (netAppFolderPath) {
       netAppRefetch();
     }
-  }, [netAppFolderPath, netAppRefetch, transferId]);
+  }, [netAppFolderPath, netAppRefetch]);
 
   const getIndexingFileTransferPayload = (): IndexingFileTransferPayload => {
     if (!selectedTransferAction) {
@@ -612,6 +612,8 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           handleFileTransferClear(transferId!);
 
         setTransferId("");
+        egressRefetch();
+        netAppRefetch();
       }
       if (
         response.status === "PartiallyCompleted" ||
@@ -631,7 +633,16 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         setTransferStatusData(null);
       }
     },
-    [caseId, navigate, setTransferStatus, setTransferId, username, transferId],
+    [
+      caseId,
+      navigate,
+      setTransferStatus,
+      setTransferId,
+      username,
+      transferId,
+      egressRefetch,
+      netAppRefetch,
+    ],
   );
   const isComponentUnmounted = useCallback(() => {
     return unMounting.current;
