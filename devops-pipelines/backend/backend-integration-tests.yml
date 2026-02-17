@@ -19,6 +19,10 @@ variables:
     value: '8.x'
   - name: testResultsDirectory
     value: '$(Agent.TempDirectory)/TestResults'
+  - name: nugetArtifact
+    value: 'localnuget'
+  - name: nugetArtifactDownloadPath
+    value: '$(Build.SourcesDirectory)/localnuget'
 
 pool: 'LACC PreProd Pool'
 
@@ -95,14 +99,14 @@ jobs:
       displayName: 'Use .NET SDK'
       inputs:
         packageType: 'sdk'
-        version: ${{ parameters.dotNetVersion }}
+        version: $(dotNetVersion)
 
     - task: DownloadPipelineArtifact@2
       displayName: 'Download Local NuGet Package'
       inputs:
         buildType: 'current'
-        artifact: '${{ parameters.nugetArtifact }}'
-        path: '${{ parameters.nugetArtifactDownloadPath }}'
+        artifact: $(nugetArtifact)
+        path: $(nugetArtifactDownloadPath)
 
     - task: Bash@3
       displayName: 'Create NuGet.Config'
@@ -114,7 +118,7 @@ jobs:
           <configuration>
             <packageSources>
               <clear />
-              <add key="local-packages" value="${{ parameters.nugetArtifactDownloadPath }}" />
+              <add key="local-packages" value="$(nugetArtifactDownloadPath)" />
               <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
             </packageSources>
             <packageSourceMapping>
