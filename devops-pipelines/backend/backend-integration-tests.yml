@@ -1,122 +1,150 @@
 trigger: none
 
 variables:
-  buildConfiguration: 'Release'
-  dotNetVersion: '8.x'
-  efVersion: '8.0.*'
-  testResultsDirectory: '$(Agent.TempDirectory)/TestResults'
+  - group: lacc-backend-secrets-${{ parameters.environment }}
+  - group: lacc-backend-config-${{ parameters.environment }}
+  - group: lacc-automated-testing
+  - name: buildConfiguration
+    value: 'Release'
+  - name: dotNetVersion
+    value: '8.x'
+  - name: testResultsDirectory
+    value: '$(Agent.TempDirectory)/TestResults'
 
 pool: 'LACC PreProd Pool'
 
-stages:
-  - stage: Build_And_Test_Backend
-    displayName: 'Build, Test & Package'
-    jobs:
-      - job: Package_NuGet
-        displayName: 'Pack and Publish NuGet Package'
-        steps:
-          - template: ../templates/dotnet-build-steps.yml
-            parameters:
-              projectPath: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-              projectName: 'HttpTelemetry'
-              buildConfiguration: $(buildConfiguration)
-              dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: false
-              publishOutput: false
-              runTests: false
+jobs:
+- job: Package_NuGet
+  displayName: 'Pack and Publish NuGet Package'
+  steps:
+    - template: ../templates/dotnet-build-steps.yml
+      parameters:
+        projectPath: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+        projectName: 'HttpTelemetry'
+        buildConfiguration: $(buildConfiguration)
+        dotNetVersion: $(dotNetVersion)
+        useLocalNuGet: false
+        publishOutput: false
+        runTests: false
 
-          - script: |
-              mkdir -p $(Build.SourcesDirectory)/localnuget
-              rm -f $(Build.SourcesDirectory)/localnuget/*.nupkg
-            displayName: 'Prepare local NuGet directory'
+    - script: |
+        mkdir -p $(Build.SourcesDirectory)/localnuget
+        rm -f $(Build.SourcesDirectory)/localnuget/*.nupkg
+      displayName: 'Prepare local NuGet directory'
 
-          - task: DotNetCoreCLI@2
-            displayName: 'Pack HttpTelemetry'
-            inputs:
-              command: 'pack'
-              packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-              outputDir: '$(Build.SourcesDirectory)/localnuget'
-              arguments: '--configuration $(buildConfiguration) --no-build'
+    - task: DotNetCoreCLI@2
+      displayName: 'Pack HttpTelemetry'
+      inputs:
+        command: 'pack'
+        packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+        outputDir: '$(Build.SourcesDirectory)/localnuget'
+        arguments: '--configuration $(buildConfiguration) --no-build'
 
-          - task: PublishPipelineArtifact@1
-            displayName: 'Publish HttpTelemetry Package'
-            inputs:
-              targetPath: '$(Build.SourcesDirectory)/localnuget'
-              artifact: 'localnuget'
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish HttpTelemetry Package'
+      inputs:
+        targetPath: '$(Build.SourcesDirectory)/localnuget'
+        artifact: 'localnuget'
 
-      - job: Build_And_Test_Solution
-        displayName: 'Build & Test Solution'
-        dependsOn: Package_NuGet
-        steps:
-          - template: ../templates/dotnet-build-steps.yml
-            parameters:
-              projectPath: 'backend/CPS.ComplexCases.sln'
-              projectName: 'Backend Solution'
-              buildConfiguration: '$(buildConfiguration)'
-              dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: true
-              publishOutput: false
-              runTests: true
-              testResultsDirectory: $(testResultsDirectory)
+- job: Run Integration Tests
+  displayName: 'Build & Test Solution'
+  dependsOn: Package_NuGet
+  variables:
+    Egress.Url: $(EgressOptionsUrl)
+    Egress.Username: $(EgressOptionsUsername)
+    Egress.Password: $(EgressOptionsPassword)
+    Egress.WorkspaceId: $(EgressWorkspaceId)
+    Egress.TestDestinationPath: "integration-tests"
+    DDEI.BaseUrl: $(DDEIOptionsBaseUrl)
+    DDEI.AccessKey: $(DDEIOptionsAccessKey)
+    DDEI.Username: $(CmsUserName)
+    DDEI.Password: $(CmsUserPassword)
+    DDEI.TestCaseId:
+    DDEI.TestUrn:
+    DDEI.TestOperationName:
+    DDEI.TestDefendantLastName:
+    DDEI:TestCmsAreaCode:
+    Azure.TenantId: $(TenantId)
+    Azure.ClientId: S(CallingAppValidAudience)
+    Azure.ClientSecret: $(DevAccessClientSecret)
+    Azure.UserScope: 'api://S(CallingAppValidAudience)/user_impersonation'
+    Azure.TestUserEmail: $(AadUserName)
+    Azure.TestUserPassword: $(AadUserPassword)
+    NetApp.Url: $(NetAppOptionsUrl)
+    NetApp.ClusterUrl: $(NetAppOptionsClusterUrl)
+    NetApp.BucketName: $(NetAppOptionsBucketName)
+    NetApp.S3ServiceUuid: $(NetAppOptionsS3ServiceUuid)
+    KeyVault.Url: https://kv-lacc-dev.vault.azure.net/
+    ConnectionStrings.CaseManagementDatastoreConnection: $(DatastoreConnectionString)
+  steps:
+    - task: UseDotNet@2
+      displayName: 'Use .NET SDK'
+      inputs:
+        packageType: 'sdk'
+        version: ${{ parameters.dotNetVersion }}
 
-      - job: Build_Main_API
-        displayName: 'Build Main API'
-        dependsOn: Build_And_Test_Solution
-        steps:
-          # Build and publish Main API
-          - template: ../templates/dotnet-build-steps.yml
-            parameters:
-              projectPath: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-              projectName: 'lacc-main-api-drop'
-              buildConfiguration: $(buildConfiguration)
-              dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: true
-              publishOutput: false
-              runTests: false
+    - task: DownloadPipelineArtifact@2
+      displayName: 'Download Local NuGet Package'
+      inputs:
+        buildType: 'current'
+        artifact: '${{ parameters.nugetArtifact }}'
+        path: '${{ parameters.nugetArtifactDownloadPath }}'
 
-      - job: Build_FileTransfer_API
-        displayName: 'Build FileTransfer API'
-        dependsOn: Build_And_Test_Solution
-        steps:
-          # Build and publish FileTransfer API
-          - template: ../templates/dotnet-build-steps.yml
-            parameters:
-              projectPath: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
-              projectName: 'lacc-filetransfer-api-drop'
-              buildConfiguration: $(buildConfiguration)
-              dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: false
-              publishOutput: false
-              runTests: false
+    - task: Bash@3
+      displayName: 'Create NuGet.Config'
+      inputs:
+        targetType: 'inline'
+        script: |
+          cat <<EOF > "$(Build.SourcesDirectory)/NuGet.Config"
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <packageSources>
+              <clear />
+              <add key="local-packages" value="${{ parameters.nugetArtifactDownloadPath }}" />
+              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+            </packageSources>
+            <packageSourceMapping>
+              <packageSource key="local-packages">
+                <package pattern="CPS.ComplexCases.*" />
+              </packageSource>
+              <packageSource key="nuget.org">
+                <package pattern="*" />
+              </packageSource>
+            </packageSourceMapping>
+            <config>
+              <add key="globalPackagesFolder" value="$(Build.SourcesDirectory)/packages" />
+            </config>
+            <packageRestore>
+              <add key="enabled" value="True" />
+              <add key="automatic" value="True" />
+            </packageRestore>
+          </configuration>
+          EOF
 
-      - job: Package_Database_Scripts
-        displayName: 'Package Database Migration Scripts'
-        dependsOn: Build_And_Test_Solution
-        steps:
-          # Build Data project with dependencies
-          - template: ../templates/dotnet-build-steps.yml
-            parameters:
-              projectPath: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
-              projectName: 'Database'
-              buildConfiguration: $(buildConfiguration)
-              dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: true
-              publishOutput: false
-              runTests: false
+    # # Build project
+    # - task: DotNetCoreCLI@2
+    #   displayName: 'Build Main API'
+    #   inputs:
+    #     command: 'build'
+    #     projects: '${{ parameters.projectPath }}'
+    #     arguments: '--configuration Release'
 
-          - task: Bash@3
-            displayName: 'Generate Migration Scripts'
-            inputs:
-              targetType: 'inline'
-              script: |
-                export PATH="$PATH:$HOME/.dotnet/tools"
-                
-                if ! dotnet ef --version &> /dev/null; then
-                  dotnet tool install --global dotnet-ef --version $(efVersion)
-                fi
+    - task: DotNetCoreCLI@2
+      displayName: 'Run Tests'
+      inputs:
+        command: 'test'
+        projects: 'backend/CPS.ComplexCases.API.Integration.Tests/CPS.ComplexCases.API.Integration.Tests.csproj'
+        arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage;Format=cobertura" --settings backend/CodeCoverage.runsettings'
+        publishTestResults: true
+        testResultsFormat: 'VSTest'
+        testResultsFiles: '**/*.trx'
+        testRunTitle: 'Integration Tests'
+        workingDirectory: '$(Build.SourcesDirectory)'
+        resultsDirectory: '$(testResultsDirectory)'
 
-                dotnet ef migrations script \
-                --idempotent \
-                --output $(Build.ArtifactStagingDirectory)/migration-script.sql \
-                --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
-                --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
+    - task: PublishCodeCoverageResults@2
+      displayName: 'Publish Code Coverage'
+      inputs:
+        summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+        failIfCoverageEmpty: true
+      condition: succeededOrFailed()
