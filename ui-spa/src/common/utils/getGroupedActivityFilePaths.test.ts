@@ -53,6 +53,28 @@ describe("getGroupedActivityFilePaths", () => {
     ).toStrictEqual(expectedResult);
   });
 
+  test("should preserve folder hierarchy when failed paths include the same source root as success paths", () => {
+    const successFiles = [
+      { path: "2. Investigation/folder1/subfolder/file1.txt" },
+    ];
+    const failedFiles = [
+      { path: "2. Investigation/folder1/subfolder/file2.txt" },
+      { path: "2. Investigation/folder1/subfolder/file3.txt" },
+    ];
+    const sourcePath = "2. Investigation/";
+
+    const expectedResult = {
+      "folder1 > subfolder": {
+        success: [{ fileName: "file1.txt" }],
+        errors: [{ fileName: "file2.txt" }, { fileName: "file3.txt" }],
+      },
+    };
+
+    expect(
+      getGroupedActivityFilePaths(successFiles, failedFiles, sourcePath),
+    ).toStrictEqual(expectedResult);
+  });
+
   test("should group the successFiles and failedFiles into relevant relative path groups", () => {
     const successFiles = [
       {
