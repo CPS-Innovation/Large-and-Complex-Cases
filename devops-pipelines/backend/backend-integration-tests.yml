@@ -8,6 +8,13 @@ parameters:
   - dev
   - staging
   - prod
+- name: azureSubscription
+  type: string
+  default: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
+  values:
+  - 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
+  - 'Azure Pipeline: Large and Complex Cases - Prod'
+
 
 variables:
   - group: lacc-backend-secrets-${{ parameters.environment }}
@@ -96,6 +103,38 @@ jobs:
     Postgres.AuthMode: $(PostgresAuthMode)
     Postgres.DbUserName: $(DbUserName)
   steps:
+    - task: Bash@3
+      displayName: 'Ensure Azure CLI'
+      inputs:
+        targetType: 'inline'
+        script: |
+          echo "Checking if Azure CLI is installed..."
+          
+          # Check if az command exists
+          if command -v az &> /dev/null; then
+            echo "Azure CLI is already installed"
+            az --version
+            exit 0
+          fi
+
+          echo "Azure CLI not found, installing..."
+          bash $(scripts_directory)/installAzureCli.sh 
+
+    - task: AzureCLI@2
+      displayName: "Login to Azure"
+      inputs:
+        azureSubscription: ${{ parameters.azureSubscription }}
+        scriptType: bash
+        scriptLocation: inlineScript
+        addSpnToEnvironment: true
+        inlineScript: |
+          az login \
+            --service-principal \
+            --username $servicePrincipalId \
+            --federated-token "$idToken" \
+            --tenant $tenantId
+          az account show
+          
     - task: UseDotNet@2
       displayName: 'Use .NET SDK'
       inputs:
