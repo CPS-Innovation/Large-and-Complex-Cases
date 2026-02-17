@@ -152,7 +152,7 @@ jobs:
       inputs:
         folderPath: 'backend/CPS.ComplexCases.API.Integration.Tests'
         enableXmlTransform: false
-        jsonTargetFiles: backend/CPS.ComplexCases.API.Integration.Tests/appsettings.template.json
+        jsonTargetFiles: appsettings.template.json
 
     - script: mv backend/CPS.ComplexCases.API.Integration.Tests/appsettings.template.json backend/CPS.ComplexCases.API.Integration.Tests/appsettings.json
       displayName: 'Rename Appsettings File'
