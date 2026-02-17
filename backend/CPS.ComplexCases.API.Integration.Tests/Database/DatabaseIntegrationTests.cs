@@ -16,7 +16,9 @@ public class DatabaseIntegrationTests : IClassFixture<IntegrationTestFixture>
     [SkippableFact]
     public async Task CaseMetadata_CanQueryAll()
     {
-        Skip.If(!_fixture.IsDatabaseConfigured, "Database not configured - set ConnectionStrings__CaseManagementDatastoreConnection");
+        Skip.If(
+            !_fixture.IsDatabaseConfigured,
+            "Database not configured - set ConnectionStrings__CaseManagementDatastoreConnection (and for CI AAD auth set Postgres__AuthMode=AAD).");
 
         // Act
         var count = await _fixture.DbContext!.CaseMetadata.CountAsync();
