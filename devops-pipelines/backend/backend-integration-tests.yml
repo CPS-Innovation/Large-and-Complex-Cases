@@ -92,6 +92,7 @@ jobs:
     NetApp.PepperVersion: $(NetAppOptionsPepperVersion)
     NetApp.TestFolderPrefix: 'integration-tests'
     KeyVault.Url: 'https://kv-lacc-${{parameters.environment}}.vault.azure.net/'
+    ConnectionStrings.CaseManagementDatastoreConnection: $(CaseManagementDatastoreConnection)
     Postgres.AuthMode: $(PostgresAuthMode)
     Postgres.DbUserName: $(DbUserName)
   steps:
