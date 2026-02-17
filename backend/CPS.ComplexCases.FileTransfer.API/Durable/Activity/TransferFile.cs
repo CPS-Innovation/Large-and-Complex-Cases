@@ -133,11 +133,14 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         }
         catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
+            var errorMessage = $"HTTP request timed out: {ex.Message}";
             _logger.LogWarning(ex, "HTTP request timed out during transfer: {Path}", payload.SourcePath.Path);
+            telemetryEvent.ErrorCode = TransferErrorCode.GeneralError.ToString();
+            telemetryEvent.ErrorMessage = errorMessage;
             return CreateFailureResult(
                 payload.SourcePath.Path,
                 TransferErrorCode.GeneralError,
-                $"HTTP request timed out: {ex.Message}",
+                errorMessage,
                 ex);
         }
         catch (OperationCanceledException ex)
