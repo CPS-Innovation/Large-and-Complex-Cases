@@ -465,8 +465,8 @@ public class NetAppClient(
                                              || ex.StatusCode == System.Net.HttpStatusCode.RequestTimeout)
             .WaitAndRetryAsync(
                 Backoff.DecorrelatedJitterBackoffV2(
-                    medianFirstRetryDelay: TimeSpan.FromSeconds(2),
-                    retryCount: 3),
+                    medianFirstRetryDelay: TimeSpan.FromSeconds(3),
+                    retryCount: 5),
                 onRetry: (exception, timespan, retryCount, context) =>
                 {
                     _logger.LogWarning(exception,

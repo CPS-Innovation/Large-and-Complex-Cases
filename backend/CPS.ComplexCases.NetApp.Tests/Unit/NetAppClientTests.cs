@@ -663,7 +663,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             _amazonS3Mock.Verify(
                 s => s.CompleteMultipartUploadAsync(It.IsAny<CompleteMultipartUploadRequest>(),
                     It.IsAny<CancellationToken>()),
-                Times.Exactly(4)); // 1 initial + 3 retries
+                Times.Exactly(6)); // 1 initial + 5 retries
             _loggerMock.Verify(
                 l => l.Log(
                     LogLevel.Warning,
@@ -672,7 +672,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                         v != null && v!.ToString()!.Contains("CompleteMultipartUpload retry attempt")),
                     It.IsAny<AmazonS3Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-                Times.Exactly(3));
+                Times.Exactly(5));
         }
 
         [Fact]
