@@ -81,7 +81,7 @@ jobs:
     Azure.TenantId: $(TenantId)
     Azure.ClientId: S(CallingAppValidAudience)
     Azure.ClientSecret: $(DevAccessClientSecret)
-    Azure.UserScope: 'api://S(CallingAppValidAudience)/user_impersonation'
+    Azure.UserScope: 'api://$(CallingAppValidAudience)/user_impersonation'
     Azure.TestUserEmail: $(AadUserName)
     Azure.TestUserPassword: $(AadUserPassword)
     NetApp.Url: $(NetAppOptionsUrl)
@@ -93,7 +93,7 @@ jobs:
     NetApp.TestFolderPrefix: 'integration-tests'
     KeyVault.Url: 'https://kv-lacc-${{parameters.environment}}.vault.azure.net/'
     Postgres.AuthMode: $(PostgresAuthMode)
-    Postgres.DBUserName: $(DBUserName)
+    Postgres.DbUserName: $(DbUserName)
   steps:
     - task: UseDotNet@2
       displayName: 'Use .NET SDK'
