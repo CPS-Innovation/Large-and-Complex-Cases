@@ -79,7 +79,7 @@ jobs:
     DDEI.TestDefendantLastName: $(CmsTestDefendantLastName)
     DDEI:TestCmsAreaCode: $(CmsTestCmsAreaCode)
     Azure.TenantId: $(TenantId)
-    Azure.ClientId: S(CallingAppValidAudience)
+    Azure.ClientId: $(CallingAppValidAudience)
     Azure.ClientSecret: $(DevAccessClientSecret)
     Azure.UserScope: 'api://$(CallingAppValidAudience)/user_impersonation'
     Azure.TestUserEmail: $(AadUserName)
