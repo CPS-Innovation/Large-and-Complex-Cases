@@ -24,6 +24,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Npgsql;
 using Polly;
 using Polly.Retry;
 
@@ -32,6 +33,7 @@ namespace CPS.ComplexCases.API.Integration.Tests.Fixtures;
 public class IntegrationTestFixture : IAsyncLifetime
 {
     private readonly ILoggerFactory _loggerFactory;
+    private NpgsqlDataSource? _dbDataSource;
     private string? _cachedBearerToken;
     private DateTime _tokenExpiry = DateTime.MinValue;
     public IConfiguration Configuration { get; }
@@ -92,6 +94,7 @@ public class IntegrationTestFixture : IAsyncLifetime
     public Task DisposeAsync()
     {
         DbContext?.Dispose();
+        _dbDataSource?.Dispose();
         _loggerFactory.Dispose();
         return Task.CompletedTask;
     }
@@ -243,8 +246,42 @@ public class IntegrationTestFixture : IAsyncLifetime
         if (!IsDatabaseConfigured) return;
 
         var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-        optionsBuilder.UseNpgsql(Settings.CaseManagementDatastoreConnection, x =>
-            x.MigrationsHistoryTable("__EFMigrationsHistory", Data.Constants.SchemaNames.Lcc));
+        var authMode = Configuration["Postgres:AuthMode"];
+
+        if (authMode?.Equals("AAD", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            var dataSourceBuilder = new NpgsqlDataSourceBuilder(Settings.CaseManagementDatastoreConnection);
+
+            if (dataSourceBuilder.ConnectionStringBuilder.Password is null)
+            {
+                var dbUserName = Configuration["Postgres:DbUserName"];
+                if (!string.IsNullOrEmpty(dbUserName))
+                {
+                    dataSourceBuilder.ConnectionStringBuilder.Username = dbUserName;
+                }
+
+                var credentials = new DefaultAzureCredential();
+                dataSourceBuilder.UsePeriodicPasswordProvider(
+                    async (_, ct) =>
+                    {
+                        var token = await credentials.GetTokenAsync(
+                            new TokenRequestContext(["https://ossrdbms-aad.database.windows.net/.default"]),
+                            ct).ConfigureAwait(false);
+                        return token.Token;
+                    },
+                    TimeSpan.FromHours(1),
+                    TimeSpan.FromSeconds(30));
+            }
+
+            _dbDataSource = dataSourceBuilder.Build();
+            optionsBuilder.UseNpgsql(_dbDataSource, x =>
+                x.MigrationsHistoryTable("__EFMigrationsHistory", Data.Constants.SchemaNames.Lcc));
+        }
+        else
+        {
+            optionsBuilder.UseNpgsql(Settings.CaseManagementDatastoreConnection, x =>
+                x.MigrationsHistoryTable("__EFMigrationsHistory", Data.Constants.SchemaNames.Lcc));
+        }
 
         DbContext = new ApplicationDbContext(optionsBuilder.Options);
     }
