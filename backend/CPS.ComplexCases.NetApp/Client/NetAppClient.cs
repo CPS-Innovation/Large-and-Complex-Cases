@@ -36,6 +36,7 @@ public class NetAppClient(
                 _logger.LogWarning("Bucket name is null or empty.");
                 return false;
             }
+
             var bucketExists = await _amazonS3UtilsWrapper.DoesS3BucketExistV2Async(s3Client, arg.BucketName);
             if (bucketExists)
             {
@@ -101,9 +102,12 @@ public class NetAppClient(
             var response = await s3Client.PutObjectAsync(request);
             if (response.HttpStatusCode != System.Net.HttpStatusCode.OK)
             {
-                _logger.LogWarning("Failed to create folder {FolderKey} in bucket {BucketName}. HTTP Status Code: {StatusCode}", arg.FolderKey, arg.BucketName, response.HttpStatusCode);
+                _logger.LogWarning(
+                    "Failed to create folder {FolderKey} in bucket {BucketName}. HTTP Status Code: {StatusCode}",
+                    arg.FolderKey, arg.BucketName, response.HttpStatusCode);
                 return false;
             }
+
             var retryPolicy = GetDeleteFileRetryPolicy(request.Key, arg.BucketName);
 
             var deleteResponse = await retryPolicy.ExecuteAsync(async () =>
@@ -117,7 +121,8 @@ public class NetAppClient(
         }
         catch (AmazonS3Exception ex)
         {
-            _logger.LogError(ex, ex.Message, "Failed to create folder {FolderKey} in bucket {BucketName}.", arg.FolderKey, arg.BucketName);
+            _logger.LogError(ex, ex.Message, "Failed to create folder {FolderKey} in bucket {BucketName}.",
+                arg.FolderKey, arg.BucketName);
             throw;
         }
     }
@@ -136,16 +141,20 @@ public class NetAppClient(
         {
             if (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
-                _logger.LogWarning("Object {ObjectKey} not found in bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
+                _logger.LogWarning("Object {ObjectKey} not found in bucket {BucketName}.", arg.ObjectKey,
+                    arg.BucketName);
                 throw new FileNotFoundException($"Object {arg.ObjectKey} not found in bucket {arg.BucketName}.", ex);
             }
+
             if (ex.StatusCode == System.Net.HttpStatusCode.PreconditionFailed)
             {
-                _logger.LogWarning("ETag mismatch for object {ObjectKey} in bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
+                _logger.LogWarning("ETag mismatch for object {ObjectKey} in bucket {BucketName}.", arg.ObjectKey,
+                    arg.BucketName);
                 return null;
             }
 
-            _logger.LogError(ex, ex.Message, "Failed to get file {ObjectKey} from bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
+            _logger.LogError(ex, ex.Message, "Failed to get file {ObjectKey} from bucket {BucketName}.", arg.ObjectKey,
+                arg.BucketName);
             throw;
         }
     }
@@ -161,7 +170,8 @@ public class NetAppClient(
         }
         catch (AmazonS3Exception ex)
         {
-            _logger.LogError(ex, ex.Message, "Failed to upload file {ObjectKey} to bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
+            _logger.LogError(ex, ex.Message, "Failed to upload file {ObjectKey} to bucket {BucketName}.", arg.ObjectKey,
+                arg.BucketName);
             throw;
         }
     }
@@ -288,7 +298,8 @@ public class NetAppClient(
         }
         catch (AmazonS3Exception ex)
         {
-            _logger.LogError(ex, "Failed to upload part {PartNumber} for file {ObjectKey}.", arg.PartNumber, arg.ObjectKey);
+            _logger.LogError(ex, "Failed to upload part {PartNumber} for file {ObjectKey}.", arg.PartNumber,
+                arg.ObjectKey);
             throw;
         }
     }
@@ -296,33 +307,32 @@ public class NetAppClient(
     public async Task<CompleteMultipartUploadResponse?> CompleteMultipartUploadAsync(CompleteMultipartUploadArg arg)
     {
         var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
-        try
-        {
-            return await s3Client.CompleteMultipartUploadAsync(_netAppRequestFactory.CompleteMultipartUploadRequest(arg));
-        }
-        catch (AmazonS3Exception ex)
-        {
-            _logger.LogError(ex, "Failed to complete multipart upload {UploadId} for file {ObjectKey}.", arg.UploadId, arg.ObjectKey);
-            throw;
-        }
+        var retryPolicy = GetCompleteMultipartUploadRetryPolicy(arg.UploadId, arg.ObjectKey);
+        return await retryPolicy.ExecuteAsync(async () =>
+            await s3Client.CompleteMultipartUploadAsync(
+                _netAppRequestFactory.CompleteMultipartUploadRequest(arg)));
     }
 
     public async Task<bool> DoesObjectExistAsync(GetObjectArg arg)
     {
         try
         {
-            var headObjectArg = _netAppS3HttpArgFactory.CreateGetHeadObjectArg(arg.BearerToken, arg.BucketName, arg.ObjectKey);
+            var headObjectArg =
+                _netAppS3HttpArgFactory.CreateGetHeadObjectArg(arg.BearerToken, arg.BucketName, arg.ObjectKey);
             var response = await _netAppS3HttpClient.GetHeadObjectAsync(headObjectArg);
             return response.StatusCode == System.Net.HttpStatusCode.OK;
         }
         catch (HttpRequestException ex)
         {
-            _logger.LogError(ex, "HTTP request failed while checking existence of object {ObjectKey} in bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
+            _logger.LogError(ex,
+                "HTTP request failed while checking existence of object {ObjectKey} in bucket {BucketName}.",
+                arg.ObjectKey, arg.BucketName);
             return false;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to check if object {ObjectKey} exists in bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
+            _logger.LogError(ex, "Failed to check if object {ObjectKey} exists in bucket {BucketName}.", arg.ObjectKey,
+                arg.BucketName);
             return false;
         }
     }
@@ -360,24 +370,28 @@ public class NetAppClient(
 
                 foreach (var error in deleteErrors)
                 {
-                    _logger.LogError("Failed to delete object {ObjectKey} from bucket {BucketName}. Code: {Code}, Message: {Message}",
+                    _logger.LogError(
+                        "Failed to delete object {ObjectKey} from bucket {BucketName}. Code: {Code}, Message: {Message}",
                         error.Key, arg.BucketName, error.Code, error.Message);
                 }
 
                 var successfulDeletionsCount = deletedObjects.Count;
                 var failedDeletionsCount = deleteErrors.Count;
 
-                return $"Successfully deleted {successfulDeletionsCount} files from bucket {arg.BucketName}. Deletion failed for {failedDeletionsCount} files. ";
+                return
+                    $"Successfully deleted {successfulDeletionsCount} files from bucket {arg.BucketName}. Deletion failed for {failedDeletionsCount} files. ";
             }
         }
         catch (AmazonS3Exception ex)
         {
-            _logger.LogError(ex, "Failed to delete file or folder {Path} from bucket {BucketName}.", arg.Path, arg.BucketName);
+            _logger.LogError(ex, "Failed to delete file or folder {Path} from bucket {BucketName}.", arg.Path,
+                arg.BucketName);
             throw;
         }
     }
 
-    private async Task<IEnumerable<string>> ListAllObjectKeysForDeletionAsync(string bucketName, string prefix, string bearerToken)
+    private async Task<IEnumerable<string>> ListAllObjectKeysForDeletionAsync(string bucketName, string prefix,
+        string bearerToken)
     {
         var objectKeys = new List<string>();
 
@@ -407,7 +421,8 @@ public class NetAppClient(
                 {
                     if (!string.IsNullOrEmpty(folder.Path))
                     {
-                        var subObjectKeys = await ListAllObjectKeysForDeletionAsync(bucketName, folder.Path, bearerToken);
+                        var subObjectKeys =
+                            await ListAllObjectKeysForDeletionAsync(bucketName, folder.Path, bearerToken);
                         objectKeys.AddRange(subObjectKeys);
                         objectKeys.Add(folder.Path);
                     }
@@ -415,7 +430,6 @@ public class NetAppClient(
             }
 
             continuationToken = listResponse?.Pagination.NextContinuationToken;
-
         } while (!string.IsNullOrEmpty(continuationToken));
 
         objectKeys.Add(prefix);
@@ -423,23 +437,41 @@ public class NetAppClient(
         return objectKeys;
     }
 
-    private Polly.Retry.AsyncRetryPolicy<DeleteObjectResponse> GetDeleteFileRetryPolicy(string objectKey, string bucketName)
+    private Polly.Retry.AsyncRetryPolicy<DeleteObjectResponse> GetDeleteFileRetryPolicy(string objectKey,
+        string bucketName)
     {
         return Policy
-                .HandleResult<DeleteObjectResponse>(r => r.HttpStatusCode != System.Net.HttpStatusCode.NoContent)
-                .WaitAndRetryAsync(
-                    Backoff.DecorrelatedJitterBackoffV2(
-                        medianFirstRetryDelay: TimeSpan.FromSeconds(1),
-                        retryCount: 3),
-                    onRetry: (outcome, timespan, retryCount, context) =>
-                    {
-                        _logger.LogWarning(
-                            "Delete object retry attempt {RetryCount} for key {ObjectKey} in bucket {BucketName}. Status: {StatusCode}. Waiting {DelayMs}ms before next retry.",
-                            retryCount,
-                            objectKey,
-                            bucketName,
-                            outcome.Result?.HttpStatusCode,
-                            timespan.TotalMilliseconds);
-                    });
+            .HandleResult<DeleteObjectResponse>(r => r.HttpStatusCode != System.Net.HttpStatusCode.NoContent)
+            .WaitAndRetryAsync(
+                Backoff.DecorrelatedJitterBackoffV2(
+                    medianFirstRetryDelay: TimeSpan.FromSeconds(1),
+                    retryCount: 3),
+                onRetry: (outcome, timespan, retryCount, context) =>
+                {
+                    _logger.LogWarning(
+                        "Delete object retry attempt {RetryCount} for key {ObjectKey} in bucket {BucketName}. Status: {StatusCode}. Waiting {DelayMs}ms before next retry.",
+                        retryCount,
+                        objectKey,
+                        bucketName,
+                        outcome.Result?.HttpStatusCode,
+                        timespan.TotalMilliseconds);
+                });
+    }
+
+    private Polly.Retry.AsyncRetryPolicy GetCompleteMultipartUploadRetryPolicy(string uploadId, string objectKey)
+    {
+        return Policy
+            .Handle<AmazonS3Exception>(ex => (int)ex.StatusCode >= 500
+                                             || ex.StatusCode == System.Net.HttpStatusCode.RequestTimeout)
+            .WaitAndRetryAsync(
+                Backoff.DecorrelatedJitterBackoffV2(
+                    medianFirstRetryDelay: TimeSpan.FromSeconds(2),
+                    retryCount: 3),
+                onRetry: (exception, timespan, retryCount, context) =>
+                {
+                    _logger.LogWarning(exception,
+                        "CompleteMultipartUpload retry attempt {RetryCount} for upload {UploadId} ({ObjectKey}). Waiting {DelayMs}ms.",
+                        retryCount, uploadId, objectKey, timespan.TotalMilliseconds);
+                });
     }
 }
