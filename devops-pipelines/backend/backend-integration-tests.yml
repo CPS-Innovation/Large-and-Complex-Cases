@@ -59,8 +59,8 @@ jobs:
         targetPath: '$(Build.SourcesDirectory)/localnuget'
         artifact: 'localnuget'
 
-- job: Run Integration Tests
-  displayName: 'Build & Test Solution'
+- job: Run_Integration_Tests
+  displayName: 'Run Integration Test'
   dependsOn: Package_NuGet
   variables:
     Egress.Url: $(EgressOptionsUrl)
