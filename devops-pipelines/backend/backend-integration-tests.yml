@@ -1,12 +1,18 @@
 trigger: none
 
 parameters:
-  environment: 'dev'
+- name: environment
+  tyoe: string
+  default: 'dev'
+  values:
+  - dev
+  - staging
+  - prod
 
 variables:
   - group: lacc-backend-secrets-${{ parameters.environment }}
   - group: lacc-backend-config-${{ parameters.environment }}
-  - group: lacc-automated-testing
+  - group: lacc-automated-testing-${{ parameters.environment }}
   - name: buildConfiguration
     value: 'Release'
   - name: dotNetVersion
