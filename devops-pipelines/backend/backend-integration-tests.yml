@@ -1,5 +1,8 @@
 trigger: none
 
+parameters:
+  environment: 'dev'
+
 variables:
   - group: lacc-backend-secrets-${{ parameters.environment }}
   - group: lacc-backend-config-${{ parameters.environment }}
@@ -52,6 +55,7 @@ jobs:
   variables:
     Egress.Url: $(EgressOptionsUrl)
     Egress.Username: $(EgressOptionsUsername)
+    Egress.Email: $(EgressEmail)
     Egress.Password: $(EgressOptionsPassword)
     Egress.WorkspaceId: $(EgressWorkspaceId)
     Egress.TestDestinationPath: "integration-tests"
@@ -59,11 +63,11 @@ jobs:
     DDEI.AccessKey: $(DDEIOptionsAccessKey)
     DDEI.Username: $(CmsUserName)
     DDEI.Password: $(CmsUserPassword)
-    DDEI.TestCaseId:
-    DDEI.TestUrn:
-    DDEI.TestOperationName:
-    DDEI.TestDefendantLastName:
-    DDEI:TestCmsAreaCode:
+    DDEI.TestCaseId: $(CmsTestCaseId)
+    DDEI.TestUrn: $(CmsTestUrn)
+    DDEI.TestOperationName: S(CmsTestOperationName)
+    DDEI.TestDefendantLastName: $(CmsTestDefendantLastName)
+    DDEI:TestCmsAreaCode: $(CmsTestCmsAreaCode)
     Azure.TenantId: $(TenantId)
     Azure.ClientId: S(CallingAppValidAudience)
     Azure.ClientSecret: $(DevAccessClientSecret)
@@ -74,8 +78,12 @@ jobs:
     NetApp.ClusterUrl: $(NetAppOptionsClusterUrl)
     NetApp.BucketName: $(NetAppOptionsBucketName)
     NetApp.S3ServiceUuid: $(NetAppOptionsS3ServiceUuid)
-    KeyVault.Url: https://kv-lacc-dev.vault.azure.net/
-    ConnectionStrings.CaseManagementDatastoreConnection: $(DatastoreConnectionString)
+    NetApp.SessionDurationSeconds: 1800
+    NetApp.PepperVersion: $(NetAppOptionsPepperVersion)
+    NetApp.TestFolderPrefix: 'integration-tests'
+    KeyVault.Url: 'https://kv-lacc-${{parameters.environment}}.vault.azure.net/'
+    Postgres.AuthMode: $(PostgresAuthMode)
+    Postgres.DBUserName: $(DBUserName)
   steps:
     - task: UseDotNet@2
       displayName: 'Use .NET SDK'
@@ -128,6 +136,16 @@ jobs:
     #     command: 'build'
     #     projects: '${{ parameters.projectPath }}'
     #     arguments: '--configuration Release'
+
+    - task: FileTransform@2
+      displayName: 'Write App Settings to File'
+      inputs:
+        folderPath: 'backend/CPS.ComplexCases.API.Integration.Tests'
+        enableXmlTransform: false
+        jsonTargetFiles: backend/CPS.ComplexCases.API.Integration.Tests/appsettings.template.json
+
+    - script: mv backend/CPS.ComplexCases.API.Integration.Tests/appsettings.template.json backend/CPS.ComplexCases.API.Integration.Tests/appsettings.json
+      displayName: 'Rename Appsettings File'
 
     - task: DotNetCoreCLI@2
       displayName: 'Run Tests'
