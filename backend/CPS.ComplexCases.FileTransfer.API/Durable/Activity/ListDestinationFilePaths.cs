@@ -15,7 +15,7 @@ public class ListDestinationFilePaths(IStorageClientFactory storageClientFactory
     public async Task<HashSet<string>> Run([ActivityTrigger] ListDestinationPayload payload)
     {
         var files = await _egressStorageClient.GetAllFilesFromFolderAsync(
-            "", payload.WorkspaceId);
+            payload.DestinationPath, payload.WorkspaceId);
 
         return files
             .Where(f => !string.IsNullOrEmpty(f.FullFilePath))

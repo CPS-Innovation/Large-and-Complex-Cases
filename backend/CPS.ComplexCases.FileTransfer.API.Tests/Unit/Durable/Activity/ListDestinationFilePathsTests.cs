@@ -55,7 +55,7 @@ public class ListDestinationFilePathsTests
         };
 
         _egressStorageClientMock
-            .Setup(x => x.GetAllFilesFromFolderAsync("", _workspaceId))
+            .Setup(x => x.GetAllFilesFromFolderAsync("dest/path", _workspaceId))
             .ReturnsAsync(files);
 
         // Act
@@ -92,7 +92,7 @@ public class ListDestinationFilePathsTests
         };
 
         _egressStorageClientMock
-            .Setup(x => x.GetAllFilesFromFolderAsync("", _workspaceId))
+            .Setup(x => x.GetAllFilesFromFolderAsync("dest/path", _workspaceId))
             .ReturnsAsync(files);
 
         // Act
@@ -129,7 +129,7 @@ public class ListDestinationFilePathsTests
         };
 
         _egressStorageClientMock
-            .Setup(x => x.GetAllFilesFromFolderAsync("", _workspaceId))
+            .Setup(x => x.GetAllFilesFromFolderAsync("dest/path", _workspaceId))
             .ReturnsAsync(files);
 
         // Act
@@ -152,7 +152,7 @@ public class ListDestinationFilePathsTests
         var files = new List<FileTransferInfo>();
 
         _egressStorageClientMock
-            .Setup(x => x.GetAllFilesFromFolderAsync("", _workspaceId))
+            .Setup(x => x.GetAllFilesFromFolderAsync("dest/path", _workspaceId))
             .ReturnsAsync(files);
 
         // Act
@@ -182,7 +182,7 @@ public class ListDestinationFilePathsTests
         };
 
         _egressStorageClientMock
-            .Setup(x => x.GetAllFilesFromFolderAsync("", _workspaceId))
+            .Setup(x => x.GetAllFilesFromFolderAsync("dest/path", _workspaceId))
             .ReturnsAsync(files);
 
         // Act
@@ -216,7 +216,7 @@ public class ListDestinationFilePathsTests
         };
 
         _egressStorageClientMock
-            .Setup(x => x.GetAllFilesFromFolderAsync("", _workspaceId))
+            .Setup(x => x.GetAllFilesFromFolderAsync("dest/path", _workspaceId))
             .ReturnsAsync(files);
 
         // Act
@@ -239,7 +239,7 @@ public class ListDestinationFilePathsTests
         var files = new List<FileTransferInfo>();
 
         _egressStorageClientMock
-            .Setup(x => x.GetAllFilesFromFolderAsync("", _workspaceId))
+            .Setup(x => x.GetAllFilesFromFolderAsync("dest/path", _workspaceId))
             .ReturnsAsync(files);
 
         // Act
@@ -247,7 +247,7 @@ public class ListDestinationFilePathsTests
 
         // Assert
         _egressStorageClientMock.Verify(
-            x => x.GetAllFilesFromFolderAsync("", _workspaceId),
+            x => x.GetAllFilesFromFolderAsync("dest/path", _workspaceId),
             Times.Once);
     }
 
@@ -259,7 +259,7 @@ public class ListDestinationFilePathsTests
         var files = new List<FileTransferInfo>();
 
         _egressStorageClientMock
-            .Setup(x => x.GetAllFilesFromFolderAsync("", _workspaceId))
+            .Setup(x => x.GetAllFilesFromFolderAsync("dest/path", _workspaceId))
             .ReturnsAsync(files);
 
         // Act

@@ -10,6 +10,8 @@ export type TransferStatusResponse = {
   completedAt: null | string;
   failedItems: TransferFailedItem[];
   userName: string;
+  totalFiles: number;
+  processedFiles: number;
 };
 
 export type TransferFailedItem = {
