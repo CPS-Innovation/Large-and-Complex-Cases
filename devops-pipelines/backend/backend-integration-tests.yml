@@ -70,6 +70,7 @@ jobs:
   displayName: 'Run Integration Test'
   dependsOn: Package_NuGet
   variables:
+    projectDir: 'backend/CPS.ComplexCases.API.Integration.Tests'
     Egress.Url: $(EgressOptionsUrl)
     Egress.Username: $(EgressOptionsUsername)
     Egress.Email: $(EgressEmail)
@@ -119,21 +120,6 @@ jobs:
 
           echo "Azure CLI not found, installing..."
           bash $(scripts_directory)/installAzureCli.sh 
-
-    - task: AzureCLI@2
-      displayName: "Login to Azure"
-      inputs:
-        azureSubscription: ${{ parameters.azureSubscription }}
-        scriptType: bash
-        scriptLocation: inlineScript
-        addSpnToEnvironment: true
-        inlineScript: |
-          az login \
-            --service-principal \
-            --username $servicePrincipalId \
-            --federated-token "$idToken" \
-            --tenant $tenantId
-          az account show
           
     - task: UseDotNet@2
       displayName: 'Use .NET SDK'
@@ -179,36 +165,52 @@ jobs:
           </configuration>
           EOF
 
-    # # Build project
-    # - task: DotNetCoreCLI@2
-    #   displayName: 'Build Main API'
-    #   inputs:
-    #     command: 'build'
-    #     projects: '${{ parameters.projectPath }}'
-    #     arguments: '--configuration Release'
-
     - task: FileTransform@2
       displayName: 'Write App Settings to File'
       inputs:
-        folderPath: 'backend/CPS.ComplexCases.API.Integration.Tests'
+        folderPath: '$(projectDir)'
         enableXmlTransform: false
         jsonTargetFiles: appsettings.template.json
 
-    - script: mv backend/CPS.ComplexCases.API.Integration.Tests/appsettings.template.json backend/CPS.ComplexCases.API.Integration.Tests/appsettings.json
+    - script: mv $(projectDir)/appsettings.template.json $(projectDir)/appsettings.json
       displayName: 'Rename Appsettings File'
 
-    - task: DotNetCoreCLI@2
-      displayName: 'Run Tests'
+    - task: AzureCLI@2
+      displayName: "Run Tests"
       inputs:
-        command: 'test'
-        projects: 'backend/CPS.ComplexCases.API.Integration.Tests/CPS.ComplexCases.API.Integration.Tests.csproj'
-        arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage;Format=cobertura" --settings backend/CodeCoverage.runsettings'
-        publishTestResults: true
-        testResultsFormat: 'VSTest'
-        testResultsFiles: '**/*.trx'
-        testRunTitle: 'Integration Tests'
+        azureSubscription: ${{ parameters.azureSubscription }}
+        scriptType: bash
+        scriptLocation: inlineScript
+        addSpnToEnvironment: true
         workingDirectory: '$(Build.SourcesDirectory)'
-        resultsDirectory: '$(testResultsDirectory)'
+        inlineScript: |
+          # az login \
+          #   --service-principal \
+          #   --username $servicePrincipalId \
+          #   --federated-token "$idToken" \
+          #   --tenant $tenantId
+          echo "---------- az account show ----------"
+          az account show
+
+          dotnet test $(projectDir)/CPS.ComplexCases.API.Integration.Tests.csproj' \
+            --configuration "$(buildConfiguration)" \
+            --collect:"XPlat Code Coverage;Format=cobertura" \
+            --settings backend/CodeCoverage.runsettings \
+            --logger "trx;LogFileName=integration-tests.trx" \
+            --results-directory "$(testResultsDirectory)"
+
+    # - task: DotNetCoreCLI@2
+    #   displayName: 'Run Tests'
+    #   inputs:
+    #     command: 'test'
+    #     projects: 'backend/CPS.ComplexCases.API.Integration.Tests/CPS.ComplexCases.API.Integration.Tests.csproj'
+    #     arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage;Format=cobertura" --settings backend/CodeCoverage.runsettings'
+    #     publishTestResults: true
+    #     testResultsFormat: 'VSTest'
+    #     testResultsFiles: '**/*.trx'
+    #     testRunTitle: 'Integration Tests'
+    #     workingDirectory: '$(Build.SourcesDirectory)'
+    #     resultsDirectory: '$(testResultsDirectory)'
 
     - task: PublishCodeCoverageResults@2
       displayName: 'Publish Code Coverage'
