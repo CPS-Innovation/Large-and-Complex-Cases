@@ -176,7 +176,7 @@ jobs:
       displayName: 'Rename Appsettings File'
 
     - task: AzureCLI@2
-      displayName: "Run Tests"
+      displayName: 'Run Tests'
       inputs:
         azureSubscription: ${{ parameters.azureSubscription }}
         scriptType: bash
@@ -184,20 +184,18 @@ jobs:
         addSpnToEnvironment: true
         workingDirectory: '$(Build.SourcesDirectory)'
         inlineScript: |
-          # az login \
-          #   --service-principal \
-          #   --username $servicePrincipalId \
-          #   --federated-token "$idToken" \
-          #   --tenant $tenantId
-          echo "---------- az account show ----------"
-          az account show
-
-          dotnet test $(projectDir)/CPS.ComplexCases.API.Integration.Tests.csproj' \
-            --configuration "$(buildConfiguration)" \
+          dotnet test $(projectDir)/CPS.ComplexCases.API.Integration.Tests.csproj \
+            --configuration $(buildConfiguration) \
             --collect:"XPlat Code Coverage;Format=cobertura" \
             --settings backend/CodeCoverage.runsettings \
             --logger "trx;LogFileName=integration-tests.trx" \
-            --results-directory "$(testResultsDirectory)"
+            --results-directory $(testResultsDirectory)
+      
+    - task: PublishTestResults@2
+      inputs:
+        testResultsFormat: 'VSTest'
+        testResultsFiles: '$(testResultsDirectory)/integration-tests.trx'
+      condition: succeededOrFailed()
 
     # - task: DotNetCoreCLI@2
     #   displayName: 'Run Tests'
