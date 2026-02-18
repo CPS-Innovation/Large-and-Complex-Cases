@@ -239,7 +239,7 @@ public class NetAppStorageClientTests
             .Returns(getArg);
 
         _netAppClientMock
-            .Setup(c => c.CompleteMultipartUploadAsync(completeArg))
+            .Setup(c => c.CompleteMultipartUploadAsync(completeArg, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new CompleteMultipartUploadResponse { ETag = resultETag });
 
         var arg = new GetHeadObjectArg
@@ -304,7 +304,7 @@ public class NetAppStorageClientTests
             .Returns(getArg);
 
         _netAppClientMock
-            .Setup(c => c.CompleteMultipartUploadAsync(completeArg))
+            .Setup(c => c.CompleteMultipartUploadAsync(completeArg, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new CompleteMultipartUploadResponse { ETag = resultETag });
 
         var arg = new GetHeadObjectArg
@@ -355,7 +355,7 @@ public class NetAppStorageClientTests
             .Returns(completeArg);
 
         _netAppClientMock
-            .Setup(c => c.CompleteMultipartUploadAsync(completeArg))
+            .Setup(c => c.CompleteMultipartUploadAsync(completeArg, It.IsAny<CancellationToken>()))
             .ReturnsAsync((CompleteMultipartUploadResponse?)null);
 
         // Act & Assert

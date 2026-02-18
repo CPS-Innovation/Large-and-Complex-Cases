@@ -289,6 +289,11 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             }
 
             await Task.WhenAll(uploadTasks);
+            
+            // Allow S3 to finalise part registration before completing the upload.
+            // Without this delay, CompleteMultipartUpload can receive a transient 500
+            // when parts have not yet been fully registered internally by S3.
+            await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
 
             string md5Hash = md5?.Hash != null ? Convert.ToBase64String(md5.Hash) : string.Empty;
             string? filePath = payload.TransferDirection == TransferDirection.EgressToNetApp ? payload.DestinationPath.EnsureTrailingSlash() + payload.SourcePath.Path : null;

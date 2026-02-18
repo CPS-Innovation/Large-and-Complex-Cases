@@ -304,13 +304,22 @@ public class NetAppClient(
         }
     }
 
-    public async Task<CompleteMultipartUploadResponse?> CompleteMultipartUploadAsync(CompleteMultipartUploadArg arg)
+    public async Task<CompleteMultipartUploadResponse?> CompleteMultipartUploadAsync(CompleteMultipartUploadArg arg, CancellationToken cancellationToken = default)
     {
         var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
         var retryPolicy = GetCompleteMultipartUploadRetryPolicy(arg.UploadId, arg.ObjectKey);
-        return await retryPolicy.ExecuteAsync(async () =>
-            await s3Client.CompleteMultipartUploadAsync(
-                _netAppRequestFactory.CompleteMultipartUploadRequest(arg)));
+        try
+        {
+            return await retryPolicy.ExecuteAsync(
+                ct => s3Client.CompleteMultipartUploadAsync(
+                    _netAppRequestFactory.CompleteMultipartUploadRequest(arg), ct),
+                cancellationToken);
+        }
+        catch (AmazonS3Exception ex)
+        {
+            _logger.LogError(ex, "Failed to complete multipart upload {UploadId} for file {ObjectKey} after all retry attempts.", arg.UploadId, arg.ObjectKey);
+            throw;
+        }
     }
 
     public async Task<bool> DoesObjectExistAsync(GetObjectArg arg)

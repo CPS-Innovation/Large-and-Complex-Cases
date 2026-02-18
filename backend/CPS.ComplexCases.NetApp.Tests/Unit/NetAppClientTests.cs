@@ -601,6 +601,14 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 s => s.CompleteMultipartUploadAsync(It.IsAny<CompleteMultipartUploadRequest>(),
                     It.IsAny<CancellationToken>()),
                 Times.Once);
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v != null && v!.ToString()!.Contains("after all retry attempts")),
+                    It.IsAny<AmazonS3Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
         }
 
         [Fact]
@@ -673,6 +681,14 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                     It.IsAny<AmazonS3Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Exactly(5));
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v != null && v!.ToString()!.Contains("after all retry attempts")),
+                    It.IsAny<AmazonS3Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
         }
 
         [Fact]
