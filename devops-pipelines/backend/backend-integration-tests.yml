@@ -34,41 +34,41 @@ variables:
 pool: 'LACC PreProd Pool'
 
 jobs:
-- job: Package_NuGet
-  displayName: 'Pack and Publish NuGet Package'
-  steps:
-    - template: ../templates/dotnet-build-steps.yml
-      parameters:
-        projectPath: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-        projectName: 'HttpTelemetry'
-        buildConfiguration: $(buildConfiguration)
-        dotNetVersion: $(dotNetVersion)
-        useLocalNuGet: false
-        publishOutput: false
-        runTests: false
+# - job: Package_NuGet
+#   displayName: 'Pack and Publish NuGet Package'
+#   steps:
+#     - template: ../templates/dotnet-build-steps.yml
+#       parameters:
+#         projectPath: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+#         projectName: 'HttpTelemetry'
+#         buildConfiguration: $(buildConfiguration)
+#         dotNetVersion: $(dotNetVersion)
+#         useLocalNuGet: false
+#         publishOutput: false
+#         runTests: false
 
-    - script: |
-        mkdir -p $(Build.SourcesDirectory)/localnuget
-        rm -f $(Build.SourcesDirectory)/localnuget/*.nupkg
-      displayName: 'Prepare local NuGet directory'
+#     - script: |
+#         mkdir -p $(Build.SourcesDirectory)/localnuget
+#         rm -f $(Build.SourcesDirectory)/localnuget/*.nupkg
+#       displayName: 'Prepare local NuGet directory'
 
-    - task: DotNetCoreCLI@2
-      displayName: 'Pack HttpTelemetry'
-      inputs:
-        command: 'pack'
-        packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-        outputDir: '$(Build.SourcesDirectory)/localnuget'
-        arguments: '--configuration $(buildConfiguration) --no-build'
+#     - task: DotNetCoreCLI@2
+#       displayName: 'Pack HttpTelemetry'
+#       inputs:
+#         command: 'pack'
+#         packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+#         outputDir: '$(Build.SourcesDirectory)/localnuget'
+#         arguments: '--configuration $(buildConfiguration) --no-build'
 
-    - task: PublishPipelineArtifact@1
-      displayName: 'Publish HttpTelemetry Package'
-      inputs:
-        targetPath: '$(Build.SourcesDirectory)/localnuget'
-        artifact: 'localnuget'
+#     - task: PublishPipelineArtifact@1
+#       displayName: 'Publish HttpTelemetry Package'
+#       inputs:
+#         targetPath: '$(Build.SourcesDirectory)/localnuget'
+#         artifact: 'localnuget'
 
 - job: Run_Integration_Tests
   displayName: 'Run Integration Test'
-  dependsOn: Package_NuGet
+  # dependsOn: Package_NuGet
   variables:
     projectDir: 'backend/CPS.ComplexCases.API.Integration.Tests'
     Egress.Url: $(EgressOptionsUrl)
@@ -77,7 +77,7 @@ jobs:
     Egress.Password: $(EgressOptionsPassword)
     Egress.WorkspaceId: $(EgressWorkspaceId)
     Egress.TestDestinationPath: "integration-tests"
-    DDEI.BaseUrl: 'https://fa-wm-app-ddei-dev.azurewebsites.net'
+    DDEI.BaseUrl: $[ replace( variables['DDEIOptionsBaseUrl'], '/api', '' ) ]
     DDEI.AccessKey: $(DDEIOptionsAccessKey)
     DDEI.Username: $(CmsUserName)
     DDEI.Password: $(CmsUserPassword)
@@ -121,59 +121,59 @@ jobs:
           echo "Azure CLI not found, installing..."
           bash devops-pipelines/scripts/installAzureCli.sh 
           
-    - task: UseDotNet@2
-      displayName: 'Use .NET SDK'
-      inputs:
-        packageType: 'sdk'
-        version: $(dotNetVersion)
+    # - task: UseDotNet@2
+    #   displayName: 'Use .NET SDK'
+    #   inputs:
+    #     packageType: 'sdk'
+    #     version: $(dotNetVersion)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: 'Download Local NuGet Package'
-      inputs:
-        buildType: 'current'
-        artifact: $(nugetArtifact)
-        path: $(nugetArtifactDownloadPath)
+    # - task: DownloadPipelineArtifact@2
+    #   displayName: 'Download Local NuGet Package'
+    #   inputs:
+    #     buildType: 'current'
+    #     artifact: $(nugetArtifact)
+    #     path: $(nugetArtifactDownloadPath)
 
-    - task: Bash@3
-      displayName: 'Create NuGet.Config'
-      inputs:
-        targetType: 'inline'
-        script: |
-          cat <<EOF > "$(Build.SourcesDirectory)/NuGet.Config"
-          <?xml version="1.0" encoding="utf-8"?>
-          <configuration>
-            <packageSources>
-              <clear />
-              <add key="local-packages" value="$(nugetArtifactDownloadPath)" />
-              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
-            </packageSources>
-            <packageSourceMapping>
-              <packageSource key="local-packages">
-                <package pattern="CPS.ComplexCases.*" />
-              </packageSource>
-              <packageSource key="nuget.org">
-                <package pattern="*" />
-              </packageSource>
-            </packageSourceMapping>
-            <config>
-              <add key="globalPackagesFolder" value="$(Build.SourcesDirectory)/packages" />
-            </config>
-            <packageRestore>
-              <add key="enabled" value="True" />
-              <add key="automatic" value="True" />
-            </packageRestore>
-          </configuration>
-          EOF
+    # - task: Bash@3
+    #   displayName: 'Create NuGet.Config'
+    #   inputs:
+    #     targetType: 'inline'
+    #     script: |
+    #       cat <<EOF > "$(Build.SourcesDirectory)/NuGet.Config"
+    #       <?xml version="1.0" encoding="utf-8"?>
+    #       <configuration>
+    #         <packageSources>
+    #           <clear />
+    #           <add key="local-packages" value="$(nugetArtifactDownloadPath)" />
+    #           <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+    #         </packageSources>
+    #         <packageSourceMapping>
+    #           <packageSource key="local-packages">
+    #             <package pattern="CPS.ComplexCases.*" />
+    #           </packageSource>
+    #           <packageSource key="nuget.org">
+    #             <package pattern="*" />
+    #           </packageSource>
+    #         </packageSourceMapping>
+    #         <config>
+    #           <add key="globalPackagesFolder" value="$(Build.SourcesDirectory)/packages" />
+    #         </config>
+    #         <packageRestore>
+    #           <add key="enabled" value="True" />
+    #           <add key="automatic" value="True" />
+    #         </packageRestore>
+    #       </configuration>
+    #       EOF
 
-    - task: FileTransform@2
-      displayName: 'Write App Settings to File'
-      inputs:
-        folderPath: '$(projectDir)'
-        enableXmlTransform: false
-        jsonTargetFiles: appsettings.template.json
+    # - task: FileTransform@2
+    #   displayName: 'Write App Settings to File'
+    #   inputs:
+    #     folderPath: '$(projectDir)'
+    #     enableXmlTransform: false
+    #     jsonTargetFiles: appsettings.template.json
 
-    - script: mv $(projectDir)/appsettings.template.json $(projectDir)/appsettings.json
-      displayName: 'Rename Appsettings File'
+    # - script: mv $(projectDir)/appsettings.template.json $(projectDir)/appsettings.json
+    #   displayName: 'Rename Appsettings File'
 
     - task: AzureCLI@2
       displayName: 'Run Tests'
@@ -184,35 +184,25 @@ jobs:
         addSpnToEnvironment: true
         workingDirectory: '$(Build.SourcesDirectory)'
         inlineScript: |
-          dotnet test $(projectDir)/CPS.ComplexCases.API.Integration.Tests.csproj \
-            --configuration $(buildConfiguration) \
-            --collect:"XPlat Code Coverage;Format=cobertura" \
-            --settings backend/CodeCoverage.runsettings \
-            --logger "trx;LogFileName=integration-tests.trx" \
-            --results-directory $(testResultsDirectory)
+         echo "curling..."
+         curl -v $(DDEI.BaseUrl)
+         
+          # dotnet test $(projectDir)/CPS.ComplexCases.API.Integration.Tests.csproj \
+          #   --configuration $(buildConfiguration) \
+          #   --collect:"XPlat Code Coverage;Format=cobertura" \
+          #   --settings backend/CodeCoverage.runsettings \
+          #   --logger "trx;LogFileName=integration-tests.trx" \
+          #   --results-directory $(testResultsDirectory)
       
-    - task: PublishTestResults@2
-      inputs:
-        testResultsFormat: 'VSTest'
-        testResultsFiles: '$(testResultsDirectory)/integration-tests.trx'
-      condition: succeededOrFailed()
-
-    # - task: DotNetCoreCLI@2
-    #   displayName: 'Run Tests'
+    # - task: PublishTestResults@2
     #   inputs:
-    #     command: 'test'
-    #     projects: 'backend/CPS.ComplexCases.API.Integration.Tests/CPS.ComplexCases.API.Integration.Tests.csproj'
-    #     arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage;Format=cobertura" --settings backend/CodeCoverage.runsettings'
-    #     publishTestResults: true
     #     testResultsFormat: 'VSTest'
-    #     testResultsFiles: '**/*.trx'
-    #     testRunTitle: 'Integration Tests'
-    #     workingDirectory: '$(Build.SourcesDirectory)'
-    #     resultsDirectory: '$(testResultsDirectory)'
+    #     testResultsFiles: '$(testResultsDirectory)/integration-tests.trx'
+    #   condition: succeededOrFailed()
 
-    - task: PublishCodeCoverageResults@2
-      displayName: 'Publish Code Coverage'
-      inputs:
-        summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
-        failIfCoverageEmpty: true
-      condition: succeededOrFailed()
+    # - task: PublishCodeCoverageResults@2
+    #   displayName: 'Publish Code Coverage'
+    #   inputs:
+    #     summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+    #     failIfCoverageEmpty: true
+    #   condition: succeededOrFailed()
