@@ -104,6 +104,7 @@ jobs:
     Postgres.AuthMode: $(PostgresAuthMode)
     Postgres.DbUserName: $(DbUserName)
   steps:
+    - script: 
     - task: Bash@3
       displayName: 'Ensure Azure CLI'
       inputs:
