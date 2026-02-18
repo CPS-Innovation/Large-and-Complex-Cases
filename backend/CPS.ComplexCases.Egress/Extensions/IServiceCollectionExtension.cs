@@ -27,6 +27,7 @@ public static class IServiceCollectionExtension
         throw new ArgumentNullException(nameof(egressServiceUrl), "EgressOptions:Url configuration is missing or empty.");
       }
       client.BaseAddress = new Uri(egressServiceUrl);
+      client.Timeout = TimeSpan.FromMinutes(10);
     })
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
     .AddPolicyHandler(GetRetryPolicy());
@@ -39,6 +40,7 @@ public static class IServiceCollectionExtension
         throw new ArgumentNullException(nameof(egressServiceUrl), "EgressOptions:Url configuration is missing or empty.");
       }
       client.BaseAddress = new Uri(egressServiceUrl);
+      client.Timeout = TimeSpan.FromMinutes(10);
     })
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
     .AddPolicyHandler(GetRetryPolicy());
