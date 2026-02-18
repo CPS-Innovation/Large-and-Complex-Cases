@@ -129,7 +129,19 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             LogFileConflictTelemetry(payload);
             telemetryEvent.ErrorCode = TransferErrorCode.FileExists.ToString();
             telemetryEvent.ErrorMessage = ex.Message;
-            return CreateFailureResult(payload.SourcePath.Path, TransferErrorCode.FileExists, ex.Message, ex);
+            return CreateFailureResult(payload.SourcePath.FullFilePath ?? payload.SourcePath.Path, TransferErrorCode.FileExists, ex.Message, ex);
+        }
+        catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            var errorMessage = $"HTTP request timed out: {ex.Message}";
+            _logger.LogWarning(ex, "HTTP request timed out during transfer: {Path}", payload.SourcePath.Path);
+            telemetryEvent.ErrorCode = TransferErrorCode.GeneralError.ToString();
+            telemetryEvent.ErrorMessage = errorMessage;
+            return CreateFailureResult(
+                payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
+                TransferErrorCode.GeneralError,
+                errorMessage,
+                ex);
         }
         catch (OperationCanceledException ex)
         {
@@ -142,7 +154,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             telemetryEvent.ErrorCode = TransferErrorCode.GeneralError.ToString();
             telemetryEvent.ErrorMessage = errorMessage;
             return CreateFailureResult(
-                payload.SourcePath.Path,
+                payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
                 TransferErrorCode.GeneralError,
                 errorMessage,
                 ex);
@@ -306,7 +318,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                     payload.SourcePath.Path, payload.DestinationPath);
 
                 return CreateFailureResult(
-                    payload.SourcePath.Path,
+                    payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
                     TransferErrorCode.IntegrityVerificationFailed,
                     "Upload completed but failed to verify.");
             }
