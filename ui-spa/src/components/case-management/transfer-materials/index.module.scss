@@ -1,7 +1,7 @@
 .mainContainer {
   display: flex;
   width: 100%;
-  gap: 10px;
+  gap: 0.625rem;
 
   .titleWrapper {
     background: #f3f2f1;
@@ -103,4 +103,11 @@
   font-weight: bold;
   font-size: 1.4rem;
   margin: 0.5rem;
+}
+.transferProgressMetrics {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-direction: column;
+  text-align: center;
 }

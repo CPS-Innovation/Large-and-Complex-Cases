@@ -65,6 +65,7 @@ VITE_MOCK_API_SOURCE=<mock API source>
 VITE_CLIENT_ID=<Azure AD client id>
 VITE_TENANT_ID=<Azure AD tenant id>
 VITE_MOCK_AUTH=<true|false>
+VITE_FEATURE_FLAG_TRANSFER_MOVE=<true|false>
 ```
 **Sample `.env.local` file:**
 ```
@@ -74,6 +75,7 @@ VITE_MOCK_API_SOURCE=http://localhost:7071/api/
 VITE_CLIENT_ID=your-client-id
 VITE_TENANT_ID=your-tenant-id
 VITE_MOCK_AUTH=true
+VITE_FEATURE_FLAG_TRANSFER_MOVE=true
 ```
 **To use:**  
 - Create a `.env.local` file in `ui-spa/` and set the above variables as needed.

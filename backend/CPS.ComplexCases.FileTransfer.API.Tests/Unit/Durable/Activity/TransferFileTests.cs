@@ -264,6 +264,27 @@ public class TransferFileTests
     }
 
     [Fact]
+    public async Task Run_TaskCanceledWithoutCancellationRequest_ReturnsFailedResultWithGeneralError()
+    {
+        var payload = CreatePayload();
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>()))
+            .ThrowsAsync(new TaskCanceledException("The request was canceled due to timeout."));
+
+        var result = await _activity.Run(payload, CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.FailedItem);
+        Assert.Equal(TransferErrorCode.GeneralError, result.FailedItem.ErrorCode);
+        Assert.Contains("HTTP request timed out", result.FailedItem.ErrorMessage);
+    }
+
+    [Fact]
     public async Task Run_Cancelled_ThrowsOperationCanceledException()
     {
         var payload = CreatePayload();

@@ -337,6 +337,12 @@ public class EgressStorageClient(
     {
         // Get the folder name from the base path (selected folder)
         var baseFolderName = Path.GetFileName(baseFolderPath.TrimEnd('/'));
+
+        if (string.IsNullOrEmpty(baseFolderName))
+        {
+            return Path.Combine(filePath, fileName).Replace('\\', '/');
+        }
+
         var relativePath = Path.GetRelativePath(baseFolderPath, filePath).Replace('\\', '/');
 
         if (relativePath == RootPathValue)
