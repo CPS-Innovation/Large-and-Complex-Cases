@@ -521,6 +521,44 @@ public class EgressStorageClientTests : IDisposable
         VerifyListMaterialRequestWithFolderId(workspaceId, subFolderId, token);
     }
 
+    [Theory]
+    [InlineData("operation123/Statements", "Statements/report.pdf", "uploads", "uploads", "report.pdf")]
+    [InlineData("operation123/Statements", "Statements/Witness/report.pdf", "uploads", "uploads/Witness", "report.pdf")]
+    [InlineData("op/Case/Evidence", "Case/Evidence/Photos/crime.jpg", "dest", "dest/Photos", "crime.jpg")]
+    public async Task InitiateUploadAsync_WithOperationNameInSourceRootFolderPath_StripsOperationNameBeforeDestinationPath(
+        string sourceRootFolderPath,
+        string relativePath,
+        string destinationPath,
+        string expectedFolderPath,
+        string expectedFileName)
+    {
+        // Arrange
+        var fileSize = 1024L;
+        var sourcePath = _fixture.Create<string>();
+        var workspaceId = _fixture.Create<string>();
+        var token = _fixture.Create<string>();
+        var uploadId = _fixture.Create<string>();
+
+        var tokenResponse = new GetWorkspaceTokenResponse { Token = token };
+        var uploadResponse = new CreateUploadResponse { Id = uploadId };
+
+        SetupTokenRequest(token);
+        SetupCreateUploadRequest(expectedFolderPath, fileSize, workspaceId, expectedFileName, token);
+        SetupHttpMockResponses(
+            ("token", tokenResponse),
+            ("upload", uploadResponse)
+        );
+
+        // Act
+        var result = await _client.InitiateUploadAsync(destinationPath, fileSize, sourcePath, workspaceId, relativePath, sourceRootFolderPath);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(uploadId, result.UploadId);
+        VerifyTokenRequest();
+        VerifyCreateUploadRequest(expectedFolderPath, fileSize, workspaceId, expectedFileName, token);
+    }
+
     [Fact]
     public async Task InitiateUploadAsync_WhenFolderCreationFails_ThrowsHttpRequestException()
     {
