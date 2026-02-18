@@ -22,13 +22,13 @@ set_kv_secret() {
     local secret_value="$2"
     
     if [ -n "$secret_value" ] && [ "$secret_value" != "" ] && [ "$secret_value" != "null" ]; then
-    echo "Setting Key Vault secret: $secret_name"
-    az keyvault secret set \
-        --vault-name "$KEY_VAULT_NAME" \
-        --name "$secret_name" \
-        --value "$secret_value" \
-        --output none
-    
+        echo "Setting Key Vault secret: $secret_name"
+        az keyvault secret set \
+            --vault-name "$KEY_VAULT_NAME" \
+            --name "$secret_name" \
+            --value "$secret_value" \
+            --output none
+        
         if [ $? -eq 0 ]; then
             echo "✅ Secret '$secret_name' set successfully"
         else
@@ -37,9 +37,9 @@ set_kv_secret() {
             echo $exit_message
         fi
     else
-        exit_code=1
+        exit_code=0
         exit_message="⚠️ Skipping '$secret_name' - value is empty or not provided"
-        echo $exit_message
+        echo "##vso[task.logissue type=warning]$exit_message"
     fi
 }
 
