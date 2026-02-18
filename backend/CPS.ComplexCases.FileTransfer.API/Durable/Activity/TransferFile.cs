@@ -138,7 +138,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             telemetryEvent.ErrorCode = TransferErrorCode.GeneralError.ToString();
             telemetryEvent.ErrorMessage = errorMessage;
             return CreateFailureResult(
-                payload.SourcePath.Path,
+                payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
                 TransferErrorCode.GeneralError,
                 errorMessage,
                 ex);
