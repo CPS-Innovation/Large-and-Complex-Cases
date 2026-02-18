@@ -55,7 +55,7 @@ export const RenameTransferFilePage: React.FC<RenameTransferFilePageProps> = ({
       </BackLink>
       <PageContentWrapper>
         <div className={styles.contentWrapper}>
-          <h1 className="govuk-heading-xl">Edit file name</h1>
+          <h1 className="govuk-heading-xl">Rename file</h1>
 
           <Input
             value={inputValue}

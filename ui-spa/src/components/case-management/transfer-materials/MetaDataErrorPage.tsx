@@ -54,14 +54,21 @@ const MetaDataErrorPage = () => {
       <BackLink to={"/"}>Back</BackLink>
       <div className={styles.contentWrapper}>
         <h1 className="govuk-heading-xl">
-          There was a problem connecting to{" "}
+          There is a problem connecting to{" "}
           {errorType === "shareddrive" ? "Shared Drive" : "Egress"}
         </h1>
-        <p>
-          The connection to{" "}
-          {errorType === "shareddrive" ? "Shared Drive" : "Egress"} folder for{" "}
-          <b>{operationName}</b> case has stopped working.
-        </p>
+        {errorType === "shareddrive" ? (
+          <p>
+            The connection to the Shared Drive folder for the{" "}
+            <b>{operationName}</b> case has stopped working.
+          </p>
+        ) : (
+          <p>
+            The connection to the Egress case for <b>{operationName}</b> has
+            stopped working.
+          </p>
+        )}
+
         <div className={styles.btnWrapper}>
           <Button onClick={handleReconnect}>Reconnect</Button>
           <LinkButton onClick={handleCancel}>Cancel</LinkButton>

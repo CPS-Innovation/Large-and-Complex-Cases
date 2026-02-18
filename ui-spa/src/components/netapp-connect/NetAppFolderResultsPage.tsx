@@ -80,7 +80,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
                 onClick={() => handleConnect(data.folderPath)}
                 disabled={!!data.caseId}
               >
-                Connect folder
+                Connect
               </Button>
             ),
           },

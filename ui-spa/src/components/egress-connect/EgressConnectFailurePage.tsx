@@ -15,7 +15,7 @@ const EgressConnectFailurePage: React.FC<EgressConnectFailurePageProps> = ({
       <PageContentWrapper>
         <div className={styles.contentWrapper}>
           <h1 className="govuk-heading-xl">
-            Sorry, there was a problem connecting to Egress
+            There is a problem connecting to Egress
           </h1>
           <p>You can:</p>
           <ul className="govuk-list govuk-list--bullet">

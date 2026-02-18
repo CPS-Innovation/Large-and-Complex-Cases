@@ -5,20 +5,16 @@ export type ResolvePathFileType = {
   relativeFinalPath: string;
 };
 
-export const getGroupedResolvePaths = (
-  files: ResolvePathFileType[],
-  basePath: string,
-) => {
+export const getGroupedResolvePaths = (files: ResolvePathFileType[]) => {
   const groupedFiles = files.reduce(
     (acc, curr) => {
-      const relativeSourcePath = curr.relativeSourcePath
-        ? curr.relativeSourcePath
-        : basePath;
-      if (!acc[`${relativeSourcePath}`]) {
-        acc[`${relativeSourcePath}`] = [curr];
+      const relativeFinalPath = curr.relativeFinalPath;
+
+      if (!acc[`${relativeFinalPath}`]) {
+        acc[`${relativeFinalPath}`] = [curr];
         return acc;
       }
-      acc[`${relativeSourcePath}`].push(curr);
+      acc[`${relativeFinalPath}`].push(curr);
       return acc;
     },
     {} as Record<string, ResolvePathFileType[]>,
