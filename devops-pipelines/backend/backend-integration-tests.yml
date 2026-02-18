@@ -77,7 +77,7 @@ jobs:
     Egress.Password: $(EgressOptionsPassword)
     Egress.WorkspaceId: $(EgressWorkspaceId)
     Egress.TestDestinationPath: "integration-tests"
-    DDEI.BaseUrl: $(DDEIOptionsBaseUrl)
+    DDEI.BaseUrl: 'https://fa-wm-app-ddei-dev.azurewebsites.net'
     DDEI.AccessKey: $(DDEIOptionsAccessKey)
     DDEI.Username: $(CmsUserName)
     DDEI.Password: $(CmsUserPassword)
