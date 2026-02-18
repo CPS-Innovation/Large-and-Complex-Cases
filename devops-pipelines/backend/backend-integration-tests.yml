@@ -119,7 +119,7 @@ jobs:
           fi
 
           echo "Azure CLI not found, installing..."
-          bash $(scripts_directory)/installAzureCli.sh 
+          bash devops-pipelines/scripts/installAzureCli.sh 
           
     - task: UseDotNet@2
       displayName: 'Use .NET SDK'
