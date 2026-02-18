@@ -15,6 +15,7 @@ using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using System.Collections.Concurrent;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Durable.Activity;
 
@@ -261,6 +262,82 @@ public class TransferFileTests
                 It.IsAny<string?>(),
                 It.IsAny<string>()),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_MultipartUpload_WithOversizedArrayPoolBuffer_UploadsOnlyExpectedBytesPerPart()
+    {
+        var payload = CreatePayload();
+        var content = Encoding.UTF8.GetBytes("abcde");
+        var stream = new MemoryStream(content);
+        var contentLength = content.Length;
+        var session = new UploadSession { UploadId = Guid.NewGuid().ToString() };
+        var uploadedParts = new ConcurrentDictionary<int, (byte[] Data, long Start, long End)>();
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(payload.SourcePath.Path,
+                                              payload.WorkspaceId,
+                                              payload.SourcePath.FileId,
+                                              payload.BearerToken,
+                                              payload.BucketName))
+            .ReturnsAsync((stream, contentLength));
+
+        _destinationClientMock
+            .Setup(x => x.InitiateUploadAsync(
+                payload.DestinationPath,
+                contentLength,
+                payload.SourcePath.Path,
+                payload.WorkspaceId,
+                payload.SourcePath.RelativePath,
+                payload.SourceRootFolderPath,
+                payload.BearerToken,
+                payload.BucketName))
+            .ReturnsAsync(session);
+
+        _destinationClientMock
+            .Setup(x => x.UploadChunkAsync(
+                It.IsAny<UploadSession>(),
+                It.IsAny<int>(),
+                It.IsAny<byte[]>(),
+                It.IsAny<long>(),
+                It.IsAny<long>(),
+                It.IsAny<long>(),
+                It.IsAny<string>(),
+                It.IsAny<string?>()))
+            .ReturnsAsync((UploadSession uploadSession, int partNum, byte[] data, long start, long end, long total, string token, string? bucket) =>
+            {
+                uploadedParts[partNum] = (data, start, end);
+                return new UploadChunkResult(TransferDirection.EgressToNetApp, $"etag{partNum}", partNum);
+            });
+
+        _destinationClientMock
+            .Setup(x => x.CompleteUploadAsync(
+                session,
+                null,
+                It.IsAny<Dictionary<int, string>>(),
+                payload.BearerToken,
+                payload.BucketName,
+                payload.DestinationPath.EnsureTrailingSlash() + payload.SourcePath.Path))
+            .Returns(Task.FromResult(true));
+
+        var result = await _activity.Run(payload);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, uploadedParts.Count);
+
+        Assert.True(uploadedParts.TryGetValue(1, out var part1));
+        Assert.Equal(0, part1.Start);
+        Assert.Equal(3, part1.End);
+        Assert.Equal(new byte[] { (byte)'a', (byte)'b', (byte)'c', (byte)'d' }, part1.Data);
+
+        Assert.True(uploadedParts.TryGetValue(2, out var part2));
+        Assert.Equal(4, part2.Start);
+        Assert.Equal(4, part2.End);
+        Assert.Equal(new byte[] { (byte)'e' }, part2.Data);
     }
 
     [Fact]
