@@ -651,7 +651,7 @@ test.describe("netapp-egress-transfer", () => {
     await expect(page.getByTestId("netapp-table-wrapper")).toBeVisible();
   });
 
-  test("Should show the netapp connection error screen, if another user who does not have access to netapp come to the application when an active transfer is happening ", async ({
+  test("Should show the netapp connection error screen, if user who does not have access to netapp come to the application when there is an active transfer Id", async ({
     page,
     worker,
   }) => {
@@ -680,7 +680,7 @@ test.describe("netapp-egress-transfer", () => {
         async () => {
           await delay(10);
           return HttpResponse.json({
-            status: "InProgress",
+            status: "PartiallyCompleted",
             transferType: "Copy",
             direction: "NetAppToEgress",
             completedAt: null,
@@ -690,14 +690,29 @@ test.describe("netapp-egress-transfer", () => {
         },
       ),
     );
+    let statusApiCall = false;
+    page.on("request", (request) => {
+      if (
+        request
+          .url()
+          .includes(
+            "https://mocked-out-api/api/v1/filetransfer/mock-transfer-id/status",
+          )
+      ) {
+        statusApiCall = true;
+      }
+    });
     await page.goto("/case/12/case-management");
     await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
     await expect(page.getByTestId("tab-active")).toHaveText(
       "Transfer materials",
     );
-    await expect(page.getByTestId("transfer-spinner")).toBeVisible();
     await expect(page.getByTestId("egress-table-wrapper")).not.toBeVisible();
     await expect(page.getByTestId("netapp-table-wrapper")).not.toBeVisible();
+    await expect(
+      page.getByTestId("tab-content-transfer-materials"),
+    ).not.toBeVisible();
+    await expect(page.getByTestId("transfer-spinner")).not.toBeVisible();
 
     await expect(page).toHaveURL(
       "/case/12/case-management/connection-error?type=shareddrive",
@@ -711,9 +726,6 @@ test.describe("netapp-egress-transfer", () => {
       "check the case exists and you have access on the Case Management System",
       "contact the product team if you need help",
     ]);
-    await expect(
-      page.getByTestId("tab-content-transfer-materials"),
-    ).not.toBeVisible();
-    await expect(page.getByTestId("transfer-spinner")).not.toBeVisible();
+    expect(statusApiCall).toBe(false);
   });
 });

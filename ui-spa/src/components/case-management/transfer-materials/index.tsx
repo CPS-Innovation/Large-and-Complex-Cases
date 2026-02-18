@@ -660,7 +660,11 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!transferId) {
+    if (
+      !transferId ||
+      egressStatus !== "succeeded" ||
+      netAppStatus !== "succeeded"
+    ) {
       return;
     }
     setTransferStatus("transferring");
@@ -672,6 +676,8 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     );
   }, [
     transferId,
+    egressStatus,
+    netAppStatus,
     setTransferStatus,
     isComponentUnmounted,
     handleStatusResponse,
@@ -684,7 +690,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     };
     if (!transferStatusData?.transferMetrics) return defaultMetricsData;
 
-    if (transferStatusData?.transferMetrics?.totalFiles === 0) {
+    if (!transferStatusData?.transferMetrics?.totalFiles) {
       return defaultMetricsData;
     }
     const progressAriaLiveText = `Transfer progress, ${transferStatusData.transferMetrics.processedFiles} out of ${transferStatusData.transferMetrics.totalFiles} files processed`;

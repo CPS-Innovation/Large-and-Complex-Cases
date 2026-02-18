@@ -839,7 +839,7 @@ test.describe("egress-netapp-transfer", () => {
     ).not.toBeVisible();
   });
 
-  test("Should show the egress connection error screen, if another user who does not have access to egress come to the application when an active transfer is happening ", async ({
+  test("Should show the egress connection error screen, if user who does not have access to egress come to the application when there is an active transfer Id", async ({
     page,
     worker,
   }) => {
@@ -881,14 +881,30 @@ test.describe("egress-netapp-transfer", () => {
         },
       ),
     );
+
+    let statusApiCall = false;
+    page.on("request", (request) => {
+      if (
+        request
+          .url()
+          .includes(
+            "https://mocked-out-api/api/v1/filetransfer/mock-transfer-id/status",
+          )
+      ) {
+        statusApiCall = true;
+      }
+    });
     await page.goto("/case/12/case-management");
     await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
     await expect(page.getByTestId("tab-active")).toHaveText(
       "Transfer materials",
     );
-    await expect(page.getByTestId("transfer-spinner")).toBeVisible();
     await expect(page.getByTestId("egress-table-wrapper")).not.toBeVisible();
     await expect(page.getByTestId("netapp-table-wrapper")).not.toBeVisible();
+    await expect(
+      page.getByTestId("tab-content-transfer-materials"),
+    ).not.toBeVisible();
+    await expect(page.getByTestId("transfer-spinner")).not.toBeVisible();
 
     await expect(page).toHaveURL(
       "/case/12/case-management/connection-error?type=egress",
@@ -903,9 +919,6 @@ test.describe("egress-netapp-transfer", () => {
       "contact the product team if you need help",
     ]);
 
-    await expect(
-      page.getByTestId("tab-content-transfer-materials"),
-    ).not.toBeVisible();
-    await expect(page.getByTestId("transfer-spinner")).not.toBeVisible();
+    expect(statusApiCall).toBe(false);
   });
 });
