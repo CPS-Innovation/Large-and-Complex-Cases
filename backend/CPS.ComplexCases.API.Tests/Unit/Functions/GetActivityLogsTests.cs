@@ -50,6 +50,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         public async Task Run_ValidQueryParameters_CallsServiceWithExpectedFilter()
         {
             // Arrange
+            var caseId = 12;
             var fromDate = DateTime.UtcNow.AddDays(-10);
             var toDate = DateTime.UtcNow;
             var username = _fixture.Create<string>();
@@ -61,6 +62,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
 
             var queryParams = new Dictionary<string, string>
             {
+                [InputParameters.CaseId] = caseId.ToString(),
                 [InputParameters.FromDate] = fromDate.ToString("O"),
                 [InputParameters.ToDate] = toDate.ToString("O"),
                 [InputParameters.UserId] = username,
@@ -90,7 +92,8 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             Assert.Equal(response, okResult.Value);
 
             Assert.NotNull(capturedFilter);
-            Assert.True(capturedFilter!.FromDate.HasValue);
+            Assert.Equal(caseId, capturedFilter!.CaseId);
+            Assert.True(capturedFilter.FromDate.HasValue);
             Assert.True(capturedFilter.ToDate.HasValue);
             Assert.Equal(username, capturedFilter.Username, ignoreCase: true);
             Assert.Equal(actionType, capturedFilter.ActionType, ignoreCase: true);
@@ -98,6 +101,36 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             Assert.Equal(resourceId, capturedFilter.ResourceId, ignoreCase: true);
             Assert.Equal(skip, capturedFilter.Skip);
             Assert.Equal(take, capturedFilter.Take);
+        }
+
+        [Fact]
+        public async Task Run_CaseIdQueryParameter_BindsToCaseIdOnFilter()
+        {
+            // Arrange
+            var caseId = 42;
+            var queryParams = new Dictionary<string, string>
+            {
+                [InputParameters.CaseId] = caseId.ToString()
+            };
+
+            var response = _fixture.Create<ActivityLogsResponse>();
+            ActivityLogFilterDto? capturedFilter = null;
+
+            _activityLogServiceMock
+                .Setup(s => s.GetActivityLogsAsync(It.IsAny<ActivityLogFilterDto>()))
+                .Callback<ActivityLogFilterDto>(f => capturedFilter = f)
+                .ReturnsAsync(response);
+
+            var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(queryParams);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+            // Act
+            var result = await _function.Run(request, functionContext);
+
+            // Assert
+            Assert.IsType<OkObjectResult>(result);
+            Assert.NotNull(capturedFilter);
+            Assert.Equal(caseId, capturedFilter!.CaseId);
         }
 
         [Fact]
@@ -124,7 +157,8 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             Assert.Equal(response, okResult.Value);
 
             Assert.NotNull(capturedFilter);
-            Assert.Null(capturedFilter!.FromDate);
+            Assert.Null(capturedFilter!.CaseId);
+            Assert.Null(capturedFilter.FromDate);
             Assert.Null(capturedFilter.ToDate);
             Assert.Null(capturedFilter.Username);
             Assert.Null(capturedFilter.ActionType);
