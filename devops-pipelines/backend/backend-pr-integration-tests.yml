@@ -9,7 +9,7 @@ pr:
       - backend/*
 
 variables:
-- template: ./templates/variables/backend-deploy-vars.yml
+- template: ../templates/variables/backend-deploy-vars.yml
   parameters: 
     environment: 'dev'
 - name: buildConfiguration
