@@ -9,9 +9,6 @@ pr:
       - backend/*
 
 variables:
-- template: ./variables/backend-deploy-vars.yml
-  parameters: 
-    environment: 'dev'
 - name: buildConfiguration
   value: 'Release'
 - name: dotNetVersion
