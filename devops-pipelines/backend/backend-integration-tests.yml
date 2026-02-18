@@ -127,43 +127,43 @@ jobs:
         packageType: 'sdk'
         version: $(dotNetVersion)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: 'Download Local NuGet Package'
-      inputs:
-        buildType: 'current'
-        artifact: $(nugetArtifact)
-        path: $(nugetArtifactDownloadPath)
+    # - task: DownloadPipelineArtifact@2
+    #   displayName: 'Download Local NuGet Package'
+    #   inputs:
+    #     buildType: 'current'
+    #     artifact: $(nugetArtifact)
+    #     path: $(nugetArtifactDownloadPath)
 
-    - task: Bash@3
-      displayName: 'Create NuGet.Config'
-      inputs:
-        targetType: 'inline'
-        script: |
-          cat <<EOF > "$(Build.SourcesDirectory)/NuGet.Config"
-          <?xml version="1.0" encoding="utf-8"?>
-          <configuration>
-            <packageSources>
-              <clear />
-              <add key="local-packages" value="$(nugetArtifactDownloadPath)" />
-              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
-            </packageSources>
-            <packageSourceMapping>
-              <packageSource key="local-packages">
-                <package pattern="CPS.ComplexCases.*" />
-              </packageSource>
-              <packageSource key="nuget.org">
-                <package pattern="*" />
-              </packageSource>
-            </packageSourceMapping>
-            <config>
-              <add key="globalPackagesFolder" value="$(Build.SourcesDirectory)/packages" />
-            </config>
-            <packageRestore>
-              <add key="enabled" value="True" />
-              <add key="automatic" value="True" />
-            </packageRestore>
-          </configuration>
-          EOF
+    # - task: Bash@3
+    #   displayName: 'Create NuGet.Config'
+    #   inputs:
+    #     targetType: 'inline'
+    #     script: |
+    #       cat <<EOF > "$(Build.SourcesDirectory)/NuGet.Config"
+    #       <?xml version="1.0" encoding="utf-8"?>
+    #       <configuration>
+    #         <packageSources>
+    #           <clear />
+    #           <add key="local-packages" value="$(nugetArtifactDownloadPath)" />
+    #           <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+    #         </packageSources>
+    #         <packageSourceMapping>
+    #           <packageSource key="local-packages">
+    #             <package pattern="CPS.ComplexCases.*" />
+    #           </packageSource>
+    #           <packageSource key="nuget.org">
+    #             <package pattern="*" />
+    #           </packageSource>
+    #         </packageSourceMapping>
+    #         <config>
+    #           <add key="globalPackagesFolder" value="$(Build.SourcesDirectory)/packages" />
+    #         </config>
+    #         <packageRestore>
+    #           <add key="enabled" value="True" />
+    #           <add key="automatic" value="True" />
+    #         </packageRestore>
+    #       </configuration>
+    #       EOF
 
     - task: FileTransform@2
       displayName: 'Write App Settings to File'
