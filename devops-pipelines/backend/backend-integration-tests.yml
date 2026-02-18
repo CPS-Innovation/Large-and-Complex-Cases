@@ -104,7 +104,10 @@ jobs:
     Postgres.AuthMode: $(PostgresAuthMode)
     Postgres.DbUserName: $(DbUserName)
   steps:
-    - script: 
+    - script: |
+        echo "checking if local nuget exists"
+        ls $(Build.SourcesDirectory)
+
     - task: Bash@3
       displayName: 'Ensure Azure CLI'
       inputs:
