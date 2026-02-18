@@ -56,7 +56,7 @@ jobs:
     NetApp.SessionDurationSeconds: $(NetAppOptionsSessionDurationSeconds)
     NetApp.PepperVersion: $(NetAppOptionsPepperVersion)
     NetApp.TestFolderPrefix: 'integration-tests'
-    KeyVault.Url: $(keyVaultName)
+    KeyVault.Url: 'https://$(keyVaultName).vault.azure.net/'
     ConnectionStrings.CaseManagementDatastoreConnection: $(DbConnectionString)
     Postgres.AuthMode: $(PostgresAuthMode)
     Postgres.DbUserName: $(DbUserName)
