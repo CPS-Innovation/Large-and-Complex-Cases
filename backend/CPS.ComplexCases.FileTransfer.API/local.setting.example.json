@@ -16,7 +16,8 @@
     "NetAppOptions__PepperVersion": "v1",
     "ConnectionStrings__CaseManagementDatastoreConnection": "Your postgres connection string",
     "FileTransfer__PurgeRetention__RetentionDays": "30",
-    "FileTransfer__PurgeRetention__Schedule": "0 0 2 * * *"
+    "FileTransfer__PurgeRetention__Schedule": "0 0 2 * * *",
+    "SizeConfig__MaxOrchestratorRetries": "3"
   },
   "Host": {
     "LocalHttpPort": 7072

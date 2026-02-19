@@ -54,6 +54,40 @@ public class TransferEntityState : TaskEntity<TransferEntity>
         State.DeletionErrors.AddRange(failedToDeleteItems);
         State.UpdatedAt = DateTime.UtcNow;
     }
+
+    public void RemoveTransientFailures()
+    {
+        var transientFailures = State.FailedItems
+            .Where(f => f.ErrorCode == TransferErrorCode.Transient)
+            .ToList();
+
+        foreach (var failure in transientFailures)
+        {
+            State.FailedItems.Remove(failure);
+            State.FailedFiles--;
+            // ProcessedFiles deliberately NOT decremented
+            // the file was already "processed" from the UI's perspective
+        }
+
+        State.UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void AddSuccessfulRetryItem(TransferItem transferItem)
+    {
+        State.SuccessfulItems.Add(transferItem);
+        State.SuccessfulFiles++;
+        // ProcessedFiles NOT incremented -- already counted from first attempt
+        State.UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void AddFailedRetryItem(TransferFailedItem failedItem)
+    {
+        State.FailedItems.Add(failedItem);
+        State.FailedFiles++;
+        // ProcessedFiles NOT incremented -- already counted from first attempt
+        State.UpdatedAt = DateTime.UtcNow;
+    }
+
     public TransferEntity CurrentState => State;
 
 }

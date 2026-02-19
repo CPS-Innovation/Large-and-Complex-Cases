@@ -217,5 +217,10 @@ steps:
             "name": "RateLimiting__IntervalInSeconds",
             "value": "$(RateLimitingIntervalInSeconds)",
             "slotSetting": false
-          }
+          },
+          {
+            "name": "SizeConfig__MaxOrchestratorRetries",
+            "value": "$(MaxOrchestratorRetries)",
+            "slotSetting": false
+          },
         ]
