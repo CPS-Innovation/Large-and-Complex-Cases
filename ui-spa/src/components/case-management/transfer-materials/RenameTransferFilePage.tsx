@@ -26,7 +26,7 @@ export const RenameTransferFilePage: React.FC<RenameTransferFilePageProps> = ({
   };
 
   const getCharactersText = useCallback(() => {
-    const characterCount = `${relativeFilePath}/${inputValue}`.length;
+    const characterCount = `${relativeFilePath}${inputValue}`.length;
     const tagColor =
       characterCount > MAX_FILE_PATH_CHARACTERS ? "red" : "green";
 
