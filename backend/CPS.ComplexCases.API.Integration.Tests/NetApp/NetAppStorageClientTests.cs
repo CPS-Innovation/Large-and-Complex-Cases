@@ -241,6 +241,8 @@ public class NetAppStorageClientTests : IClassFixture<IntegrationTestFixture>, I
         Assert.NotNull(chunk2Result.ETag);
         etags[2] = chunk2Result.ETag;
 
+        await Task.Delay(TimeSpan.FromSeconds(2));
+
         // Act - Step 3: Complete upload
         await _storageClient!.CompleteUploadAsync(
             session: session,
