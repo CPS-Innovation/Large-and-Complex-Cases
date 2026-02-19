@@ -50,7 +50,9 @@ public class SecurityGroupMetadataService(ILogger<SecurityGroupMetadataService> 
     {
         try
         {
-            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.json");
+            var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            var suffix = environment == "Production" ? "Production" : "PreProd";
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), $"SourceFiles/SecurityGroupMappings.{suffix}.json");
 
             if (!File.Exists(filePath))
             {
