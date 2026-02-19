@@ -319,6 +319,11 @@ public class NetAppClientTests : IClassFixture<IntegrationTestFixture>, IAsyncLi
         Assert.NotNull(part2Response);
         completedParts[2] = part2Response.ETag;
 
+        // Allow S3/StorageGRID to finalise part registration before completing the upload.
+        // Without this delay, CompleteMultipartUpload can receive a transient 500
+        // when parts have not yet been fully registered internally.
+        await Task.Delay(TimeSpan.FromSeconds(10));
+
         // Complete multipart upload
         var completeArg = _fixture.NetAppArgFactory!.CreateCompleteMultipartUploadArg(
             bearerToken,

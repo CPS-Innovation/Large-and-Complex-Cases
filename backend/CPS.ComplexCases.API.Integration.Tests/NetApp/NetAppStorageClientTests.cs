@@ -241,12 +241,15 @@ public class NetAppStorageClientTests : IClassFixture<IntegrationTestFixture>, I
         Assert.NotNull(chunk2Result.ETag);
         etags[2] = chunk2Result.ETag;
 
+        await Task.Delay(TimeSpan.FromSeconds(10));
+
         // Act - Step 3: Complete upload
         await _storageClient!.CompleteUploadAsync(
             session: session,
             etags: etags,
             bearerToken: bearerToken,
-            bucketName: _fixture.NetAppBucketName!);
+            bucketName: _fixture.NetAppBucketName!,
+            filePath: session.WorkspaceId);
 
         // Assert
         var exists = await NetAppTestHelper.WaitForObjectExistsAsync(_fixture, bearerToken, session.WorkspaceId);
