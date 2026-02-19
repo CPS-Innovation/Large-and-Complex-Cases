@@ -404,6 +404,11 @@ public class S3TelemetryHandlerStub : IS3TelemetryHandler
 /// </summary>
 public class RetryDelegatingHandler : DelegatingHandler
 {
+    // Shared concurrency limiter across all handler instances — mirrors the production
+    // bulkhead policy (maxParallelization: 30) to prevent flooding the Egress API
+    // and triggering sustained 429s during recursive parallel folder traversal.
+    private static readonly SemaphoreSlim _concurrencyLimiter = new(10, 10);
+
     private readonly ResiliencePipeline<HttpResponseMessage> _pipeline;
 
     public RetryDelegatingHandler() : base(new HttpClientHandler())
@@ -437,11 +442,19 @@ public class RetryDelegatingHandler : DelegatingHandler
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
-        return await _pipeline.ExecuteAsync(async token =>
+        await _concurrencyLimiter.WaitAsync(cancellationToken);
+        try
         {
-            var clonedRequest = await CloneHttpRequestMessageAsync(request);
-            return await base.SendAsync(clonedRequest, token);
-        }, cancellationToken);
+            return await _pipeline.ExecuteAsync(async token =>
+            {
+                var clonedRequest = await CloneHttpRequestMessageAsync(request);
+                return await base.SendAsync(clonedRequest, token);
+            }, cancellationToken);
+        }
+        finally
+        {
+            _concurrencyLimiter.Release();
+        }
     }
 
     private static async Task<HttpRequestMessage> CloneHttpRequestMessageAsync(HttpRequestMessage request)
