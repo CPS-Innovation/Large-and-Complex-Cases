@@ -7,5 +7,6 @@ public enum TransferErrorCode
 {
     FileExists,
     GeneralError,
-    IntegrityVerificationFailed
+    IntegrityVerificationFailed,
+    Transient
 }
