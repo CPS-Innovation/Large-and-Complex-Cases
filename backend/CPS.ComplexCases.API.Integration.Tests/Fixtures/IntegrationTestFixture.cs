@@ -411,14 +411,24 @@ public class RetryDelegatingHandler : DelegatingHandler
         _pipeline = new ResiliencePipelineBuilder<HttpResponseMessage>()
             .AddRetry(new RetryStrategyOptions<HttpResponseMessage>
             {
-                MaxRetryAttempts = 5,
+                MaxRetryAttempts = 10,
                 BackoffType = DelayBackoffType.Exponential,
-                Delay = TimeSpan.FromSeconds(1),
+                Delay = TimeSpan.FromSeconds(2),
                 UseJitter = true,
                 ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
                     .HandleResult(response =>
                         response.StatusCode == HttpStatusCode.TooManyRequests ||
-                        (int)response.StatusCode >= 500)
+                        (int)response.StatusCode >= 500),
+                DelayGenerator = static args =>
+                {
+                    // Respect Retry-After header from 429 responses if present
+                    if (args.Outcome.Result is HttpResponseMessage { StatusCode: HttpStatusCode.TooManyRequests } response
+                        && response.Headers.RetryAfter?.Delta is TimeSpan retryAfter)
+                    {
+                        return new ValueTask<TimeSpan?>(retryAfter);
+                    }
+                    return new ValueTask<TimeSpan?>((TimeSpan?)null);
+                }
             })
             .Build();
     }
