@@ -152,7 +152,7 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
         // Allow S3/StorageGRID to finalise part registration before completing the upload.
         // Without this delay, CompleteMultipartUpload can receive a transient 500
         // when parts have not yet been fully registered internally.
-        await Task.Delay(TimeSpan.FromSeconds(10));
+        await Task.Delay(TimeSpan.FromSeconds(30));
 
         var completeArg = _fixture.NetAppArgFactory!.CreateCompleteMultipartUploadArg(
             bearerToken,
