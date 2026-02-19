@@ -11,7 +11,6 @@
     "Storage": "UseDevelopmentStorage=true",
     "TenantId": "00dd0d1d-d7e6-4338-ac51-565339c7088c",
     "CallingAppValidAudience": "57c88580-01d4-477d-9b1d-ebb22c8d05af",
-    "CallingAppValidRoles": "",
     "EgressOptions__Url": "http://localhost:<port>",
     "EgressOptions__Username": "<username",
     "EgressOptions__Password": "<email>:<password>",
