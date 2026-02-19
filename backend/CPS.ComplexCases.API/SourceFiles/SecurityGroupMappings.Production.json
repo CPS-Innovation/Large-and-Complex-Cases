@@ -1,8 +1,14 @@
 [
-    {
-        "id": "435c78f6-b08e-4bd9-8b3c-63ec1d1d15ee",
-        "displayName": "CPS-ComplexCases-Default",
-        "bucketName": "flexgroup1",
-        "description": "Default security group for CPS Complex Cases"
-    }
+  {
+    "id": "39836c67-1947-4104-b7a9-bff7123b87e7",
+    "displayName": "CPS-ComplexCases-Default",
+    "bucketName": "flexgroup1",
+    "description": "Default security group for CPS Complex Cases"
+  },
+  {
+    "id": "435c78f6-b08e-4bd9-8b3c-63ec1d1d15ee",
+    "displayName": "York-CTD-Users",
+    "bucketName": "YFHCTD",
+    "description": "York CTD Users security group for CPS Complex Cases"
+  }
 ]
