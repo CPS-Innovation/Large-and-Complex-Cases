@@ -386,16 +386,16 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   }, [apiRequestError]);
 
   useEffect(() => {
-    if (egressWorkspaceId && !transferId) {
+    if (egressWorkspaceId) {
       egressRefetch();
     }
-  }, [egressWorkspaceId, egressRefetch, transferId]);
+  }, [egressWorkspaceId, egressRefetch]);
 
   useEffect(() => {
-    if (netAppFolderPath && !transferId) {
+    if (netAppFolderPath) {
       netAppRefetch();
     }
-  }, [netAppFolderPath, netAppRefetch, transferId]);
+  }, [netAppFolderPath, netAppRefetch]);
 
   const getIndexingFileTransferPayload = (): IndexingFileTransferPayload => {
     if (!selectedTransferAction) {
@@ -612,6 +612,8 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           handleFileTransferClear(transferId!);
 
         setTransferId("");
+        egressRefetch();
+        netAppRefetch();
       }
       if (
         response.status === "PartiallyCompleted" ||
@@ -631,7 +633,16 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         setTransferStatusData(null);
       }
     },
-    [caseId, navigate, setTransferStatus, setTransferId, username, transferId],
+    [
+      caseId,
+      navigate,
+      setTransferStatus,
+      setTransferId,
+      username,
+      transferId,
+      egressRefetch,
+      netAppRefetch,
+    ],
   );
   const isComponentUnmounted = useCallback(() => {
     return unMounting.current;
@@ -649,7 +660,11 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!transferId) {
+    if (
+      !transferId ||
+      egressStatus !== "succeeded" ||
+      netAppStatus !== "succeeded"
+    ) {
       return;
     }
     setTransferStatus("transferring");
@@ -661,6 +676,8 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     );
   }, [
     transferId,
+    egressStatus,
+    netAppStatus,
     setTransferStatus,
     isComponentUnmounted,
     handleStatusResponse,
@@ -673,7 +690,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     };
     if (!transferStatusData?.transferMetrics) return defaultMetricsData;
 
-    if (transferStatusData?.transferMetrics?.totalFiles === 0) {
+    if (!transferStatusData?.transferMetrics?.totalFiles) {
       return defaultMetricsData;
     }
     const progressAriaLiveText = `Transfer progress, ${transferStatusData.transferMetrics.processedFiles} out of ${transferStatusData.transferMetrics.totalFiles} files processed`;

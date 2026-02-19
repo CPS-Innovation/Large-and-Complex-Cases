@@ -186,6 +186,7 @@ public class TransferFileTests
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.IntegrityVerificationFailed, result.FailedItem.ErrorCode);
+        Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
         Assert.Equal("Upload completed but failed to verify.", result.FailedItem.ErrorMessage);
     }
 
@@ -207,6 +208,7 @@ public class TransferFileTests
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.FileExists, result.FailedItem.ErrorCode);
+        Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
     }
 
     [Fact]
@@ -227,7 +229,30 @@ public class TransferFileTests
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.GeneralError, result.FailedItem.ErrorCode);
+        Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
         Assert.Contains("System.InvalidOperationException", result.FailedItem.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task Run_UnexpectedException_UsesPathWhenFullFilePathIsNull()
+    {
+        var payload = CreatePayload();
+        payload.SourcePath.FullFilePath = null;
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>()))
+            .ThrowsAsync(new InvalidOperationException("Something went wrong"));
+
+        var result = await _activity.Run(payload);
+
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.FailedItem);
+        Assert.Equal(TransferErrorCode.GeneralError, result.FailedItem.ErrorCode);
+        Assert.Equal(payload.SourcePath.Path, result.FailedItem.SourcePath);
     }
 
     [Fact]
@@ -252,6 +277,7 @@ public class TransferFileTests
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.FileExists, result.FailedItem.ErrorCode);
+        Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
         Assert.Contains(payload.DestinationPath + payload.SourcePath.Path, result.FailedItem.ErrorMessage);
 
         _sourceClientMock.Verify(x => x.OpenReadStreamAsync(

@@ -38,7 +38,7 @@ const RelativePathFiles: React.FC<RelativePathFilesProps> = ({
               <ul className={styles.list}>
                 {groupedFiles[`${key}`].errors.map((file) => (
                   <li
-                    key={`${key}-${file.fileName}`}
+                    key={`${key}-err-${file.fileName}`}
                     className={styles.listItem}
                   >
                     <div className={styles.listContent}>
@@ -68,7 +68,7 @@ const RelativePathFiles: React.FC<RelativePathFilesProps> = ({
               <ul className={styles.list}>
                 {groupedFiles[`${key}`].success.map((file) => (
                   <li
-                    key={`${key}-${file.fileName}`}
+                    key={`${key}-ok-${file.fileName}`}
                     className={styles.listItem}
                   >
                     <div className={styles.listContent}>
