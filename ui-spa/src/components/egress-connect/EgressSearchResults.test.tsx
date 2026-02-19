@@ -331,7 +331,7 @@ describe("EgressSearchResults", () => {
     ]);
   });
 
-  it("Should disable the Connect folder button if the folder is already connected to a case", () => {
+  it("Should disable the Connect button if the folder is already connected to a case", () => {
     render(
       <EgressSearchResults
         workspaceName="thunder"

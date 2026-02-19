@@ -718,7 +718,7 @@ test.describe("netapp-egress-transfer", () => {
       "/case/12/case-management/connection-error?type=shareddrive",
     );
     await expect(page.locator("h1")).toHaveText(
-      "Sorry, there was a problem connecting to Shared Drive",
+      "There is a problem connecting to the Shared Drive",
     );
     const listItems = page.locator("ul > li");
     await expect(listItems).toHaveCount(2);

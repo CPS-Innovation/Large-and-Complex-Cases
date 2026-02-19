@@ -113,7 +113,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
                 {
                   id: "id_3",
                   sourcePath:
-                    "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+                    "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswweee.pdf",
                   errorType: "",
                 },
                 {
@@ -152,45 +152,47 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
       );
-      await expect(page.locator("h1")).toHaveText("File structure is too long");
+      await expect(page.locator("h1")).toHaveText(
+        "Shorten file names or folder paths",
+      );
       await expect(
         page.getByTestId("resolve-file-path-inset-text"),
       ).toBeVisible();
       await expect(
         page
           .getByTestId("resolve-file-path-inset-text")
-          .getByText(
-            "There are 2 files with names longer than 260 characters.",
-          ),
+          .getByText("2 files are longer than 260 character length"),
       ).toBeVisible();
       await expect(
         page
           .getByTestId("resolve-file-path-inset-text")
           .getByText(
-            "You need to rename the files or change the folder structure.",
+            "You must shorten the file name or move the file before you can transfer.",
           ),
       ).toBeVisible();
       await expect(page.locator("section")).toHaveCount(2);
       const sections = await page.locator("section").all();
 
       await validateFilePathErrorSection(sections[0], {
-        relativePath: "egress/folder3",
+        relativePath:
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3",
         filePaths: [
           {
             fileName:
-              "file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+              "file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswweee.pdf",
             characterText: "261 characters",
           },
         ],
       });
 
       await validateFilePathErrorSection(sections[1], {
-        relativePath: "egress/folder4/folder5",
+        relativePath:
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5",
         filePaths: [
           {
             fileName:
               "file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
-            characterText: "266 characters",
+            characterText: "265 characters",
           },
         ],
       });
@@ -207,10 +209,10 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-rename-file",
       );
-      await expect(page.locator("h1")).toHaveText("Edit file name");
+      await expect(page.locator("h1")).toHaveText("Rename file");
 
       await expect(await page.locator(`input`)).toHaveValue(
-        "file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+        "file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswweee.pdf",
       );
       await expect(page.getByTestId("character-tag")).toHaveText(
         "261 characters",
@@ -235,7 +237,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
         .locator(`input`)
         .fill("file3eweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf");
       await expect(page.getByTestId("character-tag")).toHaveText(
-        "257 characters",
+        "256 characters",
       );
 
       await page.getByRole("button", { name: "Continue" }).click();
@@ -244,22 +246,24 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       );
 
       await validateFilePathErrorSection(sections[0], {
-        relativePath: "egress/folder3",
+        relativePath:
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3",
         filePaths: [
           {
             fileName:
               "file3eweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
-            characterText: "257 characters",
+            characterText: "256 characters",
           },
         ],
       });
       await validateFilePathErrorSection(sections[1], {
-        relativePath: "egress/folder4/folder5",
+        relativePath:
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5",
         filePaths: [
           {
             fileName:
               "file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
-            characterText: "266 characters",
+            characterText: "265 characters",
           },
         ],
       });
@@ -276,16 +280,16 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-rename-file",
       );
-      await expect(page.locator("h1")).toHaveText("Edit file name");
+      await expect(page.locator("h1")).toHaveText("Rename file");
 
       await expect(page.locator("input")).toHaveValue(
         "file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
       );
       await expect(
-        page.getByText("File path length:266 characters"),
+        page.getByText("File path length:265 characters"),
       ).toBeVisible();
       await expect(page.getByTestId("character-tag")).toHaveText(
-        "266 characters",
+        "265 characters",
       );
 
       await expect(
@@ -300,7 +304,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       ).not.toBeDisabled();
       await page
         .locator("input")
-        .fill("file5eweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwsswees.pdf");
+        .fill("file5eweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweess.pdf");
       await expect(page.getByTestId("character-tag")).toHaveText(
         "260 characters",
       );
@@ -310,20 +314,22 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
         "/case/12/case-management/transfer-resolve-file-path",
       );
       await validateFilePathErrorSection(sections[0], {
-        relativePath: "egress/folder3",
+        relativePath:
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3",
         filePaths: [
           {
             fileName:
               "file3eweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
-            characterText: "257 characters",
+            characterText: "256 characters",
           },
         ],
       });
       await validateFilePathErrorSection(sections[1], {
-        relativePath: "egress/folder4/folder5",
+        relativePath:
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5",
         filePaths: [
           {
-            fileName: "file5eweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwsswees.pdf",
+            fileName: "file5eweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweess.pdf",
             characterText: "260 characters",
           },
         ],
@@ -408,7 +414,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
                 {
                   id: "id_3",
                   sourcePath:
-                    "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+                    "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswweee.pdf",
                   errorType: "",
                 },
                 {
@@ -431,7 +437,9 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
       );
-      await expect(page.locator("h1")).toHaveText("File structure is too long");
+      await expect(page.locator("h1")).toHaveText(
+        "Shorten file names or folder paths",
+      );
       await expect(
         page.getByRole("button", { name: "Start transfer" }),
       ).toBeDisabled();
@@ -445,7 +453,9 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
       );
-      await expect(page.locator("h1")).toHaveText("File structure is too long");
+      await expect(page.locator("h1")).toHaveText(
+        "Shorten file names or folder paths",
+      );
       await expect(
         page.getByRole("button", { name: "Start transfer" }),
       ).toBeDisabled();
@@ -474,7 +484,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
                 {
                   id: "id_3",
                   sourcePath:
-                    "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+                    "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswweee.pdf",
                   errorType: "",
                 },
                 {
@@ -497,7 +507,9 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
       );
-      await expect(page.locator("h1")).toHaveText("File structure is too long");
+      await expect(page.locator("h1")).toHaveText(
+        "Shorten file names or folder paths",
+      );
       const renameBtns = await page
         .getByRole("button", { name: "Rename" })
         .all();
@@ -505,7 +517,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-rename-file",
       );
-      await expect(page.locator("h1")).toHaveText("Edit file name");
+      await expect(page.locator("h1")).toHaveText("Rename file");
       await expect(
         page.getByRole("button", { name: "Cancel" }),
       ).not.toBeDisabled();
@@ -517,12 +529,14 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
       );
-      await expect(page.locator("h1")).toHaveText("File structure is too long");
+      await expect(page.locator("h1")).toHaveText(
+        "Shorten file names or folder paths",
+      );
       await renameBtns[1].click();
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-rename-file",
       );
-      await expect(page.locator("h1")).toHaveText("Edit file name");
+      await expect(page.locator("h1")).toHaveText("Rename file");
       await expect(
         page.getByRole("button", { name: "Cancel" }),
       ).not.toBeDisabled();
@@ -534,7 +548,9 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
       );
-      await expect(page.locator("h1")).toHaveText("File structure is too long");
+      await expect(page.locator("h1")).toHaveText(
+        "Shorten file names or folder paths",
+      );
       await page.getByRole("link", { name: "Back" }).click();
       await expect(page).toHaveURL("/case/12/case-management");
     });
@@ -568,7 +584,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
                 {
                   id: "id_3",
                   sourcePath:
-                    "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+                    "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswweee.pdf",
                   errorType: "",
                 },
                 {
@@ -603,54 +619,59 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
       );
-      await expect(page.locator("h1")).toHaveText("File structure is too long");
+      await expect(page.locator("h1")).toHaveText(
+        "Shorten file names or folder paths",
+      );
 
       const sections = await page.locator("section").all();
       await validateFilePathErrorSection(sections[0], {
-        relativePath: "folder-1-0",
+        relativePath:
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination",
         filePaths: [
           {
             fileName:
               "file6qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
-            characterText: "246 characters",
+            characterText: "245 characters",
           },
           {
             fileName:
               "file6_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
-            characterText: "248 characters",
+            characterText: "247 characters",
           },
         ],
       });
 
       await validateFilePathErrorSection(sections[1], {
-        relativePath: "egress/folder3",
+        relativePath:
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3",
         filePaths: [
           {
             fileName:
-              "file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+              "file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswweee.pdf",
             characterText: "261 characters",
           },
           {
             fileName:
               "file3_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
-            characterText: "263 characters",
+            characterText: "262 characters",
           },
         ],
       });
 
       await validateFilePathErrorSection(sections[2], {
-        relativePath: "egress/folder4/folder5",
+        relativePath:
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5",
         filePaths: [
           {
             fileName:
               "file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
-            characterText: "266 characters",
+            characterText: "265 characters",
           },
           {
             fileName:
               "file5_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
 
-            characterText: "268 characters",
+            characterText: "267 characters",
           },
         ],
       });
@@ -714,7 +735,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
         "/case/12/case-management",
       );
       await expect(page.getByTestId("contact-information")).toHaveText(
-        "To get help, call the Service Desk 0800 692 6996.",
+        "To get help, contact the product team.",
       );
       await expect(
         page.getByRole("button", { name: "Return to the case" }),

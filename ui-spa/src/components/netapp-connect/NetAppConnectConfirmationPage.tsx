@@ -32,7 +32,7 @@ const NetAppConnectConfirmationPage: React.FC<
                       Are you sure?
                     </h1>{" "}
                     <span>
-                      {`Confirm you want to link "${selectedFolderName}" network shared drive folder to
+                      {`Confirm you want to link "${selectedFolderName}" network Shared Drive folder to
               the case?`}
                     </span>
                   </>

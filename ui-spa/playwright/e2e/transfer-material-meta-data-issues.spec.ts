@@ -25,11 +25,11 @@ test.describe("egress meta data issues", () => {
       "/case/12/case-management/egress-connection-error?operation-name=Thunderstruck",
     );
     await expect(page.locator("h1")).toHaveText(
-      "There was a problem connecting to Egress",
+      "There is a problem connecting to Egress",
     );
     await expect(
       page.getByText(
-        "The connection to egress folder for Thunderstruck case has stopped working.",
+        "The connection to the Egress case for Thunderstruck has stopped working.",
       ),
     ).toBeVisible();
     await expect(page.getByRole("link", { name: "Back" })).toBeVisible();
@@ -83,11 +83,11 @@ test.describe("egress meta data issues", () => {
       "/case/12/case-management/egress-connection-error?operation-name=Thunderstruck",
     );
     await expect(page.locator("h1")).toHaveText(
-      "There was a problem connecting to Egress",
+      "There is a problem connecting to Egress",
     );
     await expect(
       page.getByText(
-        "The connection to egress folder for Thunderstruck case has stopped working.",
+        "The connection to the Egress case for Thunderstruck has stopped working.",
       ),
     ).toBeVisible();
     await expect(page.getByRole("link", { name: "Back" })).toBeVisible();
@@ -97,9 +97,7 @@ test.describe("egress meta data issues", () => {
     await expect(page).toHaveURL(
       "/case/12/egress-connect?workspace-name=Thunderstruck",
     );
-    await expect(page.locator("h1")).toHaveText(
-      "Link an Egress folder to the case",
-    );
+    await expect(page.locator("h1")).toHaveText("Link Egress to the case");
   });
   test("Should handle if the user lands on the transfer material but the egress folder is not accessible for the user, by navigating to connection error page", async ({
     page,
@@ -121,7 +119,7 @@ test.describe("egress meta data issues", () => {
       "/case/12/case-management/connection-error?type=egress",
     );
     await expect(page.locator("h1")).toHaveText(
-      "Sorry, there was a problem connecting to Egress",
+      "There is a problem connecting to Egress",
     );
     const listItems = page.locator("ul > li");
     await expect(listItems).toHaveCount(2);
@@ -219,11 +217,11 @@ test.describe("netapp meta data issues", () => {
       "/case/12/case-management/shared-drive-connection-error?operation-name=Thunderstruck",
     );
     await expect(page.locator("h1")).toHaveText(
-      "There was a problem connecting to Shared Drive",
+      "There is a problem connecting to Shared Drive",
     );
     await expect(
       page.getByText(
-        "The connection to shared drive folder for Thunderstruck case has stopped working.",
+        "The connection to the Shared Drive folder for the Thunderstruck case has stopped working.",
       ),
     ).toBeVisible();
     await expect(page.getByRole("link", { name: "Back" })).toBeVisible();
@@ -251,11 +249,11 @@ test.describe("netapp meta data issues", () => {
       "/case/12/case-management/shared-drive-connection-error?operation-name=Thunderstruck",
     );
     await expect(page.locator("h1")).toHaveText(
-      "There was a problem connecting to Shared Drive",
+      "There is a problem connecting to Shared Drive",
     );
     await expect(
       page.getByText(
-        "The connection to shared drive folder for Thunderstruck case has stopped working.",
+        "The connection to the Shared Drive folder for the Thunderstruck case has stopped working.",
       ),
     ).toBeVisible();
     await expect(page.getByRole("link", { name: "Back" })).toBeVisible();
@@ -266,7 +264,7 @@ test.describe("netapp meta data issues", () => {
       "/case/12/netapp-connect?operation-name=Thunderstruck",
     );
     await expect(page.locator("h1")).toHaveText(
-      "Link a network shared drive folder to the case",
+      "Link a network Shared Drive folder to the case",
     );
   });
   test("Should handle if the user lands on the transfer material but the netapp folder is not accessible for the user, by navigating to connection error page", async ({
@@ -286,7 +284,7 @@ test.describe("netapp meta data issues", () => {
       "/case/12/case-management/connection-error?type=shareddrive",
     );
     await expect(page.locator("h1")).toHaveText(
-      "Sorry, there was a problem connecting to Shared Drive",
+      "There is a problem connecting to the Shared Drive",
     );
     const listItems = page.locator("ul > li");
     await expect(listItems).toHaveCount(2);
@@ -300,7 +298,7 @@ test.describe("netapp meta data issues", () => {
       "/",
     );
   });
-  test("Should handle the get shared drive list api error", async ({
+  test("Should handle the get Shared Drive list api error", async ({
     page,
     worker,
   }) => {
@@ -338,7 +336,7 @@ test.describe("netapp meta data issues", () => {
     await expect(page).toHaveURL("/");
   });
 
-  test("User should not be able to land directly on the shared drive connection error page,it should be redirected to search case page", async ({
+  test("User should not be able to land directly on the Shared Drive connection error page,it should be redirected to search case page", async ({
     page,
   }) => {
     await page.goto(
