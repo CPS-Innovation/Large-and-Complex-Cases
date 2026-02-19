@@ -7,7 +7,7 @@
   },
   {
     "id": "435c78f6-b08e-4bd9-8b3c-63ec1d1d15ee",
-    "displayName": "York-CTD-Users",
+    "displayName": "York-CTD-Cases",
     "bucketName": "YFHCTD",
     "description": "York CTD Users security group for CPS Complex Cases"
   }
