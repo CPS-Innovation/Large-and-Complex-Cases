@@ -1,4 +1,6 @@
+using System.Net;
 using System.Text;
+using Amazon.S3;
 using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Models.Domain;
@@ -186,6 +188,7 @@ public class TransferFileTests
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.IntegrityVerificationFailed, result.FailedItem.ErrorCode);
+        Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
         Assert.Equal("Upload completed but failed to verify.", result.FailedItem.ErrorMessage);
     }
 
@@ -207,6 +210,7 @@ public class TransferFileTests
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.FileExists, result.FailedItem.ErrorCode);
+        Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
     }
 
     [Fact]
@@ -227,7 +231,30 @@ public class TransferFileTests
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.GeneralError, result.FailedItem.ErrorCode);
+        Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
         Assert.Contains("System.InvalidOperationException", result.FailedItem.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task Run_UnexpectedException_UsesPathWhenFullFilePathIsNull()
+    {
+        var payload = CreatePayload();
+        payload.SourcePath.FullFilePath = null;
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>()))
+            .ThrowsAsync(new InvalidOperationException("Something went wrong"));
+
+        var result = await _activity.Run(payload);
+
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.FailedItem);
+        Assert.Equal(TransferErrorCode.GeneralError, result.FailedItem.ErrorCode);
+        Assert.Equal(payload.SourcePath.Path, result.FailedItem.SourcePath);
     }
 
     [Fact]
@@ -252,6 +279,7 @@ public class TransferFileTests
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.FileExists, result.FailedItem.ErrorCode);
+        Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
         Assert.Contains(payload.DestinationPath + payload.SourcePath.Path, result.FailedItem.ErrorMessage);
 
         _sourceClientMock.Verify(x => x.OpenReadStreamAsync(
@@ -261,6 +289,27 @@ public class TransferFileTests
                 It.IsAny<string?>(),
                 It.IsAny<string>()),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_TaskCanceledWithoutCancellationRequest_ReturnsFailedResultWithGeneralError()
+    {
+        var payload = CreatePayload();
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>()))
+            .ThrowsAsync(new TaskCanceledException("The request was canceled due to timeout."));
+
+        var result = await _activity.Run(payload, CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.FailedItem);
+        Assert.Equal(TransferErrorCode.GeneralError, result.FailedItem.ErrorCode);
+        Assert.Contains("HTTP request timed out", result.FailedItem.ErrorMessage);
     }
 
     [Fact]
@@ -299,5 +348,92 @@ public class TransferFileTests
             .ReturnsAsync(new UploadSession { UploadId = Guid.NewGuid().ToString() });
 
         await Assert.ThrowsAsync<OperationCanceledException>(() => _activity.Run(payload, cts.Token));
+    }
+
+    [Fact]
+    public async Task Run_AmazonS3ExceptionWith500_ReturnsTransientErrorCode()
+    {
+        var payload = CreatePayload();
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>()))
+            .ThrowsAsync(new AmazonS3Exception("We encountered an internal error. Please try again.") { StatusCode = HttpStatusCode.InternalServerError });
+
+        var result = await _activity.Run(payload);
+
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.FailedItem);
+        Assert.Equal(TransferErrorCode.Transient, result.FailedItem.ErrorCode);
+        Assert.Contains("HTTP 500", result.FailedItem.ErrorMessage);
+        Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
+    }
+
+    [Fact]
+    public async Task Run_AmazonS3ExceptionWith404_ReturnsTransientErrorCode()
+    {
+        var payload = CreatePayload();
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>()))
+            .ThrowsAsync(new AmazonS3Exception("The specified upload does not exist.") { StatusCode = HttpStatusCode.NotFound });
+
+        var result = await _activity.Run(payload);
+
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.FailedItem);
+        Assert.Equal(TransferErrorCode.Transient, result.FailedItem.ErrorCode);
+        Assert.Contains("HTTP 404", result.FailedItem.ErrorMessage);
+        Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
+    }
+
+    [Fact]
+    public async Task Run_AmazonS3ExceptionWith403_ReturnsGeneralErrorCode()
+    {
+        var payload = CreatePayload();
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>()))
+            .ThrowsAsync(new AmazonS3Exception("Access Denied") { StatusCode = HttpStatusCode.Forbidden });
+
+        var result = await _activity.Run(payload);
+
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.FailedItem);
+        Assert.Equal(TransferErrorCode.GeneralError, result.FailedItem.ErrorCode);
+        Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
+    }
+
+    [Fact]
+    public async Task Run_HttpIOException_ReturnsTransientErrorCode()
+    {
+        var payload = CreatePayload();
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>()))
+            .ThrowsAsync(new System.Net.Http.HttpIOException(System.Net.Http.HttpRequestError.ResponseEnded, "The response ended prematurely, with at least 6382474147 additional bytes expected."));
+
+        var result = await _activity.Run(payload);
+
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.FailedItem);
+        Assert.Equal(TransferErrorCode.Transient, result.FailedItem.ErrorCode);
+        Assert.Contains("Transient stream error", result.FailedItem.ErrorMessage);
+        Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
     }
 }

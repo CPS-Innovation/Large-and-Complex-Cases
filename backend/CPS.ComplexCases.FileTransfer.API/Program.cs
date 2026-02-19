@@ -81,6 +81,9 @@ var host = new HostBuilder()
         services.Configure<SizeConfig>(
             configuration.GetSection("FileTransfer:SizeConfig"));
 
+        services.Configure<PurgeRetentionConfig>(
+            configuration.GetSection(PurgeRetentionConfig.SectionName));
+
         services.AddScoped<IStorageClientFactory, StorageClientFactory>();
         services.AddScoped<IRequestValidator, RequestValidator>();
         services.AddScoped<ITransferEntityHelper, TransferEntityHelper>();

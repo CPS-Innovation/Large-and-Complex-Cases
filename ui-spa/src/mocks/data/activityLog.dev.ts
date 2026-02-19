@@ -35,6 +35,12 @@ export const activityLogDev: ActivityLogResponse = {
             path: "egress/folder1/file5.pdf",
           },
           {
+            path: "egress/folder1/file6.pdf",
+          },
+          {
+            path: "egress/folder1/file7.pdf",
+          },
+          {
             path: "egress/folder1/folder2/file6.pdf",
           },
         ],
@@ -42,7 +48,7 @@ export const activityLogDev: ActivityLogResponse = {
       },
     },
     {
-      id: "4",
+      id: "5",
       actionType: "TRANSFER_INITIATED",
       timestamp: "2024-01-20T12:46:10.865517Z",
       userName: "dwight_schrute@cps.gov.uk",

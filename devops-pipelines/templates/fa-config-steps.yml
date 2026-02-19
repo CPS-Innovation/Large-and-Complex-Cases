@@ -129,6 +129,16 @@ steps:
             "slotSetting": false
           },
           {
+            "name": "FileTransfer__PurgeRetention__RetentionDays",
+            "value": "$(FileTransferPurgeRetentionRetentionDays)",
+            "slotSetting": false
+          },
+          {
+            "name": "FileTransfer__PurgeRetention__Schedule",
+            "value": "$(FileTransferPurgeRetentionSchedule)",
+            "slotSetting": false
+          },
+          {
             "name": "SizeConfig__ChunkSizeBytes",
             "value": "$(SizeConfigChunkSizeBytes)",
             "slotSetting": false
@@ -207,5 +217,10 @@ steps:
             "name": "RateLimiting__IntervalInSeconds",
             "value": "$(RateLimitingIntervalInSeconds)",
             "slotSetting": false
-          }
+          },
+          {
+            "name": "SizeConfig__MaxOrchestratorRetries",
+            "value": "$(MaxOrchestratorRetries)",
+            "slotSetting": false
+          },
         ]

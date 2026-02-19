@@ -15,6 +15,12 @@ public class DurableTaskClientStub : DurableTaskClient
         _entityClient = entityClient;
     }
 
+    public Func<OrchestrationQuery?, AsyncPageable<OrchestrationMetadata>>? OnGetAllInstancesAsync { get; set; }
+    public Func<PurgeInstancesFilter, CancellationToken, Task<PurgeResult>>? OnPurgeAllInstancesAsync { get; set; }
+    
+    public OrchestrationQuery? CapturedQuery { get; private set; }
+    public PurgeInstancesFilter? CapturedPurgeFilter { get; private set; }
+
     public override DurableEntityClient Entities => _entityClient;
 
     public override ValueTask DisposeAsync()
@@ -24,7 +30,14 @@ public class DurableTaskClientStub : DurableTaskClient
 
     public override AsyncPageable<OrchestrationMetadata> GetAllInstancesAsync(OrchestrationQuery? filter = null)
     {
-        throw new NotImplementedException();
+        CapturedQuery = filter;
+        
+        if (OnGetAllInstancesAsync == null)
+        {
+            throw new InvalidOperationException("OnGetAllInstancesAsync delegate is not set.");
+        }
+        
+        return OnGetAllInstancesAsync(filter);
     }
 
     public override Task<OrchestrationMetadata?> GetInstancesAsync(string instanceId, bool getInputsAndOutputs = false, CancellationToken cancellation = default)
@@ -60,5 +73,17 @@ public class DurableTaskClientStub : DurableTaskClient
     public override Task<OrchestrationMetadata> WaitForInstanceStartAsync(string instanceId, bool getInputsAndOutputs = false, CancellationToken cancellation = default)
     {
         throw new NotImplementedException();
+    }
+
+    public override Task<PurgeResult> PurgeAllInstancesAsync(PurgeInstancesFilter filter, CancellationToken cancellation = default)
+    {
+        CapturedPurgeFilter = filter;
+        
+        if (OnPurgeAllInstancesAsync != null)
+        {
+            return OnPurgeAllInstancesAsync(filter, cancellation);
+        }
+        
+        return Task.FromResult(new PurgeResult(0));
     }
 }

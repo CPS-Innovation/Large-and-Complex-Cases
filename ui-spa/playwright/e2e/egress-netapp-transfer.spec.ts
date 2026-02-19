@@ -838,4 +838,87 @@ test.describe("egress-netapp-transfer", () => {
       page.getByTestId("dropdown-panel").getByRole("button", { name: "Move" }),
     ).not.toBeVisible();
   });
+
+  test("Should show the egress connection error screen, if user who does not have access to egress come to the application when there is an active transfer Id", async ({
+    page,
+    worker,
+  }) => {
+    await worker.use(
+      http.get(
+        "https://mocked-out-api/api/v1/egress/workspaces/egress_1/files",
+        async () => {
+          await delay(500);
+          return new HttpResponse(null, { status: 401 });
+        },
+      ),
+    );
+    await worker.use(
+      http.get("https://mocked-out-api/api/v1/cases/12", async () => {
+        await delay(10);
+        return HttpResponse.json({
+          caseId: "12",
+          egressWorkspaceId: "egress_1",
+          netappFolderPath: "netapp/",
+          operationName: "Thunderstruck",
+          urn: "45AA2098221",
+          activeTransferId: "mock-transfer-id",
+        });
+      }),
+    );
+    await worker.use(
+      http.get(
+        "https://mocked-out-api/api/v1/filetransfer/mock-transfer-id/status",
+        async () => {
+          await delay(10);
+          return HttpResponse.json({
+            status: "InProgress",
+            transferType: "Copy",
+            direction: "EgressToNetApp",
+            completedAt: null,
+            failedItems: [],
+            userName: "abc@example.org",
+          });
+        },
+      ),
+    );
+
+    let statusApiCall = false;
+    page.on("request", (request) => {
+      if (
+        request
+          .url()
+          .includes(
+            "https://mocked-out-api/api/v1/filetransfer/mock-transfer-id/status",
+          )
+      ) {
+        statusApiCall = true;
+      }
+    });
+    await page.goto("/case/12/case-management");
+    await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
+    await expect(page.getByTestId("tab-active")).toHaveText(
+      "Transfer materials",
+    );
+    await expect(page.getByTestId("egress-table-wrapper")).not.toBeVisible();
+    await expect(page.getByTestId("netapp-table-wrapper")).not.toBeVisible();
+    await expect(
+      page.getByTestId("tab-content-transfer-materials"),
+    ).not.toBeVisible();
+    await expect(page.getByTestId("transfer-spinner")).not.toBeVisible();
+
+    await expect(page).toHaveURL(
+      "/case/12/case-management/connection-error?type=egress",
+    );
+    await expect(page.locator("h1")).toHaveText(
+      "Sorry, there was a problem connecting to Egress",
+    );
+    const listItems = page.locator("ul > li");
+    await expect(listItems).toHaveCount(2);
+    await expect(listItems).toHaveText([
+      "check the case exists and you have access on the Case Management System",
+      "contact the product team if you need help",
+    ]);
+
+    expect(statusApiCall).toBe(false);
+  });
 });
