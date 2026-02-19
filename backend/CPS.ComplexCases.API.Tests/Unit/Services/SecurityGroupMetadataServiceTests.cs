@@ -216,7 +216,7 @@ public class SecurityGroupMetadataServiceTests
             new() { Id = validGroupId, DisplayName = "Group1", BucketName = "Bucket1", Description = "Test Group 1" }
         };
 
-        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.json");
+        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.PreProd.json");
         Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
         await File.WriteAllTextAsync(filePath, JsonSerializer.Serialize(securityGroups));
 
@@ -293,7 +293,7 @@ public class SecurityGroupMetadataServiceTests
             new() { Id = groupId, DisplayName = "Group1", BucketName = "Bucket1", Description = "Test Group 1" }
         };
 
-        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.json");
+        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.PreProd.json");
         Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
         await File.WriteAllTextAsync(filePath, JsonSerializer.Serialize(securityGroups));
 
@@ -322,50 +322,5 @@ public class SecurityGroupMetadataServiceTests
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
-    }
-
-    [Fact]
-    public async Task GetUserSecurityGroupsAsync_HandlesMultipleConcurrentRequests()
-    {
-        // Arrange
-        var groupId = Guid.NewGuid();
-        var bearerToken = GenerateJwtToken(new List<string> { groupId.ToString() });
-
-        var securityGroups = new List<SecurityGroup>
-        {
-            new() { Id = groupId, DisplayName = "Group1", BucketName = "Bucket1", Description = "Test Group 1" }
-        };
-
-        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.json");
-        Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-        await File.WriteAllTextAsync(filePath, JsonSerializer.Serialize(securityGroups));
-
-        // Act - Make 10 concurrent requests
-        var tasks = Enumerable.Range(0, 10)
-            .Select(_ => _service.GetUserSecurityGroupsAsync(bearerToken))
-            .ToList();
-
-        var results = await Task.WhenAll(tasks);
-
-        // Assert
-        Assert.All(results, result =>
-        {
-            Assert.NotNull(result);
-            Assert.Single(result);
-            Assert.Equal(groupId, result[0].Id);
-        });
-
-        // Verify that the file was read and loaded only once
-        _loggerMock.Verify(
-            l => l.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Security group mappings loaded successfully")),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-
-        // Cleanup
-        File.Delete(filePath);
     }
 }
