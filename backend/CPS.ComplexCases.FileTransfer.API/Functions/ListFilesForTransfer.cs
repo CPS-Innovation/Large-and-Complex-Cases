@@ -127,14 +127,6 @@ public class ListFilesForTransfer(
             result.ValidationErrors = failedFiles;
             result.IsInvalid = failedFiles.Any();
         }
-        else if (request.Value != null && request.Value.TransferDirection == TransferDirection.NetAppToEgress)
-        {
-            if (!string.IsNullOrEmpty(request.Value.SourceRootFolderPath))
-            {
-                var operationName = request.Value.SourceRootFolderPath.Substring(0, request.Value.SourceRootFolderPath.IndexOf('/'));
-                result.SourceRootFolderPath = request.Value.SourceRootFolderPath.RemovePathPrefix(operationName);
-            }
-        }
 
         _logger.LogInformation("Listed {FileCount} files for transfer with CorrelationId: {CorrelationId}", result.Files.Count(), req.Headers.GetCorrelationId());
 
