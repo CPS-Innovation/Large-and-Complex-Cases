@@ -246,7 +246,8 @@ public class NetAppStorageClientTests : IClassFixture<IntegrationTestFixture>, I
             session: session,
             etags: etags,
             bearerToken: bearerToken,
-            bucketName: _fixture.NetAppBucketName!);
+            bucketName: _fixture.NetAppBucketName!,
+            filePath: session.WorkspaceId);
 
         // Assert
         var exists = await NetAppTestHelper.WaitForObjectExistsAsync(_fixture, bearerToken, session.WorkspaceId);
