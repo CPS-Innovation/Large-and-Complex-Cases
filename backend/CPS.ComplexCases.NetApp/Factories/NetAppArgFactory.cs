@@ -127,7 +127,7 @@ public class NetAppArgFactory : INetAppArgFactory
             BucketName = bucketName.ToLowerInvariant(),
             ObjectKey = objectName,
             UploadId = uploadId,
-            CompletedParts = parts.Select(part => new PartETag
+            CompletedParts = parts.OrderBy(part => part.Key).Select(part => new PartETag
             {
                 PartNumber = part.Key,
                 ETag = part.Value

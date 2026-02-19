@@ -53,7 +53,9 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             _netAppS3HttpClientMock = _fixture.Freeze<Mock<INetAppS3HttpClient>>();
             _netAppS3HttpArgFactoryMock = _fixture.Freeze<Mock<INetAppS3HttpArgFactory>>();
 
-            _client = new NetAppClient(_loggerMock.Object, _amazonS3UtilsWrapperMock.Object, _netAppRequestFactoryMock.Object, _s3ClientFactoryMock.Object, _netAppS3HttpClientMock.Object, _netAppS3HttpArgFactoryMock.Object);
+            _client = new NetAppClient(_loggerMock.Object, _amazonS3UtilsWrapperMock.Object,
+                _netAppRequestFactoryMock.Object, _s3ClientFactoryMock.Object, _netAppS3HttpClientMock.Object,
+                _netAppS3HttpArgFactoryMock.Object);
         }
 
         [Fact]
@@ -486,7 +488,9 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             arg.BearerToken = BearerToken;
             var response = new InitiateMultipartUploadResponse();
 
-            _amazonS3Mock.Setup(s => s.InitiateMultipartUploadAsync(It.IsAny<InitiateMultipartUploadRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
+            _amazonS3Mock
+                .Setup(s => s.InitiateMultipartUploadAsync(It.IsAny<InitiateMultipartUploadRequest>(),
+                    It.IsAny<CancellationToken>())).ReturnsAsync(response);
 
             var result = await _client.InitiateMultipartUploadAsync(arg);
 
@@ -496,9 +500,12 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         [Fact]
         public async Task InitiateMultipartUploadAsync_ReturnsNull_AndLogs_OnException()
         {
-            var arg = new InitiateMultipartUploadArg { BearerToken = BearerToken, ObjectKey = "file.txt", BucketName = "bucket" };
+            var arg = new InitiateMultipartUploadArg
+                { BearerToken = BearerToken, ObjectKey = "file.txt", BucketName = "bucket" };
 
-            _amazonS3Mock.Setup(s => s.InitiateMultipartUploadAsync(It.IsAny<InitiateMultipartUploadRequest>(), It.IsAny<CancellationToken>()))
+            _amazonS3Mock.Setup(s =>
+                    s.InitiateMultipartUploadAsync(It.IsAny<InitiateMultipartUploadRequest>(),
+                        It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new AmazonS3Exception("fail"));
 
             var result = await _client.InitiateMultipartUploadAsync(arg);
@@ -508,7 +515,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 l => l.Log(
                     LogLevel.Error,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v != null && v!.ToString()!.Contains("Failed to initiate multipart upload")),
+                    It.Is<It.IsAnyType>((v, t) =>
+                        v != null && v!.ToString()!.Contains("Failed to initiate multipart upload")),
                     It.IsAny<AmazonS3Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
@@ -517,10 +525,15 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         [Fact]
         public async Task UploadPartAsync_ReturnsResponse_OnSuccess()
         {
-            var arg = new UploadPartArg { BearerToken = BearerToken, UploadId = "1", ObjectKey = "file.txt", BucketName = "bucket", PartNumber = 1, PartData = new byte[] { 1, 2, 3 } };
+            var arg = new UploadPartArg
+            {
+                BearerToken = BearerToken, UploadId = "1", ObjectKey = "file.txt", BucketName = "bucket",
+                PartNumber = 1, PartData = new byte[] { 1, 2, 3 }
+            };
             var response = new UploadPartResponse();
 
-            _amazonS3Mock.Setup(s => s.UploadPartAsync(It.IsAny<UploadPartRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
+            _amazonS3Mock.Setup(s => s.UploadPartAsync(It.IsAny<UploadPartRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(response);
 
             var result = await _client.UploadPartAsync(arg);
 
@@ -530,7 +543,11 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         [Fact]
         public async Task UploadPartAsync_Throws_OnException_AndLogs()
         {
-            var arg = new UploadPartArg { BearerToken = BearerToken, UploadId = "1", ObjectKey = "file.txt", BucketName = "bucket", PartNumber = 1, PartData = new byte[] { 1, 2, 3 } };
+            var arg = new UploadPartArg
+            {
+                BearerToken = BearerToken, UploadId = "1", ObjectKey = "file.txt", BucketName = "bucket",
+                PartNumber = 1, PartData = new byte[] { 1, 2, 3 }
+            };
 
             _amazonS3Mock.Setup(s => s.UploadPartAsync(It.IsAny<UploadPartRequest>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new AmazonS3Exception("fail"));
@@ -549,10 +566,16 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         [Fact]
         public async Task CompleteMultipartUploadAsync_ReturnsResponse_OnSuccess()
         {
-            var arg = new CompleteMultipartUploadArg { BearerToken = BearerToken, ObjectKey = "file.txt", BucketName = "bucket", UploadId = "uploadid", CompletedParts = [] };
+            var arg = new CompleteMultipartUploadArg
+            {
+                BearerToken = BearerToken, ObjectKey = "file.txt", BucketName = "bucket", UploadId = "uploadid",
+                CompletedParts = []
+            };
             var response = new CompleteMultipartUploadResponse();
 
-            _amazonS3Mock.Setup(s => s.CompleteMultipartUploadAsync(It.IsAny<CompleteMultipartUploadRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
+            _amazonS3Mock
+                .Setup(s => s.CompleteMultipartUploadAsync(It.IsAny<CompleteMultipartUploadRequest>(),
+                    It.IsAny<CancellationToken>())).ReturnsAsync(response);
 
             var result = await _client.CompleteMultipartUploadAsync(arg);
 
@@ -560,19 +583,109 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         }
 
         [Fact]
-        public async Task CompleteMultipartUploadAsync_Throws_OnException_AndLogs()
+        public async Task CompleteMultipartUploadAsync_Throws_OnNonTransientException_AndDoesNotRetry()
         {
-            var arg = new CompleteMultipartUploadArg { BearerToken = BearerToken, ObjectKey = "file.txt", BucketName = "bucket", UploadId = "uploadid", CompletedParts = [] };
+            var arg = new CompleteMultipartUploadArg
+            {
+                BearerToken = BearerToken, ObjectKey = "file.txt", BucketName = "bucket", UploadId = "uploadid",
+                CompletedParts = []
+            };
 
-            _amazonS3Mock.Setup(s => s.CompleteMultipartUploadAsync(It.IsAny<CompleteMultipartUploadRequest>(), It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new AmazonS3Exception("fail"));
+            _amazonS3Mock.Setup(s =>
+                    s.CompleteMultipartUploadAsync(It.IsAny<CompleteMultipartUploadRequest>(),
+                        It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new AmazonS3Exception("Access Denied") { StatusCode = HttpStatusCode.Forbidden });
 
             await Assert.ThrowsAsync<AmazonS3Exception>(() => _client.CompleteMultipartUploadAsync(arg));
+            _amazonS3Mock.Verify(
+                s => s.CompleteMultipartUploadAsync(It.IsAny<CompleteMultipartUploadRequest>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
             _loggerMock.Verify(
                 l => l.Log(
                     LogLevel.Error,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v != null && v!.ToString()!.Contains("Failed to complete multipart upload")),
+                    It.Is<It.IsAnyType>((v, t) => v != null && v!.ToString()!.Contains("after all retry attempts")),
+                    It.IsAny<AmazonS3Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task CompleteMultipartUploadAsync_RetriesOnTransient500_AndSucceeds()
+        {
+            var arg = new CompleteMultipartUploadArg
+            {
+                BearerToken = BearerToken, ObjectKey = "file.txt", BucketName = "bucket", UploadId = "uploadid",
+                CompletedParts = []
+            };
+            var expectedResponse = new CompleteMultipartUploadResponse();
+
+            var callCount = 0;
+            _amazonS3Mock
+                .Setup(s => s.CompleteMultipartUploadAsync(It.IsAny<CompleteMultipartUploadRequest>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() =>
+                {
+                    callCount++;
+                    if (callCount == 1)
+                        throw new AmazonS3Exception("We encountered an internal error. Please try again.")
+                            { StatusCode = HttpStatusCode.InternalServerError };
+                    return expectedResponse;
+                });
+
+            var result = await _client.CompleteMultipartUploadAsync(arg);
+
+            Assert.Equal(expectedResponse, result);
+            _amazonS3Mock.Verify(
+                s => s.CompleteMultipartUploadAsync(It.IsAny<CompleteMultipartUploadRequest>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Exactly(2));
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) =>
+                        v != null && v!.ToString()!.Contains("CompleteMultipartUpload retry attempt")),
+                    It.IsAny<AmazonS3Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task CompleteMultipartUploadAsync_ExhaustsRetries_AndThrows()
+        {
+            var arg = new CompleteMultipartUploadArg
+            {
+                BearerToken = BearerToken, ObjectKey = "file.txt", BucketName = "bucket", UploadId = "uploadid",
+                CompletedParts = []
+            };
+
+            _amazonS3Mock
+                .Setup(s => s.CompleteMultipartUploadAsync(It.IsAny<CompleteMultipartUploadRequest>(),
+                    It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new AmazonS3Exception("We encountered an internal error. Please try again.")
+                    { StatusCode = HttpStatusCode.InternalServerError });
+
+            await Assert.ThrowsAsync<AmazonS3Exception>(() => _client.CompleteMultipartUploadAsync(arg));
+            _amazonS3Mock.Verify(
+                s => s.CompleteMultipartUploadAsync(It.IsAny<CompleteMultipartUploadRequest>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Exactly(6)); // 1 initial + 5 retries
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) =>
+                        v != null && v!.ToString()!.Contains("CompleteMultipartUpload retry attempt")),
+                    It.IsAny<AmazonS3Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Exactly(5));
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v != null && v!.ToString()!.Contains("after all retry attempts")),
                     It.IsAny<AmazonS3Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
@@ -584,7 +697,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             var arg = new GetObjectArg { BearerToken = BearerToken, ObjectKey = "file.txt", BucketName = "bucket" };
             var response = new HeadObjectResponseDto { StatusCode = HttpStatusCode.OK };
 
-            _netAppS3HttpClientMock.Setup(s => s.GetHeadObjectAsync(It.IsAny<GetHeadObjectArg>())).ReturnsAsync(response);
+            _netAppS3HttpClientMock.Setup(s => s.GetHeadObjectAsync(It.IsAny<GetHeadObjectArg>()))
+                .ReturnsAsync(response);
 
             var result = await _client.DoesObjectExistAsync(arg);
 
@@ -1011,7 +1125,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 .Setup(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
                 .ReturnsAsync(new ListObjectsV2Response
                 {
-                    S3Objects = filesToDelete.Where(f => !f.EndsWith('/')).Select(f => new S3Object { Key = f, Size = 100 }).ToList(),
+                    S3Objects = filesToDelete.Where(f => !f.EndsWith('/'))
+                        .Select(f => new S3Object { Key = f, Size = 100 }).ToList(),
                     CommonPrefixes = [],
                     IsTruncated = false
                 });
@@ -1029,12 +1144,14 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             var result = await _client.DeleteFileOrFolderAsync(arg);
 
             // Assert
-            Assert.Equal($"Successfully deleted folder {folderPath} and its contents from bucket {BucketName}.", result);
+            Assert.Equal($"Successfully deleted folder {folderPath} and its contents from bucket {BucketName}.",
+                result);
             _amazonS3Mock.Verify(x => x.DeleteObjectsAsync(It.IsAny<DeleteObjectsRequest>(), default), Times.Once);
         }
 
         [Fact]
-        public async Task DeleteFileOrFolderAsync_WhenDeleteObjectsAsync_WithPartialFailures_ReturnsPartialFailureMessage()
+        public async Task
+            DeleteFileOrFolderAsync_WhenDeleteObjectsAsync_WithPartialFailures_ReturnsPartialFailureMessage()
         {
             // Arrange
             var folderPath = "witnesses/statements";
@@ -1064,12 +1181,14 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 .Setup(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
                 .ReturnsAsync(new ListObjectsV2Response
                 {
-                    S3Objects = filesToDelete.Where(f => !f.EndsWith('/')).Select(f => new S3Object { Key = f, Size = 100 }).ToList(),
+                    S3Objects = filesToDelete.Where(f => !f.EndsWith('/'))
+                        .Select(f => new S3Object { Key = f, Size = 100 }).ToList(),
                     CommonPrefixes = [],
                     IsTruncated = false
                 });
 
-            var deletedObjects = filesToDelete.Take(successfulDeletions).Select(f => new DeletedObject { Key = f }).ToList();
+            var deletedObjects = filesToDelete.Take(successfulDeletions).Select(f => new DeletedObject { Key = f })
+                .ToList();
             var deleteErrors = new List<DeleteError>
             {
                 new DeleteError { Key = filesToDelete.Last(), Code = "AccessDenied", Message = "Access Denied" }
@@ -1129,12 +1248,14 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 .Setup(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
                 .ReturnsAsync(new ListObjectsV2Response
                 {
-                    S3Objects = filesToDelete.Where(f => !f.EndsWith('/')).Select(f => new S3Object { Key = f, Size = 100 }).ToList(),
+                    S3Objects = filesToDelete.Where(f => !f.EndsWith('/'))
+                        .Select(f => new S3Object { Key = f, Size = 100 }).ToList(),
                     CommonPrefixes = [],
                     IsTruncated = false
                 });
 
-            var deleteErrors = filesToDelete.Select(f => new DeleteError { Key = f, Code = "AccessDenied", Message = "Access Denied" }).ToList();
+            var deleteErrors = filesToDelete.Select(f => new DeleteError
+                { Key = f, Code = "AccessDenied", Message = "Access Denied" }).ToList();
 
             _amazonS3Mock
                 .Setup(x => x.DeleteObjectsAsync(It.IsAny<DeleteObjectsRequest>(), default))
@@ -1201,7 +1322,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             var result = await _client.DeleteFileOrFolderAsync(arg);
 
             // Assert
-            Assert.Equal($"Successfully deleted folder {folderPath} and its contents from bucket {BucketName}.", result);
+            Assert.Equal($"Successfully deleted folder {folderPath} and its contents from bucket {BucketName}.",
+                result);
             _amazonS3Mock.Verify(x => x.DeleteObjectsAsync(It.IsAny<DeleteObjectsRequest>(), default), Times.Once);
         }
 
@@ -1263,11 +1385,12 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 x => x.Log(
                     It.Is<LogLevel>(l => l == LogLevel.Error),
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(errorKey) && v.ToString()!.Contains(errorCode) && v.ToString()!.Contains(errorMessage)),
+                    It.Is<It.IsAnyType>((v, t) =>
+                        v.ToString()!.Contains(errorKey) && v.ToString()!.Contains(errorCode) &&
+                        v.ToString()!.Contains(errorMessage)),
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
         }
-
     }
 }

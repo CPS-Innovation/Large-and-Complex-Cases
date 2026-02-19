@@ -6,4 +6,5 @@ public class SizeConfig
     public int MinMultipartSizeBytes { get; set; } = 5 * 1024 * 1024; // Default to 5 MB
     public int BatchSize { get; set; } = 10; // Default to 10 files per batch
     public int MaxConcurrentPartUploads { get; set; } = 4;
+    public int MaxOrchestratorRetries { get; set; } = 3; // default to 3
 }

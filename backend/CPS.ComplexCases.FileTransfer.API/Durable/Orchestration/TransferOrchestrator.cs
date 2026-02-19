@@ -133,6 +133,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
 
             int batchSize = _sizeConfig.BatchSize;
             var batch = new List<Task<TransferResult>>();
+            var allResults = new List<TransferResult>();
 
             foreach (var sourcePath in cleanFiles)
             {
@@ -162,6 +163,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                     // Process batch results and update entity synchronously
                     var batchResults = await Task.WhenAll(batch);
                     await ProcessTransferResults(context, entityId, batchResults, transferOrchestrationEvent);
+                    allResults.AddRange(batchResults);
                     batch.Clear();
                 }
             }
@@ -171,6 +173,71 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
             {
                 var remainingResults = await Task.WhenAll(batch);
                 await ProcessTransferResults(context, entityId, remainingResults, transferOrchestrationEvent);
+                allResults.AddRange(remainingResults);
+            }
+
+            // 2b. Orchestrator-level retry for transient S3 failures
+            int maxOrchestratorRetries = _sizeConfig.MaxOrchestratorRetries;
+            for (int attempt = 0; attempt < maxOrchestratorRetries; attempt++)
+            {
+                var retryableFailures = allResults
+                    .Where(r => r != null && !r.IsSuccess && r.FailedItem?.ErrorCode == TransferErrorCode.Transient)
+                    .ToList();
+
+                if (retryableFailures.Count == 0) break;
+
+                logger.LogWarning(
+                    "Orchestrator retry attempt {Attempt}/{MaxRetries}: re-attempting {Count} transiently failed files.",
+                    attempt + 1, maxOrchestratorRetries, retryableFailures.Count);
+
+                // Durable timer backoff ÔÇö no compute consumed during wait
+                await context.CreateTimer(
+                    context.CurrentUtcDateTime.Add(TimeSpan.FromSeconds(30 * (attempt + 1))),
+                    CancellationToken.None);
+
+                // Match failed paths back to original TransferSourcePath objects
+                var failedPaths = retryableFailures
+                    .Select(r => r.FailedItem!.SourcePath)
+                    .ToHashSet();
+
+                var retrySourcePaths = cleanFiles
+                    .Where(f => failedPaths.Contains(f.Path) || (f.FullFilePath != null && failedPaths.Contains(f.FullFilePath)))
+                    .ToList();
+
+                // Remove transient failures from entity state (undo AddFailedItem counts)
+                await context.Entities.CallEntityAsync(
+                    entityId,
+                    nameof(TransferEntityState.RemoveTransientFailures));
+
+                // Correct telemetry counters
+                transferOrchestrationEvent.TotalFilesFailed -= retryableFailures.Count;
+
+                // Re-dispatch as fresh TransferFile activities
+                var retryBatch = retrySourcePaths.Select(sp =>
+                    context.CallActivityAsync<TransferResult>(
+                        nameof(TransferFile),
+                        new TransferFilePayload
+                        {
+                            CaseId = input.CaseId,
+                            SourcePath = sp,
+                            DestinationPath = transferEntity.DestinationPath,
+                            TransferId = transferEntity.Id,
+                            TransferType = transferEntity.TransferType,
+                            TransferDirection = transferEntity.Direction,
+                            WorkspaceId = input.WorkspaceId,
+                            SourceRootFolderPath = input.SourceRootFolderPath,
+                            BearerToken = input.BearerToken,
+                            BucketName = input.BucketName,
+                            UserName = input.UserName!,
+                            CorrelationId = input.CorrelationId!
+                        })).ToList();
+
+                var retryResults = await Task.WhenAll(retryBatch);
+                await ProcessTransferResults(context, entityId, retryResults, transferOrchestrationEvent, isRetry: true);
+
+                // Replace transient failures with retry results for next iteration
+                allResults.RemoveAll(r => r != null && !r.IsSuccess && r.FailedItem?.ErrorCode == TransferErrorCode.Transient);
+                allResults.AddRange(retryResults);
             }
 
             // 3. Delete files if transfer direction is EgressToNetApp and transfer type is Move
@@ -253,7 +320,8 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
         TaskOrchestrationContext context,
         EntityInstanceId entityId,
         TransferResult[] results,
-        TransferOrchestrationEvent telemetryEvent)
+        TransferOrchestrationEvent telemetryEvent,
+        bool isRetry = false)
     {
         foreach (var result in results)
         {
@@ -262,7 +330,8 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                 // Use CallEntityAsync for synchronous entity updates
                 await context.Entities.CallEntityAsync(
                     entityId,
-                    nameof(TransferEntityState.AddSuccessfulItem),
+                    isRetry ? nameof(TransferEntityState.AddSuccessfulRetryItem)
+                            : nameof(TransferEntityState.AddSuccessfulItem),
                     result.SuccessfulItem);
 
                 // Update telemetry event
@@ -274,7 +343,8 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                 // Use CallEntityAsync for synchronous entity updates
                 await context.Entities.CallEntityAsync(
                     entityId,
-                    nameof(TransferEntityState.AddFailedItem),
+                    isRetry ? nameof(TransferEntityState.AddFailedRetryItem)
+                            : nameof(TransferEntityState.AddFailedItem),
                     result.FailedItem);
 
                 // Update telemetry event
