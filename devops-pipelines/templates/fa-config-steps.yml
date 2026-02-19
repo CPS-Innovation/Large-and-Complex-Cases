@@ -54,23 +54,8 @@ steps:
             "slotSetting": false
           },
           {
-            "name": "NetAppOptions__MockUrl",
-            "value": "$(NetAppOptionsMockUrl)",
-            "slotSetting": false
-          },
-          {
             "name": "NetAppOptions__ClusterUrl",
             "value": "$(NetAppOptionsClusterUrl)",
-            "slotSetting": false
-          },
-          {
-            "name": "NetAppOptions__EnableMock",
-            "value": "$(NetAppOptionsEnableMock)",
-            "slotSetting": false
-          },
-          {
-            "name": "NetAppOptions__BucketName",
-            "value": "$(NetAppOptionsBucketName)",
             "slotSetting": false
           },
           {
@@ -106,11 +91,6 @@ steps:
           {
             "name": "CallingAppValidAudience",
             "value": "$(CallingAppValidAudience)",
-            "slotSetting": false
-          },
-          {
-            "name": "CallingAppValidRoles",
-            "value": "$(CallingAppValidRoles)",
             "slotSetting": false
           },
           {
