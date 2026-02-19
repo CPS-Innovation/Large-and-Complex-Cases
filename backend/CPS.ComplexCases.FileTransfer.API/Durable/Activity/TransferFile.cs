@@ -1,3 +1,4 @@
+using Amazon.S3;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -129,7 +130,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             LogFileConflictTelemetry(payload);
             telemetryEvent.ErrorCode = TransferErrorCode.FileExists.ToString();
             telemetryEvent.ErrorMessage = ex.Message;
-            return CreateFailureResult(payload.SourcePath.Path, TransferErrorCode.FileExists, ex.Message, ex);
+            return CreateFailureResult(payload.SourcePath.FullFilePath ?? payload.SourcePath.Path, TransferErrorCode.FileExists, ex.Message, ex);
         }
         catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
@@ -138,8 +139,32 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             telemetryEvent.ErrorCode = TransferErrorCode.GeneralError.ToString();
             telemetryEvent.ErrorMessage = errorMessage;
             return CreateFailureResult(
-                payload.SourcePath.Path,
+                payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
                 TransferErrorCode.GeneralError,
+                errorMessage,
+                ex);
+        }
+        catch (AmazonS3Exception ex) when ((int)ex.StatusCode >= 500
+            || ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            var errorMessage = $"Transient S3 error (HTTP {(int)ex.StatusCode}): {ex.Message}";
+            telemetryEvent.ErrorCode = TransferErrorCode.Transient.ToString();
+            telemetryEvent.ErrorMessage = errorMessage;
+            return CreateFailureResult(
+                payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
+                TransferErrorCode.Transient,
+                errorMessage,
+                ex);
+        }
+        catch (System.Net.Http.HttpIOException ex)
+        {
+            var errorMessage = $"Transient stream error: {ex.Message}";
+            _logger.LogWarning(ex, "Source stream ended prematurely during transfer: {Path}", payload.SourcePath.Path);
+            telemetryEvent.ErrorCode = TransferErrorCode.Transient.ToString();
+            telemetryEvent.ErrorMessage = errorMessage;
+            return CreateFailureResult(
+                payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
+                TransferErrorCode.Transient,
                 errorMessage,
                 ex);
         }
@@ -154,7 +179,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             telemetryEvent.ErrorCode = TransferErrorCode.GeneralError.ToString();
             telemetryEvent.ErrorMessage = errorMessage;
             return CreateFailureResult(
-                payload.SourcePath.Path,
+                payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
                 TransferErrorCode.GeneralError,
                 errorMessage,
                 ex);
@@ -301,6 +326,11 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             }
 
             await Task.WhenAll(uploadTasks);
+            
+            // Allow S3/StorageGRID to finalise part registration before completing the upload.
+            // Without this delay, CompleteMultipartUpload can receive a transient 500
+            // when parts have not yet been fully registered internally.
+            await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
 
             string md5Hash = md5?.Hash != null ? Convert.ToBase64String(md5.Hash) : string.Empty;
             string? filePath = payload.TransferDirection == TransferDirection.EgressToNetApp ? payload.DestinationPath.EnsureTrailingSlash() + payload.SourcePath.Path : null;
@@ -313,7 +343,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                     payload.SourcePath.Path, payload.DestinationPath);
 
                 return CreateFailureResult(
-                    payload.SourcePath.Path,
+                    payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
                     TransferErrorCode.IntegrityVerificationFailed,
                     "Upload completed but failed to verify.");
             }

@@ -188,7 +188,7 @@ public class NetAppStorageClientTests : IDisposable
 
         _netAppArgFactoryMock.Setup(f => f.CreateCompleteMultipartUploadArg(BearerToken, BucketName, ObjectKey, UploadId, etags)).Returns(arg);
         _netAppRequestFactoryMock.Setup(c => c.CompleteMultipartUploadRequest(arg)).Returns(request);
-        _netAppClient.Setup(c => c.CompleteMultipartUploadAsync(arg)).ReturnsAsync(new CompleteMultipartUploadResponse
+        _netAppClient.Setup(c => c.CompleteMultipartUploadAsync(arg, It.IsAny<CancellationToken>())).ReturnsAsync(new CompleteMultipartUploadResponse
         {
             ETag = "final-etag-67890"
         });

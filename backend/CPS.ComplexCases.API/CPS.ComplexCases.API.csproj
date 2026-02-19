@@ -54,6 +54,7 @@
     <Using Include="System.Threading.ExecutionContext" Alias="ExecutionContext" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="SourceFiles/SecurityGroupMappings.json" CopyToOutputDirectory="Always" />
+    <None Include="SourceFiles/SecurityGroupMappings.PreProd.json" CopyToOutputDirectory="Always" />
+    <None Include="SourceFiles/SecurityGroupMappings.Production.json" CopyToOutputDirectory="Always" />
   </ItemGroup>
 </Project>

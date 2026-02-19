@@ -45,7 +45,7 @@ public class SecurityGroupMetadataServiceTests
             new() { Id = Guid.NewGuid(), DisplayName = "Group3", BucketName = "Bucket3", Description = "Test Group 3" }
         };
 
-        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.json");
+        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.PreProd.json");
         Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
         await File.WriteAllTextAsync(filePath, JsonSerializer.Serialize(securityGroups));
 
@@ -103,7 +103,7 @@ public class SecurityGroupMetadataServiceTests
             new () { Id = groupId2, DisplayName = "Group1", BucketName = "Bucket1", Description = "Test Group 1" }
         };
 
-        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.json");
+        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.PreProd.json");
         Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
         await File.WriteAllTextAsync(filePath, JsonSerializer.Serialize(securityGroups));
 
@@ -132,7 +132,7 @@ public class SecurityGroupMetadataServiceTests
         var groupId = Guid.NewGuid();
         var bearerToken = GenerateJwtToken(new List<string> { groupId.ToString() });
 
-        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.json");
+        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.PreProd.json");
         if (File.Exists(filePath))
         {
             File.Delete(filePath);
@@ -160,7 +160,7 @@ public class SecurityGroupMetadataServiceTests
         var groupId = Guid.NewGuid();
         var bearerToken = GenerateJwtToken(new List<string> { groupId.ToString() });
 
-        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.json");
+        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.PreProd.json");
         Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
         await File.WriteAllTextAsync(filePath, "invalid json");
 
