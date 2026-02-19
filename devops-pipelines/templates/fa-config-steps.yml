@@ -222,5 +222,5 @@ steps:
             "name": "SizeConfig__MaxOrchestratorRetries",
             "value": "$(MaxOrchestratorRetries)",
             "slotSetting": false
-          },
+          }
         ]
