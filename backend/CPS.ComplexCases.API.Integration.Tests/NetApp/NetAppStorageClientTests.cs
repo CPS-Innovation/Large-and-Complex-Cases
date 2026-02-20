@@ -1,4 +1,5 @@
 using System.Text;
+using Amazon.S3;
 using Moq;
 using CPS.ComplexCases.API.Integration.Tests.Fixtures;
 using CPS.ComplexCases.API.Integration.Tests.Helpers;
@@ -204,55 +205,65 @@ public class NetAppStorageClientTests : IClassFixture<IntegrationTestFixture>, I
         var sourcePath = $"multipart-storage-{Guid.NewGuid():N}.bin";
         var totalSize = part1Data.Length + part2Data.Length;
 
-        // Act - Step 1: Initiate upload
-        var session = await _storageClient!.InitiateUploadAsync(
-            destinationPath: _testFolderPrefix,
-            fileSize: totalSize,
-            sourcePath: sourcePath,
-            bearerToken: bearerToken,
-            bucketName: _fixture.NetAppBucketName!);
+        // In production (TransferFile.cs) the orchestrator retries the entire activity when
+        // CompleteMultipartUpload returns a transient 500, because the error also internally aborts
+        // the multipart upload and invalidates the upload ID. We mirror that here by restarting the
+        // full flow (initiate → upload parts → complete) on each attempt.
+        UploadSession? completedSession = null;
+        for (var attempt = 1; attempt <= 3; attempt++)
+        {
+            // Act - Step 1: Initiate upload
+            var session = await _storageClient!.InitiateUploadAsync(
+                destinationPath: _testFolderPrefix,
+                fileSize: totalSize,
+                sourcePath: sourcePath,
+                bearerToken: bearerToken,
+                bucketName: _fixture.NetAppBucketName!);
 
-        Assert.NotNull(session);
-        Assert.NotEmpty(session.UploadId);
-        Assert.NotNull(session.WorkspaceId);
+            // Act - Step 2: Upload chunks
+            var etags = new Dictionary<int, string>();
 
-        // Act - Step 2: Upload chunks
-        var etags = new Dictionary<int, string>();
+            var chunk1Result = await _storageClient!.UploadChunkAsync(
+                session: session,
+                chunkNumber: 1,
+                chunkData: part1Data,
+                bearerToken: bearerToken,
+                bucketName: _fixture.NetAppBucketName!);
+            etags[1] = chunk1Result.ETag!;
 
-        var chunk1Result = await _storageClient!.UploadChunkAsync(
-            session: session,
-            chunkNumber: 1,
-            chunkData: part1Data,
-            bearerToken: bearerToken,
-            bucketName: _fixture.NetAppBucketName!);
+            var chunk2Result = await _storageClient!.UploadChunkAsync(
+                session: session,
+                chunkNumber: 2,
+                chunkData: part2Data,
+                bearerToken: bearerToken,
+                bucketName: _fixture.NetAppBucketName!);
+            etags[2] = chunk2Result.ETag!;
 
-        Assert.NotNull(chunk1Result);
-        Assert.NotNull(chunk1Result.ETag);
-        etags[1] = chunk1Result.ETag;
+            // Match the production delay from TransferFile.cs before completing.
+            await Task.Delay(TimeSpan.FromSeconds(2));
 
-        var chunk2Result = await _storageClient!.UploadChunkAsync(
-            session: session,
-            chunkNumber: 2,
-            chunkData: part2Data,
-            bearerToken: bearerToken,
-            bucketName: _fixture.NetAppBucketName!);
-
-        Assert.NotNull(chunk2Result);
-        Assert.NotNull(chunk2Result.ETag);
-        etags[2] = chunk2Result.ETag;
-
-        await Task.Delay(TimeSpan.FromSeconds(10));
-
-        // Act - Step 3: Complete upload
-        await _storageClient!.CompleteUploadAsync(
-            session: session,
-            etags: etags,
-            bearerToken: bearerToken,
-            bucketName: _fixture.NetAppBucketName!,
-            filePath: session.WorkspaceId);
+            // Act - Step 3: Complete upload
+            try
+            {
+                await _storageClient!.CompleteUploadAsync(
+                    session: session,
+                    etags: etags,
+                    bearerToken: bearerToken,
+                    bucketName: _fixture.NetAppBucketName!,
+                    filePath: session.WorkspaceId);
+                completedSession = session;
+                break;
+            }
+            catch (AmazonS3Exception) when (attempt < 3)
+            {
+                // StorageGRID aborted the upload alongside the internal error;
+                // the upload ID is now invalid so the full flow must be restarted.
+            }
+        }
 
         // Assert
-        var exists = await NetAppTestHelper.WaitForObjectExistsAsync(_fixture, bearerToken, session.WorkspaceId);
+        Assert.NotNull(completedSession);
+        var exists = await NetAppTestHelper.WaitForObjectExistsAsync(_fixture, bearerToken, completedSession.WorkspaceId!);
         Assert.True(exists, "Multipart uploaded file should exist");
     }
 

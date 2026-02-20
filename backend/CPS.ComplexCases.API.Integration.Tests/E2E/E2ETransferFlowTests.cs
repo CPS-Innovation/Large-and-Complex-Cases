@@ -1,4 +1,5 @@
 using System.Text;
+using Amazon.S3;
 using CPS.ComplexCases.API.Integration.Tests.Fixtures;
 using CPS.ComplexCases.API.Integration.Tests.Helpers;
 using CPS.ComplexCases.Common.Models.Domain;
@@ -120,50 +121,55 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
 
         var netAppDestinationPath = $"{_netAppTestFolderPrefix}/{testFileName}";
 
-        var initiateArg = _fixture.NetAppArgFactory!.CreateInitiateMultipartUploadArg(
-            bearerToken,
-            _fixture.NetAppBucketName!,
-            netAppDestinationPath);
-
-        var initiateResponse = await _fixture.NetAppClient!.InitiateMultipartUploadAsync(initiateArg);
-        Assert.NotNull(initiateResponse);
-        Assert.NotEmpty(initiateResponse.UploadId);
-
-        var uploadId = initiateResponse.UploadId;
-        var completedParts = new Dictionary<int, string>();
-
+        // In production (TransferFile.cs) the orchestrator retries the entire activity when
+        // CompleteMultipartUpload returns a transient 500, because the error also internally aborts
+        // the multipart upload and invalidates the upload ID. We mirror that here by restarting the
+        // full flow (initiate → upload parts → complete) on each attempt.
         var chunks = TestDataHelper.SplitIntoChunks(testContent, partSize).ToList();
-        for (int i = 0; i < chunks.Count; i++)
+        string? completedETag = null;
+        for (var attempt = 1; attempt <= 3; attempt++)
         {
-            var partNumber = i + 1;
-            var uploadPartArg = _fixture.NetAppArgFactory!.CreateUploadPartArg(
-                bearerToken,
-                _fixture.NetAppBucketName!,
-                netAppDestinationPath,
-                chunks[i],
-                partNumber,
-                uploadId);
+            var initiateArg = _fixture.NetAppArgFactory!.CreateInitiateMultipartUploadArg(
+                bearerToken, _fixture.NetAppBucketName!, netAppDestinationPath);
 
-            var partResponse = await _fixture.NetAppClient!.UploadPartAsync(uploadPartArg);
-            Assert.NotNull(partResponse);
-            completedParts[partNumber] = partResponse.ETag;
+            var initiateResponse = await _fixture.NetAppClient!.InitiateMultipartUploadAsync(initiateArg);
+            Assert.NotNull(initiateResponse);
+            Assert.NotEmpty(initiateResponse.UploadId);
+
+            var uploadId = initiateResponse.UploadId;
+            var completedParts = new Dictionary<int, string>();
+
+            for (int i = 0; i < chunks.Count; i++)
+            {
+                var partResponse = await _fixture.NetAppClient!.UploadPartAsync(
+                    _fixture.NetAppArgFactory!.CreateUploadPartArg(
+                        bearerToken, _fixture.NetAppBucketName!, netAppDestinationPath,
+                        chunks[i], i + 1, uploadId));
+                Assert.NotNull(partResponse);
+                completedParts[i + 1] = partResponse.ETag;
+            }
+
+            // Match the production delay from TransferFile.cs before completing.
+            await Task.Delay(TimeSpan.FromSeconds(2));
+
+            try
+            {
+                var completeResponse = await _fixture.NetAppClient!.CompleteMultipartUploadAsync(
+                    _fixture.NetAppArgFactory!.CreateCompleteMultipartUploadArg(
+                        bearerToken, _fixture.NetAppBucketName!, netAppDestinationPath,
+                        uploadId, completedParts));
+                Assert.NotNull(completeResponse);
+                completedETag = completeResponse.ETag;
+                break;
+            }
+            catch (AmazonS3Exception) when (attempt < 3)
+            {
+                // StorageGRID aborted the upload alongside the internal error;
+                // the upload ID is now invalid so the full flow must be restarted.
+            }
         }
 
-        // Allow S3/StorageGRID to finalise part registration before completing the upload.
-        // Without this delay, CompleteMultipartUpload can receive a transient 500
-        // when parts have not yet been fully registered internally.
-        await Task.Delay(TimeSpan.FromSeconds(30));
-
-        var completeArg = _fixture.NetAppArgFactory!.CreateCompleteMultipartUploadArg(
-            bearerToken,
-            _fixture.NetAppBucketName!,
-            netAppDestinationPath,
-            uploadId,
-            completedParts);
-
-        var completeResponse = await _fixture.NetAppClient!.CompleteMultipartUploadAsync(completeArg);
-        Assert.NotNull(completeResponse);
-
+        Assert.False(string.IsNullOrEmpty(completedETag));
         var exists = await NetAppTestHelper.WaitForObjectExistsAsync(_fixture, bearerToken, netAppDestinationPath);
         Assert.True(exists, "Large file should exist in NetApp after multipart transfer");
     }
