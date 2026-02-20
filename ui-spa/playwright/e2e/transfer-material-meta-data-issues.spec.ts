@@ -217,7 +217,7 @@ test.describe("netapp meta data issues", () => {
       "/case/12/case-management/shared-drive-connection-error?operation-name=Thunderstruck",
     );
     await expect(page.locator("h1")).toHaveText(
-      "There is a problem connecting to Shared Drive",
+      "There is a problem connecting to the Shared Drive",
     );
     await expect(
       page.getByText(
@@ -249,7 +249,7 @@ test.describe("netapp meta data issues", () => {
       "/case/12/case-management/shared-drive-connection-error?operation-name=Thunderstruck",
     );
     await expect(page.locator("h1")).toHaveText(
-      "There is a problem connecting to Shared Drive",
+      "There is a problem connecting to the Shared Drive",
     );
     await expect(
       page.getByText(
@@ -264,7 +264,7 @@ test.describe("netapp meta data issues", () => {
       "/case/12/netapp-connect?operation-name=Thunderstruck",
     );
     await expect(page.locator("h1")).toHaveText(
-      "Link a network Shared Drive folder to the case",
+      "Link a Shared Drive folder to the case",
     );
   });
   test("Should handle if the user lands on the transfer material but the netapp folder is not accessible for the user, by navigating to connection error page", async ({

@@ -55,7 +55,7 @@ const MetaDataErrorPage = () => {
       <div className={styles.contentWrapper}>
         <h1 className="govuk-heading-xl">
           There is a problem connecting to{" "}
-          {errorType === "shareddrive" ? "Shared Drive" : "Egress"}
+          {errorType === "shareddrive" ? "the Shared Drive" : "Egress"}
         </h1>
         {errorType === "shareddrive" ? (
           <p>

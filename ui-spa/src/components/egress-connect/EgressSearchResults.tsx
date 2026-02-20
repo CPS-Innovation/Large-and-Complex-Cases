@@ -159,7 +159,7 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
       {!egressSearchResultsData.length && (
         <>
           <div className={styles.searchResultsCount}>
-            There are <b>no folders </b>matching <b>{workspaceName}</b>.
+            There are <b>no cases </b>matching <b>{workspaceName}</b>.
           </div>
           <div className={styles.noResultsContent}>
             <div>

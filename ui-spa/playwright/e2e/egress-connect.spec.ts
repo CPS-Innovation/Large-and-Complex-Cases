@@ -36,11 +36,8 @@ test.describe("egress connect", () => {
     await expect(page.locator("h1")).toHaveText(`Are you sure?`);
     await expect(
       page.getByText(
-        `Confirm you want to link "thunderstrike" Egress folder to the case?`,
+        `Confirm you want to link "thunderstrike" on Egress to the case?`,
       ),
-    ).toBeVisible();
-    await expect(
-      page.getByText(`You can change the linked folder later if needed.`),
     ).toBeVisible();
 
     await page.getByRole("link", { name: "Back" }).click();
@@ -212,7 +209,7 @@ test.describe("egress connect", () => {
     );
     await expect(page.locator("h1")).toHaveText("Link Egress to the case");
     await expect(
-      page.getByText("There are no folders matching Thunderstruck2_pl."),
+      page.getByText("There are no cases matching Thunderstruck2_pl."),
     ).toBeVisible();
 
     const listItems = page.locator("ul > li");

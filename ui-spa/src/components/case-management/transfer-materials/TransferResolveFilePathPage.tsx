@@ -202,12 +202,12 @@ const TransferResolveFilePathPage = () => {
           <InsetText data-testid="resolve-file-path-inset-text">
             {largePathFilesCount === 1 ? (
               <p>
-                <b>1 file</b> is longer than 260 character length{" "}
+                <b>1 file</b> is longer than the 260 character limit{" "}
               </p>
             ) : (
               <p>
-                <b>{largePathFilesCount} files</b> are longer than 260 character
-                length{" "}
+                <b>{largePathFilesCount} files</b> are longer than the 260
+                character limit{" "}
               </p>
             )}
 
@@ -220,7 +220,7 @@ const TransferResolveFilePathPage = () => {
             </div>
             <p>
               You must shorten the file name or move the file before you can
-              transfer.
+              start the transfer.
             </p>
           </InsetText>
 

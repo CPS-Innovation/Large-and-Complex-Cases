@@ -161,13 +161,13 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(
         page
           .getByTestId("resolve-file-path-inset-text")
-          .getByText("2 files are longer than 260 character length"),
+          .getByText("2 files are longer than the 260 character limit"),
       ).toBeVisible();
       await expect(
         page
           .getByTestId("resolve-file-path-inset-text")
           .getByText(
-            "You must shorten the file name or move the file before you can transfer.",
+            "You must shorten the file name or move the file before you can start the transfer.",
           ),
       ).toBeVisible();
       await expect(page.locator("section")).toHaveCount(2);
@@ -219,7 +219,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       );
 
       await expect(
-        page.getByText("File path length:262 characters"),
+        page.getByText("File path length:261 characters"),
       ).toBeVisible();
 
       await expect(

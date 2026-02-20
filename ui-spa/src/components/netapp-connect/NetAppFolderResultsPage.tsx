@@ -124,7 +124,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
       <BackLink to={backLinkUrl}>Back</BackLink>
       <PageContentWrapper>
         <h1 className="govuk-heading-xl govuk-!-margin-bottom-0">
-          Link a network Shared Drive folder to the case
+          Link a Shared Drive folder to the case
         </h1>
         <InsetText>
           <p>
