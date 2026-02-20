@@ -1275,7 +1275,7 @@ describe("gateway apis", () => {
       const result = await getActivityLog("test_case_id");
       expect(result).toEqual(mockData);
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/activity/logs?caseId=test_case_id`,
+        `gateway_url/api/v1/activity/logs?case-id=test_case_id`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -1299,7 +1299,7 @@ describe("gateway apis", () => {
       await expect(getActivityLog("test_case_id")).rejects.toThrow(
         new ApiError(
           `Getting case activity log failed`,
-          "gateway_url/api/v1/activity/logs?caseId=test_case_id",
+          "gateway_url/api/v1/activity/logs?case-id=test_case_id",
           {
             status: 500,
             statusText: "Internal Server Error",
@@ -1307,7 +1307,7 @@ describe("gateway apis", () => {
         ),
       );
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/activity/logs?caseId=test_case_id`,
+        `gateway_url/api/v1/activity/logs?case-id=test_case_id`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",

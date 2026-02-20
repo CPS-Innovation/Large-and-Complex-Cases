@@ -25,6 +25,7 @@ public class GetActivityLogs(ILogger<GetActivityLogs> logger, IActivityLogServic
     [OpenApiOperation(operationId: nameof(GetActivityLogs), tags: ["ActivityLog"], Description = "Lists filtered activity logs.")]
     [CmsAuthValuesAuth]
     [BearerTokenAuth]
+    [OpenApiParameter(name: InputParameters.CaseId, In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The case ID for filtering activity logs.")]
     [OpenApiParameter(name: InputParameters.FromDate, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The start date for filtering activity logs.")]
     [OpenApiParameter(name: InputParameters.ToDate, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The end date for filtering activity logs.")]
     [OpenApiParameter(name: InputParameters.UserId, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The user ID for filtering activity logs.")]
@@ -45,6 +46,7 @@ public class GetActivityLogs(ILogger<GetActivityLogs> logger, IActivityLogServic
 
         var activityLogFilter = new ActivityLogFilterDto
         {
+            CaseId = int.TryParse(req.Query[InputParameters.CaseId], out var caseId) ? caseId : null,
             FromDate = DateTime.TryParse(req.Query[InputParameters.FromDate].FirstOrDefault(), out var fromDate) ? fromDate : null,
             ToDate = DateTime.TryParse(req.Query[InputParameters.ToDate].FirstOrDefault(), out var toDate) ? toDate : null,
             Username = req.Query[InputParameters.UserId].FirstOrDefault(),

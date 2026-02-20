@@ -94,11 +94,6 @@ steps:
             "slotSetting": false
           },
           {
-            "name": "CallingAppValidRoles",
-            "value": "$(CallingAppValidRoles)",
-            "slotSetting": false
-          },
-          {
             "name": "DDEIOptions__BaseUrl",
             "value": "$(DDEIOptionsBaseUrl)",
             "slotSetting": false
@@ -207,5 +202,5 @@ steps:
             "name": "SizeConfig__MaxOrchestratorRetries",
             "value": "$(MaxOrchestratorRetries)",
             "slotSetting": false
-          },
+          }
         ]
