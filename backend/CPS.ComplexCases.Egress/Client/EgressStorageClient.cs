@@ -53,7 +53,8 @@ public class EgressStorageClient(
         var sourcePathWithoutOperationName = sourceRootFolderPath;
         if (!string.IsNullOrEmpty(sourceRootFolderPath))
         {
-            var operationName = sourceRootFolderPath.Substring(0, sourceRootFolderPath.IndexOf('/'));
+            var slashIndex = sourceRootFolderPath.IndexOf('/');
+            var operationName = slashIndex >= 0 ? sourceRootFolderPath[..slashIndex] : sourceRootFolderPath;
             sourcePathWithoutOperationName = sourceRootFolderPath.RemovePathPrefix(operationName);
         }
         var relativePathFromSourceRoot = GetRelativePathFromSourceRoot(relativePath, sourcePathWithoutOperationName);

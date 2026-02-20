@@ -9,10 +9,14 @@ pr:
       - backend/*
 
 variables:
-  buildConfiguration: 'Release'
-  dotNetVersion: '8.x'
-  efVersion: '8.0.*'
-  testResultsDirectory: '$(Agent.TempDirectory)/TestResults'
+- name: buildConfiguration
+  value: 'Release'
+- name: dotNetVersion
+  value: '8.x'
+- name: efVersion
+  value: '8.0.*'
+- name: testResultsDirectory
+  value: '$(Agent.TempDirectory)/TestResults'
 
 pool: 'LACC PreProd Pool'
 
@@ -128,4 +132,3 @@ stages:
                 --output $(Build.ArtifactStagingDirectory)/migration-script.sql \
                 --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
                 --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
-

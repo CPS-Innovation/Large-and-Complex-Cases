@@ -13,6 +13,9 @@ AzuriteConfig
 # Azure Functions localsettings file
 local.settings.json
 
+# Integration tests settings (contains secrets)
+**/CPS.ComplexCases.API.Integration.Tests/appsettings.json
+
 # User-specific files
 *.suo
 *.user
