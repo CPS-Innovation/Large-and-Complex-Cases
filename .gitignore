@@ -319,4 +319,8 @@ build-output/
 coverage-reports/
 ui-spa/Get-CmsAuthAndInit.ps1
 
+# local nuget
 nuget.config
+
+# postman
+*.postman_environment.json

@@ -1,0 +1,42 @@
+parameters:
+- name: environment
+  type: string
+- name: postmanCollectionPath
+  type: string
+- name: appInstance
+  type: string
+
+steps:
+- checkout: self
+  sparseCheckoutDirectories: backend/postman
+  fetchDepth: 1
+
+- task: UseNode@1
+  displayName: 'Use Node.js'
+  inputs:
+    version: '20.x'
+
+- script: |
+    if command -v newman &> /dev/null; then
+      echo "Newman already installed. Skipping installation."
+    else
+      echo "Installing newman..."
+      npm install -g --ignore-scripts newman@6.2.1
+      echo "newman version: $(newman -v)"
+    fi
+  displayName: 'Install Newman'
+
+- script: |
+    newman run ${{parameters.postmanCollectionPath}} \
+    --env-var "baseUrl=https://${{parameters.appInstance}}.azurewebsites.net" \
+    --env-var "uiUrl=https://lacc-app-ui-spa-${{parameters.environment}}.azurewebsites.net" \
+    --env-var "tenantId=$(TenantId)" \
+    --env-var "apiClientId=$(CallingAppValidAudience)" \
+    --env-var "aadUsername=$(AadUserName)" \
+    --env-var "aadPassword=$(AadUserPassword)" \
+    --env-var "ddeiBaseUrl=$(DDEIOptionsBaseUrl)" \
+    --env-var "ddeiAccessKey=$(DDEIOptionsAccessKey)" \
+    --env-var "cmsUsername=$(CmsUserName)" \
+    --env-var "cmsPassword=$(CmsUserPassword)" \
+    --env-var "egressWorkspaceId=$(EgressWorkspaceId)"
+  displayName: 'Run Postman Collection'
