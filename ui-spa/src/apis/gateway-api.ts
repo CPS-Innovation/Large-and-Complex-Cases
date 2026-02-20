@@ -386,7 +386,7 @@ export const handleFileTransferClear = async (transferId: string) => {
 };
 
 export const getActivityLog = async (caseId: string) => {
-  const url = `${GATEWAY_BASE_URL}/api/v1/activity/logs?caseId=${caseId}`;
+  const url = `${GATEWAY_BASE_URL}/api/v1/activity/logs?case-id=${caseId}`;
 
   const response = await fetch(url, {
     method: "GET",
