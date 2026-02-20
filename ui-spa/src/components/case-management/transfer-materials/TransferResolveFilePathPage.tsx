@@ -212,13 +212,13 @@ const TransferResolveFilePathPage = () => {
               </p>
             )}
 
-            <p>
-              The 260 character limit includes:
+            <div>
+              <p>The 260 character limit includes:</p>
               <ul>
                 <li> the file name </li>
                 <li> all the folder names in the file path </li>
               </ul>
-            </p>
+            </div>
             <p>
               You must shorten the file name or move the file before you can
               transfer.
