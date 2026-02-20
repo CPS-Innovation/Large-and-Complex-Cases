@@ -108,7 +108,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
               sourceRootFolderPath: "egress/",
               transferDirection: "EgressToNetApp",
               destinationPath:
-                "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination",
+                "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/",
               validationErrors: [
                 {
                   id: "id_3",
@@ -175,24 +175,24 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
 
       await validateFilePathErrorSection(sections[0], {
         relativePath:
-          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3",
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3/",
         filePaths: [
           {
             fileName:
               "file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswweee.pdf",
-            characterText: "261 characters",
+            characterText: "262 characters",
           },
         ],
       });
 
       await validateFilePathErrorSection(sections[1], {
         relativePath:
-          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5",
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5/",
         filePaths: [
           {
             fileName:
               "file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
-            characterText: "265 characters",
+            characterText: "266 characters",
           },
         ],
       });
@@ -215,11 +215,11 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
         "file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswweee.pdf",
       );
       await expect(page.getByTestId("character-tag")).toHaveText(
-        "261 characters",
+        "262 characters",
       );
 
       await expect(
-        page.getByText("File path length:261 characters"),
+        page.getByText("File path length:262 characters"),
       ).toBeVisible();
 
       await expect(
@@ -237,7 +237,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
         .locator(`input`)
         .fill("file3eweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf");
       await expect(page.getByTestId("character-tag")).toHaveText(
-        "256 characters",
+        "257 characters",
       );
 
       await page.getByRole("button", { name: "Continue" }).click();
@@ -247,23 +247,23 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
 
       await validateFilePathErrorSection(sections[0], {
         relativePath:
-          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3",
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3/",
         filePaths: [
           {
             fileName:
               "file3eweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
-            characterText: "256 characters",
+            characterText: "257 characters",
           },
         ],
       });
       await validateFilePathErrorSection(sections[1], {
         relativePath:
-          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5",
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5/",
         filePaths: [
           {
             fileName:
               "file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
-            characterText: "265 characters",
+            characterText: "266 characters",
           },
         ],
       });
@@ -286,10 +286,10 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
         "file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
       );
       await expect(
-        page.getByText("File path length:265 characters"),
+        page.getByText("File path length:266 characters"),
       ).toBeVisible();
       await expect(page.getByTestId("character-tag")).toHaveText(
-        "265 characters",
+        "266 characters",
       );
 
       await expect(
@@ -304,7 +304,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       ).not.toBeDisabled();
       await page
         .locator("input")
-        .fill("file5eweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweess.pdf");
+        .fill("file5eweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwsswees.pdf");
       await expect(page.getByTestId("character-tag")).toHaveText(
         "260 characters",
       );
@@ -315,21 +315,21 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       );
       await validateFilePathErrorSection(sections[0], {
         relativePath:
-          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3",
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3/",
         filePaths: [
           {
             fileName:
               "file3eweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
-            characterText: "256 characters",
+            characterText: "257 characters",
           },
         ],
       });
       await validateFilePathErrorSection(sections[1], {
         relativePath:
-          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5",
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5/",
         filePaths: [
           {
-            fileName: "file5eweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweess.pdf",
+            fileName: "file5eweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwsswees.pdf",
             characterText: "260 characters",
           },
         ],
@@ -409,7 +409,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
               caseId: 12,
               isInvalid: true,
               destinationPath:
-                "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination",
+                "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/",
               validationErrors: [
                 {
                   id: "id_3",
@@ -479,7 +479,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
               caseId: 12,
               isInvalid: true,
               destinationPath:
-                "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination",
+                "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/",
               validationErrors: [
                 {
                   id: "id_3",
@@ -567,7 +567,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
               caseId: 12,
               isInvalid: true,
               destinationPath:
-                "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination",
+                "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/",
               validationErrors: [
                 {
                   id: "id_6",
@@ -626,52 +626,52 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       const sections = await page.locator("section").all();
       await validateFilePathErrorSection(sections[0], {
         relativePath:
-          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination",
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/",
         filePaths: [
           {
             fileName:
               "file6qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
-            characterText: "245 characters",
+            characterText: "246 characters",
           },
           {
             fileName:
               "file6_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
-            characterText: "247 characters",
+            characterText: "248 characters",
           },
         ],
       });
 
       await validateFilePathErrorSection(sections[1], {
         relativePath:
-          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3",
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3/",
         filePaths: [
           {
             fileName:
               "file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswweee.pdf",
-            characterText: "261 characters",
+            characterText: "262 characters",
           },
           {
             fileName:
               "file3_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
-            characterText: "262 characters",
+            characterText: "263 characters",
           },
         ],
       });
 
       await validateFilePathErrorSection(sections[2], {
         relativePath:
-          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5",
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5/",
         filePaths: [
           {
             fileName:
               "file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
-            characterText: "265 characters",
+            characterText: "266 characters",
           },
           {
             fileName:
               "file5_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
 
-            characterText: "267 characters",
+            characterText: "268 characters",
           },
         ],
       });
