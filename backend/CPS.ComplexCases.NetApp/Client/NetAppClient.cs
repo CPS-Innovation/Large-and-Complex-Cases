@@ -329,6 +329,7 @@ public class NetAppClient(
             var headObjectArg =
                 _netAppS3HttpArgFactory.CreateGetHeadObjectArg(arg.BearerToken, arg.BucketName, arg.ObjectKey);
             var response = await _netAppS3HttpClient.GetHeadObjectAsync(headObjectArg);
+
             return response.StatusCode == System.Net.HttpStatusCode.OK;
         }
         catch (HttpRequestException ex)
@@ -336,13 +337,13 @@ public class NetAppClient(
             _logger.LogError(ex,
                 "HTTP request failed while checking existence of object {ObjectKey} in bucket {BucketName}.",
                 arg.ObjectKey, arg.BucketName);
-            return false;
+            throw;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to check if object {ObjectKey} exists in bucket {BucketName}.", arg.ObjectKey,
                 arg.BucketName);
-            return false;
+            throw;
         }
     }
 

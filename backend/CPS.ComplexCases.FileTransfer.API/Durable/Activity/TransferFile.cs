@@ -1,7 +1,8 @@
-using Amazon.S3;
+using System.Net;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Amazon.S3;
 using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Models.Domain;
@@ -145,7 +146,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 ex);
         }
         catch (AmazonS3Exception ex) when ((int)ex.StatusCode >= 500
-            || ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            || ex.StatusCode == HttpStatusCode.NotFound)
         {
             var errorMessage = $"Transient S3 error (HTTP {(int)ex.StatusCode}): {ex.Message}";
             telemetryEvent.ErrorCode = TransferErrorCode.Transient.ToString();
@@ -156,7 +157,19 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 errorMessage,
                 ex);
         }
-        catch (System.Net.Http.HttpIOException ex)
+        catch (HttpRequestException ex) when (ex.StatusCode is HttpStatusCode.Forbidden || (int?)ex.StatusCode >= 500)
+        {
+            var errorMessage = $"Transient S3 error (HTTP {(int)ex.StatusCode}): {ex.Message}";
+            _logger.LogWarning(ex, "S3 error during transfer: {Path}", payload.SourcePath.Path);
+            telemetryEvent.ErrorCode = TransferErrorCode.Transient.ToString();
+            telemetryEvent.ErrorMessage = errorMessage;
+            return CreateFailureResult(
+                payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
+                TransferErrorCode.Transient,
+                errorMessage,
+                ex);
+        }
+        catch (HttpIOException ex)
         {
             var errorMessage = $"Transient stream error: {ex.Message}";
             _logger.LogWarning(ex, "Source stream ended prematurely during transfer: {Path}", payload.SourcePath.Path);
@@ -326,7 +339,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             }
 
             await Task.WhenAll(uploadTasks);
-            
+
             // Allow S3/StorageGRID to finalise part registration before completing the upload.
             // Without this delay, CompleteMultipartUpload can receive a transient 500
             // when parts have not yet been fully registered internally.
