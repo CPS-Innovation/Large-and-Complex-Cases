@@ -46,9 +46,6 @@ const TransferResolveFilePathPage = () => {
     }, [resolvePathFiles]);
 
   const largePathFilesCount = useMemo(() => {
-    // if (!resolvePathFiles.length) {
-    //   return 0;
-    // }
     const longPathFiles = resolvePathFiles.filter(
       (file) =>
         `${file.relativeFinalPath}${file.sourceName}`.length >
@@ -58,7 +55,9 @@ const TransferResolveFilePathPage = () => {
   }, [resolvePathFiles]);
 
   useEffect(() => {
-    setAriaLiveText("indexing transfer error, file structure is too long");
+    setAriaLiveText(
+      "indexing transfer error,  shorten file names or folder paths",
+    );
   }, []);
 
   useEffect(() => {
@@ -183,7 +182,7 @@ const TransferResolveFilePathPage = () => {
         </span>
       )}
       <PageContentWrapper>
-        {!largePathFilesCount && (
+        {!largePathFilesCount && resolvePathFiles.length > 0 && (
           <div className={styles.successBanner}>
             <NotificationBanner
               type="success"
@@ -276,18 +275,20 @@ const TransferResolveFilePathPage = () => {
                 );
               })}
             </div>
-            <div className={styles.btnWrapper}>
-              <Button
-                className={styles.btnStartTransfer}
-                disabled={disableBtns || largePathFilesCount > 0}
-                onClick={handleStartTransferBtnClick}
-              >
-                Start transfer
-              </Button>
-              <LinkButton onClick={handleCancel} disabled={disableBtns}>
-                Cancel
-              </LinkButton>
-            </div>
+            {resolvePathFiles.length > 0 && (
+              <div className={styles.btnWrapper}>
+                <Button
+                  className={styles.btnStartTransfer}
+                  disabled={disableBtns || largePathFilesCount > 0}
+                  onClick={handleStartTransferBtnClick}
+                >
+                  Start transfer
+                </Button>
+                <LinkButton onClick={handleCancel} disabled={disableBtns}>
+                  Cancel
+                </LinkButton>
+              </div>
+            )}
           </div>
         </div>
       </PageContentWrapper>
