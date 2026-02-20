@@ -38,7 +38,7 @@ public static class NetAppTestHelper
         string objectKey)
     {
         return await ExistsRetryPipeline.ExecuteAsync(
-            async _ => await ObjectExistsViaListAsync(fixture, bearerToken, objectKey));
+            async _ => await ObjectExistsViaHeadObjectAsync(fixture, bearerToken, objectKey));
     }
 
     /// <summary>
@@ -86,6 +86,26 @@ public static class NetAppTestHelper
                    path.EndsWith("/" + fileName, StringComparison.OrdinalIgnoreCase) ||
                    path.Equals(fileName, StringComparison.OrdinalIgnoreCase);
         });
+    }
+
+    /// <summary>
+    /// Checks if an object exists in NetApp storage by sending a HEAD request for the object.
+    /// </summary>
+    /// <param name="fixture">The integration test fixture containing NetApp client and configuration.</param>
+    /// <param name="bearerToken">The bearer token for authentication.</param>
+    /// <param name="objectKey">The full object key to check for existence.</param>
+    /// <returns>True if the object exists; otherwise, false.</returns>
+    public static async Task<bool> ObjectExistsViaHeadObjectAsync(
+        IntegrationTestFixture fixture,
+        string bearerToken,
+        string objectKey)
+    {
+        var headArg = fixture.NetAppArgFactory!.CreateGetObjectArg(
+            bearerToken,
+            fixture.NetAppBucketName!,
+            objectKey);
+
+        return await fixture.NetAppClient!.DoesObjectExistAsync(headArg);
     }
 
     /// <summary>

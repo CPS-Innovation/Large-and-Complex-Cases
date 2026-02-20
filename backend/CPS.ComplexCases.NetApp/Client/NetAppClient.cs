@@ -326,8 +326,7 @@ public class NetAppClient(
     {
         try
         {
-            var headObjectArg =
-                _netAppS3HttpArgFactory.CreateGetHeadObjectArg(arg.BearerToken, arg.BucketName, arg.ObjectKey);
+            var headObjectArg = _netAppS3HttpArgFactory.CreateGetHeadObjectArg(arg.BearerToken, arg.BucketName, arg.ObjectKey);
             var response = await _netAppS3HttpClient.GetHeadObjectAsync(headObjectArg);
 
             return response.StatusCode == System.Net.HttpStatusCode.OK;

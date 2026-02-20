@@ -1,5 +1,7 @@
 using System.Net;
 using System.Text;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Amazon.S3;
 using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Handlers;
@@ -14,8 +16,6 @@ using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Durable.Activity;
@@ -281,6 +281,108 @@ public class TransferFileTests
         Assert.Equal(TransferErrorCode.FileExists, result.FailedItem.ErrorCode);
         Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
         Assert.Contains(payload.DestinationPath + payload.SourcePath.Path, result.FailedItem.ErrorMessage);
+
+        _sourceClientMock.Verify(x => x.OpenReadStreamAsync(
+                It.IsAny<string>(),
+                It.IsAny<string?>(),
+                It.IsAny<string>(),
+                It.IsAny<string?>(),
+                It.IsAny<string>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_EgressToNetApp_FileExistsCheckThrowsHttpRequestExceptionForForbidden_ReturnsTransientFailure()
+    {
+        var payload = CreatePayload();
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _destinationClientMock
+            .Setup(x => x.FileExistsAsync(
+                payload.DestinationPath + payload.SourcePath.Path,
+                payload.WorkspaceId,
+                payload.BearerToken,
+                payload.BucketName))
+            .ThrowsAsync(new HttpRequestException("Forbidden", null, HttpStatusCode.Forbidden));
+
+        var result = await _activity.Run(payload);
+
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.FailedItem);
+        Assert.Equal(TransferErrorCode.Transient, result.FailedItem.ErrorCode);
+        Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
+        Assert.Contains("HTTP 403", result.FailedItem.ErrorMessage);
+
+        _sourceClientMock.Verify(x => x.OpenReadStreamAsync(
+                It.IsAny<string>(),
+                It.IsAny<string?>(),
+                It.IsAny<string>(),
+                It.IsAny<string?>(),
+                It.IsAny<string>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_EgressToNetApp_FileExistsCheckThrowsHttpRequestExceptionForServerError_ReturnsTransientFailure()
+    {
+        var payload = CreatePayload();
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _destinationClientMock
+            .Setup(x => x.FileExistsAsync(
+                payload.DestinationPath + payload.SourcePath.Path,
+                payload.WorkspaceId,
+                payload.BearerToken,
+                payload.BucketName))
+            .ThrowsAsync(new HttpRequestException("Internal Server Error", null, HttpStatusCode.InternalServerError));
+
+        var result = await _activity.Run(payload);
+
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.FailedItem);
+        Assert.Equal(TransferErrorCode.Transient, result.FailedItem.ErrorCode);
+        Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
+        Assert.Contains("HTTP 500", result.FailedItem.ErrorMessage);
+
+        _sourceClientMock.Verify(x => x.OpenReadStreamAsync(
+                It.IsAny<string>(),
+                It.IsAny<string?>(),
+                It.IsAny<string>(),
+                It.IsAny<string?>(),
+                It.IsAny<string>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_EgressToNetApp_FileExistsCheckThrowsUnexpectedException_ReturnsGeneralErrorFailure()
+    {
+        var payload = CreatePayload();
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _destinationClientMock
+            .Setup(x => x.FileExistsAsync(
+                payload.DestinationPath + payload.SourcePath.Path,
+                payload.WorkspaceId,
+                payload.BearerToken,
+                payload.BucketName))
+            .ThrowsAsync(new InvalidOperationException("File exists check failed"));
+
+        var result = await _activity.Run(payload);
+
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.FailedItem);
+        Assert.Equal(TransferErrorCode.GeneralError, result.FailedItem.ErrorCode);
+        Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
+        Assert.Contains("System.InvalidOperationException", result.FailedItem.ErrorMessage);
 
         _sourceClientMock.Verify(x => x.OpenReadStreamAsync(
                 It.IsAny<string>(),
