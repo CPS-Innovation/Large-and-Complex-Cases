@@ -184,6 +184,8 @@ stages:
   - template: ./variables/backend-deploy-vars.yml
     parameters: 
       environment: ${{ parameters.environment }}
+  - ${{ if eq(parameters.runPostmanSmokeTest, true) }}:
+    - group: lacc-automated-testing-${{ parameters.environment }}
   pool: ${{ parameters.agentPool }}
   jobs:
     - deployment: Deploy_Main_API
