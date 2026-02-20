@@ -298,6 +298,55 @@ namespace CPS.ComplexCases.Data.Tests.Unit.Repositories
         }
 
         [Fact]
+        public async Task GetByFilterAsync_ShouldFilterByCaseId()
+        {
+            var targetCaseId = 12;
+            var matchingLogs = CreateActivityLogBuilder()
+                .With(a => a.CaseId, targetCaseId)
+                .CreateMany(3);
+            var nonMatchingLogs = CreateActivityLogBuilder()
+                .With(a => a.CaseId, 99)
+                .CreateMany(2);
+
+            _context.ActivityLogs.AddRange(matchingLogs);
+            _context.ActivityLogs.AddRange(nonMatchingLogs);
+            await _context.SaveChangesAsync();
+
+            var filter = new ActivityLogFilterDto
+            {
+                CaseId = targetCaseId,
+                Skip = 0,
+                Take = 10
+            };
+
+            var result = await _repository.GetByFilterAsync(filter);
+
+            Assert.Equal(3, result.TotalCount);
+            Assert.All(result.Logs, log => Assert.Equal(targetCaseId, log.CaseId));
+        }
+
+        [Fact]
+        public async Task GetByFilterAsync_WithNoCaseId_ShouldReturnAllLogs()
+        {
+            var logs = CreateActivityLogBuilder()
+                .With(a => a.CaseId, 1)
+                .CreateMany(2)
+                .Concat(CreateActivityLogBuilder()
+                    .With(a => a.CaseId, 2)
+                    .CreateMany(3))
+                .ToList();
+
+            _context.ActivityLogs.AddRange(logs);
+            await _context.SaveChangesAsync();
+
+            var filter = new ActivityLogFilterDto { Skip = 0, Take = 10 };
+
+            var result = await _repository.GetByFilterAsync(filter);
+
+            Assert.Equal(5, result.TotalCount);
+        }
+
+        [Fact]
         public async Task GetByFilterAsync_ShouldReturnOrderedResults()
         {
             var now = DateTime.UtcNow;

@@ -45,6 +45,10 @@ public class ActivityLogRepository(ApplicationDbContext dbContext) : IActivityLo
     {
         IQueryable<ActivityLog> query = _dbContext.ActivityLogs.AsNoTracking();
 
+        if (filter.CaseId.HasValue)
+        {
+            query = query.Where(a => a.CaseId == filter.CaseId.Value);
+        }
         if (filter.FromDate.HasValue)
         {
             query = query.Where(a => a.Timestamp >= filter.FromDate.Value.ToUniversalTime());
