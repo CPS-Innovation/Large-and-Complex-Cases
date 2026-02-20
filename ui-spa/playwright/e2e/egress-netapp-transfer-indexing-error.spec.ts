@@ -113,7 +113,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
                 {
                   id: "id_3",
                   sourcePath:
-                    "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswweee.pdf",
+                    "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
                   errorType: "",
                 },
                 {
@@ -179,8 +179,8 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
         filePaths: [
           {
             fileName:
-              "file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswweee.pdf",
-            characterText: "262 characters",
+              "file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+            characterText: "261 characters",
           },
         ],
       });
@@ -212,10 +212,10 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page.locator("h1")).toHaveText("Rename file");
 
       await expect(await page.locator(`input`)).toHaveValue(
-        "file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswweee.pdf",
+        "file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
       );
       await expect(page.getByTestId("character-tag")).toHaveText(
-        "262 characters",
+        "261 characters",
       );
 
       await expect(
@@ -414,7 +414,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
                 {
                   id: "id_3",
                   sourcePath:
-                    "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswweee.pdf",
+                    "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
                   errorType: "",
                 },
                 {
@@ -484,7 +484,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
                 {
                   id: "id_3",
                   sourcePath:
-                    "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswweee.pdf",
+                    "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
                   errorType: "",
                 },
                 {
@@ -584,7 +584,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
                 {
                   id: "id_3",
                   sourcePath:
-                    "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswweee.pdf",
+                    "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
                   errorType: "",
                 },
                 {
@@ -647,8 +647,8 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
         filePaths: [
           {
             fileName:
-              "file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswweee.pdf",
-            characterText: "262 characters",
+              "file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+            characterText: "261 characters",
           },
           {
             fileName:
