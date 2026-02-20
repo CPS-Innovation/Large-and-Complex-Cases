@@ -12,7 +12,7 @@ export default defineConfig(({ command, mode }) => {
   return {
     build: { sourcemap: buildSourceMap },
     plugins: [
-      react(), 
+      react(),
       svgr(),
       isE2ECoverage &&
         istanbul({
@@ -33,7 +33,7 @@ export default defineConfig(({ command, mode }) => {
             "src/main.tsx",
           ],
           requireEnv: false,
-          forceBuildInstrument: true
+          forceBuildInstrument: true,
         }),
     ].filter(Boolean),
     test: {
@@ -47,7 +47,7 @@ export default defineConfig(({ command, mode }) => {
       },
       coverage: {
         enabled: true,
-        reporter: ["json", "cobertura"],
+        reporter: ["text", "json", "cobertura"],
         provider: "v8",
         reportsDirectory: "coverage/unit",
         include: ["src/**/*.{ts,tsx,js,jsx}"],

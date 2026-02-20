@@ -31,7 +31,7 @@
   padding: 1rem 0 1rem 0;
 
   align-items: center;
-  &:first-child span {
+  & span {
     max-width: 50rem;
     white-space: normal;
     overflow-wrap: break-word;
@@ -80,4 +80,7 @@
 .successBanner {
   margin-top: 2rem;
   width: 60%;
+  .successMessage {
+    font-size: 1.5rem;
+  }
 }

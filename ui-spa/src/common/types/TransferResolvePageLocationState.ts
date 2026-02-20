@@ -6,5 +6,4 @@ export type TransferResolvePageLocationState = {
   validationErrors: IndexingError[];
   destinationPath: string;
   initiateTransferPayload: EgreessToNetAppTransferPayload;
-  baseFolderName: string;
 };

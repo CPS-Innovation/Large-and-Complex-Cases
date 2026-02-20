@@ -28,29 +28,29 @@ describe("getMappedResolvePathFiles", () => {
         id: "1",
         relativeSourcePath: "folder1",
         sourceName: "file1.pdf",
-        relativeFinalPath: "destination/folder1",
+        relativeFinalPath: "destination/folder1/",
       },
       {
         id: "2",
         relativeSourcePath: "folder1",
         sourceName: "file2.pdf",
-        relativeFinalPath: "destination/folder1",
+        relativeFinalPath: "destination/folder1/",
       },
       {
         id: "3",
         relativeSourcePath: "folder1/folder2",
         sourceName: "file3.pdf",
-        relativeFinalPath: "destination/folder1/folder2",
+        relativeFinalPath: "destination/folder1/folder2/",
       },
       {
         id: "4",
         relativeSourcePath: "",
         sourceName: "file4.pdf",
-        relativeFinalPath: "destination",
+        relativeFinalPath: "destination/",
       },
     ];
 
-    const result = getMappedResolvePathFiles(indexingErrors, "destination");
+    const result = getMappedResolvePathFiles(indexingErrors, "destination/");
     expect(result).toEqual(expectedResult);
   });
 });

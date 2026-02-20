@@ -12,7 +12,7 @@ export const getMappedResolvePathFiles = (
     relativeSourcePath: getRelativePathFromPath(error.sourcePath),
     sourceName: getFileNameFromPath(error.sourcePath),
     relativeFinalPath: getRelativePathFromPath(error.sourcePath)
-      ? `${destinationPath}/${getRelativePathFromPath(error.sourcePath)}`
+      ? `${destinationPath}${getRelativePathFromPath(error.sourcePath)}/`
       : destinationPath,
   }));
   return mappedFiles;

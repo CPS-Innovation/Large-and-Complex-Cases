@@ -910,7 +910,7 @@ test.describe("egress-netapp-transfer", () => {
       "/case/12/case-management/connection-error?type=egress",
     );
     await expect(page.locator("h1")).toHaveText(
-      "Sorry, there was a problem connecting to Egress",
+      "There is a problem connecting to Egress",
     );
     const listItems = page.locator("ul > li");
     await expect(listItems).toHaveCount(2);
