@@ -9,7 +9,9 @@ parameters:
 steps:
 - checkout: self
   sparseCheckoutDirectories: backend/postman
-  fetchDepth: 1
+  
+- script: ls -R backend/postman
+  displayName: "Verify Postman files"
 
 - task: UseNode@1
   displayName: 'Use Node.js'
