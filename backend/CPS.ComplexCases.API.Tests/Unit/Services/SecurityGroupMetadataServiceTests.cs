@@ -183,28 +183,6 @@ public class SecurityGroupMetadataServiceTests
     }
 
     [Fact]
-    public void ExtractGroupIdsFromToken_ReturnsGroupIds_WhenValid()
-    {
-        // Arrange
-        var groupId1 = Guid.NewGuid();
-        var groupId2 = Guid.NewGuid();
-        var bearerToken = GenerateJwtToken(new List<string> { groupId1.ToString(), groupId2.ToString() });
-
-        var handler = new JwtSecurityTokenHandler();
-        var jwt = handler.ReadJwtToken(bearerToken);
-
-        var groupIds = jwt.Claims
-            .Where(c => c.Type == "groups")
-            .Select(c => Guid.Parse(c.Value))
-            .ToList();
-
-        // Assert
-        Assert.Equal(2, groupIds.Count);
-        Assert.Contains(groupId1, groupIds);
-        Assert.Contains(groupId2, groupIds);
-    }
-
-    [Fact]
     public async Task GetUserSecurityGroupsAsync_SkipsMalformedGuids_AndReturnsValidOnes()
     {
         // Arrange

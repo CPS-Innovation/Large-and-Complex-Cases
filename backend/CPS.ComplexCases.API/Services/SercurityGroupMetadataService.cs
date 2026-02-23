@@ -68,6 +68,9 @@ public class SecurityGroupMetadataService(ILogger<SecurityGroupMetadataService> 
         await _cacheLock.WaitAsync();
         try
         {
+            if (_cachedSecurityGroups != null)
+                return _cachedSecurityGroups;
+
             var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
             var suffix = environment == "Production" ? "Production" : "PreProd";
             var filePath = Path.Combine(Directory.GetCurrentDirectory(), $"SourceFiles/SecurityGroupMappings.{suffix}.json");
