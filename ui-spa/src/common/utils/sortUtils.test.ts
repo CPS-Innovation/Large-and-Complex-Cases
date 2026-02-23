@@ -1,4 +1,8 @@
-import { sortByStringProperty, sortByDateProperty } from "./sortUtils";
+import {
+  sortByStringProperty,
+  sortByDateProperty,
+  sortByNumberProperty,
+} from "./sortUtils";
 
 describe("SortUtils", () => {
   describe("sortByStringProperty", () => {
@@ -69,6 +73,46 @@ describe("SortUtils", () => {
       ];
 
       const sortedData = sortByDateProperty(data, "dateCreated", "descending");
+      expect(sortedData).toEqual(expectedResult);
+    });
+  });
+
+  describe("sortByNumberProperty", () => {
+    it("Should be able to sort an array of objects based on file size property in ascending order", () => {
+      const data = [
+        { id: 1, name: "file1.txt", filesize: 200 },
+        { id: 2, name: "file2.txt", filesize: 100 },
+        { id: 3, name: "file3.txt", filesize: 600 },
+        { id: 4, name: "file4.txt", filesize: 300 },
+      ];
+
+      const expectedResult = [
+        { id: 2, name: "file2.txt", filesize: 100 },
+        { id: 1, name: "file1.txt", filesize: 200 },
+        { id: 4, name: "file4.txt", filesize: 300 },
+        { id: 3, name: "file3.txt", filesize: 600 },
+      ];
+
+      const sortedData = sortByNumberProperty(data, "filesize", "ascending");
+      expect(sortedData).toEqual(expectedResult);
+    });
+
+    it("Should be able to sort an array of objects based on file size property in descending order", () => {
+      const data = [
+        { id: 1, name: "file1.txt", filesize: 200 },
+        { id: 2, name: "file2.txt", filesize: 100 },
+        { id: 3, name: "file3.txt", filesize: 600 },
+        { id: 4, name: "file4.txt", filesize: 300 },
+      ];
+
+      const expectedResult = [
+        { id: 3, name: "file3.txt", filesize: 600 },
+        { id: 4, name: "file4.txt", filesize: 300 },
+        { id: 1, name: "file1.txt", filesize: 200 },
+        { id: 2, name: "file2.txt", filesize: 100 },
+      ];
+
+      const sortedData = sortByNumberProperty(data, "filesize", "descending");
       expect(sortedData).toEqual(expectedResult);
     });
   });
