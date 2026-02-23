@@ -167,7 +167,7 @@ test.describe("egress connect", () => {
     await page.getByRole("button", { name: "Search" }).click();
     await expect(page).toHaveURL("/case/13/egress-connect?workspace-name=abc");
     await expect(
-      page.getByText("There are 2 folders matching abc."),
+      page.getByText("There are 2 cases matching abc."),
     ).toBeVisible();
   });
 
@@ -293,7 +293,7 @@ test.describe("egress connect", () => {
       ),
     ).toBeVisible();
     await expect(
-      page.getByText("There are 2 folders matching Thunderstruck2_pl."),
+      page.getByText("There are 2 cases matching Thunderstruck2_pl."),
     ).toBeVisible();
     await expect(page.getByTestId("search-folder-name")).toHaveValue(
       "Thunderstruck2_pl",
@@ -399,7 +399,7 @@ test.describe("egress connect", () => {
       "Thunderstruck2_pl",
     );
     await expect(
-      page.getByText("There are 2 folders matching Thunderstruck2_pl."),
+      page.getByText("There are 2 cases matching Thunderstruck2_pl."),
     ).toBeVisible();
     await page.getByRole("button", { name: "Connect" }).first().click();
     await expect(page).toHaveURL("/case/13/egress-connect/confirmation");
@@ -414,7 +414,7 @@ test.describe("egress connect", () => {
       "Thunderstruck2_pl",
     );
     await expect(
-      page.getByText("There are 2 folders matching Thunderstruck2_pl."),
+      page.getByText("There are 2 cases matching Thunderstruck2_pl."),
     ).toBeVisible();
     await page.getByRole("link", { name: "Back" }).click();
     await expect(page).toHaveURL("search-results?urn=11AA2222233");
