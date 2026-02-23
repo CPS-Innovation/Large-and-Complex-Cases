@@ -522,10 +522,10 @@ public class EgressStorageClientTests : IDisposable
     }
 
     [Theory]
-    [InlineData("operation123/Statements", "Statements/report.pdf", "uploads", "uploads", "report.pdf")]
-    [InlineData("operation123/Statements", "Statements/Witness/report.pdf", "uploads", "uploads/Witness", "report.pdf")]
-    [InlineData("op/Case/Evidence", "Case/Evidence/Photos/crime.jpg", "dest", "dest/Photos", "crime.jpg")]
-    public async Task InitiateUploadAsync_WithOperationNameInSourceRootFolderPath_StripsOperationNameBeforeDestinationPath(
+    [InlineData("Statements", "Statements/report.pdf", "uploads", "uploads", "report.pdf")]
+    [InlineData("Statements", "Statements/Witness/report.pdf", "uploads", "uploads/Witness", "report.pdf")]
+    [InlineData("Case/Evidence", "Case/Evidence/Photos/crime.jpg", "dest", "dest/Photos", "crime.jpg")]
+    public async Task InitiateUploadAsync_WithPreStrippedSourceRootFolderPath_ComputesCorrectDestinationPath(
         string sourceRootFolderPath,
         string relativePath,
         string destinationPath,
