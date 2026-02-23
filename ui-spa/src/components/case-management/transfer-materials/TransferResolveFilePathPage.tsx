@@ -176,7 +176,7 @@ const TransferResolveFilePathPage = () => {
       <BackLink to={`/case/${caseId}/case-management`} replace>
         Back
       </BackLink>
-      {largePathFilesCount && (
+      {largePathFilesCount > 0 && (
         <span role="alert" aria-live="polite" className="govuk-visually-hidden">
           {ariaLiveText}
         </span>
