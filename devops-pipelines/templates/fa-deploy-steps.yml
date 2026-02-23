@@ -7,6 +7,8 @@ parameters:
   azureSubscription: ''
   resourceGroupName: $(resourceGroupName)
   deployToSlot: false
+  runPostmanSmokeTest: false
+  postmanCollectionPath: ''
   slotName: ''
 
 steps:
@@ -73,6 +75,7 @@ steps:
 
   - task: Bash@3
     displayName: 'Check Function App Health'
+    condition: and(succeeded(), ${{ eq(parameters.runPostmanSmokeTest, false) }})
     inputs:
       targetType: 'inline'
       script: |
@@ -88,6 +91,13 @@ steps:
         fi
 
         echo "✅ Function app is responsive and in a healthy state."
+
+  - ${{ if eq(parameters.runPostmanSmokeTest, true) }}:
+    - template: ../templates/smoke-test-steps.yml
+      parameters:
+        environment: ${{parameters.environment}}
+        postmanCollectionPath: ${{parameters.postmanCollectionPath}}
+        appInstance: $(instanceName)
 
   - task: AzureAppServiceManage@0
     condition: and(succeeded(), ${{ eq(parameters.deployToSlot, true) }})

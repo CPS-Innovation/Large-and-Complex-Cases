@@ -37,6 +37,9 @@ parameters:
   - name: slotName
     type: string
     default: ''
+  - name: runPostmanSmokeTest
+    type: boolean
+    default: false
 
 stages:
 - stage: Approve_Deployment_${{ parameters.environment }}
@@ -181,6 +184,8 @@ stages:
   - template: ./variables/backend-deploy-vars.yml
     parameters: 
       environment: ${{ parameters.environment }}
+  - ${{ if eq(parameters.runPostmanSmokeTest, true) }}:
+    - group: lacc-automated-testing-${{ parameters.environment }}
   pool: ${{ parameters.agentPool }}
   jobs:
     - deployment: Deploy_Main_API
@@ -200,6 +205,8 @@ stages:
                   buildArtifactName: 'lacc-main-api-drop'
                   deployToSlot: ${{ parameters.deployToSlot }}
                   slotName: ${{ parameters.slotName }}
+                  runPostmanSmokeTest: ${{ parameters.runPostmanSmokeTest }}
+                  postmanCollectionPath: '$(System.DefaultWorkingDirectory)/backend/postman/LCCMainAPISmokeTest.postman_collection.json'
                   
               - template: ./runner-cleanup-steps.yml
                 parameters:
