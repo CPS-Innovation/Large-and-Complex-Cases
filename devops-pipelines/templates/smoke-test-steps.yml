@@ -7,12 +7,6 @@ parameters:
   type: string
 
 steps:
-- checkout: self
-  sparseCheckoutDirectories: backend/postman
-  
-- script: ls -R backend/postman
-  displayName: "Verify Postman files"
-
 - task: UseNode@1
   displayName: 'Use Node.js'
   inputs:

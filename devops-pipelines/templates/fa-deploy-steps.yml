@@ -38,7 +38,7 @@ steps:
       resourceGroupName: ${{ parameters.resourceGroupName }}
 
   - checkout: self
-    sparseCheckoutDirectories: devops-pipelines/scripts
+    sparseCheckoutDirectories: devops-pipelines/scripts backend/postman
     fetchDepth: 1
 
   - task: Bash@3
