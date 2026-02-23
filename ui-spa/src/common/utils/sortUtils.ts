@@ -29,3 +29,16 @@ export const sortByDateProperty = <T>(
     }
   });
 };
+
+export const sortByNumberProperty = <T>(
+  data: T[],
+  filesizeProperty: keyof T,
+  order: "ascending" | "descending",
+): T[] => {
+  return [...data].sort((a, b) => {
+    const sizeA = a[filesizeProperty] as number;
+    const sizeB = b[filesizeProperty] as number;
+    if (order === "ascending") return sizeA - sizeB;
+    return sizeB - sizeA;
+  });
+};

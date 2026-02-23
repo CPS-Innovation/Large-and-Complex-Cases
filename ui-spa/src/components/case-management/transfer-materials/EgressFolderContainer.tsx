@@ -5,6 +5,7 @@ import FolderNavigationTable from "../../common/FolderNavigationTable";
 import {
   sortByStringProperty,
   sortByDateProperty,
+  sortByNumberProperty,
 } from "../../../common/utils/sortUtils";
 import { formatFileSize } from "../../../common/utils/formatFileSize";
 import { getActionDataFromId } from "../../../common/utils/getActionDataFromId";
@@ -64,7 +65,7 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
       );
 
     if (sortValues?.name === "file-size")
-      return sortByStringProperty(
+      return sortByNumberProperty(
         egressFolderData,
         "filesize",
         sortValues.type,
