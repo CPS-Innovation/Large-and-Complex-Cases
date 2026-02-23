@@ -24,7 +24,7 @@ stages:
       approvers: $(preprodApprovers)
       deployToSlot: true
       slotName: 'stg'
-      runPostmanSmokeTest: false
+      runPostmanSmokeTest: true
 
   - template: ../templates/backend-deploy-stages.yml
     parameters:
