@@ -54,7 +54,7 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
             _netAppTestFolderPrefix);
 
         await _fixture.NetAppClient!.DeleteFileOrFolderAsync(deleteArg);
-        
+
         if (_egressFilesToCleanup.Any())
         {
             var groupedByWorkspace = _egressFilesToCleanup.GroupBy(x => x.WorkspaceId);

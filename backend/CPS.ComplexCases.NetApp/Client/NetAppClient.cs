@@ -399,6 +399,28 @@ public class NetAppClient(
         }
     }
 
+    public async Task<HeadObjectResponseDto> GetHeadObjectMetadataAsync(GetObjectArg arg)
+    {
+        try
+        {
+            var headObjectArg = _netAppS3HttpArgFactory.CreateGetHeadObjectArg(arg.BearerToken, arg.BucketName, arg.ObjectKey);
+            return await _netAppS3HttpClient.GetHeadObjectAsync(headObjectArg);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex,
+                "HTTP request failed while getting head object metadata for {ObjectKey} in bucket {BucketName}.",
+                arg.ObjectKey, arg.BucketName);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get head object metadata for {ObjectKey} in bucket {BucketName}.", arg.ObjectKey,
+                arg.BucketName);
+            throw;
+        }
+    }
+
     private async Task<IEnumerable<string>> ListAllObjectKeysForDeletionAsync(string bucketName, string prefix,
         string bearerToken)
     {

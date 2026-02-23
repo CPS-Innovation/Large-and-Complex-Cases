@@ -26,7 +26,8 @@ public class NetAppS3HttpClient(HttpClient httpClient, IS3CredentialService s3Cr
         var headObjectResponse = new HeadObjectResponseDto
         {
             StatusCode = response.StatusCode,
-            ETag = response.Headers.ETag?.Tag.Unquote() ?? string.Empty
+            ETag = response.Headers.ETag?.Tag.Unquote() ?? string.Empty,
+            ContentLength = response.Content.Headers.ContentLength ?? 0
         };
 
         return headObjectResponse;
