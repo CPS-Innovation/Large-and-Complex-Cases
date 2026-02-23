@@ -468,7 +468,7 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
     }
 
     [SkippableFact]
-    public async Task NetAppToEgress_DuplicateFiles_DetectedAndRejected()
+    public async Task NetAppToEgress_WithPreStrippedPaths_DestinationPathsAreCorrect()
     {
         Skip.If(!IsE2ETransferConfigured, "Both Egress and NetApp configuration required for E2E transfer tests");
 
