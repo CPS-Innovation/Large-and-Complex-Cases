@@ -89,7 +89,7 @@ describe("EgressSearchResults", () => {
       ["ahunderstrikeabcd", "Not connected", "28/01/2000", "Connect"],
     ]);
     expect(screen.queryByTestId("egress-results-count")).toHaveTextContent(
-      "There are 4 folders matching thunder.",
+      "There are 4 cases matching thunder.",
     );
 
     const newResults = {
@@ -105,7 +105,7 @@ describe("EgressSearchResults", () => {
       />,
     );
     expect(screen.queryByTestId("egress-results-count")).toHaveTextContent(
-      "There is 1 folder matching thunder.",
+      "There is 1 case matching thunder.",
     );
     const newRows = screen.getAllByRole("row");
     const newDataRows = newRows.slice(1);
