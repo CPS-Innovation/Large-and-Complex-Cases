@@ -2,7 +2,10 @@ import { useMemo, useState } from "react";
 import { LinkButton, InsetText } from "../../govuk";
 import Checkbox from "../../common/Checkbox";
 import { NetAppFolderData } from "../../../common/types/NetAppFolderData";
-import { sortByStringProperty } from "../../../common/utils/sortUtils";
+import {
+  sortByStringProperty,
+  sortByNumberProperty,
+} from "../../../common/utils/sortUtils";
 import { getActionDataFromId } from "../../../common/utils/getActionDataFromId";
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
 import { getFileNameFromPath } from "../../../common/utils/getFileNameFromPath";
@@ -51,7 +54,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
     if (sortValues?.name === "folder-name")
       return sortByStringProperty(netAppFolderData, "path", sortValues.type);
     if (sortValues?.name === "file-size")
-      return sortByStringProperty(
+      return sortByNumberProperty(
         netAppFolderData,
         "filesize",
         sortValues.type,
