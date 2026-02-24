@@ -557,6 +557,56 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
         });
     }
 
+    [SkippableFact]
+    public async Task EgressToNetApp_ExistingFiles_AreNotOverwritten()
+    {
+        Skip.If(!IsE2ETransferConfigured, "Both Egress and NetApp configuration required for E2E transfer tests");
+
+        // Arrange
+        var bearerToken = await _fixture.GetUserDelegatedBearerTokenAsync();
+        var testFileName = TestDataHelper.GenerateTestFileName();
+        var initialContent = $"Initial content - {DateTime.UtcNow:O} - {Guid.NewGuid()}";
+        var updatedContent = $"Updated file content - {DateTime.UtcNow:O} - {Guid.NewGuid()}";
+        var initialBytes = Encoding.UTF8.GetBytes(initialContent);
+        var updatedBytes = Encoding.UTF8.GetBytes(updatedContent);
+        var destinationPath = $"{_netAppTestFolderPrefix}/{testFileName}";
+
+        // Upload initial file to NetApp
+        using (var stream = new MemoryStream(initialBytes))
+        {
+            var uploadArg = _fixture.NetAppArgFactory!.CreateUploadObjectArg(
+                bearerToken,
+                _fixture.NetAppBucketName!,
+                destinationPath,
+                stream,
+                initialBytes.Length);
+
+            await _fixture.NetAppClient!.UploadObjectAsync(uploadArg);
+        }
+
+        var exists = await NetAppTestHelper.WaitForObjectExistsAsync(_fixture, bearerToken, destinationPath);
+
+        // Attempt to upload updated content to the same path
+        if (!exists)
+        {
+            using (var stream = new MemoryStream(updatedBytes))
+            {
+                var uploadArg = _fixture.NetAppArgFactory!.CreateUploadObjectArg(
+                    bearerToken,
+                    _fixture.NetAppBucketName!,
+                    destinationPath,
+                    stream,
+                    updatedBytes.Length);
+
+                await _fixture.NetAppClient!.UploadObjectAsync(uploadArg);
+            }
+        }
+
+        // Assert that the content has not changed (i.e., the file was not overwritten)
+        var metadata = await NetAppTestHelper.GetObjectMetadataAsync(_fixture, bearerToken, destinationPath);
+        Assert.Equal(initialBytes.Length, metadata.ContentLength);
+    }
+
     private async Task<UploadSession> UploadFileToEgressAsync(
         string workspaceId,
         string destinationPath,

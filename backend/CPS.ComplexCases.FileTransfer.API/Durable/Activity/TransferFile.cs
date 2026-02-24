@@ -157,7 +157,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 errorMessage,
                 ex);
         }
-        catch (HttpRequestException ex) when (ex.StatusCode is HttpStatusCode.Forbidden || (int?)ex.StatusCode >= 500)
+        catch (HttpRequestException ex) when ((int?)ex.StatusCode >= 500)
         {
             var errorMessage = $"Transient S3 error (HTTP {(int)ex.StatusCode}): {ex.Message}";
             _logger.LogWarning(ex, "S3 error during transfer: {Path}", payload.SourcePath.Path);

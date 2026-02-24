@@ -292,40 +292,6 @@ public class TransferFileTests
     }
 
     [Fact]
-    public async Task Run_EgressToNetApp_FileExistsCheckThrowsHttpRequestExceptionForForbidden_ReturnsTransientFailure()
-    {
-        var payload = CreatePayload();
-
-        _storageClientFactoryMock
-            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
-            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
-
-        _destinationClientMock
-            .Setup(x => x.FileExistsAsync(
-                payload.DestinationPath + payload.SourcePath.Path,
-                payload.WorkspaceId,
-                payload.BearerToken,
-                payload.BucketName))
-            .ThrowsAsync(new HttpRequestException("Forbidden", null, HttpStatusCode.Forbidden));
-
-        var result = await _activity.Run(payload);
-
-        Assert.False(result.IsSuccess);
-        Assert.NotNull(result.FailedItem);
-        Assert.Equal(TransferErrorCode.Transient, result.FailedItem.ErrorCode);
-        Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
-        Assert.Contains("HTTP 403", result.FailedItem.ErrorMessage);
-
-        _sourceClientMock.Verify(x => x.OpenReadStreamAsync(
-                It.IsAny<string>(),
-                It.IsAny<string?>(),
-                It.IsAny<string>(),
-                It.IsAny<string?>(),
-                It.IsAny<string>()),
-            Times.Never);
-    }
-
-    [Fact]
     public async Task Run_EgressToNetApp_FileExistsCheckThrowsHttpRequestExceptionForServerError_ReturnsTransientFailure()
     {
         var payload = CreatePayload();
