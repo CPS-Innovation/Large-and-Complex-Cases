@@ -32,12 +32,13 @@ export const sortByDateProperty = <T>(
 
 export const sortByNumberProperty = <T>(
   data: T[],
-  filesizeProperty: keyof T,
+  numberProperty: keyof T,
   order: "ascending" | "descending",
 ): T[] => {
   return [...data].sort((a, b) => {
-    const sizeA = a[filesizeProperty] as number;
-    const sizeB = b[filesizeProperty] as number;
+    const sizeA = typeof a[numberProperty] === "number" ? a[numberProperty] : 0;
+    const sizeB = typeof b[numberProperty] === "number" ? b[numberProperty] : 0;
+
     if (order === "ascending") return sizeA - sizeB;
     return sizeB - sizeA;
   });

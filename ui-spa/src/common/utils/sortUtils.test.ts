@@ -115,5 +115,26 @@ describe("SortUtils", () => {
       const sortedData = sortByNumberProperty(data, "filesize", "descending");
       expect(sortedData).toEqual(expectedResult);
     });
+
+    it("Should be able to handle the sort gracefully if the given sort property is not a number", () => {
+      const data = [
+        { id: 1, name: "file1.txt", filesize: undefined },
+        { id: 5, name: "file5.txt", filesize: 200 },
+        { id: 2, name: "file2.txt", filesize: null },
+        { id: 3, name: "file3.txt", filesize: "abc" },
+        { id: 4, name: "file4.txt", filesize: 300 },
+      ];
+
+      const expectedResult = [
+        { id: 4, name: "file4.txt", filesize: 300 },
+        { id: 5, name: "file5.txt", filesize: 200 },
+        { id: 1, name: "file1.txt", filesize: undefined },
+        { id: 2, name: "file2.txt", filesize: null },
+        { id: 3, name: "file3.txt", filesize: "abc" },
+      ];
+
+      const sortedData = sortByNumberProperty(data, "filesize", "descending");
+      expect(sortedData).toEqual(expectedResult);
+    });
   });
 });
