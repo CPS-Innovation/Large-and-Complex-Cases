@@ -49,17 +49,24 @@ public class SecurityGroupMetadataServiceTests
         Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
         await File.WriteAllTextAsync(filePath, JsonSerializer.Serialize(securityGroups));
 
-        // Act
-        var result = await _service.GetUserSecurityGroupsAsync(bearerToken);
+        try
+        {
+            // Act
+            var result = await _service.GetUserSecurityGroupsAsync(bearerToken);
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(2, result.Count);
-        Assert.Contains(result, g => g.Id == groupId1);
-        Assert.Contains(result, g => g.Id == groupId2);
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(2, result.Count);
+            Assert.Contains(result, g => g.Id == groupId1);
+            Assert.Contains(result, g => g.Id == groupId2);
 
-        // Cleanup
-        File.Delete(filePath);
+        }
+        finally
+        {
+            // Cleanup
+            if (File.Exists(filePath))
+                File.Delete(filePath);
+        }
     }
 
     [Fact]
@@ -107,22 +114,28 @@ public class SecurityGroupMetadataServiceTests
         Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
         await File.WriteAllTextAsync(filePath, JsonSerializer.Serialize(securityGroups));
 
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<MissingSecurityGroupException>(() =>
-            _service.GetUserSecurityGroupsAsync(bearerToken));
+        try
+        {
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<MissingSecurityGroupException>(() =>
+                _service.GetUserSecurityGroupsAsync(bearerToken));
 
-        Assert.Equal("No matching security groups found for the provided IDs.", exception.Message);
-        _loggerMock.Verify(
-            l => l.Log(
-                LogLevel.Warning,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("No matching security groups found")),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-
-        // Cleanup
-        File.Delete(filePath);
+            Assert.Equal("No matching security groups found for the provided IDs.", exception.Message);
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("No matching security groups found")),
+                    null,
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+        finally
+        {
+            // Cleanup
+            if (File.Exists(filePath))
+                File.Delete(filePath);
+        }
     }
 
     [Fact]
@@ -164,22 +177,28 @@ public class SecurityGroupMetadataServiceTests
         Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
         await File.WriteAllTextAsync(filePath, "invalid json");
 
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<JsonException>(() =>
-            _service.GetUserSecurityGroupsAsync(bearerToken));
+        try
+        {
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<JsonException>(() =>
+                _service.GetUserSecurityGroupsAsync(bearerToken));
 
-        Assert.Equal("'i' is an invalid start of a value. Path: $ | LineNumber: 0 | BytePositionInLine: 0.", exception.Message);
-        _loggerMock.Verify(
-            l => l.Log(
-                LogLevel.Error,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to deserialize security group data from JSON.")),
-                It.IsAny<Exception?>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-
-        // Cleanup
-        File.Delete(filePath);
+            Assert.Equal("'i' is an invalid start of a value. Path: $ | LineNumber: 0 | BytePositionInLine: 0.", exception.Message);
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to deserialize security group data from JSON.")),
+                    It.IsAny<Exception?>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+        finally
+        {
+            // Cleanup
+            if (File.Exists(filePath))
+                File.Delete(filePath);
+        }
     }
 
     [Fact]
@@ -198,34 +217,40 @@ public class SecurityGroupMetadataServiceTests
         Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
         await File.WriteAllTextAsync(filePath, JsonSerializer.Serialize(securityGroups));
 
-        // Act
-        var result = await _service.GetUserSecurityGroupsAsync(bearerToken);
+        try
+        {
+            // Act
+            var result = await _service.GetUserSecurityGroupsAsync(bearerToken);
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.Single(result);
-        Assert.Contains(result, g => g.Id == validGroupId);
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result);
+            Assert.Contains(result, g => g.Id == validGroupId);
 
-        _loggerMock.Verify(
-            l => l.Log(
-                LogLevel.Warning,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Malformed GUID found in token groups claim: not-a-guid")),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Malformed GUID found in token groups claim: not-a-guid")),
+                    null,
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
 
-        _loggerMock.Verify(
-            l => l.Log(
-                LogLevel.Warning,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Malformed GUID found in token groups claim: also-invalid")),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-
-        // Cleanup
-        File.Delete(filePath);
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Malformed GUID found in token groups claim: also-invalid")),
+                    null,
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+        finally
+        {
+            // Cleanup
+            if (File.Exists(filePath))
+                File.Delete(filePath);
+        }
     }
 
     [Fact]
