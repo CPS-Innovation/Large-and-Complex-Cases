@@ -284,7 +284,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           data-testid="shared-drive-region-title"
           className={styles.titleWrapper}
         >
-          <span className={styles.regionHead}>Shared drive</span>-{" "}
+          <span className={styles.regionHead}>Shared Drive</span>-{" "}
           <span>{transferSource === "egress" ? "Destination" : "Source"}</span>
           <span className="govuk-visually-hidden"> region</span>
         </div>

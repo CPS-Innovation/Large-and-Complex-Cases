@@ -26,7 +26,7 @@ export const RenameTransferFilePage: React.FC<RenameTransferFilePageProps> = ({
   };
 
   const getCharactersText = useCallback(() => {
-    const characterCount = `${relativeFilePath}/${inputValue}`.length;
+    const characterCount = `${relativeFilePath}${inputValue}`.length;
     const tagColor =
       characterCount > MAX_FILE_PATH_CHARACTERS ? "red" : "green";
 
@@ -55,7 +55,7 @@ export const RenameTransferFilePage: React.FC<RenameTransferFilePageProps> = ({
       </BackLink>
       <PageContentWrapper>
         <div className={styles.contentWrapper}>
-          <h1 className="govuk-heading-xl">Edit file name</h1>
+          <h1 className="govuk-heading-xl">Rename file</h1>
 
           <Input
             value={inputValue}

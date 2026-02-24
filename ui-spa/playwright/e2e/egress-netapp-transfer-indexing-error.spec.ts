@@ -108,7 +108,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
               sourceRootFolderPath: "egress/",
               transferDirection: "EgressToNetApp",
               destinationPath:
-                "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination",
+                "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/",
               validationErrors: [
                 {
                   id: "id_3",
@@ -152,29 +152,30 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
       );
-      await expect(page.locator("h1")).toHaveText("File structure is too long");
+      await expect(page.locator("h1")).toHaveText(
+        "Shorten file names or folder paths",
+      );
       await expect(
         page.getByTestId("resolve-file-path-inset-text"),
       ).toBeVisible();
       await expect(
         page
           .getByTestId("resolve-file-path-inset-text")
-          .getByText(
-            "There are 2 files with names longer than 260 characters.",
-          ),
+          .getByText("2 files are longer than the 260 character limit"),
       ).toBeVisible();
       await expect(
         page
           .getByTestId("resolve-file-path-inset-text")
           .getByText(
-            "You need to rename the files or change the folder structure.",
+            "You must shorten the file name or move the file before you can start the transfer.",
           ),
       ).toBeVisible();
       await expect(page.locator("section")).toHaveCount(2);
       const sections = await page.locator("section").all();
 
       await validateFilePathErrorSection(sections[0], {
-        relativePath: "egress/folder3",
+        relativePath:
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3/",
         filePaths: [
           {
             fileName:
@@ -185,7 +186,8 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       });
 
       await validateFilePathErrorSection(sections[1], {
-        relativePath: "egress/folder4/folder5",
+        relativePath:
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5/",
         filePaths: [
           {
             fileName:
@@ -207,7 +209,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-rename-file",
       );
-      await expect(page.locator("h1")).toHaveText("Edit file name");
+      await expect(page.locator("h1")).toHaveText("Rename file");
 
       await expect(await page.locator(`input`)).toHaveValue(
         "file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
@@ -244,7 +246,8 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       );
 
       await validateFilePathErrorSection(sections[0], {
-        relativePath: "egress/folder3",
+        relativePath:
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3/",
         filePaths: [
           {
             fileName:
@@ -254,7 +257,8 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
         ],
       });
       await validateFilePathErrorSection(sections[1], {
-        relativePath: "egress/folder4/folder5",
+        relativePath:
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5/",
         filePaths: [
           {
             fileName:
@@ -276,7 +280,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-rename-file",
       );
-      await expect(page.locator("h1")).toHaveText("Edit file name");
+      await expect(page.locator("h1")).toHaveText("Rename file");
 
       await expect(page.locator("input")).toHaveValue(
         "file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
@@ -310,7 +314,8 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
         "/case/12/case-management/transfer-resolve-file-path",
       );
       await validateFilePathErrorSection(sections[0], {
-        relativePath: "egress/folder3",
+        relativePath:
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3/",
         filePaths: [
           {
             fileName:
@@ -320,7 +325,8 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
         ],
       });
       await validateFilePathErrorSection(sections[1], {
-        relativePath: "egress/folder4/folder5",
+        relativePath:
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5/",
         filePaths: [
           {
             fileName: "file5eweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwsswees.pdf",
@@ -403,7 +409,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
               caseId: 12,
               isInvalid: true,
               destinationPath:
-                "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination",
+                "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/",
               validationErrors: [
                 {
                   id: "id_3",
@@ -431,7 +437,9 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
       );
-      await expect(page.locator("h1")).toHaveText("File structure is too long");
+      await expect(page.locator("h1")).toHaveText(
+        "Shorten file names or folder paths",
+      );
       await expect(
         page.getByRole("button", { name: "Start transfer" }),
       ).toBeDisabled();
@@ -445,7 +453,9 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
       );
-      await expect(page.locator("h1")).toHaveText("File structure is too long");
+      await expect(page.locator("h1")).toHaveText(
+        "Shorten file names or folder paths",
+      );
       await expect(
         page.getByRole("button", { name: "Start transfer" }),
       ).toBeDisabled();
@@ -469,7 +479,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
               caseId: 12,
               isInvalid: true,
               destinationPath:
-                "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination",
+                "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/",
               validationErrors: [
                 {
                   id: "id_3",
@@ -497,7 +507,9 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
       );
-      await expect(page.locator("h1")).toHaveText("File structure is too long");
+      await expect(page.locator("h1")).toHaveText(
+        "Shorten file names or folder paths",
+      );
       const renameBtns = await page
         .getByRole("button", { name: "Rename" })
         .all();
@@ -505,7 +517,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-rename-file",
       );
-      await expect(page.locator("h1")).toHaveText("Edit file name");
+      await expect(page.locator("h1")).toHaveText("Rename file");
       await expect(
         page.getByRole("button", { name: "Cancel" }),
       ).not.toBeDisabled();
@@ -517,12 +529,14 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
       );
-      await expect(page.locator("h1")).toHaveText("File structure is too long");
+      await expect(page.locator("h1")).toHaveText(
+        "Shorten file names or folder paths",
+      );
       await renameBtns[1].click();
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-rename-file",
       );
-      await expect(page.locator("h1")).toHaveText("Edit file name");
+      await expect(page.locator("h1")).toHaveText("Rename file");
       await expect(
         page.getByRole("button", { name: "Cancel" }),
       ).not.toBeDisabled();
@@ -534,7 +548,9 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
       );
-      await expect(page.locator("h1")).toHaveText("File structure is too long");
+      await expect(page.locator("h1")).toHaveText(
+        "Shorten file names or folder paths",
+      );
       await page.getByRole("link", { name: "Back" }).click();
       await expect(page).toHaveURL("/case/12/case-management");
     });
@@ -551,7 +567,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
               caseId: 12,
               isInvalid: true,
               destinationPath:
-                "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination",
+                "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/",
               validationErrors: [
                 {
                   id: "id_6",
@@ -603,11 +619,14 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
       );
-      await expect(page.locator("h1")).toHaveText("File structure is too long");
+      await expect(page.locator("h1")).toHaveText(
+        "Shorten file names or folder paths",
+      );
 
       const sections = await page.locator("section").all();
       await validateFilePathErrorSection(sections[0], {
-        relativePath: "folder-1-0",
+        relativePath:
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/",
         filePaths: [
           {
             fileName:
@@ -623,7 +642,8 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       });
 
       await validateFilePathErrorSection(sections[1], {
-        relativePath: "egress/folder3",
+        relativePath:
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3/",
         filePaths: [
           {
             fileName:
@@ -639,7 +659,8 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       });
 
       await validateFilePathErrorSection(sections[2], {
-        relativePath: "egress/folder4/folder5",
+        relativePath:
+          "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5/",
         filePaths: [
           {
             fileName:
@@ -714,7 +735,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
         "/case/12/case-management",
       );
       await expect(page.getByTestId("contact-information")).toHaveText(
-        "To get help, call the Service Desk 0800 692 6996.",
+        "To get help, contact the product team.",
       );
       await expect(
         page.getByRole("button", { name: "Return to the case" }),

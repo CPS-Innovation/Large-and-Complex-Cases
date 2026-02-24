@@ -32,17 +32,15 @@ const NetAppConnectConfirmationPage: React.FC<
                       Are you sure?
                     </h1>{" "}
                     <span>
-                      {`Confirm you want to link "${selectedFolderName}" network shared drive folder to
-              the case?`}
+                      Confirm you want to link{" "}
+                      <b>&quot;{selectedFolderName}&quot;</b> Shared Drive
+                      folder to the case?
                     </span>
                   </>
                 ),
               },
             }}
             name="Are you sure?"
-            hint={{
-              children: "You can change the linked folder later if needed.",
-            }}
             items={[
               {
                 children: "Yes",
