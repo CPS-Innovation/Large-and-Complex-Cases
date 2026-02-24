@@ -407,6 +407,136 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
     }
 
     [SkippableFact]
+    public async Task NetAppToEgress_CopyWithNestedFolders_PreservesFolderStructure()
+    {
+        Skip.If(!IsE2ETransferConfigured, "Both Egress and NetApp configuration required for E2E transfer tests");
+
+        // Arrange
+        var workspaceId = _fixture.EgressWorkspaceId!;
+        var destinationPath = TestDataHelper.GenerateTestFolderPath();
+        const string sourceRootFolderPath = "folder1";
+
+        var files = new[]
+        {
+            ("folder1/file1.txt",                   $"Content for file1 - {Guid.NewGuid()}"),
+            ("folder1/nestedfolder1/file2.txt",     $"Content for file2 - {Guid.NewGuid()}"),
+            ("folder1/nestedfolder1/file3.txt",     $"Content for file3 - {Guid.NewGuid()}"),
+        };
+
+        // Act — upload each file the same way TransferFile activity does, using the
+        // pre-stripped sourceRootFolderPath that ListFilesForTransfer now produces.
+        foreach (var (relativePath, content) in files)
+        {
+            var contentBytes = Encoding.UTF8.GetBytes(content);
+            var session = await _fixture.EgressStorageClient!.InitiateUploadAsync(
+                destinationPath: destinationPath,
+                fileSize: contentBytes.Length,
+                sourcePath: relativePath,
+                workspaceId: workspaceId,
+                relativePath: relativePath,
+                sourceRootFolderPath: sourceRootFolderPath);
+
+            _egressFilesToCleanup.Add((session.UploadId!, workspaceId));
+
+            await _fixture.EgressStorageClient.UploadChunkAsync(
+                session: session,
+                chunkNumber: 1,
+                chunkData: contentBytes,
+                start: 0,
+                end: contentBytes.Length - 1,
+                totalSize: contentBytes.Length);
+
+            await _fixture.EgressStorageClient.CompleteUploadAsync(session, TestDataHelper.ComputeMd5Hash(contentBytes));
+        }
+
+        // Assert — list the Egress workspace and filter to just our destination folder
+        var allFiles = await _fixture.EgressStorageClient!.GetAllFilesFromFolderAsync(destinationPath, workspaceId);
+        var fullFilePaths = allFiles
+            .Where(f => !string.IsNullOrEmpty(f.FullFilePath)
+                     && f.FullFilePath.StartsWith(destinationPath, StringComparison.OrdinalIgnoreCase))
+            .Select(f => f.FullFilePath!)
+            .ToList();
+
+        Assert.Equal(3, fullFilePaths.Count);
+
+        // file1.txt must land directly under destinationPath — NOT inside a "folder1" sub-folder.
+        Assert.Contains(fullFilePaths, p => p.Equals($"{destinationPath}/file1.txt", StringComparison.OrdinalIgnoreCase));
+
+        // file2.txt and file3.txt must land inside a "nestedfolder1" sub-folder.
+        Assert.Contains(fullFilePaths, p => p.Equals($"{destinationPath}/nestedfolder1/file2.txt", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(fullFilePaths, p => p.Equals($"{destinationPath}/nestedfolder1/file3.txt", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [SkippableFact]
+    public async Task NetAppToEgress_WithPreStrippedPaths_DestinationPathsAreCorrect()
+    {
+        Skip.If(!IsE2ETransferConfigured, "Both Egress and NetApp configuration required for E2E transfer tests");
+
+        // Arrange
+        var workspaceId = _fixture.EgressWorkspaceId!;
+        var destinationPath = TestDataHelper.GenerateTestFolderPath();
+        const string sourceRootFolderPath = "folder1";
+
+        var files = new[]
+        {
+            ("folder1/file1.txt",               Encoding.UTF8.GetBytes($"Original content A - {Guid.NewGuid()}")),
+            ("folder1/nestedfolder1/file2.txt", Encoding.UTF8.GetBytes($"Original content B - {Guid.NewGuid()}")),
+        };
+
+        // First transfer — upload all files to Egress.
+        foreach (var (relativePath, contentBytes) in files)
+        {
+            var session = await _fixture.EgressStorageClient!.InitiateUploadAsync(
+                destinationPath: destinationPath,
+                fileSize: contentBytes.Length,
+                sourcePath: relativePath,
+                workspaceId: workspaceId,
+                relativePath: relativePath,
+                sourceRootFolderPath: sourceRootFolderPath);
+
+            _egressFilesToCleanup.Add((session.UploadId!, workspaceId));
+
+            await _fixture.EgressStorageClient.UploadChunkAsync(
+                session: session,
+                chunkNumber: 1,
+                chunkData: contentBytes,
+                start: 0,
+                end: contentBytes.Length - 1,
+                totalSize: contentBytes.Length);
+
+            await _fixture.EgressStorageClient.CompleteUploadAsync(session, TestDataHelper.ComputeMd5Hash(contentBytes));
+        }
+
+        var destinationFiles = (await _fixture.EgressStorageClient!.GetAllFilesFromFolderAsync(destinationPath, workspaceId))
+            .Where(f => !string.IsNullOrEmpty(f.FullFilePath)
+                     && f.FullFilePath.StartsWith(destinationPath, StringComparison.OrdinalIgnoreCase))
+            .Select(f => f.FullFilePath!)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        Assert.NotEmpty(destinationFiles);
+
+        static string ComputeDestPath(string dest, string relPath, string rootFolder)
+        {
+            var destWithSlash = dest.EndsWith('/') ? dest : dest + "/";
+            var index = relPath.IndexOf(rootFolder, StringComparison.OrdinalIgnoreCase);
+            if (index == 0)
+            {
+                return destWithSlash + relPath.Substring(rootFolder.Length).TrimStart('/', '\\');
+            }
+            return destWithSlash + relPath;
+        }
+
+        // Assert
+        foreach (var (relativePath, _) in files)
+        {
+            var computedDest = ComputeDestPath(destinationPath, relativePath, sourceRootFolderPath);
+            Assert.Contains(computedDest, destinationFiles);
+        }
+
+        Assert.Equal(files.Length, destinationFiles.Count);
+    }
+
+    [SkippableFact]
     public async Task NetAppToEgress_NonExistentSource_ThrowsFileNotFoundException()
     {
         Skip.If(!IsE2ETransferConfigured, "Both Egress and NetApp configuration required for E2E transfer tests");

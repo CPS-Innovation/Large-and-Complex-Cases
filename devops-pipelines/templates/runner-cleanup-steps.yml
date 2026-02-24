@@ -5,6 +5,7 @@ parameters:
 steps:
   - task: bash@3
     displayName: "Cleanup Downloaded Artifact"
+    condition: succeededOrFailed()
     inputs:
       targetType: 'inline'
       workingDirectory: ${{ parameters.workingDirectory }}
