@@ -1,14 +1,16 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.API.Domain.Models;
 using CPS.ComplexCases.API.Exceptions;
-using Microsoft.Extensions.Logging;
 
 namespace CPS.ComplexCases.API.Services;
 
 public class SecurityGroupMetadataService(ILogger<SecurityGroupMetadataService> logger) : ISecurityGroupMetadataService
 {
     private readonly ILogger<SecurityGroupMetadataService> _logger = logger;
+    private List<SecurityGroup>? _cachedSecurityGroups;
+    private readonly SemaphoreSlim _cacheLock = new(1, 1);
 
     public async Task<List<SecurityGroup>> GetUserSecurityGroupsAsync(string bearerToken)
     {
@@ -32,10 +34,20 @@ public class SecurityGroupMetadataService(ILogger<SecurityGroupMetadataService> 
         var handler = new JwtSecurityTokenHandler();
         var jwt = handler.ReadJwtToken(bearerToken);
 
-        var groupIds = jwt.Claims
-            .Where(c => c.Type == "groups")
-            .Select(c => Guid.Parse(c.Value))
-            .ToList();
+        var groupClaims = jwt.Claims.Where(c => c.Type == "groups").ToList();
+        var groupIds = new List<Guid>();
+
+        foreach (var claim in groupClaims)
+        {
+            if (Guid.TryParse(claim.Value, out var groupId))
+            {
+                groupIds.Add(groupId);
+            }
+            else
+            {
+                _logger.LogWarning("Malformed GUID found in token groups claim: {ClaimValue}", claim.Value);
+            }
+        }
 
         if (groupIds.Count == 0)
         {
@@ -48,8 +60,17 @@ public class SecurityGroupMetadataService(ILogger<SecurityGroupMetadataService> 
 
     private async Task<List<SecurityGroup>> GetSecurityGroupDetails()
     {
+        if (_cachedSecurityGroups != null)
+        {
+            return _cachedSecurityGroups;
+        }
+
+        await _cacheLock.WaitAsync();
         try
         {
+            if (_cachedSecurityGroups != null)
+                return _cachedSecurityGroups;
+
             var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
             var suffix = environment == "Production" ? "Production" : "PreProd";
             var filePath = Path.Combine(Directory.GetCurrentDirectory(), $"SourceFiles/SecurityGroupMappings.{suffix}.json");
@@ -69,7 +90,10 @@ public class SecurityGroupMetadataService(ILogger<SecurityGroupMetadataService> 
                 throw new MissingSecurityGroupException("Failed to deserialize security group data from JSON.");
             }
 
-            return groups;
+            _cachedSecurityGroups = groups;
+            _logger.LogInformation("Security group mappings loaded successfully. Total groups: {Count}", groups.Count);
+
+            return _cachedSecurityGroups;
         }
         catch (JsonException ex)
         {
@@ -80,6 +104,10 @@ public class SecurityGroupMetadataService(ILogger<SecurityGroupMetadataService> 
         {
             _logger.LogError(ex, "An unexpected error occurred while retrieving security group details.");
             throw;
+        }
+        finally
+        {
+            _cacheLock.Release();
         }
     }
 }

@@ -31,6 +31,7 @@ public class ExceptionHandlingMiddleware : IFunctionsWorkerMiddleware
       {
         ArgumentNullException or BadRequestException => HttpStatusCode.BadRequest,
         CmsUnauthorizedException or CpsAuthenticationException or NetAppUnauthorizedException => HttpStatusCode.Unauthorized,
+        MissingSecurityGroupException => HttpStatusCode.Forbidden,
         DdeiClientException ddeiException => ddeiException.StatusCode,
         _ => HttpStatusCode.InternalServerError,
       };
