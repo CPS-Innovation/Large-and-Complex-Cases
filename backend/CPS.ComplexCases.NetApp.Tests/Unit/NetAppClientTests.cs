@@ -564,6 +564,172 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         }
 
         [Fact]
+        public async Task UploadPartAsync_WhenInvalidAccessKeyIdError_RetriesAndSucceeds()
+        {
+            // Arrange
+            var arg = new UploadPartArg
+            {
+                BearerToken = BearerToken, UploadId = "1", ObjectKey = "file.txt", BucketName = "bucket",
+                PartNumber = 1, PartData = new byte[] { 1, 2, 3 }
+            };
+            var expectedResponse = new UploadPartResponse();
+            var callCount = 0;
+
+            _amazonS3Mock.Setup(s => s.UploadPartAsync(It.IsAny<UploadPartRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() =>
+                {
+                    callCount++;
+                    if (callCount == 1)
+                        throw new AmazonS3Exception("The AWS access key ID you provided does not exist in our records.")
+                            { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "InvalidAccessKeyId" };
+                    return expectedResponse;
+                });
+
+            // Act
+            var result = await _client.UploadPartAsync(arg);
+
+            // Assert
+            Assert.Equal(expectedResponse, result);
+            _amazonS3Mock.Verify(
+                s => s.UploadPartAsync(It.IsAny<UploadPartRequest>(), It.IsAny<CancellationToken>()),
+                Times.Exactly(2));
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v != null && v!.ToString()!.Contains("credentials likely rotated mid-transfer")),
+                    It.IsAny<AmazonS3Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task UploadPartAsync_WhenExpiredTokenError_RetriesAndSucceeds()
+        {
+            // Arrange
+            var arg = new UploadPartArg
+            {
+                BearerToken = BearerToken, UploadId = "1", ObjectKey = "file.txt", BucketName = "bucket",
+                PartNumber = 1, PartData = new byte[] { 1, 2, 3 }
+            };
+            var expectedResponse = new UploadPartResponse();
+            var callCount = 0;
+
+            _amazonS3Mock.Setup(s => s.UploadPartAsync(It.IsAny<UploadPartRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() =>
+                {
+                    callCount++;
+                    if (callCount == 1)
+                        throw new AmazonS3Exception("The provided token has expired.")
+                            { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "ExpiredToken" };
+                    return expectedResponse;
+                });
+
+            // Act
+            var result = await _client.UploadPartAsync(arg);
+
+            // Assert
+            Assert.Equal(expectedResponse, result);
+            _amazonS3Mock.Verify(
+                s => s.UploadPartAsync(It.IsAny<UploadPartRequest>(), It.IsAny<CancellationToken>()),
+                Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task UploadPartAsync_WhenCredentialErrorMatchedByMessageFallback_RetriesAndSucceeds()
+        {
+            // Arrange - 403 Forbidden with the known message text but no standard ErrorCode
+            // (guards against NetApp returning a non-standard ErrorCode for this condition)
+            var arg = new UploadPartArg
+            {
+                BearerToken = BearerToken, UploadId = "1", ObjectKey = "file.txt", BucketName = "bucket",
+                PartNumber = 1, PartData = new byte[] { 1, 2, 3 }
+            };
+            var expectedResponse = new UploadPartResponse();
+            var callCount = 0;
+
+            _amazonS3Mock.Setup(s => s.UploadPartAsync(It.IsAny<UploadPartRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() =>
+                {
+                    callCount++;
+                    if (callCount == 1)
+                        throw new AmazonS3Exception("The AWS access key ID you provided does not exist in our records.")
+                            { StatusCode = HttpStatusCode.Forbidden };
+                    return expectedResponse;
+                });
+
+            // Act
+            var result = await _client.UploadPartAsync(arg);
+
+            // Assert
+            Assert.Equal(expectedResponse, result);
+            _amazonS3Mock.Verify(
+                s => s.UploadPartAsync(It.IsAny<UploadPartRequest>(), It.IsAny<CancellationToken>()),
+                Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task UploadPartAsync_WhenAllRetriesExhausted_ThrowsAndLogs()
+        {
+            // Arrange
+            var arg = new UploadPartArg
+            {
+                BearerToken = BearerToken, UploadId = "1", ObjectKey = "file.txt", BucketName = "bucket",
+                PartNumber = 1, PartData = new byte[] { 1, 2, 3 }
+            };
+
+            _amazonS3Mock.Setup(s => s.UploadPartAsync(It.IsAny<UploadPartRequest>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new AmazonS3Exception("The AWS access key ID you provided does not exist in our records.")
+                    { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "InvalidAccessKeyId" });
+
+            // Act & Assert
+            await Assert.ThrowsAsync<AmazonS3Exception>(() => _client.UploadPartAsync(arg));
+
+            // 1 initial attempt + 2 retries = 3 total
+            _amazonS3Mock.Verify(
+                s => s.UploadPartAsync(It.IsAny<UploadPartRequest>(), It.IsAny<CancellationToken>()),
+                Times.Exactly(3));
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v != null && v!.ToString()!.Contains("credentials likely rotated mid-transfer")),
+                    It.IsAny<AmazonS3Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Exactly(2));
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v != null && v!.ToString()!.Contains("after all retry attempts")),
+                    It.IsAny<AmazonS3Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task UploadPartAsync_WhenNonCredentialForbiddenError_DoesNotRetry()
+        {
+            // Arrange - generic Access Denied should NOT trigger the credential retry path
+            var arg = new UploadPartArg
+            {
+                BearerToken = BearerToken, UploadId = "1", ObjectKey = "file.txt", BucketName = "bucket",
+                PartNumber = 1, PartData = new byte[] { 1, 2, 3 }
+            };
+
+            _amazonS3Mock.Setup(s => s.UploadPartAsync(It.IsAny<UploadPartRequest>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new AmazonS3Exception("Access Denied")
+                    { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" });
+
+            // Act & Assert
+            await Assert.ThrowsAsync<AmazonS3Exception>(() => _client.UploadPartAsync(arg));
+
+            _amazonS3Mock.Verify(
+                s => s.UploadPartAsync(It.IsAny<UploadPartRequest>(), It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
         public async Task CompleteMultipartUploadAsync_ReturnsResponse_OnSuccess()
         {
             var arg = new CompleteMultipartUploadArg

@@ -279,27 +279,34 @@ public class NetAppClient(
 
     public async Task<UploadPartResponse?> UploadPartAsync(UploadPartArg arg)
     {
-        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
+        var retryPolicy = GetUploadPartRetryPolicy(arg.PartNumber, arg.ObjectKey);
         try
         {
-            using var partStream = new MemoryStream(arg.PartData, writable: false);
-
-            var request = new UploadPartRequest
+            return await retryPolicy.ExecuteAsync(async () =>
             {
-                BucketName = arg.BucketName,
-                Key = arg.ObjectKey,
-                UploadId = arg.UploadId,
-                PartNumber = arg.PartNumber,
-                PartSize = arg.PartData.Length,
-                InputStream = partStream,
-                DisablePayloadSigning = true
-            };
-            return await s3Client.UploadPartAsync(request);
+                // Re-resolve the S3 client on every attempt so that a credential
+                // rotation triggered by a sibling task is picked up automatically.
+                var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
+                using var partStream = new MemoryStream(arg.PartData, writable: false);
+
+                var request = new UploadPartRequest
+                {
+                    BucketName = arg.BucketName,
+                    Key = arg.ObjectKey,
+                    UploadId = arg.UploadId,
+                    PartNumber = arg.PartNumber,
+                    PartSize = arg.PartData.Length,
+                    InputStream = partStream,
+                    DisablePayloadSigning = true
+                };
+                return await s3Client.UploadPartAsync(request);
+            });
         }
         catch (AmazonS3Exception ex)
         {
-            _logger.LogError(ex, "Failed to upload part {PartNumber} for file {ObjectKey}.", arg.PartNumber,
-                arg.ObjectKey);
+            _logger.LogError(ex,
+                "Failed to upload part {PartNumber} for file {ObjectKey} after all retry attempts. StatusCode={StatusCode}, ErrorCode={ErrorCode}",
+                arg.PartNumber, arg.ObjectKey, ex.StatusCode, ex.ErrorCode);
             throw;
         }
     }
@@ -464,6 +471,32 @@ public class NetAppClient(
                         bucketName,
                         outcome.Result?.HttpStatusCode,
                         timespan.TotalMilliseconds);
+                });
+    }
+
+    private Polly.Retry.AsyncRetryPolicy<UploadPartResponse?> GetUploadPartRetryPolicy(int partNumber, string objectKey)
+    {
+        // Retry when NetApp rejects the access key because credentials were rotated
+        // by a concurrently running part upload. On retry, GetS3ClientAsync will
+        // pick up the freshly-rotated credentials from Key Vault.
+        return Policy
+            .HandleResult<UploadPartResponse?>(r => false)
+            .Or<AmazonS3Exception>(ex =>
+                ex.StatusCode == System.Net.HttpStatusCode.Forbidden
+                && (ex.ErrorCode is "InvalidAccessKeyId" or "ExpiredToken" or "InvalidClientTokenId"
+                    || ex.Message.Contains("does not exist in our records", StringComparison.OrdinalIgnoreCase)
+                    || ex.Message.Contains("token has expired", StringComparison.OrdinalIgnoreCase)))
+            .WaitAndRetryAsync(
+                retryCount: 2,
+                sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(retryAttempt * 3),
+                onRetry: (outcome, timespan, retryCount, context) =>
+                {
+                    _logger.LogWarning(outcome.Exception,
+                        "Credential error uploading part {PartNumber} for {ObjectKey} - credentials likely rotated mid-transfer (StatusCode={StatusCode}, ErrorCode={ErrorCode}). Refreshing and retrying (attempt {RetryCount}/2). Waiting {DelayMs}ms.",
+                        partNumber, objectKey,
+                        (outcome.Exception as AmazonS3Exception)?.StatusCode,
+                        (outcome.Exception as AmazonS3Exception)?.ErrorCode,
+                        retryCount, timespan.TotalMilliseconds);
                 });
     }
 
