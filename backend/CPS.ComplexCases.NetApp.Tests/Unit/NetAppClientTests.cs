@@ -754,7 +754,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 l => l.Log(
                     LogLevel.Error,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v != null && v!.ToString()!.Contains("HTTP request failed while checking existence of object")),
+                    It.Is<It.IsAnyType>((v, t) => v != null && v!.ToString()!.Contains("HTTP request failed while getting head object metadata")),
                     ex,
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
@@ -775,7 +775,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 l => l.Log(
                     LogLevel.Error,
                     It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v != null && v!.ToString()!.Contains("Failed to check if object")),
+                    It.Is<It.IsAnyType>((v, t) => v != null && v!.ToString()!.Contains("Failed to get head object metadata")),
                     ex,
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
