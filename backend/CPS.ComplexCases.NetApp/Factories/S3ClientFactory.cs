@@ -95,16 +95,14 @@ public class S3ClientFactory(
         {
             // In non-Development environments, load and trust the custom CA certificates
             _logger.LogInformation("Using custom CA certificate validation (non-Development mode).");
-            if (trustedCerts.Count > 0)
-            {
-                var handler = new HttpClientHandler
-                {
-                    ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) =>
-                        _netAppCertFactory.ValidateCertificateWithCustomCa(cert, chain, sslPolicyErrors, trustedCerts)
-                };
 
-                s3Config.HttpClientFactory = new CustomHttpClientFactory(handler);
-            }
+            var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) =>
+                    _netAppCertFactory.ValidateCertificateWithCustomCa(cert, chain, sslPolicyErrors, trustedCerts)
+            };
+
+            s3Config.HttpClientFactory = new CustomHttpClientFactory(handler);
         }
         else if (isDevelopment)
         {
