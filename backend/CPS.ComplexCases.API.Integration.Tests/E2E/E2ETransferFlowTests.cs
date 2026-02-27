@@ -296,7 +296,8 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
         Assert.Equal(testContentBytes.Length, metadata.ContentLength);
 
         var egressDestinationPath = TestDataHelper.GenerateTestFolderPath();
-        var egressSession = await UploadFileToEgressAsync(workspaceId, egressDestinationPath, testFileName, testContentBytes);
+        var egressSession =
+            await UploadFileToEgressAsync(workspaceId, egressDestinationPath, testFileName, testContentBytes);
 
         Assert.NotNull(egressSession);
         Assert.NotNull(egressSession.UploadId);
@@ -401,7 +402,8 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
 
         var egressDestinationPath = TestDataHelper.GenerateTestFolderPath();
         var returnFileName = $"returned-{testFileName}";
-        var egressSession = await UploadFileToEgressAsync(workspaceId, egressDestinationPath, returnFileName, originalBytes);
+        var egressSession =
+            await UploadFileToEgressAsync(workspaceId, egressDestinationPath, returnFileName, originalBytes);
 
         Assert.NotNull(egressSession);
         Assert.NotNull(egressSession.UploadId);
@@ -419,9 +421,9 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
 
         var files = new[]
         {
-            ("folder1/file1.txt",                   $"Content for file1 - {Guid.NewGuid()}"),
-            ("folder1/nestedfolder1/file2.txt",     $"Content for file2 - {Guid.NewGuid()}"),
-            ("folder1/nestedfolder1/file3.txt",     $"Content for file3 - {Guid.NewGuid()}"),
+            ("folder1/file1.txt", $"Content for file1 - {Guid.NewGuid()}"),
+            ("folder1/nestedfolder1/file2.txt", $"Content for file2 - {Guid.NewGuid()}"),
+            ("folder1/nestedfolder1/file3.txt", $"Content for file3 - {Guid.NewGuid()}"),
         };
 
         // Act — upload each file the same way TransferFile activity does, using the
@@ -447,25 +449,29 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
                 end: contentBytes.Length - 1,
                 totalSize: contentBytes.Length);
 
-            await _fixture.EgressStorageClient.CompleteUploadAsync(session, TestDataHelper.ComputeMd5Hash(contentBytes));
+            await _fixture.EgressStorageClient.CompleteUploadAsync(session,
+                TestDataHelper.ComputeMd5Hash(contentBytes));
         }
 
         // Assert — list the Egress workspace and filter to just our destination folder
         var allFiles = await _fixture.EgressStorageClient!.GetAllFilesFromFolderAsync(destinationPath, workspaceId);
         var fullFilePaths = allFiles
             .Where(f => !string.IsNullOrEmpty(f.FullFilePath)
-                     && f.FullFilePath.StartsWith(destinationPath, StringComparison.OrdinalIgnoreCase))
+                        && f.FullFilePath.StartsWith(destinationPath, StringComparison.OrdinalIgnoreCase))
             .Select(f => f.FullFilePath!)
             .ToList();
 
         Assert.Equal(3, fullFilePaths.Count);
 
         // file1.txt must land directly under destinationPath — NOT inside a "folder1" sub-folder.
-        Assert.Contains(fullFilePaths, p => p.Equals($"{destinationPath}/file1.txt", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(fullFilePaths,
+            p => p.Equals($"{destinationPath}/file1.txt", StringComparison.OrdinalIgnoreCase));
 
         // file2.txt and file3.txt must land inside a "nestedfolder1" sub-folder.
-        Assert.Contains(fullFilePaths, p => p.Equals($"{destinationPath}/nestedfolder1/file2.txt", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(fullFilePaths, p => p.Equals($"{destinationPath}/nestedfolder1/file3.txt", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(fullFilePaths,
+            p => p.Equals($"{destinationPath}/nestedfolder1/file2.txt", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(fullFilePaths,
+            p => p.Equals($"{destinationPath}/nestedfolder1/file3.txt", StringComparison.OrdinalIgnoreCase));
     }
 
     [SkippableFact]
@@ -480,7 +486,7 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
 
         var files = new[]
         {
-            ("folder1/file1.txt",               Encoding.UTF8.GetBytes($"Original content A - {Guid.NewGuid()}")),
+            ("folder1/file1.txt", Encoding.UTF8.GetBytes($"Original content A - {Guid.NewGuid()}")),
             ("folder1/nestedfolder1/file2.txt", Encoding.UTF8.GetBytes($"Original content B - {Guid.NewGuid()}")),
         };
 
@@ -505,12 +511,14 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
                 end: contentBytes.Length - 1,
                 totalSize: contentBytes.Length);
 
-            await _fixture.EgressStorageClient.CompleteUploadAsync(session, TestDataHelper.ComputeMd5Hash(contentBytes));
+            await _fixture.EgressStorageClient.CompleteUploadAsync(session,
+                TestDataHelper.ComputeMd5Hash(contentBytes));
         }
 
-        var destinationFiles = (await _fixture.EgressStorageClient!.GetAllFilesFromFolderAsync(destinationPath, workspaceId))
+        var destinationFiles =
+            (await _fixture.EgressStorageClient!.GetAllFilesFromFolderAsync(destinationPath, workspaceId))
             .Where(f => !string.IsNullOrEmpty(f.FullFilePath)
-                     && f.FullFilePath.StartsWith(destinationPath, StringComparison.OrdinalIgnoreCase))
+                        && f.FullFilePath.StartsWith(destinationPath, StringComparison.OrdinalIgnoreCase))
             .Select(f => f.FullFilePath!)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -524,6 +532,7 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
             {
                 return destWithSlash + relPath.Substring(rootFolder.Length).TrimStart('/', '\\');
             }
+
             return destWithSlash + relPath;
         }
 
@@ -591,22 +600,11 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
             destinationPath);
 
         var exists = await _fixture.NetAppClient!.DoesObjectExistAsync(arg);
+        Assert.True(exists, "File should exist after initial upload");
 
-        // Attempt to upload updated content to the same path
-        if (!exists)
-        {
-            using (var stream = new MemoryStream(updatedBytes))
-            {
-                var uploadArg = _fixture.NetAppArgFactory!.CreateUploadObjectArg(
-                    bearerToken,
-                    _fixture.NetAppBucketName!,
-                    destinationPath,
-                    stream,
-                    updatedBytes.Length);
-
-                await _fixture.NetAppClient!.UploadObjectAsync(uploadArg);
-            }
-        }
+        // Verify DoesObjectExistAsync correctly detects the duplicate on a second check
+        var duplicateCheck = await _fixture.NetAppClient!.DoesObjectExistAsync(arg);
+        Assert.True(duplicateCheck, "DoesObjectExistAsync should consistently return true for an existing file");
 
         // Assert that the content has not changed (i.e., the file was not overwritten)
         var metadata = await NetAppTestHelper.GetObjectMetadataAsync(_fixture, bearerToken, destinationPath);
@@ -646,12 +644,11 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
             netAppSourcePath);
 
         var alreadyExists = await _fixture.NetAppClient!.DoesObjectExistAsync(getArg);
+        Assert.True(alreadyExists, "File should exist after initial multipart upload");
 
-        if (!alreadyExists)
-        {
-            completedETag = await UploadMultipartFileToNetApp(bearerToken, netAppSourcePath, TestDataHelper.SplitIntoChunks(updatedContent, MinimumMultipartChunkSize).ToList(), completedETag);
-            Assert.False(string.IsNullOrEmpty(completedETag), "Second multipart upload to NetApp should have succeeded");
-        }
+        // Verify the existence check consistently detects the multipart-uploaded file
+        var duplicateCheck = await _fixture.NetAppClient!.DoesObjectExistAsync(getArg);
+        Assert.True(duplicateCheck, "DoesObjectExistAsync should detect existing multipart-uploaded file");
 
         var existingFileMetadata = await _fixture.NetAppClient!.GetHeadObjectMetadataAsync(getArg);
 
@@ -676,7 +673,8 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
         var existingContent2 = Encoding.UTF8.GetBytes($"Existing content 2 - {DateTime.UtcNow:O} - {Guid.NewGuid()}");
         var newContent1 = Encoding.UTF8.GetBytes($"New content 1 - {DateTime.UtcNow:O} - {Guid.NewGuid()}");
         var newContent2 = Encoding.UTF8.GetBytes($"New content 2 - {DateTime.UtcNow:O} - {Guid.NewGuid()}");
-        var overwriteContent = Encoding.UTF8.GetBytes($"Overwrite attempt content - {DateTime.UtcNow:O} - {Guid.NewGuid()}");
+        var overwriteContent =
+            Encoding.UTF8.GetBytes($"Overwrite attempt content - {DateTime.UtcNow:O} - {Guid.NewGuid()}");
 
         var destinationPath1 = $"{_netAppTestFolderPrefix}/{testFileName1}";
         var destinationPath2 = $"{_netAppTestFolderPrefix}/{testFileName2}";
@@ -685,10 +683,10 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
 
         // Pre-upload testFileName1 and testFileName2 to NetApp so they exist before the test runs
         foreach (var (path, content) in new[]
-        {
-            (destinationPath1, existingContent1),
-            (destinationPath2, existingContent2)
-        })
+                 {
+                     (destinationPath1, existingContent1),
+                     (destinationPath2, existingContent2)
+                 })
         {
             using var stream = new MemoryStream(content);
             await _fixture.NetAppClient!.UploadObjectAsync(
@@ -706,10 +704,10 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
         // Act — attempt to upload all four files, skipping any that already exist
         var filesToUpload = new[]
         {
-            (Path: destinationPath1,    FileName: testFileName1, Content: overwriteContent),
-            (Path: destinationPath2,    FileName: testFileName2, Content: overwriteContent),
-            (Path: destinationPathNew1, FileName: newFileName1,  Content: newContent1),
-            (Path: destinationPathNew2, FileName: newFileName2,  Content: newContent2),
+            (Path: destinationPath1, FileName: testFileName1, Content: overwriteContent),
+            (Path: destinationPath2, FileName: testFileName2, Content: overwriteContent),
+            (Path: destinationPathNew1, FileName: newFileName1, Content: newContent1),
+            (Path: destinationPathNew2, FileName: newFileName2, Content: newContent2),
         };
 
         foreach (var (path, fileName, content) in filesToUpload)
@@ -822,7 +820,106 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
         Assert.NotEqual(secondContent.Length, metadataA.ContentLength);
     }
 
-    private async Task<string?> UploadMultipartFileToNetApp(string bearerToken, string netAppSourcePath, List<byte[]> chunks, string? completedETag)
+    [SkippableFact]
+    public async Task EgressToNetApp_NestedFolder_DetectsDuplicatesAtAllLevels()
+    {
+        Skip.If(!IsE2ETransferConfigured, "Both Egress and NetApp configuration required for E2E transfer tests");
+
+        // Arrange
+        var bearerToken = await _fixture.GetUserDelegatedBearerTokenAsync();
+        var folderPrefix = $"{_netAppTestFolderPrefix}/nested-dup-{Guid.NewGuid():N}";
+
+        // Files that will be pre-populated (should be detected as duplicates)
+        var existingFile1Content = Encoding.UTF8.GetBytes($"Existing root file - {Guid.NewGuid()}");
+        var existingNestedContent = Encoding.UTF8.GetBytes($"Existing nested file - {Guid.NewGuid()}");
+
+        // Files that are new (should be uploaded successfully)
+        var newFile2Content = Encoding.UTF8.GetBytes($"New root file - {Guid.NewGuid()}");
+        var newNestedContent = Encoding.UTF8.GetBytes($"New nested file - {Guid.NewGuid()}");
+
+        var paths = new[]
+        {
+            (Path: $"{folderPrefix}/file1.txt", Content: existingFile1Content, ShouldExist: true),
+            (Path: $"{folderPrefix}/nested/nested1.txt", Content: existingNestedContent, ShouldExist: true),
+            (Path: $"{folderPrefix}/file2.txt", Content: newFile2Content, ShouldExist: false),
+            (Path: $"{folderPrefix}/nested/nested2.txt", Content: newNestedContent, ShouldExist: false),
+        };
+
+        // Pre-populate the files that should already exist
+        foreach (var (path, content, shouldExist) in paths.Where(p => p.ShouldExist))
+        {
+            using var stream = new MemoryStream(content);
+            await _fixture.NetAppClient!.UploadObjectAsync(
+                _fixture.NetAppArgFactory!.CreateUploadObjectArg(
+                    bearerToken,
+                    _fixture.NetAppBucketName!,
+                    path,
+                    stream,
+                    content.Length));
+
+            var exists = await NetAppTestHelper.WaitForObjectExistsAsync(_fixture, bearerToken, path);
+            Assert.True(exists, $"Pre-condition failed: {path} should exist before the test runs");
+        }
+
+        // Act — check each file and upload only if it doesn't already exist (mirrors production TransferFile.Run)
+        foreach (var (path, content, shouldExist) in paths)
+        {
+            var getArg = _fixture.NetAppArgFactory!.CreateGetObjectArg(
+                bearerToken,
+                _fixture.NetAppBucketName!,
+                path);
+
+            var alreadyExists = await _fixture.NetAppClient!.DoesObjectExistAsync(getArg);
+
+            if (shouldExist)
+            {
+                // These files were pre-populated — DoesObjectExistAsync should detect them
+                Assert.True(alreadyExists, $"DoesObjectExistAsync should return true for pre-existing file: {path}");
+            }
+            else
+            {
+                // These files are new — DoesObjectExistAsync should return false
+                Assert.False(alreadyExists, $"DoesObjectExistAsync should return false for new file: {path}");
+
+                using var stream = new MemoryStream(content);
+                await _fixture.NetAppClient!.UploadObjectAsync(
+                    _fixture.NetAppArgFactory!.CreateUploadObjectArg(
+                        bearerToken,
+                        _fixture.NetAppBucketName!,
+                        path,
+                        stream,
+                        content.Length));
+            }
+        }
+
+        // Assert — pre-existing files are unchanged
+        var metadata1 =
+            await NetAppTestHelper.GetObjectMetadataAsync(_fixture, bearerToken, $"{folderPrefix}/file1.txt");
+        Assert.Equal(existingFile1Content.Length, metadata1.ContentLength);
+
+        var metadataNested1 =
+            await NetAppTestHelper.GetObjectMetadataAsync(_fixture, bearerToken, $"{folderPrefix}/nested/nested1.txt");
+        Assert.Equal(existingNestedContent.Length, metadataNested1.ContentLength);
+
+        // Assert — new files were uploaded successfully
+        var existsFile2 =
+            await NetAppTestHelper.WaitForObjectExistsAsync(_fixture, bearerToken, $"{folderPrefix}/file2.txt");
+        Assert.True(existsFile2, "New root-level file should have been uploaded");
+        var metadataFile2 =
+            await NetAppTestHelper.GetObjectMetadataAsync(_fixture, bearerToken, $"{folderPrefix}/file2.txt");
+        Assert.Equal(newFile2Content.Length, metadataFile2.ContentLength);
+
+        var existsNested2 =
+            await NetAppTestHelper.WaitForObjectExistsAsync(_fixture, bearerToken,
+                $"{folderPrefix}/nested/nested2.txt");
+        Assert.True(existsNested2, "New nested file should have been uploaded");
+        var metadataNested2 =
+            await NetAppTestHelper.GetObjectMetadataAsync(_fixture, bearerToken, $"{folderPrefix}/nested/nested2.txt");
+        Assert.Equal(newNestedContent.Length, metadataNested2.ContentLength);
+    }
+
+    private async Task<string?> UploadMultipartFileToNetApp(string bearerToken, string netAppSourcePath,
+        List<byte[]> chunks, string? completedETag)
     {
         for (var attempt = 1; attempt <= 3; attempt++)
         {
