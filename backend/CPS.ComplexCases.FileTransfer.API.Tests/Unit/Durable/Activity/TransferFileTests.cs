@@ -416,6 +416,98 @@ public class TransferFileTests
     }
 
     [Fact]
+    public async Task Run_AmazonS3ExceptionWith403AndInvalidAccessKeyId_ReturnsTransientErrorCode()
+    {
+        // Credentials were rotated on NetApp between the S3 client being created and the
+        // upload request completing - the error code uniquely identifies this case.
+        var payload = CreatePayload();
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>()))
+            .ThrowsAsync(new AmazonS3Exception("The AWS access key ID you provided does not exist in our records.")
+                { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "InvalidAccessKeyId" });
+
+        var result = await _activity.Run(payload);
+
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.FailedItem);
+        Assert.Equal(TransferErrorCode.Transient, result.FailedItem.ErrorCode);
+        Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
+    }
+
+    [Fact]
+    public async Task Run_AmazonS3ExceptionWith403AndExpiredToken_ReturnsTransientErrorCode()
+    {
+        var payload = CreatePayload();
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>()))
+            .ThrowsAsync(new AmazonS3Exception("The provided token has expired.")
+                { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "ExpiredToken" });
+
+        var result = await _activity.Run(payload);
+
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.FailedItem);
+        Assert.Equal(TransferErrorCode.Transient, result.FailedItem.ErrorCode);
+        Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
+    }
+
+    [Fact]
+    public async Task Run_AmazonS3ExceptionWith403AndKnownMessageButNoErrorCode_ReturnsTransientErrorCode()
+    {
+        var payload = CreatePayload();
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>()))
+            .ThrowsAsync(new AmazonS3Exception("The AWS access key ID you provided does not exist in our records.")
+                { StatusCode = HttpStatusCode.Forbidden });
+
+        var result = await _activity.Run(payload);
+
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.FailedItem);
+        Assert.Equal(TransferErrorCode.Transient, result.FailedItem.ErrorCode);
+        Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
+    }
+
+    [Fact]
+    public async Task Run_AmazonS3ExceptionWith403Generic_StillReturnsGeneralErrorCode()
+    {
+        // A plain Access Denied (e.g. bucket permission error) must NOT be treated as
+        // transient - it is a permanent error and should not cause orchestrator retries.
+        var payload = CreatePayload();
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>()))
+            .ThrowsAsync(new AmazonS3Exception("Access Denied")
+                { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" });
+
+        var result = await _activity.Run(payload);
+
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.FailedItem);
+        Assert.Equal(TransferErrorCode.GeneralError, result.FailedItem.ErrorCode);
+        Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
+    }
+
+    [Fact]
     public async Task Run_HttpIOException_ReturnsTransientErrorCode()
     {
         var payload = CreatePayload();

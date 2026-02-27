@@ -676,6 +676,116 @@ public class S3ClientFactoryTests
             Times.Once);
     }
 
+ [Fact]
+    public async Task GetS3ClientAsync_WhenCalledConcurrently_RotatesCredentialsOnlyOnce()
+    {
+        // Arrange
+        var bearerToken = GenerateTestJwtToken(TestOid, TestUserName);
+
+        _credentialServiceMock
+            .Setup(x => x.GetCredentialKeysAsync(bearerToken))
+            .ReturnsAsync(("initial-key", "initial-secret"));
+
+        await _factory.GetS3ClientAsync(bearerToken);
+
+        _credentialServiceMock.Invocations.Clear();
+
+        // Simulate credentials expiring
+        var hasRotated = false;
+        var lockObj = new object();
+
+        _keyVaultServiceMock
+            .Setup(x => x.CheckCredentialStatusAsync(TestOid))
+            .ReturnsAsync(() =>
+            {
+                lock (lockObj)
+                {
+                    return new CredentialStatus
+                    {
+                        Exists = true,
+                        NeedsRegeneration = !hasRotated,
+                        IsValid = hasRotated,
+                        RemainingMinutes = hasRotated ? 55 : 2
+                    };
+                }
+            });
+
+        _credentialServiceMock
+            .Setup(x => x.GetCredentialKeysAsync(bearerToken))
+            .ReturnsAsync(() =>
+            {
+                lock (lockObj) { hasRotated = true; }
+                return ("rotated-key", "rotated-secret");
+            });
+
+        // Act
+        var tasks = Enumerable.Range(0, 5)
+            .Select(_ => _factory.GetS3ClientAsync(bearerToken))
+            .ToList();
+
+        await Task.WhenAll(tasks);
+
+        // Assert - SemaphoreSlim should have serialised the calls so that only the
+        // first task rotates; the remaining 4 reuse the cached client
+        _credentialServiceMock.Verify(
+            x => x.GetCredentialKeysAsync(bearerToken),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task GetS3ClientAsync_WhenCalledConcurrently_AllCallersGetAValidClient()
+    {
+        // Arrange
+        var bearerToken = GenerateTestJwtToken(TestOid, TestUserName);
+
+        _credentialServiceMock
+            .Setup(x => x.GetCredentialKeysAsync(bearerToken))
+            .ReturnsAsync(("access-key", "secret-key"));
+
+        var hasRotated = false;
+        var lockObj = new object();
+
+        _keyVaultServiceMock
+            .Setup(x => x.CheckCredentialStatusAsync(TestOid))
+            .ReturnsAsync(() =>
+            {
+                lock (lockObj)
+                {
+                    return new CredentialStatus
+                    {
+                        Exists = true,
+                        NeedsRegeneration = !hasRotated,
+                        IsValid = hasRotated,
+                        RemainingMinutes = hasRotated ? 55 : 2
+                    };
+                }
+            });
+
+        _credentialServiceMock
+            .Setup(x => x.GetCredentialKeysAsync(bearerToken))
+            .ReturnsAsync(() =>
+            {
+                lock (lockObj) { hasRotated = true; }
+                return ("rotated-key", "rotated-secret");
+            });
+
+        await _factory.GetS3ClientAsync(bearerToken);
+
+        // Act
+        var tasks = Enumerable.Range(0, 5)
+            .Select(_ => _factory.GetS3ClientAsync(bearerToken))
+            .ToList();
+
+        var results = await Task.WhenAll(tasks);
+
+        // Assert
+        Assert.All(results, client => Assert.NotNull(client));
+
+        // All callers should get the same client instance
+        var distinctClients = results.Distinct().ToList();
+        Assert.Single(distinctClients);
+    }
+
     private static X509Certificate2 GenerateSelfSignedCertificate(string subjectName)
     {
         var rsa = System.Security.Cryptography.RSA.Create(2048);
