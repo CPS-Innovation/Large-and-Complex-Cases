@@ -482,10 +482,9 @@ public class NetAppClient(
         return Policy
             .HandleResult<UploadPartResponse?>(r => false)
             .Or<AmazonS3Exception>(ex =>
-                ex.StatusCode == System.Net.HttpStatusCode.Forbidden
-                && (ex.ErrorCode is "InvalidAccessKeyId" or "ExpiredToken" or "InvalidClientTokenId"
+             ex.ErrorCode is "InvalidAccessKeyId" or "ExpiredToken" or "InvalidClientTokenId"
                     || ex.Message.Contains("does not exist in our records", StringComparison.OrdinalIgnoreCase)
-                    || ex.Message.Contains("token has expired", StringComparison.OrdinalIgnoreCase)))
+                    || ex.Message.Contains("token has expired", StringComparison.OrdinalIgnoreCase))
             .WaitAndRetryAsync(
                 retryCount: 2,
                 sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(retryAttempt * 3),

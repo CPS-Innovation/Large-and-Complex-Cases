@@ -420,15 +420,14 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         return new TransferResult { IsSuccess = false, FailedItem = failedItem };
     }
 
-    // NetApp returns 403 Forbidden when the access key has been rotated since the
+    // NetApp exception when the access key has been rotated since the
     // S3 client was created. Treating this as transient ensures the orchestrator
     // retries with freshly-resolved credentials.
     // The message fallback covers non-standard NetApp ErrorCode
     private static bool IsCredentialExpiredError(AmazonS3Exception ex) =>
-        ex.StatusCode == System.Net.HttpStatusCode.Forbidden
-        && (ex.ErrorCode is "InvalidAccessKeyId" or "ExpiredToken" or "InvalidClientTokenId"
+            ex.ErrorCode is "InvalidAccessKeyId" or "ExpiredToken" or "InvalidClientTokenId"
             || ex.Message.Contains("does not exist in our records", StringComparison.OrdinalIgnoreCase)
-            || ex.Message.Contains("token has expired", StringComparison.OrdinalIgnoreCase));
+            || ex.Message.Contains("token has expired", StringComparison.OrdinalIgnoreCase);
 
     private static string GetDestinationPath(TransferFilePayload payload)
     {
