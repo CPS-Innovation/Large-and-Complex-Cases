@@ -12,6 +12,7 @@ using CPS.ComplexCases.NetApp.Services;
 using CPS.ComplexCases.NetApp.Telemetry;
 using Moq;
 using System.Security.Cryptography.X509Certificates;
+using System.Net.Security;
 
 namespace CPS.ComplexCases.NetApp.Tests.Unit.Factories;
 
@@ -487,6 +488,195 @@ public class S3ClientFactoryTests
     }
 
     [Fact]
+    public async Task CreateS3Client_UsesCustomCaValidation_WhenNotDevelopmentAndTrustedCertsPresent()
+    {
+        // Arrange
+        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Production");
+
+        var trustedCerts = new X509Certificate2Collection { GenerateSelfSignedCertificate("CN=TestCA") };
+        _netAppCertFactoryMock
+            .Setup(f => f.GetTrustedCaCertificates())
+            .Returns(trustedCerts);
+
+        _netAppCertFactoryMock
+            .Setup(f => f.ValidateCertificateWithCustomCa(
+                It.IsAny<X509Certificate2?>(),
+                It.IsAny<X509Chain?>(),
+                It.IsAny<SslPolicyErrors>(),
+                It.IsAny<X509Certificate2Collection>()))
+            .Returns(true);
+
+        var bearerToken = GenerateTestJwtToken(TestOid, TestUserName);
+
+        // Act
+        var result = await _factory.GetS3ClientAsync(bearerToken);
+
+        // Assert
+        Assert.NotNull(result);
+        _loggerMock.Verify(
+            l => l.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Using custom CA certificate validation (non-Development mode)")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateS3Client_CallsValidateCertificateWithCustomCa_WhenNotDevelopmentAndTrustedCertsPresent()
+    {
+        // Arrange
+        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Production");
+
+        var trustedCerts = new X509Certificate2Collection { GenerateSelfSignedCertificate("CN=TestCA") };
+        _netAppCertFactoryMock
+            .Setup(f => f.GetTrustedCaCertificates())
+            .Returns(trustedCerts);
+
+        // Act
+        await _factory.GetS3ClientAsync(GenerateTestJwtToken(TestOid, TestUserName));
+
+        // Assert
+        _netAppCertFactoryMock.Verify(
+            f => f.GetTrustedCaCertificates(),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateS3Client_BypassesSslValidation_WhenIsDevelopment()
+    {
+        // Arrange
+        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
+
+        var trustedCerts = new X509Certificate2Collection();
+        _netAppCertFactoryMock
+            .Setup(f => f.GetTrustedCaCertificates())
+            .Returns(trustedCerts);
+
+        // Act
+        var result = await _factory.GetS3ClientAsync(GenerateTestJwtToken(TestOid, TestUserName));
+
+        // Assert
+        Assert.NotNull(result);
+        _netAppCertFactoryMock.Verify(
+            f => f.ValidateCertificateWithCustomCa(
+                It.IsAny<X509Certificate2?>(),
+                It.IsAny<X509Chain?>(),
+                It.IsAny<SslPolicyErrors>(),
+                It.IsAny<X509Certificate2Collection>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateS3Client_BypassesSslValidation_WhenIsDevelopmentWithTrustedCerts()
+    {
+        // Arrange
+        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
+
+        // Even with trusted certs present, development mode should bypass SSL
+        var trustedCerts = new X509Certificate2Collection { GenerateSelfSignedCertificate("CN=TestCA") };
+        _netAppCertFactoryMock
+            .Setup(f => f.GetTrustedCaCertificates())
+            .Returns(trustedCerts);
+
+        // Act
+        var result = await _factory.GetS3ClientAsync(GenerateTestJwtToken(TestOid, TestUserName));
+
+        // Assert
+        Assert.NotNull(result);
+        _netAppCertFactoryMock.Verify(
+            f => f.ValidateCertificateWithCustomCa(
+                It.IsAny<X509Certificate2?>(),
+                It.IsAny<X509Chain?>(),
+                It.IsAny<SslPolicyErrors>(),
+                It.IsAny<X509Certificate2Collection>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateS3Client_ThrowsInvalidOperationException_WhenNotDevelopmentAndNoTrustedCerts()
+    {
+        // Arrange
+        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Production");
+
+        _netAppCertFactoryMock
+            .Setup(f => f.GetTrustedCaCertificates())
+            .Returns(new X509Certificate2Collection());
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _factory.GetS3ClientAsync(GenerateTestJwtToken(TestOid, TestUserName)));
+        Assert.Contains("No trusted CA certificates were loaded", exception.Message);
+        Assert.Contains("non-development environments", exception.Message);
+    }
+
+    [Fact]
+    public async Task CreateS3Client_ThrowsInvalidOperationException_WhenStagingAndNoTrustedCerts()
+    {
+        // Arrange
+        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Staging");
+
+        _netAppCertFactoryMock
+            .Setup(f => f.GetTrustedCaCertificates())
+            .Returns(new X509Certificate2Collection());
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _factory.GetS3ClientAsync(GenerateTestJwtToken(TestOid, TestUserName)));
+    }
+
+    [Fact]
+    public async Task GetS3ClientAsync_ThrowsArgumentException_WhenOidClaimMissing()
+    {
+        // Arrange
+        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
+
+        _netAppCertFactoryMock
+            .Setup(f => f.GetTrustedCaCertificates())
+            .Returns(new X509Certificate2Collection());
+
+        var handler = new JwtSecurityTokenHandler();
+        var tokenWithNoOid = handler.WriteToken(new JwtSecurityToken(
+            issuer: "test-issuer",
+            audience: "test-audience",
+            claims: [],
+            expires: DateTime.UtcNow.AddHours(1)));
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ArgumentException>(
+            () => _factory.GetS3ClientAsync(tokenWithNoOid));
+
+        Assert.Contains("oid claim is missing", exception.Message);
+    }
+
+    [Fact]
+    public async Task GetS3ClientAsync_ReturnsCachedClient_WhenOidMatchesAndCredentialsValid()
+    {
+        // Arrange
+        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
+
+        _netAppCertFactoryMock
+            .Setup(f => f.GetTrustedCaCertificates())
+            .Returns(new X509Certificate2Collection());
+
+        _keyVaultServiceMock
+            .Setup(k => k.CheckCredentialStatusAsync(It.IsAny<string>()))
+            .ReturnsAsync(new CredentialStatus { NeedsRegeneration = false });
+
+        var bearerToken = GenerateTestJwtToken(TestOid, TestUserName);
+
+        // Act
+        var firstResult = await _factory.GetS3ClientAsync(bearerToken);
+        var secondResult = await _factory.GetS3ClientAsync(bearerToken);
+        // Assert
+        Assert.Same(firstResult, secondResult);
+        _credentialServiceMock.Verify(
+            s => s.GetCredentialKeysAsync(It.IsAny<string>()),
+            Times.Once);
+    }
+
+ [Fact]
     public async Task GetS3ClientAsync_WhenCalledConcurrently_RotatesCredentialsOnlyOnce()
     {
         // Arrange
@@ -594,5 +784,19 @@ public class S3ClientFactoryTests
         // All callers should get the same client instance
         var distinctClients = results.Distinct().ToList();
         Assert.Single(distinctClients);
+    }
+
+    private static X509Certificate2 GenerateSelfSignedCertificate(string subjectName)
+    {
+        var rsa = System.Security.Cryptography.RSA.Create(2048);
+        var request = new CertificateRequest(
+            subjectName,
+            rsa,
+            System.Security.Cryptography.HashAlgorithmName.SHA256,
+            System.Security.Cryptography.RSASignaturePadding.Pkcs1);
+
+        return request.CreateSelfSigned(
+            DateTimeOffset.UtcNow,
+            DateTimeOffset.UtcNow.AddYears(1));
     }
 }

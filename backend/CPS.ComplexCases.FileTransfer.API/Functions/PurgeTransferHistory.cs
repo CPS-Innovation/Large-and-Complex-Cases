@@ -16,7 +16,7 @@ public class PurgeTransferHistory(ILogger<PurgeTransferHistory> logger, IOptions
 
     [Function(nameof(PurgeTransferHistory))]
     public async Task Run(
-        [TimerTrigger("%FileTransfer__PurgeRetention__Schedule%")] TimerInfo timerInfo,
+        [TimerTrigger("%FileTransferPurgeRetentionSchedule%")] TimerInfo timerInfo,
         [DurableClient] DurableTaskClient client,
         CancellationToken cancellationToken = default)
     {
