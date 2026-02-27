@@ -282,6 +282,17 @@ public class TransferFileTests
         Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
         Assert.Contains(payload.DestinationPath + payload.SourcePath.Path, result.FailedItem.ErrorMessage);
 
+        _sourceClientMock.Verify(x => x.InitiateUploadAsync(
+                It.IsAny<string>(),
+                It.IsAny<long>(),
+                It.IsAny<string>(),
+                It.IsAny<string?>(),
+                It.IsAny<string>(),
+                It.IsAny<string?>(),
+                It.IsAny<string>(),
+                It.IsAny<string?>()),
+            Times.Never);
+
         _sourceClientMock.Verify(x => x.OpenReadStreamAsync(
                 It.IsAny<string>(),
                 It.IsAny<string?>(),
