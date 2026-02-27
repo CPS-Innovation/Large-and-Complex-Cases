@@ -404,6 +404,36 @@ public class S3CredentialServiceTests
     }
 
     [Fact]
+    public async Task GetCredentialsAsync_WhenNetAppReturnsUnauthorized_ThrowsS3CredentialException()
+    {
+        // Arrange
+        var unauthorizedException = new NetAppUnauthorizedException("Unauthorized access to NetApp.");
+
+        var status = new CredentialStatus
+        {
+            Exists = false,
+            IsValid = false,
+            NeedsRegeneration = true
+        };
+
+        _keyVaultServiceMock.Setup(x => x.CheckCredentialStatusAsync(_oid))
+            .ReturnsAsync(status);
+
+        _netAppHttpClientMock.Setup(x => x.RegenerateUserKeysAsync(It.IsAny<RegenerateUserKeysArg>()))
+            .ThrowsAsync(unauthorizedException);
+
+        _netAppArgFactoryMock.Setup(x => x.CreateRegenerateUserKeysArg(_userName, _bearerToken, _options.S3ServiceUuid, _options.SessionDurationSeconds))
+            .Returns(new RegenerateUserKeysArg());
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<S3CredentialException>(() =>
+            _sut.GetCredentialsAsync(_oid, _userName, _bearerToken));
+
+        Assert.Contains("Failed to generate S3 credentials from NetApp", ex.Message);
+        Assert.Equal(unauthorizedException, ex.InnerException);
+    }
+
+    [Fact]
     public async Task GetCredentialsAsync_WhenKeyVaultStorageFails_ThrowsS3CredentialException()
     {
         // Arrange
