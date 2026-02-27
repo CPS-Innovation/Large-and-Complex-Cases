@@ -19,6 +19,7 @@ using CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
 using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Middleware;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
+using CPS.ComplexCases.FileTransfer.API.Telemetry;
 using CPS.ComplexCases.NetApp.Extensions;
 using CPS.ComplexCases.Common.Handlers;
 
@@ -48,6 +49,7 @@ var host = new HostBuilder()
                 EnableAdaptiveSampling = false,
             })
             .ConfigureFunctionsApplicationInsights();
+        services.AddApplicationInsightsTelemetryProcessor<AzureSdkTraceFilter>();
         services.Configure<LoggerFilterOptions>(options =>
         {
             // See: https://learn.microsoft.com/en-us/azure/azure-functions/dotnet-isolated-process-guide?tabs=windows#managing-log-levels

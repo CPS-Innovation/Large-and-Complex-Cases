@@ -43,7 +43,7 @@ test.describe("transfer material egress list", () => {
 
     await expect(page.getByTestId("shared-drive-region-title")).toBeVisible();
     await expect(page.getByTestId("shared-drive-region-title")).toHaveText(
-      "Shared drive- Destination region",
+      "Shared Drive- Destination region",
     );
   });
 

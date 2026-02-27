@@ -45,8 +45,7 @@ const TransferMovePermissionsErrorPage = () => {
             </Button>
 
             <p data-testid="contact-information">
-              To get help, call the Service Desk{" "}
-              <a href="tel:08006926996">0800 692 6996</a>.
+              To get help, contact the product team.
             </p>
           </div>
         </div>

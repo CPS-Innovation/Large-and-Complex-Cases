@@ -42,26 +42,22 @@ const TransferResolveFilePathPage = () => {
 
   const groupedResolvedPathFiles: Record<string, ResolvePathFileType[]> =
     useMemo(() => {
-      return getGroupedResolvePaths(
-        resolvePathFiles,
-        locationState ? locationState?.baseFolderName : "",
-      );
-    }, [resolvePathFiles, locationState]);
+      return getGroupedResolvePaths(resolvePathFiles);
+    }, [resolvePathFiles]);
 
-  const largePathFiles = useMemo(() => {
-    if (!resolvePathFiles.length) {
-      return true;
-    }
-    const longPathFile = resolvePathFiles.find(
+  const largePathFilesCount = useMemo(() => {
+    const longPathFiles = resolvePathFiles.filter(
       (file) =>
-        `${file.relativeFinalPath}/${file.sourceName}`.length >
+        `${file.relativeFinalPath}${file.sourceName}`.length >
         MAX_FILE_PATH_CHARACTERS,
     );
-    return !!longPathFile;
+    return longPathFiles.length;
   }, [resolvePathFiles]);
 
   useEffect(() => {
-    setAriaLiveText("indexing transfer error, file structure is too long");
+    setAriaLiveText(
+      "indexing transfer error,  shorten file names or folder paths",
+    );
   }, []);
 
   useEffect(() => {
@@ -180,39 +176,51 @@ const TransferResolveFilePathPage = () => {
       <BackLink to={`/case/${caseId}/case-management`} replace>
         Back
       </BackLink>
-      {largePathFiles && (
+      {largePathFilesCount > 0 && (
         <span role="alert" aria-live="polite" className="govuk-visually-hidden">
           {ariaLiveText}
         </span>
       )}
       <PageContentWrapper>
-        {!largePathFiles && (
+        {!largePathFilesCount && resolvePathFiles.length > 0 && (
           <div className={styles.successBanner}>
             <NotificationBanner
               type="success"
               data-testid="resolve-path-success-notification-banner"
             >
-              Your {resolvePathFiles.length === 1 ? "file" : "files"} can now be
-              transferred.
+              <b className={styles.successMessage}>
+                Your {resolvePathFiles.length === 1 ? "file" : "files"} can now
+                be transferred.
+              </b>
             </NotificationBanner>
           </div>
         )}
         <div className={styles.contentWrapper}>
-          <h1 className="govuk-heading-xl">File structure is too long</h1>
+          <h1 className="govuk-heading-xl">
+            Shorten file names or folder paths
+          </h1>
           <InsetText data-testid="resolve-file-path-inset-text">
+            {largePathFilesCount === 1 ? (
+              <p>
+                <b>1 file</b> is longer than the 260 character limit{" "}
+              </p>
+            ) : (
+              <p>
+                <b>{largePathFilesCount} files</b> are longer than the 260
+                character limit{" "}
+              </p>
+            )}
+
+            <div>
+              <p>The 260 character limit includes:</p>
+              <ul>
+                <li> the file name </li>
+                <li> all the folder names in the file path </li>
+              </ul>
+            </div>
             <p>
-              There {resolvePathFiles.length === 1 ? "is" : "are"}{" "}
-              <b>
-                {resolvePathFiles.length}{" "}
-                {resolvePathFiles.length === 1 ? "file" : "files"}{" "}
-              </b>
-              with {resolvePathFiles.length === 1 ? "a name" : "names"} longer
-              than {MAX_FILE_PATH_CHARACTERS} characters.
-            </p>
-            <p>
-              You need to rename the{" "}
-              {resolvePathFiles.length === 1 ? "file" : "files"} or change the
-              folder structure.
+              You must shorten the file name or move the file before you can
+              start the transfer.
             </p>
           </InsetText>
 
@@ -245,7 +253,7 @@ const TransferResolveFilePathPage = () => {
                             </div>
                             <div data-testid="character-tag">
                               {getCharactersTag(
-                                `${file.relativeFinalPath}/${file.sourceName}`,
+                                `${file.relativeFinalPath}${file.sourceName}`,
                               )}
                             </div>
                             <div className={styles.renameButton}>
@@ -267,18 +275,20 @@ const TransferResolveFilePathPage = () => {
                 );
               })}
             </div>
-            <div className={styles.btnWrapper}>
-              <Button
-                className={styles.btnStartTransfer}
-                disabled={disableBtns || largePathFiles}
-                onClick={handleStartTransferBtnClick}
-              >
-                Start transfer
-              </Button>
-              <LinkButton onClick={handleCancel} disabled={disableBtns}>
-                Cancel
-              </LinkButton>
-            </div>
+            {resolvePathFiles.length > 0 && (
+              <div className={styles.btnWrapper}>
+                <Button
+                  className={styles.btnStartTransfer}
+                  disabled={disableBtns || largePathFilesCount > 0}
+                  onClick={handleStartTransferBtnClick}
+                >
+                  Start transfer
+                </Button>
+                <LinkButton onClick={handleCancel} disabled={disableBtns}>
+                  Cancel
+                </LinkButton>
+              </div>
+            )}
           </div>
         </div>
       </PageContentWrapper>

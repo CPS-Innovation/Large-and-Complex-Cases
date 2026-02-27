@@ -32,17 +32,15 @@ const EgressConnectConfirmationPage: React.FC<
                       Are you sure?
                     </h1>{" "}
                     <span>
-                      {`Confirm you want to link "${selectedWorkspaceName}" Egress folder to
-              the case?`}
+                      Confirm you want to link{" "}
+                      <b>&quot;{selectedWorkspaceName}&quot;</b> on Egress to
+                      the case?
                     </span>
                   </>
                 ),
               },
             }}
             name="Are you sure?"
-            hint={{
-              children: "You can change the linked folder later if needed.",
-            }}
             items={[
               {
                 children: "Yes",
