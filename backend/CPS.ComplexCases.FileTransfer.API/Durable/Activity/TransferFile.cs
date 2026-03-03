@@ -26,7 +26,12 @@ namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 /// Durable activity for transferring files between storage endpoints.
 /// Handles chunked uploads, computes MD5 hashes for integrity, and returns transfer results.
 /// </summary>
-public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<TransferFile> logger, IOptions<SizeConfig> sizeConfig, IInitializationHandler initializationHandler, ITelemetryClient telemetryClient)
+public class TransferFile(
+    IStorageClientFactory storageClientFactory,
+    ILogger<TransferFile> logger,
+    IOptions<SizeConfig> sizeConfig,
+    IInitializationHandler initializationHandler,
+    ITelemetryClient telemetryClient)
 {
     private readonly IStorageClientFactory _storageClientFactory = storageClientFactory;
     private readonly ILogger<TransferFile> _logger = logger;
@@ -35,7 +40,8 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
     private readonly ITelemetryClient _telemetryClient = telemetryClient;
 
     [Function(nameof(TransferFile))]
-    public async Task<TransferResult> Run([ActivityTrigger] TransferFilePayload payload, CancellationToken cancellationToken = default)
+    public async Task<TransferResult> Run([ActivityTrigger] TransferFilePayload payload,
+        CancellationToken cancellationToken = default)
     {
         var startTime = DateTime.UtcNow;
 
@@ -132,7 +138,8 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             LogFileConflictTelemetry(payload);
             telemetryEvent.ErrorCode = TransferErrorCode.FileExists.ToString();
             telemetryEvent.ErrorMessage = ex.Message;
-            return CreateFailureResult(payload.SourcePath.FullFilePath ?? payload.SourcePath.Path, TransferErrorCode.FileExists, ex.Message, ex);
+            return CreateFailureResult(payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
+                TransferErrorCode.FileExists, ex.Message, ex);
         }
         catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
@@ -147,7 +154,7 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                 ex);
         }
         catch (AmazonS3Exception ex) when ((int)ex.StatusCode >= 500
-            || ex.StatusCode == HttpStatusCode.NotFound)
+                                           || ex.StatusCode == HttpStatusCode.NotFound)
         {
             var errorMessage = $"Transient S3 error (HTTP {(int)ex.StatusCode}): {ex.Message}";
             telemetryEvent.ErrorCode = TransferErrorCode.Transient.ToString();
@@ -189,7 +196,8 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         }
         catch (Exception ex)
         {
-            var errorMessage = $"Exception: {ex.GetType().FullName}: {ex.Message}{Environment.NewLine}StackTrace: {ex.StackTrace}";
+            var errorMessage =
+                $"Exception: {ex.GetType().FullName}: {ex.Message}{Environment.NewLine}StackTrace: {ex.StackTrace}";
             telemetryEvent.ErrorCode = TransferErrorCode.GeneralError.ToString();
             telemetryEvent.ErrorMessage = errorMessage;
             return CreateFailureResult(
@@ -265,50 +273,54 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                long remainingBytes = totalSize - bytesProcessed;
-                int targetPartSize = (int)Math.Min(_sizeConfig.ChunkSizeBytes, remainingBytes);
-                var partData = ArrayPool<byte>.Shared.Rent(targetPartSize);
+                // Wait for upload slot BEFORE reading the next chunk to cap memory usage.
+                // This limits in-flight data copies to MaxConcurrentPartUploads (~32 MB at 8 MB chunks),
+                // preventing OutOfMemoryException on large files.
+                await uploadSemaphore.WaitAsync(cancellationToken);
+                bool uploadTaskOwnsSemaphore = false;
                 try
                 {
-                    int partOffset = 0;
-
-                    while (partOffset < targetPartSize)
-                    {
-                        int bytesToRead = targetPartSize - partOffset;
-                        int bytesRead = await sourceStream.ReadAsync(
-                            partData.AsMemory(partOffset, bytesToRead),
-                            cancellationToken);
-
-                        if (bytesRead == 0)
-                        {
-                            if (bytesProcessed + partOffset < totalSize)
-                            {
-                                throw new InvalidOperationException(
-                                    $"Unexpected end of stream at position {bytesProcessed + partOffset}");
-                            }
-                            break;
-                        }
-                        partOffset += bytesRead;
-                    }
-
-                    if (md5 != null)
-                    {
-                        if (bytesProcessed + partOffset == totalSize)
-                            md5.TransformFinalBlock(partData, 0, partOffset);
-                        else
-                            md5.TransformBlock(partData, 0, partOffset, null, 0);
-                    }
-
-                    long start = bytesProcessed;
-                    long end = start + partOffset - 1;
-                    bytesProcessed += partOffset;
-                    int currentPartNumber = partNumber++;
-
-                    // Wait for upload slot BEFORE copying data
-                    await uploadSemaphore.WaitAsync(cancellationToken);
-                    bool uploadTaskOwnsSemaphore = false;
+                    long remainingBytes = totalSize - bytesProcessed;
+                    int targetPartSize = (int)Math.Min(_sizeConfig.ChunkSizeBytes, remainingBytes);
+                    var partData = ArrayPool<byte>.Shared.Rent(targetPartSize);
                     try
                     {
+                        int partOffset = 0;
+
+                        while (partOffset < targetPartSize)
+                        {
+                            int bytesToRead = targetPartSize - partOffset;
+                            int bytesRead = await sourceStream.ReadAsync(
+                                partData.AsMemory(partOffset, bytesToRead),
+                                cancellationToken);
+
+                            if (bytesRead == 0)
+                            {
+                                if (bytesProcessed + partOffset < totalSize)
+                                {
+                                    throw new InvalidOperationException(
+                                        $"Unexpected end of stream at position {bytesProcessed + partOffset}");
+                                }
+
+                                break;
+                            }
+
+                            partOffset += bytesRead;
+                        }
+
+                        if (md5 != null)
+                        {
+                            if (bytesProcessed + partOffset == totalSize)
+                                md5.TransformFinalBlock(partData, 0, partOffset);
+                            else
+                                md5.TransformBlock(partData, 0, partOffset, null, 0);
+                        }
+
+                        long start = bytesProcessed;
+                        long end = start + partOffset - 1;
+                        bytesProcessed += partOffset;
+                        int currentPartNumber = partNumber++;
+
                         // Copy part data for the upload task
                         var partDataCopy = partData.AsMemory(0, partOffset).ToArray();
 
@@ -345,15 +357,15 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
                     }
                     finally
                     {
-                        if (!uploadTaskOwnsSemaphore)
-                        {
-                            uploadSemaphore.Release();
-                        }
+                        ArrayPool<byte>.Shared.Return(partData);
                     }
                 }
                 finally
                 {
-                    ArrayPool<byte>.Shared.Return(partData);
+                    if (!uploadTaskOwnsSemaphore)
+                    {
+                        uploadSemaphore.Release();
+                    }
                 }
             }
 
@@ -365,7 +377,9 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
             await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
 
             string md5Hash = md5?.Hash != null ? Convert.ToBase64String(md5.Hash) : string.Empty;
-            string? filePath = payload.TransferDirection == TransferDirection.EgressToNetApp ? payload.DestinationPath.EnsureTrailingSlash() + payload.SourcePath.Path : null;
+            string? filePath = payload.TransferDirection == TransferDirection.EgressToNetApp
+                ? payload.DestinationPath.EnsureTrailingSlash() + payload.SourcePath.Path
+                : null;
             var isVerified = await CompleteUpload(destinationClient, session, md5Hash, uploadedEtags,
                 payload.BearerToken, payload.BucketName, filePath);
 
@@ -402,11 +416,13 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         }
         else
         {
-            return await destinationClient.CompleteUploadAsync(session, null, etags: uploadedChunks, bearerToken, bucketName, filePath);
+            return await destinationClient.CompleteUploadAsync(session, null, etags: uploadedChunks, bearerToken,
+                bucketName, filePath);
         }
     }
 
-    private static TransferResult CreateSuccessResult(TransferFilePayload payload, long totalSize, DateTime startTime, int totalParts = 1)
+    private static TransferResult CreateSuccessResult(TransferFilePayload payload, long totalSize, DateTime startTime,
+        int totalParts = 1)
     {
         var endTime = DateTime.UtcNow;
 
@@ -459,10 +475,12 @@ public class TransferFile(IStorageClientFactory storageClientFactory, ILogger<Tr
         }
         else
         {
-            int? index = payload.SourcePath.RelativePath?.IndexOf(payload.SourceRootFolderPath ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+            int? index = payload.SourcePath.RelativePath?.IndexOf(payload.SourceRootFolderPath ?? string.Empty,
+                StringComparison.OrdinalIgnoreCase);
             if (index.HasValue && index.Value == 0 && !string.IsNullOrEmpty(payload.SourceRootFolderPath))
             {
-                return payload.DestinationPath + payload.SourcePath.RelativePath!.Substring(payload.SourceRootFolderPath.Length).TrimStart('/', '\\');
+                return payload.DestinationPath + payload.SourcePath.RelativePath!
+                    .Substring(payload.SourceRootFolderPath.Length).TrimStart('/', '\\');
             }
             else
             {
