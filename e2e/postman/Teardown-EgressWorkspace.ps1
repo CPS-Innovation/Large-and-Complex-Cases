@@ -50,7 +50,7 @@ if (-not $BaseUrl -or -not $ServiceAccountAuth) {
 # Authenticate
 Write-Host "[1/4] Authenticating..." -ForegroundColor Yellow
 
-$tokenJson = curl.exe --silent --location "$BaseUrl/api/v1/user/auth/" `
+$tokenJson = & $curl --silent --location "$BaseUrl/api/v1/user/auth/" `
     --header "Accept: application/json" `
     --header "Authorization: Basic $ServiceAccountAuth"
 
@@ -71,7 +71,7 @@ Write-Host "  [OK] Authenticated" -ForegroundColor Green
 
 Write-Host "[4/4] Deleting workspace..." -ForegroundColor Yellow
 
-$deleteJson = curl.exe --silent --request DELETE `
+$deleteJson = & $curl --silent --request DELETE `
     "$BaseUrl/api/v1/workspaces/$WorkspaceId/" `
     --header "Authorization: Basic $TokenBase64"
 
