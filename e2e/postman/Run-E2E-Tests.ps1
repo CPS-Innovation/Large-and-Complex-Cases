@@ -462,8 +462,17 @@ if (-not $SkipUpload) {
     Write-Host "  Size: $(if ($SizeMB -gt 0) { "$SizeMB MB" } else { "$SizeGB GB" })"
     Write-Host "  File Count: $FileCount"
     Write-Host ""
+
     
-    $tempOutputFile = Join-Path $env:TEMP "egress_upload_output_$((Get-Date).Ticks).txt"
+    $TempFolder = $env:TEMP
+    if ([string]::IsNullOrWhiteSpace($TempFolder)) {
+        $TempFolder = $env:TMPDIR
+    }
+    if ([string]::IsNullOrWhiteSpace($TempFolder)) {
+        $TempFolder = "/tmp"
+    }
+    
+    $tempOutputFile = Join-Path $TempFolder "egress_upload_output_$((Get-Date).Ticks).txt"
     
     & $UploadScriptPath @uploadArgs *>&1 | Tee-Object -FilePath $tempOutputFile
     
