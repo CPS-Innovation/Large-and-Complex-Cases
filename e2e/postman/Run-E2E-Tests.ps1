@@ -124,12 +124,14 @@ if (Test-Path $SecretsFile) {
 
 # Load config with priority: CLI params > env vars > defaults
 $Config = @{
+    BaseUrl       = if ($env:LCC_API_BASE_URL) { $env:LCC_API_BASE_URL } else { "" }
     TenantId      = if ($env:LCC_TENANT_ID) { $env:LCC_TENANT_ID } else { "" }
     RegisterCaseClientId = if ($env:LCC_REGISTER_CASE_CLIENT_ID) { $env:LCC_REGISTER_CASE_CLIENT_ID } else { "" }
     AzureUsername = if ($AzureUsername) { $AzureUsername } elseif ($env:LCC_AZURE_USERNAME) { $env:LCC_AZURE_USERNAME } else { "" }
     AzurePassword = if ($AzurePassword) { $AzurePassword } elseif ($env:LCC_AZURE_PASSWORD) { $env:LCC_AZURE_PASSWORD } else { "" }
     CmsUsername   = if ($CmsUsername) { $CmsUsername } elseif ($env:LCC_CMS_USERNAME) { $env:LCC_CMS_USERNAME } else { "" }
     CmsPassword   = if ($CmsPassword) { $CmsPassword } elseif ($env:LCC_CMS_PASSWORD) { $env:LCC_CMS_PASSWORD } else { "" }
+    DdeiBaseUrl   = if ($env:LCC_DDEI_BASE_URL) { $env:LCC_DDEI_BASE_URL } else { "" }
     DdeiAccessKey = if ($env:LCC_DDEI_ACCESS_KEY) { $env:LCC_DDEI_ACCESS_KEY } else { "" }
     BaseUrl       = if ($env:LCC_BASE_URL) { $env:LCC_BASE_URL } else { "" }
     CaseApiBaseUrl = if ($env:LCC_CASE_API_BASE_URL) { $env:LCC_CASE_API_BASE_URL } else { "" }
@@ -145,6 +147,7 @@ $Config = @{
 
 # Validate required config
 $missingConfig = @()
+if (-not $Config.BaseUrl) { $missingConfig += "LCC_API_BASE_URL" }
 if (-not $Config.TenantId) { $missingConfig += "LCC_TENANT_ID" }
 if (-not $Config.LccApiId) { $missingConfig += "LCC_API_ID" }
 if (-not $Config.AzureUsername) { $missingConfig += "LCC_AZURE_USERNAME (or -AzureUsername)" }
@@ -595,6 +598,10 @@ else {
 Write-Header "STEP 2: Update Variables"
 
 $variables = @{
+    "tenantId" = $Config.TenantId
+    "apiClientId" = $Config.ApiClientId
+    "baseUrl" = $Config.BaseUrl
+    "ddeiBaseUrl" = $Config.DdeiBaseUrl
     "egressWorkspaceId" = $EgressWorkspaceId
     "egressWorkspaceName" = $EgressWorkspaceName
     "defendantSurname" = $EgressWorkspaceName
@@ -679,9 +686,8 @@ Write-Host ""
 
 foreach ($folder in $foldersToRun) {
     Write-Host ""
-    Write-Host "─────────────────────────────────────────────────────────────" -ForegroundColor DarkGray
     Write-Host "Preparing: $folder" -ForegroundColor Cyan
-    Write-Host "─────────────────────────────────────────────────────────────" -ForegroundColor DarkGray
+    Write-Host ""
     
     # When RegisterCase is set and running multiple folders, export environment
     # from the first run so we can capture the caseId/caseUrn for subsequent runs

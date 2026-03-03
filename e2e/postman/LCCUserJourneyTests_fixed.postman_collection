@@ -130,7 +130,7 @@
                                                                                "token"
                                                                            ]
                                                               },
-                                                      "description":  "Get Azure AD token using Resource Owner Password Credentials (ROPC) flow.\n\n**Required Variables:**\n- `tenantId` - Azure AD tenant ID\n- `uiClientId` - UI application client ID\n- `apiClientId` - API application client ID\n- `azureUsername` - Your Azure AD email\n- `azurePassword` - Your Azure AD password\n\n**Outputs:**\n- `accessToken` - JWT token for API calls\n- `bearerToken` - Same as accessToken"
+                                                      "description":  "Get Azure AD token using Resource Owner Password Credentials (ROPC) flow.\n\n**Required Variables:**\n- `tenantId` - Azure AD tenant ID\n- `apiClientId` - API application client ID\n- `azureUsername` - Your Azure AD email\n- `azurePassword` - Your Azure AD password\n\n**Outputs:**\n- `accessToken` - JWT token for API calls\n- `bearerToken` - Same as accessToken"
                                                   },
                                       "response":  [
 
@@ -7739,14 +7739,12 @@
                                                   "  console.log(\u0027=== Azure AD Token (ROPC) ===\u0027);",
                                                   "  ",
                                                   "  const tenantId = vars.get(\u0027tenantId\u0027);",
-                                                  "  const uiClientId = vars.get(\u0027uiClientId\u0027);",
                                                   "  const apiClientId = vars.get(\u0027apiClientId\u0027);",
                                                   "  const azureUsername = vars.get(\u0027azureUsername\u0027);",
                                                   "  const azurePassword = vars.get(\u0027azurePassword\u0027);",
                                                   "",
                                                   "  const missingAadVars = [];",
                                                   "  if (!tenantId) missingAadVars.push(\u0027tenantId\u0027);",
-                                                  "  if (!uiClientId) missingAadVars.push(\u0027uiClientId\u0027);",
                                                   "  if (!apiClientId) missingAadVars.push(\u0027apiClientId\u0027);",
                                                   "  if (!azureUsername) missingAadVars.push(\u0027azureUsername\u0027);",
                                                   "  if (!azurePassword) missingAadVars.push(\u0027azurePassword\u0027);",
@@ -7770,7 +7768,7 @@
                                                   "        body: {",
                                                   "          mode: \u0027urlencoded\u0027,",
                                                   "          urlencoded: [",
-                                                  "            { key: \u0027client_id\u0027, value: uiClientId },",
+                                                  "            { key: \u0027client_id\u0027, value: apiClientId },",
                                                   "            { key: \u0027scope\u0027, value: scope },",
                                                   "            { key: \u0027username\u0027, value: azureUsername },",
                                                   "            { key: \u0027password\u0027, value: azurePassword },",
