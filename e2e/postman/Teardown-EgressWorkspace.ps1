@@ -38,6 +38,28 @@ Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host "        EGRESS CLEANUP SCRIPT"              -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 
+# ============================================================
+# Cross-Platform Environment Setup (Temp + curl)
+# ============================================================
+$TempFolder = $env:TEMP
+if ([string]::IsNullOrWhiteSpace($TempFolder)) {
+    $TempFolder = $env:TMPDIR
+}
+if ([string]::IsNullOrWhiteSpace($TempFolder)) {
+    $TempFolder = "/tmp"
+}
+
+# Use curl.exe on Windows)
+$curl = "curl.exe"
+# Otherwise, fallback to curl (Linux/macOS)
+if (-not (Get-Command $curl -ErrorAction SilentlyContinue)) {
+    $curl = "curl"
+}
+
+# ==============================================================
+# AUTHENTICATE
+# ==============================================================
+
 # Load configuration
 $BaseUrl = $env:LCC_EGRESS_BASE_URL
 $ServiceAccountAuth = $env:LCC_EGRESS_SERVICE_ACCOUNT_AUTH
