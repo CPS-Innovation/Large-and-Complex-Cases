@@ -1,6 +1,6 @@
 # LCC E2E Test Suite
 
-Automated end-to-end tests for the Legal Case Collaboration (LCC) file transfer system.
+Automated end-to-end tests for the Large & Complex Cases (LCC) file transfer system.
 
 ## Quick Start
 
@@ -89,7 +89,7 @@ steps:
       arguments: '-SizeMB 100 -TestsToRun all'
     env:
       LCC_TENANT_ID: $(LCC_TENANT_ID)
-      LCC_CLIENT_ID: $(LCC_CLIENT_ID)
+      LCC_API_CLIENT_ID: $(LCC_CLIENT_ID)
       LCC_AZURE_USERNAME: $(LCC_AZURE_USERNAME)
       LCC_AZURE_PASSWORD: $(LCC_AZURE_PASSWORD)
       LCC_CMS_USERNAME: $(LCC_CMS_USERNAME)

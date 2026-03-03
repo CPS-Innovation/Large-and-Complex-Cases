@@ -67,7 +67,7 @@ param(
     [string]$CollectionPath = ".\LCCUserJourneyTests_fixed.postman_collection",
     
     [Parameter(Mandatory=$false)]
-    [string]$EnvironmentPath = ".\LCCTestEnvironment.postman_environment",
+    [string]$EnvironmentPath = ".\LCCTestEnvironment.postman_environment.template",
     
     [Parameter(Mandatory=$false)]
     [string]$UploadScriptPath = ".\Setup-EgressWorkspaceAndUpload.ps1",
@@ -120,23 +120,28 @@ if (Test-Path $SecretsFile) {
 
 # Load config with priority: CLI params > env vars > defaults
 $Config = @{
+    BaseUrl       = if ($env:LCC_API_BASE_URL) { $env:LCC_API_BASE_URL } else { "" }
     TenantId      = if ($env:LCC_TENANT_ID) { $env:LCC_TENANT_ID } else { "" }
-    ClientId      = if ($env:LCC_CLIENT_ID) { $env:LCC_CLIENT_ID } else { "" }
+    ApiClientId      = if ($env:LCC_API_CLIENT_ID) { $env:LCC_API_CLIENT_ID } else { "" }
     AzureUsername = if ($AzureUsername) { $AzureUsername } elseif ($env:LCC_AZURE_USERNAME) { $env:LCC_AZURE_USERNAME } else { "" }
     AzurePassword = if ($AzurePassword) { $AzurePassword } elseif ($env:LCC_AZURE_PASSWORD) { $env:LCC_AZURE_PASSWORD } else { "" }
     CmsUsername   = if ($CmsUsername) { $CmsUsername } elseif ($env:LCC_CMS_USERNAME) { $env:LCC_CMS_USERNAME } else { "" }
     CmsPassword   = if ($CmsPassword) { $CmsPassword } elseif ($env:LCC_CMS_PASSWORD) { $env:LCC_CMS_PASSWORD } else { "" }
+    DdeiBaseUrl   = if ($env:LCC_DDEI_BASE_URL) { $env:LCC_DDEI_BASE_URL } else { "" }
     DdeiAccessKey = if ($env:LCC_DDEI_ACCESS_KEY) { $env:LCC_DDEI_ACCESS_KEY } else { "" }
 }
 
 # Validate required config
 $missingConfig = @()
+if (-not $Config.BaseUrl) { $missingConfig += "LCC_API_BASE_URL" }
 if (-not $Config.TenantId) { $missingConfig += "LCC_TENANT_ID" }
-if (-not $Config.ClientId) { $missingConfig += "LCC_CLIENT_ID" }
+if (-not $Config.ApiClientId) { $missingConfig += "LCC_API_CLIENT_ID" }
 if (-not $Config.AzureUsername) { $missingConfig += "LCC_AZURE_USERNAME (or -AzureUsername)" }
 if (-not $Config.AzurePassword) { $missingConfig += "LCC_AZURE_PASSWORD (or -AzurePassword)" }
 if (-not $Config.CmsUsername) { $missingConfig += "LCC_CMS_USERNAME (or -CmsUsername)" }
 if (-not $Config.CmsPassword) { $missingConfig += "LCC_CMS_PASSWORD (or -CmsPassword)" }
+if (-not $Config.DdeiBaseUrl) { $missingConfig += "LCC_DDEI_BASE_URL" }
+if (-not $Config.DdeiAccessKey) { $missingConfig += "LCC_DDEI_ACCESS_KEY" }
 
 if ($missingConfig.Count -gt 0) {
     Write-Host ""
@@ -338,16 +343,35 @@ function Run-NewmanFolder {
     
     $fullHtmlReport = Join-Path (Resolve-Path $ReportsDir).Path "$reportName.html"
     $fullJsonReport = Join-Path (Resolve-Path $ReportsDir).Path "$reportName.json"
-    
-    & newman run $fullCollectionPath `
-        --folder $FolderName `
-        --environment $fullEnvPath `
-        --timeout-request 120000 `
-        --delay-request 2000 `
-        -r "cli,htmlextra,json" `
-        --reporter-htmlextra-export $fullHtmlReport `
-        --reporter-htmlextra-logs `
-        --reporter-json-export $fullJsonReport
+    $fullJunitReport = Join-Path (Resolve-Path $ReportsDir).Path "$reportName.xml"
+
+    # Detect CI/CD
+    $runningInCI = $env:TF_BUILD -or $env:GITHUB_ACTIONS
+
+    # Build arguments
+    $newmanArgs = @(
+        "run", $fullCollectionPath
+        "--folder", $FolderName
+        "--environment", $fullEnvPath
+        "--timeout-request", "120000"
+        "--delay-request", "2000"
+        "-r", "cli,htmlextra,json"
+        "--reporter-htmlextra-export", $fullHtmlReport
+        "--reporter-htmlextra-logs"
+        "--reporter-json-export", $fullJsonReport
+    )
+
+    # Add sensitive-data flag only if running in CI/CD
+    if ($runningInCI) {
+        $newmanArgs += @(
+            "-r", "cli,junit,htmlextra"
+            "--reporter-junit-export", $fullJunitReport
+            "--reporter-htmlextra-skipSensitiveData"
+        )
+    }
+
+    # Execute
+    & newman @newmanArgs
     
     $exitCode = $LASTEXITCODE
     $htmlReport = $fullHtmlReport
@@ -526,14 +550,14 @@ else {
 Write-Header "STEP 2: Update Variables"
 
 $variables = @{
+    "tenantId" = $Config.TenantId
+    "apiClientId" = $Config.ApiClientId
+    "baseUrl" = $Config.BaseUrl
+    "ddeiBaseUrl" = $Config.DdeiBaseUrl
     "egressWorkspaceId" = $EgressWorkspaceId
     "egressWorkspaceName" = $EgressWorkspaceName
     "defendantSurname" = $EgressWorkspaceName
     "searchDefendantName" = $EgressWorkspaceName
-    "tenantId" = $Config.TenantId
-    "apiClientId" = $Config.ClientId
-    "clientId" = $Config.ClientId
-    "uiClientId" = $Config.ClientId
     "netappFolderPath" = "Automation-Testing/"
     "sourceRootFolderPath" = "Automation-Testing/"
     "egressDestinationFolder" = "4. Served Evidence/"
@@ -556,9 +580,6 @@ $variables["ddeiAccessKey"] = $Config.DdeiAccessKey
 
 # Update environment file
 $UpdatedEnvPath = Update-EnvironmentFile -EnvironmentPath $EnvironmentPath -Variables $variables -OutputDir $ScriptDir
-
-# Update collection variables
-Update-CollectionVariables -CollectionPath $CollectionPath -Variables $variables
 
 # ============================================================
 # STEP 3: Determine Which Tests to Run
@@ -593,9 +614,8 @@ Write-Host ""
 
 foreach ($folder in $foldersToRun) {
     Write-Host ""
-    Write-Host "─────────────────────────────────────────────────────────────" -ForegroundColor DarkGray
     Write-Host "Preparing: $folder" -ForegroundColor Cyan
-    Write-Host "─────────────────────────────────────────────────────────────" -ForegroundColor DarkGray
+    Write-Host ""
     
     $result = Run-NewmanFolder `
         -CollectionPath $CollectionPath `
