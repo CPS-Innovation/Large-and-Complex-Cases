@@ -101,7 +101,7 @@ $script:Config = @{
     DefaultUploadFolder = "4. Served Evidence/"
     
     # Workspace name prefix for automation
-    WorkspaceNamePrefix = "AUTOMATION-TESTING"
+    WorkspaceNamePrefix = "AUTOMATION-TESTING-"
 }
 # ============================================================
 
