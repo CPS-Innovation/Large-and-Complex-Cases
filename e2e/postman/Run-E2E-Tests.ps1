@@ -130,13 +130,13 @@ $Config = @{
     AzurePassword = if ($AzurePassword) { $AzurePassword } elseif ($env:LCC_AZURE_PASSWORD) { $env:LCC_AZURE_PASSWORD } else { "" }
     CmsUsername   = if ($CmsUsername) { $CmsUsername } elseif ($env:LCC_CMS_USERNAME) { $env:LCC_CMS_USERNAME } else { "" }
     CmsPassword   = if ($CmsPassword) { $CmsPassword } elseif ($env:LCC_CMS_PASSWORD) { $env:LCC_CMS_PASSWORD } else { "" }
+    DdeiBaseUrl   = if ($env:LCC_DDEI_BASE_URL) { $env:LCC_DDEI_BASE_URL } else { "" }
     DdeiAccessKey = if ($env:LCC_DDEI_ACCESS_KEY) { $env:LCC_DDEI_ACCESS_KEY } else { "" }
     DdeiAccessKeyRegCase = if ($env:LCC_DDEI_ACCESS_KEY_REGCASE) { $env:LCC_DDEI_ACCESS_KEY_REGCASE } else { "" }
     BaseUrl       = if ($env:LCC_BASE_URL) { $env:LCC_BASE_URL } else { "" }
     UiUrl         = if ($env:LCC_UI_URL) { $env:LCC_UI_URL } else { "" }
     CaseApiBaseUrl = if ($env:LCC_CASE_API_BASE_URL) { $env:LCC_CASE_API_BASE_URL } else { "" }
     EgressBaseUrl = if ($env:LCC_EGRESS_BASE_URL) { $env:LCC_EGRESS_BASE_URL } else { "" }
-    DdeiBaseUrl   = if ($env:LCC_DDEI_BASE_URL) { $env:LCC_DDEI_BASE_URL } else { "" }
     LccApiId      = if ($env:LCC_API_ID) { $env:LCC_API_ID } else { "" }
     LccApiClientSecret = if ($env:LCC_API_CLIENT_SECRET) { $env:LCC_API_CLIENT_SECRET } else { "" }
     DefaultCaseId      = if ($env:LCC_DEFAULT_CASE_ID) { $env:LCC_DEFAULT_CASE_ID } else { "" }
@@ -375,7 +375,6 @@ function Run-NewmanFolder {
     $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
     $reportName = ($FolderName -replace '[^a-zA-Z0-9]', '_') + "_$timestamp"
     $htmlReport = Join-Path $ReportsDir "$reportName.html"
-    $jsonReport = Join-Path $ReportsDir "$reportName.json"
     
     Write-Host "Folder: $FolderName" -ForegroundColor Gray
     
@@ -420,7 +419,6 @@ function Run-NewmanFolder {
     
     $exitCode = $LASTEXITCODE
     $htmlReport = $fullHtmlReport
-    $jsonReport = $fullJsonReport
     
     $duration = (Get-Date) - $startTime
     
@@ -726,10 +724,13 @@ $additional = [Math]::Max(0, [int][Math]::Ceiling(($totalSizeMB - 100) / 100.0))
 $maxPollAttempts = [Math]::Min(600, 60 + $additional)
 
 $variables = @{
+    "tenantId" = $Config.TenantId
+    "apiClientId" = $Config.ApiClientId
+    "baseUrl" = $Config.BaseUrl
+    "ddeiBaseUrl" = $Config.DdeiBaseUrl
     "egressWorkspaceId" = $EgressWorkspaceId
     "egressWorkspaceName" = $EgressWorkspaceName
     "defendantSurname" = $EgressWorkspaceName
-    "tenantId" = $Config.TenantId
     "registerCaseClientId" = $Config.RegisterCaseClientId
     "lccApiId" = $Config.LccApiId
     "netappFolderPath" = "Automation-Testing/"
@@ -741,11 +742,9 @@ $variables = @{
     "registerCase" = if ($RegisterCase) { "true" } else { "false" }
     "defaultCaseId" = $Config.DefaultCaseId
     "defaultCaseUrn" = $Config.DefaultCaseUrn
-    "baseUrl" = $Config.BaseUrl
     "uiUrl" = $Config.UiUrl
     "caseApiBaseUrl" = $Config.CaseApiBaseUrl
     "egressBaseUrl" = $Config.EgressBaseUrl
-    "ddeiBaseUrl" = $Config.DdeiBaseUrl
 }
 
 if ($EgressFileId) { $variables["egressFileId"] = $EgressFileId }

@@ -28,4 +28,8 @@ sudo apt-get update
 sudo apt-get install -y powershell
 
 # Start PowerShell
+<<<<<<< HEAD
 pwsh -v
+=======
+pwsh
+>>>>>>> fe34e764 (add pipeline and teardown script)
