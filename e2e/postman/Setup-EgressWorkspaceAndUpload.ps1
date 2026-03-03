@@ -200,6 +200,13 @@ $TotalUploadLabel = if ($TotalUploadSize -ge 1GB) {
     "$([Math]::Round($TotalUploadSize / 1MB, 2)) MB"
 }
 
+# Use curl.exe on Windows)
+$curl = "curl.exe"
+# Otherwise, fallback to curl (Linux/macOS)
+if (-not (Get-Command $curl -ErrorAction SilentlyContinue)) {
+    $curl = "curl"
+}
+
 # ============================================================
 # HEADER
 # ============================================================
@@ -226,7 +233,7 @@ Write-Host ""
 # ============================================================
 Write-Host "[1/8] Authenticating with Egress..." -ForegroundColor Yellow
 
-$tokenJson = curl.exe --silent --location "$BaseUrl/api/v1/user/auth/" `
+$tokenJson = & $curl --silent --location "$BaseUrl/api/v1/user/auth/" `
     --header "Accept: application/json" `
     --header "Authorization: Basic $ServiceAccountAuth"
 
@@ -250,7 +257,7 @@ if ([string]::IsNullOrEmpty($WorkspaceName)) {
     $allWorkspaces = @()
     $page = 1
     do {
-        $wsResult = curl.exe --silent --location "$BaseUrl/api/v1/workspaces/?page=$page" `
+        $wsResult = & $curl --silent --location "$BaseUrl/api/v1/workspaces/?page=$page" `
             --header "Authorization: Basic $TokenBase64"
         $wsObj = $wsResult | ConvertFrom-Json
         $allWorkspaces += $wsObj.data
@@ -294,7 +301,7 @@ $bodyFile = Join-Path $env:TEMP "egress_create.json"
     description = "Automation test workspace - Created $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - $FileCount file(s)"
 } | ConvertTo-Json -Compress | Set-Content $bodyFile -Encoding UTF8
 
-$createResult = curl.exe --silent --location --request POST "$BaseUrl/api/v1/workspaces/" `
+$createResult = & $curl --silent --location --request POST "$BaseUrl/api/v1/workspaces/" `
     --header "Authorization: Basic $TokenBase64" `
     --header "Content-Type: application/json" `
     --data "@$bodyFile"
@@ -326,7 +333,7 @@ if ($UserEmail) {
     $bodyFile = Join-Path $env:TEMP "egress_adduser.json"
     $addUserBody | Set-Content $bodyFile -Encoding UTF8
 
-    $addResult = curl.exe --silent --location --request POST "$BaseUrl/api/v1/workspaces/$WorkspaceId/users/" `
+    $addResult = & $curl --silent --location --request POST "$BaseUrl/api/v1/workspaces/$WorkspaceId/users/" `
         --header "Authorization: Basic $TokenBase64" `
         --header "Content-Type: application/json" `
         --data "@$bodyFile"
@@ -334,7 +341,7 @@ if ($UserEmail) {
     Remove-Item $bodyFile -Force -ErrorAction SilentlyContinue
 
     # Verify user was added
-    $usersResult = curl.exe --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId/users/" `
+    $usersResult = & $curl --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId/users/" `
         --header "Authorization: Basic $TokenBase64"
 
     if ($usersResult -match $UserEmail) {
@@ -415,7 +422,7 @@ if ($SkipUpload) {
 
         $initBody | ConvertTo-Json | Set-Content $initBodyFile -Encoding UTF8
 
-        $initJson = curl.exe --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId/uploads" `
+        $initJson = & $curl --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId/uploads" `
             --header "Content-Type: application/json" `
             --header "Authorization: Basic $TokenBase64" `
             --data "@$initBodyFile"
@@ -435,7 +442,7 @@ if ($SkipUpload) {
                 }
                 $initBody | ConvertTo-Json | Set-Content $initBodyFile -Encoding UTF8
 
-                $initJson = curl.exe --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId/uploads" `
+                $initJson = & $curl --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId/uploads" `
                     --header "Content-Type: application/json" `
                     --header "Authorization: Basic $TokenBase64" `
                     --data "@$initBodyFile"
@@ -512,7 +519,7 @@ Folder:      $ActualFolderPath
                 $chunkSuccess = $false
                 $chunkRetries = 3
                 for ($retry = 1; $retry -le $chunkRetries; $retry++) {
-                    $chunkResult = curl.exe --silent --location --request PATCH `
+                    $chunkResult = & $curl --silent --location --request PATCH `
                         "$BaseUrl/api/v1/workspaces/$WorkspaceId/uploads/$UploadId/" `
                         --header "Authorization: Basic $TokenBase64" `
                         --header "Content-Range: $ContentRange" `
@@ -568,7 +575,7 @@ Folder:      $ActualFolderPath
         for ($retry = 1; $retry -le $completeRetries; $retry++) {
             Write-Host "  Sending completion request (attempt $retry/$completeRetries)..." -NoNewline
 
-            $completeResult = curl.exe --silent --location --request PUT `
+            $completeResult = & $curl --silent --location --request PUT `
                 "$BaseUrl/api/v1/workspaces/$WorkspaceId/uploads/$UploadId/" `
                 --header "Authorization: Basic $TokenBase64" `
                 --header "Content-Type: application/json" `
@@ -599,7 +606,7 @@ Folder:      $ActualFolderPath
 
             Start-Sleep -Seconds $retryDelay
 
-            $filesResult = curl.exe --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId/files?folder_id=$FolderId" `
+            $filesResult = & $curl --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId/files?folder_id=$FolderId" `
                 --header "Authorization: Basic $TokenBase64"
 
             try {
