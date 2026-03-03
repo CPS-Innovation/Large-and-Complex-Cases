@@ -67,7 +67,7 @@ export const activityLogPlaywright: ActivityLogResponse = {
       timestamp: "2024-01-18T12:46:10.865517Z",
       userName: "dwight_schrute@cps.gov.uk",
       caseId: "case_1",
-      description: "Case connected to the Shared drive",
+      description: "Case connected to the Shared Drive",
       details: null,
     },
     {

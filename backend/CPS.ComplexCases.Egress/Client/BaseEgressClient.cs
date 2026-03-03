@@ -25,21 +25,36 @@ public abstract class BaseEgressClient(
 
     protected async Task<string> GetWorkspaceToken()
     {
+        // TEMPORARY DIAGNOSTIC: verify Key Vault references are resolving
+        var usernameHint = string.IsNullOrEmpty(_egressOptions.Username)
+            ? "<EMPTY>"
+            : $"{_egressOptions.Username[..Math.Min(3, _egressOptions.Username.Length)]}***" +
+              $" (len={_egressOptions.Username.Length})";
+        var passwordHint = string.IsNullOrEmpty(_egressOptions.Password)
+            ? "<EMPTY>"
+            : $"{_egressOptions.Password[..Math.Min(3, _egressOptions.Password.Length)]}***" +
+              $" (len={_egressOptions.Password.Length})";
+        _logger.LogWarning(
+            "[DIAG] Egress credential check — Username: {UsernameHint}, Password: {PasswordHint}",
+            usernameHint, passwordHint);
+
         var response = await SendRequestAsync<GetWorkspaceTokenResponse>(
             _egressRequestFactory.GetWorkspaceTokenRequest(_egressOptions.Username, _egressOptions.Password));
         return response.Token;
     }
 
-    protected async Task<T> SendRequestAsync<T>(HttpRequestMessage request, [CallerMemberName] string callerMemberName = "")
+    protected async Task<T> SendRequestAsync<T>(HttpRequestMessage request,
+        [CallerMemberName] string callerMemberName = "")
     {
         using var response = await SendRequestAsync(request, false, callerMemberName);
         var responseContent = await response.Content.ReadAsStringAsync();
         var result = JsonSerializer.Deserialize<T>(responseContent)
-            ?? throw new InvalidOperationException("Deserialization returned null.");
+                     ?? throw new InvalidOperationException("Deserialization returned null.");
         return result;
     }
 
-    protected async Task<HttpResponseMessage> SendRequestAsync(HttpRequestMessage request, bool streamResponse = false, [CallerMemberName] string callerMemberName = "")
+    protected async Task<HttpResponseMessage> SendRequestAsync(HttpRequestMessage request, bool streamResponse = false,
+        [CallerMemberName] string callerMemberName = "")
     {
         var completionOption = streamResponse
             ? HttpCompletionOption.ResponseHeadersRead
@@ -52,6 +67,15 @@ public abstract class BaseEgressClient(
         telemetryEvent.CallEndTime = DateTime.UtcNow;
         telemetryEvent.ResponseStatusCode = response.StatusCode;
         _telemetryClient.TrackEvent(telemetryEvent);
+
+        // TEMPORARY DIAGNOSTIC: log response body before EnsureSuccessStatusCode discards it
+        if (!response.IsSuccessStatusCode)
+        {
+            var responseBody = await response.Content.ReadAsStringAsync();
+            _logger.LogError(
+                "[DIAG] Egress non-success response — Status: {StatusCode}, URL: {RequestUrl}, Body: {ResponseBody}",
+                (int)response.StatusCode, request.RequestUri, responseBody);
+        }
 
         try
         {

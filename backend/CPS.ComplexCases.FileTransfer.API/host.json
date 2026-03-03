@@ -12,7 +12,14 @@
     "logLevel": {
       "default": "Information",
       "Microsoft": "Warning",
-      "Microsoft.Hosting.Lifetime": "Information"
+      "Microsoft.Hosting.Lifetime": "Information",
+      "DurableTask.AzureStorage": "Warning",
+      "DurableTask.Core": "Warning",
+      "Azure.Core": "Warning",
+      "Azure.Identity": "Warning",
+      "Worker": "Warning",
+      "Grpc.Net.Client": "Warning",
+      "Microsoft.Azure.WebJobs.Script": "Warning"
     }
   },
   "extensionBundle": {

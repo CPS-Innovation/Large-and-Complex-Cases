@@ -65,10 +65,7 @@ public static class IServiceCollectionExtension
 			client.Timeout = TimeSpan.FromMinutes(10);
 
 		})
-		.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
-		{
-			ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; }
-		})
+		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment))
 		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
 		.AddPolicyHandler(GetRetryPolicy());
 
@@ -83,33 +80,39 @@ public static class IServiceCollectionExtension
 			client.Timeout = TimeSpan.FromMinutes(10);
 
 		})
-		.ConfigurePrimaryHttpMessageHandler(sp =>
-			{
-				var certFactory = sp.GetRequiredService<INetAppCertFactory>();
-				var trustedCerts = certFactory.GetTrustedCaCertificates();
-				if (!isDevelopment && trustedCerts.Count > 0)
-				{
-					var handler = new HttpClientHandler
-					{
-						ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) =>
-							certFactory.ValidateCertificateWithCustomCa(cert, chain, sslPolicyErrors, trustedCerts)
-					};
-					return handler;
-				}
-				else
-				{
-					var handler = new HttpClientHandler
-					{
-						ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; }
-					};
-					return handler;
-				}
-			}
+		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment)
 		)
 		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
 		.AddPolicyHandler(GetRetryPolicy());
 
 		services.AddTransient<NetAppStorageClient>();
+	}
+
+	private static HttpClientHandler CreateHttpClientHandler(IServiceProvider sp, bool isDevelopment)
+	{
+		var certFactory = sp.GetRequiredService<INetAppCertFactory>();
+		var trustedCerts = certFactory.GetTrustedCaCertificates();
+		if (!isDevelopment && trustedCerts.Count > 0)
+		{
+			return new HttpClientHandler
+			{
+				ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) =>
+					certFactory.ValidateCertificateWithCustomCa(cert, chain, sslPolicyErrors, trustedCerts)
+			};
+		}
+		else if (isDevelopment)
+		{
+			return new HttpClientHandler
+			{
+				ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+			};
+		}
+		else
+		{
+			throw new InvalidOperationException(
+				"No trusted CA certificates were loaded. SSL certificate validation cannot be bypassed in non-development environments. " +
+				"Ensure RootCaCert, IssuingCaCert, and/or IssuingCaCert2 are correctly configured.");
+		}
 	}
 
 	private static AsyncPolicyWrap<HttpResponseMessage> GetRetryPolicy()

@@ -7,6 +7,7 @@ using CPS.ComplexCases.NetApp.Models.Dto;
 using CPS.ComplexCases.NetApp.Wrappers;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
+using System.Net;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
@@ -324,26 +325,8 @@ public class NetAppClient(
 
     public async Task<bool> DoesObjectExistAsync(GetObjectArg arg)
     {
-        try
-        {
-            var headObjectArg =
-                _netAppS3HttpArgFactory.CreateGetHeadObjectArg(arg.BearerToken, arg.BucketName, arg.ObjectKey);
-            var response = await _netAppS3HttpClient.GetHeadObjectAsync(headObjectArg);
-            return response.StatusCode == System.Net.HttpStatusCode.OK;
-        }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogError(ex,
-                "HTTP request failed while checking existence of object {ObjectKey} in bucket {BucketName}.",
-                arg.ObjectKey, arg.BucketName);
-            return false;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to check if object {ObjectKey} exists in bucket {BucketName}.", arg.ObjectKey,
-                arg.BucketName);
-            return false;
-        }
+        var response = await GetHeadObjectMetadataAsync(arg);
+        return response.StatusCode == HttpStatusCode.OK;
     }
 
     public async Task<string> DeleteFileOrFolderAsync(DeleteFileOrFolderArg arg)
@@ -394,6 +377,28 @@ public class NetAppClient(
         catch (AmazonS3Exception ex)
         {
             _logger.LogError(ex, "Failed to delete file or folder {Path} from bucket {BucketName}.", arg.Path,
+                arg.BucketName);
+            throw;
+        }
+    }
+
+    public async Task<HeadObjectResponseDto> GetHeadObjectMetadataAsync(GetObjectArg arg)
+    {
+        try
+        {
+            var headObjectArg = _netAppS3HttpArgFactory.CreateGetHeadObjectArg(arg.BearerToken, arg.BucketName, arg.ObjectKey);
+            return await _netAppS3HttpClient.GetHeadObjectAsync(headObjectArg);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex,
+                "HTTP request failed while getting head object metadata for {ObjectKey} in bucket {BucketName}.",
+                arg.ObjectKey, arg.BucketName);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get head object metadata for {ObjectKey} in bucket {BucketName}.", arg.ObjectKey,
                 arg.BucketName);
             throw;
         }

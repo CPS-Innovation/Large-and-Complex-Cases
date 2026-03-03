@@ -26,9 +26,17 @@
       margin: 0.125rem 0.125rem 0.125rem 0;
     }
   }
+  & button {
+    overflow-wrap: break-word;
+    word-break: break-all;
+    text-align: left;
+  }
 }
 
 .listItem {
+  overflow-wrap: break-word;
+  word-break: break-all;
+  text-align: left;
   position: relative;
   padding: 0 0.4rem;
   display: flex;

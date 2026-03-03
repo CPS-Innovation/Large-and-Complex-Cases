@@ -12,9 +12,4 @@ public class PurgeRetentionConfig
     /// Default 30 days.
     /// </summary>
     public int RetentionDays { get; set; } = 30;
-
-    /// <summary>
-    /// Cron expression for the purge timer. Default "0 0 2 * * *" (2:00 AM UTC daily).
-    /// </summary>
-    public string Schedule { get; set; } = "0 0 2 * * *";
 }

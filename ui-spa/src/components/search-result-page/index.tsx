@@ -291,7 +291,7 @@ const CaseSearchResultPage = () => {
     const resultString = resultsCount < 2 ? "case" : "cases";
     const instructionText = (
       <>
-        Select <b>view</b> to transfer files or folders or <b>connect</b> to
+        Select <b>View</b> to transfer files or folders or <b>Connect</b> to
         setup storage locations.
       </>
     );

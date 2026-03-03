@@ -89,8 +89,22 @@ public class S3ClientFactory(
         };
 
         var isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
+        var trustedCerts = _netAppCertFactory.GetTrustedCaCertificates();
 
-        if (isDevelopment)
+        if (!isDevelopment && trustedCerts.Count > 0)
+        {
+            // In non-Development environments, load and trust the custom CA certificates
+            _logger.LogInformation("Using custom CA certificate validation (non-Development mode).");
+
+            var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) =>
+                    _netAppCertFactory.ValidateCertificateWithCustomCa(cert, chain, sslPolicyErrors, trustedCerts)
+            };
+
+            s3Config.HttpClientFactory = new CustomHttpClientFactory(handler);
+        }
+        else if (isDevelopment)
         {
             // In Development, bypass all SSL validation
             ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
@@ -104,19 +118,9 @@ public class S3ClientFactory(
         }
         else
         {
-            // In non-Development environments, load and trust the custom CA certificates
-            _logger.LogInformation("Using custom CA certificate validation (non-Development mode).");
-            var trustedCerts = _netAppCertFactory.GetTrustedCaCertificates();
-            if (trustedCerts.Count > 0)
-            {
-                var handler = new HttpClientHandler
-                {
-                    ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) =>
-                        _netAppCertFactory.ValidateCertificateWithCustomCa(cert, chain, sslPolicyErrors, trustedCerts)
-                };
-
-                s3Config.HttpClientFactory = new CustomHttpClientFactory(handler);
-            }
+            throw new InvalidOperationException(
+                "No trusted CA certificates were loaded. SSL certificate validation cannot be bypassed in non-development environments. " +
+                "Please ensure that the Root CA and Issuing CA certificates are correctly configured in Key Vault.");
         }
 
         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;

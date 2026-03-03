@@ -34,6 +34,8 @@ public class NetAppCertFactory(ILogger<NetAppCertFactory> logger, IOptions<NetAp
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to load Root CA certificate from KV. Error: {Message}.", ex.Message);
+                _trustedCaCertificates = null;
+                throw new InvalidOperationException("Failed to load Root CA certificate from Key Vault. See inner exception for details.", ex);
             }
         }
 
@@ -50,6 +52,8 @@ public class NetAppCertFactory(ILogger<NetAppCertFactory> logger, IOptions<NetAp
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to load Issuing CA certificate from KV. Error: {Message}.", ex.Message);
+                _trustedCaCertificates = null;
+                throw new InvalidOperationException("Failed to load Issuing CA certificate from Key Vault. See inner exception for details.", ex);
             }
         }
 
@@ -66,6 +70,8 @@ public class NetAppCertFactory(ILogger<NetAppCertFactory> logger, IOptions<NetAp
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to load Issuing CA certificate 2 from KV. Error: {Message}.", ex.Message);
+                _trustedCaCertificates = null;
+                throw new InvalidOperationException("Failed to load Issuing CA certificate 2 from Key Vault. See inner exception for details.", ex);
             }
         }
 

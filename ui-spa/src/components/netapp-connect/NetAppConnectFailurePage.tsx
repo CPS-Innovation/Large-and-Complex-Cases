@@ -14,7 +14,7 @@ const NetAppConnectFailurePage: React.FC<NetAppConnectFailurePageProps> = ({
       <PageContentWrapper>
         <div className={styles.contentWrapper}>
           <h1 className="govuk-heading-xl">
-            Sorry, there was a problem connecting to network Shared Drive
+            There is a problem connecting to the Shared Drive
           </h1>
           <p>You can:</p>
           <ul className="govuk-list govuk-list--bullet">

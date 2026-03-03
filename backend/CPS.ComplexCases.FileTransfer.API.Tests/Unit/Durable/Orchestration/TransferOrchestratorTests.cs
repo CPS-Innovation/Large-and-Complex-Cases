@@ -432,6 +432,94 @@ public class TransferOrchestratorTests
     }
 
     [Fact]
+    public async Task RunOrchestrator_WhenNetAppToEgress_WithNestedFolders_DetectsDuplicatesForAllFiles()
+    {
+        // Arrange
+        var payload = new TransferPayload
+        {
+            TransferId = _fixture.Create<Guid>(),
+            DestinationPath = "uploads/",
+            BearerToken = _fixture.Create<string>(),
+            SourceRootFolderPath = "folder1",
+            SourcePaths =
+            [
+                new TransferSourcePath
+                {
+                    Path = "folder1/file1.txt",
+                    RelativePath = "folder1/file1.txt"
+                },
+                new TransferSourcePath
+                {
+                    Path = "folder1/nestedfolder1/file2.txt",
+                    RelativePath = "folder1/nestedfolder1/file2.txt"
+                },
+                new TransferSourcePath
+                {
+                    Path = "folder1/nestedfolder1/file3.txt",
+                    RelativePath = "folder1/nestedfolder1/file3.txt"
+                }
+            ],
+            CaseId = _fixture.Create<int>(),
+            TransferType = TransferType.Copy,
+            TransferDirection = TransferDirection.NetAppToEgress,
+            WorkspaceId = _fixture.Create<string>(),
+            BucketName = _fixture.Create<string>(),
+            UserName = _fixture.Create<string>(),
+            IsRetry = false,
+            CorrelationId = _fixture.Create<Guid>()
+        };
+
+        var destinationFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "uploads/file1.txt",
+            "uploads/nestedfolder1/file2.txt",
+            "uploads/nestedfolder1/file3.txt"
+        };
+
+        var failedItems = new List<TransferFailedItem>();
+        var transferFilePayloads = new List<TransferFilePayload>();
+
+        _contextMock.Setup(c => c.GetInput<TransferPayload>()).Returns(payload);
+
+        _contextMock.Setup(c => c.CallActivityAsync<HashSet<string>>(
+                It.Is<TaskName>(t => t.Name == "ListDestinationFilePaths"),
+                It.IsAny<object>(),
+                It.IsAny<TaskOptions>()))
+            .ReturnsAsync(destinationFiles);
+
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.CompletedTask);
+
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ReturnsAsync(new TransferResult { IsSuccess = true, SuccessfulItem = _fixture.Create<TransferItem>() })
+            .Callback<TaskName, object, TaskOptions>((taskName, p, _) =>
+            {
+                if (taskName.Name == "TransferFile" && p is TransferFilePayload tfp)
+                    transferFilePayloads.Add(tfp);
+            });
+
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask)
+            .Callback<EntityInstanceId, string, object, CallEntityOptions>((_, operation, p, __) =>
+            {
+                if (operation == nameof(TransferEntityState.AddFailedItem) && p is TransferFailedItem fi)
+                    failedItems.Add(fi);
+            });
+
+        // Act
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        // Assert — all three files should be flagged as duplicates; no TransferFile calls made.
+        Assert.Equal(3, failedItems.Count);
+        Assert.All(failedItems, item => Assert.Equal(TransferErrorCode.FileExists, item.ErrorCode));
+        Assert.Empty(transferFilePayloads);
+
+        Assert.Contains(failedItems, f => f.SourcePath == "folder1/file1.txt");
+        Assert.Contains(failedItems, f => f.SourcePath == "folder1/nestedfolder1/file2.txt");
+        Assert.Contains(failedItems, f => f.SourcePath == "folder1/nestedfolder1/file3.txt");
+    }
+
+    [Fact]
     public async Task RunOrchestrator_WhenNotNetAppToEgress_SkipsDestinationListing()
     {
         // Arrange

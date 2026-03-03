@@ -80,7 +80,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
                 onClick={() => handleConnect(data.folderPath)}
                 disabled={!!data.caseId}
               >
-                Connect folder
+                Connect
               </Button>
             ),
           },
@@ -124,7 +124,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
       <BackLink to={backLinkUrl}>Back</BackLink>
       <PageContentWrapper>
         <h1 className="govuk-heading-xl govuk-!-margin-bottom-0">
-          Link a network shared drive folder to the case
+          Link a Shared Drive folder to the case
         </h1>
         <InsetText>
           <p>

@@ -10,9 +10,9 @@ export const egressToNetAppIndexingTransferDev: IndexingFileTransferResponse = {
   files: [
     {
       id: "id_1",
-      sourcePath: "egress/folder1",
+      sourcePath: "egress/folder1/file1.pdf",
     },
-    { id: "id_2", sourcePath: "egress/folder1/folder2" },
+    { id: "id_2", sourcePath: "egress/folder1/folder2/file2.pdf" },
   ],
 };
 
@@ -24,8 +24,8 @@ export const netAppToEgressIndexingTransferDev: IndexingFileTransferResponse = {
   sourceRootFolderPath: "netapp/",
   transferDirection: "NetAppToEgress",
   files: [
-    { sourcePath: "netapp/folder1" },
-    { sourcePath: "netapp/folder1/folder2" },
+    { sourcePath: "netapp/folder1/file1.pdf" },
+    { sourcePath: "netapp/folder1/folder2/file2.pdf" },
   ],
 };
 
@@ -35,12 +35,17 @@ export const egressToNetAppIndexingErrorDev: IndexingFileTransferResponse = {
   sourceRootFolderPath: "egress/",
   transferDirection: "EgressToNetApp",
   destinationPath:
-    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination",
+    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/",
   validationErrors: [
     {
       id: "id_3",
       sourcePath:
-        "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+        "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswweee.pdf",
+    },
+    {
+      id: "id_4",
+      sourcePath:
+        "egress/folder3/file4qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
     },
     {
       id: "id_5",

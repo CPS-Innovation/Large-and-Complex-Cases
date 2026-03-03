@@ -91,7 +91,7 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
                 onClick={() => handleConnect(data.id)}
                 disabled={!!data.caseId}
               >
-                Connect folder
+                Connect
               </Button>
             ),
           },
@@ -122,12 +122,12 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
             There {egressSearchResultsData.length > 1 ? "are" : "is"}{" "}
             <b>
               {egressSearchResultsData.length}{" "}
-              {egressSearchResultsData.length > 1 ? "folders" : "folder"}
+              {egressSearchResultsData.length > 1 ? "cases" : "case"}
             </b>{" "}
             matching <b>{workspaceName}</b>.
           </div>
           <SortableTable
-            caption="egress files and folders table, column headers with buttons are sortable"
+            caption="egress cases table, column headers with buttons are sortable"
             captionClassName="govuk-visually-hidden"
             head={[
               {
@@ -159,7 +159,7 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
       {!egressSearchResultsData.length && (
         <>
           <div className={styles.searchResultsCount}>
-            There are <b>no folders </b>matching <b>{workspaceName}</b>.
+            There are <b>no cases </b>matching <b>{workspaceName}</b>.
           </div>
           <div className={styles.noResultsContent}>
             <div>
@@ -168,7 +168,8 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
             <ul className="govuk-list govuk-list--bullet">
               <li>check for spelling or typing errors</li>
               <li>
-                check the folder exists and you have the correct permissions
+                check the case exists on Egress and you have the correct
+                permissions
               </li>
               <li>contact the product team if you need help</li>
             </ul>

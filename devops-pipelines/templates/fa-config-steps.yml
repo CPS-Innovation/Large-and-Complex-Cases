@@ -114,7 +114,7 @@ steps:
             "slotSetting": false
           },
           {
-            "name": "FileTransfer__PurgeRetention__Schedule",
+            "name": "FileTransferPurgeRetentionSchedule",
             "value": "$(FileTransferPurgeRetentionSchedule)",
             "slotSetting": false
           },
