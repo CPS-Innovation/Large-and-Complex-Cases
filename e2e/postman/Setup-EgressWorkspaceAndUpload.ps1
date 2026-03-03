@@ -200,6 +200,17 @@ $TotalUploadLabel = if ($TotalUploadSize -ge 1GB) {
     "$([Math]::Round($TotalUploadSize / 1MB, 2)) MB"
 }
 
+# ============================================================
+# Cross-Platform Environment Setup (Temp + curl)
+# ============================================================
+$TempFolder = $env:TEMP
+if ([string]::IsNullOrWhiteSpace($TempFolder)) {
+    $TempFolder = $env:TMPDIR
+}
+if ([string]::IsNullOrWhiteSpace($TempFolder)) {
+    $TempFolder = "/tmp"
+}
+
 # Use curl.exe on Windows)
 $curl = "curl.exe"
 # Otherwise, fallback to curl (Linux/macOS)
