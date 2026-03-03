@@ -8,7 +8,7 @@ parameters:
 
 jobs:
 - job: run_e2e_tests
-  depends_on: ${{ parameters.dependsOn}}
+  dependsOn: ${{ parameters.dependsOn }}
   variables:
   - group: lacc-backend-secrets-${{ parameters.environment }}
   - group: lacc-backend-config-${{ parameters.environment }}
