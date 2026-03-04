@@ -326,3 +326,4 @@ nuget.config
 *.postman_environment.json
 *.postman_environment
 newman-reports
+secrets.config.ps1

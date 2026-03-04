@@ -120,26 +120,30 @@ if (Test-Path $SecretsFile) {
 
 # Load config with priority: CLI params > env vars > defaults
 $Config = @{
-    BaseUrl       = if ($env:LCC_API_BASE_URL) { $env:LCC_API_BASE_URL } else { "" }
-    TenantId      = if ($env:LCC_TENANT_ID) { $env:LCC_TENANT_ID } else { "" }
-    ApiClientId      = if ($env:LCC_API_CLIENT_ID) { $env:LCC_API_CLIENT_ID } else { "" }
-    AzureUsername = if ($AzureUsername) { $AzureUsername } elseif ($env:LCC_AZURE_USERNAME) { $env:LCC_AZURE_USERNAME } else { "" }
-    AzurePassword = if ($AzurePassword) { $AzurePassword } elseif ($env:LCC_AZURE_PASSWORD) { $env:LCC_AZURE_PASSWORD } else { "" }
-    CmsUsername   = if ($CmsUsername) { $CmsUsername } elseif ($env:LCC_CMS_USERNAME) { $env:LCC_CMS_USERNAME } else { "" }
-    CmsPassword   = if ($CmsPassword) { $CmsPassword } elseif ($env:LCC_CMS_PASSWORD) { $env:LCC_CMS_PASSWORD } else { "" }
-    DdeiBaseUrl   = if ($env:LCC_DDEI_BASE_URL) { $env:LCC_DDEI_BASE_URL } else { "" }
-    DdeiAccessKey = if ($env:LCC_DDEI_ACCESS_KEY) { $env:LCC_DDEI_ACCESS_KEY } else { "" }
+    BaseUrl        = if ($env:LCC_API_BASE_URL) { $env:LCC_API_BASE_URL } else { "" }
+    UiUrl          = if ($env:LCC_UI_URL) { $env:LCC_UI_URL } else { "" }
+    TenantId       = if ($env:LCC_TENANT_ID) { $env:LCC_TENANT_ID } else { "" }
+    ApiClientId    = if ($env:LCC_API_CLIENT_ID) { $env:LCC_API_CLIENT_ID } else { "" }
+    AzureUsername  = if ($AzureUsername) { $AzureUsername } elseif ($env:LCC_AZURE_USERNAME) { $env:LCC_AZURE_USERNAME } else { "" }
+    AzurePassword  = if ($AzurePassword) { $AzurePassword } elseif ($env:LCC_AZURE_PASSWORD) { $env:LCC_AZURE_PASSWORD } else { "" }
+    CmsUsername    = if ($CmsUsername) { $CmsUsername } elseif ($env:LCC_CMS_USERNAME) { $env:LCC_CMS_USERNAME } else { "" }
+    CmsPassword    = if ($CmsPassword) { $CmsPassword } elseif ($env:LCC_CMS_PASSWORD) { $env:LCC_CMS_PASSWORD } else { "" }
+    CaseApiBaseUrl = if ($env:LCC_CASE_API_BASE_URL) { $env:LCC_CASE_API_BASE_URL } else { "" }
+    DdeiBaseUrl    = if ($env:LCC_DDEI_BASE_URL) { $env:LCC_DDEI_BASE_URL } else { "" }
+    DdeiAccessKey  = if ($env:LCC_DDEI_ACCESS_KEY) { $env:LCC_DDEI_ACCESS_KEY } else { "" }
 }
 
 # Validate required config
 $missingConfig = @()
 if (-not $Config.BaseUrl) { $missingConfig += "LCC_API_BASE_URL" }
+if (-not $Config.UiUrl) { $missingConfig += "LCC_UI_URL" }
 if (-not $Config.TenantId) { $missingConfig += "LCC_TENANT_ID" }
 if (-not $Config.ApiClientId) { $missingConfig += "LCC_API_CLIENT_ID" }
 if (-not $Config.AzureUsername) { $missingConfig += "LCC_AZURE_USERNAME (or -AzureUsername)" }
 if (-not $Config.AzurePassword) { $missingConfig += "LCC_AZURE_PASSWORD (or -AzurePassword)" }
 if (-not $Config.CmsUsername) { $missingConfig += "LCC_CMS_USERNAME (or -CmsUsername)" }
 if (-not $Config.CmsPassword) { $missingConfig += "LCC_CMS_PASSWORD (or -CmsPassword)" }
+if (-not $Config.CaseApiBaseUrl) { $missingConfig += "LCC_CASE_API_BASE_URL" }
 if (-not $Config.DdeiBaseUrl) { $missingConfig += "LCC_DDEI_BASE_URL" }
 if (-not $Config.DdeiAccessKey) { $missingConfig += "LCC_DDEI_ACCESS_KEY" }
 
@@ -586,6 +590,8 @@ $variables = @{
     "tenantId" = $Config.TenantId
     "apiClientId" = $Config.ApiClientId
     "baseUrl" = $Config.BaseUrl
+    "uiUrl" = $Config.uiUrl
+    "caseApiBaseUrl" = $Config.CaseApiBaseUrl
     "ddeiBaseUrl" = $Config.DdeiBaseUrl
     "egressWorkspaceId" = $EgressWorkspaceId
     "egressWorkspaceName" = $EgressWorkspaceName
