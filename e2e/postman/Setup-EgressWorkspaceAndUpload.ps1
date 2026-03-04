@@ -305,7 +305,7 @@ if ([string]::IsNullOrEmpty($WorkspaceName)) {
 # ============================================================
 Write-Host "[3/8] Creating workspace..." -ForegroundColor Yellow
 
-$bodyFile = Join-Path $env:TEMP "egress_create.json"
+$bodyFile = Join-Path $TempFolder "egress_create.json"
 @{
     name = $WorkspaceName
     template_id = $TemplateId
@@ -341,7 +341,7 @@ if ($UserEmail) {
     Write-Host "[4/8] Adding user: $UserEmail..." -ForegroundColor Yellow
 
     $addUserBody = '[{"switch_id":"' + $UserEmail + '","role_id":"' + $AdminRoleId + '"}]'
-    $bodyFile = Join-Path $env:TEMP "egress_adduser.json"
+    $bodyFile = Join-Path $TempFolder "egress_adduser.json"
     $addUserBody | Set-Content $bodyFile -Encoding UTF8
 
     $addResult = & $curl --silent --location --request POST "$BaseUrl/api/v1/workspaces/$WorkspaceId/users/" `
@@ -421,7 +421,7 @@ if ($SkipUpload) {
         Write-Host "[6/8] Initiating upload for: $CurrentFileName" -ForegroundColor Yellow
 
         # Initiate upload for this file
-        $initBodyFile = Join-Path $env:TEMP "egress_init.json"
+        $initBodyFile = Join-Path $TempFolder "egress_init.json"
         $initBody = @{
             filename = $CurrentFileName
             filesize = $FileSize
@@ -479,7 +479,7 @@ if ($SkipUpload) {
         $BytesUploaded = 0
         $ChunkNum = 1
         $FileStartTime = Get-Date
-        $TempFile = Join-Path $env:TEMP "egress_chunk.tmp"
+        $TempFile = Join-Path $TempFolder "egress_chunk.tmp"
         $uploadSuccess = $true
 
         try {
@@ -577,7 +577,7 @@ Folder:      $ActualFolderPath
         # Complete upload
         Write-Host "[8/8] Completing upload..." -ForegroundColor Yellow
 
-        $completeBodyFile = Join-Path $env:TEMP "egress_complete.json"
+        $completeBodyFile = Join-Path $TempFolder "egress_complete.json"
         '{"done":true}' | Set-Content $completeBodyFile -Encoding UTF8
 
         $completeSuccess = $false
