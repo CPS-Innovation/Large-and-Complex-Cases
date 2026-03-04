@@ -51,8 +51,9 @@ jobs:
 
   - script: |
       echo "###### DEBUG ######"
-      echo "egressWorkspaceId:"
-      echo $(egressWorkspaceId)
+      echo "Test Workspace Created in previous step:"
+      echo $(isTestWorkspaceCreated)
+      echo "egressWorkspaceId is: $(egressWorkspaceId)"
       echo "###### DEBUG ######"
 
       mv -f $(System.DefaultWorkingDirectory)/e2e/postman/newman-reports/* $(Build.ArtifactStagingDirectory)
@@ -71,13 +72,13 @@ jobs:
   - publish: '$(Build.ArtifactStagingDirectory)/html-reports'
     artifact: '${{parameters.environment}}-NewmanReportsHTML'
 
-  - task: PowerShell@2
-    displayName: 'Cleanup Egress Test Workspace'
-    condition: ne(variables['egressWorkspaceId'], '')
-    inputs:
-      workingDirectory: '$(System.DefaultWorkingDirectory)/e2e/postman'
-      filePath: '$(System.DefaultWorkingDirectory)/e2e/postman/Teardown-EgressWorkspace.ps1'
-      arguments: '-WorkspaceId $(EgressWorkspaceId)'
-    env:
-      LCC_EGRESS_BASE_URL: $(EgressOptionsUrl)
-      LCC_EGRESS_SERVICE_ACCOUNT_AUTH: $(EgressServiceAccountAuth)
+  # - task: PowerShell@2
+  #   displayName: 'Cleanup Egress Test Workspace'
+  #   condition: eq(variables['isTestWorkspaceCreated'], true)
+  #   inputs:
+  #     workingDirectory: '$(System.DefaultWorkingDirectory)/e2e/postman'
+  #     filePath: '$(System.DefaultWorkingDirectory)/e2e/postman/Teardown-EgressWorkspace.ps1'
+  #     arguments: '-WorkspaceId $(EgressWorkspaceId)'
+  #   env:
+  #     LCC_EGRESS_BASE_URL: $(EgressOptionsUrl)
+  #     LCC_EGRESS_SERVICE_ACCOUNT_AUTH: $(EgressServiceAccountAuth)

@@ -797,6 +797,7 @@ Write-Host ""
 Write-Host "========================================================" -ForegroundColor Yellow
 Write-Host "  ADO PIPELINE OUTPUT" -ForegroundColor Yellow
 Write-Host "========================================================" -ForegroundColor Yellow
+Write-Host "##vso[task.setvariable variable=isTestWorkspaceCreated]$isWorkspaceCreated"
 Write-Host "##vso[task.setvariable variable=egressWorkspaceId]$WorkspaceId"
 Write-Host "##vso[task.setvariable variable=egressWorkspaceName]$WorkspaceName"
 if (-not $SkipUpload -and $UploadedFiles.Count -gt 0) {
