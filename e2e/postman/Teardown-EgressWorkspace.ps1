@@ -39,15 +39,8 @@ Write-Host "        EGRESS CLEANUP SCRIPT"              -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 
 # ============================================================
-# Cross-Platform Environment Setup (Temp + curl)
+# Cross-Platform Environment Setup (curl)
 # ============================================================
-$TempFolder = $env:TEMP
-if ([string]::IsNullOrWhiteSpace($TempFolder)) {
-    $TempFolder = $env:TMPDIR
-}
-if ([string]::IsNullOrWhiteSpace($TempFolder)) {
-    $TempFolder = "/tmp"
-}
 
 # Use curl.exe on Windows)
 $curl = "curl.exe"
