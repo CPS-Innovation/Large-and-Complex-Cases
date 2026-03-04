@@ -325,3 +325,4 @@ nuget.config
 # postman
 *.postman_environment.json
 *.postman_environment
+newman-reports
