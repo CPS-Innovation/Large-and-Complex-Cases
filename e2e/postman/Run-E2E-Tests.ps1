@@ -227,38 +227,38 @@ function Write-Info {
 }
 
 function Check-Newman {
-    # $npm = Get-Command npm -ErrorAction SilentlyContinue
-    # if (-not $npm) {
-    #     Write-Err "npm is not installed. Cannot install Newman."
-    #     return $false
-    # }
+    $npm = Get-Command npm -ErrorAction SilentlyContinue
+    if (-not $npm) {
+        Write-Err "npm is not installed. Cannot install Newman."
+        return $false
+    }
 
-    # $packageInstalled = $false
+    $packageInstalled = $false
 
-    # $newman = Get-Command newman -ErrorAction SilentlyContinue
-    # if (-not $newman) {
+    $newman = Get-Command newman -ErrorAction SilentlyContinue
+    if (-not $newman) {
         Write-Host "Newman not found. Installing..." -ForegroundColor Yellow
-        npm install --ignore-scripts newman
-    #     $packageInstalled = $true
-    # }
+        npm install -g --ignore-scripts newman
+        $packageInstalled = $true
+    }
 
-    # $htmlExtra = Get-Command newman-reporter-htmlextra -ErrorAction SilentlyContinue
-    # if (-not $htmlExtra) {
+    $htmlExtra = Get-Command newman-reporter-htmlextra -ErrorAction SilentlyContinue
+    if (-not $htmlExtra) {
         Write-Host "newman-reporter-htmlextra not found. Installing..." -ForegroundColor Yellow
-        npm install --ignore-scripts newman-reporter-htmlextra
-    #     $packageInstalled = $true
-    # }
+        npm install -g --ignore-scripts newman-reporter-htmlextra
+        $packageInstalled = $true
+    }
 
     # Re-check: verify installs succeeded
     $newman = Get-Command newman -ErrorAction SilentlyContinue
     $htmlExtra = Get-Command newman-reporter-htmlextra -ErrorAction SilentlyContinue
 
     if ($newman -and $htmlExtra) {
-        # if ($packageInstalled) {
+        if ($packageInstalled) {
             Write-Host "Newman and required reporters installed successfully." -ForegroundColor Green
-        # } else {
-        #     Write-Host "Newman and reporters already installed." -ForegroundColor Green
-        # }
+        } else {
+            Write-Host "Newman and reporters already installed." -ForegroundColor Green
+        }
         return $true
     }
     Write-Error "Failed to install Newman or its reporter."
