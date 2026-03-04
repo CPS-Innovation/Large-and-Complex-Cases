@@ -228,13 +228,17 @@ function Write-Info {
 
 function Check-Newman {
     $newman = Get-Command newman -ErrorAction SilentlyContinue
+    $htmlExtra = Get-Command newman-reporter-htmlextra -ErrorAction SilentlyContinue
     if (-not $newman) {
         Write-Err "Newman is not installed!"
-        Write-Host ""
         Write-Host "Install Newman with:" -ForegroundColor Yellow
         Write-Host "  npm install -g newman" -ForegroundColor White
         Write-Host "  npm install -g newman-reporter-htmlextra" -ForegroundColor White
-        Write-Host ""
+        return $false
+    } elseif (-not $htmlExtra) {
+        Write-Err "Newman reporter HTML Extra is not installed!"
+        Write-Host "Install htmlextra reporter with:" -ForegroundColor Yellow
+        Write-Host "  npm install -g newman-reporter-htmlextra" -ForegroundColor White
         return $false
     }
     Write-Success "Newman found: $($newman.Source)"
