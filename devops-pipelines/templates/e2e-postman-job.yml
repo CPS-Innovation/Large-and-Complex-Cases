@@ -6,6 +6,8 @@ parameters:
   type: object
   default: []
 
+pool: 'LACC PreProd Pool'
+
 jobs:
 - job: run_e2e_tests
   dependsOn: ${{ parameters.dependsOn }}
