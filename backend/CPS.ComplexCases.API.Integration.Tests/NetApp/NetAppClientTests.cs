@@ -259,7 +259,7 @@ public class NetAppClientTests : IClassFixture<IntegrationTestFixture>, IAsyncLi
         var nonExistentKey = $"{_testFolderPrefix}/does-not-exist-{Guid.NewGuid():N}.txt";
 
         // Act
-        var exists = await NetAppTestHelper.ObjectExistsViaListAsync(_fixture, bearerToken, nonExistentKey);
+        var exists = await NetAppTestHelper.ObjectExistsViaHeadObjectAsync(_fixture, bearerToken, nonExistentKey);
 
         // Assert
         Assert.False(exists, "Object should not exist");
@@ -336,7 +336,7 @@ public class NetAppClientTests : IClassFixture<IntegrationTestFixture>, IAsyncLi
 
         // Assert
         Assert.False(string.IsNullOrEmpty(completedETag));
-        var exists = await NetAppTestHelper.ObjectExistsViaListAsync(_fixture, bearerToken, objectKey);
+        var exists = await NetAppTestHelper.ObjectExistsViaHeadObjectAsync(_fixture, bearerToken, objectKey);
         Assert.True(exists, "Multipart uploaded file should exist");
     }
 

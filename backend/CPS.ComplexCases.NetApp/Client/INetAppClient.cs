@@ -19,5 +19,6 @@ namespace CPS.ComplexCases.NetApp.Client
         Task<CompleteMultipartUploadResponse?> CompleteMultipartUploadAsync(CompleteMultipartUploadArg arg, CancellationToken cancellationToken = default);
         Task<bool> DoesObjectExistAsync(GetObjectArg arg);
         Task<string> DeleteFileOrFolderAsync(DeleteFileOrFolderArg arg);
+        Task<HeadObjectResponseDto> GetHeadObjectMetadataAsync(GetObjectArg arg);
     }
 }
