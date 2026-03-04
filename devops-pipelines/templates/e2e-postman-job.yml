@@ -50,23 +50,30 @@ jobs:
       LCC_EGRESS_SERVICE_ACCOUNT_AUTH: $(EgressServiceAccountAuth)
 
   - script: |
+      echo "###### DEBUG ######"
+      echo "egressWorkspaceId:"
+      echo $(egressWorkspaceId)
+      echo "###### DEBUG ######"
+
       mv -f $(System.DefaultWorkingDirectory)/e2e/postman/newman-reports/* $(Build.ArtifactStagingDirectory)
       cd $(Build.ArtifactStagingDirectory)
       mkdir html-reports
       mv *.html html-reports
     displayName: 'Stage Reports for Publishing'
+    condition: succeededOrFailed()
 
   - task: PublishTestResults@2
     inputs:
       testResultsFormat: 'JUnit'
       testResultsFiles: '$(Build.ArtifactStagingDirectory)/*.xml'
-    displayName: 'Publish Newman Report' 
+    displayName: 'Publish Newman Report'
     
   - publish: '$(Build.ArtifactStagingDirectory)/html-reports'
     artifact: '${{parameters.environment}}-NewmanReportsHTML'
 
   - task: PowerShell@2
     displayName: 'Cleanup Egress Test Workspace'
+    condition: ne(variables['egressWorkspaceId'], '')
     inputs:
       workingDirectory: '$(System.DefaultWorkingDirectory)/e2e/postman'
       filePath: '$(System.DefaultWorkingDirectory)/e2e/postman/Teardown-EgressWorkspace.ps1'
