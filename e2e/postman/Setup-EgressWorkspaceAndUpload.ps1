@@ -303,6 +303,7 @@ if ([string]::IsNullOrEmpty($WorkspaceName)) {
 # ============================================================
 # STEP 3: Create Workspace
 # ============================================================
+
 Write-Host "[3/8] Creating workspace..." -ForegroundColor Yellow
 
 $bodyFile = Join-Path $TempFolder "egress_create.json"
@@ -319,10 +320,12 @@ $createResult = & $curl --silent --location --request POST "$BaseUrl/api/v1/work
 
 Remove-Item $bodyFile -Force -ErrorAction SilentlyContinue
 
+$isWorkspaceCreated = $false
 $WorkspaceId = ""
 try {
     $createObj = $createResult | ConvertFrom-Json
     if ($createObj.id) {
+        $isWorkspaceCreated = $true
         $WorkspaceId = $createObj.id
         Write-Host "  [OK] Workspace created: $WorkspaceId" -ForegroundColor Green
     } else {
@@ -732,6 +735,7 @@ Write-Host ""
 Write-Host "========================================================" -ForegroundColor Yellow
 Write-Host "  ADO PIPELINE OUTPUT" -ForegroundColor Yellow
 Write-Host "========================================================" -ForegroundColor Yellow
+Write-Host "##vso[task.setvariable variable=isTestWorkspaceCreated]$isWorkspaceCreated"
 Write-Host "##vso[task.setvariable variable=egressWorkspaceId]$WorkspaceId"
 Write-Host "##vso[task.setvariable variable=egressWorkspaceName]$WorkspaceName"
 if (-not $SkipUpload -and $UploadedFiles.Count -gt 0) {
