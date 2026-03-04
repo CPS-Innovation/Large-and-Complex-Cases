@@ -605,7 +605,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net",
+                                                                         "value":  "{{uiUrl}}",
                                                                          "type":  "text"
                                                                      }
                                                                  ],
@@ -709,7 +709,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net",
+                                                                         "value":  "{{uiUrl}}",
                                                                          "type":  "text"
                                                                      }
                                                                  ],
@@ -798,7 +798,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net",
+                                                                         "value":  "{{uiUrl}}",
                                                                          "type":  "text"
                                                                      }
                                                                  ],
@@ -918,7 +918,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net",
+                                                                         "value":  "{{uiUrl}}",
                                                                          "type":  "text"
                                                                      }
                                                                  ],
@@ -1208,7 +1208,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net",
+                                                                         "value":  "{{uiUrl}}",
                                                                          "type":  "text"
                                                                      }
                                                                  ],
@@ -1758,7 +1758,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net",
+                                                                         "value":  "{{uiUrl}}",
                                                                          "type":  "text"
                                                                      }
                                                                  ],
@@ -1856,7 +1856,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net",
+                                                                         "value":  "{{uiUrl}}",
                                                                          "type":  "text"
                                                                      }
                                                                  ],
@@ -1976,7 +1976,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net",
+                                                                         "value":  "{{uiUrl}}",
                                                                          "type":  "text"
                                                                      }
                                                                  ],
@@ -2058,7 +2058,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "url":  {
@@ -2151,7 +2151,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "body":  {
@@ -2228,7 +2228,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "body":  {
@@ -2313,7 +2313,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "url":  {
@@ -2430,7 +2430,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "url":  {
@@ -2518,7 +2518,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "url":  {
@@ -2980,11 +2980,8 @@
                                                                },
                                                       "url":  {
                                                                   "raw":  "{{caseApiBaseUrl}}/api/v1/cases",
-                                                                  "protocol":  "https",
                                                                   "host":  [
-                                                                               "fa-cm-api-dev",
-                                                                               "azurewebsites",
-                                                                               "net"
+                                                                               "{{caseApiBaseUrl}}"
                                                                            ],
                                                                   "path":  [
                                                                                "api",
@@ -2992,7 +2989,7 @@
                                                                                "cases"
                                                                            ]
                                                               },
-                                                      "description":  "Generated from cURL: curl --location \u0027{{baseUrl}}/api/v1/cases\u0027 \\\r\n--header \u0027Content-Type: application/json\u0027 \\\r\n--header \u0027Correlation-Id: bc838a6f-a337-437f-8e42-4d65469f9798\u0027 \\\r\n--header \u0027Cookie: Cms-Auth-Values=%7B%22Cookies%22%3A%22ASP.NET_SessionId%3Dulpixrfdcvml3za1hdj422og%3B%20UID%3D107546%3B%20WindowID%3DMASTER%3B%20CMSUSER107546%3Dulpixrfdcvml3za1hdj422og%3B%20.CMSAUTH%3DFD05163543BAC665F4B154276A0CE0E5304706EE1D60FD09496CAB70192F9B9794955DEF363D04BEFBF320F354587066E6F4207F6D0D2A6F9F675E0B820107D8934D67E56C3F68794153A3B4B51D52498CB2EF0A81925FADDC9FC8E4F08E87356DF2157547D3742B010297C8EBCA2C15FB41A42519377A312B79BA1A6E42635066B8FF97%3B%20dtCookie%3Dv_4_srv_4_sn_E09DF4A74B6AAC89D762D0DB73BD9B9B_perc_100000_ol_0_mul_1_app-3A1d479dbf707b0c2a_1%3B%20BIGipServer~ent-s221~CPSACP-LTM-CM-WAN-CIN3-cin3.cps.gov.uk_POOL%3Drd1o00000000000000000000ffff0a02a00do80%22%2C%22Token%22%3A%226db92e06-827e-479b-9bf4-c0f5dd0bf721%22%2C%22ExpiryTime%22%3A%222026-01-15T16%3A56%3A29.8514537%2B00%3A00%22%7D\u0027 \\\r\n--header \u0027Authorization: Bearer {{accessToken}}\u0027 \\\r\n--data \u0027{\r\n    \"urn\": {\r\n        \"policeForce\": \"45\",\r\n        \"policeUnit\": \"EL\",\r\n        \"uniqueRef\": \"45155\",\r\n        \"year\": 25\r\n    },\r\n    \"registeringAreaId\": 1001,\r\n    \"registeringUnitId\": 2002,\r\n    \"allocatedWcuId\": 2012391,\r\n    \"crest\": \"\",\r\n    \"operationName\": \"\",\r\n    \"courtLocationId\": 0,\r\n    \"courtLocationName\": \"\",\r\n    \"hearingDate\": null,\r\n    \"defendants\": [],\r\n    \"victims\": [],\r\n    \"complexity\": \"\",\r\n    \"caseWeight\": \"\",\r\n    \"monitoringCodes\":[\r\n        {\r\n            \"code\": \"CSEA\",\r\n            \"selected\": true\r\n        }\r\n    ],\r\n    \"prosecutorId\": 0,\r\n    \"caseWorker\": \"\",\r\n    \"oicRank\": \"\",\r\n    \"oicSurname\": \"\",\r\n    \"oicFirstnames\": \"\",\r\n    \"oicShoulderNumber\": \"\",\r\n    \"oicPoliceUnit\": \"\"\r\n}\u0027"
+                                                      "description":  "Register a case with CMS with the Case Management Register a Case API"
                                                   },
                                       "response":  [
 
@@ -3085,7 +3082,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "url":  {
@@ -3160,11 +3157,8 @@
                                                                },
                                                       "url":  {
                                                                   "raw":  "{{baseUrl}}/api/v1/egress/connections",
-                                                                  "protocol":  "https",
                                                                   "host":  [
-                                                                               "fa-lacc-api-dev",
-                                                                               "azurewebsites",
-                                                                               "net"
+                                                                               "{{baseUrl}}"
                                                                            ],
                                                                   "path":  [
                                                                                "api",
@@ -3173,7 +3167,7 @@
                                                                                "connections"
                                                                            ]
                                                               },
-                                                      "description":  "Generated from cURL: curl --location \u0027{{baseUrl}}/api/v1/egress/connections\u0027 \\\r\n--header \u0027Authorization: Bearer {{accessToken}}\u0027 \\\r\n--header \u0027Content-Type: application/json\u0027 \\\r\n--header \u0027Accept: */*\u0027 \\\r\n--header \u0027Correlation-Id: 885303ba-f706-4deb-82f8-c6fffb072021\u0027 \\\r\n--data \u0027{\r\n    \"egressWorkspaceId\": \"{{egressWorkspaceId}}\",\r\n    \"caseId\": 2178476\r\n}\u0027"
+                                                      "description":  "Search for a case in Egress"
                                                   },
                                       "response":  [
 
@@ -3216,11 +3210,8 @@
                                                                  ],
                                                       "url":  {
                                                                   "raw":  "{{baseUrl}}/api/v1/netapp/folders?operation-name={{egressWorkspaceName}}\u0026path=\u0026take=50\u0026continuation-token=",
-                                                                  "protocol":  "https",
                                                                   "host":  [
-                                                                               "fa-lacc-api-dev",
-                                                                               "azurewebsites",
-                                                                               "net"
+                                                                               "{{baseUrl}}"
                                                                            ],
                                                                   "path":  [
                                                                                "api",
@@ -3247,7 +3238,7 @@
                                                                                 }
                                                                             ]
                                                               },
-                                                      "description":  "Generated from cURL: curl --location \u0027{{baseUrl}}/api/v1/netapp/folders?operation-name=AUTOMATION-TESTING9\u0026path=\u0026take=50\u0026continuation-token=\u0027 \\\r\n--header \u0027Authorization: Bearer {{accessToken}}\u0027 \\\r\n--header \u0027Accept: */*\u0027 \\\r\n--header \u0027Correlation-Id: 885303ba-f706-4deb-82f8-c6fffb072021\u0027"
+                                                      "description":  "Find a matching folder in Shared Drive"
                                                   },
                                       "response":  [
 
@@ -3303,11 +3294,8 @@
                                                                },
                                                       "url":  {
                                                                   "raw":  "{{baseUrl}}/api/v1/netapp/connections",
-                                                                  "protocol":  "https",
                                                                   "host":  [
-                                                                               "fa-lacc-api-dev",
-                                                                               "azurewebsites",
-                                                                               "net"
+                                                                               "{{baseUrl}}"
                                                                            ],
                                                                   "path":  [
                                                                                "api",
@@ -3316,7 +3304,7 @@
                                                                                "connections"
                                                                            ]
                                                               },
-                                                      "description":  "Generated from cURL: curl --location \u0027{{baseUrl}}/api/v1/netapp/connections\u0027 \\\r\n--header \u0027Authorization: Bearer {{accessToken}}\u0027 \\\r\n--header \u0027Content-Type: application/json\u0027 \\\r\n--header \u0027Accept: */*\u0027 \\\r\n--header \u0027Correlation-Id: 885303ba-f706-4deb-82f8-c6fffb072021\u0027 \\\r\n--data \u0027{\r\n    \"operationName\": \"AUTOMATION-TESTING9\",\r\n    \"folderPath\": \"{{netappFolderPath}}\",\r\n    \"caseId\": 2178476\r\n}\u0027"
+                                                      "description":  "Connect to NetApp"
                                                   },
                                       "response":  [
 
@@ -3423,7 +3411,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "url":  {
@@ -3577,7 +3565,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "url":  {
@@ -3752,7 +3740,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "body":  {
@@ -3909,7 +3897,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "body":  {
@@ -4071,7 +4059,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "url":  {
@@ -4235,7 +4223,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "url":  {
@@ -4328,7 +4316,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "url":  {
@@ -4644,11 +4632,8 @@
                                                                },
                                                       "url":  {
                                                                   "raw":  "{{caseApiBaseUrl}}/api/v1/cases",
-                                                                  "protocol":  "https",
                                                                   "host":  [
-                                                                               "fa-cm-api-dev",
-                                                                               "azurewebsites",
-                                                                               "net"
+                                                                               "{{caseApiBaseUrl}}"
                                                                            ],
                                                                   "path":  [
                                                                                "api",
@@ -4656,7 +4641,7 @@
                                                                                "cases"
                                                                            ]
                                                               },
-                                                      "description":  "Generated from cURL: curl --location \u0027{{baseUrl}}/api/v1/cases\u0027 \\\r\n--header \u0027Content-Type: application/json\u0027 \\\r\n--header \u0027Correlation-Id: bc838a6f-a337-437f-8e42-4d65469f9798\u0027 \\\r\n--header \u0027Cookie: Cms-Auth-Values=%7B%22Cookies%22%3A%22ASP.NET_SessionId%3Dulpixrfdcvml3za1hdj422og%3B%20UID%3D107546%3B%20WindowID%3DMASTER%3B%20CMSUSER107546%3Dulpixrfdcvml3za1hdj422og%3B%20.CMSAUTH%3DFD05163543BAC665F4B154276A0CE0E5304706EE1D60FD09496CAB70192F9B9794955DEF363D04BEFBF320F354587066E6F4207F6D0D2A6F9F675E0B820107D8934D67E56C3F68794153A3B4B51D52498CB2EF0A81925FADDC9FC8E4F08E87356DF2157547D3742B010297C8EBCA2C15FB41A42519377A312B79BA1A6E42635066B8FF97%3B%20dtCookie%3Dv_4_srv_4_sn_E09DF4A74B6AAC89D762D0DB73BD9B9B_perc_100000_ol_0_mul_1_app-3A1d479dbf707b0c2a_1%3B%20BIGipServer~ent-s221~CPSACP-LTM-CM-WAN-CIN3-cin3.cps.gov.uk_POOL%3Drd1o00000000000000000000ffff0a02a00do80%22%2C%22Token%22%3A%226db92e06-827e-479b-9bf4-c0f5dd0bf721%22%2C%22ExpiryTime%22%3A%222026-01-15T16%3A56%3A29.8514537%2B00%3A00%22%7D\u0027 \\\r\n--header \u0027Authorization: Bearer {{accessToken}}\u0027 \\\r\n--data \u0027{\r\n    \"urn\": {\r\n        \"policeForce\": \"45\",\r\n        \"policeUnit\": \"EL\",\r\n        \"uniqueRef\": \"45155\",\r\n        \"year\": 25\r\n    },\r\n    \"registeringAreaId\": 1001,\r\n    \"registeringUnitId\": 2002,\r\n    \"allocatedWcuId\": 2012391,\r\n    \"crest\": \"\",\r\n    \"operationName\": \"\",\r\n    \"courtLocationId\": 0,\r\n    \"courtLocationName\": \"\",\r\n    \"hearingDate\": null,\r\n    \"defendants\": [],\r\n    \"victims\": [],\r\n    \"complexity\": \"\",\r\n    \"caseWeight\": \"\",\r\n    \"monitoringCodes\":[\r\n        {\r\n            \"code\": \"CSEA\",\r\n            \"selected\": true\r\n        }\r\n    ],\r\n    \"prosecutorId\": 0,\r\n    \"caseWorker\": \"\",\r\n    \"oicRank\": \"\",\r\n    \"oicSurname\": \"\",\r\n    \"oicFirstnames\": \"\",\r\n    \"oicShoulderNumber\": \"\",\r\n    \"oicPoliceUnit\": \"\"\r\n}\u0027"
+                                                      "description":  "Register a Case in CMS with the Case Management Register a Case API"
                                                   },
                                       "response":  [
 
@@ -4749,7 +4734,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "url":  {
@@ -4824,11 +4809,8 @@
                                                                },
                                                       "url":  {
                                                                   "raw":  "{{baseUrl}}/api/v1/egress/connections",
-                                                                  "protocol":  "https",
                                                                   "host":  [
-                                                                               "fa-lacc-api-dev",
-                                                                               "azurewebsites",
-                                                                               "net"
+                                                                               "{{baseUrl}}"
                                                                            ],
                                                                   "path":  [
                                                                                "api",
@@ -4837,7 +4819,7 @@
                                                                                "connections"
                                                                            ]
                                                               },
-                                                      "description":  "Generated from cURL: curl --location \u0027{{baseUrl}}/api/v1/egress/connections\u0027 \\\r\n--header \u0027Authorization: Bearer {{accessToken}}\u0027 \\\r\n--header \u0027Content-Type: application/json\u0027 \\\r\n--header \u0027Accept: */*\u0027 \\\r\n--header \u0027Correlation-Id: 885303ba-f706-4deb-82f8-c6fffb072021\u0027 \\\r\n--data \u0027{\r\n    \"egressWorkspaceId\": \"{{egressWorkspaceId}}\",\r\n    \"caseId\": 2178476\r\n}\u0027"
+                                                      "description":  "Connect to Egress"
                                                   },
                                       "response":  [
 
@@ -4893,11 +4875,8 @@
                                                                },
                                                       "url":  {
                                                                   "raw":  "{{baseUrl}}/api/v1/netapp/connections",
-                                                                  "protocol":  "https",
                                                                   "host":  [
-                                                                               "fa-lacc-api-dev",
-                                                                               "azurewebsites",
-                                                                               "net"
+                                                                               "{{baseUrl}}"
                                                                            ],
                                                                   "path":  [
                                                                                "api",
@@ -4906,7 +4885,7 @@
                                                                                "connections"
                                                                            ]
                                                               },
-                                                      "description":  "Generated from cURL: curl --location \u0027{{baseUrl}}/api/v1/netapp/connections\u0027 \\\r\n--header \u0027Authorization: Bearer {{accessToken}}\u0027 \\\r\n--header \u0027Content-Type: application/json\u0027 \\\r\n--header \u0027Accept: */*\u0027 \\\r\n--header \u0027Correlation-Id: 885303ba-f706-4deb-82f8-c6fffb072021\u0027 \\\r\n--data \u0027{\r\n    \"operationName\": \"AUTOMATION-TESTING9\",\r\n    \"folderPath\": \"{{netappFolderPath}}\",\r\n    \"caseId\": 2178476\r\n}\u0027"
+                                                      "description":  "Connect to NetApp"
                                                   },
                                       "response":  [
 
@@ -4949,11 +4928,8 @@
                                                                  ],
                                                       "url":  {
                                                                   "raw":  "{{baseUrl}}/api/v1/netapp/folders?operation-name={{egressWorkspaceName}}\u0026path=\u0026take=50\u0026continuation-token=",
-                                                                  "protocol":  "https",
                                                                   "host":  [
-                                                                               "fa-lacc-api-dev",
-                                                                               "azurewebsites",
-                                                                               "net"
+                                                                               "{{baseUrl}}"
                                                                            ],
                                                                   "path":  [
                                                                                "api",
@@ -4980,7 +4956,7 @@
                                                                                 }
                                                                             ]
                                                               },
-                                                      "description":  "Generated from cURL: curl --location \u0027{{baseUrl}}/api/v1/netapp/folders?operation-name=AUTOMATION-TESTING9\u0026path=\u0026take=50\u0026continuation-token=\u0027 \\\r\n--header \u0027Authorization: Bearer {{accessToken}}\u0027 \\\r\n--header \u0027Accept: */*\u0027 \\\r\n--header \u0027Correlation-Id: 885303ba-f706-4deb-82f8-c6fffb072021\u0027"
+                                                      "description":  "Find a matching folder in Shared Drive"
                                                   },
                                       "response":  [
 
@@ -5087,7 +5063,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "url":  {
@@ -5241,7 +5217,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "url":  {
@@ -5416,7 +5392,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "body":  {
@@ -5573,7 +5549,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "body":  {
@@ -5735,7 +5711,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "url":  {
@@ -5899,7 +5875,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "url":  {
@@ -6004,7 +5980,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "url":  {
@@ -6322,11 +6298,8 @@
                                                                },
                                                       "url":  {
                                                                   "raw":  "{{caseApiBaseUrl}}/api/v1/cases",
-                                                                  "protocol":  "https",
                                                                   "host":  [
-                                                                               "fa-cm-api-dev",
-                                                                               "azurewebsites",
-                                                                               "net"
+                                                                               "{{caseApiBaseUrl}}"
                                                                            ],
                                                                   "path":  [
                                                                                "api",
@@ -6334,7 +6307,7 @@
                                                                                "cases"
                                                                            ]
                                                               },
-                                                      "description":  "Generated from cURL: curl --location \u0027{{baseUrl}}/api/v1/cases\u0027 \\\r\n--header \u0027Content-Type: application/json\u0027 \\\r\n--header \u0027Correlation-Id: bc838a6f-a337-437f-8e42-4d65469f9798\u0027 \\\r\n--header \u0027Cookie: Cms-Auth-Values=%7B%22Cookies%22%3A%22ASP.NET_SessionId%3Dulpixrfdcvml3za1hdj422og%3B%20UID%3D107546%3B%20WindowID%3DMASTER%3B%20CMSUSER107546%3Dulpixrfdcvml3za1hdj422og%3B%20.CMSAUTH%3DFD05163543BAC665F4B154276A0CE0E5304706EE1D60FD09496CAB70192F9B9794955DEF363D04BEFBF320F354587066E6F4207F6D0D2A6F9F675E0B820107D8934D67E56C3F68794153A3B4B51D52498CB2EF0A81925FADDC9FC8E4F08E87356DF2157547D3742B010297C8EBCA2C15FB41A42519377A312B79BA1A6E42635066B8FF97%3B%20dtCookie%3Dv_4_srv_4_sn_E09DF4A74B6AAC89D762D0DB73BD9B9B_perc_100000_ol_0_mul_1_app-3A1d479dbf707b0c2a_1%3B%20BIGipServer~ent-s221~CPSACP-LTM-CM-WAN-CIN3-cin3.cps.gov.uk_POOL%3Drd1o00000000000000000000ffff0a02a00do80%22%2C%22Token%22%3A%226db92e06-827e-479b-9bf4-c0f5dd0bf721%22%2C%22ExpiryTime%22%3A%222026-01-15T16%3A56%3A29.8514537%2B00%3A00%22%7D\u0027 \\\r\n--header \u0027Authorization: Bearer {{accessToken}}\u0027 \\\r\n--data \u0027{\r\n    \"urn\": {\r\n        \"policeForce\": \"45\",\r\n        \"policeUnit\": \"EL\",\r\n        \"uniqueRef\": \"45155\",\r\n        \"year\": 25\r\n    },\r\n    \"registeringAreaId\": 1001,\r\n    \"registeringUnitId\": 2002,\r\n    \"allocatedWcuId\": 2012391,\r\n    \"crest\": \"\",\r\n    \"operationName\": \"\",\r\n    \"courtLocationId\": 0,\r\n    \"courtLocationName\": \"\",\r\n    \"hearingDate\": null,\r\n    \"defendants\": [],\r\n    \"victims\": [],\r\n    \"complexity\": \"\",\r\n    \"caseWeight\": \"\",\r\n    \"monitoringCodes\":[\r\n        {\r\n            \"code\": \"CSEA\",\r\n            \"selected\": true\r\n        }\r\n    ],\r\n    \"prosecutorId\": 0,\r\n    \"caseWorker\": \"\",\r\n    \"oicRank\": \"\",\r\n    \"oicSurname\": \"\",\r\n    \"oicFirstnames\": \"\",\r\n    \"oicShoulderNumber\": \"\",\r\n    \"oicPoliceUnit\": \"\"\r\n}\u0027"
+                                                      "description":  "Register a Case"
                                                   },
                                       "response":  [
 
@@ -6427,7 +6400,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "url":  {
@@ -6502,11 +6475,8 @@
                                                                },
                                                       "url":  {
                                                                   "raw":  "{{baseUrl}}/api/v1/egress/connections",
-                                                                  "protocol":  "https",
                                                                   "host":  [
-                                                                               "fa-lacc-api-dev",
-                                                                               "azurewebsites",
-                                                                               "net"
+                                                                               "{{baseUrl}}"
                                                                            ],
                                                                   "path":  [
                                                                                "api",
@@ -6515,7 +6485,7 @@
                                                                                "connections"
                                                                            ]
                                                               },
-                                                      "description":  "Generated from cURL: curl --location \u0027{{baseUrl}}/api/v1/egress/connections\u0027 \\\r\n--header \u0027Authorization: Bearer {{accessToken}}\u0027 \\\r\n--header \u0027Content-Type: application/json\u0027 \\\r\n--header \u0027Accept: */*\u0027 \\\r\n--header \u0027Correlation-Id: 885303ba-f706-4deb-82f8-c6fffb072021\u0027 \\\r\n--data \u0027{\r\n    \"egressWorkspaceId\": \"{{egressWorkspaceId}}\",\r\n    \"caseId\": 2178476\r\n}\u0027"
+                                                      "description":  "Connect to Egress"
                                                   },
                                       "response":  [
 
@@ -6571,11 +6541,8 @@
                                                                },
                                                       "url":  {
                                                                   "raw":  "{{baseUrl}}/api/v1/netapp/connections",
-                                                                  "protocol":  "https",
                                                                   "host":  [
-                                                                               "fa-lacc-api-dev",
-                                                                               "azurewebsites",
-                                                                               "net"
+                                                                               "{{baseUrl}}"
                                                                            ],
                                                                   "path":  [
                                                                                "api",
@@ -6584,7 +6551,7 @@
                                                                                "connections"
                                                                            ]
                                                               },
-                                                      "description":  "Generated from cURL: curl --location \u0027{{baseUrl}}/api/v1/netapp/connections\u0027 \\\r\n--header \u0027Authorization: Bearer {{accessToken}}\u0027 \\\r\n--header \u0027Content-Type: application/json\u0027 \\\r\n--header \u0027Accept: */*\u0027 \\\r\n--header \u0027Correlation-Id: 885303ba-f706-4deb-82f8-c6fffb072021\u0027 \\\r\n--data \u0027{\r\n    \"operationName\": \"AUTOMATION-TESTING9\",\r\n    \"folderPath\": \"{{netappFolderPath}}\",\r\n    \"caseId\": 2178476\r\n}\u0027"
+                                                      "description":  "Connect to Egress"
                                                   },
                                       "response":  [
 
@@ -6627,11 +6594,8 @@
                                                                  ],
                                                       "url":  {
                                                                   "raw":  "{{baseUrl}}/api/v1/netapp/folders?operation-name={{egressWorkspaceName}}\u0026path=\u0026take=50\u0026continuation-token=",
-                                                                  "protocol":  "https",
                                                                   "host":  [
-                                                                               "fa-lacc-api-dev",
-                                                                               "azurewebsites",
-                                                                               "net"
+                                                                               "{{baseUrl}}"
                                                                            ],
                                                                   "path":  [
                                                                                "api",
@@ -6658,7 +6622,7 @@
                                                                                 }
                                                                             ]
                                                               },
-                                                      "description":  "Generated from cURL: curl --location \u0027{{baseUrl}}/api/v1/netapp/folders?operation-name=AUTOMATION-TESTING9\u0026path=\u0026take=50\u0026continuation-token=\u0027 \\\r\n--header \u0027Authorization: Bearer {{accessToken}}\u0027 \\\r\n--header \u0027Accept: */*\u0027 \\\r\n--header \u0027Correlation-Id: 885303ba-f706-4deb-82f8-c6fffb072021\u0027"
+                                                      "description":  "Find a matching case on Shared Drive"
                                                   },
                                       "response":  [
 
@@ -6776,7 +6740,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "url":  {
@@ -6912,16 +6876,13 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "url":  {
                                                                   "raw":  "{{baseUrl}}/api/v1/netapp/files?path=Automation-Testing%2F\u0026take=50\u0026continuation-token=",
-                                                                  "protocol":  "https",
                                                                   "host":  [
-                                                                               "fa-lacc-api-dev",
-                                                                               "azurewebsites",
-                                                                               "net"
+                                                                               "{{baseUrl}}"
                                                                            ],
                                                                   "path":  [
                                                                                "api",
@@ -6944,7 +6905,7 @@
                                                                                 }
                                                                             ]
                                                               },
-                                                      "description":  "Generated from cURL: curl --location \u0027{{baseUrl}}/api/v1/netapp/files?path=Automation-Testing%2F\u0026take=50\u0026continuation-token=\u0027 \\\r\n--header \u0027Authorization: Bearer {{accessToken}}\u0027 \\\r\n--header \u0027Accept: */*\u0027 \\\r\n--header \u0027Cookie: Cms-Auth-Values=%7B%22Cookies%22%3A%22ASP.NET_SessionId%3Dx2mjenlx0zvmz4tg0yftxcux%3B%20UID%3D107546%3B%20WindowID%3DMASTER%3B%20CMSUSER107546%3Dx2mjenlx0zvmz4tg0yftxcux%3B%20.CMSAUTH%3D107E2390776ABA0C9B1575A9D1518BE8522F666349079B91CEC36C6A8AC4123821EB05911FCD69524EAE35131ECB2E968A021C48F43DFA26E08CD5401E2A2993D549FB32977A18E1A9939DFBC185C06F3B88E8EC1CB093A65A849F47A59E2FFF2687078A2F983AD00561A3817B942F9381DB78BA6C7A2A64A7F97D29790621CFC81C6837%3B%20dtCookie%3Dv_4_srv_1_sn_ED49F7B0D0864FB49D0315624A846BF7_perc_100000_ol_0_mul_1_app-3A1d479dbf707b0c2a_1_rcs-3Acss_0%3B%20BIGipServer~ent-s221~CPSACP-LTM-CM-WAN-CIN3-cin3.cps.gov.uk_POOL%3Drd1o00000000000000000000ffff0a02a00do80%22%2C%22Token%22%3A%224dd44435-cc3e-4509-9436-72dd794d44fb%22%2C%22ExpiryTime%22%3A%222026-01-20T18%3A51%3A59.9219991%2B00%3A00%22%7D\u0027 \\\r\n--header \u0027Correlation-Id: 6ecc9f0b-2cf9-4b31-9939-057144f82045\u0027 \\\r\n--header \u0027Origin: https://lacc-app-ui-spa-dev.azurewebsites.net\u0027"
+                                                      "description":  "List NetApp Files"
                                                   },
                                       "response":  [
 
@@ -7045,7 +7006,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "body":  {
@@ -7069,7 +7030,7 @@
                                                                                "files"
                                                                            ]
                                                               },
-                                                      "description":  "Generated from cURL: curl --location \u0027{{baseUrl}}/api/v1/filetransfer/files\u0027 \\\r\n--header \u0027Accept: */*\u0027 \\\r\n--header \u0027Authorization: Bearer {{accessToken}}\u0027 \\\r\n--header \u0027Cookie: Cms-Auth-Values=%7B%22Cookies%22%3A%22ASP.NET_SessionId%3Dx2mjenlx0zvmz4tg0yftxcux%3B%20UID%3D107546%3B%20WindowID%3DMASTER%3B%20CMSUSER107546%3Dx2mjenlx0zvmz4tg0yftxcux%3B%20.CMSAUTH%3D107E2390776ABA0C9B1575A9D1518BE8522F666349079B91CEC36C6A8AC4123821EB05911FCD69524EAE35131ECB2E968A021C48F43DFA26E08CD5401E2A2993D549FB32977A18E1A9939DFBC185C06F3B88E8EC1CB093A65A849F47A59E2FFF2687078A2F983AD00561A3817B942F9381DB78BA6C7A2A64A7F97D29790621CFC81C6837%3B%20dtCookie%3Dv_4_srv_1_sn_ED49F7B0D0864FB49D0315624A846BF7_perc_100000_ol_0_mul_1_app-3A1d479dbf707b0c2a_1_rcs-3Acss_0%3B%20BIGipServer~ent-s221~CPSACP-LTM-CM-WAN-CIN3-cin3.cps.gov.uk_POOL%3Drd1o00000000000000000000ffff0a02a00do80%22%2C%22Token%22%3A%224dd44435-cc3e-4509-9436-72dd794d44fb%22%2C%22ExpiryTime%22%3A%222026-01-20T18%3A51%3A59.9219991%2B00%3A00%22%7D\u0027 \\\r\n--header \u0027Content-Type: application/json\u0027 \\\r\n--header \u0027Correlation-Id: 6ecc9f0b-2cf9-4b31-9939-057144f82045\u0027 \\\r\n--header \u0027Origin: https://lacc-app-ui-spa-dev.azurewebsites.net\u0027 \\\r\n--data \u0027{\r\n    \"caseId\": 2178698,\r\n    \"transferDirection\": \"EgressToNetApp\",\r\n    \"transferType\": \"Copy\",\r\n    \"sourcePaths\": [\r\n        {\r\n            \"fileId\": \"696f8ba3c8d0267aeb7f80d0\",\r\n            \"path\": \"generated-1GB-2026-01-20-14-04-46.bin\",\r\n            \"isFolder\": false\r\n        }\r\n    ],\r\n    \"destinationPath\": \"{{netappFolderPath}}\",\r\n    \"workspaceId\": \"696f8b7f6c57db45e56a6d1a\",\r\n    \"sourceRootFolderPath\": \"/\"\r\n}\u0027"
+                                                      "description":  "Validate Transfer NetApp to Egress"
                                                   },
                                       "response":  [
 
@@ -7176,7 +7137,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "body":  {
@@ -7200,7 +7161,7 @@
                                                                                "initiate"
                                                                            ]
                                                               },
-                                                      "description":  "Generated from cURL: curl --location \u0027{{baseUrl}}/api/v1/filetransfer/initiate\u0027 \\\r\n--header \u0027Authorization: Bearer {{accessToken}}\u0027 \\\r\n--header \u0027Accept: */*\u0027 \\\r\n--header \u0027Content-Type: application/json\u0027 \\\r\n--header \u0027Cookie: Cms-Auth-Values=%7B%22Cookies%22%3A%22ASP.NET_SessionId%3Dx2mjenlx0zvmz4tg0yftxcux%3B%20UID%3D107546%3B%20WindowID%3DMASTER%3B%20CMSUSER107546%3Dx2mjenlx0zvmz4tg0yftxcux%3B%20.CMSAUTH%3D107E2390776ABA0C9B1575A9D1518BE8522F666349079B91CEC36C6A8AC4123821EB05911FCD69524EAE35131ECB2E968A021C48F43DFA26E08CD5401E2A2993D549FB32977A18E1A9939DFBC185C06F3B88E8EC1CB093A65A849F47A59E2FFF2687078A2F983AD00561A3817B942F9381DB78BA6C7A2A64A7F97D29790621CFC81C6837%3B%20dtCookie%3Dv_4_srv_1_sn_ED49F7B0D0864FB49D0315624A846BF7_perc_100000_ol_0_mul_1_app-3A1d479dbf707b0c2a_1_rcs-3Acss_0%3B%20BIGipServer~ent-s221~CPSACP-LTM-CM-WAN-CIN3-cin3.cps.gov.uk_POOL%3Drd1o00000000000000000000ffff0a02a00do80%22%2C%22Token%22%3A%224dd44435-cc3e-4509-9436-72dd794d44fb%22%2C%22ExpiryTime%22%3A%222026-01-20T18%3A51%3A59.9219991%2B00%3A00%22%7D\u0027 \\\r\n--header \u0027Correlation-Id: 6ecc9f0b-2cf9-4b31-9939-057144f82045\u0027 \\\r\n--header \u0027Origin: https://lacc-app-ui-spa-dev.azurewebsites.net\u0027 \\\r\n--data \u0027{\r\n    \"caseId\": 2178698,\r\n    \"transferDirection\": \"NetAppToEgress\",\r\n    \"transferType\": \"Copy\",\r\n    \"sourcePaths\": [\r\n        {\r\n            \"path\": \"\"\r\n        }\r\n    ],\r\n    \"destinationPath\": \"{{egressUploadFolderPath}}\",\r\n    \"workspaceId\": \"696f8b7f6c57db45e56a6d1a\",\r\n    \"sourceRootFolderPath\": \"{{netappFolderPath}}\"\r\n}\u0027"
+                                                      "description":  "Initiate Transfer NetApp to Egress"
                                                   },
                                       "response":  [
 
@@ -7330,7 +7291,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "url":  {
@@ -7478,7 +7439,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "url":  {
@@ -7563,7 +7524,7 @@
                                                                      },
                                                                      {
                                                                          "key":  "Origin",
-                                                                         "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                                         "value":  "{{uiUrl}}"
                                                                      }
                                                                  ],
                                                       "url":  {
@@ -7676,7 +7637,7 @@
                                                     },
                                                     {
                                                         "key":  "Origin",
-                                                        "value":  "https://lacc-app-ui-spa-dev.azurewebsites.net"
+                                                        "value":  "{{uiUrl}}"
                                                     }
                                                 ],
                                      "body":  {
