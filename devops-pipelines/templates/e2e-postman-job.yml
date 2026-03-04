@@ -52,16 +52,19 @@ jobs:
       LCC_EGRESS_SERVICE_ACCOUNT_AUTH: $(EgressServiceAccountAuth)
 
   - script: |
-      echo "###### DEBUG ######"
-      echo "Test Workspace Created in previous step:"
-      echo $(isTestWorkspaceCreated)
-      echo "egressWorkspaceId is: $(egressWorkspaceId)"
-      echo "###### DEBUG ######"
-
+      echo "Moving newman reports to Artifact Staging Directory..."
       mv -f $(System.DefaultWorkingDirectory)/e2e/postman/newman-reports/* $(Build.ArtifactStagingDirectory)
+      
+      echo "Showing contents of Artifact Staging Directory:"
       cd $(Build.ArtifactStagingDirectory)
+      ls .
+
+      echo "Moving HTML reports into a newly created html-reports directory..."
       mkdir html-reports
       mv *.html html-reports
+
+      echo "Showing contents of html-reports directory:"
+      ls html-reports
     displayName: 'Stage Reports for Publishing'
     condition: succeededOrFailed()
 
@@ -70,17 +73,19 @@ jobs:
       testResultsFormat: 'JUnit'
       testResultsFiles: '$(Build.ArtifactStagingDirectory)/*.xml'
     displayName: 'Publish Newman Report'
+    condition: succeededOrFailed()
     
   - publish: '$(Build.ArtifactStagingDirectory)/html-reports'
     artifact: '${{parameters.environment}}-NewmanReportsHTML'
+    condition: succeededOrFailed()
 
-  # - task: PowerShell@2
-  #   displayName: 'Cleanup Egress Test Workspace'
-  #   condition: eq(variables['isTestWorkspaceCreated'], true)
-  #   inputs:
-  #     workingDirectory: '$(System.DefaultWorkingDirectory)/e2e/postman'
-  #     filePath: '$(System.DefaultWorkingDirectory)/e2e/postman/Teardown-EgressWorkspace.ps1'
-  #     arguments: '-WorkspaceId $(EgressWorkspaceId)'
-  #   env:
-  #     LCC_EGRESS_BASE_URL: $(EgressOptionsUrl)
-  #     LCC_EGRESS_SERVICE_ACCOUNT_AUTH: $(EgressServiceAccountAuth)
+  - task: PowerShell@2
+    displayName: 'Cleanup Egress Test Workspace'
+    condition: eq(variables['isTestWorkspaceCreated'], true)
+    inputs:
+      workingDirectory: '$(System.DefaultWorkingDirectory)/e2e/postman'
+      filePath: '$(System.DefaultWorkingDirectory)/e2e/postman/Teardown-EgressWorkspace.ps1'
+      arguments: '-WorkspaceId $(egressWorkspaceId)'
+    env:
+      LCC_EGRESS_BASE_URL: $(EgressOptionsUrl)
+      LCC_EGRESS_SERVICE_ACCOUNT_AUTH: $(EgressServiceAccountAuth)
