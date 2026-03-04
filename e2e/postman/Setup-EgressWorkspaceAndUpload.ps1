@@ -455,7 +455,7 @@ if ($SkipUpload) {
         Write-Host "[6/8] Initiating upload for: $CurrentFileName" -ForegroundColor Yellow
 
         # Initiate upload for this file
-        $initBodyFile = Join-Path $env:TEMP "egress_init.json"
+        $initBodyFile = Join-Path $TempFolder "egress_init.json"
         $initBody = @{
             filename = $CurrentFileName
             filesize = $FileSize
@@ -526,7 +526,7 @@ if ($SkipUpload) {
         $BytesUploaded = 0
         $ChunkNum = 1
         $FileStartTime = Get-Date
-        $TempFile = Join-Path $env:TEMP "egress_chunk.tmp"
+        $TempFile = Join-Path $TempFolder "egress_chunk.tmp"
         $uploadSuccess = $true
 
         try {
@@ -642,7 +642,7 @@ if ($SkipUpload) {
         # Complete upload
         Write-Host "[8/8] Completing upload..." -ForegroundColor Yellow
 
-        $completeBodyFile = Join-Path $env:TEMP "egress_complete.json"
+        $completeBodyFile = Join-Path $TempFolder "egress_complete.json"
         '{"done":true}' | Set-Content $completeBodyFile -Encoding UTF8
 
         $completeSuccess = $false
