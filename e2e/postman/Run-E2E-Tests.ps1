@@ -148,6 +148,7 @@ $Config = @{
 # Validate required config
 $missingConfig = @()
 if (-not $Config.BaseUrl) { $missingConfig += "LCC_API_BASE_URL" }
+if (-not $Config.UiUrl) { $missingConfig += "LCC_UI_URL" }
 if (-not $Config.TenantId) { $missingConfig += "LCC_TENANT_ID" }
 if (-not $Config.LccApiId) { $missingConfig += "LCC_API_ID" }
 if (-not $Config.AzureUsername) { $missingConfig += "LCC_AZURE_USERNAME (or -AzureUsername)" }
@@ -634,6 +635,8 @@ $variables = @{
     "tenantId" = $Config.TenantId
     "apiClientId" = $Config.ApiClientId
     "baseUrl" = $Config.BaseUrl
+    "uiUrl" = $Config.uiUrl
+    "caseApiBaseUrl" = $Config.CaseApiBaseUrl
     "ddeiBaseUrl" = $Config.DdeiBaseUrl
     "egressWorkspaceId" = $EgressWorkspaceId
     "egressWorkspaceName" = $EgressWorkspaceName
