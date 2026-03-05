@@ -6,4 +6,5 @@ public interface IS3ClientFactory
 {
     public Task<IAmazonS3> GetS3ClientAsync(string bearerToken);
     public void SetS3ClientAsync(IAmazonS3 s3Client);
+    public Task InvalidateClientAsync();
 }

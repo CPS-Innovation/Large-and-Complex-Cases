@@ -439,6 +439,7 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
                 relativePath: relativePath,
                 sourceRootFolderPath: sourceRootFolderPath);
 
+            Assert.NotNull(session.UploadId);
             _egressFilesToCleanup.Add((session.UploadId!, workspaceId));
 
             await _fixture.EgressStorageClient.UploadChunkAsync(
@@ -449,17 +450,26 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
                 end: contentBytes.Length - 1,
                 totalSize: contentBytes.Length);
 
-            await _fixture.EgressStorageClient.CompleteUploadAsync(session,
+            var completed = await _fixture.EgressStorageClient.CompleteUploadAsync(session,
                 TestDataHelper.ComputeMd5Hash(contentBytes));
+            Assert.True(completed, $"CompleteUploadAsync failed for {relativePath}");
         }
 
-        // Assert — list the Egress workspace and filter to just our destination folder
-        var allFiles = await _fixture.EgressStorageClient!.GetAllFilesFromFolderAsync(destinationPath, workspaceId);
-        var fullFilePaths = allFiles
-            .Where(f => !string.IsNullOrEmpty(f.FullFilePath)
-                        && f.FullFilePath.StartsWith(destinationPath, StringComparison.OrdinalIgnoreCase))
-            .Select(f => f.FullFilePath!)
-            .ToList();
+        // Poll the Egress API until all uploaded files are indexed.
+        // The Egress API has eventual consistency — files may not appear
+        // in listings immediately after CompleteUploadAsync returns.
+        List<string> fullFilePaths = [];
+        for (var attempt = 1; attempt <= 5; attempt++)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(3));
+            var allFiles = await _fixture.EgressStorageClient!.GetAllFilesFromFolderAsync(destinationPath, workspaceId);
+            fullFilePaths = allFiles
+                .Where(f => !string.IsNullOrEmpty(f.FullFilePath)
+                            && f.FullFilePath.StartsWith(destinationPath, StringComparison.OrdinalIgnoreCase))
+                .Select(f => f.FullFilePath!)
+                .ToList();
+            if (fullFilePaths.Count >= 3) break;
+        }
 
         Assert.Equal(3, fullFilePaths.Count);
 
@@ -501,6 +511,7 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
                 relativePath: relativePath,
                 sourceRootFolderPath: sourceRootFolderPath);
 
+            Assert.NotNull(session.UploadId);
             _egressFilesToCleanup.Add((session.UploadId!, workspaceId));
 
             await _fixture.EgressStorageClient.UploadChunkAsync(
@@ -511,16 +522,24 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
                 end: contentBytes.Length - 1,
                 totalSize: contentBytes.Length);
 
-            await _fixture.EgressStorageClient.CompleteUploadAsync(session,
+            var completed = await _fixture.EgressStorageClient.CompleteUploadAsync(session,
                 TestDataHelper.ComputeMd5Hash(contentBytes));
+            Assert.True(completed, $"CompleteUploadAsync failed for {relativePath}");
         }
 
-        var destinationFiles =
-            (await _fixture.EgressStorageClient!.GetAllFilesFromFolderAsync(destinationPath, workspaceId))
-            .Where(f => !string.IsNullOrEmpty(f.FullFilePath)
-                        && f.FullFilePath.StartsWith(destinationPath, StringComparison.OrdinalIgnoreCase))
-            .Select(f => f.FullFilePath!)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        // Poll the Egress API until all uploaded files are indexed.
+        HashSet<string> destinationFiles = [];
+        for (var attempt = 1; attempt <= 5; attempt++)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(3));
+            destinationFiles =
+                (await _fixture.EgressStorageClient!.GetAllFilesFromFolderAsync(destinationPath, workspaceId))
+                .Where(f => !string.IsNullOrEmpty(f.FullFilePath)
+                            && f.FullFilePath.StartsWith(destinationPath, StringComparison.OrdinalIgnoreCase))
+                .Select(f => f.FullFilePath!)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            if (destinationFiles.Count >= files.Length) break;
+        }
 
         Assert.NotEmpty(destinationFiles);
 
