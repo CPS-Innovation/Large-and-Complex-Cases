@@ -6,4 +6,5 @@ public interface IS3CredentialService
 {
     Task<S3CredentialsDecrypted> GetCredentialsAsync(string oid, string userName, string bearerToken);
     Task<(string? accessKey, string? secretKey)> GetCredentialKeysAsync(string bearerToken);
+    Task<(string? accessKey, string? secretKey)> RegenerateCredentialKeysAsync(string bearerToken);
 }

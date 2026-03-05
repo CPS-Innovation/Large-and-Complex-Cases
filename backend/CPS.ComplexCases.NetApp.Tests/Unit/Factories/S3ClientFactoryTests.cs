@@ -786,6 +786,114 @@ public class S3ClientFactoryTests
         Assert.Single(distinctClients);
     }
 
+    [Fact]
+    public async Task InvalidateClientAsync_SetsForceRegeneration_NextCallUsesRegenerateCredentialKeys()
+    {
+        // Arrange
+        var bearerToken = GenerateTestJwtToken(TestOid, TestUserName);
+
+        _credentialServiceMock
+            .Setup(x => x.GetCredentialKeysAsync(bearerToken))
+            .ReturnsAsync(("initial-key", "initial-secret"));
+
+        _credentialServiceMock
+            .Setup(x => x.RegenerateCredentialKeysAsync(bearerToken))
+            .ReturnsAsync(("regenerated-key", "regenerated-secret"));
+
+        // Create initial client
+        var firstClient = await _factory.GetS3ClientAsync(bearerToken);
+        Assert.NotNull(firstClient);
+
+        // Act - Invalidate and get a new client
+        await _factory.InvalidateClientAsync();
+        var secondClient = await _factory.GetS3ClientAsync(bearerToken);
+
+        // Assert
+        Assert.NotNull(secondClient);
+        Assert.NotSame(firstClient, secondClient);
+
+        // RegenerateCredentialKeysAsync should have been called (not GetCredentialKeysAsync again)
+        _credentialServiceMock.Verify(
+            x => x.RegenerateCredentialKeysAsync(bearerToken),
+            Times.Once);
+
+        // GetCredentialKeysAsync should only have been called once (for the initial client)
+        _credentialServiceMock.Verify(
+            x => x.GetCredentialKeysAsync(bearerToken),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task InvalidateClientAsync_ForceRegenerationFlagResetsAfterOneRegen()
+    {
+        // Arrange
+        var bearerToken = GenerateTestJwtToken(TestOid, TestUserName);
+
+        _credentialServiceMock
+            .Setup(x => x.GetCredentialKeysAsync(bearerToken))
+            .ReturnsAsync(("normal-key", "normal-secret"));
+
+        _credentialServiceMock
+            .Setup(x => x.RegenerateCredentialKeysAsync(bearerToken))
+            .ReturnsAsync(("regenerated-key", "regenerated-secret"));
+
+        var validStatus = new CredentialStatus
+        {
+            Exists = true,
+            IsValid = true,
+            NeedsRegeneration = false,
+            RemainingMinutes = 55
+        };
+
+        _keyVaultServiceMock
+            .Setup(x => x.CheckCredentialStatusAsync(TestOid))
+            .ReturnsAsync(validStatus);
+
+        // Create initial client
+        await _factory.GetS3ClientAsync(bearerToken);
+
+        // Invalidate and regenerate
+        await _factory.InvalidateClientAsync();
+        var regenClient = await _factory.GetS3ClientAsync(bearerToken);
+
+        // Act - Third call should use the normal path (flag was reset)
+        var thirdClient = await _factory.GetS3ClientAsync(bearerToken);
+
+        // Assert - Third call should return the cached regen client, not create another
+        Assert.Same(regenClient, thirdClient);
+
+        // RegenerateCredentialKeysAsync should only have been called once (during the invalidation)
+        _credentialServiceMock.Verify(
+            x => x.RegenerateCredentialKeysAsync(bearerToken),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task InvalidateClientAsync_LogsWarningAboutForceRegeneration()
+    {
+        // Arrange
+        var bearerToken = GenerateTestJwtToken(TestOid, TestUserName);
+
+        _credentialServiceMock
+            .Setup(x => x.GetCredentialKeysAsync(bearerToken))
+            .ReturnsAsync(("key", "secret"));
+
+        await _factory.GetS3ClientAsync(bearerToken);
+
+        // Act
+        await _factory.InvalidateClientAsync();
+
+        // Assert
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("force credential regeneration")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
     private static X509Certificate2 GenerateSelfSignedCertificate(string subjectName)
     {
         var rsa = System.Security.Cryptography.RSA.Create(2048);

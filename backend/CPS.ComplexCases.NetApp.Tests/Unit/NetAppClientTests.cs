@@ -716,25 +716,35 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         }
 
         [Fact]
-        public async Task UploadPartAsync_WhenNonCredentialForbiddenError_DoesNotRetry()
+        public async Task UploadPartAsync_WhenAccessDeniedError_RetriesAndSucceeds()
         {
-            // Arrange - generic Access Denied should NOT trigger the credential retry path
+            // Arrange - AccessDenied now triggers credential retry (shared Key Vault scenario)
             var arg = new UploadPartArg
             {
                 BearerToken = BearerToken, UploadId = "1", ObjectKey = "file.txt", BucketName = "bucket",
                 PartNumber = 1, PartData = new byte[] { 1, 2, 3 }
             };
+            var expectedResponse = new UploadPartResponse();
+            var callCount = 0;
 
             _amazonS3Mock.Setup(s => s.UploadPartAsync(It.IsAny<UploadPartRequest>(), It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new AmazonS3Exception("Access Denied")
-                    { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" });
+                .ReturnsAsync(() =>
+                {
+                    callCount++;
+                    if (callCount == 1)
+                        throw new AmazonS3Exception("Access Denied")
+                            { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" };
+                    return expectedResponse;
+                });
 
-            // Act & Assert
-            await Assert.ThrowsAsync<AmazonS3Exception>(() => _client.UploadPartAsync(arg));
+            // Act
+            var result = await _client.UploadPartAsync(arg);
 
+            // Assert
+            Assert.Equal(expectedResponse, result);
             _amazonS3Mock.Verify(
                 s => s.UploadPartAsync(It.IsAny<UploadPartRequest>(), It.IsAny<CancellationToken>()),
-                Times.Once);
+                Times.Exactly(2));
         }
 
         [Fact]
@@ -1597,6 +1607,104 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateFolderAsync_WhenCredentialError_RetriesAndSucceeds()
+        {
+            // Arrange
+            var arg = new CreateFolderArg { BearerToken = BearerToken, BucketName = "bucket", FolderKey = "folder" };
+            var putRequest = new PutObjectRequest();
+            _netAppRequestFactoryMock.Setup(x => x.CreateFolderRequest(arg)).Returns(putRequest);
+
+            var callCount = 0;
+            _amazonS3Mock.Setup(x => x.PutObjectAsync(It.IsAny<PutObjectRequest>(), default))
+                .ReturnsAsync(() =>
+                {
+                    callCount++;
+                    if (callCount == 1)
+                        throw new AmazonS3Exception("Access Denied")
+                            { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" };
+                    return new PutObjectResponse { HttpStatusCode = HttpStatusCode.OK };
+                });
+
+            _amazonS3Mock.Setup(x => x.DeleteObjectAsync(It.IsAny<DeleteObjectRequest>(), default))
+                .ReturnsAsync(new DeleteObjectResponse { HttpStatusCode = HttpStatusCode.NoContent });
+
+            // Act
+            var result = await _client.CreateFolderAsync(arg);
+
+            // Assert
+            Assert.True(result);
+            _s3ClientFactoryMock.Verify(x => x.InvalidateClientAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateFolderAsync_WhenCredentialRetryAlsoFails_Throws()
+        {
+            // Arrange
+            var arg = new CreateFolderArg { BearerToken = BearerToken, BucketName = "bucket", FolderKey = "folder" };
+            var putRequest = new PutObjectRequest();
+            _netAppRequestFactoryMock.Setup(x => x.CreateFolderRequest(arg)).Returns(putRequest);
+
+            _amazonS3Mock.Setup(x => x.PutObjectAsync(It.IsAny<PutObjectRequest>(), default))
+                .ThrowsAsync(new AmazonS3Exception("Access Denied")
+                    { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" });
+
+            // Act & Assert
+            await Assert.ThrowsAsync<AmazonS3Exception>(() => _client.CreateFolderAsync(arg));
+            _s3ClientFactoryMock.Verify(x => x.InvalidateClientAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task ListObjectsInBucketAsync_WhenCredentialError_RetriesAndSucceeds()
+        {
+            // Arrange
+            var arg = new ListObjectsInBucketArg { BearerToken = BearerToken, BucketName = "bucket" };
+            var callCount = 0;
+
+            _amazonS3Mock.Setup(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
+                .ReturnsAsync(() =>
+                {
+                    callCount++;
+                    if (callCount == 1)
+                        throw new AmazonS3Exception("The AWS access key ID you provided does not exist in our records.")
+                            { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "InvalidAccessKeyId" };
+                    return new ListObjectsV2Response { S3Objects = [] };
+                });
+
+            // Act
+            var result = await _client.ListObjectsInBucketAsync(arg);
+
+            // Assert
+            Assert.NotNull(result);
+            _s3ClientFactoryMock.Verify(x => x.InvalidateClientAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task UploadObjectAsync_WhenCredentialError_RetriesAndSucceeds()
+        {
+            // Arrange
+            var arg = _fixture.Create<UploadObjectArg>();
+            arg.BearerToken = BearerToken;
+
+            var callCount = 0;
+            _amazonS3Mock.Setup(x => x.PutObjectAsync(It.IsAny<PutObjectRequest>(), default))
+                .ReturnsAsync(() =>
+                {
+                    callCount++;
+                    if (callCount == 1)
+                        throw new AmazonS3Exception("Access Denied")
+                            { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" };
+                    return new PutObjectResponse { HttpStatusCode = HttpStatusCode.OK };
+                });
+
+            // Act
+            var result = await _client.UploadObjectAsync(arg);
+
+            // Assert
+            Assert.True(result);
+            _s3ClientFactoryMock.Verify(x => x.InvalidateClientAsync(), Times.Once);
         }
     }
 }
