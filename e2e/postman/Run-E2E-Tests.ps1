@@ -64,7 +64,7 @@ param(
     [int]$FileCount = 1,
     
     [Parameter(Mandatory=$false)]
-    [string]$CollectionPath = ".\LCCUserJourneyTests_fixed.postman_collection",
+    [string]$CollectionPath = ".\LCCUserJourneyTests.postman_collection",
     
     [Parameter(Mandatory=$false)]
     [string]$EnvironmentPath = ".\LCCTestEnvironment.postman_environment.template",
