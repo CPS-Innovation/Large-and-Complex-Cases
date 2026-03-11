@@ -1,6 +1,6 @@
 # LCC E2E Test Suite
 
-Automated end-to-end tests for the Legal Case Collaboration (LCC) file transfer system.
+Automated end-to-end tests for the Large and Complex Cases (LCC) file transfer system.
 
 ## Quick Start
 
@@ -168,13 +168,13 @@ Creates Egress workspace and uploads test files.
 |------|-------------|---------|
 | `Run-E2E-Tests.ps1` | Main test runner | ✅ Yes |
 | `Setup-EgressWorkspaceAndUpload.ps1` | Egress setup utilities | ✅ Yes |
-| `Load-Config.psm1` | Configuration loader module | ✅ Yes |
 | `secrets.config.template.ps1` | Template for local secrets | ✅ Yes |
 | `secrets.config.ps1` | Your local secrets | ❌ No |
-| `LCCUserJourneyTests_fixed.postman_collection` | Postman test collection | ✅ Yes |
+| `LCCUserJourneyTests_fixed.postman_collection.json` | Postman test collection | ✅ Yes |
 | `LCCTestEnvironment.postman_environment.template` | Environment template | ✅ Yes |
 | `LCCTestEnvironment.postman_environment` | Your local environment | ❌ No |
-| `.gitignore` | Git ignore rules | ✅ Yes |
+| `newman-reports/` | Newman HTML/JSON test reports | ❌ No |
+| `LCCTestEnvironment_updated.*` | Auto-generated updated env files | ❌ No |
 | `README.md` | This file | ✅ Yes |
 
 ---
@@ -193,6 +193,10 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 npm install -g newman
 npm install -g newman-reporter-htmlextra
 ```
+
+### curl.exe Not Found
+
+The upload script requires `curl.exe` (the Windows native binary), not the PowerShell `curl` alias (`Invoke-WebRequest`). `curl.exe` is included with Windows 10 1803+ and Windows Server 2019+. If missing, install it from https://curl.se/windows/.
 
 ### Missing Configuration
 

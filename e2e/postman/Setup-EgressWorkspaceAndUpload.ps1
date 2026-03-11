@@ -158,6 +158,17 @@ $MaxFileIdRetries = 10
 $FileIdRetryDelaySeconds = 5
 
 # ============================================================
+# PREREQUISITE CHECK
+# ============================================================
+$curlExe = Get-Command curl.exe -ErrorAction SilentlyContinue
+if (-not $curlExe) {
+    Write-Host "ERROR: curl.exe is not available!" -ForegroundColor Red
+    Write-Host "This script requires curl.exe (not the PowerShell Invoke-WebRequest alias)." -ForegroundColor Yellow
+    Write-Host "curl.exe is included with Windows 10 1803+ and Windows Server 2019+." -ForegroundColor Yellow
+    exit 1
+}
+
+# ============================================================
 # VALIDATE PARAMETERS
 # ============================================================
 if (-not $SkipUpload) {

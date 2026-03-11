@@ -64,7 +64,7 @@ param(
     [int]$FileCount = 1,
     
     [Parameter(Mandatory=$false)]
-    [string]$CollectionPath = ".\LCCUserJourneyTests_fixed.postman_collection",
+    [string]$CollectionPath = ".\LCCUserJourneyTests_fixed.postman_collection.json",
     
     [Parameter(Mandatory=$false)]
     [string]$EnvironmentPath = ".\LCCTestEnvironment.postman_environment",
@@ -613,11 +613,15 @@ foreach ($folder in $foldersToRun) {
             break
         }
         
-        Write-Host ""
-        Write-Host "Test failed. Continue with remaining tests? (Y/N)" -ForegroundColor Yellow -NoNewline
-        $continue = Read-Host " "
-        if ($continue -ne 'Y' -and $continue -ne 'y') {
-            break
+        if ([Environment]::UserInteractive -eq $false) {
+            Write-Host "Non-interactive mode: auto-continuing after failure" -ForegroundColor Yellow
+        } else {
+            Write-Host ""
+            Write-Host "Test failed. Continue with remaining tests? (Y/N)" -ForegroundColor Yellow -NoNewline
+            $continue = Read-Host " "
+            if ($continue -notin @('Y', 'y')) {
+                break
+            }
         }
     }
     

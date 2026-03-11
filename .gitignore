@@ -324,3 +324,10 @@ nuget.config
 
 # postman
 *.postman_environment.json
+
+# E2E Postman Tests
+e2e/postman/secrets.config.ps1
+e2e/postman/*.postman_environment
+!e2e/postman/*.postman_environment.template
+e2e/postman/newman-reports/
+e2e/postman/LCCTestEnvironment_updated.*
