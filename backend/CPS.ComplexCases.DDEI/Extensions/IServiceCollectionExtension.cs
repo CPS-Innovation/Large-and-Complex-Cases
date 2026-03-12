@@ -59,7 +59,8 @@ public static class IServiceCollectionExtension
         && response.RequestMessage?.Method != HttpMethod.Put;
 
     return Policy
-        .HandleResult<HttpResponseMessage>(r => responseStatusCodePredicate(r) && methodPredicate(r))
+        .Handle<HttpRequestException>()
+        .OrResult<HttpResponseMessage>(r => responseStatusCodePredicate(r) && methodPredicate(r))
         .WaitAndRetryAsync(delay);
   }
 }
