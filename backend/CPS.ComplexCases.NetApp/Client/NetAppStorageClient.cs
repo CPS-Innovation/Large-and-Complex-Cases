@@ -214,12 +214,19 @@ public class NetAppStorageClient(
             throw new InvalidOperationException($"Failed to upload {objectName} to NetApp.");
     }
 
-    public async Task<bool> VerifyUpload(string bearerToken, string bucketName, string objectName, string eTag, int maxRetries = 2, int delayMs = 2000)
+    public async Task<bool> VerifyUpload(string bearerToken, string bucketName, string objectName, string eTag,
+        int maxRetries = 5, int baseDelayMs = 2000)
     {
         for (var attempt = 0; attempt <= maxRetries; attempt++)
         {
             if (attempt > 0)
+            {
+                var delayMs = baseDelayMs * (int)Math.Pow(2, attempt - 1);
+                _logger.LogInformation(
+                    "VerifyUpload waiting {DelayMs}ms before retry attempt {Attempt}/{MaxAttempts} for {ObjectName}",
+                    delayMs, attempt + 1, maxRetries + 1, objectName);
                 await Task.Delay(delayMs);
+            }
 
             var arg = _netAppS3HttpArgFactory.CreateGetHeadObjectArg(
                 bearerToken ?? throw new ArgumentNullException(nameof(bearerToken), "Bearer token cannot be null."),
@@ -243,8 +250,10 @@ public class NetAppStorageClient(
                     "VerifyUpload ETag mismatch for {ObjectName}. Expected: {Expected}, Actual: {Actual}",
                     objectName, eTag.Unquote(), response.ETag);
             }
+
             return matches;
         }
+
         return false;
     }
 

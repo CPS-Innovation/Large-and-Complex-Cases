@@ -87,7 +87,8 @@ public class NetAppStorageClientTests
             });
 
         // Act
-        var result = await _client.InitiateUploadAsync(destinationPath, 123, sourcePath, null, null, null, BearerToken, BucketName);
+        var result = await _client.InitiateUploadAsync(destinationPath, 123, sourcePath, null, null, null, BearerToken,
+            BucketName);
 
         // Assert
         Assert.NotNull(result);
@@ -159,7 +160,8 @@ public class NetAppStorageClientTests
             });
 
         // Act
-        var result = await _client.UploadChunkAsync(session, chunkNumber, chunkData, null, null, null, BearerToken, BucketName);
+        var result = await _client.UploadChunkAsync(session, chunkNumber, chunkData, null, null, null, BearerToken,
+            BucketName);
 
         // Assert
         Assert.Equal(TransferDirection.EgressToNetApp, result.TransferDirection);
@@ -395,7 +397,8 @@ public class NetAppStorageClientTests
             .ReturnsAsync(true);
 
         // Act
-        await _client.UploadFileAsync(destinationPath, stream, content.Length, null, relativePath, null, BearerToken, BucketName);
+        await _client.UploadFileAsync(destinationPath, stream, content.Length, null, relativePath, null, BearerToken,
+            BucketName);
 
         // Assert
         _netAppClientMock.Verify(c => c.UploadObjectAsync(arg), Times.Once);
@@ -430,7 +433,8 @@ public class NetAppStorageClientTests
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _client.UploadFileAsync(destinationPath, stream, content.Length, null, relativePath, null, BearerToken, BucketName));
+            _client.UploadFileAsync(destinationPath, stream, content.Length, null, relativePath, null, BearerToken,
+                BucketName));
     }
 
     [Fact]
@@ -523,7 +527,8 @@ public class NetAppStorageClientTests
             .ReturnsAsync((Models.Dto.HeadObjectResponseDto)null!);
 
         // Act
-        var result = await _client.VerifyUpload(BearerToken, BucketName, ObjectKey, eTag, maxRetries: 0, delayMs: 0);
+        var result =
+            await _client.VerifyUpload(BearerToken, BucketName, ObjectKey, eTag, maxRetries: 0, baseDelayMs: 0);
 
         // Assert
         Assert.False(result);
@@ -551,7 +556,8 @@ public class NetAppStorageClientTests
             .ReturnsAsync(new Models.Dto.HeadObjectResponseDto { ETag = eTag, StatusCode = HttpStatusCode.OK });
 
         // Act
-        var result = await _client.VerifyUpload(BearerToken, BucketName, ObjectKey, eTag, maxRetries: 0, delayMs: 0);
+        var result =
+            await _client.VerifyUpload(BearerToken, BucketName, ObjectKey, eTag, maxRetries: 0, baseDelayMs: 0);
 
         // Assert
         Assert.True(result);
@@ -576,10 +582,12 @@ public class NetAppStorageClientTests
 
         _netAppS3HttpClientMock
             .Setup(c => c.GetHeadObjectAsync(arg))
-            .ReturnsAsync(new Models.Dto.HeadObjectResponseDto { ETag = _fixture.Create<string>(), StatusCode = HttpStatusCode.OK });
+            .ReturnsAsync(new Models.Dto.HeadObjectResponseDto
+                { ETag = _fixture.Create<string>(), StatusCode = HttpStatusCode.OK });
 
         // Act
-        var result = await _client.VerifyUpload(BearerToken, BucketName, ObjectKey, eTag, maxRetries: 0, delayMs: 0);
+        var result =
+            await _client.VerifyUpload(BearerToken, BucketName, ObjectKey, eTag, maxRetries: 0, baseDelayMs: 0);
 
         // Assert
         Assert.False(result);
@@ -614,7 +622,8 @@ public class NetAppStorageClientTests
             });
 
         // Act
-        var result = await _client.VerifyUpload(BearerToken, BucketName, ObjectKey, eTag, maxRetries: 2, delayMs: 0);
+        var result =
+            await _client.VerifyUpload(BearerToken, BucketName, ObjectKey, eTag, maxRetries: 2, baseDelayMs: 0);
 
         // Assert
         Assert.True(result);
@@ -643,7 +652,8 @@ public class NetAppStorageClientTests
             .ReturnsAsync(new Models.Dto.HeadObjectResponseDto { StatusCode = HttpStatusCode.NotFound });
 
         // Act
-        var result = await _client.VerifyUpload(BearerToken, BucketName, ObjectKey, eTag, maxRetries: 2, delayMs: 0);
+        var result =
+            await _client.VerifyUpload(BearerToken, BucketName, ObjectKey, eTag, maxRetries: 2, baseDelayMs: 0);
 
         // Assert
         Assert.False(result);
@@ -672,7 +682,7 @@ public class NetAppStorageClientTests
             .ReturnsAsync(new Models.Dto.HeadObjectResponseDto { StatusCode = HttpStatusCode.NotFound });
 
         // Act
-        await _client.VerifyUpload(BearerToken, BucketName, ObjectKey, eTag, maxRetries: 0, delayMs: 0);
+        await _client.VerifyUpload(BearerToken, BucketName, ObjectKey, eTag, maxRetries: 0, baseDelayMs: 0);
 
         // Assert
         _loggerMock.Verify(
@@ -708,7 +718,7 @@ public class NetAppStorageClientTests
             .ReturnsAsync(new Models.Dto.HeadObjectResponseDto { ETag = wrongETag, StatusCode = HttpStatusCode.OK });
 
         // Act
-        await _client.VerifyUpload(BearerToken, BucketName, ObjectKey, eTag, maxRetries: 0, delayMs: 0);
+        await _client.VerifyUpload(BearerToken, BucketName, ObjectKey, eTag, maxRetries: 0, baseDelayMs: 0);
 
         // Assert
         _loggerMock.Verify(
@@ -751,7 +761,8 @@ public class NetAppStorageClientTests
             });
 
         // Act
-        var result = await _client.VerifyUpload(BearerToken, BucketName, ObjectKey, eTag, maxRetries: 2, delayMs: 0);
+        var result =
+            await _client.VerifyUpload(BearerToken, BucketName, ObjectKey, eTag, maxRetries: 2, baseDelayMs: 0);
 
         // Assert
         Assert.False(result);
