@@ -28,25 +28,17 @@ public class NetAppClient(
 
     public async Task<bool> CreateBucketAsync(CreateBucketArg arg)
     {
-        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
-
         try
         {
-            if (string.IsNullOrEmpty(arg.BucketName))
-            {
-                _logger.LogWarning("Bucket name is null or empty.");
-                return false;
-            }
-
-            var bucketExists = await _amazonS3UtilsWrapper.DoesS3BucketExistV2Async(s3Client, arg.BucketName);
-            if (bucketExists)
-            {
-                _logger.LogInformation("Bucket with name {BucketName} already exists.", arg.BucketName);
-                return false;
-            }
-
-            var response = await s3Client.PutBucketAsync(_netAppRequestFactory.CreateBucketRequest(arg));
-            return response.HttpStatusCode == System.Net.HttpStatusCode.OK;
+            return await CreateBucketCoreAsync(arg);
+        }
+        catch (AmazonS3Exception ex) when (IsCredentialError(ex))
+        {
+            _logger.LogWarning(ex,
+                "Credential error in CreateBucketAsync (ErrorCode={ErrorCode}) - invalidating and retrying once",
+                ex.ErrorCode);
+            await _s3ClientFactory.InvalidateClientAsync();
+            return await CreateBucketCoreAsync(arg);
         }
         catch (AmazonS3Exception ex)
         {
@@ -55,20 +47,53 @@ public class NetAppClient(
         }
     }
 
-    public async Task<IEnumerable<S3Bucket>> ListBucketsAsync(ListBucketsArg arg)
+    private async Task<bool> CreateBucketCoreAsync(CreateBucketArg arg)
     {
         var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
 
+        if (string.IsNullOrEmpty(arg.BucketName))
+        {
+            _logger.LogWarning("Bucket name is null or empty.");
+            return false;
+        }
+
+        var bucketExists = await _amazonS3UtilsWrapper.DoesS3BucketExistV2Async(s3Client, arg.BucketName);
+        if (bucketExists)
+        {
+            _logger.LogInformation("Bucket with name {BucketName} already exists.", arg.BucketName);
+            return false;
+        }
+
+        var response = await s3Client.PutBucketAsync(_netAppRequestFactory.CreateBucketRequest(arg));
+        return response.HttpStatusCode == System.Net.HttpStatusCode.OK;
+    }
+
+    public async Task<IEnumerable<S3Bucket>> ListBucketsAsync(ListBucketsArg arg)
+    {
         try
         {
-            var response = await s3Client.ListBucketsAsync(_netAppRequestFactory.ListBucketsRequest(arg));
-            return response.Buckets ?? [];
+            return await ListBucketsCoreAsync(arg);
+        }
+        catch (AmazonS3Exception ex) when (IsCredentialError(ex))
+        {
+            _logger.LogWarning(ex,
+                "Credential error in ListBucketsAsync (ErrorCode={ErrorCode}) - invalidating and retrying once",
+                ex.ErrorCode);
+            await _s3ClientFactory.InvalidateClientAsync();
+            return await ListBucketsCoreAsync(arg);
         }
         catch (AmazonS3Exception ex)
         {
             _logger.LogError(ex, ex.Message, "Failed to list buckets.");
             return [];
         }
+    }
+
+    private async Task<IEnumerable<S3Bucket>> ListBucketsCoreAsync(ListBucketsArg arg)
+    {
+        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
+        var response = await s3Client.ListBucketsAsync(_netAppRequestFactory.ListBucketsRequest(arg));
+        return response.Buckets ?? [];
     }
 
     public async Task<S3Bucket?> FindBucketAsync(FindBucketArg arg)
@@ -90,45 +115,42 @@ public class NetAppClient(
         }
     }
 
-    public async Task<bool> CreateFolderAsync(CreateFolderArg arg)
+    public Task<bool> CreateFolderAsync(CreateFolderArg arg)
+        => ExecuteWithCredentialRetryAsync(() => CreateFolderCoreAsync(arg), nameof(CreateFolderAsync));
+
+    private async Task<bool> CreateFolderCoreAsync(CreateFolderArg arg)
     {
         var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
 
-        try
+        // S3 does not have a native folder concept. Folders are represented by creating a zero-byte object with a key that ends with a "/".
+        // However, doing so results in an rate-limiting issue with NetApp.
+        // As a workaround, to create a folder, we create an empty object and then delete it immediately after to simulate folder creation.
+        var request = _netAppRequestFactory.CreateFolderRequest(arg);
+        var response = await s3Client.PutObjectAsync(request);
+        if (response.HttpStatusCode != System.Net.HttpStatusCode.OK)
         {
-            // S3 does not have a native folder concept. Folders are represented by creating a zero-byte object with a key that ends with a "/".
-            // However, doing so results in an rate-limiting issue with NetApp.
-            // As a workaround, to create a folder, we create an empty object and then delete it immediately after to simulate folder creation.
-            var request = _netAppRequestFactory.CreateFolderRequest(arg);
-            var response = await s3Client.PutObjectAsync(request);
-            if (response.HttpStatusCode != System.Net.HttpStatusCode.OK)
+            _logger.LogWarning(
+                "Failed to create folder {FolderKey} in bucket {BucketName}. HTTP Status Code: {StatusCode}",
+                arg.FolderKey, arg.BucketName, response.HttpStatusCode);
+            return false;
+        }
+
+        var retryPolicy = GetDeleteFileRetryPolicy(request.Key, arg.BucketName);
+
+        var deleteResponse = await retryPolicy.ExecuteAsync(async () =>
+            await s3Client.DeleteObjectAsync(new DeleteObjectRequest
             {
-                _logger.LogWarning(
-                    "Failed to create folder {FolderKey} in bucket {BucketName}. HTTP Status Code: {StatusCode}",
-                    arg.FolderKey, arg.BucketName, response.HttpStatusCode);
-                return false;
-            }
+                BucketName = arg.BucketName,
+                Key = request.Key
+            }));
 
-            var retryPolicy = GetDeleteFileRetryPolicy(request.Key, arg.BucketName);
-
-            var deleteResponse = await retryPolicy.ExecuteAsync(async () =>
-                await s3Client.DeleteObjectAsync(new DeleteObjectRequest
-                {
-                    BucketName = arg.BucketName,
-                    Key = request.Key
-                }));
-
-            return deleteResponse.HttpStatusCode == System.Net.HttpStatusCode.NoContent;
-        }
-        catch (AmazonS3Exception ex)
-        {
-            _logger.LogError(ex, ex.Message, "Failed to create folder {FolderKey} in bucket {BucketName}.",
-                arg.FolderKey, arg.BucketName);
-            throw;
-        }
+        return deleteResponse.HttpStatusCode == System.Net.HttpStatusCode.NoContent;
     }
 
-    public async Task<GetObjectResponse?> GetObjectAsync(GetObjectArg arg)
+    public Task<GetObjectResponse?> GetObjectAsync(GetObjectArg arg)
+        => ExecuteWithCredentialRetryAsync(() => GetObjectCoreAsync(arg), nameof(GetObjectAsync));
+
+    private async Task<GetObjectResponse?> GetObjectCoreAsync(GetObjectArg arg)
     {
         var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
 
@@ -160,10 +182,12 @@ public class NetAppClient(
         }
     }
 
-    public async Task<bool> UploadObjectAsync(UploadObjectArg arg)
+    public Task<bool> UploadObjectAsync(UploadObjectArg arg)
+        => ExecuteWithCredentialRetryAsync(() => UploadObjectCoreAsync(arg), nameof(UploadObjectAsync));
+
+    private async Task<bool> UploadObjectCoreAsync(UploadObjectArg arg)
     {
         var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
-
         try
         {
             var response = await s3Client.PutObjectAsync(_netAppRequestFactory.UploadObjectRequest(arg));
@@ -179,83 +203,76 @@ public class NetAppClient(
 
     public async Task<ListNetAppObjectsDto?> ListObjectsInBucketAsync(ListObjectsInBucketArg arg)
     {
-        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
-
         try
         {
-            var request = _netAppRequestFactory.ListObjectsInBucketRequest(arg);
-            var response = await s3Client.ListObjectsV2Async(request);
-
-            var folders = (response.CommonPrefixes ?? []).Select(data => new ListNetAppFolderDataDto
-            {
-                Path = data
-            });
-
-            var files = (response.S3Objects ?? []).Select(data => new ListNetAppFileDataDto
-            {
-                Path = data.Key,
-                Etag = data.ETag,
-                Filesize = data.Size ?? 0,
-                LastModified = data.LastModified ?? DateTime.MinValue
-            });
-
-            var result = new ListNetAppObjectsDto
-            {
-                Data = new ListNetAppDataDto
-                {
-                    BucketName = arg.BucketName,
-                    RootPath = arg.Prefix,
-                    FolderData = folders,
-                    FileData = files
-                },
-                Pagination = new PaginationDto
-                {
-                    ContinuationToken = response.ContinuationToken,
-                    NextContinuationToken = response.NextContinuationToken,
-                    MaxKeys = response.MaxKeys,
-                    KeyCount = response.KeyCount ?? 0
-                }
-            };
-
-            return result;
+            return await ListObjectsInBucketCoreAsync(arg);
+        }
+        catch (AmazonS3Exception ex) when (IsCredentialError(ex))
+        {
+            _logger.LogWarning(ex,
+                "Credential error in ListObjectsInBucketAsync (ErrorCode={ErrorCode}) - invalidating and retrying once",
+                ex.ErrorCode);
+            await _s3ClientFactory.InvalidateClientAsync();
+            return await ListObjectsInBucketCoreAsync(arg);
         }
         catch (AmazonS3Exception ex)
         {
             _logger.LogError(ex, "Failed to list objects in bucket {BucketName}.", arg.BucketName);
             return null;
         }
+    }
+
+    private async Task<ListNetAppObjectsDto?> ListObjectsInBucketCoreAsync(ListObjectsInBucketArg arg)
+    {
+        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
+        var request = _netAppRequestFactory.ListObjectsInBucketRequest(arg);
+        var response = await s3Client.ListObjectsV2Async(request);
+
+        var folders = (response.CommonPrefixes ?? []).Select(data => new ListNetAppFolderDataDto
+        {
+            Path = data
+        });
+
+        var files = (response.S3Objects ?? []).Select(data => new ListNetAppFileDataDto
+        {
+            Path = data.Key,
+            Etag = data.ETag,
+            Filesize = data.Size ?? 0,
+            LastModified = data.LastModified ?? DateTime.MinValue
+        });
+
+        return new ListNetAppObjectsDto
+        {
+            Data = new ListNetAppDataDto
+            {
+                BucketName = arg.BucketName,
+                RootPath = arg.Prefix,
+                FolderData = folders,
+                FileData = files
+            },
+            Pagination = new PaginationDto
+            {
+                ContinuationToken = response.ContinuationToken,
+                NextContinuationToken = response.NextContinuationToken,
+                MaxKeys = response.MaxKeys,
+                KeyCount = response.KeyCount ?? 0
+            }
+        };
     }
 
     public async Task<ListNetAppObjectsDto?> ListFoldersInBucketAsync(ListFoldersInBucketArg arg)
     {
-        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
         try
         {
-            var response = await s3Client.ListObjectsV2Async(_netAppRequestFactory.ListFoldersInBucketRequest(arg));
-            var folders = (response.CommonPrefixes ?? []).Select(data => new ListNetAppFolderDataDto
-            {
-                Path = data
-            });
-
-            var result = new ListNetAppObjectsDto
-            {
-                Data = new ListNetAppDataDto
-                {
-                    BucketName = arg.BucketName,
-                    RootPath = arg.Prefix,
-                    FolderData = folders,
-                    FileData = []
-                },
-                Pagination = new PaginationDto
-                {
-                    ContinuationToken = response.ContinuationToken,
-                    NextContinuationToken = response.NextContinuationToken,
-                    MaxKeys = response.MaxKeys,
-                    KeyCount = response.KeyCount ?? 0
-                }
-            };
-
-            return result;
+            return await ListFoldersInBucketCoreAsync(arg);
+        }
+        catch (AmazonS3Exception ex) when (IsCredentialError(ex))
+        {
+            _logger.LogWarning(ex,
+                "Credential error in ListFoldersInBucketAsync (ErrorCode={ErrorCode}) - invalidating and retrying once",
+                ex.ErrorCode);
+            await _s3ClientFactory.InvalidateClientAsync();
+            return await ListFoldersInBucketCoreAsync(arg);
         }
         catch (AmazonS3Exception ex)
         {
@@ -264,12 +281,47 @@ public class NetAppClient(
         }
     }
 
-    public async Task<InitiateMultipartUploadResponse?> InitiateMultipartUploadAsync(InitiateMultipartUploadArg arg)
+    private async Task<ListNetAppObjectsDto?> ListFoldersInBucketCoreAsync(ListFoldersInBucketArg arg)
     {
         var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
+        var response = await s3Client.ListObjectsV2Async(_netAppRequestFactory.ListFoldersInBucketRequest(arg));
+        var folders = (response.CommonPrefixes ?? []).Select(data => new ListNetAppFolderDataDto
+        {
+            Path = data
+        });
+
+        return new ListNetAppObjectsDto
+        {
+            Data = new ListNetAppDataDto
+            {
+                BucketName = arg.BucketName,
+                RootPath = arg.Prefix,
+                FolderData = folders,
+                FileData = []
+            },
+            Pagination = new PaginationDto
+            {
+                ContinuationToken = response.ContinuationToken,
+                NextContinuationToken = response.NextContinuationToken,
+                MaxKeys = response.MaxKeys,
+                KeyCount = response.KeyCount ?? 0
+            }
+        };
+    }
+
+    public async Task<InitiateMultipartUploadResponse?> InitiateMultipartUploadAsync(InitiateMultipartUploadArg arg)
+    {
         try
         {
-            return await s3Client.InitiateMultipartUploadAsync(_netAppRequestFactory.CreateMultipartUploadRequest(arg));
+            return await InitiateMultipartUploadCoreAsync(arg);
+        }
+        catch (AmazonS3Exception ex) when (IsCredentialError(ex))
+        {
+            _logger.LogWarning(ex,
+                "Credential error in InitiateMultipartUploadAsync (ErrorCode={ErrorCode}) - invalidating and retrying once",
+                ex.ErrorCode);
+            await _s3ClientFactory.InvalidateClientAsync();
+            return await InitiateMultipartUploadCoreAsync(arg);
         }
         catch (AmazonS3Exception ex)
         {
@@ -278,47 +330,65 @@ public class NetAppClient(
         }
     }
 
-    public async Task<UploadPartResponse?> UploadPartAsync(UploadPartArg arg)
+    private async Task<InitiateMultipartUploadResponse?> InitiateMultipartUploadCoreAsync(
+        InitiateMultipartUploadArg arg)
     {
         var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
+        return await s3Client.InitiateMultipartUploadAsync(_netAppRequestFactory.CreateMultipartUploadRequest(arg));
+    }
+
+    public async Task<UploadPartResponse?> UploadPartAsync(UploadPartArg arg)
+    {
+        var retryPolicy = GetUploadPartRetryPolicy(arg.PartNumber, arg.ObjectKey);
         try
         {
-            using var partStream = new MemoryStream(arg.PartData, writable: false);
-
-            var request = new UploadPartRequest
+            return await retryPolicy.ExecuteAsync(async () =>
             {
-                BucketName = arg.BucketName,
-                Key = arg.ObjectKey,
-                UploadId = arg.UploadId,
-                PartNumber = arg.PartNumber,
-                PartSize = arg.PartData.Length,
-                InputStream = partStream,
-                DisablePayloadSigning = true
-            };
-            return await s3Client.UploadPartAsync(request);
+                // Re-resolve the S3 client on every attempt so that a credential
+                // rotation triggered by a sibling task or another environment is picked up.
+                var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
+                using var partStream = new MemoryStream(arg.PartData, writable: false);
+
+                var request = new UploadPartRequest
+                {
+                    BucketName = arg.BucketName,
+                    Key = arg.ObjectKey,
+                    UploadId = arg.UploadId,
+                    PartNumber = arg.PartNumber,
+                    PartSize = arg.PartData.Length,
+                    InputStream = partStream,
+                    DisablePayloadSigning = true
+                };
+                return await s3Client.UploadPartAsync(request);
+            });
         }
         catch (AmazonS3Exception ex)
         {
-            _logger.LogError(ex, "Failed to upload part {PartNumber} for file {ObjectKey}.", arg.PartNumber,
-                arg.ObjectKey);
+            _logger.LogError(ex,
+                "Failed to upload part {PartNumber} for file {ObjectKey} after all retry attempts. StatusCode={StatusCode}, ErrorCode={ErrorCode}",
+                arg.PartNumber, arg.ObjectKey, ex.StatusCode, ex.ErrorCode);
             throw;
         }
     }
 
-    public async Task<CompleteMultipartUploadResponse?> CompleteMultipartUploadAsync(CompleteMultipartUploadArg arg, CancellationToken cancellationToken = default)
+    public async Task<CompleteMultipartUploadResponse?> CompleteMultipartUploadAsync(CompleteMultipartUploadArg arg,
+        CancellationToken cancellationToken = default)
     {
-        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
         var retryPolicy = GetCompleteMultipartUploadRetryPolicy(arg.UploadId, arg.ObjectKey);
         try
         {
-            return await retryPolicy.ExecuteAsync(
-                ct => s3Client.CompleteMultipartUploadAsync(
-                    _netAppRequestFactory.CompleteMultipartUploadRequest(arg), ct),
-                cancellationToken);
+            return await retryPolicy.ExecuteAsync(async ct =>
+            {
+                var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
+                return await s3Client.CompleteMultipartUploadAsync(
+                    _netAppRequestFactory.CompleteMultipartUploadRequest(arg), ct);
+            }, cancellationToken);
         }
         catch (AmazonS3Exception ex)
         {
-            _logger.LogError(ex, "Failed to complete multipart upload {UploadId} for file {ObjectKey} after all retry attempts.", arg.UploadId, arg.ObjectKey);
+            _logger.LogError(ex,
+                "Failed to complete multipart upload {UploadId} for file {ObjectKey} after all retry attempts.",
+                arg.UploadId, arg.ObjectKey);
             throw;
         }
     }
@@ -329,7 +399,10 @@ public class NetAppClient(
         return response.StatusCode == HttpStatusCode.OK;
     }
 
-    public async Task<string> DeleteFileOrFolderAsync(DeleteFileOrFolderArg arg)
+    public Task<string> DeleteFileOrFolderAsync(DeleteFileOrFolderArg arg)
+        => ExecuteWithCredentialRetryAsync(() => DeleteFileOrFolderCoreAsync(arg), nameof(DeleteFileOrFolderAsync));
+
+    private async Task<string> DeleteFileOrFolderCoreAsync(DeleteFileOrFolderArg arg)
     {
         var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
         try
@@ -343,6 +416,12 @@ public class NetAppClient(
             else
             {
                 var filesToDelete = await ListAllObjectKeysForDeletionAsync(arg.BucketName, arg.Path, arg.BearerToken);
+
+                // Re-resolve the S3 client after listing. The listing phase calls
+                // ListObjectsInBucketAsync internally, which has its own credential
+                // retry wrapper. If that wrapper detects a credential error and
+                // regenerates keys, the s3Client captured above now holds dead keys.
+                s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
 
                 var deleteObjectsRequest = new DeleteObjectsRequest
                 {
@@ -386,7 +465,8 @@ public class NetAppClient(
     {
         try
         {
-            var headObjectArg = _netAppS3HttpArgFactory.CreateGetHeadObjectArg(arg.BearerToken, arg.BucketName, arg.ObjectKey);
+            var headObjectArg =
+                _netAppS3HttpArgFactory.CreateGetHeadObjectArg(arg.BearerToken, arg.BucketName, arg.ObjectKey);
             return await _netAppS3HttpClient.GetHeadObjectAsync(headObjectArg);
         }
         catch (HttpRequestException ex)
@@ -398,7 +478,8 @@ public class NetAppClient(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to get head object metadata for {ObjectKey} in bucket {BucketName}.", arg.ObjectKey,
+            _logger.LogError(ex, "Failed to get head object metadata for {ObjectKey} in bucket {BucketName}.",
+                arg.ObjectKey,
                 arg.BucketName);
             throw;
         }
@@ -472,20 +553,77 @@ public class NetAppClient(
                 });
     }
 
+    private Polly.Retry.AsyncRetryPolicy<UploadPartResponse?> GetUploadPartRetryPolicy(int partNumber, string objectKey)
+    {
+        // Retry when NetApp rejects the access key because credentials were rotated
+        // by a concurrently running part upload or another environment sharing the same Key Vault.
+        // On retry, InvalidateClientAsync + GetS3ClientAsync will force-regenerate fresh credentials.
+        return Policy
+            .HandleResult<UploadPartResponse?>(r => false)
+            .Or<AmazonS3Exception>(IsCredentialError)
+            .WaitAndRetryAsync(
+                retryCount: 2,
+                sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(retryAttempt * 3),
+                onRetryAsync: async (outcome, timespan, retryCount, context) =>
+                {
+                    _logger.LogWarning(outcome.Exception,
+                        "Credential error uploading part {PartNumber} for {ObjectKey} - credentials likely rotated mid-transfer (StatusCode={StatusCode}, ErrorCode={ErrorCode}). Refreshing and retrying (attempt {RetryCount}/2). Waiting {DelayMs}ms.",
+                        partNumber, objectKey,
+                        (outcome.Exception as AmazonS3Exception)?.StatusCode,
+                        (outcome.Exception as AmazonS3Exception)?.ErrorCode,
+                        retryCount, timespan.TotalMilliseconds);
+
+                    // Invalidate the cached client ONLY on retry (not the first attempt)
+                    // so that GetS3ClientAsync regenerates credentials on the next call.
+                    await _s3ClientFactory.InvalidateClientAsync();
+                });
+    }
+
     private Polly.Retry.AsyncRetryPolicy GetCompleteMultipartUploadRetryPolicy(string uploadId, string objectKey)
     {
         return Policy
             .Handle<AmazonS3Exception>(ex => (int)ex.StatusCode >= 500
-                                             || ex.StatusCode == System.Net.HttpStatusCode.RequestTimeout)
+                                             || ex.StatusCode == System.Net.HttpStatusCode.RequestTimeout
+                                             || IsCredentialError(ex))
             .WaitAndRetryAsync(
                 Backoff.DecorrelatedJitterBackoffV2(
                     medianFirstRetryDelay: TimeSpan.FromSeconds(3),
                     retryCount: 5),
-                onRetry: (exception, timespan, retryCount, context) =>
+                onRetryAsync: async (exception, timespan, retryCount, context) =>
                 {
                     _logger.LogWarning(exception,
                         "CompleteMultipartUpload retry attempt {RetryCount} for upload {UploadId} ({ObjectKey}). Waiting {DelayMs}ms.",
                         retryCount, uploadId, objectKey, timespan.TotalMilliseconds);
+
+                    // Force credential regeneration on retry so the next attempt
+                    // gets fresh keys from NetApp instead of reusing the dead cache.
+                    if (exception is AmazonS3Exception s3Ex && IsCredentialError(s3Ex))
+                    {
+                        await _s3ClientFactory.InvalidateClientAsync();
+                    }
                 });
+    }
+
+    private static bool IsCredentialError(AmazonS3Exception ex)
+        => ex.ErrorCode is "InvalidAccessKeyId" or "ExpiredToken"
+               or "InvalidClientTokenId" or "AccessDenied"
+           || ex.Message.Contains("does not exist in our records", StringComparison.OrdinalIgnoreCase)
+           || ex.Message.Contains("token has expired", StringComparison.OrdinalIgnoreCase);
+
+    private async Task<T> ExecuteWithCredentialRetryAsync<T>(
+        Func<Task<T>> operation, string operationName)
+    {
+        try
+        {
+            return await operation();
+        }
+        catch (AmazonS3Exception ex) when (IsCredentialError(ex))
+        {
+            _logger.LogWarning(ex,
+                "Credential error in {Operation} (ErrorCode={ErrorCode}) - invalidating S3 client and retrying once with fresh credentials",
+                operationName, ex.ErrorCode);
+            await _s3ClientFactory.InvalidateClientAsync();
+            return await operation();
+        }
     }
 }
