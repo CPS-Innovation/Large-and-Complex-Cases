@@ -1,5 +1,4 @@
 using System.Buffers;
-using System.Net;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -154,9 +153,10 @@ public class TransferFile(
                 ex);
         }
         catch (AmazonS3Exception ex) when ((int)ex.StatusCode >= 500
-                                           || ex.StatusCode == HttpStatusCode.NotFound)
+            || ex.StatusCode == System.Net.HttpStatusCode.NotFound
+            || IsCredentialExpiredError(ex))
         {
-            var errorMessage = $"Transient S3 error (HTTP {(int)ex.StatusCode}): {ex.Message}";
+            var errorMessage = $"Transient S3 error (HTTP {(int)ex.StatusCode}, ErrorCode={ex.ErrorCode}): {ex.Message}";
             telemetryEvent.ErrorCode = TransferErrorCode.Transient.ToString();
             telemetryEvent.ErrorMessage = errorMessage;
             return CreateFailureResult(
@@ -466,6 +466,15 @@ public class TransferFile(
 
         return new TransferResult { IsSuccess = false, FailedItem = failedItem };
     }
+
+    // NetApp exception when the access key has been rotated since the
+    // S3 client was created. Treating this as transient ensures the orchestrator
+    // retries with freshly-resolved credentials.
+    // The message fallback covers non-standard NetApp ErrorCode
+    private static bool IsCredentialExpiredError(AmazonS3Exception ex) =>
+            ex.ErrorCode is "InvalidAccessKeyId" or "ExpiredToken" or "InvalidClientTokenId"
+            || ex.Message.Contains("does not exist in our records", StringComparison.OrdinalIgnoreCase)
+            || ex.Message.Contains("token has expired", StringComparison.OrdinalIgnoreCase);
 
     private static string GetDestinationPath(TransferFilePayload payload)
     {

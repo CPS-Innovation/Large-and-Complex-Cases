@@ -27,30 +27,46 @@ public class S3ClientFactory(
     private readonly IKeyVaultService _keyVaultService = keyVaultService;
     private IAmazonS3? _s3Client;
     private string? _currentOid;
+    private bool _forceRegeneration;
+    // Serialises concurrent credential checks and rotations so that only one task
+    // can rotate credentials at a time. Without this, multiple concurrent chunk
+    // uploads can each detect expiry and independently call RegenerateUserKeysAsync,
+    // causing the old keys to be invalidated while sibling uploads are still in flight.
+    private readonly SemaphoreSlim _clientLock = new(1, 1);
 
     public async Task<IAmazonS3> GetS3ClientAsync(string bearerToken)
     {
         var oid = ExtractOidFromToken(bearerToken);
 
-        if (_s3Client != null && _currentOid == oid)
+        await _clientLock.WaitAsync();
+        try
         {
-            // Check if credentials are still valid before returning cached client
-            var status = await _keyVaultService.CheckCredentialStatusAsync(oid);
-
-            if (!status.NeedsRegeneration)
+            if (_s3Client != null && _currentOid == oid && !_forceRegeneration)
             {
-                return _s3Client;
+                // Check if credentials are still valid before returning cached client
+                var status = await _keyVaultService.CheckCredentialStatusAsync(oid);
+
+                if (!status.NeedsRegeneration)
+                {
+                    return _s3Client;
+                }
+
+                _logger.LogInformation(
+                    "Credentials expiring soon for user {Oid} ({RemainingMinutes:F1} minutes remaining) - recreating S3 client",
+                    oid,
+                    status.RemainingMinutes);
             }
 
-            _logger.LogInformation(
-                "Credentials expiring soon for user {Oid} ({RemainingMinutes:F1} minutes remaining) - recreating S3 client",
-                oid,
-                status.RemainingMinutes);
+            var forceRegen = _forceRegeneration;
+            _forceRegeneration = false;
+            _currentOid = oid;
+            _s3Client = await CreateS3Client(bearerToken, forceRegen);
+            return _s3Client;
         }
-
-        _currentOid = oid;
-        _s3Client = await CreateS3Client(bearerToken);
-        return _s3Client;
+        finally
+        {
+            _clientLock.Release();
+        }
     }
 
     private static string ExtractOidFromToken(string bearerToken)
@@ -72,9 +88,27 @@ public class S3ClientFactory(
         _s3Client = s3Client;
     }
 
-    private async Task<IAmazonS3> CreateS3Client(string bearerToken)
+    public async Task InvalidateClientAsync()
     {
-        var (accessKey, secretKey) = await _s3CredentialsService.GetCredentialKeysAsync(bearerToken);
+        await _clientLock.WaitAsync();
+        try
+        {
+            _s3Client = null;
+            _forceRegeneration = true;
+            _logger.LogWarning(
+                "S3 client invalidated due to credential error - will force credential regeneration on next request");
+        }
+        finally
+        {
+            _clientLock.Release();
+        }
+    }
+
+    private async Task<IAmazonS3> CreateS3Client(string bearerToken, bool forceRegeneration = false)
+    {
+        var (accessKey, secretKey) = forceRegeneration
+            ? await _s3CredentialsService.RegenerateCredentialKeysAsync(bearerToken)
+            : await _s3CredentialsService.GetCredentialKeysAsync(bearerToken);
         var credentials = new BasicAWSCredentials(accessKey, secretKey);
 
         var s3Config = new AmazonS3Config
