@@ -2,6 +2,7 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import svgr from "vite-plugin-svgr";
+import csp from "vite-plugin-csp-guard";
 import istanbul from "vite-plugin-istanbul";
 
 export default defineConfig(({ command, mode }) => {
@@ -30,6 +31,35 @@ export default defineConfig(({ command, mode }) => {
           return html;
         },
       },
+      csp({
+        dev: {
+          run: true,
+        },
+        policy: {
+          "default-src": ["'self'"],
+          "script-src": ["'self'"],
+          "script-src-elem": [
+            "'self'",
+            env.VITE_GLOBAL_NAV_SCRIPT_URL,
+            "https://polaris-dev-notprod.cps.gov.uk/",
+            "https://polaris-qa-notprod.cps.gov.uk/",
+            "https://polaris.cps.gov.uk/",
+            "https://sacpsglobalcomponents.blob.core.windows.net/",
+          ],
+          "connect-src": [
+            env.VITE_GATEWAY_BASE_URL,
+            "https://polaris-dev-notprod.cps.gov.uk/",
+            "https://polaris-qa-notprod.cps.gov.uk/",
+            "https://polaris.cps.gov.uk/",
+            "https://sacpsglobalcomponents.blob.core.windows.net/",
+            "https://login.microsoftonline.com",
+            "https://js.monitor.azure.com/",
+          ],
+          "style-src-elem": ["'self'", "'unsafe-inline'"],
+          "img-src": ["'self'", "data:"],
+          "font-src": ["'self'"],
+        },
+      }),
       isE2ECoverage &&
         istanbul({
           include: ["src/**/*.{ts,tsx,js,jsx}"],
