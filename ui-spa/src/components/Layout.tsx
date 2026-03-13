@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import Footer from "./Footer";
 import Header from "./Header";
+import { useUserGroupsFeatureFlag } from "../common/hooks/useUserGroupsFeatureFlag";
 import { useLocation } from "react-router-dom";
 import { SkipLink } from "../components/govuk";
 import styles from "./Layout.module.scss";
@@ -12,6 +13,7 @@ export default function RootLayout({
 }>) {
   const location = useLocation();
   const skipLinkSiblingRef = useRef(null);
+  const featureFlags = useUserGroupsFeatureFlag();
 
   useEffect(() => {
     /*This is a way to bring the focus back to the top of the page
@@ -25,9 +27,14 @@ export default function RootLayout({
     }
   }, [location.pathname]);
   return (
-    <div ref={skipLinkSiblingRef} tabIndex={-1}>
+    <div ref={skipLinkSiblingRef} tabIndex={-1} className={styles.rootLayout}>
       <SkipLink href="#main-content">Skip to main content</SkipLink>
-      <Header />
+      {featureFlags.globalNav && (
+        <div className="govuk-width-container">
+          <cps-global-header></cps-global-header>
+        </div>
+      )}
+      {!featureFlags.globalNav && <Header />}
       <div className={styles.mainContent}>{children}</div>
       <Footer />
     </div>
