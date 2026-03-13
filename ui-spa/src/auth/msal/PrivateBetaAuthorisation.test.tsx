@@ -7,7 +7,6 @@ const PRIVATE_BETA_USER_GROUP_VALUE = "foo";
 const EXPECTED_APP_TEXT = "app_text";
 
 vi.mock("../../config");
-vi.mock("../common/hooks/useUserGroupsFeatureFlag");
 vi.mock("react-router-dom", () => ({
   useLocation: () => ({
     pathname: "",
