@@ -1,5 +1,5 @@
 /// <reference types="vitest" />
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import svgr from "vite-plugin-svgr";
 import istanbul from "vite-plugin-istanbul";
@@ -8,12 +8,28 @@ export default defineConfig(({ command, mode }) => {
   const isE2ECoverage = process.env.E2E_COVERAGE === "1";
   const isProdBuild = command === "build" && mode === "production";
   const buildSourceMap = isE2ECoverage || !isProdBuild;
+  const env = loadEnv(mode, process.cwd(), "");
 
   return {
     build: { sourcemap: buildSourceMap },
     plugins: [
       react(),
       svgr(),
+      {
+        name: "inject-external-script",
+        transformIndexHtml(html: string) {
+          if (
+            env.VITE_GLOBAL_NAV_SCRIPT_URL &&
+            env.VITE_FEATURE_FLAG_GLOBAL_NAV === "true"
+          ) {
+            return html.replace(
+              "</head>",
+              `<script src="${env.VITE_GLOBAL_NAV_SCRIPT_URL}" type="module"></script>\n</head>`,
+            );
+          }
+          return html;
+        },
+      },
       isE2ECoverage &&
         istanbul({
           include: ["src/**/*.{ts,tsx,js,jsx}"],
