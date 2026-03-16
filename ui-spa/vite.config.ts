@@ -16,7 +16,7 @@ export default defineConfig(({ command, mode }) => {
       return [];
     }
     if (
-      env.VITE_GLOBAL_NAV_SCRIPT_URL?.includes(
+      env.VITE_GLOBAL_NAV_SCRIPT_URL?.startsWith(
         "https://sacpsglobalcomponents.blob.core.windows.net/",
       )
     ) {
@@ -26,14 +26,14 @@ export default defineConfig(({ command, mode }) => {
       ];
     }
     if (
-      env.VITE_GLOBAL_NAV_SCRIPT_URL?.includes(
+      env.VITE_GLOBAL_NAV_SCRIPT_URL?.startsWith(
         "https://polaris-qa-notprod.cps.gov.uk/",
       )
     ) {
       return ["https://polaris-qa-notprod.cps.gov.uk/"];
     }
     if (
-      env.VITE_GLOBAL_NAV_SCRIPT_URL?.includes("https://polaris.cps.gov.uk/")
+      env.VITE_GLOBAL_NAV_SCRIPT_URL?.startsWith("https://polaris.cps.gov.uk/")
     ) {
       return ["https://polaris.cps.gov.uk/"];
     }
@@ -68,6 +68,7 @@ export default defineConfig(({ command, mode }) => {
           "script-src": ["'self'"],
           "script-src-elem": ["'self'", ...getAllowedSources()],
           "connect-src": [
+            "'self'",
             env.VITE_GATEWAY_BASE_URL ?? "",
             ...getAllowedSources(),
             "https://login.microsoftonline.com",
