@@ -11,6 +11,34 @@ export default defineConfig(({ command, mode }) => {
   const buildSourceMap = isE2ECoverage || !isProdBuild;
   const env = loadEnv(mode, process.cwd(), "");
 
+  const getAllowedSources = () => {
+    if (env.VITE_FEATURE_FLAG_GLOBAL_NAV !== "true") {
+      return [];
+    }
+    if (
+      env.VITE_GLOBAL_NAV_SCRIPT_URL?.includes(
+        "https://sacpsglobalcomponents.blob.core.windows.net/",
+      )
+    ) {
+      return [
+        "https://sacpsglobalcomponents.blob.core.windows.net/",
+        "https://polaris-qa-notprod.cps.gov.uk/",
+      ];
+    }
+    if (
+      env.VITE_GLOBAL_NAV_SCRIPT_URL?.includes(
+        "https://polaris-qa-notprod.cps.gov.uk/",
+      )
+    ) {
+      return ["https://polaris-qa-notprod.cps.gov.uk/"];
+    }
+    if (
+      env.VITE_GLOBAL_NAV_SCRIPT_URL?.includes("https://polaris.cps.gov.uk/")
+    ) {
+      return ["https://polaris.cps.gov.uk/"];
+    }
+    return [];
+  };
   return {
     build: { sourcemap: buildSourceMap },
     plugins: [
@@ -38,20 +66,10 @@ export default defineConfig(({ command, mode }) => {
         policy: {
           "default-src": ["'self'"],
           "script-src": ["'self'"],
-          "script-src-elem": [
-            "'self'",
-            env.VITE_GLOBAL_NAV_SCRIPT_URL,
-            "https://polaris-dev-notprod.cps.gov.uk/",
-            "https://polaris-qa-notprod.cps.gov.uk/",
-            "https://polaris.cps.gov.uk/",
-            "https://sacpsglobalcomponents.blob.core.windows.net/",
-          ],
+          "script-src-elem": ["'self'", ...getAllowedSources()],
           "connect-src": [
-            env.VITE_GATEWAY_BASE_URL,
-            "https://polaris-dev-notprod.cps.gov.uk/",
-            "https://polaris-qa-notprod.cps.gov.uk/",
-            "https://polaris.cps.gov.uk/",
-            "https://sacpsglobalcomponents.blob.core.windows.net/",
+            env.VITE_GATEWAY_BASE_URL ?? "",
+            ...getAllowedSources(),
             "https://login.microsoftonline.com",
             "https://js.monitor.azure.com/",
           ],
