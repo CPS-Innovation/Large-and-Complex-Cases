@@ -87,7 +87,7 @@ stages:
             workingDirectory: '$(workingDir)'
           
           - publish: '$(workingDir)/$(covDir)/unit/index.html'
-            artifact: 'unit-coverage-report'
+            artifact: '$(System.JobId)-unit-coverage-report'
             displayName: 'Publish Unit Test Coverage Report as Pipeline Artifact'
 
 # ---------- E2E TESTS (Playwright) ----------
@@ -124,7 +124,7 @@ stages:
             workingDirectory: '$(workingDir)'
 
           - publish: '$(workingDir)/$(covDir)/e2e/index.html'
-            artifact: 'e2e-coverage-report'
+            artifact: '$(System.JobId)-e2e-coverage-report'
             displayName: 'Publish E2E Coverage Report as Pipeline Artifact'
           
           - script: |
