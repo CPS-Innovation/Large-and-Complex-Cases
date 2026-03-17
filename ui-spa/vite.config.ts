@@ -17,16 +17,6 @@ export default defineConfig(({ command, mode }) => {
     }
     if (
       env.VITE_GLOBAL_NAV_SCRIPT_URL?.startsWith(
-        "https://sacpsglobalcomponents.blob.core.windows.net/",
-      )
-    ) {
-      return [
-        "https://sacpsglobalcomponents.blob.core.windows.net/",
-        "https://polaris-qa-notprod.cps.gov.uk/",
-      ];
-    }
-    if (
-      env.VITE_GLOBAL_NAV_SCRIPT_URL?.startsWith(
         "https://polaris-qa-notprod.cps.gov.uk/",
       )
     ) {
@@ -66,6 +56,7 @@ export default defineConfig(({ command, mode }) => {
         policy: {
           "default-src": ["'self'"],
           "script-src": ["'self'"],
+          "child-src": ["'self'", ...getAllowedSources()],
           "script-src-elem": ["'self'", ...getAllowedSources()],
           "connect-src": [
             "'self'",
