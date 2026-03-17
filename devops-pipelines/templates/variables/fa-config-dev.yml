@@ -1,0 +1,17 @@
+variables:
+- name: DDEIOptionsBaseUrl
+  value: 'https://fa-wm-app-ddei-dev.azurewebsites.net/api'
+- name: RedirectUrlCaseworkApp
+  value: 'https://example.com/polaris?r='
+- name: RedirectUrlLccUi
+  value: 'https://lacc-app-ui-spa-dev.azurewebsites.net'
+- name: CallingAppValidAudience
+  value: $(CallingAppValidAudience)
+- name: EgressOptionsUrl
+  value: 'https://cps-qa.egresscloud.com'
+- name: NetAppOptionsClusterUrl
+  value: $(NetAppOptionsClusterUrl)
+- name: NetAppOptionsS3ServiceUuid
+  value: $(NetAppOptionsS3ServiceUuid)
+- name: NetAppOptionsUrl
+  value: $(NetAppOptionsUrl)
