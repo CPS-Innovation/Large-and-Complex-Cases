@@ -11,6 +11,7 @@ vi.mock("react-router-dom", () => ({
   useLocation: () => ({
     pathname: "",
   }),
+  useSearchParams: () => [new URLSearchParams()],
 }));
 const mockConfig = config as {
   PRIVATE_BETA_USER_GROUP: string | null;

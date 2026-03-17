@@ -11,5 +11,8 @@ export const FEATURE_FLAG_CASE_DETAILS =
 export const FEATURE_FLAG_TRANSFER_MOVE =
   `${import.meta.env.VITE_FEATURE_FLAG_TRANSFER_MOVE}` === "true";
 export const PRIVATE_BETA_FEATURE_USER_GROUP2 = `${import.meta.env.VITE_PRIVATE_BETA_FEATURE_USER_GROUP2}`;
+export const GLOBAL_NAV_SCRIPT_URL = `${import.meta.env.VITE_GLOBAL_NAV_SCRIPT_URL}`;
+export const FEATURE_FLAG_GLOBAL_NAV =
+  `${import.meta.env.VITE_FEATURE_FLAG_GLOBAL_NAV}` === "true";
 
 console.log(JSON.stringify(import.meta.env));
