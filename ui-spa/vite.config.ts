@@ -11,6 +11,24 @@ export default defineConfig(({ command, mode }) => {
   const buildSourceMap = isE2ECoverage || !isProdBuild;
   const env = loadEnv(mode, process.cwd(), "");
 
+  const getAllowedSources = () => {
+    if (env.VITE_FEATURE_FLAG_GLOBAL_NAV !== "true") {
+      return [];
+    }
+    if (
+      env.VITE_GLOBAL_NAV_SCRIPT_URL?.startsWith(
+        "https://polaris-qa-notprod.cps.gov.uk/",
+      )
+    ) {
+      return ["https://polaris-qa-notprod.cps.gov.uk/"];
+    }
+    if (
+      env.VITE_GLOBAL_NAV_SCRIPT_URL?.startsWith("https://polaris.cps.gov.uk/")
+    ) {
+      return ["https://polaris.cps.gov.uk/"];
+    }
+    return [];
+  };
   return {
     build: { sourcemap: buildSourceMap },
     plugins: [
@@ -38,20 +56,12 @@ export default defineConfig(({ command, mode }) => {
         policy: {
           "default-src": ["'self'"],
           "script-src": ["'self'"],
-          "script-src-elem": [
-            "'self'",
-            env.VITE_GLOBAL_NAV_SCRIPT_URL,
-            "https://polaris-dev-notprod.cps.gov.uk/",
-            "https://polaris-qa-notprod.cps.gov.uk/",
-            "https://polaris.cps.gov.uk/",
-            "https://sacpsglobalcomponents.blob.core.windows.net/",
-          ],
+          "child-src": ["'self'", ...getAllowedSources()],
+          "script-src-elem": ["'self'", ...getAllowedSources()],
           "connect-src": [
-            env.VITE_GATEWAY_BASE_URL,
-            "https://polaris-dev-notprod.cps.gov.uk/",
-            "https://polaris-qa-notprod.cps.gov.uk/",
-            "https://polaris.cps.gov.uk/",
-            "https://sacpsglobalcomponents.blob.core.windows.net/",
+            "'self'",
+            env.VITE_GATEWAY_BASE_URL ?? "",
+            ...getAllowedSources(),
             "https://login.microsoftonline.com",
             "https://js.monitor.azure.com/",
           ],
