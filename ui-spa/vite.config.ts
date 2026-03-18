@@ -56,13 +56,17 @@ export default defineConfig(({ command, mode }) => {
         policy: {
           "default-src": ["'self'"],
           "script-src": ["'self'"],
-          "child-src": ["'self'", ...getAllowedSources()],
+          "child-src": [
+            "'self'",
+            ...getAllowedSources(),
+            "https://login.microsoftonline.com/",
+          ],
           "script-src-elem": ["'self'", ...getAllowedSources()],
           "connect-src": [
             "'self'",
             env.VITE_GATEWAY_BASE_URL ?? "",
             ...getAllowedSources(),
-            "https://login.microsoftonline.com",
+            "https://login.microsoftonline.com/",
             "https://js.monitor.azure.com/",
           ],
           "style-src-elem": ["'self'", "'unsafe-inline'"],
