@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
@@ -14,13 +15,15 @@ public class NetAppStorageClient(
     INetAppArgFactory netAppArgFactory,
     ICaseMetadataService caseMetadataService,
     INetAppS3HttpClient netAppS3HttpClient,
-    INetAppS3HttpArgFactory netAppS3HttpArgFactory) : IStorageClient
+    INetAppS3HttpArgFactory netAppS3HttpArgFactory,
+    ILogger<NetAppStorageClient> logger) : IStorageClient
 {
     private readonly INetAppClient _netAppClient = netAppClient;
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
     private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
     private readonly INetAppS3HttpClient _netAppS3HttpClient = netAppS3HttpClient;
     private readonly INetAppS3HttpArgFactory _netAppS3HttpArgFactory = netAppS3HttpArgFactory;
+    private readonly ILogger<NetAppStorageClient> _logger = logger;
 
     public async Task<bool> CompleteUploadAsync(UploadSession session, string? md5hash = null, Dictionary<int, string>? etags = null, string? bearerToken = null, string? bucketName = null, string? filePath = null)
     {
@@ -211,19 +214,47 @@ public class NetAppStorageClient(
             throw new InvalidOperationException($"Failed to upload {objectName} to NetApp.");
     }
 
-    public async Task<bool> VerifyUpload(string bearerToken, string bucketName, string objectName, string eTag)
+    public async Task<bool> VerifyUpload(string bearerToken, string bucketName, string objectName, string eTag,
+        int maxRetries = 5, int baseDelayMs = 2000)
     {
-        var arg = _netAppS3HttpArgFactory.CreateGetHeadObjectArg(
-            bearerToken ?? throw new ArgumentNullException(nameof(bearerToken), "Bearer token cannot be null."),
-            bucketName ?? throw new ArgumentNullException(nameof(bucketName), "Bucket name cannot be null."),
-            objectName ?? throw new ArgumentNullException(nameof(objectName), "Object name cannot be null."));
+        for (var attempt = 0; attempt <= maxRetries; attempt++)
+        {
+            if (attempt > 0)
+            {
+                var delayMs = baseDelayMs * (int)Math.Pow(2, attempt - 1);
+                _logger.LogInformation(
+                    "VerifyUpload waiting {DelayMs}ms before retry attempt {Attempt}/{MaxAttempts} for {ObjectName}",
+                    delayMs, attempt + 1, maxRetries + 1, objectName);
+                await Task.Delay(delayMs);
+            }
 
-        var response = await _netAppS3HttpClient.GetHeadObjectAsync(arg);
+            var arg = _netAppS3HttpArgFactory.CreateGetHeadObjectArg(
+                bearerToken ?? throw new ArgumentNullException(nameof(bearerToken), "Bearer token cannot be null."),
+                bucketName ?? throw new ArgumentNullException(nameof(bucketName), "Bucket name cannot be null."),
+                objectName ?? throw new ArgumentNullException(nameof(objectName), "Object name cannot be null."));
 
-        if (response == null || response.StatusCode != System.Net.HttpStatusCode.OK)
-            return false;
+            var response = await _netAppS3HttpClient.GetHeadObjectAsync(arg);
 
-        return response.ETag == eTag.Unquote();
+            if (response == null || response.StatusCode != System.Net.HttpStatusCode.OK)
+            {
+                _logger.LogWarning(
+                    "VerifyUpload attempt {Attempt}/{MaxAttempts}: HEAD returned {StatusCode} for {ObjectName}. Expected ETag: {ExpectedETag}",
+                    attempt + 1, maxRetries + 1, response?.StatusCode, objectName, eTag);
+                continue;
+            }
+
+            var matches = response.ETag == eTag.Unquote();
+            if (!matches)
+            {
+                _logger.LogWarning(
+                    "VerifyUpload ETag mismatch for {ObjectName}. Expected: {Expected}, Actual: {Actual}",
+                    objectName, eTag.Unquote(), response.ETag);
+            }
+
+            return matches;
+        }
+
+        return false;
     }
 
     public Task<bool> FileExistsAsync(string path, string? workspaceId = null, string? bearerToken = null, string? bucketName = null)

@@ -1,19 +1,79 @@
 /// <reference types="vitest" />
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import svgr from "vite-plugin-svgr";
+import csp from "vite-plugin-csp-guard";
 import istanbul from "vite-plugin-istanbul";
 
 export default defineConfig(({ command, mode }) => {
   const isE2ECoverage = process.env.E2E_COVERAGE === "1";
   const isProdBuild = command === "build" && mode === "production";
   const buildSourceMap = isE2ECoverage || !isProdBuild;
+  const env = loadEnv(mode, process.cwd(), "");
 
+  const getAllowedSources = () => {
+    if (env.VITE_FEATURE_FLAG_GLOBAL_NAV !== "true") {
+      return [];
+    }
+    if (
+      env.VITE_GLOBAL_NAV_SCRIPT_URL?.startsWith(
+        "https://polaris-qa-notprod.cps.gov.uk/",
+      )
+    ) {
+      return ["https://polaris-qa-notprod.cps.gov.uk/"];
+    }
+    if (
+      env.VITE_GLOBAL_NAV_SCRIPT_URL?.startsWith("https://polaris.cps.gov.uk/")
+    ) {
+      return ["https://polaris.cps.gov.uk/"];
+    }
+    return [];
+  };
   return {
     build: { sourcemap: buildSourceMap },
     plugins: [
       react(),
       svgr(),
+      {
+        name: "inject-external-script",
+        transformIndexHtml(html: string) {
+          if (
+            env.VITE_GLOBAL_NAV_SCRIPT_URL &&
+            env.VITE_FEATURE_FLAG_GLOBAL_NAV === "true"
+          ) {
+            return html.replace(
+              "</head>",
+              `<script src="${env.VITE_GLOBAL_NAV_SCRIPT_URL}" type="module"></script>\n</head>`,
+            );
+          }
+          return html;
+        },
+      },
+      csp({
+        dev: {
+          run: true,
+        },
+        policy: {
+          "default-src": ["'self'"],
+          "script-src": ["'self'"],
+          "child-src": [
+            "'self'",
+            ...getAllowedSources(),
+            "https://login.microsoftonline.com/",
+          ],
+          "script-src-elem": ["'self'", ...getAllowedSources()],
+          "connect-src": [
+            "'self'",
+            env.VITE_GATEWAY_BASE_URL ?? "",
+            ...getAllowedSources(),
+            "https://login.microsoftonline.com/",
+            "https://js.monitor.azure.com/",
+          ],
+          "style-src-elem": ["'self'", "'unsafe-inline'"],
+          "img-src": ["'self'", "data:"],
+          "font-src": ["'self'"],
+        },
+      }),
       isE2ECoverage &&
         istanbul({
           include: ["src/**/*.{ts,tsx,js,jsx}"],
