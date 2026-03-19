@@ -55,7 +55,6 @@ stages:
 
 - stage:  Database_Migration_${{ parameters.environment }}
   displayName: '${{ parameters.environment }} - Database Migration'
-  dependsOn: Update_Key_Vault_${{ parameters.environment }}
   variables:
   - template: ./variables/backend-deploy-vars.yml
     parameters: 

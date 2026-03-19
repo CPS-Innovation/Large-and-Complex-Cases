@@ -41,7 +41,7 @@ public static class IServiceCollectionExtension
 		{
 			var logger = sp.GetRequiredService<ILogger<KeyVaultService>>();
 			var keyVaultUrl = configuration["KeyVaultUri"]
-				?? throw new ArgumentNullException("KeyVaultUri", "KeyVault:Url configuration is missing or empty.");
+				?? throw new ArgumentNullException("KeyVaultUri", "KeyVaultUri configuration is missing or empty.");
 
 			var secretClient = new SecretClient(
 				new Uri(keyVaultUrl),
