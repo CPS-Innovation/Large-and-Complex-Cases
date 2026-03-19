@@ -1,8 +1,6 @@
 variables:
-- name: CryptoOptionsHashAlgorithm
-  value: 'SHA256'
-- name: CryptoOptionsHkdfInfo
-  value: 'S3CredentialEncryption'
+- name: EgressOptionsUrl
+  value: 'https://cps-qa.egresscloud.com'
 - name: CryptoOptionsKeySizeBytes
   value: '32'
 - name: CryptoOptionsNonceSizeBytes
@@ -23,12 +21,8 @@ variables:
   value: '3'
 - name: NetAppOptionsPepperVersion
   value: 'v1'
-- name: NetAppOptionsRegionName
-  value: 'eu-west-1'
 - name: NetAppOptionsSessionDurationSeconds
   value: '3600'
-- name: PostgresAuthMode
-  value: 'AAD'
 - name: RateLimitingIntervalInSeconds
   value: '60'
 - name: RateLimitingPermitLimit
