@@ -23,49 +23,49 @@ steps:
       appSettings: |
         [
           {
-            "name":
-            "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=)"
+            "name": "ConnectionStrings__CaseManagementDatastoreConnection"
+            "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=ConnectionStrings--CaseManagementDatastoreConnection)"
             "slotSrtting": false
           },
           {
-            "name":
-            "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=)"
+            "name": "FileTransferApiOptions__AccessKey"
+            "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=FileTransferApiOptions--AccessKey)"
             "slotSrtting": false
           },
           {
-            "name":
-            "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=)"
+            "name": "DDEIOptions__AccessKey"
+            "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=DDEIOptions--AccessKey)"
             "slotSrtting": false
           },
           {
-            "name":
-            "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=)"
+            "name": "EgressOptions__Password"
+            "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=EgressOptions--Password)"
             "slotSrtting": false
           },
           {
-            "name":
-            "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=)"
+            "name": "EgressOptions__Username"
+            "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=EgressOptions--Username)"
             "slotSrtting": false
           },
           {
-            "name":
-            "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=)"
+            "name": "NetAppOptions__RootCaCert"
+            "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=NetAppOptions--RootCaCert)"
             "slotSrtting": false
           },
           {
-            "name":
-            "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=)"
+            "name": "NetAppOptions__IssuingCaCert"
+            "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=NetAppOptions--IssuingCaCert)"
+            "slotSrtting": false
+          },
+          {
+            "name": "NetAppOptions__IssuingCaCert2"
+            "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=NetAppOptions--IssuingCaCert2)"
             "slotSrtting": false
           },
           {
             "name": "KeyVaultUri",
             "value": "https://${{ parameters.keyVaultName }}.vault.azure.net/",
             "slotSetting": false
-          },
-          {
-            "name": "EgressOptions__Username
-            "value": "$(EgressOptionsUsername)"
-            "slotSrtting": false
           },
           {
             "name": "NetAppOptions__Url",
@@ -79,7 +79,7 @@ steps:
           },
           {
             "name": "NetAppOptions__RegionName",
-            "value": "$(NetAppOptionsRegionName)",
+            "value": "eu-west-1",
             "slotSetting": false
           },
           {
@@ -179,7 +179,7 @@ steps:
           },
           {
             "name": "CryptoOptions__HkdfInfo",
-            "value": "$(CryptoOptionsHkdfInfo)",
+            "value": "S3CredentialEncryption",
             "slotSetting": false
           },
           {
