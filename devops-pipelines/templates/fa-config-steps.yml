@@ -25,42 +25,42 @@ steps:
           {
             "name": "ConnectionStrings__CaseManagementDatastoreConnection",
             "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=ConnectionStrings--CaseManagementDatastoreConnection)",
-            "slotSrtting": false
+            "slotSetting": false
           },
           {
             "name": "FileTransferApiOptions__AccessKey",
             "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=FileTransferApiOptions--AccessKey)",
-            "slotSrtting": false
+            "slotSetting": false
           },
           {
             "name": "DDEIOptions__AccessKey",
             "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=DDEIOptions--AccessKey)",
-            "slotSrtting": false
+            "slotSetting": false
           },
           {
             "name": "EgressOptions__Password",
             "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=EgressOptions--Password)",
-            "slotSrtting": false
+            "slotSetting": false
           },
           {
             "name": "EgressOptions__Username",
             "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=EgressOptions--Username)",
-            "slotSrtting": false
+            "slotSetting": false
           },
           {
             "name": "NetAppOptions__RootCaCert",
             "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=NetAppOptions--RootCaCert)",
-            "slotSrtting": false
+            "slotSetting": false
           },
           {
             "name": "NetAppOptions__IssuingCaCert",
             "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=NetAppOptions--IssuingCaCert)",
-            "slotSrtting": false
+            "slotSetting": false
           },
           {
             "name": "NetAppOptions__IssuingCaCert2",
             "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=NetAppOptions--IssuingCaCert2)",
-            "slotSrtting": false
+            "slotSetting": false
           },
           {
             "name": "KeyVaultUri",
