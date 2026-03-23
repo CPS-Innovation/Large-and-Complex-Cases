@@ -6,7 +6,7 @@ import fs from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
 
-import { setupHandlers } from "../../src/mocks/handlers";
+import { setupHandlers } from "../../../src/mocks/handlers";
 
 const istanbulCLIOutput = path.join(process.cwd(), "coverage", ".nyc_output");
 

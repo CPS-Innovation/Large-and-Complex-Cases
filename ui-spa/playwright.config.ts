@@ -7,7 +7,7 @@ dotenv.config({ path: ".env.playwright" });
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  testDir: "./integration-tests",
+  testDir: "./playwright/integration-tests",
   outputDir: "./playwright/test-results",
 
   /* Run tests in files in parallel */

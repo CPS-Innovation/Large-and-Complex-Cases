@@ -1,11 +1,11 @@
 {
-  "name": "integration",
+  "name": "e2e",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "integration": "npx playwright test --ui",
-    "integration:ci": "npx playwright test"
+    "e2e": "npx playwright test --ui",
+    "e2e:ci": "npx playwright test"
   },
   "keywords": [],
   "author": "Stef Stachow",
