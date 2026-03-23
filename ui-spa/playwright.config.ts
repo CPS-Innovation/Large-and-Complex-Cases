@@ -7,7 +7,7 @@ dotenv.config({ path: ".env.playwright" });
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  testDir: "./playwright/e2e",
+  testDir: "./playwright/integration",
   outputDir: "./playwright/test-results",
 
   /* Run tests in files in parallel */
@@ -22,7 +22,7 @@ export default defineConfig({
   reporter: [
     ["list"],
     ["html", { outputFolder: "./playwright/playwright-report" }],
-    ["junit", { outputFile: "./playwright/e2e-test-results.xml" }],
+    ["junit", { outputFile: "./playwright/integration-test-results.xml" }],
   ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
