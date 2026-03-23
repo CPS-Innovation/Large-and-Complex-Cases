@@ -1,4 +1,4 @@
-import { expect, test } from "../utils/test";
+import { expect, test } from "./utils/test";
 import { delay, HttpResponse, http } from "msw";
 import { Page, Locator } from "@playwright/test";
 test.describe("egress-netapp-transfer-indexing-error", () => {

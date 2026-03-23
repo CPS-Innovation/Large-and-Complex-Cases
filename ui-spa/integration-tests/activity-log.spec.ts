@@ -1,7 +1,7 @@
 import { delay, HttpResponse, http } from "msw";
-import { expect, test } from "../utils/test";
+import { expect, test } from "./utils/test";
 import { Page } from "@playwright/test";
-import { ActivityLogResponse } from "../../src/common/types/ActivityLogResponse";
+import { ActivityLogResponse } from "../src/common/types/ActivityLogResponse";
 test.describe("activity log", () => {
   const goToActivityLog = async (page: Page) => {
     await page.goto("/case/12/case-management");

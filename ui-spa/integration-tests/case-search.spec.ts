@@ -1,6 +1,6 @@
 import { delay, HttpResponse, http } from "msw";
-import { expect, test } from "../utils/test";
-import { caseAreasPlaywright } from "../../src/mocks/data";
+import { expect, test } from "./utils/test";
+import { caseAreasPlaywright } from "../src/mocks/data";
 import { Page } from "@playwright/test";
 
 test.describe("Case Search/Results", async () => {

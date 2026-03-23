@@ -1,5 +1,5 @@
 import { delay, HttpResponse, http } from "msw";
-import { expect, test } from "../utils/test";
+import { expect, test } from "./utils/test";
 
 test.describe("egress meta data issues", () => {
   test("Should handle if the user lands on the transfer material with just missing egress connection meta data,by navigating to egress connection error page", async ({

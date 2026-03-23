@@ -25,7 +25,7 @@
   },
   "include": [
     "src",
-    "playwright/integration/**/*.ts",
+    "integration-tests/**/*.ts",
     "playwright.config.ts",
     "playwright/lighthouse"
   ]
