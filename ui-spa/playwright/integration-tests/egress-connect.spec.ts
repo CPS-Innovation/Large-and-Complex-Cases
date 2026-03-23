@@ -1,5 +1,5 @@
 import { delay, HttpResponse, http } from "msw";
-import { expect, test } from "../utils/test";
+import { expect, test } from "./utils/test";
 
 test.describe("egress connect", () => {
   test.beforeEach(async ({ page }) => {

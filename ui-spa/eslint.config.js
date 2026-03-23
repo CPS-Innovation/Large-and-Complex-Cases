@@ -36,7 +36,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ["**/*.test.ts", "**/*.spec.ts", "playwright/utils/*"],
+    files: ["**/*.test.ts", "**/*.spec.ts", "playwright/integration-tests/utils/*"],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
       "react-hooks/rules-of-hooks": "off"

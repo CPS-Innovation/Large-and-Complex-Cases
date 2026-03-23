@@ -1,4 +1,4 @@
-import { expect, test } from "../utils/test";
+import { expect, test } from "./utils/test";
 import { delay, HttpResponse, http } from "msw";
 import { TransferStatusResponse } from "../../src/common/types/TransferStatusResponse";
 import { Page } from "@playwright/test";

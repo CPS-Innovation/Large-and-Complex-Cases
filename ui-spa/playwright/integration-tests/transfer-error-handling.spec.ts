@@ -1,4 +1,4 @@
-import { expect, test } from "../utils/test";
+import { expect, test } from "./utils/test";
 import { delay, HttpResponse, http } from "msw";
 test.describe("transfer-error-handling", () => {
   test.beforeEach(async ({ page }) => {

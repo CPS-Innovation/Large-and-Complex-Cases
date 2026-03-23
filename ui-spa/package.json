@@ -12,12 +12,12 @@
     "prettier:format": "prettier --write ./src",
     "test": "vitest",
     "unit:coverage": "vitest run --coverage",
-    "e2e:test": "playwright test --ui",
-    "e2e:report": "playwright show-report ./playwright/playwright-report",
-    "e2e:build": "tsc -b && vite build --mode playwright",
-    "e2e:test:ci": "npm run e2e:build && cross-env CI=true playwright test",
-    "e2e:coverage": "rimraf coverage/.nyc_output && cross-env E2E_COVERAGE=1 npm run e2e:test:ci",
-    "e2e:coverage:cobertura": "npm run e2e:coverage && npx nyc report -t coverage/.nyc_output -r cobertura --report-dir coverage/e2e"
+    "integration:test": "playwright test --ui",
+    "integration:report": "playwright show-report ./playwright/playwright-report",
+    "integration:build": "tsc -b && vite build --mode playwright",
+    "integration:test:ci": "npm run integration:build && cross-env CI=true playwright test",
+    "integration:coverage": "rimraf coverage/.nyc_output && cross-env E2E_COVERAGE=1 npm run integration:test:ci",
+    "integration:coverage:cobertura": "npm run integration:coverage && npx nyc report -t coverage/.nyc_output -r cobertura --report-dir coverage/integration"
   },
   "dependencies": {
     "@azure/msal-browser": "^4.4.0",

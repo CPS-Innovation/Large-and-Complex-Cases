@@ -1,5 +1,5 @@
 import { delay, HttpResponse, http } from "msw";
-import { expect, test } from "../utils/test";
+import { expect, test } from "./utils/test";
 import { Page } from "@playwright/test";
 import { ActivityLogResponse } from "../../src/common/types/ActivityLogResponse";
 test.describe("activity log", () => {
