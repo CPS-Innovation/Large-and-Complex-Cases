@@ -120,7 +120,7 @@ For settings such as api keys, passwords, certificates, etc., the "value" field 
   "slotSetting": false
 },
 ``` 
-The key-value pairs for these secrets must be added to the Key Vaults by a team member with appropriate access.
+❗ The key-value pairs for these secrets must be added to the Key Vaults by a team member with appropriate access.
 
 **Non-sensitive cross-environment values:**
 
@@ -143,7 +143,7 @@ Non-sensitive values that remain consistent across all environments can be added
     "slotSetting": false
   },
   ```
-  The key-value pairs must be added to the relevant variable groups in the Azure DevOps Library.
+  ❗ The key-value pairs must be added to the relevant variable groups in the Azure DevOps Library.
 
 **Non-sensitive environment-specific values** 
 
