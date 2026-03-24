@@ -40,8 +40,8 @@ public static class IServiceCollectionExtension
 		services.AddSingleton<IKeyVaultService>(sp =>
 		{
 			var logger = sp.GetRequiredService<ILogger<KeyVaultService>>();
-			var keyVaultUrl = configuration["KeyVaultUri"]
-				?? throw new ArgumentNullException("KeyVaultUri", "KeyVaultUri configuration is missing or empty.");
+			var keyVaultUrl = configuration["KeyVault:Url"]
+				?? throw new ArgumentNullException("KeyVault:Url", "KeyVault:Url configuration is missing or empty.");
 
 			var secretClient = new SecretClient(
 				new Uri(keyVaultUrl),

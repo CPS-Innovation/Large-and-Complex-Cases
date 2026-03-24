@@ -63,7 +63,7 @@ steps:
             "slotSetting": false
           },
           {
-            "name": "KeyVaultUri",
+            "name": "KeyVault__Url",
             "value": "https://${{ parameters.keyVaultName }}.vault.azure.net/",
             "slotSetting": false
           },
