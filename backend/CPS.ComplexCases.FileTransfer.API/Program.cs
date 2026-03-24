@@ -8,7 +8,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.ApplicationInsights;
 using CPS.ComplexCases.ActivityLog.Extensions;
-using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.OpenApi;
 using CPS.ComplexCases.Common.Services;
@@ -34,11 +33,6 @@ var host = new HostBuilder()
         webApp.UseMiddleware<RequestValidationMiddleware>();
     }) // Adds ASP.NET Core integration
     .ConfigureLogging(options => options.AddApplicationInsights())
-    .ConfigureAppConfiguration((context, config) =>
-    {
-        // Configure Azure Key Vault if KeyVaultUri is provided
-        config.AddKeyVaultIfConfigured(config.Build(), logger);
-    })
     .ConfigureServices((context, services) =>
     {
         // Get configuration for service registrations
