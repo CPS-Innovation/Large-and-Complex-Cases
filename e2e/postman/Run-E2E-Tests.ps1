@@ -99,7 +99,11 @@ param(
     [string]$CmsUsername = "",
 
     [Parameter(Mandatory=$false)]
-    [string]$CmsPassword = ""
+    [string]$CmsPassword = "",
+
+    # When set, registers a new case. Default: skip registration and use existing case.
+    [Parameter(Mandatory=$false)]
+    [switch]$RegisterCase
 )
 
 # ============================================================
@@ -122,11 +126,22 @@ if (Test-Path $SecretsFile) {
 $Config = @{
     TenantId      = if ($env:LCC_TENANT_ID) { $env:LCC_TENANT_ID } else { "" }
     ClientId      = if ($env:LCC_CLIENT_ID) { $env:LCC_CLIENT_ID } else { "" }
+    RegisterCaseClientId = if ($env:LCC_REGISTER_CASE_CLIENT_ID) { $env:LCC_REGISTER_CASE_CLIENT_ID } else { "" }
     AzureUsername = if ($AzureUsername) { $AzureUsername } elseif ($env:LCC_AZURE_USERNAME) { $env:LCC_AZURE_USERNAME } else { "" }
     AzurePassword = if ($AzurePassword) { $AzurePassword } elseif ($env:LCC_AZURE_PASSWORD) { $env:LCC_AZURE_PASSWORD } else { "" }
     CmsUsername   = if ($CmsUsername) { $CmsUsername } elseif ($env:LCC_CMS_USERNAME) { $env:LCC_CMS_USERNAME } else { "" }
     CmsPassword   = if ($CmsPassword) { $CmsPassword } elseif ($env:LCC_CMS_PASSWORD) { $env:LCC_CMS_PASSWORD } else { "" }
     DdeiAccessKey = if ($env:LCC_DDEI_ACCESS_KEY) { $env:LCC_DDEI_ACCESS_KEY } else { "" }
+    BaseUrl       = if ($env:LCC_BASE_URL) { $env:LCC_BASE_URL } else { "" }
+    CaseApiBaseUrl = if ($env:LCC_CASE_API_BASE_URL) { $env:LCC_CASE_API_BASE_URL } else { "" }
+    DdeiBaseUrl   = if ($env:LCC_DDEI_BASE_URL) { $env:LCC_DDEI_BASE_URL } else { "" }
+    UiClientId    = if ($env:LCC_UI_CLIENT_ID) { $env:LCC_UI_CLIENT_ID } else { "" }
+    LccApiId      = if ($env:LCC_API_ID) { $env:LCC_API_ID } else { "" }
+    LccApiClientSecret = if ($env:LCC_API_CLIENT_SECRET) { $env:LCC_API_CLIENT_SECRET } else { "" }
+    DefaultCaseId      = if ($env:LCC_DEFAULT_CASE_ID) { $env:LCC_DEFAULT_CASE_ID } else { "" }
+    DefaultCaseUrn     = if ($env:LCC_DEFAULT_CASE_URN) { $env:LCC_DEFAULT_CASE_URN } else { "" }
+    DefaultWorkspaceId   = if ($env:LCC_DEFAULT_WORKSPACE_ID) { $env:LCC_DEFAULT_WORKSPACE_ID } else { "" }
+    DefaultWorkspaceName = if ($env:LCC_DEFAULT_WORKSPACE_NAME) { $env:LCC_DEFAULT_WORKSPACE_NAME } else { "" }
 }
 
 # Validate required config
@@ -137,6 +152,12 @@ if (-not $Config.AzureUsername) { $missingConfig += "LCC_AZURE_USERNAME (or -Azu
 if (-not $Config.AzurePassword) { $missingConfig += "LCC_AZURE_PASSWORD (or -AzurePassword)" }
 if (-not $Config.CmsUsername) { $missingConfig += "LCC_CMS_USERNAME (or -CmsUsername)" }
 if (-not $Config.CmsPassword) { $missingConfig += "LCC_CMS_PASSWORD (or -CmsPassword)" }
+if (-not $Config.DdeiAccessKey) { $missingConfig += "LCC_DDEI_ACCESS_KEY" }
+if (-not $Config.BaseUrl) { $missingConfig += "LCC_BASE_URL" }
+if (-not $Config.CaseApiBaseUrl) { $missingConfig += "LCC_CASE_API_BASE_URL" }
+if (-not $Config.DdeiBaseUrl) { $missingConfig += "LCC_DDEI_BASE_URL" }
+if (-not $Config.UiClientId) { $missingConfig += "LCC_UI_CLIENT_ID" }
+if (-not $Config.LccApiId) { $missingConfig += "LCC_API_ID" }
 
 if ($missingConfig.Count -gt 0) {
     Write-Host ""
@@ -260,21 +281,34 @@ function Update-EnvironmentFile {
 function Update-CollectionVariables {
     param(
         [string]$CollectionPath,
-        [hashtable]$Variables
+        [hashtable]$Variables,
+        [string]$OutputDir
     )
-    
-    Write-Info "Updating collection variables in place..."
-    
-    $collection = Get-Content $CollectionPath -Raw | ConvertFrom-Json
-    
+
+    Write-Info "Updating collection variables..."
+
+    $collDir = if ($OutputDir) { $OutputDir } else { Split-Path -Parent $CollectionPath }
+    if (-not $collDir) { $collDir = Get-Location }
+    $collFilename = [System.IO.Path]::GetFileNameWithoutExtension($CollectionPath)
+    $collExtension = [System.IO.Path]::GetExtension($CollectionPath)
+    $updatedCollPath = Join-Path $collDir "${collFilename}_updated${collExtension}"
+
+    if (Test-Path $updatedCollPath) {
+        Write-Host "  Using existing updated collection file" -ForegroundColor Gray
+        $collection = Get-Content $updatedCollPath -Raw | ConvertFrom-Json
+    } else {
+        Write-Host "  Creating new updated collection file from original" -ForegroundColor Gray
+        $collection = Get-Content $CollectionPath -Raw | ConvertFrom-Json
+    }
+
     if (-not $collection.variable) {
         $collection | Add-Member -NotePropertyName "variable" -NotePropertyValue @()
     }
-    
+
     foreach ($key in $Variables.Keys) {
         $value = $Variables[$key]
         $found = $false
-        
+
         for ($i = 0; $i -lt $collection.variable.Count; $i++) {
             if ($collection.variable[$i].key -eq $key) {
                 $collection.variable[$i].value = $value
@@ -283,7 +317,7 @@ function Update-CollectionVariables {
                 break
             }
         }
-        
+
         if (-not $found) {
             $collection.variable += @{
                 key = $key
@@ -293,10 +327,11 @@ function Update-CollectionVariables {
             Write-Host "  Added: $key" -ForegroundColor Gray
         }
     }
-    
-    $collection | ConvertTo-Json -Depth 100 | Set-Content $CollectionPath -Encoding UTF8
-    
-    Write-Success "Collection updated: $CollectionPath"
+
+    $collection | ConvertTo-Json -Depth 100 | Set-Content $updatedCollPath -Encoding UTF8
+
+    Write-Success "Collection saved to: $updatedCollPath"
+    return $updatedCollPath
 }
 
 function Run-NewmanFolder {
@@ -434,6 +469,15 @@ if (-not $SkipUpload) {
     $uploadArgs["ChunkSizeMB"] = $ChunkSizeMB
     $uploadArgs["FileCount"] = $FileCount
 
+    # Default mode: upload to existing workspace instead of creating new one
+    if (-not $RegisterCase) {
+        $uploadArgs["ExistingWorkspaceId"] = $Config.DefaultWorkspaceId
+        $uploadArgs["WorkspaceName"] = $Config.DefaultWorkspaceName
+        Write-Host "  Mode: Default (uploading to existing workspace $($Config.DefaultWorkspaceName))" -ForegroundColor Cyan
+    } else {
+        Write-Host "  Mode: RegisterCase (creating new workspace)" -ForegroundColor Cyan
+    }
+
     Write-Info "Running upload..."
     Write-Host "  Size: $(if ($SizeMB -gt 0) { "$SizeMB MB" } else { "$SizeGB GB" })"
     Write-Host "  File Count: $FileCount"
@@ -532,11 +576,19 @@ $variables = @{
     "searchDefendantName" = $EgressWorkspaceName
     "tenantId" = $Config.TenantId
     "apiClientId" = $Config.ClientId
+    "registerCaseClientId" = $Config.RegisterCaseClientId
     "clientId" = $Config.ClientId
-    "uiClientId" = $Config.ClientId
+    "uiClientId" = $Config.UiClientId
+    "lccApiId" = $Config.LccApiId
     "netappFolderPath" = "Automation-Testing/"
     "sourceRootFolderPath" = "Automation-Testing/"
     "egressDestinationFolder" = "4. Served Evidence/"
+    "registerCase" = if ($RegisterCase) { "true" } else { "false" }
+    "defaultCaseId" = $Config.DefaultCaseId
+    "defaultCaseUrn" = $Config.DefaultCaseUrn
+    "baseUrl" = $Config.BaseUrl
+    "caseApiBaseUrl" = $Config.CaseApiBaseUrl
+    "ddeiBaseUrl" = $Config.DdeiBaseUrl
 }
 
 if ($EgressFileId) { $variables["egressFileId"] = $EgressFileId }
@@ -545,20 +597,31 @@ if ($EgressFileIds) { $variables["egressFileIds"] = $EgressFileIds }
 if ($EgressFileNames) { $variables["egressFileNames"] = $EgressFileNames }
 if ($EgressFileCount) { $variables["egressFileCount"] = $EgressFileCount }
 
-# Add authentication credentials from config
-$variables["azureUsername"] = $Config.AzureUsername
-$variables["azurePassword"] = $Config.AzurePassword
-$variables["cmsUsername"] = $Config.CmsUsername
-$variables["username"] = $Config.CmsUsername
-$variables["cmsPassword"] = $Config.CmsPassword
-$variables["password"] = $Config.CmsPassword
-$variables["ddeiAccessKey"] = $Config.DdeiAccessKey
+# Separate secrets from non-secret variables.
+# Secrets go ONLY into the environment file (loaded via Newman --environment).
+# Non-secret variables go into both the environment and the collection copy.
+$secretVariables = @{
+    "azureUsername" = $Config.AzureUsername
+    "azurePassword" = $Config.AzurePassword
+    "cmsUsername"   = $Config.CmsUsername
+    "username"      = $Config.CmsUsername
+    "cmsPassword"   = $Config.CmsPassword
+    "password"      = $Config.CmsPassword
+    "ddeiAccessKey" = $Config.DdeiAccessKey
+    "lccApiClientSecret" = $Config.LccApiClientSecret
+}
 
-# Update environment file
-$UpdatedEnvPath = Update-EnvironmentFile -EnvironmentPath $EnvironmentPath -Variables $variables -OutputDir $ScriptDir
+# All variables (secrets + non-secrets) go into the environment file
+$allVariables = $variables.Clone()
+foreach ($key in $secretVariables.Keys) {
+    $allVariables[$key] = $secretVariables[$key]
+}
 
-# Update collection variables
-Update-CollectionVariables -CollectionPath $CollectionPath -Variables $variables
+# Update environment file with ALL variables (including secrets)
+$UpdatedEnvPath = Update-EnvironmentFile -EnvironmentPath $EnvironmentPath -Variables $allVariables -OutputDir $ScriptDir
+
+# Update collection variables with NON-SECRET variables only (writes to a _updated copy)
+$UpdatedCollectionPath = Update-CollectionVariables -CollectionPath $CollectionPath -Variables $variables -OutputDir $ScriptDir
 
 # ============================================================
 # STEP 3: Determine Which Tests to Run
@@ -598,7 +661,7 @@ foreach ($folder in $foldersToRun) {
     Write-Host "─────────────────────────────────────────────────────────────" -ForegroundColor DarkGray
     
     $result = Run-NewmanFolder `
-        -CollectionPath $CollectionPath `
+        -CollectionPath $UpdatedCollectionPath `
         -FolderName $folder `
         -EnvironmentPath $UpdatedEnvPath `
         -ReportsDir $ReportsDir

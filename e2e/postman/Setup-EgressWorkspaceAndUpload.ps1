@@ -86,7 +86,11 @@ param(
     [double]$ChunkSizeMB = 5,
 
     [Parameter(Mandatory=$false)]
-    [switch]$SkipUpload
+    [switch]$SkipUpload,
+
+    # Upload to an existing workspace instead of creating a new one
+    [Parameter(Mandatory=$false)]
+    [string]$ExistingWorkspaceId = ""
 )
 
 # ============================================================
@@ -251,110 +255,129 @@ $Token = $tokenObj.token
 $TokenBase64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($Token))
 Write-Host "  [OK] Token obtained (expires in $($tokenObj.duration)s)" -ForegroundColor Green
 
-# ============================================================
-# STEP 2: Generate Workspace Name
-# ============================================================
-if ([string]::IsNullOrEmpty($WorkspaceName)) {
-    Write-Host "[2/8] Finding next workspace number..." -ForegroundColor Yellow
-
-    # Get all workspaces
-    $allWorkspaces = @()
-    $page = 1
-    do {
-        $wsResult = curl.exe --silent --location "$BaseUrl/api/v1/workspaces/?page=$page" `
+if ($ExistingWorkspaceId) {
+    # ============================================================
+    # STEPS 2-4: SKIP - Using existing workspace
+    # ============================================================
+    $WorkspaceId = $ExistingWorkspaceId
+    if ([string]::IsNullOrEmpty($WorkspaceName)) {
+        # Look up workspace name from API
+        $wsDetailResult = curl.exe --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId" `
             --header "Authorization: Basic $TokenBase64"
-        $wsObj = $wsResult | ConvertFrom-Json
-        $allWorkspaces += $wsObj.data
-        $page++
-    } while ($wsObj.pagination.next_url -ne "")
-
-    # Find highest Automation-Testing number
-    $maxNum = -1
-    foreach ($ws in $allWorkspaces) {
-        if ($ws.name -eq "Automation-Testing" -or $ws.name -eq "AUTOMATION-TESTING") {
-            if ($maxNum -lt 0) { $maxNum = 0 }
-        }
-        elseif ($ws.name -match "^(?i)Automation-Testing(\d+)$") {
-            $num = [int]$matches[1]
-            if ($num -gt $maxNum) { $maxNum = $num }
+        try {
+            $wsDetail = $wsDetailResult | ConvertFrom-Json
+            $WorkspaceName = $wsDetail.name
+        } catch {
+            $WorkspaceName = "EXISTING-WORKSPACE"
         }
     }
-
-    # Generate name
-    if ($WorkspaceNumber -ge 0) {
-        $WorkspaceName = if ($WorkspaceNumber -eq 0) { "AUTOMATION-TESTING" } else { "AUTOMATION-TESTING$WorkspaceNumber" }
-    } else {
-        $nextNum = $maxNum + 1
-        $WorkspaceName = if ($nextNum -eq 0) { "AUTOMATION-TESTING" } else { "AUTOMATION-TESTING$nextNum" }
-    }
-
-    Write-Host "  [OK] Workspace name: $WorkspaceName" -ForegroundColor Green
+    Write-Host "[2-4/8] Using existing workspace: $WorkspaceName ($WorkspaceId)" -ForegroundColor Green
 } else {
-    Write-Host "[2/8] Using provided name: $WorkspaceName" -ForegroundColor Yellow
-}
+    # ============================================================
+    # STEP 2: Generate Workspace Name
+    # ============================================================
+    if ([string]::IsNullOrEmpty($WorkspaceName)) {
+        Write-Host "[2/8] Finding next workspace number..." -ForegroundColor Yellow
 
-# ============================================================
-# STEP 3: Create Workspace
-# ============================================================
-Write-Host "[3/8] Creating workspace..." -ForegroundColor Yellow
+        # Get all workspaces
+        $allWorkspaces = @()
+        $page = 1
+        do {
+            $wsResult = curl.exe --silent --location "$BaseUrl/api/v1/workspaces/?page=$page" `
+                --header "Authorization: Basic $TokenBase64"
+            $wsObj = $wsResult | ConvertFrom-Json
+            $allWorkspaces += $wsObj.data
+            $page++
+        } while ($wsObj.pagination.next_url -ne "")
 
-$bodyFile = Join-Path $env:TEMP "egress_create.json"
-@{
-    name = $WorkspaceName
-    template_id = $TemplateId
-    description = "Automation test workspace - Created $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - $FileCount file(s)"
-} | ConvertTo-Json -Compress | Set-Content $bodyFile -Encoding UTF8
+        # Find highest Automation-Testing number
+        $maxNum = -1
+        foreach ($ws in $allWorkspaces) {
+            if ($ws.name -eq "Automation-Testing" -or $ws.name -eq "AUTOMATION-TESTING") {
+                if ($maxNum -lt 0) { $maxNum = 0 }
+            }
+            elseif ($ws.name -match "^(?i)Automation-Testing(\d+)$") {
+                $num = [int]$matches[1]
+                if ($num -gt $maxNum) { $maxNum = $num }
+            }
+        }
 
-$createResult = curl.exe --silent --location --request POST "$BaseUrl/api/v1/workspaces/" `
-    --header "Authorization: Basic $TokenBase64" `
-    --header "Content-Type: application/json" `
-    --data "@$bodyFile"
+        # Generate name
+        if ($WorkspaceNumber -ge 0) {
+            $WorkspaceName = if ($WorkspaceNumber -eq 0) { "AUTOMATION-TESTING" } else { "AUTOMATION-TESTING$WorkspaceNumber" }
+        } else {
+            $nextNum = $maxNum + 1
+            $WorkspaceName = if ($nextNum -eq 0) { "AUTOMATION-TESTING" } else { "AUTOMATION-TESTING$nextNum" }
+        }
 
-Remove-Item $bodyFile -Force -ErrorAction SilentlyContinue
-
-$WorkspaceId = ""
-try {
-    $createObj = $createResult | ConvertFrom-Json
-    if ($createObj.id) {
-        $WorkspaceId = $createObj.id
-        Write-Host "  [OK] Workspace created: $WorkspaceId" -ForegroundColor Green
+        Write-Host "  [OK] Workspace name: $WorkspaceName" -ForegroundColor Green
     } else {
-        Write-Error "Failed to create workspace: $createResult"
-        exit 1
+        Write-Host "[2/8] Using provided name: $WorkspaceName" -ForegroundColor Yellow
     }
-} catch {
-    Write-Error "Failed to parse response: $createResult"
-    exit 1
-}
 
-# ============================================================
-# STEP 4: Add User
-# ============================================================
-if ($UserEmail) {
-    Write-Host "[4/8] Adding user: $UserEmail..." -ForegroundColor Yellow
+    # ============================================================
+    # STEP 3: Create Workspace
+    # ============================================================
+    Write-Host "[3/8] Creating workspace..." -ForegroundColor Yellow
 
-    $addUserBody = '[{"switch_id":"' + $UserEmail + '","role_id":"' + $AdminRoleId + '"}]'
-    $bodyFile = Join-Path $env:TEMP "egress_adduser.json"
-    $addUserBody | Set-Content $bodyFile -Encoding UTF8
+    $bodyFile = Join-Path $env:TEMP "egress_create.json"
+    @{
+        name = $WorkspaceName
+        template_id = $TemplateId
+        description = "Automation test workspace - Created $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - $FileCount file(s)"
+    } | ConvertTo-Json -Compress | Set-Content $bodyFile -Encoding UTF8
 
-    $addResult = curl.exe --silent --location --request POST "$BaseUrl/api/v1/workspaces/$WorkspaceId/users/" `
+    $createResult = curl.exe --silent --location --request POST "$BaseUrl/api/v1/workspaces/" `
         --header "Authorization: Basic $TokenBase64" `
         --header "Content-Type: application/json" `
         --data "@$bodyFile"
 
     Remove-Item $bodyFile -Force -ErrorAction SilentlyContinue
 
-    # Verify user was added
-    $usersResult = curl.exe --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId/users/" `
-        --header "Authorization: Basic $TokenBase64"
-
-    if ($usersResult -match $UserEmail) {
-        Write-Host "  [OK] User added as Administrator" -ForegroundColor Green
-    } else {
-        Write-Host "  [WARN] User may not have been added" -ForegroundColor Yellow
+    $WorkspaceId = ""
+    try {
+        $createObj = $createResult | ConvertFrom-Json
+        if ($createObj.id) {
+            $WorkspaceId = $createObj.id
+            Write-Host "  [OK] Workspace created: $WorkspaceId" -ForegroundColor Green
+        } else {
+            Write-Error "Failed to create workspace: $createResult"
+            exit 1
+        }
+    } catch {
+        Write-Error "Failed to parse response: $createResult"
+        exit 1
     }
-} else {
-    Write-Host "[4/8] Skipping user add (no email provided)" -ForegroundColor Gray
+
+    # ============================================================
+    # STEP 4: Add User
+    # ============================================================
+    if ($UserEmail) {
+        Write-Host "[4/8] Adding user: $UserEmail..." -ForegroundColor Yellow
+
+        $addUserBody = '[{"switch_id":"' + $UserEmail + '","role_id":"' + $AdminRoleId + '"}]'
+        $bodyFile = Join-Path $env:TEMP "egress_adduser.json"
+        $addUserBody | Set-Content $bodyFile -Encoding UTF8
+
+        $addResult = curl.exe --silent --location --request POST "$BaseUrl/api/v1/workspaces/$WorkspaceId/users/" `
+            --header "Authorization: Basic $TokenBase64" `
+            --header "Content-Type: application/json" `
+            --data "@$bodyFile"
+
+        Remove-Item $bodyFile -Force -ErrorAction SilentlyContinue
+
+        # Verify user was added
+        $usersResult = curl.exe --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId/users/" `
+            --header "Authorization: Basic $TokenBase64"
+
+        if ($usersResult -match $UserEmail) {
+            Write-Host "  [OK] User added as Administrator" -ForegroundColor Green
+        } else {
+            Write-Host "  [WARN] User may not have been added" -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host "[4/8] Skipping user add (no email provided)" -ForegroundColor Gray
+    }
 }
 
 # ============================================================

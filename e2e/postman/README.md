@@ -16,15 +16,28 @@ notepad secrets.config.ps1
 
 ### 2. Run Tests
 
+The test suite supports two run modes:
+
 ```powershell
-# Run with 100MB test file
+# DEFAULT MODE - uses existing case, skips registration & connection setup (faster)
 .\Run-E2E-Tests.ps1 -SizeMB 100
 
-# Run specific test only
-.\Run-E2E-Tests.ps1 -SizeMB 100 -TestsToRun copy
+# REGISTER CASE MODE - full flow: registers new case, creates connections
+.\Run-E2E-Tests.ps1 -SizeMB 100 -RegisterCase
 ```
 
 That's it! The scripts automatically load credentials from `secrets.config.ps1`.
+
+### Run Modes
+
+| | Default Mode | RegisterCase Mode |
+|---|---|---|
+| **Command** | `.\Run-E2E-Tests.ps1 -SizeMB 100` | `.\Run-E2E-Tests.ps1 -SizeMB 100 -RegisterCase` |
+| **Case** | Pre-existing case | New case registered per run |
+| **Workspace** | Uploads to existing workspace | Creates new workspace |
+| **Connections** | Skipped (already exist) | Created (Egress + NetApp) |
+| **Speed** | ~4 min (all 3 tests) | ~6 min (all 3 tests) |
+| **Use case** | Day-to-day testing, CI/CD | Testing case registration flow |
 
 ---
 
@@ -42,20 +55,33 @@ Edit the file with your values:
 
 ```powershell
 # Azure AD Configuration
-$env:LCC_TENANT_ID = "your-tenant-id"
-$env:LCC_CLIENT_ID = "your-client-id"
+$env:LCC_TENANT_ID = ""
+$env:LCC_CLIENT_ID = ""
+$env:LCC_REGISTER_CASE_CLIENT_ID = ""   # Client ID for Case Registration API
+$env:LCC_UI_CLIENT_ID = ""              # Client ID for LCC API (public client)
+$env:LCC_API_ID = ""                    # LCC API Application ID (used in scope)
 
 # Azure AD Credentials
-$env:LCC_AZURE_USERNAME = "your.name@cps.gov.uk"
-$env:LCC_AZURE_PASSWORD = "your-azure-password"
+$env:LCC_AZURE_USERNAME = ""
+$env:LCC_AZURE_PASSWORD = ""
 
 # CMS Credentials
-$env:LCC_CMS_USERNAME = "YourName.CIN3"
-$env:LCC_CMS_PASSWORD = "your-cms-password"
+$env:LCC_CMS_USERNAME = ""
+$env:LCC_CMS_PASSWORD = ""
+
+# DDEI Access Key
+$env:LCC_DDEI_ACCESS_KEY = ""
+
+# API Endpoints
+$env:LCC_BASE_URL = ""
+$env:LCC_CASE_API_BASE_URL = ""
+$env:LCC_DDEI_BASE_URL = ""
 
 # Egress Configuration
-$env:LCC_EGRESS_BASE_URL = "https://cps-qa.egresscloud.com"
-$env:LCC_EGRESS_SERVICE_ACCOUNT_AUTH = "your-base64-encoded-credentials"
+$env:LCC_EGRESS_BASE_URL = ""
+$env:LCC_EGRESS_SERVICE_ACCOUNT_AUTH = ""
+$env:LCC_EGRESS_TEMPLATE_ID = ""
+$env:LCC_EGRESS_ADMIN_ROLE_ID = ""
 ```
 
 ### Option B: CI/CD Pipeline (Environment Variables)
@@ -66,10 +92,17 @@ Set these environment variables in your pipeline:
 |----------|-------------|----------|
 | `LCC_TENANT_ID` | Azure AD Tenant ID | Yes |
 | `LCC_CLIENT_ID` | Azure AD Client/App ID | Yes |
+| `LCC_REGISTER_CASE_CLIENT_ID` | Client ID for Case Registration API | Yes |
+| `LCC_UI_CLIENT_ID` | Client ID for LCC API (public client) | Yes |
+| `LCC_API_ID` | LCC API Application ID (used in token scope) | Yes |
 | `LCC_AZURE_USERNAME` | Azure AD email | Yes |
 | `LCC_AZURE_PASSWORD` | Azure AD password | Yes |
 | `LCC_CMS_USERNAME` | CMS username (e.g., Name.CIN3) | Yes |
 | `LCC_CMS_PASSWORD` | CMS password | Yes |
+| `LCC_DDEI_ACCESS_KEY` | DDEI API access key | Yes |
+| `LCC_BASE_URL` | LCC API base URL | Yes |
+| `LCC_CASE_API_BASE_URL` | Case Management API base URL | Yes |
+| `LCC_DDEI_BASE_URL` | DDEI API base URL | Yes |
 | `LCC_EGRESS_BASE_URL` | Egress API URL | Yes |
 | `LCC_EGRESS_SERVICE_ACCOUNT_AUTH` | Base64 service account auth | Yes |
 | `LCC_EGRESS_TEMPLATE_ID` | Egress template ID | No (has default) |
@@ -104,7 +137,7 @@ Pass credentials directly (useful for one-off runs):
 
 ```powershell
 .\Run-E2E-Tests.ps1 -SizeMB 100 `
-    -AzureUsername "your.name@cps.gov.uk" `
+    -AzureUsername "your.name@domain.com" `
     -AzurePassword "your-password" `
     -CmsUsername "YourName.CIN3" `
     -CmsPassword "your-cms-password"
@@ -121,17 +154,23 @@ Pass credentials directly (useful for one-off runs):
 Main test orchestrator that uploads files and runs Newman tests.
 
 ```powershell
-# Basic usage
+# Default mode - all 3 tests, uses existing case
 .\Run-E2E-Tests.ps1 -SizeMB 100
+
+# Default mode - specific test only
+.\Run-E2E-Tests.ps1 -SizeMB 100 -TestsToRun copy
+
+# RegisterCase mode - full flow with new case registration
+.\Run-E2E-Tests.ps1 -SizeMB 100 -RegisterCase
+
+# RegisterCase mode - specific test only
+.\Run-E2E-Tests.ps1 -SizeMB 100 -RegisterCase -TestsToRun copy
 
 # Multiple files
 .\Run-E2E-Tests.ps1 -SizeMB 100 -FileCount 3
 
-# Specific test only
-.\Run-E2E-Tests.ps1 -SizeMB 100 -TestsToRun copy
-
-# Skip upload, use existing workspace
-.\Run-E2E-Tests.ps1 -SkipUpload -EgressWorkspaceId "abc123" -EgressWorkspaceName "AUTOMATION-TESTING5"
+# Skip upload, reuse existing workspace
+.\Run-E2E-Tests.ps1 -SkipUpload -EgressWorkspaceId "abc123" -EgressWorkspaceName "WORKSPACE-NAME"
 ```
 
 **Parameters:**
@@ -142,6 +181,7 @@ Main test orchestrator that uploads files and runs Newman tests.
 | `-SizeGB` | File size in GB | 1 |
 | `-FileCount` | Number of files to upload | 1 |
 | `-TestsToRun` | all, copy, move, netapp-to-egress | all |
+| `-RegisterCase` | Register a new case (full flow). Without this flag, uses pre-existing case. | false |
 | `-SkipUpload` | Skip file upload step | false |
 | `-StopOnFailure` | Stop on first failure | false |
 
