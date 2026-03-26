@@ -29,7 +29,6 @@ import { InitiateFileTransferResponse } from "../common/types/InitiateFileTransf
 import { InitiateFileTransferPayload } from "../common/types/InitiateFileTransferPayload";
 import { TransferStatusResponse } from "../common/types/TransferStatusResponse";
 import { ActivityLogResponse } from "../common/types/ActivityLogResponse";
-
 import { ApiError } from "../common/errors/ApiError";
 
 export const CORRELATION_ID = "Correlation-Id";
@@ -78,22 +77,24 @@ export const getCaseDivisionsOrAreas = async () => {
 };
 
 export const getEgressSearchResults = async (
-  searchParams: string,
+  workspaceName: string,
   skip: number = 0,
   take: number = 50,
   collected: EgressSearchResultData = [],
 ): Promise<EgressSearchResultData> => {
   const url = `${GATEWAY_BASE_URL}/api/v1/egress/workspaces`;
-  const response = await fetch(
-    `${url}?${searchParams}&skip=${skip}&take=${take}`,
-    {
-      method: "GET",
-      credentials: "include",
-      headers: {
-        ...(await buildCommonHeaders()),
-      },
+  const params = new URLSearchParams({
+    "workspace-name": workspaceName,
+    skip: `${skip}`,
+    take: `${take}`,
+  });
+  const response = await fetch(`${url}?${params}`, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      ...(await buildCommonHeaders()),
     },
-  );
+  });
   if (!response.ok) {
     throw new ApiError(`Searching for Egress workspaces failed`, url, response);
   }
@@ -105,7 +106,7 @@ export const getEgressSearchResults = async (
     if (skip + take >= pagination.totalResults) {
       return updated;
     }
-    return getEgressSearchResults(searchParams, skip + take, take, updated);
+    return getEgressSearchResults(workspaceName, skip + take, take, updated);
   } catch (error) {
     throw new Error(
       `Invalid API response format for Egress workspace search results, ${error}`,
@@ -148,16 +149,19 @@ export const getConnectNetAppFolders = async (
   collectedFolders: ConnectNetAppFolder[] = [],
 ): Promise<ConnectNetAppFolderData> => {
   const url = `${GATEWAY_BASE_URL}/api/v1/netapp/folders`;
-  const response = await fetch(
-    `${url}?operation-name=${operationName}&path=${folderPath}&take=${take}&continuation-token=${continuationToken}`,
-    {
-      method: "GET",
-      credentials: "include",
-      headers: {
-        ...(await buildCommonHeaders()),
-      },
+  const params = new URLSearchParams({
+    "operation-name": operationName,
+    path: folderPath,
+    take: `${take}`,
+    "continuation-token": continuationToken,
+  });
+  const response = await fetch(`${url}?${params}`, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      ...(await buildCommonHeaders()),
     },
-  );
+  });
   if (!response.ok) {
     throw new ApiError(`getting netapp folders failed`, url, response);
   }
@@ -240,7 +244,12 @@ export const getEgressFolders = async (
   take: number = 50,
   collected: EgressFolderData = [],
 ): Promise<EgressFolderData> => {
-  const url = `${GATEWAY_BASE_URL}/api/v1/egress/workspaces/${workspaceId}/files?folder-id=${folderId}&skip=${skip}&take=${take}`;
+  const params = new URLSearchParams({
+    "folder-id": folderId,
+    skip: `${skip}`,
+    take: `${take}`,
+  });
+  const url = `${GATEWAY_BASE_URL}/api/v1/egress/workspaces/${workspaceId}/files?${params}`;
   const response = await fetch(url, {
     method: "GET",
     credentials: "include",
@@ -273,16 +282,18 @@ export const getNetAppFolders = async (
   collectedFiles: NetAppFile[] = [],
 ): Promise<NetAppFolderDataResponse> => {
   const url = `${GATEWAY_BASE_URL}/api/v1/netapp/files`;
-  const response = await fetch(
-    `${url}?path=${folderPath}&take=${take}&continuation-token=${continuationToken}`,
-    {
-      method: "GET",
-      credentials: "include",
-      headers: {
-        ...(await buildCommonHeaders()),
-      },
+  const params = new URLSearchParams({
+    path: folderPath,
+    take: `${take}`,
+    "continuation-token": continuationToken,
+  });
+  const response = await fetch(`${url}?${params}`, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      ...(await buildCommonHeaders()),
     },
-  );
+  });
   if (!response.ok) {
     throw new ApiError(`getting netapp files/folders failed`, url, response);
   }
@@ -386,7 +397,10 @@ export const handleFileTransferClear = async (transferId: string) => {
 };
 
 export const getActivityLog = async (caseId: string) => {
-  const url = `${GATEWAY_BASE_URL}/api/v1/activity/logs?case-id=${caseId}`;
+  const params = new URLSearchParams({
+    "case-id": caseId,
+  });
+  const url = `${GATEWAY_BASE_URL}/api/v1/activity/logs?${params}`;
 
   const response = await fetch(url, {
     method: "GET",

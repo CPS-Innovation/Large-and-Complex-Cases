@@ -60,10 +60,12 @@ describe("gateway apis", () => {
         json: async () => mockData,
       });
 
-      const result = await getCaseSearchResults("thunder");
+      const result = await getCaseSearchResults(
+        "defendant-name=husband&area=10",
+      );
       expect(result).toEqual(mockData);
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/case-search?thunder`,
+        `gateway_url/api/v1/case-search?defendant-name=husband&area=10`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -177,7 +179,7 @@ describe("gateway apis", () => {
       const result = await getEgressSearchResults("thunder", 0, 50, []);
       expect(result).toEqual(mockData.data);
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/egress/workspaces?thunder&skip=0&take=50`,
+        `gateway_url/api/v1/egress/workspaces?workspace-name=thunder&skip=0&take=50`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -211,7 +213,7 @@ describe("gateway apis", () => {
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenNthCalledWith(
         1,
-        `gateway_url/api/v1/egress/workspaces?thunder&skip=0&take=50`,
+        `gateway_url/api/v1/egress/workspaces?workspace-name=thunder&skip=0&take=50`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -223,7 +225,7 @@ describe("gateway apis", () => {
       );
       expect(fetch).toHaveBeenNthCalledWith(
         2,
-        `gateway_url/api/v1/egress/workspaces?thunder&skip=50&take=50`,
+        `gateway_url/api/v1/egress/workspaces?workspace-name=thunder&skip=50&take=50`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -258,7 +260,7 @@ describe("gateway apis", () => {
       );
 
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/egress/workspaces?thunder&skip=0&take=50`,
+        "gateway_url/api/v1/egress/workspaces?workspace-name=thunder&skip=0&take=50",
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -294,7 +296,7 @@ describe("gateway apis", () => {
       );
 
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/egress/workspaces?thunder&skip=0&take=50`,
+        `gateway_url/api/v1/egress/workspaces?workspace-name=thunder&skip=0&take=50`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -396,7 +398,7 @@ describe("gateway apis", () => {
       );
       expect(result).toEqual(mockData.data);
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/netapp/folders?operation-name=thunder&path=/netapp&take=50&continuation-token=`,
+        `gateway_url/api/v1/netapp/folders?operation-name=thunder&path=%2Fnetapp&take=50&continuation-token=`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -443,7 +445,7 @@ describe("gateway apis", () => {
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenNthCalledWith(
         1,
-        `gateway_url/api/v1/netapp/folders?operation-name=thunder&path=/netapp&take=50&continuation-token=`,
+        "gateway_url/api/v1/netapp/folders?operation-name=thunder&path=%2Fnetapp&take=50&continuation-token=",
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -455,7 +457,7 @@ describe("gateway apis", () => {
       );
       expect(fetch).toHaveBeenNthCalledWith(
         2,
-        `gateway_url/api/v1/netapp/folders?operation-name=thunder&path=/netapp&take=50&continuation-token=abc`,
+        "gateway_url/api/v1/netapp/folders?operation-name=thunder&path=%2Fnetapp&take=50&continuation-token=abc",
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -489,7 +491,7 @@ describe("gateway apis", () => {
       );
 
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/netapp/folders?operation-name=thunder&path=/netapp&take=50&continuation-token=`,
+        "gateway_url/api/v1/netapp/folders?operation-name=thunder&path=%2Fnetapp&take=50&continuation-token=",
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -521,7 +523,7 @@ describe("gateway apis", () => {
       );
 
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/netapp/folders?operation-name=thunder&path=/netapp&take=50&continuation-token=`,
+        "gateway_url/api/v1/netapp/folders?operation-name=thunder&path=%2Fnetapp&take=50&continuation-token=",
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -840,7 +842,7 @@ describe("gateway apis", () => {
       const result = await getNetAppFolders("/netapp", 50, "", []);
       expect(result).toEqual(mockData.data);
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/netapp/files?path=/netapp&take=50&continuation-token=`,
+        "gateway_url/api/v1/netapp/files?path=%2Fnetapp&take=50&continuation-token=",
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -887,7 +889,7 @@ describe("gateway apis", () => {
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenNthCalledWith(
         1,
-        `gateway_url/api/v1/netapp/files?path=/netapp&take=50&continuation-token=`,
+        "gateway_url/api/v1/netapp/files?path=%2Fnetapp&take=50&continuation-token=",
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -899,7 +901,7 @@ describe("gateway apis", () => {
       );
       expect(fetch).toHaveBeenNthCalledWith(
         2,
-        `gateway_url/api/v1/netapp/files?path=/netapp&take=50&continuation-token=abc`,
+        "gateway_url/api/v1/netapp/files?path=%2Fnetapp&take=50&continuation-token=abc",
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -931,7 +933,7 @@ describe("gateway apis", () => {
       );
 
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/netapp/files?path=/netapp&take=50&continuation-token=`,
+        "gateway_url/api/v1/netapp/files?path=%2Fnetapp&take=50&continuation-token=",
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -964,7 +966,7 @@ describe("gateway apis", () => {
       );
 
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/netapp/files?path=/netapp&take=50&continuation-token=`,
+        "gateway_url/api/v1/netapp/files?path=%2Fnetapp&take=50&continuation-token=",
         expect.objectContaining({
           method: "GET",
           credentials: "include",
