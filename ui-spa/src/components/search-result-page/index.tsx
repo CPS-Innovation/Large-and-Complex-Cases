@@ -67,7 +67,7 @@ const CaseSearchResultPage = () => {
 
   const caseSearchApi = useApi(
     getCaseSearchResults,
-    [queryString],
+    [searchParams],
     triggerSearchApi,
   );
 

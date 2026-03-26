@@ -23,6 +23,7 @@ import {
   NetAppFolderResponse,
   NetAppFolderDataResponse,
 } from "../common/types/NetAppFolderData";
+import { type CaseSearchParams } from "../common/types/CaseSearchParams";
 import { IndexingFileTransferResponse } from "../common/types/IndexingFileTransferResponse";
 import { IndexingFileTransferPayload } from "../common/types/IndexingFileTransferPayload";
 import { InitiateFileTransferResponse } from "../common/types/InitiateFileTransferResponse";
@@ -41,9 +42,10 @@ const buildCommonHeaders = async (): Promise<Record<string, string>> => {
 };
 
 export const getCaseSearchResults = async (
-  searchParams: string,
+  searchParams: CaseSearchParams,
 ): Promise<SearchResultData> => {
-  const url = `${GATEWAY_BASE_URL}/api/v1/case-search?${searchParams}`;
+  const params = new URLSearchParams(searchParams);
+  const url = `${GATEWAY_BASE_URL}/api/v1/case-search?${params}`;
 
   const response = await fetch(url, {
     method: "GET",
@@ -416,8 +418,8 @@ export const getActivityLog = async (caseId: string) => {
   return (await response.json()) as ActivityLogResponse;
 };
 
-export const downloadActivityLog = async (actvityId: string) => {
-  const url = `${GATEWAY_BASE_URL}/api/v1/activity/${actvityId}/logs/download`;
+export const downloadActivityLog = async (activityId: string) => {
+  const url = `${GATEWAY_BASE_URL}/api/v1/activity/${activityId}/logs/download`;
 
   const response = await fetch(url, {
     method: "GET",

@@ -60,12 +60,13 @@ describe("gateway apis", () => {
         json: async () => mockData,
       });
 
-      const result = await getCaseSearchResults(
-        "defendant-name=husband&area=10",
-      );
+      const result = await getCaseSearchResults({
+        "defendant-name": "husband&wife",
+        area: "10",
+      });
       expect(result).toEqual(mockData);
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/case-search?defendant-name=husband&area=10`,
+        `gateway_url/api/v1/case-search?defendant-name=husband%26wife&area=10`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -86,10 +87,12 @@ describe("gateway apis", () => {
         statusText: "Internal Server Error",
       });
 
-      await expect(getCaseSearchResults("thunder")).rejects.toThrow(ApiError);
+      await expect(
+        getCaseSearchResults({ "defendant-name": "husband&wife", area: "10" }),
+      ).rejects.toThrow(ApiError);
 
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/case-search?thunder`,
+        `gateway_url/api/v1/case-search?defendant-name=husband%26wife&area=10`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -390,15 +393,15 @@ describe("gateway apis", () => {
       });
 
       const result = await getConnectNetAppFolders(
-        "thunder",
-        "/netapp",
+        "thunder&struck",
+        "/netapp/folder&test",
         50,
         "",
         [],
       );
       expect(result).toEqual(mockData.data);
       expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/netapp/folders?operation-name=thunder&path=%2Fnetapp&take=50&continuation-token=`,
+        `gateway_url/api/v1/netapp/folders?operation-name=thunder%26struck&path=%2Fnetapp%2Ffolder%26test&take=50&continuation-token=`,
         expect.objectContaining({
           method: "GET",
           credentials: "include",
@@ -839,10 +842,10 @@ describe("gateway apis", () => {
         json: async () => mockData,
       });
 
-      const result = await getNetAppFolders("/netapp", 50, "", []);
+      const result = await getNetAppFolders("/netapp/folder&test", 50, "", []);
       expect(result).toEqual(mockData.data);
       expect(fetch).toHaveBeenCalledWith(
-        "gateway_url/api/v1/netapp/files?path=%2Fnetapp&take=50&continuation-token=",
+        "gateway_url/api/v1/netapp/files?path=%2Fnetapp%2Ffolder%26test&take=50&continuation-token=",
         expect.objectContaining({
           method: "GET",
           credentials: "include",
