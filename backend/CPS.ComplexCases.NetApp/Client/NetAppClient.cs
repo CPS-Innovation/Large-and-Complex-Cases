@@ -1,13 +1,14 @@
+using System.Net;
 using Microsoft.Extensions.Logging;
 using Amazon.S3;
 using Amazon.S3.Model;
+using CPS.ComplexCases.NetApp.Exceptions;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Models.Dto;
 using CPS.ComplexCases.NetApp.Wrappers;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
-using System.Net;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
@@ -38,7 +39,14 @@ public class NetAppClient(
                 "Credential error in CreateBucketAsync (ErrorCode={ErrorCode}) - invalidating and retrying once",
                 ex.ErrorCode);
             await _s3ClientFactory.InvalidateClientAsync();
-            return await CreateBucketCoreAsync(arg);
+            try
+            {
+                return await CreateBucketCoreAsync(arg);
+            }
+            catch (AmazonS3Exception retryEx) when (retryEx.ErrorCode == "AccessDenied")
+            {
+                throw new NetAppAccessDeniedException(arg.BucketName, retryEx);
+            }
         }
         catch (AmazonS3Exception ex)
         {
@@ -65,7 +73,7 @@ public class NetAppClient(
         }
 
         var response = await s3Client.PutBucketAsync(_netAppRequestFactory.CreateBucketRequest(arg));
-        return response.HttpStatusCode == System.Net.HttpStatusCode.OK;
+        return response.HttpStatusCode == HttpStatusCode.OK;
     }
 
     public async Task<IEnumerable<S3Bucket>> ListBucketsAsync(ListBucketsArg arg)
@@ -80,7 +88,14 @@ public class NetAppClient(
                 "Credential error in ListBucketsAsync (ErrorCode={ErrorCode}) - invalidating and retrying once",
                 ex.ErrorCode);
             await _s3ClientFactory.InvalidateClientAsync();
-            return await ListBucketsCoreAsync(arg);
+            try
+            {
+                return await ListBucketsCoreAsync(arg);
+            }
+            catch (AmazonS3Exception retryEx) when (retryEx.ErrorCode == "AccessDenied")
+            {
+                throw new NetAppAccessDeniedException(arg.BucketName, retryEx);
+            }
         }
         catch (AmazonS3Exception ex)
         {
@@ -127,7 +142,7 @@ public class NetAppClient(
         // As a workaround, to create a folder, we create an empty object and then delete it immediately after to simulate folder creation.
         var request = _netAppRequestFactory.CreateFolderRequest(arg);
         var response = await s3Client.PutObjectAsync(request);
-        if (response.HttpStatusCode != System.Net.HttpStatusCode.OK)
+        if (response.HttpStatusCode != HttpStatusCode.OK)
         {
             _logger.LogWarning(
                 "Failed to create folder {FolderKey} in bucket {BucketName}. HTTP Status Code: {StatusCode}",
@@ -144,7 +159,7 @@ public class NetAppClient(
                 Key = request.Key
             }));
 
-        return deleteResponse.HttpStatusCode == System.Net.HttpStatusCode.NoContent;
+        return deleteResponse.HttpStatusCode == HttpStatusCode.NoContent;
     }
 
     public Task<GetObjectResponse?> GetObjectAsync(GetObjectArg arg)
@@ -162,14 +177,14 @@ public class NetAppClient(
         }
         catch (AmazonS3Exception ex)
         {
-            if (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            if (ex.StatusCode == HttpStatusCode.NotFound)
             {
                 _logger.LogWarning("Object {ObjectKey} not found in bucket {BucketName}.", arg.ObjectKey,
                     arg.BucketName);
                 throw new FileNotFoundException($"Object {arg.ObjectKey} not found in bucket {arg.BucketName}.", ex);
             }
 
-            if (ex.StatusCode == System.Net.HttpStatusCode.PreconditionFailed)
+            if (ex.StatusCode == HttpStatusCode.PreconditionFailed)
             {
                 _logger.LogWarning("ETag mismatch for object {ObjectKey} in bucket {BucketName}.", arg.ObjectKey,
                     arg.BucketName);
@@ -191,7 +206,7 @@ public class NetAppClient(
         try
         {
             var response = await s3Client.PutObjectAsync(_netAppRequestFactory.UploadObjectRequest(arg));
-            return response.HttpStatusCode == System.Net.HttpStatusCode.OK;
+            return response.HttpStatusCode == HttpStatusCode.OK;
         }
         catch (AmazonS3Exception ex)
         {
@@ -213,7 +228,14 @@ public class NetAppClient(
                 "Credential error in ListObjectsInBucketAsync (ErrorCode={ErrorCode}) - invalidating and retrying once",
                 ex.ErrorCode);
             await _s3ClientFactory.InvalidateClientAsync();
-            return await ListObjectsInBucketCoreAsync(arg);
+            try
+            {
+                return await ListObjectsInBucketCoreAsync(arg);
+            }
+            catch (AmazonS3Exception retryEx) when (retryEx.ErrorCode == "AccessDenied")
+            {
+                throw new NetAppAccessDeniedException(arg.BucketName, retryEx);
+            }
         }
         catch (AmazonS3Exception ex)
         {
@@ -272,7 +294,14 @@ public class NetAppClient(
                 "Credential error in ListFoldersInBucketAsync (ErrorCode={ErrorCode}) - invalidating and retrying once",
                 ex.ErrorCode);
             await _s3ClientFactory.InvalidateClientAsync();
-            return await ListFoldersInBucketCoreAsync(arg);
+            try
+            {
+                return await ListFoldersInBucketCoreAsync(arg);
+            }
+            catch (AmazonS3Exception retryEx) when (retryEx.ErrorCode == "AccessDenied")
+            {
+                throw new NetAppAccessDeniedException(arg.BucketName, retryEx);
+            }
         }
         catch (AmazonS3Exception ex)
         {
@@ -321,7 +350,14 @@ public class NetAppClient(
                 "Credential error in InitiateMultipartUploadAsync (ErrorCode={ErrorCode}) - invalidating and retrying once",
                 ex.ErrorCode);
             await _s3ClientFactory.InvalidateClientAsync();
-            return await InitiateMultipartUploadCoreAsync(arg);
+            try
+            {
+                return await InitiateMultipartUploadCoreAsync(arg);
+            }
+            catch (AmazonS3Exception retryEx) when (retryEx.ErrorCode == "AccessDenied")
+            {
+                throw new NetAppAccessDeniedException(arg.BucketName, retryEx);
+            }
         }
         catch (AmazonS3Exception ex)
         {
@@ -434,7 +470,7 @@ public class NetAppClient(
                 var deleteErrors = response.DeleteErrors ?? [];
                 var deletedObjects = response.DeletedObjects ?? [];
 
-                if (response.HttpStatusCode == System.Net.HttpStatusCode.OK && deleteErrors.Count == 0)
+                if (response.HttpStatusCode == HttpStatusCode.OK && deleteErrors.Count == 0)
                 {
                     return $"Successfully deleted folder {arg.Path} and its contents from bucket {arg.BucketName}.";
                 }
@@ -536,7 +572,7 @@ public class NetAppClient(
         string bucketName)
     {
         return Policy
-            .HandleResult<DeleteObjectResponse>(r => r.HttpStatusCode != System.Net.HttpStatusCode.NoContent)
+            .HandleResult<DeleteObjectResponse>(r => r.HttpStatusCode != HttpStatusCode.NoContent)
             .WaitAndRetryAsync(
                 Backoff.DecorrelatedJitterBackoffV2(
                     medianFirstRetryDelay: TimeSpan.FromSeconds(1),
@@ -583,7 +619,7 @@ public class NetAppClient(
     {
         return Policy
             .Handle<AmazonS3Exception>(ex => (int)ex.StatusCode >= 500
-                                             || ex.StatusCode == System.Net.HttpStatusCode.RequestTimeout
+                                             || ex.StatusCode == HttpStatusCode.RequestTimeout
                                              || IsCredentialError(ex))
             .WaitAndRetryAsync(
                 Backoff.DecorrelatedJitterBackoffV2(
