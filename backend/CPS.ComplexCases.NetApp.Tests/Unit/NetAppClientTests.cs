@@ -6,6 +6,7 @@ using Amazon.S3.Model;
 using AutoFixture;
 using AutoFixture.AutoMoq;
 using CPS.ComplexCases.NetApp.Client;
+using CPS.ComplexCases.NetApp.Exceptions;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
@@ -577,8 +578,12 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             // Arrange
             var arg = new UploadPartArg
             {
-                BearerToken = BearerToken, UploadId = "1", ObjectKey = "file.txt", BucketName = "bucket",
-                PartNumber = 1, PartData = new byte[] { 1, 2, 3 }
+                BearerToken = BearerToken,
+                UploadId = "1",
+                ObjectKey = "file.txt",
+                BucketName = "bucket",
+                PartNumber = 1,
+                PartData = new byte[] { 1, 2, 3 }
             };
             var expectedResponse = new UploadPartResponse();
             var callCount = 0;
@@ -589,7 +594,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                     callCount++;
                     if (callCount == 1)
                         throw new AmazonS3Exception("The AWS access key ID you provided does not exist in our records.")
-                            { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "InvalidAccessKeyId" };
+                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "InvalidAccessKeyId" };
                     return expectedResponse;
                 });
 
@@ -617,8 +622,12 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             // Arrange
             var arg = new UploadPartArg
             {
-                BearerToken = BearerToken, UploadId = "1", ObjectKey = "file.txt", BucketName = "bucket",
-                PartNumber = 1, PartData = new byte[] { 1, 2, 3 }
+                BearerToken = BearerToken,
+                UploadId = "1",
+                ObjectKey = "file.txt",
+                BucketName = "bucket",
+                PartNumber = 1,
+                PartData = new byte[] { 1, 2, 3 }
             };
             var expectedResponse = new UploadPartResponse();
             var callCount = 0;
@@ -629,7 +638,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                     callCount++;
                     if (callCount == 1)
                         throw new AmazonS3Exception("The provided token has expired.")
-                            { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "ExpiredToken" };
+                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "ExpiredToken" };
                     return expectedResponse;
                 });
 
@@ -650,8 +659,12 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             // (guards against NetApp returning a non-standard ErrorCode for this condition)
             var arg = new UploadPartArg
             {
-                BearerToken = BearerToken, UploadId = "1", ObjectKey = "file.txt", BucketName = "bucket",
-                PartNumber = 1, PartData = new byte[] { 1, 2, 3 }
+                BearerToken = BearerToken,
+                UploadId = "1",
+                ObjectKey = "file.txt",
+                BucketName = "bucket",
+                PartNumber = 1,
+                PartData = new byte[] { 1, 2, 3 }
             };
             var expectedResponse = new UploadPartResponse();
             var callCount = 0;
@@ -662,7 +675,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                     callCount++;
                     if (callCount == 1)
                         throw new AmazonS3Exception("The AWS access key ID you provided does not exist in our records.")
-                            { StatusCode = HttpStatusCode.Forbidden };
+                        { StatusCode = HttpStatusCode.Forbidden };
                     return expectedResponse;
                 });
 
@@ -682,13 +695,17 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             // Arrange
             var arg = new UploadPartArg
             {
-                BearerToken = BearerToken, UploadId = "1", ObjectKey = "file.txt", BucketName = "bucket",
-                PartNumber = 1, PartData = new byte[] { 1, 2, 3 }
+                BearerToken = BearerToken,
+                UploadId = "1",
+                ObjectKey = "file.txt",
+                BucketName = "bucket",
+                PartNumber = 1,
+                PartData = new byte[] { 1, 2, 3 }
             };
 
             _amazonS3Mock.Setup(s => s.UploadPartAsync(It.IsAny<UploadPartRequest>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new AmazonS3Exception("The AWS access key ID you provided does not exist in our records.")
-                    { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "InvalidAccessKeyId" });
+                { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "InvalidAccessKeyId" });
 
             // Act & Assert
             await Assert.ThrowsAsync<AmazonS3Exception>(() => _client.UploadPartAsync(arg));
@@ -716,13 +733,47 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         }
 
         [Fact]
+        public async Task UploadPartAsync_WhenAllRetriesExhaustedWithAccessDenied_ThrowsNetAppAccessDeniedException()
+        {
+            // Arrange – NetApp keeps returning AccessDenied even after credential refresh;
+            // after all 3 attempts the error must surface as NetAppAccessDeniedException, not a raw 500.
+            var arg = new UploadPartArg
+            {
+                BearerToken = BearerToken,
+                UploadId = "1",
+                ObjectKey = "file.txt",
+                BucketName = "bucket",
+                PartNumber = 1,
+                PartData = new byte[] { 1, 2, 3 }
+            };
+
+            _amazonS3Mock.Setup(s => s.UploadPartAsync(It.IsAny<UploadPartRequest>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new AmazonS3Exception("Access Denied")
+                { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" });
+
+            // Act
+            var ex = await Record.ExceptionAsync(() => _client.UploadPartAsync(arg));
+
+            // Assert – 1 initial attempt + 2 retries = 3 total, then converted to NetAppAccessDeniedException
+            Assert.IsType<NetAppAccessDeniedException>(ex);
+            Assert.Equal(arg.BucketName, ((NetAppAccessDeniedException)ex).BucketName);
+            _amazonS3Mock.Verify(
+                s => s.UploadPartAsync(It.IsAny<UploadPartRequest>(), It.IsAny<CancellationToken>()),
+                Times.Exactly(3));
+        }
+
+        [Fact]
         public async Task UploadPartAsync_WhenAccessDeniedError_RetriesAndSucceeds()
         {
             // Arrange - AccessDenied now triggers credential retry (shared Key Vault scenario)
             var arg = new UploadPartArg
             {
-                BearerToken = BearerToken, UploadId = "1", ObjectKey = "file.txt", BucketName = "bucket",
-                PartNumber = 1, PartData = new byte[] { 1, 2, 3 }
+                BearerToken = BearerToken,
+                UploadId = "1",
+                ObjectKey = "file.txt",
+                BucketName = "bucket",
+                PartNumber = 1,
+                PartData = new byte[] { 1, 2, 3 }
             };
             var expectedResponse = new UploadPartResponse();
             var callCount = 0;
@@ -733,7 +784,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                     callCount++;
                     if (callCount == 1)
                         throw new AmazonS3Exception("Access Denied")
-                            { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" };
+                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" };
                     return expectedResponse;
                 });
 
@@ -799,6 +850,38 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                     It.IsAny<AmazonS3Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
+        }
+
+        [Fact]
+        public async Task CompleteMultipartUploadAsync_WhenAllRetriesExhaustedWithAccessDenied_ThrowsNetAppAccessDeniedException()
+        {
+            // Arrange – NetApp keeps returning AccessDenied even after credential refresh;
+            // after all retries the error must surface as NetAppAccessDeniedException, not a raw 500.
+            var arg = new CompleteMultipartUploadArg
+            {
+                BearerToken = BearerToken,
+                ObjectKey = "file.txt",
+                BucketName = "bucket",
+                UploadId = "uploadid",
+                CompletedParts = []
+            };
+
+            _amazonS3Mock
+                .Setup(s => s.CompleteMultipartUploadAsync(It.IsAny<CompleteMultipartUploadRequest>(),
+                    It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new AmazonS3Exception("Access Denied")
+                { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" });
+
+            // Act
+            var ex = await Record.ExceptionAsync(() => _client.CompleteMultipartUploadAsync(arg));
+
+            // Assert – 1 initial attempt + 5 retries = 6 total, then converted to NetAppAccessDeniedException
+            Assert.IsType<NetAppAccessDeniedException>(ex);
+            Assert.Equal(arg.BucketName, ((NetAppAccessDeniedException)ex).BucketName);
+            _amazonS3Mock.Verify(
+                s => s.CompleteMultipartUploadAsync(It.IsAny<CompleteMultipartUploadRequest>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Exactly(6));
         }
 
         [Fact]
@@ -1624,7 +1707,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                     callCount++;
                     if (callCount == 1)
                         throw new AmazonS3Exception("Access Denied")
-                            { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" };
+                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" };
                     return new PutObjectResponse { HttpStatusCode = HttpStatusCode.OK };
                 });
 
@@ -1649,10 +1732,10 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
 
             _amazonS3Mock.Setup(x => x.PutObjectAsync(It.IsAny<PutObjectRequest>(), default))
                 .ThrowsAsync(new AmazonS3Exception("Access Denied")
-                    { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" });
+                { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" });
 
             // Act & Assert
-            await Assert.ThrowsAsync<AmazonS3Exception>(() => _client.CreateFolderAsync(arg));
+            await Assert.ThrowsAsync<NetAppAccessDeniedException>(() => _client.CreateFolderAsync(arg));
             _s3ClientFactoryMock.Verify(x => x.InvalidateClientAsync(), Times.Once);
         }
 
@@ -1669,7 +1752,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                     callCount++;
                     if (callCount == 1)
                         throw new AmazonS3Exception("The AWS access key ID you provided does not exist in our records.")
-                            { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "InvalidAccessKeyId" };
+                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "InvalidAccessKeyId" };
                     return new ListObjectsV2Response { S3Objects = [] };
                 });
 
@@ -1695,7 +1778,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                     callCount++;
                     if (callCount == 1)
                         throw new AmazonS3Exception("Access Denied")
-                            { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" };
+                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" };
                     return new PutObjectResponse { HttpStatusCode = HttpStatusCode.OK };
                 });
 
@@ -1705,6 +1788,272 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             // Assert
             Assert.True(result);
             _s3ClientFactoryMock.Verify(x => x.InvalidateClientAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateBucketAsync_WhenCredentialError_InvalidatesClientAndRetriesSuccessfully()
+        {
+            // Arrange
+            var arg = _fixture.Create<CreateBucketArg>();
+            arg.BearerToken = BearerToken;
+
+            _amazonS3UtilsWrapperMock
+                .Setup(x => x.DoesS3BucketExistV2Async(It.IsAny<IAmazonS3>(), arg.BucketName))
+                .ReturnsAsync(false);
+
+            var callCount = 0;
+            _amazonS3Mock
+                .Setup(x => x.PutBucketAsync(It.IsAny<PutBucketRequest>(), default))
+                .ReturnsAsync(() =>
+                {
+                    callCount++;
+                    if (callCount == 1)
+                        throw new AmazonS3Exception("The AWS access key ID you provided does not exist in our records.")
+                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "InvalidAccessKeyId" };
+                    return new PutBucketResponse { HttpStatusCode = HttpStatusCode.OK };
+                });
+
+            // Act
+            var result = await _client.CreateBucketAsync(arg);
+
+            // Assert
+            Assert.True(result);
+            _s3ClientFactoryMock.Verify(x => x.InvalidateClientAsync(), Times.Once);
+            _amazonS3Mock.Verify(x => x.PutBucketAsync(It.IsAny<PutBucketRequest>(), default), Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task CreateBucketAsync_WhenAccessDeniedOnRetry_ThrowsNetAppAccessDeniedException()
+        {
+            // Arrange
+            var arg = _fixture.Create<CreateBucketArg>();
+            arg.BearerToken = BearerToken;
+
+            _amazonS3UtilsWrapperMock
+                .Setup(x => x.DoesS3BucketExistV2Async(It.IsAny<IAmazonS3>(), arg.BucketName))
+                .ReturnsAsync(false);
+
+            var callCount = 0;
+            _amazonS3Mock
+                .Setup(x => x.PutBucketAsync(It.IsAny<PutBucketRequest>(), default))
+                .ReturnsAsync(() =>
+                {
+                    callCount++;
+                    var errorCode = callCount == 1 ? "InvalidAccessKeyId" : "AccessDenied";
+                    throw new AmazonS3Exception("Access denied")
+                    { StatusCode = HttpStatusCode.Forbidden, ErrorCode = errorCode };
+                });
+
+            // Act
+            var ex = await Record.ExceptionAsync(() => _client.CreateBucketAsync(arg));
+
+            // Assert
+            Assert.IsType<NetAppAccessDeniedException>(ex);
+            Assert.Equal(arg.BucketName, ((NetAppAccessDeniedException)ex).BucketName);
+            _s3ClientFactoryMock.Verify(x => x.InvalidateClientAsync(), Times.Once);
+            _amazonS3Mock.Verify(x => x.PutBucketAsync(It.IsAny<PutBucketRequest>(), default), Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task ListBucketsAsync_WhenCredentialError_InvalidatesClientAndRetriesSuccessfully()
+        {
+            // Arrange
+            var arg = new ListBucketsArg { BearerToken = BearerToken, BucketName = BucketName };
+            var expectedBucket = new S3Bucket { BucketName = BucketName };
+
+            var callCount = 0;
+            _amazonS3Mock
+                .Setup(x => x.ListBucketsAsync(It.IsAny<ListBucketsRequest>(), default))
+                .ReturnsAsync(() =>
+                {
+                    callCount++;
+                    if (callCount == 1)
+                        throw new AmazonS3Exception("The AWS access key ID you provided does not exist in our records.")
+                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "InvalidAccessKeyId" };
+                    return new ListBucketsResponse { Buckets = [expectedBucket] };
+                });
+
+            // Act
+            var result = await _client.ListBucketsAsync(arg);
+
+            // Assert
+            Assert.Single(result);
+            _s3ClientFactoryMock.Verify(x => x.InvalidateClientAsync(), Times.Once);
+            _amazonS3Mock.Verify(x => x.ListBucketsAsync(It.IsAny<ListBucketsRequest>(), default), Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task ListBucketsAsync_WhenAccessDeniedOnRetry_ThrowsNetAppAccessDeniedException()
+        {
+            // Arrange
+            var arg = new ListBucketsArg { BearerToken = BearerToken, BucketName = BucketName };
+
+            var callCount = 0;
+            _amazonS3Mock
+                .Setup(x => x.ListBucketsAsync(It.IsAny<ListBucketsRequest>(), default))
+                .ReturnsAsync(() =>
+                {
+                    callCount++;
+                    var errorCode = callCount == 1 ? "InvalidAccessKeyId" : "AccessDenied";
+                    throw new AmazonS3Exception("Access denied")
+                    { StatusCode = HttpStatusCode.Forbidden, ErrorCode = errorCode };
+                });
+
+            // Act
+            var ex = await Record.ExceptionAsync(() => _client.ListBucketsAsync(arg));
+
+            // Assert
+            Assert.IsType<NetAppAccessDeniedException>(ex);
+            Assert.Equal(BucketName, ((NetAppAccessDeniedException)ex).BucketName);
+            _s3ClientFactoryMock.Verify(x => x.InvalidateClientAsync(), Times.Once);
+            _amazonS3Mock.Verify(x => x.ListBucketsAsync(It.IsAny<ListBucketsRequest>(), default), Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task ListObjectsInBucketAsync_WhenAccessDeniedOnRetry_ThrowsNetAppAccessDeniedException()
+        {
+            // Arrange
+            var arg = new ListObjectsInBucketArg { BearerToken = BearerToken, BucketName = BucketName };
+
+            var callCount = 0;
+            _amazonS3Mock
+                .Setup(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
+                .ReturnsAsync(() =>
+                {
+                    callCount++;
+                    var errorCode = callCount == 1 ? "InvalidAccessKeyId" : "AccessDenied";
+                    throw new AmazonS3Exception("Access denied")
+                    { StatusCode = HttpStatusCode.Forbidden, ErrorCode = errorCode };
+                });
+
+            // Act
+            var ex = await Record.ExceptionAsync(() => _client.ListObjectsInBucketAsync(arg));
+
+            // Assert
+            Assert.IsType<NetAppAccessDeniedException>(ex);
+            Assert.Equal(BucketName, ((NetAppAccessDeniedException)ex).BucketName);
+            _s3ClientFactoryMock.Verify(x => x.InvalidateClientAsync(), Times.Once);
+            _amazonS3Mock.Verify(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default), Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task ListFoldersInBucketAsync_WhenCredentialError_InvalidatesClientAndRetriesSuccessfully()
+        {
+            // Arrange
+            var arg = new ListFoldersInBucketArg { BearerToken = BearerToken, BucketName = BucketName };
+
+            var callCount = 0;
+            _amazonS3Mock
+                .Setup(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
+                .ReturnsAsync(() =>
+                {
+                    callCount++;
+                    if (callCount == 1)
+                        throw new AmazonS3Exception("The AWS access key ID you provided does not exist in our records.")
+                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "InvalidAccessKeyId" };
+                    return new ListObjectsV2Response { CommonPrefixes = ["folder1/"] };
+                });
+
+            // Act
+            var result = await _client.ListFoldersInBucketAsync(arg);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result.Data.FolderData);
+            _s3ClientFactoryMock.Verify(x => x.InvalidateClientAsync(), Times.Once);
+            _amazonS3Mock.Verify(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default), Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task ListFoldersInBucketAsync_WhenAccessDeniedOnRetry_ThrowsNetAppAccessDeniedException()
+        {
+            // Arrange
+            var arg = new ListFoldersInBucketArg { BearerToken = BearerToken, BucketName = BucketName };
+
+            var callCount = 0;
+            _amazonS3Mock
+                .Setup(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
+                .ReturnsAsync(() =>
+                {
+                    callCount++;
+                    var errorCode = callCount == 1 ? "InvalidAccessKeyId" : "AccessDenied";
+                    throw new AmazonS3Exception("Access denied")
+                    { StatusCode = HttpStatusCode.Forbidden, ErrorCode = errorCode };
+                });
+
+            // Act
+            var ex = await Record.ExceptionAsync(() => _client.ListFoldersInBucketAsync(arg));
+
+            // Assert
+            Assert.IsType<NetAppAccessDeniedException>(ex);
+            Assert.Equal(BucketName, ((NetAppAccessDeniedException)ex).BucketName);
+            _s3ClientFactoryMock.Verify(x => x.InvalidateClientAsync(), Times.Once);
+            _amazonS3Mock.Verify(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default), Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task InitiateMultipartUploadAsync_WhenCredentialError_InvalidatesClientAndRetriesSuccessfully()
+        {
+            // Arrange
+            var arg = new InitiateMultipartUploadArg
+            { BearerToken = BearerToken, ObjectKey = "file.txt", BucketName = BucketName };
+            var expectedResponse = new InitiateMultipartUploadResponse();
+
+            var callCount = 0;
+            _amazonS3Mock
+                .Setup(s => s.InitiateMultipartUploadAsync(It.IsAny<InitiateMultipartUploadRequest>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() =>
+                {
+                    callCount++;
+                    if (callCount == 1)
+                        throw new AmazonS3Exception("The AWS access key ID you provided does not exist in our records.")
+                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "InvalidAccessKeyId" };
+                    return expectedResponse;
+                });
+
+            // Act
+            var result = await _client.InitiateMultipartUploadAsync(arg);
+
+            // Assert
+            Assert.Equal(expectedResponse, result);
+            _s3ClientFactoryMock.Verify(x => x.InvalidateClientAsync(), Times.Once);
+            _amazonS3Mock.Verify(
+                s => s.InitiateMultipartUploadAsync(It.IsAny<InitiateMultipartUploadRequest>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task InitiateMultipartUploadAsync_WhenAccessDeniedOnRetry_ThrowsNetAppAccessDeniedException()
+        {
+            // Arrange
+            var arg = new InitiateMultipartUploadArg
+            { BearerToken = BearerToken, ObjectKey = "file.txt", BucketName = BucketName };
+
+            var callCount = 0;
+            _amazonS3Mock
+                .Setup(s => s.InitiateMultipartUploadAsync(It.IsAny<InitiateMultipartUploadRequest>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() =>
+                {
+                    callCount++;
+                    var errorCode = callCount == 1 ? "InvalidAccessKeyId" : "AccessDenied";
+                    throw new AmazonS3Exception("Access denied")
+                    { StatusCode = HttpStatusCode.Forbidden, ErrorCode = errorCode };
+                });
+
+            // Act
+            var ex = await Record.ExceptionAsync(() => _client.InitiateMultipartUploadAsync(arg));
+
+            // Assert
+            Assert.IsType<NetAppAccessDeniedException>(ex);
+            Assert.Equal(BucketName, ((NetAppAccessDeniedException)ex).BucketName);
+            _s3ClientFactoryMock.Verify(x => x.InvalidateClientAsync(), Times.Once);
+            _amazonS3Mock.Verify(
+                s => s.InitiateMultipartUploadAsync(It.IsAny<InitiateMultipartUploadRequest>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Exactly(2));
         }
     }
 }
