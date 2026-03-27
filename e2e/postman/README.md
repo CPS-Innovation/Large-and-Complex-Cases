@@ -10,6 +10,9 @@ Automated end-to-end tests for the Large and Complex Cases (LCC) file transfer s
 # Copy the secrets template
 Copy-Item secrets.config.template.ps1 secrets.config.ps1
 
+# Copy the environment template
+Copy-Item LCCTestEnvironment.postman_environment.template.json LCCTestEnvironment.postman_environment.json
+
 # Edit with your credentials
 notepad secrets.config.ps1
 ```
@@ -45,10 +48,11 @@ That's it! The scripts automatically load credentials from `secrets.config.ps1`.
 
 ### Option A: Local Development (secrets.config.ps1)
 
-Create `secrets.config.ps1` from the template:
+Create `secrets.config.ps1` and the environment file from their templates:
 
 ```powershell
 Copy-Item secrets.config.template.ps1 secrets.config.ps1
+Copy-Item LCCTestEnvironment.postman_environment.template.json LCCTestEnvironment.postman_environment.json
 ```
 
 Edit the file with your values:
@@ -210,9 +214,9 @@ Creates Egress workspace and uploads test files.
 | `Setup-EgressWorkspaceAndUpload.ps1` | Egress setup utilities | ✅ Yes |
 | `secrets.config.template.ps1` | Template for local secrets | ✅ Yes |
 | `secrets.config.ps1` | Your local secrets | ❌ No |
-| `LCCUserJourneyTests_fixed.postman_collection.json` | Postman test collection | ✅ Yes |
-| `LCCTestEnvironment.postman_environment.template` | Environment template | ✅ Yes |
-| `LCCTestEnvironment.postman_environment` | Your local environment | ❌ No |
+| `LCCUserJourneyTests.postman_collection.json` | Postman test collection | ✅ Yes |
+| `LCCTestEnvironment.postman_environment.json.template.json` | Environment template | ✅ Yes |
+| `LCCTestEnvironment.postman_environment.json` | Your local environment | ❌ No |
 | `newman-reports/` | Newman HTML/JSON test reports | ❌ No |
 | `LCCTestEnvironment_updated.*` | Auto-generated updated env files | ❌ No |
 | `README.md` | This file | ✅ Yes |

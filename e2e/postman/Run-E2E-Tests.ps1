@@ -64,10 +64,10 @@ param(
     [int]$FileCount = 1,
     
     [Parameter(Mandatory=$false)]
-    [string]$CollectionPath = ".\LCCUserJourneyTests_fixed.postman_collection.json",
+    [string]$CollectionPath = ".\LCCUserJourneyTests.postman_collection.json",
     
     [Parameter(Mandatory=$false)]
-    [string]$EnvironmentPath = ".\LCCTestEnvironment.postman_environment",
+    [string]$EnvironmentPath = ".\LCCTestEnvironment.postman_environment.json",
     
     [Parameter(Mandatory=$false)]
     [string]$UploadScriptPath = ".\Setup-EgressWorkspaceAndUpload.ps1",
@@ -159,6 +159,19 @@ if (-not $Config.DdeiBaseUrl) { $missingConfig += "LCC_DDEI_BASE_URL" }
 if (-not $Config.UiClientId) { $missingConfig += "LCC_UI_CLIENT_ID" }
 if (-not $Config.LccApiId) { $missingConfig += "LCC_API_ID" }
 
+# Default mode requires pre-existing case and workspace config
+if (-not $RegisterCase) {
+    if (-not $Config.DefaultCaseId) { $missingConfig += "LCC_DEFAULT_CASE_ID (required for default mode)" }
+    if (-not $Config.DefaultCaseUrn) { $missingConfig += "LCC_DEFAULT_CASE_URN (required for default mode)" }
+    if (-not $Config.DefaultWorkspaceId) { $missingConfig += "LCC_DEFAULT_WORKSPACE_ID (required for default mode)" }
+    if (-not $Config.DefaultWorkspaceName) { $missingConfig += "LCC_DEFAULT_WORKSPACE_NAME (required for default mode)" }
+}
+
+# Warn about optional config that may cause issues if missing
+if (-not $Config.LccApiClientSecret) {
+    Write-Host "[WARNING] LCC_API_CLIENT_SECRET is not set - client credential auth flows will not work" -ForegroundColor Yellow
+}
+
 if ($missingConfig.Count -gt 0) {
     Write-Host ""
     Write-Host "ERROR: Missing required configuration:" -ForegroundColor Red
@@ -238,7 +251,7 @@ function Update-EnvironmentFile {
     
     $envDir = if ($OutputDir) { $OutputDir } else { Split-Path -Parent $EnvironmentPath }
     if (-not $envDir) { $envDir = Get-Location }
-    $updatedEnvPath = Join-Path $envDir "LCCTestEnvironment_updated.postman_environment"
+    $updatedEnvPath = Join-Path $envDir "LCCTestEnvironment_updated.postman_environment.json"
     
     if (Test-Path $updatedEnvPath) {
         Write-Host "  Using existing updated environment file" -ForegroundColor Gray
@@ -468,6 +481,9 @@ if (-not $SkipUpload) {
     }
     $uploadArgs["ChunkSizeMB"] = $ChunkSizeMB
     $uploadArgs["FileCount"] = $FileCount
+
+    # Pass through CLI credential overrides to upload script
+    if ($AzureUsername) { $uploadArgs["UserEmail"] = $AzureUsername }
 
     # Default mode: upload to existing workspace instead of creating new one
     if (-not $RegisterCase) {

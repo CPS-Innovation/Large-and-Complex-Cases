@@ -43,7 +43,7 @@
 
 param(
     [Parameter(Mandatory=$false)]
-    [string]$EnvironmentFile = ".\LCCTestEnvironment_updated.postman_environment",
+    [string]$EnvironmentFile = ".\LCCTestEnvironment_updated.postman_environment.json",
 
     [Parameter(Mandatory=$true)]
     [string]$WorkspaceId,
