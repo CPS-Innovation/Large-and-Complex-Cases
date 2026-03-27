@@ -131,7 +131,7 @@ public class NetAppClient(
     }
 
     public Task<bool> CreateFolderAsync(CreateFolderArg arg)
-        => ExecuteWithCredentialRetryAsync(() => CreateFolderCoreAsync(arg), nameof(CreateFolderAsync));
+        => ExecuteWithCredentialRetryAsync(() => CreateFolderCoreAsync(arg), nameof(CreateFolderAsync), arg.BucketName);
 
     private async Task<bool> CreateFolderCoreAsync(CreateFolderArg arg)
     {
@@ -163,7 +163,7 @@ public class NetAppClient(
     }
 
     public Task<GetObjectResponse?> GetObjectAsync(GetObjectArg arg)
-        => ExecuteWithCredentialRetryAsync(() => GetObjectCoreAsync(arg), nameof(GetObjectAsync));
+        => ExecuteWithCredentialRetryAsync(() => GetObjectCoreAsync(arg), nameof(GetObjectAsync), arg.BucketName);
 
     private async Task<GetObjectResponse?> GetObjectCoreAsync(GetObjectArg arg)
     {
@@ -198,7 +198,7 @@ public class NetAppClient(
     }
 
     public Task<bool> UploadObjectAsync(UploadObjectArg arg)
-        => ExecuteWithCredentialRetryAsync(() => UploadObjectCoreAsync(arg), nameof(UploadObjectAsync));
+        => ExecuteWithCredentialRetryAsync(() => UploadObjectCoreAsync(arg), nameof(UploadObjectAsync), arg.BucketName);
 
     private async Task<bool> UploadObjectCoreAsync(UploadObjectArg arg)
     {
@@ -398,6 +398,10 @@ public class NetAppClient(
                 return await s3Client.UploadPartAsync(request);
             });
         }
+        catch (AmazonS3Exception ex) when (ex.ErrorCode == "AccessDenied")
+        {
+            throw new NetAppAccessDeniedException(arg.BucketName, ex);
+        }
         catch (AmazonS3Exception ex)
         {
             _logger.LogError(ex,
@@ -420,6 +424,10 @@ public class NetAppClient(
                     _netAppRequestFactory.CompleteMultipartUploadRequest(arg), ct);
             }, cancellationToken);
         }
+        catch (AmazonS3Exception ex) when (ex.ErrorCode == "AccessDenied")
+        {
+            throw new NetAppAccessDeniedException(arg.BucketName, ex);
+        }
         catch (AmazonS3Exception ex)
         {
             _logger.LogError(ex,
@@ -436,7 +444,7 @@ public class NetAppClient(
     }
 
     public Task<string> DeleteFileOrFolderAsync(DeleteFileOrFolderArg arg)
-        => ExecuteWithCredentialRetryAsync(() => DeleteFileOrFolderCoreAsync(arg), nameof(DeleteFileOrFolderAsync));
+        => ExecuteWithCredentialRetryAsync(() => DeleteFileOrFolderCoreAsync(arg), nameof(DeleteFileOrFolderAsync), arg.BucketName);
 
     private async Task<string> DeleteFileOrFolderCoreAsync(DeleteFileOrFolderArg arg)
     {
@@ -647,7 +655,7 @@ public class NetAppClient(
            || ex.Message.Contains("token has expired", StringComparison.OrdinalIgnoreCase);
 
     private async Task<T> ExecuteWithCredentialRetryAsync<T>(
-        Func<Task<T>> operation, string operationName)
+        Func<Task<T>> operation, string operationName, string bucketName)
     {
         try
         {
@@ -659,7 +667,14 @@ public class NetAppClient(
                 "Credential error in {Operation} (ErrorCode={ErrorCode}) - invalidating S3 client and retrying once with fresh credentials",
                 operationName, ex.ErrorCode);
             await _s3ClientFactory.InvalidateClientAsync();
-            return await operation();
+            try
+            {
+                return await operation();
+            }
+            catch (AmazonS3Exception retryEx) when (retryEx.ErrorCode == "AccessDenied")
+            {
+                throw new NetAppAccessDeniedException(bucketName, retryEx);
+            }
         }
     }
 }

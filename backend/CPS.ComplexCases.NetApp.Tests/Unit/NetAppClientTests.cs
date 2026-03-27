@@ -733,6 +733,36 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         }
 
         [Fact]
+        public async Task UploadPartAsync_WhenAllRetriesExhaustedWithAccessDenied_ThrowsNetAppAccessDeniedException()
+        {
+            // Arrange – NetApp keeps returning AccessDenied even after credential refresh;
+            // after all 3 attempts the error must surface as NetAppAccessDeniedException, not a raw 500.
+            var arg = new UploadPartArg
+            {
+                BearerToken = BearerToken,
+                UploadId = "1",
+                ObjectKey = "file.txt",
+                BucketName = "bucket",
+                PartNumber = 1,
+                PartData = new byte[] { 1, 2, 3 }
+            };
+
+            _amazonS3Mock.Setup(s => s.UploadPartAsync(It.IsAny<UploadPartRequest>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new AmazonS3Exception("Access Denied")
+                { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" });
+
+            // Act
+            var ex = await Record.ExceptionAsync(() => _client.UploadPartAsync(arg));
+
+            // Assert – 1 initial attempt + 2 retries = 3 total, then converted to NetAppAccessDeniedException
+            Assert.IsType<NetAppAccessDeniedException>(ex);
+            Assert.Equal(arg.BucketName, ((NetAppAccessDeniedException)ex).BucketName);
+            _amazonS3Mock.Verify(
+                s => s.UploadPartAsync(It.IsAny<UploadPartRequest>(), It.IsAny<CancellationToken>()),
+                Times.Exactly(3));
+        }
+
+        [Fact]
         public async Task UploadPartAsync_WhenAccessDeniedError_RetriesAndSucceeds()
         {
             // Arrange - AccessDenied now triggers credential retry (shared Key Vault scenario)
@@ -820,6 +850,38 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                     It.IsAny<AmazonS3Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
+        }
+
+        [Fact]
+        public async Task CompleteMultipartUploadAsync_WhenAllRetriesExhaustedWithAccessDenied_ThrowsNetAppAccessDeniedException()
+        {
+            // Arrange – NetApp keeps returning AccessDenied even after credential refresh;
+            // after all retries the error must surface as NetAppAccessDeniedException, not a raw 500.
+            var arg = new CompleteMultipartUploadArg
+            {
+                BearerToken = BearerToken,
+                ObjectKey = "file.txt",
+                BucketName = "bucket",
+                UploadId = "uploadid",
+                CompletedParts = []
+            };
+
+            _amazonS3Mock
+                .Setup(s => s.CompleteMultipartUploadAsync(It.IsAny<CompleteMultipartUploadRequest>(),
+                    It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new AmazonS3Exception("Access Denied")
+                { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" });
+
+            // Act
+            var ex = await Record.ExceptionAsync(() => _client.CompleteMultipartUploadAsync(arg));
+
+            // Assert – 1 initial attempt + 5 retries = 6 total, then converted to NetAppAccessDeniedException
+            Assert.IsType<NetAppAccessDeniedException>(ex);
+            Assert.Equal(arg.BucketName, ((NetAppAccessDeniedException)ex).BucketName);
+            _amazonS3Mock.Verify(
+                s => s.CompleteMultipartUploadAsync(It.IsAny<CompleteMultipartUploadRequest>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Exactly(6));
         }
 
         [Fact]
@@ -1673,7 +1735,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" });
 
             // Act & Assert
-            await Assert.ThrowsAsync<AmazonS3Exception>(() => _client.CreateFolderAsync(arg));
+            await Assert.ThrowsAsync<NetAppAccessDeniedException>(() => _client.CreateFolderAsync(arg));
             _s3ClientFactoryMock.Verify(x => x.InvalidateClientAsync(), Times.Once);
         }
 
