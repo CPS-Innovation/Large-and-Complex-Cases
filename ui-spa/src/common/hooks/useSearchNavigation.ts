@@ -1,41 +1,35 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
-
-export type SearchParamsType = {
-  urn?: string;
-  "operation-name"?: string;
-  "defendant-name"?: string;
-  area?: string;
-};
+import { type CaseSearchParams } from "../types/CaseSearchParams";
 
 const useSearchNavigation = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const updateSearchParams = (params: SearchParamsType) => {
+  const updateSearchParams = (params: CaseSearchParams) => {
     setSearchParams(params);
   };
 
-  const navigateWithParams = (params: SearchParamsType) => {
-    const queryString = new URLSearchParams(Object.entries(params)).toString();
+  const navigateWithParams = (params: CaseSearchParams) => {
+    const queryString = new URLSearchParams(params);
 
     navigate(`/search-results?${queryString}`);
   };
 
-  const validateSearchParams = (params: URLSearchParams): SearchParamsType => {
-    const validKeys: (keyof SearchParamsType)[] = [
+  const validateSearchParams = (params: URLSearchParams): CaseSearchParams => {
+    const validKeys: (keyof CaseSearchParams)[] = [
       "urn",
       "operation-name",
       "defendant-name",
       "area",
     ];
-    const validParams: Partial<SearchParamsType> = {};
+    const validParams: Partial<CaseSearchParams> = {};
     for (const [key, value] of params.entries()) {
-      if (validKeys.includes(key as keyof SearchParamsType)) {
-        validParams[key as keyof SearchParamsType] = value;
+      if (validKeys.includes(key as keyof CaseSearchParams)) {
+        validParams[key as keyof CaseSearchParams] = value;
       }
     }
 
-    return validParams as SearchParamsType;
+    return validParams as CaseSearchParams;
   };
   const filteredSearchParams = validateSearchParams(searchParams);
   return {

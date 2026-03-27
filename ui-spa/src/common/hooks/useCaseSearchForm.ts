@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { SearchParamsType } from "../../common/hooks/useSearchNavigation";
+import { type CaseSearchParams } from "../types/CaseSearchParams";
 import { validateUrn } from "../utils/validateUrn";
 
 export enum SearchFormField {
@@ -175,7 +175,7 @@ export const useCaseSearchForm = (initialData: SearchFromData) => {
   };
 
   const getSearchParams = () => {
-    let searchParams: SearchParamsType = {};
+    let searchParams: CaseSearchParams = {};
     switch (formData[SearchFormField.searchType]) {
       case "urn": {
         const { rootUrn } = validateUrn(formData[SearchFormField.urn]);
