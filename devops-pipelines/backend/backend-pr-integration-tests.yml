@@ -12,7 +12,9 @@ variables:
 - template: ../templates/variables/backend-deploy-vars.yml
   parameters: 
     environment: 'dev'
+- template: ../templates/variables/fa-config-dev.yml
 - group: lacc-automated-testing-dev
+- group: lacc-backend-secrets-dev
 - name: buildConfiguration
   value: 'Release'
 - name: dotNetVersion
