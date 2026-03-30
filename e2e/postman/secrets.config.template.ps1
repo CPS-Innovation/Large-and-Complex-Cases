@@ -14,10 +14,8 @@
 
 # Azure AD Configuration
 $env:LCC_TENANT_ID = "YOUR_AZURE_TENANT_ID"
-$env:LCC_CLIENT_ID = "YOUR_AZURE_CLIENT_ID"
 $env:LCC_REGISTER_CASE_CLIENT_ID = ""  # Client ID for Register Case API
-$env:LCC_UI_CLIENT_ID = ""              # Client ID for LCC API (all other calls)
-$env:LCC_API_ID = ""                    # LCC API Application ID (scope)
+$env:LCC_API_ID = ""                    # LCC API Application/Client ID (auth and scope)
 
 # Azure AD User Credentials (for ROPC flow)
 $env:LCC_AZURE_USERNAME = "your.name@cps.gov.uk"

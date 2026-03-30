@@ -125,7 +125,6 @@ if (Test-Path $SecretsFile) {
 # Load config with priority: CLI params > env vars > defaults
 $Config = @{
     TenantId      = if ($env:LCC_TENANT_ID) { $env:LCC_TENANT_ID } else { "" }
-    ClientId      = if ($env:LCC_CLIENT_ID) { $env:LCC_CLIENT_ID } else { "" }
     RegisterCaseClientId = if ($env:LCC_REGISTER_CASE_CLIENT_ID) { $env:LCC_REGISTER_CASE_CLIENT_ID } else { "" }
     AzureUsername = if ($AzureUsername) { $AzureUsername } elseif ($env:LCC_AZURE_USERNAME) { $env:LCC_AZURE_USERNAME } else { "" }
     AzurePassword = if ($AzurePassword) { $AzurePassword } elseif ($env:LCC_AZURE_PASSWORD) { $env:LCC_AZURE_PASSWORD } else { "" }
@@ -135,7 +134,6 @@ $Config = @{
     BaseUrl       = if ($env:LCC_BASE_URL) { $env:LCC_BASE_URL } else { "" }
     CaseApiBaseUrl = if ($env:LCC_CASE_API_BASE_URL) { $env:LCC_CASE_API_BASE_URL } else { "" }
     DdeiBaseUrl   = if ($env:LCC_DDEI_BASE_URL) { $env:LCC_DDEI_BASE_URL } else { "" }
-    UiClientId    = if ($env:LCC_UI_CLIENT_ID) { $env:LCC_UI_CLIENT_ID } else { "" }
     LccApiId      = if ($env:LCC_API_ID) { $env:LCC_API_ID } else { "" }
     LccApiClientSecret = if ($env:LCC_API_CLIENT_SECRET) { $env:LCC_API_CLIENT_SECRET } else { "" }
     DefaultCaseId      = if ($env:LCC_DEFAULT_CASE_ID) { $env:LCC_DEFAULT_CASE_ID } else { "" }
@@ -147,7 +145,7 @@ $Config = @{
 # Validate required config
 $missingConfig = @()
 if (-not $Config.TenantId) { $missingConfig += "LCC_TENANT_ID" }
-if (-not $Config.ClientId) { $missingConfig += "LCC_CLIENT_ID" }
+if (-not $Config.LccApiId) { $missingConfig += "LCC_API_ID" }
 if (-not $Config.AzureUsername) { $missingConfig += "LCC_AZURE_USERNAME (or -AzureUsername)" }
 if (-not $Config.AzurePassword) { $missingConfig += "LCC_AZURE_PASSWORD (or -AzurePassword)" }
 if (-not $Config.CmsUsername) { $missingConfig += "LCC_CMS_USERNAME (or -CmsUsername)" }
@@ -156,7 +154,6 @@ if (-not $Config.DdeiAccessKey) { $missingConfig += "LCC_DDEI_ACCESS_KEY" }
 if (-not $Config.BaseUrl) { $missingConfig += "LCC_BASE_URL" }
 if (-not $Config.CaseApiBaseUrl) { $missingConfig += "LCC_CASE_API_BASE_URL" }
 if (-not $Config.DdeiBaseUrl) { $missingConfig += "LCC_DDEI_BASE_URL" }
-if (-not $Config.UiClientId) { $missingConfig += "LCC_UI_CLIENT_ID" }
 if (-not $Config.LccApiId) { $missingConfig += "LCC_API_ID" }
 
 # Default mode requires pre-existing case and workspace config
@@ -591,10 +588,10 @@ $variables = @{
     "defendantSurname" = $EgressWorkspaceName
     "searchDefendantName" = $EgressWorkspaceName
     "tenantId" = $Config.TenantId
-    "apiClientId" = $Config.ClientId
+    "apiClientId" = $Config.LccApiId
     "registerCaseClientId" = $Config.RegisterCaseClientId
-    "clientId" = $Config.ClientId
-    "uiClientId" = $Config.UiClientId
+    "clientId" = $Config.LccApiId
+    "uiClientId" = $Config.LccApiId
     "lccApiId" = $Config.LccApiId
     "netappFolderPath" = "Automation-Testing/"
     "sourceRootFolderPath" = "Automation-Testing/"

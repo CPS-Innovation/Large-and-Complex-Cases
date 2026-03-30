@@ -82,12 +82,17 @@
 							"urlencoded": [
 								{
 									"key": "client_id",
-									"value": "{{registerCaseClientId}}",
+									"value": "{{lccApiId}}",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{lccApiClientSecret}}",
 									"type": "text"
 								},
 								{
 									"key": "scope",
-									"value": "api://{{registerCaseClientId}}/user_impersonation",
+									"value": "api://{{lccApiId}}/user_impersonation",
 									"type": "text"
 								},
 								{
@@ -2980,7 +2985,7 @@
 							"urlencoded": [
 								{
 									"key": "client_id",
-									"value": "{{uiClientId}}"
+									"value": "{{lccApiId}}"
 								},
 								{
 									"key": "client_secret",
@@ -4805,7 +4810,7 @@
 							"urlencoded": [
 								{
 									"key": "client_id",
-									"value": "{{uiClientId}}"
+									"value": "{{lccApiId}}"
 								},
 								{
 									"key": "client_secret",
@@ -6634,7 +6639,7 @@
 							"urlencoded": [
 								{
 									"key": "client_id",
-									"value": "{{uiClientId}}"
+									"value": "{{lccApiId}}"
 								},
 								{
 									"key": "client_secret",
@@ -8134,15 +8139,13 @@
 					"  console.log('=== Azure AD Token (ROPC) ===');",
 					"  ",
 					"  const tenantId = vars.get('tenantId');",
-					"  const uiClientId = vars.get('uiClientId');",
-					"  const apiClientId = vars.get('apiClientId');",
+					"  const lccApiId =vars.get('lccApiId');",
 					"  const azureUsername = vars.get('azureUsername');",
 					"  const azurePassword = vars.get('azurePassword');",
 					"",
 					"  const missingAadVars = [];",
 					"  if (!tenantId) missingAadVars.push('tenantId');",
-					"  if (!uiClientId) missingAadVars.push('uiClientId');",
-					"  if (!apiClientId) missingAadVars.push('apiClientId');",
+					"  if (!lccApiId) missingAadVars.push('lccApiId');",
 					"  if (!azureUsername) missingAadVars.push('azureUsername');",
 					"  if (!azurePassword) missingAadVars.push('azurePassword');",
 					"",
@@ -8156,7 +8159,7 @@
 					"    if (!expiry || now >= expiry - 60000) {",
 					"      console.log('[AAD] Requesting token via ROPC...');",
 					"      const tokenUrl = 'https://login.microsoftonline.com/' + tenantId + '/oauth2/v2.0/token';",
-					"      const scope = 'api://' + apiClientId + '/user_impersonation';",
+					"      const scope = 'api://' + lccApiId + '/user_impersonation';",
 					"",
 					"      pm.sendRequest({",
 					"        url: tokenUrl,",
@@ -8165,7 +8168,7 @@
 					"        body: {",
 					"          mode: 'urlencoded',",
 					"          urlencoded: [",
-					"            { key: 'client_id', value: uiClientId },",
+					"            { key: 'client_id', value: lccApiId },",
 					"            { key: 'client_secret', value: pm.environment.get('lccApiClientSecret') || '' },",
 					"            { key: 'scope', value: scope },",
 					"            { key: 'username', value: azureUsername },",
