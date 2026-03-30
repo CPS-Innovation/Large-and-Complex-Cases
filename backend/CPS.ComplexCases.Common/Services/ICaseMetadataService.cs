@@ -14,4 +14,5 @@ public interface ICaseMetadataService
   Task<IEnumerable<CaseMetadata>> GetCaseMetadataForNetAppFolderPathsAsync(IEnumerable<string> netAppFolderPaths);
   Task UpdateActiveTransferIdAsync(int caseId, Guid? activeTransferId);
   Task<bool> ClearActiveTransferIdAsync(Guid transferId);
+  Task<string?> ClearNetAppFolderPathAsync(int caseId);
 }

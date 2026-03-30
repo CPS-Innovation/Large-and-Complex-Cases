@@ -1,3 +1,4 @@
+using CPS.ComplexCases.Common.Constants;
 using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.Data.Repositories;
@@ -178,6 +179,44 @@ public class CaseMetadataService : ICaseMetadataService
     catch (Exception ex)
     {
       _logger.LogError(ex, "Error clearing active transfer ID for transfer {TransferId}", transferId);
+      throw;
+    }
+  }
+
+  public async Task<string?> ClearNetAppFolderPathAsync(int caseId)
+  {
+    _logger.LogInformation("Clearing NetApp folder path for case {CaseId}", caseId);
+    try
+    {
+      var existingMetadata = await _caseMetadataRepository.GetByCaseIdAsync(caseId);
+
+      if (existingMetadata != null)
+      {
+        if (!string.IsNullOrEmpty(existingMetadata.ActiveTransferId.ToString()))
+        {
+          _logger.LogWarning("Cannot clear NetApp folder path for case {CaseId} because there is an active transfer", caseId);
+          return CaseMetadataState.TransferIsActive;
+        }
+        else if (string.IsNullOrEmpty(existingMetadata.NetappFolderPath))
+        {
+          _logger.LogWarning("No NetApp folder path to clear for case {CaseId}", caseId);
+          return CaseMetadataState.NetAppFolderPathIsNull;
+        }
+
+        var existingPath = existingMetadata.NetappFolderPath;
+        existingMetadata.NetappFolderPath = null;
+        await _caseMetadataRepository.UpdateAsync(existingMetadata);
+        return existingPath;
+      }
+      else
+      {
+        _logger.LogWarning("No metadata found for case {CaseId} to clear NetApp folder path", caseId);
+        return null;
+      }
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error clearing NetApp folder path for case {CaseId}", caseId);
       throw;
     }
   }
