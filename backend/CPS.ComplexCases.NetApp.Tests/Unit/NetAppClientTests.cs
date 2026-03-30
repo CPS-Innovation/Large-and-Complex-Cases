@@ -6,6 +6,7 @@ using Amazon.S3.Model;
 using AutoFixture;
 using AutoFixture.AutoMoq;
 using CPS.ComplexCases.NetApp.Client;
+using CPS.ComplexCases.NetApp.Constants;
 using CPS.ComplexCases.NetApp.Exceptions;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
@@ -594,7 +595,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                     callCount++;
                     if (callCount == 1)
                         throw new AmazonS3Exception("The AWS access key ID you provided does not exist in our records.")
-                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "InvalidAccessKeyId" };
+                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = S3ErrorCodes.InvalidAccessKeyId };
                     return expectedResponse;
                 });
 
@@ -638,7 +639,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                     callCount++;
                     if (callCount == 1)
                         throw new AmazonS3Exception("The provided token has expired.")
-                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "ExpiredToken" };
+                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = S3ErrorCodes.ExpiredToken };
                     return expectedResponse;
                 });
 
@@ -705,7 +706,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
 
             _amazonS3Mock.Setup(s => s.UploadPartAsync(It.IsAny<UploadPartRequest>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new AmazonS3Exception("The AWS access key ID you provided does not exist in our records.")
-                { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "InvalidAccessKeyId" });
+                { StatusCode = HttpStatusCode.Forbidden, ErrorCode = S3ErrorCodes.InvalidAccessKeyId });
 
             // Act & Assert
             await Assert.ThrowsAsync<AmazonS3Exception>(() => _client.UploadPartAsync(arg));
@@ -749,7 +750,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
 
             _amazonS3Mock.Setup(s => s.UploadPartAsync(It.IsAny<UploadPartRequest>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new AmazonS3Exception("Access Denied")
-                { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" });
+                { StatusCode = HttpStatusCode.Forbidden, ErrorCode = S3ErrorCodes.AccessDenied });
 
             // Act
             var ex = await Record.ExceptionAsync(() => _client.UploadPartAsync(arg));
@@ -783,8 +784,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 {
                     callCount++;
                     if (callCount == 1)
-                        throw new AmazonS3Exception("Access Denied")
-                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" };
+                        throw new AmazonS3Exception(S3ErrorCodes.AccessDenied)
+                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = S3ErrorCodes.AccessDenied };
                     return expectedResponse;
                 });
 
@@ -835,7 +836,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             _amazonS3Mock.Setup(s =>
                     s.CompleteMultipartUploadAsync(It.IsAny<CompleteMultipartUploadRequest>(),
                         It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new AmazonS3Exception("Access Denied") { StatusCode = HttpStatusCode.Forbidden });
+                .ThrowsAsync(new AmazonS3Exception(S3ErrorCodes.AccessDenied) { StatusCode = HttpStatusCode.Forbidden });
 
             await Assert.ThrowsAsync<AmazonS3Exception>(() => _client.CompleteMultipartUploadAsync(arg));
             _amazonS3Mock.Verify(
@@ -869,8 +870,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             _amazonS3Mock
                 .Setup(s => s.CompleteMultipartUploadAsync(It.IsAny<CompleteMultipartUploadRequest>(),
                     It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new AmazonS3Exception("Access Denied")
-                { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" });
+                .ThrowsAsync(new AmazonS3Exception(S3ErrorCodes.AccessDenied)
+                { StatusCode = HttpStatusCode.Forbidden, ErrorCode = S3ErrorCodes.AccessDenied });
 
             // Act
             var ex = await Record.ExceptionAsync(() => _client.CompleteMultipartUploadAsync(arg));
@@ -1302,7 +1303,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
 
             _amazonS3Mock
                 .Setup(x => x.DeleteObjectAsync(deleteRequest, default))
-                .ThrowsAsync(new AmazonS3Exception("Access Denied"));
+                .ThrowsAsync(new AmazonS3Exception(S3ErrorCodes.AccessDenied));
 
             // Act & Assert
             await Assert.ThrowsAsync<AmazonS3Exception>(() => _client.DeleteFileOrFolderAsync(arg));
@@ -1490,7 +1491,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 .ToList();
             var deleteErrors = new List<DeleteError>
             {
-                new DeleteError { Key = filesToDelete.Last(), Code = "AccessDenied", Message = "Access Denied" }
+                new DeleteError { Key = filesToDelete.Last(), Code = S3ErrorCodes.AccessDenied, Message = S3ErrorCodes.AccessDenied }
             };
 
             _amazonS3Mock
@@ -1554,7 +1555,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 });
 
             var deleteErrors = filesToDelete.Select(f => new DeleteError
-            { Key = f, Code = "AccessDenied", Message = "Access Denied" }).ToList();
+            { Key = f, Code = S3ErrorCodes.AccessDenied, Message = S3ErrorCodes.AccessDenied }).ToList();
 
             _amazonS3Mock
                 .Setup(x => x.DeleteObjectsAsync(It.IsAny<DeleteObjectsRequest>(), default))
@@ -1706,8 +1707,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 {
                     callCount++;
                     if (callCount == 1)
-                        throw new AmazonS3Exception("Access Denied")
-                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" };
+                        throw new AmazonS3Exception(S3ErrorCodes.AccessDenied)
+                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = S3ErrorCodes.AccessDenied };
                     return new PutObjectResponse { HttpStatusCode = HttpStatusCode.OK };
                 });
 
@@ -1731,8 +1732,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             _netAppRequestFactoryMock.Setup(x => x.CreateFolderRequest(arg)).Returns(putRequest);
 
             _amazonS3Mock.Setup(x => x.PutObjectAsync(It.IsAny<PutObjectRequest>(), default))
-                .ThrowsAsync(new AmazonS3Exception("Access Denied")
-                { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" });
+                .ThrowsAsync(new AmazonS3Exception(S3ErrorCodes.AccessDenied)
+                { StatusCode = HttpStatusCode.Forbidden, ErrorCode = S3ErrorCodes.AccessDenied });
 
             // Act & Assert
             await Assert.ThrowsAsync<NetAppAccessDeniedException>(() => _client.CreateFolderAsync(arg));
@@ -1752,7 +1753,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                     callCount++;
                     if (callCount == 1)
                         throw new AmazonS3Exception("The AWS access key ID you provided does not exist in our records.")
-                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "InvalidAccessKeyId" };
+                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = S3ErrorCodes.InvalidAccessKeyId };
                     return new ListObjectsV2Response { S3Objects = [] };
                 });
 
@@ -1777,8 +1778,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 {
                     callCount++;
                     if (callCount == 1)
-                        throw new AmazonS3Exception("Access Denied")
-                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" };
+                        throw new AmazonS3Exception(S3ErrorCodes.AccessDenied)
+                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = S3ErrorCodes.AccessDenied };
                     return new PutObjectResponse { HttpStatusCode = HttpStatusCode.OK };
                 });
 
@@ -1809,7 +1810,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                     callCount++;
                     if (callCount == 1)
                         throw new AmazonS3Exception("The AWS access key ID you provided does not exist in our records.")
-                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "InvalidAccessKeyId" };
+                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = S3ErrorCodes.InvalidAccessKeyId };
                     return new PutBucketResponse { HttpStatusCode = HttpStatusCode.OK };
                 });
 
@@ -1839,7 +1840,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 .ReturnsAsync(() =>
                 {
                     callCount++;
-                    var errorCode = callCount == 1 ? "InvalidAccessKeyId" : "AccessDenied";
+                    var errorCode = callCount == 1 ? S3ErrorCodes.InvalidAccessKeyId : S3ErrorCodes.AccessDenied;
                     throw new AmazonS3Exception("Access denied")
                     { StatusCode = HttpStatusCode.Forbidden, ErrorCode = errorCode };
                 });
@@ -1869,7 +1870,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                     callCount++;
                     if (callCount == 1)
                         throw new AmazonS3Exception("The AWS access key ID you provided does not exist in our records.")
-                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "InvalidAccessKeyId" };
+                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = S3ErrorCodes.InvalidAccessKeyId };
                     return new ListBucketsResponse { Buckets = [expectedBucket] };
                 });
 
@@ -1894,8 +1895,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 .ReturnsAsync(() =>
                 {
                     callCount++;
-                    var errorCode = callCount == 1 ? "InvalidAccessKeyId" : "AccessDenied";
-                    throw new AmazonS3Exception("Access denied")
+                    var errorCode = callCount == 1 ? S3ErrorCodes.InvalidAccessKeyId : S3ErrorCodes.AccessDenied;
+                    throw new AmazonS3Exception(S3ErrorCodes.AccessDenied)
                     { StatusCode = HttpStatusCode.Forbidden, ErrorCode = errorCode };
                 });
 
@@ -1921,8 +1922,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 .ReturnsAsync(() =>
                 {
                     callCount++;
-                    var errorCode = callCount == 1 ? "InvalidAccessKeyId" : "AccessDenied";
-                    throw new AmazonS3Exception("Access denied")
+                    var errorCode = callCount == 1 ? S3ErrorCodes.InvalidAccessKeyId : S3ErrorCodes.AccessDenied;
+                    throw new AmazonS3Exception(S3ErrorCodes.AccessDenied)
                     { StatusCode = HttpStatusCode.Forbidden, ErrorCode = errorCode };
                 });
 
@@ -1950,7 +1951,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                     callCount++;
                     if (callCount == 1)
                         throw new AmazonS3Exception("The AWS access key ID you provided does not exist in our records.")
-                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "InvalidAccessKeyId" };
+                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = S3ErrorCodes.InvalidAccessKeyId };
                     return new ListObjectsV2Response { CommonPrefixes = ["folder1/"] };
                 });
 
@@ -1976,8 +1977,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 .ReturnsAsync(() =>
                 {
                     callCount++;
-                    var errorCode = callCount == 1 ? "InvalidAccessKeyId" : "AccessDenied";
-                    throw new AmazonS3Exception("Access denied")
+                    var errorCode = callCount == 1 ? S3ErrorCodes.InvalidAccessKeyId : S3ErrorCodes.AccessDenied;
+                    throw new AmazonS3Exception(S3ErrorCodes.AccessDenied)
                     { StatusCode = HttpStatusCode.Forbidden, ErrorCode = errorCode };
                 });
 
@@ -2008,7 +2009,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                     callCount++;
                     if (callCount == 1)
                         throw new AmazonS3Exception("The AWS access key ID you provided does not exist in our records.")
-                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "InvalidAccessKeyId" };
+                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = S3ErrorCodes.InvalidAccessKeyId };
                     return expectedResponse;
                 });
 
@@ -2038,8 +2039,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 .ReturnsAsync(() =>
                 {
                     callCount++;
-                    var errorCode = callCount == 1 ? "InvalidAccessKeyId" : "AccessDenied";
-                    throw new AmazonS3Exception("Access denied")
+                    var errorCode = callCount == 1 ? S3ErrorCodes.InvalidAccessKeyId : S3ErrorCodes.AccessDenied;
+                    throw new AmazonS3Exception(S3ErrorCodes.AccessDenied)
                     { StatusCode = HttpStatusCode.Forbidden, ErrorCode = errorCode };
                 });
 

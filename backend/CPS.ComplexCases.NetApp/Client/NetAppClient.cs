@@ -2,6 +2,7 @@ using System.Net;
 using Microsoft.Extensions.Logging;
 using Amazon.S3;
 using Amazon.S3.Model;
+using CPS.ComplexCases.NetApp.Constants;
 using CPS.ComplexCases.NetApp.Exceptions;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
@@ -43,7 +44,7 @@ public class NetAppClient(
             {
                 return await CreateBucketCoreAsync(arg);
             }
-            catch (AmazonS3Exception retryEx) when (retryEx.ErrorCode == "AccessDenied")
+            catch (AmazonS3Exception retryEx) when (retryEx.ErrorCode == S3ErrorCodes.AccessDenied)
             {
                 throw new NetAppAccessDeniedException(arg.BucketName, retryEx);
             }
@@ -92,7 +93,7 @@ public class NetAppClient(
             {
                 return await ListBucketsCoreAsync(arg);
             }
-            catch (AmazonS3Exception retryEx) when (retryEx.ErrorCode == "AccessDenied")
+            catch (AmazonS3Exception retryEx) when (retryEx.ErrorCode == S3ErrorCodes.AccessDenied)
             {
                 throw new NetAppAccessDeniedException(arg.BucketName, retryEx);
             }
@@ -232,7 +233,7 @@ public class NetAppClient(
             {
                 return await ListObjectsInBucketCoreAsync(arg);
             }
-            catch (AmazonS3Exception retryEx) when (retryEx.ErrorCode == "AccessDenied")
+            catch (AmazonS3Exception retryEx) when (retryEx.ErrorCode == S3ErrorCodes.AccessDenied)
             {
                 throw new NetAppAccessDeniedException(arg.BucketName, retryEx);
             }
@@ -298,7 +299,7 @@ public class NetAppClient(
             {
                 return await ListFoldersInBucketCoreAsync(arg);
             }
-            catch (AmazonS3Exception retryEx) when (retryEx.ErrorCode == "AccessDenied")
+            catch (AmazonS3Exception retryEx) when (retryEx.ErrorCode == S3ErrorCodes.AccessDenied)
             {
                 throw new NetAppAccessDeniedException(arg.BucketName, retryEx);
             }
@@ -354,7 +355,7 @@ public class NetAppClient(
             {
                 return await InitiateMultipartUploadCoreAsync(arg);
             }
-            catch (AmazonS3Exception retryEx) when (retryEx.ErrorCode == "AccessDenied")
+            catch (AmazonS3Exception retryEx) when (retryEx.ErrorCode == S3ErrorCodes.AccessDenied)
             {
                 throw new NetAppAccessDeniedException(arg.BucketName, retryEx);
             }
@@ -398,7 +399,7 @@ public class NetAppClient(
                 return await s3Client.UploadPartAsync(request);
             });
         }
-        catch (AmazonS3Exception ex) when (ex.ErrorCode == "AccessDenied")
+        catch (AmazonS3Exception ex) when (ex.ErrorCode == S3ErrorCodes.AccessDenied)
         {
             throw new NetAppAccessDeniedException(arg.BucketName, ex);
         }
@@ -424,7 +425,7 @@ public class NetAppClient(
                     _netAppRequestFactory.CompleteMultipartUploadRequest(arg), ct);
             }, cancellationToken);
         }
-        catch (AmazonS3Exception ex) when (ex.ErrorCode == "AccessDenied")
+        catch (AmazonS3Exception ex) when (ex.ErrorCode == S3ErrorCodes.AccessDenied)
         {
             throw new NetAppAccessDeniedException(arg.BucketName, ex);
         }
@@ -649,8 +650,8 @@ public class NetAppClient(
     }
 
     private static bool IsCredentialError(AmazonS3Exception ex)
-        => ex.ErrorCode is "InvalidAccessKeyId" or "ExpiredToken"
-               or "InvalidClientTokenId" or "AccessDenied"
+        => ex.ErrorCode is S3ErrorCodes.InvalidAccessKeyId or S3ErrorCodes.ExpiredToken
+               or S3ErrorCodes.InvalidClientTokenId or S3ErrorCodes.AccessDenied
            || ex.Message.Contains("does not exist in our records", StringComparison.OrdinalIgnoreCase)
            || ex.Message.Contains("token has expired", StringComparison.OrdinalIgnoreCase);
 
@@ -671,7 +672,7 @@ public class NetAppClient(
             {
                 return await operation();
             }
-            catch (AmazonS3Exception retryEx) when (retryEx.ErrorCode == "AccessDenied")
+            catch (AmazonS3Exception retryEx) when (retryEx.ErrorCode == S3ErrorCodes.AccessDenied)
             {
                 throw new NetAppAccessDeniedException(bucketName, retryEx);
             }
