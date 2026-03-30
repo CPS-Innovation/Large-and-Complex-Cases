@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "b2320ee5-aa8b-48c8-b9b6-4802b9a1a2af",
-		"name": "LCC User Journey Tests (with Case Registration) Copy 3",
+		"name": "LCC User Journey Tests (with Case Registration)",
 		"description": "Complete LCC API testing collection with AUTOMATIC authentication and Case Registration.\n\n## Quick Start\n\n**Just set 4 variables and run!**\n\n| Variable | Your Value |\n|----------|------------|\n| `azureUsername` | Your Azure AD email |\n| `azurePassword` | Your Azure AD password |\n| `cmsUsername` | Your CMS username (e.g., Name.CIN3) |\n| `cmsPassword` | Your CMS password |\n| `egressWorkspaceName` | Workspace name (sets defendant surname) |\n\n## Sections\n\n1. **Authentication** - Azure AD & CMS auth (auto-handled)\n2. **Case Registration** - Register cases with defendants matching workspace name\n3. **Case Management** - Search and manage cases  \n4. **Egress Integration** - List Egress files via LCC API\n5. **NetApp Integration** - List NetApp files\n6. **File Transfer** - Egress <-> NetApp transfers (includes Register Case)\n7. **System** - Health checks\n8. **Egress Direct Upload** - 100MB automated file upload\n\n## Egress to NetApp Workflow\n\n1. Run **5.0 Register Case** - Creates case with defendant = workspace name\n2. Run **5.1 List Egress Files** - Gets files from workspace\n3. Run **5.2 Validate Transfer** - Validates transfer\n4. Run **5.3 Initiate Transfer** - Starts the transfer\n5. Run **5.4 Get Transfer Status** - Monitor progress\n\n## Pre-configured (DEV Environment)\n\n- `baseUrl` - LCC API\n- `caseApiBaseUrl` - Case Management API (fa-cm-api-dev)\n- `ddeiBaseUrl` - DDEI API\n- `egressBaseUrl` - Egress API",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "49647760",
@@ -2983,6 +2983,10 @@
 									"value": "{{uiClientId}}"
 								},
 								{
+									"key": "client_secret",
+									"value": "{{lccApiClientSecret}}"
+								},
+								{
 									"key": "scope",
 									"value": "api://{{lccApiId}}/user_impersonation"
 								},
@@ -4802,6 +4806,10 @@
 								{
 									"key": "client_id",
 									"value": "{{uiClientId}}"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{lccApiClientSecret}}"
 								},
 								{
 									"key": "scope",
@@ -6629,6 +6637,10 @@
 									"value": "{{uiClientId}}"
 								},
 								{
+									"key": "client_secret",
+									"value": "{{lccApiClientSecret}}"
+								},
+								{
 									"key": "scope",
 									"value": "api://{{lccApiId}}/user_impersonation"
 								},
@@ -8154,6 +8166,7 @@
 					"          mode: 'urlencoded',",
 					"          urlencoded: [",
 					"            { key: 'client_id', value: uiClientId },",
+					"            { key: 'client_secret', value: pm.environment.get('lccApiClientSecret') || '' },",
 					"            { key: 'scope', value: scope },",
 					"            { key: 'username', value: azureUsername },",
 					"            { key: 'password', value: azurePassword },",

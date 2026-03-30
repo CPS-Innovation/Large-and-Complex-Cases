@@ -67,7 +67,7 @@ param(
     [string]$CollectionPath = ".\LCCUserJourneyTests.postman_collection.json",
     
     [Parameter(Mandatory=$false)]
-    [string]$EnvironmentPath = ".\LCCTestEnvironment.postman_environment.json",
+    [string]$EnvironmentPath = ".\LCCTestEnvironment.postman_environment.template.json",
     
     [Parameter(Mandatory=$false)]
     [string]$UploadScriptPath = ".\Setup-EgressWorkspaceAndUpload.ps1",
