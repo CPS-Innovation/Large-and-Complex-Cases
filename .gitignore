@@ -332,3 +332,4 @@ e2e/postman/*.postman_environment
 e2e/postman/newman-reports/
 e2e/postman/LCCTestEnvironment_updated.*
 e2e/postman/*_updated.postman_collection.json
+e2e/postman/*postman_collection_updated.json

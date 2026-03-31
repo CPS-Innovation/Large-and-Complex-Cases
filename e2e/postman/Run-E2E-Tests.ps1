@@ -133,6 +133,7 @@ $Config = @{
     DdeiAccessKey = if ($env:LCC_DDEI_ACCESS_KEY) { $env:LCC_DDEI_ACCESS_KEY } else { "" }
     BaseUrl       = if ($env:LCC_BASE_URL) { $env:LCC_BASE_URL } else { "" }
     CaseApiBaseUrl = if ($env:LCC_CASE_API_BASE_URL) { $env:LCC_CASE_API_BASE_URL } else { "" }
+    EgressBaseUrl = if ($env:LCC_EGRESS_BASE_URL) { $env:LCC_EGRESS_BASE_URL } else { "" }
     DdeiBaseUrl   = if ($env:LCC_DDEI_BASE_URL) { $env:LCC_DDEI_BASE_URL } else { "" }
     LccApiId      = if ($env:LCC_API_ID) { $env:LCC_API_ID } else { "" }
     LccApiClientSecret = if ($env:LCC_API_CLIENT_SECRET) { $env:LCC_API_CLIENT_SECRET } else { "" }
@@ -153,6 +154,7 @@ if (-not $Config.CmsPassword) { $missingConfig += "LCC_CMS_PASSWORD (or -CmsPass
 if (-not $Config.DdeiAccessKey) { $missingConfig += "LCC_DDEI_ACCESS_KEY" }
 if (-not $Config.BaseUrl) { $missingConfig += "LCC_BASE_URL" }
 if (-not $Config.CaseApiBaseUrl) { $missingConfig += "LCC_CASE_API_BASE_URL" }
+if (-not $Config.EgressBaseUrl) { $missingConfig += "LCC_CASE_API_BASE_URL" }
 if (-not $Config.DdeiBaseUrl) { $missingConfig += "LCC_DDEI_BASE_URL" }
 if (-not $Config.LccApiId) { $missingConfig += "LCC_API_ID" }
 
@@ -601,6 +603,7 @@ $variables = @{
     "defaultCaseUrn" = $Config.DefaultCaseUrn
     "baseUrl" = $Config.BaseUrl
     "caseApiBaseUrl" = $Config.CaseApiBaseUrl
+    "egressBaseUrl" = $Config.EgressBaseUrl
     "ddeiBaseUrl" = $Config.DdeiBaseUrl
 }
 
