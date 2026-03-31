@@ -1,4 +1,5 @@
 
+using CPS.ComplexCases.Common.Models.Results;
 using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.Data.Models.Requests;
 
@@ -14,4 +15,5 @@ public interface ICaseMetadataService
   Task<IEnumerable<CaseMetadata>> GetCaseMetadataForNetAppFolderPathsAsync(IEnumerable<string> netAppFolderPaths);
   Task UpdateActiveTransferIdAsync(int caseId, Guid? activeTransferId);
   Task<bool> ClearActiveTransferIdAsync(Guid transferId);
+  Task<ClearFolderPathResult> ClearNetAppFolderPathAsync(int caseId);
 }
