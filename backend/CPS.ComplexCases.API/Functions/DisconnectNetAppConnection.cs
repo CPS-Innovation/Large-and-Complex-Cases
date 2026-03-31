@@ -9,7 +9,7 @@ using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.Common.Attributes;
-using CPS.ComplexCases.Common.Constants;
+using CPS.ComplexCases.Common.Enums;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Services;
 
@@ -32,7 +32,7 @@ public class DisconnectNetAppConnection(ILogger<DisconnectNetAppConnection> logg
     [OpenApiOperation(operationId: nameof(DisconnectNetAppConnection), tags: ["NetApp"], Description = "Disconnect a NetApp folder from a case.")]
     [CmsAuthValuesAuth]
     [BearerTokenAuth]
-    [OpenApiParameter(name: InputParameters.CaseId, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The case ID to disconnect from.")]
+    [OpenApiParameter(name: InputParameters.CaseId, In = ParameterLocation.Query, Required = true, Type = typeof(int), Description = "The case ID to disconnect from.")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Conflict, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Conflict)]
@@ -50,17 +50,17 @@ public class DisconnectNetAppConnection(ILogger<DisconnectNetAppConnection> logg
 
         _initializationHandler.Initialize(context.Username, context.CorrelationId, caseId);
 
-        var existingPath = await _caseMetadataService.ClearNetAppFolderPathAsync(caseId);
+        var result = await _caseMetadataService.ClearNetAppFolderPathAsync(caseId);
 
-        if (existingPath == null)
+        if (result.State == CaseMetadataState.NoCaseMetadataFound)
         {
             return new NotFoundObjectResult($"No NetApp connection found for case ID {caseId}.");
         }
-        else if (existingPath == CaseMetadataState.TransferIsActive)
+        else if (result.State == CaseMetadataState.TransferIsActive)
         {
             return new ConflictObjectResult($"Cannot disconnect NetApp connection for case ID {caseId} because there is an active transfer.");
         }
-        else if (existingPath == CaseMetadataState.NetAppFolderPathIsNull)
+        else if (result.State == CaseMetadataState.NetAppFolderPathIsNull)
         {
             return new BadRequestObjectResult($"Case ID {caseId} does not have an active NetApp connection.");
         }
@@ -69,8 +69,8 @@ public class DisconnectNetAppConnection(ILogger<DisconnectNetAppConnection> logg
             ActivityLog.Enums.ActionType.DisconnectionFromNetApp,
             ActivityLog.Enums.ResourceType.StorageConnection,
             caseId,
-            existingPath,
-            existingPath,
+            result.ClearedPath!,
+            result.ClearedPath,
             context.Username);
 
         return new OkResult();

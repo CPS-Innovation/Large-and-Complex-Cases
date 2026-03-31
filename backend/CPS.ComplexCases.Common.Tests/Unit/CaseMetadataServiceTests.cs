@@ -1,6 +1,6 @@
 using AutoFixture;
 using AutoFixture.AutoMoq;
-using CPS.ComplexCases.Common.Constants;
+using CPS.ComplexCases.Common.Enums;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.Data.Models.Requests;
@@ -465,7 +465,7 @@ public class CaseMetadataServiceTests
         var result = await _service.ClearNetAppFolderPathAsync(caseId);
 
         // Assert
-        Assert.Null(result);
+        Assert.Equal(CaseMetadataState.NoCaseMetadataFound, result.State);
 
         _repositoryMock.Verify(
             r => r.UpdateAsync(It.IsAny<CaseMetadata>()),
@@ -501,7 +501,7 @@ public class CaseMetadataServiceTests
         var result = await _service.ClearNetAppFolderPathAsync(caseId);
 
         // Assert
-        Assert.Equal(CaseMetadataState.TransferIsActive, result);
+        Assert.Equal(CaseMetadataState.TransferIsActive, result.State);
     }
 
     [Fact]
@@ -549,7 +549,7 @@ public class CaseMetadataServiceTests
         var result = await _service.ClearNetAppFolderPathAsync(caseId);
 
         // Assert
-        Assert.Equal(CaseMetadataState.NetAppFolderPathIsNull, result);
+        Assert.Equal(CaseMetadataState.NetAppFolderPathIsNull, result.State);
     }
 
     [Fact]
@@ -602,7 +602,8 @@ public class CaseMetadataServiceTests
         var result = await _service.ClearNetAppFolderPathAsync(caseId);
 
         // Assert
-        Assert.Equal(existingPath, result);
+        Assert.Equal(CaseMetadataState.Success, result.State);
+        Assert.Equal(existingPath, result.ClearedPath);
     }
 
     [Fact]

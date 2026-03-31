@@ -5,8 +5,9 @@ using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Functions;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
-using CPS.ComplexCases.Common.Constants;
+using CPS.ComplexCases.Common.Enums;
 using CPS.ComplexCases.Common.Handlers;
+using CPS.ComplexCases.Common.Models.Results;
 using CPS.ComplexCases.Common.Services;
 using Moq;
 
@@ -80,7 +81,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             var caseId = _fixture.Create<int>();
             _caseMetadataServiceMock
                 .Setup(x => x.ClearNetAppFolderPathAsync(caseId))
-                .ReturnsAsync((string?)null);
+                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.NoCaseMetadataFound });
 
             var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameter(InputParameters.CaseId, caseId.ToString(), _testCorrelationId);
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
@@ -100,7 +101,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             var caseId = _fixture.Create<int>();
             _caseMetadataServiceMock
                 .Setup(x => x.ClearNetAppFolderPathAsync(caseId))
-                .ReturnsAsync(CaseMetadataState.TransferIsActive);
+                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.TransferIsActive });
 
             var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameter(InputParameters.CaseId, caseId.ToString(), _testCorrelationId);
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
@@ -120,7 +121,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             var caseId = _fixture.Create<int>();
             _caseMetadataServiceMock
                 .Setup(x => x.ClearNetAppFolderPathAsync(caseId))
-                .ReturnsAsync(CaseMetadataState.NetAppFolderPathIsNull);
+                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.NetAppFolderPathIsNull });
 
             var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameter(InputParameters.CaseId, caseId.ToString(), _testCorrelationId);
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
@@ -141,7 +142,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             var folderPath = _fixture.Create<string>();
             _caseMetadataServiceMock
                 .Setup(x => x.ClearNetAppFolderPathAsync(caseId))
-                .ReturnsAsync(folderPath);
+                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = folderPath });
 
             var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameter(InputParameters.CaseId, caseId.ToString(), _testCorrelationId);
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
@@ -161,7 +162,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             var folderPath = _fixture.Create<string>();
             _caseMetadataServiceMock
                 .Setup(x => x.ClearNetAppFolderPathAsync(caseId))
-                .ReturnsAsync(folderPath);
+                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = folderPath });
 
             var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameter(InputParameters.CaseId, caseId.ToString(), _testCorrelationId);
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
@@ -189,7 +190,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             var folderPath = _fixture.Create<string>();
             _caseMetadataServiceMock
                 .Setup(x => x.ClearNetAppFolderPathAsync(caseId))
-                .ReturnsAsync(folderPath);
+                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = folderPath });
 
             var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameter(InputParameters.CaseId, caseId.ToString(), _testCorrelationId);
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
@@ -208,7 +209,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             var caseId = _fixture.Create<int>();
             _caseMetadataServiceMock
                 .Setup(x => x.ClearNetAppFolderPathAsync(caseId))
-                .ReturnsAsync((string?)null);
+                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.NoCaseMetadataFound });
 
             var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameter(InputParameters.CaseId, caseId.ToString(), _testCorrelationId);
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
@@ -235,7 +236,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             var caseId = _fixture.Create<int>();
             _caseMetadataServiceMock
                 .Setup(x => x.ClearNetAppFolderPathAsync(caseId))
-                .ReturnsAsync(CaseMetadataState.TransferIsActive);
+                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.TransferIsActive });
 
             var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameter(InputParameters.CaseId, caseId.ToString(), _testCorrelationId);
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
@@ -262,7 +263,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             var caseId = _fixture.Create<int>();
             _caseMetadataServiceMock
                 .Setup(x => x.ClearNetAppFolderPathAsync(caseId))
-                .ReturnsAsync(CaseMetadataState.NetAppFolderPathIsNull);
+                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.NetAppFolderPathIsNull });
 
             var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameter(InputParameters.CaseId, caseId.ToString(), _testCorrelationId);
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);

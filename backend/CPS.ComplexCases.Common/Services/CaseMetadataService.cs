@@ -1,4 +1,5 @@
-using CPS.ComplexCases.Common.Constants;
+using CPS.ComplexCases.Common.Enums;
+using CPS.ComplexCases.Common.Models.Results;
 using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.Data.Repositories;
@@ -183,7 +184,7 @@ public class CaseMetadataService : ICaseMetadataService
     }
   }
 
-  public async Task<string?> ClearNetAppFolderPathAsync(int caseId)
+  public async Task<ClearFolderPathResult> ClearNetAppFolderPathAsync(int caseId)
   {
     _logger.LogInformation("Clearing NetApp folder path for case {CaseId}", caseId);
     try
@@ -192,26 +193,26 @@ public class CaseMetadataService : ICaseMetadataService
 
       if (existingMetadata != null)
       {
-        if (!string.IsNullOrEmpty(existingMetadata.ActiveTransferId.ToString()))
+        if (existingMetadata.ActiveTransferId.HasValue)
         {
           _logger.LogWarning("Cannot clear NetApp folder path for case {CaseId} because there is an active transfer", caseId);
-          return CaseMetadataState.TransferIsActive;
+          return new ClearFolderPathResult { State = CaseMetadataState.TransferIsActive };
         }
         else if (string.IsNullOrEmpty(existingMetadata.NetappFolderPath))
         {
           _logger.LogWarning("No NetApp folder path to clear for case {CaseId}", caseId);
-          return CaseMetadataState.NetAppFolderPathIsNull;
+          return new ClearFolderPathResult { State = CaseMetadataState.NetAppFolderPathIsNull };
         }
 
         var existingPath = existingMetadata.NetappFolderPath;
         existingMetadata.NetappFolderPath = null;
         await _caseMetadataRepository.UpdateAsync(existingMetadata);
-        return existingPath;
+        return new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = existingPath };
       }
       else
       {
         _logger.LogWarning("No metadata found for case {CaseId} to clear NetApp folder path", caseId);
-        return null;
+        return new ClearFolderPathResult { State = CaseMetadataState.NoCaseMetadataFound };
       }
     }
     catch (Exception ex)
