@@ -491,7 +491,20 @@ if ($SkipUpload) {
         # Upload chunks
         Write-Host "[7/8] Generating and uploading $TotalChunks chunks..." -ForegroundColor Yellow
 
-        $Random = New-Object System.Random
+        # Sample text lines for human-readable file content
+        $SampleLines = @(
+            "The quick brown fox jumps over the lazy dog."
+            "This file was generated for Large and Complex Cases E2E testing."
+            "Egress workspace file transfer validation in progress."
+            "Pack my box with five dozen liquor jugs."
+            "How vexingly quick daft zebras jump."
+            "The five boxing wizards jump quickly."
+            "Case materials are transferred between Egress and NetApp storage."
+            "All file transfer operations are logged for audit compliance."
+            "Workspace files are verified after each transfer operation."
+            "End-to-end testing ensures system reliability and data integrity."
+        )
+        $LineCounter = 1
         $BytesUploaded = 0
         $ChunkNum = 1
         $FileStartTime = Get-Date
@@ -502,28 +515,46 @@ if ($SkipUpload) {
             while ($BytesUploaded -lt $FileSize) {
                 $BytesToUpload = [Math]::Min($ChunkSizeBytes, $FileSize - $BytesUploaded)
 
-                # Generate random bytes
-                $ChunkData = New-Object byte[] $BytesToUpload
-                $Random.NextBytes($ChunkData)
+                # Generate human-readable text content
+                $sb = New-Object System.Text.StringBuilder ($BytesToUpload + 1024)
 
-                # Add header to first chunk
+                # Add metadata header to first chunk
                 if ($ChunkNum -eq 1) {
-                    $header = @"
-============================================================
-EGRESS GENERATED TEST FILE
-============================================================
-Generated:   $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
-Filename:    $CurrentFileName
-File:        $fileIndex of $FileCount
-Size:        $([Math]::Round($FileSize / 1GB, 3)) GB ($FileSize bytes)
-Workspace:   $WorkspaceName
-WorkspaceId: $WorkspaceId
-Folder:      $ActualFolderPath
-============================================================
+                    [void]$sb.AppendLine("============================================================")
+                    [void]$sb.AppendLine("EGRESS GENERATED TEST FILE")
+                    [void]$sb.AppendLine("============================================================")
+                    [void]$sb.AppendLine("Generated:   $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')")
+                    [void]$sb.AppendLine("Filename:    $CurrentFileName")
+                    [void]$sb.AppendLine("File:        $fileIndex of $FileCount")
+                    [void]$sb.AppendLine("Size:        $([Math]::Round($FileSize / 1GB, 3)) GB ($FileSize bytes)")
+                    [void]$sb.AppendLine("Workspace:   $WorkspaceName")
+                    [void]$sb.AppendLine("WorkspaceId: $WorkspaceId")
+                    [void]$sb.AppendLine("Folder:      $ActualFolderPath")
+                    [void]$sb.AppendLine("Chunks:      $TotalChunks x $ChunkSizeMB MB")
+                    [void]$sb.AppendLine("============================================================")
+                    [void]$sb.AppendLine("")
+                }
 
-"@
-                    $headerBytes = [Text.Encoding]::UTF8.GetBytes($header)
-                    [Array]::Copy($headerBytes, $ChunkData, [Math]::Min($headerBytes.Length, $ChunkData.Length))
+                # Fill remaining space with numbered, readable lines
+                $sampleIdx = 0
+                while ($sb.Length -lt $BytesToUpload) {
+                    $line = "[Chunk $ChunkNum/$TotalChunks | Line $LineCounter] $($SampleLines[$sampleIdx % $SampleLines.Count])"
+                    [void]$sb.AppendLine($line)
+                    $LineCounter++
+                    $sampleIdx++
+                }
+
+                # Trim or pad to exact byte count
+                $textBytes = [Text.Encoding]::UTF8.GetBytes($sb.ToString())
+                $ChunkData = New-Object byte[] $BytesToUpload
+                if ($textBytes.Length -ge $BytesToUpload) {
+                    [Array]::Copy($textBytes, $ChunkData, $BytesToUpload)
+                } else {
+                    # Pad with spaces + newlines if text is shorter (unlikely)
+                    [Array]::Copy($textBytes, $ChunkData, $textBytes.Length)
+                    for ($p = $textBytes.Length; $p -lt $BytesToUpload; $p++) {
+                        $ChunkData[$p] = if (($p % 80) -eq 79) { 10 } else { 32 }  # newline every 80 chars, space otherwise
+                    }
                 }
 
                 # Write to temp file

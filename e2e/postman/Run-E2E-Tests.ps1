@@ -154,9 +154,8 @@ if (-not $Config.CmsPassword) { $missingConfig += "LCC_CMS_PASSWORD (or -CmsPass
 if (-not $Config.DdeiAccessKey) { $missingConfig += "LCC_DDEI_ACCESS_KEY" }
 if (-not $Config.BaseUrl) { $missingConfig += "LCC_BASE_URL" }
 if (-not $Config.CaseApiBaseUrl) { $missingConfig += "LCC_CASE_API_BASE_URL" }
-if (-not $Config.EgressBaseUrl) { $missingConfig += "LCC_CASE_API_BASE_URL" }
+if (-not $Config.EgressBaseUrl) { $missingConfig += "LCC_EGRESS_BASE_URL" }
 if (-not $Config.DdeiBaseUrl) { $missingConfig += "LCC_DDEI_BASE_URL" }
-if (-not $Config.LccApiId) { $missingConfig += "LCC_API_ID" }
 
 # Default mode requires pre-existing case and workspace config
 if (-not $RegisterCase) {
@@ -351,7 +350,8 @@ function Run-NewmanFolder {
         [string]$CollectionPath,
         [string]$FolderName,
         [string]$EnvironmentPath,
-        [string]$ReportsDir
+        [string]$ReportsDir,
+        [string]$ExportEnvironmentPath = ""
     )
     
     Write-Header "Running: $FolderName"
@@ -386,15 +386,25 @@ function Run-NewmanFolder {
     $fullHtmlReport = Join-Path (Resolve-Path $ReportsDir).Path "$reportName.html"
     $fullJsonReport = Join-Path (Resolve-Path $ReportsDir).Path "$reportName.json"
     
-    & newman run $fullCollectionPath `
-        --folder $FolderName `
-        --environment $fullEnvPath `
-        --timeout-request 120000 `
-        --delay-request 2000 `
-        -r "cli,htmlextra,json" `
-        --reporter-htmlextra-export $fullHtmlReport `
-        --reporter-htmlextra-logs `
-        --reporter-json-export $fullJsonReport
+    # Build Newman arguments as array for clean conditional flags
+    $newmanArgs = @(
+        "run", $fullCollectionPath,
+        "--folder", $FolderName,
+        "--environment", $fullEnvPath,
+        "--timeout-request", "120000",
+        "--delay-request", "2000",
+        "-r", "cli,htmlextra,json",
+        "--reporter-htmlextra-export", $fullHtmlReport,
+        "--reporter-htmlextra-logs",
+        "--reporter-json-export", $fullJsonReport
+    )
+    
+    if ($ExportEnvironmentPath) {
+        $newmanArgs += @("--export-environment", $ExportEnvironmentPath)
+        Write-Host "  Export environment to: $ExportEnvironmentPath" -ForegroundColor Gray
+    }
+    
+    & newman @newmanArgs
     
     $exitCode = $LASTEXITCODE
     $htmlReport = $fullHtmlReport
@@ -588,15 +598,10 @@ $variables = @{
     "egressWorkspaceId" = $EgressWorkspaceId
     "egressWorkspaceName" = $EgressWorkspaceName
     "defendantSurname" = $EgressWorkspaceName
-    "searchDefendantName" = $EgressWorkspaceName
     "tenantId" = $Config.TenantId
-    "apiClientId" = $Config.LccApiId
     "registerCaseClientId" = $Config.RegisterCaseClientId
-    "clientId" = $Config.LccApiId
-    "uiClientId" = $Config.LccApiId
     "lccApiId" = $Config.LccApiId
     "netappFolderPath" = "Automation-Testing/"
-    "sourceRootFolderPath" = "Automation-Testing/"
     "egressDestinationFolder" = "4. Served Evidence/"
     "registerCase" = if ($RegisterCase) { "true" } else { "false" }
     "defaultCaseId" = $Config.DefaultCaseId
@@ -620,9 +625,7 @@ $secretVariables = @{
     "azureUsername" = $Config.AzureUsername
     "azurePassword" = $Config.AzurePassword
     "cmsUsername"   = $Config.CmsUsername
-    "username"      = $Config.CmsUsername
     "cmsPassword"   = $Config.CmsPassword
-    "password"      = $Config.CmsPassword
     "ddeiAccessKey" = $Config.DdeiAccessKey
     "lccApiClientSecret" = $Config.LccApiClientSecret
 }
@@ -665,9 +668,13 @@ Write-Host ""
 # ============================================================
 $results = @{}
 $allPassed = $true
+$isFirstRun = $true
 
 Write-Header "STEP 4: Run E2E Tests"
 Write-Host "Workspace: $EgressWorkspaceId ($EgressWorkspaceName)" -ForegroundColor Cyan
+if ($RegisterCase -and $foldersToRun.Count -gt 1) {
+    Write-Host "RegisterCase: Will register once on first folder, then reuse for remaining folders" -ForegroundColor Cyan
+}
 Write-Host ""
 
 foreach ($folder in $foldersToRun) {
@@ -676,13 +683,68 @@ foreach ($folder in $foldersToRun) {
     Write-Host "Preparing: $folder" -ForegroundColor Cyan
     Write-Host "─────────────────────────────────────────────────────────────" -ForegroundColor DarkGray
     
+    # When RegisterCase is set and running multiple folders, export environment
+    # from the first run so we can capture the caseId/caseUrn for subsequent runs
+    $exportEnvPath = ""
+    if ($RegisterCase -and $isFirstRun -and $foldersToRun.Count -gt 1) {
+        $exportEnvPath = Join-Path $ScriptDir "LCCTestEnvironment_exported.postman_environment.json"
+        Write-Info "First RegisterCase run - will capture caseId for subsequent folders"
+    }
+    
     $result = Run-NewmanFolder `
         -CollectionPath $UpdatedCollectionPath `
         -FolderName $folder `
         -EnvironmentPath $UpdatedEnvPath `
-        -ReportsDir $ReportsDir
+        -ReportsDir $ReportsDir `
+        -ExportEnvironmentPath $exportEnvPath
     
     $results[$folder] = $result
+    
+    # After the first RegisterCase run, capture caseId/caseUrn and disable
+    # registration for subsequent folders to prevent creating multiple cases
+    if ($RegisterCase -and $isFirstRun -and $foldersToRun.Count -gt 1) {
+        $isFirstRun = $false
+        
+        if ($result.Success -and $exportEnvPath -and (Test-Path $exportEnvPath)) {
+            Write-Info "Capturing registered case for subsequent test folders..."
+            
+            $exportedEnv = Get-Content $exportEnvPath -Raw | ConvertFrom-Json
+            $capturedCaseId = ""
+            $capturedCaseUrn = ""
+            
+            foreach ($val in $exportedEnv.values) {
+                if ($val.key -eq "caseId") { $capturedCaseId = $val.value }
+                if ($val.key -eq "caseUrn") { $capturedCaseUrn = $val.value }
+            }
+            
+            if ($capturedCaseId) {
+                Write-Success "Captured caseId: $capturedCaseId, caseUrn: $capturedCaseUrn"
+                Write-Info "Subsequent folders will reuse this case (registerCase=false)"
+                
+                # Update environment file: disable registration, inject captured case
+                $reuseVars = @{
+                    "registerCase"  = "false"
+                    "defaultCaseId" = $capturedCaseId
+                    "defaultCaseUrn" = $capturedCaseUrn
+                    "caseId"        = $capturedCaseId
+                    "caseUrn"       = $capturedCaseUrn
+                }
+                $UpdatedEnvPath = Update-EnvironmentFile -EnvironmentPath $UpdatedEnvPath -Variables $reuseVars -OutputDir $ScriptDir
+                
+                # Also update collection variables
+                $UpdatedCollectionPath = Update-CollectionVariables -CollectionPath $UpdatedCollectionPath -Variables $reuseVars -OutputDir $ScriptDir
+            } else {
+                Write-Err "Failed to capture caseId from first run - subsequent runs may register new cases"
+            }
+            
+            # Clean up exported env file
+            Remove-Item $exportEnvPath -Force -ErrorAction SilentlyContinue
+        } elseif (-not $result.Success) {
+            Write-Err "First RegisterCase run failed - cannot capture caseId for reuse"
+        }
+    } else {
+        $isFirstRun = $false
+    }
     
     if (-not $result.Success) {
         $allPassed = $false

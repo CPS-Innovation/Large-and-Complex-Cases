@@ -2652,7 +2652,7 @@
 									"    // Use hardcoded existing case",
 									"    pm.environment.set('caseId', pm.variables.get('defaultCaseId'));",
 									"    pm.environment.set('caseUrn', pm.variables.get('defaultCaseUrn'));",
-									"    pm.environment.set('searchDefendantName', pm.environment.get('egressWorkspaceName') || 'AUTOMATION-TESTING');",
+
 									"    console.log('[SKIP] registerCase not set - using existing caseId: ' + pm.variables.get('defaultCaseId') + ', urn: ' + pm.variables.get('defaultCaseUrn'));",
 									"    // Still save the token",
 									"    const skipResp = pm.response.json();",
@@ -2878,9 +2878,7 @@
 									"    pm.environment.set(\"caseId\", responseBody.caseId);\r",
 									"    pm.environment.set(\"caseUrn\", responseBody.urn);\r",
 									"    \r",
-									"    const defendantSurname = pm.environment.get(\"defendantSurname\") || \"Miller\";\r",
-									"    pm.environment.set(\"searchDefendantName\", defendantSurname);\r",
-									"    \r",
+
 									"    console.log(\"=== CASE CREATED ===\");\r",
 									"    console.log(\"Case ID:\", responseBody.caseId);\r",
 									"    console.log(\"URN:\", responseBody.urn);\r",
@@ -4477,7 +4475,7 @@
 									"    // Use hardcoded existing case",
 									"    pm.environment.set('caseId', pm.variables.get('defaultCaseId'));",
 									"    pm.environment.set('caseUrn', pm.variables.get('defaultCaseUrn'));",
-									"    pm.environment.set('searchDefendantName', pm.environment.get('egressWorkspaceName') || 'AUTOMATION-TESTING');",
+
 									"    console.log('[SKIP] registerCase not set - using existing caseId: ' + pm.variables.get('defaultCaseId') + ', urn: ' + pm.variables.get('defaultCaseUrn'));",
 									"    // Still save the token",
 									"    const skipResp = pm.response.json();",
@@ -4703,9 +4701,7 @@
 									"    pm.environment.set(\"caseId\", responseBody.caseId);\r",
 									"    pm.environment.set(\"caseUrn\", responseBody.urn);\r",
 									"    \r",
-									"    const defendantSurname = pm.environment.get(\"defendantSurname\") || \"Miller\";\r",
-									"    pm.environment.set(\"searchDefendantName\", defendantSurname);\r",
-									"    \r",
+
 									"    console.log(\"=== CASE CREATED ===\");\r",
 									"    console.log(\"Case ID:\", responseBody.caseId);\r",
 									"    console.log(\"URN:\", responseBody.urn);\r",
@@ -6306,7 +6302,7 @@
 									"    // Use hardcoded existing case",
 									"    pm.environment.set('caseId', pm.variables.get('defaultCaseId'));",
 									"    pm.environment.set('caseUrn', pm.variables.get('defaultCaseUrn'));",
-									"    pm.environment.set('searchDefendantName', pm.environment.get('egressWorkspaceName') || 'AUTOMATION-TESTING');",
+
 									"    console.log('[SKIP] registerCase not set - using existing caseId: ' + pm.variables.get('defaultCaseId') + ', urn: ' + pm.variables.get('defaultCaseUrn'));",
 									"    // Still save the token",
 									"    const skipResp = pm.response.json();",
@@ -6532,9 +6528,7 @@
 									"    pm.environment.set(\"caseId\", responseBody.caseId);\r",
 									"    pm.environment.set(\"caseUrn\", responseBody.urn);\r",
 									"    \r",
-									"    const defendantSurname = pm.environment.get(\"defendantSurname\") || \"Miller\";\r",
-									"    pm.environment.set(\"searchDefendantName\", defendantSurname);\r",
-									"    \r",
+
 									"    console.log(\"=== CASE CREATED ===\");\r",
 									"    console.log(\"Case ID:\", responseBody.caseId);\r",
 									"    console.log(\"URN:\", responseBody.urn);\r",
