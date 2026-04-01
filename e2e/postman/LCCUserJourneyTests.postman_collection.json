@@ -271,6 +271,14 @@
 									"} else {",
 									"    if (!token) console.error('Run 1.1 Get Azure AD Token first');",
 									"    if (!cmsAuth) console.error('Run 1.2 Get CMS Auth first');",
+									"}",
+									"",
+									"// Skip Case Registration folder when registerCase is not enabled",
+									"if (pm.variables.get('registerCase') !== 'true') {",
+									"    pm.environment.set('caseId', pm.variables.get('defaultCaseId'));",
+									"    pm.environment.set('caseUrn', pm.variables.get('defaultCaseUrn'));",
+									"    console.log('[SKIP] registerCase not set - using existing caseId:', pm.variables.get('defaultCaseId'));",
+									"    pm.execution.setNextRequest('2.1 Search Cases');",
 									"}"
 								],
 								"type": "text/javascript"
@@ -1457,6 +1465,14 @@
 									"    console.log(\"NetApp folder now linked to case!\");",
 									"} else {",
 									"    console.error(\"Failed to create connection:\", pm.response.text());",
+									"}",
+									"",
+									"// Skip 5.0 Register Case when registerCase is not enabled",
+									"if (pm.variables.get('registerCase') !== 'true') {",
+									"    pm.environment.set('caseId', pm.variables.get('defaultCaseId'));",
+									"    pm.environment.set('caseUrn', pm.variables.get('defaultCaseUrn'));",
+									"    console.log('[SKIP] registerCase not set - skipping 5.0 Register Case');",
+									"    pm.execution.setNextRequest('5.1 Create Egress Connection');",
 									"}"
 								],
 								"type": "text/javascript"
