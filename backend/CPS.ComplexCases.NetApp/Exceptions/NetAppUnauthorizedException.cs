@@ -2,17 +2,15 @@ using System.Net;
 
 namespace CPS.ComplexCases.NetApp.Exceptions;
 
-public class NetAppUnauthorizedException : Exception
+public class NetAppUnauthorizedException : NetAppClientException
 {
     public NetAppUnauthorizedException()
-        : base("Unauthorized access to NetApp resource.")
+        : base(HttpStatusCode.Unauthorized, "Unauthorized access to NetApp resource.")
     {
     }
 
     public NetAppUnauthorizedException(string message)
-        : base(message)
+        : base(HttpStatusCode.Unauthorized, message)
     {
     }
-
-    public static HttpStatusCode StatusCode => HttpStatusCode.Unauthorized;
 }
