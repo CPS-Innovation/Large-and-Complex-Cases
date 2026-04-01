@@ -11,7 +11,9 @@ using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Requests;
+using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Common.Storage;
+using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Models.Args;
 using CPS.ComplexCases.FileTransfer.API.Factories;
@@ -32,6 +34,7 @@ public class ListFilesForTransferTests
     private readonly Mock<IRequestValidator> _requestValidatorMock;
     private readonly Mock<IEgressClient> _egressClientMock;
     private readonly Mock<IInitializationHandler> _initializationHandlerMock;
+    private readonly Mock<ICaseMetadataService> _caseMetadataServiceMock;
     private readonly ListFilesForTransfer _function;
     private readonly int _testCaseId;
     private readonly string _testWorkspaceId;
@@ -46,12 +49,13 @@ public class ListFilesForTransferTests
         _requestValidatorMock = new Mock<IRequestValidator>();
         _egressClientMock = new Mock<IEgressClient>();
         _initializationHandlerMock = new Mock<IInitializationHandler>();
+        _caseMetadataServiceMock = new Mock<ICaseMetadataService>();
 
         _testWorkspaceId = _fixture.Create<string>();
         _testCaseId = _fixture.Create<int>();
         _testCorrelationId = _fixture.Create<Guid>();
 
-        _function = new ListFilesForTransfer(_loggerMock.Object, _storageClientFactoryMock.Object, _requestValidatorMock.Object, _egressClientMock.Object, _initializationHandlerMock.Object);
+        _function = new ListFilesForTransfer(_loggerMock.Object, _storageClientFactoryMock.Object, _requestValidatorMock.Object, _egressClientMock.Object, _caseMetadataServiceMock.Object, _initializationHandlerMock.Object);
     }
 
     [Fact]
@@ -381,7 +385,7 @@ public class ListFilesForTransferTests
         Assert.Single(filesResult.Files, f => f.Id == "folder1" && f.SourcePath == "source/folder1/file2.txt" && f.RelativePath == "folder1/file2.txt");
     }
 
-    private ListFilesForTransferRequest CreateRequest(TransferDirection transferDirection, string destinationPath = "valid/path/", TransferType transferType = TransferType.Copy)
+    private ListFilesForTransferRequest CreateRequest(TransferDirection transferDirection, string destinationPath = "valid/path/", TransferType transferType = TransferType.Copy, string? sourceRootFolderPath = null)
     {
         return new ListFilesForTransferRequest
         {
@@ -391,8 +395,127 @@ public class ListFilesForTransferTests
             TransferType = transferType,
             DestinationPath = destinationPath,
             WorkspaceId = _testWorkspaceId,
-            SourcePaths = _fixture.Create<List<SelectedSourcePath>>()
+            SourcePaths = _fixture.Create<List<SelectedSourcePath>>(),
+            SourceRootFolderPath = sourceRootFolderPath
         };
+    }
+
+    [Fact]
+    public async Task Run_NetAppToEgress_WithMultiSegmentNetAppFolderPath_StripsFullPrefixFromSourceRootFolderPath()
+    {
+        // Arrange
+        var netappFolderPath = "/volume/case/123";
+        var sourceRootFolderPath = "/volume/case/123/documents";
+        var expectedStripped = "documents";
+
+        var reqMock = CreateHttpRequestMock();
+        var context = new Mock<FunctionContext>().Object;
+
+        var validationResult = new ValidatableRequest<ListFilesForTransferRequest>
+        {
+            IsValid = true,
+            Value = CreateRequest(TransferDirection.NetAppToEgress, sourceRootFolderPath: sourceRootFolderPath),
+        };
+
+        _requestValidatorMock.Setup(v => v.GetJsonBody<ListFilesForTransferRequest, ListFilesForTransferValidator>(It.IsAny<HttpRequest>()))
+            .ReturnsAsync(validationResult);
+
+        _storageClientFactoryMock.Setup(f => f.GetSourceClientForDirection(TransferDirection.NetAppToEgress))
+            .Returns(_storageClientMock.Object);
+
+        _storageClientMock.Setup(c => c.ListFilesForTransferAsync(
+            It.IsAny<List<TransferEntityDto>>(), _testWorkspaceId, _testCaseId, null, null))
+            .ReturnsAsync(new List<FileTransferInfo>());
+
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForCaseIdAsync(_testCaseId))
+            .ReturnsAsync(new CaseMetadata { CaseId = _testCaseId, NetappFolderPath = netappFolderPath });
+
+        // Act
+        var result = await _function.Run(reqMock.Object, context);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var filesResult = Assert.IsType<FilesForTransferResult>(okResult.Value);
+        Assert.Equal(expectedStripped, filesResult.SourceRootFolderPath);
+    }
+
+    [Fact]
+    public async Task Run_NetAppToEgress_WithSingleSegmentNetAppFolderPath_StripsFullPrefixFromSourceRootFolderPath()
+    {
+        // Arrange
+        var netappFolderPath = "/volume";
+        var sourceRootFolderPath = "/volume/documents";
+        var expectedStripped = "documents";
+
+        var reqMock = CreateHttpRequestMock();
+        var context = new Mock<FunctionContext>().Object;
+
+        var validationResult = new ValidatableRequest<ListFilesForTransferRequest>
+        {
+            IsValid = true,
+            Value = CreateRequest(TransferDirection.NetAppToEgress, sourceRootFolderPath: sourceRootFolderPath),
+        };
+
+        _requestValidatorMock.Setup(v => v.GetJsonBody<ListFilesForTransferRequest, ListFilesForTransferValidator>(It.IsAny<HttpRequest>()))
+            .ReturnsAsync(validationResult);
+
+        _storageClientFactoryMock.Setup(f => f.GetSourceClientForDirection(TransferDirection.NetAppToEgress))
+            .Returns(_storageClientMock.Object);
+
+        _storageClientMock.Setup(c => c.ListFilesForTransferAsync(
+            It.IsAny<List<TransferEntityDto>>(), _testWorkspaceId, _testCaseId, null, null))
+            .ReturnsAsync(new List<FileTransferInfo>());
+
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForCaseIdAsync(_testCaseId))
+            .ReturnsAsync(new CaseMetadata { CaseId = _testCaseId, NetappFolderPath = netappFolderPath });
+
+        // Act
+        var result = await _function.Run(reqMock.Object, context);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var filesResult = Assert.IsType<FilesForTransferResult>(okResult.Value);
+        Assert.Equal(expectedStripped, filesResult.SourceRootFolderPath);
+    }
+
+    [Fact]
+    public async Task Run_NetAppToEgress_WhenCaseMetadataNotFound_KeepsOriginalSourceRootFolderPath()
+    {
+        // Arrange
+        var sourceRootFolderPath = "/volume/case/123/documents";
+
+        var reqMock = CreateHttpRequestMock();
+        var context = new Mock<FunctionContext>().Object;
+
+        var validationResult = new ValidatableRequest<ListFilesForTransferRequest>
+        {
+            IsValid = true,
+            Value = CreateRequest(TransferDirection.NetAppToEgress, sourceRootFolderPath: sourceRootFolderPath),
+        };
+
+        _requestValidatorMock.Setup(v => v.GetJsonBody<ListFilesForTransferRequest, ListFilesForTransferValidator>(It.IsAny<HttpRequest>()))
+            .ReturnsAsync(validationResult);
+
+        _storageClientFactoryMock.Setup(f => f.GetSourceClientForDirection(TransferDirection.NetAppToEgress))
+            .Returns(_storageClientMock.Object);
+
+        _storageClientMock.Setup(c => c.ListFilesForTransferAsync(
+            It.IsAny<List<TransferEntityDto>>(), _testWorkspaceId, _testCaseId, null, null))
+            .ReturnsAsync(new List<FileTransferInfo>());
+
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForCaseIdAsync(_testCaseId))
+            .ReturnsAsync((CaseMetadata?)null);
+
+        // Act
+        var result = await _function.Run(reqMock.Object, context);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var filesResult = Assert.IsType<FilesForTransferResult>(okResult.Value);
+        Assert.Equal(sourceRootFolderPath, filesResult.SourceRootFolderPath);
     }
 
     private Mock<HttpRequest> CreateHttpRequestMock()

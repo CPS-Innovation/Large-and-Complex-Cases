@@ -691,6 +691,7 @@ public class EgressStorageClientTests : IDisposable
     [InlineData("root/folder/file.txt", "notmatching/", "root/folder/file.txt")]
     [InlineData("/root/folder/file.txt", "/root/", "folder/file.txt")]
     [InlineData("root/folder/file.txt", "root", "folder/file.txt")]
+    [InlineData("ROOT/Folder/file.txt", "root/folder/", "file.txt")]
     public void GetRelativePathFromSourceRoot_ReturnsExpected(string relativePath, string? sourceRootFolderPath, string expected)
     {
         var result = EgressStorageClient.GetRelativePathFromSourceRoot(relativePath, sourceRootFolderPath);
