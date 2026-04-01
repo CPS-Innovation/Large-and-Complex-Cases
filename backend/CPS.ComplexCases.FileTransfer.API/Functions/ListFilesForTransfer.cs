@@ -139,6 +139,10 @@ public class ListFilesForTransfer(
                 {
                     result.SourceRootFolderPath = request.Value.SourceRootFolderPath.RemovePathPrefix(caseMetaData.NetappFolderPath);
                 }
+                else
+                {
+                    _logger.LogWarning("Could not retrieve NetApp folder path for case ID {CaseId} to calculate relative paths for transfer files with CorrelationId {CorrelationId}", request.Value.CaseId, request.Value.CorrelationId);
+                }
             }
         }
 

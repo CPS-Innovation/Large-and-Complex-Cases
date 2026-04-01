@@ -404,9 +404,9 @@ public class ListFilesForTransferTests
     public async Task Run_NetAppToEgress_WithMultiSegmentNetAppFolderPath_StripsFullPrefixFromSourceRootFolderPath()
     {
         // Arrange
-        var netappFolderPath = "/volume/case/123";
-        var sourceRootFolderPath = "/volume/case/123/documents";
-        var expectedStripped = "documents";
+        var netappFolderPath = "/thunderstruck/evidence/documents";
+        var sourceRootFolderPath = "/thunderstruck/evidence/documents/files";
+        var expectedStripped = "files";
 
         var reqMock = CreateHttpRequestMock();
         var context = new Mock<FunctionContext>().Object;
@@ -444,9 +444,9 @@ public class ListFilesForTransferTests
     public async Task Run_NetAppToEgress_WithSingleSegmentNetAppFolderPath_StripsFullPrefixFromSourceRootFolderPath()
     {
         // Arrange
-        var netappFolderPath = "/volume";
-        var sourceRootFolderPath = "/volume/documents";
-        var expectedStripped = "documents";
+        var netappFolderPath = "/thunderstruck";
+        var sourceRootFolderPath = "/thunderstruck/evidence";
+        var expectedStripped = "evidence";
 
         var reqMock = CreateHttpRequestMock();
         var context = new Mock<FunctionContext>().Object;
@@ -484,7 +484,7 @@ public class ListFilesForTransferTests
     public async Task Run_NetAppToEgress_WhenCaseMetadataNotFound_KeepsOriginalSourceRootFolderPath()
     {
         // Arrange
-        var sourceRootFolderPath = "/volume/case/123/documents";
+        var sourceRootFolderPath = "/thunderstruck/evidence/documents";
 
         var reqMock = CreateHttpRequestMock();
         var context = new Mock<FunctionContext>().Object;
@@ -516,6 +516,92 @@ public class ListFilesForTransferTests
         var okResult = Assert.IsType<OkObjectResult>(result);
         var filesResult = Assert.IsType<FilesForTransferResult>(okResult.Value);
         Assert.Equal(sourceRootFolderPath, filesResult.SourceRootFolderPath);
+    }
+
+    [Fact]
+    public async Task Run_NetAppToEgress_WhenCaseMetadataNotFound_LogsWarning()
+    {
+        // Arrange
+        var sourceRootFolderPath = "/thunderstruck/evidence/documents";
+
+        var reqMock = CreateHttpRequestMock();
+        var context = new Mock<FunctionContext>().Object;
+
+        var validationResult = new ValidatableRequest<ListFilesForTransferRequest>
+        {
+            IsValid = true,
+            Value = CreateRequest(TransferDirection.NetAppToEgress, sourceRootFolderPath: sourceRootFolderPath),
+        };
+
+        _requestValidatorMock.Setup(v => v.GetJsonBody<ListFilesForTransferRequest, ListFilesForTransferValidator>(It.IsAny<HttpRequest>()))
+            .ReturnsAsync(validationResult);
+
+        _storageClientFactoryMock.Setup(f => f.GetSourceClientForDirection(TransferDirection.NetAppToEgress))
+            .Returns(_storageClientMock.Object);
+
+        _storageClientMock.Setup(c => c.ListFilesForTransferAsync(
+            It.IsAny<List<TransferEntityDto>>(), _testWorkspaceId, _testCaseId, null, null))
+            .ReturnsAsync(new List<FileTransferInfo>());
+
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForCaseIdAsync(_testCaseId))
+            .ReturnsAsync((CaseMetadata?)null);
+
+        // Act
+        await _function.Run(reqMock.Object, context);
+
+        // Assert
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Could not retrieve NetApp folder path for case ID {_testCaseId}")),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_NetAppToEgress_WhenNetappFolderPathIsNull_LogsWarning()
+    {
+        // Arrange
+        var sourceRootFolderPath = "/thunderstruck/evidence/documents";
+
+        var reqMock = CreateHttpRequestMock();
+        var context = new Mock<FunctionContext>().Object;
+
+        var validationResult = new ValidatableRequest<ListFilesForTransferRequest>
+        {
+            IsValid = true,
+            Value = CreateRequest(TransferDirection.NetAppToEgress, sourceRootFolderPath: sourceRootFolderPath),
+        };
+
+        _requestValidatorMock.Setup(v => v.GetJsonBody<ListFilesForTransferRequest, ListFilesForTransferValidator>(It.IsAny<HttpRequest>()))
+            .ReturnsAsync(validationResult);
+
+        _storageClientFactoryMock.Setup(f => f.GetSourceClientForDirection(TransferDirection.NetAppToEgress))
+            .Returns(_storageClientMock.Object);
+
+        _storageClientMock.Setup(c => c.ListFilesForTransferAsync(
+            It.IsAny<List<TransferEntityDto>>(), _testWorkspaceId, _testCaseId, null, null))
+            .ReturnsAsync(new List<FileTransferInfo>());
+
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForCaseIdAsync(_testCaseId))
+            .ReturnsAsync(new CaseMetadata { CaseId = _testCaseId, NetappFolderPath = null });
+
+        // Act
+        await _function.Run(reqMock.Object, context);
+
+        // Assert
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Could not retrieve NetApp folder path for case ID {_testCaseId}")),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 
     private Mock<HttpRequest> CreateHttpRequestMock()
