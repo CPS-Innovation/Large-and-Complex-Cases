@@ -1,5 +1,6 @@
 using AutoFixture;
 using AutoFixture.AutoMoq;
+using CPS.ComplexCases.Common.Enums;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.Data.Models.Requests;
@@ -438,6 +439,218 @@ public class CaseMetadataServiceTests
         // Act & Assert
         var exception = await Assert.ThrowsAsync<Exception>(
             () => _service.ClearActiveTransferIdAsync(transferId));
+
+        Assert.Same(expectedException, exception);
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.Is<Exception>(ex => ex == expectedException),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ClearNetAppFolderPathAsync_WhenNoMetadataExists_ReturnsNull()
+    {
+        // Arrange
+        var caseId = _fixture.Create<int>();
+
+        _repositoryMock
+            .Setup(r => r.GetByCaseIdAsync(caseId))
+            .ReturnsAsync((CaseMetadata?)null);
+
+        // Act
+        var result = await _service.ClearNetAppFolderPathAsync(caseId);
+
+        // Assert
+        Assert.Equal(CaseMetadataState.NoCaseMetadataFound, result.State);
+
+        _repositoryMock.Verify(
+            r => r.UpdateAsync(It.IsAny<CaseMetadata>()),
+            Times.Never);
+
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"No metadata found for case {caseId} to clear NetApp folder path")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ClearNetAppFolderPathAsync_WhenActiveTransferExists_ReturnsTransferIsActive()
+    {
+        // Arrange
+        var caseId = _fixture.Create<int>();
+        var existingMetadata = new CaseMetadata
+        {
+            CaseId = caseId,
+            ActiveTransferId = Guid.NewGuid(),
+            NetappFolderPath = "/some/path"
+        };
+
+        _repositoryMock
+            .Setup(r => r.GetByCaseIdAsync(caseId))
+            .ReturnsAsync(existingMetadata);
+
+        // Act
+        var result = await _service.ClearNetAppFolderPathAsync(caseId);
+
+        // Assert
+        Assert.Equal(CaseMetadataState.TransferIsActive, result.State);
+    }
+
+    [Fact]
+    public async Task ClearNetAppFolderPathAsync_WhenActiveTransferExists_DoesNotCallUpdate()
+    {
+        // Arrange
+        var caseId = _fixture.Create<int>();
+        var existingMetadata = new CaseMetadata
+        {
+            CaseId = caseId,
+            ActiveTransferId = Guid.NewGuid(),
+            NetappFolderPath = "/some/path"
+        };
+
+        _repositoryMock
+            .Setup(r => r.GetByCaseIdAsync(caseId))
+            .ReturnsAsync(existingMetadata);
+
+        // Act
+        await _service.ClearNetAppFolderPathAsync(caseId);
+
+        // Assert
+        _repositoryMock.Verify(
+            r => r.UpdateAsync(It.IsAny<CaseMetadata>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task ClearNetAppFolderPathAsync_WhenNetAppFolderPathIsNull_ReturnsNetAppFolderPathIsNull()
+    {
+        // Arrange
+        var caseId = _fixture.Create<int>();
+        var existingMetadata = new CaseMetadata
+        {
+            CaseId = caseId,
+            ActiveTransferId = null,
+            NetappFolderPath = null
+        };
+
+        _repositoryMock
+            .Setup(r => r.GetByCaseIdAsync(caseId))
+            .ReturnsAsync(existingMetadata);
+
+        // Act
+        var result = await _service.ClearNetAppFolderPathAsync(caseId);
+
+        // Assert
+        Assert.Equal(CaseMetadataState.NetAppFolderPathIsNull, result.State);
+    }
+
+    [Fact]
+    public async Task ClearNetAppFolderPathAsync_WhenNetAppFolderPathIsNull_DoesNotCallUpdate()
+    {
+        // Arrange
+        var caseId = _fixture.Create<int>();
+        var existingMetadata = new CaseMetadata
+        {
+            CaseId = caseId,
+            ActiveTransferId = null,
+            NetappFolderPath = null
+        };
+
+        _repositoryMock
+            .Setup(r => r.GetByCaseIdAsync(caseId))
+            .ReturnsAsync(existingMetadata);
+
+        // Act
+        await _service.ClearNetAppFolderPathAsync(caseId);
+
+        // Assert
+        _repositoryMock.Verify(
+            r => r.UpdateAsync(It.IsAny<CaseMetadata>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task ClearNetAppFolderPathAsync_WhenSuccessful_ReturnsExistingPath()
+    {
+        // Arrange
+        var caseId = _fixture.Create<int>();
+        var existingPath = "/existing/netapp/path";
+        var existingMetadata = new CaseMetadata
+        {
+            CaseId = caseId,
+            ActiveTransferId = null,
+            NetappFolderPath = existingPath
+        };
+
+        _repositoryMock
+            .Setup(r => r.GetByCaseIdAsync(caseId))
+            .ReturnsAsync(existingMetadata);
+
+        _repositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<CaseMetadata>()))
+            .ReturnsAsync(existingMetadata);
+
+        // Act
+        var result = await _service.ClearNetAppFolderPathAsync(caseId);
+
+        // Assert
+        Assert.Equal(CaseMetadataState.Success, result.State);
+        Assert.Equal(existingPath, result.ClearedPath);
+    }
+
+    [Fact]
+    public async Task ClearNetAppFolderPathAsync_WhenSuccessful_ClearsPathAndCallsUpdate()
+    {
+        // Arrange
+        var caseId = _fixture.Create<int>();
+        var existingMetadata = new CaseMetadata
+        {
+            CaseId = caseId,
+            ActiveTransferId = null,
+            NetappFolderPath = "/existing/netapp/path"
+        };
+
+        _repositoryMock
+            .Setup(r => r.GetByCaseIdAsync(caseId))
+            .ReturnsAsync(existingMetadata);
+
+        _repositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<CaseMetadata>()))
+            .ReturnsAsync(existingMetadata);
+
+        // Act
+        await _service.ClearNetAppFolderPathAsync(caseId);
+
+        // Assert
+        _repositoryMock.Verify(
+            r => r.UpdateAsync(It.Is<CaseMetadata>(m =>
+                m.CaseId == caseId &&
+                m.NetappFolderPath == null)),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ClearNetAppFolderPathAsync_WhenRepositoryThrowsException_LogsAndRethrows()
+    {
+        // Arrange
+        var caseId = _fixture.Create<int>();
+        var expectedException = new Exception("Repository error");
+
+        _repositoryMock
+            .Setup(r => r.GetByCaseIdAsync(caseId))
+            .ThrowsAsync(expectedException);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<Exception>(
+            () => _service.ClearNetAppFolderPathAsync(caseId));
 
         Assert.Same(expectedException, exception);
         _loggerMock.Verify(

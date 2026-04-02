@@ -19,6 +19,7 @@ using CPS.ComplexCases.FileTransfer.API.Models.Domain;
 using CPS.ComplexCases.FileTransfer.API.Validators;
 using CPS.ComplexCases.FileTransfer.API.Models.Results;
 using CPS.ComplexCases.Common.Handlers;
+using CPS.ComplexCases.Common.Services;
 
 namespace CPS.ComplexCases.FileTransfer.API.Functions;
 
@@ -27,12 +28,14 @@ public class ListFilesForTransfer(
     IStorageClientFactory storageClientFactory,
     IRequestValidator requestValidator,
     IEgressClient egressClient,
+    ICaseMetadataService caseMetadataService,
     IInitializationHandler initializationHandler)
 {
     private readonly ILogger<ListFilesForTransfer> _logger = logger;
     private readonly IStorageClientFactory _storageClientFactory = storageClientFactory;
     private readonly IRequestValidator _requestValidator = requestValidator;
     private readonly IEgressClient _egressClient = egressClient;
+    private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
     private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
     [Function(nameof(ListFilesForTransfer))]
@@ -131,11 +134,14 @@ public class ListFilesForTransfer(
         {
             if (!string.IsNullOrEmpty(request.Value.SourceRootFolderPath))
             {
-                var slashIndex = request.Value.SourceRootFolderPath.IndexOf('/');
-                if (slashIndex >= 0)
+                var caseMetaData = await _caseMetadataService.GetCaseMetadataForCaseIdAsync(request.Value.CaseId);
+                if (caseMetaData?.NetappFolderPath != null)
                 {
-                    var operationName = request.Value.SourceRootFolderPath[..slashIndex];
-                    result.SourceRootFolderPath = request.Value.SourceRootFolderPath.RemovePathPrefix(operationName);
+                    result.SourceRootFolderPath = request.Value.SourceRootFolderPath.RemovePathPrefix(caseMetaData.NetappFolderPath);
+                }
+                else
+                {
+                    _logger.LogWarning("Could not retrieve NetApp folder path for case ID {CaseId} to calculate relative paths for transfer files with CorrelationId {CorrelationId}", request.Value.CaseId, request.Value.CorrelationId);
                 }
             }
         }
