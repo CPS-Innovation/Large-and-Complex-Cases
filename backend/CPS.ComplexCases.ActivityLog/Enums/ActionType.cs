@@ -14,12 +14,9 @@ namespace CPS.ComplexCases.ActivityLog.Enums
         ConnectionToEgress,
         [AlternateValue("CONNECTION_TO_NETAPP")]
         ConnectionToNetApp,
-<<<<<<< HEAD
         [AlternateValue("MATERIAL_RENAMED")]
         MaterialRenamed
-=======
         [AlternateValue("DISCONNECTION_FROM_NETAPP")]
         DisconnectionFromNetApp
->>>>>>> main
     }
 }
