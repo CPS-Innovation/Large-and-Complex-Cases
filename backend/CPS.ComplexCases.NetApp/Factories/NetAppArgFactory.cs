@@ -167,6 +167,17 @@ public class NetAppArgFactory : INetAppArgFactory
         };
     }
 
+    public PutObjectTaggingArg CreatePutObjectTaggingArg(string bearerToken, string bucketName, string objectKey, Dictionary<string, string> tags)
+    {
+        return new PutObjectTaggingArg
+        {
+            BearerToken = bearerToken,
+            BucketName = bucketName,
+            ObjectKey = objectKey,
+            Tags = tags
+        };
+    }
+
     private static string SetPrefix(string? prefix)
     {
         if (!string.IsNullOrEmpty(prefix))

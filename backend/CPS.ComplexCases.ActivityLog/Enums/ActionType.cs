@@ -13,6 +13,8 @@ namespace CPS.ComplexCases.ActivityLog.Enums
         [AlternateValue("CONNECTION_TO_EGRESS")]
         ConnectionToEgress,
         [AlternateValue("CONNECTION_TO_NETAPP")]
-        ConnectionToNetApp
+        ConnectionToNetApp,
+        [AlternateValue("MATERIAL_RENAMED")]
+        MaterialRenamed
     }
 }

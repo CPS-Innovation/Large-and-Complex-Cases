@@ -65,7 +65,8 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                 IsRetry = input.IsRetry ?? false,
                 UserName = input.UserName,
                 CorrelationId = input.CorrelationId,
-                BearerToken = input.BearerToken
+                BearerToken = input.BearerToken,
+                BucketName = input.BucketName
             };
 
             var entityId = new EntityInstanceId(nameof(TransferEntityState), input.TransferId.ToString());
@@ -240,8 +241,32 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                 allResults.AddRange(retryResults);
             }
 
-            // 3. Delete files if transfer direction is EgressToNetApp and transfer type is Move
-            if (input.TransferDirection == TransferDirection.EgressToNetApp && input.TransferType == TransferType.Move)
+            // 2.5 Tag the renamed file on NetApp with its provenance
+            if (input.TransferDirection == TransferDirection.NetAppToNetApp
+                && input.TransferType == TransferType.Move
+                && input.SourcePaths.Count > 0
+                && allResults.Any(r => r.IsSuccess))
+            {
+                var sourcePath = input.SourcePaths[0];
+                var destKey = $"{input.DestinationPath}/{sourcePath.ModifiedPath}";
+
+                await context.CallActivityAsync(
+                    nameof(TagRenamedMaterial),
+                    new TagRenamedMaterialPayload
+                    {
+                        BearerToken = input.BearerToken,
+                        BucketName = input.BucketName,
+                        DestinationKey = destKey,
+                        OriginalKey = sourcePath.Path,
+                        UserName = input.UserName,
+                        CorrelationId = input.CorrelationId
+                    });
+            }
+
+            // 3. Delete files if transfer type is Move (EgressToNetApp deletes from Egress; NetAppToNetApp deletes source key from NetApp)
+            if ((input.TransferDirection == TransferDirection.EgressToNetApp ||
+                 input.TransferDirection == TransferDirection.NetAppToNetApp)
+                && input.TransferType == TransferType.Move)
             {
                 await context.CallActivityAsync(
                     nameof(DeleteFiles),
@@ -265,11 +290,18 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                 });
 
             // 5. Update activity log
+            var completionActionType = input.TransferDirection == TransferDirection.NetAppToNetApp
+                ? ActivityLog.Enums.ActionType.MaterialRenamed
+                : ActivityLog.Enums.ActionType.TransferCompleted;
+
             await context.CallActivityAsync(
                 nameof(UpdateActivityLog),
                 new UpdateActivityLogPayload
                 {
-                    ActionType = ActivityLog.Enums.ActionType.TransferCompleted,
+                    ActionType = completionActionType,
+                    ResourceType = input.TransferDirection == TransferDirection.NetAppToNetApp
+                        ? ActivityLog.Enums.ResourceType.Material
+                        : null,
                     TransferId = input.TransferId.ToString(),
                     UserName = input.UserName,
                     CorrelationId = input.CorrelationId

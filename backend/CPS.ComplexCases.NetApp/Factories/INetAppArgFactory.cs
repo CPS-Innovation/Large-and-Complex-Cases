@@ -18,5 +18,6 @@ namespace CPS.ComplexCases.NetApp.Factories
         RegisterUserArg CreateRegisterUserArg(string username, string accessToken, Guid s3ServiceUuid);
         RegenerateUserKeysArg CreateRegenerateUserKeysArg(string username, string accessToken, Guid s3ServiceUuid, int sessionDuration);
         DeleteFileOrFolderArg CreateDeleteFileOrFolderArg(string bearerToken, string bucketName, string operationName, string path);
+        PutObjectTaggingArg CreatePutObjectTaggingArg(string bearerToken, string bucketName, string objectKey, Dictionary<string, string> tags);
     }
 }

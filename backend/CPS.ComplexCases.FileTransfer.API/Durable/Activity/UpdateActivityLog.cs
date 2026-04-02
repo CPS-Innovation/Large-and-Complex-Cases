@@ -89,7 +89,7 @@ public class UpdateActivityLog(IActivityLogService activityLogService, ILogger<U
 
         await _activityLogService.CreateActivityLogAsync(
             actionType: payload.ActionType,
-            resourceType: ResourceType.FileTransfer,
+            resourceType: payload.ResourceType ?? ResourceType.FileTransfer,
             resourceId: entity.State.Id.ToString(),
             resourceName: entity.State.Direction.ToString(),
             caseId: entity.State.CaseId,

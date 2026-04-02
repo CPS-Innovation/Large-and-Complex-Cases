@@ -30,4 +30,5 @@ public class TransferEntity
     public string? UserName { get; set; }
     public Guid? CorrelationId { get; set; } = null;
     public required string BearerToken { get; set; }
+    public string? BucketName { get; set; }
 }

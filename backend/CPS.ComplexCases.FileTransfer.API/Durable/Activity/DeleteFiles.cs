@@ -71,7 +71,11 @@ public class DeleteFiles(ITransferEntityHelper transferEntityHelper, IStorageCli
 
         try
         {
-            var result = await storageClient.DeleteFilesAsync(filesToDelete, payload.WorkspaceId);
+            var result = await storageClient.DeleteFilesAsync(
+                filesToDelete,
+                payload.WorkspaceId,
+                entity.State.BearerToken,
+                entity.State.BucketName);
 
             if (result.FailedFiles != null && result.FailedFiles.Count != 0)
             {
@@ -105,7 +109,8 @@ public class DeleteFiles(ITransferEntityHelper transferEntityHelper, IStorageCli
 
     private static readonly HashSet<TransferDirection> AllowedDirections =
     [
-        TransferDirection.EgressToNetApp
+        TransferDirection.EgressToNetApp,
+        TransferDirection.NetAppToNetApp
     ];
 }
 

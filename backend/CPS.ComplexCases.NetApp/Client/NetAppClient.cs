@@ -209,6 +209,11 @@ public class NetAppClient(
             var response = await s3Client.PutObjectAsync(_netAppRequestFactory.UploadObjectRequest(arg));
             return response.HttpStatusCode == HttpStatusCode.OK;
         }
+        catch (AmazonS3Exception ex) when ((int)ex.StatusCode == 423)
+        {
+            _logger.LogWarning(ex, "Upload blocked by SMB lock on {ObjectKey} in bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
+            throw new NetAppLockedException(arg.ObjectKey, ex);
+        }
         catch (AmazonS3Exception ex)
         {
             _logger.LogError(ex, ex.Message, "Failed to upload file {ObjectKey} to bucket {BucketName}.", arg.ObjectKey,
@@ -498,6 +503,11 @@ public class NetAppClient(
                     $"Successfully deleted {successfulDeletionsCount} files from bucket {arg.BucketName}. Deletion failed for {failedDeletionsCount} files. ";
             }
         }
+        catch (AmazonS3Exception ex) when ((int)ex.StatusCode == 423)
+        {
+            _logger.LogWarning(ex, "Delete blocked by SMB lock on {Path} in bucket {BucketName}.", arg.Path, arg.BucketName);
+            throw new NetAppLockedException(arg.Path, ex);
+        }
         catch (AmazonS3Exception ex)
         {
             _logger.LogError(ex, "Failed to delete file or folder {Path} from bucket {BucketName}.", arg.Path,
@@ -526,6 +536,66 @@ public class NetAppClient(
             _logger.LogError(ex, "Failed to get head object metadata for {ObjectKey} in bucket {BucketName}.",
                 arg.ObjectKey,
                 arg.BucketName);
+            throw;
+        }
+    }
+
+    public Task<bool> PutObjectTaggingAsync(PutObjectTaggingArg arg)
+        => ExecuteWithCredentialRetryAsync(() => PutObjectTaggingCoreAsync(arg), nameof(PutObjectTaggingAsync), arg.BucketName);
+
+    private async Task<bool> PutObjectTaggingCoreAsync(PutObjectTaggingArg arg)
+    {
+        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
+        try
+        {
+            var request = new PutObjectTaggingRequest
+            {
+                BucketName = arg.BucketName,
+                Key = arg.ObjectKey,
+                Tagging = new Tagging
+                {
+                    TagSet = arg.Tags.Select(t => new Tag { Key = t.Key, Value = t.Value }).ToList()
+                }
+            };
+
+            var response = await s3Client.PutObjectTaggingAsync(request);
+
+            if (response.HttpStatusCode == HttpStatusCode.OK)
+            {
+                _logger.LogInformation("Successfully tagged object {ObjectKey} in bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
+                return true;
+            }
+
+            _logger.LogWarning("Unexpected status {StatusCode} when tagging object {ObjectKey} in bucket {BucketName}.", response.HttpStatusCode, arg.ObjectKey, arg.BucketName);
+            return false;
+        }
+        catch (AmazonS3Exception ex)
+        {
+            _logger.LogError(ex, "Failed to tag object {ObjectKey} in bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
+            throw;
+        }
+    }
+
+    public Task<Dictionary<string, string>> GetObjectTaggingAsync(GetObjectArg arg)
+        => ExecuteWithCredentialRetryAsync(() => GetObjectTaggingCoreAsync(arg), nameof(GetObjectTaggingAsync), arg.BucketName);
+
+    private async Task<Dictionary<string, string>> GetObjectTaggingCoreAsync(GetObjectArg arg)
+    {
+        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
+        try
+        {
+            var request = new GetObjectTaggingRequest
+            {
+                BucketName = arg.BucketName,
+                Key = arg.ObjectKey
+            };
+
+            var response = await s3Client.GetObjectTaggingAsync(request);
+            return response.Tagging.ToDictionary(t => t.Key, t => t.Value);
+        }
+        catch (AmazonS3Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get tags for object {ObjectKey} in bucket {BucketName}.", arg.ObjectKey, arg.BucketName);
             throw;
         }
     }

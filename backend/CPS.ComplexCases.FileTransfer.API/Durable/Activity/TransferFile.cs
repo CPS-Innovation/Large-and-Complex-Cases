@@ -377,8 +377,8 @@ public class TransferFile(
             await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
 
             string md5Hash = md5?.Hash != null ? Convert.ToBase64String(md5.Hash) : string.Empty;
-            string? filePath = payload.TransferDirection == TransferDirection.EgressToNetApp
-                ? payload.DestinationPath.EnsureTrailingSlash() + payload.SourcePath.Path
+            string? filePath = payload.TransferDirection is TransferDirection.EgressToNetApp or TransferDirection.NetAppToNetApp
+                ? payload.DestinationPath.EnsureTrailingSlash() + sourceFilePath
                 : null;
             var isVerified = await CompleteUpload(destinationClient, session, md5Hash, uploadedEtags,
                 payload.BearerToken, payload.BucketName, filePath);

@@ -192,9 +192,40 @@ public class NetAppStorageClient(
         return filesForTransfer;
     }
 
-    public Task<DeleteFilesResult> DeleteFilesAsync(List<DeletionEntityDto> filesToDelete, string? workspaceId = null, string? BearerToken = null, string? bucketName = null)
+    public async Task<DeleteFilesResult> DeleteFilesAsync(List<DeletionEntityDto> filesToDelete, string? workspaceId = null, string? BearerToken = null, string? bucketName = null)
     {
-        throw new NotImplementedException();
+        var deletedFiles = new List<string>();
+        var failedFiles = new List<FailedFileDeletion>();
+
+        var resolvedBearerToken = BearerToken ?? throw new ArgumentNullException(nameof(BearerToken), "Bearer token is required for NetApp file deletion.");
+        var resolvedBucketName = bucketName ?? throw new ArgumentNullException(nameof(bucketName), "Bucket name is required for NetApp file deletion.");
+
+        foreach (var file in filesToDelete)
+        {
+            try
+            {
+                // operationName is used only in the result message inside DeleteFileOrFolderCoreAsync;
+                // the actual delete uses arg.Path and arg.BucketName.
+                var arg = _netAppArgFactory.CreateDeleteFileOrFolderArg(resolvedBearerToken, resolvedBucketName, string.Empty, file.Path);
+                await _netAppClient.DeleteFileOrFolderAsync(arg);
+                deletedFiles.Add(file.Path);
+            }
+            catch (Exception ex)
+            {
+                failedFiles.Add(new FailedFileDeletion
+                {
+                    FileId = file.FileId ?? file.Path,
+                    Filename = file.Path,
+                    Reason = ex.Message
+                });
+            }
+        }
+
+        return new DeleteFilesResult
+        {
+            DeletedFiles = deletedFiles,
+            FailedFiles = failedFiles
+        };
     }
 
     public async Task UploadFileAsync(string destinationPath, Stream fileStream, long contentLength, string? workspaceId = null, string? relativePath = null, string? sourceRootFolderPath = null, string? bearerToken = null, string? bucketName = null)
