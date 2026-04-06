@@ -53,64 +53,8 @@ stages:
       approvers: ${{ parameters.approvers }}
       agentPool: ${{ parameters.agentPool }}
 
-- stage:  Update_Key_Vault_${{ parameters.environment }}
-  displayName: '${{ parameters.environment }} - Update Key Vault'
-  ${{ if eq(parameters.requireValidation, true) }}:
-    dependsOn: Approve_Deployment_${{ parameters.environment }}
-  ${{ else }}:
-    dependsOn: []
-  variables:
-  - template: ./variables/backend-deploy-vars.yml
-    parameters: 
-      environment: ${{ parameters.environment }}
-  pool: ${{ parameters.agentPool }}
-  jobs:
-    - job: Populate_KV
-      displayName: '${{ parameters.environment }} - Update Key Vault'
-      steps:
-        - checkout: self
-          sparseCheckoutDirectories: devops-pipelines/scripts
-          fetchDepth: 1
-
-        - task: Bash@3
-          displayName: 'Ensure Azure CLI'
-          inputs:
-            targetType: 'inline'
-            script: |
-              echo "Checking if Azure CLI is installed..."
-              
-              # Check if az command exists
-              if command -v az &> /dev/null; then
-                echo "Azure CLI is already installed"
-                az --version
-                exit 0
-              fi
-
-              echo "Azure CLI not found, installing..."
-              bash $(scripts_directory)/installAzureCli.sh   
-
-        - task: AzureCLI@2
-          displayName: '${{ parameters.environment }} - Initialize Key Vault Secrets from Variable Groups'
-          inputs:
-            azureSubscription: ${{ parameters.azureSubscription }}
-            scriptType: 'bash'
-            scriptLocation: 'inlineScript'
-            inlineScript: |
-              bash $(scripts_directory)/populateKV.sh
-          env:
-            KEY_VAULT_NAME: $(keyVaultName)
-            CASE_MANAGEMENT_DATASTORE_CONNECTION: $(CaseManagementDatastoreConnection)
-            EGRESS_OPTIONS_USERNAME: $(EgressOptionsUsername)
-            EGRESS_OPTIONS_PASSWORD: $(EgressOptionsPassword)
-            DDEI_OPTIONS_ACCESS_KEY: $(DDEIOptionsAccessKey)
-            NET_APP_OPTIONS_ROOT_CA_CERT: $(NetAppOptionsRootCaCert)
-            NET_APP_OPTIONS_ISSUING_CA_CERT: $(NetAppOptionsIssuingCaCert)
-            NET_APP_OPTIONS_ISSUING_CA_CERT2: $(NetAppOptionsIssuingCaCert2)
-            FILE_TRANSFER_API_OPTIONS_ACCESS_KEY: $(FileTransferApiOptionsAccessKey)
-
 - stage:  Database_Migration_${{ parameters.environment }}
   displayName: '${{ parameters.environment }} - Database Migration'
-  dependsOn: Update_Key_Vault_${{ parameters.environment }}
   variables:
   - template: ./variables/backend-deploy-vars.yml
     parameters: 
@@ -184,8 +128,10 @@ stages:
   - template: ./variables/backend-deploy-vars.yml
     parameters: 
       environment: ${{ parameters.environment }}
+  - template: ./variables/fa-config-${{parameters.environment}}.yml
   - ${{ if eq(parameters.runPostmanSmokeTest, true) }}:
     - group: lacc-automated-testing-${{ parameters.environment }}
+    - group: lacc-backend-secrets-${{ parameters.environment }}
   pool: ${{ parameters.agentPool }}
   jobs:
     - deployment: Deploy_Main_API
