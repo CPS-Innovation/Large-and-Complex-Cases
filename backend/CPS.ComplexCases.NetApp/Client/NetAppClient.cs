@@ -136,31 +136,14 @@ public class NetAppClient(
 
     private async Task<bool> CreateFolderCoreAsync(CreateFolderArg arg)
     {
-        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
-
-        // S3 does not have a native folder concept. Folders are represented by creating a zero-byte object with a key that ends with a "/".
-        // However, doing so results in an rate-limiting issue with NetApp.
-        // As a workaround, to create a folder, we create an empty object and then delete it immediately after to simulate folder creation.
-        var request = _netAppRequestFactory.CreateFolderRequest(arg);
-        var response = await s3Client.PutObjectAsync(request);
-        if (response.HttpStatusCode != HttpStatusCode.OK)
+        var success = await _netAppS3HttpClient.PutFolderAsync(arg);
+        if (!success)
         {
             _logger.LogWarning(
-                "Failed to create folder {FolderKey} in bucket {BucketName}. HTTP Status Code: {StatusCode}",
-                arg.FolderKey, arg.BucketName, response.HttpStatusCode);
-            return false;
+                "Failed to create folder {FolderKey} in bucket {BucketName}.",
+                arg.FolderKey, arg.BucketName);
         }
-
-        var retryPolicy = GetDeleteFileRetryPolicy(request.Key, arg.BucketName);
-
-        var deleteResponse = await retryPolicy.ExecuteAsync(async () =>
-            await s3Client.DeleteObjectAsync(new DeleteObjectRequest
-            {
-                BucketName = arg.BucketName,
-                Key = request.Key
-            }));
-
-        return deleteResponse.HttpStatusCode == HttpStatusCode.NoContent;
+        return success;
     }
 
     public Task<GetObjectResponse?> GetObjectAsync(GetObjectArg arg)

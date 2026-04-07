@@ -33,6 +33,26 @@ public class NetAppS3HttpClient(HttpClient httpClient, IS3CredentialService s3Cr
         return headObjectResponse;
     }
 
+    public async Task<bool> PutFolderAsync(CreateFolderArg arg)
+    {
+        // Append trailing slash to produce the S3 zero-byte "directory marker" key.
+        // Using a raw HTTP PUT here (rather than the AWS SDK PutObjectAsync) avoids
+        // the rate-limiting issue that StorageGRID/NetApp exhibits when the SDK sends
+        // a trailing-slash PutObject. A single, signed PUT with an empty body is all
+        // the S3 API requires per the StorageGRID PutObject spec.
+        var folderKey = arg.FolderKey.TrimEnd('/') + '/';
+        var key = $"{arg.BucketName}/{folderKey}";
+
+        var request = new HttpRequestMessage(HttpMethod.Put, key)
+        {
+            Content = new ByteArrayContent([])
+        };
+
+        await SignRequest(request, arg.BearerToken, key, string.Empty);
+        var response = await _httpClient.SendAsync(request);
+        return response.IsSuccessStatusCode;
+    }
+
     private async Task SignRequest(HttpRequestMessage request, string bearerToken, string key, string payload)
     {
         var (accessKey, secretKey) = await _s3CredentialService.GetCredentialKeysAsync(bearerToken);
