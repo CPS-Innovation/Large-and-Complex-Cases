@@ -46,7 +46,7 @@ public class CreateNetAppFolder(ILogger<CreateNetAppFolder> logger,
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Forbidden, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Forbidden)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "v1/folders")] HttpRequest req, FunctionContext functionContext)
+    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "v1/netapp/folders")] HttpRequest req, FunctionContext functionContext)
     {
         var context = functionContext.GetRequestContext();
         _initializationHandler.Initialize(context.Username, context.CorrelationId);
@@ -64,8 +64,16 @@ public class CreateNetAppFolder(ILogger<CreateNetAppFolder> logger,
 
         var folderName = folderPath.Contains('/') ? folderPath[(folderPath.LastIndexOf('/') + 1)..] : folderPath;
 
-        var existsArg = _netAppArgFactory.CreateGetObjectArg(context.BearerToken, bucketName, folderPath + "/");
-        var folderExists = await _netAppClient.DoesObjectExistAsync(existsArg);
+        // List the parent directory with a delimiter rather than checking the folder's own prefix directly.
+        // NetApp StorageGRID does not include a key that is
+        // exactly equal to the list prefix in S3Objects, so an empty folder returns KeyCount = 0 when
+        // queried by its own prefix. Listing the parent with delimiter "/" is reliable for both empty
+        // and non-empty folders: the folder marker key "{folderPath}/" always appears in CommonPrefixes
+        // because it contains a "/" after the parent prefix.
+        var parentPath = folderPath.Contains('/') ? folderPath[..folderPath.LastIndexOf('/')] : string.Empty;
+        var listFoldersArg = _netAppArgFactory.CreateListFoldersInBucketArg(context.BearerToken, bucketName, prefix: parentPath);
+        var listFoldersResponse = await _netAppClient.ListFoldersInBucketAsync(listFoldersArg);
+        var folderExists = listFoldersResponse?.Data.FolderData.Any(f => f.Path == folderPath + "/") == true;
 
         if (folderExists)
         {
