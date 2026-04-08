@@ -23,6 +23,7 @@ using CPS.ComplexCases.Egress.Models.Args;
 using CPS.ComplexCases.Egress.Models.Dto;
 using CPS.ComplexCases.Egress.Models.Response;
 using Moq;
+using CPS.ComplexCases.DDEI.Services;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions
 {
@@ -33,6 +34,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         private readonly Mock<IEgressArgFactory> _egressArgFactoryMock;
         private readonly Mock<ICaseMetadataService> _caseMetadataServiceMock;
         private readonly Mock<IActivityLogService> _activityLogServiceMock;
+        private readonly Mock<ICaseNamingService> _caseNamingServiceMock;
         private readonly Mock<IRequestValidator> _requestValidatorMock;
         private readonly Mock<IInitializationHandler> _initializationHandlerMock;
         private readonly Fixture _fixture;
@@ -59,6 +61,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _egressArgFactoryMock = new Mock<IEgressArgFactory>();
             _caseMetadataServiceMock = new Mock<ICaseMetadataService>();
             _activityLogServiceMock = new Mock<IActivityLogService>();
+            _caseNamingServiceMock = new Mock<ICaseNamingService>();
             _requestValidatorMock = new Mock<IRequestValidator>();
             _ddeiClientMock = new Mock<IDdeiClient>();
             _ddeiArgFactoryMock = new Mock<IDdeiArgFactory>();
@@ -71,6 +74,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 _egressArgFactoryMock.Object,
                 _ddeiClientMock.Object,
                 _ddeiArgFactoryMock.Object,
+                _caseNamingServiceMock.Object,
                 _loggerMock.Object,
                 _activityLogServiceMock.Object,
                 _requestValidatorMock.Object,
@@ -163,6 +167,10 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _egressClientMock
                 .Setup(c => c.GrantWorkspacePermission(grantPermissionArg))
                 .Returns(Task.CompletedTask);
+
+            _caseNamingServiceMock
+                .Setup(s => s.GenerateCaseName(caseResponse))
+                .ReturnsAsync(expectedWorkspaceName);
 
             _caseMetadataServiceMock
                 .Setup(s => s.CreateEgressConnectionAsync(It.Is<CreateEgressConnectionDto>(
@@ -283,6 +291,10 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .Setup(c => c.GrantWorkspacePermission(grantPermissionArg))
                 .Returns(Task.CompletedTask);
 
+            _caseNamingServiceMock
+                .Setup(s => s.GenerateCaseName(caseResponse))
+                .ReturnsAsync(expectedWorkspaceName);
+
             _caseMetadataServiceMock
                 .Setup(s => s.CreateEgressConnectionAsync(It.Is<CreateEgressConnectionDto>(
                     dto => dto.CaseId == _caseId && dto.EgressWorkspaceId == _workspaceId)))
@@ -395,6 +407,10 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _ddeiClientMock
                 .Setup(c => c.GetCaseAsync(cmsArg))
                 .ReturnsAsync(caseResponse);
+
+            _caseNamingServiceMock
+                .Setup(s => s.GenerateCaseName(caseResponse))
+                .ReturnsAsync(expectedWorkspaceName);
 
             _egressArgFactoryMock
                 .Setup(f => f.CreateEgressWorkspaceArg(expectedWorkspaceName, _description, _templateId))
