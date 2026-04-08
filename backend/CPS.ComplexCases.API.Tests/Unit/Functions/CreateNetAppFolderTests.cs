@@ -18,7 +18,6 @@ using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
-using CPS.ComplexCases.NetApp.Models.Dto;
 using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions;
@@ -90,23 +89,14 @@ public class CreateNetAppFolderTests
 
     private void SetupNoExistingFolders(string folderPath)
     {
-        var listArg = _fixture.Create<ListFoldersInBucketArg>();
+        var existsArg = _fixture.Create<GetObjectArg>();
         _netAppArgFactoryMock
-            .Setup(f => f.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, null, null, null, folderPath))
-            .Returns(listArg);
+            .Setup(f => f.CreateGetObjectArg(_testBearerToken, _testBucketName, folderPath + "/", null))
+            .Returns(existsArg);
 
         _netAppClientMock
-            .Setup(c => c.ListFoldersInBucketAsync(listArg))
-            .ReturnsAsync(new ListNetAppObjectsDto
-            {
-                Data = new ListNetAppDataDto
-                {
-                    BucketName = _testBucketName,
-                    FolderData = [],
-                    FileData = []
-                },
-                Pagination = new PaginationDto()
-            });
+            .Setup(c => c.DoesObjectExistAsync(existsArg))
+            .ReturnsAsync(false);
     }
 
     // -------------------------------------------------------------------------
@@ -141,7 +131,7 @@ public class CreateNetAppFolderTests
 
         _initializationHandlerMock.Verify(h => h.Initialize(_testUsername, _testCorrelationId, null), Times.Once);
         _securityGroupMetadataServiceMock.Verify(s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()), Times.Never);
-        _netAppClientMock.Verify(c => c.ListFoldersInBucketAsync(It.IsAny<ListFoldersInBucketArg>()), Times.Never);
+        _netAppClientMock.Verify(c => c.DoesObjectExistAsync(It.IsAny<GetObjectArg>()), Times.Never);
         _netAppClientMock.Verify(c => c.CreateFolderAsync(It.IsAny<CreateFolderArg>()), Times.Never);
     }
 
@@ -161,23 +151,14 @@ public class CreateNetAppFolderTests
             .Setup(s => s.GetUserSecurityGroupsAsync(_testBearerToken))
             .ReturnsAsync(_defaultSecurityGroups);
 
-        var listArg = _fixture.Create<ListFoldersInBucketArg>();
+        var existsArg = _fixture.Create<GetObjectArg>();
         _netAppArgFactoryMock
-            .Setup(f => f.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, null, null, null, folderPath))
-            .Returns(listArg);
+            .Setup(f => f.CreateGetObjectArg(_testBearerToken, _testBucketName, folderPath + "/", null))
+            .Returns(existsArg);
 
         _netAppClientMock
-            .Setup(c => c.ListFoldersInBucketAsync(listArg))
-            .ReturnsAsync(new ListNetAppObjectsDto
-            {
-                Data = new ListNetAppDataDto
-                {
-                    BucketName = _testBucketName,
-                    FolderData = [new ListNetAppFolderDataDto { Path = folderPath + "/" }],
-                    FileData = []
-                },
-                Pagination = new PaginationDto()
-            });
+            .Setup(c => c.DoesObjectExistAsync(existsArg))
+            .ReturnsAsync(true);
 
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestFor(dto);
         var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
@@ -196,7 +177,7 @@ public class CreateNetAppFolderTests
     }
 
     [Fact]
-    public async Task Run_WhenListFoldersReturnsNull_DoesNotReturnConflict()
+    public async Task Run_WhenDoesObjectExistReturnsFalse_ProceedsWithCreation()
     {
         // Arrange
         var folderPath = "operation-123/my-folder";
@@ -207,14 +188,14 @@ public class CreateNetAppFolderTests
             .Setup(s => s.GetUserSecurityGroupsAsync(_testBearerToken))
             .ReturnsAsync(_defaultSecurityGroups);
 
-        var listArg = _fixture.Create<ListFoldersInBucketArg>();
+        var existsArg = _fixture.Create<GetObjectArg>();
         _netAppArgFactoryMock
-            .Setup(f => f.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, null, null, null, folderPath))
-            .Returns(listArg);
+            .Setup(f => f.CreateGetObjectArg(_testBearerToken, _testBucketName, folderPath + "/", null))
+            .Returns(existsArg);
 
         _netAppClientMock
-            .Setup(c => c.ListFoldersInBucketAsync(listArg))
-            .ReturnsAsync((ListNetAppObjectsDto?)null);
+            .Setup(c => c.DoesObjectExistAsync(existsArg))
+            .ReturnsAsync(false);
 
         var createArg = _fixture.Create<CreateFolderArg>();
         _netAppArgFactoryMock
@@ -514,7 +495,7 @@ public class CreateNetAppFolderTests
 
         _initializationHandlerMock.Verify(h => h.Initialize(_testUsername, _testCorrelationId, null), Times.Once);
         _securityGroupMetadataServiceMock.Verify(s => s.GetUserSecurityGroupsAsync(_testBearerToken), Times.Once);
-        _netAppClientMock.Verify(c => c.ListFoldersInBucketAsync(It.IsAny<ListFoldersInBucketArg>()), Times.Never);
+        _netAppClientMock.Verify(c => c.DoesObjectExistAsync(It.IsAny<GetObjectArg>()), Times.Never);
         _netAppClientMock.Verify(c => c.CreateFolderAsync(It.IsAny<CreateFolderArg>()), Times.Never);
     }
 
@@ -537,17 +518,13 @@ public class CreateNetAppFolderTests
             .Setup(s => s.GetUserSecurityGroupsAsync(_testBearerToken))
             .ReturnsAsync(securityGroups);
 
-        var listArg = _fixture.Create<ListFoldersInBucketArg>();
+        var existsArg = _fixture.Create<GetObjectArg>();
         _netAppArgFactoryMock
-            .Setup(f => f.CreateListFoldersInBucketArg(_testBearerToken, firstBucketName, null, null, null, folderPath))
-            .Returns(listArg);
+            .Setup(f => f.CreateGetObjectArg(_testBearerToken, firstBucketName, folderPath + "/", null))
+            .Returns(existsArg);
         _netAppClientMock
-            .Setup(c => c.ListFoldersInBucketAsync(listArg))
-            .ReturnsAsync(new ListNetAppObjectsDto
-            {
-                Data = new ListNetAppDataDto { BucketName = firstBucketName, FolderData = [], FileData = [] },
-                Pagination = new PaginationDto()
-            });
+            .Setup(c => c.DoesObjectExistAsync(existsArg))
+            .ReturnsAsync(false);
 
         var createArg = _fixture.Create<CreateFolderArg>();
         _netAppArgFactoryMock

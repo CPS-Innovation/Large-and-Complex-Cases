@@ -1,7 +1,9 @@
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Options;
 using CPS.ComplexCases.Common.Extensions;
+using CPS.ComplexCases.NetApp.Exceptions;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Models.Dto;
@@ -50,6 +52,13 @@ public class NetAppS3HttpClient(HttpClient httpClient, IS3CredentialService s3Cr
 
         await SignRequest(request, arg.BearerToken, key, string.Empty);
         var response = await _httpClient.SendAsync(request);
+
+        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            throw new S3CredentialException(
+                $"HTTP {(int)response.StatusCode} received from NetApp PUT folder '{arg.FolderKey}' in bucket '{arg.BucketName}' — credentials may be expired or invalid.");
+        }
+
         return response.IsSuccessStatusCode;
     }
 

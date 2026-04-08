@@ -73,13 +73,20 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
 
         await _caseMetadataService.CreateNetAppConnectionAsync(netAppConnectionRequest.Value);
 
-        await _activityLogService.CreateActivityLogAsync(
-            ActivityLog.Enums.ActionType.ConnectionToNetApp,
-            ActivityLog.Enums.ResourceType.StorageConnection,
-            netAppConnectionRequest.Value.CaseId,
-            netAppConnectionRequest.Value.NetAppFolderPath,
-            netAppConnectionRequest.Value.NetAppFolderPath,
-            context.Username);
+        try
+        {
+            await _activityLogService.CreateActivityLogAsync(
+                ActivityLog.Enums.ActionType.ConnectionToNetApp,
+                ActivityLog.Enums.ResourceType.StorageConnection,
+                netAppConnectionRequest.Value.CaseId,
+                netAppConnectionRequest.Value.NetAppFolderPath,
+                netAppConnectionRequest.Value.NetAppFolderPath,
+                context.Username);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to write activity log for NetApp connection creation for case {CaseId}.", netAppConnectionRequest.Value.CaseId);
+        }
 
         return new OkResult();
     }

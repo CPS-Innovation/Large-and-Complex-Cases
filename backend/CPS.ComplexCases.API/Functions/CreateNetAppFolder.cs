@@ -64,11 +64,10 @@ public class CreateNetAppFolder(ILogger<CreateNetAppFolder> logger,
 
         var folderName = folderPath.Contains('/') ? folderPath[(folderPath.LastIndexOf('/') + 1)..] : folderPath;
 
-        var listArg = _netAppArgFactory.CreateListFoldersInBucketArg(context.BearerToken, bucketName, null, null, null, folderPath);
-        var existing = await _netAppClient.ListFoldersInBucketAsync(listArg);
+        var existsArg = _netAppArgFactory.CreateGetObjectArg(context.BearerToken, bucketName, folderPath + "/");
+        var folderExists = await _netAppClient.DoesObjectExistAsync(existsArg);
 
-        if (existing?.Data?.FolderData != null &&
-            existing.Data.FolderData.Any(f => f.Path?.TrimEnd('/').Equals(folderPath, StringComparison.OrdinalIgnoreCase) == true))
+        if (folderExists)
         {
             _logger.LogWarning("Folder already exists at path {FolderPath} in bucket {BucketName}.", folderPath, bucketName);
             return new ConflictObjectResult($"A folder already exists at path '{folderPath}'.");

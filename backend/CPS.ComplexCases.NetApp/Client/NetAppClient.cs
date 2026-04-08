@@ -660,5 +660,20 @@ public class NetAppClient(
                 throw new NetAppAccessDeniedException(bucketName, retryEx);
             }
         }
+        catch (S3CredentialException ex)
+        {
+            _logger.LogWarning(ex,
+                "HTTP credential error in {Operation} - invalidating S3 client and retrying once with fresh credentials",
+                operationName);
+            await _s3ClientFactory.InvalidateClientAsync();
+            try
+            {
+                return await operation();
+            }
+            catch (S3CredentialException retryEx)
+            {
+                throw new NetAppAccessDeniedException(bucketName, retryEx);
+            }
+        }
     }
 }

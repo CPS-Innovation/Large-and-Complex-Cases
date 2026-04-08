@@ -1621,6 +1621,49 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         }
 
         [Fact]
+        public async Task CreateFolderAsync_WhenCredentialError_RetriesAndSucceeds()
+        {
+            // Arrange
+            var arg = new CreateFolderArg { BearerToken = BearerToken, BucketName = "bucket", FolderKey = "test-folder" };
+            var callCount = 0;
+
+            _netAppS3HttpClientMock
+                .Setup(x => x.PutFolderAsync(arg))
+                .ReturnsAsync(() =>
+                {
+                    callCount++;
+                    if (callCount == 1)
+                        throw new S3CredentialException("HTTP 403 received — credentials expired.");
+                    return true;
+                });
+
+            // Act
+            var result = await _client.CreateFolderAsync(arg);
+
+            // Assert
+            Assert.True(result);
+            _s3ClientFactoryMock.Verify(x => x.InvalidateClientAsync(), Times.Once);
+            _netAppS3HttpClientMock.Verify(x => x.PutFolderAsync(arg), Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task CreateFolderAsync_WhenCredentialRetryAlsoFails_ThrowsNetAppAccessDeniedException()
+        {
+            // Arrange
+            var arg = new CreateFolderArg { BearerToken = BearerToken, BucketName = "bucket", FolderKey = "test-folder" };
+
+            _netAppS3HttpClientMock
+                .Setup(x => x.PutFolderAsync(arg))
+                .ThrowsAsync(new S3CredentialException("HTTP 403 received — credentials expired."));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<NetAppAccessDeniedException>(() => _client.CreateFolderAsync(arg));
+
+            _s3ClientFactoryMock.Verify(x => x.InvalidateClientAsync(), Times.Once);
+            _netAppS3HttpClientMock.Verify(x => x.PutFolderAsync(arg), Times.Exactly(2));
+        }
+
+        [Fact]
         public async Task ListObjectsInBucketAsync_WhenCredentialError_RetriesAndSucceeds()
         {
             // Arrange
