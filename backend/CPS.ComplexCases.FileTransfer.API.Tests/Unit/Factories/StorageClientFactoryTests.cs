@@ -93,6 +93,18 @@ public class StorageClientFactoryTests : IDisposable
         Assert.Contains("NetAppStorageClient", exception.Message);
     }
 
+    [Fact]
+    public void GetClientsForDirection_WhenDirectionIsNetAppToNetApp_AttemptsToResolveNetAppStorageClient()
+    {
+        // NetAppToNetApp calls GetClient(StorageProvider.NetApp) for both source and destination.
+        // Services are not registered in this test, so we expect InvalidOperationException
+        // whose message references NetAppStorageClient — confirming the correct provider is targeted.
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            _factory.GetClientsForDirection(TransferDirection.NetAppToNetApp));
+
+        Assert.Contains("NetAppStorageClient", exception.Message);
+    }
+
     public void Dispose()
     {
         _serviceProvider?.Dispose();
