@@ -152,13 +152,13 @@ namespace CPS.ComplexCases.API.Tests.Unit.Clients
             };
             var serializedContent = JsonSerializer.Serialize(requestModel);
             var expectedContent = new StringContent(serializedContent, Encoding.UTF8, ContentType.ApplicationJson);
-            var expectedRequest = new HttpRequestMessage(HttpMethod.Post, "v1/netapp/materials/rename")
+            var expectedRequest = new HttpRequestMessage(HttpMethod.Post, "netapp/materials/rename")
             {
                 Content = expectedContent
             };
 
             _requestFactoryMock
-                .Setup(f => f.Create(HttpMethod.Post, "v1/netapp/materials/rename", _correlationId,
+                .Setup(f => f.Create(HttpMethod.Post, "netapp/materials/rename", _correlationId,
                     It.Is<StringContent>(sc => ContentMatches(sc, serializedContent))))
                 .Returns(expectedRequest);
 
@@ -168,7 +168,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Clients
                 .Setup<Task<HttpResponseMessage>>("SendAsync",
                     ItExpr.Is<HttpRequestMessage>(req =>
                         req.Method == HttpMethod.Post &&
-                        req.RequestUri!.ToString().EndsWith("v1/netapp/materials/rename")),
+                        req.RequestUri!.ToString().EndsWith("netapp/materials/rename")),
                     ItExpr.IsAny<CancellationToken>())
                 .ReturnsAsync(expectedResponse);
 
