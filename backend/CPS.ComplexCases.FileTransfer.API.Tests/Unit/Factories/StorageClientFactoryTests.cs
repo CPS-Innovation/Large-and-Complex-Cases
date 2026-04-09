@@ -1,7 +1,12 @@
 using CPS.ComplexCases.Common.Models.Domain.Enums;
+using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 using CPS.ComplexCases.FileTransfer.API.Factories;
+using CPS.ComplexCases.NetApp.Client;
+using CPS.ComplexCases.NetApp.Factories;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Factories;
 
@@ -103,6 +108,30 @@ public class StorageClientFactoryTests : IDisposable
             _factory.GetClientsForDirection(TransferDirection.NetAppToNetApp));
 
         Assert.Contains("NetAppStorageClient", exception.Message);
+    }
+
+    [Fact]
+    public void GetClientsForDirection_ReturnsTwoNetAppStorageClients_WhenDirectionIsNetAppToNetApp()
+    {
+        // Arrange.
+        var services = new ServiceCollection();
+        services.AddSingleton(Mock.Of<INetAppClient>());
+        services.AddSingleton(Mock.Of<INetAppArgFactory>());
+        services.AddSingleton(Mock.Of<ICaseMetadataService>());
+        services.AddSingleton(Mock.Of<INetAppS3HttpClient>());
+        services.AddSingleton(Mock.Of<INetAppS3HttpArgFactory>());
+        services.AddSingleton(Mock.Of<ILogger<NetAppStorageClient>>());
+        services.AddTransient<NetAppStorageClient>();
+
+        using var provider = services.BuildServiceProvider();
+        var factory = new StorageClientFactory(provider);
+
+        // Act
+        var (source, destination) = factory.GetClientsForDirection(TransferDirection.NetAppToNetApp);
+
+        // Assert
+        Assert.IsType<NetAppStorageClient>(source);
+        Assert.IsType<NetAppStorageClient>(destination);
     }
 
     public void Dispose()
