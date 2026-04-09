@@ -314,5 +314,54 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 It.IsAny<string>(),
                 It.IsAny<string>(), null), Times.Never);
         }
+
+        [Fact]
+        public async Task Run_WhenActivityLogThrows_StillReturnsOk()
+        {
+            // Arrange
+            var netAppConnectionRequest = _fixture.Create<CreateNetAppConnectionDto>();
+            var netAppArg = _fixture.Create<ListFoldersInBucketArg>();
+            var netAppResponse = _fixture.Create<ListNetAppObjectsDto>();
+
+            _requestValidatorMock
+                .Setup(x => x.GetJsonBody<CreateNetAppConnectionDto, CreateNetAppConnectionValidator>(It.IsAny<HttpRequest>()))
+                .ReturnsAsync(new ValidatableRequest<CreateNetAppConnectionDto>
+                {
+                    IsValid = true,
+                    Value = netAppConnectionRequest
+                });
+
+            _netAppArgFactoryMock
+                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, netAppConnectionRequest.OperationName, null, 1, null))
+                .Returns(netAppArg);
+
+            _netAppClientMock
+                .Setup(x => x.ListFoldersInBucketAsync(netAppArg))
+                .ReturnsAsync(netAppResponse);
+
+            _caseMetadataServiceMock
+                .Setup(x => x.CreateNetAppConnectionAsync(netAppConnectionRequest))
+                .Returns(Task.CompletedTask);
+
+            _activityLogServiceMock
+                .Setup(x => x.CreateActivityLogAsync(
+                    It.IsAny<ActivityLog.Enums.ActionType>(),
+                    It.IsAny<ActivityLog.Enums.ResourceType>(),
+                    It.IsAny<int>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    null))
+                .ThrowsAsync(new Exception("Activity log unavailable"));
+
+            var request = HttpRequestStubHelper.CreateHttpRequestFor(netAppConnectionRequest);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+            // Act
+            var result = await _function.Run(request, functionContext);
+
+            // Assert — connection creation succeeded; logging failure must not surface as an error
+            Assert.IsType<OkResult>(result);
+        }
     }
 }

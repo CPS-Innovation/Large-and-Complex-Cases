@@ -8,7 +8,6 @@ public interface INetAppRequestFactory
     PutBucketRequest CreateBucketRequest(CreateBucketArg arg);
     ListBucketsRequest ListBucketsRequest(ListBucketsArg arg);
     PutObjectRequest UploadObjectRequest(UploadObjectArg arg);
-    PutObjectRequest CreateFolderRequest(CreateFolderArg arg);
     GetObjectRequest GetObjectRequest(GetObjectArg arg);
     ListObjectsV2Request ListObjectsInBucketRequest(ListObjectsInBucketArg arg);
     ListObjectsV2Request ListFoldersInBucketRequest(ListFoldersInBucketArg arg);
