@@ -34,6 +34,15 @@ public class FileTransferClient(IRequestFactory requestFactory, HttpClient httpC
             $"transfer/{transferId}/status",
             correlationId);
     }
+
+    public async Task<HttpResponseMessage> RenameNetAppMaterialAsync(RenameNetAppMaterialRequest request, Guid correlationId)
+    {
+        return await SendRequestAsync(
+            HttpMethod.Post,
+            "netapp/materials/rename",
+            correlationId,
+            new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, ContentType.ApplicationJson));
+    }
     private async Task<HttpResponseMessage> SendRequestAsync(HttpMethod httpMethod, string requestUri, Guid correlationId, HttpContent? content = null)
     {
         var request = _requestFactory.Create(httpMethod, requestUri, correlationId, content);

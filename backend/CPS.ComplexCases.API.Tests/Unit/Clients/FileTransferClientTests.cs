@@ -137,6 +137,49 @@ namespace CPS.ComplexCases.API.Tests.Unit.Clients
             _requestFactoryMock.VerifyAll();
         }
 
+        [Fact]
+        public async Task RenameNetAppMaterialAsync_SendsCorrectRequest()
+        {
+            // Arrange
+            var requestModel = new RenameNetAppMaterialRequest
+            {
+                CaseId = 42,
+                SourcePath = "materials/case42/document.pdf",
+                DestinationPath = "materials/case42/renamed.pdf",
+                BearerToken = "token",
+                BucketName = "flexgroup4",
+                Username = "user@example.com"
+            };
+            var serializedContent = JsonSerializer.Serialize(requestModel);
+            var expectedContent = new StringContent(serializedContent, Encoding.UTF8, ContentType.ApplicationJson);
+            var expectedRequest = new HttpRequestMessage(HttpMethod.Post, "v1/netapp/materials/rename")
+            {
+                Content = expectedContent
+            };
+
+            _requestFactoryMock
+                .Setup(f => f.Create(HttpMethod.Post, "v1/netapp/materials/rename", _correlationId,
+                    It.Is<StringContent>(sc => ContentMatches(sc, serializedContent))))
+                .Returns(expectedRequest);
+
+            var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK);
+            _httpMessageHandlerMock
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>("SendAsync",
+                    ItExpr.Is<HttpRequestMessage>(req =>
+                        req.Method == HttpMethod.Post &&
+                        req.RequestUri!.ToString().EndsWith("v1/netapp/materials/rename")),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(expectedResponse);
+
+            // Act
+            var result = await _client.RenameNetAppMaterialAsync(requestModel, _correlationId);
+
+            // Assert
+            Assert.Equal(expectedResponse, result);
+            _requestFactoryMock.VerifyAll();
+        }
+
         private static bool ContentMatches(StringContent content, string expectedContent)
         {
             var actualContent = content.ReadAsStringAsync().GetAwaiter().GetResult();
