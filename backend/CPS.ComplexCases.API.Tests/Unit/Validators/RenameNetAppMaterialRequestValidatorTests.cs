@@ -81,6 +81,28 @@ public class RenameNetAppMaterialRequestValidatorTests
             .WithErrorMessage("DestinationPath must not contain path traversal sequences ('..').");
     }
 
+    [Fact]
+    public void Should_Have_Error_When_SourcePath_Ends_With_Slash()
+    {
+        var request = CreateValidRequest();
+        request.SourcePath = "materials/case42/";
+
+        var result = _validator.TestValidate(request);
+        result.ShouldHaveValidationErrorFor(x => x.SourcePath)
+            .WithErrorMessage("SourcePath must not end with '/' (must be a file path, not a folder).");
+    }
+
+    [Fact]
+    public void Should_Have_Error_When_DestinationPath_Ends_With_Slash()
+    {
+        var request = CreateValidRequest();
+        request.DestinationPath = "materials/case42/";
+
+        var result = _validator.TestValidate(request);
+        result.ShouldHaveValidationErrorFor(x => x.DestinationPath)
+            .WithErrorMessage("DestinationPath must not end with '/' (must be a file path, not a folder).");
+    }
+
     private static RenameNetAppMaterialRequest CreateValidRequest() =>
         new()
         {

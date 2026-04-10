@@ -15,13 +15,17 @@ public class RenameNetAppMaterialRequestValidator : AbstractValidator<RenameNetA
             .NotEmpty()
             .WithMessage("SourcePath is required.")
             .Must(p => !p.Contains(".."))
-            .WithMessage("SourcePath must not contain path traversal sequences ('..').");
+            .WithMessage("SourcePath must not contain path traversal sequences ('..').")
+            .Must(p => !p.EndsWith('/'))
+            .WithMessage("SourcePath must not end with '/' (must be a file path, not a folder).");
 
         RuleFor(x => x.DestinationPath)
             .NotEmpty()
             .WithMessage("DestinationPath is required.")
             .Must(p => !p.Contains(".."))
-            .WithMessage("DestinationPath must not contain path traversal sequences ('..').");
+            .WithMessage("DestinationPath must not contain path traversal sequences ('..').")
+            .Must(p => !p.EndsWith('/'))
+            .WithMessage("DestinationPath must not end with '/' (must be a file path, not a folder).");
 
         RuleFor(x => x)
             .Must(x => x.SourcePath != x.DestinationPath)
