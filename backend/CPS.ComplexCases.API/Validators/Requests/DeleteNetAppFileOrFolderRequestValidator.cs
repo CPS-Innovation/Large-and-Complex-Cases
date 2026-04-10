@@ -1,4 +1,4 @@
-using CPS.ComplexCases.Data.Models.Requests;
+using CPS.ComplexCases.NetApp.Models.Requests;
 using FluentValidation;
 
 namespace CPS.ComplexCases.API.Validators.Requests;

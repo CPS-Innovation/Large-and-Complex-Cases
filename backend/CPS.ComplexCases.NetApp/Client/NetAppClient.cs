@@ -1,10 +1,14 @@
 using System.Net;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Amazon.S3;
 using Amazon.S3.Model;
+using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.NetApp.Constants;
+using CPS.ComplexCases.NetApp.Enums;
 using CPS.ComplexCases.NetApp.Exceptions;
 using CPS.ComplexCases.NetApp.Factories;
+using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Models.Dto;
 using CPS.ComplexCases.NetApp.Wrappers;
@@ -15,15 +19,19 @@ namespace CPS.ComplexCases.NetApp.Client;
 
 public class NetAppClient(
     ILogger<NetAppClient> logger,
+    IOptions<NetAppOptions> options,
     IAmazonS3UtilsWrapper amazonS3UtilsWrapper,
     INetAppRequestFactory netAppRequestFactory,
+    INetAppArgFactory netAppArgFactory,
     IS3ClientFactory s3ClientFactory,
     INetAppS3HttpClient netAppS3HttpClient,
     INetAppS3HttpArgFactory netAppS3HttpArgFactory) : INetAppClient
 {
     private readonly ILogger<NetAppClient> _logger = logger;
+    private readonly NetAppOptions _options = options.Value;
     private readonly IAmazonS3UtilsWrapper _amazonS3UtilsWrapper = amazonS3UtilsWrapper;
     private readonly INetAppRequestFactory _netAppRequestFactory = netAppRequestFactory;
+    private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
     private readonly IS3ClientFactory _s3ClientFactory = s3ClientFactory;
     private readonly INetAppS3HttpClient _netAppS3HttpClient = netAppS3HttpClient;
     private readonly INetAppS3HttpArgFactory _netAppS3HttpArgFactory = netAppS3HttpArgFactory;
@@ -553,6 +561,131 @@ public class NetAppClient(
                 arg.BucketName);
             throw;
         }
+    }
+
+    public async Task<SearchResultsDto?> SearchObjectsInBucketAsync(SearchArg arg)
+    {
+        try
+        {
+            var searchTerm = arg.OperationName.EnsureTrailingSlash();
+
+            if (arg.Mode == SearchModes.Prefix)
+            {
+                return await SearchPrefixAsync(arg, searchTerm);
+            }
+
+            return await SearchSubstringAsync(arg, searchTerm);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "HTTP request failed while searching objects in bucket {BucketName}.", arg.BucketName);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to search objects in bucket {BucketName}.", arg.BucketName);
+            throw;
+        }
+    }
+
+    private async Task<SearchResultsDto> SearchPrefixAsync(SearchArg arg, string searchTerm)
+    {
+        if (!string.IsNullOrEmpty(arg.Query))
+        {
+            searchTerm += arg.Query;
+        }
+
+        var listObjectsArg = _netAppArgFactory.CreateListObjectsInBucketArg(
+            arg.BearerToken, arg.BucketName, null, arg.MaxResults, searchTerm, includeDelimiter: true);
+        var response = await ListObjectsInBucketAsync(listObjectsArg);
+
+        if (response == null)
+        {
+            return new SearchResultsDto { Data = [], Truncated = false, TotalScanned = 0 };
+        }
+
+        var searchResults = MapToSearchResultItems(response);
+
+        return new SearchResultsDto
+        {
+            Data = searchResults,
+            Truncated = response.Pagination.NextContinuationToken != null,
+            TotalScanned = 0,
+        };
+    }
+
+    private async Task<SearchResultsDto> SearchSubstringAsync(SearchArg arg, string searchTerm)
+    {
+        var matchingResults = new List<SearchResultItemDto>();
+        var totalScanned = 0;
+        var truncated = false;
+        string? continuationToken = null;
+
+        do
+        {
+            var remaining = _options.SearchMaxSubstringScanItems - totalScanned;
+            var pageSize = Math.Min(arg.MaxResults, remaining);
+
+            var listObjectsArg = _netAppArgFactory.CreateListObjectsInBucketArg(
+                arg.BearerToken, arg.BucketName, continuationToken, pageSize, arg.OperationName, includeDelimiter: false);
+            var response = await ListObjectsInBucketAsync(listObjectsArg);
+
+            if (response == null)
+            {
+                break;
+            }
+
+            totalScanned += response.Pagination.KeyCount;
+            continuationToken = response.Pagination.NextContinuationToken;
+
+            var pageItems = MapToSearchResultItems(response);
+
+            if (!string.IsNullOrEmpty(arg.Query))
+            {
+                pageItems = pageItems
+                    .Where(x => x.Key.Contains(arg.Query, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            matchingResults.AddRange(pageItems);
+
+            if (totalScanned >= _options.SearchMaxSubstringScanItems && continuationToken != null)
+            {
+                truncated = true;
+                break;
+            }
+        }
+        while (continuationToken != null);
+
+        return new SearchResultsDto
+        {
+            Data = matchingResults,
+            Truncated = truncated,
+            TotalScanned = totalScanned,
+        };
+    }
+
+    private static List<SearchResultItemDto> MapToSearchResultItems(ListNetAppObjectsDto response)
+    {
+        var results = response.Data.FileData.Select(x => new SearchResultItemDto
+        {
+            Key = x.Path,
+            Type = S3SearchResultTypes.File,
+            LastModified = x.LastModified,
+            Size = x.Filesize
+        }).ToList();
+
+        results.AddRange(response.Data.FolderData
+            .Where(x => !string.IsNullOrEmpty(x.Path))
+            .Select(x => new SearchResultItemDto
+            {
+                Key = x.Path!,
+                Type = S3SearchResultTypes.Folder,
+                LastModified = null,
+                Size = null
+            }));
+
+        return results;
     }
 
     private async Task<IEnumerable<string>> ListAllObjectKeysForDeletionAsync(string bucketName, string prefix,
