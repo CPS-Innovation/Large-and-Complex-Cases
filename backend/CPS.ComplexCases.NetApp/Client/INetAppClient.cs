@@ -21,5 +21,6 @@ namespace CPS.ComplexCases.NetApp.Client
         Task<string> DeleteFileOrFolderAsync(DeleteFileOrFolderArg arg);
         Task<HeadObjectResponseDto> GetHeadObjectMetadataAsync(GetObjectArg arg);
         Task<SearchResultsDto?> SearchObjectsInBucketAsync(SearchArg arg);
+        Task AbortMultipartUploadAsync(AbortMultipartUploadArg arg);
     }
 }

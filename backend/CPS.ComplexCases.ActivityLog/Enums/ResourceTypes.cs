@@ -6,6 +6,7 @@ namespace CPS.ComplexCases.ActivityLog.Enums
         TransferItem,
         TransferItemPart,
         StorageConnection,
-        NetAppFolder
+        NetAppFolder,
+        Material
     }
 }

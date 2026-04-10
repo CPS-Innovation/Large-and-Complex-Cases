@@ -429,6 +429,48 @@ public class NetAppClient(
         }
     }
 
+    public async Task AbortMultipartUploadAsync(AbortMultipartUploadArg arg)
+    {
+        try
+        {
+            await AbortMultipartUploadCoreAsync(arg);
+        }
+        catch (AmazonS3Exception ex) when (IsCredentialError(ex))
+        {
+            _logger.LogWarning(ex,
+                "Credential error in AbortMultipartUploadAsync (ErrorCode={ErrorCode}) - invalidating and retrying once",
+                ex.ErrorCode);
+            await _s3ClientFactory.InvalidateClientAsync();
+            try
+            {
+                await AbortMultipartUploadCoreAsync(arg);
+            }
+            catch (AmazonS3Exception retryEx)
+            {
+                _logger.LogError(retryEx,
+                    "Failed to abort multipart upload {UploadId} for {ObjectKey} after credential refresh.",
+                    arg.UploadId, arg.ObjectKey);
+            }
+        }
+        catch (AmazonS3Exception ex)
+        {
+            _logger.LogError(ex,
+                "Failed to abort multipart upload {UploadId} for {ObjectKey}.",
+                arg.UploadId, arg.ObjectKey);
+        }
+    }
+
+    private async Task AbortMultipartUploadCoreAsync(AbortMultipartUploadArg arg)
+    {
+        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
+        await s3Client.AbortMultipartUploadAsync(new AbortMultipartUploadRequest
+        {
+            BucketName = arg.BucketName,
+            Key = arg.ObjectKey,
+            UploadId = arg.UploadId
+        });
+    }
+
     public async Task<bool> DoesObjectExistAsync(GetObjectArg arg)
     {
         var response = await GetHeadObjectMetadataAsync(arg);

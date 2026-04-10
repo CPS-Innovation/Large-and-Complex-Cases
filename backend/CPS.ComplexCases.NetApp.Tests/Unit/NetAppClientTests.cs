@@ -2077,7 +2077,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             Assert.Single(result!.Data);
             _netAppArgFactoryMock.Verify(
                 f => f.CreateListObjectsInBucketArg(BearerToken, BucketName, null, 100, "test-operation/", true),
-                Times.Once);
+                        Times.Once);
         }
 
         [Fact]
@@ -2421,6 +2421,89 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to search objects in bucket")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task AbortMultipartUploadAsync_ReturnsSuccessfully_OnHappyPath()
+        {
+            // Arrange
+            var arg = new AbortMultipartUploadArg
+            { BearerToken = BearerToken, BucketName = BucketName, ObjectKey = "file.txt", UploadId = "upload-id" };
+
+            _amazonS3Mock
+                .Setup(s => s.AbortMultipartUploadAsync(It.IsAny<AbortMultipartUploadRequest>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AbortMultipartUploadResponse());
+
+            // Act
+            var ex = await Record.ExceptionAsync(() => _client.AbortMultipartUploadAsync(arg));
+
+            // Assert
+            Assert.Null(ex);
+            _amazonS3Mock.Verify(
+                s => s.AbortMultipartUploadAsync(It.IsAny<AbortMultipartUploadRequest>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task AbortMultipartUploadAsync_DoesNotThrow_OnAmazonS3Exception()
+        {
+            // Arrange
+            var arg = new AbortMultipartUploadArg
+            { BearerToken = BearerToken, BucketName = BucketName, ObjectKey = "file.txt", UploadId = "upload-id" };
+
+            _amazonS3Mock
+                .Setup(s => s.AbortMultipartUploadAsync(It.IsAny<AbortMultipartUploadRequest>(),
+                    It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new AmazonS3Exception("NoSuchUpload")
+                { StatusCode = HttpStatusCode.NotFound, ErrorCode = "NoSuchUpload" });
+
+            // Act — abort is best-effort; the method must not propagate the exception
+            var ex = await Record.ExceptionAsync(() => _client.AbortMultipartUploadAsync(arg));
+
+            // Assert
+            Assert.Null(ex);
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v != null && v!.ToString()!.Contains("Failed to abort multipart upload")),
+                    It.IsAny<AmazonS3Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task AbortMultipartUploadAsync_WhenCredentialError_InvalidatesAndRetries()
+        {
+            // Arrange
+            var arg = new AbortMultipartUploadArg
+            { BearerToken = BearerToken, BucketName = BucketName, ObjectKey = "file.txt", UploadId = "upload-id" };
+
+            var callCount = 0;
+            _amazonS3Mock
+                .Setup(s => s.AbortMultipartUploadAsync(It.IsAny<AbortMultipartUploadRequest>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() =>
+                {
+                    callCount++;
+                    if (callCount == 1)
+                        throw new AmazonS3Exception("The AWS access key ID you provided does not exist in our records.")
+                        { StatusCode = HttpStatusCode.Forbidden, ErrorCode = S3ErrorCodes.InvalidAccessKeyId };
+                    return new AbortMultipartUploadResponse();
+                });
+
+            // Act
+            var ex = await Record.ExceptionAsync(() => _client.AbortMultipartUploadAsync(arg));
+
+            // Assert
+            Assert.Null(ex);
+            _s3ClientFactoryMock.Verify(x => x.InvalidateClientAsync(), Times.Once);
+            _amazonS3Mock.Verify(
+                s => s.AbortMultipartUploadAsync(It.IsAny<AbortMultipartUploadRequest>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Exactly(2));
         }
 
         private static SearchArg CreateSearchArg(SearchModes mode, string? query = null, int maxResults = 100)
