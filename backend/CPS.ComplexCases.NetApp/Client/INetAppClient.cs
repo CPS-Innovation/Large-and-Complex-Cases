@@ -20,5 +20,6 @@ namespace CPS.ComplexCases.NetApp.Client
         Task<bool> DoesObjectExistAsync(GetObjectArg arg);
         Task<string> DeleteFileOrFolderAsync(DeleteFileOrFolderArg arg);
         Task<HeadObjectResponseDto> GetHeadObjectMetadataAsync(GetObjectArg arg);
+        Task<SearchResultsDto?> SearchObjectsInBucketAsync(SearchArg arg);
     }
 }

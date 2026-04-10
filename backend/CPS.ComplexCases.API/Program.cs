@@ -1,5 +1,7 @@
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.ApplicationInsights.WorkerService;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,13 +10,14 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.ApplicationInsights;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
-using ThrottlingTroll;
+using Microsoft.Net.Http.Headers;
 using CPS.ComplexCases.ActivityLog.Extensions;
 using CPS.ComplexCases.API.Extensions;
 using CPS.ComplexCases.API.Middleware;
 using CPS.ComplexCases.API.OpenApi;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Validators;
+using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
@@ -25,9 +28,8 @@ using CPS.ComplexCases.DDEI.Extensions;
 using CPS.ComplexCases.DDEI.Tactical.Extensions;
 using CPS.ComplexCases.Egress.Extensions;
 using CPS.ComplexCases.NetApp.Extensions;
-using System.IdentityModel.Tokens.Jwt;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Net.Http.Headers;
+using FluentValidation;
+using ThrottlingTroll;
 
 // Create a temporary logger for configuration phase
 using var loggerFactory = LoggerFactory.Create(configure => configure.AddConsole());
@@ -201,6 +203,8 @@ var host = new HostBuilder()
         services.AddSingleton<IOpenApiConfigurationOptions, OpenApiConfigurationOptions>();
         services.AddSingleton<IRequestValidator, RequestValidator>();
         services.AddSingleton<ISecurityGroupMetadataService, SecurityGroupMetadataService>();
+
+        services.AddValidatorsFromAssemblyContaining<SearchNetAppFoldersRequestValidator>();
     })
     .Build();
 
