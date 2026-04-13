@@ -60,7 +60,6 @@ test.describe("Egress to NetApp Copy - Multiple Files (50MB x 3)", () => {
     const fileIndices = testData.files.map((_, i) => i);
     await transferTab.selectEgressFiles(fileIndices);
 
-    await transferTab.openTransferDropdown();
     await transferTab.selectAction("Copy");
 
     // Step 7: Confirm transfer

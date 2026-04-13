@@ -8,7 +8,7 @@ export class CaseManagementPage {
   }
 
   async waitForLoad() {
-    await this.page.waitForSelector("h1");
+    await this.page.locator('[role="tablist"]').waitFor({ state: "visible" });
   }
 
   async switchToTab(tabName: "transfer-materials" | "activity-log") {
