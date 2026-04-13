@@ -1,6 +1,4 @@
 variables:
-- name: EgressOptionsUrl
-  value: 'https://cps.egresscloud.com'
 - name: CryptoOptionsKeySizeBytes
   value: '32'
 - name: CryptoOptionsNonceSizeBytes

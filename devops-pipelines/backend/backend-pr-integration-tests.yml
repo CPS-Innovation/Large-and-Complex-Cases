@@ -9,119 +9,119 @@ pr:
       - backend/*
 
 variables:
-- template: ../templates/variables/backend-deploy-vars.yml
-  parameters: 
-    environment: 'dev'
-- template: ../templates/variables/fa-config-dev.yml
-- group: lacc-automated-testing-dev
-- group: lacc-backend-secrets-dev
-- name: buildConfiguration
-  value: 'Release'
-- name: dotNetVersion
-  value: '8.x'
-- name: efVersion
-  value: '8.0.*'
-- name: testResultsDirectory
-  value: '$(Agent.TempDirectory)/TestResults'
+  - template: ../templates/variables/backend-deploy-vars.yml
+    parameters:
+      environment: "dev"
+  - template: ../templates/variables/fa-config-dev.yml
+  - group: lacc-automated-testing-dev
+  - group: lacc-backend-secrets-dev
+  - name: buildConfiguration
+    value: "Release"
+  - name: dotNetVersion
+    value: "8.x"
+  - name: efVersion
+    value: "8.0.*"
+  - name: testResultsDirectory
+    value: "$(Agent.TempDirectory)/TestResults"
 
-pool: 'LACC PreProd Pool'
+pool: "LACC PreProd Pool"
 
 jobs:
-- job: Run_Integration_Tests
-  displayName: 'Run Integration Test'
-  variables:
-    projectDir: 'backend/CPS.ComplexCases.API.Integration.Tests'
-    Egress.Url: $(EgressOptionsUrl)
-    Egress.Username: $(EgressOptionsUsername)
-    Egress.Email: $(EgressEmail)
-    Egress.Password: $(EgressOptionsPassword)
-    Egress.WorkspaceId: $(EgressWorkspaceId)
-    Egress.TestDestinationPath: "integration-tests"
-    DDEI.BaseUrl: $[ replace( variables['DDEIOptionsBaseUrl'], '/api', '' ) ]
-    DDEI.AccessKey: $(DDEIOptionsAccessKey)
-    DDEI.Username: $(CmsUserName)
-    DDEI.Password: $(CmsUserPassword)
-    DDEI.TestCaseId: $(CmsTestCaseId)
-    DDEI.TestUrn: $(CmsTestUrn)
-    DDEI.TestOperationName: $(CmsTestOperationName)
-    DDEI.TestDefendantLastName: $(CmsTestDefendantLastName)
-    DDEI:TestCmsAreaCode: $(CmsTestCmsAreaCode)
-    Azure.TenantId: $(TenantId)
-    Azure.ClientId: $(CallingAppValidAudience)
-    Azure.ClientSecret: $(AadClientSecret)
-    Azure.UserScope: 'api://$(CallingAppValidAudience)/user_impersonation'
-    Azure.TestUserEmail: $(AadUserName)
-    Azure.TestUserPassword: $(AadUserPassword)
-    NetApp.Url: $(NetAppOptionsUrl)
-    NetApp.ClusterUrl: $(NetAppOptionsClusterUrl)
-    NetApp.BucketName: $(NetAppOptionsBucketName)
-    NetApp.S3ServiceUuid: $(NetAppOptionsS3ServiceUuid)
-    NetApp.SessionDurationSeconds: $(NetAppOptionsSessionDurationSeconds)
-    NetApp.PepperVersion: $(NetAppOptionsPepperVersion)
-    NetApp.TestFolderPrefix: 'integration-tests'
-    KeyVault.Url: 'https://$(keyVaultName).vault.azure.net/'
-    ConnectionStrings.CaseManagementDatastoreConnection: $(DbConnectionString)
-    Postgres.AuthMode: $(PostgresAuthMode)
-    Postgres.DbUserName: $(DbUserName)
-  steps:
-    - task: Bash@3
-      displayName: 'Ensure Azure CLI'
-      inputs:
-        targetType: 'inline'
-        script: |
-          echo "Checking if Azure CLI is installed..."
-          
-          # Check if az command exists
-          if command -v az &> /dev/null; then
-            echo "Azure CLI is already installed"
-            az --version
-            exit 0
-          fi
+  - job: Run_Integration_Tests
+    displayName: "Run Integration Test"
+    variables:
+      projectDir: "backend/CPS.ComplexCases.API.Integration.Tests"
+      Egress.Url: $(EgressOptionsUrl)
+      Egress.Username: $(EgressOptionsUsername)
+      Egress.Email: $(EgressEmail)
+      Egress.Password: $(EgressOptionsPassword)
+      Egress.WorkspaceId: $(EgressWorkspaceId)
+      Egress.TestDestinationPath: "integration-tests"
+      DDEI.BaseUrl: $[ replace( variables['DDEIOptionsBaseUrl'], '/api', '' ) ]
+      DDEI.AccessKey: $(DDEIOptionsAccessKey)
+      DDEI.Username: $(CmsUserName)
+      DDEI.Password: $(CmsUserPassword)
+      DDEI.TestCaseId: $(CmsTestCaseId)
+      DDEI.TestUrn: $(CmsTestUrn)
+      DDEI.TestOperationName: $(CmsTestOperationName)
+      DDEI.TestDefendantLastName: $(CmsTestDefendantLastName)
+      DDEI:TestCmsAreaCode: $(CmsTestCmsAreaCode)
+      Azure.TenantId: $(TenantId)
+      Azure.ClientId: $(CallingAppValidAudience)
+      Azure.ClientSecret: $(AadClientSecret)
+      Azure.UserScope: "api://$(CallingAppValidAudience)/user_impersonation"
+      Azure.TestUserEmail: $(AadUserName)
+      Azure.TestUserPassword: $(AadUserPassword)
+      NetApp.Url: $(NetAppOptionsUrl)
+      NetApp.ClusterUrl: $(NetAppOptionsClusterUrl)
+      NetApp.BucketName: $(NetAppOptionsBucketName)
+      NetApp.S3ServiceUuid: $(NetAppOptionsS3ServiceUuid)
+      NetApp.SessionDurationSeconds: $(NetAppOptionsSessionDurationSeconds)
+      NetApp.PepperVersion: $(NetAppOptionsPepperVersion)
+      NetApp.TestFolderPrefix: "integration-tests"
+      KeyVault.Url: "https://$(keyVaultName).vault.azure.net/"
+      ConnectionStrings.CaseManagementDatastoreConnection: $(DbConnectionString)
+      Postgres.AuthMode: $(PostgresAuthMode)
+      Postgres.DbUserName: $(DbUserName)
+    steps:
+      - task: Bash@3
+        displayName: "Ensure Azure CLI"
+        inputs:
+          targetType: "inline"
+          script: |
+            echo "Checking if Azure CLI is installed..."
 
-          echo "Azure CLI not found, installing..."
-          bash $(scripts_directory)/installAzureCli.sh 
-          
-    - task: UseDotNet@2
-      displayName: 'Use .NET SDK'
-      inputs:
-        packageType: 'sdk'
-        version: $(dotNetVersion)
+            # Check if az command exists
+            if command -v az &> /dev/null; then
+              echo "Azure CLI is already installed"
+              az --version
+              exit 0
+            fi
 
-    - task: FileTransform@2
-      displayName: 'Write App Settings to File'
-      inputs:
-        folderPath: '$(projectDir)'
-        enableXmlTransform: false
-        jsonTargetFiles: appsettings.template.json
+            echo "Azure CLI not found, installing..."
+            bash $(scripts_directory)/installAzureCli.sh
 
-    - script: mv $(projectDir)/appsettings.template.json $(projectDir)/appsettings.json
-      displayName: 'Rename Appsettings File'
+      - task: UseDotNet@2
+        displayName: "Use .NET SDK"
+        inputs:
+          packageType: "sdk"
+          version: $(dotNetVersion)
 
-    - task: AzureCLI@2
-      displayName: 'Run Integration Tests'
-      inputs:
-        azureSubscription: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
-        scriptType: bash
-        scriptLocation: inlineScript
-        addSpnToEnvironment: true
-        workingDirectory: '$(Build.SourcesDirectory)'
-        inlineScript: |
-          dotnet test $(projectDir)/CPS.ComplexCases.API.Integration.Tests.csproj \
-            --configuration $(buildConfiguration) \
-            --collect:"XPlat Code Coverage;Format=cobertura" \
-            --settings backend/CodeCoverage.runsettings \
-            --logger "trx;LogFileName=integration-tests.trx" \
-            --results-directory $(testResultsDirectory)
-      
-    - task: PublishTestResults@2
-      inputs:
-        testResultsFormat: 'VSTest'
-        testResultsFiles: '$(testResultsDirectory)/integration-tests.trx'
-      condition: succeededOrFailed()
+      - task: FileTransform@2
+        displayName: "Write App Settings to File"
+        inputs:
+          folderPath: "$(projectDir)"
+          enableXmlTransform: false
+          jsonTargetFiles: appsettings.template.json
 
-    - task: PublishCodeCoverageResults@2
-      displayName: 'Publish Code Coverage'
-      inputs:
-        summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
-        failIfCoverageEmpty: true
-      condition: succeededOrFailed()
+      - script: mv $(projectDir)/appsettings.template.json $(projectDir)/appsettings.json
+        displayName: "Rename Appsettings File"
+
+      - task: AzureCLI@2
+        displayName: "Run Integration Tests"
+        inputs:
+          azureSubscription: "Azure Pipeline: Large and Complex Cases - Pre-Prod"
+          scriptType: bash
+          scriptLocation: inlineScript
+          addSpnToEnvironment: true
+          workingDirectory: "$(Build.SourcesDirectory)"
+          inlineScript: |
+            dotnet test $(projectDir)/CPS.ComplexCases.API.Integration.Tests.csproj \
+              --configuration $(buildConfiguration) \
+              --collect:"XPlat Code Coverage;Format=cobertura" \
+              --settings backend/CodeCoverage.runsettings \
+              --logger "trx;LogFileName=integration-tests.trx" \
+              --results-directory $(testResultsDirectory)
+
+      - task: PublishTestResults@2
+        inputs:
+          testResultsFormat: "VSTest"
+          testResultsFiles: "$(testResultsDirectory)/integration-tests.trx"
+        condition: succeededOrFailed()
+
+      - task: PublishCodeCoverageResults@2
+        displayName: "Publish Code Coverage"
+        inputs:
+          summaryFileLocation: "$(Agent.TempDirectory)/**/coverage.cobertura.xml"
+          failIfCoverageEmpty: true
+        condition: succeededOrFailed()
