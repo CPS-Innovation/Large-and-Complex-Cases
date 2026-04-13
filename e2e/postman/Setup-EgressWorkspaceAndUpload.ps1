@@ -269,7 +269,7 @@ if ($ExistingWorkspaceId) {
     $WorkspaceId = $ExistingWorkspaceId
     if ([string]::IsNullOrEmpty($WorkspaceName)) {
         # Look up workspace name from API
-        $wsDetailResult = $curl --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId" `
+        $wsDetailResult = & $curl --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId" `
             --header "Authorization: Basic $TokenBase64"
         try {
             $wsDetail = $wsDetailResult | ConvertFrom-Json
@@ -290,7 +290,7 @@ if ($ExistingWorkspaceId) {
         $allWorkspaces = @()
         $page = 1
         do {
-            $wsResult = $curl --silent --location "$BaseUrl/api/v1/workspaces/?page=$page" `
+            $wsResult = & $curl --silent --location "$BaseUrl/api/v1/workspaces/?page=$page" `
                 --header "Authorization: Basic $TokenBase64"
             $wsObj = $wsResult | ConvertFrom-Json
             $allWorkspaces += $wsObj.data
@@ -334,7 +334,7 @@ if ($ExistingWorkspaceId) {
         description = "Automation test workspace - Created $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - $FileCount file(s)"
     } | ConvertTo-Json -Compress | Set-Content $bodyFile -Encoding UTF8
 
-    $createResult = $curl --silent --location --request POST "$BaseUrl/api/v1/workspaces/" `
+    $createResult = & $curl --silent --location --request POST "$BaseUrl/api/v1/workspaces/" `
         --header "Authorization: Basic $TokenBase64" `
         --header "Content-Type: application/json" `
         --data "@$bodyFile"
@@ -347,6 +347,7 @@ if ($ExistingWorkspaceId) {
         if ($createObj.id) {
             $WorkspaceId = $createObj.id
             Write-Host "  [OK] Workspace created: $WorkspaceId" -ForegroundColor Green
+
         } else {
             Write-Error "Failed to create workspace: $createResult"
             exit 1
@@ -366,7 +367,7 @@ if ($ExistingWorkspaceId) {
         $bodyFile = Join-Path $env:TEMP "egress_adduser.json"
         $addUserBody | Set-Content $bodyFile -Encoding UTF8
 
-        $addResult = $curl --silent --location --request POST "$BaseUrl/api/v1/workspaces/$WorkspaceId/users/" `
+        $addResult = & $curl --silent --location --request POST "$BaseUrl/api/v1/workspaces/$WorkspaceId/users/" `
             --header "Authorization: Basic $TokenBase64" `
             --header "Content-Type: application/json" `
             --data "@$bodyFile"
@@ -374,7 +375,7 @@ if ($ExistingWorkspaceId) {
         Remove-Item $bodyFile -Force -ErrorAction SilentlyContinue
 
         # Verify user was added
-        $usersResult = $curl --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId/users/" `
+        $usersResult = & $curl --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId/users/" `
             --header "Authorization: Basic $TokenBase64"
 
         if ($usersResult -match $UserEmail) {

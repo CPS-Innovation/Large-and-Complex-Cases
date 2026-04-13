@@ -1,69 +1,89 @@
 <#
 .SYNOPSIS
-    Cleanup Egress Automation Workspace and test files.
+    Tear down Egress artefacts created by automation.
 
 .DESCRIPTION
-    Deletes everything created by the Setup-EgressWorkspaceAndUpload.ps1 script:
-      • Deletes entire workspace (recommended)
-      • OR deletes only uploaded files (optional)
-      • Removes the added admin user (optional)
+    Supports two explicit teardown modes:
+      1. Delete entire workspace (if created by automation)
+      2. Delete specific uploaded files (if workspace already existed)
 
-    Automatically loads:
-      • LCC_EGRESS_BASE_URL
-      • LCC_EGRESS_SERVICE_ACCOUNT_AUTH
+    Script will refuse to run unless an explicit mode is selected.
 
 .PARAMETER WorkspaceId
-    ID of the workspace to delete.
+    Egress workspace ID.
 
-.PARAMETER DeleteFilesOnly
-    If set, only deletes uploaded files, not the workspace.
+.PARAMETER FileIds
+    One or more file IDs to delete (used with -DeleteFiles).
 
-.PARAMETER RemoveUser
-    If set, removes the admin user that was added.
+.PARAMETER DeleteWorkspace
+    Deletes the entire workspace.
 
-.EXAMPLE
-    .\Cleanup-EgressWorkspace.ps1 -WorkspaceId "abc123"
+.PARAMETER DeleteFiles
+    Deletes only the specified files.
 
-.EXAMPLE
-    .\Cleanup-EgressWorkspace.ps1 -WorkspaceId "abc123" -DeleteFilesOnly
+.PARAMETER Force
+    Required safety switch to actually perform deletion.
 #>
 
 param(
     [Parameter(Mandatory=$true)]
-    [string]$WorkspaceId
+    [string]$WorkspaceId,
+
+    [string[]]$FileIds = @(),
+
+    [switch]$DeleteWorkspace,
+    [switch]$DeleteFiles,
+    [switch]$Force
 )
 
-Write-Host ""
-Write-Host "==========================================" -ForegroundColor Cyan
-Write-Host "        EGRESS CLEANUP SCRIPT"              -ForegroundColor Cyan
-Write-Host "==========================================" -ForegroundColor Cyan
-
 # ============================================================
-# Cross-Platform Environment Setup (curl)
+# SAFETY CHECKS
 # ============================================================
-
-# Use curl.exe on Windows)
-$curl = "curl.exe"
-# Otherwise, fallback to curl (Linux/macOS)
-if (-not (Get-Command $curl -ErrorAction SilentlyContinue)) {
-    $curl = "curl"
+if (-not $Force) {
+    Write-Host "ERROR: -Force is required to perform destructive actions." -ForegroundColor Red
+    exit 1
 }
 
-# ==============================================================
-# AUTHENTICATE
-# ==============================================================
+if ($DeleteWorkspace -and $DeleteFiles) {
+    Write-Host "ERROR: Choose either -DeleteWorkspace OR -DeleteFiles, not both." -ForegroundColor Red
+    exit 1
+}
 
-# Load configuration
+if (-not $DeleteWorkspace -and -not $DeleteFiles) {
+    Write-Host "ERROR: Must specify either -DeleteWorkspace or -DeleteFiles." -ForegroundColor Red
+    exit 1
+}
+
+if ($DeleteFiles -and $FileIds.Count -eq 0) {
+    Write-Host "ERROR: -DeleteFiles requires at least one FileId." -ForegroundColor Red
+    exit 1
+}
+
+# ============================================================
+# LOAD CONFIGURATION (same pattern as setup script)
+# ============================================================
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$SecretsFile = Join-Path $ScriptDir "secrets.config.ps1"
+
+if (Test-Path $SecretsFile) {
+    . $SecretsFile
+}
+
 $BaseUrl = $env:LCC_EGRESS_BASE_URL
 $ServiceAccountAuth = $env:LCC_EGRESS_SERVICE_ACCOUNT_AUTH
 
 if (-not $BaseUrl -or -not $ServiceAccountAuth) {
-    Write-Error "Missing environment variables. Ensure LCC_EGRESS_BASE_URL and LCC_EGRESS_SERVICE_ACCOUNT_AUTH are set."
+    Write-Error "Missing Egress configuration."
     exit 1
 }
 
-# Authenticate
-Write-Host "[1/4] Authenticating..." -ForegroundColor Yellow
+$curl = Get-Command curl.exe -ErrorAction SilentlyContinue
+if (-not $curl) { $curl = "curl" }
+
+# ============================================================
+# AUTHENTICATE
+# ============================================================
+Write-Host "[1/3] Authenticating..." -ForegroundColor Yellow
 
 $tokenJson = & $curl --silent --location "$BaseUrl/api/v1/user/auth/" `
     --header "Accept: application/json" `
@@ -71,32 +91,53 @@ $tokenJson = & $curl --silent --location "$BaseUrl/api/v1/user/auth/" `
 
 $tokenObj = $tokenJson | ConvertFrom-Json
 if (-not $tokenObj.token) {
-    Write-Error "Failed to authenticate: $tokenJson"
+    Write-Error "Authentication failed."
     exit 1
 }
 
-$Token = $tokenObj.token
-$TokenBase64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($Token))
-
+$TokenBase64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($tokenObj.token))
 Write-Host "  [OK] Authenticated" -ForegroundColor Green
 
-# ==============================================================
-# DELETE WORKSPACE
-# ==============================================================
+# ============================================================
+# MODE 1: DELETE FILES ONLY
+# ============================================================
+if ($DeleteFiles) {
+    Write-Host "[2/3] Deleting files..." -ForegroundColor Yellow
 
-Write-Host "[4/4] Deleting workspace..." -ForegroundColor Yellow
+    foreach ($fileId in $FileIds) {
+        Write-Host "  Deleting file $fileId" -ForegroundColor Gray
 
-$deleteJson = & $curl --silent --request DELETE `
-    "$BaseUrl/api/v1/workspaces/$WorkspaceId/" `
-    --header "Authorization: Basic $TokenBase64"
+        $result = & $curl --silent --location --request DELETE `
+            "$BaseUrl/api/v1/workspaces/$WorkspaceId/files/$fileId" `
+            --header "Authorization: Basic $TokenBase64"
 
-if ($deleteJson -match '"success"') {
-    Write-Host "  [OK] Workspace deleted" -ForegroundColor Green
-} else {
-    Write-Host "  [WARN] Response: $deleteJson" -ForegroundColor Yellow
+        if ($result -match '"error_code"') {
+            Write-Host "    [WARN] Failed to delete file $fileId" -ForegroundColor Yellow
+        } else {
+            Write-Host "    [OK] Deleted" -ForegroundColor Green
+        }
+    }
+
+    Write-Host "[3/3] File cleanup complete." -ForegroundColor Green
+    exit 0
 }
 
-Write-Host ""
-Write-Host "==========================================" -ForegroundColor Green
-Write-Host " CLEANUP COMPLETE" -ForegroundColor Green
-Write-Host "==========================================" -ForegroundColor Green
+# ============================================================
+# MODE 2: DELETE ENTIRE WORKSPACE
+# ============================================================
+if ($DeleteWorkspace) {
+    Write-Host "[2/3] Deleting workspace $WorkspaceId..." -ForegroundColor Yellow
+
+    $result = & $curl --silent --location --request DELETE `
+        "$BaseUrl/api/v1/workspaces/$WorkspaceId" `
+        --header "Authorization: Basic $TokenBase64"
+
+    if ($result -match '"error_code"') {
+        Write-Error "Workspace deletion failed."
+        exit 1
+    }
+
+    Write-Host "  [OK] Workspace deleted" -ForegroundColor Green
+    Write-Host "[3/3] Teardown complete." -ForegroundColor Green
+    exit 0
+}
