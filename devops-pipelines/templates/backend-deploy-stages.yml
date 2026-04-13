@@ -55,6 +55,10 @@ stages:
 
   - stage: Database_Migration_${{ parameters.environment }}
     displayName: "${{ parameters.environment }} - Database Migration"
+    ${{ if eq(parameters.requireValidation, true) }}:
+      dependsOn: Approve_Deployment_${{ parameters.environment }}
+    ${{ else }}:
+      dependsOn: []
     variables:
       - template: ./variables/backend-deploy-vars.yml
         parameters:
