@@ -130,7 +130,6 @@ $Config = @{
     AzurePassword = if ($AzurePassword) { $AzurePassword } elseif ($env:LCC_AZURE_PASSWORD) { $env:LCC_AZURE_PASSWORD } else { "" }
     CmsUsername   = if ($CmsUsername) { $CmsUsername } elseif ($env:LCC_CMS_USERNAME) { $env:LCC_CMS_USERNAME } else { "" }
     CmsPassword   = if ($CmsPassword) { $CmsPassword } elseif ($env:LCC_CMS_PASSWORD) { $env:LCC_CMS_PASSWORD } else { "" }
-    DdeiBaseUrl   = if ($env:LCC_DDEI_BASE_URL) { $env:LCC_DDEI_BASE_URL } else { "" }
     DdeiAccessKey = if ($env:LCC_DDEI_ACCESS_KEY) { $env:LCC_DDEI_ACCESS_KEY } else { "" }
     DdeiAccessKeyRegCase = if ($env:LCC_DDEI_ACCESS_KEY_REGCASE) { $env:LCC_DDEI_ACCESS_KEY_REGCASE } else { "" }
     BaseUrl       = if ($env:LCC_BASE_URL) { $env:LCC_BASE_URL } else { "" }
@@ -148,7 +147,7 @@ $Config = @{
 # Validate required config
 $missingConfig = @()
 if (-not $Config.TenantId) { $missingConfig += "LCC_TENANT_ID" }
-if (-not $Config.LccApiId) { $missingConfig += "LCC_API_ID" }
+if (-not $Config.lccApiClientId) { $missingConfig += "LCC_API_CLIENT_ID" }
 if (-not $Config.AzureUsername) { $missingConfig += "LCC_AZURE_USERNAME (or -AzureUsername)" }
 if (-not $Config.AzurePassword) { $missingConfig += "LCC_AZURE_PASSWORD (or -AzurePassword)" }
 if (-not $Config.CmsUsername) { $missingConfig += "LCC_CMS_USERNAME (or -CmsUsername)" }
@@ -174,6 +173,8 @@ if (-not $RegisterCase) {
     if (-not $Config.DefaultCaseUrn) { $missingConfig += "LCC_DEFAULT_CASE_URN (required for default mode)" }
     if (-not $Config.DefaultWorkspaceId) { $missingConfig += "LCC_DEFAULT_WORKSPACE_ID (required for default mode)" }
     if (-not $Config.DefaultWorkspaceName) { $missingConfig += "LCC_DEFAULT_WORKSPACE_NAME (required for default mode)" }
+} else {
+    if (-not $Config.CaseApiBaseUrl) { $missingConfig += "LCC_CASE_API_BASE_URL" }
 }
 
 # Warn about optional config that may cause issues if missing
@@ -236,42 +237,18 @@ function Write-Info {
 }
 
 function Check-Newman {
-    $npm = Get-Command npm -ErrorAction SilentlyContinue
-    if (-not $npm) {
-        Write-Err "npm is not installed. Cannot install Newman."
-        return $false
-    }
-
-    $packageInstalled = $false
-
     $newman = Get-Command newman -ErrorAction SilentlyContinue
     if (-not $newman) {
-        Write-Host "Newman not found. Installing..." -ForegroundColor Yellow
-        npm install -g --ignore-scripts newman
-        $packageInstalled = $true
+        Write-Err "Newman is not installed!"
+        Write-Host ""
+        Write-Host "Install Newman with:" -ForegroundColor Yellow
+        Write-Host "  npm install -g newman" -ForegroundColor White
+        Write-Host "  npm install -g newman-reporter-htmlextra" -ForegroundColor White
+        Write-Host ""
+        return $false
     }
-
-    $htmlExtra = Get-Command newman-reporter-htmlextra -ErrorAction SilentlyContinue
-    if (-not $htmlExtra) {
-        Write-Host "newman-reporter-htmlextra not found. Installing..." -ForegroundColor Yellow
-        npm install -g --ignore-scripts newman-reporter-htmlextra
-        $packageInstalled = $true
-    }
-
-    # Re-check: verify installs succeeded
-    $newman = Get-Command newman -ErrorAction SilentlyContinue
-    $htmlExtra = Get-Command newman-reporter-htmlextra -ErrorAction SilentlyContinue
-
-    if ($newman -and $htmlExtra) {
-        if ($packageInstalled) {
-            Write-Host "Newman and required reporters installed successfully." -ForegroundColor Green
-        } else {
-            Write-Host "Newman and reporters already installed." -ForegroundColor Green
-        }
-        return $true
-    }
-    Write-Error "Failed to install Newman or its reporter."
-    return $false
+    Write-Success "Newman found: $($newman.Source)"
+    return $true
 }
 
 function Update-EnvironmentFile {
@@ -574,17 +551,8 @@ if (-not $SkipUpload) {
     Write-Host "  Size: $(if ($SizeMB -gt 0) { "$SizeMB MB" } else { "$SizeGB GB" })"
     Write-Host "  File Count: $FileCount"
     Write-Host ""
-
     
-    $TempFolder = $env:TEMP
-    if ([string]::IsNullOrWhiteSpace($TempFolder)) {
-        $TempFolder = $env:TMPDIR
-    }
-    if ([string]::IsNullOrWhiteSpace($TempFolder)) {
-        $TempFolder = "/tmp"
-    }
-    
-    $tempOutputFile = Join-Path $TempFolder "egress_upload_output_$((Get-Date).Ticks).txt"
+    $tempOutputFile = Join-Path $env:TEMP "egress_upload_output_$((Get-Date).Ticks).txt"
     
     & $UploadScriptPath @uploadArgs *>&1 | Tee-Object -FilePath $tempOutputFile
     
@@ -757,17 +725,11 @@ $additional = [Math]::Max(0, [int][Math]::Ceiling(($totalSizeMB - 100) / 100.0))
 $maxPollAttempts = [Math]::Min(600, 60 + $additional)
 
 $variables = @{
-    "tenantId" = $Config.TenantId
-    "apiClientId" = $Config.ApiClientId
-    "baseUrl" = $Config.BaseUrl
-    "uiUrl" = $Config.uiUrl
-    "caseApiBaseUrl" = $Config.CaseApiBaseUrl
-    "ddeiBaseUrl" = $Config.DdeiBaseUrl
     "egressWorkspaceId" = $EgressWorkspaceId
     "egressWorkspaceName" = $EgressWorkspaceName
     "defendantSurname" = $EgressWorkspaceName
     "registerCaseClientId" = $Config.RegisterCaseClientId
-    "lccApiId" = $Config.LccApiId
+    "lccApiClientId" = $Config.lccApiClientId
     "netappFolderPath" = "Automation-Testing/"
     # NetApp -> Egress copy-back destination base. Collection appends a per-run
     # `e2e-run-<id>/` sub-folder (in 10./[NME] 10. Validate prerequest) -- that

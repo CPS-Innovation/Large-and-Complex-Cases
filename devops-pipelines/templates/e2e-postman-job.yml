@@ -37,21 +37,23 @@ jobs:
     inputs:
       workingDirectory: '$(System.DefaultWorkingDirectory)/e2e/postman'
       filePath: '$(System.DefaultWorkingDirectory)/e2e/postman/Run-E2E-Tests.ps1'
-      arguments: '-SizeMB 100 -StopOnFailure'
+      arguments: '-SizeMB 7 -StopOnFailure'
     env:
-      LCC_UI_URL: "https://lacc-app-ui-spa-${{parameters.environment}}.azurewebsites.net"
-      LCC_API_BASE_URL: "https://fa-lacc-api-${{parameters.environment}}.azurewebsites.net"
+      LCC_BASE_URL: "https://fa-lacc-api-${{parameters.environment}}.azurewebsites.net"
       LCC_TENANT_ID: $(TenantId)
       LCC_API_CLIENT_ID: $(CallingAppValidAudience)
       LCC_AZURE_USERNAME: $(AadUserName)
       LCC_AZURE_PASSWORD: $(AadUserPassword)
       LCC_CMS_USERNAME: $(CmsUserName)
       LCC_CMS_PASSWORD: $(CmsUserPassword)
-      LCC_CASE_API_BASE_URL: "https://fa-cm-api-${{parameters.environment}}.azurewebsites.net"
       LCC_DDEI_BASE_URL: $(DDEIOptionsBaseUrl)
       LCC_DDEI_ACCESS_KEY: $(DDEIOptionsAccessKey)
       LCC_EGRESS_BASE_URL: $(EgressOptionsUrl)
       LCC_EGRESS_SERVICE_ACCOUNT_AUTH: $(EgressServiceAccountAuth)
+      LCC_DEFAULT_CASE_ID: $(CmsTestCaseId)
+      LCC_DEFAULT_CASE_URN: $(CmsTestUrn)
+      LCC_DEFAULT_WORKSPACE_ID: $(EgressWorkspaceId)
+      LCC_DEFAULT_WORKSPACE_NAME: $(CmsTestOperationName)
 
   - script: |
       echo "Moving newman reports to Artifact Staging Directory..."
@@ -80,14 +82,3 @@ jobs:
   - publish: '$(Build.ArtifactStagingDirectory)/html-reports'
     artifact: '${{parameters.environment}}-NewmanReportsHTML'
     condition: succeededOrFailed()
-
-  - task: PowerShell@2
-    displayName: 'Cleanup Egress Test Workspace'
-    condition: eq(variables['isTestWorkspaceCreated'], true)
-    inputs:
-      workingDirectory: '$(System.DefaultWorkingDirectory)/e2e/postman'
-      filePath: '$(System.DefaultWorkingDirectory)/e2e/postman/Teardown-EgressWorkspace.ps1'
-      arguments: '-WorkspaceId $(egressWorkspaceId)'
-    env:
-      LCC_EGRESS_BASE_URL: $(EgressOptionsUrl)
-      LCC_EGRESS_SERVICE_ACCOUNT_AUTH: $(EgressServiceAccountAuth)
