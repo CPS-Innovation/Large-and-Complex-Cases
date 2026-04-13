@@ -701,7 +701,8 @@ public class NetAppClient(
                 BearerToken = bearerToken,
                 BucketName = bucketName,
                 Prefix = prefix.EndsWith('/') ? prefix : prefix + "/",
-                ContinuationToken = continuationToken
+                ContinuationToken = continuationToken,
+                IncludeDelimiter = true
             };
 
             var listResponse = await ListObjectsInBucketAsync(listArg);
