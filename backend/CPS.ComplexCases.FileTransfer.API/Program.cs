@@ -15,6 +15,7 @@ using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.Data.Extensions;
 using CPS.ComplexCases.Egress.Extensions;
+using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
 using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Middleware;
@@ -89,6 +90,7 @@ var host = new HostBuilder()
         services.AddScoped<IStorageClientFactory, StorageClientFactory>();
         services.AddScoped<IRequestValidator, RequestValidator>();
         services.AddScoped<ITransferEntityHelper, TransferEntityHelper>();
+        services.AddScoped<ITransferFile, TransferFile>();
 
         services.AddDurableTaskClient(x => { x.UseGrpc(); });
         // Configure OpenAPI

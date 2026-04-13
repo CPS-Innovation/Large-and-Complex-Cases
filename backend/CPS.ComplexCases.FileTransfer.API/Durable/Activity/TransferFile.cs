@@ -30,7 +30,7 @@ public class TransferFile(
     ILogger<TransferFile> logger,
     IOptions<SizeConfig> sizeConfig,
     IInitializationHandler initializationHandler,
-    ITelemetryClient telemetryClient)
+    ITelemetryClient telemetryClient) : ITransferFile
 {
     private readonly IStorageClientFactory _storageClientFactory = storageClientFactory;
     private readonly ILogger<TransferFile> _logger = logger;
@@ -377,9 +377,14 @@ public class TransferFile(
             await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
 
             string md5Hash = md5?.Hash != null ? Convert.ToBase64String(md5.Hash) : string.Empty;
-            string? filePath = payload.TransferDirection == TransferDirection.EgressToNetApp
-                ? payload.DestinationPath.EnsureTrailingSlash() + payload.SourcePath.Path
-                : null;
+            string? filePath = payload.TransferDirection switch
+            {
+                TransferDirection.EgressToNetApp =>
+                    payload.DestinationPath.EnsureTrailingSlash() + payload.SourcePath.Path,
+                TransferDirection.NetAppToNetApp =>
+                    payload.DestinationPath.EnsureTrailingSlash() + sourceFilePath,
+                _ => null
+            };
             var isVerified = await CompleteUpload(destinationClient, session, md5Hash, uploadedEtags,
                 payload.BearerToken, payload.BucketName, filePath);
 
