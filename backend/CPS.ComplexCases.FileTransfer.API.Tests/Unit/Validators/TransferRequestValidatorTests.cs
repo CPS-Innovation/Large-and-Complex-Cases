@@ -30,7 +30,7 @@ public class TransferRequestValidatorTests
         var result = _validator.TestValidate(request);
 
         result.ShouldHaveValidationErrorFor(x => x.TransferDirection)
-            .WithErrorMessage("TransferDirection must be either EgressToNetApp or NetAppToEgress.");
+            .WithErrorMessage("TransferDirection must be EgressToNetApp, NetAppToEgress, or NetAppToNetApp.");
     }
 
     [Fact]

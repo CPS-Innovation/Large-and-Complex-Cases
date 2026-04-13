@@ -1,0 +1,33 @@
+variables:
+- name: CryptoOptionsKeySizeBytes
+  value: '32'
+- name: CryptoOptionsNonceSizeBytes
+  value: '12'
+- name: CryptoOptionsSaltSizeBytes
+  value: '32'
+- name: CryptoOptionsTagSizeBytes
+  value: '16'
+- name: FileTransferApiOptionsFirstRetryDelaySeconds
+  value: '1'
+- name: FileTransferApiOptionsRetryAttempts
+  value: '2'
+- name: FileTransferPurgeRetentionRetentionDays
+  value: '30'
+- name: FileTransferPurgeRetentionSchedule
+  value: '0 0 2 * * *'
+- name: MaxOrchestratorRetries
+  value: '3'
+- name: NetAppOptionsPepperVersion
+  value: 'v1'
+- name: NetAppOptionsSessionDurationSeconds
+  value: '3600'
+- name: RateLimitingIntervalInSeconds
+  value: '60'
+- name: RateLimitingPermitLimit
+  value: '100'
+- name: SessionTimeoutMinutes
+  value: '60'
+- name: SizeConfigBatchSize
+  value: '10'
+- name: SizeConfigChunkSizeBytes
+  value: '5242880'

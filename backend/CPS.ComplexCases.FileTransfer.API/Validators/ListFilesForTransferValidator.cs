@@ -9,7 +9,7 @@ public class ListFilesForTransferValidator : AbstractValidator<ListFilesForTrans
     {
         RuleFor(x => x.TransferDirection)
             .IsInEnum()
-            .WithMessage("TransferDirection must be either EgressToNetApp or NetAppToEgress.");
+            .WithMessage("TransferDirection must be EgressToNetApp, NetAppToEgress, or NetAppToNetApp.");
 
         RuleFor(x => x.SourcePaths)
             .NotEmpty()

@@ -18,8 +18,8 @@ public class ActivityLogConfiguration : IEntityTypeConfiguration<ActivityLog>
         builder.Property(x => x.ActionType).HasColumnName("action_type").HasMaxLength(50);
         builder.Property(x => x.UserName).HasColumnName("user_name").HasMaxLength(100);
         builder.Property(x => x.ResourceType).HasColumnName("resource_type").HasMaxLength(50);
-        builder.Property(x => x.ResourceId).HasColumnName("resource_id").HasMaxLength(50);
-        builder.Property(x => x.ResourceName).HasColumnName("resource_name").HasMaxLength(100);
+        builder.Property(x => x.ResourceId).HasColumnName("resource_id").HasMaxLength(260);
+        builder.Property(x => x.ResourceName).HasColumnName("resource_name").HasMaxLength(260);
         builder.Property(x => x.Description).HasColumnName("description").HasMaxLength(500);
         builder.Property(x => x.Timestamp).HasColumnName("timestamp").IsRequired();
         builder.Property(x => x.Details).HasColumnName("details").HasColumnType("jsonb");

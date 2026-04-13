@@ -34,6 +34,10 @@ public class StorageClientFactory(IServiceProvider serviceProvider) : IStorageCl
                 GetClient(StorageProvider.NetApp),
                 GetClient(StorageProvider.Egress)
             ),
+            TransferDirection.NetAppToNetApp => (
+                GetClient(StorageProvider.NetApp),
+                GetClient(StorageProvider.NetApp)
+            ),
             _ => throw new ArgumentOutOfRangeException(nameof(direction), $"Unsupported transfer direction: {direction}")
         };
     }

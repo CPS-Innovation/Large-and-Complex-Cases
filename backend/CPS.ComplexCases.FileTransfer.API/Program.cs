@@ -8,13 +8,13 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.ApplicationInsights;
 using CPS.ComplexCases.ActivityLog.Extensions;
-using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.OpenApi;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.Data.Extensions;
 using CPS.ComplexCases.Egress.Extensions;
+using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
 using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Middleware;
@@ -33,11 +33,6 @@ var host = new HostBuilder()
         webApp.UseMiddleware<RequestValidationMiddleware>();
     }) // Adds ASP.NET Core integration
     .ConfigureLogging(options => options.AddApplicationInsights())
-    .ConfigureAppConfiguration((context, config) =>
-    {
-        // Configure Azure Key Vault if KeyVaultUri is provided
-        config.AddKeyVaultIfConfigured(config.Build(), logger);
-    })
     .ConfigureServices((context, services) =>
     {
         // Get configuration for service registrations
@@ -89,6 +84,7 @@ var host = new HostBuilder()
         services.AddScoped<IStorageClientFactory, StorageClientFactory>();
         services.AddScoped<IRequestValidator, RequestValidator>();
         services.AddScoped<ITransferEntityHelper, TransferEntityHelper>();
+        services.AddScoped<ITransferFile, TransferFile>();
 
         services.AddDurableTaskClient(x => { x.UseGrpc(); });
         // Configure OpenAPI

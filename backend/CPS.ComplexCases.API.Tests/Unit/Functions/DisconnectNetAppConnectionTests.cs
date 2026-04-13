@@ -282,5 +282,36 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 null),
                 Times.Never);
         }
+
+        [Fact]
+        public async Task Run_WhenActivityLogThrows_StillReturnsOk()
+        {
+            // Arrange
+            var caseId = _fixture.Create<int>();
+            var folderPath = _fixture.Create<string>();
+            _caseMetadataServiceMock
+                .Setup(x => x.ClearNetAppFolderPathAsync(caseId))
+                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = folderPath });
+
+            _activityLogServiceMock
+                .Setup(x => x.CreateActivityLogAsync(
+                    It.IsAny<ActivityLog.Enums.ActionType>(),
+                    It.IsAny<ActivityLog.Enums.ResourceType>(),
+                    It.IsAny<int>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    null))
+                .ThrowsAsync(new Exception("Activity log unavailable"));
+
+            var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameter(InputParameters.CaseId, caseId.ToString(), _testCorrelationId);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+            // Act
+            var result = await _function.Run(request, functionContext);
+
+            // Assert — disconnection succeeded; logging failure must not surface as an error
+            Assert.IsType<OkResult>(result);
+        }
     }
 }

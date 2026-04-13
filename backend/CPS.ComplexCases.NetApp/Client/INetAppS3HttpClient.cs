@@ -6,4 +6,5 @@ namespace CPS.ComplexCases.NetApp.Client;
 public interface INetAppS3HttpClient
 {
     Task<HeadObjectResponseDto> GetHeadObjectAsync(GetHeadObjectArg arg);
+    Task<bool> PutFolderAsync(CreateFolderArg arg);
 }

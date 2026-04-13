@@ -136,31 +136,14 @@ public class NetAppClient(
 
     private async Task<bool> CreateFolderCoreAsync(CreateFolderArg arg)
     {
-        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
-
-        // S3 does not have a native folder concept. Folders are represented by creating a zero-byte object with a key that ends with a "/".
-        // However, doing so results in an rate-limiting issue with NetApp.
-        // As a workaround, to create a folder, we create an empty object and then delete it immediately after to simulate folder creation.
-        var request = _netAppRequestFactory.CreateFolderRequest(arg);
-        var response = await s3Client.PutObjectAsync(request);
-        if (response.HttpStatusCode != HttpStatusCode.OK)
+        var success = await _netAppS3HttpClient.PutFolderAsync(arg);
+        if (!success)
         {
             _logger.LogWarning(
-                "Failed to create folder {FolderKey} in bucket {BucketName}. HTTP Status Code: {StatusCode}",
-                arg.FolderKey, arg.BucketName, response.HttpStatusCode);
-            return false;
+                "Failed to create folder {FolderKey} in bucket {BucketName}.",
+                arg.FolderKey, arg.BucketName);
         }
-
-        var retryPolicy = GetDeleteFileRetryPolicy(request.Key, arg.BucketName);
-
-        var deleteResponse = await retryPolicy.ExecuteAsync(async () =>
-            await s3Client.DeleteObjectAsync(new DeleteObjectRequest
-            {
-                BucketName = arg.BucketName,
-                Key = request.Key
-            }));
-
-        return deleteResponse.HttpStatusCode == HttpStatusCode.NoContent;
+        return success;
     }
 
     public Task<GetObjectResponse?> GetObjectAsync(GetObjectArg arg)
@@ -438,6 +421,48 @@ public class NetAppClient(
         }
     }
 
+    public async Task AbortMultipartUploadAsync(AbortMultipartUploadArg arg)
+    {
+        try
+        {
+            await AbortMultipartUploadCoreAsync(arg);
+        }
+        catch (AmazonS3Exception ex) when (IsCredentialError(ex))
+        {
+            _logger.LogWarning(ex,
+                "Credential error in AbortMultipartUploadAsync (ErrorCode={ErrorCode}) - invalidating and retrying once",
+                ex.ErrorCode);
+            await _s3ClientFactory.InvalidateClientAsync();
+            try
+            {
+                await AbortMultipartUploadCoreAsync(arg);
+            }
+            catch (AmazonS3Exception retryEx)
+            {
+                _logger.LogError(retryEx,
+                    "Failed to abort multipart upload {UploadId} for {ObjectKey} after credential refresh.",
+                    arg.UploadId, arg.ObjectKey);
+            }
+        }
+        catch (AmazonS3Exception ex)
+        {
+            _logger.LogError(ex,
+                "Failed to abort multipart upload {UploadId} for {ObjectKey}.",
+                arg.UploadId, arg.ObjectKey);
+        }
+    }
+
+    private async Task AbortMultipartUploadCoreAsync(AbortMultipartUploadArg arg)
+    {
+        var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
+        await s3Client.AbortMultipartUploadAsync(new AbortMultipartUploadRequest
+        {
+            BucketName = arg.BucketName,
+            Key = arg.ObjectKey,
+            UploadId = arg.UploadId
+        });
+    }
+
     public async Task<bool> DoesObjectExistAsync(GetObjectArg arg)
     {
         var response = await GetHeadObjectMetadataAsync(arg);
@@ -673,6 +698,21 @@ public class NetAppClient(
                 return await operation();
             }
             catch (AmazonS3Exception retryEx) when (retryEx.ErrorCode == S3ErrorCodes.AccessDenied)
+            {
+                throw new NetAppAccessDeniedException(bucketName, retryEx);
+            }
+        }
+        catch (S3CredentialException ex)
+        {
+            _logger.LogWarning(ex,
+                "HTTP credential error in {Operation} - invalidating S3 client and retrying once with fresh credentials",
+                operationName);
+            await _s3ClientFactory.InvalidateClientAsync();
+            try
+            {
+                return await operation();
+            }
+            catch (S3CredentialException retryEx)
             {
                 throw new NetAppAccessDeniedException(bucketName, retryEx);
             }

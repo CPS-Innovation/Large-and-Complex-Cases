@@ -65,13 +65,20 @@ public class DisconnectNetAppConnection(ILogger<DisconnectNetAppConnection> logg
             return new BadRequestObjectResult($"Case ID {caseId} does not have an active NetApp connection.");
         }
 
-        await _activityLogService.CreateActivityLogAsync(
-            ActivityLog.Enums.ActionType.DisconnectionFromNetApp,
-            ActivityLog.Enums.ResourceType.StorageConnection,
-            caseId,
-            result.ClearedPath!,
-            result.ClearedPath,
-            context.Username);
+        try
+        {
+            await _activityLogService.CreateActivityLogAsync(
+                ActivityLog.Enums.ActionType.DisconnectionFromNetApp,
+                ActivityLog.Enums.ResourceType.StorageConnection,
+                caseId,
+                result.ClearedPath!,
+                result.ClearedPath,
+                context.Username);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to write activity log for NetApp connection disconnection for case {CaseId}.", caseId);
+        }
 
         return new OkResult();
     }

@@ -9,5 +9,7 @@ public enum TransferDirection
     [AlternateValue("Egress -> NetApp")]
     EgressToNetApp,
     [AlternateValue("NetApp -> Egress")]
-    NetAppToEgress
+    NetAppToEgress,
+    [AlternateValue("NetApp -> NetApp")]
+    NetAppToNetApp
 }
