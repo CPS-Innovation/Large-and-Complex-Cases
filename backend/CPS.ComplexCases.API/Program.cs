@@ -18,7 +18,6 @@ using CPS.ComplexCases.API.OpenApi;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Validators;
 using CPS.ComplexCases.API.Validators.Requests;
-using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Services;
@@ -141,11 +140,6 @@ var host = new HostBuilder()
     })
     // ✅ Adds ASP.NET Core integration
     .ConfigureLogging(options => options.AddApplicationInsights())
-    .ConfigureAppConfiguration((context, config) =>
-    {
-        // ✅ Configure Azure Key Vault if KeyVaultUri is provided
-        config.AddKeyVaultIfConfigured(config.Build(), logger);
-    })
     .ConfigureServices((context, services) =>
     {
         // Get configuration for service registrations
