@@ -15,7 +15,7 @@
 # Azure AD Configuration
 $env:LCC_TENANT_ID = "YOUR_AZURE_TENANT_ID"
 $env:LCC_REGISTER_CASE_CLIENT_ID = ""  # Client ID for Register Case API
-$env:LCC_API_ID = ""                    # LCC API Application/Client ID (auth and scope)
+$env:LCC_API_CLIENT_ID = ""                    # LCC API Application/Client ID (auth and scope)
 $env:LCC_API_CLIENT_SECRET = ""         # LCC API Client Secret (for confidential client flows)
 
 # Azure AD User Credentials (for ROPC flow)
