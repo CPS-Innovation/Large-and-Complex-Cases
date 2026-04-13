@@ -124,20 +124,18 @@ if (Test-Path $SecretsFile) {
 
 # Load config with priority: CLI params > env vars > defaults
 $Config = @{
-    BaseUrl       = if ($env:LCC_API_BASE_URL) { $env:LCC_API_BASE_URL } else { "" }
     TenantId      = if ($env:LCC_TENANT_ID) { $env:LCC_TENANT_ID } else { "" }
     RegisterCaseClientId = if ($env:LCC_REGISTER_CASE_CLIENT_ID) { $env:LCC_REGISTER_CASE_CLIENT_ID } else { "" }
     AzureUsername = if ($AzureUsername) { $AzureUsername } elseif ($env:LCC_AZURE_USERNAME) { $env:LCC_AZURE_USERNAME } else { "" }
     AzurePassword = if ($AzurePassword) { $AzurePassword } elseif ($env:LCC_AZURE_PASSWORD) { $env:LCC_AZURE_PASSWORD } else { "" }
     CmsUsername   = if ($CmsUsername) { $CmsUsername } elseif ($env:LCC_CMS_USERNAME) { $env:LCC_CMS_USERNAME } else { "" }
     CmsPassword   = if ($CmsPassword) { $CmsPassword } elseif ($env:LCC_CMS_PASSWORD) { $env:LCC_CMS_PASSWORD } else { "" }
-    DdeiBaseUrl   = if ($env:LCC_DDEI_BASE_URL) { $env:LCC_DDEI_BASE_URL } else { "" }
     DdeiAccessKey = if ($env:LCC_DDEI_ACCESS_KEY) { $env:LCC_DDEI_ACCESS_KEY } else { "" }
     BaseUrl       = if ($env:LCC_BASE_URL) { $env:LCC_BASE_URL } else { "" }
     CaseApiBaseUrl = if ($env:LCC_CASE_API_BASE_URL) { $env:LCC_CASE_API_BASE_URL } else { "" }
     EgressBaseUrl = if ($env:LCC_EGRESS_BASE_URL) { $env:LCC_EGRESS_BASE_URL } else { "" }
     DdeiBaseUrl   = if ($env:LCC_DDEI_BASE_URL) { $env:LCC_DDEI_BASE_URL } else { "" }
-    LccApiId      = if ($env:LCC_API_ID) { $env:LCC_API_ID } else { "" }
+    lccApiClientId      = if ($env:LCC_API_CLIENT_ID) { $env:LCC_API_CLIENT_ID } else { "" }
     LccApiClientSecret = if ($env:LCC_API_CLIENT_SECRET) { $env:LCC_API_CLIENT_SECRET } else { "" }
     DefaultCaseId      = if ($env:LCC_DEFAULT_CASE_ID) { $env:LCC_DEFAULT_CASE_ID } else { "" }
     DefaultCaseUrn     = if ($env:LCC_DEFAULT_CASE_URN) { $env:LCC_DEFAULT_CASE_URN } else { "" }
@@ -147,17 +145,14 @@ $Config = @{
 
 # Validate required config
 $missingConfig = @()
-if (-not $Config.BaseUrl) { $missingConfig += "LCC_API_BASE_URL" }
-if (-not $Config.UiUrl) { $missingConfig += "LCC_UI_URL" }
 if (-not $Config.TenantId) { $missingConfig += "LCC_TENANT_ID" }
-if (-not $Config.LccApiId) { $missingConfig += "LCC_API_ID" }
+if (-not $Config.lccApiClientId) { $missingConfig += "LCC_API_CLIENT_ID" }
 if (-not $Config.AzureUsername) { $missingConfig += "LCC_AZURE_USERNAME (or -AzureUsername)" }
 if (-not $Config.AzurePassword) { $missingConfig += "LCC_AZURE_PASSWORD (or -AzurePassword)" }
 if (-not $Config.CmsUsername) { $missingConfig += "LCC_CMS_USERNAME (or -CmsUsername)" }
 if (-not $Config.CmsPassword) { $missingConfig += "LCC_CMS_PASSWORD (or -CmsPassword)" }
 if (-not $Config.DdeiAccessKey) { $missingConfig += "LCC_DDEI_ACCESS_KEY" }
 if (-not $Config.BaseUrl) { $missingConfig += "LCC_BASE_URL" }
-if (-not $Config.CaseApiBaseUrl) { $missingConfig += "LCC_CASE_API_BASE_URL" }
 if (-not $Config.EgressBaseUrl) { $missingConfig += "LCC_EGRESS_BASE_URL" }
 if (-not $Config.DdeiBaseUrl) { $missingConfig += "LCC_DDEI_BASE_URL" }
 
@@ -167,6 +162,8 @@ if (-not $RegisterCase) {
     if (-not $Config.DefaultCaseUrn) { $missingConfig += "LCC_DEFAULT_CASE_URN (required for default mode)" }
     if (-not $Config.DefaultWorkspaceId) { $missingConfig += "LCC_DEFAULT_WORKSPACE_ID (required for default mode)" }
     if (-not $Config.DefaultWorkspaceName) { $missingConfig += "LCC_DEFAULT_WORKSPACE_NAME (required for default mode)" }
+} else {
+    if (-not $Config.CaseApiBaseUrl) { $missingConfig += "LCC_CASE_API_BASE_URL" }
 }
 
 # Warn about optional config that may cause issues if missing
@@ -228,42 +225,18 @@ function Write-Info {
 }
 
 function Check-Newman {
-    $npm = Get-Command npm -ErrorAction SilentlyContinue
-    if (-not $npm) {
-        Write-Err "npm is not installed. Cannot install Newman."
-        return $false
-    }
-
-    $packageInstalled = $false
-
     $newman = Get-Command newman -ErrorAction SilentlyContinue
     if (-not $newman) {
-        Write-Host "Newman not found. Installing..." -ForegroundColor Yellow
-        npm install -g --ignore-scripts newman
-        $packageInstalled = $true
+        Write-Err "Newman is not installed!"
+        Write-Host ""
+        Write-Host "Install Newman with:" -ForegroundColor Yellow
+        Write-Host "  npm install -g newman" -ForegroundColor White
+        Write-Host "  npm install -g newman-reporter-htmlextra" -ForegroundColor White
+        Write-Host ""
+        return $false
     }
-
-    $htmlExtra = Get-Command newman-reporter-htmlextra -ErrorAction SilentlyContinue
-    if (-not $htmlExtra) {
-        Write-Host "newman-reporter-htmlextra not found. Installing..." -ForegroundColor Yellow
-        npm install -g --ignore-scripts newman-reporter-htmlextra
-        $packageInstalled = $true
-    }
-
-    # Re-check: verify installs succeeded
-    $newman = Get-Command newman -ErrorAction SilentlyContinue
-    $htmlExtra = Get-Command newman-reporter-htmlextra -ErrorAction SilentlyContinue
-
-    if ($newman -and $htmlExtra) {
-        if ($packageInstalled) {
-            Write-Host "Newman and required reporters installed successfully." -ForegroundColor Green
-        } else {
-            Write-Host "Newman and reporters already installed." -ForegroundColor Green
-        }
-        return $true
-    }
-    Write-Error "Failed to install Newman or its reporter."
-    return $false
+    Write-Success "Newman found: $($newman.Source)"
+    return $true
 }
 
 function Update-EnvironmentFile {
@@ -535,17 +508,8 @@ if (-not $SkipUpload) {
     Write-Host "  Size: $(if ($SizeMB -gt 0) { "$SizeMB MB" } else { "$SizeGB GB" })"
     Write-Host "  File Count: $FileCount"
     Write-Host ""
-
     
-    $TempFolder = $env:TEMP
-    if ([string]::IsNullOrWhiteSpace($TempFolder)) {
-        $TempFolder = $env:TMPDIR
-    }
-    if ([string]::IsNullOrWhiteSpace($TempFolder)) {
-        $TempFolder = "/tmp"
-    }
-    
-    $tempOutputFile = Join-Path $TempFolder "egress_upload_output_$((Get-Date).Ticks).txt"
+    $tempOutputFile = Join-Path $env:TEMP "egress_upload_output_$((Get-Date).Ticks).txt"
     
     & $UploadScriptPath @uploadArgs *>&1 | Tee-Object -FilePath $tempOutputFile
     
@@ -632,18 +596,12 @@ else {
 Write-Header "STEP 2: Update Variables"
 
 $variables = @{
-    "tenantId" = $Config.TenantId
-    "apiClientId" = $Config.ApiClientId
-    "baseUrl" = $Config.BaseUrl
-    "uiUrl" = $Config.uiUrl
-    "caseApiBaseUrl" = $Config.CaseApiBaseUrl
-    "ddeiBaseUrl" = $Config.DdeiBaseUrl
     "egressWorkspaceId" = $EgressWorkspaceId
     "egressWorkspaceName" = $EgressWorkspaceName
     "defendantSurname" = $EgressWorkspaceName
     "tenantId" = $Config.TenantId
     "registerCaseClientId" = $Config.RegisterCaseClientId
-    "lccApiId" = $Config.LccApiId
+    "lccApiClientId" = $Config.lccApiClientId
     "netappFolderPath" = "Automation-Testing/"
     "egressDestinationFolder" = "4. Served Evidence/"
     "registerCase" = if ($RegisterCase) { "true" } else { "false" }
@@ -722,8 +680,9 @@ Write-Host ""
 
 foreach ($folder in $foldersToRun) {
     Write-Host ""
+    Write-Host "─────────────────────────────────────────────────────────────" -ForegroundColor DarkGray
     Write-Host "Preparing: $folder" -ForegroundColor Cyan
-    Write-Host ""
+    Write-Host "─────────────────────────────────────────────────────────────" -ForegroundColor DarkGray
     
     # When RegisterCase is set and running multiple folders, export environment
     # from the first run so we can capture the caseId/caseUrn for subsequent runs
