@@ -162,14 +162,21 @@ $MaxFileIdRetries = 10
 $FileIdRetryDelaySeconds = 5
 
 # ============================================================
-# PREREQUISITE CHECK
+# Cross-Platform Environment Setup (Temp + curl)
 # ============================================================
-$curlExe = Get-Command curl.exe -ErrorAction SilentlyContinue
-if (-not $curlExe) {
-    Write-Host "ERROR: curl.exe is not available!" -ForegroundColor Red
-    Write-Host "This script requires curl.exe (not the PowerShell Invoke-WebRequest alias)." -ForegroundColor Yellow
-    Write-Host "curl.exe is included with Windows 10 1803+ and Windows Server 2019+." -ForegroundColor Yellow
-    exit 1
+$TempFolder = $env:TEMP
+if ([string]::IsNullOrWhiteSpace($TempFolder)) {
+    $TempFolder = $env:TMPDIR
+}
+if ([string]::IsNullOrWhiteSpace($TempFolder)) {
+    $TempFolder = "/tmp"
+}
+
+
+$curl = "curl.exe"
+# Otherwise, fallback to curl for Linux/macOS
+if (-not (Get-Command $curl -ErrorAction SilentlyContinue)) {
+    $curl = "curl"
 }
 
 # ============================================================
@@ -213,24 +220,6 @@ $TotalUploadLabel = if ($TotalUploadSize -ge 1GB) {
     "$([Math]::Round($TotalUploadSize / 1GB, 2)) GB"
 } else {
     "$([Math]::Round($TotalUploadSize / 1MB, 2)) MB"
-}
-
-# ============================================================
-# Cross-Platform Environment Setup (Temp + curl)
-# ============================================================
-$TempFolder = $env:TEMP
-if ([string]::IsNullOrWhiteSpace($TempFolder)) {
-    $TempFolder = $env:TMPDIR
-}
-if ([string]::IsNullOrWhiteSpace($TempFolder)) {
-    $TempFolder = "/tmp"
-}
-
-# Use curl.exe on Windows)
-$curl = "curl.exe"
-# Otherwise, fallback to curl (Linux/macOS)
-if (-not (Get-Command $curl -ErrorAction SilentlyContinue)) {
-    $curl = "curl"
 }
 
 # ============================================================
@@ -280,7 +269,7 @@ if ($ExistingWorkspaceId) {
     $WorkspaceId = $ExistingWorkspaceId
     if ([string]::IsNullOrEmpty($WorkspaceName)) {
         # Look up workspace name from API
-        $wsDetailResult = curl.exe --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId" `
+        $wsDetailResult = $curl --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId" `
             --header "Authorization: Basic $TokenBase64"
         try {
             $wsDetail = $wsDetailResult | ConvertFrom-Json
@@ -301,7 +290,7 @@ if ($ExistingWorkspaceId) {
         $allWorkspaces = @()
         $page = 1
         do {
-            $wsResult = curl.exe --silent --location "$BaseUrl/api/v1/workspaces/?page=$page" `
+            $wsResult = $curl --silent --location "$BaseUrl/api/v1/workspaces/?page=$page" `
                 --header "Authorization: Basic $TokenBase64"
             $wsObj = $wsResult | ConvertFrom-Json
             $allWorkspaces += $wsObj.data
@@ -345,7 +334,7 @@ if ($ExistingWorkspaceId) {
         description = "Automation test workspace - Created $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - $FileCount file(s)"
     } | ConvertTo-Json -Compress | Set-Content $bodyFile -Encoding UTF8
 
-    $createResult = curl.exe --silent --location --request POST "$BaseUrl/api/v1/workspaces/" `
+    $createResult = $curl --silent --location --request POST "$BaseUrl/api/v1/workspaces/" `
         --header "Authorization: Basic $TokenBase64" `
         --header "Content-Type: application/json" `
         --data "@$bodyFile"
@@ -377,7 +366,7 @@ if ($ExistingWorkspaceId) {
         $bodyFile = Join-Path $env:TEMP "egress_adduser.json"
         $addUserBody | Set-Content $bodyFile -Encoding UTF8
 
-        $addResult = curl.exe --silent --location --request POST "$BaseUrl/api/v1/workspaces/$WorkspaceId/users/" `
+        $addResult = $curl --silent --location --request POST "$BaseUrl/api/v1/workspaces/$WorkspaceId/users/" `
             --header "Authorization: Basic $TokenBase64" `
             --header "Content-Type: application/json" `
             --data "@$bodyFile"
@@ -385,7 +374,7 @@ if ($ExistingWorkspaceId) {
         Remove-Item $bodyFile -Force -ErrorAction SilentlyContinue
 
         # Verify user was added
-        $usersResult = curl.exe --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId/users/" `
+        $usersResult = $curl --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId/users/" `
             --header "Authorization: Basic $TokenBase64"
 
         if ($usersResult -match $UserEmail) {
