@@ -141,11 +141,6 @@ var host = new HostBuilder()
     })
     // ✅ Adds ASP.NET Core integration
     .ConfigureLogging(options => options.AddApplicationInsights())
-    .ConfigureAppConfiguration((context, config) =>
-    {
-        // ✅ Configure Azure Key Vault if KeyVaultUri is provided
-        config.AddKeyVaultIfConfigured(config.Build(), logger);
-    })
     .ConfigureServices((context, services) =>
     {
         // Get configuration for service registrations
