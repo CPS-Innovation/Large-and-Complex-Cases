@@ -31,7 +31,7 @@ export class TransferMaterialsTab {
 
   async selectEgressFiles(indices: number[]) {
     const checkboxes = await this.page
-      .locator("table").first()
+      .getByTestId("egress-table-wrapper")
       .locator("tbody tr")
       .locator('input[type="checkbox"]')
       .all();
@@ -42,7 +42,8 @@ export class TransferMaterialsTab {
 
   async selectNetAppFiles(indices: number[]) {
     const checkboxes = await this.page
-      .locator("table tbody tr")
+      .getByTestId("netapp-table-wrapper")
+      .locator("tbody tr")
       .locator('input[type="checkbox"]')
       .all();
     for (const index of indices) {
@@ -52,10 +53,6 @@ export class TransferMaterialsTab {
 
   async selectAllNetAppFiles() {
     await this.page.getByLabel("Select folders and files").check();
-  }
-
-  async openTransferDropdown(index: number = 0) {
-    // No-op: the Copy/Move buttons are directly visible in the inset text area
   }
 
   async selectAction(action: "Copy" | "Move") {
@@ -79,10 +76,21 @@ export class TransferMaterialsTab {
     await modal.getByRole("button", { name: "Continue" }).click();
   }
 
-  async waitForTransferComplete(timeout: number = 120_000) {
-    await this.page
-      .getByTestId("transfer-success-notification-banner")
-      .waitFor({ state: "visible", timeout });
+  async waitForTransferComplete(timeout: number = 300_000) {
+    const successBanner = this.page.getByTestId("transfer-success-notification-banner");
+    const errorHeading = this.page.locator('text="There is a problem transferring files"');
+
+    // Wait for either success banner or error page to appear
+    await Promise.race([
+      successBanner.waitFor({ state: "visible", timeout }),
+      errorHeading.waitFor({ state: "visible", timeout }),
+    ]);
+
+    // Assert it was the success banner, not the error page
+    if (await errorHeading.isVisible()) {
+      const errorText = await this.page.locator("main").innerText();
+      throw new Error(`Transfer failed: ${errorText}`);
+    }
   }
 
   async getTransferProgress(): Promise<string> {
@@ -97,7 +105,7 @@ export class TransferMaterialsTab {
 
   /** Wait until at least `expectedCount` file rows appear in the Egress panel folder, refreshing periodically. */
   async waitForFileCount(expectedCount: number, folderName: string, timeout: number = 120_000) {
-    const egressTable = this.page.locator("table").first();
+    const egressTable = this.page.getByTestId("egress-table-wrapper").locator("table");
     const start = Date.now();
     // Check current count first (already navigated into folder)
     let rows = await egressTable.locator("tbody tr").all();
@@ -106,6 +114,7 @@ export class TransferMaterialsTab {
     while (Date.now() - start < timeout) {
       console.log(`  Waiting for files: ${rows.length}/${expectedCount} visible, refreshing...`);
       await this.page.waitForTimeout(5_000);
+      // Full reload required: Egress file list is fetched once on page load and not auto-refreshed
       await this.page.reload();
       await this.waitForEgressFiles();
       await this.navigateToFolder(folderName);

@@ -1,54 +1,33 @@
-import { test, expect } from "../fixtures/test-fixtures";
+import { test, expect } from "../fixtures/test-fixtures-default";
 import { CaseSearchPage } from "../pages/CaseSearchPage";
 import { SearchResultsPage } from "../pages/SearchResultsPage";
-import { EgressConnectPage } from "../pages/EgressConnectPage";
-import { EgressConfirmationPage } from "../pages/EgressConfirmationPage";
-import { NetAppConnectPage } from "../pages/NetAppConnectPage";
-import { NetAppConfirmationPage } from "../pages/NetAppConfirmationPage";
 import { CaseManagementPage } from "../pages/CaseManagementPage";
 import { TransferMaterialsTab } from "../pages/TransferMaterialsTab";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
 
-test.describe("Egress to NetApp Move", () => {
-  test.skip("should move files from Egress to NetApp", async ({
+test.describe("Egress to NetApp Move (Default Mode)", () => {
+  test.skip("should move files from Egress to NetApp using existing case", async ({
     page,
     testData,
   }) => {
     test.setTimeout(300_000);
-    const { caseUrn, workspace } = testData;
+    const { caseUrn } = testData;
 
     // Step 1: Search for case by URN
     const caseSearch = new CaseSearchPage(page);
     await caseSearch.searchByUrn(caseUrn);
 
-    // Step 2: Click into case from results
+    // Step 2: Click View on already-connected case
     const searchResults = new SearchResultsPage(page);
     await searchResults.waitForResults();
     await searchResults.clickCaseAction(caseUrn);
 
-    // Step 3: Connect Egress workspace
-    const egressConnect = new EgressConnectPage(page);
-    await egressConnect.searchFolder(workspace.name);
-    await egressConnect.waitForResults();
-    await egressConnect.connectFolder();
-
-    const egressConfirm = new EgressConfirmationPage(page);
-    await egressConfirm.confirmConnect();
-
-    // Step 4: Connect NetApp folder
-    const netappConnect = new NetAppConnectPage(page);
-    await netappConnect.waitForFolders();
-    await netappConnect.connectFolder();
-
-    const netappConfirm = new NetAppConfirmationPage(page);
-    await netappConfirm.confirmConnect();
-
-    // Step 5: Navigate to Transfer Materials tab
+    // Step 3: Navigate to Transfer Materials tab
     const caseMgmt = new CaseManagementPage(page);
     await caseMgmt.waitForLoad();
     await caseMgmt.switchToTab("transfer-materials");
 
-    // Step 6: Select files from Egress panel and initiate Move
+    // Step 4: Select files from Egress panel and initiate Move
     const transferTab = new TransferMaterialsTab(page);
     await transferTab.waitForEgressFiles();
     await transferTab.navigateToFolder("4. Served Evidence");
@@ -59,19 +38,19 @@ test.describe("Egress to NetApp Move", () => {
 
     await transferTab.selectAction("Move");
 
-    // Step 7: Confirm transfer
+    // Step 5: Confirm transfer
     await transferTab.confirmTransfer();
 
-    // Step 8: Wait for transfer to complete
+    // Step 6: Wait for transfer to complete
     await transferTab.waitForTransferComplete();
 
-    // Step 9: Verify in Activity Log
+    // Step 7: Verify in Activity Log
     await caseMgmt.switchToTab("activity-log");
     const activityLog = new ActivityLogTab(page);
     await activityLog.waitForLogs();
     await activityLog.verifyTransferLogged("Move");
 
-    // Step 10: Download CSV and verify
+    // Step 8: Download CSV and verify
     await activityLog.expandFileList("Move");
     await activityLog.downloadCsv("Move");
     await activityLog.verifyDownloadSuccess();

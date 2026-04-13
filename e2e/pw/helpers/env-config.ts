@@ -39,6 +39,11 @@ export function loadEnvConfig() {
 
     testFileSizeMb: parseInt(optionalEnv("TEST_FILE_SIZE_MB", "100"), 10),
     testFileCount: parseInt(optionalEnv("TEST_FILE_COUNT", "1"), 10),
+
+    defaultWorkspaceId: process.env.DEFAULT_WORKSPACE_ID || "",
+    defaultWorkspaceName: process.env.DEFAULT_WORKSPACE_NAME || "",
+    defaultCaseUrn: process.env.DEFAULT_CASE_URN || "",
+    defaultCaseId: process.env.DEFAULT_CASE_ID || "",
   };
 }
 

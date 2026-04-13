@@ -41,7 +41,7 @@ export async function findNextWorkspaceName(
     if (!Array.isArray(workspaces) || workspaces.length === 0) break;
 
     for (const ws of workspaces) {
-      const match = ws.name.match(/^AUTOMATION-TESTING(\d+)$/i);
+      const match = ws.name.match(/^AUTOMATION-TESTING(\d+)(-\d+)?$/i);
       if (match) {
         const num = parseInt(match[1], 10);
         if (num > maxNumber) maxNumber = num;
