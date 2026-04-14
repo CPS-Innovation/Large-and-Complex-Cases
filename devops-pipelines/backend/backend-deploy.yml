@@ -15,6 +15,13 @@ stages:
     parameters:
       environment: dev
       requireValidation: false
+  
+  - stage: Run_E2e_Tests
+    displayName: 'Run E2E Tests'
+    jobs:
+    - template: ../templates/e2e-postman-job.yml
+      parameters:
+        environment: dev
 
   - template: ../templates/backend-deploy-stages.yml
     parameters:
