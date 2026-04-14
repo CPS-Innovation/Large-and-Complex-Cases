@@ -225,18 +225,42 @@ function Write-Info {
 }
 
 function Check-Newman {
-    $newman = Get-Command newman -ErrorAction SilentlyContinue
-    if (-not $newman) {
-        Write-Err "Newman is not installed!"
-        Write-Host ""
-        Write-Host "Install Newman with:" -ForegroundColor Yellow
-        Write-Host "  npm install -g newman" -ForegroundColor White
-        Write-Host "  npm install -g newman-reporter-htmlextra" -ForegroundColor White
-        Write-Host ""
+    $npm = Get-Command npm -ErrorAction SilentlyContinue
+    if (-not $npm) {
+        Write-Err "npm is not installed. Cannot install Newman."
         return $false
     }
-    Write-Success "Newman found: $($newman.Source)"
-    return $true
+
+    $packageInstalled = $false
+
+    $newman = Get-Command newman -ErrorAction SilentlyContinue
+    if (-not $newman) {
+        Write-Host "Newman not found. Installing..." -ForegroundColor Yellow
+        npm install -g --ignore-scripts newman
+        $packageInstalled = $true
+    }
+
+    $htmlExtra = Get-Command newman-reporter-htmlextra -ErrorAction SilentlyContinue
+    if (-not $htmlExtra) {
+        Write-Host "newman-reporter-htmlextra not found. Installing..." -ForegroundColor Yellow
+        npm install -g --ignore-scripts newman-reporter-htmlextra
+        $packageInstalled = $true
+    }
+
+    # Re-check: verify installs succeeded
+    $newman = Get-Command newman -ErrorAction SilentlyContinue
+    $htmlExtra = Get-Command newman-reporter-htmlextra -ErrorAction SilentlyContinue
+
+    if ($newman -and $htmlExtra) {
+        if ($packageInstalled) {
+            Write-Host "Newman and required reporters installed successfully." -ForegroundColor Green
+        } else {
+            Write-Host "Newman and reporters already installed." -ForegroundColor Green
+        }
+        return $true
+    }
+    Write-Error "Failed to install Newman or its reporter."
+    return $false
 }
 
 function Update-EnvironmentFile {
@@ -386,6 +410,10 @@ function Run-NewmanFolder {
     
     $fullHtmlReport = Join-Path (Resolve-Path $ReportsDir).Path "$reportName.html"
     $fullJsonReport = Join-Path (Resolve-Path $ReportsDir).Path "$reportName.json"
+    $fullJunitReport = Join-Path (Resolve-Path $ReportsDir).Path "$reportName.xml"
+
+    # Detect if running in CICD
+    $runningInCI = $env:TF_BUILD -or $env:GITHUB_ACTIONS
     
     # Build Newman arguments as array for clean conditional flags
     $newmanArgs = @(
@@ -393,12 +421,24 @@ function Run-NewmanFolder {
         "--folder", $FolderName,
         "--environment", $fullEnvPath,
         "--timeout-request", "120000",
-        "--delay-request", "1000",
-        "-r", "cli,htmlextra,json",
-        "--reporter-htmlextra-export", $fullHtmlReport,
-        "--reporter-htmlextra-logs",
-        "--reporter-json-export", $fullJsonReport
+        "--delay-request", "1000"
     )
+
+    # Add skipSensitiveData flag only if running in CI/CD
+    if ($runningInCI) {
+        $newmanArgs += @(
+            "-r", "cli,junit,htmlextra"
+            "--reporter-junit-export", $fullJunitReport
+            "--reporter-htmlextra-skipSensitiveData"
+        )
+    } else {
+        $newmanArgs += @(
+            "-r", "cli,htmlextra,json",
+            "--reporter-htmlextra-export", $fullHtmlReport,
+            "--reporter-htmlextra-logs",
+            "--reporter-json-export", $fullJsonReport
+        )
+    }
     
     if ($ExportEnvironmentPath) {
         $newmanArgs += @("--export-environment", $ExportEnvironmentPath)
