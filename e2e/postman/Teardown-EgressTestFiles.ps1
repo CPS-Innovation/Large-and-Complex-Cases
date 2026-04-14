@@ -36,6 +36,12 @@ param(
     [switch]$Force
 )
 
+# Normalise FileIds input
+$FileIds = $FileIds |
+    ForEach-Object { $_ -split "," } |
+    Where-Object { $_ -and $_.Trim() -ne "" } |
+    Select-Object -Unique
+
 # ============================================================
 # SAFETY CHECKS
 # ============================================================

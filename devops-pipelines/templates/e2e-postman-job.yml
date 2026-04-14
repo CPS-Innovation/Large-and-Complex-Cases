@@ -96,7 +96,7 @@ jobs:
       arguments: > 
         -DeleteFiles
         -WorkspaceId $(EgressWorkspaceId)
-        -FileIds $(egressFileIds) 
+        -FileIds $(egressFileIds)
         -Force
     env:
       LCC_EGRESS_BASE_URL: $(EgressOptionsUrl)

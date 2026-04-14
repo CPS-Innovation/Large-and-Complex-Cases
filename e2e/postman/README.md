@@ -182,6 +182,21 @@ Creates an Egress workspace and uploads test files.
 
 # Workspace only, no upload
 .\Setup-EgressWorkspaceAndUpload.ps1 -SkipUpload
+
+# Upload file only, to an existing workspace
+.\Setup-EgressWorkspaceAndUpload.ps1 -SizeMB 1 -ExistingWorkspaceId <existing-workspace-id> -WorkspaceName <existing-workspace-name>
+```
+
+### Teardown-EgressTestFiles.ps1
+
+Deletes test materials uploaded to Egress.
+
+```powershell
+# Delete files uploaded to a workspace
+.\Teardown-EgressTestFiles -DeleteFiles -WorkspaceId <workspace-id> -FileIds id1,id2,id3 -Force
+
+# Delete an entire workspace
+.\Teardown-EgressTestFiles -DeleteWorkspace -WorkspaceId <workspace-id> -Force
 ```
 
 ---
