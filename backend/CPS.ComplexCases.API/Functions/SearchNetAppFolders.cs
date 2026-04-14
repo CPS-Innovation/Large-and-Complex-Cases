@@ -43,14 +43,14 @@ public class SearchNetAppFolders(
     [BearerTokenAuth]
     [OpenApiParameter(name: InputParameters.CaseId, In = ParameterLocation.Query, Required = true, Type = typeof(string), Description = "The case ID to search within.")]
     [OpenApiParameter(name: InputParameters.Query, In = ParameterLocation.Query, Required = true, Type = typeof(string), Description = "The query to search for.")]
-    [OpenApiParameter(name: InputParameters.Mode, In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The mode to use for the search (prefix or substring).")]
+    [OpenApiParameter(name: InputParameters.Mode, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The mode to use for the search (prefix or substring).")]
     [OpenApiParameter(name: InputParameters.MaxResults, In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The maximum number of results to return.")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(SearchResultsDto), Description = ApiResponseDescriptions.Success)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Forbidden, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Forbidden)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/netapp/folders/search")] HttpRequest req, FunctionContext functionContext)
+    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/netapp/search")] HttpRequest req, FunctionContext functionContext)
     {
         var context = functionContext.GetRequestContext();
         _initializationHandler.Initialize(context.Username, context.CorrelationId);

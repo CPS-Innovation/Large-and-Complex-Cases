@@ -31,3 +31,5 @@ variables:
   value: '10'
 - name: SizeConfigChunkSizeBytes
   value: '5242880'
+- name: NetAppOptionsSearchMaxSubstringScanItems
+  value: '10000'

@@ -8,7 +8,9 @@ public class SearchNetAppFoldersRequestValidator : AbstractValidator<SearchNetAp
     public SearchNetAppFoldersRequestValidator()
     {
         RuleFor(x => x.CaseId).GreaterThan(0).WithMessage("CaseId must be provided.");
-        RuleFor(x => x.Query).NotEmpty().WithMessage("Query must be provided.");
+        RuleFor(x => x.Query)
+            .NotEmpty().WithMessage("Query must be provided.")
+            .Must(q => q != null && !q.Contains("..")).WithMessage("Path cannot contain '..' to navigate up directories.");
         RuleFor(x => x.MaxResults).InclusiveBetween(1, 1000).WithMessage("MaxResults must be between 1 and 1000.");
     }
 }

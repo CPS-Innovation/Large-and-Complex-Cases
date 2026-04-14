@@ -2075,9 +2075,6 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             // Assert
             Assert.NotNull(result);
             Assert.Single(result!.Data);
-            _netAppArgFactoryMock.Verify(
-                f => f.CreateListObjectsInBucketArg(BearerToken, BucketName, null, 100, "test-operation/", true),
-                        Times.Once);
         }
 
         [Fact]
@@ -2136,6 +2133,93 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         }
 
         [Fact]
+        public async Task SearchObjectsInBucketAsync_PrefixMode_UsesDelimiterFalse()
+        {
+            // Arrange — verify that SearchPrefixAsync constructs its ListObjectsInBucketArg
+            // with IncludeDelimiter = false so all nested objects are returned by S3.
+            var arg = CreateSearchArg(SearchModes.Prefix, query: "doc");
+            var s3Request = new ListObjectsV2Request();
+            var s3Response = CreateListObjectsV2Response(fileKeys: ["test-operation/doc.txt"]);
+
+            ListObjectsInBucketArg? capturedArg = null;
+            _netAppRequestFactoryMock
+                .Setup(f => f.ListObjectsInBucketRequest(It.IsAny<ListObjectsInBucketArg>()))
+                .Callback<ListObjectsInBucketArg>(a => capturedArg = a)
+                .Returns(s3Request);
+            _amazonS3Mock
+                .Setup(s => s.ListObjectsV2Async(s3Request, default))
+                .ReturnsAsync(s3Response);
+
+            // Act
+            await _client.SearchObjectsInBucketAsync(arg);
+
+            // Assert
+            Assert.NotNull(capturedArg);
+            Assert.False(capturedArg!.IncludeDelimiter);
+        }
+
+        [Fact]
+        public async Task SearchObjectsInBucketAsync_PrefixMode_DoesNotAppendTrailingSlashToSearchTerm()
+        {
+            // Arrange — the prefix passed to S3 must be "test-operation/<query>" with no
+            // trailing slash appended to the query, so prefix-matching is open-ended.
+            var arg = CreateSearchArg(SearchModes.Prefix, query: "doc");
+            var s3Request = new ListObjectsV2Request();
+            var s3Response = CreateListObjectsV2Response(fileKeys: ["test-operation/doc.txt"]);
+
+            ListObjectsInBucketArg? capturedArg = null;
+            _netAppRequestFactoryMock
+                .Setup(f => f.ListObjectsInBucketRequest(It.IsAny<ListObjectsInBucketArg>()))
+                .Callback<ListObjectsInBucketArg>(a => capturedArg = a)
+                .Returns(s3Request);
+            _amazonS3Mock
+                .Setup(s => s.ListObjectsV2Async(s3Request, default))
+                .ReturnsAsync(s3Response);
+
+            // Act
+            await _client.SearchObjectsInBucketAsync(arg);
+
+            // Assert
+            Assert.NotNull(capturedArg);
+            Assert.Equal("test-operation/doc", capturedArg!.Prefix);
+            Assert.False(capturedArg.Prefix!.EndsWith('/'), "Prefix must not end with '/' when a query is supplied.");
+        }
+
+        [Fact]
+        public async Task SearchObjectsInBucketAsync_PrefixMode_ReturnsDeepMatchesAcrossNestedPaths()
+        {
+            // Arrange — because IncludeDelimiter = false, S3 returns all objects under the
+            // prefix recursively. Verify that files at multiple nesting levels are all mapped.
+            var arg = CreateSearchArg(SearchModes.Prefix, query: "doc");
+            var s3Request = new ListObjectsV2Request();
+            var s3Response = CreateListObjectsV2Response(
+                fileKeys:
+                [
+                    "test-operation/doc.txt",
+                    "test-operation/documents/report.pdf",
+                    "test-operation/documents/2025/review.docx"
+                ]);
+
+            _netAppRequestFactoryMock
+                .Setup(f => f.ListObjectsInBucketRequest(It.IsAny<ListObjectsInBucketArg>()))
+                .Returns(s3Request);
+            _amazonS3Mock
+                .Setup(s => s.ListObjectsV2Async(s3Request, default))
+                .ReturnsAsync(s3Response);
+
+            // Act
+            var result = await _client.SearchObjectsInBucketAsync(arg);
+
+            // Assert — all three deeply-nested files are returned as individual results
+            Assert.NotNull(result);
+            Assert.Equal(3, result!.Data.Count());
+            Assert.All(result.Data, x => Assert.Equal("File", x.Type));
+            Assert.Contains(result.Data, x => x.Key == "test-operation/doc.txt");
+            Assert.Contains(result.Data, x => x.Key == "test-operation/documents/report.pdf");
+            Assert.Contains(result.Data, x => x.Key == "test-operation/documents/2025/review.docx");
+        }
+
+        [Fact]
         public async Task SearchObjectsInBucketAsync_SubstringMode_ReturnsMatchingItems_SinglePage()
         {
             // Arrange
@@ -2185,6 +2269,43 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             Assert.NotNull(result);
             Assert.Single(result!.Data);
             Assert.Equal("test-operation/witness-statement.txt", result.Data.First().Key);
+        }
+
+        [Fact]
+        public async Task SearchObjectsInBucketAsync_SubstringMode_DetectsFolderFromTrailingSlashKey_WhenDelimiterFalse()
+        {
+            var arg = CreateSearchArg(SearchModes.Substring, query: "evidence");
+            var s3Request = new ListObjectsV2Request();
+            var s3Response = CreateListObjectsV2Response(
+                fileKeys:
+                [
+                    "test-operation/evidence/",          // virtual folder marker
+                    "test-operation/evidence-report.txt" // regular file
+                ],
+                keyCount: 2);
+
+            var listArg = new ListObjectsInBucketArg { BearerToken = BearerToken, BucketName = BucketName };
+            _netAppArgFactoryMock
+                .Setup(f => f.CreateListObjectsInBucketArg(BearerToken, BucketName, null, 100, "test-operation", false))
+                .Returns(listArg);
+            SetupListObjectsV2(s3Request, s3Response);
+
+            // Act
+            var result = await _client.SearchObjectsInBucketAsync(arg);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(2, result!.Data.Count());
+
+            var folder = result.Data.Single(x => x.Key == "test-operation/evidence/");
+            Assert.Equal(S3SearchResultTypes.Folder, folder.Type);
+            Assert.Null(folder.LastModified);
+            Assert.Null(folder.Size);
+
+            var file = result.Data.Single(x => x.Key == "test-operation/evidence-report.txt");
+            Assert.Equal(S3SearchResultTypes.File, file.Type);
+            Assert.NotNull(file.LastModified);
+            Assert.NotNull(file.Size);
         }
 
         [Fact]
@@ -2401,20 +2522,185 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         }
 
         [Fact]
+        public async Task SearchObjectsInBucketAsync_SubstringMode_StopsAndSetsTruncated_WhenMaxResultsCapReached()
+        {
+            // Arrange — MaxResults=2; page 1 returns exactly 2 matches but a further page exists
+            var arg = CreateSearchArg(SearchModes.Substring, query: "match", maxResults: 2);
+
+            var listArg1 = new ListObjectsInBucketArg { BearerToken = BearerToken, BucketName = "page1" };
+            var s3Request1 = new ListObjectsV2Request { BucketName = "page1" };
+
+            _netAppArgFactoryMock
+                .Setup(f => f.CreateListObjectsInBucketArg(BearerToken, BucketName, null, 2, "test-operation", false))
+                .Returns(listArg1);
+            _netAppRequestFactoryMock.Setup(f => f.ListObjectsInBucketRequest(listArg1)).Returns(s3Request1);
+            _amazonS3Mock
+                .Setup(s => s.ListObjectsV2Async(s3Request1, default))
+                .ReturnsAsync(CreateListObjectsV2Response(
+                    fileKeys: ["test-operation/match1.txt", "test-operation/match2.txt"],
+                    nextContinuationToken: "token-page2",
+                    keyCount: 2));
+
+            // Act
+            var result = await _client.SearchObjectsInBucketAsync(arg);
+
+            // Assert — should stop after page 1 and mark as truncated
+            Assert.NotNull(result);
+            Assert.Equal(2, result!.Data.Count());
+            Assert.True(result.Truncated);
+            Assert.Equal(2, result.TotalScanned);
+            _netAppArgFactoryMock.Verify(
+                f => f.CreateListObjectsInBucketArg(BearerToken, BucketName, "token-page2", It.IsAny<int>(), It.IsAny<string>(), It.IsAny<bool>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task SearchObjectsInBucketAsync_SubstringMode_TrimsResultsAndSetsTruncated_WhenSinglePageExceedsMaxResults()
+        {
+            // Arrange — MaxResults=2 but page returns 3 matches
+            var arg = CreateSearchArg(SearchModes.Substring, query: "match", maxResults: 2);
+
+            var listArg = new ListObjectsInBucketArg { BearerToken = BearerToken, BucketName = BucketName };
+            var s3Request = new ListObjectsV2Request();
+            var s3Response = CreateListObjectsV2Response(
+                fileKeys: ["test-operation/match1.txt", "test-operation/match2.txt", "test-operation/match3.txt"],
+                keyCount: 3);
+
+            _netAppArgFactoryMock
+                .Setup(f => f.CreateListObjectsInBucketArg(BearerToken, BucketName, null, 2, "test-operation", false))
+                .Returns(listArg);
+            SetupListObjectsV2(s3Request, s3Response);
+
+            // Act
+            var result = await _client.SearchObjectsInBucketAsync(arg);
+
+            // Assert — only 2 results returned despite 3 matching; truncated because more existed
+            Assert.NotNull(result);
+            Assert.Equal(2, result!.Data.Count());
+            Assert.True(result.Truncated);
+            Assert.Equal(3, result.TotalScanned);
+        }
+
+        [Fact]
+        public async Task SearchObjectsInBucketAsync_SubstringMode_StopsAtMaxResults()
+        {
+            // Arrange — MaxResults=2; matches arrive one per page so the cap is hit at a page
+            // boundary (after page 2). Verifies that page 3 is never requested.
+            var arg = CreateSearchArg(SearchModes.Substring, query: "match", maxResults: 2);
+
+            var listArg1 = new ListObjectsInBucketArg { BearerToken = BearerToken, BucketName = "p1" };
+            var listArg2 = new ListObjectsInBucketArg { BearerToken = BearerToken, BucketName = "p2" };
+            var s3Request1 = new ListObjectsV2Request { BucketName = "p1" };
+            var s3Request2 = new ListObjectsV2Request { BucketName = "p2" };
+
+            _netAppArgFactoryMock
+                .Setup(f => f.CreateListObjectsInBucketArg(BearerToken, BucketName, null, 2, "test-operation", false))
+                .Returns(listArg1);
+            _netAppArgFactoryMock
+                .Setup(f => f.CreateListObjectsInBucketArg(BearerToken, BucketName, "token-2", 2, "test-operation", false))
+                .Returns(listArg2);
+
+            _netAppRequestFactoryMock.Setup(f => f.ListObjectsInBucketRequest(listArg1)).Returns(s3Request1);
+            _netAppRequestFactoryMock.Setup(f => f.ListObjectsInBucketRequest(listArg2)).Returns(s3Request2);
+
+            _amazonS3Mock
+                .Setup(s => s.ListObjectsV2Async(s3Request1, default))
+                .ReturnsAsync(CreateListObjectsV2Response(
+                    fileKeys: ["test-operation/match1.txt", "test-operation/no-match.txt"],
+                    nextContinuationToken: "token-2",
+                    keyCount: 2));
+            _amazonS3Mock
+                .Setup(s => s.ListObjectsV2Async(s3Request2, default))
+                .ReturnsAsync(CreateListObjectsV2Response(
+                    fileKeys: ["test-operation/match2.txt", "test-operation/no-match-2.txt"],
+                    nextContinuationToken: "token-3",   // page 3 exists but must never be fetched
+                    keyCount: 2));
+
+            // Act
+            var result = await _client.SearchObjectsInBucketAsync(arg);
+
+            // Assert — exactly 2 matching results; page 3 never requested
+            Assert.NotNull(result);
+            Assert.Equal(2, result!.Data.Count());
+            Assert.All(result.Data, x => Assert.Contains("match", x.Key));
+            _netAppArgFactoryMock.Verify(
+                f => f.CreateListObjectsInBucketArg(BearerToken, BucketName, "token-3", It.IsAny<int>(), It.IsAny<string>(), It.IsAny<bool>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task SearchObjectsInBucketAsync_SubstringMode_SetsTruncatedTrue_WhenCappedByMaxResults()
+        {
+            var arg = CreateSearchArg(SearchModes.Substring, query: "match", maxResults: 2);
+
+            var listArg1 = new ListObjectsInBucketArg { BearerToken = BearerToken, BucketName = "p1" };
+            var listArg2 = new ListObjectsInBucketArg { BearerToken = BearerToken, BucketName = "p2" };
+            var s3Request1 = new ListObjectsV2Request { BucketName = "p1" };
+            var s3Request2 = new ListObjectsV2Request { BucketName = "p2" };
+
+            _netAppArgFactoryMock
+                .Setup(f => f.CreateListObjectsInBucketArg(BearerToken, BucketName, null, 2, "test-operation", false))
+                .Returns(listArg1);
+            _netAppArgFactoryMock
+                .Setup(f => f.CreateListObjectsInBucketArg(BearerToken, BucketName, "token-2", 2, "test-operation", false))
+                .Returns(listArg2);
+
+            _netAppRequestFactoryMock.Setup(f => f.ListObjectsInBucketRequest(listArg1)).Returns(s3Request1);
+            _netAppRequestFactoryMock.Setup(f => f.ListObjectsInBucketRequest(listArg2)).Returns(s3Request2);
+
+            _amazonS3Mock
+                .Setup(s => s.ListObjectsV2Async(s3Request1, default))
+                .ReturnsAsync(CreateListObjectsV2Response(
+                    fileKeys: ["test-operation/match1.txt", "test-operation/random.txt"],
+                    nextContinuationToken: "token-2",
+                    keyCount: 2));
+            _amazonS3Mock
+                .Setup(s => s.ListObjectsV2Async(s3Request2, default))
+                .ReturnsAsync(CreateListObjectsV2Response(
+                    fileKeys: ["test-operation/match2.txt"],
+                    nextContinuationToken: "token-3",   // more pages exist beyond the cap
+                    keyCount: 1));
+
+            // Act
+            var result = await _client.SearchObjectsInBucketAsync(arg);
+
+            // Assert — Truncated=true because MaxResults was reached, not the scan limit
+            Assert.NotNull(result);
+            Assert.True(result!.Truncated);
+            Assert.Equal(2, result.Data.Count());
+            // TotalScanned (3) is far below the default SearchMaxSubstringScanItems (10000),
+            // confirming MaxResults is the reason for truncation.
+            Assert.Equal(3, result.TotalScanned);
+            Assert.True(result.TotalScanned < 10000, "Truncated must be caused by MaxResults, not scan limit.");
+        }
+
+        [Fact]
         public async Task SearchObjectsInBucketAsync_ThrowsAndLogs_WhenAmazonS3ExceptionEscapes()
         {
-            // Arrange — configure the factory to throw directly so the exception propagates
             var arg = CreateSearchArg(SearchModes.Prefix, query: "doc");
-            _netAppArgFactoryMock
-                .Setup(f => f.CreateListObjectsInBucketArg(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(),
-                    It.IsAny<int?>(), It.IsAny<string?>(), It.IsAny<bool>()))
-                .Throws(new Exception("unexpected failure"));
+
+            _netAppRequestFactoryMock
+                .Setup(f => f.ListObjectsInBucketRequest(It.IsAny<ListObjectsInBucketArg>()))
+                .Returns(new ListObjectsV2Request());
+
+            var callCount = 0;
+            _amazonS3Mock
+                .Setup(s => s.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
+                .ReturnsAsync(() =>
+                {
+                    callCount++;
+                    var errorCode = callCount == 1 ? S3ErrorCodes.InvalidAccessKeyId : S3ErrorCodes.AccessDenied;
+                    throw new AmazonS3Exception("S3 error")
+                    { StatusCode = HttpStatusCode.Forbidden, ErrorCode = errorCode };
+                });
 
             // Act
             var ex = await Record.ExceptionAsync(() => _client.SearchObjectsInBucketAsync(arg));
 
             // Assert
             Assert.NotNull(ex);
+            Assert.IsType<NetAppAccessDeniedException>(ex);
+            _amazonS3Mock.Verify(s => s.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default), Times.Exactly(2));
             _loggerMock.Verify(x => x.Log(
                 It.Is<LogLevel>(l => l == LogLevel.Error),
                 It.IsAny<EventId>(),

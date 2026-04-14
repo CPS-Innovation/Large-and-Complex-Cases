@@ -595,8 +595,13 @@ public class NetAppClient(
             searchTerm += arg.Query;
         }
 
-        var listObjectsArg = _netAppArgFactory.CreateListObjectsInBucketArg(
-            arg.BearerToken, arg.BucketName, null, arg.MaxResults, searchTerm, includeDelimiter: true);
+        var listObjectsArg = new ListObjectsInBucketArg
+        {
+            BearerToken = arg.BearerToken,
+            BucketName = arg.BucketName,
+            Prefix = searchTerm,
+            IncludeDelimiter = false
+        };
         var response = await ListObjectsInBucketAsync(listObjectsArg);
 
         if (response == null)
@@ -647,9 +652,17 @@ public class NetAppClient(
                     .ToList();
             }
 
+            var remainingCapacity = arg.MaxResults - matchingResults.Count;
+            if (pageItems.Count > remainingCapacity)
+            {
+                matchingResults.AddRange(pageItems.Take(remainingCapacity));
+                truncated = true;
+                break;
+            }
+
             matchingResults.AddRange(pageItems);
 
-            if (totalScanned >= _options.SearchMaxSubstringScanItems && continuationToken != null)
+            if ((matchingResults.Count >= arg.MaxResults || totalScanned >= _options.SearchMaxSubstringScanItems) && continuationToken != null)
             {
                 truncated = true;
                 break;
@@ -667,12 +680,16 @@ public class NetAppClient(
 
     private static List<SearchResultItemDto> MapToSearchResultItems(ListNetAppObjectsDto response)
     {
-        var results = response.Data.FileData.Select(x => new SearchResultItemDto
+        var results = response.Data.FileData.Select(x =>
         {
-            Key = x.Path,
-            Type = S3SearchResultTypes.File,
-            LastModified = x.LastModified,
-            Size = x.Filesize
+            var isFolder = x.Path.EndsWith('/');
+            return new SearchResultItemDto
+            {
+                Key = x.Path,
+                Type = isFolder ? S3SearchResultTypes.Folder : S3SearchResultTypes.File,
+                LastModified = isFolder ? null : x.LastModified,
+                Size = isFolder ? null : x.Filesize
+            };
         }).ToList();
 
         results.AddRange(response.Data.FolderData
