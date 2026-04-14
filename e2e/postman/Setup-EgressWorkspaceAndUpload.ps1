@@ -796,6 +796,8 @@ Write-Host "##vso[task.setvariable variable=isTestWorkspaceCreated]$isTestWorksp
 Write-Host "##vso[task.setvariable variable=egressWorkspaceId]$WorkspaceId"
 Write-Host "##vso[task.setvariable variable=egressWorkspaceName]$WorkspaceName"
 if (-not $SkipUpload -and $UploadedFiles.Count -gt 0) {
+    Write-Host "##vso[task.setvariable variable=isFilesUploaded]true"
+
     $firstFile = $UploadedFiles[0]
     Write-Host "##vso[task.setvariable variable=egressFileId]$($firstFile.FileId)"
     Write-Host "##vso[task.setvariable variable=egressUploadId]$($firstFile.UploadId)"
