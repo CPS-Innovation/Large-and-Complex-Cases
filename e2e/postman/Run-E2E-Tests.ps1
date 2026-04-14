@@ -388,7 +388,6 @@ function Run-NewmanFolder {
     $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
     $reportName = ($FolderName -replace '[^a-zA-Z0-9]', '_') + "_$timestamp"
     $htmlReport = Join-Path $ReportsDir "$reportName.html"
-    $jsonReport = Join-Path $ReportsDir "$reportName.json"
     
     Write-Host "Folder: $FolderName" -ForegroundColor Gray
     
@@ -421,21 +420,21 @@ function Run-NewmanFolder {
         "--folder", $FolderName,
         "--environment", $fullEnvPath,
         "--timeout-request", "120000",
-        "--delay-request", "1000"
+        "--delay-request", "1000",
+        "--reporter-htmlextra-export", $fullHtmlReport,
+        "--reporter-htmlextra-logs"
     )
 
     # Add skipSensitiveData flag only if running in CI/CD
     if ($runningInCI) {
         $newmanArgs += @(
-            "-r", "cli,junit,htmlextra"
-            "--reporter-junit-export", $fullJunitReport
+            "-r", "cli,junit,htmlextra",
+            "--reporter-junit-export", $fullJunitReport,
             "--reporter-htmlextra-skipSensitiveData"
         )
     } else {
         $newmanArgs += @(
             "-r", "cli,htmlextra,json",
-            "--reporter-htmlextra-export", $fullHtmlReport,
-            "--reporter-htmlextra-logs",
             "--reporter-json-export", $fullJsonReport
         )
     }

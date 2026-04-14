@@ -101,7 +101,7 @@ $script:Config = @{
     DefaultUploadFolder = "4. Served Evidence/"
     
     # Workspace name prefix for automation
-    WorkspaceNamePrefix = "AUTOMATION-TESTING-"
+    WorkspaceNamePrefix = "AUTOMATION-TESTING"
 }
 # ============================================================
 
@@ -279,6 +279,7 @@ if ($ExistingWorkspaceId) {
         }
     }
     Write-Host "[2-4/8] Using existing workspace: $WorkspaceName ($WorkspaceId)" -ForegroundColor Green
+    Write-Host
 } else {
     # ============================================================
     # STEP 2: Generate Workspace Name
