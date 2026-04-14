@@ -2,14 +2,16 @@ parameters:
 - name: environment
   type: string
   default: dev
+- name: agentPool
+  type: string
+  default: LACC PreProd Pool
 - name: dependsOn
   type: object
   default: []
 
-pool: 'LACC PreProd Pool'
-
 jobs:
 - job: run_e2e_tests
+  pool: ${{ parameters.agentPool }}
   dependsOn: ${{ parameters.dependsOn }}
   variables:
   - group: lacc-backend-secrets-${{ parameters.environment }}
