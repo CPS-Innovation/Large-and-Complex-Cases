@@ -432,21 +432,21 @@ function Run-NewmanFolder {
         "--folder", $FolderName,
         "--environment", $fullEnvPath,
         "--timeout-request", "120000",
-        "--delay-request", "1000"
+        "--delay-request", "1000",
+        "--reporter-htmlextra-export", $fullHtmlReport,
+        "--reporter-htmlextra-logs"
     )
 
     # Add skipSensitiveData flag only if running in CI/CD
     if ($runningInCI) {
         $newmanArgs += @(
-            "-r", "cli,junit,htmlextra"
-            "--reporter-junit-export", $fullJunitReport
+            "-r", "cli,junit,htmlextra",
+            "--reporter-junit-export", $fullJunitReport,
             "--reporter-htmlextra-skipSensitiveData"
         )
     } else {
         $newmanArgs += @(
             "-r", "cli,htmlextra,json",
-            "--reporter-htmlextra-export", $fullHtmlReport,
-            "--reporter-htmlextra-logs",
             "--reporter-json-export", $fullJsonReport
         )
     }
