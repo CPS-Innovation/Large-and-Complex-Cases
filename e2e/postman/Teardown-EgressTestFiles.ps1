@@ -60,7 +60,7 @@ if ($DeleteFiles -and $FileIds.Count -eq 0) {
 }
 
 # ============================================================
-# LOAD CONFIGURATION (same pattern as setup script)
+# LOAD CONFIGURATION
 # ============================================================
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $SecretsFile = Join-Path $ScriptDir "secrets.config.ps1"

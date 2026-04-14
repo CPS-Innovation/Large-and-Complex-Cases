@@ -174,6 +174,9 @@ $ChunkSizeBytes = [long]($ChunkSizeMB * 1024 * 1024)
 $MaxFileIdRetries = 10
 $FileIdRetryDelaySeconds = 5
 
+# Set isTestWorkspaceCreated flag default
+$isTestWorkspaceCreated = $false
+
 # ============================================================
 # Cross-Platform Environment Setup (Temp + curl)
 # ============================================================
@@ -360,6 +363,7 @@ if ($ExistingWorkspaceId) {
         $createObj = $createResult | ConvertFrom-Json
         if ($createObj.id) {
             $WorkspaceId = $createObj.id
+            $isTestWorkspaceCreated = $true
             Write-Host "  [OK] Workspace created: $WorkspaceId" -ForegroundColor Green
 
         } else {
@@ -852,7 +856,7 @@ Write-Host ""
 Write-Host "========================================================" -ForegroundColor Yellow
 Write-Host "  ADO PIPELINE OUTPUT" -ForegroundColor Yellow
 Write-Host "========================================================" -ForegroundColor Yellow
-Write-Host "##vso[task.setvariable variable=isTestWorkspaceCreated]$isWorkspaceCreated"
+Write-Host "##vso[task.setvariable variable=isTestWorkspaceCreated]$isTestWorkspaceCreated"
 Write-Host "##vso[task.setvariable variable=egressWorkspaceId]$WorkspaceId"
 Write-Host "##vso[task.setvariable variable=egressWorkspaceName]$WorkspaceName"
 if (-not $SkipUpload -and $UploadedFiles.Count -gt 0) {
