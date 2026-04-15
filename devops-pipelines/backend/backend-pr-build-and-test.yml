@@ -24,6 +24,20 @@ stages:
   - stage: Build_And_Test_Backend
     displayName: 'Build, Test & Package'
     jobs:
+      - job: Check_DB_Migration_Diff
+        steps:
+          - checkout: self
+            fetchDepth: 0
+
+          - task: Bash@3
+            name: Diff_Check
+            displayName: 'Detect Database Migration Changes'
+            inputs:
+              targetType: filePath
+              filePath: $(System.DefaultWorkingDirectory)/devops-pipelines/scripts/detectGitDiff.sh
+            env:
+               OUTPUT_VAR_NAME: runDbMigrationJob
+
       - job: Package_NuGet
         displayName: 'Pack and Publish NuGet Package'
         steps:
@@ -96,7 +110,10 @@ stages:
 
       - job: Package_Database_Scripts
         displayName: 'Package Database Migration Scripts'
-        dependsOn: Build_And_Test_Solution
+        dependsOn: 
+        - Build_And_Test_Solution
+        - Check_DB_Migration_Diff
+        condition: eq(dependencies.Check_DB_Migration_Diff.outputs['Diff_Check.runDbMigrationJob'], 'true')
         steps:
           # Build Data project with dependencies
           - template: ../templates/dotnet-build-steps.yml
