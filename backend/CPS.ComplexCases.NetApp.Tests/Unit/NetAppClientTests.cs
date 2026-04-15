@@ -2271,6 +2271,30 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             Assert.Single(result!.Data);
             Assert.Equal("test-operation/witness-statement.txt", result.Data.First().Key);
         }
+        
+        [Fact]
+        public async Task SearchObjectsInBucketAsync_SubstringMode_ReturnsOnlyMatchingFolder_WhenQueryMatchesParentSegmentNotBasename()
+        {
+            var arg = CreateSearchArg(SearchModes.Substring, query: "test3");
+            var s3Request = new ListObjectsV2Request();
+            var s3Response = CreateListObjectsV2Response(
+                fileKeys: ["test-operation/evidence/test3/Report.pdf"],
+                keyCount: 1);
+
+            var listArg = new ListObjectsInBucketArg { BearerToken = BearerToken, BucketName = BucketName };
+            _netAppArgFactoryMock
+                .Setup(f => f.CreateListObjectsInBucketArg(BearerToken, BucketName, null, 100, "test-operation", false))
+                .Returns(listArg);
+            SetupListObjectsV2(s3Request, s3Response);
+
+            var result = await _client.SearchObjectsInBucketAsync(arg);
+
+            Assert.NotNull(result);
+            Assert.Single(result!.Data);
+            var folder = result.Data.Single();
+            Assert.Equal(S3SearchResultTypes.Folder, folder.Type);
+            Assert.Equal("test-operation/evidence/test3/", folder.Key);
+        }
 
         [Fact]
         public async Task SearchObjectsInBucketAsync_SubstringMode_DetectsFolderFromTrailingSlashKey_WhenDelimiterFalse()

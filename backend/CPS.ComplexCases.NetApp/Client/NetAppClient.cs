@@ -644,6 +644,7 @@ public class NetAppClient(
     private async Task<SearchResultsDto> SearchSubstringAsync(SearchArg arg, string searchTerm)
     {
         var matchingResults = new List<SearchResultItemDto>();
+        var keysInResults = new HashSet<string>(StringComparer.Ordinal);
         var totalScanned = 0;
         var truncated = false;
         string? continuationToken = null;
@@ -665,26 +666,29 @@ public class NetAppClient(
             totalScanned += response.Pagination.KeyCount;
             continuationToken = response.Pagination.NextContinuationToken;
 
-            var pageItems = MapToSearchResultItems(response);
+            var pageItems = string.IsNullOrEmpty(arg.Query)
+                ? MapToSearchResultItems(response)
+                : CollectSubstringSegmentMatches(response, arg.OperationName, arg.Query);
 
-            if (!string.IsNullOrEmpty(arg.Query))
+            foreach (var item in pageItems)
             {
-                pageItems = pageItems
-                    .Where(x => x.Key.Contains(arg.Query, StringComparison.OrdinalIgnoreCase))
-                    .ToList();
+                if (!keysInResults.Add(item.Key))
+                    continue;
+
+                if (matchingResults.Count >= arg.MaxResults)
+                {
+                    truncated = true;
+                    break;
+                }
+
+                matchingResults.Add(item);
             }
 
-            var remainingCapacity = arg.MaxResults - matchingResults.Count;
-            if (pageItems.Count > remainingCapacity)
-            {
-                matchingResults.AddRange(pageItems.Take(remainingCapacity));
-                truncated = true;
+            if (truncated)
                 break;
-            }
 
-            matchingResults.AddRange(pageItems);
-
-            if ((matchingResults.Count >= arg.MaxResults || totalScanned >= _options.SearchMaxSubstringScanItems) && continuationToken != null)
+            if ((matchingResults.Count >= arg.MaxResults || totalScanned >= _options.SearchMaxSubstringScanItems)
+                && continuationToken != null)
             {
                 truncated = true;
                 break;
@@ -698,6 +702,114 @@ public class NetAppClient(
             Truncated = truncated,
             TotalScanned = totalScanned,
         };
+    }
+
+    private static List<SearchResultItemDto> CollectSubstringSegmentMatches(
+        ListNetAppObjectsDto response,
+        string operationName,
+        string query)
+    {
+        var rootPrefix = NormalizeOperationNamePrefix(operationName);
+        var comparer = StringComparison.OrdinalIgnoreCase;
+        var dedupe = new HashSet<string>(StringComparer.Ordinal);
+        var ordered = new List<SearchResultItemDto>();
+
+        foreach (var item in MapToSearchResultItems(response))
+        {
+            if (item.Type == S3SearchResultTypes.Folder)
+            {
+                if (!FolderKeySegmentMatches(item.Key, query, comparer) || !dedupe.Add(item.Key))
+                    continue;
+
+                ordered.Add(item);
+                continue;
+            }
+
+            if (FileBasenameMatches(item.Key, query, comparer) && dedupe.Add(item.Key))
+                ordered.Add(item);
+
+            foreach (var folder in EnumerateDerivedParentFolders(item.Key, rootPrefix, query, comparer))
+            {
+                if (dedupe.Add(folder.Key))
+                    ordered.Add(folder);
+            }
+        }
+
+        return ordered
+            .OrderBy(x => x.Type == S3SearchResultTypes.File ? 1 : 0)
+            .ThenBy(x => x.Key, StringComparer.Ordinal)
+            .ToList();
+    }
+
+    private static string NormalizeOperationNamePrefix(string operationName)
+    {
+        if (string.IsNullOrEmpty(operationName))
+            return string.Empty;
+
+        return operationName.EndsWith(S3Constants.Delimiter, StringComparison.Ordinal)
+            ? operationName
+            : operationName + S3Constants.Delimiter;
+    }
+
+    private static bool FolderKeySegmentMatches(string folderKey, string query, StringComparison comparer)
+    {
+        var name = GetFolderSegmentName(folderKey);
+        return !string.IsNullOrEmpty(name) && name.Contains(query, comparer);
+    }
+
+    private static string GetFolderSegmentName(string folderKey)
+    {
+        var trimmed = folderKey.TrimEnd('/');
+        if (string.IsNullOrEmpty(trimmed))
+            return string.Empty;
+
+        var lastSlash = trimmed.LastIndexOf(S3Constants.Delimiter, StringComparison.Ordinal);
+        return lastSlash < 0 ? trimmed : trimmed[(lastSlash + 1)..];
+    }
+
+    private static bool FileBasenameMatches(string fileKey, string query, StringComparison comparer)
+    {
+        if (string.IsNullOrEmpty(fileKey) || fileKey.EndsWith(S3Constants.Delimiter, StringComparison.Ordinal))
+            return false;
+
+        var lastSlash = fileKey.LastIndexOf(S3Constants.Delimiter, StringComparison.Ordinal);
+        var basename = lastSlash < 0 ? fileKey : fileKey[(lastSlash + 1)..];
+        return basename.Contains(query, comparer);
+    }
+
+    private static IEnumerable<SearchResultItemDto> EnumerateDerivedParentFolders(
+        string fileKey,
+        string rootPrefix,
+        string query,
+        StringComparison comparer)
+    {
+        if (string.IsNullOrEmpty(fileKey) || fileKey.EndsWith(S3Constants.Delimiter, StringComparison.Ordinal))
+            yield break;
+
+        if (string.IsNullOrEmpty(rootPrefix) || !fileKey.StartsWith(rootPrefix, StringComparison.OrdinalIgnoreCase))
+            yield break;
+
+        var relative = fileKey[rootPrefix.Length..];
+        var parts = relative.Split(S3Constants.Delimiter, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 2)
+            yield break;
+
+        for (var i = 0; i < parts.Length - 1; i++)
+        {
+            if (!parts[i].Contains(query, comparer))
+                continue;
+
+            var folderRel = string.Join(S3Constants.Delimiter, parts.Take(i + 1));
+            var folderKey = $"{rootPrefix}{folderRel}{S3Constants.Delimiter}";
+
+            yield return new SearchResultItemDto
+            {
+                Key = folderKey,
+                Type = S3SearchResultTypes.Folder,
+                LastModified = null,
+                Size = null
+            };
+        }
     }
 
     private static List<SearchResultItemDto> MapToSearchResultItems(ListNetAppObjectsDto response)
