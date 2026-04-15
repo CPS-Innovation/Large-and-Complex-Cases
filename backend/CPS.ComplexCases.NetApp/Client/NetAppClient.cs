@@ -599,6 +599,7 @@ public class NetAppClient(
         {
             BearerToken = arg.BearerToken,
             BucketName = arg.BucketName,
+            MaxKeys = arg.MaxResults.ToString(),
             Prefix = searchTerm,
             IncludeDelimiter = false
         };
@@ -611,10 +612,31 @@ public class NetAppClient(
 
         var searchResults = MapToSearchResultItems(response);
 
+        // Search again with Delimiter=true to ensure folders (CommonPrefixes)
+        // are included alongside the file matches returned by the no-delimiter call.
+        var listObjectsWithDelimiterArg = new ListObjectsInBucketArg
+        {
+            BearerToken = arg.BearerToken,
+            BucketName = arg.BucketName,
+            MaxKeys = arg.MaxResults.ToString(),
+            Prefix = searchTerm,
+            IncludeDelimiter = true
+        };
+
+        var responseWithDelimiter = await ListObjectsInBucketAsync(listObjectsWithDelimiterArg);
+
+        if (responseWithDelimiter != null)
+        {
+            var existingKeys = searchResults.Select(x => x.Key).ToHashSet(StringComparer.Ordinal);
+            var searchResultsWithDelimiter = MapToSearchResultItems(responseWithDelimiter);
+            searchResults.AddRange(searchResultsWithDelimiter.Where(x => !existingKeys.Contains(x.Key)));
+        }
+
         return new SearchResultsDto
         {
             Data = searchResults,
-            Truncated = response.Pagination.NextContinuationToken != null,
+            Truncated = response.Pagination.NextContinuationToken != null
+                        || responseWithDelimiter?.Pagination.NextContinuationToken != null,
             TotalScanned = 0,
         };
     }

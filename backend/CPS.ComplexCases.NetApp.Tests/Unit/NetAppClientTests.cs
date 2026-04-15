@@ -2133,18 +2133,18 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         }
 
         [Fact]
-        public async Task SearchObjectsInBucketAsync_PrefixMode_UsesDelimiterFalse()
+        public async Task SearchObjectsInBucketAsync_PrefixMode_UsesBothDelimiterVariants()
         {
-            // Arrange — verify that SearchPrefixAsync constructs its ListObjectsInBucketArg
-            // with IncludeDelimiter = false so all nested objects are returned by S3.
+            // Arrange — SearchPrefixAsync makes two calls: one with IncludeDelimiter=false
+            // (deep file results) and one with IncludeDelimiter=true (immediate folder structure).
             var arg = CreateSearchArg(SearchModes.Prefix, query: "doc");
             var s3Request = new ListObjectsV2Request();
             var s3Response = CreateListObjectsV2Response(fileKeys: ["test-operation/doc.txt"]);
 
-            ListObjectsInBucketArg? capturedArg = null;
+            var capturedArgs = new List<ListObjectsInBucketArg>();
             _netAppRequestFactoryMock
                 .Setup(f => f.ListObjectsInBucketRequest(It.IsAny<ListObjectsInBucketArg>()))
-                .Callback<ListObjectsInBucketArg>(a => capturedArg = a)
+                .Callback<ListObjectsInBucketArg>(capturedArgs.Add)
                 .Returns(s3Request);
             _amazonS3Mock
                 .Setup(s => s.ListObjectsV2Async(s3Request, default))
@@ -2153,9 +2153,10 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             // Act
             await _client.SearchObjectsInBucketAsync(arg);
 
-            // Assert
-            Assert.NotNull(capturedArg);
-            Assert.False(capturedArg!.IncludeDelimiter);
+            // Assert — exactly two calls are made, one without delimiter and one with
+            Assert.Equal(2, capturedArgs.Count);
+            Assert.Contains(capturedArgs, a => !a.IncludeDelimiter);
+            Assert.Contains(capturedArgs, a => a.IncludeDelimiter);
         }
 
         [Fact]

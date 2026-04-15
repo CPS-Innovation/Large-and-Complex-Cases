@@ -373,7 +373,7 @@ public class SearchNetAppFoldersTests
         // Act
         await _function.Run(httpRequest, functionContext);
 
-        // Assert - default MaxResults is 1000
+        // Assert
         _netAppArgFactoryMock.Verify(
             f => f.CreateSearchArg(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), 1000, It.IsAny<SearchModes>()),
             Times.Once);
@@ -412,6 +412,69 @@ public class SearchNetAppFoldersTests
         // Assert
         _netAppArgFactoryMock.Verify(
             f => f.CreateSearchArg(_testBearerToken, _testBucketName, It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<SearchModes>()),
+            Times.Once);
+    }
+
+    [Theory]
+    [InlineData("../etc/passwd")]
+    [InlineData("some/../traversal")]
+    [InlineData("..")]
+    public async Task Run_ReturnsBadRequest_WhenQueryContainsDoubleDotPathTraversal(string query)
+    {
+        // Arrange
+        var queryParams = new Dictionary<string, string>
+        {
+            [InputParameters.CaseId] = "123",
+            [InputParameters.Query] = query
+        };
+        var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(queryParams);
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+        // Act
+        var result = await _function.Run(httpRequest, functionContext);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Contains("Path cannot contain '..'", badRequest.Value?.ToString());
+        _netAppClientMock.Verify(c => c.SearchObjectsInBucketAsync(It.IsAny<SearchArg>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_FallsBackToPrefixMode_WhenModeIsUnrecognised()
+    {
+        // Arrange — an unrecognised mode string cannot be parsed as SearchModes so the
+        // function defaults to Prefix rather than returning a 400.
+        var folderPath = "/case/123";
+        var queryParams = new Dictionary<string, string>
+        {
+            [InputParameters.CaseId] = "123",
+            [InputParameters.Query] = "searchTerm",
+            [InputParameters.Mode] = "invalidMode"
+        };
+        var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(queryParams);
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+        var searchArg = _fixture.Create<SearchArg>();
+
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForCaseIdAsync(123))
+            .ReturnsAsync(new CaseMetadata { CaseId = 123, NetappFolderPath = folderPath });
+
+        _netAppArgFactoryMock
+            .Setup(f => f.CreateSearchArg(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<SearchModes>()))
+            .Returns(searchArg);
+
+        _netAppClientMock
+            .Setup(c => c.SearchObjectsInBucketAsync(searchArg))
+            .ReturnsAsync(_fixture.Create<SearchResultsDto>());
+
+        // Act
+        var result = await _function.Run(httpRequest, functionContext);
+
+        // Assert
+        Assert.IsType<OkObjectResult>(result);
+        _netAppArgFactoryMock.Verify(
+            f => f.CreateSearchArg(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<int>(), SearchModes.Prefix),
             Times.Once);
     }
 }
