@@ -66,6 +66,7 @@ stages:
             displayName: 'Publish HttpTelemetry Package'
 
       - job: Build_And_Test_Solution
+        pool: ubuntu-latest
         displayName: 'Build & Test Solution'
         dependsOn: Package_NuGet
         steps:
