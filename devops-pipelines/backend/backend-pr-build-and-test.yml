@@ -65,8 +65,9 @@ stages:
             artifact: 'localnuget'
             displayName: 'Publish HttpTelemetry Package'
 
-      - job: Build_And_Test_Solution
-        pool: ubuntu-latest
+      - job: Build_And_Test_Solution       
+        pool:
+          vmImage: 'ubuntu-latest'
         displayName: 'Build & Test Solution'
         dependsOn: Package_NuGet
         steps:
