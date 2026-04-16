@@ -42,8 +42,6 @@ parameters:
     default: false
 
 stages:
-# A 'Preflight' stage is defined in the caller pipeline, where a flag is set once to determine whether the Database Migration stage should run.
-
   - stage: Preflight_${{ parameters.environment }}
     displayName: "${{ parameters.environment }} - Preflight Checks"
     jobs:
@@ -76,7 +74,7 @@ stages:
   - stage: Database_Migration_${{ parameters.environment }}
     displayName: "${{ parameters.environment }} - Database Migration"
     condition: stageDependencies.Preflight_${{ parameters.environment }}.Set_DeployDB_Flag.outputs['checkArtifact.deployDatabase']
-    dependsOn: Preflight
+    dependsOn: Preflight_${{ parameters.environment }}
     variables:
       - template: ./variables/backend-deploy-vars.yml
         parameters:
