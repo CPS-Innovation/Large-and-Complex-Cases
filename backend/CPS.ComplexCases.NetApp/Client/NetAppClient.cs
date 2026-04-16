@@ -632,11 +632,31 @@ public class NetAppClient(
             searchResults.AddRange(searchResultsWithDelimiter.Where(x => !existingKeys.Contains(x.Key)));
         }
 
-        var mergeExceedsMax = searchResults.Count > arg.MaxResults;
-        if (mergeExceedsMax)
+        var merged = searchResults;
+
+        if (merged.Count > arg.MaxResults)
         {
-            searchResults = searchResults.Take(arg.MaxResults).ToList();
+            var folders = merged
+                .Where(x => x.Type == S3SearchResultTypes.Folder)
+                .ToList();
+
+            var files = merged
+                .Where(x => x.Type == S3SearchResultTypes.File)
+                .ToList();
+
+            var capped = new List<SearchResultItemDto>(arg.MaxResults);
+
+            capped.AddRange(folders.Take(arg.MaxResults));
+
+            if (capped.Count < arg.MaxResults)
+            {
+                capped.AddRange(files.Take(arg.MaxResults - capped.Count));
+            }
+
+            searchResults = capped;
         }
+
+        var mergeExceedsMax = merged.Count > arg.MaxResults;
 
         return new SearchResultsDto
         {
