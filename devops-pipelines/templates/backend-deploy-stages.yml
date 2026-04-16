@@ -143,6 +143,7 @@ stages:
 
   - stage: Deploy_Function_Apps_${{ parameters.environment }}
     displayName: "${{ parameters.environment }} - Deploy Function Apps"
+    dependsOn: Preflight_${{ parameters.environment }}
     variables:
       - template: ./variables/backend-deploy-vars.yml
         parameters:
