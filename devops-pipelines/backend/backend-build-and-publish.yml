@@ -108,7 +108,7 @@ stages:
 
   - stage: Build_Filetransfer_API
     displayName: 'Build Transfer API'
-    dependsOn: Package_NuGet
+    dependsOn: Preflight
     jobs:
       - job: Build_FileTransfer_API
         displayName: 'Build FileTransfer API'
