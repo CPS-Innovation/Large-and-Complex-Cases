@@ -38,13 +38,11 @@ stages:
     parameters:
       environment: dev
       requireValidation: false
-      dependsOn: Preflight
 
   - template: ../templates/backend-deploy-stages.yml
     parameters:
       environment: staging
       requireValidation: true
-      dependsOn: Preflight
       notifyUsers: $(preprodNotifyUsers)
       approvers: $(preprodApprovers)
       deployToSlot: true
@@ -55,7 +53,6 @@ stages:
     parameters:
       environment: prod
       requireValidation: true
-      dependsOn: Preflight
       notifyUsers: $(prodNotifyUsers)
       approvers: $(prodApprovers)
       agentPool: 'LACC Prod Pool'
