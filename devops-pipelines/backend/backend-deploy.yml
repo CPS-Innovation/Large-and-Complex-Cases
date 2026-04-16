@@ -7,6 +7,8 @@ resources:
         include:
           - main
 
+variables:
+  - group: lacc-deployment-global
 
 stages:
   - template: ../templates/backend-deploy-stages.yml

@@ -13,12 +13,6 @@ parameters:
     values:
       - "LACC PreProd Pool"
       - "LACC Prod Pool"
-  - name: deployMainAPI
-    type: boolean
-    default: true
-  - name: deployFileTransferAPI
-    type: boolean
-    default: true
   - name: requireValidation
     type: boolean
     default: false
@@ -42,39 +36,29 @@ parameters:
     default: false
 
 stages:
-  - stage: Preflight_${{ parameters.environment }}
-    displayName: "${{ parameters.environment }} - Preflight Checks"
+  - stage: Approve_Deployment_${{ parameters.environment }}
+    displayName: "${{ parameters.environment }} - Approve Deployment"
+    condition: and(succeeded(), ${{ eq(parameters.requireValidation, true) }})
     jobs:
-      - ${{ if eq(parameters.requireValidation, true) }}:
-        - template: ./manual-validation-jobs.yml
-          parameters:
-            instructions: "Please verify the deployment to the lower environment worked as expected before approving deployment to ${{parameters.environment}}."
-            notifyUsers: ${{ parameters.notifyUsers }}
-            approvers: ${{ parameters.approvers }}
-            agentPool: ${{ parameters.agentPool }}
-      
-      - job: Set_DeployDB_Flag
-        displayName: 'Check If DB Deployment Is Needed'
-        steps:
-          - download: build
-            artifact: database-scripts-drop
-            continueOnError: true   
+      - template: ./manual-validation-jobs.yml
+        parameters:
+          instructions: "Please verify the deployment to the lower environment worked as expected before approving deployment to ${{parameters.environment}}."
+          notifyUsers: ${{ parameters.notifyUsers }}
+          approvers: ${{ parameters.approvers }}
+          agentPool: ${{ parameters.agentPool }}
 
-          - bash: |
-              if [ "$(Agent.JobStatus)" = "Succeeded" ]; then
-                echo "DB migrations artifact found. Dastabase migration will be deployed."
-                echo "##vso[task.setvariable variable=deployDatabase;isOutput=true]$true"
-              else
-                echo "No DB migrations artifact found. Dastabase migration will be skipped."
-                echo "##vso[task.setvariable variable=deployDatabase;isOutput=true]$false"
-              fi
-            displayName: Detect DB migrations from artifact
-            name: checkArtifact
-
-  - stage: Database_Migration_${{ parameters.environment }}
+  - stage: Migrate_DB_${{ parameters.environment }}
     displayName: "${{ parameters.environment }} - Database Migration"
-    condition: stageDependencies.Preflight_${{ parameters.environment }}.Set_DeployDB_Flag.outputs['checkArtifact.deployDatabase']
-    dependsOn: Preflight_${{ parameters.environment }}
+    # A 'Preflight' stage is defined in the caller pipeline, which outputs the flag 'runDbMigrationSteps'
+    ${{ if eq(parameters.requireValidation, true) }}:
+      dependsOn: 
+        - Approve_Deployment_${{ parameters.environment }}
+        - Preflight
+    ${{ else }}:
+      dependsOn:
+        - Build_API
+        - Preflight
+    condition: eq(stageDependencies.Preflight.Check_DB_Diff.outputs['Diff_Check.runDbMigrationSteps'],'true')
     variables:
       - template: ./variables/backend-deploy-vars.yml
         parameters:
@@ -143,7 +127,8 @@ stages:
 
   - stage: Deploy_Function_Apps_${{ parameters.environment }}
     displayName: "${{ parameters.environment }} - Deploy Function Apps"
-    dependsOn: Preflight_${{ parameters.environment }}
+    dependsOn: Migrate_DB_${{ parameters.environment }}
+    condition: in(stageDependencies.Migrate_DB_${{ parameters.environment }}.result, 'Succeeded', 'Skipped')
     variables:
       - template: ./variables/backend-deploy-vars.yml
         parameters:
@@ -156,7 +141,6 @@ stages:
     jobs:
       - deployment: Deploy_Main_API
         displayName: "${{ parameters.environment }} - Deploy Main API Function App"
-        condition: ${{ eq(parameters.deployMainAPI, true) }}
         environment: "LACC-Backend-${{ parameters.environment }}"
         strategy:
           runOnce:
@@ -180,7 +164,6 @@ stages:
 
       - deployment: Deploy_FileTransfer_API
         displayName: "${{ parameters.environment }} - Deploy FileTransfer API Function App"
-        condition: ${{ eq(parameters.deployFileTransferAPI, true) }}
         environment: "LACC-Backend-${{ parameters.environment }}"
         strategy:
           runOnce:
