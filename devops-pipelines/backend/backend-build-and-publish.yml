@@ -9,11 +9,6 @@ trigger:
 
 pr: none
 
-parameters: 
-- name: packageDatabase
-  type: boolean
-  default: true
-
 variables:
   buildConfiguration: 'Release'
   dotNetVersion: '8.x'
@@ -23,9 +18,25 @@ variables:
 pool: 'LACC PreProd Pool'
 
 stages:
-  - stage: Package_NuGet
-    displayName: 'Produce Nuget Package'
+  - stage: Preflight
+    displayName: 'Preflight Checks & Preparation'
     jobs: 
+    - job: Check_DB_Diff
+      displayName: 'Check for Database Migration Changes'
+      steps:
+        - checkout: self
+          fetchDepth: 0
+
+        - task: Bash@3
+          name: Diff_Check
+          displayName: 'Detect Database Migration Changes'
+          inputs:
+            targetType: filePath
+            filePath: $(System.DefaultWorkingDirectory)/devops-pipelines/scripts/detectGitDiff.sh
+          env:
+            PATH_TO_CHECK: $(System.DefaultWorkingDirectory)/backend/CPS.ComplexCases.Data/Migrations
+            OUTPUT_VAR_NAME: packageDatabase
+
     - job: Package_NuGet
       displayName: 'Pack and Publish NuGet Package'
       steps:
@@ -53,10 +64,12 @@ stages:
   
   - stage: Build_Main_API
     displayName: 'Build Main API'
-    dependsOn: Package_NuGet
+    dependsOn: Preflight
+    variables:
+      packageDatabase: $[ eq(stageDependencies.Preflight.Check_DB_Diff.outputs['Diff_Check.packageDatabase'],'true') ]
     jobs:
       - job: Build_Main_API
-        displayName: 'Build Main API & DB Migration Scripts'
+        displayName: 'Build Main API & DB Migration Scripts if Needed'
         steps:
           - template: ../templates/dotnet-build-steps.yml
             parameters:
@@ -68,28 +81,30 @@ stages:
               publishOutput: true
               runTests: false
           
-          - ${{ if eq(parameters.packageDatabase, true) }}:
-            - task: DotNetCoreCLI@2
-              displayName: 'Build Database Project'
-              inputs:
-                command: 'build'
-                projects: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
-                arguments: '--configuration $(buildConfiguration) '
+          - task: DotNetCoreCLI@2
+            condition: eq(variables.packageDatabase, true)
+            displayName: 'Build Database Project'
+            inputs:
+              command: 'build'
+              projects: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
+              arguments: '--configuration $(buildConfiguration) '
 
-            - task: Bash@3
-              displayName: 'Generate Migration Scripts'
-              inputs:
-                filePath: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/generateDBMigrationScripts.sh'
-              env:
-                EF_VERSION: $(efVersion)
-                DATA_PROJECT_PATH: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
-                STARTUP_PROJECT_PATH: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-                MIGRATION_SCRIPT_OUT: 'database-artifact/migration-script.sql'
-                ROLLBACK_SCRIPT_OUT: 'database-artifact/rollback-migration-script.sql'
+          - task: Bash@3
+            condition: eq(variables.packageDatabase, true)
+            displayName: 'Generate Migration Scripts'
+            inputs:
+              filePath: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/generateDBMigrationScripts.sh'
+            env:
+              EF_VERSION: $(efVersion)
+              DATA_PROJECT_PATH: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
+              STARTUP_PROJECT_PATH: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+              MIGRATION_SCRIPT_OUT: 'database-artifact/migration-script.sql'
+              ROLLBACK_SCRIPT_OUT: 'database-artifact/rollback-migration-script.sql'
 
-            - publish: 'database-artifact'
-              artifact: 'database-scripts-drop'
-              displayName: 'Publish Database Scripts'
+          - publish: 'database-artifact'
+            artifact: 'database-scripts-drop'
+            displayName: 'Publish Database Scripts'
+            condition: eq(variables.packageDatabase, true)
 
   - stage: Build_Filetransfer_API
     displayName: 'Build Transfer API'

@@ -13,6 +13,9 @@ parameters:
     values:
       - "LACC PreProd Pool"
       - "LACC Prod Pool"
+  - name: deployDatabase
+    type: boolean
+    default: false
   - name: deployMainAPI
     type: boolean
     default: true
@@ -40,11 +43,15 @@ parameters:
   - name: runPostmanSmokeTest
     type: boolean
     default: false
+  - name: dependsOn
+    type: object
+    default: []
 
 stages:
   - stage: Approve_Deployment_${{ parameters.environment }}
     displayName: "${{ parameters.environment }} - Approve Deployment"
     condition: and(succeeded(), ${{ eq(parameters.requireValidation, true) }})
+    dependsOn: ${{ parameters.dependsOn }}
     jobs:
       - template: ./manual-validation-jobs.yml
         parameters:
@@ -55,10 +62,11 @@ stages:
 
   - stage: Database_Migration_${{ parameters.environment }}
     displayName: "${{ parameters.environment }} - Database Migration"
+    condition: and(succeeded(), ${{ eq(parameters.deployDatabase, true) }})
     ${{ if eq(parameters.requireValidation, true) }}:
       dependsOn: Approve_Deployment_${{ parameters.environment }}
     ${{ else }}:
-      dependsOn: []
+      dependsOn: ${{ parameters.dependsOn }}
     variables:
       - template: ./variables/backend-deploy-vars.yml
         parameters:
@@ -127,7 +135,12 @@ stages:
 
   - stage: Deploy_Function_Apps_${{ parameters.environment }}
     displayName: "${{ parameters.environment }} - Deploy Function Apps"
-    dependsOn: Database_Migration_${{ parameters.environment }}
+    ${{ if eq(parameters.deployDatabase, true) }}:
+      dependsOn: Database_Migration_${{ parameters.environment }}
+    ${{ elseif eq(parameters.requireValidation, true) }}:
+      dependsOn: Approve_Deployment_${{ parameters.environment }}
+    ${{ else }}:
+      dependsOn: ${{ parameters.dependsOn }}
     variables:
       - template: ./variables/backend-deploy-vars.yml
         parameters:

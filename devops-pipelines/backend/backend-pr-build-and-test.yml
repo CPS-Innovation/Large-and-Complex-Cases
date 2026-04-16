@@ -38,7 +38,7 @@ stages:
               filePath: $(System.DefaultWorkingDirectory)/devops-pipelines/scripts/detectGitDiff.sh
             env:
               PATH_TO_CHECK: $(System.DefaultWorkingDirectory)/backend/CPS.ComplexCases.Data/Migrations
-              OUTPUT_VAR_NAME: runDbMigrationJob
+              OUTPUT_VAR_NAME: packageDatabase
 
       - job: Package_NuGet
         displayName: 'Pack and Publish NuGet Package'
@@ -65,57 +65,57 @@ stages:
             artifact: 'localnuget'
             displayName: 'Publish HttpTelemetry Package'
 
-      # - job: Build_And_Test_Solution       
-      #   displayName: 'Build & Test Solution'
-      #   dependsOn: Package_NuGet
-      #   steps:
-      #     - template: ../templates/dotnet-build-steps.yml
-      #       parameters:
-      #         projectPath: 'backend/CPS.ComplexCases.sln'
-      #         projectName: 'Backend Solution'
-      #         buildConfiguration: '$(buildConfiguration)'
-      #         dotNetVersion: $(dotNetVersion)
-      #         useLocalNuGet: true
-      #         publishOutput: false
-      #         runTests: true
-      #         testResultsDirectory: $(testResultsDirectory)
+      - job: Build_And_Test_Solution       
+        displayName: 'Build & Test Solution'
+        dependsOn: Package_NuGet
+        steps:
+          - template: ../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.sln'
+              projectName: 'Backend Solution'
+              buildConfiguration: '$(buildConfiguration)'
+              dotNetVersion: $(dotNetVersion)
+              useLocalNuGet: true
+              publishOutput: false
+              runTests: true
+              testResultsDirectory: $(testResultsDirectory)
 
-      # - job: Build_Main_API
-      #   displayName: 'Build Main API'
-      #   dependsOn: Build_And_Test_Solution
-      #   steps:
-      #     # Build and publish Main API
-      #     - template: ../templates/dotnet-build-steps.yml
-      #       parameters:
-      #         projectPath: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-      #         projectName: 'lacc-main-api-drop'
-      #         buildConfiguration: $(buildConfiguration)
-      #         dotNetVersion: $(dotNetVersion)
-      #         useLocalNuGet: true
-      #         publishOutput: false
-      #         runTests: false
+      - job: Build_Main_API
+        displayName: 'Build Main API'
+        dependsOn: Build_And_Test_Solution
+        steps:
+          # Build and publish Main API
+          - template: ../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+              projectName: 'lacc-main-api-drop'
+              buildConfiguration: $(buildConfiguration)
+              dotNetVersion: $(dotNetVersion)
+              useLocalNuGet: true
+              publishOutput: false
+              runTests: false
 
-      # - job: Build_FileTransfer_API
-      #   displayName: 'Build FileTransfer API'
-      #   dependsOn: Build_And_Test_Solution
-      #   steps:
-      #     # Build and publish FileTransfer API
-      #     - template: ../templates/dotnet-build-steps.yml
-      #       parameters:
-      #         projectPath: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
-      #         projectName: 'lacc-filetransfer-api-drop'
-      #         buildConfiguration: $(buildConfiguration)
-      #         dotNetVersion: $(dotNetVersion)
-      #         useLocalNuGet: false
-      #         publishOutput: false
-      #         runTests: false
+      - job: Build_FileTransfer_API
+        displayName: 'Build FileTransfer API'
+        dependsOn: Build_And_Test_Solution
+        steps:
+          # Build and publish FileTransfer API
+          - template: ../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
+              projectName: 'lacc-filetransfer-api-drop'
+              buildConfiguration: $(buildConfiguration)
+              dotNetVersion: $(dotNetVersion)
+              useLocalNuGet: false
+              publishOutput: false
+              runTests: false
 
       - job: Package_Database_Scripts
         displayName: 'Package Database Migration Scripts'
         dependsOn: 
-        # - Build_And_Test_Solution
+        - Build_And_Test_Solution
         - Check_DB_Diff
-        condition: eq(dependencies.Check_DB_Diff.outputs['Diff_Check.runDbMigrationJob'], 'true')
+        condition: eq(dependencies.Check_DB_Diff.outputs['Diff_Check.packageDatabase'], 'true')
         steps:
           # Build Data project with dependencies
           - template: ../templates/dotnet-build-steps.yml
