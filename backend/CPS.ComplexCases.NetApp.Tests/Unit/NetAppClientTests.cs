@@ -2221,6 +2221,82 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         }
 
         [Fact]
+        public async Task SearchObjectsInBucketAsync_PrefixMode_TrimsToMaxResults_AndSetsTruncated_WhenMergedCountExceedsLimit()
+        {
+            // Arrange — no-delimiter call returns 2 files; delimiter call returns 1 additional folder.
+            // MaxResults = 2, so the merged list of 3 must be trimmed to 2 and Truncated must be true.
+            var arg = CreateSearchArg(SearchModes.Prefix, query: "doc", maxResults: 2);
+
+            var noDelimRequest = new ListObjectsV2Request { BucketName = BucketName, Delimiter = null };
+            var delimRequest = new ListObjectsV2Request { BucketName = BucketName, Delimiter = "/" };
+
+            var noDelimResponse = CreateListObjectsV2Response(
+                fileKeys: ["test-operation/doc-a.txt", "test-operation/doc-b.txt"]);
+            var delimResponse = CreateListObjectsV2Response(
+                folderPrefixes: ["test-operation/documents/"]);
+
+            _netAppRequestFactoryMock
+                .Setup(f => f.ListObjectsInBucketRequest(It.Is<ListObjectsInBucketArg>(a => !a.IncludeDelimiter)))
+                .Returns(noDelimRequest);
+            _netAppRequestFactoryMock
+                .Setup(f => f.ListObjectsInBucketRequest(It.Is<ListObjectsInBucketArg>(a => a.IncludeDelimiter)))
+                .Returns(delimRequest);
+
+            _amazonS3Mock
+                .Setup(s => s.ListObjectsV2Async(noDelimRequest, default))
+                .ReturnsAsync(noDelimResponse);
+            _amazonS3Mock
+                .Setup(s => s.ListObjectsV2Async(delimRequest, default))
+                .ReturnsAsync(delimResponse);
+
+            // Act
+            var result = await _client.SearchObjectsInBucketAsync(arg);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(2, result!.Data.Count());
+            Assert.True(result.Truncated);
+        }
+
+        [Fact]
+        public async Task SearchObjectsInBucketAsync_PrefixMode_DoesNotTruncate_WhenMergedCountIsWithinLimit()
+        {
+            // Arrange — no-delimiter call returns 1 file; delimiter call returns 1 folder.
+            // MaxResults = 5, so the combined 2 items fit and Truncated must be false.
+            var arg = CreateSearchArg(SearchModes.Prefix, query: "doc", maxResults: 5);
+
+            var noDelimRequest = new ListObjectsV2Request { BucketName = BucketName, Delimiter = null };
+            var delimRequest = new ListObjectsV2Request { BucketName = BucketName, Delimiter = "/" };
+
+            var noDelimResponse = CreateListObjectsV2Response(
+                fileKeys: ["test-operation/doc-a.txt"]);
+            var delimResponse = CreateListObjectsV2Response(
+                folderPrefixes: ["test-operation/documents/"]);
+
+            _netAppRequestFactoryMock
+                .Setup(f => f.ListObjectsInBucketRequest(It.Is<ListObjectsInBucketArg>(a => !a.IncludeDelimiter)))
+                .Returns(noDelimRequest);
+            _netAppRequestFactoryMock
+                .Setup(f => f.ListObjectsInBucketRequest(It.Is<ListObjectsInBucketArg>(a => a.IncludeDelimiter)))
+                .Returns(delimRequest);
+
+            _amazonS3Mock
+                .Setup(s => s.ListObjectsV2Async(noDelimRequest, default))
+                .ReturnsAsync(noDelimResponse);
+            _amazonS3Mock
+                .Setup(s => s.ListObjectsV2Async(delimRequest, default))
+                .ReturnsAsync(delimResponse);
+
+            // Act
+            var result = await _client.SearchObjectsInBucketAsync(arg);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(2, result!.Data.Count());
+            Assert.False(result.Truncated);
+        }
+
+        [Fact]
         public async Task SearchObjectsInBucketAsync_SubstringMode_ReturnsMatchingItems_SinglePage()
         {
             // Arrange
@@ -2271,7 +2347,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             Assert.Single(result!.Data);
             Assert.Equal("test-operation/witness-statement.txt", result.Data.First().Key);
         }
-        
+
         [Fact]
         public async Task SearchObjectsInBucketAsync_SubstringMode_ReturnsOnlyMatchingFolder_WhenQueryMatchesParentSegmentNotBasename()
         {

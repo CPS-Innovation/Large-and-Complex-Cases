@@ -632,10 +632,17 @@ public class NetAppClient(
             searchResults.AddRange(searchResultsWithDelimiter.Where(x => !existingKeys.Contains(x.Key)));
         }
 
+        var mergeExceedsMax = searchResults.Count > arg.MaxResults;
+        if (mergeExceedsMax)
+        {
+            searchResults = searchResults.Take(arg.MaxResults).ToList();
+        }
+
         return new SearchResultsDto
         {
             Data = searchResults,
-            Truncated = response.Pagination.NextContinuationToken != null
+            Truncated = mergeExceedsMax
+                        || response.Pagination.NextContinuationToken != null
                         || responseWithDelimiter?.Pagination.NextContinuationToken != null,
             TotalScanned = 0,
         };
