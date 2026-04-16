@@ -44,26 +44,39 @@ parameters:
 stages:
 # A 'Preflight' stage is defined in the caller pipeline, where a flag is set once to determine whether the Database Migration stage should run.
 
-  - stage: Approve_Deployment_${{ parameters.environment }}
-    displayName: "${{ parameters.environment }} - Approve Deployment"
-    condition: and(succeeded(), ${{ eq(parameters.requireValidation, true) }})
+  - stage: Preflight_${{ parameters.environment }}
+    displayName: "${{ parameters.environment }} - Preflight Checks"
     jobs:
-      - template: ./manual-validation-jobs.yml
-        parameters:
-          instructions: "Please verify the deployment to the lower environment worked as expected before approving deployment to ${{parameters.environment}}."
-          notifyUsers: ${{ parameters.notifyUsers }}
-          approvers: ${{ parameters.approvers }}
-          agentPool: ${{ parameters.agentPool }}
+      - ${{ if eq(parameters.requireValidation, true) }}):
+        - template: ./manual-validation-jobs.yml
+          parameters:
+            instructions: "Please verify the deployment to the lower environment worked as expected before approving deployment to ${{parameters.environment}}."
+            notifyUsers: ${{ parameters.notifyUsers }}
+            approvers: ${{ parameters.approvers }}
+            agentPool: ${{ parameters.agentPool }}
+      
+      - job: Set_DeployDB_Flag
+        displayName: 'Check If DB Deployment Is Needed'
+        steps:
+          - download: build
+            artifact: database-scripts-drop
+            continueOnError: true   
+            
+          - bash: |
+              if [ -d "$(Pipeline.Workspace)/build/database-scripts-drop" ]; then
+                echo "DB migrations artifact found"
+                echo "##vso[task.setvariable variable=deployDatabase;isOutput=true]$true"
+              else
+                echo "No DB migrations artifact found"
+                echo "##vso[task.setvariable variable=deployDatabase;isOutput=true]$false"
+              fi
+            displayName: Detect DB migrations from artifact
+            name: checkArtifact
 
   - stage: Database_Migration_${{ parameters.environment }}
     displayName: "${{ parameters.environment }} - Database Migration"
-    condition: and(succeeded(), eq(variables['deployDatabase'], 'true'))
-    ${{ if eq(parameters.requireValidation, true) }}:
-      dependsOn: 
-      - Approve_Deployment_${{ parameters.environment }}
-      - Preflight
-    ${{ else }}:
-      dependsOn: Preflight
+    condition: stageDependencies.Preflight_${{ parameters.environment }}.Set_DeployDB_Flag.outputs['checkArtifact.deployDatabase']
+    dependsOn: Preflight
     variables:
       - template: ./variables/backend-deploy-vars.yml
         parameters:
