@@ -47,7 +47,7 @@ stages:
   - stage: Preflight_${{ parameters.environment }}
     displayName: "${{ parameters.environment }} - Preflight Checks"
     jobs:
-      - ${{ if eq(parameters.requireValidation, true) }}):
+      - ${{ if eq(parameters.requireValidation, true) }}:
         - template: ./manual-validation-jobs.yml
           parameters:
             instructions: "Please verify the deployment to the lower environment worked as expected before approving deployment to ${{parameters.environment}}."
