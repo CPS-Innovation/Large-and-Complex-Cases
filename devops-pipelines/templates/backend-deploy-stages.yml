@@ -55,18 +55,19 @@ stages:
       
       - job: Set_DeployDB_Flag
         displayName: 'Check If DB Deployment Is Needed'
+        continueOnError: true
         steps:
           - download: build
             artifact: database-scripts-drop
             continueOnError: true   
-            
+
           - bash: |
-              if [ -d "$(Pipeline.Workspace)/build/database-scripts-drop" ]; then
-                echo "DB migrations artifact found"
-                echo "##vso[task.setvariable variable=deployDatabase;isOutput=true]$true"
+              if [ "$(Agent.JobStatus)" = "Succeeded" ]; then
+                echo "DB migrations artifact found. Dastabase migration will be deployed."
+                echo "##vso[task.setvariable variable=deployDatabase;isOutput=true]true"
               else
-                echo "No DB migrations artifact found"
-                echo "##vso[task.setvariable variable=deployDatabase;isOutput=true]$false"
+                echo "No DB migrations artifact found. Dastabase migration will be skipped."
+                echo "##vso[task.setvariable variable=deployDatabase;isOutput=true]false"
               fi
             displayName: Detect DB migrations from artifact
             name: checkArtifact
