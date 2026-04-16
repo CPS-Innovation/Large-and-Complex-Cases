@@ -114,7 +114,7 @@ public class NetAppRequestFactory : INetAppRequestFactory
             BucketName = arg.BucketName,
             ContinuationToken = arg.ContinuationToken,
             MaxKeys = !string.IsNullOrEmpty(arg.MaxKeys) ? int.Parse(arg.MaxKeys) : 1000,
-            Delimiter = S3Constants.Delimiter,
+            Delimiter = arg.IncludeDelimiter ? S3Constants.Delimiter : "",
             Prefix = arg.Prefix,
         };
     }

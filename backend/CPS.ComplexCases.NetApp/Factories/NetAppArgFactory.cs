@@ -1,5 +1,6 @@
 using Amazon.S3.Model;
 using CPS.ComplexCases.NetApp.Constants;
+using CPS.ComplexCases.NetApp.Enums;
 using CPS.ComplexCases.NetApp.Models.Args;
 
 namespace CPS.ComplexCases.NetApp.Factories;
@@ -164,6 +165,19 @@ public class NetAppArgFactory : INetAppArgFactory
             BucketName = bucketName.ToLowerInvariant(),
             OperationName = operationName,
             Path = path
+        };
+    }
+
+    public SearchArg CreateSearchArg(string bearerToken, string bucketName, string operationName, string? query, int maxResults, SearchModes mode = SearchModes.Prefix)
+    {
+        return new SearchArg
+        {
+            BearerToken = bearerToken,
+            BucketName = bucketName.ToLowerInvariant(),
+            OperationName = operationName,
+            Query = query,
+            MaxResults = maxResults,
+            Mode = mode
         };
     }
 

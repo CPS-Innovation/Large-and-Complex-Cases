@@ -376,8 +376,10 @@ public class IntegrationTestFixture : IAsyncLifetime
         var netAppClientLogger = _loggerFactory.CreateLogger<NetAppClient>();
         NetAppClient = new NetAppClient(
             netAppClientLogger,
+            netAppOptionsWrapper,
             amazonS3UtilsWrapper,
             netAppRequestFactory,
+            netAppArgFactory,
             s3ClientFactory,
             NetAppS3HttpClient,
             NetAppS3HttpArgFactory);

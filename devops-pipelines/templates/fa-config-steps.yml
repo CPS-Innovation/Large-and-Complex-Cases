@@ -98,6 +98,11 @@ steps:
             "slotSetting": false
           },
           {
+            "name": "NetAppOptions__SearchMaxSubstringScanItems",
+            "value": "$(NetAppOptionsSearchMaxSubstringScanItems)",
+            "slotSetting": false
+          },
+          {
             "name": "EgressOptions__Url",
             "value": "$(EgressOptionsUrl)",
             "slotSetting": false

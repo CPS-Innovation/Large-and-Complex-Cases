@@ -11,9 +11,9 @@ using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Common.Constants;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
-using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
+using CPS.ComplexCases.NetApp.Models.Requests;
 
 namespace CPS.ComplexCases.API.Functions;
 
