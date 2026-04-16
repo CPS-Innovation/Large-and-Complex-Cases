@@ -13,9 +13,6 @@ parameters:
     values:
       - "LACC PreProd Pool"
       - "LACC Prod Pool"
-  - name: deployDatabase
-    type: boolean
-    default: false
   - name: deployMainAPI
     type: boolean
     default: true
@@ -62,7 +59,7 @@ stages:
 
   - stage: Database_Migration_${{ parameters.environment }}
     displayName: "${{ parameters.environment }} - Database Migration"
-    condition: and(succeeded(), ${{ eq(parameters.deployDatabase, true) }})
+    condition: and(succeeded(), eq(variables['deployDatabase'], 'true'))
     ${{ if eq(parameters.requireValidation, true) }}:
       dependsOn: Approve_Deployment_${{ parameters.environment }}
     ${{ else }}:

@@ -9,6 +9,8 @@ resources:
 
 variables:
   - group: lacc-deployment-global
+  - name: deployDatabase
+    value: $[ stageDependencies.Preflight.Set_DeployDB_Flag.outputs['checkArtifact.deployDatabase'] ]
 
 stages:
   - stage: Preflight
@@ -37,14 +39,12 @@ stages:
       environment: dev
       requireValidation: false
       dependsOn: Preflight
-      deployDatabase: stageDependencies.Preflight.Set_DeployDB_Flag.outputs['checkArtifact.deployDatabase']
 
   - template: ../templates/backend-deploy-stages.yml
     parameters:
       environment: staging
       requireValidation: true
       dependsOn: Preflight
-      deployDatabase: stageDependencies.Preflight.Set_DeployDB_Flag.outputs['checkArtifact.deployDatabase']
       notifyUsers: $(preprodNotifyUsers)
       approvers: $(preprodApprovers)
       deployToSlot: true
@@ -56,7 +56,6 @@ stages:
       environment: prod
       requireValidation: true
       dependsOn: Preflight
-      deployDatabase: stageDependencies.Preflight.Set_DeployDB_Flag.outputs['checkArtifact.deployDatabase']
       notifyUsers: $(prodNotifyUsers)
       approvers: $(prodApprovers)
       agentPool: 'LACC Prod Pool'
