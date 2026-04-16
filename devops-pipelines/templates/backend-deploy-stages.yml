@@ -93,7 +93,7 @@ stages:
                       echo "Azure CLI not found, installing..."
                       bash $(scripts_directory)/installAzureCli.sh
 
-                - download: build
+                - download: current
                   artifact: "database-scripts-drop"
 
                 - task: AzureCLI@2
@@ -151,7 +151,6 @@ stages:
                     environment: ${{ parameters.environment }}
                     azureSubscription: ${{ parameters.azureSubscription }}
                     functionAppName: "fa-lacc-api-${{ parameters.environment }}"
-                    pipelineResourceAlias: "build"
                     buildArtifactName: "lacc-main-api-drop"
                     deployToSlot: ${{ parameters.deployToSlot }}
                     slotName: ${{ parameters.slotName }}
@@ -160,7 +159,7 @@ stages:
 
                 - template: ./runner-cleanup-steps.yml
                   parameters:
-                    buildArtifact: "build"
+                    buildArtifact: "lacc-main-api-drop"
 
       - deployment: Deploy_FileTransfer_API
         displayName: "${{ parameters.environment }} - Deploy FileTransfer API Function App"
@@ -174,11 +173,10 @@ stages:
                     environment: ${{ parameters.environment }}
                     azureSubscription: ${{ parameters.azureSubscription }}
                     functionAppName: "fa-lacc-filetransfer-api-${{ parameters.environment }}"
-                    pipelineResourceAlias: "build"
                     buildArtifactName: "lacc-filetransfer-api-drop"
                     deployToSlot: ${{ parameters.deployToSlot }}
                     slotName: ${{ parameters.slotName }}
 
                 - template: ./runner-cleanup-steps.yml
                   parameters:
-                    buildArtifact: "build"
+                    buildArtifact: "lacc-filetransfer-api-drop"
