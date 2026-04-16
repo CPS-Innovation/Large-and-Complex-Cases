@@ -24,10 +24,10 @@ stages:
         - bash: |
             if [ -d "$(Pipeline.Workspace)/build/database-scripts-drop" ]; then
               echo "DB migrations artifact found"
-              echo "##vso[task.setvariable variable=deployDatabase;isOutput=true]true"
+              echo "##vso[task.setvariable variable=deployDatabase;isOutput=true]$true"
             else
               echo "No DB migrations artifact found"
-              echo "##vso[task.setvariable variable=deployDatabase;isOutput=true]false"
+              echo "##vso[task.setvariable variable=deployDatabase;isOutput=true]$false"
             fi
           displayName: Detect DB migrations from artifact
           name: checkArtifact
@@ -37,14 +37,14 @@ stages:
       environment: dev
       requireValidation: false
       dependsOn: Preflight
-      deployDatabase: eq(stageDependencies.Preflight.Set_DeployDB_Flag.outputs['checkArtifact.deployDatabase'], 'true')
+      deployDatabase: stageDependencies.Preflight.Set_DeployDB_Flag.outputs['checkArtifact.deployDatabase']
 
   - template: ../templates/backend-deploy-stages.yml
     parameters:
       environment: staging
       requireValidation: true
       dependsOn: Preflight
-      deployDatabase: $[ eq(stageDependencies.Preflight.Set_DeployDB_Flag.outputs['checkArtifact.deployDatabase'], 'true') ]
+      deployDatabase: stageDependencies.Preflight.Set_DeployDB_Flag.outputs['checkArtifact.deployDatabase']
       notifyUsers: $(preprodNotifyUsers)
       approvers: $(preprodApprovers)
       deployToSlot: true
@@ -56,7 +56,7 @@ stages:
       environment: prod
       requireValidation: true
       dependsOn: Preflight
-      deployDatabase: eq(stageDependencies.Preflight.Set_DeployDB_Flag.outputs['checkArtifact.deployDatabase'], 'true')
+      deployDatabase: stageDependencies.Preflight.Set_DeployDB_Flag.outputs['checkArtifact.deployDatabase']
       notifyUsers: $(prodNotifyUsers)
       approvers: $(prodApprovers)
       agentPool: 'LACC Prod Pool'
