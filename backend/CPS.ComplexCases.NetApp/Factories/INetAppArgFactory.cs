@@ -18,5 +18,6 @@ namespace CPS.ComplexCases.NetApp.Factories
         RegisterUserArg CreateRegisterUserArg(string username, string accessToken, Guid s3ServiceUuid);
         RegenerateUserKeysArg CreateRegenerateUserKeysArg(string username, string accessToken, Guid s3ServiceUuid, int sessionDuration);
         DeleteFileOrFolderArg CreateDeleteFileOrFolderArg(string bearerToken, string bucketName, string operationName, string path, bool isFolder = false);
+        SearchArg CreateSearchArg(string bearerToken, string bucketName, string operationName, string? query, int maxResults, Enums.SearchModes mode = Enums.SearchModes.Prefix);
     }
 }

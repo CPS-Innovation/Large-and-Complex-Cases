@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace CPS.ComplexCases.Data.Models.Requests;
+namespace CPS.ComplexCases.NetApp.Models.Requests;
 
 public class DeleteNetAppFileOrFolderDto
 {

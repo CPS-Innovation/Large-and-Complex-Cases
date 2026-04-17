@@ -61,7 +61,7 @@ jobs:
       NetApp.TestFolderPrefix: "integration-tests"
       KeyVault.Url: "https://$(keyVaultName).vault.azure.net/"
       ConnectionStrings.CaseManagementDatastoreConnection: $(DbConnectionString)
-      Postgres.AuthMode: $(PostgresAuthMode)
+      Postgres.AuthMode: "AAD"
       Postgres.DbUserName: $(DbUserName)
     steps:
       - task: Bash@3
