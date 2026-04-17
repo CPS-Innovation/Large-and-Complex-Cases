@@ -33,14 +33,14 @@ The scripts automatically load credentials from `secrets.config.ps1`.
 
 ### Run Modes
 
-| | Default Mode | RegisterCase Mode |
-|---|---|---|
-| **Command** | `.\Run-E2E-Tests.ps1 -SizeMB 100` | `.\Run-E2E-Tests.ps1 -SizeMB 100 -RegisterCase` |
-| **Case** | Pre-existing case | Registers one case on the first folder, reuses it for remaining folders |
-| **Workspace** | Uploads to existing workspace | Creates new workspace |
-| **Connections** | Skipped (already exist) | Created (Egress + NetApp) |
-| **Speed** | Approx. 4 min (all 3 tests) | Approx. 6 min (all 3 tests) |
-| **Use case** | Day-to-day testing, CI/CD | Testing case registration flow |
+|                 | Default Mode                      | RegisterCase Mode                                                       |
+| --------------- | --------------------------------- | ----------------------------------------------------------------------- |
+| **Command**     | `.\Run-E2E-Tests.ps1 -SizeMB 100` | `.\Run-E2E-Tests.ps1 -SizeMB 100 -RegisterCase`                         |
+| **Case**        | Pre-existing case                 | Registers one case on the first folder, reuses it for remaining folders |
+| **Workspace**   | Uploads to existing workspace     | Creates new workspace                                                   |
+| **Connections** | Skipped (already exist)           | Created (Egress + NetApp)                                               |
+| **Speed**       | Approx. 4 min (all 3 tests)       | Approx. 6 min (all 3 tests)                                             |
+| **Use case**    | Day-to-day testing, CI/CD         | Testing case registration flow                                          |
 
 ---
 
@@ -61,28 +61,28 @@ Edit `secrets.config.ps1` with your values. See `secrets.config.template.ps1` fo
 
 Set these environment variables in your pipeline:
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `LCC_TENANT_ID` | Azure AD Tenant ID | Yes |
-| `LCC_REGISTER_CASE_CLIENT_ID` | Client ID for Case Registration API | Yes |
-| `LCC_API_ID` | LCC API Application ID (used in token scope) | Yes |
-| `LCC_API_CLIENT_SECRET` | LCC API Client Secret (confidential client flows) | Yes |
-| `LCC_AZURE_USERNAME` | Azure AD email | Yes |
-| `LCC_AZURE_PASSWORD` | Azure AD password | Yes |
-| `LCC_CMS_USERNAME` | CMS username (e.g. Name.CIN3) | Yes |
-| `LCC_CMS_PASSWORD` | CMS password | Yes |
-| `LCC_DDEI_ACCESS_KEY` | DDEI API access key | Yes |
-| `LCC_BASE_URL` | LCC API base URL | Yes |
-| `LCC_CASE_API_BASE_URL` | Case Management API base URL | Yes |
-| `LCC_DDEI_BASE_URL` | DDEI API base URL | Yes |
-| `LCC_EGRESS_BASE_URL` | Egress API URL | Yes |
-| `LCC_EGRESS_SERVICE_ACCOUNT_AUTH` | Base64 service account auth | Yes |
-| `LCC_EGRESS_TEMPLATE_ID` | Egress template ID | No (has default) |
-| `LCC_EGRESS_ADMIN_ROLE_ID` | Egress admin role ID | No (has default) |
-| `LCC_DEFAULT_CASE_ID` | Pre-existing case ID (default mode only) | Conditional |
-| `LCC_DEFAULT_CASE_URN` | Pre-existing case URN (default mode only) | Conditional |
-| `LCC_DEFAULT_WORKSPACE_ID` | Pre-existing workspace ID (default mode only) | Conditional |
-| `LCC_DEFAULT_WORKSPACE_NAME` | Pre-existing workspace name (default mode only) | Conditional |
+| Variable                          | Description                                       | Required         |
+| --------------------------------- | ------------------------------------------------- | ---------------- |
+| `LCC_TENANT_ID`                   | Azure AD Tenant ID                                | Yes              |
+| `LCC_REGISTER_CASE_CLIENT_ID`     | Client ID for Case Registration API               | Yes              |
+| `LCC_API_CLIENT_ID`               | LCC API Application ID (used in token scope)      | Yes              |
+| `LCC_API_CLIENT_SECRET`           | LCC API Client Secret (confidential client flows) | Yes              |
+| `LCC_AZURE_USERNAME`              | Azure AD email                                    | Yes              |
+| `LCC_AZURE_PASSWORD`              | Azure AD password                                 | Yes              |
+| `LCC_CMS_USERNAME`                | CMS username (e.g. Name.CIN3)                     | Yes              |
+| `LCC_CMS_PASSWORD`                | CMS password                                      | Yes              |
+| `LCC_DDEI_ACCESS_KEY`             | DDEI API access key                               | Yes              |
+| `LCC_BASE_URL`                    | LCC API base URL                                  | Yes              |
+| `LCC_CASE_API_BASE_URL`           | Case Management API base URL                      | Yes              |
+| `LCC_DDEI_BASE_URL`               | DDEI API base URL                                 | Yes              |
+| `LCC_EGRESS_BASE_URL`             | Egress API URL                                    | Yes              |
+| `LCC_EGRESS_SERVICE_ACCOUNT_AUTH` | Base64 service account auth                       | Yes              |
+| `LCC_EGRESS_TEMPLATE_ID`          | Egress template ID                                | No (has default) |
+| `LCC_EGRESS_ADMIN_ROLE_ID`        | Egress admin role ID                              | No (has default) |
+| `LCC_DEFAULT_CASE_ID`             | Pre-existing case ID (default mode only)          | Conditional      |
+| `LCC_DEFAULT_CASE_URN`            | Pre-existing case URN (default mode only)         | Conditional      |
+| `LCC_DEFAULT_WORKSPACE_ID`        | Pre-existing workspace ID (default mode only)     | Conditional      |
+| `LCC_DEFAULT_WORKSPACE_NAME`      | Pre-existing workspace name (default mode only)   | Conditional      |
 
 Conditional variables are required when running in default mode (without `-RegisterCase`). They are not needed for RegisterCase mode.
 
@@ -94,13 +94,13 @@ variables:
 
 steps:
   - task: PowerShell@2
-    displayName: 'Run E2E Tests'
+    displayName: "Run E2E Tests"
     inputs:
-      filePath: '$(Build.SourcesDirectory)/e2e/postman/Run-E2E-Tests.ps1'
-      arguments: '-SizeMB 100 -TestsToRun all'
+      filePath: "$(Build.SourcesDirectory)/e2e/postman/Run-E2E-Tests.ps1"
+      arguments: "-SizeMB 100 -TestsToRun all"
     env:
       LCC_TENANT_ID: $(LCC_TENANT_ID)
-      LCC_API_ID: $(LCC_API_ID)
+      LCC_API_CLIENT_ID: $(LCC_API_CLIENT_ID)
       LCC_API_CLIENT_SECRET: $(LCC_API_CLIENT_SECRET)
       LCC_REGISTER_CASE_CLIENT_ID: $(LCC_REGISTER_CASE_CLIENT_ID)
       LCC_AZURE_USERNAME: $(LCC_AZURE_USERNAME)
@@ -159,15 +159,15 @@ Main test orchestrator. Uploads files to Egress and runs Newman tests.
 
 Parameters:
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `-SizeMB` | File size in MB | - |
-| `-SizeGB` | File size in GB | 1 |
-| `-FileCount` | Number of files to upload | 1 |
-| `-TestsToRun` | all, copy, move, netapp-to-egress | all |
-| `-RegisterCase` | Register a new case. Without this flag, uses pre-existing case. | false |
-| `-SkipUpload` | Skip file upload step | false |
-| `-StopOnFailure` | Stop on first test failure | false |
+| Parameter        | Description                                                     | Default |
+| ---------------- | --------------------------------------------------------------- | ------- |
+| `-SizeMB`        | File size in MB                                                 | -       |
+| `-SizeGB`        | File size in GB                                                 | 1       |
+| `-FileCount`     | Number of files to upload                                       | 1       |
+| `-TestsToRun`    | all, copy, move, netapp-to-egress                               | all     |
+| `-RegisterCase`  | Register a new case. Without this flag, uses pre-existing case. | false   |
+| `-SkipUpload`    | Skip file upload step                                           | false   |
+| `-StopOnFailure` | Stop on first test failure                                      | false   |
 
 ### Setup-EgressWorkspaceAndUpload.ps1
 
@@ -182,24 +182,39 @@ Creates an Egress workspace and uploads test files.
 
 # Workspace only, no upload
 .\Setup-EgressWorkspaceAndUpload.ps1 -SkipUpload
+
+# Upload file only, to an existing workspace
+.\Setup-EgressWorkspaceAndUpload.ps1 -SizeMB 1 -ExistingWorkspaceId <existing-workspace-id> -WorkspaceName <existing-workspace-name>
+```
+
+### Teardown-EgressTestFiles.ps1
+
+Deletes test materials uploaded to Egress.
+
+```powershell
+# Delete files uploaded to a workspace
+.\Teardown-EgressTestFiles -DeleteFiles -WorkspaceId <workspace-id> -FileIds id1,id2,id3 -Force
+
+# Delete an entire workspace
+.\Teardown-EgressTestFiles -DeleteWorkspace -WorkspaceId <workspace-id> -Force
 ```
 
 ---
 
 ## Files
 
-| File | Description | Commit |
-|------|-------------|--------|
-| `Run-E2E-Tests.ps1` | Main test runner | Yes |
-| `Setup-EgressWorkspaceAndUpload.ps1` | Egress setup utilities | Yes |
-| `secrets.config.template.ps1` | Template for local secrets | Yes |
-| `secrets.config.ps1` | Your local secrets | No |
-| `LCCUserJourneyTests.postman_collection.json` | Postman test collection | Yes |
-| `LCCTestEnvironment.postman_environment.template.json` | Environment template | Yes |
-| `LCCTestEnvironment.postman_environment.json` | Your local environment | No |
-| `newman-reports/` | Newman HTML/JSON test reports | No |
-| `LCCTestEnvironment_updated.*` | Auto-generated updated env files | No |
-| `README.md` | This file | Yes |
+| File                                                   | Description                      | Commit |
+| ------------------------------------------------------ | -------------------------------- | ------ |
+| `Run-E2E-Tests.ps1`                                    | Main test runner                 | Yes    |
+| `Setup-EgressWorkspaceAndUpload.ps1`                   | Egress setup utilities           | Yes    |
+| `secrets.config.template.ps1`                          | Template for local secrets       | Yes    |
+| `secrets.config.ps1`                                   | Your local secrets               | No     |
+| `LCCUserJourneyTests.postman_collection.json`          | Postman test collection          | Yes    |
+| `LCCTestEnvironment.postman_environment.template.json` | Environment template             | Yes    |
+| `LCCTestEnvironment.postman_environment.json`          | Your local environment           | No     |
+| `newman-reports/`                                      | Newman HTML/JSON test reports    | No     |
+| `LCCTestEnvironment_updated.*`                         | Auto-generated updated env files | No     |
+| `README.md`                                            | This file                        | Yes    |
 
 ---
 
