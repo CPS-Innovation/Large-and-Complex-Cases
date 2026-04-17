@@ -45,7 +45,8 @@ public class NetAppClientTests : IClassFixture<IntegrationTestFixture>, IAsyncLi
             bearerToken,
             _fixture.NetAppBucketName!,
             "integration-test-cleanup",
-            _testFolderPrefix);
+            _testFolderPrefix,
+            isFolder: true);
 
         await _fixture.NetAppClient!.DeleteFileOrFolderAsync(deleteArg);
     }
