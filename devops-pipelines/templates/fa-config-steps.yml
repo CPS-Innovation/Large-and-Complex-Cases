@@ -57,6 +57,7 @@ steps:
             "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=NetAppOptions--IssuingCaCert)",
             "slotSetting": false
           },
+          ${{ if ne(parameters.environment, 'prod') }}:
           {
             "name": "NetAppOptions__IssuingCaCert2",
             "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=NetAppOptions--IssuingCaCert2)",
