@@ -34,7 +34,11 @@ jobs:
 
 - job: Manual_Validation_Weekday
   dependsOn: Set_Flag
-  condition: eq(dependencies.Set_Flag.outputs['SetFlag.isFriday'], 'false')
+  condition: |
+    and(
+      eq(dependencies.Set_Flag.outputs['SetFlag.isFriday'], 'false'),
+      ne(variables['Agent.JobStatus'], 'Canceled')
+    )
   pool: server
   timeoutInMinutes: 1500
   steps:
@@ -49,7 +53,11 @@ jobs:
 
 - job: Manual_Validation_Friday
   dependsOn: Set_Flag
-  condition: eq(dependencies.Set_Flag.outputs['SetFlag.isFriday'], 'true')
+  condition: |
+    and(
+      eq(dependencies.Set_Flag.outputs['SetFlag.isFriday'], 'true'),
+      ne(variables['Agent.JobStatus'], 'Canceled')
+    )
   pool: server
   timeoutInMinutes: 4380
   steps:

@@ -76,7 +76,11 @@ stages:
       - deployment: Deploy_Database_Changes
         displayName: "${{ parameters.environment }} - Deploy Database Changes"
         environment: "LACC-Backend-${{ parameters.environment }}"
-        condition: eq(variables.runDbMigration, 'true')
+        condition: |
+          and(
+            ne(variables['Agent.JobStatus'], 'Canceled'),
+            eq(variables.runDbMigration, 'true')
+          )
         strategy:
           runOnce:
             deploy:
@@ -136,7 +140,11 @@ stages:
 
       - deployment: Deploy_Main_API
         dependsOn: Deploy_Database_Changes
-        condition: in(dependencies.Deploy_Database_Changes.result, 'Succeeded', 'Skipped')
+        condition: |
+          and(
+            ne(variables['Agent.JobStatus'], 'Canceled'),
+            in(dependencies.Deploy_Database_Changes.result, 'Succeeded', 'Skipped')
+          )
         displayName: "${{ parameters.environment }} - Deploy Main API Function App"
         environment: "LACC-Backend-${{ parameters.environment }}"
         strategy:
@@ -160,7 +168,11 @@ stages:
 
       - deployment: Deploy_FileTransfer_API
         dependsOn: Deploy_Database_Changes
-        condition: in(dependencies.Deploy_Database_Changes.result, 'Succeeded', 'Skipped')
+        condition: |
+          and(
+            ne(variables['Agent.JobStatus'], 'Canceled'),
+            in(dependencies.Deploy_Database_Changes.result, 'Succeeded', 'Skipped')
+          )
         displayName: "${{ parameters.environment }} - Deploy FileTransfer API Function App"
         environment: "LACC-Backend-${{ parameters.environment }}"
         strategy:
