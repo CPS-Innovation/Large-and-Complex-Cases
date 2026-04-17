@@ -9,23 +9,36 @@ trigger:
 
 pr: none
 
-parameters: 
-- name: packageDatabase
-  type: boolean
-  default: true
-
 variables:
-  buildConfiguration: 'Release'
-  dotNetVersion: '8.x'
-  efVersion: '8.0.*'
-  testResultsDirectory: '$(Agent.TempDirectory)/TestResults'
-
-pool: 'LACC PreProd Pool'
+  - group: lacc-deployment-global
+  - name: buildConfiguration
+    value: 'Release'
+  - name: dotNetVersion
+    value: '8.x'
+  - name: efVersion
+    value: '8.0.*'
 
 stages:
-  - stage: Package_NuGet
-    displayName: 'Produce Nuget Package'
+  - stage: Preflight
+    displayName: 'Preflight Checks & Preparation'
+    pool: 'LACC PreProd Pool'
     jobs: 
+    - job: Check_DB_Diff
+      displayName: 'Check for Database Migration Changes'
+      steps:
+        - checkout: self
+          fetchDepth: 0
+
+        - task: Bash@3
+          name: Diff_Check
+          displayName: 'Detect Database Migration Changes'
+          inputs:
+            targetType: filePath
+            filePath: $(System.DefaultWorkingDirectory)/devops-pipelines/scripts/detectGitDiff.sh
+          env:
+            PATH_TO_CHECK: $(System.DefaultWorkingDirectory)/backend/CPS.ComplexCases.Data/Migrations
+            OUTPUT_VAR_NAME: runDbMigrationSteps
+
     - job: Package_NuGet
       displayName: 'Pack and Publish NuGet Package'
       steps:
@@ -51,12 +64,15 @@ stages:
           artifact: 'localnuget'
           displayName: 'Publish HttpTelemetry Package'
   
-  - stage: Build_Main_API
-    displayName: 'Build Main API'
-    dependsOn: Package_NuGet
+  - stage: Build_API
+    displayName: 'Build APIs for Deployment'
+    dependsOn: Preflight
+    pool: 'LACC PreProd Pool'
+    variables:
+      runDbMigrationSteps: $[ eq(stageDependencies.Preflight.Check_DB_Diff.outputs['Diff_Check.runDbMigrationSteps'],'true') ]
     jobs:
       - job: Build_Main_API
-        displayName: 'Build Main API & DB Migration Scripts'
+        displayName: 'Build Main API & DB Migration Scripts if Needed'
         steps:
           - template: ../templates/dotnet-build-steps.yml
             parameters:
@@ -68,33 +84,31 @@ stages:
               publishOutput: true
               runTests: false
           
-          - ${{ if eq(parameters.packageDatabase, true) }}:
-            - task: DotNetCoreCLI@2
-              displayName: 'Build Database Project'
-              inputs:
-                command: 'build'
-                projects: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
-                arguments: '--configuration $(buildConfiguration) '
+          - task: DotNetCoreCLI@2
+            condition: eq(variables.runDbMigrationSteps, true)
+            displayName: 'Build Database Project'
+            inputs:
+              command: 'build'
+              projects: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
+              arguments: '--configuration $(buildConfiguration) '
 
-            - task: Bash@3
-              displayName: 'Generate Migration Scripts'
-              inputs:
-                filePath: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/generateDBMigrationScripts.sh'
-              env:
-                EF_VERSION: $(efVersion)
-                DATA_PROJECT_PATH: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
-                STARTUP_PROJECT_PATH: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-                MIGRATION_SCRIPT_OUT: 'database-artifact/migration-script.sql'
-                ROLLBACK_SCRIPT_OUT: 'database-artifact/rollback-migration-script.sql'
+          - task: Bash@3
+            condition: eq(variables.runDbMigrationSteps, true)
+            displayName: 'Generate Migration Scripts'
+            inputs:
+              filePath: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/generateDBMigrationScripts.sh'
+            env:
+              EF_VERSION: $(efVersion)
+              DATA_PROJECT_PATH: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
+              STARTUP_PROJECT_PATH: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+              MIGRATION_SCRIPT_OUT: 'database-artifact/migration-script.sql'
+              ROLLBACK_SCRIPT_OUT: 'database-artifact/rollback-migration-script.sql'
 
-            - publish: 'database-artifact'
-              artifact: 'database-scripts-drop'
-              displayName: 'Publish Database Scripts'
+          - publish: 'database-artifact'
+            artifact: 'database-scripts-drop'
+            displayName: 'Publish Database Scripts'
+            condition: eq(variables.runDbMigrationSteps, true)
 
-  - stage: Build_Filetransfer_API
-    displayName: 'Build Transfer API'
-    dependsOn: Package_NuGet
-    jobs:
       - job: Build_FileTransfer_API
         displayName: 'Build FileTransfer API'
         steps:
@@ -107,3 +121,30 @@ stages:
               useLocalNuGet: true
               publishOutput: true
               runTests: false
+             
+# Deployment stages:
+  - template: ../templates/backend-deploy-stages.yml
+    parameters:
+      environment: dev
+      requireValidation: false
+
+  - template: ../templates/backend-deploy-stages.yml
+    parameters:
+      environment: staging
+      requireValidation: true
+      notifyUsers: $(preprodNotifyUsers)
+      approvers: $(preprodApprovers)
+      deployToSlot: true
+      slotName: 'stg'
+      runPostmanSmokeTest: true
+
+  - template: ../templates/backend-deploy-stages.yml
+    parameters:
+      environment: prod
+      requireValidation: true
+      notifyUsers: $(prodNotifyUsers)
+      approvers: $(prodApprovers)
+      agentPool: 'LACC Prod Pool'
+      azureSubscription: 'Azure Pipeline: Large and Complex Cases - Prod'
+      deployToSlot: true
+      slotName: 'stg'
