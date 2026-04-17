@@ -37,6 +37,10 @@ parameters:
 
 stages:
   - stage: Approve_Deployment_${{ parameters.environment }}
+    ${{ if eq(parameters.environment, "staging") }}:
+      dependsOn: Deploy_Backend_dev
+    ${{ if eq(parameters.environment, "prod") }}:
+      dependsOn: Deploy_Backend_staging
     displayName: "${{ parameters.environment }} - Approve Deployment"
     condition: and(succeeded(), ${{ eq(parameters.requireValidation, true) }})
     jobs:
@@ -47,27 +51,32 @@ stages:
           approvers: ${{ parameters.approvers }}
           agentPool: ${{ parameters.agentPool }}
 
-  - stage: Migrate_DB_${{ parameters.environment }}
-    displayName: "${{ parameters.environment }} - Database Migration"
+  - stage: Deploy_Backend_${{ parameters.environment }}
     ${{ if eq(parameters.requireValidation, true) }}:
-      dependsOn: 
+      dependsOn:
         - Approve_Deployment_${{ parameters.environment }}
-        - Preflight  # Stage 'Preflight' is defined in the caller pipeline
+        - Preflight # Stage "Preflight" is defined in the caller pipeline
     ${{ else }}:
       dependsOn:
-        - Build_API # Stage 'Build_API'is defined in the caller pipeline
+        - Build_API # Stage "Build_API"is defined in the caller pipeline
         - Preflight
-    # The Preflight stage outputs the flag 'runDbMigrationSteps'
-    condition: eq(stageDependencies.Preflight.Check_DB_Diff.outputs['Diff_Check.runDbMigrationSteps'],'true')
+    displayName: "${{ parameters.environment }} - Deploy Backend Services"
     variables:
+      - name: runDbMigration # The Preflight stage outputs the flag "runDbMigrationSteps"
+        value: $[ eq(stageDependencies.Preflight.Check_DB_Diff.outputs["Diff_Check.runDbMigrationSteps"],"true") ]
       - template: ./variables/backend-deploy-vars.yml
         parameters:
           environment: ${{ parameters.environment }}
+      - template: ./variables/fa-config-${{parameters.environment}}.yml
+      - ${{ if eq(parameters.runPostmanSmokeTest, true) }}:
+          - group: lacc-automated-testing-${{ parameters.environment }}
+          - group: lacc-backend-secrets-${{ parameters.environment }}
     pool: ${{ parameters.agentPool }}
     jobs:
       - deployment: Deploy_Database_Changes
         displayName: "${{ parameters.environment }} - Deploy Database Changes"
         environment: "LACC-Backend-${{ parameters.environment }}"
+        condition: eq(variables.runDbMigration, "true")
         strategy:
           runOnce:
             deploy:
@@ -119,27 +128,15 @@ stages:
                       bash $(scripts_directory)/updateDatabase.sh
                   env:
                     KEY_VAULT_NAME: $(keyVaultName)
-                    MIGRATION_SCRIPT_PATH: "$(Pipeline.Workspace)/build/database-scripts-drop/migration-script.sql"
+                    MIGRATION_SCRIPT_PATH: "$(Pipeline.Workspace)/database-scripts-drop/migration-script.sql"
 
                 - template: ./runner-cleanup-steps.yml
                   parameters:
-                    buildArtifact: "build"
+                    buildArtifact: "database-scripts-drop"
 
-  - stage: Deploy_Function_Apps_${{ parameters.environment }}
-    displayName: "${{ parameters.environment }} - Deploy Function Apps"
-    dependsOn: Migrate_DB_${{ parameters.environment }}
-    condition: in(stageDependencies.Migrate_DB_${{ parameters.environment }}.result, 'Succeeded', 'Skipped')
-    variables:
-      - template: ./variables/backend-deploy-vars.yml
-        parameters:
-          environment: ${{ parameters.environment }}
-      - template: ./variables/fa-config-${{parameters.environment}}.yml
-      - ${{ if eq(parameters.runPostmanSmokeTest, true) }}:
-          - group: lacc-automated-testing-${{ parameters.environment }}
-          - group: lacc-backend-secrets-${{ parameters.environment }}
-    pool: ${{ parameters.agentPool }}
-    jobs:
       - deployment: Deploy_Main_API
+        dependsOn: Deploy_Database_Changes
+        condition: in(dependencies.Deploy_Database_Changes.result, "Succeeded", "Skipped")
         displayName: "${{ parameters.environment }} - Deploy Main API Function App"
         environment: "LACC-Backend-${{ parameters.environment }}"
         strategy:
@@ -162,6 +159,8 @@ stages:
                     buildArtifact: "lacc-main-api-drop"
 
       - deployment: Deploy_FileTransfer_API
+        dependsOn: Deploy_Database_Changes
+        condition: in(dependencies.Deploy_Database_Changes.result, "Succeeded", "Skipped")
         displayName: "${{ parameters.environment }} - Deploy FileTransfer API Function App"
         environment: "LACC-Backend-${{ parameters.environment }}"
         strategy:
