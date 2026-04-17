@@ -156,14 +156,15 @@ public class NetAppArgFactory : INetAppArgFactory
         };
     }
 
-    public DeleteFileOrFolderArg CreateDeleteFileOrFolderArg(string bearerToken, string bucketName, string operationName, string path)
+    public DeleteFileOrFolderArg CreateDeleteFileOrFolderArg(string bearerToken, string bucketName, string operationName, string path, bool isFolder = false)
     {
         return new DeleteFileOrFolderArg
         {
             BearerToken = bearerToken,
             BucketName = bucketName.ToLowerInvariant(),
             OperationName = operationName,
-            Path = path
+            Path = path,
+            IsFolder = isFolder
         };
     }
 

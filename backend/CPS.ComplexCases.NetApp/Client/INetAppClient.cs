@@ -1,4 +1,5 @@
 using Amazon.S3.Model;
+using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Models.Dto;
 
@@ -18,7 +19,7 @@ namespace CPS.ComplexCases.NetApp.Client
         Task<UploadPartResponse?> UploadPartAsync(UploadPartArg arg);
         Task<CompleteMultipartUploadResponse?> CompleteMultipartUploadAsync(CompleteMultipartUploadArg arg, CancellationToken cancellationToken = default);
         Task<bool> DoesObjectExistAsync(GetObjectArg arg);
-        Task<string> DeleteFileOrFolderAsync(DeleteFileOrFolderArg arg);
+        Task<DeleteNetAppResult> DeleteFileOrFolderAsync(DeleteFileOrFolderArg arg);
         Task<HeadObjectResponseDto> GetHeadObjectMetadataAsync(GetObjectArg arg);
         Task AbortMultipartUploadAsync(AbortMultipartUploadArg arg);
     }

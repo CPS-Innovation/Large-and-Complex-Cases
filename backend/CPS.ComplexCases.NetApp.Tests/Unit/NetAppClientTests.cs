@@ -1099,7 +1099,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 BearerToken = BearerToken,
                 BucketName = BucketName,
                 Path = filePath,
-                OperationName = "test-operation"
+                OperationName = "test-operation",
+                IsFolder = false
             };
 
             var deleteRequest = new DeleteObjectRequest
@@ -1120,7 +1121,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             var result = await _client.DeleteFileOrFolderAsync(arg);
 
             // Assert
-            Assert.Equal($"Successfully deleted file {filePath} from bucket {BucketName}.", result);
+            Assert.True(result.Success);
+            Assert.Equal(1, result.KeysDeleted);
             _amazonS3Mock.Verify(x => x.DeleteObjectAsync(deleteRequest, default), Times.Once);
         }
 
@@ -1134,7 +1136,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 BearerToken = BearerToken,
                 BucketName = BucketName,
                 Path = folderPath,
-                OperationName = "test-operation"
+                OperationName = "test-operation",
+                IsFolder = true
             };
 
             var filesToDelete = new List<string>
@@ -1155,29 +1158,21 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                     IsTruncated = false
                 });
 
-            foreach (var file in filesToDelete)
-            {
-                _netAppRequestFactoryMock
-                    .Setup(x => x.DeleteObjectRequest(It.Is<DeleteFileOrFolderArg>(a => a.Path == file)))
-                    .Returns(new DeleteObjectRequest { BucketName = BucketName, Key = file });
-            }
-
             _amazonS3Mock
-                .Setup(x => x.DeleteObjectAsync(It.IsAny<DeleteObjectRequest>(), default))
-                .ReturnsAsync(() =>
+                .Setup(x => x.DeleteObjectsAsync(It.IsAny<DeleteObjectsRequest>(), default))
+                .ReturnsAsync(new DeleteObjectsResponse
                 {
-                    return new DeleteObjectResponse { HttpStatusCode = HttpStatusCode.InternalServerError };
+                    HttpStatusCode = HttpStatusCode.OK,
+                    DeletedObjects = [],
+                    DeleteErrors = filesToDelete.Select(f => new DeleteError { Key = f, Code = "AccessDenied", Message = "Access denied" }).ToList()
                 });
-
-            _netAppRequestFactoryMock
-                .Setup(x => x.DeleteObjectRequest(It.Is<DeleteFileOrFolderArg>(a => a.Path == folderPath)))
-                .Returns(new DeleteObjectRequest { BucketName = BucketName, Key = folderPath });
 
             // Act
             var result = await _client.DeleteFileOrFolderAsync(arg);
 
             // Assert
-            Assert.Contains("Deletion failed for", result);
+            Assert.False(result.Success);
+            Assert.Contains("Deletion failed for", result.ErrorMessage);
         }
 
         [Fact]
@@ -1252,7 +1247,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             var result = await _client.DeleteFileOrFolderAsync(arg);
 
             // Assert
-            Assert.Contains("Successfully deleted file", result);
+            Assert.True(result.Success);
             _amazonS3Mock.Verify(x => x.DeleteObjectAsync(deleteRequest, default), Times.Once);
         }
 
@@ -1268,7 +1263,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 BearerToken = BearerToken,
                 BucketName = BucketName,
                 Path = folderPath,
-                OperationName = "test-operation"
+                OperationName = "test-operation",
+                IsFolder = true
             };
 
             _netAppRequestFactoryMock
@@ -1284,19 +1280,20 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                     IsTruncated = false
                 });
 
-            _netAppRequestFactoryMock
-                .Setup(x => x.DeleteObjectRequest(It.Is<DeleteFileOrFolderArg>(a => a.Path == folderPath)))
-                .Returns(new DeleteObjectRequest { BucketName = BucketName, Key = folderPath });
-
             _amazonS3Mock
-                .Setup(x => x.DeleteObjectAsync(It.Is<DeleteObjectRequest>(r => r.Key == folderPath), default))
-                .ReturnsAsync(new DeleteObjectResponse { HttpStatusCode = HttpStatusCode.NoContent });
+                .Setup(x => x.DeleteObjectsAsync(It.IsAny<DeleteObjectsRequest>(), default))
+                .ReturnsAsync(new DeleteObjectsResponse
+                {
+                    HttpStatusCode = HttpStatusCode.OK,
+                    DeletedObjects = [new DeletedObject { Key = folderPath }],
+                    DeleteErrors = []
+                });
 
             // Act
             var result = await _client.DeleteFileOrFolderAsync(arg);
 
             // Assert
-            Assert.Contains("Successfully deleted", result);
+            Assert.True(result.Success);
         }
 
         [Fact]
@@ -1309,7 +1306,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 BearerToken = BearerToken,
                 BucketName = BucketName,
                 Path = folderPath,
-                OperationName = "test-operation"
+                OperationName = "test-operation",
+                IsFolder = true
             };
 
             var filesToDelete = new List<string>
@@ -1346,8 +1344,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             var result = await _client.DeleteFileOrFolderAsync(arg);
 
             // Assert
-            Assert.Equal($"Successfully deleted folder {folderPath} and its contents from bucket {BucketName}.",
-                result);
+            Assert.True(result.Success);
             _amazonS3Mock.Verify(x => x.DeleteObjectsAsync(It.IsAny<DeleteObjectsRequest>(), default), Times.Once);
         }
 
@@ -1362,11 +1359,11 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 BearerToken = BearerToken,
                 BucketName = BucketName,
                 Path = folderPath,
-                OperationName = "test-operation"
+                OperationName = "test-operation",
+                IsFolder = true
             };
 
             var successfulDeletions = 2;
-            var failedDeletions = 1;
 
             var filesToDelete = new List<string>
             {
@@ -1409,8 +1406,9 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             var result = await _client.DeleteFileOrFolderAsync(arg);
 
             // Assert
-            Assert.Contains($"Successfully deleted {successfulDeletions} files from bucket {BucketName}", result);
-            Assert.Contains($"Deletion failed for {failedDeletions} files", result);
+            Assert.False(result.Success);
+            Assert.Equal(successfulDeletions, result.KeysDeleted);
+            Assert.Contains("Deletion failed for", result.ErrorMessage);
             _loggerMock.Verify(
                 x => x.Log(
                     It.Is<LogLevel>(l => l == LogLevel.Error),
@@ -1432,7 +1430,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 BearerToken = BearerToken,
                 BucketName = BucketName,
                 Path = folderPath,
-                OperationName = "test-operation"
+                OperationName = "test-operation",
+                IsFolder = true
             };
 
             var filesToDelete = new List<string>
@@ -1472,8 +1471,9 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             var result = await _client.DeleteFileOrFolderAsync(arg);
 
             // Assert
-            Assert.Contains($"Successfully deleted 0 files from bucket {BucketName}", result);
-            Assert.Contains($"Deletion failed for {deleteErrors.Count} files", result);
+            Assert.False(result.Success);
+            Assert.Equal(0, result.KeysDeleted);
+            Assert.Contains("Deletion failed for", result.ErrorMessage);
             _loggerMock.Verify(
                 x => x.Log(
                     It.Is<LogLevel>(l => l == LogLevel.Error),
@@ -1495,7 +1495,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 BearerToken = BearerToken,
                 BucketName = BucketName,
                 Path = folderPath,
-                OperationName = "test-operation"
+                OperationName = "test-operation",
+                IsFolder = true
             };
 
             _netAppRequestFactoryMock
@@ -1524,8 +1525,7 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             var result = await _client.DeleteFileOrFolderAsync(arg);
 
             // Assert
-            Assert.Equal($"Successfully deleted folder {folderPath} and its contents from bucket {BucketName}.",
-                result);
+            Assert.True(result.Success);
             _amazonS3Mock.Verify(x => x.DeleteObjectsAsync(It.IsAny<DeleteObjectsRequest>(), default), Times.Once);
         }
 
@@ -1539,7 +1539,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 BearerToken = BearerToken,
                 BucketName = BucketName,
                 Path = folderPath,
-                OperationName = "test-operation"
+                OperationName = "test-operation",
+                IsFolder = true
             };
 
             var filesToDelete = new List<string>
