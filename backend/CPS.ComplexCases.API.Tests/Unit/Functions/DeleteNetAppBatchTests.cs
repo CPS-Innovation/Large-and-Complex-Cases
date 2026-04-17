@@ -1,0 +1,630 @@
+using System.Net;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Logging;
+using Amazon.S3;
+using AutoFixture;
+using CPS.ComplexCases.ActivityLog.Enums;
+using CPS.ComplexCases.ActivityLog.Services;
+using CPS.ComplexCases.API.Domain.Models;
+using CPS.ComplexCases.API.Domain.Response;
+using CPS.ComplexCases.API.Exceptions;
+using CPS.ComplexCases.API.Functions;
+using CPS.ComplexCases.API.Services;
+using CPS.ComplexCases.API.Tests.Unit.Helpers;
+using CPS.ComplexCases.API.Validators.Requests;
+using CPS.ComplexCases.Common.Handlers;
+using CPS.ComplexCases.Common.Helpers;
+using CPS.ComplexCases.Common.Models;
+using CPS.ComplexCases.Data.Models.Requests;
+using CPS.ComplexCases.NetApp.Client;
+using CPS.ComplexCases.NetApp.Factories;
+using CPS.ComplexCases.NetApp.Models;
+using CPS.ComplexCases.NetApp.Models.Args;
+using Moq;
+
+namespace CPS.ComplexCases.API.Tests.Unit.Functions;
+
+public class DeleteNetAppBatchTests
+{
+    private readonly Mock<ILogger<DeleteNetAppBatch>> _loggerMock;
+    private readonly Mock<INetAppClient> _netAppClientMock;
+    private readonly Mock<INetAppArgFactory> _netAppArgFactoryMock;
+    private readonly Mock<IActivityLogService> _activityLogServiceMock;
+    private readonly Mock<IRequestValidator> _requestValidatorMock;
+    private readonly Mock<ISecurityGroupMetadataService> _securityGroupMetadataServiceMock;
+    private readonly Mock<IInitializationHandler> _initializationHandlerMock;
+    private readonly DeleteNetAppBatch _function;
+    private readonly Fixture _fixture;
+    private readonly string _testBearerToken;
+    private readonly string _testBucketName;
+    private readonly Guid _testCorrelationId;
+    private readonly string _testUsername;
+    private readonly string _testCmsAuthValues;
+    private readonly List<SecurityGroup> _defaultSecurityGroups;
+
+    public DeleteNetAppBatchTests()
+    {
+        _loggerMock = new Mock<ILogger<DeleteNetAppBatch>>();
+        _netAppClientMock = new Mock<INetAppClient>();
+        _netAppArgFactoryMock = new Mock<INetAppArgFactory>();
+        _activityLogServiceMock = new Mock<IActivityLogService>();
+        _requestValidatorMock = new Mock<IRequestValidator>();
+        _securityGroupMetadataServiceMock = new Mock<ISecurityGroupMetadataService>();
+        _initializationHandlerMock = new Mock<IInitializationHandler>();
+
+        _fixture = new Fixture();
+        _testBearerToken = _fixture.Create<string>();
+        _testBucketName = _fixture.Create<string>();
+        _testCorrelationId = _fixture.Create<Guid>();
+        _testUsername = _fixture.Create<string>();
+        _testCmsAuthValues = _fixture.Create<string>();
+
+        _defaultSecurityGroups =
+        [
+            new() {
+                Id = _fixture.Create<Guid>(),
+                BucketName = _testBucketName,
+                DisplayName = "Test Security Group"
+            }
+        ];
+
+        _netAppArgFactoryMock
+            .Setup(f => f.CreateDeleteFileOrFolderArg(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
+            .Returns((string bearer, string bucket, string op, string path, bool isFolder) =>
+                new DeleteFileOrFolderArg { BearerToken = bearer, BucketName = bucket, OperationName = op, Path = path, IsFolder = isFolder });
+
+        _activityLogServiceMock
+            .Setup(s => s.CreateActivityLogAsync(It.IsAny<ActionType>(), It.IsAny<ResourceType>(), It.IsAny<int>(),
+                It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<System.Text.Json.JsonDocument?>()))
+            .Returns(Task.CompletedTask);
+
+        _function = new DeleteNetAppBatch(
+            _loggerMock.Object,
+            _netAppClientMock.Object,
+            _netAppArgFactoryMock.Object,
+            _activityLogServiceMock.Object,
+            _requestValidatorMock.Object,
+            _securityGroupMetadataServiceMock.Object,
+            _initializationHandlerMock.Object);
+    }
+
+    [Fact]
+    public async Task Run_InvalidRequest_ReturnsBadRequest()
+    {
+        // Arrange
+        var validationErrors = new List<string> { "Operations cannot be empty." };
+        SetupRequestValidator(MakeBatchDto(1, []), isValid: false, errors: validationErrors);
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        var result = await _function.Run(req, ctx);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        var errors = Assert.IsAssignableFrom<IEnumerable<string>>(badRequest.Value);
+        Assert.Equal(validationErrors, errors);
+
+        _securityGroupMetadataServiceMock.Verify(s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()), Times.Never);
+        _netAppClientMock.Verify(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_SingleFileBatch_DeletesFileAndReturnsOk()
+    {
+        // Arrange
+        const int caseId = 42;
+        const string path = "CaseRoot/evidence.pdf";
+        var dto = MakeBatchDto(caseId, [MaterialOp(path)]);
+
+        SetupRequestValidator(dto, isValid: true);
+        SetupSecurityGroups();
+        SetupClientSuccess(path, isFolder: false, keysDeleted: 1);
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        var result = await _function.Run(req, ctx);
+
+        // Assert
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
+
+        Assert.Equal(1, response.TotalRequested);
+        Assert.Equal(1, response.Succeeded);
+        Assert.Equal(0, response.Failed);
+        Assert.Single(response.Results);
+        Assert.Equal("Deleted", response.Results[0].Status);
+        Assert.Equal(path, response.Results[0].SourcePath);
+        Assert.Null(response.Results[0].Error);
+    }
+
+    [Fact]
+    public async Task Run_SingleFileBatch_DoesNotPopulateKeysDeletedForSingleFile()
+    {
+        // Arrange
+        const string path = "CaseRoot/report.pdf";
+        var dto = MakeBatchDto(1, [MaterialOp(path)]);
+
+        SetupRequestValidator(dto, isValid: true);
+        SetupSecurityGroups();
+        SetupClientSuccess(path, isFolder: false, keysDeleted: 1);
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        var result = await _function.Run(req, ctx);
+
+        // Assert
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
+        Assert.Null(response.Results[0].KeysDeleted);
+    }
+
+    [Fact]
+    public async Task Run_SingleFolderBatch_DeletesFolderAndReturnsOk()
+    {
+        // Arrange
+        const int caseId = 99;
+        const string path = "CaseRoot/Old-Folder/";
+        const int keysDeleted = 47;
+        var dto = MakeBatchDto(caseId, [FolderOp(path)]);
+
+        SetupRequestValidator(dto, isValid: true);
+        SetupSecurityGroups();
+        SetupClientSuccess(path, isFolder: true, keysDeleted: keysDeleted);
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        var result = await _function.Run(req, ctx);
+
+        // Assert
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
+
+        Assert.Equal(1, response.TotalRequested);
+        Assert.Equal(1, response.Succeeded);
+        Assert.Equal(0, response.Failed);
+        Assert.Equal("Deleted", response.Results[0].Status);
+        Assert.Equal(keysDeleted, response.Results[0].KeysDeleted);
+    }
+
+    [Fact]
+    public async Task Run_FolderDelete_PassesIsFolderTrueToArgFactory()
+    {
+        // Arrange
+        const string path = "CaseRoot/Old-Folder/";
+        var dto = MakeBatchDto(1, [FolderOp(path)]);
+
+        SetupRequestValidator(dto, isValid: true);
+        SetupSecurityGroups();
+        SetupClientSuccess(path, isFolder: true, keysDeleted: 5);
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        await _function.Run(req, ctx);
+
+        // Assert
+        _netAppArgFactoryMock.Verify(
+            f => f.CreateDeleteFileOrFolderArg(_testBearerToken, _testBucketName, string.Empty, path, true),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_MaterialDelete_PassesIsFolderFalseToArgFactory()
+    {
+        // Arrange
+        const string path = "CaseRoot/evidence.pdf";
+        var dto = MakeBatchDto(1, [MaterialOp(path)]);
+
+        SetupRequestValidator(dto, isValid: true);
+        SetupSecurityGroups();
+        SetupClientSuccess(path, isFolder: false, keysDeleted: 1);
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        await _function.Run(req, ctx);
+
+        // Assert
+        _netAppArgFactoryMock.Verify(
+            f => f.CreateDeleteFileOrFolderArg(_testBearerToken, _testBucketName, string.Empty, path, false),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_MixedBatch_DeletesAllItemsAndCountsCorrectly()
+    {
+        // Arrange
+        const string file1 = "CaseRoot/report.pdf";
+        const string file2 = "CaseRoot/evidence.docx";
+        const string folder = "CaseRoot/Old-Folder/";
+        var dto = MakeBatchDto(1, [MaterialOp(file1), MaterialOp(file2), FolderOp(folder)]);
+
+        SetupRequestValidator(dto, isValid: true);
+        SetupSecurityGroups();
+        SetupClientSuccess(file1, isFolder: false, keysDeleted: 1);
+        SetupClientSuccess(file2, isFolder: false, keysDeleted: 1);
+        SetupClientSuccess(folder, isFolder: true, keysDeleted: 10);
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        var result = await _function.Run(req, ctx);
+
+        // Assert
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
+
+        Assert.Equal(3, response.TotalRequested);
+        Assert.Equal(3, response.Succeeded);
+        Assert.Equal(0, response.Failed);
+        Assert.All(response.Results, r => Assert.Equal("Deleted", r.Status));
+    }
+
+    [Fact]
+    public async Task Run_SuccessfulMaterialDelete_LogsMaterialDeletedActivity()
+    {
+        // Arrange
+        const int caseId = 42;
+        const string path = "CaseRoot/report.pdf";
+        var dto = MakeBatchDto(caseId, [MaterialOp(path)]);
+
+        SetupRequestValidator(dto, isValid: true);
+        SetupSecurityGroups();
+        SetupClientSuccess(path, isFolder: false, keysDeleted: 1);
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        await _function.Run(req, ctx);
+
+        // Assert
+        _activityLogServiceMock.Verify(
+            s => s.CreateActivityLogAsync(
+                ActionType.MaterialDeleted,
+                ResourceType.Material,
+                caseId,
+                path,
+                path,
+                _testUsername,
+                null),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_SuccessfulFolderDelete_LogsFolderDeletedActivity()
+    {
+        // Arrange
+        const int caseId = 99;
+        const string path = "CaseRoot/Old-Folder/";
+        var dto = MakeBatchDto(caseId, [FolderOp(path)]);
+
+        SetupRequestValidator(dto, isValid: true);
+        SetupSecurityGroups();
+        SetupClientSuccess(path, isFolder: true, keysDeleted: 5);
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        await _function.Run(req, ctx);
+
+        // Assert
+        _activityLogServiceMock.Verify(
+            s => s.CreateActivityLogAsync(
+                ActionType.FolderDeleted,
+                ResourceType.NetAppFolder,
+                caseId,
+                path,
+                path,
+                _testUsername,
+                null),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_ActivityLogThrows_StillReturnsOkAndDoesNotAbortBatch()
+    {
+        // Arrange
+        const string path = "CaseRoot/evidence.pdf";
+        var dto = MakeBatchDto(1, [MaterialOp(path)]);
+
+        SetupRequestValidator(dto, isValid: true);
+        SetupSecurityGroups();
+        SetupClientSuccess(path, isFolder: false, keysDeleted: 1);
+
+        _activityLogServiceMock
+            .Setup(s => s.CreateActivityLogAsync(It.IsAny<ActionType>(), It.IsAny<ResourceType>(), It.IsAny<int>(),
+                It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<System.Text.Json.JsonDocument?>()))
+            .ThrowsAsync(new Exception("Log service unavailable"));
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        var result = await _function.Run(req, ctx);
+
+        // Assert — the delete still shows as Deleted despite the log failure
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
+        Assert.Equal(1, response.Succeeded);
+        Assert.Equal("Deleted", response.Results[0].Status);
+    }
+
+    [Fact]
+    public async Task Run_FailedDelete_DoesNotLogActivity()
+    {
+        // Arrange
+        const string path = "CaseRoot/evidence.pdf";
+        var dto = MakeBatchDto(1, [MaterialOp(path)]);
+
+        SetupRequestValidator(dto, isValid: true);
+        SetupSecurityGroups();
+        SetupClientFailure(path, isFolder: false, errorMessage: "Something went wrong");
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        await _function.Run(req, ctx);
+
+        // Assert
+        _activityLogServiceMock.Verify(
+            s => s.CreateActivityLogAsync(It.IsAny<ActionType>(), It.IsAny<ResourceType>(), It.IsAny<int>(),
+                It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<System.Text.Json.JsonDocument?>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_PartialFailure_ContinuesRemainingItemsAndReturnsAll()
+    {
+        // Arrange
+        const string file1 = "CaseRoot/report.pdf";
+        const string file2 = "CaseRoot/evidence.docx";
+        var dto = MakeBatchDto(1, [MaterialOp(file1), MaterialOp(file2)]);
+
+        SetupRequestValidator(dto, isValid: true);
+        SetupSecurityGroups();
+        SetupClientSuccess(file1, isFolder: false, keysDeleted: 1);
+        SetupClientFailure(file2, isFolder: false, errorMessage: "Delete failed");
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        var result = await _function.Run(req, ctx);
+
+        // Assert
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
+
+        Assert.Equal(2, response.TotalRequested);
+        Assert.Equal(1, response.Succeeded);
+        Assert.Equal(1, response.Failed);
+
+        var successItem = response.Results.Single(r => r.SourcePath == file1);
+        Assert.Equal("Deleted", successItem.Status);
+
+        var failedItem = response.Results.Single(r => r.SourcePath == file2);
+        Assert.Equal("Failed", failedItem.Status);
+        Assert.NotNull(failedItem.Error);
+    }
+
+    [Fact]
+    public async Task Run_ClientThrows423_RecordsFailureWithSmbMessageAndContinuesBatch()
+    {
+        // Arrange
+        const string lockedFile = "CaseRoot/open-in-word.docx";
+        const string otherFile = "CaseRoot/evidence.pdf";
+        var dto = MakeBatchDto(1, [MaterialOp(lockedFile), MaterialOp(otherFile)]);
+
+        SetupRequestValidator(dto, isValid: true);
+        SetupSecurityGroups();
+
+        var lockedEx = new AmazonS3Exception("Locked") { StatusCode = HttpStatusCode.Locked };
+        _netAppClientMock
+            .Setup(c => c.DeleteFileOrFolderAsync(It.Is<DeleteFileOrFolderArg>(a => a.Path == lockedFile)))
+            .ThrowsAsync(lockedEx);
+
+        SetupClientSuccess(otherFile, isFolder: false, keysDeleted: 1);
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        var result = await _function.Run(req, ctx);
+
+        // Assert
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
+
+        Assert.Equal(2, response.TotalRequested);
+        Assert.Equal(1, response.Succeeded);
+        Assert.Equal(1, response.Failed);
+
+        var failedItem = response.Results.Single(r => r.SourcePath == lockedFile);
+        Assert.Equal("Failed", failedItem.Status);
+        Assert.Contains("423", failedItem.Error);
+
+        var successItem = response.Results.Single(r => r.SourcePath == otherFile);
+        Assert.Equal("Deleted", successItem.Status);
+    }
+
+    [Fact]
+    public async Task Run_ClientThrows423_DoesNotLogActivity()
+    {
+        // Arrange
+        const string path = "CaseRoot/open-in-word.docx";
+        var dto = MakeBatchDto(1, [MaterialOp(path)]);
+
+        SetupRequestValidator(dto, isValid: true);
+        SetupSecurityGroups();
+
+        var lockedEx = new AmazonS3Exception("Locked") { StatusCode = HttpStatusCode.Locked };
+        _netAppClientMock
+            .Setup(c => c.DeleteFileOrFolderAsync(It.Is<DeleteFileOrFolderArg>(a => a.Path == path)))
+            .ThrowsAsync(lockedEx);
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        await _function.Run(req, ctx);
+
+        // Assert
+        _activityLogServiceMock.Verify(
+            s => s.CreateActivityLogAsync(It.IsAny<ActionType>(), It.IsAny<ResourceType>(), It.IsAny<int>(),
+                It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<System.Text.Json.JsonDocument?>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_ClientThrowsUnexpectedException_RecordsFailureAndContinuesBatch()
+    {
+        // Arrange
+        const string badFile = "CaseRoot/corrupted.pdf";
+        const string goodFile = "CaseRoot/evidence.pdf";
+        var dto = MakeBatchDto(1, [MaterialOp(badFile), MaterialOp(goodFile)]);
+
+        SetupRequestValidator(dto, isValid: true);
+        SetupSecurityGroups();
+
+        _netAppClientMock
+            .Setup(c => c.DeleteFileOrFolderAsync(It.Is<DeleteFileOrFolderArg>(a => a.Path == badFile)))
+            .ThrowsAsync(new InvalidOperationException("Something broke"));
+
+        SetupClientSuccess(goodFile, isFolder: false, keysDeleted: 1);
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        var result = await _function.Run(req, ctx);
+
+        // Assert
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
+
+        Assert.Equal(1, response.Succeeded);
+        Assert.Equal(1, response.Failed);
+
+        var failedItem = response.Results.Single(r => r.SourcePath == badFile);
+        Assert.Equal("Failed", failedItem.Status);
+        Assert.Equal("Something broke", failedItem.Error);
+    }
+
+    [Fact]
+    public async Task Run_UsesFirstSecurityGroupBucketName()
+    {
+        // Arrange
+        const string path = "CaseRoot/evidence.pdf";
+        const string firstBucket = "first-bucket";
+        const string secondBucket = "second-bucket";
+        var dto = MakeBatchDto(1, [MaterialOp(path)]);
+
+        SetupRequestValidator(dto, isValid: true);
+
+        _securityGroupMetadataServiceMock
+            .Setup(s => s.GetUserSecurityGroupsAsync(_testBearerToken))
+            .ReturnsAsync(
+            [
+                new() { Id = _fixture.Create<Guid>(), BucketName = firstBucket, DisplayName = "First" },
+                new() { Id = _fixture.Create<Guid>(), BucketName = secondBucket, DisplayName = "Second" }
+            ]);
+
+        _netAppClientMock
+            .Setup(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()))
+            .ReturnsAsync(new DeleteNetAppResult(true, 1, null, null));
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        await _function.Run(req, ctx);
+
+        // Assert
+        _netAppArgFactoryMock.Verify(
+            f => f.CreateDeleteFileOrFolderArg(_testBearerToken, firstBucket, string.Empty, path, false),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_MissingSecurityGroup_ThrowsMissingSecurityGroupException()
+    {
+        // Arrange
+        var dto = MakeBatchDto(1, [MaterialOp("CaseRoot/evidence.pdf")]);
+        SetupRequestValidator(dto, isValid: true);
+
+        _securityGroupMetadataServiceMock
+            .Setup(s => s.GetUserSecurityGroupsAsync(_testBearerToken))
+            .ThrowsAsync(new MissingSecurityGroupException("No security groups found."));
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<MissingSecurityGroupException>(() => _function.Run(req, ctx));
+
+        _netAppClientMock.Verify(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_InitializesHandlerWithUsernameAndCorrelationId()
+    {
+        // Arrange
+        var dto = MakeBatchDto(1, [MaterialOp("CaseRoot/evidence.pdf")]);
+        SetupRequestValidator(dto, isValid: true);
+        SetupSecurityGroups();
+        SetupClientSuccess("CaseRoot/evidence.pdf", isFolder: false, keysDeleted: 1);
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        await _function.Run(req, ctx);
+
+        // Assert
+        _initializationHandlerMock.Verify(h => h.Initialize(_testUsername, _testCorrelationId, null), Times.Once);
+    }
+
+    private static DeleteNetAppBatchDto MakeBatchDto(int caseId, List<DeleteNetAppBatchOperationDto> operations) =>
+        new() { CaseId = caseId, Operations = operations };
+
+    private static DeleteNetAppBatchOperationDto MaterialOp(string sourcePath) =>
+        new() { Type = NetAppDeleteOperationType.Material, SourcePath = sourcePath };
+
+    private static DeleteNetAppBatchOperationDto FolderOp(string sourcePath) =>
+        new() { Type = NetAppDeleteOperationType.Folder, SourcePath = sourcePath };
+
+    private void SetupRequestValidator(DeleteNetAppBatchDto dto, bool isValid, List<string>? errors = null)
+    {
+        _requestValidatorMock
+            .Setup(x => x.GetJsonBody<DeleteNetAppBatchDto, DeleteNetAppBatchRequestValidator>(It.IsAny<HttpRequest>()))
+            .ReturnsAsync(new ValidatableRequest<DeleteNetAppBatchDto>
+            {
+                IsValid = isValid,
+                ValidationErrors = errors ?? [],
+                Value = dto
+            });
+    }
+
+    private void SetupSecurityGroups()
+    {
+        _securityGroupMetadataServiceMock
+            .Setup(s => s.GetUserSecurityGroupsAsync(_testBearerToken))
+            .ReturnsAsync(_defaultSecurityGroups);
+    }
+
+    private void SetupClientSuccess(string path, bool isFolder, int keysDeleted)
+    {
+        _netAppClientMock
+            .Setup(c => c.DeleteFileOrFolderAsync(It.Is<DeleteFileOrFolderArg>(a => a.Path == path && a.IsFolder == isFolder)))
+            .ReturnsAsync(new DeleteNetAppResult(true, keysDeleted, null, null));
+    }
+
+    private void SetupClientFailure(string path, bool isFolder, string errorMessage)
+    {
+        _netAppClientMock
+            .Setup(c => c.DeleteFileOrFolderAsync(It.Is<DeleteFileOrFolderArg>(a => a.Path == path && a.IsFolder == isFolder)))
+            .ReturnsAsync(new DeleteNetAppResult(false, 0, errorMessage, null));
+    }
+
+    private (HttpRequest req, FunctionContext ctx) CreateRequestAndContext() =>
+        (HttpRequestStubHelper.CreateHttpRequest(_testCorrelationId),
+         FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken));
+}

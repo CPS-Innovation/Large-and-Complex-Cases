@@ -477,23 +477,23 @@ public class NetAppClient(
         return response.StatusCode == HttpStatusCode.OK;
     }
 
-    public Task<string> DeleteFileOrFolderAsync(DeleteFileOrFolderArg arg)
+    public Task<DeleteNetAppResult> DeleteFileOrFolderAsync(DeleteFileOrFolderArg arg)
         => ExecuteWithCredentialRetryAsync(() => DeleteFileOrFolderCoreAsync(arg), nameof(DeleteFileOrFolderAsync), arg.BucketName);
 
-    private async Task<string> DeleteFileOrFolderCoreAsync(DeleteFileOrFolderArg arg)
+    private async Task<DeleteNetAppResult> DeleteFileOrFolderCoreAsync(DeleteFileOrFolderArg arg)
     {
         var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
         try
         {
-            if (Path.HasExtension(arg.Path))
+            if (!arg.IsFolder)
             {
                 var request = _netAppRequestFactory.DeleteObjectRequest(arg);
                 await s3Client.DeleteObjectAsync(request);
-                return $"Successfully deleted file {arg.Path} from bucket {arg.BucketName}.";
+                return new DeleteNetAppResult(true, 1, null, null);
             }
             else
             {
-                var filesToDelete = await ListAllObjectKeysForDeletionAsync(arg.BucketName, arg.Path, arg.BearerToken);
+                var filesToDelete = (await ListAllObjectKeysForDeletionAsync(arg.BucketName, arg.Path, arg.BearerToken)).ToList();
 
                 // Re-resolve the S3 client after listing. The listing phase calls
                 // ListObjectsInBucketAsync internally, which has its own credential
@@ -501,34 +501,38 @@ public class NetAppClient(
                 // regenerates keys, the s3Client captured above now holds dead keys.
                 s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
 
-                var deleteObjectsRequest = new DeleteObjectsRequest
+                var totalDeleted = 0;
+                var allErrors = new List<DeleteError>();
+
+                foreach (var chunk in filesToDelete.Chunk(1000))
                 {
-                    BucketName = arg.BucketName,
-                    Objects = filesToDelete.Select(path => new KeyVersion { Key = path }).ToList()
-                };
+                    var deleteObjectsRequest = new DeleteObjectsRequest
+                    {
+                        BucketName = arg.BucketName,
+                        Objects = chunk.Select(path => new KeyVersion { Key = path }).ToList()
+                    };
 
-                var response = await s3Client.DeleteObjectsAsync(deleteObjectsRequest);
+                    var response = await s3Client.DeleteObjectsAsync(deleteObjectsRequest);
 
-                var deleteErrors = response.DeleteErrors ?? [];
-                var deletedObjects = response.DeletedObjects ?? [];
+                    totalDeleted += (response.DeletedObjects ?? []).Count;
 
-                if (response.HttpStatusCode == HttpStatusCode.OK && deleteErrors.Count == 0)
-                {
-                    return $"Successfully deleted folder {arg.Path} and its contents from bucket {arg.BucketName}.";
+                    var chunkErrors = response.DeleteErrors ?? [];
+                    foreach (var error in chunkErrors)
+                    {
+                        _logger.LogError(
+                            "Failed to delete object {ObjectKey} from bucket {BucketName}. Code: {Code}, Message: {Message}",
+                            error.Key, arg.BucketName, error.Code, error.Message);
+                    }
+                    allErrors.AddRange(chunkErrors);
                 }
 
-                foreach (var error in deleteErrors)
+                if (allErrors.Count > 0)
                 {
-                    _logger.LogError(
-                        "Failed to delete object {ObjectKey} from bucket {BucketName}. Code: {Code}, Message: {Message}",
-                        error.Key, arg.BucketName, error.Code, error.Message);
+                    return new DeleteNetAppResult(false, totalDeleted,
+                        $"Deletion failed for {allErrors.Count} object(s) in folder {arg.Path}.", null);
                 }
 
-                var successfulDeletionsCount = deletedObjects.Count;
-                var failedDeletionsCount = deleteErrors.Count;
-
-                return
-                    $"Successfully deleted {successfulDeletionsCount} files from bucket {arg.BucketName}. Deletion failed for {failedDeletionsCount} files. ";
+                return new DeleteNetAppResult(true, totalDeleted, null, null);
             }
         }
         catch (AmazonS3Exception ex)

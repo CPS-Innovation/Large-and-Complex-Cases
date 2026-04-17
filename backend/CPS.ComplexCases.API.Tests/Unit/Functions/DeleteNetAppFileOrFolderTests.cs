@@ -13,6 +13,7 @@ using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
+using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Models.Requests;
 using Moq;
@@ -122,7 +123,7 @@ public class DeleteNetAppFileOrFolderTests
 
         _initializationHandlerMock.Verify(h => h.Initialize(It.IsAny<string>(), It.IsAny<Guid>(), null), Times.Once);
         _securityGroupMetadataServiceMock.Verify(s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()), Times.Never);
-        _netAppArgFactoryMock.Verify(f => f.CreateDeleteFileOrFolderArg(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        _netAppArgFactoryMock.Verify(f => f.CreateDeleteFileOrFolderArg(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
         _netAppClientMock.Verify(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()), Times.Never);
     }
 
@@ -157,7 +158,7 @@ public class DeleteNetAppFileOrFolderTests
 
         _initializationHandlerMock.Verify(h => h.Initialize(It.IsAny<string>(), It.IsAny<Guid>(), null), Times.Once);
         _securityGroupMetadataServiceMock.Verify(s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()), Times.Never);
-        _netAppArgFactoryMock.Verify(f => f.CreateDeleteFileOrFolderArg(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        _netAppArgFactoryMock.Verify(f => f.CreateDeleteFileOrFolderArg(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
         _netAppClientMock.Verify(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()), Times.Never);
     }
 
@@ -169,7 +170,7 @@ public class DeleteNetAppFileOrFolderTests
         var filePath = "documents/report.pdf";
         var deleteRequest = new DeleteNetAppFileOrFolderDto { Path = filePath };
         var arg = _fixture.Create<DeleteFileOrFolderArg>();
-        var expectedMessage = $"Successfully deleted file {operationName}/{filePath} from bucket {_testBucketName}.";
+        var expectedResult = new DeleteNetAppResult(true, 1, null, null);
 
         var securityGroups = new List<SecurityGroup>
         {
@@ -193,12 +194,12 @@ public class DeleteNetAppFileOrFolderTests
             .ReturnsAsync(securityGroups);
 
         _netAppArgFactoryMock
-            .Setup(f => f.CreateDeleteFileOrFolderArg(_testBearerToken, _testBucketName, operationName, $"{operationName}/{filePath}"))
+            .Setup(f => f.CreateDeleteFileOrFolderArg(_testBearerToken, _testBucketName, operationName, $"{operationName}/{filePath}", false))
             .Returns(arg);
 
         _netAppClientMock
             .Setup(c => c.DeleteFileOrFolderAsync(arg))
-            .ReturnsAsync(expectedMessage);
+            .ReturnsAsync(expectedResult);
 
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestFor(deleteRequest);
         var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
@@ -208,11 +209,12 @@ public class DeleteNetAppFileOrFolderTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        Assert.Equal(expectedMessage, okResult.Value);
+        var deleteResult = Assert.IsType<DeleteNetAppResult>(okResult.Value);
+        Assert.True(deleteResult.Success);
 
         _initializationHandlerMock.Verify(h => h.Initialize(_testUsername, _testCorrelationId, null), Times.Once);
         _securityGroupMetadataServiceMock.Verify(s => s.GetUserSecurityGroupsAsync(_testBearerToken), Times.Once);
-        _netAppArgFactoryMock.Verify(f => f.CreateDeleteFileOrFolderArg(_testBearerToken, _testBucketName, operationName, $"{operationName}/{filePath}"), Times.Once);
+        _netAppArgFactoryMock.Verify(f => f.CreateDeleteFileOrFolderArg(_testBearerToken, _testBucketName, operationName, $"{operationName}/{filePath}", false), Times.Once);
         _netAppClientMock.Verify(c => c.DeleteFileOrFolderAsync(arg), Times.Once);
     }
 
@@ -224,7 +226,7 @@ public class DeleteNetAppFileOrFolderTests
         var folderPath = "documents/reports";
         var deleteRequest = new DeleteNetAppFileOrFolderDto { Path = folderPath };
         var arg = _fixture.Create<DeleteFileOrFolderArg>();
-        var expectedMessage = $"Successfully deleted {operationName}/{folderPath} from bucket {_testBucketName}.";
+        var expectedResult = new DeleteNetAppResult(true, 47, null, null);
 
         var securityGroups = new List<SecurityGroup>
         {
@@ -248,12 +250,12 @@ public class DeleteNetAppFileOrFolderTests
             .ReturnsAsync(securityGroups);
 
         _netAppArgFactoryMock
-            .Setup(f => f.CreateDeleteFileOrFolderArg(_testBearerToken, _testBucketName, operationName, $"{operationName}/{folderPath}"))
+            .Setup(f => f.CreateDeleteFileOrFolderArg(_testBearerToken, _testBucketName, operationName, $"{operationName}/{folderPath}", false))
             .Returns(arg);
 
         _netAppClientMock
             .Setup(c => c.DeleteFileOrFolderAsync(arg))
-            .ReturnsAsync(expectedMessage);
+            .ReturnsAsync(expectedResult);
 
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestFor(deleteRequest);
         var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
@@ -263,11 +265,12 @@ public class DeleteNetAppFileOrFolderTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        Assert.Equal(expectedMessage, okResult.Value);
+        var deleteResult = Assert.IsType<DeleteNetAppResult>(okResult.Value);
+        Assert.True(deleteResult.Success);
 
         _initializationHandlerMock.Verify(h => h.Initialize(_testUsername, _testCorrelationId, null), Times.Once);
         _securityGroupMetadataServiceMock.Verify(s => s.GetUserSecurityGroupsAsync(_testBearerToken), Times.Once);
-        _netAppArgFactoryMock.Verify(f => f.CreateDeleteFileOrFolderArg(_testBearerToken, _testBucketName, operationName, $"{operationName}/{folderPath}"), Times.Once);
+        _netAppArgFactoryMock.Verify(f => f.CreateDeleteFileOrFolderArg(_testBearerToken, _testBucketName, operationName, $"{operationName}/{folderPath}", false), Times.Once);
         _netAppClientMock.Verify(c => c.DeleteFileOrFolderAsync(arg), Times.Once);
     }
 
@@ -299,7 +302,7 @@ public class DeleteNetAppFileOrFolderTests
 
         _initializationHandlerMock.Verify(h => h.Initialize(_testUsername, _testCorrelationId, null), Times.Once);
         _securityGroupMetadataServiceMock.Verify(s => s.GetUserSecurityGroupsAsync(_testBearerToken), Times.Once);
-        _netAppArgFactoryMock.Verify(f => f.CreateDeleteFileOrFolderArg(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        _netAppArgFactoryMock.Verify(f => f.CreateDeleteFileOrFolderArg(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
         _netAppClientMock.Verify(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()), Times.Never);
     }
 
@@ -333,12 +336,12 @@ public class DeleteNetAppFileOrFolderTests
             .ReturnsAsync(securityGroups);
 
         _netAppArgFactoryMock
-            .Setup(f => f.CreateDeleteFileOrFolderArg(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .Setup(f => f.CreateDeleteFileOrFolderArg(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
             .Returns(arg);
 
         _netAppClientMock
             .Setup(c => c.DeleteFileOrFolderAsync(arg))
-            .ReturnsAsync("Success");
+            .ReturnsAsync(new DeleteNetAppResult(true, 1, null, null));
 
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestFor(deleteRequest);
         var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
@@ -388,12 +391,12 @@ public class DeleteNetAppFileOrFolderTests
             .ReturnsAsync(securityGroups);
 
         _netAppArgFactoryMock
-            .Setup(f => f.CreateDeleteFileOrFolderArg(_testBearerToken, firstBucketName, operationName, $"{operationName}/{filePath}"))
+            .Setup(f => f.CreateDeleteFileOrFolderArg(_testBearerToken, firstBucketName, operationName, $"{operationName}/{filePath}", false))
             .Returns(arg);
 
         _netAppClientMock
             .Setup(c => c.DeleteFileOrFolderAsync(arg))
-            .ReturnsAsync("Success");
+            .ReturnsAsync(new DeleteNetAppResult(true, 1, null, null));
 
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestFor(deleteRequest);
         var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
@@ -402,7 +405,7 @@ public class DeleteNetAppFileOrFolderTests
         await _function.Run(httpRequest, operationName, functionContext);
 
         // Assert
-        _netAppArgFactoryMock.Verify(f => f.CreateDeleteFileOrFolderArg(_testBearerToken, firstBucketName, operationName, $"{operationName}/{filePath}"), Times.Once);
+        _netAppArgFactoryMock.Verify(f => f.CreateDeleteFileOrFolderArg(_testBearerToken, firstBucketName, operationName, $"{operationName}/{filePath}", false), Times.Once);
     }
 
     [Fact]
@@ -437,12 +440,12 @@ public class DeleteNetAppFileOrFolderTests
             .ReturnsAsync(securityGroups);
 
         _netAppArgFactoryMock
-            .Setup(f => f.CreateDeleteFileOrFolderArg(_testBearerToken, _testBucketName, operationName, expectedFullPath))
+            .Setup(f => f.CreateDeleteFileOrFolderArg(_testBearerToken, _testBucketName, operationName, expectedFullPath, false))
             .Returns(arg);
 
         _netAppClientMock
             .Setup(c => c.DeleteFileOrFolderAsync(arg))
-            .ReturnsAsync("Success");
+            .ReturnsAsync(new DeleteNetAppResult(true, 1, null, null));
 
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestFor(deleteRequest);
         var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
@@ -455,6 +458,7 @@ public class DeleteNetAppFileOrFolderTests
             _testBearerToken,
             _testBucketName,
             operationName,
-            expectedFullPath), Times.Once);
+            expectedFullPath,
+            false), Times.Once);
     }
 }
