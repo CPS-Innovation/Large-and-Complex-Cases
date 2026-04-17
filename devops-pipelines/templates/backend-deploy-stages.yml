@@ -76,7 +76,7 @@ stages:
       - deployment: Deploy_Database_Changes
         displayName: "${{ parameters.environment }} - Deploy Database Changes"
         environment: "LACC-Backend-${{ parameters.environment }}"
-        condition: eq(variables.runDbMigration, "true")
+        condition: eq(variables.runDbMigration, 'true')
         strategy:
           runOnce:
             deploy:
