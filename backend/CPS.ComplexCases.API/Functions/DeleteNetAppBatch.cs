@@ -13,6 +13,7 @@ using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
+using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
@@ -26,6 +27,7 @@ public class DeleteNetAppBatch(
     IActivityLogService activityLogService,
     IRequestValidator requestValidator,
     ISecurityGroupMetadataService securityGroupMetadataService,
+    ICaseMetadataService caseMetadataService,
     IInitializationHandler initializationHandler)
 {
     private readonly ILogger<DeleteNetAppBatch> _logger = logger;
@@ -34,6 +36,7 @@ public class DeleteNetAppBatch(
     private readonly IActivityLogService _activityLogService = activityLogService;
     private readonly IRequestValidator _requestValidator = requestValidator;
     private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
+    private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
     private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
     [Function(nameof(DeleteNetAppBatch))]
@@ -42,7 +45,7 @@ public class DeleteNetAppBatch(
     [BearerTokenAuth]
     [OpenApiRequestBody(ContentType.ApplicationJson, typeof(DeleteNetAppBatchDto), Description = "Body containing the case ID and list of files/folders to delete.")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(DeleteNetAppBatchResponse), Description = ApiResponseDescriptions.Success)]
-    [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.ApplicationJson, typeof(IEnumerable<string>), Description = ApiResponseDescriptions.BadRequest)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Forbidden, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Forbidden)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
@@ -58,6 +61,15 @@ public class DeleteNetAppBatch(
         if (!batchRequest.IsValid)
             return new BadRequestObjectResult(batchRequest.ValidationErrors);
 
+        var caseMetadata = await _caseMetadataService.GetCaseMetadataForCaseIdAsync(batchRequest.Value.CaseId);
+
+        if (caseMetadata == null || string.IsNullOrEmpty(caseMetadata.NetappFolderPath))
+            return new BadRequestObjectResult("Case metadata or NetApp folder path is missing.");
+
+        var casePrefix = caseMetadata.NetappFolderPath.EndsWith('/')
+            ? caseMetadata.NetappFolderPath
+            : caseMetadata.NetappFolderPath + "/";
+
         var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
         var bucket = securityGroups.First().BucketName;
 
@@ -65,6 +77,20 @@ public class DeleteNetAppBatch(
 
         foreach (var op in batchRequest.Value.Operations)
         {
+            if (!op.SourcePath.StartsWith(casePrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning(
+                    "Path {SourcePath} is not within case folder {CasePrefix}. Skipping.",
+                    op.SourcePath, casePrefix);
+                results.Add(new DeleteNetAppBatchItemResult
+                {
+                    SourcePath = op.SourcePath,
+                    Status = "Failed",
+                    Error = "Path is not within the case's NetApp folder."
+                });
+                continue;
+            }
+
             var isFolder = op.Type == NetAppDeleteOperationType.Folder;
             var arg = _netAppArgFactory.CreateDeleteFileOrFolderArg(
                 context.BearerToken, bucket, string.Empty, op.SourcePath, isFolder);

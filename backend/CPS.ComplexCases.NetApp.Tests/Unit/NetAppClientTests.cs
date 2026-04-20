@@ -1111,6 +1111,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 Key = filePath
             };
 
+            SetupFileExistsCheck(filePath, exists: true);
+
             _netAppRequestFactoryMock
                 .Setup(x => x.DeleteObjectRequest(arg))
                 .Returns(deleteRequest);
@@ -1126,6 +1128,31 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             Assert.True(result.Success);
             Assert.Equal(1, result.KeysDeleted);
             _amazonS3Mock.Verify(x => x.DeleteObjectAsync(deleteRequest, default), Times.Once);
+        }
+
+        [Fact]
+        public async Task DeleteFileOrFolderAsync_WhenFileDoesNotExist_ReturnsSuccessWithZeroKeysDeleted()
+        {
+            // Arrange
+            var filePath = "statement/missing.pdf";
+            var arg = new DeleteFileOrFolderArg
+            {
+                BearerToken = BearerToken,
+                BucketName = BucketName,
+                Path = filePath,
+                OperationName = "test-operation",
+                IsFolder = false
+            };
+
+            SetupFileExistsCheck(filePath, exists: false);
+
+            // Act
+            var result = await _client.DeleteFileOrFolderAsync(arg);
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.Equal(0, result.KeysDeleted);
+            _amazonS3Mock.Verify(x => x.DeleteObjectAsync(It.IsAny<DeleteObjectRequest>(), default), Times.Never);
         }
 
         [Fact]
@@ -1196,6 +1223,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 Key = filePath
             };
 
+            SetupFileExistsCheck(filePath, exists: true);
+
             _netAppRequestFactoryMock
                 .Setup(x => x.DeleteObjectRequest(arg))
                 .Returns(deleteRequest);
@@ -1236,6 +1265,8 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 BucketName = arg.BucketName,
                 Key = filePath
             };
+
+            SetupFileExistsCheck(filePath, exists: true);
 
             _netAppRequestFactoryMock
                 .Setup(x => x.DeleteObjectRequest(arg))
@@ -2930,6 +2961,27 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
             _amazonS3Mock
                 .Setup(s => s.ListObjectsV2Async(request, default))
                 .ReturnsAsync(response);
+        }
+
+        private void SetupFileExistsCheck(string filePath, bool exists)
+        {
+            var getObjectArg = new GetObjectArg { BearerToken = BearerToken, BucketName = BucketName, ObjectKey = filePath };
+            var headObjectArg = new GetHeadObjectArg { BearerToken = BearerToken, BucketName = BucketName, ObjectKey = filePath };
+
+            _netAppArgFactoryMock
+                .Setup(x => x.CreateGetObjectArg(BearerToken, BucketName, filePath, null))
+                .Returns(getObjectArg);
+
+            _netAppS3HttpArgFactoryMock
+                .Setup(x => x.CreateGetHeadObjectArg(BearerToken, BucketName, filePath))
+                .Returns(headObjectArg);
+
+            _netAppS3HttpClientMock
+                .Setup(x => x.GetHeadObjectAsync(headObjectArg))
+                .ReturnsAsync(new HeadObjectResponseDto
+                {
+                    StatusCode = exists ? HttpStatusCode.OK : HttpStatusCode.NotFound
+                });
         }
     }
 }

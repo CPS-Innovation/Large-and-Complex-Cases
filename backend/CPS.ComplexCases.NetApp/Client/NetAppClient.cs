@@ -487,6 +487,10 @@ public class NetAppClient(
         {
             if (!arg.IsFolder)
             {
+                var getObjectArg = _netAppArgFactory.CreateGetObjectArg(arg.BearerToken, arg.BucketName, arg.Path);
+                if (!await DoesObjectExistAsync(getObjectArg))
+                    return new DeleteNetAppResult(true, 0, null, null);
+
                 var request = _netAppRequestFactory.DeleteObjectRequest(arg);
                 await s3Client.DeleteObjectAsync(request);
                 return new DeleteNetAppResult(true, 1, null, null);

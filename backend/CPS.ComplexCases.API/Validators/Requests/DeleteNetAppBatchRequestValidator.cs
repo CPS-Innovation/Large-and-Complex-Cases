@@ -5,11 +5,21 @@ namespace CPS.ComplexCases.API.Validators.Requests;
 
 public class DeleteNetAppBatchRequestValidator : AbstractValidator<DeleteNetAppBatchDto>
 {
+    public const int MaxOperations = 100;
+
     public DeleteNetAppBatchRequestValidator()
     {
+        RuleFor(x => x.CaseId)
+            .GreaterThan(0)
+            .WithMessage("CaseId must be a positive integer.");
+
         RuleFor(x => x.Operations)
             .NotEmpty()
             .WithMessage("Operations cannot be empty.");
+
+        RuleFor(x => x.Operations)
+            .Must(ops => ops == null || ops.Count <= MaxOperations)
+            .WithMessage($"A batch may not contain more than {MaxOperations} operations.");
 
         RuleFor(x => x.Operations)
             .Must(ops => ops == null || ops.Select(o => o.SourcePath).Distinct(StringComparer.OrdinalIgnoreCase).Count() == ops.Count)

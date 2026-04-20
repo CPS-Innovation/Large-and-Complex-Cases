@@ -12,6 +12,29 @@ public class DeleteNetAppBatchRequestValidatorTests
         _validator = new DeleteNetAppBatchRequestValidator();
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Validate_WhenCaseIdIsNotPositive_ReturnsValidationError(int caseId)
+    {
+        // Arrange
+        var request = new DeleteNetAppBatchDto
+        {
+            CaseId = caseId,
+            Operations =
+            [
+                new DeleteNetAppBatchOperationDto { Type = NetAppDeleteOperationType.Material, SourcePath = "folder/file.txt" }
+            ]
+        };
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Single(result.Errors, e => e.PropertyName == nameof(request.CaseId) && e.ErrorMessage == "CaseId must be a positive integer.");
+    }
+
     [Fact]
     public void Validate_WhenOperationsIsEmpty_ReturnsValidationError()
     {
@@ -28,6 +51,41 @@ public class DeleteNetAppBatchRequestValidatorTests
         // Assert
         Assert.False(result.IsValid);
         Assert.Single(result.Errors, e => e.PropertyName == nameof(request.Operations) && e.ErrorMessage == "Operations cannot be empty.");
+    }
+
+    [Fact]
+    public void Validate_WhenOperationsExceedsMaximum_ReturnsValidationError()
+    {
+        // Arrange
+        var operations = Enumerable.Range(1, DeleteNetAppBatchRequestValidator.MaxOperations + 1)
+            .Select(i => new DeleteNetAppBatchOperationDto { Type = NetAppDeleteOperationType.Material, SourcePath = $"folder/file{i}.txt" })
+            .ToList();
+
+        var request = new DeleteNetAppBatchDto { CaseId = 1, Operations = operations };
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Single(result.Errors, e => e.PropertyName == nameof(request.Operations) && e.ErrorMessage.Contains("more than"));
+    }
+
+    [Fact]
+    public void Validate_WhenOperationsIsAtMaximum_IsValid()
+    {
+        // Arrange
+        var operations = Enumerable.Range(1, DeleteNetAppBatchRequestValidator.MaxOperations)
+            .Select(i => new DeleteNetAppBatchOperationDto { Type = NetAppDeleteOperationType.Material, SourcePath = $"folder/file{i}.txt" })
+            .ToList();
+
+        var request = new DeleteNetAppBatchDto { CaseId = 1, Operations = operations };
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        Assert.True(result.IsValid);
     }
 
     [Fact]

@@ -17,6 +17,8 @@ using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models;
+using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
@@ -34,6 +36,7 @@ public class DeleteNetAppBatchTests
     private readonly Mock<IActivityLogService> _activityLogServiceMock;
     private readonly Mock<IRequestValidator> _requestValidatorMock;
     private readonly Mock<ISecurityGroupMetadataService> _securityGroupMetadataServiceMock;
+    private readonly Mock<ICaseMetadataService> _caseMetadataServiceMock;
     private readonly Mock<IInitializationHandler> _initializationHandlerMock;
     private readonly DeleteNetAppBatch _function;
     private readonly Fixture _fixture;
@@ -52,6 +55,7 @@ public class DeleteNetAppBatchTests
         _activityLogServiceMock = new Mock<IActivityLogService>();
         _requestValidatorMock = new Mock<IRequestValidator>();
         _securityGroupMetadataServiceMock = new Mock<ISecurityGroupMetadataService>();
+        _caseMetadataServiceMock = new Mock<ICaseMetadataService>();
         _initializationHandlerMock = new Mock<IInitializationHandler>();
 
         _fixture = new Fixture();
@@ -87,6 +91,7 @@ public class DeleteNetAppBatchTests
             _activityLogServiceMock.Object,
             _requestValidatorMock.Object,
             _securityGroupMetadataServiceMock.Object,
+            _caseMetadataServiceMock.Object,
             _initializationHandlerMock.Object);
     }
 
@@ -107,8 +112,157 @@ public class DeleteNetAppBatchTests
         var errors = Assert.IsAssignableFrom<IEnumerable<string>>(badRequest.Value);
         Assert.Equal(validationErrors, errors);
 
+        _caseMetadataServiceMock.Verify(s => s.GetCaseMetadataForCaseIdAsync(It.IsAny<int>()), Times.Never);
         _securityGroupMetadataServiceMock.Verify(s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()), Times.Never);
         _netAppClientMock.Verify(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_MissingCaseMetadata_ReturnsBadRequest()
+    {
+        // Arrange
+        var dto = MakeBatchDto(42, [MaterialOp("CaseRoot/evidence.pdf")]);
+        SetupRequestValidator(dto, isValid: true);
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForCaseIdAsync(42))
+            .ReturnsAsync((CaseMetadata?)null);
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        var result = await _function.Run(req, ctx);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Contains("missing", badRequest.Value?.ToString(), StringComparison.OrdinalIgnoreCase);
+        _netAppClientMock.Verify(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_EmptyNetAppFolderPath_ReturnsBadRequest()
+    {
+        // Arrange
+        var dto = MakeBatchDto(42, [MaterialOp("CaseRoot/evidence.pdf")]);
+        SetupRequestValidator(dto, isValid: true);
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForCaseIdAsync(42))
+            .ReturnsAsync(new CaseMetadata { CaseId = 42, NetappFolderPath = null });
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        var result = await _function.Run(req, ctx);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Contains("missing", badRequest.Value?.ToString(), StringComparison.OrdinalIgnoreCase);
+        _netAppClientMock.Verify(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_PathOutsideCaseRoot_RecordsFailureAndSkipsDelete()
+    {
+        // Arrange
+        const string outsidePath = "OtherCase/secret.pdf";
+        var dto = MakeBatchDto(1, [MaterialOp(outsidePath)]);
+        SetupRequestValidator(dto, isValid: true);
+        SetupCaseMetadata();
+        SetupSecurityGroups();
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        var result = await _function.Run(req, ctx);
+
+        // Assert
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
+
+        Assert.Equal(1, response.TotalRequested);
+        Assert.Equal(0, response.Succeeded);
+        Assert.Equal(1, response.Failed);
+        Assert.Equal("Failed", response.Results[0].Status);
+        Assert.NotNull(response.Results[0].Error);
+
+        _netAppClientMock.Verify(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_MixedBatch_ValidAndInvalidPaths_DeletesValidSkipsInvalid()
+    {
+        // Arrange
+        const string validPath = "CaseRoot/evidence.pdf";
+        const string invalidPath = "OtherCase/secret.pdf";
+        var dto = MakeBatchDto(1, [MaterialOp(validPath), MaterialOp(invalidPath)]);
+
+        SetupRequestValidator(dto, isValid: true);
+        SetupCaseMetadata();
+        SetupSecurityGroups();
+        SetupClientSuccess(validPath, isFolder: false, keysDeleted: 1);
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        var result = await _function.Run(req, ctx);
+
+        // Assert
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
+
+        Assert.Equal(2, response.TotalRequested);
+        Assert.Equal(1, response.Succeeded);
+        Assert.Equal(1, response.Failed);
+
+        Assert.Equal("Deleted", response.Results.Single(r => r.SourcePath == validPath).Status);
+        Assert.Equal("Failed", response.Results.Single(r => r.SourcePath == invalidPath).Status);
+
+        _netAppClientMock.Verify(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_PathOutsideCaseRoot_DoesNotLogActivity()
+    {
+        // Arrange
+        const string outsidePath = "OtherCase/secret.pdf";
+        var dto = MakeBatchDto(1, [MaterialOp(outsidePath)]);
+        SetupRequestValidator(dto, isValid: true);
+        SetupCaseMetadata();
+        SetupSecurityGroups();
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        await _function.Run(req, ctx);
+
+        // Assert
+        _activityLogServiceMock.Verify(
+            s => s.CreateActivityLogAsync(It.IsAny<ActionType>(), It.IsAny<ResourceType>(), It.IsAny<int>(),
+                It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<System.Text.Json.JsonDocument?>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_NetAppFolderPathWithoutTrailingSlash_IsNormalizedForPrefixCheck()
+    {
+        // Arrange — NetappFolderPath stored without trailing slash, path is valid
+        const string validPath = "CaseRoot/evidence.pdf";
+        var dto = MakeBatchDto(1, [MaterialOp(validPath)]);
+        SetupRequestValidator(dto, isValid: true);
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForCaseIdAsync(1))
+            .ReturnsAsync(new CaseMetadata { CaseId = 1, NetappFolderPath = "CaseRoot" });
+        SetupSecurityGroups();
+        SetupClientSuccess(validPath, isFolder: false, keysDeleted: 1);
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        var result = await _function.Run(req, ctx);
+
+        // Assert
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
+        Assert.Equal(1, response.Succeeded);
     }
 
     [Fact]
@@ -120,6 +274,7 @@ public class DeleteNetAppBatchTests
         var dto = MakeBatchDto(caseId, [MaterialOp(path)]);
 
         SetupRequestValidator(dto, isValid: true);
+        SetupCaseMetadata();
         SetupSecurityGroups();
         SetupClientSuccess(path, isFolder: false, keysDeleted: 1);
 
@@ -149,6 +304,7 @@ public class DeleteNetAppBatchTests
         var dto = MakeBatchDto(1, [MaterialOp(path)]);
 
         SetupRequestValidator(dto, isValid: true);
+        SetupCaseMetadata();
         SetupSecurityGroups();
         SetupClientSuccess(path, isFolder: false, keysDeleted: 1);
 
@@ -173,6 +329,7 @@ public class DeleteNetAppBatchTests
         var dto = MakeBatchDto(caseId, [FolderOp(path)]);
 
         SetupRequestValidator(dto, isValid: true);
+        SetupCaseMetadata();
         SetupSecurityGroups();
         SetupClientSuccess(path, isFolder: true, keysDeleted: keysDeleted);
 
@@ -200,6 +357,7 @@ public class DeleteNetAppBatchTests
         var dto = MakeBatchDto(1, [FolderOp(path)]);
 
         SetupRequestValidator(dto, isValid: true);
+        SetupCaseMetadata();
         SetupSecurityGroups();
         SetupClientSuccess(path, isFolder: true, keysDeleted: 5);
 
@@ -222,6 +380,7 @@ public class DeleteNetAppBatchTests
         var dto = MakeBatchDto(1, [MaterialOp(path)]);
 
         SetupRequestValidator(dto, isValid: true);
+        SetupCaseMetadata();
         SetupSecurityGroups();
         SetupClientSuccess(path, isFolder: false, keysDeleted: 1);
 
@@ -246,6 +405,7 @@ public class DeleteNetAppBatchTests
         var dto = MakeBatchDto(1, [MaterialOp(file1), MaterialOp(file2), FolderOp(folder)]);
 
         SetupRequestValidator(dto, isValid: true);
+        SetupCaseMetadata();
         SetupSecurityGroups();
         SetupClientSuccess(file1, isFolder: false, keysDeleted: 1);
         SetupClientSuccess(file2, isFolder: false, keysDeleted: 1);
@@ -275,6 +435,7 @@ public class DeleteNetAppBatchTests
         var dto = MakeBatchDto(caseId, [MaterialOp(path)]);
 
         SetupRequestValidator(dto, isValid: true);
+        SetupCaseMetadata();
         SetupSecurityGroups();
         SetupClientSuccess(path, isFolder: false, keysDeleted: 1);
 
@@ -305,6 +466,7 @@ public class DeleteNetAppBatchTests
         var dto = MakeBatchDto(caseId, [FolderOp(path)]);
 
         SetupRequestValidator(dto, isValid: true);
+        SetupCaseMetadata();
         SetupSecurityGroups();
         SetupClientSuccess(path, isFolder: true, keysDeleted: 5);
 
@@ -334,6 +496,7 @@ public class DeleteNetAppBatchTests
         var dto = MakeBatchDto(1, [MaterialOp(path)]);
 
         SetupRequestValidator(dto, isValid: true);
+        SetupCaseMetadata();
         SetupSecurityGroups();
         SetupClientSuccess(path, isFolder: false, keysDeleted: 1);
 
@@ -362,6 +525,7 @@ public class DeleteNetAppBatchTests
         var dto = MakeBatchDto(1, [MaterialOp(path)]);
 
         SetupRequestValidator(dto, isValid: true);
+        SetupCaseMetadata();
         SetupSecurityGroups();
         SetupClientFailure(path, isFolder: false, errorMessage: "Something went wrong");
 
@@ -386,6 +550,7 @@ public class DeleteNetAppBatchTests
         var dto = MakeBatchDto(1, [MaterialOp(file1), MaterialOp(file2)]);
 
         SetupRequestValidator(dto, isValid: true);
+        SetupCaseMetadata();
         SetupSecurityGroups();
         SetupClientSuccess(file1, isFolder: false, keysDeleted: 1);
         SetupClientFailure(file2, isFolder: false, errorMessage: "Delete failed");
@@ -420,6 +585,7 @@ public class DeleteNetAppBatchTests
         var dto = MakeBatchDto(1, [MaterialOp(lockedFile), MaterialOp(otherFile)]);
 
         SetupRequestValidator(dto, isValid: true);
+        SetupCaseMetadata();
         SetupSecurityGroups();
 
         var lockedEx = new AmazonS3Exception("Locked") { StatusCode = HttpStatusCode.Locked };
@@ -458,6 +624,7 @@ public class DeleteNetAppBatchTests
         var dto = MakeBatchDto(1, [MaterialOp(path)]);
 
         SetupRequestValidator(dto, isValid: true);
+        SetupCaseMetadata();
         SetupSecurityGroups();
 
         var lockedEx = new AmazonS3Exception("Locked") { StatusCode = HttpStatusCode.Locked };
@@ -486,6 +653,7 @@ public class DeleteNetAppBatchTests
         var dto = MakeBatchDto(1, [MaterialOp(badFile), MaterialOp(goodFile)]);
 
         SetupRequestValidator(dto, isValid: true);
+        SetupCaseMetadata();
         SetupSecurityGroups();
 
         _netAppClientMock
@@ -521,6 +689,7 @@ public class DeleteNetAppBatchTests
         var dto = MakeBatchDto(1, [MaterialOp(path)]);
 
         SetupRequestValidator(dto, isValid: true);
+        SetupCaseMetadata();
 
         _securityGroupMetadataServiceMock
             .Setup(s => s.GetUserSecurityGroupsAsync(_testBearerToken))
@@ -551,6 +720,7 @@ public class DeleteNetAppBatchTests
         // Arrange
         var dto = MakeBatchDto(1, [MaterialOp("CaseRoot/evidence.pdf")]);
         SetupRequestValidator(dto, isValid: true);
+        SetupCaseMetadata();
 
         _securityGroupMetadataServiceMock
             .Setup(s => s.GetUserSecurityGroupsAsync(_testBearerToken))
@@ -570,6 +740,7 @@ public class DeleteNetAppBatchTests
         // Arrange
         var dto = MakeBatchDto(1, [MaterialOp("CaseRoot/evidence.pdf")]);
         SetupRequestValidator(dto, isValid: true);
+        SetupCaseMetadata();
         SetupSecurityGroups();
         SetupClientSuccess("CaseRoot/evidence.pdf", isFolder: false, keysDeleted: 1);
 
@@ -601,6 +772,13 @@ public class DeleteNetAppBatchTests
                 ValidationErrors = errors ?? [],
                 Value = dto
             });
+    }
+
+    private void SetupCaseMetadata(string netappFolderPath = "CaseRoot/")
+    {
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForCaseIdAsync(It.IsAny<int>()))
+            .ReturnsAsync(new CaseMetadata { CaseId = 1, NetappFolderPath = netappFolderPath });
     }
 
     private void SetupSecurityGroups()
