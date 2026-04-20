@@ -81,17 +81,8 @@ stages:
             deploy:
               steps:
                 - bash: |
-                    if [ "$(runDbMigration)" == "false" ]; then
-                      echo "Database migration is not required. Skipping to the next job."
-                      exit 0
-                    elif [ "$(runDbMigration)" == "true" ]; then
-                      echo "Continuing to run database migration steps."
-                      exit 0
-                    fi
-                    
-                    echo "The value for runDbMigration is: $runDbMigration"
-                    echo "Expected the value to equal either true or false."
-                    exit 1
+                    echo "Database migration is not required. Skipping to the next job."
+                  condition: eq(variables.runDbMigration, 'false')
 
                 - checkout: self
                   condition: eq(variables.runDbMigration, 'true')
