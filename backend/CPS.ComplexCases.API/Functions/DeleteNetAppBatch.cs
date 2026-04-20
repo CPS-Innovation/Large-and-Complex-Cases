@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
+using CPS.ComplexCases.ActivityLog.Extensions;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
@@ -120,29 +121,6 @@ public class DeleteNetAppBatch(
                         Status = "Deleted",
                         KeysDeleted = result.KeysDeleted > 1 ? result.KeysDeleted : null
                     });
-
-                    try
-                    {
-                        var actionType = isFolder
-                            ? ActivityLog.Enums.ActionType.FolderDeleted
-                            : ActivityLog.Enums.ActionType.MaterialDeleted;
-
-                        var resourceType = isFolder
-                            ? ActivityLog.Enums.ResourceType.NetAppFolder
-                            : ActivityLog.Enums.ResourceType.Material;
-
-                        await _activityLogService.CreateActivityLogAsync(
-                            actionType,
-                            resourceType,
-                            batchRequest.Value.CaseId,
-                            op.SourcePath,
-                            op.SourcePath,
-                            context.Username);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Failed to write activity log for deletion of {SourcePath}.", op.SourcePath);
-                    }
                 }
             }
             catch (Amazon.S3.AmazonS3Exception ex) when ((int)ex.StatusCode == 423)
@@ -169,6 +147,36 @@ public class DeleteNetAppBatch(
 
         var succeeded = results.Count(r => r.Status == "Deleted");
         var failed = results.Count(r => r.Status == "Failed");
+
+        if (succeeded > 0)
+        {
+            try
+            {
+                var details = new
+                {
+                    items = results.Select(r => new
+                    {
+                        sourcePath = r.SourcePath,
+                        outcome = r.Status,
+                        error = r.Error,
+                        keysDeleted = r.KeysDeleted
+                    })
+                }.SerializeToJsonDocument(_logger);
+
+                await _activityLogService.CreateActivityLogAsync(
+                    ActivityLog.Enums.ActionType.MaterialDeleted,
+                    ActivityLog.Enums.ResourceType.Material,
+                    batchRequest.Value.CaseId,
+                    batchRequest.Value.CaseId.ToString(),
+                    null,
+                    context.Username,
+                    details);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to write batch activity log for case {CaseId}.", batchRequest.Value.CaseId);
+            }
+        }
 
         return new OkObjectResult(new DeleteNetAppBatchResponse
         {

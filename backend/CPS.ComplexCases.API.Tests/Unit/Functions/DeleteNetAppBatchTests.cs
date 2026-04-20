@@ -427,7 +427,7 @@ public class DeleteNetAppBatchTests
     }
 
     [Fact]
-    public async Task Run_SuccessfulMaterialDelete_LogsMaterialDeletedActivity()
+    public async Task Run_SuccessfulMaterialDelete_LogsSingleBatchDeletedActivity()
     {
         // Arrange
         const int caseId = 42;
@@ -444,21 +444,21 @@ public class DeleteNetAppBatchTests
         // Act
         await _function.Run(req, ctx);
 
-        // Assert
+        // Assert — one BatchDeleted row per request, regardless of item count
         _activityLogServiceMock.Verify(
             s => s.CreateActivityLogAsync(
                 ActionType.MaterialDeleted,
                 ResourceType.Material,
                 caseId,
-                path,
-                path,
+                caseId.ToString(),
+                null,
                 _testUsername,
-                null),
+                It.IsAny<System.Text.Json.JsonDocument?>()),
             Times.Once);
     }
 
     [Fact]
-    public async Task Run_SuccessfulFolderDelete_LogsFolderDeletedActivity()
+    public async Task Run_SuccessfulFolderDelete_LogsSingleBatchDeletedActivity()
     {
         // Arrange
         const int caseId = 99;
@@ -475,17 +475,109 @@ public class DeleteNetAppBatchTests
         // Act
         await _function.Run(req, ctx);
 
-        // Assert
+        // Assert — folder deletes also produce one BatchDeleted row
         _activityLogServiceMock.Verify(
             s => s.CreateActivityLogAsync(
-                ActionType.FolderDeleted,
-                ResourceType.NetAppFolder,
+                ActionType.MaterialDeleted,
+                ResourceType.Material,
                 caseId,
-                path,
-                path,
+                caseId.ToString(),
+                null,
                 _testUsername,
-                null),
+                It.IsAny<System.Text.Json.JsonDocument?>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_BatchDelete_DetailsPayloadContainsOutcomeForEachItem()
+    {
+        // Arrange
+        const int caseId = 1;
+        const string file = "CaseRoot/report.pdf";
+        const string folder = "CaseRoot/Old-Folder/";
+        var dto = MakeBatchDto(caseId, [MaterialOp(file), FolderOp(folder)]);
+
+        SetupRequestValidator(dto, isValid: true);
+        SetupCaseMetadata();
+        SetupSecurityGroups();
+        SetupClientSuccess(file, isFolder: false, keysDeleted: 1);
+        SetupClientSuccess(folder, isFolder: true, keysDeleted: 3);
+
+        System.Text.Json.JsonDocument? capturedDetails = null;
+        _activityLogServiceMock
+            .Setup(s => s.CreateActivityLogAsync(
+                It.IsAny<ActionType>(), It.IsAny<ResourceType>(), It.IsAny<int>(),
+                It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(),
+                It.IsAny<System.Text.Json.JsonDocument?>()))
+            .Callback<ActionType, ResourceType, int, string, string?, string?, System.Text.Json.JsonDocument?>(
+                (_, _, _, _, _, _, details) => capturedDetails = details)
+            .Returns(Task.CompletedTask);
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        await _function.Run(req, ctx);
+
+        // Assert
+        Assert.NotNull(capturedDetails);
+        var items = capturedDetails.RootElement.GetProperty("items");
+        Assert.Equal(2, items.GetArrayLength());
+
+        var fileItem = items.EnumerateArray().Single(e => e.GetProperty("sourcePath").GetString() == file);
+        Assert.Equal("Deleted", fileItem.GetProperty("outcome").GetString());
+
+        var folderItem = items.EnumerateArray().Single(e => e.GetProperty("sourcePath").GetString() == folder);
+        Assert.Equal("Deleted", folderItem.GetProperty("outcome").GetString());
+        Assert.Equal(3, folderItem.GetProperty("keysDeleted").GetInt32());
+    }
+
+    [Fact]
+    public async Task Run_PartialFailure_BatchLogDetailsContainsBothSuccessAndFailureOutcomes()
+    {
+        // Arrange
+        const int caseId = 1;
+        const string goodFile = "CaseRoot/report.pdf";
+        const string badFile = "CaseRoot/corrupted.pdf";
+        var dto = MakeBatchDto(caseId, [MaterialOp(goodFile), MaterialOp(badFile)]);
+
+        SetupRequestValidator(dto, isValid: true);
+        SetupCaseMetadata();
+        SetupSecurityGroups();
+        SetupClientSuccess(goodFile, isFolder: false, keysDeleted: 1);
+        SetupClientFailure(badFile, isFolder: false, errorMessage: "Delete failed");
+
+        System.Text.Json.JsonDocument? capturedDetails = null;
+        _activityLogServiceMock
+            .Setup(s => s.CreateActivityLogAsync(
+                It.IsAny<ActionType>(), It.IsAny<ResourceType>(), It.IsAny<int>(),
+                It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(),
+                It.IsAny<System.Text.Json.JsonDocument?>()))
+            .Callback<ActionType, ResourceType, int, string, string?, string?, System.Text.Json.JsonDocument?>(
+                (_, _, _, _, _, _, details) => capturedDetails = details)
+            .Returns(Task.CompletedTask);
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        await _function.Run(req, ctx);
+
+        // Assert — log is written once because at least one item succeeded
+        _activityLogServiceMock.Verify(
+            s => s.CreateActivityLogAsync(
+                ActionType.MaterialDeleted, It.IsAny<ResourceType>(), It.IsAny<int>(),
+                It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(),
+                It.IsAny<System.Text.Json.JsonDocument?>()),
+            Times.Once);
+
+        Assert.NotNull(capturedDetails);
+        var items = capturedDetails.RootElement.GetProperty("items");
+        Assert.Equal(2, items.GetArrayLength());
+
+        var successItem = items.EnumerateArray().Single(e => e.GetProperty("sourcePath").GetString() == goodFile);
+        Assert.Equal("Deleted", successItem.GetProperty("outcome").GetString());
+
+        var failedItem = items.EnumerateArray().Single(e => e.GetProperty("sourcePath").GetString() == badFile);
+        Assert.Equal("Failed", failedItem.GetProperty("outcome").GetString());
     }
 
     [Fact]
