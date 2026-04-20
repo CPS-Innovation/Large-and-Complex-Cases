@@ -65,7 +65,7 @@ stages:
             artifact: 'localnuget'
             displayName: 'Publish HttpTelemetry Package'
 
-      - job: Build_And_Test_Solution       
+      - job: Build_And_Test_Solution
         displayName: 'Build & Test Solution'
         dependsOn: Package_NuGet
         steps:
@@ -115,7 +115,7 @@ stages:
         dependsOn: 
         - Build_And_Test_Solution
         - Check_DB_Diff
-        condition: eq(dependencies.Check_DB_Diff.outputs['Diff_Check.packageDatabase'], 'true')
+        condition: and(succeeded(), eq(dependencies.Check_DB_Diff.outputs['Diff_Check.packageDatabase'], 'true'))
         steps:
           # Build Data project with dependencies
           - template: ../templates/dotnet-build-steps.yml
