@@ -81,8 +81,9 @@ stages:
             deploy:
               steps:
                 - bash: |
-                    echo "Database migration is not required. Skipping to the next job."
+                    echo "Database migration is not required. The next steps will be skipped."
                   condition: eq(variables.runDbMigration, 'false')
+                  displayName: "Print skip message"
 
                 - checkout: self
                   condition: eq(variables.runDbMigration, 'true')
