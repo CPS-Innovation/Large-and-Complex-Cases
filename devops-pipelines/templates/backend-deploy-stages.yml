@@ -36,20 +36,20 @@ parameters:
     default: false
 
 stages:
-  - stage: Approve_Deployment_${{ parameters.environment }}
-    ${{ if eq(parameters.environment, 'staging') }}:
-      dependsOn: Deploy_Backend_dev
-    ${{ if eq(parameters.environment, 'prod') }}:
-      dependsOn: Deploy_Backend_staging
-    displayName: "${{ parameters.environment }} - Approve Deployment"
-    condition: and(succeeded(), ${{ eq(parameters.requireValidation, true) }})
-    jobs:
-      - template: ./manual-validation-jobs.yml
-        parameters:
-          instructions: "Please verify the deployment to the lower environment worked as expected before approving deployment to ${{parameters.environment}}."
-          notifyUsers: ${{ parameters.notifyUsers }}
-          approvers: ${{ parameters.approvers }}
-          agentPool: ${{ parameters.agentPool }}
+  - ${{ if eq(parameters.requireValidation, true) }}:
+    - stage: Approve_Deployment_${{ parameters.environment }}
+      ${{ if eq(parameters.environment, 'staging') }}:
+        dependsOn: Deploy_Backend_dev
+      ${{ if eq(parameters.environment, 'prod') }}:
+        dependsOn: Deploy_Backend_staging
+      displayName: "${{ parameters.environment }} - Approve Deployment"
+      jobs:
+        - template: ./manual-validation-jobs.yml
+          parameters:
+            instructions: "Please verify the deployment to the lower environment worked as expected before approving deployment to ${{parameters.environment}}."
+            notifyUsers: ${{ parameters.notifyUsers }}
+            approvers: ${{ parameters.approvers }}
+            agentPool: ${{ parameters.agentPool }}
 
   - stage: Deploy_Backend_${{ parameters.environment }}
     ${{ if eq(parameters.requireValidation, true) }}:
@@ -76,16 +76,30 @@ stages:
       - deployment: Deploy_Database_Changes
         displayName: "${{ parameters.environment }} - Deploy Database Changes"
         environment: "LACC-Backend-${{ parameters.environment }}"
-        condition: eq(variables.runDbMigration, 'true')
         strategy:
           runOnce:
             deploy:
               steps:
+                - bash: |
+                    if [ "$(runDbMigration)" == "false" ]; then
+                      echo "Database migration is not required. Skipping to the next job."
+                      exit 0
+                    elif [ "$(runDbMigration)" == "true" ]; then
+                      echo "Continuing to run database migration steps."
+                      exit 0
+                    fi
+                    
+                    echo "The value for runDbMigration is: $runDbMigration"
+                    echo "Expected the value to equal either true or false."
+                    exit 1
+
                 - checkout: self
+                  condition: eq(variables.runDbMigration, 'true')
                   sparseCheckoutDirectories: devops-pipelines/scripts
                   fetchDepth: 1
 
                 - task: Bash@3
+                  condition: eq(variables.runDbMigration, 'true')
                   displayName: "Ensure Azure CLI"
                   inputs:
                     targetType: "inline"
@@ -104,8 +118,10 @@ stages:
 
                 - download: current
                   artifact: "database-scripts-drop"
+                  condition: eq(variables.runDbMigration, 'true')
 
                 - task: AzureCLI@2
+                  condition: eq(variables.runDbMigration, 'true')
                   displayName: "Run Database Migration"
                   inputs:
                     azureSubscription: ${{ parameters.azureSubscription }}
@@ -131,12 +147,12 @@ stages:
                     MIGRATION_SCRIPT_PATH: "$(Pipeline.Workspace)/database-scripts-drop/migration-script.sql"
 
                 - template: ./runner-cleanup-steps.yml
+                  condition: eq(variables.runDbMigration, 'true')
                   parameters:
                     buildArtifact: "database-scripts-drop"
 
       - deployment: Deploy_Main_API
         dependsOn: Deploy_Database_Changes
-        condition: in(dependencies.Deploy_Database_Changes.result, 'Succeeded', 'Skipped')
         displayName: "${{ parameters.environment }} - Deploy Main API Function App"
         environment: "LACC-Backend-${{ parameters.environment }}"
         strategy:
@@ -160,7 +176,6 @@ stages:
 
       - deployment: Deploy_FileTransfer_API
         dependsOn: Deploy_Database_Changes
-        condition: in(dependencies.Deploy_Database_Changes.result, 'Succeeded', 'Skipped')
         displayName: "${{ parameters.environment }} - Deploy FileTransfer API Function App"
         environment: "LACC-Backend-${{ parameters.environment }}"
         strategy:
