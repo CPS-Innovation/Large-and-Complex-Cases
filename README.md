@@ -71,19 +71,24 @@ The following are triggered in response to any changes pushed to the [`backend`]
 
 - **Backend Build & Test:** [`backend-pr-build-and-test.yml`](devops-pipelines/backend/backend-pr-build-and-test.yml)
   - Trigger: PR against main.
-  - Restores, builds, and tests all backend projects.
+  - Determines whether database migration is required based on git diff in the [Migrations folder](backend/CPS.ComplexCases.Data/Migrations) between the triggering branch and main.
+  - Restores, builds, and runs unit tests on the complete solution.
   - Publishes test results and code coverage.
-- **Backend Build & Publish:** [`backend-build-and-publish.yml`](devops-pipelines/backend/backend-build-and-publish.yml)
+  - Builds the main API and FileTransfer API projects.
+  - If required, builds the Data project and generates migration scripts.
+- **Backend Test Integration:** [`backend-pr-integration-tests.yml`](devops-pipelines/backend/backend-pr-integration-tests.yml)
+  - Trigger: PR against main.
+  - Runs all tests in the [Integration tests](backend/CPS.ComplexCases.API.Integration.Tests) project.
+  - Publishes test results and code coverage.
+- **Backend Build & Deploy:** [`backend-build-and-deploy.yml`](devops-pipelines/backend/backend-build-and-deploy.yml)
   - Trigger: Merge to main branch.
+  - Determines whether database migration is required based on git diff in the [Migrations folder](backend/CPS.ComplexCases.Data/Migrations) between the current branch head and the previous one.
   - Packages and publishes Main API and FileTransfer API for deployment.
-  - Generates and publishes database migration scripts for deployment.
-- **Backend Deploy:** [`backend-deploy.yml`](devops-pipelines/backend/backend-deploy.yml)
-  - Trigger: A successful run of the build and punlish pipeline above.
+  - If required, generates and publishes database migration scripts for deployment. (This includes a rollback migration script that can be deployed manually if rollback is required.)
   - Runs the following stages in the dev environment:
-    - Updates the Key Vault with configuration values for the function apps.
-    - Runs the migration scripts against the database.
-    - Deploys build artifacts to Azure Function Apps.
-  - Pauses for manual validation before repeating the process in staging.
+    - If required, runs the migration scripts against the database.
+    - Deploys the API build artifacts to Azure Function Apps.
+  - Pauses for manual validation before repeating the deployment steps in staging and prod.
 
 #### UI
 

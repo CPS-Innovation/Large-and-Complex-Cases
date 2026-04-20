@@ -1,0 +1,150 @@
+trigger:
+  batch: true
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - backend/*
+
+pr: none
+
+variables:
+  - group: lacc-deployment-global
+  - name: buildConfiguration
+    value: 'Release'
+  - name: dotNetVersion
+    value: '8.x'
+  - name: efVersion
+    value: '8.0.*'
+
+stages:
+  - stage: Preflight
+    displayName: 'Preflight Checks & Preparation'
+    pool: 'LACC PreProd Pool'
+    jobs: 
+    - job: Check_DB_Diff
+      displayName: 'Check for Database Migration Changes'
+      steps:
+        - checkout: self
+          fetchDepth: 0
+
+        - task: Bash@3
+          name: Diff_Check
+          displayName: 'Detect Database Migration Changes'
+          inputs:
+            targetType: filePath
+            filePath: $(System.DefaultWorkingDirectory)/devops-pipelines/scripts/detectGitDiff.sh
+          env:
+            PATH_TO_CHECK: $(System.DefaultWorkingDirectory)/backend/CPS.ComplexCases.Data/Migrations
+            OUTPUT_VAR_NAME: runDbMigrationSteps
+
+    - job: Package_NuGet
+      displayName: 'Pack and Publish NuGet Package'
+      steps:
+        - template: ../templates/dotnet-build-steps.yml
+          parameters:
+            projectPath: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+            projectName: 'HttpTelemetry'
+            buildConfiguration: $(buildConfiguration)
+            dotNetVersion: $(dotNetVersion)
+            useLocalNuGet: false
+            publishOutput: false
+            runTests: false
+
+        - task: DotNetCoreCLI@2
+          displayName: 'Pack HttpTelemetry'
+          inputs:
+            command: 'pack'
+            packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+            outputDir: '$(Build.ArtifactStagingDirectory)'
+            arguments: '--configuration $(buildConfiguration) --no-build'
+
+        - publish: '$(Build.ArtifactStagingDirectory)'
+          artifact: 'localnuget'
+          displayName: 'Publish HttpTelemetry Package'
+  
+  - stage: Build_API
+    displayName: 'Build APIs for Deployment'
+    dependsOn: Preflight
+    pool: 'LACC PreProd Pool'
+    variables:
+      runDbMigrationSteps: $[ eq(stageDependencies.Preflight.Check_DB_Diff.outputs['Diff_Check.runDbMigrationSteps'],'true') ]
+    jobs:
+      - job: Build_Main_API
+        displayName: 'Build Main API & DB Migration Scripts if Needed'
+        steps:
+          - template: ../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+              projectName: 'lacc-main-api'
+              buildConfiguration: $(buildConfiguration)
+              dotNetVersion: $(dotNetVersion)
+              useLocalNuGet: true
+              publishOutput: true
+              runTests: false
+          
+          - task: DotNetCoreCLI@2
+            condition: eq(variables.runDbMigrationSteps, true)
+            displayName: 'Build Database Project'
+            inputs:
+              command: 'build'
+              projects: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
+              arguments: '--configuration $(buildConfiguration) '
+
+          - task: Bash@3
+            condition: eq(variables.runDbMigrationSteps, true)
+            displayName: 'Generate Migration Scripts'
+            inputs:
+              filePath: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/generateDBMigrationScripts.sh'
+            env:
+              EF_VERSION: $(efVersion)
+              DATA_PROJECT_PATH: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
+              STARTUP_PROJECT_PATH: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
+              MIGRATION_SCRIPT_OUT: 'database-artifact/migration-script.sql'
+              ROLLBACK_SCRIPT_OUT: 'database-artifact/rollback-migration-script.sql'
+
+          - publish: 'database-artifact'
+            artifact: 'database-scripts-drop'
+            displayName: 'Publish Database Scripts'
+            condition: eq(variables.runDbMigrationSteps, true)
+
+      - job: Build_FileTransfer_API
+        displayName: 'Build FileTransfer API'
+        steps:
+          - template: ../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
+              projectName: 'lacc-filetransfer-api'
+              buildConfiguration: $(buildConfiguration)
+              dotNetVersion: $(dotNetVersion)
+              useLocalNuGet: true
+              publishOutput: true
+              runTests: false
+             
+# Deployment stages:
+  - template: ../templates/backend-deploy-stages.yml
+    parameters:
+      environment: dev
+      requireValidation: false
+
+  - template: ../templates/backend-deploy-stages.yml
+    parameters:
+      environment: staging
+      requireValidation: true
+      notifyUsers: $(preprodNotifyUsers)
+      approvers: $(preprodApprovers)
+      deployToSlot: true
+      slotName: 'stg'
+      runPostmanSmokeTest: true
+
+  - template: ../templates/backend-deploy-stages.yml
+    parameters:
+      environment: prod
+      requireValidation: true
+      notifyUsers: $(prodNotifyUsers)
+      approvers: $(prodApprovers)
+      agentPool: 'LACC Prod Pool'
+      azureSubscription: 'Azure Pipeline: Large and Complex Cases - Prod'
+      deployToSlot: true
+      slotName: 'stg'
