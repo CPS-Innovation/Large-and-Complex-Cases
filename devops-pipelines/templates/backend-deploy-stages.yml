@@ -147,8 +147,8 @@ stages:
                     MIGRATION_SCRIPT_PATH: "$(Pipeline.Workspace)/database-scripts-drop/migration-script.sql"
 
                 - template: ./runner-cleanup-steps.yml
-                  condition: eq(variables.runDbMigration, 'true')
                   parameters:
+                    condition: eq(variables.runDbMigration, 'true')
                     buildArtifact: "database-scripts-drop"
 
       - deployment: Deploy_Main_API
