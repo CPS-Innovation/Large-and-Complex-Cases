@@ -13,8 +13,25 @@ parameters:
     type: string
 
 steps:
+  - ${{ if ne(parameters.environment, 'prod') }}:
+    - task: AzureAppServiceSettings@1
+      displayName: "Configure Function App Settings (PreProd Only)"
+      inputs:
+        azureSubscription: ${{ parameters.azureSubscription }}
+        appName: ${{ parameters.functionAppName }}
+        resourceGroupName: ${{ parameters.resourceGroupName }}
+        slotName: ${{ parameters.slotName }}
+        appSettings: |
+          [  
+            {
+              "name": "NetAppOptions__IssuingCaCert2",
+              "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=NetAppOptions--IssuingCaCert2)",
+              "slotSetting": false
+            }
+          ]
+
   - task: AzureAppServiceSettings@1
-    displayName: "Configure Function App Settings"
+    displayName: "Configure Function App Settings (All Environments)"
     inputs:
       azureSubscription: ${{ parameters.azureSubscription }}
       appName: ${{ parameters.functionAppName }}
@@ -55,11 +72,6 @@ steps:
           {
             "name": "NetAppOptions__IssuingCaCert",
             "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=NetAppOptions--IssuingCaCert)",
-            "slotSetting": false
-          },
-          {
-            "name": "NetAppOptions__IssuingCaCert2",
-            "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=NetAppOptions--IssuingCaCert2)",
             "slotSetting": false
           },
           {

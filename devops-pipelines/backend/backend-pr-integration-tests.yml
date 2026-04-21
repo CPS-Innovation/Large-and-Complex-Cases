@@ -36,6 +36,7 @@ jobs:
       Egress.Email: $(EgressEmail)
       Egress.Password: $(EgressOptionsPassword)
       Egress.WorkspaceId: $(EgressWorkspaceId)
+      Egress.WorkspaceName: $(EgressWorkspaceName)
       Egress.TestDestinationPath: "integration-tests"
       DDEI.BaseUrl: $[ replace( variables['DDEIOptionsBaseUrl'], '/api', '' ) ]
       DDEI.AccessKey: $(DDEIOptionsAccessKey)
