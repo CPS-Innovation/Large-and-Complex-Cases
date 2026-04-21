@@ -59,5 +59,6 @@ public static class IServiceCollectionExtension
 
     services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
     services.AddScoped<ICaseMetadataRepository, CaseMetadataRepository>();
+    services.AddScoped<ICaseActiveManageMaterialsRepository, CaseActiveManageMaterialsRepository>();
   }
 }

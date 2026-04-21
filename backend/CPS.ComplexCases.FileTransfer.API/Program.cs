@@ -74,6 +74,7 @@ var host = new HostBuilder()
         services.AddSingleton<IInitializationHandler, InitializationHandler>();
 
         services.AddScoped<ICaseMetadataService, CaseMetadataService>();
+        services.AddScoped<ICaseActiveManageMaterialsService, CaseActiveManageMaterialsService>();
 
         services.Configure<SizeConfig>(
             configuration.GetSection("FileTransfer:SizeConfig"));

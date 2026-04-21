@@ -22,6 +22,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         private readonly Mock<IDdeiClient> _ddeiClientMock;
         private readonly Mock<IDdeiArgFactory> _ddeiArgFactoryMock;
         private readonly Mock<IInitializationHandler> _initializationHandlerMock;
+        private readonly Mock<ICaseActiveManageMaterialsService> _caseActiveManageMaterialsServiceMock;
         private readonly Fixture _fixture;
         private readonly GetCase _function;
 
@@ -32,13 +33,18 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _ddeiClientMock = new Mock<IDdeiClient>();
             _ddeiArgFactoryMock = new Mock<IDdeiArgFactory>();
             _initializationHandlerMock = new Mock<IInitializationHandler>();
+            _caseActiveManageMaterialsServiceMock = new Mock<ICaseActiveManageMaterialsService>();
+            _caseActiveManageMaterialsServiceMock
+                .Setup(s => s.GetActiveOperationsForCaseAsync(It.IsAny<int>()))
+                .ReturnsAsync([]);
             _fixture = new Fixture();
             _function = new GetCase(
                 _loggerMock.Object,
                 _caseClientMock.Object,
                 _ddeiClientMock.Object,
                 _ddeiArgFactoryMock.Object,
-                _initializationHandlerMock.Object);
+                _initializationHandlerMock.Object,
+                _caseActiveManageMaterialsServiceMock.Object);
         }
 
         [Fact]
