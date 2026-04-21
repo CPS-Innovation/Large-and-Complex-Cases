@@ -1,4 +1,4 @@
-import { ActivityItem } from "../types/ActivityLogResponse";
+import { ActivityItem, isTransferDetails } from "../types/ActivityLogResponse";
 
 export const getTransferActivityStatusTagData = (
   activity: ActivityItem,
@@ -12,16 +12,19 @@ export const getTransferActivityStatusTagData = (
   )
     return null;
 
-  if (!activity.details) return null;
-  if (!activity.details.transferedFileCount)
+  if (!isTransferDetails(activity.details)) return null;
+
+  const { details } = activity;
+
+  if (!details.transferedFileCount)
     return {
       name: "Failed",
       color: "red",
     };
 
   if (
-    activity.details.totalFiles === activity.details.transferedFileCount &&
-    !activity.details.errorFileCount
+    details.totalFiles === details.transferedFileCount &&
+    !details.errorFileCount
   )
     return {
       name: "Completed",

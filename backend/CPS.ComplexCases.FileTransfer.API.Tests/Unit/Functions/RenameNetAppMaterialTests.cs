@@ -131,7 +131,7 @@ public class RenameNetAppMaterialTests
             });
 
         _netAppClientMock.Setup(c => c.DeleteFileOrFolderAsync(It.Is<DeleteFileOrFolderArg>(a => a.Path == DestinationPath)))
-            .ReturnsAsync(new DeleteNetAppResult(true, 0, null, null));
+            .ReturnsAsync(new DeleteNetAppResult(true, true, 0, null, null));
 
         var result = await _function.Run(CreateHttpRequest());
 
@@ -161,7 +161,7 @@ public class RenameNetAppMaterialTests
         SetupSuccessfulTransfer();
 
         _netAppClientMock.Setup(c => c.DeleteFileOrFolderAsync(It.Is<DeleteFileOrFolderArg>(a => a.Path == SourcePath)))
-            .ReturnsAsync(new DeleteNetAppResult(true, 1, null, null));
+            .ReturnsAsync(new DeleteNetAppResult(true, true, 1, null, null));
 
         _activityLogServiceMock
             .Setup(s => s.CreateActivityLogAsync(
@@ -198,7 +198,7 @@ public class RenameNetAppMaterialTests
             .ReturnsAsync(new TransferResult { IsSuccess = true });
 
         _netAppClientMock.Setup(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()))
-            .ReturnsAsync(new DeleteNetAppResult(true, 1, null, null));
+            .ReturnsAsync(new DeleteNetAppResult(true, true, 1, null, null));
 
         await _function.Run(CreateHttpRequest());
 
@@ -262,7 +262,7 @@ public class RenameNetAppMaterialTests
         SetupSuccessfulTransfer();
 
         _netAppClientMock.Setup(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()))
-            .ReturnsAsync(new DeleteNetAppResult(true, 1, null, null));
+            .ReturnsAsync(new DeleteNetAppResult(true, true, 1, null, null));
 
         _activityLogServiceMock
             .Setup(s => s.CreateActivityLogAsync(

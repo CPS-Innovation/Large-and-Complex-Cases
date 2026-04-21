@@ -489,11 +489,11 @@ public class NetAppClient(
             {
                 var getObjectArg = _netAppArgFactory.CreateGetObjectArg(arg.BearerToken, arg.BucketName, arg.Path);
                 if (!await DoesObjectExistAsync(getObjectArg))
-                    return new DeleteNetAppResult(true, 0, null, null);
+                    return new DeleteNetAppResult(true, false, 0, null, null);
 
                 var request = _netAppRequestFactory.DeleteObjectRequest(arg);
                 await s3Client.DeleteObjectAsync(request);
-                return new DeleteNetAppResult(true, 1, null, null);
+                return new DeleteNetAppResult(true, true, 1, null, null);
             }
             else
             {
@@ -532,11 +532,11 @@ public class NetAppClient(
 
                 if (allErrors.Count > 0)
                 {
-                    return new DeleteNetAppResult(false, totalDeleted,
+                    return new DeleteNetAppResult(false, true, totalDeleted,
                         $"Deletion failed for {allErrors.Count} object(s) in folder {arg.Path}.", null);
                 }
 
-                return new DeleteNetAppResult(true, totalDeleted, null, null);
+                return new DeleteNetAppResult(true, true, totalDeleted, null, null);
             }
         }
         catch (AmazonS3Exception ex)
@@ -892,29 +892,28 @@ public class NetAppClient(
             };
 
             var listResponse = await ListObjectsInBucketAsync(listArg);
-            if (listResponse?.Data.FileData != null)
+            if (listResponse == null)
+                throw new InvalidOperationException(
+                    $"Failed to list objects under prefix '{prefix}' in bucket '{bucketName}'. " +
+                    "Aborting folder delete to avoid leaving orphaned objects.");
+
+            foreach (var file in listResponse.Data.FileData ?? [])
             {
-                foreach (var file in listResponse.Data.FileData)
+                objectKeys.Add(file.Path);
+            }
+
+            foreach (var folder in listResponse.Data.FolderData ?? [])
+            {
+                if (!string.IsNullOrEmpty(folder.Path))
                 {
-                    objectKeys.Add(file.Path);
+                    var subObjectKeys =
+                        await ListAllObjectKeysForDeletionAsync(bucketName, folder.Path, bearerToken);
+                    objectKeys.AddRange(subObjectKeys);
+                    objectKeys.Add(folder.Path);
                 }
             }
 
-            if (listResponse?.Data.FolderData != null)
-            {
-                foreach (var folder in listResponse.Data.FolderData)
-                {
-                    if (!string.IsNullOrEmpty(folder.Path))
-                    {
-                        var subObjectKeys =
-                            await ListAllObjectKeysForDeletionAsync(bucketName, folder.Path, bearerToken);
-                        objectKeys.AddRange(subObjectKeys);
-                        objectKeys.Add(folder.Path);
-                    }
-                }
-            }
-
-            continuationToken = listResponse?.Pagination.NextContinuationToken;
+            continuationToken = listResponse.Pagination.NextContinuationToken;
         } while (!string.IsNullOrEmpty(continuationToken));
 
         objectKeys.Add(prefix);

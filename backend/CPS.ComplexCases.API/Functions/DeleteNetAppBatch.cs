@@ -113,6 +113,15 @@ public class DeleteNetAppBatch(
                         Error = result.ErrorMessage
                     });
                 }
+                else if (!result.WasFound)
+                {
+                    _logger.LogInformation("Path {SourcePath} was not found in NetApp; treating as already deleted.", op.SourcePath);
+                    results.Add(new DeleteNetAppBatchItemResult
+                    {
+                        SourcePath = op.SourcePath,
+                        Status = "NotFound"
+                    });
+                }
                 else
                 {
                     results.Add(new DeleteNetAppBatchItemResult
@@ -146,12 +155,32 @@ public class DeleteNetAppBatch(
         }
 
         var succeeded = results.Count(r => r.Status == "Deleted");
+        var notFound = results.Count(r => r.Status == "NotFound");
         var failed = results.Count(r => r.Status == "Failed");
 
-        if (succeeded > 0)
+        if (succeeded > 0 || notFound > 0)
         {
             try
             {
+                var auditedPaths = results
+                    .Where(r => r.Status is "Deleted" or "NotFound")
+                    .Select(r => r.SourcePath)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                var auditedOps = batchRequest.Value.Operations
+                    .Where(op => auditedPaths.Contains(op.SourcePath))
+                    .ToList();
+
+                var hasFolder = auditedOps.Any(op => op.Type == NetAppDeleteOperationType.Folder);
+                var hasMaterial = auditedOps.Any(op => op.Type == NetAppDeleteOperationType.Material);
+
+                var actionType = (hasFolder, hasMaterial) switch
+                {
+                    (true, true) => ActivityLog.Enums.ActionType.FolderAndMaterialDeleted,
+                    (true, false) => ActivityLog.Enums.ActionType.FolderDeleted,
+                    _ => ActivityLog.Enums.ActionType.MaterialDeleted
+                };
+
                 var details = new
                 {
                     items = results.Select(r => new
@@ -164,7 +193,7 @@ public class DeleteNetAppBatch(
                 }.SerializeToJsonDocument(_logger);
 
                 await _activityLogService.CreateActivityLogAsync(
-                    ActivityLog.Enums.ActionType.MaterialDeleted,
+                    actionType,
                     ActivityLog.Enums.ResourceType.Material,
                     batchRequest.Value.CaseId,
                     batchRequest.Value.CaseId.ToString(),
@@ -182,6 +211,7 @@ public class DeleteNetAppBatch(
         {
             TotalRequested = batchRequest.Value.Operations.Count,
             Succeeded = succeeded,
+            NotFound = notFound,
             Failed = failed,
             Results = results
         });

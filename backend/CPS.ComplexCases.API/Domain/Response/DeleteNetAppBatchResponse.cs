@@ -4,6 +4,7 @@ public class DeleteNetAppBatchResponse
 {
     public int TotalRequested { get; set; }
     public int Succeeded { get; set; }
+    public int NotFound { get; set; }
     public int Failed { get; set; }
     public List<DeleteNetAppBatchItemResult> Results { get; set; } = [];
 }
