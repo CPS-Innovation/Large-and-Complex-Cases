@@ -99,6 +99,24 @@ export class TransferMaterialsTab {
       .innerText();
   }
 
+  async selectEgressFileByName(fileName: string) {
+    const row = this.page
+      .getByTestId("egress-table-wrapper")
+      .locator("tbody tr", { hasText: fileName });
+    const checkbox = row.locator('input[type="checkbox"]');
+    await checkbox.scrollIntoViewIfNeeded();
+    await checkbox.check();
+  }
+
+  async selectNetAppFileByName(fileName: string) {
+    const row = this.page
+      .getByTestId("netapp-table-wrapper")
+      .locator("tbody tr", { hasText: fileName });
+    const checkbox = row.locator('input[type="checkbox"]');
+    await checkbox.scrollIntoViewIfNeeded();
+    await checkbox.check();
+  }
+
   async navigateToFolder(folderName: string) {
     await this.page.getByRole("button", { name: folderName }).click();
   }
