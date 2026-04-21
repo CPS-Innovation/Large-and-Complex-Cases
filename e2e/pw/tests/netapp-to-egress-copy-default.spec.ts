@@ -4,6 +4,8 @@ import { SearchResultsPage } from "../pages/SearchResultsPage";
 import { CaseManagementPage } from "../pages/CaseManagementPage";
 import { TransferMaterialsTab } from "../pages/TransferMaterialsTab";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
+import * as fs from "fs";
+import * as path from "path";
 
 test.describe("NetApp to Egress Copy (Default Mode)", () => {
   test("should copy files from NetApp to Egress using existing case", async ({
@@ -41,21 +43,36 @@ test.describe("NetApp to Egress Copy (Default Mode)", () => {
     const dateHeader = page.getByTestId("netapp-table-wrapper").getByRole("button", { name: "Last modified date" });
     await dateHeader.click();
     await transferTab.waitForNetAppFiles();
-    // Click again if sorted ascending (oldest first) — we want newest first
     await dateHeader.click();
     await transferTab.waitForNetAppFiles();
 
-    // Step 7: Select the first file (newest, least likely to be a duplicate)
-    await transferTab.selectNetAppFiles([0]);
+    // Step 7: Read the filename transferred to NetApp by the egress-to-netapp-copy-default test
+    const sharedFile = path.resolve(__dirname, "../test-results/.last-transferred-file.txt");
+    let targetFileName: string;
+    if (fs.existsSync(sharedFile)) {
+      targetFileName = fs.readFileSync(sharedFile, "utf-8").trim();
+    } else {
+      // Fallback: use own uploaded file name (may not be on NetApp yet)
+      targetFileName = testData.files[0].fileName;
+    }
 
-    // Step 8: Navigate into Egress destination subfolder (use different folder to avoid duplicates)
+    // Select the file by name from NetApp
+    const netAppFileRow = page.getByTestId("netapp-table-wrapper")
+      .locator("tbody tr", { hasText: targetFileName });
+    await netAppFileRow.waitFor({ state: "visible", timeout: 30_000 });
+    const checkbox = netAppFileRow.locator('input[type="checkbox"]');
+    await checkbox.scrollIntoViewIfNeeded();
+    await checkbox.check();
+
+    // Step 8: Navigate into Egress destination subfolder
+    // Use a different folder than where the file was uploaded (4. Served Evidence)
     await transferTab.navigateToFolder("2. Counsel only");
     await transferTab.waitForEgressFiles();
 
     // Step 9: Initiate Copy to Egress
     await transferTab.selectReverseAction("Copy");
 
-    // Step 9: Confirm transfer
+    // Step 10: Confirm transfer
     await transferTab.confirmTransfer();
 
     // Step 10: Wait for transfer to complete
