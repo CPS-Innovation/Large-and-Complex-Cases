@@ -4,8 +4,8 @@
   "scripts": {
     "e2e": "npx playwright test --ui",
     "e2e:ci": "npx playwright test",
-    "e2e:existing-case": "npx playwright test --grep 'Default Mode'",
-    "e2e:register-case": "npx playwright test --grep-invert 'Default Mode'",
+    "e2e:existing-case": "npx playwright test --grep \"Default Mode\"",
+    "e2e:register-case": "npx playwright test --grep-invert \"Default Mode\"",
     "e2e:headed": "npx playwright test --headed",
     "report": "npx playwright show-report ./playwright-report",
     "report:generate": "npx playwright test --reporter=html",
