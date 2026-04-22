@@ -134,7 +134,8 @@ public class DeleteNetAppBatchTests
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.Contains("missing", badRequest.Value?.ToString(), StringComparison.OrdinalIgnoreCase);
+        var errors = Assert.IsAssignableFrom<IEnumerable<string>>(badRequest.Value);
+        Assert.Contains(errors, e => e.Contains("missing", StringComparison.OrdinalIgnoreCase));
         _netAppClientMock.Verify(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()), Times.Never);
     }
 
@@ -155,7 +156,8 @@ public class DeleteNetAppBatchTests
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.Contains("missing", badRequest.Value?.ToString(), StringComparison.OrdinalIgnoreCase);
+        var errors = Assert.IsAssignableFrom<IEnumerable<string>>(badRequest.Value);
+        Assert.Contains(errors, e => e.Contains("missing", StringComparison.OrdinalIgnoreCase));
         _netAppClientMock.Verify(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()), Times.Never);
     }
 
@@ -178,6 +180,7 @@ public class DeleteNetAppBatchTests
         var ok = Assert.IsType<OkObjectResult>(result);
         var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
 
+        Assert.Equal("Failed", response.Status);
         Assert.Equal(1, response.TotalRequested);
         Assert.Equal(0, response.Succeeded);
         Assert.Equal(1, response.Failed);
@@ -209,6 +212,7 @@ public class DeleteNetAppBatchTests
         var ok = Assert.IsType<OkObjectResult>(result);
         var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
 
+        Assert.Equal("PartiallyCompleted", response.Status);
         Assert.Equal(2, response.TotalRequested);
         Assert.Equal(1, response.Succeeded);
         Assert.Equal(1, response.Failed);
@@ -287,6 +291,7 @@ public class DeleteNetAppBatchTests
         var ok = Assert.IsType<OkObjectResult>(result);
         var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
 
+        Assert.Equal("Completed", response.Status);
         Assert.Equal(1, response.TotalRequested);
         Assert.Equal(1, response.Succeeded);
         Assert.Equal(0, response.Failed);
@@ -342,6 +347,7 @@ public class DeleteNetAppBatchTests
         var ok = Assert.IsType<OkObjectResult>(result);
         var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
 
+        Assert.Equal("Completed", response.Status);
         Assert.Equal(1, response.TotalRequested);
         Assert.Equal(1, response.Succeeded);
         Assert.Equal(0, response.Failed);
@@ -352,7 +358,7 @@ public class DeleteNetAppBatchTests
     [Fact]
     public async Task Run_FolderDelete_PassesIsFolderTrueToArgFactory()
     {
-        // Arrange
+        // Arrange — path already has trailing slash; it should be passed through unchanged.
         const string path = "CaseRoot/Old-Folder/";
         var dto = MakeBatchDto(1, [FolderOp(path)]);
 
@@ -420,6 +426,7 @@ public class DeleteNetAppBatchTests
         var ok = Assert.IsType<OkObjectResult>(result);
         var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
 
+        Assert.Equal("Completed", response.Status);
         Assert.Equal(3, response.TotalRequested);
         Assert.Equal(3, response.Succeeded);
         Assert.Equal(0, response.Failed);
@@ -475,11 +482,11 @@ public class DeleteNetAppBatchTests
         // Act
         await _function.Run(req, ctx);
 
-        // Assert — folder-only batch uses FolderDeleted action type
+        // Assert — folder-only batch uses FolderDeleted action type and NetAppFolder resource type
         _activityLogServiceMock.Verify(
             s => s.CreateActivityLogAsync(
                 ActionType.FolderDeleted,
-                ResourceType.Material,
+                ResourceType.NetAppFolder,
                 caseId,
                 caseId.ToString(),
                 null,
@@ -659,6 +666,7 @@ public class DeleteNetAppBatchTests
         var ok = Assert.IsType<OkObjectResult>(result);
         var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
 
+        Assert.Equal("PartiallyCompleted", response.Status);
         Assert.Equal(2, response.TotalRequested);
         Assert.Equal(1, response.Succeeded);
         Assert.Equal(1, response.Failed);
@@ -699,6 +707,7 @@ public class DeleteNetAppBatchTests
         var ok = Assert.IsType<OkObjectResult>(result);
         var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
 
+        Assert.Equal("PartiallyCompleted", response.Status);
         Assert.Equal(2, response.TotalRequested);
         Assert.Equal(1, response.Succeeded);
         Assert.Equal(1, response.Failed);
@@ -766,6 +775,7 @@ public class DeleteNetAppBatchTests
         var ok = Assert.IsType<OkObjectResult>(result);
         var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
 
+        Assert.Equal("PartiallyCompleted", response.Status);
         Assert.Equal(1, response.Succeeded);
         Assert.Equal(1, response.Failed);
 
@@ -869,6 +879,7 @@ public class DeleteNetAppBatchTests
         var ok = Assert.IsType<OkObjectResult>(result);
         var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
 
+        Assert.Equal("NoOp", response.Status);
         Assert.Equal(1, response.TotalRequested);
         Assert.Equal(0, response.Succeeded);
         Assert.Equal(1, response.NotFound);
@@ -942,6 +953,7 @@ public class DeleteNetAppBatchTests
         var ok = Assert.IsType<OkObjectResult>(result);
         var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
 
+        Assert.Equal("Completed", response.Status);
         Assert.Equal(2, response.TotalRequested);
         Assert.Equal(1, response.Succeeded);
         Assert.Equal(1, response.NotFound);

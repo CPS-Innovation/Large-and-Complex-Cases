@@ -278,7 +278,7 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
             ActionType.TransferCompleted => $"Transfer completed between {resourceName}",
             ActionType.TransferFailed => $"Transfer failed between {resourceName}",
             ActionType.FolderDeleted => "Folder(s) deleted",
-            ActionType.MaterialDeleted => "Document(s) deleted",
+            ActionType.MaterialDeleted => "Material(s) deleted",
             ActionType.FolderAndMaterialDeleted => "Folder(s) and document(s) deleted",
             _ => $"Performed action {actionType} on resource {resourceName}"
         };

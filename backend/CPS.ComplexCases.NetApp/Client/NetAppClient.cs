@@ -497,7 +497,12 @@ public class NetAppClient(
             }
             else
             {
-                var filesToDelete = (await ListAllObjectKeysForDeletionAsync(arg.BucketName, arg.Path, arg.BearerToken)).ToList();
+                // Folder paths must always end with "/" so the S3 listing prefix, the
+                // unconditionally-appended marker key, and the physical deletion key are
+                // all consistent. Normalise here to cover any caller that omits the slash.
+                var folderPath = arg.Path.EndsWith('/') ? arg.Path : arg.Path + "/";
+
+                var filesToDelete = (await ListAllObjectKeysForDeletionAsync(arg.BucketName, folderPath, arg.BearerToken)).ToList();
 
                 // Re-resolve the S3 client after listing. The listing phase calls
                 // ListObjectsInBucketAsync internally, which has its own credential
@@ -533,7 +538,7 @@ public class NetAppClient(
                 if (allErrors.Count > 0)
                 {
                     return new DeleteNetAppResult(false, true, totalDeleted,
-                        $"Deletion failed for {allErrors.Count} object(s) in folder {arg.Path}.", null);
+                        $"Deletion failed for {allErrors.Count} object(s) in folder {folderPath}.", null);
                 }
 
                 return new DeleteNetAppResult(true, true, totalDeleted, null, null);
