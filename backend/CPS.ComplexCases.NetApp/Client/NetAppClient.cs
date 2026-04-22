@@ -510,6 +510,19 @@ public class NetAppClient(
                 // regenerates keys, the s3Client captured above now holds dead keys.
                 s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
 
+                // ListAllObjectKeysForDeletionAsync always appends the folder marker key
+                // unconditionally, so filesToDelete is never empty. If only that marker
+                // was collected (nothing found under the prefix), probe via HEAD to
+                // surface WasFound = false for non-existent folders — mirroring the file
+                // deletion path and ensuring the batch response shows NotFound instead
+                // of Deleted.
+                if (filesToDelete.Count == 1)
+                {
+                    var markerArg = _netAppArgFactory.CreateGetObjectArg(arg.BearerToken, arg.BucketName, folderPath);
+                    if (!await DoesObjectExistAsync(markerArg))
+                        return new DeleteNetAppResult(true, false, 0, null, null);
+                }
+
                 var totalDeleted = 0;
                 var allErrors = new List<DeleteError>();
 
