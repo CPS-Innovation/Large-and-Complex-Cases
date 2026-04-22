@@ -10,6 +10,9 @@ import { getCaseMetaData } from "../../apis/gateway-api";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useUserGroupsFeatureFlag } from "../../common/hooks/useUserGroupsFeatureFlag";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
+import TreeView from "../../components/common/TreeView/TreeView";
+import { getNetAppFolders } from "../../apis/gateway-api";
+import { getFolderNameFromPath } from "../../common/utils/getFolderNameFromPath";
 
 import styles from "./index.module.scss";
 
@@ -86,6 +89,27 @@ const CaseManagementPage = () => {
     validateRoute();
   }, [location, validateRoute]);
 
+  const exampleData: TreeNode[] = [
+    {
+      id: "root-doc",
+      name: "Documents",
+      path: "/Documents",
+      isFolder: true,
+    },
+    {
+      id: "root-pics",
+      name: "Pictures",
+      path: "/Pictures",
+      isFolder: true,
+    },
+    {
+      id: "todo",
+      name: "todo.txt",
+      path: "/todo.txt",
+      isFolder: true,
+    },
+  ];
+
   const items: ItemProps<TabId>[] = [
     {
       id: "transfer-materials",
@@ -133,6 +157,31 @@ const CaseManagementPage = () => {
         children: caseMetaData?.data ? (
           <div>
             <h3> Case Details</h3>
+            <TreeView
+              data={exampleData}
+              onSelect={() => {
+                console.log("Node selected");
+              }}
+              onToggle={() => {
+                console.log("Node toggled");
+              }}
+              onLoadChildren={async (nodeId) => {
+                console.log("Load children for node:", nodeId);
+                await new Promise((res) => setTimeout(res, 1000));
+
+                const data = await getNetAppFolders(nodeId);
+
+                const folders = data.folderData.map((folder) => {
+                  return {
+                    id: folder.path,
+                    name: getFolderNameFromPath(folder.path),
+                    path: folder.path,
+                    isFolder: true,
+                  };
+                });
+                return folders;
+              }}
+            />
           </div>
         ) : (
           <></>

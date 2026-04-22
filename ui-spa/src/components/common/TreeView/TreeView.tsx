@@ -1,0 +1,334 @@
+import React, {
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+  KeyboardEvent,
+} from "react";
+import FolderIcon from "../../../components/svgs/folder.svg?react";
+import { Spinner } from "../../common/Spinner";
+import styles from "./TreeView.module.scss";
+
+export type TreeNode = {
+  id: string;
+  name: string;
+  path?: string;
+  isFolder: boolean;
+  children?: TreeNode[];
+};
+
+export type TreeViewProps = {
+  data: TreeNode[];
+  onSelect?: (node: TreeNode) => void;
+  onToggle?: (node: TreeNode, expanded: boolean) => void;
+  onLoadChildren?: (nodeId: string) => Promise<TreeNode[]>;
+  selectedId?: string | null;
+  className?: string;
+};
+
+const TreeView: React.FC<TreeViewProps> = ({
+  data,
+  onSelect,
+  onToggle,
+  onLoadChildren,
+  selectedId: controlledSelectedId,
+  className,
+}) => {
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set([]));
+  const [focusedId, setFocusedId] = useState<string | null>(() => {
+    return data.length > 0 ? data[0].id : null;
+  });
+  const [uncontrolledSelectedId, setUncontrolledSelectedId] = useState<
+    string | null
+  >(null);
+
+  const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
+  const [loadedChildren, setLoadedChildren] = useState<
+    Record<string, TreeNode[]>
+  >({});
+
+  const selectedId = controlledSelectedId ?? uncontrolledSelectedId;
+
+  const refs = useRef<Record<string, HTMLElement | null>>({});
+
+  const getVisibleNodes = useCallback(() => {
+    const out: TreeNode[] = [];
+    const walk = (nodes: TreeNode[]) => {
+      for (const n of nodes) {
+        out.push(n);
+        const children = n.children ?? loadedChildren[n.id];
+        if (n.isFolder && expandedIds.has(n.id) && children) {
+          walk(children);
+        }
+      }
+    };
+    walk(data);
+    return out;
+  }, [data, expandedIds, loadedChildren]);
+
+  const findParentId = useCallback(
+    (nodes: TreeNode[], childId: string): string | null => {
+      for (const n of nodes) {
+        const children = n.children ?? loadedChildren[n.id];
+        if (children?.some((c) => c.id === childId)) return n.id;
+        if (children) {
+          const p = findParentId(children, childId);
+          if (p) return p;
+        }
+      }
+      return null;
+    },
+    [loadedChildren],
+  );
+
+  const findNodeById = useCallback(
+    (nodes: TreeNode[], id: string): TreeNode | undefined => {
+      for (const n of nodes) {
+        if (n.id === id) return n;
+        if (n.children) {
+          const found = findNodeById(n.children, id);
+          if (found) return found;
+        }
+        const cached = loadedChildren[n.id];
+        if (cached) {
+          const found = findNodeById(cached, id);
+          if (found) return found;
+        }
+      }
+      return undefined;
+    },
+    [loadedChildren],
+  );
+
+  const toggle = useCallback(
+    (id: string) => {
+      console.log("Toggling node:", id);
+      setExpandedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) {
+          next.delete(id);
+        } else {
+          next.add(id);
+          const node = findNodeById(data, id);
+
+          if (node && node.isFolder) {
+            const hasChildren =
+              (node.children && node.children.length > 0) ||
+              (loadedChildren &&
+                loadedChildren[id] &&
+                loadedChildren[id].length > 0);
+
+            console.log("hasChildren for node:", id);
+            if (!hasChildren && onLoadChildren) {
+              setLoadingIds((s) => new Set(s).add(id));
+
+              onLoadChildren(node.id)
+                .then((children: TreeNode[]) => {
+                  setLoadedChildren((prev) => ({ ...prev, [id]: children }));
+                })
+                .catch(() => {
+                  console.error("Error loading children for node:", id);
+                })
+                .finally(() => {
+                  setLoadingIds((s) => {
+                    const nextSet = new Set(s);
+                    nextSet.delete(id);
+                    return nextSet;
+                  });
+                });
+            }
+          }
+        }
+        console.log("Expanded IDs: new>>>", next);
+        return next;
+      });
+    },
+    [data, findNodeById, onLoadChildren, loadedChildren],
+  );
+
+  useEffect(() => {
+    console.log("Focused ID changed:", focusedId);
+    if (focusedId) {
+      const el = refs.current[focusedId];
+      el?.focus();
+    }
+  }, [focusedId]);
+
+  useEffect(() => {
+    console.log("expanded ID changed:", expandedIds);
+    // if (expandedId) {
+    //   const el = refs.current[expandedId];
+    //   el?.focus();
+    // }
+  }, [expandedIds]);
+
+  const visible = getVisibleNodes();
+
+  const focusNext = (id: string | null) => {
+    if (!id) return;
+    const i = visible.findIndex((n) => n.id === id);
+    // console.log("Focusing next ID:", i);
+    // console.log("Focusing next ID:", visible);
+    if (i >= 0 && i < visible.length - 1) setFocusedId(visible[i + 1].id);
+  };
+  const focusPrev = (id: string | null) => {
+    if (!id) return;
+    const i = visible.findIndex((n) => n.id === id);
+    if (i > 0) setFocusedId(visible[i - 1].id);
+  };
+
+  const focusFirst = () => {
+    if (visible.length > 0) setFocusedId(visible[0].id);
+  };
+  const focusLast = () => {
+    const last = visible.at(-1);
+    if (last) setFocusedId(last.id);
+  };
+
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (!focusedId) return;
+    const node = findNodeById(data, focusedId);
+    if (!node) return;
+
+    switch (e.key) {
+      case "ArrowDown":
+        console.log("ArrowDown pressed");
+        e.preventDefault();
+        focusNext(focusedId);
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        focusPrev(focusedId);
+        break;
+      case "ArrowRight":
+        e.preventDefault();
+        if (node.isFolder) {
+          if (!expandedIds.has(node.id)) {
+            console.log("Expanding node on ArrowRight:", node.id);
+            toggle(node.id);
+          } else if (node.children && node.children.length > 0) {
+            setFocusedId(node.children[0].id);
+          }
+        }
+        break;
+      case "ArrowLeft":
+        e.preventDefault();
+        if (node.isFolder && expandedIds.has(node.id)) {
+          toggle(node.id);
+        } else {
+          const parentId = findParentId(data, node.id);
+          if (parentId) setFocusedId(parentId);
+        }
+        break;
+      case "Home":
+        e.preventDefault();
+        focusFirst();
+        break;
+      case "End":
+        e.preventDefault();
+        focusLast();
+        break;
+      case "Enter":
+      case " ":
+        e.preventDefault();
+        if (!controlledSelectedId) setUncontrolledSelectedId(node.id);
+        onSelect?.(node);
+
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleClick = (node: TreeNode) => {
+    setFocusedId(node.id);
+    if (!controlledSelectedId) setUncontrolledSelectedId(node.id);
+    onSelect?.(node);
+  };
+
+  const renderNode = (node: TreeNode, level: number) => {
+    // console.log("focusId>>", focusedId);
+    const isExpanded = node.isFolder && expandedIds.has(node.id);
+    const isSelected = selectedId === node.id;
+    const isFocused = focusedId === node.id;
+    const isLoading = loadingIds.has(node.id);
+    const children = node.children ?? loadedChildren[node.id];
+    // console.log("children>>>", children);
+    // console.log("isExpanded>>>", isExpanded);
+
+    return (
+      <li
+        key={node.id + level}
+        role="treeitem"
+        ref={(el) => {
+          refs.current[node.id] = el;
+        }}
+        aria-expanded={node.isFolder ? isExpanded : undefined}
+        aria-busy={isLoading ? true : undefined}
+        aria-level={level}
+        data-id={node.id}
+        aria-selected={isSelected}
+        aria-labelledby={`name-${node.id}`}
+        tabIndex={isFocused ? 0 : -1}
+        className={`${styles.treeItem} ${isFocused ? styles.focused : ""}`}
+        onKeyDown={(e) => {
+          e.stopPropagation();
+          onKeyDown(e);
+        }}
+        // onFocus={() => setFocusedId(node.id)}
+      >
+        <div className={styles.node}>
+          <div className={styles.toggleWrap} aria-hidden={true}>
+            <div onClick={() => toggle(node.id)} className={styles.toggleIcon}>
+              {isExpanded ? "-" : "+"}
+            </div>
+          </div>
+          <div
+            id={`name-${node.id}`}
+            className={`folderNode ${styles.folderNode} ${isSelected ? styles.selected : ""}`}
+            onClick={() => handleClick(node)}
+
+            // onFocus={() => setFocusedId(node.id)}
+            // onKeyDown={onKeyDown}
+            // tabIndex={isFocused ? 0 : -1}
+          >
+            <div aria-hidden={true}>
+              <FolderIcon />
+            </div>
+            <span className={styles.folderName}>{node.name}</span>
+          </div>
+          {/* <span className={styles.folderName}>{node.name}</span> */}
+        </div>
+        {isLoading && (
+          <div className={styles.loadingIconWrapper} aria-hidden>
+            <Spinner data-testid="transfer-spinner" diameterPx={15} />
+          </div>
+        )}
+        {!isLoading &&
+          node.isFolder &&
+          isExpanded &&
+          children &&
+          children.length > 0 && (
+            <ul role="group" className={styles.children}>
+              {children.map((child) => renderNode(child, level + 1))}
+            </ul>
+          )}
+      </li>
+    );
+  };
+
+  return (
+    <div className={`${styles.tree} ${className ?? ""}`}>
+      <ul
+        role="tree"
+        aria-label="Files"
+        // tabIndex={0}
+        className={styles.treeList}
+      >
+        {data.map((node) => renderNode(node, 1))}
+      </ul>
+    </div>
+  );
+};
+
+export default TreeView;
