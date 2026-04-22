@@ -279,7 +279,7 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
             ActionType.TransferFailed => $"Transfer failed between {resourceName}",
             ActionType.FolderDeleted => "Folder(s) deleted",
             ActionType.MaterialDeleted => "Material(s) deleted",
-            ActionType.FolderAndMaterialDeleted => "Folder(s) and document(s) deleted",
+            ActionType.FolderAndMaterialDeleted => "Folder(s) and material(s) deleted",
             _ => $"Performed action {actionType} on resource {resourceName}"
         };
     }
