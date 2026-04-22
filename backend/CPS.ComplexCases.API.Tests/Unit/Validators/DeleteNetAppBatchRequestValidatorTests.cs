@@ -242,6 +242,50 @@ public class DeleteNetAppBatchRequestValidatorTests
     }
 
     [Fact]
+    public void Validate_WhenFolderOperationSourcePathMissingTrailingSlash_ReturnsValidationError()
+    {
+        // Arrange
+        var request = new DeleteNetAppBatchDto
+        {
+            CaseId = 1,
+            Operations =
+            [
+                new DeleteNetAppBatchOperationDto { Type = NetAppDeleteOperationType.Folder, SourcePath = "folder/subfolder" }
+            ]
+        };
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Single(result.Errors, e =>
+            e.PropertyName == "Operations[0].SourcePath" &&
+            e.ErrorMessage == "SourcePath for a Folder operation must end with a '/'.");
+    }
+
+    [Fact]
+    public void Validate_WhenFolderOperationSourcePathHasTrailingSlash_IsValid()
+    {
+        // Arrange
+        var request = new DeleteNetAppBatchDto
+        {
+            CaseId = 1,
+            Operations =
+            [
+                new DeleteNetAppBatchOperationDto { Type = NetAppDeleteOperationType.Folder, SourcePath = "folder/subfolder/" }
+            ]
+        };
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        Assert.True(result.IsValid);
+        Assert.Empty(result.Errors);
+    }
+
+    [Fact]
     public void Validate_WhenRequestIsValid_ReturnsSuccess()
     {
         // Arrange
@@ -251,7 +295,7 @@ public class DeleteNetAppBatchRequestValidatorTests
             Operations =
             [
                 new DeleteNetAppBatchOperationDto { Type = NetAppDeleteOperationType.Material, SourcePath = "folder/file.txt" },
-                new DeleteNetAppBatchOperationDto { Type = NetAppDeleteOperationType.Folder, SourcePath = "folder/subfolder" }
+                new DeleteNetAppBatchOperationDto { Type = NetAppDeleteOperationType.Folder, SourcePath = "folder/subfolder/" }
             ]
         };
 

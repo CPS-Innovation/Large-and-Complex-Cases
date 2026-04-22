@@ -489,15 +489,20 @@ public class NetAppClient(
             {
                 var getObjectArg = _netAppArgFactory.CreateGetObjectArg(arg.BearerToken, arg.BucketName, arg.Path);
                 if (!await DoesObjectExistAsync(getObjectArg))
-                    return new DeleteNetAppResult(true, 0, null, null);
+                    return new DeleteNetAppResult(true, false, 0, null, null);
 
                 var request = _netAppRequestFactory.DeleteObjectRequest(arg);
                 await s3Client.DeleteObjectAsync(request);
-                return new DeleteNetAppResult(true, 1, null, null);
+                return new DeleteNetAppResult(true, true, 1, null, null);
             }
             else
             {
-                var filesToDelete = (await ListAllObjectKeysForDeletionAsync(arg.BucketName, arg.Path, arg.BearerToken)).ToList();
+                // Folder paths must always end with "/" so the S3 listing prefix, the
+                // unconditionally-appended marker key, and the physical deletion key are
+                // all consistent. Normalise here to cover any caller that omits the slash.
+                var folderPath = arg.Path.EndsWith('/') ? arg.Path : arg.Path + "/";
+
+                var filesToDelete = (await ListAllObjectKeysForDeletionAsync(arg.BucketName, folderPath, arg.BearerToken)).ToList();
 
                 // Re-resolve the S3 client after listing. The listing phase calls
                 // ListObjectsInBucketAsync internally, which has its own credential
@@ -532,11 +537,11 @@ public class NetAppClient(
 
                 if (allErrors.Count > 0)
                 {
-                    return new DeleteNetAppResult(false, totalDeleted,
-                        $"Deletion failed for {allErrors.Count} object(s) in folder {arg.Path}.", null);
+                    return new DeleteNetAppResult(false, true, totalDeleted,
+                        $"Deletion failed for {allErrors.Count} object(s) in folder {folderPath}.", null);
                 }
 
-                return new DeleteNetAppResult(true, totalDeleted, null, null);
+                return new DeleteNetAppResult(true, true, totalDeleted, null, null);
             }
         }
         catch (AmazonS3Exception ex)
@@ -892,29 +897,28 @@ public class NetAppClient(
             };
 
             var listResponse = await ListObjectsInBucketAsync(listArg);
-            if (listResponse?.Data.FileData != null)
+            if (listResponse == null)
+                throw new InvalidOperationException(
+                    $"Failed to list objects under prefix '{prefix}' in bucket '{bucketName}'. " +
+                    "Aborting folder delete to avoid leaving orphaned objects.");
+
+            foreach (var file in listResponse.Data.FileData ?? [])
             {
-                foreach (var file in listResponse.Data.FileData)
+                objectKeys.Add(file.Path);
+            }
+
+            foreach (var folder in listResponse.Data.FolderData ?? [])
+            {
+                if (!string.IsNullOrEmpty(folder.Path))
                 {
-                    objectKeys.Add(file.Path);
+                    var subObjectKeys =
+                        await ListAllObjectKeysForDeletionAsync(bucketName, folder.Path, bearerToken);
+                    objectKeys.AddRange(subObjectKeys);
+                    objectKeys.Add(folder.Path);
                 }
             }
 
-            if (listResponse?.Data.FolderData != null)
-            {
-                foreach (var folder in listResponse.Data.FolderData)
-                {
-                    if (!string.IsNullOrEmpty(folder.Path))
-                    {
-                        var subObjectKeys =
-                            await ListAllObjectKeysForDeletionAsync(bucketName, folder.Path, bearerToken);
-                        objectKeys.AddRange(subObjectKeys);
-                        objectKeys.Add(folder.Path);
-                    }
-                }
-            }
-
-            continuationToken = listResponse?.Pagination.NextContinuationToken;
+            continuationToken = listResponse.Pagination.NextContinuationToken;
         } while (!string.IsNullOrEmpty(continuationToken));
 
         objectKeys.Add(prefix);

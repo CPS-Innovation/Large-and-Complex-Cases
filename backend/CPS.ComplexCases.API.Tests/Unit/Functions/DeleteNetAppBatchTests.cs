@@ -134,7 +134,8 @@ public class DeleteNetAppBatchTests
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.Contains("missing", badRequest.Value?.ToString(), StringComparison.OrdinalIgnoreCase);
+        var errors = Assert.IsAssignableFrom<IEnumerable<string>>(badRequest.Value);
+        Assert.Contains(errors, e => e.Contains("missing", StringComparison.OrdinalIgnoreCase));
         _netAppClientMock.Verify(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()), Times.Never);
     }
 
@@ -155,7 +156,8 @@ public class DeleteNetAppBatchTests
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.Contains("missing", badRequest.Value?.ToString(), StringComparison.OrdinalIgnoreCase);
+        var errors = Assert.IsAssignableFrom<IEnumerable<string>>(badRequest.Value);
+        Assert.Contains(errors, e => e.Contains("missing", StringComparison.OrdinalIgnoreCase));
         _netAppClientMock.Verify(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()), Times.Never);
     }
 
@@ -178,6 +180,7 @@ public class DeleteNetAppBatchTests
         var ok = Assert.IsType<OkObjectResult>(result);
         var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
 
+        Assert.Equal("Failed", response.Status);
         Assert.Equal(1, response.TotalRequested);
         Assert.Equal(0, response.Succeeded);
         Assert.Equal(1, response.Failed);
@@ -209,6 +212,7 @@ public class DeleteNetAppBatchTests
         var ok = Assert.IsType<OkObjectResult>(result);
         var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
 
+        Assert.Equal("PartiallyCompleted", response.Status);
         Assert.Equal(2, response.TotalRequested);
         Assert.Equal(1, response.Succeeded);
         Assert.Equal(1, response.Failed);
@@ -287,6 +291,7 @@ public class DeleteNetAppBatchTests
         var ok = Assert.IsType<OkObjectResult>(result);
         var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
 
+        Assert.Equal("Completed", response.Status);
         Assert.Equal(1, response.TotalRequested);
         Assert.Equal(1, response.Succeeded);
         Assert.Equal(0, response.Failed);
@@ -342,6 +347,7 @@ public class DeleteNetAppBatchTests
         var ok = Assert.IsType<OkObjectResult>(result);
         var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
 
+        Assert.Equal("Completed", response.Status);
         Assert.Equal(1, response.TotalRequested);
         Assert.Equal(1, response.Succeeded);
         Assert.Equal(0, response.Failed);
@@ -352,7 +358,7 @@ public class DeleteNetAppBatchTests
     [Fact]
     public async Task Run_FolderDelete_PassesIsFolderTrueToArgFactory()
     {
-        // Arrange
+        // Arrange — path already has trailing slash; it should be passed through unchanged.
         const string path = "CaseRoot/Old-Folder/";
         var dto = MakeBatchDto(1, [FolderOp(path)]);
 
@@ -420,6 +426,7 @@ public class DeleteNetAppBatchTests
         var ok = Assert.IsType<OkObjectResult>(result);
         var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
 
+        Assert.Equal("Completed", response.Status);
         Assert.Equal(3, response.TotalRequested);
         Assert.Equal(3, response.Succeeded);
         Assert.Equal(0, response.Failed);
@@ -458,7 +465,7 @@ public class DeleteNetAppBatchTests
     }
 
     [Fact]
-    public async Task Run_SuccessfulFolderDelete_LogsSingleBatchDeletedActivity()
+    public async Task Run_SuccessfulFolderDelete_LogsFolderDeletedActivity()
     {
         // Arrange
         const int caseId = 99;
@@ -475,11 +482,11 @@ public class DeleteNetAppBatchTests
         // Act
         await _function.Run(req, ctx);
 
-        // Assert — folder deletes also produce one BatchDeleted row
+        // Assert — folder-only batch uses FolderDeleted action type and NetAppFolder resource type
         _activityLogServiceMock.Verify(
             s => s.CreateActivityLogAsync(
-                ActionType.MaterialDeleted,
-                ResourceType.Material,
+                ActionType.FolderDeleted,
+                ResourceType.NetAppFolder,
                 caseId,
                 caseId.ToString(),
                 null,
@@ -503,6 +510,7 @@ public class DeleteNetAppBatchTests
         SetupClientSuccess(file, isFolder: false, keysDeleted: 1);
         SetupClientSuccess(folder, isFolder: true, keysDeleted: 3);
 
+        ActionType? capturedActionType = null;
         System.Text.Json.JsonDocument? capturedDetails = null;
         _activityLogServiceMock
             .Setup(s => s.CreateActivityLogAsync(
@@ -510,7 +518,7 @@ public class DeleteNetAppBatchTests
                 It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(),
                 It.IsAny<System.Text.Json.JsonDocument?>()))
             .Callback<ActionType, ResourceType, int, string, string?, string?, System.Text.Json.JsonDocument?>(
-                (_, _, _, _, _, _, details) => capturedDetails = details)
+                (actionType, _, _, _, _, _, details) => { capturedActionType = actionType; capturedDetails = details; })
             .Returns(Task.CompletedTask);
 
         var (req, ctx) = CreateRequestAndContext();
@@ -518,7 +526,9 @@ public class DeleteNetAppBatchTests
         // Act
         await _function.Run(req, ctx);
 
-        // Assert
+        // Assert — mixed folder+material batch uses FolderAndMaterialDeleted
+        Assert.Equal(ActionType.FolderAndMaterialDeleted, capturedActionType);
+
         Assert.NotNull(capturedDetails);
         var items = capturedDetails.RootElement.GetProperty("items");
         Assert.Equal(2, items.GetArrayLength());
@@ -656,6 +666,7 @@ public class DeleteNetAppBatchTests
         var ok = Assert.IsType<OkObjectResult>(result);
         var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
 
+        Assert.Equal("PartiallyCompleted", response.Status);
         Assert.Equal(2, response.TotalRequested);
         Assert.Equal(1, response.Succeeded);
         Assert.Equal(1, response.Failed);
@@ -696,6 +707,7 @@ public class DeleteNetAppBatchTests
         var ok = Assert.IsType<OkObjectResult>(result);
         var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
 
+        Assert.Equal("PartiallyCompleted", response.Status);
         Assert.Equal(2, response.TotalRequested);
         Assert.Equal(1, response.Succeeded);
         Assert.Equal(1, response.Failed);
@@ -763,6 +775,7 @@ public class DeleteNetAppBatchTests
         var ok = Assert.IsType<OkObjectResult>(result);
         var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
 
+        Assert.Equal("PartiallyCompleted", response.Status);
         Assert.Equal(1, response.Succeeded);
         Assert.Equal(1, response.Failed);
 
@@ -793,7 +806,7 @@ public class DeleteNetAppBatchTests
 
         _netAppClientMock
             .Setup(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()))
-            .ReturnsAsync(new DeleteNetAppResult(true, 1, null, null));
+            .ReturnsAsync(new DeleteNetAppResult(true, true, 1, null, null));
 
         var (req, ctx) = CreateRequestAndContext();
 
@@ -845,6 +858,119 @@ public class DeleteNetAppBatchTests
         _initializationHandlerMock.Verify(h => h.Initialize(_testUsername, _testCorrelationId, null), Times.Once);
     }
 
+    [Fact]
+    public async Task Run_FileNotFound_RecordsNotFoundStatusAndDoesNotCountAsSucceeded()
+    {
+        // Arrange
+        const string missingFile = "CaseRoot/gone.pdf";
+        var dto = MakeBatchDto(1, [MaterialOp(missingFile)]);
+
+        SetupRequestValidator(dto, isValid: true);
+        SetupCaseMetadata();
+        SetupSecurityGroups();
+        SetupClientNotFound(missingFile, isFolder: false);
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        var result = await _function.Run(req, ctx);
+
+        // Assert
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
+
+        Assert.Equal("NoOp", response.Status);
+        Assert.Equal(1, response.TotalRequested);
+        Assert.Equal(0, response.Succeeded);
+        Assert.Equal(1, response.NotFound);
+        Assert.Equal(0, response.Failed);
+        Assert.Equal("NotFound", response.Results[0].Status);
+        Assert.Null(response.Results[0].Error);
+    }
+
+    [Fact]
+    public async Task Run_FileNotFound_LogsActivityWithNotFoundOutcome()
+    {
+        // Arrange
+        const string missingFile = "CaseRoot/gone.pdf";
+        var dto = MakeBatchDto(1, [MaterialOp(missingFile)]);
+
+        SetupRequestValidator(dto, isValid: true);
+        SetupCaseMetadata();
+        SetupSecurityGroups();
+        SetupClientNotFound(missingFile, isFolder: false);
+
+        System.Text.Json.JsonDocument? capturedDetails = null;
+        _activityLogServiceMock
+            .Setup(s => s.CreateActivityLogAsync(
+                It.IsAny<ActionType>(), It.IsAny<ResourceType>(), It.IsAny<int>(),
+                It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(),
+                It.IsAny<System.Text.Json.JsonDocument?>()))
+            .Callback<ActionType, ResourceType, int, string, string?, string?, System.Text.Json.JsonDocument?>(
+                (_, _, _, _, _, _, details) => capturedDetails = details)
+            .Returns(Task.CompletedTask);
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        await _function.Run(req, ctx);
+
+        // Assert — NotFound attempts are auditable even though nothing was physically deleted
+        _activityLogServiceMock.Verify(
+            s => s.CreateActivityLogAsync(
+                ActionType.MaterialDeleted, It.IsAny<ResourceType>(), It.IsAny<int>(),
+                It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(),
+                It.IsAny<System.Text.Json.JsonDocument?>()),
+            Times.Once);
+
+        Assert.NotNull(capturedDetails);
+        var items = capturedDetails.RootElement.GetProperty("items");
+        var item = items.EnumerateArray().Single();
+        Assert.Equal(missingFile, item.GetProperty("sourcePath").GetString());
+        Assert.Equal("NotFound", item.GetProperty("outcome").GetString());
+    }
+
+    [Fact]
+    public async Task Run_MixedBatch_NotFoundAndDeleted_CountsCorrectlyAndLogsActivity()
+    {
+        // Arrange
+        const string existingFile = "CaseRoot/evidence.pdf";
+        const string missingFile = "CaseRoot/gone.pdf";
+        var dto = MakeBatchDto(1, [MaterialOp(existingFile), MaterialOp(missingFile)]);
+
+        SetupRequestValidator(dto, isValid: true);
+        SetupCaseMetadata();
+        SetupSecurityGroups();
+        SetupClientSuccess(existingFile, isFolder: false, keysDeleted: 1);
+        SetupClientNotFound(missingFile, isFolder: false);
+
+        var (req, ctx) = CreateRequestAndContext();
+
+        // Act
+        var result = await _function.Run(req, ctx);
+
+        // Assert
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
+
+        Assert.Equal("Completed", response.Status);
+        Assert.Equal(2, response.TotalRequested);
+        Assert.Equal(1, response.Succeeded);
+        Assert.Equal(1, response.NotFound);
+        Assert.Equal(0, response.Failed);
+
+        Assert.Equal("Deleted", response.Results.Single(r => r.SourcePath == existingFile).Status);
+        Assert.Equal("NotFound", response.Results.Single(r => r.SourcePath == missingFile).Status);
+
+        // Activity log is written because at least one item was actually deleted
+        _activityLogServiceMock.Verify(
+            s => s.CreateActivityLogAsync(
+                ActionType.MaterialDeleted, It.IsAny<ResourceType>(), It.IsAny<int>(),
+                It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(),
+                It.IsAny<System.Text.Json.JsonDocument?>()),
+            Times.Once);
+    }
+
     private static DeleteNetAppBatchDto MakeBatchDto(int caseId, List<DeleteNetAppBatchOperationDto> operations) =>
         new() { CaseId = caseId, Operations = operations };
 
@@ -884,14 +1010,21 @@ public class DeleteNetAppBatchTests
     {
         _netAppClientMock
             .Setup(c => c.DeleteFileOrFolderAsync(It.Is<DeleteFileOrFolderArg>(a => a.Path == path && a.IsFolder == isFolder)))
-            .ReturnsAsync(new DeleteNetAppResult(true, keysDeleted, null, null));
+            .ReturnsAsync(new DeleteNetAppResult(true, true, keysDeleted, null, null));
+    }
+
+    private void SetupClientNotFound(string path, bool isFolder)
+    {
+        _netAppClientMock
+            .Setup(c => c.DeleteFileOrFolderAsync(It.Is<DeleteFileOrFolderArg>(a => a.Path == path && a.IsFolder == isFolder)))
+            .ReturnsAsync(new DeleteNetAppResult(true, false, 0, null, null));
     }
 
     private void SetupClientFailure(string path, bool isFolder, string errorMessage)
     {
         _netAppClientMock
             .Setup(c => c.DeleteFileOrFolderAsync(It.Is<DeleteFileOrFolderArg>(a => a.Path == path && a.IsFolder == isFolder)))
-            .ReturnsAsync(new DeleteNetAppResult(false, 0, errorMessage, null));
+            .ReturnsAsync(new DeleteNetAppResult(false, false, 0, errorMessage, null));
     }
 
     private (HttpRequest req, FunctionContext ctx) CreateRequestAndContext() =>

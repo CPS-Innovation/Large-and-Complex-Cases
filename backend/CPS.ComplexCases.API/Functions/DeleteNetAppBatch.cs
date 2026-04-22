@@ -65,7 +65,7 @@ public class DeleteNetAppBatch(
         var caseMetadata = await _caseMetadataService.GetCaseMetadataForCaseIdAsync(batchRequest.Value.CaseId);
 
         if (caseMetadata == null || string.IsNullOrEmpty(caseMetadata.NetappFolderPath))
-            return new BadRequestObjectResult("Case metadata or NetApp folder path is missing.");
+            return new BadRequestObjectResult(new[] { "Case metadata or NetApp folder path is missing." });
 
         var casePrefix = caseMetadata.NetappFolderPath.EndsWith('/')
             ? caseMetadata.NetappFolderPath
@@ -113,6 +113,15 @@ public class DeleteNetAppBatch(
                         Error = result.ErrorMessage
                     });
                 }
+                else if (!result.WasFound)
+                {
+                    _logger.LogInformation("Path {SourcePath} was not found in NetApp; treating as already deleted.", op.SourcePath);
+                    results.Add(new DeleteNetAppBatchItemResult
+                    {
+                        SourcePath = op.SourcePath,
+                        Status = "NotFound"
+                    });
+                }
                 else
                 {
                     results.Add(new DeleteNetAppBatchItemResult
@@ -146,12 +155,32 @@ public class DeleteNetAppBatch(
         }
 
         var succeeded = results.Count(r => r.Status == "Deleted");
+        var notFound = results.Count(r => r.Status == "NotFound");
         var failed = results.Count(r => r.Status == "Failed");
 
-        if (succeeded > 0)
+        if (succeeded > 0 || notFound > 0)
         {
             try
             {
+                var auditedPaths = results
+                    .Where(r => r.Status is "Deleted" or "NotFound")
+                    .Select(r => r.SourcePath)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                var auditedOps = batchRequest.Value.Operations
+                    .Where(op => auditedPaths.Contains(op.SourcePath))
+                    .ToList();
+
+                var hasFolder = auditedOps.Any(op => op.Type == NetAppDeleteOperationType.Folder);
+                var hasMaterial = auditedOps.Any(op => op.Type == NetAppDeleteOperationType.Material);
+
+                var (actionType, resourceType) = (hasFolder, hasMaterial) switch
+                {
+                    (true, true) => (ActivityLog.Enums.ActionType.FolderAndMaterialDeleted, ActivityLog.Enums.ResourceType.Material),
+                    (true, false) => (ActivityLog.Enums.ActionType.FolderDeleted, ActivityLog.Enums.ResourceType.NetAppFolder),
+                    _ => (ActivityLog.Enums.ActionType.MaterialDeleted, ActivityLog.Enums.ResourceType.Material)
+                };
+
                 var details = new
                 {
                     items = results.Select(r => new
@@ -164,8 +193,8 @@ public class DeleteNetAppBatch(
                 }.SerializeToJsonDocument(_logger);
 
                 await _activityLogService.CreateActivityLogAsync(
-                    ActivityLog.Enums.ActionType.MaterialDeleted,
-                    ActivityLog.Enums.ResourceType.Material,
+                    actionType,
+                    resourceType,
                     batchRequest.Value.CaseId,
                     batchRequest.Value.CaseId.ToString(),
                     null,
@@ -178,10 +207,20 @@ public class DeleteNetAppBatch(
             }
         }
 
+        var batchStatus = (succeeded > 0, failed > 0) switch
+        {
+            (false, false) => "NoOp",
+            (true, false) => "Completed",
+            (false, true) => "Failed",
+            _ => "PartiallyCompleted"
+        };
+
         return new OkObjectResult(new DeleteNetAppBatchResponse
         {
+            Status = batchStatus,
             TotalRequested = batchRequest.Value.Operations.Count,
             Succeeded = succeeded,
+            NotFound = notFound,
             Failed = failed,
             Results = results
         });

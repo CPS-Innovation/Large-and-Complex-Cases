@@ -1290,7 +1290,55 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         [InlineData("documents")]
         public async Task DeleteFileOrFolderAsync_WithoutExtension_IdentifiesAsFolder(string folderPath)
         {
-            // Arrange
+            // Arrange — bare path is normalised to "folderPath/" inside the client.
+            var arg = new DeleteFileOrFolderArg
+            {
+                BearerToken = BearerToken,
+                BucketName = BucketName,
+                Path = folderPath,
+                OperationName = "test-operation",
+                IsFolder = true
+            };
+
+            _netAppRequestFactoryMock
+                .Setup(x => x.ListObjectsInBucketRequest(It.IsAny<ListObjectsInBucketArg>()))
+                .Returns(new ListObjectsV2Request { BucketName = BucketName });
+
+            _amazonS3Mock
+                .Setup(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
+                .ReturnsAsync(new ListObjectsV2Response
+                {
+                    S3Objects = [],
+                    CommonPrefixes = [],
+                    IsTruncated = false
+                });
+
+            _amazonS3Mock
+                .Setup(x => x.DeleteObjectsAsync(It.IsAny<DeleteObjectsRequest>(), default))
+                .ReturnsAsync(new DeleteObjectsResponse
+                {
+                    HttpStatusCode = HttpStatusCode.OK,
+                    DeletedObjects = [new DeletedObject { Key = folderPath + "/" }],
+                    DeleteErrors = []
+                });
+
+            // Act
+            var result = await _client.DeleteFileOrFolderAsync(arg);
+
+            // Assert — no HEAD probes; deletion proceeds unconditionally
+            Assert.True(result.Success);
+            Assert.True(result.WasFound);
+            _netAppS3HttpClientMock.Verify(
+                x => x.GetHeadObjectAsync(It.IsAny<GetHeadObjectArg>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task DeleteFileOrFolderAsync_WhenPathAlreadyHasTrailingSlash_DeletesSuccessfully()
+        {
+            // Arrange — path already ends with "/" (the standard folder-marker convention).
+            // No existence probes should be made; deletion proceeds unconditionally.
+            var folderPath = "capricorn/DemoEditedV3/";
             var arg = new DeleteFileOrFolderArg
             {
                 BearerToken = BearerToken,
@@ -1327,6 +1375,60 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
 
             // Assert
             Assert.True(result.Success);
+            Assert.True(result.WasFound);
+            _amazonS3Mock.Verify(x => x.DeleteObjectsAsync(It.IsAny<DeleteObjectsRequest>(), default), Times.Once);
+            _netAppS3HttpClientMock.Verify(
+                x => x.GetHeadObjectAsync(It.IsAny<GetHeadObjectArg>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task DeleteFileOrFolderAsync_WhenFolderHasNoContents_TreatsDeleteAsIdempotent()
+        {
+            // Arrange — folder path that produces an empty listing (no files, no marker).
+            // S3 DeleteObjects is idempotent; the call succeeds regardless of prior existence.
+            var folderPath = "statements/missing-folder/";
+            var arg = new DeleteFileOrFolderArg
+            {
+                BearerToken = BearerToken,
+                BucketName = BucketName,
+                Path = folderPath,
+                OperationName = "test-operation",
+                IsFolder = true
+            };
+
+            _netAppRequestFactoryMock
+                .Setup(x => x.ListObjectsInBucketRequest(It.IsAny<ListObjectsInBucketArg>()))
+                .Returns(new ListObjectsV2Request { BucketName = BucketName });
+
+            _amazonS3Mock
+                .Setup(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
+                .ReturnsAsync(new ListObjectsV2Response
+                {
+                    S3Objects = [],
+                    CommonPrefixes = [],
+                    IsTruncated = false
+                });
+
+            _amazonS3Mock
+                .Setup(x => x.DeleteObjectsAsync(It.IsAny<DeleteObjectsRequest>(), default))
+                .ReturnsAsync(new DeleteObjectsResponse
+                {
+                    HttpStatusCode = HttpStatusCode.OK,
+                    DeletedObjects = [new DeletedObject { Key = folderPath }],
+                    DeleteErrors = []
+                });
+
+            // Act
+            var result = await _client.DeleteFileOrFolderAsync(arg);
+
+            // Assert — no HEAD probes; WasFound=true because S3 is idempotent
+            Assert.True(result.Success);
+            Assert.True(result.WasFound);
+            _amazonS3Mock.Verify(x => x.DeleteObjectsAsync(It.IsAny<DeleteObjectsRequest>(), default), Times.Once);
+            _netAppS3HttpClientMock.Verify(
+                x => x.GetHeadObjectAsync(It.IsAny<GetHeadObjectArg>()),
+                Times.Never);
         }
 
         [Fact]
@@ -1550,16 +1652,20 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
                 .ReturnsAsync(new DeleteObjectsResponse
                 {
                     HttpStatusCode = HttpStatusCode.OK,
-                    DeletedObjects = [new DeletedObject { Key = folderPath }],
+                    DeletedObjects = [new DeletedObject { Key = folderPath + "/" }],
                     DeleteErrors = []
                 });
 
             // Act
             var result = await _client.DeleteFileOrFolderAsync(arg);
 
-            // Assert
+            // Assert — no HEAD probes; deletion proceeds unconditionally
             Assert.True(result.Success);
+            Assert.True(result.WasFound);
             _amazonS3Mock.Verify(x => x.DeleteObjectsAsync(It.IsAny<DeleteObjectsRequest>(), default), Times.Once);
+            _netAppS3HttpClientMock.Verify(
+                x => x.GetHeadObjectAsync(It.IsAny<GetHeadObjectArg>()),
+                Times.Never);
         }
 
         [Fact]

@@ -1,11 +1,12 @@
 parameters:
   workingDirectory: $(Pipeline.Workspace)
   buildArtifact: ''
+  condition: succeededOrFailed()
 
 steps:
   - task: bash@3
     displayName: "Cleanup Downloaded Artifact"
-    condition: succeededOrFailed()
+    condition: ${{ parameters.condition }}
     inputs:
       targetType: 'inline'
       workingDirectory: ${{ parameters.workingDirectory }}
