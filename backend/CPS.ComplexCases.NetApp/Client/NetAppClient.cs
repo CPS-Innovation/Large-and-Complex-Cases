@@ -477,23 +477,32 @@ public class NetAppClient(
         return response.StatusCode == HttpStatusCode.OK;
     }
 
-    public Task<string> DeleteFileOrFolderAsync(DeleteFileOrFolderArg arg)
+    public Task<DeleteNetAppResult> DeleteFileOrFolderAsync(DeleteFileOrFolderArg arg)
         => ExecuteWithCredentialRetryAsync(() => DeleteFileOrFolderCoreAsync(arg), nameof(DeleteFileOrFolderAsync), arg.BucketName);
 
-    private async Task<string> DeleteFileOrFolderCoreAsync(DeleteFileOrFolderArg arg)
+    private async Task<DeleteNetAppResult> DeleteFileOrFolderCoreAsync(DeleteFileOrFolderArg arg)
     {
         var s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
         try
         {
-            if (Path.HasExtension(arg.Path))
+            if (!arg.IsFolder)
             {
+                var getObjectArg = _netAppArgFactory.CreateGetObjectArg(arg.BearerToken, arg.BucketName, arg.Path);
+                if (!await DoesObjectExistAsync(getObjectArg))
+                    return new DeleteNetAppResult(true, false, 0, null, null);
+
                 var request = _netAppRequestFactory.DeleteObjectRequest(arg);
                 await s3Client.DeleteObjectAsync(request);
-                return $"Successfully deleted file {arg.Path} from bucket {arg.BucketName}.";
+                return new DeleteNetAppResult(true, true, 1, null, null);
             }
             else
             {
-                var filesToDelete = await ListAllObjectKeysForDeletionAsync(arg.BucketName, arg.Path, arg.BearerToken);
+                // Folder paths must always end with "/" so the S3 listing prefix, the
+                // unconditionally-appended marker key, and the physical deletion key are
+                // all consistent. Normalise here to cover any caller that omits the slash.
+                var folderPath = arg.Path.EndsWith('/') ? arg.Path : arg.Path + "/";
+
+                var filesToDelete = (await ListAllObjectKeysForDeletionAsync(arg.BucketName, folderPath, arg.BearerToken)).ToList();
 
                 // Re-resolve the S3 client after listing. The listing phase calls
                 // ListObjectsInBucketAsync internally, which has its own credential
@@ -501,34 +510,51 @@ public class NetAppClient(
                 // regenerates keys, the s3Client captured above now holds dead keys.
                 s3Client = await _s3ClientFactory.GetS3ClientAsync(arg.BearerToken);
 
-                var deleteObjectsRequest = new DeleteObjectsRequest
+                // ListAllObjectKeysForDeletionAsync always appends the folder marker key
+                // unconditionally, so filesToDelete is never empty. If only that marker
+                // was collected (nothing found under the prefix), probe via HEAD to
+                // surface WasFound = false for non-existent folders — mirroring the file
+                // deletion path and ensuring the batch response shows NotFound instead
+                // of Deleted.
+                if (filesToDelete.Count == 1)
                 {
-                    BucketName = arg.BucketName,
-                    Objects = filesToDelete.Select(path => new KeyVersion { Key = path }).ToList()
-                };
-
-                var response = await s3Client.DeleteObjectsAsync(deleteObjectsRequest);
-
-                var deleteErrors = response.DeleteErrors ?? [];
-                var deletedObjects = response.DeletedObjects ?? [];
-
-                if (response.HttpStatusCode == HttpStatusCode.OK && deleteErrors.Count == 0)
-                {
-                    return $"Successfully deleted folder {arg.Path} and its contents from bucket {arg.BucketName}.";
+                    var markerArg = _netAppArgFactory.CreateGetObjectArg(arg.BearerToken, arg.BucketName, folderPath);
+                    if (!await DoesObjectExistAsync(markerArg))
+                        return new DeleteNetAppResult(true, false, 0, null, null);
                 }
 
-                foreach (var error in deleteErrors)
+                var totalDeleted = 0;
+                var allErrors = new List<DeleteError>();
+
+                foreach (var chunk in filesToDelete.Chunk(1000))
                 {
-                    _logger.LogError(
-                        "Failed to delete object {ObjectKey} from bucket {BucketName}. Code: {Code}, Message: {Message}",
-                        error.Key, arg.BucketName, error.Code, error.Message);
+                    var deleteObjectsRequest = new DeleteObjectsRequest
+                    {
+                        BucketName = arg.BucketName,
+                        Objects = chunk.Select(path => new KeyVersion { Key = path }).ToList()
+                    };
+
+                    var response = await s3Client.DeleteObjectsAsync(deleteObjectsRequest);
+
+                    totalDeleted += (response.DeletedObjects ?? []).Count;
+
+                    var chunkErrors = response.DeleteErrors ?? [];
+                    foreach (var error in chunkErrors)
+                    {
+                        _logger.LogError(
+                            "Failed to delete object {ObjectKey} from bucket {BucketName}. Code: {Code}, Message: {Message}",
+                            error.Key, arg.BucketName, error.Code, error.Message);
+                    }
+                    allErrors.AddRange(chunkErrors);
                 }
 
-                var successfulDeletionsCount = deletedObjects.Count;
-                var failedDeletionsCount = deleteErrors.Count;
+                if (allErrors.Count > 0)
+                {
+                    return new DeleteNetAppResult(false, true, totalDeleted,
+                        $"Deletion failed for {allErrors.Count} object(s) in folder {folderPath}.", null);
+                }
 
-                return
-                    $"Successfully deleted {successfulDeletionsCount} files from bucket {arg.BucketName}. Deletion failed for {failedDeletionsCount} files. ";
+                return new DeleteNetAppResult(true, true, totalDeleted, null, null);
             }
         }
         catch (AmazonS3Exception ex)
@@ -884,29 +910,28 @@ public class NetAppClient(
             };
 
             var listResponse = await ListObjectsInBucketAsync(listArg);
-            if (listResponse?.Data.FileData != null)
+            if (listResponse == null)
+                throw new InvalidOperationException(
+                    $"Failed to list objects under prefix '{prefix}' in bucket '{bucketName}'. " +
+                    "Aborting folder delete to avoid leaving orphaned objects.");
+
+            foreach (var file in listResponse.Data.FileData ?? [])
             {
-                foreach (var file in listResponse.Data.FileData)
+                objectKeys.Add(file.Path);
+            }
+
+            foreach (var folder in listResponse.Data.FolderData ?? [])
+            {
+                if (!string.IsNullOrEmpty(folder.Path))
                 {
-                    objectKeys.Add(file.Path);
+                    var subObjectKeys =
+                        await ListAllObjectKeysForDeletionAsync(bucketName, folder.Path, bearerToken);
+                    objectKeys.AddRange(subObjectKeys);
+                    objectKeys.Add(folder.Path);
                 }
             }
 
-            if (listResponse?.Data.FolderData != null)
-            {
-                foreach (var folder in listResponse.Data.FolderData)
-                {
-                    if (!string.IsNullOrEmpty(folder.Path))
-                    {
-                        var subObjectKeys =
-                            await ListAllObjectKeysForDeletionAsync(bucketName, folder.Path, bearerToken);
-                        objectKeys.AddRange(subObjectKeys);
-                        objectKeys.Add(folder.Path);
-                    }
-                }
-            }
-
-            continuationToken = listResponse?.Pagination.NextContinuationToken;
+            continuationToken = listResponse.Pagination.NextContinuationToken;
         } while (!string.IsNullOrEmpty(continuationToken));
 
         objectKeys.Add(prefix);

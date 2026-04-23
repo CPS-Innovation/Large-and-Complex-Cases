@@ -20,6 +20,10 @@ namespace CPS.ComplexCases.ActivityLog.Enums
         FolderCreated,
         [AlternateValue("FOLDER_DELETED")]
         FolderDeleted,
+        [AlternateValue("MATERIAL_DELETED")]
+        MaterialDeleted,
+        [AlternateValue("FOLDER_AND_MATERIAL_DELETED")]
+        FolderAndMaterialDeleted,
         [AlternateValue("FOLDER_RENAMED")]
         FolderRenamed,
         [AlternateValue("FOLDER_COPIED")]

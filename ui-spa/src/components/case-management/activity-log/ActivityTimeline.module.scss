@@ -108,6 +108,44 @@
   }
 }
 
+.batchDeleteList {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+}
+
+.batchDeleteItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #f3f2f1;
+  flex-wrap: wrap;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.batchDeletePath {
+  flex: 1;
+  font-size: 0.9rem;
+  color: #003078;
+  word-break: break-all;
+}
+
+.batchDeleteTag {
+  font-weight: normal;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.batchDeleteError {
+  width: 100%;
+  font-size: 0.85rem;
+  color: #d4351c;
+}
+
 .visuallyHidden {
   clip: rect(0 0 0 0);
   clip-path: inset(50%);
