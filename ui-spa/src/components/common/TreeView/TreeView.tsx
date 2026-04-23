@@ -20,7 +20,6 @@ export type TreeNode = {
 export type TreeViewProps = {
   data: TreeNode[];
   onSelect?: (node: TreeNode) => void;
-  onToggle?: (node: TreeNode, expanded: boolean) => void;
   onLoadChildren?: (nodeId: string) => Promise<TreeNode[]>;
   selectedId?: string | null;
   className?: string;
@@ -29,7 +28,6 @@ export type TreeViewProps = {
 const TreeView: React.FC<TreeViewProps> = ({
   data,
   onSelect,
-  onToggle,
   onLoadChildren,
   selectedId: controlledSelectedId,
   className,
@@ -111,14 +109,11 @@ const TreeView: React.FC<TreeViewProps> = ({
           next.add(id);
           const node = findNodeById(data, id);
 
-          if (node && node.isFolder) {
+          if (node) {
             const hasChildren =
               (node.children && node.children.length > 0) ||
-              (loadedChildren &&
-                loadedChildren[id] &&
-                loadedChildren[id].length > 0);
+              (loadedChildren?.[id] && loadedChildren[id].length > 0);
 
-            console.log("hasChildren for node:", id);
             if (!hasChildren && onLoadChildren) {
               setLoadingIds((s) => new Set(s).add(id));
 
@@ -139,7 +134,6 @@ const TreeView: React.FC<TreeViewProps> = ({
             }
           }
         }
-        console.log("Expanded IDs: new>>>", next);
         return next;
       });
     },
@@ -147,30 +141,20 @@ const TreeView: React.FC<TreeViewProps> = ({
   );
 
   useEffect(() => {
-    console.log("Focused ID changed:", focusedId);
     if (focusedId) {
       const el = refs.current[focusedId];
       el?.focus();
     }
   }, [focusedId]);
 
-  useEffect(() => {
-    console.log("expanded ID changed:", expandedIds);
-    // if (expandedId) {
-    //   const el = refs.current[expandedId];
-    //   el?.focus();
-    // }
-  }, [expandedIds]);
-
   const visible = getVisibleNodes();
 
   const focusNext = (id: string | null) => {
     if (!id) return;
     const i = visible.findIndex((n) => n.id === id);
-    // console.log("Focusing next ID:", i);
-    // console.log("Focusing next ID:", visible);
     if (i >= 0 && i < visible.length - 1) setFocusedId(visible[i + 1].id);
   };
+
   const focusPrev = (id: string | null) => {
     if (!id) return;
     const i = visible.findIndex((n) => n.id === id);
@@ -192,7 +176,6 @@ const TreeView: React.FC<TreeViewProps> = ({
 
     switch (e.key) {
       case "ArrowDown":
-        console.log("ArrowDown pressed");
         e.preventDefault();
         focusNext(focusedId);
         break;
@@ -204,7 +187,6 @@ const TreeView: React.FC<TreeViewProps> = ({
         e.preventDefault();
         if (node.isFolder) {
           if (!expandedIds.has(node.id)) {
-            console.log("Expanding node on ArrowRight:", node.id);
             toggle(node.id);
           } else if (node.children && node.children.length > 0) {
             setFocusedId(node.children[0].id);
@@ -247,14 +229,11 @@ const TreeView: React.FC<TreeViewProps> = ({
   };
 
   const renderNode = (node: TreeNode, level: number) => {
-    // console.log("focusId>>", focusedId);
     const isExpanded = node.isFolder && expandedIds.has(node.id);
     const isSelected = selectedId === node.id;
     const isFocused = focusedId === node.id;
     const isLoading = loadingIds.has(node.id);
     const children = node.children ?? loadedChildren[node.id];
-    // console.log("children>>>", children);
-    // console.log("isExpanded>>>", isExpanded);
 
     return (
       <li
@@ -275,9 +254,11 @@ const TreeView: React.FC<TreeViewProps> = ({
           e.stopPropagation();
           onKeyDown(e);
         }}
-        // onFocus={() => setFocusedId(node.id)}
       >
         <div className={styles.node}>
+          <div aria-live="polite" className="govuk-visually-hidden">
+            {isLoading ? "Loading sub folders" : ""}
+          </div>
           <div className={styles.toggleWrap} aria-hidden={true}>
             <div onClick={() => toggle(node.id)} className={styles.toggleIcon}>
               {isExpanded ? "-" : "+"}
@@ -287,17 +268,12 @@ const TreeView: React.FC<TreeViewProps> = ({
             id={`name-${node.id}`}
             className={`folderNode ${styles.folderNode} ${isSelected ? styles.selected : ""}`}
             onClick={() => handleClick(node)}
-
-            // onFocus={() => setFocusedId(node.id)}
-            // onKeyDown={onKeyDown}
-            // tabIndex={isFocused ? 0 : -1}
           >
             <div aria-hidden={true}>
               <FolderIcon />
             </div>
             <span className={styles.folderName}>{node.name}</span>
           </div>
-          {/* <span className={styles.folderName}>{node.name}</span> */}
         </div>
         {isLoading && (
           <div className={styles.loadingIconWrapper} aria-hidden>
@@ -319,12 +295,7 @@ const TreeView: React.FC<TreeViewProps> = ({
 
   return (
     <div className={`${styles.tree} ${className ?? ""}`}>
-      <ul
-        role="tree"
-        aria-label="Files"
-        // tabIndex={0}
-        className={styles.treeList}
-      >
+      <ul role="tree" aria-label="Folders" className={styles.treeList}>
         {data.map((node) => renderNode(node, 1))}
       </ul>
     </div>
