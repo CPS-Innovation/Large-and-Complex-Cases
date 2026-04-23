@@ -190,6 +190,11 @@ const TreeView: React.FC<TreeViewProps> = ({
             toggle(node.id);
           } else if (node.children && node.children.length > 0) {
             setFocusedId(node.children[0].id);
+          } else if (
+            loadedChildren[node.id] &&
+            loadedChildren[node.id].length > 0
+          ) {
+            setFocusedId(loadedChildren[node.id][0].id);
           }
         }
         break;
