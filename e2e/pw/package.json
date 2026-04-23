@@ -1,0 +1,21 @@
+{
+  "name": "e2e-pw",
+  "version": "1.0.0",
+  "scripts": {
+    "e2e": "npx playwright test --ui",
+    "e2e:ci": "npx playwright test",
+    "e2e:existing-case": "npx playwright test --grep \"Default Mode\"",
+    "e2e:register-case": "npx playwright test --grep-invert \"Default Mode\"",
+    "e2e:headed": "npx playwright test --headed",
+    "report": "npx playwright show-report ./playwright-report",
+    "report:generate": "npx playwright test --reporter=html",
+    "report:junit": "npx playwright test --reporter=junit > test-results/results.xml"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^22.13.13"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7"
+  }
+}
