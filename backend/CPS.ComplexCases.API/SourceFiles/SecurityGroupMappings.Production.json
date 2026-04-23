@@ -14,7 +14,7 @@
   {
     "id": "086813d3-b340-44cc-b6dd-5ebb8487c13d",
     "displayName": "Manchester-Cases",
-    "bucketName": "MSLPublic",
+    "bucketName": "mslpublic",
     "description": "Manchester Users security group for CPS Complex Cases"
   }
 ]
