@@ -6,7 +6,7 @@ import React, {
   KeyboardEvent,
 } from "react";
 import FolderIcon from "../../../components/svgs/folder.svg?react";
-import { Spinner } from "../../common/Spinner";
+import { Spinner } from "../Spinner";
 import styles from "./TreeView.module.scss";
 
 export type TreeNode = {
