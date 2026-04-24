@@ -3,7 +3,9 @@ import {
   ActivityLogResponse,
   ActivityItem,
   BatchDeleteDetails,
+  BatchCopyDetails,
   TransferDetails,
+  isBatchCopyDetails,
   isBatchDeleteDetails,
   isTransferDetails,
 } from "../../../common/types/ActivityLogResponse";
@@ -184,12 +186,39 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
     </div>
   );
 
+  const renderBatchCopyDetails = (details: BatchCopyDetails) => (
+    <div>
+      <Details summaryChildren="View copied items">
+        <ul className={styles.batchDeleteList}>
+          {details.items.map((item, i) => (
+            <li key={i} className={styles.batchDeleteItem}>
+              <span className={styles.batchDeletePath}>
+                {getCleanPath(item.sourcePath).replace(/\//g, " > ")}
+              </span>
+              <Tag
+                gdsTagColour={item.outcome === "Copied" ? "green" : "grey"}
+                className={styles.batchDeleteTag}
+                data-testid="batch-copy-outcome-tag"
+              >
+                {item.outcome}
+              </Tag>
+            </li>
+          ))}
+        </ul>
+      </Details>
+    </div>
+  );
+
   const renderDetails = (activity: ActivityItem) => {
     const { details } = activity;
     if (!details) return null;
 
     if (isTransferDetails(details)) {
       return renderTransferDetails(activity.id, activity.timestamp, details);
+    }
+
+    if (isBatchCopyDetails(details)) {
+      return renderBatchCopyDetails(details);
     }
 
     if (isBatchDeleteDetails(details)) {

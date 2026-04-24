@@ -176,6 +176,19 @@ public class CopyNetAppBatchRequestValidatorTests
     }
 
     [Fact]
+    public void Validate_WhenFolderSourcePathDoesNotEndWithSlash_ReturnsValidationError()
+    {
+        var ops = new List<CopyNetAppBatchOperationDto>
+        {
+            new() { Type = NetAppCopyOperationType.Folder, SourcePath = "CaseRoot/Old-Folder" },
+        };
+        var request = ValidBatch(ops);
+        var result = _validator.Validate(request);
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage.Contains("end with a '/'"));
+    }
+
+    [Fact]
     public void Validate_WhenSourcePathStartsWithSlash_ReturnsValidationError()
     {
         var ops = new List<CopyNetAppBatchOperationDto>

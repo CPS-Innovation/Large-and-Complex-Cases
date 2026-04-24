@@ -59,6 +59,10 @@ public class CopyNetAppBatchRequestValidator : AbstractValidator<CopyNetAppBatch
                 .WithMessage("SourcePath must not contain path traversal sequences ('..').")
                 .Must(path => !path.StartsWith('/'))
                 .WithMessage("SourcePath must not start with '/'.");
+
+            op.RuleFor(x => x.SourcePath)
+                .Must((operation, path) => operation.Type != NetAppCopyOperationType.Folder || path.EndsWith('/'))
+                .WithMessage("SourcePath for a Folder operation must end with a '/'.");
         });
 
         RuleFor(x => x)

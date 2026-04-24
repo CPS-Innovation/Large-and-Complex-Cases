@@ -24,50 +24,60 @@ public class WriteCopyActivityLog(
 
         var successfulKeySet = new HashSet<string>(payload.SuccessfulSourceKeys, StringComparer.OrdinalIgnoreCase);
 
-        foreach (var operation in payload.OriginalOperations)
+        var items = payload.OriginalOperations.Select(op =>
         {
-            try
-            {
-                if (string.Equals(operation.Type, "Folder", StringComparison.OrdinalIgnoreCase))
-                {
-                    var hasCopied = successfulKeySet.Any(key =>
-                        key.StartsWith(operation.SourcePath.TrimEnd('/') + "/", StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(key, operation.SourcePath, StringComparison.OrdinalIgnoreCase));
+            var isCopied = string.Equals(op.Type, "Folder", StringComparison.OrdinalIgnoreCase)
+                ? successfulKeySet.Any(key =>
+                    key.StartsWith(op.SourcePath.TrimEnd('/') + "/", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(key, op.SourcePath, StringComparison.OrdinalIgnoreCase))
+                : successfulKeySet.Contains(op.SourcePath);
 
-                    if (hasCopied)
-                    {
-                        var details = new { sourcePath = operation.SourcePath }.SerializeToJsonDocument(_logger);
-                        await _activityLogService.CreateActivityLogAsync(
-                            actionType: ActionType.FolderCopied,
-                            resourceType: ResourceType.Material,
-                            caseId: payload.CaseId,
-                            resourceId: operation.SourcePath,
-                            resourceName: Path.GetFileName(operation.SourcePath.TrimEnd('/')),
-                            userName: payload.UserName,
-                            details: details);
-                    }
-                }
-                else
-                {
-                    if (successfulKeySet.Contains(operation.SourcePath))
-                    {
-                        var details = new { sourcePath = operation.SourcePath }.SerializeToJsonDocument(_logger);
-                        await _activityLogService.CreateActivityLogAsync(
-                            actionType: ActionType.MaterialCopied,
-                            resourceType: ResourceType.Material,
-                            caseId: payload.CaseId,
-                            resourceId: operation.SourcePath,
-                            resourceName: Path.GetFileName(operation.SourcePath),
-                            userName: payload.UserName,
-                            details: details);
-                    }
-                }
-            }
-            catch (Exception ex)
+            return new
             {
-                _logger.LogError(ex, "Failed to write activity log for copy operation {SourcePath}. CaseId: {CaseId}",
-                    operation.SourcePath, payload.CaseId);
-            }
+                sourcePath = op.SourcePath,
+                outcome = isCopied ? "Copied" : "NotCopied",
+                type = op.Type
+            };
+        }).ToList();
+
+        var copiedOps = payload.OriginalOperations
+            .Zip(items, (op, item) => (op, item))
+            .Where(x => x.item.outcome == "Copied")
+            .Select(x => x.op)
+            .ToList();
+
+        if (copiedOps.Count == 0)
+        {
+            _logger.LogInformation("No operations were successfully copied for CaseId: {CaseId}. Skipping activity log.", payload.CaseId);
+            return;
+        }
+
+        try
+        {
+            var hasFolder = copiedOps.Any(op => string.Equals(op.Type, "Folder", StringComparison.OrdinalIgnoreCase));
+            var hasMaterial = copiedOps.Any(op => !string.Equals(op.Type, "Folder", StringComparison.OrdinalIgnoreCase));
+
+            var (actionType, resourceType) = (hasFolder, hasMaterial) switch
+            {
+                (true, true) => (ActionType.FolderAndMaterialCopied, ResourceType.Material),
+                (true, false) => (ActionType.FolderCopied, ResourceType.NetAppFolder),
+                _ => (ActionType.MaterialCopied, ResourceType.Material)
+            };
+
+            var details = new { items }.SerializeToJsonDocument(_logger);
+
+            await _activityLogService.CreateActivityLogAsync(
+                actionType,
+                resourceType,
+                payload.CaseId,
+                payload.CaseId.ToString(),
+                null,
+                payload.UserName,
+                details);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to write batch copy activity log for CaseId: {CaseId}.", payload.CaseId);
         }
     }
 }

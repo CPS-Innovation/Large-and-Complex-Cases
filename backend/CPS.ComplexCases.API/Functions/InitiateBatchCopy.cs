@@ -69,7 +69,7 @@ public class InitiateBatchCopy(
         {
             _logger.LogWarning("Case metadata or NetApp folder path missing for CaseId: {CaseId}. CorrelationId: {CorrelationId}",
                 batchRequest.Value.CaseId, context.CorrelationId);
-            return new BadRequestObjectResult("Case metadata or NetApp folder path is missing.");
+            return new BadRequestObjectResult(new [] { "Case metadata or NetApp folder path is missing." });
         }
 
         var casePrefix = caseMetadata.NetappFolderPath.EndsWith('/')
@@ -85,7 +85,7 @@ public class InitiateBatchCopy(
         {
             _logger.LogWarning("Source paths outside case folder: {Paths}. CorrelationId: {CorrelationId}",
                 invalidPaths, context.CorrelationId);
-            return new BadRequestObjectResult($"The following source paths are not within the case's NetApp folder: {string.Join(", ", invalidPaths)}");
+            return new BadRequestObjectResult(new [] { $"The following source paths are not within the case's NetApp folder: {string.Join(", ", invalidPaths)}" });
         }
 
         var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
