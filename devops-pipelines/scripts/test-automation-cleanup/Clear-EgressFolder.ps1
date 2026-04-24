@@ -21,7 +21,7 @@ Import-Module (Join-Path $PSScriptRoot 'EgressCleanupHelperModule.psm1')
 # ============================================================
 # AUTHENTICATE
 # ============================================================
-Write-Host "[1/4] Authenticating to Egress..." -ForegroundColor Yellow
+Write-Host "[1/3] Authenticating to Egress..." -ForegroundColor Yellow
 
 try {
   $AuthHeader = Connect-EgressServiceAccount `
@@ -36,47 +36,15 @@ catch {
 Write-Host "  [OK] Authenticated" -ForegroundColor Green
 
 # ============================================================
-# FIND FOLDER
-# ============================================================
-Write-Host "[2/4] Finding folder '$FolderName'..." -ForegroundColor Yellow
-
-try {
-  $topLevelFiles = Invoke-RestMethod -Method Get `
-    -Uri "$BaseUrl/api/v1/workspaces/$WorkspaceId/files" `
-    -Headers $AuthHeader
-}
-catch {
-  Write-Error "Failed to retrieve workspace files: $($_.Exception.Message)"
-  exit 1
-}
-
-$matchingFolders = $topLevelFiles.data | Where-Object {
-  $_.filename -eq $FolderName
-}
-
-if (-not $matchingFolders) {
-  Write-Error "No folder named '$FolderName' was found."
-  exit 1
-}
-
-if ($matchingFolders.Count -gt 1) {
-  Write-Error "Multiple folders named '$FolderName' found. Aborting."
-  exit 1
-}
-
-$folderId = $matchingFolders.id
-Write-Host "  [OK] Folder ID: $folderId" -ForegroundColor Green
-
-# ============================================================
 # LIST FILES
 # ============================================================
-Write-Host "[3/4] Listing files..." -ForegroundColor Yellow
+Write-Host "[2/3] Listing files..." -ForegroundColor Yellow
 
 $filesToDelete = @()
 
 try {
   $response = Invoke-RestMethod -Method Get `
-    -Uri "$BaseUrl/api/v1/workspaces/$WorkspaceId/files?folder=$folderId" `
+    -Uri "$BaseUrl/api/v1/workspaces/$WorkspaceId/files?path=$folderName" `
     -Headers $AuthHeader
 }
 catch {
@@ -132,7 +100,7 @@ else {
 # ============================================================
 # DELETE FILES
 # ============================================================
-Write-Host "[4/4] Deleting $($filesToDelete.Count) file(s)..." -ForegroundColor Yellow
+Write-Host "[3/3] Deleting $($filesToDelete.Count) file(s)..." -ForegroundColor Yellow
 
 
 $fileIds = @($filesToDelete | Select-Object -ExpandProperty id)

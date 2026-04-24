@@ -43,7 +43,6 @@ try {
   $response = Invoke-RestMethod -Method Get `
     -Uri "$BaseUrl/api/v1/workspaces?name=$WorkspaceNamePrefix" `
     -Headers $AuthHeader `
-    -Body $body `
     -ContentType 'application/json'
 }
 catch {
