@@ -1,4 +1,4 @@
-import { test, expect } from "../fixtures/test-fixtures-default";
+import { test } from "../fixtures/test-fixtures-default";
 import { CaseSearchPage } from "../pages/CaseSearchPage";
 import { SearchResultsPage } from "../pages/SearchResultsPage";
 import { CaseManagementPage } from "../pages/CaseManagementPage";
@@ -11,7 +11,7 @@ test.describe("Egress to NetApp Move (Default Mode)", () => {
     testData,
   }) => {
     test.setTimeout(300_000);
-    const { caseUrn } = testData;
+    const { caseUrn, uploadSubfolder } = testData;
 
     // Step 1: Search for case by URN
     const caseSearch = new CaseSearchPage(page);
@@ -32,6 +32,10 @@ test.describe("Egress to NetApp Move (Default Mode)", () => {
     await transferTab.waitForEgressFiles();
     await transferTab.navigateToFolder("4. Served Evidence");
     await transferTab.waitForEgressFiles();
+    if (uploadSubfolder) {
+      await transferTab.navigateToFolder(uploadSubfolder);
+      await transferTab.waitForEgressFiles();
+    }
 
     const fileIndices = testData.files.map((_, i) => i);
     await transferTab.selectEgressFiles(fileIndices);

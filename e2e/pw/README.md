@@ -26,35 +26,26 @@ Tests run in two modes:
 
 ```
 e2e/pw/
-  fixtures/               # Playwright test fixtures (test setup/teardown)
-    setup-helper.ts            # Full setup (workspace, upload, case registration, login)
-    setup-helper-default.ts    # Default mode setup (upload to existing workspace, login)
-    test-fixtures.ts           # Register case fixture (100MB x 1)
-    test-fixtures-default.ts   # Default mode fixture (100MB x 1)
-    test-fixtures-large.ts     # Register case large file fixture (200MB x 1)
-    test-fixtures-default-large.ts # Default mode large file fixture (200MB x 1)
-    test-fixtures-multifile.ts # Multi-file fixture (50MB x 3)
-  helpers/                # API helpers and utilities
-    auth-api.ts                # Azure AD + CMS authentication
-    case-api.ts                # Case registration API
-    egress-api.ts              # Egress workspace, upload, and file management
-    env-config.ts              # Environment variable loader
-    types.ts                   # TypeScript type definitions
-  pages/                  # Page Object Models
-    ActivityLogTab.ts
-    AzureADLoginPage.ts
-    CaseManagementPage.ts
-    CaseSearchPage.ts
-    EgressConfirmationPage.ts
-    EgressConnectPage.ts
-    NetAppConfirmationPage.ts
-    NetAppConnectPage.ts
-    SearchResultsPage.ts
-    TacticalLoginPage.ts
-    TransferMaterialsTab.ts
-  tests/                  # Test spec files
-  playwright.config.ts
-  .env.template           # Environment variable template
+  fixtures/
+    setup-helper.ts                   # Register-case API + login (used by setup project)
+    setup-helper-default.ts           # Default-mode setup (upload to pre-connected case)
+    test-fixtures-register-case.ts    # Shared register-case fixture (per-test file upload)
+    test-fixtures-default.ts          # Default mode fixture (100MB x 1)
+    test-fixtures-default-large.ts    # Default mode fixture (200MB x 1)
+  helpers/
+    auth-api.ts                       # Azure AD + CMS authentication
+    case-api.ts                       # Case registration API
+    egress-api.ts                     # Egress workspace, upload, folder management
+    env-config.ts                     # Environment variable loader
+    constants.ts                      # Non-sensitive shared Egress IDs
+    types.ts                          # TypeScript type definitions
+  pages/                              # Page Object Models
+  tests/
+    register-case.setup.ts            # Setup project: register + connect once per run
+    *-default.spec.ts                 # Default-mode specs (DEFAULT_WORKSPACE_ID)
+    *.spec.ts                         # Register-case specs (consume setup state)
+  playwright.config.ts                # Three projects: setup, register-case, default-mode
+  .env.template
 ```
 
 ## Prerequisites
@@ -108,6 +99,29 @@ e2e/pw/
 | `DEFAULT_CASE_ID` | Pre-existing case ID | Default mode only |
 | `DEFAULT_CASE_URN` | Pre-existing case URN | Default mode only |
 
+## Environment Profiles
+
+`playwright.config.ts` loads the env file named `.env.${ENVIRONMENT}` at
+startup, defaulting to `.env.local` when `ENVIRONMENT` is unset. That means
+you can keep multiple profiles side-by-side (e.g. `.env.local`, `.env.dev`,
+`.env.ci`) and switch between them per invocation.
+
+Examples:
+
+```bash
+# Default — reads .env.local
+npm run e2e:existing-case
+
+# Read .env.dev instead
+ENVIRONMENT=dev npm run e2e:existing-case
+
+# Register-case flow against a CI profile
+ENVIRONMENT=ci npm run e2e:register-case
+```
+
+Only `.env.template` is tracked in git; every `.env.<name>` file is ignored
+by the root `.gitignore` to avoid accidental secret commits.
+
 ## Running Tests
 
 ```bash
@@ -120,8 +134,14 @@ npm run e2e:ci
 # Run only default mode tests (existing case, faster)
 npm run e2e:existing-case
 
+# Run only default mode tests in Playwright UI mode
+npm run e2e:existing-case:ui
+
 # Run only register case tests (full flow)
 npm run e2e:register-case
+
+# Run only register case tests in Playwright UI mode
+npm run e2e:register-case:ui
 
 # Run all tests headed (sequential)
 npm run e2e:headed
@@ -165,18 +185,28 @@ npx playwright show-trace test-results/<test-folder>/trace.zip
 
 ### Register Case Mode
 
-1. **Fixture setup** (automated, before each test):
-   - Authenticate with Egress API
-   - Create a unique Egress workspace
-   - Upload test file(s) via chunked upload
-   - Get Azure AD + CMS auth tokens
-   - Register a fresh case via the Case API
-   - Browser login (Tactical + Azure AD)
+Setup and test execution are split across two Playwright projects so the
+expensive register + connect flow runs once per suite rather than once per
+spec.
 
-2. **Test steps** (in the browser):
-   - Search for the case by URN
-   - Connect Egress workspace to the case
-   - Connect NetApp folder to the case
+1. **`register-case-setup` project** (runs once, before any register-case spec):
+   - Authenticate with Egress API, create a unique workspace, add test user,
+     upload a 1MB seed file
+   - Get Azure AD + CMS auth tokens and register a fresh case
+   - Browser login (Tactical + Azure AD), search the case by URN, connect
+     Egress workspace, connect NetApp folder
+   - Persist `storageState` to `.auth/register-case.json` and shared case
+     info (`{workspace, caseUrn}`) to `.state/register-case.json`
+
+2. **Per-spec fixture** (`test-fixtures-register-case.ts`):
+   - Load shared state from `.state/register-case.json`
+   - Upload the spec's sized files (configurable via `test.use({ testOptions })`)
+     into the shared workspace
+   - Browser starts with the persisted `storageState`, so login + connect
+     steps are skipped
+
+3. **Test steps** (in the browser):
+   - Search for the pre-connected case by URN
    - Navigate to Transfer Materials tab
    - Select source files and initiate Copy/Move
    - Confirm transfer and wait for completion
@@ -199,3 +229,60 @@ npx playwright show-trace test-results/<test-folder>/trace.zip
 ## Configuration
 
 Tests run with `workers: 1` because all tests share the same Azure AD credentials -- parallel execution causes session conflicts.
+
+## Cleanup / Test Data Hygiene
+
+Cleanup is driven by the suite itself, not ops. The test fixtures delete
+per-test files on success, and a dedicated teardown project sweeps stale
+workspaces on every register-case run.
+
+### Per-test file teardown
+
+Both fixtures delete the files they uploaded after `use()` returns, but
+**only when `testInfo.status === "passed"`**. On failure the files are left
+in their dated subfolder for post-mortem inspection.
+
+- Register-case: `fixtures/test-fixtures-register-case.ts` calls
+  `deleteFiles()` with the id array captured from `uploadFile()`.
+- Default: `fixtures/test-fixtures-default.ts` and
+  `fixtures/test-fixtures-default-large.ts` do the same, against
+  `DEFAULT_WORKSPACE_ID`. The **workspace itself is never deleted** from
+  default-mode teardown — it's shared.
+
+Files uploaded by passing tests therefore disappear at run end; files from
+failing tests stay put, grouped under:
+
+- `4. Served Evidence/e2e-<spec>-<random>/` (register-case, source side)
+- `2. Counsel only/e2e-<spec>-<random>/` (register-case, NetApp→Egress dest)
+- `4. Served Evidence/e2e-YYYY-MM-DDTHH-MM-SS/` (default mode, source side)
+- `2. Counsel only/e2e-YYYY-MM-DDTHH-MM-SS/` (default mode, NetApp→Egress dest)
+
+### Register-case run-end workspace sweep
+
+The `register-case-teardown` project (wired via `teardown:` on the setup
+project in `playwright.config.ts`) runs after all dependent tests finish.
+It applies a **rolling 24-hour sweep**:
+
+1. Lists every workspace whose name matches `AUTOMATION-TESTING*` via the
+   Egress `view=full` endpoint (`listAutomationWorkspaces` in
+   `helpers/egress-api.ts`).
+2. Filters to those with `date_created < now - 24h`.
+3. Excludes the current run's workspace id (from `.state/register-case.json`)
+   and `DEFAULT_WORKSPACE_ID` — these are **never deleted** by the sweep.
+4. Calls `deleteWorkspace()` best-effort on each survivor (warns on failure,
+   never throws, so a flaky delete won't mask test success).
+5. Removes `.auth/` and `.state/` files so the next run starts clean.
+
+Consequence: today's register-case workspace stays alive for ~24h after its
+run finishes (useful for debugging a failed run), then gets swept by the
+first run of the following day.
+
+### What still isn't automated
+
+- **Registered cases** — CMS/DDEI have no programmatic archive. Registered
+  cases accumulate and need an ops-side archive process.
+- **NetApp source files** — `netapp-to-egress-copy.spec.ts` and
+  `netapp-to-egress-move.spec.ts` read whatever newest file is on NetApp;
+  the suite doesn't upload to NetApp, so nothing to delete there.
+- **Empty subfolders** — `deleteFiles` removes files but leaves the
+  `e2e-*` folders behind. Cheap clutter; periodic ops prune if needed.

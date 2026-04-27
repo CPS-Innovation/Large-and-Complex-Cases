@@ -2,6 +2,7 @@ import { Page } from "@playwright/test";
 import { loadEnvConfig } from "../helpers/env-config";
 import {
   authenticateEgress,
+  createFolder,
   uploadFile,
 } from "../helpers/egress-api";
 import { TacticalLoginPage } from "../pages/TacticalLoginPage";
@@ -50,14 +51,47 @@ export async function setupDefaultTestData(
   // Step 1: Authenticate with Egress and upload files to existing workspace
   console.log("=== Default Mode: Upload to Existing Workspace ===\n");
 
-  console.log("[1/2] Authenticating with Egress...");
+  console.log("[1/3] Authenticating with Egress...");
   const egressToken = await authenticateEgress(
     config.egressBaseUrl,
     config.egressServiceAccountAuth
   );
 
+  // Per-run timestamped subfolder reused on both sides of the transfer
+  // flow. Source side: "4. Served Evidence/e2e-YYYY-MM-DDTHH-MM-SS/".
+  // Destination side: "2. Counsel only/e2e-YYYY-MM-DDTHH-MM-SS/". A
+  // per-run suffix (vs date-only) is required because repeat runs on the
+  // same day previously collided in the destination folder when the test
+  // picked the same newest-by-date file from NetApp twice. Folders still
+  // sort by date prefix so ops can prune `e2e-YYYY-MM-DD*` ranges.
+  const sourceParent = "4. Served Evidence";
+  const destinationParent = "2. Counsel only";
+  const uploadSubfolder = `e2e-${new Date()
+    .toISOString()
+    .replace(/[:.]/g, "-")
+    .slice(0, 19)}`;
+  const uploadPath = `${sourceParent}/${uploadSubfolder}/`;
+
   console.log(
-    `[2/2] Uploading ${fileCount} test file(s) of ${fileSizeMb}MB to workspace ${workspaceName} (${workspaceId})...`
+    `[2/3] Ensuring subfolder ${uploadSubfolder} exists in source + destination...`
+  );
+  await createFolder(
+    config.egressBaseUrl,
+    egressToken,
+    workspaceId,
+    sourceParent,
+    uploadSubfolder
+  );
+  await createFolder(
+    config.egressBaseUrl,
+    egressToken,
+    workspaceId,
+    destinationParent,
+    uploadSubfolder
+  );
+
+  console.log(
+    `[3/3] Uploading ${fileCount} test file(s) of ${fileSizeMb}MB to ${workspaceName} (${workspaceId}) at ${uploadPath}...`
   );
   const fileSizeBytes = fileSizeMb * 1024 * 1024;
   const files: UploadedFile[] = [];
@@ -74,7 +108,8 @@ export async function setupDefaultTestData(
       egressToken,
       workspaceId,
       fileSizeBytes,
-      fileName
+      fileName,
+      uploadPath
     );
     files.push(file);
   }
@@ -111,7 +146,7 @@ export async function setupDefaultTestData(
   return {
     workspace: { id: workspaceId, name: workspaceName },
     files,
-    caseId,
     caseUrn,
+    uploadSubfolder,
   };
 }

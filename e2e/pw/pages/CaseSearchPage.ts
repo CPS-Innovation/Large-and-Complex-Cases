@@ -1,4 +1,4 @@
-import { Page } from "@playwright/test";
+import { Page, expect } from "@playwright/test";
 
 export class CaseSearchPage {
   static readonly route = "/";
@@ -14,11 +14,15 @@ export class CaseSearchPage {
     await this.waitForRadioButtons();
   }
 
+  // Wait for radios to be *enabled*, not just present. Tactical login must
+  // be fresh before the LCC app enables the search form — a stale tactical
+  // cookie leaves the radios rendered but disabled, and any submit from
+  // that state gets rejected by /api/v1/case-search with HTTP 400.
   async waitForRadioButtons() {
     await Promise.all([
-      this.page.getByTestId("radio-search-urn").waitFor({ state: "visible", timeout: 30000 }),
-      this.page.getByTestId("radio-search-defendant-name").waitFor({ state: "visible", timeout: 30000 }),
-      this.page.getByTestId("radio-search-operation-name").waitFor({ state: "visible", timeout: 30000 }),
+      expect(this.page.getByTestId("radio-search-urn")).toBeEnabled({ timeout: 60_000 }),
+      expect(this.page.getByTestId("radio-search-defendant-name")).toBeEnabled({ timeout: 60_000 }),
+      expect(this.page.getByTestId("radio-search-operation-name")).toBeEnabled({ timeout: 60_000 }),
     ]);
   }
 
@@ -31,7 +35,7 @@ export class CaseSearchPage {
   }
 
   async clickSearch() {
-    await this.page.locator("button").click();
+    await this.page.getByRole("button", { name: "Search" }).click();
   }
 
   async searchByUrn(urn: string) {

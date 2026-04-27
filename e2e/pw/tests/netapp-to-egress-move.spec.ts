@@ -5,17 +5,21 @@ import { CaseManagementPage } from "../pages/CaseManagementPage";
 import { TransferMaterialsTab } from "../pages/TransferMaterialsTab";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
 
-test.describe("NetApp to Egress Copy", () => {
+// Move is only exposed on the NetApp -> Egress direction and is gated by
+// feature flag + Azure AD group (PRIVATE_BETA_FEATURE_USER_GROUP2). See
+// useUserGroupsFeatureFlag.ts. The Egress -> NetApp panel has no Move
+// button at all.
+
+test.describe("NetApp to Egress Move", () => {
   test.use({ testOptions: { fileSizeMb: 100, fileCount: 1 } });
 
-  test("should copy files from NetApp to Egress", async ({
+  test("should move files from NetApp to Egress", async ({
     page,
     testData,
   }) => {
     test.setTimeout(300_000);
     const { caseUrn, uploadSubfolder } = testData;
 
-    // Step 1: Search for pre-connected case
     const caseSearch = new CaseSearchPage(page);
     await caseSearch.searchByUrn(caseUrn);
 
@@ -23,7 +27,6 @@ test.describe("NetApp to Egress Copy", () => {
     await searchResults.waitForResults();
     await searchResults.clickCaseAction(caseUrn);
 
-    // Step 2: Navigate to Transfer Materials tab and wait for panels to load
     const caseMgmt = new CaseManagementPage(page);
     await caseMgmt.waitForLoad();
     await caseMgmt.switchToTab("transfer-materials");
@@ -32,13 +35,9 @@ test.describe("NetApp to Egress Copy", () => {
     await transferTab.waitForEgressFiles();
     await transferTab.waitForNetAppFiles();
 
-    // Step 3: Switch to NetApp -> Egress direction
     await transferTab.switchToNetAppSource();
     await transferTab.waitForNetAppFiles();
 
-    // Step 4: Sort NetApp by date descending, then select the top row.
-    // Destination is a per-test subfolder in 2. Counsel only, so whatever
-    // file we pick won't collide with prior runs' copies.
     const dateHeader = page
       .getByTestId("netapp-table-wrapper")
       .getByRole("button", { name: "Last modified date" });
@@ -49,10 +48,6 @@ test.describe("NetApp to Egress Copy", () => {
 
     await transferTab.selectNetAppFiles([0]);
 
-    // Step 5: Navigate into Egress destination subfolder.
-    // Use a different top-level folder than the upload source (4. Served
-    // Evidence), then into this test's dated subfolder so repeat runs don't
-    // collide with files already copied there on previous runs.
     await transferTab.navigateToFolder("2. Counsel only");
     await transferTab.waitForEgressFiles();
     if (uploadSubfolder) {
@@ -60,19 +55,17 @@ test.describe("NetApp to Egress Copy", () => {
       await transferTab.waitForEgressFiles();
     }
 
-    // Step 6: Initiate Copy to Egress
-    await transferTab.selectReverseAction("Copy");
+    await transferTab.selectReverseAction("Move");
     await transferTab.confirmTransfer();
     await transferTab.waitForTransferComplete();
 
-    // Step 7: Verify in Activity Log
     await caseMgmt.switchToTab("activity-log");
     const activityLog = new ActivityLogTab(page);
     await activityLog.waitForLogs();
-    await activityLog.verifyTransferLogged("Copy");
+    await activityLog.verifyTransferLogged("Move");
 
-    await activityLog.expandFileList();
-    await activityLog.downloadCsv();
+    await activityLog.expandFileList("Move");
+    await activityLog.downloadCsv("Move");
     await activityLog.verifyDownloadSuccess();
   });
 });

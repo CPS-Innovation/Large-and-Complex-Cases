@@ -19,26 +19,79 @@ export async function authenticateEgress(
   return Buffer.from(data.token, "utf-8").toString("base64");
 }
 
+export interface EgressWorkspaceInfo {
+  id: string;
+  name: string;
+  /** ISO datetime from Egress `date_created`. */
+  dateCreated: string;
+}
+
+/**
+ * Paginates /workspaces?view=full and returns every AUTOMATION-TESTING*
+ * workspace with its creation timestamp. Used by the register-case teardown
+ * to sweep workspaces older than N hours regardless of which run created
+ * them. Workspaces without a date_created field are skipped (safer to leave
+ * them than to delete blindly).
+ */
+export async function listAutomationWorkspaces(
+  baseUrl: string,
+  token: string
+): Promise<EgressWorkspaceInfo[]> {
+  const pageSize = 50;
+  const maxPages = 50;
+  const results: EgressWorkspaceInfo[] = [];
+
+  for (let page = 1; page <= maxPages; page++) {
+    const response = await fetch(
+      `${baseUrl}/api/v1/workspaces/?page=${page}&page_size=${pageSize}&view=full`,
+      { headers: { Authorization: `Basic ${token}` } }
+    );
+    if (!response.ok) break;
+
+    const body: {
+      data?: { id: string; name: string; date_created?: string }[];
+    } = await response.json();
+    const workspaces = body.data ?? [];
+    if (workspaces.length === 0) break;
+
+    for (const ws of workspaces) {
+      if (/^AUTOMATION-TESTING/i.test(ws.name) && ws.date_created) {
+        results.push({
+          id: ws.id,
+          name: ws.name,
+          dateCreated: ws.date_created,
+        });
+      }
+    }
+
+    if (workspaces.length < pageSize) break;
+  }
+
+  return results;
+}
+
 export async function findNextWorkspaceName(
   baseUrl: string,
   token: string
 ): Promise<string> {
-  let maxNumber = 0;
-  let page = 1;
   const pageSize = 50;
+  const maxPages = 50;
+  let maxNumber = 0;
 
-  while (true) {
+  for (let page = 1; page <= maxPages; page++) {
     const response = await fetch(
-      `${baseUrl}/api/v1/workspaces/?page=${page}`,
+      `${baseUrl}/api/v1/workspaces/?page=${page}&page_size=${pageSize}`,
       { headers: { Authorization: `Basic ${token}` } }
     );
 
     if (!response.ok) break;
 
-    const data = await response.json();
-    const workspaces: { name: string }[] = data.data || data.results || data;
+    // Documented shape: { data: ListWorkspacesResponseData[], data_info: {...} }
+    // See backend/CPS.ComplexCases.Egress/Models/Response/FindWorkspaceResponse.cs
+    const body: { data?: { name: string }[] } = await response.json();
+    const workspaces = body.data ?? [];
 
-    if (!Array.isArray(workspaces) || workspaces.length === 0) break;
+    if (workspaces.length === 0) break;
 
     for (const ws of workspaces) {
       const match = ws.name.match(/^AUTOMATION-TESTING(\d+)(-\d+)?$/i);
@@ -49,7 +102,6 @@ export async function findNextWorkspaceName(
     }
 
     if (workspaces.length < pageSize) break;
-    page++;
   }
 
   // Add random suffix to avoid race conditions when running tests in parallel
@@ -85,6 +137,46 @@ export async function createWorkspace(
 
   const data = await response.json();
   return data.id;
+}
+
+/**
+ * Creates a subfolder under the given parent path in the workspace.
+ * Idempotent: if Egress reports the folder already exists (4xx), this is
+ * treated as success so the helper is safe to call from every test run
+ * when uploading into a dated subfolder.
+ */
+export async function createFolder(
+  baseUrl: string,
+  token: string,
+  workspaceId: string,
+  parentPath: string,
+  folderName: string
+): Promise<void> {
+  const response = await fetch(
+    `${baseUrl}/api/v1/workspaces/${workspaceId}/files?path=${encodeURIComponent(parentPath)}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ folder_name: folderName }),
+    }
+  );
+
+  if (response.ok) return;
+
+  const text = await response.text();
+  // Treat duplicate-folder responses as success.
+  if (
+    response.status === 409 ||
+    (response.status === 400 && /exist/i.test(text))
+  ) {
+    return;
+  }
+  throw new Error(
+    `Egress folder creation failed (${response.status}): ${text}`
+  );
 }
 
 export async function addUserToWorkspace(
@@ -223,10 +315,82 @@ export async function uploadFile(
     );
   }
 
-  // The file ID will be discovered later via the LCC API during tests.
-  // The Egress file listing API doesn't reliably expose subfolder contents,
-  // so we use the upload ID as reference and trust the upload completed.
-  console.log(`  Upload complete: ${uploadId}`);
-  return { fileId: uploadId, fileName, fileSize: fileSizeBytes };
+  // Egress returns the file record on completion. Fall back to uploadId if
+  // the response shape changes so callers that need an id for teardown
+  // always get something to work with.
+  const completeData = await completeResponse.json().catch(() => ({}));
+  const fileId: string = completeData?.id ?? uploadId;
+
+  console.log(`  Upload complete: ${fileId}`);
+  return { id: fileId, fileName, fileSize: fileSizeBytes };
+}
+
+/**
+ * Best-effort bulk file delete. Logs and swallows errors so teardown never
+ * fails a passing test — the dated subfolder + manual sweep acts as a
+ * safety net. Endpoint shape matches EgressRequestFactory.DeleteFilesRequest
+ * in the backend: DELETE /workspaces/{id}/files with { file_ids: [...] }.
+ */
+export async function deleteFiles(
+  baseUrl: string,
+  token: string,
+  workspaceId: string,
+  fileIds: string[]
+): Promise<void> {
+  if (fileIds.length === 0) return;
+  try {
+    const response = await fetch(
+      `${baseUrl}/api/v1/workspaces/${workspaceId}/files`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Basic ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ file_ids: fileIds }),
+      }
+    );
+    if (!response.ok) {
+      const text = await response.text();
+      console.warn(
+        `  [teardown] deleteFiles [${fileIds.join(",")}] failed (${response.status}): ${text}`
+      );
+    }
+  } catch (err) {
+    console.warn(`  [teardown] deleteFiles threw:`, err);
+  }
+}
+
+/**
+ * Best-effort workspace delete. Intended for register-case teardown; must
+ * NOT be called against DEFAULT_WORKSPACE_ID. Endpoint per Egress docs:
+ * DELETE /api/v1/workspaces/{workspace_id}/ — trailing slash is required,
+ * Egress 405s without it.
+ */
+export async function deleteWorkspace(
+  baseUrl: string,
+  token: string,
+  workspaceId: string
+): Promise<void> {
+  try {
+    const response = await fetch(
+      `${baseUrl}/api/v1/workspaces/${workspaceId}/`,
+      {
+        method: "DELETE",
+        headers: { Authorization: `Basic ${token}` },
+      }
+    );
+    if (!response.ok) {
+      const text = await response.text();
+      console.warn(
+        `  [teardown] deleteWorkspace ${workspaceId} failed (${response.status}): ${text}`
+      );
+    }
+  } catch (err) {
+    console.warn(
+      `  [teardown] deleteWorkspace ${workspaceId} threw:`,
+      err
+    );
+  }
 }
 

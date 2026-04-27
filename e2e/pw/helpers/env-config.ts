@@ -1,3 +1,5 @@
+import { EGRESS_TEMPLATE_ID, EGRESS_ADMIN_ROLE_ID } from "./constants";
+
 function requireEnv(name: string): string {
   const value = process.env[name];
   if (!value) {
@@ -8,6 +10,17 @@ function requireEnv(name: string): string {
 
 function optionalEnv(name: string, defaultValue: string): string {
   return process.env[name] || defaultValue;
+}
+
+function positiveIntEnv(name: string, defaultValue: string): number {
+  const raw = optionalEnv(name, defaultValue);
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new Error(
+      `Invalid ${name}: expected a positive integer, got "${raw}"`
+    );
+  }
+  return parsed;
 }
 
 export function loadEnvConfig() {
@@ -28,17 +41,11 @@ export function loadEnvConfig() {
     ddeiAccessKey: requireEnv("DDEI_ACCESS_KEY"),
 
     egressServiceAccountAuth: requireEnv("EGRESS_SERVICE_ACCOUNT_AUTH"),
-    egressTemplateId: optionalEnv(
-      "EGRESS_TEMPLATE_ID",
-      "59a6855307087630eb190282"
-    ),
-    egressAdminRoleId: optionalEnv(
-      "EGRESS_ADMIN_ROLE_ID",
-      "591dab08368b665c9c5c5fe0"
-    ),
+    egressTemplateId: optionalEnv("EGRESS_TEMPLATE_ID", EGRESS_TEMPLATE_ID),
+    egressAdminRoleId: optionalEnv("EGRESS_ADMIN_ROLE_ID", EGRESS_ADMIN_ROLE_ID),
 
-    testFileSizeMb: parseInt(optionalEnv("TEST_FILE_SIZE_MB", "100"), 10),
-    testFileCount: parseInt(optionalEnv("TEST_FILE_COUNT", "1"), 10),
+    testFileSizeMb: positiveIntEnv("TEST_FILE_SIZE_MB", "100"),
+    testFileCount: positiveIntEnv("TEST_FILE_COUNT", "1"),
 
     defaultWorkspaceId: process.env.DEFAULT_WORKSPACE_ID || "",
     defaultWorkspaceName: process.env.DEFAULT_WORKSPACE_NAME || "",
