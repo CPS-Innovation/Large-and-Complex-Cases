@@ -10,6 +10,7 @@ import { getCaseMetaData } from "../../apis/gateway-api";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useUserGroupsFeatureFlag } from "../../common/hooks/useUserGroupsFeatureFlag";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
+import TransferTreeViewPage from "../case-management/transfer-materials/TransferTreeViewPage";
 
 import styles from "./index.module.scss";
 
@@ -20,7 +21,6 @@ const CaseManagementPage = () => {
   if (!caseId) throw new Error("missing caseId in the url");
 
   const caseMetaData = useApi(getCaseMetaData, [caseId], true);
-
   const [activeTabId, setActiveTabId] = useState<TabId>("transfer-materials");
 
   const featureFlags = useUserGroupsFeatureFlag();
@@ -133,6 +133,7 @@ const CaseManagementPage = () => {
         children: caseMetaData?.data ? (
           <div>
             <h3> Case Details</h3>
+            <TransferTreeViewPage caseId={caseId} />
           </div>
         ) : (
           <></>
