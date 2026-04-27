@@ -1,6 +1,7 @@
 schedules:
   - cron: '0 3 * * *'
     displayName: 'Daily 3am cleanup'
+    branches: 'main'
     always: true
 
 trigger: none
