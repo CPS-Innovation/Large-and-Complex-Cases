@@ -1,4 +1,4 @@
-import { test, expect } from "../fixtures/test-fixtures-default-large";
+import { test } from "../fixtures/test-fixtures-default-large";
 import { CaseSearchPage } from "../pages/CaseSearchPage";
 import { SearchResultsPage } from "../pages/SearchResultsPage";
 import { CaseManagementPage } from "../pages/CaseManagementPage";
@@ -11,7 +11,7 @@ test.describe("Egress to NetApp Copy - Large File 200MB (Default Mode)", () => {
     testData,
   }) => {
     test.setTimeout(900_000);
-    const { caseUrn } = testData;
+    const { caseUrn, uploadSubfolder } = testData;
 
     // Step 1: Search for case by URN
     const caseSearch = new CaseSearchPage(page);
@@ -32,6 +32,10 @@ test.describe("Egress to NetApp Copy - Large File 200MB (Default Mode)", () => {
     await transferTab.waitForEgressFiles();
     await transferTab.navigateToFolder("4. Served Evidence");
     await transferTab.waitForEgressFiles();
+    if (uploadSubfolder) {
+      await transferTab.navigateToFolder(uploadSubfolder);
+      await transferTab.waitForEgressFiles();
+    }
 
     // Wait for the uploaded file to be indexed by Egress (may take time after large upload)
     const fileName = testData.files[0].fileName;

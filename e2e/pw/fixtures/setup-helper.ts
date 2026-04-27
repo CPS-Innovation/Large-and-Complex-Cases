@@ -118,32 +118,51 @@ export async function setupTestData(
 
   console.log("=== Case Registration Complete ===\n");
 
-  // Step 3: Browser login
-  console.log("=== Browser Login ===\n");
+  await browserLogin(page);
+
+  return {
+    workspace: { id: workspaceId, name: workspaceName },
+    files,
+    caseUrn,
+    caseId,
+  };
+}
+
+/**
+ * Full tactical + Azure AD login flow, followed by waiting for the search
+ * radios to be *enabled* on the LCC case search page. The manual flow also
+ * requires tactical to be fresh before searching — if tactical cookies are
+ * stale, the radios render but stay disabled and /api/v1/case-search rejects
+ * any submit with HTTP 400.
+ *
+ * Safe to call from register-case specs at fixture time to refresh session
+ * state that has aged since the setup project ran.
+ */
+export async function browserLogin(page: Page): Promise<void> {
+  const {
+    CMS_USERNAME,
+    CMS_PASSWORD,
+    E2E_AD_USER,
+    E2E_AD_PASSWORD,
+    CMS_LOGIN_PAGE,
+    BASE_URL,
+  } = process.env;
+
+  console.log("=== Browser Login ===");
 
   console.log("  Tactical login...");
   await page.goto(CMS_LOGIN_PAGE!);
   const tacticalLogin = new TacticalLoginPage(page);
   await tacticalLogin.login(CMS_USERNAME!, CMS_PASSWORD!);
-  console.log("  Tactical login complete.");
 
   console.log("  Azure AD login...");
   await page.goto(BASE_URL!);
   const adLogin = new AzureADLoginPage(page);
   await adLogin.login(E2E_AD_USER!, E2E_AD_PASSWORD!);
-  console.log("  Azure AD login complete.");
 
-  console.log("  Waiting for radio buttons...");
+  console.log("  Waiting for search radios to be enabled...");
   const caseSearch = new CaseSearchPage(page);
   await caseSearch.waitForRadioButtons();
-  console.log("  All 3 radio buttons visible!");
 
   console.log("=== Browser Login Complete ===\n");
-
-  return {
-    workspace: { id: workspaceId, name: workspaceName },
-    files,
-    caseId,
-    caseUrn,
-  };
 }
