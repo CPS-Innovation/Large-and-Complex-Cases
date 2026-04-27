@@ -10,5 +10,11 @@
     "displayName": "CPS-ComplexCases-Default",
     "bucketName": "flexgroup1",
     "description": "Default security group for CPS Complex Cases"
+  },
+  {
+    "id": "086813d3-b340-44cc-b6dd-5ebb8487c13d",
+    "displayName": "Manchester-Cases",
+    "bucketName": "mslpublic",
+    "description": "Manchester Users security group for CPS Complex Cases"
   }
 ]
