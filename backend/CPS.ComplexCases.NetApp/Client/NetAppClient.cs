@@ -519,7 +519,8 @@ public class NetAppClient(
                 if (filesToDelete.Count == 1)
                 {
                     var markerArg = _netAppArgFactory.CreateGetObjectArg(arg.BearerToken, arg.BucketName, folderPath);
-                    if (!await DoesObjectExistAsync(markerArg))
+                    if (!await DoesObjectExistAsync(markerArg) &&
+                        !await DoesFolderExistInParentListingAsync(arg.BucketName, folderPath, arg.BearerToken))
                         return new DeleteNetAppResult(true, false, 0, null, null);
                 }
 
@@ -937,6 +938,50 @@ public class NetAppClient(
         objectKeys.Add(prefix);
 
         return objectKeys;
+    }
+
+    // Checks whether a folder exists by looking for it in its parent's common-prefix
+    // listing. This is more reliable than a HEAD probe for empty folders that were
+    // created outside the S3 API (e.g. via SMB/NFS) and therefore have no zero-byte
+    // marker key in the bucket.
+    //
+    // Paginates through all pages so that folders appearing beyond the first page of a
+    // large parent directory are not missed. A null response from the listing API is
+    // treated as an operational failure rather than "not found", to avoid silently
+    // mapping transient errors to a no-op delete.
+    private async Task<bool> DoesFolderExistInParentListingAsync(string bucketName, string folderPath, string bearerToken)
+    {
+        var withoutTrailing = folderPath.TrimEnd('/');
+        var lastSlash = withoutTrailing.LastIndexOf('/');
+        var parentPrefix = lastSlash >= 0 ? withoutTrailing[..(lastSlash + 1)] : string.Empty;
+
+        string? continuationToken = null;
+        do
+        {
+            var listArg = new ListObjectsInBucketArg
+            {
+                BearerToken = bearerToken,
+                BucketName = bucketName,
+                Prefix = parentPrefix,
+                IncludeDelimiter = true,
+                ContinuationToken = continuationToken
+            };
+
+            var response = await ListObjectsInBucketAsync(listArg);
+            if (response == null)
+                throw new InvalidOperationException(
+                    $"Failed to list objects under prefix '{parentPrefix}' in bucket '{bucketName}' " +
+                    $"while checking existence of folder '{folderPath}'. " +
+                    "Aborting to avoid treating a transient listing failure as folder-not-found.");
+
+            if ((response.Data.FolderData ?? [])
+                .Any(f => string.Equals(f.Path, folderPath, StringComparison.OrdinalIgnoreCase)))
+                return true;
+
+            continuationToken = response.Pagination.NextContinuationToken;
+        } while (!string.IsNullOrEmpty(continuationToken));
+
+        return false;
     }
 
     private Polly.Retry.AsyncRetryPolicy<DeleteObjectResponse> GetDeleteFileRetryPolicy(string objectKey,
