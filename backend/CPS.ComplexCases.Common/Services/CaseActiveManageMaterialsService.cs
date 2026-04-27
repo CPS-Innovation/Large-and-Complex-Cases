@@ -37,6 +37,11 @@ public class CaseActiveManageMaterialsService(
         return await _repository.GetActiveOperationsForCaseAsync(caseId);
     }
 
+    public async Task<IEnumerable<CaseActiveManageMaterialsOperation>> GetAllActiveOperationsAsync()
+    {
+        return await _repository.GetAllActiveOperationsAsync();
+    }
+
     public async Task<bool> HasConflictingOperationAsync(int caseId, IEnumerable<string> sourcePaths, IEnumerable<string> destinationPaths)
     {
         return await _repository.HasConflictingOperationAsync(caseId, sourcePaths, destinationPaths);
