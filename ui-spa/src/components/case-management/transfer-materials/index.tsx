@@ -385,18 +385,6 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     }
   }, [apiRequestError]);
 
-  useEffect(() => {
-    if (egressWorkspaceId) {
-      egressRefetch();
-    }
-  }, [egressWorkspaceId, egressRefetch]);
-
-  useEffect(() => {
-    if (netAppFolderPath) {
-      netAppRefetch();
-    }
-  }, [netAppFolderPath, netAppRefetch]);
-
   const getIndexingFileTransferPayload = (): IndexingFileTransferPayload => {
     if (!selectedTransferAction) {
       throw new Error(

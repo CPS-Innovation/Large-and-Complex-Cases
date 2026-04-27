@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import TreeView from "../tree-view/TreeView";
 import { Button } from "../../../components/govuk/Button";
 import { Link } from "react-router-dom";
-import { type TreeViewProps, type TreeNode } from "../tree-view/TreeView";
+import { type TreeNode } from "../tree-view/TreeView";
 import styles from "./TransferWidget.module.scss";
 export type TransferWidgetProps = {
   data: TreeNode[];

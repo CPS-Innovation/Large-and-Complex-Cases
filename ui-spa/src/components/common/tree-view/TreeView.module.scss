@@ -25,19 +25,12 @@
   align-items: center;
   gap: 8px;
   background: none;
-  border: none;
   text-align: left;
   padding: 4px 6px;
   width: fit-content;
   border: 1px solid #d8dde0;
   cursor: pointer;
-  //   &:focus {
-  //     outline: 0.2rem solid #ffdd00;
-  //   }
 }
-// .focused > div .folderNode {
-//   outline: 0.2rem solid #ffdd00;
-// }
 .treeItem {
   width: fit-content;
   outline: none;
@@ -60,7 +53,7 @@
   outline: none;
   & div {
     position: absolute;
-    top: 0;
+    top: 2px;
     left: 40px;
   }
 }

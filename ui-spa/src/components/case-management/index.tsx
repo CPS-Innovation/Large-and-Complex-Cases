@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Tabs } from "../common/tabs/Tabs";
 import { TabId } from "../../common/types/CaseManagement";
 import { ItemProps } from "../common/tabs/types";
@@ -10,9 +10,7 @@ import { getCaseMetaData } from "../../apis/gateway-api";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useUserGroupsFeatureFlag } from "../../common/hooks/useUserGroupsFeatureFlag";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
-import TransferWidget from "../common/transfer-widget/TransferWidget";
-import { getNetAppFolders, getEgressFolders } from "../../apis/gateway-api";
-import { getFolderNameFromPath } from "../../common/utils/getFolderNameFromPath";
+import TransferTreeViewPage from "../case-management/transfer-materials/TransferTreeViewPage";
 
 import styles from "./index.module.scss";
 
@@ -23,65 +21,6 @@ const CaseManagementPage = () => {
   if (!caseId) throw new Error("missing caseId in the url");
 
   const caseMetaData = useApi(getCaseMetaData, [caseId], true);
-
-  const {
-    refetch: netAppRefetch,
-    status: netAppStatus,
-    data: netAppData,
-    error: netAppError,
-  } = useApi(getNetAppFolders, [caseMetaData.data?.netappFolderPath], false);
-
-  const {
-    refetch: egressRefetch,
-    status: egressStatus,
-    data: egressData,
-    error: egressError,
-  } = useApi(
-    getEgressFolders,
-    [caseMetaData.data?.egressWorkspaceId, ""],
-    false,
-  );
-
-  useEffect(() => {
-    if (caseMetaData.data?.egressWorkspaceId) {
-      egressRefetch();
-    }
-  }, [caseMetaData.data?.egressWorkspaceId, egressRefetch]);
-
-  useEffect(() => {
-    if (caseMetaData.data?.netappFolderPath) {
-      netAppRefetch();
-    }
-  }, [caseMetaData.data?.netappFolderPath, netAppRefetch]);
-
-  const initialEgressFolderData = useMemo(() => {
-    if (!egressData) return [];
-    const folders = egressData
-      .filter((folder) => folder.isFolder)
-      .map((folder) => {
-        return {
-          id: folder.id,
-          name: folder.name,
-          path: folder.path,
-          isFolder: true,
-        };
-      });
-    return folders;
-  }, [egressData]);
-
-  const initialNetappFolderData = useMemo(() => {
-    if (!caseMetaData?.data) return [];
-    const folders = [
-      {
-        id: caseMetaData.data?.netappFolderPath,
-        name: getFolderNameFromPath(caseMetaData.data?.netappFolderPath),
-        path: caseMetaData.data?.netappFolderPath,
-        isFolder: true,
-      },
-    ];
-
-    return folders;
-  }, [caseMetaData]);
   const [activeTabId, setActiveTabId] = useState<TabId>("transfer-materials");
 
   const featureFlags = useUserGroupsFeatureFlag();
@@ -194,26 +133,7 @@ const CaseManagementPage = () => {
         children: caseMetaData?.data ? (
           <div>
             <h3> Case Details</h3>
-            <TransferWidget
-              data={initialNetappFolderData}
-              onLoadChildren={async (nodeId) => {
-                console.log("Load children for node:", nodeId);
-                await new Promise((res) => setTimeout(res, 1000));
-
-                const data = await getNetAppFolders(nodeId);
-
-                const folders = data.folderData.map((folder) => {
-                  return {
-                    id: folder.path,
-                    name: getFolderNameFromPath(folder.path),
-                    path: folder.path,
-                    isFolder: true,
-                  };
-                });
-                return folders;
-              }}
-              transferAction="Copy"
-            />
+            <TransferTreeViewPage caseId={caseId} />
           </div>
         ) : (
           <></>
