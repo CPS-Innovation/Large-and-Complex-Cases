@@ -1,0 +1,37 @@
+schedules:
+  - cron: '0 3 * * *'
+    displayName: 'Daily 3am cleanup'
+    always: true
+
+trigger: none
+
+pool: 'LACC PreProd Pool'
+
+variables:
+  - group: lacc-automated-testing-dev
+  - group: lacc-backend-config-dev
+
+jobs:
+  - job: cleanup_egress_account
+    steps:
+      - script: |
+          if command -v pwsh &> /dev/null; then 
+            echo "PowerShell already installed. Skipping installation."
+          else 
+            echo "Installing PowerShell..."
+            bash '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/installPowershell.sh'
+            echo "Powershel version: $(pwsh -v)"
+          fi
+        displayName: 'Install PowerShell'
+
+      - task: PowerShell@2
+        displayName: 'Clear integration-tests Egress folder'
+        inputs:
+          filePath: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/test-automation-cleanup/Clear-EgressFolder.ps1'
+          arguments: >
+            -BaseUrl $(EgressOptionsUrl)
+            -ServiceAccountAuth $(EgressServiceAccountAuth)
+            -WorkspaceId $(EgressWorkspaceId)
+            -FolderName "integration-tests"
+            -Force
+  
