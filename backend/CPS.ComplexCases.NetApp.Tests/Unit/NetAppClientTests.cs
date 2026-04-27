@@ -1433,6 +1433,117 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         }
 
         [Fact]
+        public async Task DeleteFileOrFolderAsync_WhenEmptyFolderAppearsOnLaterPageOfParentListing_ReturnsWasFoundTrueAndDeletes()
+        {
+            // Arrange — simulates an SMB/NFS-created folder with no marker key.
+            // HEAD on the marker returns 404, and the folder appears on page 2 of
+            // the parent prefix listing rather than page 1.
+            var folderPath = "cases/123/Uploads/OldEvidence/";
+            var arg = new DeleteFileOrFolderArg
+            {
+                BearerToken = BearerToken,
+                BucketName = BucketName,
+                Path = folderPath,
+                OperationName = "test-operation",
+                IsFolder = true
+            };
+
+            _netAppRequestFactoryMock
+                .Setup(x => x.ListObjectsInBucketRequest(It.IsAny<ListObjectsInBucketArg>()))
+                .Returns(new ListObjectsV2Request { BucketName = BucketName });
+
+            // Call 1: listing the folder's own contents (ListAllObjectKeysForDeletionAsync) — empty.
+            // Call 2: parent listing page 1 — truncated, folder not yet visible.
+            // Call 3: parent listing page 2 — folder appears in CommonPrefixes.
+            _amazonS3Mock
+                .SetupSequence(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
+                .ReturnsAsync(new ListObjectsV2Response
+                {
+                    S3Objects = [],
+                    CommonPrefixes = [],
+                    IsTruncated = false
+                })
+                .ReturnsAsync(new ListObjectsV2Response
+                {
+                    S3Objects = [],
+                    CommonPrefixes = ["cases/123/Uploads/SomeOtherFolder/"],
+                    IsTruncated = true,
+                    NextContinuationToken = "page2token"
+                })
+                .ReturnsAsync(new ListObjectsV2Response
+                {
+                    S3Objects = [],
+                    CommonPrefixes = [folderPath],
+                    IsTruncated = false
+                });
+
+            // Marker key does not exist (SMB/NFS-created folder has no S3 marker).
+            SetupFileExistsCheck(folderPath, exists: false);
+
+            _amazonS3Mock
+                .Setup(x => x.DeleteObjectsAsync(It.IsAny<DeleteObjectsRequest>(), default))
+                .ReturnsAsync(new DeleteObjectsResponse
+                {
+                    HttpStatusCode = HttpStatusCode.OK,
+                    DeletedObjects = [new DeletedObject { Key = folderPath }],
+                    DeleteErrors = []
+                });
+
+            // Act
+            var result = await _client.DeleteFileOrFolderAsync(arg);
+
+            // Assert — folder found via page-2 parent listing; deletion proceeds.
+            Assert.True(result.Success);
+            Assert.True(result.WasFound);
+            _amazonS3Mock.Verify(x => x.DeleteObjectsAsync(It.IsAny<DeleteObjectsRequest>(), default), Times.Once);
+        }
+
+        [Fact]
+        public async Task DeleteFileOrFolderAsync_WhenParentListingFailsTransiently_ThrowsInvalidOperationException()
+        {
+            // Arrange — simulates a transient S3 failure while listing the parent prefix
+            // during the fallback existence check. This must propagate as an exception
+            // rather than silently returning WasFound = false, to avoid masking failures
+            // as a normal no-op delete.
+            var folderPath = "cases/123/Uploads/OldEvidence/";
+            var arg = new DeleteFileOrFolderArg
+            {
+                BearerToken = BearerToken,
+                BucketName = BucketName,
+                Path = folderPath,
+                OperationName = "test-operation",
+                IsFolder = true
+            };
+
+            _netAppRequestFactoryMock
+                .Setup(x => x.ListObjectsInBucketRequest(It.IsAny<ListObjectsInBucketArg>()))
+                .Returns(new ListObjectsV2Request { BucketName = BucketName });
+
+            // Call 1: listing the folder's own contents — empty (triggers the existence check).
+            // Call 2: parent listing fails with a non-credential S3 error, causing
+            //         ListObjectsInBucketAsync to return null.
+            _amazonS3Mock
+                .SetupSequence(x => x.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), default))
+                .ReturnsAsync(new ListObjectsV2Response
+                {
+                    S3Objects = [],
+                    CommonPrefixes = [],
+                    IsTruncated = false
+                })
+                .ThrowsAsync(new AmazonS3Exception("Simulated transient S3 failure"));
+
+            // Marker key does not exist.
+            SetupFileExistsCheck(folderPath, exists: false);
+
+            // Act & Assert — the transient listing failure must surface as an exception,
+            // not silently map to WasFound = false.
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _client.DeleteFileOrFolderAsync(arg));
+
+            _amazonS3Mock.Verify(x => x.DeleteObjectsAsync(It.IsAny<DeleteObjectsRequest>(), default), Times.Never);
+        }
+
+        [Fact]
         public async Task DeleteFileOrFolderAsync_WhenDeleteObjectsAsync_WithOkStatusAndNoErrors_ReturnsSuccessMessage()
         {
             // Arrange
