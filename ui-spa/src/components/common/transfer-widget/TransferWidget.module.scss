@@ -1,0 +1,9 @@
+.actionWrapper {
+  display: flex;
+  align-items: center;
+  margin-top: 16px;
+  gap: 1rem;
+  .transferButton {
+    margin-bottom: 0;
+  }
+}
