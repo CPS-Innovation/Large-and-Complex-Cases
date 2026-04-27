@@ -519,7 +519,8 @@ public class NetAppClient(
                 if (filesToDelete.Count == 1)
                 {
                     var markerArg = _netAppArgFactory.CreateGetObjectArg(arg.BearerToken, arg.BucketName, folderPath);
-                    if (!await DoesObjectExistAsync(markerArg))
+                    if (!await DoesObjectExistAsync(markerArg) &&
+                        !await DoesFolderExistInParentListingAsync(arg.BucketName, folderPath, arg.BearerToken))
                         return new DeleteNetAppResult(true, false, 0, null, null);
                 }
 
@@ -937,6 +938,32 @@ public class NetAppClient(
         objectKeys.Add(prefix);
 
         return objectKeys;
+    }
+
+    // Checks whether a folder exists by looking for it in its parent's common-prefix
+    // listing. This is more reliable than a HEAD probe for empty folders that were
+    // created outside the S3 API (e.g. via SMB/NFS) and therefore have no zero-byte
+    // marker key in the bucket.
+    private async Task<bool> DoesFolderExistInParentListingAsync(string bucketName, string folderPath, string bearerToken)
+    {
+        var withoutTrailing = folderPath.TrimEnd('/');
+        var lastSlash = withoutTrailing.LastIndexOf('/');
+        var parentPrefix = lastSlash >= 0 ? withoutTrailing[..(lastSlash + 1)] : string.Empty;
+
+        var listArg = new ListObjectsInBucketArg
+        {
+            BearerToken = bearerToken,
+            BucketName = bucketName,
+            Prefix = parentPrefix,
+            IncludeDelimiter = true
+        };
+
+        var response = await ListObjectsInBucketAsync(listArg);
+        if (response == null)
+            return false;
+
+        return (response.Data.FolderData ?? [])
+            .Any(f => string.Equals(f.Path, folderPath, StringComparison.OrdinalIgnoreCase));
     }
 
     private Polly.Retry.AsyncRetryPolicy<DeleteObjectResponse> GetDeleteFileRetryPolicy(string objectKey,
