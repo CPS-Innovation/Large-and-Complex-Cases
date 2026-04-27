@@ -21,7 +21,7 @@ const TransferWidget: React.FC<TransferWidgetProps> = ({
 
   return (
     <div>
-      <h2>Transfer Files</h2>
+      <h3>Transfer Files</h3>
       <TreeView
         data={data}
         onSelect={onSelect}
