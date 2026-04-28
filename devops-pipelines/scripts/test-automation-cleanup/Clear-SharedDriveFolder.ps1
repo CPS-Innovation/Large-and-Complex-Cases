@@ -57,9 +57,8 @@ if (-not $aadToken) {
 
 Write-Host "  [OK] AAD Token obtained" -ForegroundColor Green
 
-$headers = @{
+$authHeader = @{
   Authorization = "Bearer $aadToken"
-  "Content-Type" = "application/json"
 }
 
 # ============================================================
@@ -80,7 +79,8 @@ $body = @{
 try {
   $response = Invoke-RestMethod -Method Post `
     -Uri "$BaseUrl/api/v1/netapp/delete/batch" `
-    -Headers $headers `
+    -Headers $authHeader `
+    -ContentType 'application/json' `
     -Body $body
   
   if ($response.status -eq 'Completed' -and $response.succeeded -gt 0) {
@@ -109,7 +109,8 @@ $body = @{
 try {
   $response = Invoke-RestMethod -Method Post `
     -Uri "$BaseUrl/api/v1/netapp/folders" `
-    -Headers $headers `
+    -Headers $authHeader `
+    -ContentType 'application/json' `
     -Body $body
   
   if ($response -eq $true) {
@@ -123,3 +124,4 @@ catch {
   Write-Error "Error during folder recreation: $_"
   exit 1
 }
+

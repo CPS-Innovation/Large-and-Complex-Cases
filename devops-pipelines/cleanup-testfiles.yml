@@ -16,6 +16,7 @@ variables:
 
 jobs:
   - job: cleanup_egress_account
+    displayName: 'Cleanup Egress Account'
     steps:
       - script: |
           if command -v pwsh &> /dev/null; then 
@@ -37,7 +38,22 @@ jobs:
             -WorkspaceId $(EgressWorkspaceId)
             -FolderName "integration-tests"
             -Force
-      
+
+      - ${{ each folder in ["4. Served Evidence", "3. Unused - disclosed"] }}:
+        - task: PowerShell@2
+          displayName: 'Clear existingCaseAutomation Egress folder'
+          inputs:
+            filePath: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/test-automation-cleanup/Clear-EgressFolder.ps1'
+            arguments: >
+              -BaseUrl $(EgressOptionsUrl)
+              -ServiceAccountAuth $(EgressServiceAccountAuth)
+              -WorkspaceId $(E2eEgressWorkspaceId)
+              -FolderName ${{ folder }}
+              -Force
+
+      # The following step is temporarily here while Kamesh is testing his E2E tests.
+      # It can be moved to the CMRC repo once the E2E tests are available there.
+      # In Transfer Materials we won't be creating new Egress Workspaces
       - task: PowerShell@2
         displayName: 'Remove generated Automation-Testing workspaces'
         inputs:
@@ -49,6 +65,7 @@ jobs:
             -Force
     
   - job: cleanup_shared_drive
+    displayName: 'Cleanup Shared Drive (NetApp)'
     steps:
       - script: |
           if command -v pwsh &> /dev/null; then 
@@ -59,7 +76,7 @@ jobs:
             echo "Powershel version: $(pwsh -v)"
           fi
         displayName: 'Install PowerShell'
-      
+
       - task: PowerShell@2
         displayName: 'Clear integration-tests NetApp folder'
         inputs:
@@ -72,7 +89,18 @@ jobs:
             -CaseId $(IntegrationTestsCaseId)
             -FolderPath "integration-tests"
 
+      # # The following step is disabled while Kamesh is working on the E2E tests. 
+      # # Once E2E test are merged, the following should be enabled:
 
-
-      
+      # - task: PowerShell@2
+      #   displayName: 'Clear E2E tests NetApp folder'
+      #   inputs:
+      #     filePath: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/test-automation-cleanup/Clear-SharedDriveFolder.ps1'
+      #     arguments: >
+      #       -ClientId $(CallingAppValidAudience)
+      #       -TenantId $(TenantId)
+      #       -AadUsername $(AadUserName)
+      #       -AadPassword $(AadUserPassword)
+      #       -CaseId $(E2eTestsCaseId)
+      #       -FolderPath "existingCaseAutomation"
   
