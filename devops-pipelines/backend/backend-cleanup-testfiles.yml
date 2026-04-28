@@ -37,4 +37,42 @@ jobs:
             -WorkspaceId $(EgressWorkspaceId)
             -FolderName "integration-tests"
             -Force
+      
+      - task: PowerShell@2
+        displayName: 'Remove generated Automation-Testing workspaces'
+        inputs:
+          filePath: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/test-automation-cleanup/Remove-EgressWorkspacesByPrefix.ps1'
+          arguments: >
+            -BaseUrl $(EgressOptionsUrl)
+            -ServiceAccountAuth $(EgressServiceAccountAuth)
+            -WorkspaceNamePrefix "AUTOMATION-TESTING"
+            -Force
+    
+  - job: cleanup_shared_drive
+    steps:
+      - script: |
+          if command -v pwsh &> /dev/null; then 
+            echo "PowerShell already installed. Skipping installation."
+          else 
+            echo "Installing PowerShell..."
+            bash '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/installPowershell.sh'
+            echo "Powershel version: $(pwsh -v)"
+          fi
+        displayName: 'Install PowerShell'
+      
+      - task: PowerShell@2
+        displayName: 'Clear integration-tests NetApp folder'
+        inputs:
+          filePath: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/test-automation-cleanup/Clear-SharedDriveFolder.ps1'
+          arguments: >
+            -ClientId $(CallingAppValidAudience)
+            -TenantId $(TenantId)
+            -AadUsername $(AadUserName)
+            -AadPassword $(AadUserPassword)
+            -CaseId $(IntegrationTestsCaseId)
+            -FolderPath "integration-tests"
+
+
+
+      
   
