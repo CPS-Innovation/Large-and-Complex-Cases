@@ -39,17 +39,49 @@ jobs:
             -FolderName "integration-tests"
             -Force
 
-      - ${{ each folder in ["4. Served Evidence", "3. Unused - disclosed"] }}:
-        - task: PowerShell@2
-          displayName: 'Clear existingCaseAutomation Egress folder'
-          inputs:
-            filePath: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/test-automation-cleanup/Clear-EgressFolder.ps1'
-            arguments: >
-              -BaseUrl $(EgressOptionsUrl)
-              -ServiceAccountAuth $(EgressServiceAccountAuth)
-              -WorkspaceId $(E2eEgressWorkspaceId)
-              -FolderName ${{ folder }}
-              -Force
+      - task: PowerShell@2
+        displayName: 'Clear existingCaseAutomation Egress folders'
+        inputs:
+          targetType: 'inline'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/test-automation-cleanup'
+          script: |
+            $folders = @(
+              '3. Unused - disclosed'
+              '4. Served Evidence'
+            )
+
+            $failedFolders = @()
+
+            foreach ($folder in $folders) {
+              Write-Host "Attempting to clear contents of folder '$folder'..."
+
+              try {
+                & ./Clear-EgressFolder.ps1 `
+                  -BaseUrl "$(EgressOptionsUrl)" `
+                  -ServiceAccountAuth "$(EgressServiceAccountAuth)" `
+                  -WorkspaceId "$(E2eEgressWorkspaceId)" `
+                  -FolderName $folder `
+                  -Force
+              }
+              catch {
+                Write-Host "[ERROR] $_"
+                $failedFolders += @{
+                  folderName = $folder
+                  error = $_
+                }
+              }
+            }
+
+            if ($failedFolders.Count -gt 0) {
+              Write-Host "One or more folders failed to clear:"
+              foreach ($failed in $failedFolders) {
+                Write-Host " - $($failed.folderName) : $($failed.error) "
+              }
+
+              throw "Egress cleanup failed for $($failedFolders.Count) folder(s)."
+            }
+
+            Write-Host "All folders cleared successfully."
 
       # The following step is temporarily here while Kamesh is testing his E2E tests.
       # It can be moved to the CMRC repo once the E2E tests are available there.
