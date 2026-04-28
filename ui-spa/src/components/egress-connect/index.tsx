@@ -31,7 +31,7 @@ const EgressPage = () => {
 
   const egressSearchApi = useApi(
     getEgressSearchResults,
-    [`workspace-name=${workspaceName}`],
+    [workspaceName],
     false,
   );
 

@@ -409,7 +409,7 @@ public class EgressStorageClient(
 
     internal static string GetRelativePathFromSourceRoot(string relativePath, string? sourceRootFolderPath)
     {
-        return !string.IsNullOrEmpty(sourceRootFolderPath) && relativePath.StartsWith(sourceRootFolderPath) ?
+        return !string.IsNullOrEmpty(sourceRootFolderPath) && relativePath.StartsWith(sourceRootFolderPath, StringComparison.OrdinalIgnoreCase) ?
             relativePath.Substring(sourceRootFolderPath.Length).TrimStart('/', '\\') :
             relativePath;
     }

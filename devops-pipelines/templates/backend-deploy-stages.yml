@@ -1,235 +1,188 @@
 parameters:
   - name: environment
-    displayName: 'Target Environment'
+    displayName: "Target Environment"
     type: string
-    default: 'dev'
+    default: "dev"
     values:
       - dev
       - staging
       - prod
   - name: agentPool
     type: string
-    default: 'LACC PreProd Pool'
+    default: "LACC PreProd Pool"
     values:
-      - 'LACC PreProd Pool'
-      - 'LACC Prod Pool'
-  - name: deployMainAPI
-    type: boolean
-    default: true
-  - name: deployFileTransferAPI
-    type: boolean
-    default: true
+      - "LACC PreProd Pool"
+      - "LACC Prod Pool"
   - name: requireValidation
     type: boolean
     default: false
   - name: notifyUsers
     type: string
-    default: ''
+    default: ""
   - name: approvers
     type: string
-    default: ''
+    default: ""
   - name: azureSubscription
     type: string
-    default: 'Azure Pipeline: Large and Complex Cases - Pre-Prod'
+    default: "Azure Pipeline: Large and Complex Cases - Pre-Prod"
   - name: deployToSlot
     type: boolean
     default: false
   - name: slotName
     type: string
-    default: ''
+    default: ""
   - name: runPostmanSmokeTest
     type: boolean
     default: false
 
 stages:
-- stage: Approve_Deployment_${{ parameters.environment }}
-  displayName: '${{ parameters.environment }} - Approve Deployment'
-  condition: and(succeeded(), ${{ eq(parameters.requireValidation, true) }})
-  jobs:
-  - template: ./manual-validation-jobs.yml
-    parameters:
-      instructions: 'Please verify the deployment to the lower environment worked as expected before approving deployment to ${{parameters.environment}}.'
-      notifyUsers: ${{ parameters.notifyUsers }}
-      approvers: ${{ parameters.approvers }}
-      agentPool: ${{ parameters.agentPool }}
+  - ${{ if eq(parameters.requireValidation, true) }}:
+    - stage: Approve_Deployment_${{ parameters.environment }}
+      ${{ if eq(parameters.environment, 'staging') }}:
+        dependsOn: Deploy_Backend_dev
+      ${{ if eq(parameters.environment, 'prod') }}:
+        dependsOn: Deploy_Backend_staging
+      displayName: "${{ parameters.environment }} - Approve Deployment"
+      jobs:
+        - template: ./manual-validation-jobs.yml
+          parameters:
+            instructions: "Please verify the deployment to the lower environment worked as expected before approving deployment to ${{parameters.environment}}."
+            notifyUsers: ${{ parameters.notifyUsers }}
+            approvers: ${{ parameters.approvers }}
+            agentPool: ${{ parameters.agentPool }}
 
-- stage:  Update_Key_Vault_${{ parameters.environment }}
-  displayName: '${{ parameters.environment }} - Update Key Vault'
-  ${{ if eq(parameters.requireValidation, true) }}:
-    dependsOn: Approve_Deployment_${{ parameters.environment }}
-  ${{ else }}:
-    dependsOn: []
-  variables:
-  - template: ./variables/backend-deploy-vars.yml
-    parameters: 
-      environment: ${{ parameters.environment }}
-  pool: ${{ parameters.agentPool }}
-  jobs:
-    - job: Populate_KV
-      displayName: '${{ parameters.environment }} - Update Key Vault'
-      steps:
-        - checkout: self
-          sparseCheckoutDirectories: devops-pipelines/scripts
-          fetchDepth: 1
+  - stage: Deploy_Backend_${{ parameters.environment }}
+    ${{ if eq(parameters.requireValidation, true) }}:
+      dependsOn:
+        - Approve_Deployment_${{ parameters.environment }}
+        - Preflight # Stage 'Preflight' is defined in the caller pipeline
+    ${{ else }}:
+      dependsOn:
+        - Build_API # Stage 'Build_API' is defined in the caller pipeline
+        - Preflight
+    displayName: "${{ parameters.environment }} - Deploy Backend Services"
+    variables:
+      - name: runDbMigration # The Preflight stage outputs the flag 'runDbMigrationSteps'
+        value: $[ eq(stageDependencies.Preflight.Check_DB_Diff.outputs['Diff_Check.runDbMigrationSteps'],'true') ]
+      - template: ./variables/backend-deploy-vars.yml
+        parameters:
+          environment: ${{ parameters.environment }}
+      - template: ./variables/fa-config-${{parameters.environment}}.yml
+      - ${{ if eq(parameters.runPostmanSmokeTest, true) }}:
+          - group: lacc-automated-testing-${{ parameters.environment }}
+          - group: lacc-backend-secrets-${{ parameters.environment }}
+    pool: ${{ parameters.agentPool }}
+    jobs:
+      - deployment: Deploy_Database_Changes
+        displayName: "${{ parameters.environment }} - Deploy Database Changes"
+        environment: "LACC-Backend-${{ parameters.environment }}"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - bash: |
+                    echo "Database migration is not required. The next steps will be skipped."
+                  condition: eq(variables.runDbMigration, 'false')
+                  displayName: "Print skip message"
 
-        - task: Bash@3
-          displayName: 'Ensure Azure CLI'
-          inputs:
-            targetType: 'inline'
-            script: |
-              echo "Checking if Azure CLI is installed..."
-              
-              # Check if az command exists
-              if command -v az &> /dev/null; then
-                echo "Azure CLI is already installed"
-                az --version
-                exit 0
-              fi
+                - checkout: self
+                  condition: eq(variables.runDbMigration, 'true')
+                  sparseCheckoutDirectories: devops-pipelines/scripts
+                  fetchDepth: 1
 
-              echo "Azure CLI not found, installing..."
-              bash $(scripts_directory)/installAzureCli.sh   
+                - task: Bash@3
+                  condition: eq(variables.runDbMigration, 'true')
+                  displayName: "Ensure Azure CLI"
+                  inputs:
+                    targetType: "inline"
+                    script: |
+                      echo "Checking if Azure CLI is installed..."
 
-        - task: AzureCLI@2
-          displayName: '${{ parameters.environment }} - Initialize Key Vault Secrets from Variable Groups'
-          inputs:
-            azureSubscription: ${{ parameters.azureSubscription }}
-            scriptType: 'bash'
-            scriptLocation: 'inlineScript'
-            inlineScript: |
-              bash $(scripts_directory)/populateKV.sh
-          env:
-            KEY_VAULT_NAME: $(keyVaultName)
-            CASE_MANAGEMENT_DATASTORE_CONNECTION: $(CaseManagementDatastoreConnection)
-            EGRESS_OPTIONS_USERNAME: $(EgressOptionsUsername)
-            EGRESS_OPTIONS_PASSWORD: $(EgressOptionsPassword)
-            DDEI_OPTIONS_ACCESS_KEY: $(DDEIOptionsAccessKey)
-            NET_APP_OPTIONS_ROOT_CA_CERT: $(NetAppOptionsRootCaCert)
-            NET_APP_OPTIONS_ISSUING_CA_CERT: $(NetAppOptionsIssuingCaCert)
-            NET_APP_OPTIONS_ISSUING_CA_CERT2: $(NetAppOptionsIssuingCaCert2)
-            FILE_TRANSFER_API_OPTIONS_ACCESS_KEY: $(FileTransferApiOptionsAccessKey)
+                      # Check if az command exists
+                      if command -v az &> /dev/null; then
+                        echo "Azure CLI is already installed"
+                        az --version
+                        exit 0
+                      fi
 
-- stage:  Database_Migration_${{ parameters.environment }}
-  displayName: '${{ parameters.environment }} - Database Migration'
-  dependsOn: Update_Key_Vault_${{ parameters.environment }}
-  variables:
-  - template: ./variables/backend-deploy-vars.yml
-    parameters: 
-      environment: ${{ parameters.environment }}
-  pool: ${{ parameters.agentPool }}
-  jobs:
-    - deployment: Deploy_Database_Changes
-      displayName: '${{ parameters.environment }} - Deploy Database Changes'
-      environment: 'LACC-Backend-${{ parameters.environment }}'
-      strategy:
-        runOnce:
-          deploy:
-            steps:
-              - checkout: self
-                sparseCheckoutDirectories: devops-pipelines/scripts
-                fetchDepth: 1
+                      echo "Azure CLI not found, installing..."
+                      bash $(scripts_directory)/installAzureCli.sh
 
-              - task: Bash@3
-                displayName: 'Ensure Azure CLI'
-                inputs:
-                  targetType: 'inline'
-                  script: |
-                    echo "Checking if Azure CLI is installed..."
-                    
-                    # Check if az command exists
-                    if command -v az &> /dev/null; then
-                      echo "Azure CLI is already installed"
-                      az --version
-                      exit 0
-                    fi
+                - download: current
+                  artifact: "database-scripts-drop"
+                  condition: eq(variables.runDbMigration, 'true')
 
-                    echo "Azure CLI not found, installing..."
-                    bash $(scripts_directory)/installAzureCli.sh 
+                - task: AzureCLI@2
+                  condition: eq(variables.runDbMigration, 'true')
+                  displayName: "Run Database Migration"
+                  inputs:
+                    azureSubscription: ${{ parameters.azureSubscription }}
+                    scriptType: "bash"
+                    scriptLocation: "inlineScript"
+                    inlineScript: |
+                      # Get the clientId of the service principal used for the current deployment 
+                      appId=$(az account show --query user.name -o tsv)
 
-              - download: build
-                artifact: 'database-scripts-drop'
+                      # Get the service principal's app registration display name
+                      export SERVICE_PRINCIPAL=$(az ad app show --id "$appId" --query displayName -o tsv 2>/dev/null || true)
 
-              - task: AzureCLI@2
-                displayName: 'Run Database Migration'
-                inputs:
-                  azureSubscription: ${{ parameters.azureSubscription }}
-                  scriptType: 'bash'
-                  scriptLocation: 'inlineScript'
-                  inlineScript: |
-                    # Get the clientId of the service principal used for the current deployment 
-                    appId=$(az account show --query user.name -o tsv)
+                      if [ -z "$SERVICE_PRINCIPAL" ]; then
+                        echo "Service Principal's display name could not be found."
+                        exit 1
+                      fi
 
-                    # Get the service principal's app registration display name
-                    export SERVICE_PRINCIPAL=$(az ad app show --id "$appId" --query displayName -o tsv 2>/dev/null || true)
+                      echo "Service Principal display name: $SERVICE_PRINCIPAL"
 
-                    if [ -z "$SERVICE_PRINCIPAL" ]; then
-                      echo "Service Principal's display name could not be found."
-                      exit 1
-                    fi
+                      bash $(scripts_directory)/updateDatabase.sh
+                  env:
+                    KEY_VAULT_NAME: $(keyVaultName)
+                    MIGRATION_SCRIPT_PATH: "$(Pipeline.Workspace)/database-scripts-drop/migration-script.sql"
 
-                    echo "Service Principal display name: $SERVICE_PRINCIPAL"
+                - template: ./runner-cleanup-steps.yml
+                  parameters:
+                    condition: eq(variables.runDbMigration, 'true')
+                    buildArtifact: "database-scripts-drop"
 
-                    bash $(scripts_directory)/updateDatabase.sh
-                env:
-                  KEY_VAULT_NAME: $(keyVaultName)
-                  MIGRATION_SCRIPT_PATH: '$(Pipeline.Workspace)/build/database-scripts-drop/migration-script.sql'
-              
-              - template: ./runner-cleanup-steps.yml
-                parameters:
-                  buildArtifact: 'build'
+      - deployment: Deploy_Main_API
+        dependsOn: Deploy_Database_Changes
+        displayName: "${{ parameters.environment }} - Deploy Main API Function App"
+        environment: "LACC-Backend-${{ parameters.environment }}"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: ./fa-deploy-steps.yml
+                  parameters:
+                    environment: ${{ parameters.environment }}
+                    azureSubscription: ${{ parameters.azureSubscription }}
+                    functionAppName: "fa-lacc-api-${{ parameters.environment }}"
+                    buildArtifactName: "lacc-main-api-drop"
+                    deployToSlot: ${{ parameters.deployToSlot }}
+                    slotName: ${{ parameters.slotName }}
+                    runPostmanSmokeTest: ${{ parameters.runPostmanSmokeTest }}
+                    postmanCollectionPath: "$(System.DefaultWorkingDirectory)/backend/postman/LCCMainAPISmokeTest.postman_collection.json"
 
-- stage:  Deploy_Function_Apps_${{ parameters.environment }}
-  displayName: '${{ parameters.environment }} - Deploy Function Apps'
-  dependsOn: Database_Migration_${{ parameters.environment }}
-  variables:
-  - template: ./variables/backend-deploy-vars.yml
-    parameters: 
-      environment: ${{ parameters.environment }}
-  - ${{ if eq(parameters.runPostmanSmokeTest, true) }}:
-    - group: lacc-automated-testing-${{ parameters.environment }}
-  pool: ${{ parameters.agentPool }}
-  jobs:
-    - deployment: Deploy_Main_API
-      displayName: '${{ parameters.environment }} - Deploy Main API Function App'
-      condition: ${{ eq(parameters.deployMainAPI, true) }}
-      environment: 'LACC-Backend-${{ parameters.environment }}'
-      strategy:
-        runOnce:
-          deploy:
-            steps:
-              - template: ./fa-deploy-steps.yml
-                parameters:
-                  environment: ${{ parameters.environment }}
-                  azureSubscription: ${{ parameters.azureSubscription }}
-                  functionAppName: 'fa-lacc-api-${{ parameters.environment }}'
-                  pipelineResourceAlias: 'build'
-                  buildArtifactName: 'lacc-main-api-drop'
-                  deployToSlot: ${{ parameters.deployToSlot }}
-                  slotName: ${{ parameters.slotName }}
-                  runPostmanSmokeTest: ${{ parameters.runPostmanSmokeTest }}
-                  postmanCollectionPath: '$(System.DefaultWorkingDirectory)/backend/postman/LCCMainAPISmokeTest.postman_collection.json'
-                  
-              - template: ./runner-cleanup-steps.yml
-                parameters:
-                  buildArtifact: 'build'
+                - template: ./runner-cleanup-steps.yml
+                  parameters:
+                    buildArtifact: "lacc-main-api-drop"
 
-    - deployment: Deploy_FileTransfer_API
-      displayName: '${{ parameters.environment }} - Deploy FileTransfer API Function App'
-      condition: ${{ eq(parameters.deployFileTransferAPI, true) }}
-      environment: 'LACC-Backend-${{ parameters.environment }}'
-      strategy:
-        runOnce:
-          deploy:
-            steps:
-              - template: ./fa-deploy-steps.yml
-                parameters:
-                  environment: ${{ parameters.environment }}
-                  azureSubscription: ${{ parameters.azureSubscription }}
-                  functionAppName: 'fa-lacc-filetransfer-api-${{ parameters.environment }}'
-                  pipelineResourceAlias: 'build'
-                  buildArtifactName: 'lacc-filetransfer-api-drop'
-                  deployToSlot: ${{ parameters.deployToSlot }}
-                  slotName: ${{ parameters.slotName }}  
-              
-              - template: ./runner-cleanup-steps.yml
-                parameters:
-                  buildArtifact: 'build'
+      - deployment: Deploy_FileTransfer_API
+        dependsOn: Deploy_Database_Changes
+        displayName: "${{ parameters.environment }} - Deploy FileTransfer API Function App"
+        environment: "LACC-Backend-${{ parameters.environment }}"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: ./fa-deploy-steps.yml
+                  parameters:
+                    environment: ${{ parameters.environment }}
+                    azureSubscription: ${{ parameters.azureSubscription }}
+                    functionAppName: "fa-lacc-filetransfer-api-${{ parameters.environment }}"
+                    buildArtifactName: "lacc-filetransfer-api-drop"
+                    deployToSlot: ${{ parameters.deployToSlot }}
+                    slotName: ${{ parameters.slotName }}
+
+                - template: ./runner-cleanup-steps.yml
+                  parameters:
+                    buildArtifact: "lacc-filetransfer-api-drop"

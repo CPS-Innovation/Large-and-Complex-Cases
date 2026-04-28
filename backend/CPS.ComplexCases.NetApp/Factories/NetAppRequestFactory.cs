@@ -37,18 +37,6 @@ public class NetAppRequestFactory : INetAppRequestFactory
         };
     }
 
-    public PutObjectRequest CreateFolderRequest(CreateFolderArg arg)
-    {
-        var folderName = arg.FolderKey.EndsWith(S3Constants.Delimiter) ? arg.FolderKey : arg.FolderKey + S3Constants.Delimiter;
-
-        return new PutObjectRequest
-        {
-            BucketName = arg.BucketName,
-            Key = $"{folderName}{S3Constants.TempFileName}",
-            InputStream = new MemoryStream([]),
-        };
-    }
-
     public InitiateMultipartUploadRequest CreateMultipartUploadRequest(InitiateMultipartUploadArg arg)
     {
         return new InitiateMultipartUploadRequest
@@ -126,7 +114,7 @@ public class NetAppRequestFactory : INetAppRequestFactory
             BucketName = arg.BucketName,
             ContinuationToken = arg.ContinuationToken,
             MaxKeys = !string.IsNullOrEmpty(arg.MaxKeys) ? int.Parse(arg.MaxKeys) : 1000,
-            Delimiter = S3Constants.Delimiter,
+            Delimiter = arg.IncludeDelimiter ? S3Constants.Delimiter : "",
             Prefix = arg.Prefix,
         };
     }

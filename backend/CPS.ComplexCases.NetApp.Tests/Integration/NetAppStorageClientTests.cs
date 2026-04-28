@@ -75,7 +75,7 @@ public class NetAppStorageClientTests : IDisposable
             .ReturnsAsync(new AmazonS3Client(credentials, s3ClientConfig));
 
         _netAppClient = new Mock<INetAppClient>();
-        _client = new NetAppStorageClient(_netAppClient.Object, _netAppArgFactoryMock.Object, _caseMetadataServiceMock.Object, _netAppS3HttpClientMock.Object, _netAppS3HttpArgFactoryMock.Object);
+        _client = new NetAppStorageClient(_netAppClient.Object, _netAppArgFactoryMock.Object, _caseMetadataServiceMock.Object, _netAppS3HttpClientMock.Object, _netAppS3HttpArgFactoryMock.Object, new Mock<Microsoft.Extensions.Logging.ILogger<NetAppStorageClient>>().Object);
     }
 
     [Fact]

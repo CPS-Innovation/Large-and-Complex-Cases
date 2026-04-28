@@ -24,6 +24,22 @@ stages:
   - stage: Build_And_Test_Backend
     displayName: 'Build, Test & Package'
     jobs:
+      - job: Check_DB_Diff
+        displayName: 'Check for Database Migration Changes'
+        steps:
+          - checkout: self
+            fetchDepth: 0
+
+          - task: Bash@3
+            name: Diff_Check
+            displayName: 'Detect Database Migration Changes'
+            inputs:
+              targetType: filePath
+              filePath: $(System.DefaultWorkingDirectory)/devops-pipelines/scripts/detectGitDiff.sh
+            env:
+              PATH_TO_CHECK: $(System.DefaultWorkingDirectory)/backend/CPS.ComplexCases.Data/Migrations
+              OUTPUT_VAR_NAME: packageDatabase
+
       - job: Package_NuGet
         displayName: 'Pack and Publish NuGet Package'
         steps:
@@ -37,24 +53,17 @@ stages:
               publishOutput: false
               runTests: false
 
-          - script: |
-              mkdir -p $(Build.SourcesDirectory)/localnuget
-              rm -f $(Build.SourcesDirectory)/localnuget/*.nupkg
-            displayName: 'Prepare local NuGet directory'
-
           - task: DotNetCoreCLI@2
             displayName: 'Pack HttpTelemetry'
             inputs:
               command: 'pack'
               packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-              outputDir: '$(Build.SourcesDirectory)/localnuget'
+              outputDir: '$(Build.ArtifactStagingDirectory)'
               arguments: '--configuration $(buildConfiguration) --no-build'
 
-          - task: PublishPipelineArtifact@1
+          - publish: '$(Build.ArtifactStagingDirectory)'
+            artifact: 'localnuget'
             displayName: 'Publish HttpTelemetry Package'
-            inputs:
-              targetPath: '$(Build.SourcesDirectory)/localnuget'
-              artifact: 'localnuget'
 
       - job: Build_And_Test_Solution
         displayName: 'Build & Test Solution'
@@ -103,7 +112,10 @@ stages:
 
       - job: Package_Database_Scripts
         displayName: 'Package Database Migration Scripts'
-        dependsOn: Build_And_Test_Solution
+        dependsOn: 
+        - Build_And_Test_Solution
+        - Check_DB_Diff
+        condition: and(succeeded(), eq(dependencies.Check_DB_Diff.outputs['Diff_Check.packageDatabase'], 'true'))
         steps:
           # Build Data project with dependencies
           - template: ../templates/dotnet-build-steps.yml

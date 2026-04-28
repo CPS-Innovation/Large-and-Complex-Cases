@@ -273,9 +273,13 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
         {
             ActionType.ConnectionToEgress => $"Connected to Egress workspace {resourceName}",
             ActionType.ConnectionToNetApp => $"Connected to NetApp folder {resourceName}",
+            ActionType.DisconnectionFromNetApp => $"Disconnected from NetApp folder {resourceName}",
             ActionType.TransferInitiated => $"Transfer initiated between {resourceName}",
             ActionType.TransferCompleted => $"Transfer completed between {resourceName}",
             ActionType.TransferFailed => $"Transfer failed between {resourceName}",
+            ActionType.FolderDeleted => "Folder(s) deleted",
+            ActionType.MaterialDeleted => "Material(s) deleted",
+            ActionType.FolderAndMaterialDeleted => "Folder(s) and material(s) deleted",
             _ => $"Performed action {actionType} on resource {resourceName}"
         };
     }

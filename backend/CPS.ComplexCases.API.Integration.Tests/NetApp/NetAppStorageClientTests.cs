@@ -38,7 +38,8 @@ public class NetAppStorageClientTests : IClassFixture<IntegrationTestFixture>, I
             _fixture.NetAppArgFactory!,
             _caseMetadataServiceMock.Object,
             _fixture.NetAppS3HttpClient!,
-            _fixture.NetAppS3HttpArgFactory!);
+            _fixture.NetAppS3HttpArgFactory!,
+            new Microsoft.Extensions.Logging.Abstractions.NullLogger<NetAppStorageClient>());
 
         var bearerToken = await _fixture.GetUserDelegatedBearerTokenAsync();
 
@@ -61,7 +62,8 @@ public class NetAppStorageClientTests : IClassFixture<IntegrationTestFixture>, I
             bearerToken,
             _fixture.NetAppBucketName!,
             "integration-test-cleanup",
-            _testFolderPrefix);
+            _testFolderPrefix,
+            isFolder: true);
 
         await _fixture.NetAppClient!.DeleteFileOrFolderAsync(deleteArg);
     }

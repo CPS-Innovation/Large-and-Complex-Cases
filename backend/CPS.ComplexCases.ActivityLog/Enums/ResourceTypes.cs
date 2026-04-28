@@ -5,6 +5,8 @@ namespace CPS.ComplexCases.ActivityLog.Enums
         FileTransfer,
         TransferItem,
         TransferItemPart,
-        StorageConnection
+        StorageConnection,
+        NetAppFolder,
+        Material
     }
 }

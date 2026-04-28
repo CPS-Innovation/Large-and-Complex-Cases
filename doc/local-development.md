@@ -66,6 +66,8 @@ VITE_CLIENT_ID=<Azure AD client id>
 VITE_TENANT_ID=<Azure AD tenant id>
 VITE_MOCK_AUTH=<true|false>
 VITE_FEATURE_FLAG_TRANSFER_MOVE=<true|false>
+VITE_FEATURE_FLAG_GLOBAL_NAV=<true|false>
+VITE_GLOBAL_NAV_SCRIPT_URL=<GLOBAL NAV URL>
 ```
 **Sample `.env.local` file:**
 ```
@@ -76,6 +78,8 @@ VITE_CLIENT_ID=your-client-id
 VITE_TENANT_ID=your-tenant-id
 VITE_MOCK_AUTH=true
 VITE_FEATURE_FLAG_TRANSFER_MOVE=true
+VITE_FEATURE_FLAG_GLOBAL_NAV=false
+VITE_GLOBAL_NAV_SCRIPT_URL=
 ```
 **To use:**  
 - Create a `.env.local` file in `ui-spa/` and set the above variables as needed.

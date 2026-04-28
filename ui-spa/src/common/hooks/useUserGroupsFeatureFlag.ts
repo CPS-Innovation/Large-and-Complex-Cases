@@ -2,6 +2,8 @@ import { msalInstance } from "../../auth/msal/msalInstance";
 import {
   FEATURE_FLAG_CASE_DETAILS,
   FEATURE_FLAG_TRANSFER_MOVE,
+  FEATURE_FLAG_GLOBAL_NAV,
+  GLOBAL_NAV_SCRIPT_URL,
   PRIVATE_BETA_FEATURE_USER_GROUP2,
 } from "../../config";
 import { useUserDetails } from "../../auth";
@@ -53,6 +55,15 @@ export const useUserGroupsFeatureFlag = (): FeatureFlagData => {
         userDetails.username,
         FEATURE_FLAG_TRANSFER_MOVE,
         searchParams?.get("transfer-move"),
+        {
+          groups: groups,
+          groupKey: PRIVATE_BETA_FEATURE_USER_GROUP2,
+        },
+      ),
+      globalNav: shouldShowFeature(
+        userDetails.username,
+        FEATURE_FLAG_GLOBAL_NAV && !!GLOBAL_NAV_SCRIPT_URL,
+        searchParams?.get("global-nav"),
         {
           groups: groups,
           groupKey: PRIVATE_BETA_FEATURE_USER_GROUP2,

@@ -2,6 +2,10 @@ import { useState } from "react";
 import {
   ActivityLogResponse,
   ActivityItem,
+  BatchDeleteDetails,
+  TransferDetails,
+  isBatchDeleteDetails,
+  isTransferDetails,
 } from "../../../common/types/ActivityLogResponse";
 import { Details, Tag, Button } from "../../govuk";
 import RelativePathFiles from "./RelativePathFiles";
@@ -87,6 +91,114 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
       showDownloadResult(activityId, "File list download failed");
     }
   };
+
+  const renderTransferDetails = (
+    activityId: string,
+    timestamp: string,
+    details: TransferDetails,
+  ) => (
+    <div>
+      <div>
+        <div className={styles.locationData} data-testid="transfer-source">
+          <span className={styles.locationTitle}>Source:</span>
+          <span className={styles.locationPath}>
+            {getCleanPath(details.sourcePath).replace(/\//g, " > ")}
+          </span>
+        </div>
+        <div
+          className={styles.locationData}
+          data-testid="transfer-destination"
+        >
+          <span className={styles.locationTitle}>Destination:</span>
+          <span className={styles.locationPath}>
+            {getCleanPath(details.destinationPath).replace(/\//g, " > ")}
+          </span>
+        </div>
+      </div>
+
+      {(!!details.files.length || !!details.errors.length) && (
+        <div>
+          <p>Below is a list of documents/folders copied:</p>
+          <Details summaryChildren="View files">
+            <RelativePathFiles
+              successFiles={details.files}
+              errorFiles={details.errors}
+              sourcePath={details.sourcePath}
+            />
+          </Details>
+          <div className={styles.downloadBtnWrapper}>
+            <Button
+              className={styles.downloadBtn}
+              onClick={() => handleDownload(activityId, timestamp)}
+            >
+              Download the list of files (.csv)
+            </Button>
+            {downloadTooltipTexts[`${activityId}`] && (
+              <div
+                className={styles.tooltip}
+                data-testid="activity-download-tooltip"
+              >
+                <span>{downloadTooltipTexts[`${activityId}`]}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderBatchDeleteDetails = (details: BatchDeleteDetails) => (
+    <div>
+      <Details summaryChildren="View deleted items">
+        <ul className={styles.batchDeleteList}>
+          {details.items.map((item, i) => (
+            <li key={i} className={styles.batchDeleteItem}>
+              <span className={styles.batchDeletePath}>
+                {getCleanPath(item.sourcePath).replace(/\//g, " > ")}
+              </span>
+              <Tag
+                gdsTagColour={
+                  item.outcome === "Deleted"
+                    ? "green"
+                    : item.outcome === "NotFound"
+                      ? "grey"
+                      : "red"
+                }
+                className={styles.batchDeleteTag}
+                data-testid="batch-delete-outcome-tag"
+              >
+                {item.outcome}
+              </Tag>
+              {item.error && (
+                <span
+                  className={styles.batchDeleteError}
+                  data-testid="batch-delete-error"
+                >
+                  {item.error}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </Details>
+    </div>
+  );
+
+  const renderDetails = (activity: ActivityItem) => {
+    const { details } = activity;
+    if (!details) return null;
+
+    if (isTransferDetails(details)) {
+      return renderTransferDetails(activity.id, activity.timestamp, details);
+    }
+
+    if (isBatchDeleteDetails(details)) {
+      return renderBatchDeleteDetails(details);
+    }
+
+    return null;
+  };
+
   return (
     <div
       className={styles.activitiesTimeline}
@@ -112,68 +224,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
             {formatDate(activity.timestamp, true)}
           </span>
 
-          {activity.details && (
-            <div>
-              <div>
-                <div
-                  className={styles.locationData}
-                  data-testid="transfer-source"
-                >
-                  <span className={styles.locationTitle}>Source:</span>
-                  <span className={styles.locationPath}>
-                    {getCleanPath(activity.details.sourcePath).replace(
-                      /\//g,
-                      " > ",
-                    )}
-                  </span>
-                </div>
-                <div
-                  className={styles.locationData}
-                  data-testid="transfer-destination"
-                >
-                  <span className={styles.locationTitle}>Destination:</span>
-                  <span className={styles.locationPath}>
-                    {getCleanPath(activity.details.destinationPath).replace(
-                      /\//g,
-                      " > ",
-                    )}
-                  </span>
-                </div>
-              </div>
-
-              {(!!activity.details.files.length ||
-                !!activity.details.errors.length) && (
-                <div>
-                  <p>Below is a list of documents/folders copied:</p>
-                  <Details summaryChildren="View files">
-                    <RelativePathFiles
-                      successFiles={activity.details.files}
-                      errorFiles={activity.details.errors}
-                      sourcePath={activity.details.sourcePath}
-                    />
-                  </Details>
-                  <div className={styles.downloadBtnWrapper}>
-                    <Button
-                      className={styles.downloadBtn}
-                      onClick={() =>
-                        handleDownload(activity.id, activity.timestamp)
-                      }
-                    >
-                      Download the list of files (.csv)
-                    </Button>
-                    {downloadTooltipTexts[`${activity.id}`] && (
-                      <div
-                        className={styles.tooltip}
-                        data-testid="activity-download-tooltip"
-                      >
-                        <span>{downloadTooltipTexts[`${activity.id}`]}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+          {renderDetails(activity)}
         </section>
       ))}
     </div>
