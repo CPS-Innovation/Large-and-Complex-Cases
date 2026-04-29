@@ -1,10 +1,9 @@
 schedules:
   - cron: '0 3 * * *'
-    displayName: 'Daily 3am cleanup'
+    displayName: 'Daily 3am UTC cleanup'
     branches:
       include:
         - main
-        - task/FCT2-16748_cleanup-automated-testing-uploaded-files # only for testing cron trigger
     always: true
 
 trigger: none
@@ -16,8 +15,8 @@ variables:
   - group: lacc-backend-config-dev
 
 jobs:
-  - job: cleanup_egress_account
-    displayName: 'Cleanup Egress Account'
+  - job: cleanup_test_files
+    displayName: 'Cleanup Test Files from Egress and Shared Drive'
     steps:
       - script: |
           if command -v pwsh &> /dev/null; then 
@@ -42,6 +41,7 @@ jobs:
 
       - task: PowerShell@2
         displayName: 'Clear existingCaseAutomation Egress folders'
+        condition: succeededOrFailed()
         inputs:
           targetType: 'inline'
           workingDirectory: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/test-automation-cleanup'
@@ -89,6 +89,7 @@ jobs:
       # In Transfer Materials we won't be creating new Egress Workspaces
       - task: PowerShell@2
         displayName: 'Remove generated Automation-Testing workspaces'
+        condition: succeededOrFailed()
         inputs:
           filePath: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/test-automation-cleanup/Remove-EgressWorkspacesByPrefix.ps1'
           arguments: >
@@ -96,22 +97,10 @@ jobs:
             -ServiceAccountAuth $(EgressServiceAccountAuth)
             -WorkspaceNamePrefix "AUTOMATION-TESTING"
             -Force
-    
-  - job: cleanup_shared_drive
-    displayName: 'Cleanup Shared Drive (NetApp)'
-    steps:
-      - script: |
-          if command -v pwsh &> /dev/null; then 
-            echo "PowerShell already installed. Skipping installation."
-          else 
-            echo "Installing PowerShell..."
-            bash '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/installPowershell.sh'
-            echo "Powershel version: $(pwsh -v)"
-          fi
-        displayName: 'Install PowerShell'
 
       - task: PowerShell@2
         displayName: 'Clear integration-tests NetApp folder'
+        condition: succeededOrFailed()
         inputs:
           filePath: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/test-automation-cleanup/Clear-SharedDriveFolder.ps1'
           arguments: >
@@ -127,6 +116,7 @@ jobs:
 
       # - task: PowerShell@2
       #   displayName: 'Clear E2E tests NetApp folder'
+      #   condition: succeededOrFailed()
       #   inputs:
       #     filePath: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/test-automation-cleanup/Clear-SharedDriveFolder.ps1'
       #     arguments: >
