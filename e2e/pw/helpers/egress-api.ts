@@ -46,7 +46,12 @@ export async function listAutomationWorkspaces(
       `${baseUrl}/api/v1/workspaces/?page=${page}&page_size=${pageSize}&view=full`,
       { headers: { Authorization: `Basic ${token}` } }
     );
-    if (!response.ok) break;
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(
+        `Egress workspace list failed (page ${page}, status ${response.status}): ${text}`
+      );
+    }
 
     const body: {
       data?: { id: string; name: string; date_created?: string }[];
@@ -84,7 +89,12 @@ export async function findNextWorkspaceName(
       { headers: { Authorization: `Basic ${token}` } }
     );
 
-    if (!response.ok) break;
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(
+        `Egress workspace list failed (page ${page}, status ${response.status}): ${text}`
+      );
+    }
 
     // Documented shape: { data: ListWorkspacesResponseData[], data_info: {...} }
     // See backend/CPS.ComplexCases.Egress/Models/Response/FindWorkspaceResponse.cs

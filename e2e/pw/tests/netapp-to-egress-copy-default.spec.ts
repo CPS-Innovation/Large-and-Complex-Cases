@@ -4,6 +4,7 @@ import { SearchResultsPage } from "../pages/SearchResultsPage";
 import { CaseManagementPage } from "../pages/CaseManagementPage";
 import { TransferMaterialsTab } from "../pages/TransferMaterialsTab";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
+import { NETAPP_FIXTURE_FILENAME } from "../helpers/constants";
 
 test.describe("NetApp to Egress Copy (Default Mode)", () => {
   test("should copy files from NetApp to Egress using existing case", async ({
@@ -32,22 +33,13 @@ test.describe("NetApp to Egress Copy (Default Mode)", () => {
     await transferTab.switchToNetAppSource();
     await transferTab.waitForNetAppFiles();
 
-    // Sort by Last modified date (two clicks intended to land descending).
-    // We don't validate the sort because some accumulated NetApp content
-    // is fine as a source — the per-run timestamped destination subfolder
-    // means any file copies into a unique location.
-    const dateHeader = page
-      .getByTestId("netapp-table-wrapper")
-      .getByRole("button", { name: "Last modified date" });
-    await dateHeader.click();
-    await transferTab.waitForNetAppFiles();
-    await dateHeader.click();
-    await transferTab.waitForNetAppFiles();
+    // Select the canonical NetApp fixture file by exact name. Throws a
+    // clear "fixture missing" error if not seeded. See README "Required
+    // NetApp fixture" for setup.
+    await transferTab.selectNetAppFileByExactName(NETAPP_FIXTURE_FILENAME);
 
-    await transferTab.selectNetAppFiles([0]);
-
-    // Egress destination — different parent folder than the upload source,
-    // then per-run subfolder so repeat runs never collide on destination.
+    // Egress destination — different parent folder than upload source,
+    // per-run timestamped subfolder so repeat runs never collide.
     await transferTab.navigateToFolder("2. Counsel only");
     await transferTab.waitForEgressFiles();
     if (uploadSubfolder) {

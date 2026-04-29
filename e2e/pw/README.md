@@ -18,9 +18,15 @@ Tests run in two modes:
 | Egress to NetApp Copy | 100MB x 1 | ✓ | ✓ |
 | Egress to NetApp Copy - Large | 200MB x 1 | ✓ | ✓ |
 | Egress to NetApp Copy - Multifile | 50MB x 3 | -- | ✓ |
-| Egress to NetApp Move | 100MB x 1 | skipped | skipped |
-| NetApp to Egress Copy | 100MB x 1 | ✓ | ✓ |
+| Egress to NetApp Move | 100MB x 1 | ✓ | ✓ |
+| NetApp to Egress Copy | 100MB x 1 | ✓ (uses seeded fixture) | ✓ (sort + row 0) |
 | Full Flow (login, search, connect) | 100MB x 1 | -- | ✓ |
+
+NetApp -> Egress Move is descoped — the product UI doesn't expose a Move
+button in that direction (`EgressFolderContainer.tsx` has no Move
+references; only `NetAppFolderContainer.tsx` does, gated on the
+`transferMove` feature flag, which renders Move in the Egress -> NetApp
+direction only).
 
 ## Project Structure
 
@@ -35,16 +41,24 @@ e2e/pw/
   helpers/
     auth-api.ts                       # Azure AD + CMS authentication
     case-api.ts                       # Case registration API
-    egress-api.ts                     # Egress workspace, upload, folder management
+    egress-api.ts                     # Egress workspace, upload, folder, delete helpers
+    netapp-api.ts                     # NetApp file delete (per-test cleanup, default mode)
     env-config.ts                     # Environment variable loader
-    constants.ts                      # Non-sensitive shared Egress IDs
+    constants.ts                      # NETAPP_FIXTURE_FILENAME, REGISTER_CASE_NETAPP_FOLDER, Egress IDs
+    register-case-state.ts            # Shared state file paths for the setup project
     types.ts                          # TypeScript type definitions
   pages/                              # Page Object Models
   tests/
     register-case.setup.ts            # Setup project: register + connect once per run
+    register-case.teardown.ts         # 24h workspace sweep, run after register-case-tests
+    seed-netapp-fixture.setup.ts      # Opt-in NetApp source seed (RUN_SEED=1 to fire)
     *-default.spec.ts                 # Default-mode specs (DEFAULT_WORKSPACE_ID)
     *.spec.ts                         # Register-case specs (consume setup state)
-  playwright.config.ts                # Three projects: setup, register-case, default-mode
+  scripts/
+    upload-to-workspace.ts            # Standalone Egress upload tool (ad-hoc seeding)
+  playwright.config.ts                # 5 projects: register-case-setup,
+                                      # register-case-teardown, register-case-tests,
+                                      # default-mode-tests, seed-netapp-fixture
   .env.template
 ```
 
@@ -73,6 +87,69 @@ e2e/pw/
 
 4. Fill in credentials in `.env.local` (this file is git-ignored).
 
+5. **Seed the canonical NetApp fixture** — required only for the
+   default-mode `netapp-to-egress-copy-default.spec.ts` (see "Required
+   NetApp fixture" below). Register-case mode doesn't need it.
+
+## Default-mode workspace + NetApp folder convention
+
+For existing-case (default) mode, the Egress workspace and the connected
+NetApp folder both use the name **`existingCaseAutomation`**. Provision
+the pair once per environment and reuse it across all default-mode
+runs. Set `DEFAULT_WORKSPACE_NAME` and `NETAPP_OPERATION_NAME` to
+`existingCaseAutomation`, and fill in the corresponding workspace id +
+case id/urn in the other `DEFAULT_*` variables.
+
+Register-case mode is independent: it creates a fresh
+`AUTOMATION-TESTING<N>-<random>` workspace per run and connects to the
+shared `Automation-Testing` NetApp folder (hardcoded in
+`helpers/constants.ts` as `REGISTER_CASE_NETAPP_FOLDER`).
+`NETAPP_OPERATION_NAME` is not read by the register-case fixture.
+
+## Required NetApp fixture
+
+The default-mode `netapp-to-egress-copy-default.spec.ts` needs a
+deterministic source file. Picking the newest row of NetApp's listing
+isn't viable in default mode: the panel doesn't toggle descending date
+sort, has no search/filter, and pagination isn't triggered by Playwright
+scrolls — so a just-uploaded file is buried, and the existing
+accumulated `generated-100MB-2026-01-20-12-23-11.txt` at row 0 hits a
+backend transfer-rejection state.
+
+The contract: a single canonical file lives at
+`existingCaseAutomation/lcc-e2e-fixture-source.txt` on the shared drive.
+The default-mode spec selects this file by exact name and fails fast
+with a clear "fixture missing" message if it isn't present.
+
+**Register-case mode does not need the fixture.** Its destination
+Egress workspace is fresh per run, so there's no name-collision concern;
+the register-case `netapp-to-egress-copy.spec.ts` keeps its sort + row-0
+selection and is hermetic in spite of dependeing on whatever's at the
+top of NetApp's listing.
+
+Seed it once per environment (opt-in — the seed project skips itself
+unless `RUN_SEED=1` so the default `npx playwright test` invocation
+doesn't repeatedly try to re-seed):
+
+```bash
+RUN_SEED=1 npx playwright test --project=seed-netapp-fixture
+```
+
+The script uploads a 1MB `.txt` to Egress, copies it to NetApp via the
+LCC FileTransfer API, then deletes the Egress copy — leaving only the
+NetApp side. Idempotent: re-running while the fixture exists is a no-op
+(the second copy attempt will be rejected by Egress's "file exists"
+check, which the script ignores).
+
+The fixture's name pattern (`lcc-e2e-fixture-*`) is intentionally
+distinct from the per-test `generated-100MB-*` artefacts, so the
+automated cleanup helpers (`deleteNetAppFile`, 24h workspace sweep) will
+never remove it.
+
+Required env: `LCC_API_BASE_URL`, `NETAPP_OPERATION_NAME`,
+`DEFAULT_WORKSPACE_ID`, `DEFAULT_CASE_ID`, `DEFAULT_CASE_URN`, plus the
+standard auth set.
+
 ## Environment Variables
 
 | Variable | Description | Required |
@@ -98,6 +175,8 @@ e2e/pw/
 | `DEFAULT_WORKSPACE_NAME` | Pre-existing Egress workspace name | Default mode only |
 | `DEFAULT_CASE_ID` | Pre-existing case ID | Default mode only |
 | `DEFAULT_CASE_URN` | Pre-existing case URN | Default mode only |
+| `LCC_API_BASE_URL` | LCC backend URL — used by NetApp file teardown | Default mode (recommended) |
+| `NETAPP_OPERATION_NAME` | Connected NetApp folder for default mode | Default mode (recommended) |
 
 ## Environment Profiles
 
@@ -243,11 +322,19 @@ Both fixtures delete the files they uploaded after `use()` returns, but
 in their dated subfolder for post-mortem inspection.
 
 - Register-case: `fixtures/test-fixtures-register-case.ts` calls
-  `deleteFiles()` with the id array captured from `uploadFile()`.
+  `deleteFiles()` (Egress side) and `deleteNetAppFile()` (NetApp side
+  against `REGISTER_CASE_NETAPP_FOLDER`) for every file uploaded.
 - Default: `fixtures/test-fixtures-default.ts` and
   `fixtures/test-fixtures-default-large.ts` do the same, against
-  `DEFAULT_WORKSPACE_ID`. The **workspace itself is never deleted** from
-  default-mode teardown — it's shared.
+  `DEFAULT_WORKSPACE_ID` for Egress and `NETAPP_OPERATION_NAME` for
+  NetApp. The **workspace itself is never deleted** from default-mode
+  teardown — it's shared.
+
+The NetApp delete is best-effort: a NetApp -> Egress spec doesn't push
+to NetApp, so the delete attempt 404s and is logged as a warning rather
+than a failure. The endpoint is also disabled in production by the
+backend (returns 403); leave `LCC_API_BASE_URL` unset for prod-pointing
+runs to skip the call entirely.
 
 Files uploaded by passing tests therefore disappear at run end; files from
 failing tests stay put, grouped under:
@@ -279,10 +366,11 @@ first run of the following day.
 
 ### What still isn't automated
 
-- **Registered cases** — CMS/DDEI have no programmatic archive. Registered
-  cases accumulate and need an ops-side archive process.
-- **NetApp source files** — `netapp-to-egress-copy.spec.ts` and
-  `netapp-to-egress-move.spec.ts` read whatever newest file is on NetApp;
-  the suite doesn't upload to NetApp, so nothing to delete there.
+- **Registered cases** — CMS/DDEI have no programmatic archive.
+  Registered cases accumulate and need an ops-side archive process.
+- **The NetApp source fixture** — `lcc-e2e-fixture-source.txt` is
+  intentionally exempt from cleanup helpers (its name pattern doesn't
+  match `generated-100MB-*`) so it persists across runs. Re-seed via
+  the `seed-netapp-fixture` opt-in project if it goes missing.
 - **Empty subfolders** — `deleteFiles` removes files but leaves the
   `e2e-*` folders behind. Cheap clutter; periodic ops prune if needed.

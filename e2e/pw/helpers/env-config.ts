@@ -51,6 +51,14 @@ export function loadEnvConfig() {
     defaultWorkspaceName: process.env.DEFAULT_WORKSPACE_NAME || "",
     defaultCaseUrn: process.env.DEFAULT_CASE_URN || "",
     defaultCaseId: process.env.DEFAULT_CASE_ID || "",
+
+    // LCC backend base URL — needed for the post-test NetApp file
+    // teardown which hits DELETE /api/v1/cases/{operationName}/netapp.
+    // Optional: if unset, NetApp teardown is silently skipped.
+    lccApiBaseUrl: process.env.LCC_API_BASE_URL || "",
+    // The connected NetApp folder name used as the {operationName} path
+    // segment (and S3 prefix) for NetApp deletions, e.g. "Automation-Testing".
+    netAppOperationName: process.env.NETAPP_OPERATION_NAME || "",
   };
 }
 

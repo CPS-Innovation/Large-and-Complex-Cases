@@ -6,7 +6,7 @@ import { TransferMaterialsTab } from "../pages/TransferMaterialsTab";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
 
 test.describe("Egress to NetApp Move (Default Mode)", () => {
-  test.skip("should move files from Egress to NetApp using existing case", async ({
+  test("should move files from Egress to NetApp using existing case", async ({
     page,
     testData,
   }) => {
@@ -37,8 +37,22 @@ test.describe("Egress to NetApp Move (Default Mode)", () => {
       await transferTab.waitForEgressFiles();
     }
 
-    const fileIndices = testData.files.map((_, i) => i);
-    await transferTab.selectEgressFiles(fileIndices);
+    // Wait for the just-uploaded file to be indexed before selecting.
+    // Egress doesn't auto-refresh the file list, so the helper reloads +
+    // re-navigates on each retry.
+    const sourceFolderPath = uploadSubfolder
+      ? ["4. Served Evidence", uploadSubfolder]
+      : ["4. Served Evidence"];
+    await transferTab.waitForEgressFileByName(
+      testData.files[testData.files.length - 1].fileName,
+      sourceFolderPath
+    );
+
+    // Select by name (not index) so we don't pick a stranger's old file
+    // that happened to land at row 0.
+    for (const file of testData.files) {
+      await transferTab.selectEgressFileByName(file.fileName);
+    }
 
     await transferTab.selectAction("Move");
 

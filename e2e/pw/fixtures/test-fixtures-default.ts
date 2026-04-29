@@ -1,6 +1,8 @@
 import { test as base, expect } from "@playwright/test";
 import { setupDefaultTestData } from "./setup-helper-default";
 import { authenticateEgress, deleteFiles } from "../helpers/egress-api";
+import { deleteNetAppFile } from "../helpers/netapp-api";
+import { getAuthTokens } from "../helpers/auth-api";
 import { loadEnvConfig } from "../helpers/env-config";
 import type { TestSetupResult } from "../helpers/types";
 
@@ -29,6 +31,33 @@ export const test = base.extend<{ testData: TestSetupResult }>({
         result.workspace.id,
         fileIds
       );
+
+      // NetApp side cleanup: Egress->NetApp specs leave a copy at
+      // <NETAPP_OPERATION_NAME>/<fileName>. NetApp->Egress specs don't
+      // push there, so the DELETE 404s and is silently warned. Skipped
+      // entirely if LCC_API_BASE_URL or NETAPP_OPERATION_NAME unset
+      // (e.g. CI configured against prod, where the endpoint 403s anyway).
+      if (config.lccApiBaseUrl && config.netAppOperationName) {
+        const { accessToken, cmsAuth } = await getAuthTokens(
+          config.tenantId,
+          config.clientId,
+          config.e2eAdUser,
+          config.e2eAdPassword,
+          config.ddeiBaseUrl,
+          config.ddeiAccessKey,
+          config.cmsUsername,
+          config.cmsPassword
+        );
+        for (const file of result.files) {
+          await deleteNetAppFile(
+            config.lccApiBaseUrl,
+            config.netAppOperationName,
+            file.fileName,
+            accessToken,
+            cmsAuth
+          );
+        }
+      }
     }
   },
 });
