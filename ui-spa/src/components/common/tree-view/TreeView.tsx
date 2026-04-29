@@ -264,10 +264,13 @@ const TreeView: React.FC<TreeViewProps> = ({
           <div aria-live="polite" className="govuk-visually-hidden">
             {isLoading ? "Loading sub folders" : ""}
           </div>
-          <div className={styles.toggleWrap} aria-hidden={true}>
-            <div onClick={() => toggle(node.id)} className={styles.toggleIcon}>
-              {isExpanded ? "-" : "+"}
-            </div>
+
+          <div
+            onClick={() => toggle(node.id)}
+            className={styles.toggleIcon}
+            aria-labelledby={`name-${node.id}`}
+          >
+            {isExpanded ? "-" : "+"}
           </div>
           <div
             id={`name-${node.id}`}
@@ -277,7 +280,12 @@ const TreeView: React.FC<TreeViewProps> = ({
             <div aria-hidden={true}>
               <FolderIcon />
             </div>
-            <span className={styles.folderName}>{node.name}</span>
+            <span
+              className={styles.folderName}
+              aria-label={node.name.toLowerCase()}
+            >
+              {node.name}
+            </span>
           </div>
         </div>
         {isLoading && (
