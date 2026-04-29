@@ -122,6 +122,81 @@ export class TransferMaterialsTab {
     await checkbox.check();
   }
 
+  /**
+   * Select a NetApp source row by exact filename. Throws with a clear
+   * fixture-missing message if the row isn't in the loaded listing.
+   *
+   * The NetApp panel's date sort doesn't reliably toggle to descending
+   * and pagination isn't triggered by Playwright scrolls, so locating a
+   * just-uploaded file is unreliable. The story's contract is therefore
+   * that NetApp -> Egress specs work against a stable pre-seeded fixture
+   * file — see `helpers/constants.ts` (NETAPP_FIXTURE_FILENAME) and
+   * `scripts/seed-netapp-fixture.ts`. The fixture's name pattern keeps it
+   * outside the automated cleanup helpers' scope.
+   */
+  async selectNetAppFileByExactName(fileName: string) {
+    const row = this.page
+      .getByTestId("netapp-table-wrapper")
+      .locator("tbody tr", { hasText: fileName });
+    if ((await row.count()) === 0) {
+      throw new Error(
+        `Required NetApp fixture '${fileName}' not found in the NetApp panel.\n` +
+          `  Seed it via: npx tsx scripts/seed-netapp-fixture.ts\n` +
+          `  See README "Required NetApp fixture" for details.`
+      );
+    }
+    const checkbox = row.locator('input[type="checkbox"]').first();
+    await checkbox.scrollIntoViewIfNeeded();
+    await checkbox.check();
+  }
+
+  /**
+   * Scroll the NetApp panel until a row containing `fileName` appears in
+   * the DOM, then select its checkbox. Needed because the NetApp listing
+   * paginates via continuation tokens — a freshly-uploaded file with a
+   * recent date is at the bottom of the default ascending sort and won't
+   * be in the DOM until the panel scrolls and triggers more page loads.
+   */
+  async selectNetAppFileByNameWithScroll(
+    fileName: string,
+    timeout: number = 180_000
+  ) {
+    const netappTable = this.page.getByTestId("netapp-table-wrapper");
+    const fileRow = netappTable.locator("tbody tr", { hasText: fileName });
+    const start = Date.now();
+
+    let lastRowCount = -1;
+    while (Date.now() - start < timeout) {
+      if ((await fileRow.count()) > 0) {
+        const checkbox = fileRow.locator('input[type="checkbox"]');
+        await checkbox.scrollIntoViewIfNeeded();
+        await checkbox.check();
+        return;
+      }
+
+      const rowCount = await netappTable.locator("tbody tr").count();
+      if (rowCount === lastRowCount) {
+        // No new rows after the last scroll — pagination either exhausted
+        // or no further auto-load was triggered. Wait briefly in case the
+        // backend is still indexing the just-uploaded file, then retry.
+        await this.page.waitForTimeout(3_000);
+      }
+      lastRowCount = rowCount;
+
+      // Scroll the last loaded row into view to trigger any infinite-scroll
+      // pagination wired to the table container.
+      await netappTable
+        .locator("tbody tr")
+        .last()
+        .scrollIntoViewIfNeeded()
+        .catch(() => {});
+      await this.page.waitForTimeout(1_500);
+    }
+    throw new Error(
+      `Timed out waiting for ${fileName} to be selectable in NetApp panel (timeout: ${timeout}ms, last row count: ${lastRowCount})`
+    );
+  }
+
   async navigateToFolder(folderName: string) {
     await this.page.getByRole("button", { name: folderName }).click();
   }

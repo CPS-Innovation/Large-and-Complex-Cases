@@ -37,13 +37,13 @@ test.describe("Egress to NetApp Copy - Large File 200MB (Default Mode)", () => {
       await transferTab.waitForEgressFiles();
     }
 
-    // Wait for the uploaded file to be indexed by Egress (may take time after large upload)
+    // Wait for the uploaded file to be indexed by Egress. Reload +
+    // re-navigate retry — plain waitFor spins against a stale DOM.
     const fileName = testData.files[0].fileName;
-    const egressTable = page.getByTestId("egress-table-wrapper");
-    await egressTable.locator("tbody tr", { hasText: fileName }).waitFor({
-      state: "visible",
-      timeout: 180_000,
-    });
+    const sourceFolderPath = uploadSubfolder
+      ? ["4. Served Evidence", uploadSubfolder]
+      : ["4. Served Evidence"];
+    await transferTab.waitForEgressFileByName(fileName, sourceFolderPath);
 
     // Select the just-uploaded file by name to avoid picking old files already on NetApp
     await transferTab.selectEgressFileByName(fileName);

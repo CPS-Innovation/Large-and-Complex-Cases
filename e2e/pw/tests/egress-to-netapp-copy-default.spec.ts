@@ -37,6 +37,17 @@ test.describe("Egress to NetApp Copy (Default Mode)", () => {
       await transferTab.waitForEgressFiles();
     }
 
+    // Wait for the just-uploaded file to be indexed before selecting.
+    // Egress doesn't auto-refresh the file list, so the helper reloads +
+    // re-navigates on each retry.
+    const sourceFolderPath = uploadSubfolder
+      ? ["4. Served Evidence", uploadSubfolder]
+      : ["4. Served Evidence"];
+    await transferTab.waitForEgressFileByName(
+      testData.files[testData.files.length - 1].fileName,
+      sourceFolderPath
+    );
+
     // Select the just-uploaded file by name to avoid picking old files already on NetApp
     for (const file of testData.files) {
       await transferTab.selectEgressFileByName(file.fileName);

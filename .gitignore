@@ -312,6 +312,7 @@ e2e/pw/test-results/
 e2e/pw/playwright-report/
 e2e/pw/.auth/
 e2e/pw/.state/
+e2e/pw/test-evidence/
 
 # Vite
 ui-spa/.vite/deps/

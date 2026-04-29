@@ -64,5 +64,15 @@ export default defineConfig({
       testMatch: /.*-default\.spec\.ts$/,
       use: { ...devices["Desktop Chrome"] },
     },
+
+    // One-off project for seeding the canonical NetApp source fixture in
+    // default mode. Run manually via:
+    //   npx playwright test --project=seed-netapp-fixture
+    // See README "Required NetApp fixture".
+    {
+      name: "seed-netapp-fixture",
+      testMatch: /.*seed-netapp-fixture\.setup\.ts/,
+      use: { ...devices["Desktop Chrome"] },
+    },
   ],
 });

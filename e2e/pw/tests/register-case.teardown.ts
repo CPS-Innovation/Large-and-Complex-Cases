@@ -41,6 +41,10 @@ teardown("sweep workspaces older than 24 hours", async () => {
   }
 
   const cutoff = Date.now() - MAX_AGE_MS;
+  // Listing failures throw — we don't want a silent "no stale workspaces"
+  // result when the API is actually broken. Individual deleteWorkspace
+  // calls below stay best-effort (warn + continue) because a single
+  // sticky workspace shouldn't fail the whole teardown.
   const all = await listAutomationWorkspaces(config.egressBaseUrl, token);
   const stale = all.filter(
     (w) => !keepIds.has(w.id) && new Date(w.dateCreated).getTime() < cutoff

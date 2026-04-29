@@ -7,6 +7,9 @@ import {
   deleteFiles,
   uploadFile,
 } from "../helpers/egress-api";
+import { deleteNetAppFile } from "../helpers/netapp-api";
+import { getAuthTokens } from "../helpers/auth-api";
+import { REGISTER_CASE_NETAPP_FOLDER } from "../helpers/constants";
 import type { TestSetupResult, UploadedFile } from "../helpers/types";
 import {
   STATE_FILE,
@@ -124,6 +127,34 @@ export const test = base.extend<
         shared.workspace.id,
         fileIds
       );
+
+      // NetApp side cleanup. Egress->NetApp specs leave a copy at
+      // <REGISTER_CASE_NETAPP_FOLDER>/<fileName>; NetApp->Egress specs
+      // don't, so they 404 and are warned. Skipped if LCC_API_BASE_URL
+      // unset (e.g. prod run where the endpoint 403s anyway). Note:
+      // register-case mode uses a different NetApp folder than default
+      // mode, so we don't read NETAPP_OPERATION_NAME from env here.
+      if (config.lccApiBaseUrl) {
+        const { accessToken, cmsAuth } = await getAuthTokens(
+          config.tenantId,
+          config.clientId,
+          config.e2eAdUser,
+          config.e2eAdPassword,
+          config.ddeiBaseUrl,
+          config.ddeiAccessKey,
+          config.cmsUsername,
+          config.cmsPassword
+        );
+        for (const file of files) {
+          await deleteNetAppFile(
+            config.lccApiBaseUrl,
+            REGISTER_CASE_NETAPP_FOLDER,
+            file.fileName,
+            accessToken,
+            cmsAuth
+          );
+        }
+      }
     }
   },
 });
