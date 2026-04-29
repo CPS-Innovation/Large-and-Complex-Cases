@@ -2,7 +2,7 @@ import { UseApiResult } from "../../common/hooks/useApi";
 import {
   SearchResultData,
   SearchResult,
-} from "../../common/types/SearchResultResponse";
+} from "../../schemas/responses/searchResult";
 import { Table, Tag } from "../govuk";
 import { Link } from "react-router";
 import { SearchFromData } from "../../common/hooks/useCaseSearchForm";

@@ -2,7 +2,7 @@ import { mapToNetAppFolderData } from "./mapToNetAppFolderData";
 import {
   NetAppFolderDataResponse,
   NetAppFolderData,
-} from "../types/NetAppFolderData";
+} from "../../schemas/responses/netAppFolderData";
 
 describe("mapToNetAppFolderData", () => {
   test("Should successfully map netapp response data into NetAppFolderData format", () => {

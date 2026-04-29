@@ -1,4 +1,4 @@
-import { IndexingError } from "../types/IndexingFileTransferResponse";
+import { IndexingError } from "../../schemas/responses/indexingFileTransferResponse";
 import { getRelativePathFromPath } from "./getRelativePathFromPath";
 import { getFileNameFromPath } from "./getFileNameFromPath";
 import { ResolvePathFileType } from "./getGroupedResolvePaths";

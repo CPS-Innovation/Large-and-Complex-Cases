@@ -1,7 +1,7 @@
 import {
   NetAppFolderDataResponse,
   NetAppFolderData,
-} from "../types/NetAppFolderData";
+} from "../../schemas/responses/netAppFolderData";
 
 export const mapToNetAppFolderData = (
   responseData: NetAppFolderDataResponse,

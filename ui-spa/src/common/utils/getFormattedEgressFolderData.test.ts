@@ -1,5 +1,5 @@
 import { getFormattedEgressFolderData } from "./getFormattedEgressFolderData";
-import { EgressFolderData } from "../types/EgressFolderData";
+import { EgressFolderData } from "../../schemas/responses/egressFolderData";
 
 describe("getFormattedEgressFolderData", () => {
   it("Should return the formatted egress folder data with new path which appends file and folder name to the end", () => {

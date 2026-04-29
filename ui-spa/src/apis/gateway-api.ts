@@ -1,35 +1,35 @@
 import { v4 as uuidv4 } from "uuid";
 import { GATEWAY_BASE_URL, GATEWAY_SCOPE } from "../config";
 import { getAccessToken } from "../auth";
-import { CaseDivisionsOrAreaResponse } from "../common/types/LooksupData";
-import { SearchResultData } from "../common/types/SearchResultResponse";
+import { CaseDivisionsOrAreaResponse } from "../schemas/responses/caseDivisionsOrArea";
+import { SearchResultData } from "../schemas/responses/searchResult";
 import {
   EgressSearchResultData,
   EgressSearchResultResponse,
-} from "../common/types/EgressSearchResponse";
+} from "../schemas/responses/egressSearchResult";
 import {
   ConnectNetAppFolder,
   ConnectNetAppFolderData,
   ConnectNetAppFolderResponse,
-} from "../common/types/ConnectNetAppFolderData";
-import { CaseMetaDataResponse } from "../common/types/CaseMetaDataResponse";
+} from "../schemas/responses/connectNetAppFolderData";
+import { CaseMetaDataResponse } from "../schemas/responses/caseMetaData";
 import {
   EgressFolderData,
   EgressFolderResponse,
-} from "../common/types/EgressFolderData";
+} from "../schemas/responses/egressFolderData";
 import {
   NetAppFolder,
   NetAppFile,
   NetAppFolderResponse,
   NetAppFolderDataResponse,
-} from "../common/types/NetAppFolderData";
+} from "../schemas/responses/netAppFolderData";
+import { IndexingFileTransferResponse } from "../schemas/responses/indexingFileTransferResponse";
+import { InitiateFileTransferResponse } from "../schemas/responses/initiateFileTransferResponse";
+import { TransferStatusResponse } from "../schemas/responses/transferStatusResponse";
+import { ActivityLogResponse } from "../schemas/responses/activityLogResponse";
+import { IndexingFileTransferPayload } from "../schemas/requests/indexingFileTransferPayload";
+import { InitiateFileTransferPayload } from "../schemas/requests/initiateFileTransferPayload";
 import { type CaseSearchParams } from "../common/types/CaseSearchParams";
-import { IndexingFileTransferResponse } from "../common/types/IndexingFileTransferResponse";
-import { IndexingFileTransferPayload } from "../common/types/IndexingFileTransferPayload";
-import { InitiateFileTransferResponse } from "../common/types/InitiateFileTransferResponse";
-import { InitiateFileTransferPayload } from "../common/types/InitiateFileTransferPayload";
-import { TransferStatusResponse } from "../common/types/TransferStatusResponse";
-import { ActivityLogResponse } from "../common/types/ActivityLogResponse";
 import { ApiError } from "../common/errors/ApiError";
 
 export const CORRELATION_ID = "Correlation-Id";

@@ -1,4 +1,4 @@
-import { EgressFolderData } from "../types/EgressFolderData";
+import { EgressFolderData } from "../../schemas/responses/egressFolderData";
 export const getFormattedEgressFolderData = (
   data: EgressFolderData,
 ): EgressFolderData => {

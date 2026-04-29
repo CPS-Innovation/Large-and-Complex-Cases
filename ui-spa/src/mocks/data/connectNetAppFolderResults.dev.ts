@@ -1,4 +1,4 @@
-import { ConnectNetAppFolderResponse } from "../../common/types/ConnectNetAppFolderData";
+import { ConnectNetAppFolderResponse } from "../../schemas/responses/connectNetAppFolderData";
 export const netAppRootFolderResultsDev: ConnectNetAppFolderResponse = {
   data: {
     rootPath: "",

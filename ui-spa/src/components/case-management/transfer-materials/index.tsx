@@ -18,11 +18,11 @@ import { TransferAction } from "../../../common/types/TransferAction";
 import { getFormattedEgressFolderData } from "../../../common/utils/getFormattedEgressFolderData";
 import { mapToNetAppFolderData } from "../../../common/utils/mapToNetAppFolderData";
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
-import { InitiateFileTransferPayload } from "../../../common/types/InitiateFileTransferPayload";
-import { IndexingFileTransferPayload } from "../../../common/types/IndexingFileTransferPayload";
-import { TransferStatusResponse } from "../../../common/types/TransferStatusResponse";
-import { IndexingFileTransferResponse } from "../../../common/types/IndexingFileTransferResponse";
-import { InitiateFileTransferResponse } from "../../../common/types/InitiateFileTransferResponse";
+import { InitiateFileTransferPayload } from "../../../schemas/requests/initiateFileTransferPayload";
+import { IndexingFileTransferPayload } from "../../../schemas/requests/indexingFileTransferPayload";
+import { TransferStatusResponse } from "../../../schemas/responses/transferStatusResponse";
+import { IndexingFileTransferResponse } from "../../../schemas/responses/indexingFileTransferResponse";
+import { InitiateFileTransferResponse } from "../../../schemas/responses/initiateFileTransferResponse";
 import { useUserDetails } from "../../../auth";
 import { ApiError } from "../../../common/errors/ApiError";
 import { pollTransferStatus } from "../../../common/utils/pollTransferStatus";
@@ -31,7 +31,7 @@ import { getDuplicateFoldersAndFiles } from "../../../common/utils/getDuplicateF
 import {
   type EgressTransferPayloadSourcePath,
   type NetAppTransferPayloadSourcePath,
-} from "../../../common/types/InitiateFileTransferPayload";
+} from "../../../schemas/requests/initiateFileTransferPayload";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {

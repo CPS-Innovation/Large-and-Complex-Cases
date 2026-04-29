@@ -12,7 +12,7 @@ import { getActionDataFromId } from "../../../common/utils/getActionDataFromId";
 import FolderIcon from "../../../components/svgs/folder.svg?react";
 import FileIcon from "../../../components/svgs/file.svg?react";
 import { formatDate } from "../../../common/utils/formatDate";
-import { EgressFolderData } from "../../../common/types/EgressFolderData";
+import { EgressFolderData } from "../../../schemas/responses/egressFolderData";
 import { DropdownButton } from "../../common/DropdownButton";
 import { TransferAction } from "../../../common/types/TransferAction";
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";

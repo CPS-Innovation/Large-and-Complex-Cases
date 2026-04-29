@@ -1,4 +1,4 @@
-import { CaseMetaDataResponse } from "../../common/types/CaseMetaDataResponse";
+import { CaseMetaDataResponse } from "../../schemas/responses/caseMetaData";
 export const caseMetaDataPlaywright: CaseMetaDataResponse = {
   caseId: "12",
   egressWorkspaceId: "egress_1",

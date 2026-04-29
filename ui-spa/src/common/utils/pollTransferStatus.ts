@@ -1,5 +1,5 @@
 import { getTransferStatus } from "../../apis/gateway-api";
-import { TransferStatusResponse } from "../types/TransferStatusResponse";
+import { TransferStatusResponse } from "../../schemas/responses/transferStatusResponse";
 import { ApiError } from "../../common/errors/ApiError";
 
 /**

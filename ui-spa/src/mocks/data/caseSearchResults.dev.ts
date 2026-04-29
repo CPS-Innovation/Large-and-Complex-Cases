@@ -1,4 +1,4 @@
-import { SearchResultData } from "../../common/types/SearchResultResponse";
+import { SearchResultData } from "../../schemas/responses/searchResult";
 
 export const casesSearchResultsDev: SearchResultData = [
   {

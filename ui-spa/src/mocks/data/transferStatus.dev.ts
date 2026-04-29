@@ -1,4 +1,4 @@
-import { TransferStatusResponse } from "../../common/types/TransferStatusResponse";
+import { TransferStatusResponse } from "../../schemas/responses/transferStatusResponse";
 export const egressToNetAppTransferStatusDev: TransferStatusResponse = {
   status: "Completed",
   transferType: "Copy",

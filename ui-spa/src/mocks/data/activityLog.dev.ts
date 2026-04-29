@@ -1,4 +1,4 @@
-import { ActivityLogResponse } from "../../common/types/ActivityLogResponse";
+import { ActivityLogResponse } from "../../schemas/responses/activityLogResponse";
 export const activityLogDev: ActivityLogResponse = {
   data: [
     {

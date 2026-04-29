@@ -6,7 +6,7 @@ import {
   TransferDetails,
   isBatchDeleteDetails,
   isTransferDetails,
-} from "../../../common/types/ActivityLogResponse";
+} from "../../../schemas/responses/activityLogResponse";
 import { Details, Tag, Button } from "../../govuk";
 import RelativePathFiles from "./RelativePathFiles";
 import { formatDate } from "../../../common/utils/formatDate";
@@ -105,10 +105,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
             {getCleanPath(details.sourcePath).replace(/\//g, " > ")}
           </span>
         </div>
-        <div
-          className={styles.locationData}
-          data-testid="transfer-destination"
-        >
+        <div className={styles.locationData} data-testid="transfer-destination">
           <span className={styles.locationTitle}>Destination:</span>
           <span className={styles.locationPath}>
             {getCleanPath(details.destinationPath).replace(/\//g, " > ")}

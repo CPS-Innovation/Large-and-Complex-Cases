@@ -1,6 +1,6 @@
 import { getGroupedFolderFileData } from "./getGroupedFolderFileData";
-import { EgressFolderData } from "../types/EgressFolderData";
-import { NetAppFolderData } from "../types/NetAppFolderData";
+import { EgressFolderData } from "../../schemas/responses/egressFolderData";
+import { NetAppFolderData } from "../../schemas/responses/netAppFolderData";
 
 describe("getGroupedFolderFileData", () => {
   test("It should group the selected Egress data into folders and files", () => {
