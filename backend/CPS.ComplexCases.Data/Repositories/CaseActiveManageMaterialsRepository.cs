@@ -1,3 +1,4 @@
+using System.Data;
 using System.Text.Json;
 using CPS.ComplexCases.Data.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -7,12 +8,6 @@ namespace CPS.ComplexCases.Data.Repositories;
 public class CaseActiveManageMaterialsRepository(ApplicationDbContext dbContext) : ICaseActiveManageMaterialsRepository
 {
     private readonly ApplicationDbContext _dbContext = dbContext;
-
-    public async Task InsertAsync(CaseActiveManageMaterialsOperation operation)
-    {
-        await _dbContext.CaseActiveManageMaterialsOperations.AddAsync(operation);
-        await _dbContext.SaveChangesAsync();
-    }
 
     public async Task DeleteAsync(Guid id)
     {
@@ -36,7 +31,7 @@ public class CaseActiveManageMaterialsRepository(ApplicationDbContext dbContext)
         return await _dbContext.CaseActiveManageMaterialsOperations.ToListAsync();
     }
 
-    public async Task<bool> HasConflictingOperationAsync(int caseId, IEnumerable<string> sourcePaths, IEnumerable<string> destinationPaths)
+    private async Task<bool> HasConflictingOperationAsync(int caseId, IEnumerable<string> sourcePaths, IEnumerable<string> destinationPaths)
     {
         var activeOperations = await _dbContext.CaseActiveManageMaterialsOperations
             .Where(x => x.CaseId == caseId)
@@ -77,6 +72,29 @@ public class CaseActiveManageMaterialsRepository(ApplicationDbContext dbContext)
         }
 
         return false;
+    }
+
+    public async Task<bool> CheckConflictAndInsertAsync(
+        CaseActiveManageMaterialsOperation operation,
+        IEnumerable<string> sourcePaths,
+        IEnumerable<string> destinationPaths)
+    {
+        var strategy = _dbContext.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            await using var tx = await _dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+
+            if (await HasConflictingOperationAsync(operation.CaseId, sourcePaths, destinationPaths))
+            {
+                await tx.RollbackAsync();
+                return false;
+            }
+
+            await _dbContext.CaseActiveManageMaterialsOperations.AddAsync(operation);
+            await _dbContext.SaveChangesAsync();
+            await tx.CommitAsync();
+            return true;
+        });
     }
 
     private static bool PathsOverlap(string pathA, string pathB)

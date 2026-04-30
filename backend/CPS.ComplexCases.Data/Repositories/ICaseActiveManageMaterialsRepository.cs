@@ -4,9 +4,8 @@ namespace CPS.ComplexCases.Data.Repositories;
 
 public interface ICaseActiveManageMaterialsRepository
 {
-    Task InsertAsync(CaseActiveManageMaterialsOperation operation);
     Task DeleteAsync(Guid id);
     Task<IEnumerable<CaseActiveManageMaterialsOperation>> GetActiveOperationsForCaseAsync(int caseId);
     Task<IEnumerable<CaseActiveManageMaterialsOperation>> GetAllActiveOperationsAsync();
-    Task<bool> HasConflictingOperationAsync(int caseId, IEnumerable<string> sourcePaths, IEnumerable<string> destinationPaths);
+    Task<bool> CheckConflictAndInsertAsync(CaseActiveManageMaterialsOperation operation, IEnumerable<string> sourcePaths, IEnumerable<string> destinationPaths);
 }

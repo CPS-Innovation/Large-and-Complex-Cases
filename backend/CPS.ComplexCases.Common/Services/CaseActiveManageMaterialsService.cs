@@ -11,13 +11,6 @@ public class CaseActiveManageMaterialsService(
     private readonly ICaseActiveManageMaterialsRepository _repository = repository;
     private readonly ILogger<CaseActiveManageMaterialsService> _logger = logger;
 
-    public async Task InsertOperationAsync(CaseActiveManageMaterialsOperation operation)
-    {
-        _logger.LogInformation("Inserting manage materials operation {OperationId} of type {OperationType} for case {CaseId}",
-            operation.Id, operation.OperationType, operation.CaseId);
-        await _repository.InsertAsync(operation);
-    }
-
     public async Task DeleteOperationAsync(Guid id)
     {
         _logger.LogInformation("Removing manage materials operation {OperationId}", id);
@@ -42,8 +35,14 @@ public class CaseActiveManageMaterialsService(
         return await _repository.GetAllActiveOperationsAsync();
     }
 
-    public async Task<bool> HasConflictingOperationAsync(int caseId, IEnumerable<string> sourcePaths, IEnumerable<string> destinationPaths)
+    public async Task<bool> CheckConflictAndInsertAsync(
+        CaseActiveManageMaterialsOperation operation,
+        IEnumerable<string> sourcePaths,
+        IEnumerable<string> destinationPaths)
     {
-        return await _repository.HasConflictingOperationAsync(caseId, sourcePaths, destinationPaths);
+        _logger.LogInformation(
+            "Atomically checking conflict and inserting manage materials operation {OperationId} of type {OperationType} for case {CaseId}",
+            operation.Id, operation.OperationType, operation.CaseId);
+        return await _repository.CheckConflictAndInsertAsync(operation, sourcePaths, destinationPaths);
     }
 }

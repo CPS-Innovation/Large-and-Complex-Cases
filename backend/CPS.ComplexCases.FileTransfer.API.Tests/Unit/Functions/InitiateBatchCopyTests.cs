@@ -80,12 +80,11 @@ public class InitiateBatchCopyTests
                 });
 
         _caseActiveManageMaterialsServiceMock
-            .Setup(s => s.HasConflictingOperationAsync(It.IsAny<int>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>()))
-            .ReturnsAsync(false);
-
-        _caseActiveManageMaterialsServiceMock
-            .Setup(s => s.InsertOperationAsync(It.IsAny<CaseActiveManageMaterialsOperation>()))
-            .Returns(Task.CompletedTask);
+            .Setup(s => s.CheckConflictAndInsertAsync(
+                It.IsAny<CaseActiveManageMaterialsOperation>(),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<IEnumerable<string>>()))
+            .ReturnsAsync(true);
 
         _function = new InitiateBatchCopy(
             _loggerMock.Object,
@@ -159,9 +158,15 @@ public class InitiateBatchCopyTests
     {
         SetupValidRequest();
         SetupNoActiveTransfer();
+        SetupMaterialSourceExists();
+        SetupMaterialDestinationMissing();
+        SetupNoClashAtDestination();
         _caseActiveManageMaterialsServiceMock
-            .Setup(s => s.HasConflictingOperationAsync(It.IsAny<int>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>()))
-            .ReturnsAsync(true);
+            .Setup(s => s.CheckConflictAndInsertAsync(
+                It.IsAny<CaseActiveManageMaterialsOperation>(),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<IEnumerable<string>>()))
+            .ReturnsAsync(false);
 
         var result = await _function.Run(CreateHttpRequest(), _durableClientStub);
 
@@ -181,8 +186,8 @@ public class InitiateBatchCopyTests
         await _function.Run(CreateHttpRequest(), client.Object);
 
         _caseActiveManageMaterialsServiceMock.Verify(s =>
-            s.HasConflictingOperationAsync(
-                CaseId,
+            s.CheckConflictAndInsertAsync(
+                It.IsAny<CaseActiveManageMaterialsOperation>(),
                 It.Is<IEnumerable<string>>(paths => paths.Contains(MaterialSourcePath)),
                 It.Is<IEnumerable<string>>(paths => paths.Contains(DestinationPrefix))),
             Times.Once);
@@ -332,8 +337,11 @@ public class InitiateBatchCopyTests
         await _function.Run(CreateHttpRequest(), client.Object);
 
         _caseActiveManageMaterialsServiceMock.Verify(s =>
-            s.InsertOperationAsync(It.Is<CaseActiveManageMaterialsOperation>(op =>
-                op.CaseId == CaseId && op.OperationType == "BatchCopy")),
+            s.CheckConflictAndInsertAsync(
+                It.Is<CaseActiveManageMaterialsOperation>(op =>
+                    op.CaseId == CaseId && op.OperationType == "BatchCopy"),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<IEnumerable<string>>()),
             Times.Once);
     }
 
@@ -347,9 +355,13 @@ public class InitiateBatchCopyTests
         SetupNoClashAtDestination();
         CaseActiveManageMaterialsOperation? capturedOp = null;
         _caseActiveManageMaterialsServiceMock
-            .Setup(s => s.InsertOperationAsync(It.IsAny<CaseActiveManageMaterialsOperation>()))
-            .Callback<CaseActiveManageMaterialsOperation>(op => capturedOp = op)
-            .Returns(Task.CompletedTask);
+            .Setup(s => s.CheckConflictAndInsertAsync(
+                It.IsAny<CaseActiveManageMaterialsOperation>(),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<IEnumerable<string>>()))
+            .Callback<CaseActiveManageMaterialsOperation, IEnumerable<string>, IEnumerable<string>>(
+                (op, _, _) => capturedOp = op)
+            .ReturnsAsync(true);
         var client = CreateSchedulingClient(out var capturedCalls);
 
         await _function.Run(CreateHttpRequest(), client.Object);

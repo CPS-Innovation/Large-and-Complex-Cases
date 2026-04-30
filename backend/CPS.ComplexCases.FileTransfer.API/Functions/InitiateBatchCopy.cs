@@ -86,18 +86,8 @@ public class InitiateBatchCopy(
             }
         }
 
-        // Check for conflicting manage materials operations by path
         var sourcePaths = request.Operations.Select(op => op.SourcePath).ToList();
         var destinationPaths = new List<string> { request.DestinationPrefix };
-        var hasConflict = await _caseActiveManageMaterialsService.HasConflictingOperationAsync(
-            request.CaseId, sourcePaths, destinationPaths);
-
-        if (hasConflict)
-        {
-            _logger.LogWarning("Conflicting manage materials operation detected for CaseId: {CaseId}. CorrelationId: {CorrelationId}",
-                request.CaseId, correlationId);
-            return new ConflictObjectResult("A conflicting manage materials operation is already in progress for one or more of the specified paths.");
-        }
 
         // Pre-flight checks and folder expansion
         var copyFileItems = new List<CopyFileItem>();
@@ -252,7 +242,8 @@ public class InitiateBatchCopy(
         var transferId = Guid.NewGuid();
         var now = DateTime.UtcNow;
 
-        // Insert case_active_manage_materials row
+        // Atomically check for a conflicting operation and insert the lock row in one serializable
+        // transaction, so two concurrent requests cannot both observe no conflict and both proceed.
         var mmOperation = new CaseActiveManageMaterialsOperation
         {
             Id = transferId,
@@ -264,7 +255,15 @@ public class InitiateBatchCopy(
             CreatedAt = now,
         };
 
-        await _caseActiveManageMaterialsService.InsertOperationAsync(mmOperation);
+        var inserted = await _caseActiveManageMaterialsService.CheckConflictAndInsertAsync(
+            mmOperation, sourcePaths, destinationPaths);
+
+        if (!inserted)
+        {
+            _logger.LogWarning("Conflicting manage materials operation detected for CaseId: {CaseId}. CorrelationId: {CorrelationId}",
+                request.CaseId, correlationId);
+            return new ConflictObjectResult("A conflicting manage materials operation is already in progress for one or more of the specified paths.");
+        }
 
         var originalOperations = request.Operations
             .Select(op => new CopyBatchOriginalOperation { Type = op.Type, SourcePath = op.SourcePath })
