@@ -146,6 +146,23 @@ public class InitiateBatchCopyTests
     }
 
     [Fact]
+    public async Task Run_WhenDestinationPrefixOutsideCaseFolder_ReturnsBadRequest()
+    {
+        var dto = new CopyNetAppBatchDto
+        {
+            CaseId = 1,
+            DestinationPrefix = "OtherCase/Evidence/",
+            Operations = [new() { Type = NetAppCopyOperationType.Material, SourcePath = $"{TestNetAppFolder}/file.txt" }]
+        };
+        SetupValidRequest(dto);
+        var req = HttpRequestStubHelper.CreateHttpRequest(_testCorrelationId);
+
+        var result = await _function.Run(req, CreateFunctionContext());
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
     public async Task Run_WithValidRequest_CallsFileTransferClient()
     {
         SetupValidRequest(ValidDto());

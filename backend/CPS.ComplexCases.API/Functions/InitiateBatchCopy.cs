@@ -88,6 +88,13 @@ public class InitiateBatchCopy(
             return new BadRequestObjectResult(new [] { $"The following source paths are not within the case's NetApp folder: {string.Join(", ", invalidPaths)}" });
         }
 
+        if (!batchRequest.Value.DestinationPrefix.StartsWith(casePrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning("Destination prefix '{DestinationPrefix}' is outside the case folder '{CasePrefix}'. CorrelationId: {CorrelationId}",
+                batchRequest.Value.DestinationPrefix, casePrefix, context.CorrelationId);
+            return new BadRequestObjectResult(new[] { "The destination prefix is not within the case's NetApp folder." });
+        }
+
         var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
 
         var copyRequest = new CopyNetAppBatchRequest
