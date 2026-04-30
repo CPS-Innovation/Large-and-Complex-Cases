@@ -251,6 +251,30 @@ public class InitiateBatchCopyTests
     }
 
     [Fact]
+    public async Task Run_WhenFolderCopyDestinationFileAlreadyExists_ReturnsConflict()
+    {
+        var destFolderPrefix = $"{DestinationPrefix}OldFolder/";
+        var sourceFile = $"{FolderSourcePath}a.pdf";
+        var conflictingDestKey = $"{destFolderPrefix}a.pdf";
+
+        SetupValidRequest(CreateFolderRequest());
+        SetupNoActiveTransfer();
+        SetupFolderExists(FolderSourcePath, sourceFile);
+
+        // Destination folder already contains a file that would be overwritten
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.Is<ListObjectsInBucketArg>(a =>
+                a.Prefix == destFolderPrefix && a.MaxKeys == null)))
+            .ReturnsAsync(MakeListResult([conflictingDestKey]));
+
+        var result = await _function.Run(CreateHttpRequest(), _durableClientStub);
+
+        var conflict = Assert.IsType<ConflictObjectResult>(result);
+        var errors = Assert.IsAssignableFrom<IEnumerable<string>>(conflict.Value);
+        Assert.Contains(errors, e => e.Contains(conflictingDestKey));
+    }
+
+    [Fact]
     public async Task Run_WithValidMaterialRequest_Returns202Accepted()
     {
         SetupValidRequest();

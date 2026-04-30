@@ -124,6 +124,7 @@ public class InitiateBatchCopy(
                 }
 
                 // Expand all keys in the folder with pagination
+                var expandedFiles = new List<(string SourceKey, string RelativeKey)>();
                 string? continuationToken = null;
                 do
                 {
@@ -138,17 +139,46 @@ public class InitiateBatchCopy(
                     foreach (var file in listResult.Data.FileData)
                     {
                         var relativeKey = file.Path.Substring(sourcePrefix.Length);
-                        copyFileItems.Add(new CopyFileItem
-                        {
-                            SourceKey = file.Path,
-                            DestinationPrefix = destFolderPrefix,
-                            DestinationFileName = relativeKey,
-                        });
+                        expandedFiles.Add((file.Path, relativeKey));
                     }
 
                     continuationToken = listResult.Pagination.NextContinuationToken;
                 }
                 while (!string.IsNullOrEmpty(continuationToken));
+
+                // List the destination folder once to detect any pre-existing files that would be overwritten
+                var existingDestKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                string? destContinuationToken = null;
+                do
+                {
+                    var destListArg = _netAppArgFactory.CreateListObjectsInBucketArg(
+                        request.BearerToken, request.BucketName,
+                        continuationToken: destContinuationToken,
+                        prefix: destFolderPrefix);
+                    var destListResult = await _netAppClient.ListObjectsInBucketAsync(destListArg);
+                    if (destListResult == null) break;
+                    foreach (var f in destListResult.Data.FileData)
+                        existingDestKeys.Add(f.Path);
+                    destContinuationToken = destListResult.Pagination.NextContinuationToken;
+                }
+                while (!string.IsNullOrEmpty(destContinuationToken));
+
+                // Schedule non-colliding files; report conflicts for any that would overwrite an existing object
+                foreach (var (sourceKey, relativeKey) in expandedFiles)
+                {
+                    var destKey = destFolderPrefix + relativeKey;
+                    if (existingDestKeys.Contains(destKey))
+                    {
+                        preflight409Errors.Add($"A file already exists at the destination: {destKey}");
+                        continue;
+                    }
+                    copyFileItems.Add(new CopyFileItem
+                    {
+                        SourceKey = sourceKey,
+                        DestinationPrefix = destFolderPrefix,
+                        DestinationFileName = relativeKey,
+                    });
+                }
             }
             else
             {
