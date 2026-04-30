@@ -79,7 +79,7 @@ stages:
           - task: DownloadSecureFile@1
             inputs:
               secureFile: $(asposeLicenceFileName)
-            displayName: 'Download Aspose Licencee'
+            displayName: 'Download Aspose Licence File'
 
           - task: CopyFiles@2
             inputs:
@@ -87,7 +87,7 @@ stages:
               contents: $(asposeLicenceFileName)
               targetFolder: 'backend/CPS.ComplexCases.API/Licences'
               OverWrite: true
-            displayName: 'Copy Aspose licence file to project folder for build'
+            displayName: 'Copy Aspose Licence File to Project Folder'
 
           - template: ../templates/dotnet-build-steps.yml
             parameters:
