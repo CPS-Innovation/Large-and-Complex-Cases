@@ -65,10 +65,13 @@ public class CaseActiveManageMaterialsRepository(ApplicationDbContext dbContext)
                     return true;
             }
 
-            // Or if any incoming destination overlaps with an existing source path
+            // Or if any incoming destination overlaps with an existing source or destination path
             foreach (var incomingDest in incomingDestList)
             {
                 if (existingSourcePaths.Any(existing => PathsOverlap(incomingDest, existing)))
+                    return true;
+
+                if (existingDestPaths.Any(existing => PathsOverlap(incomingDest, existing)))
                     return true;
             }
         }
