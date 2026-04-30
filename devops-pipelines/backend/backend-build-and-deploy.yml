@@ -17,6 +17,8 @@ variables:
     value: '8.x'
   - name: efVersion
     value: '8.0.*'
+  - name: asposeLicenceFileName
+    value: 'Aspose.Total.NET.lic'
 
 stages:
   - stage: Preflight
@@ -74,6 +76,19 @@ stages:
       - job: Build_Main_API
         displayName: 'Build Main API & DB Migration Scripts if Needed'
         steps:
+          - task: DownloadSecureFile@1
+            inputs:
+              secureFile: $(asposeLicenceFileName)
+            displayName: 'Download Aspose Licencee'
+
+          - task: CopyFiles@2
+            inputs:
+              sourceFolder: $(Agent.TempDirectory)
+              contents: $(asposeLicenceFileName)
+              targetFolder: 'backend/CPS.ComplexCases.API/Licences'
+              OverWrite: true
+            displayName: 'Copy Aspose licence file to project folder for build'
+
           - template: ../templates/dotnet-build-steps.yml
             parameters:
               projectPath: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
