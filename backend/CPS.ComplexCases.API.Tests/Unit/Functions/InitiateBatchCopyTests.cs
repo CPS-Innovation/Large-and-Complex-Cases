@@ -163,6 +163,30 @@ public class InitiateBatchCopyTests
     }
 
     [Fact]
+    public async Task Run_WhenDestinationPrefixOutsideCaseFolder_DoesNotCallFileTransferClient()
+    {
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForCaseIdAsync(It.IsAny<int>()))
+            .ReturnsAsync(new CaseMetadata { CaseId = 1, NetappFolderPath = "Cases/123" });
+
+        var dto = new CopyNetAppBatchDto
+        {
+            CaseId = 1,
+            DestinationPrefix = "Cases/999/",
+            Operations = [new() { Type = NetAppCopyOperationType.Material, SourcePath = "Cases/123/file.pdf" }]
+        };
+        SetupValidRequest(dto);
+        var req = HttpRequestStubHelper.CreateHttpRequest(_testCorrelationId);
+
+        var result = await _function.Run(req, CreateFunctionContext());
+
+        Assert.IsType<BadRequestObjectResult>(result);
+        _fileTransferClientMock.Verify(
+            c => c.InitiateBatchCopyAsync(It.IsAny<CopyNetAppBatchRequest>(), It.IsAny<Guid>()),
+            Times.Never);
+    }
+
+    [Fact]
     public async Task Run_WithValidRequest_CallsFileTransferClient()
     {
         SetupValidRequest(ValidDto());

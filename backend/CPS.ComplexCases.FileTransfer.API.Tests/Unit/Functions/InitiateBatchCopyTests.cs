@@ -280,6 +280,30 @@ public class InitiateBatchCopyTests
     }
 
     [Fact]
+    public async Task Run_WhenFolderCopyDestinationFileAlreadyExists_DoesNotScheduleOrchestration()
+    {
+        var destFolderPrefix = $"{DestinationPrefix}OldFolder/";
+        var sourceFile = $"{FolderSourcePath}a.pdf";
+        var conflictingDestKey = $"{destFolderPrefix}a.pdf";
+
+        SetupValidRequest(CreateFolderRequest());
+        SetupNoActiveTransfer();
+        SetupFolderExists(FolderSourcePath, sourceFile);
+
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.Is<ListObjectsInBucketArg>(a =>
+                a.Prefix == destFolderPrefix && a.MaxKeys == null)))
+            .ReturnsAsync(MakeListResult([conflictingDestKey]));
+
+        var client = CreateSchedulingClient(out var capturedCalls);
+
+        var result = await _function.Run(CreateHttpRequest(), client.Object);
+
+        Assert.IsType<ConflictObjectResult>(result);
+        Assert.Empty(capturedCalls);
+    }
+
+    [Fact]
     public async Task Run_WithValidMaterialRequest_Returns202Accepted()
     {
         SetupValidRequest();
@@ -486,6 +510,44 @@ public class InitiateBatchCopyTests
         Assert.Equal(2, payload.Files.Count);
         Assert.Contains(payload.Files, f => f.SourceKey == MaterialSourcePath);
         Assert.Contains(payload.Files, f => f.SourceKey == folderFile);
+    }
+
+    [Fact]
+    public async Task Run_WithFolderRequest_PopulatesExpectedSourceKeysOnFolderOperation()
+    {
+        var file1 = $"{FolderSourcePath}doc1.pdf";
+        var file2 = $"{FolderSourcePath}sub/doc2.docx";
+        SetupValidRequest(CreateFolderRequest());
+        SetupNoActiveTransfer();
+        SetupFolderExists(FolderSourcePath, file1, file2);
+        var client = CreateSchedulingClient(out var capturedCalls);
+
+        await _function.Run(CreateHttpRequest(), client.Object);
+
+        var payload = Assert.IsType<CopyBatchPayload>(capturedCalls[0].Input);
+        Assert.Single(payload.OriginalOperations);
+        var folderOp = payload.OriginalOperations[0];
+        Assert.Equal("Folder", folderOp.Type);
+        Assert.Equal(2, folderOp.ExpectedSourceKeys.Count);
+        Assert.Contains(file1, folderOp.ExpectedSourceKeys);
+        Assert.Contains(file2, folderOp.ExpectedSourceKeys);
+    }
+
+    [Fact]
+    public async Task Run_WithValidMaterialRequest_ExpectedSourceKeysIsEmpty()
+    {
+        SetupValidRequest();
+        SetupNoActiveTransfer();
+        SetupMaterialSourceExists();
+        SetupMaterialDestinationMissing();
+        SetupNoClashAtDestination();
+        var client = CreateSchedulingClient(out var capturedCalls);
+
+        await _function.Run(CreateHttpRequest(), client.Object);
+
+        var payload = Assert.IsType<CopyBatchPayload>(capturedCalls[0].Input);
+        Assert.Single(payload.OriginalOperations);
+        Assert.Empty(payload.OriginalOperations[0].ExpectedSourceKeys);
     }
 
     [Fact]

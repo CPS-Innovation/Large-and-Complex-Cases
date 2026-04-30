@@ -26,27 +26,37 @@ public class WriteCopyActivityLog(
 
         var items = payload.OriginalOperations.Select(op =>
         {
-            var isCopied = string.Equals(op.Type, "Folder", StringComparison.OrdinalIgnoreCase)
-                ? successfulKeySet.Any(key =>
-                    key.StartsWith(op.SourcePath.TrimEnd('/') + "/", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(key, op.SourcePath, StringComparison.OrdinalIgnoreCase))
-                : successfulKeySet.Contains(op.SourcePath);
+            string outcome;
+
+            if (string.Equals(op.Type, "Folder", StringComparison.OrdinalIgnoreCase) && op.ExpectedSourceKeys.Count > 0)
+            {
+                // For folder operations, compare all expected keys against the success set so that
+                // a folder with only partial successes is not falsely reported as fully Copied.
+                var successCount = op.ExpectedSourceKeys.Count(key => successfulKeySet.Contains(key));
+                outcome = successCount == op.ExpectedSourceKeys.Count ? "Copied"
+                        : successCount > 0 ? "Partial"
+                        : "NotCopied";
+            }
+            else
+            {
+                outcome = successfulKeySet.Contains(op.SourcePath) ? "Copied" : "NotCopied";
+            }
 
             return new
             {
                 sourcePath = op.SourcePath,
-                outcome = isCopied ? "Copied" : "NotCopied",
+                outcome,
                 type = op.Type
             };
         }).ToList();
 
-        var copiedOps = payload.OriginalOperations
+        var reportableOps = payload.OriginalOperations
             .Zip(items, (op, item) => (op, item))
-            .Where(x => x.item.outcome == "Copied")
+            .Where(x => x.item.outcome != "NotCopied")
             .Select(x => x.op)
             .ToList();
 
-        if (copiedOps.Count == 0)
+        if (reportableOps.Count == 0)
         {
             _logger.LogInformation("No operations were successfully copied for CaseId: {CaseId}. Skipping activity log.", payload.CaseId);
             return;
@@ -54,8 +64,8 @@ public class WriteCopyActivityLog(
 
         try
         {
-            var hasFolder = copiedOps.Any(op => string.Equals(op.Type, "Folder", StringComparison.OrdinalIgnoreCase));
-            var hasMaterial = copiedOps.Any(op => !string.Equals(op.Type, "Folder", StringComparison.OrdinalIgnoreCase));
+            var hasFolder = reportableOps.Any(op => string.Equals(op.Type, "Folder", StringComparison.OrdinalIgnoreCase));
+            var hasMaterial = reportableOps.Any(op => !string.Equals(op.Type, "Folder", StringComparison.OrdinalIgnoreCase));
 
             var (actionType, resourceType) = (hasFolder, hasMaterial) switch
             {

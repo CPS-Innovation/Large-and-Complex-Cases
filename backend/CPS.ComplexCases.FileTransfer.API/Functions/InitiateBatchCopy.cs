@@ -91,6 +91,7 @@ public class InitiateBatchCopy(
 
         // Pre-flight checks and folder expansion
         var copyFileItems = new List<CopyFileItem>();
+        var originalOperations = new List<CopyBatchOriginalOperation>();
         var preflight409Errors = new List<string>();
         var preflight404Errors = new List<string>();
 
@@ -153,7 +154,9 @@ public class InitiateBatchCopy(
                 }
                 while (!string.IsNullOrEmpty(destContinuationToken));
 
-                // Schedule non-colliding files; report conflicts for any that would overwrite an existing object
+                // Schedule non-colliding files; track scheduled keys so WriteCopyActivityLog can
+                // compare all expected keys against successes and detect partial folder copies.
+                var scheduledFolderKeys = new List<string>();
                 foreach (var (sourceKey, relativeKey) in expandedFiles)
                 {
                     var destKey = destFolderPrefix + relativeKey;
@@ -168,7 +171,15 @@ public class InitiateBatchCopy(
                         DestinationPrefix = destFolderPrefix,
                         DestinationFileName = relativeKey,
                     });
+                    scheduledFolderKeys.Add(sourceKey);
                 }
+
+                originalOperations.Add(new CopyBatchOriginalOperation
+                {
+                    Type = op.Type,
+                    SourcePath = op.SourcePath,
+                    ExpectedSourceKeys = scheduledFolderKeys,
+                });
             }
             else
             {
@@ -217,6 +228,12 @@ public class InitiateBatchCopy(
                     DestinationPrefix = request.DestinationPrefix,
                     DestinationFileName = fileName,
                 });
+
+                originalOperations.Add(new CopyBatchOriginalOperation
+                {
+                    Type = op.Type,
+                    SourcePath = op.SourcePath,
+                });
             }
         }
 
@@ -264,10 +281,6 @@ public class InitiateBatchCopy(
                 request.CaseId, correlationId);
             return new ConflictObjectResult("A conflicting manage materials operation is already in progress for one or more of the specified paths.");
         }
-
-        var originalOperations = request.Operations
-            .Select(op => new CopyBatchOriginalOperation { Type = op.Type, SourcePath = op.SourcePath })
-            .ToList();
 
         await orchestrationClient.ScheduleNewOrchestrationInstanceAsync(
             nameof(CopyOrchestrator),

@@ -24,4 +24,11 @@ public class CopyBatchOriginalOperation
 {
     public required string Type { get; set; }
     public required string SourcePath { get; set; }
+    /// <summary>
+    /// For Folder operations: the individual source keys that were scheduled for copy.
+    /// Populated during pre-flight expansion so WriteCopyActivityLog can determine whether
+    /// all, some, or none of the folder's files succeeded (Copied / Partial / NotCopied).
+    /// Empty for Material operations — outcome is determined by SourcePath alone.
+    /// </summary>
+    public List<string> ExpectedSourceKeys { get; set; } = [];
 }
