@@ -44,8 +44,10 @@ public class CleanupStaleManageMaterialsOperationsTests
     // ── Age-based deletion ────────────────────────────────────────────
 
     [Fact]
-    public async Task Run_WhenRowExceedsMaxAge_DeletesWithoutCheckingDurableStatus()
+    public async Task Run_WhenRowExceedsMaxAgeAndInstanceNotFound_DeletesRow()
     {
+        // Durable history may have been purged for a genuinely finished operation;
+        // the age guard acts as the fallback safety net.
         var expiredId = Guid.NewGuid();
         var expiredRow = MakeRow(expiredId, createdAt: DateTime.UtcNow.AddHours(-(_config.MaxAgeHours + 1)));
         SetupService([expiredRow]);
@@ -54,11 +56,10 @@ public class CleanupStaleManageMaterialsOperationsTests
         await _function.Run(CreateTimerInfo(), client.Object);
 
         _serviceMock.Verify(s => s.DeleteOperationAsync(expiredId), Times.Once);
-        client.Verify(c => c.GetInstancesAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
-    public async Task Run_WhenRowIsExactlyAtMaxAge_DeletesWithoutCheckingDurableStatus()
+    public async Task Run_WhenRowIsExactlyAtMaxAgeAndInstanceNotFound_DeletesRow()
     {
         var id = Guid.NewGuid();
         var row = MakeRow(id, createdAt: DateTime.UtcNow.AddHours(-_config.MaxAgeHours).AddSeconds(-1));
@@ -68,6 +69,24 @@ public class CleanupStaleManageMaterialsOperationsTests
         await _function.Run(CreateTimerInfo(), client.Object);
 
         _serviceMock.Verify(s => s.DeleteOperationAsync(id), Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_WhenRowExceedsMaxAgeButOrchestrationIsRunning_RetainsRow()
+    {
+        // A long-running copy that outlives MaxAgeHours must not lose its lock row
+        // while the orchestration is still active.
+        var id = Guid.NewGuid();
+        var agedRow = MakeRow(id, createdAt: DateTime.UtcNow.AddHours(-(_config.MaxAgeHours + 1)));
+        SetupService([agedRow]);
+        var client = CreateClient(new Dictionary<string, OrchestrationRuntimeStatus>
+        {
+            { id.ToString(), OrchestrationRuntimeStatus.Running }
+        });
+
+        await _function.Run(CreateTimerInfo(), client.Object);
+
+        _serviceMock.Verify(s => s.DeleteOperationAsync(It.IsAny<Guid>()), Times.Never);
     }
 
     // ── Status-based deletion ─────────────────────────────────────────
@@ -92,8 +111,11 @@ public class CleanupStaleManageMaterialsOperationsTests
     }
 
     [Fact]
-    public async Task Run_WhenOrchestrationInstanceNotFound_DeletesRow()
+    public async Task Run_WhenOrchestrationInstanceNotFoundButRowIsRecent_RetainsRow()
     {
+        // A recently-started operation whose durable instance is not yet visible
+        // must not be deleted — age must exceed MaxAgeHours before a missing instance
+        // is treated as a safe-to-delete orphan.
         var id = Guid.NewGuid();
         var row = MakeRow(id, createdAt: DateTime.UtcNow.AddMinutes(-5));
         SetupService([row]);
@@ -104,7 +126,7 @@ public class CleanupStaleManageMaterialsOperationsTests
 
         await _function.Run(CreateTimerInfo(), client.Object);
 
-        _serviceMock.Verify(s => s.DeleteOperationAsync(id), Times.Once);
+        _serviceMock.Verify(s => s.DeleteOperationAsync(It.IsAny<Guid>()), Times.Never);
     }
 
     [Fact]

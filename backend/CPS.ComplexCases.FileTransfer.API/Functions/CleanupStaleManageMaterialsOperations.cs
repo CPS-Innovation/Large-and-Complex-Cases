@@ -43,30 +43,41 @@ public class CleanupStaleManageMaterialsOperations(
         {
             try
             {
-                // Age-based safety net: delete without consulting durable
-                if (now - operation.CreatedAt > maxAge)
-                {
-                    _logger.LogWarning(
-                        "Deleting stale manage materials row {OperationId} for CaseId {CaseId}: age {AgeHours:F1}h exceeds max {MaxAgeHours}h.",
-                        operation.Id, operation.CaseId, (now - operation.CreatedAt).TotalHours, _config.MaxAgeHours);
-
-                    await _caseActiveManageMaterialsService.DeleteOperationAsync(operation.Id);
-                    deletedCount++;
-                    continue;
-                }
-
-                // Status-based cleanup: delete if orchestration is in a terminal state or not found
                 var instance = await orchestrationClient.GetInstancesAsync(
                     operation.Id.ToString(), cancellation: cancellationToken);
 
-                if (instance == null || TerminalStatuses.Contains(instance.RuntimeStatus))
+                var isTerminal = instance != null && TerminalStatuses.Contains(instance.RuntimeStatus);
+                var isNotFound = instance == null;
+                var isAged = now - operation.CreatedAt > maxAge;
+
+                // Delete if the orchestration is in a terminal state.
+                // Also delete if the instance is not found and the row is older than maxAge —
+                // this covers cases where durable history has been purged for a genuinely finished
+                // operation, while protecting rows for recently-started operations whose instance
+                // may not yet be visible.
+                if (isTerminal || (isNotFound && isAged))
                 {
-                    _logger.LogInformation(
-                        "Deleting manage materials row {OperationId} for CaseId {CaseId}: orchestration status is {Status}.",
-                        operation.Id, operation.CaseId, instance?.RuntimeStatus.ToString() ?? "NotFound");
+                    if (isNotFound && isAged)
+                    {
+                        _logger.LogWarning(
+                            "Deleting manage materials row {OperationId} for CaseId {CaseId}: orchestration instance not found and row age {AgeHours:F1}h exceeds max {MaxAgeHours}h.",
+                            operation.Id, operation.CaseId, (now - operation.CreatedAt).TotalHours, _config.MaxAgeHours);
+                    }
+                    else
+                    {
+                        _logger.LogInformation(
+                            "Deleting manage materials row {OperationId} for CaseId {CaseId}: orchestration status is {Status}.",
+                            operation.Id, operation.CaseId, instance!.RuntimeStatus.ToString());
+                    }
 
                     await _caseActiveManageMaterialsService.DeleteOperationAsync(operation.Id);
                     deletedCount++;
+                }
+                else if (isNotFound)
+                {
+                    _logger.LogWarning(
+                        "Manage materials row {OperationId} for CaseId {CaseId} has no durable instance but is only {AgeHours:F1}h old — retaining until age exceeds {MaxAgeHours}h.",
+                        operation.Id, operation.CaseId, (now - operation.CreatedAt).TotalHours, _config.MaxAgeHours);
                 }
             }
             catch (Exception ex)
