@@ -265,28 +265,26 @@ const TreeView: React.FC<TreeViewProps> = ({
             {isLoading ? "Loading sub folders" : ""}
           </div>
 
-          <div
+          <button
             onClick={() => toggle(node.id)}
             className={styles.toggleIcon}
-            aria-labelledby={`name-${node.id}`}
+            aria-label={isExpanded ? "minus" : "plus"}
+            tabIndex={-1}
           >
             {isExpanded ? "-" : "+"}
-          </div>
-          <div
+          </button>
+          <button
             id={`name-${node.id}`}
             className={`folderNode ${styles.folderNode} ${isSelected ? styles.selected : ""}`}
             onClick={() => handleClick(node)}
+            aria-label={node.name.toLowerCase()}
+            tabIndex={-1}
           >
             <div aria-hidden={true}>
               <FolderIcon />
             </div>
-            <span
-              className={styles.folderName}
-              aria-label={node.name.toLowerCase()}
-            >
-              {node.name}
-            </span>
-          </div>
+            {node.name}
+          </button>
         </div>
         {isLoading && (
           <div className={styles.loadingIconWrapper} aria-hidden>
