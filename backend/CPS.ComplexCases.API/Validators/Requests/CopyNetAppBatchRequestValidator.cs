@@ -1,3 +1,4 @@
+using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Data.Models.Requests;
 using FluentValidation;
 
@@ -5,7 +6,7 @@ namespace CPS.ComplexCases.API.Validators.Requests;
 
 public class CopyNetAppBatchRequestValidator : AbstractValidator<CopyNetAppBatchDto>
 {
-    public const int MaxOperations = 100;
+    public const int MaxOperations = NetAppBatchCopyValidationRules.MaxOperations;
 
     public CopyNetAppBatchRequestValidator()
     {
@@ -18,9 +19,9 @@ public class CopyNetAppBatchRequestValidator : AbstractValidator<CopyNetAppBatch
             .WithMessage("DestinationPrefix is required.")
             .Must(p => p.EndsWith('/'))
             .WithMessage("DestinationPrefix must end with '/'.")
-            .Must(p => !p.Contains(".."))
+            .Must(p => !NetAppBatchCopyValidationRules.ContainsTraversal(p))
             .WithMessage("DestinationPrefix must not contain path traversal sequences ('..').")
-            .Must(p => !p.StartsWith('/'))
+            .Must(p => !NetAppBatchCopyValidationRules.StartsWithSlash(p))
             .WithMessage("DestinationPrefix must not start with '/'.");
 
         RuleFor(x => x.Operations)
@@ -30,24 +31,11 @@ public class CopyNetAppBatchRequestValidator : AbstractValidator<CopyNetAppBatch
             .WithMessage($"A batch may not contain more than {MaxOperations} operations.");
 
         RuleFor(x => x.Operations)
-            .Must(ops => ops == null || ops.Select(o => o.SourcePath).Distinct(StringComparer.OrdinalIgnoreCase).Count() == ops.Count)
+            .Must(ops => ops == null || !NetAppBatchCopyValidationRules.HasDuplicateSourcePaths(ops.Select(o => o.SourcePath).ToList()))
             .WithMessage("Duplicate sourcePath values are not permitted in a single batch.");
 
         RuleFor(x => x.Operations)
-            .Must(ops =>
-            {
-                if (ops == null || ops.Count < 2) return true;
-                var paths = ops.Select(o => o.SourcePath).ToList();
-                for (var i = 0; i < paths.Count; i++)
-                {
-                    for (var j = i + 1; j < paths.Count; j++)
-                    {
-                        if (PathsOverlap(paths[i], paths[j]))
-                            return false;
-                    }
-                }
-                return true;
-            })
+            .Must(ops => ops == null || ops.Count < 2 || !NetAppBatchCopyValidationRules.HasOverlappingPaths(ops.Select(o => o.SourcePath).ToList()))
             .WithMessage("Operations contain overlapping paths. A folder and a file inside that folder cannot both be in the same batch.");
 
         RuleForEach(x => x.Operations).ChildRules(op =>
@@ -55,13 +43,14 @@ public class CopyNetAppBatchRequestValidator : AbstractValidator<CopyNetAppBatch
             op.RuleFor(x => x.SourcePath)
                 .NotEmpty()
                 .WithMessage("SourcePath is required.")
-                .Must(path => !path.Contains(".."))
+                .Must(path => !NetAppBatchCopyValidationRules.ContainsTraversal(path))
                 .WithMessage("SourcePath must not contain path traversal sequences ('..').")
-                .Must(path => !path.StartsWith('/'))
+                .Must(path => !NetAppBatchCopyValidationRules.StartsWithSlash(path))
                 .WithMessage("SourcePath must not start with '/'.");
 
             op.RuleFor(x => x.SourcePath)
-                .Must((operation, path) => operation.Type != NetAppCopyOperationType.Folder || path.EndsWith('/'))
+                .Must((operation, path) =>
+                    !NetAppBatchCopyValidationRules.IsFolderType(operation.Type.ToString()) || path.EndsWith('/'))
                 .WithMessage("SourcePath for a Folder operation must end with a '/'.");
         });
 
@@ -71,43 +60,9 @@ public class CopyNetAppBatchRequestValidator : AbstractValidator<CopyNetAppBatch
                 if (dto.Operations == null || string.IsNullOrEmpty(dto.DestinationPrefix))
                     return;
 
-                foreach (var op in dto.Operations)
-                {
-                    if (string.IsNullOrEmpty(op.SourcePath))
-                        continue;
-
-                    // Source and destination same key check for material ops
-                    if (op.Type == NetAppCopyOperationType.Material)
-                    {
-                        var fileName = Path.GetFileName(op.SourcePath);
-                        var computedDest = dto.DestinationPrefix + fileName;
-                        if (string.Equals(op.SourcePath, computedDest, StringComparison.OrdinalIgnoreCase))
-                        {
-                            context.AddFailure("Operations", $"Source and destination are the same for path '{op.SourcePath}'.");
-                        }
-                    }
-
-                    // Folder copy into itself: destinationPrefix must not be a child of sourcePath
-                    if (op.Type == NetAppCopyOperationType.Folder)
-                    {
-                        var sourcePrefix = op.SourcePath.EndsWith('/') ? op.SourcePath : op.SourcePath + "/";
-                        if (dto.DestinationPrefix.StartsWith(sourcePrefix, StringComparison.OrdinalIgnoreCase))
-                        {
-                            context.AddFailure("Operations",
-                                $"Folder copy destination '{dto.DestinationPrefix}' is a child of source '{op.SourcePath}'. Cannot copy a folder into itself.");
-                        }
-                    }
-                }
+                var projected = dto.Operations.Select(op => (op.Type.ToString(), op.SourcePath));
+                foreach (var error in NetAppBatchCopyValidationRules.GetCrossFieldErrors(projected, dto.DestinationPrefix))
+                    context.AddFailure("Operations", error);
             });
-    }
-
-    private static bool PathsOverlap(string pathA, string pathB)
-    {
-        var a = pathA.TrimEnd('/');
-        var b = pathB.TrimEnd('/');
-
-        return string.Equals(a, b, StringComparison.OrdinalIgnoreCase)
-            || a.StartsWith(b + "/", StringComparison.OrdinalIgnoreCase)
-            || b.StartsWith(a + "/", StringComparison.OrdinalIgnoreCase);
     }
 }
