@@ -25,24 +25,17 @@ import {
   type InitiateFileTransferPayload,
   caseDivisionsOrAreaResponseSchema,
   searchResultDataSchema,
-  egressSearchResultDataSchema,
   egressSearchResultResponseSchema,
-  connectNetAppFolderSchema,
-  connectNetAppFolderDataSchema,
   connectNetAppFolderResponseSchema,
   caseMetaDataResponseSchema,
-  egressFolderDataSchema,
   egressFolderResponseSchema,
-  netAppFolderSchema,
-  netAppFileSchema,
   netAppFolderResponseSchema,
-  netAppFolderDataResponseSchema,
   indexingFileTransferResponseSchema,
   initiateFileTransferResponseSchema,
   transferStatusResponseSchema,
   activityLogResponseSchema,
-  indexingFileTransferPayloadSchema,
-  initiateFileTransferPayloadSchema,
+  // indexingFileTransferPayloadSchema,
+  // initiateFileTransferPayloadSchema,
 } from "../schemas";
 import { type CaseSearchParams } from "../common/types/CaseSearchParams";
 import { ApiError } from "../common/errors/ApiError";
@@ -398,7 +391,14 @@ export const indexingFileTransfer = async (
   if (!response.ok) {
     throw new ApiError(`indexing file transfer api failed`, url, response);
   }
-  return (await response.json()) as IndexingFileTransferResponse;
+
+  const result = await parseAndValidateResponse<IndexingFileTransferResponse>(
+    response,
+    url,
+    indexingFileTransferResponseSchema,
+    "indexingFileTransferResponseSchema",
+  );
+  return result;
 };
 
 export const initiateFileTransfer = async (
@@ -418,7 +418,14 @@ export const initiateFileTransfer = async (
   if (!response.ok) {
     throw new ApiError(`initiate file transfer failed`, url, response);
   }
-  return (await response.json()) as InitiateFileTransferResponse;
+
+  const result = await parseAndValidateResponse<InitiateFileTransferResponse>(
+    response,
+    url,
+    initiateFileTransferResponseSchema,
+    "initiateFileTransferResponseSchema",
+  );
+  return result;
 };
 
 export const getTransferStatus = async (transferId: string) => {
