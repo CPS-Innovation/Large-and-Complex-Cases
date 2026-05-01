@@ -16,6 +16,17 @@ $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'EgressCleanupHelperModule.psm1')
 
 # ============================================================
+# APPLY INPUT SAFETY MEASURES
+# ============================================================
+
+if ($WorkspaceNamePrefix.Length -lt 3) {
+  Write-Error "WorkspaceNamePrefix must be at least 3 characters."
+  exit 1
+}
+
+$escapedPrefix = [regex]::Escape($WorkspaceNamePrefix)
+
+# ============================================================
 # AUTHENTICATE
 # ============================================================
 Write-Host "[1/3] Authenticating to Egress..." -ForegroundColor Yellow
@@ -41,7 +52,7 @@ $workspacesToRemove = @()
 
 try {
   $response = Invoke-RestMethod -Method Get `
-    -Uri "$BaseUrl/api/v1/workspaces?name=$WorkspaceNamePrefix" `
+    -Uri "$BaseUrl/api/v1/workspaces?name=$escapedPrefix" `
     -Headers $AuthHeader `
     -ContentType 'application/json'
 }
@@ -52,7 +63,11 @@ catch {
 
 while ($true) {
   if ($response.data) {
-    $workspacesToRemove += $response.data
+    $response.data | ForEach-Object {
+      if ($_.name -match "^$escapedPrefix[0-9A-Za-z-]*$") {
+        $workspacesToRemove += $_
+      }
+    }
   }
 
   if ([string]::IsNullOrWhiteSpace($response.pagination.next_url)) {

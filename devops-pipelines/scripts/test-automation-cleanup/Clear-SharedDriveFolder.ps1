@@ -17,8 +17,8 @@ param(
   [Parameter(Mandatory = $true)]
   [string]$FolderPath,
 
-  [Parameter(Mandatory = $false)]
-  [string]$BaseUrl = "https://fa-lacc-api-dev.azurewebsites.net"
+  [Parameter(Mandatory = $true)]
+  [string]$BaseUrl
 )
 
 $ErrorActionPreference = 'Stop'

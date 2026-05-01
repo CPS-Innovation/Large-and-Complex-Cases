@@ -110,6 +110,7 @@ jobs:
             -AadPassword $(AadUserPassword)
             -CaseId $(IntegrationTestsCaseId)
             -FolderPath "integration-tests"
+            -BaseUrl $(LccApiBaseUrl)
 
       # # The following step is disabled while Kamesh is working on the E2E tests. 
       # # Once E2E test are merged, the following should be enabled:
