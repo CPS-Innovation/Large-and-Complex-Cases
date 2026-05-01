@@ -42,9 +42,16 @@ public class WriteCopyActivityLog(
                 outcome = successfulKeySet.Contains(op.SourcePath) ? "Copied" : "NotCopied";
             }
 
+            // For Material: compute the exact destination key.
+            // For Folder: the destination is the resolved folder prefix.
+            var destinationPath = string.Equals(op.Type, "Folder", StringComparison.OrdinalIgnoreCase)
+                ? op.DestinationPrefix
+                : op.DestinationPrefix + Path.GetFileName(op.SourcePath);
+
             return new
             {
                 sourcePath = op.SourcePath,
+                destinationPath,
                 outcome,
                 type = op.Type
             };

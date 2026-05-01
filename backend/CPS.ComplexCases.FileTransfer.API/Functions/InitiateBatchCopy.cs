@@ -178,6 +178,7 @@ public class InitiateBatchCopy(
                 {
                     Type = op.Type,
                     SourcePath = op.SourcePath,
+                    DestinationPrefix = destFolderPrefix,
                     ExpectedSourceKeys = scheduledFolderKeys,
                 });
             }
@@ -233,6 +234,7 @@ public class InitiateBatchCopy(
                 {
                     Type = op.Type,
                     SourcePath = op.SourcePath,
+                    DestinationPrefix = request.DestinationPrefix,
                 });
             }
         }

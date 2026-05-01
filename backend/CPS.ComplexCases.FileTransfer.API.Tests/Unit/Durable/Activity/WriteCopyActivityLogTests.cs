@@ -220,6 +220,34 @@ public class WriteCopyActivityLogTests
             It.IsAny<string?>(), It.IsAny<JsonDocument?>()), Times.Once);
     }
 
+    [Fact]
+    public async Task Run_WhenMaterialCopied_LogsComputedDestinationPath()
+    {
+        var payload = BuildPayload(
+            operations: [MaterialOp("Cases/123/report.pdf", destinationPrefix: "Cases/123/Disclosure/")],
+            successfulKeys: ["Cases/123/report.pdf"]);
+
+        await _activity.Run(payload);
+
+        var details = CapturedDetails();
+        var items = ExtractItems(details);
+        Assert.Equal("Cases/123/Disclosure/report.pdf", items[0].destinationPath);
+    }
+
+    [Fact]
+    public async Task Run_WhenFolderCopied_LogsDestinationFolderPrefix()
+    {
+        var payload = BuildPayload(
+            operations: [FolderOp("Cases/123/FolderA/", ["Cases/123/FolderA/a.pdf"], destinationPrefix: "Cases/123/Disclosure/FolderA/")],
+            successfulKeys: ["Cases/123/FolderA/a.pdf"]);
+
+        await _activity.Run(payload);
+
+        var details = CapturedDetails();
+        var items = ExtractItems(details);
+        Assert.Equal("Cases/123/Disclosure/FolderA/", items[0].destinationPath);
+    }
+
     private static WriteCopyActivityLogPayload BuildPayload(
         List<CopyBatchOriginalOperation> operations,
         List<string> successfulKeys) => new()
@@ -231,17 +259,19 @@ public class WriteCopyActivityLogTests
             SuccessfulSourceKeys = successfulKeys,
         };
 
-    private static CopyBatchOriginalOperation FolderOp(string sourcePath, List<string> expectedSourceKeys) => new()
+    private static CopyBatchOriginalOperation FolderOp(string sourcePath, List<string> expectedSourceKeys, string destinationPrefix = "Cases/123/Dest/FolderA/") => new()
     {
         Type = "Folder",
         SourcePath = sourcePath,
+        DestinationPrefix = destinationPrefix,
         ExpectedSourceKeys = expectedSourceKeys,
     };
 
-    private static CopyBatchOriginalOperation MaterialOp(string sourcePath) => new()
+    private static CopyBatchOriginalOperation MaterialOp(string sourcePath, string destinationPrefix = "Cases/123/Dest/") => new()
     {
         Type = "Material",
         SourcePath = sourcePath,
+        DestinationPrefix = destinationPrefix,
     };
 
     private JsonDocument CapturedDetails()
@@ -270,13 +300,14 @@ public class WriteCopyActivityLogTests
         return captured!;
     }
 
-    private static (string outcome, string type)[] ExtractItems(JsonDocument details)
+    private static (string outcome, string type, string destinationPath)[] ExtractItems(JsonDocument details)
     {
         var itemsEl = details.RootElement.GetProperty("items");
         return itemsEl.EnumerateArray()
             .Select(el => (
                 outcome: el.GetProperty("outcome").GetString()!,
-                type: el.GetProperty("type").GetString()!))
+                type: el.GetProperty("type").GetString()!,
+                destinationPath: el.GetProperty("destinationPath").GetString()!))
             .ToArray();
     }
 }

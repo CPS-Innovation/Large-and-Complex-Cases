@@ -64,7 +64,7 @@ public class CopyOrchestratorTests
             BearerToken = "bearer-token",
             BucketName = "test-bucket",
             Files = files,
-            OriginalOperations = files.Select(f => new CopyBatchOriginalOperation { Type = "Material", SourcePath = f.SourceKey }).ToList(),
+            OriginalOperations = files.Select(f => new CopyBatchOriginalOperation { Type = "Material", SourcePath = f.SourceKey, DestinationPrefix = f.DestinationPrefix }).ToList(),
             ManageMaterialsOperationId = _fixture.Create<Guid>(),
         };
     }
@@ -250,7 +250,7 @@ public class CopyOrchestratorTests
             BearerToken = "b",
             BucketName = "bkt",
             Files = [file1, file2],
-            OriginalOperations = [new() { Type = "Material", SourcePath = file1.SourceKey }],
+            OriginalOperations = [new() { Type = "Material", SourcePath = file1.SourceKey, DestinationPrefix = file1.DestinationPrefix }],
             ManageMaterialsOperationId = _fixture.Create<Guid>(),
         };
 

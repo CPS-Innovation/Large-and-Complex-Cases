@@ -24,6 +24,7 @@ public class CopyBatchOriginalOperation
 {
     public required string Type { get; set; }
     public required string SourcePath { get; set; }
+    public required string DestinationPrefix { get; set; }
     /// <summary>
     /// For Folder operations: the individual source keys that were scheduled for copy.
     /// Populated during pre-flight expansion so WriteCopyActivityLog can determine whether
