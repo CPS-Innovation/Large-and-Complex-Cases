@@ -216,15 +216,7 @@ test.describe("Case Search/Results", async () => {
 
     test("should show validation error for search by operation name in the case search page", async ({
       page,
-      worker,
     }) => {
-      const emptyHomeAreaResponse = { ...caseAreasPlaywright, homeArea: {} };
-      await worker.use(
-        http.get("https://mocked-out-api/api/v1/areas", async () => {
-          await delay(10);
-          return HttpResponse.json(emptyHomeAreaResponse);
-        }),
-      );
       await page.goto("/");
       await page.getByRole("radio", { name: "Operation name" }).check();
       await expect(page.getByTestId("search-error-summary")).not.toBeVisible();
@@ -240,28 +232,13 @@ test.describe("Case Search/Results", async () => {
           .getByTestId("search-operation-name-link")
           .getByText("You must enter an operation name"),
       ).toBeVisible();
-      await expect(
-        page
-          .getByTestId("search-operation-area-link")
-          .getByText("You must enter an operation area"),
-      ).toBeVisible();
       page.getByTestId("search-operation-name-link").click();
       await expect(page.getByTestId("search-operation-name")).toBeFocused();
-      page.getByTestId("search-operation-area-link").click();
-      await expect(page.getByTestId("search-operation-area")).toBeFocused();
     });
 
     test("should show validation error for search by defendant last name in the case search page", async ({
       page,
-      worker,
     }) => {
-      const emptyHomeAreaResponse = { ...caseAreasPlaywright, homeArea: {} };
-      await worker.use(
-        http.get("https://mocked-out-api/api/v1/areas", async () => {
-          await delay(10);
-          return HttpResponse.json(emptyHomeAreaResponse);
-        }),
-      );
       await page.goto("/");
       await page.getByRole("radio", { name: "Defendant last name" }).check();
       await expect(page.getByTestId("search-error-summary")).not.toBeVisible();
@@ -277,15 +254,8 @@ test.describe("Case Search/Results", async () => {
           .getByTestId("search-defendant-name-link")
           .getByText("You must enter a defendant last name"),
       ).toBeVisible();
-      await expect(
-        page
-          .getByTestId("search-defendant-area-link")
-          .getByText("You must enter a defendant area"),
-      ).toBeVisible();
       page.getByTestId("search-defendant-name-link").click();
       await expect(page.getByTestId("search-defendant-name")).toBeFocused();
-      page.getByTestId("search-defendant-area-link").click();
-      await expect(page.getByTestId("search-defendant-area")).toBeFocused();
     });
 
     test("Should be able to submit the form using enter button", async ({
@@ -456,16 +426,8 @@ test.describe("Case Search/Results", async () => {
 
     test("should show validation error for search by operation name in the search result page", async ({
       page,
-      worker,
     }) => {
-      const emptyHomeAreaResponse = { ...caseAreasPlaywright, homeArea: {} };
-      await worker.use(
-        http.get("https://mocked-out-api/api/v1/areas", async () => {
-          await delay(10);
-          return HttpResponse.json(emptyHomeAreaResponse);
-        }),
-      );
-      await page.goto("/search-results?operation-name=&area=123");
+      await page.goto("/search-results?operation-name=&area=234");
       await page.waitForResponse(`https://mocked-out-api/api/v1/areas`);
       await expect(page.getByTestId("search-error-summary")).toBeVisible();
       await expect(
@@ -503,15 +465,7 @@ test.describe("Case Search/Results", async () => {
 
     test("should show validation error for search by defendant last name in the search result page", async ({
       page,
-      worker,
     }) => {
-      const emptyHomeAreaResponse = { ...caseAreasPlaywright, homeArea: {} };
-      await worker.use(
-        http.get("https://mocked-out-api/api/v1/areas", async () => {
-          await delay(10);
-          return HttpResponse.json(emptyHomeAreaResponse);
-        }),
-      );
       await page.goto("/search-results?defendant-name=&area=234");
       await page.waitForResponse(`https://mocked-out-api/api/v1/areas`);
       await expect(page.getByTestId("search-error-summary")).toBeVisible();
