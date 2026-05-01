@@ -47,6 +47,7 @@ public class CopyOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryClient 
             OrchestrationStartTime = DateTime.UtcNow
         };
 
+        var completedSuccessfully = false;
         try
         {
             // 1. Initialize transfer entity
@@ -213,8 +214,7 @@ public class CopyOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryClient 
                 });
 
             telemetryEvent.IsSuccessful = telemetryEvent.TotalFilesFailed == 0;
-            telemetryEvent.OrchestrationEndTime = DateTime.UtcNow;
-            _telemetryClient.TrackEvent(telemetryEvent);
+            completedSuccessfully = true;
         }
         catch (Exception ex)
         {
@@ -238,6 +238,7 @@ public class CopyOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryClient 
                 nameof(RemoveActiveManageMaterialsOperation),
                 input.ManageMaterialsOperationId);
 
+            telemetryEvent.IsSuccessful = completedSuccessfully && telemetryEvent.TotalFilesFailed == 0;
             telemetryEvent.OrchestrationEndTime = DateTime.UtcNow;
             _telemetryClient.TrackEvent(telemetryEvent);
         }
