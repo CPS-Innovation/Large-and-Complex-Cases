@@ -1,25 +1,25 @@
 import { z } from "zod";
 
-export const ConnectNetAppFolderSchema = z.object({
+export const connectNetAppFolderSchema = z.object({
   folderPath: z.string(),
   caseId: z.number().nullable(),
 });
-export const ConnectNetAppFolderDataSchema = z.object({
+export const connectNetAppFolderDataSchema = z.object({
   rootPath: z.string(),
-  folders: z.array(ConnectNetAppFolderSchema),
+  folders: z.array(connectNetAppFolderSchema),
 });
-export const ConnectNetAppFolderResponseSchema = z.object({
-  data: ConnectNetAppFolderDataSchema,
+export const connectNetAppFolderResponseSchema = z.object({
+  data: connectNetAppFolderDataSchema,
   pagination: z.object({
     maxKeys: z.number(),
     nextContinuationToken: z.string().nullable(),
   }),
 });
 
-export type ConnectNetAppFolder = z.infer<typeof ConnectNetAppFolderSchema>;
+export type ConnectNetAppFolder = z.infer<typeof connectNetAppFolderSchema>;
 export type ConnectNetAppFolderData = z.infer<
-  typeof ConnectNetAppFolderDataSchema
+  typeof connectNetAppFolderDataSchema
 >;
 export type ConnectNetAppFolderResponse = z.infer<
-  typeof ConnectNetAppFolderResponseSchema
+  typeof connectNetAppFolderResponseSchema
 >;

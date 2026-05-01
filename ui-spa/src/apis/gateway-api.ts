@@ -1,34 +1,49 @@
 import { v4 as uuidv4 } from "uuid";
+import { z } from "zod";
 import { GATEWAY_BASE_URL, GATEWAY_SCOPE } from "../config";
 import { getAccessToken } from "../auth";
-import { CaseDivisionsOrAreaResponse } from "../schemas/responses/caseDivisionsOrArea";
-import { SearchResultData } from "../schemas/responses/searchResult";
 import {
-  EgressSearchResultData,
-  EgressSearchResultResponse,
-} from "../schemas/responses/egressSearchResult";
-import {
-  ConnectNetAppFolder,
-  ConnectNetAppFolderData,
-  ConnectNetAppFolderResponse,
-} from "../schemas/responses/connectNetAppFolderData";
-import { CaseMetaDataResponse } from "../schemas/responses/caseMetaData";
-import {
-  EgressFolderData,
-  EgressFolderResponse,
-} from "../schemas/responses/egressFolderData";
-import {
-  NetAppFolder,
-  NetAppFile,
-  NetAppFolderResponse,
-  NetAppFolderDataResponse,
-} from "../schemas/responses/netAppFolderData";
-import { IndexingFileTransferResponse } from "../schemas/responses/indexingFileTransferResponse";
-import { InitiateFileTransferResponse } from "../schemas/responses/initiateFileTransferResponse";
-import { TransferStatusResponse } from "../schemas/responses/transferStatusResponse";
-import { ActivityLogResponse } from "../schemas/responses/activityLogResponse";
-import { IndexingFileTransferPayload } from "../schemas/requests/indexingFileTransferPayload";
-import { InitiateFileTransferPayload } from "../schemas/requests/initiateFileTransferPayload";
+  type CaseDivisionsOrAreaResponse,
+  type SearchResultData,
+  type EgressSearchResultData,
+  type EgressSearchResultResponse,
+  type ConnectNetAppFolder,
+  type ConnectNetAppFolderData,
+  type ConnectNetAppFolderResponse,
+  type CaseMetaDataResponse,
+  type EgressFolderData,
+  type EgressFolderResponse,
+  type NetAppFolder,
+  type NetAppFile,
+  type NetAppFolderResponse,
+  type NetAppFolderDataResponse,
+  type IndexingFileTransferResponse,
+  type InitiateFileTransferResponse,
+  type TransferStatusResponse,
+  type ActivityLogResponse,
+  type IndexingFileTransferPayload,
+  type InitiateFileTransferPayload,
+  caseDivisionsOrAreaResponseSchema,
+  searchResultDataSchema,
+  egressSearchResultDataSchema,
+  egressSearchResultResponseSchema,
+  connectNetAppFolderSchema,
+  connectNetAppFolderDataSchema,
+  connectNetAppFolderResponseSchema,
+  caseMetaDataResponseSchema,
+  egressFolderDataSchema,
+  egressFolderResponseSchema,
+  netAppFolderSchema,
+  netAppFileSchema,
+  netAppFolderResponseSchema,
+  netAppFolderDataResponseSchema,
+  indexingFileTransferResponseSchema,
+  initiateFileTransferResponseSchema,
+  transferStatusResponseSchema,
+  activityLogResponseSchema,
+  indexingFileTransferPayloadSchema,
+  initiateFileTransferPayloadSchema,
+} from "../schemas";
 import { type CaseSearchParams } from "../common/types/CaseSearchParams";
 import { ApiError } from "../common/errors/ApiError";
 
@@ -39,6 +54,29 @@ const buildCommonHeaders = async (): Promise<Record<string, string>> => {
     [CORRELATION_ID]: uuidv4(),
     Authorization: `Bearer ${await getAccessToken([GATEWAY_SCOPE])}`,
   };
+};
+
+export const parseAndValidateResponse = async <T>(
+  response: Response,
+  url: string,
+  schema: z.ZodType<T>,
+  contextText: string,
+): Promise<T> => {
+  let parsedJson: unknown;
+  try {
+    parsedJson = await response.json();
+  } catch (error) {
+    throw new ApiError(`${error}`, url, response);
+  }
+
+  const result = schema.safeParse(parsedJson);
+
+  if (!result.success) {
+    console.warn(`${contextText} validation failed`, result.error);
+    throw new ApiError(`response schema validation failed`, url, response);
+  }
+
+  return result.data;
 };
 
 export const getCaseSearchResults = async (
@@ -54,11 +92,16 @@ export const getCaseSearchResults = async (
       ...(await buildCommonHeaders()),
     },
   });
-
   if (!response.ok) {
     throw new ApiError(`Searching for cases failed`, url, response);
   }
-  return await response.json();
+  const result = await parseAndValidateResponse<SearchResultData>(
+    response,
+    url,
+    searchResultDataSchema,
+    "searchResultDataSchema",
+  );
+  return result;
 };
 
 export const getCaseDivisionsOrAreas = async () => {
@@ -75,7 +118,14 @@ export const getCaseDivisionsOrAreas = async () => {
   if (!response.ok) {
     throw new ApiError(`Getting case areas failed`, url, response);
   }
-  return (await response.json()) as CaseDivisionsOrAreaResponse;
+
+  const result = await parseAndValidateResponse<CaseDivisionsOrAreaResponse>(
+    response,
+    url,
+    caseDivisionsOrAreaResponseSchema,
+    "caseDivisionsOrAreaResponseSchema",
+  );
+  return result;
 };
 
 export const getEgressSearchResults = async (
@@ -100,20 +150,20 @@ export const getEgressSearchResults = async (
   if (!response.ok) {
     throw new ApiError(`Searching for Egress workspaces failed`, url, response);
   }
-  try {
-    const result = (await response.json()) as EgressSearchResultResponse;
 
-    const { data, pagination } = result;
-    const updated = collected.concat(data);
-    if (skip + take >= pagination.totalResults) {
-      return updated;
-    }
-    return getEgressSearchResults(workspaceName, skip + take, take, updated);
-  } catch (error) {
-    throw new Error(
-      `Invalid API response format for Egress workspace search results, ${error}`,
-    );
+  const result = await parseAndValidateResponse<EgressSearchResultResponse>(
+    response,
+    url,
+    egressSearchResultResponseSchema,
+    "egressSearchResultResponseSchema",
+  );
+
+  const { data, pagination } = result;
+  const updated = collected.concat(data);
+  if (skip + take >= pagination.totalResults) {
+    return updated;
   }
+  return getEgressSearchResults(workspaceName, skip + take, take, updated);
 };
 
 export const connectEgressWorkspace = async ({
@@ -167,29 +217,28 @@ export const getConnectNetAppFolders = async (
   if (!response.ok) {
     throw new ApiError(`getting netapp folders failed`, url, response);
   }
-  try {
-    const result = (await response.json()) as ConnectNetAppFolderResponse;
+  const result = await parseAndValidateResponse<ConnectNetAppFolderResponse>(
+    response,
+    url,
+    connectNetAppFolderResponseSchema,
+    "connectNetAppFolderResponseSchema",
+  );
 
-    const { data, pagination } = result;
-    const updatedFolders = collectedFolders.concat(data.folders);
-    if (!pagination.nextContinuationToken) {
-      return {
-        rootPath: data.rootPath,
-        folders: updatedFolders,
-      };
-    }
-    return getConnectNetAppFolders(
-      operationName,
-      folderPath,
-      take,
-      pagination.nextContinuationToken,
-      updatedFolders,
-    );
-  } catch (error) {
-    throw new Error(
-      `Invalid API response format for netapp folders results, ${error}`,
-    );
+  const { data, pagination } = result;
+  const updatedFolders = collectedFolders.concat(data.folders);
+  if (!pagination.nextContinuationToken) {
+    return {
+      rootPath: data.rootPath,
+      folders: updatedFolders,
+    };
   }
+  return getConnectNetAppFolders(
+    operationName,
+    folderPath,
+    take,
+    pagination.nextContinuationToken,
+    updatedFolders,
+  );
 };
 
 export const connectNetAppFolder = async ({
@@ -236,7 +285,13 @@ export const getCaseMetaData = async (caseId: string) => {
   if (!response.ok) {
     throw new ApiError(`Getting case metadata failed`, url, response);
   }
-  return (await response.json()) as CaseMetaDataResponse;
+  const result = await parseAndValidateResponse<CaseMetaDataResponse>(
+    response,
+    url,
+    caseMetaDataResponseSchema,
+    "caseMetaDataResponseSchema",
+  );
+  return result;
 };
 
 export const getEgressFolders = async (
@@ -262,18 +317,20 @@ export const getEgressFolders = async (
   if (!response.ok) {
     throw new ApiError(`Getting egress folders failed`, url, response);
   }
-  try {
-    const result = (await response.json()) as EgressFolderResponse;
 
-    const { data, pagination } = result;
-    const updated = collected.concat(data);
-    if (skip + take >= pagination.totalResults) {
-      return updated;
-    }
-    return getEgressFolders(workspaceId, folderId, skip + take, take, updated);
-  } catch (error) {
-    throw new Error(`Invalid API response format for Egress folders, ${error}`);
+  const result = await parseAndValidateResponse<EgressFolderResponse>(
+    response,
+    url,
+    egressFolderResponseSchema,
+    "egressFolderResponseSchema",
+  );
+
+  const { data, pagination } = result;
+  const updated = collected.concat(data);
+  if (skip + take >= pagination.totalResults) {
+    return updated;
   }
+  return getEgressFolders(workspaceId, folderId, skip + take, take, updated);
 };
 
 export const getNetAppFolders = async (
@@ -299,30 +356,29 @@ export const getNetAppFolders = async (
   if (!response.ok) {
     throw new ApiError(`getting netapp files/folders failed`, url, response);
   }
-  try {
-    const result = (await response.json()) as NetAppFolderResponse;
+  const result = await parseAndValidateResponse<NetAppFolderResponse>(
+    response,
+    url,
+    netAppFolderResponseSchema,
+    "netAppFolderResponseSchema",
+  );
 
-    const { data, pagination } = result;
-    const updatedFolders = collectedFolders.concat(data.folderData);
-    const updatedFiles = collectedFiles.concat(data.fileData);
-    if (!pagination.nextContinuationToken) {
-      return {
-        folderData: updatedFolders,
-        fileData: updatedFiles,
-      };
-    }
-    return getNetAppFolders(
-      folderPath,
-      take,
-      pagination.nextContinuationToken,
-      updatedFolders,
-      updatedFiles,
-    );
-  } catch (error) {
-    throw new Error(
-      `Invalid API response format for netapp files/folders results, ${error}`,
-    );
+  const { data, pagination } = result;
+  const updatedFolders = collectedFolders.concat(data.folderData);
+  const updatedFiles = collectedFiles.concat(data.fileData);
+  if (!pagination.nextContinuationToken) {
+    return {
+      folderData: updatedFolders,
+      fileData: updatedFiles,
+    };
   }
+  return getNetAppFolders(
+    folderPath,
+    take,
+    pagination.nextContinuationToken,
+    updatedFolders,
+    updatedFiles,
+  );
 };
 
 export const indexingFileTransfer = async (
@@ -379,7 +435,13 @@ export const getTransferStatus = async (transferId: string) => {
   if (!response.ok) {
     throw new ApiError(`Getting case transfer status failed`, url, response);
   }
-  return (await response.json()) as TransferStatusResponse;
+  const result = await parseAndValidateResponse<TransferStatusResponse>(
+    response,
+    url,
+    transferStatusResponseSchema,
+    "transferStatusResponseSchema",
+  );
+  return result;
 };
 
 export const handleFileTransferClear = async (transferId: string) => {
@@ -415,7 +477,13 @@ export const getActivityLog = async (caseId: string) => {
   if (!response.ok) {
     throw new ApiError(`Getting case activity log failed`, url, response);
   }
-  return (await response.json()) as ActivityLogResponse;
+  const result = await parseAndValidateResponse<ActivityLogResponse>(
+    response,
+    url,
+    activityLogResponseSchema,
+    "activityLogResponseSchema",
+  );
+  return result;
 };
 
 export const downloadActivityLog = async (activityId: string) => {

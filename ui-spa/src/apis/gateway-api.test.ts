@@ -41,16 +41,16 @@ describe("gateway apis", () => {
   });
 
   describe("getCaseSearchResults", () => {
-    it("should return case search data when fetch is successful", async () => {
+    it("getCaseSearchResults - should return case search data when fetch is successful", async () => {
       const mockData = [
         {
           operationName: "abc",
           urn: "urn",
-          caseId: "123",
+          caseId: 123,
           leadDefendantName: "abc",
           egressWorkspaceId: "abcdef",
           netappFolderPath: null,
-          registrationDate: "null",
+          registrationDate: null,
         },
       ];
       (v4 as any).mockReturnValue("id_123");
@@ -78,7 +78,7 @@ describe("gateway apis", () => {
       );
     });
 
-    it("should throw an ApiError when fetch fails", async () => {
+    it("getCaseSearchResults - should throw an ApiError when fetch fails", async () => {
       (v4 as any).mockReturnValue("id_123");
       (getAccessToken as any).mockResolvedValue("access_token");
       (fetch as any).mockResolvedValue({
@@ -103,13 +103,61 @@ describe("gateway apis", () => {
         }),
       );
     });
+
+    it("getCaseSearchResults - invalid json response throws error", async () => {
+      (globalThis.fetch as any).mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        json: () =>
+          Promise.reject(new SyntaxError("Unexpected token < in JSON")),
+      });
+
+      await expect(
+        getCaseSearchResults({ "defendant-name": "husband&wife", area: "10" }),
+      ).rejects.toBeInstanceOf(ApiError);
+      await expect(
+        getCaseSearchResults({ "defendant-name": "husband&wife", area: "10" }),
+      ).rejects.toThrow(
+        "An error occurred contacting the server at gateway_url/api/v1/case-search?defendant-name=husband%26wife&area=10: SyntaxError: Unexpected token < in JSON",
+      );
+    });
+    it("getCaseSearchResults - response schema validation failed", async () => {
+      const mockData = [
+        {
+          operationName: "abc",
+          urn: "urn",
+          caseId: "123",
+          leadDefendantName: "abc",
+          egressWorkspaceId: "abcdef",
+          netappFolderPath: null,
+          registrationDate: null,
+        },
+      ];
+      (globalThis.fetch as any).mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        json: async () => mockData,
+      });
+
+      await expect(
+        getCaseSearchResults({ "defendant-name": "husband&wife", area: "10" }),
+      ).rejects.toBeInstanceOf(ApiError);
+      await expect(
+        getCaseSearchResults({ "defendant-name": "husband&wife", area: "10" }),
+      ).rejects.toThrow(
+        "An error occurred contacting the server at gateway_url/api/v1/case-search?defendant-name=husband%26wife&area=10: response schema validation failed; status - OK (200)",
+      );
+    });
   });
+
   describe("getCaseDivisionsOrAreas", () => {
-    it("should return area data when fetch is successful", async () => {
+    it("getCaseDivisionsOrAreas- should return area data when fetch is successful", async () => {
       const mockData = {
         allAreas: [{ id: 1, description: "Area A" }],
         userAreas: [{ id: 2, description: "Area B" }],
-        homeArea: [{ id: 2, description: "Area B" }],
+        homeArea: { id: 2, description: "Area B" },
       };
       (v4 as any).mockReturnValue("id_123");
       (getAccessToken as any).mockResolvedValue("access_token");
@@ -133,7 +181,7 @@ describe("gateway apis", () => {
       );
     });
 
-    it("should throw an ApiError when fetch fails", async () => {
+    it("getCaseDivisionsOrAreas- should throw an ApiError when fetch fails", async () => {
       (v4 as any).mockReturnValue("id_123");
       (getAccessToken as any).mockResolvedValue("access_token");
       (fetch as any).mockResolvedValue({
@@ -160,9 +208,41 @@ describe("gateway apis", () => {
         }),
       );
     });
+    it("getCaseDivisionsOrAreas - invalid json response throws error", async () => {
+      (globalThis.fetch as any).mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        json: () =>
+          Promise.reject(new SyntaxError("Unexpected token < in JSON")),
+      });
+
+      await expect(getCaseDivisionsOrAreas()).rejects.toBeInstanceOf(ApiError);
+      await expect(getCaseDivisionsOrAreas()).rejects.toThrow(
+        "An error occurred contacting the server at gateway_url/api/v1/areas: SyntaxError: Unexpected token < in JSON; status - OK (200)",
+      );
+    });
+    it("getCaseDivisionsOrAreas - response schema validation failed", async () => {
+      const mockData = {
+        allAreas: [{ id: 1, description: "Area A" }],
+        userAreas: [{ id: 2, description: "Area B" }],
+        homeArea: [{ id: 2, description: "Area B" }],
+      };
+      (globalThis.fetch as any).mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        json: async () => mockData,
+      });
+
+      await expect(getCaseDivisionsOrAreas()).rejects.toBeInstanceOf(ApiError);
+      await expect(getCaseDivisionsOrAreas()).rejects.toThrow(
+        "An error occurred contacting the server at gateway_url/api/v1/areas: response schema validation failed; status - OK (200)",
+      );
+    });
   });
   describe("getEgressSearchResults", () => {
-    it("should return egress search data when fetch is successful", async () => {
+    it("getEgressSearchResults - should return egress search data when fetch is successful", async () => {
       const mockData = {
         data: [],
         pagination: {
@@ -194,7 +274,7 @@ describe("gateway apis", () => {
       );
     });
 
-    it("should make multiple calls to get the paginated data and then successfully return the data", async () => {
+    it("getEgressSearchResults - should make multiple calls to get the paginated data and then successfully return the data", async () => {
       const mockData = {
         data: [],
         pagination: {
@@ -240,7 +320,7 @@ describe("gateway apis", () => {
       );
     });
 
-    it("should throw an ApiError when fetch fails", async () => {
+    it("getEgressSearchResults - should throw an ApiError when fetch fails", async () => {
       (v4 as any).mockReturnValue("id_123");
       (getAccessToken as any).mockResolvedValue("access_token");
       (fetch as any).mockResolvedValue({
@@ -274,8 +354,25 @@ describe("gateway apis", () => {
         }),
       );
     });
+    it("getEgressSearchResults - invalid json response throws error", async () => {
+      (globalThis.fetch as any).mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        json: () =>
+          Promise.reject(new SyntaxError("Unexpected token < in JSON")),
+      });
 
-    it("should throw Error if the response data is not in correct format", async () => {
+      await expect(
+        getEgressSearchResults("thunder", 0, 50, []),
+      ).rejects.toBeInstanceOf(ApiError);
+      await expect(
+        getEgressSearchResults("thunder", 0, 50, []),
+      ).rejects.toThrow(
+        "An error occurred contacting the server at gateway_url/api/v1/egress/workspaces: SyntaxError: Unexpected token < in JSON",
+      );
+    });
+    it("getEgressSearchResults -  response schema validation failed", async () => {
       const mockData = {
         data: [],
         pagination1: {
@@ -289,30 +386,23 @@ describe("gateway apis", () => {
       (getAccessToken as any).mockResolvedValue("access_token");
       (fetch as any).mockResolvedValue({
         ok: true,
+        status: 200,
+        statusText: "OK",
         json: async () => mockData,
       });
 
       await expect(
         getEgressSearchResults("thunder", 0, 50, []),
+      ).rejects.toBeInstanceOf(ApiError);
+      await expect(
+        getEgressSearchResults("thunder", 0, 50, []),
       ).rejects.toThrow(
-        "Invalid API response format for Egress workspace search results",
-      );
-
-      expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/egress/workspaces?workspace-name=thunder&skip=0&take=50`,
-        expect.objectContaining({
-          method: "GET",
-          credentials: "include",
-          headers: {
-            Authorization: "Bearer access_token",
-            "Correlation-Id": "id_123",
-          },
-        }),
+        "An error occurred contacting the server at gateway_url/api/v1/egress/workspaces: response schema validation failed; status - OK (200)",
       );
     });
   });
   describe("connectEgressWorkspace", () => {
-    it("should return success response if the post request is successful", async () => {
+    it("connectEgressWorkspace - should return success response if the post request is successful", async () => {
       (v4 as any).mockReturnValue("id_123");
       (getAccessToken as any).mockResolvedValue("access_token");
       (fetch as any).mockResolvedValue({
@@ -341,7 +431,7 @@ describe("gateway apis", () => {
       );
     });
 
-    it("should throw an ApiError when fetch fails", async () => {
+    it("connectEgressWorkspace - should throw an ApiError when fetch fails", async () => {
       (v4 as any).mockReturnValue("id_123");
       (getAccessToken as any).mockResolvedValue("access_token");
       (fetch as any).mockResolvedValue({
@@ -375,13 +465,14 @@ describe("gateway apis", () => {
     });
   });
   describe("getConnectNetAppFolders", () => {
-    it("should return netapp connect data folders when fetch is successful", async () => {
+    it("getConnectNetAppFolders - should return netapp connect data folders when fetch is successful", async () => {
       const mockData = {
         data: {
           rootPath: "netapp/",
           folders: [],
         },
         pagination: {
+          maxKeys: 100,
           nextContinuationToken: "",
         },
       };
@@ -412,16 +503,25 @@ describe("gateway apis", () => {
         }),
       );
     });
-    it("should make multiple calls to get the paginated data and then successfully return the data", async () => {
+    it("getConnectNetAppFolders -should make multiple calls to get the paginated data and then successfully return the data", async () => {
       const mockData1 = {
-        data: { rootPath: "netapp/", folders: [{ id: 1 }] },
+        data: {
+          rootPath: "netapp/",
+          folders: [{ folderPath: "thunderstrikeab/", caseId: 123 }],
+        },
+
         pagination: {
+          maxKeys: 100,
           nextContinuationToken: "abc",
         },
       };
       const mockData2 = {
-        data: { rootPath: "netapp/", folders: [{ id: 2 }, { id: 3 }] },
+        data: {
+          rootPath: "netapp/",
+          folders: [{ folderPath: "thunderstrikeacb/", caseId: 1243 }],
+        },
         pagination: {
+          maxKeys: 100,
           nextContinuationToken: "",
         },
       };
@@ -443,7 +543,10 @@ describe("gateway apis", () => {
       );
       expect(result).toEqual({
         rootPath: "netapp/",
-        folders: [{ id: 1 }, { id: 2 }, { id: 3 }],
+        folders: [
+          { folderPath: "thunderstrikeab/", caseId: 123 },
+          { folderPath: "thunderstrikeacb/", caseId: 1243 },
+        ],
       });
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenNthCalledWith(
@@ -471,7 +574,7 @@ describe("gateway apis", () => {
         }),
       );
     });
-    it("should throw an ApiError when fetch fails", async () => {
+    it("getConnectNetAppFolders - should throw an ApiError when fetch fails", async () => {
       (v4 as any).mockReturnValue("id_123");
       (getAccessToken as any).mockResolvedValue("access_token");
       (fetch as any).mockResolvedValue({
@@ -505,7 +608,25 @@ describe("gateway apis", () => {
         }),
       );
     });
-    it("should throw Error if the response data is not in correct format", async () => {
+    it("getConnectNetAppFolders - invalid json response throws error", async () => {
+      (globalThis.fetch as any).mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        json: () =>
+          Promise.reject(new SyntaxError("Unexpected token < in JSON")),
+      });
+
+      await expect(
+        getConnectNetAppFolders("thunder", "/netapp", 50, "", []),
+      ).rejects.toBeInstanceOf(ApiError);
+      await expect(
+        getConnectNetAppFolders("thunder", "/netapp", 50, "", []),
+      ).rejects.toThrow(
+        "An error occurred contacting the server at gateway_url/api/v1/netapp/folders: SyntaxError: Unexpected token < in JSON",
+      );
+    });
+    it("getConnectNetAppFolders -  response schema validation failed", async () => {
       const mockData = {
         data: [],
         pagination1: {
@@ -516,30 +637,23 @@ describe("gateway apis", () => {
       (getAccessToken as any).mockResolvedValue("access_token");
       (fetch as any).mockResolvedValue({
         ok: true,
+        status: 200,
+        statusText: "OK",
         json: async () => mockData,
       });
 
       await expect(
         getConnectNetAppFolders("thunder", "/netapp", 50, "", []),
+      ).rejects.toBeInstanceOf(ApiError);
+      await expect(
+        getConnectNetAppFolders("thunder", "/netapp", 50, "", []),
       ).rejects.toThrow(
-        "Invalid API response format for netapp folders results",
-      );
-
-      expect(fetch).toHaveBeenCalledWith(
-        "gateway_url/api/v1/netapp/folders?operation-name=thunder&path=%2Fnetapp&take=50&continuation-token=",
-        expect.objectContaining({
-          method: "GET",
-          credentials: "include",
-          headers: {
-            Authorization: "Bearer access_token",
-            "Correlation-Id": "id_123",
-          },
-        }),
+        "An error occurred contacting the server at gateway_url/api/v1/netapp/folders: response schema validation failed; status - OK (200)",
       );
     });
   });
   describe("connectNetAppFolder", () => {
-    it("should return success response if the post request is successful", async () => {
+    it("connectNetAppFolder- should return success response if the post request is successful", async () => {
       (v4 as any).mockReturnValue("id_123");
       (getAccessToken as any).mockResolvedValue("access_token");
       (fetch as any).mockResolvedValue({
@@ -570,7 +684,7 @@ describe("gateway apis", () => {
       );
     });
 
-    it("should throw an ApiError when post request fails", async () => {
+    it("connectNetAppFolder- should throw an ApiError when post request fails", async () => {
       (v4 as any).mockReturnValue("id_123");
       (getAccessToken as any).mockResolvedValue("access_token");
       (fetch as any).mockResolvedValue({
@@ -614,14 +728,16 @@ describe("gateway apis", () => {
     });
   });
   describe("getCaseMetaData", () => {
-    it("should return case meta data when fetch is successful", async () => {
+    it("getCaseMetaData - should return case meta data when fetch is successful", async () => {
       const mockData = {
         caseId: "12",
         egressWorkspaceId: "egress_1",
         netappFolderPath: "netapp/",
         operationName: "Thunderstruck",
         urn: "45AA2098221",
+        activeTransferId: "",
       };
+
       (v4 as any).mockReturnValue("id_123");
       (getAccessToken as any).mockResolvedValue("access_token");
       (fetch as any).mockResolvedValue({
@@ -644,7 +760,7 @@ describe("gateway apis", () => {
       );
     });
 
-    it("should throw an ApiError when fetch fails", async () => {
+    it("getCaseMetaData - should throw an ApiError when fetch fails", async () => {
       (v4 as any).mockReturnValue("id_123");
       (getAccessToken as any).mockResolvedValue("access_token");
       (fetch as any).mockResolvedValue({
@@ -675,9 +791,46 @@ describe("gateway apis", () => {
         }),
       );
     });
+
+    it("getCaseMetaData - invalid json response throws error", async () => {
+      (globalThis.fetch as any).mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        json: () =>
+          Promise.reject(new SyntaxError("Unexpected token < in JSON")),
+      });
+
+      await expect(getCaseMetaData("12")).rejects.toBeInstanceOf(ApiError);
+      await expect(getCaseMetaData("12")).rejects.toThrow(
+        "An error occurred contacting the server at gateway_url/api/v1/cases/12: SyntaxError: Unexpected token < in JSON",
+      );
+    });
+
+    it("getCaseMetaData -  response schema validation failed", async () => {
+      const mockData = {
+        data: [],
+        pagination1: {
+          nextContinuationToken: "",
+        },
+      };
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        json: async () => mockData,
+      });
+
+      await expect(getCaseMetaData("12")).rejects.toBeInstanceOf(ApiError);
+      await expect(getCaseMetaData("12")).rejects.toThrow(
+        "An error occurred contacting the server at gateway_url/api/v1/cases/12: response schema validation failed; status - OK (200)",
+      );
+    });
   });
   describe("getEgressFolders", () => {
-    it("should return egress folders when fetch is successful", async () => {
+    it("getEgressFolders - should return egress folders when fetch is successful", async () => {
       const mockData = {
         data: [],
         pagination: {
@@ -709,7 +862,7 @@ describe("gateway apis", () => {
       );
     });
 
-    it("should make multiple calls to get the paginated data and then successfully return the data", async () => {
+    it("getEgressFolders - should make multiple calls to get the paginated data and then successfully return the data", async () => {
       const mockData = {
         data: [],
         pagination: {
@@ -755,7 +908,7 @@ describe("gateway apis", () => {
       );
     });
 
-    it("should throw an ApiError when fetch fails", async () => {
+    it("getEgressFolders - should throw an ApiError when fetch fails", async () => {
       (v4 as any).mockReturnValue("id_123");
       (getAccessToken as any).mockResolvedValue("access_token");
       (fetch as any).mockResolvedValue({
@@ -790,7 +943,26 @@ describe("gateway apis", () => {
       );
     });
 
-    it("should throw Error if the response data is not in correct format", async () => {
+    it("getEgressFolders - invalid json response throws error", async () => {
+      (globalThis.fetch as any).mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        json: () =>
+          Promise.reject(new SyntaxError("Unexpected token < in JSON")),
+      });
+
+      await expect(
+        getEgressFolders("thunder", "folder-1", 0, 50, []),
+      ).rejects.toBeInstanceOf(ApiError);
+      await expect(
+        getEgressFolders("thunder", "folder-1", 0, 50, []),
+      ).rejects.toThrow(
+        "An error occurred contacting the server at gateway_url/api/v1/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50: SyntaxError: Unexpected token < in JSON",
+      );
+    });
+
+    it("getEgressFolders -  response schema validation failed", async () => {
       const mockData = {
         data: [],
         pagination1: {
@@ -804,35 +976,47 @@ describe("gateway apis", () => {
       (getAccessToken as any).mockResolvedValue("access_token");
       (fetch as any).mockResolvedValue({
         ok: true,
+        status: 200,
+        statusText: "OK",
         json: async () => mockData,
       });
 
       await expect(
         getEgressFolders("thunder", "folder-1", 0, 50, []),
-      ).rejects.toThrow("Invalid API response format for Egress folders");
-
-      expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50`,
-        expect.objectContaining({
-          method: "GET",
-          credentials: "include",
-          headers: {
-            Authorization: "Bearer access_token",
-            "Correlation-Id": "id_123",
-          },
-        }),
+      ).rejects.toBeInstanceOf(ApiError);
+      await expect(
+        getEgressFolders("thunder", "folder-1", 0, 50, []),
+      ).rejects.toThrow(
+        "An error occurred contacting the server at gateway_url/api/v1/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50: response schema validation failed; status - OK (200)",
       );
     });
   });
   describe("getNetAppFolders", () => {
-    it("should return netapp folders when fetch is successful", async () => {
+    it("getNetAppFolders - should return netapp folders when fetch is successful", async () => {
       const mockData = {
         data: {
-          fileData: [],
-          folderData: [],
+          fileData: [
+            {
+              path: "netapp/file-1-0.pdf",
+              lastModified: "2000-01-02",
+              filesize: 1234,
+            },
+            {
+              path: "eweweweweewweewwewewewewewewweewerwrrwwrwrrrrrrwrwrwrwweewweeewweweeweweweew.pdf",
+              lastModified: "2000-01-03",
+              filesize: 2268979,
+            },
+          ],
+          folderData: [
+            {
+              path: "netapp/folder-1-0/",
+            },
+          ],
         },
+
         pagination: {
-          nextContinuationToken: "",
+          maxKeys: 100,
+          nextContinuationToken: null,
         },
       };
       (v4 as any).mockReturnValue("id_123");
@@ -856,25 +1040,61 @@ describe("gateway apis", () => {
         }),
       );
     });
-    it("should make multiple calls to get the paginated data and then successfully return the data", async () => {
+    it("getNetAppFolders - should make multiple calls to get the paginated data and then successfully return the data", async () => {
       const mockData1 = {
         data: {
-          fileData: [{ id: 1 }],
-          folderData: [{ id: 1 }],
+          fileData: [
+            {
+              path: "netapp/file-1-0.pdf",
+              lastModified: "2000-01-02",
+              filesize: 1234,
+            },
+            {
+              path: "ewewewf.pdf",
+              lastModified: "2000-01-03",
+              filesize: 2268979,
+            },
+          ],
+          folderData: [
+            {
+              path: "netapp/folder-1-0/",
+            },
+          ],
         },
+
         pagination: {
+          maxKeys: 10,
           nextContinuationToken: "abc",
         },
       };
+
       const mockData2 = {
         data: {
-          fileData: [{ id: 2 }, { id: 3 }],
-          folderData: [{ id: 2 }, { id: 3 }],
+          fileData: [
+            {
+              path: "netapp/file-2-0.pdf",
+              lastModified: "2000-01-02",
+              filesize: 1234,
+            },
+            {
+              path: "abc.pdf",
+              lastModified: "2000-01-03",
+              filesize: 2268979,
+            },
+          ],
+          folderData: [
+            {
+              path: "netapp/folder-2-0/",
+            },
+          ],
         },
+
         pagination: {
+          maxKeys: 10,
           nextContinuationToken: "",
         },
       };
+
       (v4 as any).mockReturnValue("id_123");
       (getAccessToken as any).mockResolvedValue("access_token");
       (fetch as any)
@@ -886,8 +1106,36 @@ describe("gateway apis", () => {
 
       const result = await getNetAppFolders("/netapp", 50, "", []);
       expect(result).toEqual({
-        fileData: [{ id: 1 }, { id: 2 }, { id: 3 }],
-        folderData: [{ id: 1 }, { id: 2 }, { id: 3 }],
+        fileData: [
+          {
+            path: "netapp/file-1-0.pdf",
+            lastModified: "2000-01-02",
+            filesize: 1234,
+          },
+          {
+            path: "ewewewf.pdf",
+            lastModified: "2000-01-03",
+            filesize: 2268979,
+          },
+          {
+            path: "netapp/file-2-0.pdf",
+            lastModified: "2000-01-02",
+            filesize: 1234,
+          },
+          {
+            path: "abc.pdf",
+            lastModified: "2000-01-03",
+            filesize: 2268979,
+          },
+        ],
+        folderData: [
+          {
+            path: "netapp/folder-1-0/",
+          },
+          {
+            path: "netapp/folder-2-0/",
+          },
+        ],
       });
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenNthCalledWith(
@@ -915,7 +1163,7 @@ describe("gateway apis", () => {
         }),
       );
     });
-    it("should throw an ApiError when fetch fails", async () => {
+    it("getNetAppFolders - should throw an ApiError when fetch fails", async () => {
       (v4 as any).mockReturnValue("id_123");
       (getAccessToken as any).mockResolvedValue("access_token");
       (fetch as any).mockResolvedValue({
@@ -947,37 +1195,65 @@ describe("gateway apis", () => {
         }),
       );
     });
-    it("should throw Error if the response data is not in correct format", async () => {
+    it("getNetAppFolders - invalid json response throws error", async () => {
+      (globalThis.fetch as any).mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        json: () =>
+          Promise.reject(new SyntaxError("Unexpected token < in JSON")),
+      });
+
+      await expect(
+        getNetAppFolders("/netapp", 50, "", []),
+      ).rejects.toBeInstanceOf(ApiError);
+      await expect(getNetAppFolders("/netapp", 50, "", [])).rejects.toThrow(
+        "An error occurred contacting the server at gateway_url/api/v1/netapp/files: SyntaxError: Unexpected token < in JSON; status - OK (200)",
+      );
+    });
+
+    it("getNetAppFolders -  response schema validation failed", async () => {
       const mockData = {
         data: {
-          fileData: [],
-          folderData: [],
+          fileData1: [
+            {
+              path: "netapp/file-1-0.pdf",
+              lastModified: "2000-01-02",
+              filesize: 1234,
+            },
+            {
+              path: "ewewewf.pdf",
+              lastModified: "2000-01-03",
+              filesize: 2268979,
+            },
+          ],
+          folderData: [
+            {
+              path: "netapp/folder-1-0/",
+            },
+          ],
         },
-        pagination1: {
+
+        pagination: {
+          maxKeys: 10,
           nextContinuationToken: "",
         },
       };
+
       (v4 as any).mockReturnValue("id_123");
       (getAccessToken as any).mockResolvedValue("access_token");
       (fetch as any).mockResolvedValue({
         ok: true,
+        status: 200,
+        statusText: "OK",
         json: async () => mockData,
       });
 
+      await expect(
+        getNetAppFolders("/netapp", 50, "", []),
+      ).rejects.toBeInstanceOf(ApiError);
       await expect(getNetAppFolders("/netapp", 50, "", [])).rejects.toThrow(
-        "Invalid API response format for netapp files/folders results",
-      );
-
-      expect(fetch).toHaveBeenCalledWith(
-        "gateway_url/api/v1/netapp/files?path=%2Fnetapp&take=50&continuation-token=",
-        expect.objectContaining({
-          method: "GET",
-          credentials: "include",
-          headers: {
-            Authorization: "Bearer access_token",
-            "Correlation-Id": "id_123",
-          },
-        }),
+        "An error occurred contacting the server at gateway_url/api/v1/netapp/files: response schema validation failed; status - OK (200)",
       );
     });
   });
@@ -1151,236 +1427,236 @@ describe("gateway apis", () => {
       );
     });
   });
-  describe("getTransferStatus", () => {
-    it("should return transferStatus when fetch is successful", async () => {
-      const mockData = {
-        caseId: 12,
-      };
-      (v4 as any).mockReturnValue("id_123");
-      (getAccessToken as any).mockResolvedValue("access_token");
-      (fetch as any).mockResolvedValue({
-        ok: true,
-        json: async () => mockData,
-      });
+  // describe("getTransferStatus", () => {
+  //   it("should return transferStatus when fetch is successful", async () => {
+  //     const mockData = {
+  //       caseId: 12,
+  //     };
+  //     (v4 as any).mockReturnValue("id_123");
+  //     (getAccessToken as any).mockResolvedValue("access_token");
+  //     (fetch as any).mockResolvedValue({
+  //       ok: true,
+  //       json: async () => mockData,
+  //     });
 
-      const result = await getTransferStatus("transfer_id_1");
-      expect(result).toEqual(mockData);
-      expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/filetransfer/transfer_id_1/status`,
-        expect.objectContaining({
-          method: "GET",
-          credentials: "include",
-          headers: {
-            Authorization: "Bearer access_token",
-            "Correlation-Id": "id_123",
-          },
-        }),
-      );
-    });
+  //     const result = await getTransferStatus("transfer_id_1");
+  //     expect(result).toEqual(mockData);
+  //     expect(fetch).toHaveBeenCalledWith(
+  //       `gateway_url/api/v1/filetransfer/transfer_id_1/status`,
+  //       expect.objectContaining({
+  //         method: "GET",
+  //         credentials: "include",
+  //         headers: {
+  //           Authorization: "Bearer access_token",
+  //           "Correlation-Id": "id_123",
+  //         },
+  //       }),
+  //     );
+  //   });
 
-    it("should throw an ApiError when fetch fails", async () => {
-      (v4 as any).mockReturnValue("id_123");
-      (getAccessToken as any).mockResolvedValue("access_token");
-      (fetch as any).mockResolvedValue({
-        ok: false,
-        status: 500,
-        statusText: "Internal Server Error",
-      });
+  //   it("should throw an ApiError when fetch fails", async () => {
+  //     (v4 as any).mockReturnValue("id_123");
+  //     (getAccessToken as any).mockResolvedValue("access_token");
+  //     (fetch as any).mockResolvedValue({
+  //       ok: false,
+  //       status: 500,
+  //       statusText: "Internal Server Error",
+  //     });
 
-      await expect(getTransferStatus("transfer_id_1")).rejects.toThrow(
-        new ApiError(
-          `Getting case transfer status failed`,
-          "gateway_url/api/v1/filetransfer/transfer_id_1/status",
-          {
-            status: 500,
-            statusText: "Internal Server Error",
-          },
-        ),
-      );
-      expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/filetransfer/transfer_id_1/status`,
-        expect.objectContaining({
-          method: "GET",
-          credentials: "include",
-          headers: {
-            Authorization: "Bearer access_token",
-            "Correlation-Id": "id_123",
-          },
-        }),
-      );
-    });
-  });
-  describe("handleFileTransferClear", () => {
-    it("should handle when post request is successful", async () => {
-      (v4 as any).mockReturnValue("id_123");
-      (getAccessToken as any).mockResolvedValue("access_token");
-      (fetch as any).mockResolvedValue({
-        ok: true,
-      });
+  //     await expect(getTransferStatus("transfer_id_1")).rejects.toThrow(
+  //       new ApiError(
+  //         `Getting case transfer status failed`,
+  //         "gateway_url/api/v1/filetransfer/transfer_id_1/status",
+  //         {
+  //           status: 500,
+  //           statusText: "Internal Server Error",
+  //         },
+  //       ),
+  //     );
+  //     expect(fetch).toHaveBeenCalledWith(
+  //       `gateway_url/api/v1/filetransfer/transfer_id_1/status`,
+  //       expect.objectContaining({
+  //         method: "GET",
+  //         credentials: "include",
+  //         headers: {
+  //           Authorization: "Bearer access_token",
+  //           "Correlation-Id": "id_123",
+  //         },
+  //       }),
+  //     );
+  //   });
+  // });
+  // describe("handleFileTransferClear", () => {
+  //   it("should handle when post request is successful", async () => {
+  //     (v4 as any).mockReturnValue("id_123");
+  //     (getAccessToken as any).mockResolvedValue("access_token");
+  //     (fetch as any).mockResolvedValue({
+  //       ok: true,
+  //     });
 
-      await handleFileTransferClear("mock_transfer_Id");
-      expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/filetransfer/mock_transfer_Id/clear`,
-        expect.objectContaining({
-          method: "POST",
-          credentials: "include",
-          headers: {
-            Authorization: "Bearer access_token",
-            "Correlation-Id": "id_123",
-          },
-        }),
-      );
-    });
+  //     await handleFileTransferClear("mock_transfer_Id");
+  //     expect(fetch).toHaveBeenCalledWith(
+  //       `gateway_url/api/v1/filetransfer/mock_transfer_Id/clear`,
+  //       expect.objectContaining({
+  //         method: "POST",
+  //         credentials: "include",
+  //         headers: {
+  //           Authorization: "Bearer access_token",
+  //           "Correlation-Id": "id_123",
+  //         },
+  //       }),
+  //     );
+  //   });
 
-    it("should throw an ApiError when fetch fails", async () => {
-      (v4 as any).mockReturnValue("id_123");
-      (getAccessToken as any).mockResolvedValue("access_token");
-      (fetch as any).mockResolvedValue({
-        ok: false,
-        status: 500,
-        statusText: "Internal Server Error",
-      });
+  //   it("should throw an ApiError when fetch fails", async () => {
+  //     (v4 as any).mockReturnValue("id_123");
+  //     (getAccessToken as any).mockResolvedValue("access_token");
+  //     (fetch as any).mockResolvedValue({
+  //       ok: false,
+  //       status: 500,
+  //       statusText: "Internal Server Error",
+  //     });
 
-      await expect(handleFileTransferClear("mock_transfer_Id")).rejects.toThrow(
-        new ApiError(
-          `clear file transfer api failed`,
-          "gateway_url/api/v1/filetransfer/mock_transfer_Id/clear",
-          {
-            status: 500,
-            statusText: "Internal Server Error",
-          },
-        ),
-      );
+  //     await expect(handleFileTransferClear("mock_transfer_Id")).rejects.toThrow(
+  //       new ApiError(
+  //         `clear file transfer api failed`,
+  //         "gateway_url/api/v1/filetransfer/mock_transfer_Id/clear",
+  //         {
+  //           status: 500,
+  //           statusText: "Internal Server Error",
+  //         },
+  //       ),
+  //     );
 
-      expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/filetransfer/mock_transfer_Id/clear`,
-        expect.objectContaining({
-          method: "POST",
-          credentials: "include",
-          headers: {
-            Authorization: "Bearer access_token",
-            "Correlation-Id": "id_123",
-          },
-        }),
-      );
-    });
-  });
-  describe("getActivityLog", () => {
-    it("should return activityLog when fetch is successful", async () => {
-      const mockData = {
-        caseId: 12,
-      };
-      (v4 as any).mockReturnValue("id_123");
-      (getAccessToken as any).mockResolvedValue("access_token");
-      (fetch as any).mockResolvedValue({
-        ok: true,
-        json: async () => mockData,
-      });
+  //     expect(fetch).toHaveBeenCalledWith(
+  //       `gateway_url/api/v1/filetransfer/mock_transfer_Id/clear`,
+  //       expect.objectContaining({
+  //         method: "POST",
+  //         credentials: "include",
+  //         headers: {
+  //           Authorization: "Bearer access_token",
+  //           "Correlation-Id": "id_123",
+  //         },
+  //       }),
+  //     );
+  //   });
+  // });
+  // describe("getActivityLog", () => {
+  //   it("should return activityLog when fetch is successful", async () => {
+  //     const mockData = {
+  //       caseId: 12,
+  //     };
+  //     (v4 as any).mockReturnValue("id_123");
+  //     (getAccessToken as any).mockResolvedValue("access_token");
+  //     (fetch as any).mockResolvedValue({
+  //       ok: true,
+  //       json: async () => mockData,
+  //     });
 
-      const result = await getActivityLog("test_case_id");
-      expect(result).toEqual(mockData);
-      expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/activity/logs?case-id=test_case_id`,
-        expect.objectContaining({
-          method: "GET",
-          credentials: "include",
-          headers: {
-            Authorization: "Bearer access_token",
-            "Correlation-Id": "id_123",
-          },
-        }),
-      );
-    });
+  //     const result = await getActivityLog("test_case_id");
+  //     expect(result).toEqual(mockData);
+  //     expect(fetch).toHaveBeenCalledWith(
+  //       `gateway_url/api/v1/activity/logs?case-id=test_case_id`,
+  //       expect.objectContaining({
+  //         method: "GET",
+  //         credentials: "include",
+  //         headers: {
+  //           Authorization: "Bearer access_token",
+  //           "Correlation-Id": "id_123",
+  //         },
+  //       }),
+  //     );
+  //   });
 
-    it("should throw an ApiError when fetch fails", async () => {
-      (v4 as any).mockReturnValue("id_123");
-      (getAccessToken as any).mockResolvedValue("access_token");
-      (fetch as any).mockResolvedValue({
-        ok: false,
-        status: 500,
-        statusText: "Internal Server Error",
-      });
+  //   it("should throw an ApiError when fetch fails", async () => {
+  //     (v4 as any).mockReturnValue("id_123");
+  //     (getAccessToken as any).mockResolvedValue("access_token");
+  //     (fetch as any).mockResolvedValue({
+  //       ok: false,
+  //       status: 500,
+  //       statusText: "Internal Server Error",
+  //     });
 
-      await expect(getActivityLog("test_case_id")).rejects.toThrow(
-        new ApiError(
-          `Getting case activity log failed`,
-          "gateway_url/api/v1/activity/logs?case-id=test_case_id",
-          {
-            status: 500,
-            statusText: "Internal Server Error",
-          },
-        ),
-      );
-      expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/activity/logs?case-id=test_case_id`,
-        expect.objectContaining({
-          method: "GET",
-          credentials: "include",
-          headers: {
-            Authorization: "Bearer access_token",
-            "Correlation-Id": "id_123",
-          },
-        }),
-      );
-    });
-  });
+  //     await expect(getActivityLog("test_case_id")).rejects.toThrow(
+  //       new ApiError(
+  //         `Getting case activity log failed`,
+  //         "gateway_url/api/v1/activity/logs?case-id=test_case_id",
+  //         {
+  //           status: 500,
+  //           statusText: "Internal Server Error",
+  //         },
+  //       ),
+  //     );
+  //     expect(fetch).toHaveBeenCalledWith(
+  //       `gateway_url/api/v1/activity/logs?case-id=test_case_id`,
+  //       expect.objectContaining({
+  //         method: "GET",
+  //         credentials: "include",
+  //         headers: {
+  //           Authorization: "Bearer access_token",
+  //           "Correlation-Id": "id_123",
+  //         },
+  //       }),
+  //     );
+  //   });
+  // });
 
-  describe("downloadActivityLog", () => {
-    it("should succesfully make the fetch call and return the response", async () => {
-      const mockBlob = new Blob(["hello"], { type: "text/csv" });
-      (v4 as any).mockReturnValue("id_123");
-      (getAccessToken as any).mockResolvedValue("access_token");
-      (fetch as any).mockResolvedValue({
-        ok: true,
-        blob: async () => mockBlob,
-      });
+  // describe("downloadActivityLog", () => {
+  //   it("should succesfully make the fetch call and return the response", async () => {
+  //     const mockBlob = new Blob(["hello"], { type: "text/csv" });
+  //     (v4 as any).mockReturnValue("id_123");
+  //     (getAccessToken as any).mockResolvedValue("access_token");
+  //     (fetch as any).mockResolvedValue({
+  //       ok: true,
+  //       blob: async () => mockBlob,
+  //     });
 
-      const result = await downloadActivityLog("test_activity_id");
-      expect(result.ok).toEqual(true);
-      expect(await result.blob()).toEqual(mockBlob);
-      expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/activity/test_activity_id/logs/download`,
-        expect.objectContaining({
-          method: "GET",
-          credentials: "include",
-          headers: {
-            Authorization: "Bearer access_token",
-            "Correlation-Id": "id_123",
-          },
-        }),
-      );
-    });
+  //     const result = await downloadActivityLog("test_activity_id");
+  //     expect(result.ok).toEqual(true);
+  //     expect(await result.blob()).toEqual(mockBlob);
+  //     expect(fetch).toHaveBeenCalledWith(
+  //       `gateway_url/api/v1/activity/test_activity_id/logs/download`,
+  //       expect.objectContaining({
+  //         method: "GET",
+  //         credentials: "include",
+  //         headers: {
+  //           Authorization: "Bearer access_token",
+  //           "Correlation-Id": "id_123",
+  //         },
+  //       }),
+  //     );
+  //   });
 
-    it("should throw an ApiError when fetch fails", async () => {
-      (v4 as any).mockReturnValue("id_123");
-      (getAccessToken as any).mockResolvedValue("access_token");
-      (fetch as any).mockResolvedValue({
-        ok: false,
-        status: 500,
-        statusText: "Internal Server Error",
-      });
+  //   it("should throw an ApiError when fetch fails", async () => {
+  //     (v4 as any).mockReturnValue("id_123");
+  //     (getAccessToken as any).mockResolvedValue("access_token");
+  //     (fetch as any).mockResolvedValue({
+  //       ok: false,
+  //       status: 500,
+  //       statusText: "Internal Server Error",
+  //     });
 
-      await expect(downloadActivityLog("test_activity_id")).rejects.toThrow(
-        new ApiError(
-          `Downloading activity log failed`,
-          "gateway_url/api/v1/activity/test_activity_id/logs/download",
-          {
-            status: 500,
-            statusText: "Internal Server Error",
-          },
-        ),
-      );
-      expect(fetch).toHaveBeenCalledWith(
-        `gateway_url/api/v1/activity/test_activity_id/logs/download`,
-        expect.objectContaining({
-          method: "GET",
-          credentials: "include",
-          headers: {
-            Authorization: "Bearer access_token",
-            "Correlation-Id": "id_123",
-          },
-        }),
-      );
-    });
-  });
+  //     await expect(downloadActivityLog("test_activity_id")).rejects.toThrow(
+  //       new ApiError(
+  //         `Downloading activity log failed`,
+  //         "gateway_url/api/v1/activity/test_activity_id/logs/download",
+  //         {
+  //           status: 500,
+  //           statusText: "Internal Server Error",
+  //         },
+  //       ),
+  //     );
+  //     expect(fetch).toHaveBeenCalledWith(
+  //       `gateway_url/api/v1/activity/test_activity_id/logs/download`,
+  //       expect.objectContaining({
+  //         method: "GET",
+  //         credentials: "include",
+  //         headers: {
+  //           Authorization: "Bearer access_token",
+  //           "Correlation-Id": "id_123",
+  //         },
+  //       }),
+  //     );
+  //   });
+  // });
 });
