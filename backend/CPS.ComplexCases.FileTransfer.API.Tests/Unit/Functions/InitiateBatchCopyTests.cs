@@ -551,6 +551,39 @@ public class InitiateBatchCopyTests
     }
 
     [Fact]
+    public async Task Run_WhenSchedulingThrows_DeletesActiveOperationRowAndRethrows()
+    {
+        SetupValidRequest();
+        SetupNoActiveTransfer();
+        SetupMaterialSourceExists();
+        SetupMaterialDestinationMissing();
+        SetupNoClashAtDestination();
+
+        Guid? capturedTransferId = null;
+        _caseActiveManageMaterialsServiceMock
+            .Setup(s => s.CheckConflictAndInsertAsync(
+                It.IsAny<CaseActiveManageMaterialsOperation>(),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<IEnumerable<string>>()))
+            .Callback<CaseActiveManageMaterialsOperation, IEnumerable<string>, IEnumerable<string>>(
+                (op, _, _) => capturedTransferId = op.Id)
+            .ReturnsAsync(true);
+
+        var failingClient = new Mock<DurableTaskClientStub>(_entityClientStub) { CallBase = true };
+        failingClient.Setup(c => c.ScheduleNewOrchestrationInstanceAsync(
+                It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<StartOrchestrationOptions>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Durable storage unavailable"));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _function.Run(CreateHttpRequest(), failingClient.Object));
+
+        Assert.NotNull(capturedTransferId);
+        _caseActiveManageMaterialsServiceMock.Verify(
+            s => s.DeleteOperationAsync(capturedTransferId!.Value),
+            Times.Once);
+    }
+
+    [Fact]
     public async Task Run_WhenNoFilesFoundAfterFolderExpansion_ReturnsBadRequest()
     {
         SetupValidRequest(CreateFolderRequest());

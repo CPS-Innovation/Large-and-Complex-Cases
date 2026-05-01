@@ -282,24 +282,34 @@ public class InitiateBatchCopy(
             return new ConflictObjectResult("A conflicting manage materials operation is already in progress for one or more of the specified paths.");
         }
 
-        await orchestrationClient.ScheduleNewOrchestrationInstanceAsync(
-            nameof(CopyOrchestrator),
-            new CopyBatchPayload
-            {
-                TransferId = transferId,
-                CaseId = request.CaseId,
-                UserName = request.UserName,
-                CorrelationId = correlationId,
-                BearerToken = request.BearerToken,
-                BucketName = request.BucketName,
-                Files = copyFileItems,
-                OriginalOperations = originalOperations,
-                ManageMaterialsOperationId = transferId,
-            },
-            new StartOrchestrationOptions
-            {
-                InstanceId = transferId.ToString(),
-            });
+        try
+        {
+            await orchestrationClient.ScheduleNewOrchestrationInstanceAsync(
+                nameof(CopyOrchestrator),
+                new CopyBatchPayload
+                {
+                    TransferId = transferId,
+                    CaseId = request.CaseId,
+                    UserName = request.UserName,
+                    CorrelationId = correlationId,
+                    BearerToken = request.BearerToken,
+                    BucketName = request.BucketName,
+                    Files = copyFileItems,
+                    OriginalOperations = originalOperations,
+                    ManageMaterialsOperationId = transferId,
+                },
+                new StartOrchestrationOptions
+                {
+                    InstanceId = transferId.ToString(),
+                });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to schedule copy orchestration for TransferId: {TransferId}, CaseId: {CaseId}. CorrelationId: {CorrelationId}. Removing active-operation row.",
+                transferId, request.CaseId, correlationId);
+            await _caseActiveManageMaterialsService.DeleteOperationAsync(transferId);
+            throw;
+        }
 
         _logger.LogInformation("Batch copy scheduled. TransferId: {TransferId}, CaseId: {CaseId}, Files: {FileCount}. CorrelationId: {CorrelationId}",
             transferId, request.CaseId, copyFileItems.Count, correlationId);
