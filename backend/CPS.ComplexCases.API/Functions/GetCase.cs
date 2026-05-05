@@ -20,13 +20,15 @@ public class GetCase(ILogger<GetCase> logger,
   ICaseMetadataService caseClient,
   IDdeiClient ddeiClient,
   IDdeiArgFactory ddeiArgFactory,
-  IInitializationHandler initializationHandler)
+  IInitializationHandler initializationHandler,
+  ICaseActiveManageMaterialsService caseActiveManageMaterialsService)
 {
     private readonly ILogger<GetCase> _logger = logger;
     private readonly ICaseMetadataService _caseClient = caseClient;
     private readonly IDdeiClient _ddeiClient = ddeiClient;
     private readonly IDdeiArgFactory _ddeiArgFactory = ddeiArgFactory;
     private readonly IInitializationHandler _initializationHandler = initializationHandler;
+    private readonly ICaseActiveManageMaterialsService _caseActiveManageMaterialsService = caseActiveManageMaterialsService;
 
     [Function(nameof(GetCase))]
     [OpenApiOperation(operationId: nameof(GetCase), tags: ["Cases"], Description = "Gets a case by ID from metadata service.")]
@@ -54,6 +56,8 @@ public class GetCase(ILogger<GetCase> logger,
         var cmsArg = _ddeiArgFactory.CreateCaseArg(context.CmsAuthValues, context.CorrelationId, caseId);
         var cmsResponse = await _ddeiClient.GetCaseAsync(cmsArg);
 
+        var activeManageMaterialsOperations = await _caseActiveManageMaterialsService.GetActiveOperationsForCaseAsync(caseId);
+
         var response = new CaseWithMetadataResponse
         {
             CaseId = caseResponse.CaseId,
@@ -62,6 +66,15 @@ public class GetCase(ILogger<GetCase> logger,
             Urn = cmsResponse.Urn,
             OperationName = cmsResponse.OperationName,
             ActiveTransferId = caseResponse.ActiveTransferId,
+            ActiveManageMaterialsOperations = activeManageMaterialsOperations.Select(op => new ActiveManageMaterialsOperationResponse
+            {
+                Id = op.Id,
+                OperationType = op.OperationType,
+                SourcePaths = op.SourcePaths,
+                DestinationPaths = op.DestinationPaths,
+                UserName = op.UserName,
+                CreatedAt = op.CreatedAt,
+            }).ToList(),
         };
 
         return new OkObjectResult(response);

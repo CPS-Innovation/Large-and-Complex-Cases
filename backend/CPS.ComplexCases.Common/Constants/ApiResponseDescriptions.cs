@@ -8,4 +8,5 @@ public static class ApiResponseDescriptions
     public const string Forbidden = "Forbidden request.";
     public const string InternalServerError = "Internal server error.";
     public const string NotFound = "Resource not found.";
+    public const string Conflict = "Conflict. A resource with conflicting state already exists.";
 }

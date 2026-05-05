@@ -155,6 +155,16 @@ steps:
             "slotSetting": false
           },
           {
+            "name": "FileTransfer__ManageMaterialsCleanup__MaxAgeHours",
+            "value": "$(FileTransferManageMaterialsCleanupMaxAgeHours)",
+            "slotSetting": false
+          },
+          {
+            "name": "ManageMaterialsCleanupSchedule",
+            "value": "$(ManageMaterialsCleanupSchedule)",
+            "slotSetting": false
+          },
+          {
             "name": "SizeConfig__ChunkSizeBytes",
             "value": "$(SizeConfigChunkSizeBytes)",
             "slotSetting": false

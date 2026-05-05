@@ -192,6 +192,7 @@ var host = new HostBuilder()
         services.AddSingleton<IInitializationHandler, InitializationHandler>();
 
         services.AddScoped<ICaseMetadataService, CaseMetadataService>();
+        services.AddScoped<ICaseActiveManageMaterialsService, CaseActiveManageMaterialsService>();
         services.AddScoped<ICaseEnrichmentService, CaseEnrichmentService>();
         services.AddScoped<IInitService, InitService>();
         services.AddSingleton<IOpenApiConfigurationOptions, OpenApiConfigurationOptions>();

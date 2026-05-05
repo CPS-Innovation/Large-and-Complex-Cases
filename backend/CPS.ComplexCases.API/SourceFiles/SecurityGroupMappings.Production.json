@@ -6,15 +6,15 @@
     "description": "York CTD Users security group for CPS Complex Cases"
   },
   {
-    "id": "39836c67-1947-4104-b7a9-bff7123b87e7",
-    "displayName": "CPS-ComplexCases-Default",
-    "bucketName": "flexgroup1",
-    "description": "Default security group for CPS Complex Cases"
-  },
-  {
     "id": "086813d3-b340-44cc-b6dd-5ebb8487c13d",
     "displayName": "Manchester-Cases",
     "bucketName": "mslpublic",
     "description": "Manchester Users security group for CPS Complex Cases"
+  },
+  {
+    "id": "39836c67-1947-4104-b7a9-bff7123b87e7",
+    "displayName": "CPS-ComplexCases-Default",
+    "bucketName": "flexgroup1",
+    "description": "Default security group for CPS Complex Cases"
   }
 ]

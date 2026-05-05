@@ -15,6 +15,10 @@ variables:
   value: '30'
 - name: FileTransferPurgeRetentionSchedule
   value: '0 0 2 * * *'
+- name: FileTransferManageMaterialsCleanupMaxAgeHours
+  value: '24'
+- name: ManageMaterialsCleanupSchedule
+  value: '0 0 2 * * *'
 - name: MaxOrchestratorRetries
   value: '3'
 - name: NetAppOptionsPepperVersion

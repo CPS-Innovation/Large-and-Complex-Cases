@@ -3,7 +3,9 @@ import {
   ActivityLogResponse,
   ActivityItem,
   BatchDeleteDetails,
+  BatchCopyDetails,
   TransferDetails,
+  isBatchCopyDetails,
   isBatchDeleteDetails,
   isTransferDetails,
 } from "../../../schemas/responses/activityLogResponse";
@@ -181,12 +183,52 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
     </div>
   );
 
+  const renderBatchCopyDetails = (details: BatchCopyDetails) => (
+    <div>
+      <Details summaryChildren="View copied items">
+        <ul className={styles.batchDeleteList}>
+          {details.items.map((item, i) => (
+            <li key={i} className={styles.batchCopyItem}>
+              <div className={styles.batchCopyPaths}>
+                <div data-testid="batch-copy-source">
+                  <span className={styles.locationTitle}>Source:</span>
+                  <span className={styles.locationPath}>
+                    {getCleanPath(item.sourcePath).replace(/\//g, " > ")}
+                  </span>
+                </div>
+                {item.destinationPath && (
+                  <div data-testid="batch-copy-destination">
+                    <span className={styles.locationTitle}>Destination:</span>
+                    <span className={styles.locationPath}>
+                      {getCleanPath(item.destinationPath).replace(/\//g, " > ")}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <Tag
+                gdsTagColour={item.outcome === "Copied" ? "green" : "grey"}
+                className={styles.batchDeleteTag}
+                data-testid="batch-copy-outcome-tag"
+              >
+                {item.outcome}
+              </Tag>
+            </li>
+          ))}
+        </ul>
+      </Details>
+    </div>
+  );
+
   const renderDetails = (activity: ActivityItem) => {
     const { details } = activity;
     if (!details) return null;
 
     if (isTransferDetails(details)) {
       return renderTransferDetails(activity.id, activity.timestamp, details);
+    }
+
+    if (isBatchCopyDetails(details)) {
+      return renderBatchCopyDetails(details);
     }
 
     if (isBatchDeleteDetails(details)) {
