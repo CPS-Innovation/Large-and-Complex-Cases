@@ -15,6 +15,7 @@ test.describe("egress meta data issues", () => {
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
           urn: "45AA2098221",
+          activeTransferId: "",
         });
       }),
     );
@@ -53,6 +54,7 @@ test.describe("egress meta data issues", () => {
           netappFolderPath: "",
           operationName: "Thunderstruck",
           urn: "45AA2098221",
+          activeTransferId: "",
         });
       }),
     );
@@ -207,6 +209,7 @@ test.describe("netapp meta data issues", () => {
           netappFolderPath: "",
           operationName: "Thunderstruck",
           urn: "45AA2098221",
+          activeTransferId: "",
         });
       }),
     );

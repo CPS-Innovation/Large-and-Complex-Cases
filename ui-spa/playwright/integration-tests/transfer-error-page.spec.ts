@@ -81,6 +81,8 @@ test.describe("transfer-error-page", () => {
               },
             ],
             userName: "dev_user@example.org",
+            totalFiles: 4,
+            processedFiles: 4,
           } as TransferStatusResponse);
         },
       ),
@@ -202,6 +204,8 @@ test.describe("transfer-error-page", () => {
               },
             ],
             userName: "dev_user@example.org",
+            totalFiles: 4,
+            processedFiles: 4,
           } as TransferStatusResponse);
         },
       ),
@@ -303,6 +307,8 @@ test.describe("transfer-error-page", () => {
               },
             ],
             userName: "dev_user@example.org",
+            totalFiles: 4,
+            processedFiles: 4,
           } as TransferStatusResponse);
         },
       ),

@@ -26,7 +26,7 @@ export const getConnectNetAppFolderResultsPlaywright = (path: string) => {
     return {
       ...netAppRootFolderResultsPlaywright,
       data: {
-        roothPath: path,
+        rootPath: path,
         folders: [],
       },
     };
@@ -40,7 +40,7 @@ export const getConnectNetAppFolderResultsPlaywright = (path: string) => {
   return {
     ...netAppRootFolderResultsPlaywright,
     data: {
-      roothPath: path,
+      rootPath: path,
       folders: newFolders,
     },
   };

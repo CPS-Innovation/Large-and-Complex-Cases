@@ -33,7 +33,7 @@ export const getConnectNetAppFolderResultsDev = (path: string) => {
     return {
       ...netAppRootFolderResultsDev,
       data: {
-        roothPath: path,
+        rootPath: path,
         folders: [],
       },
     };
@@ -47,7 +47,7 @@ export const getConnectNetAppFolderResultsDev = (path: string) => {
   return {
     ...netAppRootFolderResultsDev,
     data: {
-      roothPath: path,
+      rootPath: path,
       folders: newFolders,
     },
   };

@@ -527,6 +527,8 @@ test.describe("netapp-egress-transfer", () => {
             completedAt: null,
             failedItems: [],
             userName: "dev_user@example.org",
+            totalFiles: 30,
+            processedFiles: 30,
           });
         },
       ),
@@ -577,6 +579,8 @@ test.describe("netapp-egress-transfer", () => {
             completedAt: null,
             failedItems: [],
             userName: "abc@example.org",
+            totalFiles: 30,
+            processedFiles: 0,
           });
         },
       ),
@@ -609,6 +613,8 @@ test.describe("netapp-egress-transfer", () => {
             completedAt: null,
             failedItems: [],
             userName: "abc@example.org",
+            totalFiles: 30,
+            processedFiles: 10,
           });
         },
       ),
@@ -635,6 +641,8 @@ test.describe("netapp-egress-transfer", () => {
             completedAt: null,
             failedItems: [],
             userName: "abc@example.org",
+            totalFiles: 30,
+            processedFiles: 30,
           });
         },
       ),
