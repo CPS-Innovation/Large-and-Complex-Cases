@@ -107,6 +107,11 @@ The following are triggered in response to any changes pushed to the [`ui`](ui) 
     - Deploys the build artifact to the target Azure App Service instance.
   - Pauses for manual validation before repeating the process for staging.
 
+#### Cleanup
+
+The [cleanup pipeline](devops-pipelines/cleanup-testfiles.yml) is set to run once a night and remove any test files that were uploaded to Egress and Shared Drive (NetApp) during automated backend integration and E2E testing.
+
+
 ### Adding Configuration Variables
 
 #### Backend
