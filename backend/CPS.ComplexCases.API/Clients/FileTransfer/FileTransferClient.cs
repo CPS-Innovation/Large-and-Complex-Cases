@@ -53,6 +53,15 @@ public class FileTransferClient(IRequestFactory requestFactory, HttpClient httpC
             new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, ContentType.ApplicationJson));
     }
 
+    public async Task<HttpResponseMessage> InitiateBatchMoveAsync(MoveNetAppBatchRequest request, Guid correlationId)
+    {
+        return await SendRequestAsync(
+            HttpMethod.Post,
+            "netapp/move/batch",
+            correlationId,
+            new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, ContentType.ApplicationJson));
+    }
+
     private async Task<HttpResponseMessage> SendRequestAsync(HttpMethod httpMethod, string requestUri, Guid correlationId, HttpContent? content = null)
     {
         var request = _requestFactory.Create(httpMethod, requestUri, correlationId, content);
