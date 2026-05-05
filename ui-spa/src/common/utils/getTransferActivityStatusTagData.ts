@@ -1,7 +1,4 @@
-import {
-  ActivityItem,
-  isTransferDetails,
-} from "../../schemas/responses/activityLogResponse";
+import { type ActivityItem, isTransferDetails } from "../../schemas";
 
 export const getTransferActivityStatusTagData = (
   activity: ActivityItem,

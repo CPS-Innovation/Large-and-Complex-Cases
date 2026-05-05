@@ -1,5 +1,5 @@
 import { getTransferActivityStatusTagData } from "./getTransferActivityStatusTagData";
-import { ActivityItem } from "../../schemas/responses/activityLogResponse";
+import { type ActivityItem } from "../../schemas";
 
 describe("getTransferActivityStatusTagData", () => {
   const activity: ActivityItem = {

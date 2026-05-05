@@ -1,7 +1,7 @@
-import {
+import type {
   CaseDivisionsOrArea,
   CaseDivisionsOrAreaResponse,
-} from "../../schemas/responses/caseDivisionsOrArea";
+} from "../../schemas";
 
 const areaSortFn = (a: CaseDivisionsOrArea, b: CaseDivisionsOrArea) =>
   a.description.toLowerCase() < b.description.toLowerCase()

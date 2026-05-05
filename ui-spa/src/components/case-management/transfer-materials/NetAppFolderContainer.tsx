@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { LinkButton, InsetText } from "../../govuk";
 import Checkbox from "../../common/Checkbox";
-import { NetAppFolderData } from "../../../schemas/responses/netAppFolderData";
+import { type NetAppFolderData } from "../../../schemas";
 import {
   sortByStringProperty,
   sortByNumberProperty,

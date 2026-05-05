@@ -1,4 +1,4 @@
-import { CaseDivisionsOrAreaResponse } from "../schemas/responses/caseDivisionsOrArea";
+import { type CaseDivisionsOrAreaResponse } from "../schemas";
 import { ApiResult } from "../common/types/ApiResult";
 import { AsyncResult } from "../common/types/AsyncResult";
 import { mapAreaLookups } from "./utils/mapAreaLookups";

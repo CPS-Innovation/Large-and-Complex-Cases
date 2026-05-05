@@ -2,7 +2,7 @@ import { Button, BackLink, Details } from "../../govuk";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { PageContentWrapper } from "../../govuk/PageContentWrapper";
 import FileIcon from "../../../components/svgs/file.svg?react";
-import { type TransferFailedItem } from "../../../schemas/responses/transferStatusResponse";
+import { type TransferFailedItem } from "../../../schemas";
 import styles from "./TransferErrorPage.module.scss";
 import { useEffect } from "react";
 

@@ -20,9 +20,11 @@ import { mapToNetAppFolderData } from "../../../common/utils/mapToNetAppFolderDa
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
 import { InitiateFileTransferPayload } from "../../../schemas/requests/initiateFileTransferPayload";
 import { IndexingFileTransferPayload } from "../../../schemas/requests/indexingFileTransferPayload";
-import { TransferStatusResponse } from "../../../schemas/responses/transferStatusResponse";
-import { IndexingFileTransferResponse } from "../../../schemas/responses/indexingFileTransferResponse";
-import { InitiateFileTransferResponse } from "../../../schemas/responses/initiateFileTransferResponse";
+import type {
+  TransferStatusResponse,
+  IndexingFileTransferResponse,
+  InitiateFileTransferResponse,
+} from "../../../schemas";
 import { useUserDetails } from "../../../auth";
 import { ApiError } from "../../../common/errors/ApiError";
 import { pollTransferStatus } from "../../../common/utils/pollTransferStatus";

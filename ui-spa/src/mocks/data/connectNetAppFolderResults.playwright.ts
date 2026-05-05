@@ -1,4 +1,4 @@
-import { ConnectNetAppFolderResponse } from "../../schemas/responses/connectNetAppFolderData";
+import { type ConnectNetAppFolderResponse } from "../../schemas";
 export const netAppRootFolderResultsPlaywright: ConnectNetAppFolderResponse = {
   data: {
     rootPath: "",

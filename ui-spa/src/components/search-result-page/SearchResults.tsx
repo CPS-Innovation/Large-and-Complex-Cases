@@ -1,8 +1,5 @@
 import { UseApiResult } from "../../common/hooks/useApi";
-import {
-  SearchResultData,
-  SearchResult,
-} from "../../schemas/responses/searchResult";
+import type { SearchResultData, SearchResult } from "../../schemas";
 import { Table, Tag } from "../govuk";
 import { Link } from "react-router";
 import { SearchFromData } from "../../common/hooks/useCaseSearchForm";

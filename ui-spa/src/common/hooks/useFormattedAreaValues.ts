@@ -1,7 +1,7 @@
 import { useMemo, useEffect } from "react";
 import { useMainStateContext } from "../../providers/MainStateProvider";
 import { useAsyncActionHandlers } from "../hooks/useAsyncActionHandlers";
-import { CaseDivisionsOrArea } from "../../schemas/responses/caseDivisionsOrArea";
+import { type CaseDivisionsOrArea } from "../../schemas";
 import { useLocation } from "react-router";
 
 const mapGroupHeader = (text: string) => ({

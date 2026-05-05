@@ -1,7 +1,6 @@
 import { expect, test, vi, afterEach, beforeEach } from "vitest";
 import { getDuplicateFoldersAndFiles } from "./getDuplicateFoldersAndFiles";
-import { type EgressFolderData } from "../../schemas/responses/egressFolderData";
-import { type NetAppFolderData } from "../../schemas/responses/netAppFolderData";
+import type { EgressFolderData, NetAppFolderData } from "../../schemas";
 import * as groupedModule from "./getGroupedFolderFileData";
 import { type TransferAction } from "../types/TransferAction";
 

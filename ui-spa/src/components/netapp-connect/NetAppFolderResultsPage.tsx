@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Button, InsetText, BackLink, LinkButton } from "../govuk";
 import { UseApiResult } from "../../common/hooks/useApi";
-import { ConnectNetAppFolderData } from "../../schemas/responses/connectNetAppFolderData";
+import { type ConnectNetAppFolderData } from "../../schemas";
 import { sortByStringProperty } from "../../common/utils/sortUtils";
 import { getFolderNameFromPath } from "../../common/utils/getFolderNameFromPath";
 import FolderNavigationTable from "../common/FolderNavigationTable";

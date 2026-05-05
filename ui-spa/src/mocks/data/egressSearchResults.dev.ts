@@ -1,4 +1,4 @@
-import { EgressSearchResultResponse } from "../../schemas/responses/egressSearchResult";
+import { type EgressSearchResultResponse } from "../../schemas";
 export const egressSearchResultsDev: EgressSearchResultResponse = {
   data: [
     {

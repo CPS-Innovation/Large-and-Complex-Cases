@@ -1,14 +1,14 @@
 import { useState } from "react";
 import {
-  ActivityLogResponse,
-  ActivityItem,
-  BatchDeleteDetails,
-  BatchCopyDetails,
-  TransferDetails,
+  type ActivityLogResponse,
+  type ActivityItem,
+  type BatchDeleteDetails,
+  type BatchCopyDetails,
+  type TransferDetails,
   isBatchCopyDetails,
   isBatchDeleteDetails,
   isTransferDetails,
-} from "../../../schemas/responses/activityLogResponse";
+} from "../../../schemas";
 import { Details, Tag, Button } from "../../govuk";
 import RelativePathFiles from "./RelativePathFiles";
 import { formatDate } from "../../../common/utils/formatDate";

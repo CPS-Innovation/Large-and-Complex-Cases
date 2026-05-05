@@ -1,4 +1,4 @@
-import { EgressFolderResponse } from "../../schemas/responses/egressFolderData";
+import { type EgressFolderResponse } from "../../schemas";
 export const egressRootFolderResultsDev: EgressFolderResponse = {
   data: [
     {

@@ -1,5 +1,5 @@
 import { EgreessToNetAppTransferPayload } from "../../schemas/requests/initiateFileTransferPayload";
-import { IndexingError } from "../../schemas/responses/indexingFileTransferResponse";
+import { type IndexingError } from "../../schemas";
 
 export type TransferResolvePageLocationState = {
   isRouteValid: true;

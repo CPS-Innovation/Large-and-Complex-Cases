@@ -1,4 +1,4 @@
-import { IndexingFileTransferResponse } from "../../schemas/responses/indexingFileTransferResponse";
+import { type IndexingFileTransferResponse } from "../../schemas";
 
 export const egressToNetAppIndexingTransferDev: IndexingFileTransferResponse = {
   caseId: 12,

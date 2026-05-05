@@ -1,4 +1,4 @@
-import { NetAppFolderResponse } from "../../schemas/responses/netAppFolderData";
+import { type NetAppFolderResponse } from "../../schemas";
 export const netAppRootFolderResultsDev: NetAppFolderResponse = {
   data: {
     fileData: [
