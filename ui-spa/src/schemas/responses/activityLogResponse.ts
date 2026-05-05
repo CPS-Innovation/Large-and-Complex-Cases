@@ -1,15 +1,21 @@
 import { z } from "zod";
 
 export function isTransferDetails(
-  details: TransferDetails | BatchDeleteDetails | null,
+  details: ActivityDetails | null,
 ): details is TransferDetails {
   return transferDetailsSchema.safeParse(details).success;
 }
 
 export function isBatchDeleteDetails(
-  details: TransferDetails | BatchDeleteDetails | null,
+  details: ActivityDetails | null,
 ): details is BatchDeleteDetails {
   return batchDeleteDetailsSchema.safeParse(details).success;
+}
+
+export function isBatchCopyDetails(
+  details: ActivityDetails | null,
+): details is BatchCopyDetails {
+  return batchCopyDetailsSchema.safeParse(details).success;
 }
 
 export const transferDetailsSchema = z.object({
@@ -36,6 +42,23 @@ export const batchDeleteDetailsSchema = z.object({
   items: z.array(batchDeleteItemSchema),
 });
 
+export const batchCopyItemSchema = z.object({
+  sourcePath: z.string(),
+  destinationPath: z.string().optional(),
+  outcome: z.string(),
+  type: z.string(),
+});
+
+export const batchCopyDetailsSchema = z.object({
+  items: z.array(batchCopyItemSchema),
+});
+
+export const activityDetailsSchema = z.union([
+  transferDetailsSchema,
+  batchDeleteDetailsSchema,
+  batchCopyDetailsSchema,
+]);
+
 export const activityItemSchema = z.object({
   id: z.string(),
   actionType: z.string(),
@@ -45,9 +68,7 @@ export const activityItemSchema = z.object({
   description: z.string(),
   resourceType: z.string().optional(),
   resourceName: z.string().optional(),
-  details: z
-    .union([transferDetailsSchema, batchDeleteDetailsSchema])
-    .nullable(),
+  details: activityDetailsSchema.nullable(),
 });
 
 export const activityLogResponseSchema = z.object({
@@ -57,5 +78,11 @@ export const activityLogResponseSchema = z.object({
 export type TransferDetails = z.infer<typeof transferDetailsSchema>;
 export type BatchDeleteItem = z.infer<typeof batchDeleteItemSchema>;
 export type BatchDeleteDetails = z.infer<typeof batchDeleteDetailsSchema>;
+export type BatchCopyItem = z.infer<typeof batchCopyItemSchema>;
+export type BatchCopyDetails = z.infer<typeof batchCopyDetailsSchema>;
 export type ActivityItem = z.infer<typeof activityItemSchema>;
 export type ActivityLogResponse = z.infer<typeof activityLogResponseSchema>;
+export type ActivityDetails =
+  | TransferDetails
+  | BatchDeleteDetails
+  | BatchCopyDetails;
