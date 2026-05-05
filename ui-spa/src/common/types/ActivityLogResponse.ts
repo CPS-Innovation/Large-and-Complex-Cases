@@ -24,6 +24,7 @@ export type BatchDeleteDetails = {
 
 export type BatchCopyItem = {
   sourcePath: string;
+  destinationPath?: string;
   outcome: string;
   type: string;
 };

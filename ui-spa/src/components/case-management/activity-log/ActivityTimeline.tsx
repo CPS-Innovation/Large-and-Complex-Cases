@@ -191,10 +191,23 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
       <Details summaryChildren="View copied items">
         <ul className={styles.batchDeleteList}>
           {details.items.map((item, i) => (
-            <li key={i} className={styles.batchDeleteItem}>
-              <span className={styles.batchDeletePath}>
-                {getCleanPath(item.sourcePath).replace(/\//g, " > ")}
-              </span>
+            <li key={i} className={styles.batchCopyItem}>
+              <div className={styles.batchCopyPaths}>
+                <div data-testid="batch-copy-source">
+                  <span className={styles.locationTitle}>Source:</span>
+                  <span className={styles.locationPath}>
+                    {getCleanPath(item.sourcePath).replace(/\//g, " > ")}
+                  </span>
+                </div>
+                {item.destinationPath && (
+                  <div data-testid="batch-copy-destination">
+                    <span className={styles.locationTitle}>Destination:</span>
+                    <span className={styles.locationPath}>
+                      {getCleanPath(item.destinationPath).replace(/\//g, " > ")}
+                    </span>
+                  </div>
+                )}
+              </div>
               <Tag
                 gdsTagColour={item.outcome === "Copied" ? "green" : "grey"}
                 className={styles.batchDeleteTag}
