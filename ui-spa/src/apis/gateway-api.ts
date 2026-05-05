@@ -34,8 +34,8 @@ import {
   initiateFileTransferResponseSchema,
   transferStatusResponseSchema,
   activityLogResponseSchema,
-  // indexingFileTransferPayloadSchema,
-  // initiateFileTransferPayloadSchema,
+  indexingFileTransferPayloadSchema,
+  initiateFileTransferPayloadSchema,
 } from "../schemas";
 import { type CaseSearchParams } from "../common/types/CaseSearchParams";
 import { ApiError } from "../common/errors/ApiError";
@@ -377,6 +377,12 @@ export const getNetAppFolders = async (
 export const indexingFileTransfer = async (
   payload: IndexingFileTransferPayload,
 ) => {
+  const validatedData = indexingFileTransferPayloadSchema.safeParse(payload);
+  if (!validatedData.success) {
+    console.warn(
+      `Invalid indexing file transfer request payload: ${JSON.stringify(validatedData.error)}`,
+    );
+  }
   const url = `${GATEWAY_BASE_URL}/api/v1/filetransfer/files`;
 
   const response = await fetch(url, {
@@ -404,6 +410,13 @@ export const indexingFileTransfer = async (
 export const initiateFileTransfer = async (
   payload: InitiateFileTransferPayload,
 ) => {
+  const validatedData = initiateFileTransferPayloadSchema.safeParse(payload);
+  if (!validatedData.success) {
+    console.warn(
+      `Invalid initiate file transfer request payload: ${JSON.stringify(validatedData.error)}`,
+    );
+  }
+
   const url = `${GATEWAY_BASE_URL}/api/v1/filetransfer/initiate`;
 
   const response = await fetch(url, {

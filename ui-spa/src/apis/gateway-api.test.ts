@@ -1400,6 +1400,55 @@ describe("gateway apis", () => {
         "An error occurred contacting the server at gateway_url/api/v1/filetransfer/files: response schema validation failed; status - OK (200)",
       );
     });
+
+    it("indexingFileTransfer - should throw console.warn when request schema validation fails ", async () => {
+      const mockResponse = {
+        caseId: 12,
+        isInvalid: false,
+        destinationPath: "abc/",
+        validationErrors: [],
+        sourceRootFolderPath: "netapp/",
+        transferDirection: "NetAppToEgress",
+        files: [
+          { sourcePath: "netapp/folder1/file1.pdf" },
+          { sourcePath: "netapp/folder1/folder2/file2.pdf" },
+        ],
+      };
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => mockResponse,
+      });
+
+      const payload = {
+        caseId1: 12,
+        transferDirection: "EgressToNetApp" as const,
+        transferType: "Copy" as const,
+        sourcePaths: [
+          {
+            fileId: "1",
+            path: "abc/def",
+            isFolder: true,
+          },
+        ],
+        sourceRootFolderPath: "abc/",
+        destinationPath: "netapp/",
+      };
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      await indexingFileTransfer(payload as any);
+
+      expect(warnSpy).toHaveBeenCalledOnce();
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /^Invalid indexing file transfer request payload:/,
+        ),
+      );
+
+      warnSpy.mockRestore();
+    });
   });
   describe("initiateFileTransfer", () => {
     it("initiateFileTransfer - should successfully call the post request and return the response", async () => {
@@ -1510,6 +1559,41 @@ describe("gateway apis", () => {
       await expect(initiateFileTransfer(payload)).rejects.toThrow(
         "An error occurred contacting the server at gateway_url/api/v1/filetransfer/initiate: response schema validation failed; status - OK (200)",
       );
+    });
+    it("initiateFileTransfer - should throw console.warn when request schema validation fails ", async () => {
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        json: () => ({
+          id: "transfer-id-egress-to-netapp",
+        }),
+      });
+      const payload = {
+        isRetry: false,
+        caseId1: 12,
+        workspaceId: "thuderstruck",
+        transferType: "Copy" as const,
+        transferDirection: "EgressToNetApp" as const,
+        sourcePaths: [],
+        destinationPath: "netapp/",
+        sourceRootFolderPath: "egress/",
+      };
+
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      initiateFileTransfer(payload as any);
+
+      expect(warnSpy).toHaveBeenCalledOnce();
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /^Invalid initiate file transfer request payload:/,
+        ),
+      );
+
+      warnSpy.mockRestore();
     });
   });
   describe("getTransferStatus", () => {
