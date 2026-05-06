@@ -1401,7 +1401,7 @@ describe("gateway apis", () => {
       );
     });
 
-    it("indexingFileTransfer - should throw console.warn when request schema validation fails ", async () => {
+    it("indexingFileTransfer - should not call fetch and throw Error and console.warn when request schema validation fails ", async () => {
       const mockResponse = {
         caseId: 12,
         isInvalid: false,
@@ -1438,8 +1438,10 @@ describe("gateway apis", () => {
       };
       const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-      await indexingFileTransfer(payload as any);
-
+      await expect(indexingFileTransfer(payload as any)).rejects.toThrow(
+        new Error(`Invalid indexing file transfer request payload`),
+      );
+      expect(fetch).not.toHaveBeenCalled();
       expect(warnSpy).toHaveBeenCalledOnce();
       expect(warnSpy).toHaveBeenCalledWith(
         expect.stringMatching(
@@ -1560,7 +1562,7 @@ describe("gateway apis", () => {
         "An error occurred contacting the server at gateway_url/api/v1/filetransfer/initiate: response schema validation failed; status - OK (200)",
       );
     });
-    it("initiateFileTransfer - should throw console.warn when request schema validation fails ", async () => {
+    it("initiateFileTransfer - should not call fetch and throw Error and console.warn when request schema validation fails ", async () => {
       (v4 as any).mockReturnValue("id_123");
       (getAccessToken as any).mockResolvedValue("access_token");
       (fetch as any).mockResolvedValue({
@@ -1583,8 +1585,10 @@ describe("gateway apis", () => {
       };
 
       const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-      initiateFileTransfer(payload as any);
+      await expect(initiateFileTransfer(payload as any)).rejects.toThrow(
+        new Error(`Invalid initiate file transfer request payload`),
+      );
+      expect(fetch).not.toHaveBeenCalled();
 
       expect(warnSpy).toHaveBeenCalledOnce();
       expect(warnSpy).toHaveBeenCalledWith(

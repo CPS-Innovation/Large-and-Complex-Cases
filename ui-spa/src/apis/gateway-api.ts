@@ -380,8 +380,9 @@ export const indexingFileTransfer = async (
   const validatedData = indexingFileTransferPayloadSchema.safeParse(payload);
   if (!validatedData.success) {
     console.warn(
-      `Invalid indexing file transfer request payload: ${JSON.stringify(validatedData.error)}`,
+      `Invalid indexing file transfer request payload: ${validatedData.error}`,
     );
+    throw new Error(`Invalid indexing file transfer request payload`);
   }
   const url = `${GATEWAY_BASE_URL}/api/v1/filetransfer/files`;
 
@@ -413,8 +414,9 @@ export const initiateFileTransfer = async (
   const validatedData = initiateFileTransferPayloadSchema.safeParse(payload);
   if (!validatedData.success) {
     console.warn(
-      `Invalid initiate file transfer request payload: ${JSON.stringify(validatedData.error)}`,
+      `Invalid initiate file transfer request payload: ${validatedData.error}`,
     );
+    throw new Error(`Invalid initiate file transfer request payload`);
   }
 
   const url = `${GATEWAY_BASE_URL}/api/v1/filetransfer/initiate`;

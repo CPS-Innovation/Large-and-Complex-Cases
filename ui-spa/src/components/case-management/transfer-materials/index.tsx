@@ -383,7 +383,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
 
   useEffect(() => {
     if (apiRequestError) {
-      throw new Error(apiRequestError.message);
+      throw apiRequestError;
     }
   }, [apiRequestError]);
 
@@ -546,11 +546,9 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         return;
       }
       const newError =
-        error instanceof ApiError
+        error instanceof ApiError || error instanceof Error
           ? error
-          : new Error(
-              `Invalid indexing file transfer api response. More details, ${error}`,
-            );
+          : new Error(`${error}`);
       setApiRequestError(newError);
       return;
     }
