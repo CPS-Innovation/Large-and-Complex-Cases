@@ -15,7 +15,8 @@ function Connect-EgressServiceAccount {
         Accept        = "application/json"
         Authorization = "Basic $AuthToken"
       } `
-      -ContentType 'application/json'
+      -ContentType 'application/json' `
+      -ErrorAction Stop
   }
   catch {
     throw "Authentication failed: $($_.Exception.Message)"
@@ -50,9 +51,7 @@ function Remove-EgressFiles {
     [string[]]$FileIds
   )
 
-  $headers =  $AuthorizationHeader + @{
-    "Content-Type" = "application/json"
-  }
+  $headers =  $AuthorizationHeader
 
   $body = @{
     file_ids = $FileIds
@@ -62,7 +61,8 @@ function Remove-EgressFiles {
     -Uri "$BaseUrl/api/v1/workspaces/$WorkspaceId/files" `
     -Headers $headers `
     -Body $body `
-    -ContentType 'application/json'
+    -ContentType 'application/json' `
+    -ErrorAction Stop
   
   $failed = $response.results | Where-Object { $_.code -ne 0 }
 
@@ -74,6 +74,5 @@ function Remove-EgressFiles {
     throw "One or more files failed to delete."
   }
 }
-
 
 Export-ModuleMember -Function Connect-EgressServiceAccount, Remove-EgressFiles
