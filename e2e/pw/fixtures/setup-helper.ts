@@ -95,14 +95,14 @@ export async function setupTestData(
   // Step 2: Get auth tokens and register a fresh case
   console.log("=== Case Registration ===\n");
 
-  console.log("  Getting auth tokens...");
+  console.log("  Getting auth tokens (case-register key)...");
   const { accessToken, cmsAuth } = await getAuthTokens(
     config.tenantId,
     config.clientId,
     config.e2eAdUser,
     config.e2eAdPassword,
     config.ddeiBaseUrl,
-    config.ddeiAccessKey,
+    config.ddeiAccessKeyCaseRegister,
     config.cmsUsername,
     config.cmsPassword
   );
@@ -154,15 +154,35 @@ export async function browserLogin(page: Page): Promise<void> {
   await page.goto(CMS_LOGIN_PAGE!);
   const tacticalLogin = new TacticalLoginPage(page);
   await tacticalLogin.login(CMS_USERNAME!, CMS_PASSWORD!);
+  // Give the browser cookie jar a moment to commit the tactical
+  // Set-Cookie headers before we navigate to a different origin.
+  // Without this, the LCC SPA's first session-validation request can
+  // fire before the tactical cookies are observable, leaving the
+  // case-search radios disabled.
+  await page.waitForTimeout(3000);
+
+  console.log("  Loading LCC app...");
+  await page.goto(BASE_URL!);
 
   console.log("  Azure AD login...");
-  await page.goto(BASE_URL!);
   const adLogin = new AzureADLoginPage(page);
   await adLogin.login(E2E_AD_USER!, E2E_AD_PASSWORD!);
 
   console.log("  Waiting for search radios to be enabled...");
   const caseSearch = new CaseSearchPage(page);
-  await caseSearch.waitForRadioButtons();
+  try {
+    await caseSearch.waitForRadioButtons();
+  } catch {
+    // Radios stayed disabled — typically a tactical-session race where
+    // the LCC backend hadn't acknowledged tactical cookies before the
+    // case-search page loaded. Re-do tactical login once and retry.
+    console.log("  Radios disabled on first attempt — retrying tactical login...");
+    await page.goto(CMS_LOGIN_PAGE!);
+    await tacticalLogin.login(CMS_USERNAME!, CMS_PASSWORD!);
+    await page.waitForTimeout(3000);
+    await page.goto(BASE_URL!);
+    await caseSearch.waitForRadioButtons();
+  }
 
   console.log("=== Browser Login Complete ===\n");
 }

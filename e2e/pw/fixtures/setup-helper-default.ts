@@ -128,17 +128,36 @@ export async function setupDefaultTestData(
   await page.goto(CMS_LOGIN_PAGE!);
   const tacticalLogin = new TacticalLoginPage(page);
   await tacticalLogin.login(CMS_USERNAME!, CMS_PASSWORD!);
+  // Cookie-settle wait: lets the tactical Set-Cookie headers commit
+  // before we navigate to the LCC SPA on a different origin. Without
+  // this, the SPA's first session-validation request can fire before
+  // the tactical cookies are observable, leaving the case-search radios
+  // disabled. Same race fixed in setup-helper.ts:browserLogin.
+  await page.waitForTimeout(3000);
   console.log("  Tactical login complete.");
 
-  console.log("  Azure AD login...");
+  console.log("  Loading LCC app...");
   await page.goto(BASE_URL!);
+
+  console.log("  Azure AD login...");
   const adLogin = new AzureADLoginPage(page);
   await adLogin.login(E2E_AD_USER!, E2E_AD_PASSWORD!);
   console.log("  Azure AD login complete.");
 
   console.log("  Waiting for radio buttons...");
   const caseSearch = new CaseSearchPage(page);
-  await caseSearch.waitForRadioButtons();
+  try {
+    await caseSearch.waitForRadioButtons();
+  } catch {
+    // Radios disabled — tactical session race. Re-do tactical login
+    // once and retry.
+    console.log("  Radios disabled — retrying tactical login...");
+    await page.goto(CMS_LOGIN_PAGE!);
+    await tacticalLogin.login(CMS_USERNAME!, CMS_PASSWORD!);
+    await page.waitForTimeout(3000);
+    await page.goto(BASE_URL!);
+    await caseSearch.waitForRadioButtons();
+  }
   console.log("  All 3 radio buttons visible!");
 
   console.log("=== Browser Login Complete ===\n");

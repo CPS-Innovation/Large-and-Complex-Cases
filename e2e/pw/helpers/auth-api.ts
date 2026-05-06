@@ -1,5 +1,43 @@
 import type { AuthTokens } from "./types";
 
+/**
+ * Mint an Azure AD app-only token via the client-credentials grant.
+ * Used for endpoints that require app-roles rather than user-delegated
+ * scopes (e.g. DELETE /api/v1/netapp/connections). The resulting token
+ * has the LCC API as both client and audience, with `.default` scope
+ * which surfaces app role assignments rather than per-scope consents.
+ */
+export async function getAzureADAppToken(
+  tenantId: string,
+  clientId: string,
+  clientSecret: string
+): Promise<string> {
+  const tokenUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
+
+  const body = new URLSearchParams({
+    client_id: clientId,
+    client_secret: clientSecret,
+    scope: `api://${clientId}/.default`,
+    grant_type: "client_credentials",
+  });
+
+  const response = await fetch(tokenUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: body.toString(),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(
+      `Azure AD app-token request failed (${response.status}): ${text}`
+    );
+  }
+
+  const data = await response.json();
+  return data.access_token;
+}
+
 export async function getAzureADToken(
   tenantId: string,
   clientId: string,

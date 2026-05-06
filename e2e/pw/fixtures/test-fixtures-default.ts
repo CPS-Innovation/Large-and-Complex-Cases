@@ -8,8 +8,11 @@ import type { TestSetupResult } from "../helpers/types";
 
 export const test = base.extend<{ testData: TestSetupResult }>({
   // Default mode: uploads to known workspace, uses existing case (already connected)
-  // Skips workspace creation, case registration, Egress/NetApp connect
-  testData: async ({ page }, use, testInfo) => {
+  // Skips workspace creation, case registration, Egress/NetApp connect.
+  // Fixture timeout bumped to 5 min to cover the 100MB upload + tactical
+  // + AAD login + radio-buttons retry path on slow-tactical days; the
+  // project-level 120s default isn't enough.
+  testData: [async ({ page }, use, testInfo) => {
     const result = await setupDefaultTestData(page);
     await use(result);
 
@@ -59,7 +62,7 @@ export const test = base.extend<{ testData: TestSetupResult }>({
         }
       }
     }
-  },
+  }, { timeout: 300_000 }],
 });
 
 export { expect };

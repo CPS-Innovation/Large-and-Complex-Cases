@@ -6,12 +6,15 @@
 export const EGRESS_TEMPLATE_ID = "59a6855307087630eb190282";
 export const EGRESS_ADMIN_ROLE_ID = "591dab08368b665c9c5c5fe0";
 
-// Canonical NetApp source fixture used by every NetApp -> Egress spec.
-// Must be present at `<folder>/<NETAPP_FIXTURE_FILENAME>` on the shared
-// drive before tests run; seed once per mode via
-// `scripts/seed-netapp-fixture.ts`. The cleanup helpers
-// (deleteNetAppFile, 24h workspace sweep) only target `generated-100MB-*`
-// test artefacts, so this fixture is safe from automated removal.
+// Canonical NetApp source fixture used by the default-mode NetApp ->
+// Egress spec. Must be present at `<folder>/<NETAPP_FIXTURE_FILENAME>`
+// on the shared drive before that spec runs; seed via the
+// `seed-netapp-fixture` Playwright project (opt-in via RUN_SEED=1):
+//   bash:       RUN_SEED=1 npx playwright test --project=seed-netapp-fixture
+//   powershell: $env:RUN_SEED=1; npx playwright test --project=seed-netapp-fixture
+// The cleanup helpers (deleteNetAppFile, 24h workspace sweep) only
+// target `generated-100MB-*` test artefacts, so this fixture is safe
+// from automated removal.
 export const NETAPP_FIXTURE_FILENAME = "lcc-e2e-fixture-source.txt";
 
 // NetApp folder used by register-case mode. The setup project's NetApp

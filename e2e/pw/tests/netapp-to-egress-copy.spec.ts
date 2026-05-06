@@ -36,12 +36,10 @@ test.describe("NetApp to Egress Copy", () => {
     await transferTab.switchToNetAppSource();
     await transferTab.waitForNetAppFiles();
 
-    // Step 4: Sort NetApp by date, select row 0. Register-case mode
-    // creates a fresh Egress destination workspace per run, so the
-    // identity of the NetApp source doesn't matter for correctness — any
-    // file copies into the empty destination folder without collision.
-    // Default mode is the opposite (shared workspace, accumulated state)
-    // and uses the seeded fixture path instead.
+    // Step 4: Sort NetApp by date, select row 0.
+    // Pre-condition: REGISTER_CASE_NETAPP_FOLDER must contain >=1 file.
+    // Source identity doesn't matter — destination is a fresh per-run
+    // workspace, no collisions. See README "NetApp source pre-condition".
     const dateHeader = page
       .getByTestId("netapp-table-wrapper")
       .getByRole("button", { name: "Last modified date" });

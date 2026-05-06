@@ -124,8 +124,14 @@ with a clear "fixture missing" message if it isn't present.
 **Register-case mode does not need the fixture.** Its destination
 Egress workspace is fresh per run, so there's no name-collision concern;
 the register-case `netapp-to-egress-copy.spec.ts` keeps its sort + row-0
-selection and is hermetic in spite of dependeing on whatever's at the
-top of NetApp's listing.
+selection.
+
+### NetApp source pre-condition (register-case mode)
+
+`netapp-to-egress-copy.spec.ts` requires `Automation-Testing/` (the
+shared NetApp folder, `REGISTER_CASE_NETAPP_FOLDER`) to contain at
+least one file. Always satisfied today by accumulated test artefacts;
+on a brand-new environment, drop any file in there first.
 
 Seed it once per environment (opt-in — the seed project skips itself
 unless `RUN_SEED=1` so the default `npx playwright test` invocation
@@ -135,11 +141,14 @@ doesn't repeatedly try to re-seed):
 RUN_SEED=1 npx playwright test --project=seed-netapp-fixture
 ```
 
-The script uploads a 1MB `.txt` to Egress, copies it to NetApp via the
-LCC FileTransfer API, then deletes the Egress copy — leaving only the
-NetApp side. Idempotent: re-running while the fixture exists is a no-op
-(the second copy attempt will be rejected by Egress's "file exists"
-check, which the script ignores).
+The seed (a Playwright setup test, not a plain script) uploads a 1MB
+`.txt` to Egress via the Egress API, drives the LCC UI to do an
+Egress -> NetApp copy of it, then deletes the Egress copy — leaving
+only the NetApp side. Idempotent: re-running while the fixture already
+exists is a no-op. The LCC backend's destination duplicate-file check
+rejects the second copy attempt with "Some files already exist in the
+destination folder", and the seed catches that error path explicitly
+(see `tests/seed-netapp-fixture.setup.ts`).
 
 The fixture's name pattern (`lcc-e2e-fixture-*`) is intentionally
 distinct from the per-test `generated-100MB-*` artefacts, so the
@@ -175,8 +184,10 @@ standard auth set.
 | `DEFAULT_WORKSPACE_NAME` | Pre-existing Egress workspace name | Default mode only |
 | `DEFAULT_CASE_ID` | Pre-existing case ID | Default mode only |
 | `DEFAULT_CASE_URN` | Pre-existing case URN | Default mode only |
-| `LCC_API_BASE_URL` | LCC backend URL — used by NetApp file teardown | Default mode (recommended) |
+| `LCC_API_BASE_URL` | LCC backend URL — used by NetApp file teardown + disassociate | Default mode (recommended); register-case (recommended) |
 | `NETAPP_OPERATION_NAME` | Connected NetApp folder for default mode | Default mode (recommended) |
+| `LCC_API_CLIENT_ID` | LCC API app registration client id (client-credentials flow) for case-disassociate at register-case teardown | Register-case (recommended) |
+| `LCC_API_CLIENT_SECRET` | Secret for `LCC_API_CLIENT_ID` | Register-case (recommended) |
 
 ## Environment Profiles
 
@@ -274,15 +285,22 @@ spec.
    - Get Azure AD + CMS auth tokens and register a fresh case
    - Browser login (Tactical + Azure AD), search the case by URN, connect
      Egress workspace, connect NetApp folder
-   - Persist `storageState` to `.auth/register-case.json` and shared case
-     info (`{workspace, caseUrn}`) to `.state/register-case.json`
+   - Persist shared case info (`{workspace, caseUrn, caseId}`) to
+     `.state/register-case.json`. (storageState is also written to
+     `.auth/register-case.json` but per-spec fixtures do not consume it
+     today — see step 2.)
 
 2. **Per-spec fixture** (`test-fixtures-register-case.ts`):
    - Load shared state from `.state/register-case.json`
    - Upload the spec's sized files (configurable via `test.use({ testOptions })`)
      into the shared workspace
-   - Browser starts with the persisted `storageState`, so login + connect
-     steps are skipped
+   - Re-run the full tactical + Azure AD browser login (`browserLogin`)
+     per test. The setup-saved `storageState` is intentionally not
+     applied: tactical cookies age fast and the LCC app leaves the
+     case-search radios disabled (and rejects `/api/v1/case-search` with
+     HTTP 400) when tactical is stale. Re-logging is fast next to upload
+     + transfer time and avoids that race. The case + Egress/NetApp
+     connect work from setup is still skipped.
 
 3. **Test steps** (in the browser):
    - Search for the pre-connected case by URN
@@ -343,6 +361,32 @@ failing tests stay put, grouped under:
 - `2. Counsel only/e2e-<spec>-<random>/` (register-case, NetApp→Egress dest)
 - `4. Served Evidence/e2e-YYYY-MM-DDTHH-MM-SS/` (default mode, source side)
 - `2. Counsel only/e2e-YYYY-MM-DDTHH-MM-SS/` (default mode, NetApp→Egress dest)
+
+### Register-case run-end case disassociation
+
+Before the workspace sweep, the teardown disassociates the just-run
+case from its NetApp connection so registered cases don't leave dangling
+NetApp links behind. Endpoint:
+
+```
+DELETE /api/v1/netapp/connections?case-id={caseId}
+```
+
+Auth shape: **app-only AAD token** via the client-credentials grant
+against the LCC API app registration (`LCC_API_CLIENT_ID` +
+`LCC_API_CLIENT_SECRET`) — *not* the user-delegated tokens used
+elsewhere in the suite. The endpoint rejects user-delegated tokens
+with 401; verified empirically via `scripts/smoke-disassociate.ts`.
+
+Default mode never invokes this — the only callsite is
+`tests/register-case.teardown.ts:65`, which is gated by both
+Playwright's `teardown:` hook (only fires after register-case-tests)
+and a `STATE_FILE` existence check (only written by register-case
+setup). The default-mode existing case stays connected to NetApp
+across runs.
+
+Best-effort: a non-2xx is logged as a warn and swallowed; the
+subsequent workspace sweep still proceeds.
 
 ### Register-case run-end workspace sweep
 

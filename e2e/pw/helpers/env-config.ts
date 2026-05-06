@@ -39,6 +39,11 @@ export function loadEnvConfig() {
     cmsUsername: requireEnv("CMS_USERNAME"),
     cmsPassword: requireEnv("CMS_PASSWORD"),
     ddeiAccessKey: requireEnv("DDEI_ACCESS_KEY"),
+    // Separate function key for the case-register endpoint. The
+    // case-register backend rejects the lcc-app DDEI key with HTTP 400
+    // "Unauthorized access to CMS"; only the case-register key is
+    // accepted there. All other DDEI auth flows still use ddeiAccessKey.
+    ddeiAccessKeyCaseRegister: requireEnv("DDEI_ACCESS_KEY_CASE_REGISTER"),
 
     egressServiceAccountAuth: requireEnv("EGRESS_SERVICE_ACCOUNT_AUTH"),
     egressTemplateId: optionalEnv("EGRESS_TEMPLATE_ID", EGRESS_TEMPLATE_ID),
@@ -59,6 +64,12 @@ export function loadEnvConfig() {
     // The connected NetApp folder name used as the {operationName} path
     // segment (and S3 prefix) for NetApp deletions, e.g. "Automation-Testing".
     netAppOperationName: process.env.NETAPP_OPERATION_NAME || "",
+    // App registration for the LCC API (client-credentials flow). Used
+    // by disassociate-NetApp-connection in register-case teardown —
+    // that endpoint requires an app-only token, not user-delegated.
+    // Optional: if unset, disassociation is silently skipped.
+    lccApiClientId: process.env.LCC_API_CLIENT_ID || "",
+    lccApiClientSecret: process.env.LCC_API_CLIENT_SECRET || "",
   };
 }
 

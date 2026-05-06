@@ -6,6 +6,8 @@ import {
   deleteWorkspace,
   listAutomationWorkspaces,
 } from "../helpers/egress-api";
+import { disassociateNetAppConnection } from "../helpers/netapp-api";
+import { getAzureADAppToken } from "../helpers/auth-api";
 import {
   AUTH_FILE,
   STATE_FILE,
@@ -33,11 +35,38 @@ teardown("sweep workspaces older than 24 hours", async () => {
   if (config.defaultWorkspaceId) {
     keepIds.add(config.defaultWorkspaceId);
   }
+  let currentRunCaseId: number | undefined;
   if (fs.existsSync(STATE_FILE)) {
     const shared: RegisterCaseSharedState = JSON.parse(
       fs.readFileSync(STATE_FILE, "utf-8")
     );
     keepIds.add(shared.workspace.id);
+    currentRunCaseId = shared.caseId;
+  }
+
+  // Disassociate the current run's case from its NetApp connection
+  // before sweeping. Endpoint requires an app-only AAD token (client-
+  // credentials flow against the LCC API app registration) rather than
+  // the user-delegated tokens used elsewhere in the suite.
+  if (
+    currentRunCaseId !== undefined &&
+    config.lccApiBaseUrl &&
+    config.lccApiClientId &&
+    config.lccApiClientSecret
+  ) {
+    console.log(
+      `  Disassociating NetApp connection for case ${currentRunCaseId}...`
+    );
+    const appToken = await getAzureADAppToken(
+      config.tenantId,
+      config.lccApiClientId,
+      config.lccApiClientSecret
+    );
+    await disassociateNetAppConnection(
+      config.lccApiBaseUrl,
+      currentRunCaseId,
+      appToken
+    );
   }
 
   const cutoff = Date.now() - MAX_AGE_MS;

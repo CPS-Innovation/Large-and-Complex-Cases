@@ -96,7 +96,22 @@ setup("seed lcc-e2e-fixture-source.txt to NetApp", async ({ page }) => {
   await transferTab.selectEgressFileByName(NETAPP_FIXTURE_FILENAME);
   await transferTab.selectAction("Copy");
   await transferTab.confirmTransfer();
-  await transferTab.waitForTransferComplete();
+
+  // Idempotent: if the fixture is already on NetApp, the UI's pre-flight
+  // rejects the transfer with "Some files already exist in the destination
+  // folder". Treat that as success — the fixture is in the desired state.
+  try {
+    await transferTab.waitForTransferComplete();
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (/files? already exist/i.test(message)) {
+      console.log(
+        `Fixture already present at <NetApp>/${NETAPP_FIXTURE_FILENAME} — seed is a no-op.`
+      );
+    } else {
+      throw err;
+    }
+  }
 
   console.log("Deleting Egress-side seed source...");
   if (uploaded.id) {

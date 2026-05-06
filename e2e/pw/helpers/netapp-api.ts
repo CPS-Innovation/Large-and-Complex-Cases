@@ -51,3 +51,47 @@ export async function deleteNetAppFile(
     console.warn(`  [teardown] deleteNetAppFile ${fileName} threw:`, err);
   }
 }
+
+/**
+ * Best-effort disassociation of a case's NetApp connection.
+ *
+ * Endpoint: DELETE /api/v1/netapp/connections?case-id={caseId}
+ * Auth:     Bearer AAD token only.
+ *
+ * Used by register-case teardown after a successful run so the freshly
+ * registered case stops pointing at the NetApp folder. Best-effort —
+ * a non-OK response is logged and swallowed; the run-end workspace
+ * sweep still proceeds.
+ */
+export async function disassociateNetAppConnection(
+  baseUrl: string,
+  caseId: number,
+  accessToken: string
+): Promise<void> {
+  if (!baseUrl) {
+    console.warn(
+      `  [teardown] disassociateNetAppConnection skipped — missing LCC_API_BASE_URL`
+    );
+    return;
+  }
+  try {
+    const response = await fetch(
+      `${baseUrl}/api/v1/netapp/connections?case-id=${encodeURIComponent(String(caseId))}`,
+      {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
+    if (!response.ok) {
+      const text = await response.text();
+      console.warn(
+        `  [teardown] disassociateNetAppConnection caseId=${caseId} failed (${response.status}): ${text.slice(0, 200)}`
+      );
+    }
+  } catch (err) {
+    console.warn(
+      `  [teardown] disassociateNetAppConnection caseId=${caseId} threw:`,
+      err
+    );
+  }
+}

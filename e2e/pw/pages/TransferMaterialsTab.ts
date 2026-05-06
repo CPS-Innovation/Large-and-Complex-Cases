@@ -129,10 +129,11 @@ export class TransferMaterialsTab {
    * The NetApp panel's date sort doesn't reliably toggle to descending
    * and pagination isn't triggered by Playwright scrolls, so locating a
    * just-uploaded file is unreliable. The story's contract is therefore
-   * that NetApp -> Egress specs work against a stable pre-seeded fixture
-   * file — see `helpers/constants.ts` (NETAPP_FIXTURE_FILENAME) and
-   * `scripts/seed-netapp-fixture.ts`. The fixture's name pattern keeps it
-   * outside the automated cleanup helpers' scope.
+   * that the default-mode NetApp -> Egress spec works against a stable
+   * pre-seeded fixture file — see `helpers/constants.ts`
+   * (NETAPP_FIXTURE_FILENAME) and `tests/seed-netapp-fixture.setup.ts`.
+   * The fixture's name pattern keeps it outside the automated cleanup
+   * helpers' scope.
    */
   async selectNetAppFileByExactName(fileName: string) {
     const row = this.page
@@ -141,7 +142,9 @@ export class TransferMaterialsTab {
     if ((await row.count()) === 0) {
       throw new Error(
         `Required NetApp fixture '${fileName}' not found in the NetApp panel.\n` +
-          `  Seed it via: npx tsx scripts/seed-netapp-fixture.ts\n` +
+          `  Seed it via:\n` +
+          `    bash:       RUN_SEED=1 npx playwright test --project=seed-netapp-fixture\n` +
+          `    powershell: $env:RUN_SEED=1; npx playwright test --project=seed-netapp-fixture\n` +
           `  See README "Required NetApp fixture" for details.`
       );
     }
