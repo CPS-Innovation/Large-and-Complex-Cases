@@ -254,15 +254,16 @@ const TreeView: React.FC<TreeViewProps> = ({
 
     return (
       <li
-        key={node.id + level}
+        key={node.id}
         role="treeitem"
         ref={(el) => {
           refs.current[node.id] = el;
         }}
+        id={node.id}
+        data-testid={node.id}
         aria-expanded={node.isFolder ? isExpanded : undefined}
         aria-busy={isLoading ? true : undefined}
         aria-level={level}
-        data-id={node.id}
         aria-selected={isSelected}
         aria-labelledby={`name-${node.id}`}
         tabIndex={isFocused ? 0 : -1}
@@ -287,7 +288,8 @@ const TreeView: React.FC<TreeViewProps> = ({
               {isExpanded ? "-" : "+"}
             </button>
           )}
-          {node.isFolder && (
+
+          {node.isFolder ? (
             <button
               id={`name-${node.id}`}
               className={` ${styles.folderNode} ${isSelected ? styles.selected : ""}`}
@@ -300,8 +302,7 @@ const TreeView: React.FC<TreeViewProps> = ({
               </div>
               {node.name}
             </button>
-          )}
-          {!node.isFolder && (
+          ) : (
             <div
               id={`name-${node.id}`}
               aria-label={node.name.toLowerCase()}
@@ -314,11 +315,13 @@ const TreeView: React.FC<TreeViewProps> = ({
             </div>
           )}
         </div>
+
         {isLoading && (
           <div className={styles.loadingIconWrapper} aria-hidden>
             <Spinner data-testid="loading-spinner" diameterPx={15} />
           </div>
         )}
+
         {!isLoading &&
           node.isFolder &&
           isExpanded &&
