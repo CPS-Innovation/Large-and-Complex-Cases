@@ -37,3 +37,5 @@ variables:
   value: '5242880'
 - name: NetAppOptionsSearchMaxSubstringScanItems
   value: '10000'
+- name: FeatureFlagsManageMaterials
+  value: 'false'
