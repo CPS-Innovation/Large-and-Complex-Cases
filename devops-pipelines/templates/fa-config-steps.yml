@@ -220,6 +220,11 @@ steps:
             "slotSetting": false
           },
           {
+            "name": "FeatureFlags__ManageMaterials",
+            "value": "$(FeatureFlagsManageMaterials)",
+            "slotSetting": false
+          },
+          {
             "name": "RateLimiting__PermitLimit",
             "value": "$(RateLimitingPermitLimit)",
             "slotSetting": false

@@ -4,12 +4,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Domain.Response;
 using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Common.Handlers;
+using CPS.ComplexCases.Common.Models.Configuration;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
@@ -21,7 +23,8 @@ public class GetCase(ILogger<GetCase> logger,
   IDdeiClient ddeiClient,
   IDdeiArgFactory ddeiArgFactory,
   IInitializationHandler initializationHandler,
-  ICaseActiveManageMaterialsService caseActiveManageMaterialsService)
+  ICaseActiveManageMaterialsService caseActiveManageMaterialsService,
+  IOptions<FeatureFlagConfig> featureFlags)
 {
     private readonly ILogger<GetCase> _logger = logger;
     private readonly ICaseMetadataService _caseClient = caseClient;
@@ -29,6 +32,7 @@ public class GetCase(ILogger<GetCase> logger,
     private readonly IDdeiArgFactory _ddeiArgFactory = ddeiArgFactory;
     private readonly IInitializationHandler _initializationHandler = initializationHandler;
     private readonly ICaseActiveManageMaterialsService _caseActiveManageMaterialsService = caseActiveManageMaterialsService;
+    private readonly FeatureFlagConfig _featureFlags = featureFlags.Value;
 
     [Function(nameof(GetCase))]
     [OpenApiOperation(operationId: nameof(GetCase), tags: ["Cases"], Description = "Gets a case by ID from metadata service.")]
@@ -56,7 +60,9 @@ public class GetCase(ILogger<GetCase> logger,
         var cmsArg = _ddeiArgFactory.CreateCaseArg(context.CmsAuthValues, context.CorrelationId, caseId);
         var cmsResponse = await _ddeiClient.GetCaseAsync(cmsArg);
 
-        var activeManageMaterialsOperations = await _caseActiveManageMaterialsService.GetActiveOperationsForCaseAsync(caseId);
+        var activeManageMaterialsOperations = _featureFlags.ManageMaterials
+            ? await _caseActiveManageMaterialsService.GetActiveOperationsForCaseAsync(caseId)
+            : [];
 
         var response = new CaseWithMetadataResponse
         {
