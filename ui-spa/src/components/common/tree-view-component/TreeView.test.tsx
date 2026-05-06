@@ -173,7 +173,7 @@ describe("TreeView", () => {
     });
   });
 
-  it("selects files on click", async () => {
+  it("selects folders on click", async () => {
     const data: TreeNode[] = [
       { id: "f1", name: "Folder 1", isFolder: true },
       { id: "file1", name: "File 1", isFolder: false },
@@ -188,5 +188,149 @@ describe("TreeView", () => {
 
     expect(onSelect).toHaveBeenCalledTimes(1);
     expect(onSelect.mock.calls[0][0].id).toBe("f1");
+  });
+
+  it("file nodes do not call onLoadChildren and are selectable", async () => {
+    const data: TreeNode[] = [{ id: "fileX", name: "File X", isFolder: false }];
+
+    const onLoadChildren = vi.fn();
+    const onSelect = vi.fn();
+
+    render(
+      <TreeView
+        data={data}
+        onLoadChildren={onLoadChildren}
+        onSelect={onSelect}
+      />,
+    );
+
+    // file should render but should not have a toggle button
+    const fileLi = screen.getByText("File X").closest("li") as HTMLElement;
+    const toggle = within(fileLi).queryByRole("button", {
+      name: /plus|minus|\+|-/i,
+    });
+    expect(toggle).toBeNull();
+
+    // keyboard: focusing the file and pressing ArrowRight should NOT call onLoadChildren
+    // and pressing Enter should select the file
+    fileLi.focus();
+    userEvent.keyboard("{ArrowRight}");
+    expect(onLoadChildren).not.toHaveBeenCalled();
+
+    userEvent.keyboard("{Enter}");
+    expect(onSelect).toHaveBeenCalledTimes(0);
+  });
+
+  it("folder with pre-populated children does not call onLoadChildren when toggled", async () => {
+    const data: TreeNode[] = [
+      {
+        id: "pf",
+        name: "PrePopulated",
+        isFolder: true,
+        children: [{ id: "pf-c1", name: "ChildX", isFolder: false }],
+      },
+    ];
+
+    const onLoadChildren = vi.fn();
+
+    render(<TreeView data={data} onLoadChildren={onLoadChildren} />);
+
+    const folderLi = screen
+      .getByText("PrePopulated")
+      .closest("li") as HTMLElement;
+    const toggle = within(folderLi).getByRole("button", {
+      name: /plus|minus|\+|-/i,
+    });
+
+    // clicking toggle should expand but should NOT call onLoadChildren (children already present)
+    userEvent.click(toggle);
+    expect(onLoadChildren).not.toHaveBeenCalled();
+
+    // child should be visible immediately
+    await waitFor(() => expect(screen.getByText("ChildX")).toBeInTheDocument());
+  });
+  it("should not call onLoadChildren if the children's are already loaded and should should display it from the stored data", async () => {
+    const data: TreeNode[] = [
+      {
+        id: "a",
+        name: "folder a",
+        isFolder: true,
+      },
+    ];
+    const onLoadChildren = vi.fn((nodeId: string) => {
+      if (nodeId === "a") {
+        return Promise.resolve([
+          { id: "b", name: "folder b", isFolder: true },
+        ] as TreeNode[]);
+      }
+      if (nodeId === "b") {
+        return Promise.resolve([
+          { id: "c", name: "folder c", isFolder: true },
+        ] as TreeNode[]);
+      }
+
+      return Promise.resolve([] as TreeNode[]);
+    });
+
+    render(<TreeView data={data} onLoadChildren={onLoadChildren} />);
+
+    const folderALi = screen
+      .getByText(/folder\s*a/i)
+      .closest("li") as HTMLElement;
+    const toggleFolderA = within(folderALi).getByRole("button", {
+      name: /plus|minus|\+|-/i,
+    });
+    // clicking toggle should expand and call onLoadChildren for folder a
+    userEvent.click(toggleFolderA);
+    expect(onLoadChildren).toHaveBeenCalledTimes(1);
+    expect(onLoadChildren).toHaveBeenCalledWith("a");
+    expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
+
+    await waitFor(() =>
+      expect(screen.getByText("folder b")).toBeInTheDocument(),
+    );
+    // clicking toggle should minimize for folder a
+    userEvent.click(toggleFolderA);
+
+    await waitFor(() =>
+      expect(screen.queryByText("folder b")).not.toBeInTheDocument(),
+    );
+    expect(onLoadChildren).toHaveBeenCalledTimes(1);
+    userEvent.click(toggleFolderA);
+
+    expect(onLoadChildren).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId("loading-spinner")).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByText("folder b")).toBeInTheDocument(),
+    );
+    const folderBLi = screen
+      .getByText(/folder\s*b/i)
+      .closest("li") as HTMLElement;
+    const toggleFolderB = within(folderBLi).getByRole("button", {
+      name: /plus|minus|\+|-/i,
+    });
+    // clicking toggle should expand and call onLoadChildren for folder b
+    userEvent.click(toggleFolderB);
+    expect(onLoadChildren).toHaveBeenCalledTimes(2);
+    expect(onLoadChildren).toHaveBeenCalledWith("b");
+    expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
+
+    await waitFor(() =>
+      expect(screen.getByText("folder c")).toBeInTheDocument(),
+    );
+    // clicking toggle should minimize for folder b
+    userEvent.click(toggleFolderB);
+
+    await waitFor(() =>
+      expect(screen.queryByText("folder c")).not.toBeInTheDocument(),
+    );
+    expect(onLoadChildren).toHaveBeenCalledTimes(2);
+    // clicking toggle should expand folder b
+    userEvent.click(toggleFolderB);
+    expect(onLoadChildren).toHaveBeenCalledTimes(2);
+    expect(screen.queryByTestId("loading-spinner")).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByText("folder c")).toBeInTheDocument(),
+    );
   });
 });
