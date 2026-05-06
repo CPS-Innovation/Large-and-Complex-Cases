@@ -24,6 +24,7 @@ export type BatchDeleteDetails = {
 
 export type BatchCopyItem = {
   sourcePath: string;
+  destinationPath?: string;
   outcome: string;
   type: string;
 };
@@ -32,14 +33,25 @@ export type BatchCopyDetails = {
   items: BatchCopyItem[];
 };
 
+export type BatchMoveItem = {
+  sourcePath: string;
+  destinationPath?: string;
+  outcome: string;
+  type: string;
+};
+
+export type BatchMoveDetails = {
+  items: BatchMoveItem[];
+};
+
 export function isTransferDetails(
-  details: TransferDetails | BatchDeleteDetails | BatchCopyDetails | null,
+  details: TransferDetails | BatchDeleteDetails | BatchCopyDetails | BatchMoveDetails | null,
 ): details is TransferDetails {
   return details !== null && "destinationPath" in details;
 }
 
 export function isBatchCopyDetails(
-  details: TransferDetails | BatchDeleteDetails | BatchCopyDetails | null,
+  details: TransferDetails | BatchDeleteDetails | BatchCopyDetails | BatchMoveDetails | null,
 ): details is BatchCopyDetails {
   return (
     details !== null &&
@@ -50,8 +62,20 @@ export function isBatchCopyDetails(
   );
 }
 
+export function isBatchMoveDetails(
+  details: TransferDetails | BatchDeleteDetails | BatchCopyDetails | BatchMoveDetails | null,
+): details is BatchMoveDetails {
+  return (
+    details !== null &&
+    "items" in details &&
+    Array.isArray((details as BatchMoveDetails).items) &&
+    (details as BatchMoveDetails).items.length > 0 &&
+    "type" in (details as BatchMoveDetails).items[0]
+  );
+}
+
 export function isBatchDeleteDetails(
-  details: TransferDetails | BatchDeleteDetails | BatchCopyDetails | null,
+  details: TransferDetails | BatchDeleteDetails | BatchCopyDetails | BatchMoveDetails | null,
 ): details is BatchDeleteDetails {
   return details !== null && "items" in details && !isBatchCopyDetails(details);
 }
@@ -65,7 +89,7 @@ export type ActivityItem = {
   description: string;
   resourceType?: string;
   resourceName?: string;
-  details: TransferDetails | BatchDeleteDetails | BatchCopyDetails | null;
+  details: TransferDetails | BatchDeleteDetails | BatchCopyDetails | BatchMoveDetails | null;
 };
 
 export type ActivityLogResponse = {
