@@ -348,6 +348,20 @@ in their dated subfolder for post-mortem inspection.
   NetApp. The **workspace itself is never deleted** from default-mode
   teardown — it's shared.
 
+Both fixtures also clean the **Egress destination folder** —
+`2. Counsel only/<uploadSubfolder>/` — by listing it via
+`listEgressWorkspaceFilesByFolderId()` (using the folder id captured
+from the `createFolder` response, since Egress's `?path=` query
+silently returns 0 against subfolder paths) and bulk-deleting whatever
+is there. This catches the file the LCC backend writes during
+NetApp→Egress copies, whose basename is decided by the backend (so we
+can't predict it from the source). Egress→NetApp specs don't write to
+this folder, so the list returns empty and the call is a no-op for
+those runs. For NetApp→Egress specs the listing polls every 3 s up to
+~30 s — Egress's file index lags the LCC `transfer-complete` signal by
+a few seconds, so the first list often returns empty even when the
+copy succeeded.
+
 The NetApp delete is best-effort: a NetApp -> Egress spec doesn't push
 to NetApp, so the delete attempt 404s and is logged as a warning rather
 than a failure. The endpoint is also disabled in production by the

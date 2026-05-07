@@ -82,7 +82,11 @@ export async function setupDefaultTestData(
     sourceParent,
     uploadSubfolder
   );
-  await createFolder(
+  // Capture the destination folder id so per-test teardown can list and
+  // delete the file the LCC backend wrote there during NetApp->Egress
+  // copy specs. Undefined here means the folder already existed (rare
+  // timestamp collision); teardown silently skips destination cleanup.
+  const destinationSubfolderId = await createFolder(
     config.egressBaseUrl,
     egressToken,
     workspaceId,
@@ -167,5 +171,6 @@ export async function setupDefaultTestData(
     files,
     caseUrn,
     uploadSubfolder,
+    destinationSubfolderId,
   };
 }

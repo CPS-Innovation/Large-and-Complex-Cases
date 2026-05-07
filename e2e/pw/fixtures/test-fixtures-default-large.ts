@@ -1,6 +1,10 @@
 import { test as base, expect } from "@playwright/test";
 import { setupDefaultTestData } from "./setup-helper-default";
-import { authenticateEgress, deleteFiles } from "../helpers/egress-api";
+import {
+  authenticateEgress,
+  deleteFiles,
+  listEgressWorkspaceFilesByFolderId,
+} from "../helpers/egress-api";
 import { deleteNetAppFile } from "../helpers/netapp-api";
 import { getAuthTokens } from "../helpers/auth-api";
 import { loadEnvConfig } from "../helpers/env-config";
@@ -33,6 +37,31 @@ export const test = base.extend<{ testData: TestSetupResult }>({
         result.workspace.id,
         fileIds
       );
+
+      // Egress destination cleanup — see test-fixtures-default.ts for the
+      // rationale. Lists by folder id and deletes whatever the backend
+      // wrote there during NetApp->Egress runs.
+      if (result.destinationSubfolderId) {
+        const expectFile = /netapp-to-egress/i.test(testInfo.file);
+        const destinationFiles = await listEgressWorkspaceFilesByFolderId(
+          config.egressBaseUrl,
+          token,
+          result.workspace.id,
+          result.destinationSubfolderId,
+          expectFile
+        );
+        if (destinationFiles.length > 0) {
+          console.log(
+            `  [teardown] Deleting ${destinationFiles.length} destination file(s) from 2. Counsel only/${result.uploadSubfolder}/`
+          );
+          await deleteFiles(
+            config.egressBaseUrl,
+            token,
+            result.workspace.id,
+            destinationFiles.map((f) => f.id)
+          );
+        }
+      }
 
       // NetApp side cleanup — see test-fixtures-default.ts for details.
       if (config.lccApiBaseUrl && config.netAppOperationName) {

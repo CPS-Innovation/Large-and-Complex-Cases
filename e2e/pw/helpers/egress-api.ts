@@ -154,6 +154,12 @@ export async function createWorkspace(
  * Idempotent: if Egress reports the folder already exists (4xx), this is
  * treated as success so the helper is safe to call from every test run
  * when uploading into a dated subfolder.
+ *
+ * Returns the new folder's id when Egress creates it. Returns undefined
+ * when the folder already existed (409 / "already exists" 400) — callers
+ * that need an id for teardown should treat undefined as "skip cleanup
+ * and rely on the workspace sweep" rather than re-querying for the id,
+ * since the rare-collision case isn't worth the extra round-trip.
  */
 export async function createFolder(
   baseUrl: string,
@@ -161,7 +167,7 @@ export async function createFolder(
   workspaceId: string,
   parentPath: string,
   folderName: string
-): Promise<void> {
+): Promise<string | undefined> {
   const response = await fetch(
     `${baseUrl}/api/v1/workspaces/${workspaceId}/files?path=${encodeURIComponent(parentPath)}`,
     {
@@ -174,7 +180,10 @@ export async function createFolder(
     }
   );
 
-  if (response.ok) return;
+  if (response.ok) {
+    const body = await response.json().catch(() => ({}));
+    return body?.id;
+  }
 
   const text = await response.text();
   // Treat duplicate-folder responses as success.
@@ -182,7 +191,7 @@ export async function createFolder(
     response.status === 409 ||
     (response.status === 400 && /exist/i.test(text))
   ) {
-    return;
+    return undefined;
   }
   throw new Error(
     `Egress folder creation failed (${response.status}): ${text}`
@@ -333,6 +342,86 @@ export async function uploadFile(
 
   console.log(`  Upload complete: ${fileId}`);
   return { id: fileId, fileName, fileSize: fileSizeBytes };
+}
+
+/**
+ * Lists non-folder files inside a workspace folder by folder id. Used by
+ * per-test teardown to find NetApp->Egress destination files (the file
+ * the LCC backend wrote into "2. Counsel only/<uploadSubfolder>/") so
+ * they can be deleted alongside the source files.
+ *
+ * Folder id is preferred over `?path=` because Egress's path filter
+ * matches against the parent's stored path string and silently returns
+ * 0 when the path representation diverges. Folder id is exact.
+ *
+ * Polls if `expectFile` is set: after a NetApp->Egress transfer, the
+ * LCC backend's `waitForTransferComplete` signal precedes Egress's own
+ * file-index commit by a few seconds, so an immediate listing returns
+ * empty. Retries every 3s up to ~30s when expectFile=true and the
+ * folder still looks empty. Egress->NetApp callers that legitimately
+ * expect an empty folder should leave expectFile=false (the default).
+ *
+ * Returns ids of leaf files only — folders are skipped. Best-effort: on
+ * any HTTP failure logs a warning and returns [].
+ */
+export async function listEgressWorkspaceFilesByFolderId(
+  baseUrl: string,
+  token: string,
+  workspaceId: string,
+  folderId: string,
+  expectFile: boolean = false
+): Promise<{ id: string; fileName: string }[]> {
+  const pageSize = 50;
+  const maxPages = 50;
+  const maxAttempts = expectFile ? 10 : 1;
+  const retryDelayMs = 3000;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const results: { id: string; fileName: string }[] = [];
+    try {
+      for (let page = 0; page < maxPages; page++) {
+        const skip = page * pageSize;
+        const url = `${baseUrl}/api/v1/workspaces/${workspaceId}/files?view=full&skip=${skip}&limit=${pageSize}&folder=${encodeURIComponent(folderId)}`;
+        const response = await fetch(url, {
+          headers: { Authorization: `Basic ${token}` },
+        });
+        if (!response.ok) {
+          const text = await response.text();
+          console.warn(
+            `  [teardown] listEgressWorkspaceFilesByFolderId ${folderId} failed (${response.status}): ${text}`
+          );
+          return results;
+        }
+
+        const body: {
+          data?: { id: string; filename: string; is_folder?: boolean }[];
+        } = await response.json();
+        const items = body.data ?? [];
+        if (items.length === 0) break;
+
+        for (const item of items) {
+          if (!item.is_folder) {
+            results.push({ id: item.id, fileName: item.filename });
+          }
+        }
+
+        if (items.length < pageSize) break;
+      }
+    } catch (err) {
+      console.warn(
+        `  [teardown] listEgressWorkspaceFilesByFolderId threw:`,
+        err
+      );
+      return results;
+    }
+
+    if (results.length > 0 || !expectFile) return results;
+    if (attempt < maxAttempts - 1) {
+      await new Promise((r) => setTimeout(r, retryDelayMs));
+    }
+  }
+
+  return [];
 }
 
 /**

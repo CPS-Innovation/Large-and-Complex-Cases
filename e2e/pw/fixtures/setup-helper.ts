@@ -95,6 +95,14 @@ export async function setupTestData(
   // Step 2: Get auth tokens and register a fresh case
   console.log("=== Case Registration ===\n");
 
+  if (!config.ddeiAccessKeyCaseRegister) {
+    throw new Error(
+      "DDEI_ACCESS_KEY_CASE_REGISTER is required for the register-case setup path " +
+        "(case registration uses a different DDEI function key from the lcc-app key " +
+        "in DDEI_ACCESS_KEY). Set it in .env.local. Default-mode runs do not need this."
+    );
+  }
+
   console.log("  Getting auth tokens (case-register key)...");
   const { accessToken, cmsAuth } = await getAuthTokens(
     config.tenantId,

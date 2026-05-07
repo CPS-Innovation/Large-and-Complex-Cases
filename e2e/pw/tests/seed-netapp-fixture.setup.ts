@@ -113,6 +113,21 @@ setup("seed lcc-e2e-fixture-source.txt to NetApp", async ({ page }) => {
     }
   }
 
+  // Verify the fixture is at the path the default-mode spec actually
+  // selects from — i.e. selectable by exact basename at NetApp source
+  // root, no folder navigation. The LCC Egress->NetApp transfer
+  // currently flattens to basename at the destination, but if that
+  // contract ever changes (e.g. preserving source folders) the seed
+  // would otherwise silently "succeed" while the default test fails
+  // with a fixture-missing error.
+  console.log(
+    `Verifying fixture is selectable from NetApp root by exact name...`
+  );
+  await transferTab.switchToNetAppSource();
+  await transferTab.waitForNetAppFiles();
+  // Throws with the same fixture-missing message the test would.
+  await transferTab.selectNetAppFileByExactName(NETAPP_FIXTURE_FILENAME);
+
   console.log("Deleting Egress-side seed source...");
   if (uploaded.id) {
     await deleteFiles(

@@ -43,7 +43,12 @@ export function loadEnvConfig() {
     // case-register backend rejects the lcc-app DDEI key with HTTP 400
     // "Unauthorized access to CMS"; only the case-register key is
     // accepted there. All other DDEI auth flows still use ddeiAccessKey.
-    ddeiAccessKeyCaseRegister: requireEnv("DDEI_ACCESS_KEY_CASE_REGISTER"),
+    // Optional in shared config — only the register-case setup path
+    // (setup-helper.ts:setupTestData) reads this; default mode never
+    // registers cases, so npm run e2e:existing-case must not require it.
+    // The register-case path validates presence at the callsite and
+    // throws a clear error if missing.
+    ddeiAccessKeyCaseRegister: process.env.DDEI_ACCESS_KEY_CASE_REGISTER || "",
 
     egressServiceAccountAuth: requireEnv("EGRESS_SERVICE_ACCOUNT_AUTH"),
     egressTemplateId: optionalEnv("EGRESS_TEMPLATE_ID", EGRESS_TEMPLATE_ID),

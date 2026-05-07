@@ -5,6 +5,7 @@ import {
   authenticateEgress,
   createFolder,
   deleteFiles,
+  listEgressWorkspaceFilesByFolderId,
   uploadFile,
 } from "../helpers/egress-api";
 import { deleteNetAppFile } from "../helpers/netapp-api";
@@ -72,7 +73,9 @@ export const test = base.extend<
       SOURCE_PARENT,
       uploadSubfolder
     );
-    await createFolder(
+    // Capture destination folder id for per-test teardown of any file the
+    // LCC backend wrote there during NetApp->Egress copy specs.
+    const destinationSubfolderId = await createFolder(
       config.egressBaseUrl,
       token,
       shared.workspace.id,
@@ -128,12 +131,43 @@ export const test = base.extend<
         fileIds
       );
 
+      // Egress destination cleanup. NetApp->Egress specs copy a file into
+      // "2. Counsel only/<uploadSubfolder>/"; the destination basename is
+      // chosen by the LCC backend, so we list by folder id and delete
+      // rather than predicting the name. Egress->NetApp specs don't
+      // write to this folder so the list comes back empty and the call
+      // is a no-op. Skipped when the folder id is unknown (rare —
+      // implies the per-test slug collided at setup time).
+      if (destinationSubfolderId) {
+        const expectFile = /netapp-to-egress/i.test(testInfo.file);
+        const destinationFiles = await listEgressWorkspaceFilesByFolderId(
+          config.egressBaseUrl,
+          token,
+          shared.workspace.id,
+          destinationSubfolderId,
+          expectFile
+        );
+        if (destinationFiles.length > 0) {
+          console.log(
+            `  [teardown] Deleting ${destinationFiles.length} destination file(s) from ${DESTINATION_PARENT}/${uploadSubfolder}/`
+          );
+          await deleteFiles(
+            config.egressBaseUrl,
+            token,
+            shared.workspace.id,
+            destinationFiles.map((f) => f.id)
+          );
+        }
+      }
+
       // NetApp side cleanup. Egress->NetApp specs leave a copy at
-      // <REGISTER_CASE_NETAPP_FOLDER>/<fileName>; NetApp->Egress specs
-      // don't, so they 404 and are warned. Skipped if LCC_API_BASE_URL
-      // unset (e.g. prod run where the endpoint 403s anyway). Note:
-      // register-case mode uses a different NetApp folder than default
-      // mode, so we don't read NETAPP_OPERATION_NAME from env here.
+      // <REGISTER_CASE_NETAPP_FOLDER>/<fileName> (basename only — see
+      // deleteNetAppFile docs for why the relativePath is empty here).
+      // NetApp->Egress specs don't push there, so the DELETE 404s and is
+      // warned. Skipped if LCC_API_BASE_URL unset (e.g. prod run where
+      // the endpoint 403s anyway). Note: register-case mode uses a
+      // different NetApp folder than default mode, so we don't read
+      // NETAPP_OPERATION_NAME from env here.
       if (config.lccApiBaseUrl) {
         const { accessToken, cmsAuth } = await getAuthTokens(
           config.tenantId,

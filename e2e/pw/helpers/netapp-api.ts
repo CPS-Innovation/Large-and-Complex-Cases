@@ -7,6 +7,16 @@
  * operationName="Automation-Testing" and path="generated-...txt" deletes
  * the S3 object at "Automation-Testing/generated-...txt".
  *
+ * **Basename only is correct here**, not a defensive guess. Tests select
+ * individual files via `selectEgressFileByName(...)`, which makes the SPA
+ * send `sourcePaths: [{ path: "" }]` (empty relativePath); the backend
+ * writes at `<destinationPath>/<basename>`, i.e. flat at the NetApp
+ * folder root. A failed-transfer trace with
+ * `sourceRootFolderPath: "4. Served Evidence//"` and `destinationPath: "/"`
+ * confirms this. Tests that switch to folder/multi-file selection would
+ * preserve the source path and need the full NetApp-relative path passed
+ * here — but that's a per-test concern, not a backend contract drift.
+ *
  * Auth: requires both an Azure AD bearer token AND a CMS-Auth cookie value
  * (URL-encoded JSON), the same pair returned by helpers/auth-api.ts
  * `getAuthTokens`.
