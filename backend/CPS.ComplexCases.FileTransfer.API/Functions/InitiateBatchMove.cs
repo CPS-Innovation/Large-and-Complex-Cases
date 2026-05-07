@@ -93,6 +93,7 @@ public class InitiateBatchMove(
         var originalOperations = new List<MoveBatchOriginalOperation>();
         var preflight409Errors = new List<string>();
         var preflight404Errors = new List<string>();
+        var preflightListingErrors = new List<string>();
 
         foreach (var op in request.Operations)
         {
@@ -114,6 +115,7 @@ public class InitiateBatchMove(
 
                 var expandedFiles = new List<(string SourceKey, string RelativeKey)>();
                 string? continuationToken = null;
+                var sourcePaginationFailed = false;
                 do
                 {
                     var listArg = _netAppArgFactory.CreateListObjectsInBucketArg(
@@ -122,7 +124,11 @@ public class InitiateBatchMove(
                         prefix: sourcePrefix);
 
                     var listResult = await _netAppClient.ListObjectsInBucketAsync(listArg);
-                    if (listResult == null) break;
+                    if (listResult == null)
+                    {
+                        sourcePaginationFailed = true;
+                        break;
+                    }
 
                     foreach (var file in listResult.Data.FileData)
                     {
@@ -133,6 +139,15 @@ public class InitiateBatchMove(
                     continuationToken = listResult.Pagination.NextContinuationToken;
                 }
                 while (!string.IsNullOrEmpty(continuationToken));
+
+                if (sourcePaginationFailed)
+                {
+                    _logger.LogError(
+                        "Source folder listing returned null mid-pagination for {SourcePath}. CaseId: {CaseId}. CorrelationId: {CorrelationId}",
+                        op.SourcePath, request.CaseId, correlationId);
+                    preflightListingErrors.Add($"Failed to list source folder contents: {op.SourcePath}");
+                    continue;
+                }
 
                 var existingDestKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 string? destContinuationToken = null;
@@ -199,22 +214,33 @@ public class InitiateBatchMove(
                     continue;
                 }
 
-                var caseCheckArg = _netAppArgFactory.CreateListObjectsInBucketArg(
-                    request.BearerToken, request.BucketName,
-                    prefix: request.DestinationPrefix);
-                var caseCheckResult = await _netAppClient.ListObjectsInBucketAsync(caseCheckArg);
-                if (caseCheckResult != null)
+                var caseClashFound = false;
+                string? caseCheckToken = null;
+                do
                 {
-                    var clash = caseCheckResult.Data.FileData
-                        .Any(f => string.Equals(
-                            Path.GetFileName(f.Path), fileName, StringComparison.OrdinalIgnoreCase)
-                            && !string.Equals(f.Path, computedDest, StringComparison.Ordinal));
+                    var caseCheckArg = _netAppArgFactory.CreateListObjectsInBucketArg(
+                        request.BearerToken, request.BucketName,
+                        continuationToken: caseCheckToken,
+                        prefix: request.DestinationPrefix);
+                    var caseCheckResult = await _netAppClient.ListObjectsInBucketAsync(caseCheckArg);
+                    if (caseCheckResult == null) break;
 
-                    if (clash)
+                    if (caseCheckResult.Data.FileData.Any(f =>
+                            string.Equals(Path.GetFileName(f.Path), fileName, StringComparison.OrdinalIgnoreCase)
+                            && !string.Equals(f.Path, computedDest, StringComparison.Ordinal)))
                     {
-                        preflight409Errors.Add($"A case-insensitive name clash exists at the destination for: {op.SourcePath}");
-                        continue;
+                        caseClashFound = true;
+                        break;
                     }
+
+                    caseCheckToken = caseCheckResult.Pagination.NextContinuationToken;
+                }
+                while (!string.IsNullOrEmpty(caseCheckToken));
+
+                if (caseClashFound)
+                {
+                    preflight409Errors.Add($"A case-insensitive name clash exists at the destination for: {op.SourcePath}");
+                    continue;
                 }
 
                 moveFileItems.Add(new MoveFileItem
@@ -231,6 +257,13 @@ public class InitiateBatchMove(
                     DestinationPrefix = request.DestinationPrefix,
                 });
             }
+        }
+
+        if (preflightListingErrors.Count > 0)
+        {
+            _logger.LogWarning("Pre-flight listing errors for CaseId: {CaseId}. CorrelationId: {CorrelationId}. Errors: {Errors}",
+                request.CaseId, correlationId, preflightListingErrors);
+            return new ObjectResult(preflightListingErrors) { StatusCode = StatusCodes.Status500InternalServerError };
         }
 
         if (preflight404Errors.Count > 0)

@@ -241,6 +241,35 @@ public class InitiateBatchMoveTests
     }
 
     [Fact]
+    public async Task Run_WhenCaseInsensitiveClashAppearsOnSecondPage_ReturnsConflict()
+    {
+        const string page2Token = "dest-page2-token";
+
+        SetupValidRequest();
+        SetupNoActiveTransfer();
+        SetupMaterialSourceExists();
+        SetupMaterialDestinationMissing();
+
+        // Page 1 — no clash, but indicates a second page
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.Is<ListObjectsInBucketArg>(a =>
+                a.Prefix == DestinationPrefix && a.MaxKeys == null && a.ContinuationToken == null)))
+            .ReturnsAsync(MakeListResultWithContinuation([$"{DestinationPrefix}other.pdf"], page2Token));
+
+        // Page 2 — clash lives here
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.Is<ListObjectsInBucketArg>(a =>
+                a.Prefix == DestinationPrefix && a.MaxKeys == null && a.ContinuationToken == page2Token)))
+            .ReturnsAsync(MakeListResult([$"{DestinationPrefix}REPORT.PDF"]));
+
+        var result = await _function.Run(CreateHttpRequest(), _durableClientStub);
+
+        var conflict = Assert.IsType<ConflictObjectResult>(result);
+        var errors = Assert.IsAssignableFrom<IEnumerable<string>>(conflict.Value);
+        Assert.Contains(errors, e => e.Contains(MaterialSourcePath));
+    }
+
+    [Fact]
     public async Task Run_WhenFolderSourceNotFound_ReturnsNotFound()
     {
         SetupValidRequest(CreateFolderRequest());
@@ -530,6 +559,41 @@ public class InitiateBatchMoveTests
         Assert.IsType<BadRequestObjectResult>(result);
     }
 
+    [Fact]
+    public async Task Run_WhenFolderSourceListingReturnsNullOnSecondPage_ReturnsInternalServerError()
+    {
+        const string continuationToken = "page2-token";
+        var page1File = $"{FolderSourcePath}file1.pdf";
+
+        SetupValidRequest(CreateFolderRequest());
+        SetupNoActiveTransfer();
+
+        // Folder-exists probe (maxKeys=1)
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.Is<ListObjectsInBucketArg>(a =>
+                a.Prefix == FolderSourcePath && a.MaxKeys == "1")))
+            .ReturnsAsync(MakeListResult([page1File]));
+
+        // Page 1: success, but indicates a second page exists
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.Is<ListObjectsInBucketArg>(a =>
+                a.Prefix == FolderSourcePath && a.MaxKeys == null && a.ContinuationToken == null)))
+            .ReturnsAsync(MakeListResultWithContinuation([page1File], continuationToken));
+
+        // Page 2: null — simulates a mid-pagination listing failure
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.Is<ListObjectsInBucketArg>(a =>
+                a.Prefix == FolderSourcePath && a.MaxKeys == null && a.ContinuationToken == continuationToken)))
+            .ReturnsAsync((ListNetAppObjectsDto?)null);
+
+        var result = await _function.Run(CreateHttpRequest(), _durableClientStub);
+
+        var objectResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(StatusCodes.Status500InternalServerError, objectResult.StatusCode);
+        var errors = Assert.IsAssignableFrom<IEnumerable<string>>(objectResult.Value);
+        Assert.Contains(errors, e => e.Contains(FolderSourcePath));
+    }
+
     private void SetupValidRequest(MoveNetAppBatchRequest? request = null)
     {
         request ??= CreateMaterialRequest();
@@ -708,5 +772,22 @@ public class InitiateBatchMoveTests
             FolderData = []
         },
         Pagination = new PaginationDto()
+    };
+
+    private static ListNetAppObjectsDto MakeListResultWithContinuation(string[] paths, string nextToken) => new()
+    {
+        Data = new ListNetAppDataDto
+        {
+            BucketName = BucketName,
+            FileData = paths.Select(p => new ListNetAppFileDataDto
+            {
+                Path = p,
+                Etag = "etag",
+                Filesize = 1024,
+                LastModified = DateTime.UtcNow
+            }),
+            FolderData = []
+        },
+        Pagination = new PaginationDto { NextContinuationToken = nextToken }
     };
 }

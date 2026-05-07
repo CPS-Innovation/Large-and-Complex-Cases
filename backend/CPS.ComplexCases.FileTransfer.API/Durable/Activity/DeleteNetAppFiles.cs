@@ -30,7 +30,7 @@ public class DeleteNetAppFiles(
     private readonly ITelemetryClient _telemetryClient = telemetryClient;
 
     [Function(nameof(DeleteNetAppFiles))]
-    public async Task Run([ActivityTrigger] DeleteNetAppFilesPayload? payload, CancellationToken cancellationToken = default)
+    public async Task<List<DeletionError>> Run([ActivityTrigger] DeleteNetAppFilesPayload? payload, CancellationToken cancellationToken = default)
     {
         _initializationHandler.Initialize(payload?.UserName!, payload?.CorrelationId, payload?.CaseId);
 
@@ -63,7 +63,7 @@ public class DeleteNetAppFiles(
         {
             _logger.LogInformation("No files to delete for transfer ID {TransferId}.", payload.TransferId);
             await _transferEntityHelper.DeleteMovedItemsCompleted(payload.TransferId, new List<DeletionError>(), cancellationToken);
-            return;
+            return new List<DeletionError>();
         }
 
         var failedItems = new List<DeletionError>();
@@ -138,5 +138,7 @@ public class DeleteNetAppFiles(
         telemetryEvent.TotalFilesFailedToDelete = failedItems.Count;
         telemetryEvent.DeletionEndTime = DateTime.UtcNow;
         _telemetryClient.TrackEvent(telemetryEvent);
+
+        return failedItems;
     }
 }

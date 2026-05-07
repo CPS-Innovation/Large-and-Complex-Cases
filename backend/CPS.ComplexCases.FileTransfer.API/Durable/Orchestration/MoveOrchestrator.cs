@@ -189,7 +189,7 @@ public class MoveOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryClient 
             }
 
             // 5. Delete phase — remove source keys for all successfully copied files
-            await context.CallActivityAsync(
+            var deletionErrors = await context.CallActivityAsync<List<DeletionError>>(
                 nameof(DeleteNetAppFiles),
                 new DeleteNetAppFilesPayload
                 {
@@ -201,10 +201,17 @@ public class MoveOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryClient 
                     CaseId = input.CaseId,
                 });
 
+            // Keys whose source could not be deleted are not truly moved — exclude them from all
+            // downstream consumers so the activity log and folder-deletion check reflect this.
+            var failedDeleteSourceKeySet = new HashSet<string>(
+                (deletionErrors ?? []).Select(e => e.FileId),
+                StringComparer.OrdinalIgnoreCase);
+
             // 6. Delete now-empty source folders for Folder operations where every file was moved
             var successfulSourceKeySet = new HashSet<string>(
                 allResults
-                    .Where(r => r.IsSuccess && r.SuccessfulItem != null)
+                    .Where(r => r.IsSuccess && r.SuccessfulItem != null
+                        && !failedDeleteSourceKeySet.Contains(r.SuccessfulItem.SourcePath))
                     .Select(r => r.SuccessfulItem!.SourcePath),
                 StringComparer.OrdinalIgnoreCase);
 
@@ -241,7 +248,8 @@ public class MoveOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryClient 
 
             // 8. Write activity log entries per original operation
             var successfulSourceKeys = allResults
-                .Where(r => r.IsSuccess && r.SuccessfulItem != null)
+                .Where(r => r.IsSuccess && r.SuccessfulItem != null
+                    && !failedDeleteSourceKeySet.Contains(r.SuccessfulItem.SourcePath))
                 .Select(r => r.SuccessfulItem!.SourcePath)
                 .ToList();
 

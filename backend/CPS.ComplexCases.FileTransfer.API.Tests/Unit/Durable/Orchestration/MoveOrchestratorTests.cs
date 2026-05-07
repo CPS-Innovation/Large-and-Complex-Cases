@@ -84,6 +84,8 @@ public class MoveOrchestratorTests
             {
                 if (name.Name == nameof(TransferFile)) transferFileCallCount++;
             });
+        _contextMock.Setup(c => c.CallActivityAsync<List<DeletionError>>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.FromResult(new List<DeletionError>()));
         _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
             .Returns(Task.CompletedTask);
 
@@ -102,12 +104,14 @@ public class MoveOrchestratorTests
             .Returns(Task.CompletedTask);
         _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
             .Returns(Task.FromResult(new TransferResult { IsSuccess = true }));
+        _contextMock.Setup(c => c.CallActivityAsync<List<DeletionError>>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.FromResult(new List<DeletionError>()));
         _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
             .Returns(Task.CompletedTask);
 
         await _orchestrator.RunOrchestrator(_contextMock.Object);
 
-        _contextMock.Verify(c => c.CallActivityAsync(
+        _contextMock.Verify(c => c.CallActivityAsync<List<DeletionError>>(
             It.Is<TaskName>(n => n.Name == nameof(DeleteNetAppFiles)),
             It.IsAny<object>(),
             It.IsAny<TaskOptions>()), Times.Once);
@@ -123,7 +127,9 @@ public class MoveOrchestratorTests
         _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
             .Returns(Task.FromResult(new TransferResult { IsSuccess = true }));
         _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
-            .Returns(Task.CompletedTask)
+            .Returns(Task.CompletedTask);
+        _contextMock.Setup(c => c.CallActivityAsync<List<DeletionError>>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.FromResult(new List<DeletionError>()))
             .Callback<TaskName, object, TaskOptions>((name, arg, _) =>
             {
                 if (name.Name == nameof(DeleteNetAppFiles) && arg is DeleteNetAppFilesPayload p)
@@ -150,6 +156,8 @@ public class MoveOrchestratorTests
             .Returns(Task.CompletedTask);
         _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
             .Returns(Task.FromResult(new TransferResult { IsSuccess = true }));
+        _contextMock.Setup(c => c.CallActivityAsync<List<DeletionError>>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.FromResult(new List<DeletionError>()));
         _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
             .Returns(Task.CompletedTask);
 
@@ -171,6 +179,8 @@ public class MoveOrchestratorTests
             .Returns(Task.CompletedTask);
         _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
             .Returns(Task.FromResult(new TransferResult { IsSuccess = true }));
+        _contextMock.Setup(c => c.CallActivityAsync<List<DeletionError>>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.FromResult(new List<DeletionError>()));
         _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
             .Returns(Task.CompletedTask);
 
@@ -192,6 +202,8 @@ public class MoveOrchestratorTests
             .Returns(Task.CompletedTask);
         _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
             .Returns(Task.FromResult(new TransferResult { IsSuccess = true }));
+        _contextMock.Setup(c => c.CallActivityAsync<List<DeletionError>>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.FromResult(new List<DeletionError>()));
         _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
             .Returns(Task.CompletedTask);
 
@@ -213,6 +225,8 @@ public class MoveOrchestratorTests
             .Returns(Task.CompletedTask);
         _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
             .Returns(Task.FromResult(new TransferResult { IsSuccess = true }));
+        _contextMock.Setup(c => c.CallActivityAsync<List<DeletionError>>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.FromResult(new List<DeletionError>()));
         _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
             .Returns(Task.CompletedTask);
 
@@ -235,6 +249,8 @@ public class MoveOrchestratorTests
             .Returns(Task.CompletedTask);
         _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
             .Returns(Task.FromResult(new TransferResult { IsSuccess = true }));
+        _contextMock.Setup(c => c.CallActivityAsync<List<DeletionError>>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.FromResult(new List<DeletionError>()));
         _contextMock.Setup(c => c.Entities.CallEntityAsync(
             It.IsAny<EntityInstanceId>(),
             It.IsAny<string>(),
@@ -317,6 +333,8 @@ public class MoveOrchestratorTests
                 if (name.Name == nameof(TransferFile) && p is TransferFilePayload tfp)
                     capturedPayloads.Add(tfp);
             });
+        _contextMock.Setup(c => c.CallActivityAsync<List<DeletionError>>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.FromResult(new List<DeletionError>()));
         _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
             .Returns(Task.CompletedTask);
 
@@ -331,5 +349,78 @@ public class MoveOrchestratorTests
         var p2 = capturedPayloads.First(p => p.SourcePath.Path == file2.SourceKey);
         Assert.Equal(file2.DestinationPrefix, p2.DestinationPath);
         Assert.Equal(file2.DestinationFileName, p2.SourcePath.ModifiedPath);
+    }
+
+    [Fact]
+    public async Task RunOrchestrator_WhenDeleteNetAppFilesReturnsDeletionErrors_ActivityLogExcludesFailedDeleteKeys()
+    {
+        // file1 copied and deleted successfully → should appear as "Moved"
+        // file2 copied successfully but source delete failed (e.g. locked) → must NOT appear as "Moved"
+        var file1 = new MoveFileItem { SourceKey = "CaseRoot/A/file1.pdf", DestinationPrefix = "CaseRoot/B/", DestinationFileName = "file1.pdf" };
+        var file2 = new MoveFileItem { SourceKey = "CaseRoot/A/file2.pdf", DestinationPrefix = "CaseRoot/B/", DestinationFileName = "file2.pdf" };
+
+        var payload = new MoveBatchPayload
+        {
+            TransferId = _fixture.Create<Guid>(),
+            CaseId = 1,
+            UserName = "testuser",
+            CorrelationId = _fixture.Create<Guid>(),
+            BearerToken = "bearer-token",
+            BucketName = "test-bucket",
+            Files = [file1, file2],
+            OriginalOperations =
+            [
+                new() { Type = "Material", SourcePath = file1.SourceKey, DestinationPrefix = file1.DestinationPrefix },
+                new() { Type = "Material", SourcePath = file2.SourceKey, DestinationPrefix = file2.DestinationPrefix },
+            ],
+            ManageMaterialsOperationId = _fixture.Create<Guid>(),
+        };
+
+        // Both copies succeed
+        _contextMock.Setup(c => c.GetInput<MoveBatchPayload>()).Returns(payload);
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns<TaskName, object, TaskOptions>((name, p, _) =>
+            {
+                if (name.Name == nameof(TransferFile) && p is TransferFilePayload tfp)
+                        return Task.FromResult(new TransferResult
+                    {
+                        IsSuccess = true,
+                        SuccessfulItem = new TransferItem { SourcePath = tfp.SourcePath.Path, Status = Models.Domain.Enums.TransferItemStatus.Completed, Size = 0, IsRenamed = false }
+                    });
+                return Task.FromResult(new TransferResult { IsSuccess = true });
+            });
+
+        // Delete phase returns a failure for file2 (simulates a locked file)
+        _contextMock.Setup(c => c.CallActivityAsync<List<DeletionError>>(
+                It.Is<TaskName>(n => n.Name == nameof(DeleteNetAppFiles)),
+                It.IsAny<object>(),
+                It.IsAny<TaskOptions>()))
+            .Returns(Task.FromResult(new List<DeletionError>
+            {
+                new() { FileId = file2.SourceKey, ErrorMessage = "File is locked via SMB and could not be deleted." }
+            }));
+
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.CompletedTask);
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask);
+
+        WriteMoveActivityLogPayload? capturedActivityLog = null;
+        _contextMock.Setup(c => c.CallActivityAsync(
+                It.Is<TaskName>(n => n.Name == nameof(WriteMoveActivityLog)),
+                It.IsAny<object>(),
+                It.IsAny<TaskOptions>()))
+            .Returns(Task.CompletedTask)
+            .Callback<TaskName, object, TaskOptions>((_, arg, _) =>
+            {
+                if (arg is WriteMoveActivityLogPayload p)
+                    capturedActivityLog = p;
+            });
+
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        Assert.NotNull(capturedActivityLog);
+        Assert.Contains(file1.SourceKey, capturedActivityLog!.SuccessfulSourceKeys);
+        Assert.DoesNotContain(file2.SourceKey, capturedActivityLog.SuccessfulSourceKeys);
     }
 }
