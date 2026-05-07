@@ -8,6 +8,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
   public DbSet<CaseMetadata> CaseMetadata { get; set; }
   public DbSet<ActivityLog> ActivityLogs { get; set; }
   public DbSet<CaseActiveManageMaterialsOperation> CaseActiveManageMaterialsOperations { get; set; }
+  public DbSet<TestNewTablePerms> TestNewTablePerms { get; set; }
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
