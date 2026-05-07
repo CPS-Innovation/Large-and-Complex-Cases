@@ -23,6 +23,8 @@ import {
   type ActivityLogResponse,
   type IndexingFileTransferPayload,
   type InitiateFileTransferPayload,
+  type ConnectEgressPayload,
+  type ConnectNetAppPayload,
   caseDivisionsOrAreaResponseSchema,
   searchResultDataSchema,
   egressSearchResultResponseSchema,
@@ -36,6 +38,8 @@ import {
   activityLogResponseSchema,
   indexingFileTransferPayloadSchema,
   initiateFileTransferPayloadSchema,
+  connectEgressPayloadSchema,
+  connectNetAppPayloadSchema,
 } from "../schemas";
 import { type CaseSearchParams } from "../common/types/CaseSearchParams";
 import { ApiError } from "../common/errors/ApiError";
@@ -166,18 +170,26 @@ export const connectEgressWorkspace = async ({
   workspaceId: string;
   caseId: string;
 }) => {
-  const url = `${GATEWAY_BASE_URL}/api/v1/egress/connections`;
+  const payload: ConnectEgressPayload = {
+    egressWorkspaceId: workspaceId,
+    caseId: parseInt(caseId),
+  };
+  const validatedData = connectEgressPayloadSchema.safeParse(payload);
+  if (!validatedData.success) {
+    console.warn(
+      `Invalid connect Egress workspace request payload: ${validatedData.error}`,
+    );
+    throw new Error(`Invalid connect Egress workspace request payload`);
+  }
 
+  const url = `${GATEWAY_BASE_URL}/api/v1/egress/connections`;
   const response = await fetch(url, {
     method: "POST",
     credentials: "include",
     headers: {
       ...(await buildCommonHeaders()),
     },
-    body: JSON.stringify({
-      egressWorkspaceId: workspaceId,
-      caseId: parseInt(caseId),
-    }),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
@@ -243,19 +255,27 @@ export const connectNetAppFolder = async ({
   folderPath: string;
   caseId: string;
 }) => {
-  const url = `${GATEWAY_BASE_URL}/api/v1/netapp/connections`;
+  const payload: ConnectNetAppPayload = {
+    operationName: operationName,
+    folderPath: folderPath,
+    caseId: parseInt(caseId),
+  };
+  const validatedData = connectNetAppPayloadSchema.safeParse(payload);
+  if (!validatedData.success) {
+    console.warn(
+      `Invalid connect Netapp request payload: ${validatedData.error}`,
+    );
+    throw new Error(`Invalid connect Netapp request payload`);
+  }
 
+  const url = `${GATEWAY_BASE_URL}/api/v1/netapp/connections`;
   const response = await fetch(url, {
     method: "POST",
     credentials: "include",
     headers: {
       ...(await buildCommonHeaders()),
     },
-    body: JSON.stringify({
-      operationName: operationName,
-      folderPath: folderPath,
-      caseId: parseInt(caseId),
-    }),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {

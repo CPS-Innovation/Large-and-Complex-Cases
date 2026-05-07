@@ -463,6 +463,34 @@ describe("gateway apis", () => {
         }),
       );
     });
+
+    it("connectEgressWorkspace - should not call fetch and throw Error and console.warn when request schema validation fails ", async () => {
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: true,
+      });
+
+      const payload = {
+        workspaceId: 123,
+        caseId: "123",
+      };
+
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      await expect(connectEgressWorkspace(payload as any)).rejects.toThrow(
+        new Error(`Invalid connect Egress workspace request payload`),
+      );
+      expect(fetch).not.toHaveBeenCalled();
+      expect(warnSpy).toHaveBeenCalledOnce();
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /^Invalid connect Egress workspace request payload:/,
+        ),
+      );
+
+      warnSpy.mockRestore();
+    });
   });
   describe("getConnectNetAppFolders", () => {
     it("getConnectNetAppFolders - should return netapp connect data folders when fetch is successful", async () => {
@@ -725,6 +753,32 @@ describe("gateway apis", () => {
           }),
         }),
       );
+    });
+
+    it("connectNetAppFolder - should not call fetch and throw Error and console.warn when request schema validation fails ", async () => {
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: true,
+      });
+      const payload = {
+        operationName: "thunder",
+        folderPath: 123,
+        caseId: "123",
+      };
+
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      await expect(connectNetAppFolder(payload as any)).rejects.toThrow(
+        new Error(`Invalid connect Netapp request payload`),
+      );
+      expect(fetch).not.toHaveBeenCalled();
+      expect(warnSpy).toHaveBeenCalledOnce();
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringMatching(/^Invalid connect Netapp request payload:/),
+      );
+
+      warnSpy.mockRestore();
     });
   });
   describe("getCaseMetaData", () => {
