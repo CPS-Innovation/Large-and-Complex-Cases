@@ -28,6 +28,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.5" />
     <PackageReference Include="CPS.ComplexCases.API.HttpTelemetry" Version="1.0.41" />
     <PackageReference Include="ThrottlingTroll.AzureFunctions" Version="9.1.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CPS.ComplexCases.ActivityLog\CPS.ComplexCases.ActivityLog.csproj" />
