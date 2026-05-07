@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const caseMetaDataResponseSchema = z.object({
-  caseId: z.string(),
+  caseId: z.number(),
   egressWorkspaceId: z.string(),
   netappFolderPath: z.string(),
   operationName: z.string(),

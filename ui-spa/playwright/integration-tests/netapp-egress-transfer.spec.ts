@@ -413,7 +413,7 @@ test.describe("netapp-egress-transfer", () => {
       http.get("https://mocked-out-api/api/v1/cases/12", async () => {
         await delay(10);
         return HttpResponse.json({
-          caseId: "12",
+          caseId: 12,
           egressWorkspaceId: "egress_1",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
@@ -558,7 +558,7 @@ test.describe("netapp-egress-transfer", () => {
       http.get("https://mocked-out-api/api/v1/cases/12", async () => {
         await delay(10);
         return HttpResponse.json({
-          caseId: "12",
+          caseId: 12,
           egressWorkspaceId: "egress_1",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
@@ -673,7 +673,7 @@ test.describe("netapp-egress-transfer", () => {
       http.get("https://mocked-out-api/api/v1/cases/12", async () => {
         await delay(10);
         return HttpResponse.json({
-          caseId: "12",
+          caseId: 12,
           egressWorkspaceId: "egress_1",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",

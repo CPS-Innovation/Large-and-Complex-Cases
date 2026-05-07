@@ -6,6 +6,7 @@ export const transferFailedItemSchema = z.object({
     "FileExists",
     "GeneralError",
     "IntegrityVerificationFailed",
+    "Transient",
   ]),
 });
 

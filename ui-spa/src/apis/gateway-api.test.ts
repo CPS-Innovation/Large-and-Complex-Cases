@@ -19,7 +19,6 @@ import {
 import { ApiError } from "../common/errors/ApiError";
 import { v4 } from "uuid";
 import { getAccessToken } from "../auth";
-
 vi.mock("uuid", () => ({
   v4: vi.fn(),
 }));
@@ -784,7 +783,7 @@ describe("gateway apis", () => {
   describe("getCaseMetaData", () => {
     it("getCaseMetaData - should return case meta data when fetch is successful", async () => {
       const mockData = {
-        caseId: "12",
+        caseId: 12,
         egressWorkspaceId: "egress_1",
         netappFolderPath: "netapp/",
         operationName: "Thunderstruck",
@@ -1320,8 +1319,18 @@ describe("gateway apis", () => {
         sourceRootFolderPath: "netapp/",
         transferDirection: "NetAppToEgress",
         files: [
-          { sourcePath: "netapp/folder1/file1.pdf" },
-          { sourcePath: "netapp/folder1/folder2/file2.pdf" },
+          {
+            id: null,
+            sourcePath: "netapp/folder1/file1.pdf",
+            relativePath: "file1.pdf",
+            fullFilePath: null,
+          },
+          {
+            id: null,
+            sourcePath: "netapp/folder1/folder2/file2.pdf",
+            relativePath: "file2.pdf",
+            fullFilePath: null,
+          },
         ],
       };
       (v4 as any).mockReturnValue("id_123");
@@ -1830,7 +1839,8 @@ describe("gateway apis", () => {
             actionType: "TRANSFER_INITIATED",
             timestamp: "2024-01-20T12:46:10.865517Z",
             userName: "dwight_schrute@cps.gov.uk",
-            caseId: "case_1",
+            caseId: 20,
+            resourceName: null,
             description: "Document/folders copying from egress to shared drive",
             details: {
               transferId: "transfer-1",

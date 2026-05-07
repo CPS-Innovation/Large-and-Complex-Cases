@@ -10,7 +10,7 @@ test.describe("egress meta data issues", () => {
       http.get("https://mocked-out-api/api/v1/cases/12", async () => {
         await delay(1000);
         return HttpResponse.json({
-          caseId: "12",
+          caseId: 12,
           egressWorkspaceId: "",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
@@ -49,7 +49,7 @@ test.describe("egress meta data issues", () => {
       http.get("https://mocked-out-api/api/v1/cases/12", async () => {
         await delay(1000);
         return HttpResponse.json({
-          caseId: "12",
+          caseId: 12,
           egressWorkspaceId: "",
           netappFolderPath: "",
           operationName: "Thunderstruck",
@@ -204,7 +204,7 @@ test.describe("netapp meta data issues", () => {
       http.get("https://mocked-out-api/api/v1/cases/12", async () => {
         await delay(1000);
         return HttpResponse.json({
-          caseId: "12",
+          caseId: 12,
           egressWorkspaceId: "egress_1",
           netappFolderPath: "",
           operationName: "Thunderstruck",

@@ -64,10 +64,10 @@ export const activityItemSchema = z.object({
   actionType: z.string(),
   timestamp: z.string(),
   userName: z.string(),
-  caseId: z.string(),
+  caseId: z.number(),
   description: z.string(),
   resourceType: z.string().optional(),
-  resourceName: z.string().optional(),
+  resourceName: z.string().nullable(),
   details: activityDetailsSchema.nullable(),
 });
 

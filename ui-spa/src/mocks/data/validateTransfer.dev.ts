@@ -10,9 +10,16 @@ export const egressToNetAppIndexingTransferDev: IndexingFileTransferResponse = {
   files: [
     {
       id: "id_1",
-      sourcePath: "egress/folder1/file1.pdf",
+      sourcePath: "file1.pdf",
+      relativePath: null,
+      fullFilePath: "egress/folder1/file1.pdf",
     },
-    { id: "id_2", sourcePath: "egress/folder1/folder2/file2.pdf" },
+    {
+      id: "id_2",
+      sourcePath: "file2.pdf",
+      relativePath: null,
+      fullFilePath: "egress/folder1/folder2/file2.pdf",
+    },
   ],
 };
 
@@ -24,8 +31,18 @@ export const netAppToEgressIndexingTransferDev: IndexingFileTransferResponse = {
   sourceRootFolderPath: "netapp/",
   transferDirection: "NetAppToEgress",
   files: [
-    { sourcePath: "netapp/folder1/file1.pdf" },
-    { sourcePath: "netapp/folder1/folder2/file2.pdf" },
+    {
+      id: null,
+      sourcePath: "netapp/folder1/file1.pdf",
+      relativePath: "file1.pdf",
+      fullFilePath: null,
+    },
+    {
+      id: null,
+      sourcePath: "netapp/folder1/folder2/file2.pdf",
+      relativePath: "file2.pdf",
+      fullFilePath: null,
+    },
   ],
 };
 
@@ -54,7 +71,17 @@ export const egressToNetAppIndexingErrorDev: IndexingFileTransferResponse = {
     },
   ],
   files: [
-    { id: "id_1", sourcePath: "egress/folder1/file1.pdf" },
-    { id: "id_2", sourcePath: "egress/folder1/file2.pdf" },
+    {
+      id: "id_1",
+      sourcePath: "file1.pdf",
+      relativePath: null,
+      fullFilePath: "egress/folder1/file1.pdf",
+    },
+    {
+      id: "id_2",
+      sourcePath: "file2.pdf",
+      relativePath: null,
+      fullFilePath: "egress/folder1/file2.pdf",
+    },
   ],
 };

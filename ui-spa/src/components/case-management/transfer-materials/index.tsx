@@ -458,9 +458,9 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     if (response.transferDirection === "EgressToNetApp") {
       const sourcePaths: EgressTransferPayloadSourcePath[] = response.files.map(
         (data) => ({
-          fileId: data.id,
+          fileId: data.id ?? undefined,
           path: data.sourcePath,
-          fullFilePath: data.fullFilePath,
+          fullFilePath: data.fullFilePath ?? undefined,
         }),
       );
 
@@ -482,7 +482,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     const sourcePaths: NetAppTransferPayloadSourcePath[] = response.files.map(
       (data) => ({
         path: data.sourcePath,
-        relativePath: data.relativePath,
+        relativePath: data.relativePath ?? undefined,
       }),
     );
 

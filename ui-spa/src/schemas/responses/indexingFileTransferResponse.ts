@@ -14,10 +14,10 @@ export const indexingFileTransferResponseSchema = z.object({
   transferDirection: z.enum(["EgressToNetApp", "NetAppToEgress"]),
   files: z.array(
     z.object({
-      id: z.string().optional(),
+      id: z.string().nullable(),
       sourcePath: z.string(),
-      relativePath: z.string().optional(),
-      fullFilePath: z.string().optional(),
+      relativePath: z.string().nullable(),
+      fullFilePath: z.string().nullable(),
     }),
   ),
 });

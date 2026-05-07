@@ -124,8 +124,18 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
                 },
               ],
               files: [
-                { id: "id_1", sourcePath: "egress/folder1/file1.pdf" },
-                { id: "id_2", sourcePath: "egress/folder1/file2.pdf" },
+                {
+                  id: "id_1",
+                  sourcePath: "file1.pdf",
+                  relativePath: null,
+                  fullFilePath: "egress/folder1/file1.pdf",
+                },
+                {
+                  id: "id_2",
+                  sourcePath: "`file2.pdf",
+                  relativePath: null,
+                  fullFilePath: "egress/folder1/file2.pdf",
+                },
               ],
             });
           },
@@ -431,8 +441,18 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
                 },
               ],
               files: [
-                { id: "id_1", sourcePath: "egress/folder1/file1.pdf" },
-                { id: "id_2", sourcePath: "egress/folder1/file2.pdf" },
+                {
+                  id: "id_1",
+                  sourcePath: "file1.pdf",
+                  relativePath: null,
+                  fullFilePath: "egress/folder1/file1.pdf",
+                },
+                {
+                  id: "id_2",
+                  sourcePath: "`file2.pdf",
+                  relativePath: null,
+                  fullFilePath: "egress/folder1/file2.pdf",
+                },
               ],
             });
           },
@@ -503,8 +523,18 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
                 },
               ],
               files: [
-                { id: "id_1", sourcePath: "egress/folder1/file1.pdf" },
-                { id: "id_2", sourcePath: "egress/folder1/file2.pdf" },
+                {
+                  id: "id_1",
+                  sourcePath: "file1.pdf",
+                  relativePath: null,
+                  fullFilePath: "egress/folder1/file1.pdf",
+                },
+                {
+                  id: "id_2",
+                  sourcePath: "file2.pdf",
+                  relativePath: null,
+                  fullFilePath: "egress/folder1/file2.pdf",
+                },
               ],
             });
           },
@@ -617,8 +647,18 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
                 },
               ],
               files: [
-                { id: "id_1", sourcePath: "egress/folder1/file1.pdf" },
-                { id: "id_2", sourcePath: "egress/folder1/file2.pdf" },
+                {
+                  id: "id_1",
+                  sourcePath: "file1.pdf",
+                  relativePath: null,
+                  fullFilePath: "egress/folder1/file1.pdf",
+                },
+                {
+                  id: "id_2",
+                  sourcePath: "file2.pdf",
+                  relativePath: null,
+                  fullFilePath: "egress/folder1/file2.pdf",
+                },
               ],
             });
           },
