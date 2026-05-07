@@ -2,7 +2,7 @@ import { useRef, useEffect } from "react";
 import { Button, Input, InsetText, ErrorSummary, BackLink } from "../govuk";
 import EgressSearchResults from "./EgressSearchResults";
 import { UseApiResult } from "../../common/hooks/useApi";
-import { EgressSearchResultData } from "../../common/types/EgressSearchResponse";
+import { type EgressSearchResultData } from "../../schemas";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
 import styles from "./EgressSearchPage.module.scss";
 

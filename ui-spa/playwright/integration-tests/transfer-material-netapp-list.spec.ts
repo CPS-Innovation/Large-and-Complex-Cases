@@ -213,6 +213,7 @@ test.describe("transfer material netapp list", () => {
         return HttpResponse.json({
           data: { fileData: [], folderData: [] },
           pagination: {
+            maxKeys: 0,
             nextContinuationToken: null,
           },
         });

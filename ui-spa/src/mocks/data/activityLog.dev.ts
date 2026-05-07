@@ -1,4 +1,4 @@
-import { ActivityLogResponse } from "../../common/types/ActivityLogResponse";
+import { type ActivityLogResponse } from "../../schemas";
 export const activityLogDev: ActivityLogResponse = {
   data: [
     {
@@ -6,7 +6,8 @@ export const activityLogDev: ActivityLogResponse = {
       actionType: "TRANSFER_COMPLETED",
       timestamp: "2024-01-20T13:46:10.865517Z",
       userName: "dwight_schrute@cps.gov.uk",
-      caseId: "case_1",
+      caseId: 20,
+      resourceName: null,
       description: "Documents/folders copied from egress to shared drive",
       details: {
         transferId: "transfer-1",
@@ -52,7 +53,8 @@ export const activityLogDev: ActivityLogResponse = {
       actionType: "TRANSFER_INITIATED",
       timestamp: "2024-01-20T12:46:10.865517Z",
       userName: "dwight_schrute@cps.gov.uk",
-      caseId: "case_1",
+      caseId: 20,
+      resourceName: null,
       description: "Document/folders copying from egress to shared drive",
       details: {
         transferId: "transfer-1",
@@ -72,7 +74,8 @@ export const activityLogDev: ActivityLogResponse = {
       actionType: "TRANSFER_COMPLETED",
       timestamp: "2024-01-18T12:46:10.865517Z",
       userName: "dwight_schrute@cps.gov.uk",
-      caseId: "case_1",
+      caseId: 20,
+      resourceName: null,
       description: "Documents/folders copied from egress to shared drive",
       details: {
         transferId: "transfer-1",
@@ -112,7 +115,8 @@ export const activityLogDev: ActivityLogResponse = {
       actionType: "TRANSFER_INITIATED",
       timestamp: "2024-01-18T12:46:10.865517Z",
       userName: "dwight_schrute@cps.gov.uk",
-      caseId: "case_1",
+      caseId: 20,
+      resourceName: null,
       description: "Document/folders copying from egress to shared drive",
       details: {
         transferId: "transfer-1",
@@ -132,7 +136,8 @@ export const activityLogDev: ActivityLogResponse = {
       actionType: "CONNECTION_TO_NETAPP",
       timestamp: "2024-01-18T12:46:10.865517Z",
       userName: "dwight_schrute@cps.gov.uk",
-      caseId: "case_1",
+      caseId: 20,
+      resourceName: null,
       description: "Case connected to the Shared Drive",
       details: null,
     },
@@ -141,7 +146,8 @@ export const activityLogDev: ActivityLogResponse = {
       actionType: "CONNECTION_TO_EGRESS",
       timestamp: "2024-01-18T12:46:10.865517Z",
       userName: "dwight_schrute@cps.gov.uk",
-      caseId: "case_1",
+      caseId: 20,
+      resourceName: null,
       description: "Case connected to Egress",
       details: null,
     },

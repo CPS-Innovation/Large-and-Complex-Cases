@@ -1,4 +1,4 @@
-import { EgressFolderResponse } from "../../common/types/EgressFolderData";
+import { type EgressFolderResponse } from "../../schemas";
 export const egressRootFolderResultsPlaywright: EgressFolderResponse = {
   data: [
     {
