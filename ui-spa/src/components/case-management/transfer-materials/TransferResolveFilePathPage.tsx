@@ -17,7 +17,7 @@ import {
 import { getMappedResolvePathFiles } from "../../../common/utils/getMappedResolvePathFiles";
 import { RenameTransferFilePage } from "./RenameTransferFilePage";
 import { initiateFileTransfer } from "../../../apis/gateway-api";
-import { EgressTransferPayloadSourcePath } from "../../../common/types/InitiateFileTransferPayload";
+import { EgressTransferPayloadSourcePath } from "../../../schemas/requests/initiateFileTransferPayload";
 import { TransferResolvePageLocationState } from "../../../common/types/TransferResolvePageLocationState";
 import { PageContentWrapper } from "../../govuk/PageContentWrapper";
 import styles from "./TransferResolveFilePathPage.module.scss";

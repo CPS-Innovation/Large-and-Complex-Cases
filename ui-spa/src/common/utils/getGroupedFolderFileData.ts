@@ -1,5 +1,4 @@
-import { EgressFolderData } from "../types/EgressFolderData";
-import { NetAppFolderData } from "../types/NetAppFolderData";
+import type { EgressFolderData, NetAppFolderData } from "../../schemas";
 export const getGroupedFolderFileData = (
   selectedSourceFoldersOrFiles: string[],
   egressData: EgressFolderData | NetAppFolderData,

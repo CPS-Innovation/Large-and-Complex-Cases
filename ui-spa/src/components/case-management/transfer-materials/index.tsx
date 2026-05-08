@@ -18,11 +18,13 @@ import { TransferAction } from "../../../common/types/TransferAction";
 import { getFormattedEgressFolderData } from "../../../common/utils/getFormattedEgressFolderData";
 import { mapToNetAppFolderData } from "../../../common/utils/mapToNetAppFolderData";
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
-import { InitiateFileTransferPayload } from "../../../common/types/InitiateFileTransferPayload";
-import { IndexingFileTransferPayload } from "../../../common/types/IndexingFileTransferPayload";
-import { TransferStatusResponse } from "../../../common/types/TransferStatusResponse";
-import { IndexingFileTransferResponse } from "../../../common/types/IndexingFileTransferResponse";
-import { InitiateFileTransferResponse } from "../../../common/types/InitiateFileTransferResponse";
+import { InitiateFileTransferPayload } from "../../../schemas/requests/initiateFileTransferPayload";
+import { IndexingFileTransferPayload } from "../../../schemas/requests/indexingFileTransferPayload";
+import type {
+  TransferStatusResponse,
+  IndexingFileTransferResponse,
+  InitiateFileTransferResponse,
+} from "../../../schemas";
 import { useUserDetails } from "../../../auth";
 import { ApiError } from "../../../common/errors/ApiError";
 import { pollTransferStatus } from "../../../common/utils/pollTransferStatus";
@@ -31,7 +33,7 @@ import { getDuplicateFoldersAndFiles } from "../../../common/utils/getDuplicateF
 import {
   type EgressTransferPayloadSourcePath,
   type NetAppTransferPayloadSourcePath,
-} from "../../../common/types/InitiateFileTransferPayload";
+} from "../../../schemas/requests/initiateFileTransferPayload";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
@@ -381,7 +383,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
 
   useEffect(() => {
     if (apiRequestError) {
-      throw new Error(apiRequestError.message);
+      throw apiRequestError;
     }
   }, [apiRequestError]);
 
@@ -456,9 +458,9 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     if (response.transferDirection === "EgressToNetApp") {
       const sourcePaths: EgressTransferPayloadSourcePath[] = response.files.map(
         (data) => ({
-          fileId: data.id,
+          fileId: data.id ?? undefined,
           path: data.sourcePath,
-          fullFilePath: data.fullFilePath,
+          fullFilePath: data.fullFilePath ?? undefined,
         }),
       );
 
@@ -480,7 +482,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     const sourcePaths: NetAppTransferPayloadSourcePath[] = response.files.map(
       (data) => ({
         path: data.sourcePath,
-        relativePath: data.relativePath,
+        relativePath: data.relativePath ?? undefined,
       }),
     );
 
@@ -544,11 +546,9 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         return;
       }
       const newError =
-        error instanceof ApiError
+        error instanceof ApiError || error instanceof Error
           ? error
-          : new Error(
-              `Invalid indexing file transfer api response. More details, ${error}`,
-            );
+          : new Error(`${error}`);
       setApiRequestError(newError);
       return;
     }

@@ -15,6 +15,10 @@ variables:
   value: '30'
 - name: FileTransferPurgeRetentionSchedule
   value: '0 0 2 * * *'
+- name: FileTransferManageMaterialsCleanupMaxAgeHours
+  value: '24'
+- name: ManageMaterialsCleanupSchedule
+  value: '0 0 2 * * *'
 - name: MaxOrchestratorRetries
   value: '3'
 - name: NetAppOptionsPepperVersion
@@ -31,3 +35,7 @@ variables:
   value: '10'
 - name: SizeConfigChunkSizeBytes
   value: '5242880'
+- name: NetAppOptionsSearchMaxSubstringScanItems
+  value: '10000'
+- name: FeatureFlagsManageMaterials
+  value: 'false'

@@ -124,8 +124,18 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
                 },
               ],
               files: [
-                { id: "id_1", sourcePath: "egress/folder1/file1.pdf" },
-                { id: "id_2", sourcePath: "egress/folder1/file2.pdf" },
+                {
+                  id: "id_1",
+                  sourcePath: "file1.pdf",
+                  relativePath: null,
+                  fullFilePath: "egress/folder1/file1.pdf",
+                },
+                {
+                  id: "id_2",
+                  sourcePath: "`file2.pdf",
+                  relativePath: null,
+                  fullFilePath: "egress/folder1/file2.pdf",
+                },
               ],
             });
           },
@@ -143,6 +153,8 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
               completedAt: null,
               failedItems: [],
               userName: "dev_user@example.org",
+              totalFiles: 2,
+              processedFiles: 1,
             });
           },
         ),
@@ -375,6 +387,8 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
               completedAt: null,
               failedItems: [],
               userName: "dev_user@example.org",
+              totalFiles: 2,
+              processedFiles: 2,
             });
           },
         ),
@@ -407,6 +421,8 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
             await delay(500);
             return HttpResponse.json({
               caseId: 12,
+              sourceRootFolderPath: "egress/",
+              transferDirection: "EgressToNetApp",
               isInvalid: true,
               destinationPath:
                 "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/",
@@ -425,8 +441,18 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
                 },
               ],
               files: [
-                { id: "id_1", sourcePath: "egress/folder1/file1.pdf" },
-                { id: "id_2", sourcePath: "egress/folder1/file2.pdf" },
+                {
+                  id: "id_1",
+                  sourcePath: "file1.pdf",
+                  relativePath: null,
+                  fullFilePath: "egress/folder1/file1.pdf",
+                },
+                {
+                  id: "id_2",
+                  sourcePath: "`file2.pdf",
+                  relativePath: null,
+                  fullFilePath: "egress/folder1/file2.pdf",
+                },
               ],
             });
           },
@@ -466,7 +492,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await page.getByRole("link", { name: "Back" }).click();
       await expect(page).toHaveURL("/case/12/case-management");
     });
-    test("The back link and cancel button from the rename transfer path files page should take the user to resolve tranfer path files page", async ({
+    test("The back link and cancel button from the rename transfer path files page should take the user to resolve transfer path files page", async ({
       page,
       worker,
     }) => {
@@ -477,6 +503,8 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
             await delay(500);
             return HttpResponse.json({
               caseId: 12,
+              sourceRootFolderPath: "egress/",
+              transferDirection: "EgressToNetApp",
               isInvalid: true,
               destinationPath:
                 "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/",
@@ -495,8 +523,18 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
                 },
               ],
               files: [
-                { id: "id_1", sourcePath: "egress/folder1/file1.pdf" },
-                { id: "id_2", sourcePath: "egress/folder1/file2.pdf" },
+                {
+                  id: "id_1",
+                  sourcePath: "file1.pdf",
+                  relativePath: null,
+                  fullFilePath: "egress/folder1/file1.pdf",
+                },
+                {
+                  id: "id_2",
+                  sourcePath: "file2.pdf",
+                  relativePath: null,
+                  fullFilePath: "egress/folder1/file2.pdf",
+                },
               ],
             });
           },
@@ -566,6 +604,8 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
             return HttpResponse.json({
               caseId: 12,
               isInvalid: true,
+              sourceRootFolderPath: "egress/",
+              transferDirection: "EgressToNetApp",
               destinationPath:
                 "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/",
               validationErrors: [
@@ -607,8 +647,18 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
                 },
               ],
               files: [
-                { id: "id_1", sourcePath: "egress/folder1/file1.pdf" },
-                { id: "id_2", sourcePath: "egress/folder1/file2.pdf" },
+                {
+                  id: "id_1",
+                  sourcePath: "file1.pdf",
+                  relativePath: null,
+                  fullFilePath: "egress/folder1/file1.pdf",
+                },
+                {
+                  id: "id_2",
+                  sourcePath: "file2.pdf",
+                  relativePath: null,
+                  fullFilePath: "egress/folder1/file2.pdf",
+                },
               ],
             });
           },

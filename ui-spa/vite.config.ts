@@ -115,6 +115,7 @@ export default defineConfig(({ command, mode }) => {
           "src/**/*.{test,spec}.ts",
           "src/**/*.{test,spec}.tsx",
           "src/mocks",
+          "src/schemas",
           "src/common/types",
           "src/components",
           "src/auth/mock",

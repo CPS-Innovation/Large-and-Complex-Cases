@@ -98,6 +98,49 @@ namespace CPS.ComplexCases.Data.Migrations
                     b.ToTable("activity_log", "large_complex_cases");
                 });
 
+            modelBuilder.Entity("CPS.ComplexCases.Data.Entities.CaseActiveManageMaterialsOperation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("CaseId")
+                        .HasColumnType("integer")
+                        .HasColumnName("case_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("DestinationPaths")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("destination_paths");
+
+                    b.Property<string>("OperationType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("operation_type");
+
+                    b.Property<string>("SourcePaths")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("source_paths");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("user_name");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CaseId")
+                        .HasDatabaseName("idx_case_active_manage_materials_case_id");
+
+                    b.ToTable("case_active_manage_materials", "large_complex_cases");
+                });
+
             modelBuilder.Entity("CPS.ComplexCases.Data.Entities.CaseMetadata", b =>
                 {
                     b.Property<int>("CaseId")

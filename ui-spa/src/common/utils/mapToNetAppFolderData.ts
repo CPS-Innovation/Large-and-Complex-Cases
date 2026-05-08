@@ -1,7 +1,4 @@
-import {
-  NetAppFolderDataResponse,
-  NetAppFolderData,
-} from "../types/NetAppFolderData";
+import type { NetAppFolderDataResponse, NetAppFolderData } from "../../schemas";
 
 export const mapToNetAppFolderData = (
   responseData: NetAppFolderDataResponse,

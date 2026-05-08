@@ -437,6 +437,8 @@ test.describe("egress-netapp-transfer", () => {
               completedAt: null,
               failedItems: [],
               userName: "dev_user@example.org",
+              totalFiles: 2,
+              processedFiles: 2,
             });
           },
         ),
@@ -515,7 +517,7 @@ test.describe("egress-netapp-transfer", () => {
       http.get("https://mocked-out-api/api/v1/cases/12", async () => {
         await delay(10);
         return HttpResponse.json({
-          caseId: "12",
+          caseId: 12,
           egressWorkspaceId: "egress_1",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
@@ -629,6 +631,8 @@ test.describe("egress-netapp-transfer", () => {
             completedAt: null,
             failedItems: [],
             userName: "dev_user@example.org",
+            totalFiles: 30,
+            processedFiles: 30,
           });
         },
       ),
@@ -658,7 +662,7 @@ test.describe("egress-netapp-transfer", () => {
       http.get("https://mocked-out-api/api/v1/cases/12", async () => {
         await delay(10);
         return HttpResponse.json({
-          caseId: "12",
+          caseId: 12,
           egressWorkspaceId: "egress_1",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
@@ -679,6 +683,8 @@ test.describe("egress-netapp-transfer", () => {
             completedAt: null,
             failedItems: [],
             userName: "abc@example.org",
+            totalFiles: 30,
+            processedFiles: 0,
           });
         },
       ),
@@ -711,6 +717,8 @@ test.describe("egress-netapp-transfer", () => {
             completedAt: null,
             failedItems: [],
             userName: "abc@example.org",
+            totalFiles: 30,
+            processedFiles: 20,
           });
         },
       ),
@@ -737,6 +745,8 @@ test.describe("egress-netapp-transfer", () => {
             completedAt: null,
             failedItems: [],
             userName: "abc@example.org",
+            totalFiles: 30,
+            processedFiles: 30,
           });
         },
       ),
@@ -856,7 +866,7 @@ test.describe("egress-netapp-transfer", () => {
       http.get("https://mocked-out-api/api/v1/cases/12", async () => {
         await delay(10);
         return HttpResponse.json({
-          caseId: "12",
+          caseId: 12,
           egressWorkspaceId: "egress_1",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
@@ -877,6 +887,8 @@ test.describe("egress-netapp-transfer", () => {
             completedAt: null,
             failedItems: [],
             userName: "abc@example.org",
+            totalFiles: 30,
+            processedFiles: 2,
           });
         },
       ),

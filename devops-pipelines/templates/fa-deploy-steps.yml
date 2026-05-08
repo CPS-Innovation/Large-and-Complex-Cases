@@ -2,7 +2,7 @@ parameters:
   environment: ''
   functionAppName: ''
   buildArtifactName: ''
-  pipelineResourceAlias: ''
+  pipelineResource: 'current'
   keyVaultName: $(keyVaultName)
   azureSubscription: ''
   resourceGroupName: $(resourceGroupName)
@@ -12,7 +12,7 @@ parameters:
   slotName: ''
 
 steps:
-  - download: '${{ parameters.pipelineResourceAlias}}'
+  - download: '${{ parameters.pipelineResource}}'
     artifact: '${{ parameters.buildArtifactName }}'
 
   - template: ../templates/fa-config-steps.yml
@@ -30,7 +30,10 @@ steps:
       azureSubscription: ${{ parameters.azureSubscription }}
       appType: 'functionApp'
       appName: ${{ parameters.functionAppName }}
-      package: '$(Pipeline.Workspace)/${{ parameters.pipelineResourceAlias}}/${{ parameters.buildArtifactName }}/*.zip'
+      ${{ if eq(parameters.pipelineResource, 'current') }}: 
+        package: '$(Pipeline.Workspace)/${{ parameters.buildArtifactName }}/*.zip'
+      ${{ else }}:
+        package: '$(Pipeline.Workspace)/${{ parameters.pipelineResource}}/${{ parameters.buildArtifactName }}/*.zip'
       runtimeStack: 'DOTNET-ISOLATED|8.0'
       deploymentMethod: 'runFromPackage'
       deployToSlotOrASE: ${{ parameters.deployToSlot }}

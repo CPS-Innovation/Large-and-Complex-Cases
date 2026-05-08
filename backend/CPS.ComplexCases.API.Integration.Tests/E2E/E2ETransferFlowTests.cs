@@ -52,7 +52,8 @@ public class E2ETransferFlowTests : IClassFixture<IntegrationTestFixture>, IAsyn
             bearerToken,
             _fixture.NetAppBucketName!,
             "e2e-transfer-cleanup",
-            _netAppTestFolderPrefix);
+            _netAppTestFolderPrefix,
+            isFolder: true);
 
         await _fixture.NetAppClient!.DeleteFileOrFolderAsync(deleteArg);
 

@@ -14,11 +14,11 @@ using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models;
-using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Models.Dto;
+using CPS.ComplexCases.NetApp.Models.Requests;
 using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions;

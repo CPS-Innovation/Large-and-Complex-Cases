@@ -22,5 +22,8 @@ namespace CPS.ComplexCases.API.Constants
         public const string ResourceType = "resource-type";
         public const string ResourceId = "resource-id";
         public const string Search = "search";
+        public const string Query = "query";
+        public const string Mode = "mode";
+        public const string MaxResults = "max-results";
     }
 }

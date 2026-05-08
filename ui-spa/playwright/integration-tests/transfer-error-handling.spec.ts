@@ -127,7 +127,7 @@ test.describe("transfer-error-handling", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        "Error: Invalid indexing file transfer api response. More details, TypeError: Cannot read properties of undefined (reading 'map')",
+        "Error: An error occurred contacting the server at https://mocked-out-api/api/v1/filetransfer/files: response schema validation failed; status - OK (200)",
       ),
     ).toBeVisible();
   });
@@ -253,7 +253,7 @@ test.describe("transfer-error-handling", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        "Error: Invalid initiate transfer response, id does not exist",
+        "Error: An error occurred contacting the server at https://mocked-out-api/api/v1/filetransfer/initiate: response schema validation failed; status - OK (200)",
       ),
     ).toBeVisible();
   });

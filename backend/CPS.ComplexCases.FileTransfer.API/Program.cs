@@ -74,12 +74,16 @@ var host = new HostBuilder()
         services.AddSingleton<IInitializationHandler, InitializationHandler>();
 
         services.AddScoped<ICaseMetadataService, CaseMetadataService>();
+        services.AddScoped<ICaseActiveManageMaterialsService, CaseActiveManageMaterialsService>();
 
         services.Configure<SizeConfig>(
             configuration.GetSection("FileTransfer:SizeConfig"));
 
         services.Configure<PurgeRetentionConfig>(
             configuration.GetSection(PurgeRetentionConfig.SectionName));
+
+        services.Configure<ManageMaterialsCleanupConfig>(
+            configuration.GetSection(ManageMaterialsCleanupConfig.SectionName));
 
         services.AddScoped<IStorageClientFactory, StorageClientFactory>();
         services.AddScoped<IRequestValidator, RequestValidator>();

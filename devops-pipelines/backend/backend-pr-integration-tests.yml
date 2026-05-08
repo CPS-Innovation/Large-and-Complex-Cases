@@ -36,6 +36,7 @@ jobs:
       Egress.Email: $(EgressEmail)
       Egress.Password: $(EgressOptionsPassword)
       Egress.WorkspaceId: $(EgressWorkspaceId)
+      Egress.WorkspaceName: $(EgressWorkspaceName)
       Egress.TestDestinationPath: "integration-tests"
       DDEI.BaseUrl: $[ replace( variables['DDEIOptionsBaseUrl'], '/api', '' ) ]
       DDEI.AccessKey: $(DDEIOptionsAccessKey)
@@ -61,7 +62,7 @@ jobs:
       NetApp.TestFolderPrefix: "integration-tests"
       KeyVault.Url: "https://$(keyVaultName).vault.azure.net/"
       ConnectionStrings.CaseManagementDatastoreConnection: $(DbConnectionString)
-      Postgres.AuthMode: $(PostgresAuthMode)
+      Postgres.AuthMode: "AAD"
       Postgres.DbUserName: $(DbUserName)
     steps:
       - task: Bash@3

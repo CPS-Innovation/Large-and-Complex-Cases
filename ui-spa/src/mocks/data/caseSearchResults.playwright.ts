@@ -1,4 +1,4 @@
-import { SearchResultData } from "../../common/types/SearchResultResponse";
+import { type SearchResultData } from "../../schemas";
 export const casesSearchResultsPlaywright: SearchResultData = [
   {
     operationName: "Thunderstruck1_pl",

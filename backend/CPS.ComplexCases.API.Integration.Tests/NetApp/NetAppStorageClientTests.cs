@@ -62,7 +62,8 @@ public class NetAppStorageClientTests : IClassFixture<IntegrationTestFixture>, I
             bearerToken,
             _fixture.NetAppBucketName!,
             "integration-test-cleanup",
-            _testFolderPrefix);
+            _testFolderPrefix,
+            isFolder: true);
 
         await _fixture.NetAppClient!.DeleteFileOrFolderAsync(deleteArg);
     }

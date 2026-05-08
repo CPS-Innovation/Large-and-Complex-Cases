@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -17,7 +18,6 @@ using CPS.ComplexCases.NetApp.Wrappers;
 using CPS.ComplexCases.WireMock.Core;
 using Moq;
 using WireMock.Server;
-using System.Security.Cryptography.X509Certificates;
 
 namespace CPS.ComplexCases.NetApp.Tests.Integration
 {
@@ -166,10 +166,20 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
                 .Setup(x => x.GetTrustedCaCertificates())
                 .Returns(testCertCollection);
 
+            var netAppOptions = new NetAppOptions
+            {
+                Url = "Settings.NetApp.Url",
+                RegionName = "Settings.NetApp.RegionName",
+                S3ServiceUuid = Guid.NewGuid(),
+                SessionDurationSeconds = 3600,
+                PepperVersion = "Settings.NetApp.PepperVersion"
+            };
+
+            var netAppOptionsWrapper = new OptionsWrapper<NetAppOptions>(netAppOptions);
 
             var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<NetAppClient>();
 
-            _client = new NetAppClient(logger, _amazonS3UtilsWrapper, _netAppRequestFactory, _s3ClientFactory, _netAppS3HttpClient, _netAppS3HttpArgFactory);
+            _client = new NetAppClient(logger, netAppOptionsWrapper, _amazonS3UtilsWrapper, _netAppRequestFactory, _netAppArgFactory, _s3ClientFactory, _netAppS3HttpClient, _netAppS3HttpArgFactory);
         }
 
         [Fact]

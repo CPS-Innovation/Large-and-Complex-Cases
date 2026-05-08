@@ -13,8 +13,25 @@ parameters:
     type: string
 
 steps:
+  - ${{ if ne(parameters.environment, 'prod') }}:
+    - task: AzureAppServiceSettings@1
+      displayName: "Configure Function App Settings (PreProd Only)"
+      inputs:
+        azureSubscription: ${{ parameters.azureSubscription }}
+        appName: ${{ parameters.functionAppName }}
+        resourceGroupName: ${{ parameters.resourceGroupName }}
+        slotName: ${{ parameters.slotName }}
+        appSettings: |
+          [  
+            {
+              "name": "NetAppOptions__IssuingCaCert2",
+              "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=NetAppOptions--IssuingCaCert2)",
+              "slotSetting": false
+            }
+          ]
+
   - task: AzureAppServiceSettings@1
-    displayName: "Configure Function App Settings"
+    displayName: "Configure Function App Settings (All Environments)"
     inputs:
       azureSubscription: ${{ parameters.azureSubscription }}
       appName: ${{ parameters.functionAppName }}
@@ -58,11 +75,6 @@ steps:
             "slotSetting": false
           },
           {
-            "name": "NetAppOptions__IssuingCaCert2",
-            "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=NetAppOptions--IssuingCaCert2)",
-            "slotSetting": false
-          },
-          {
             "name": "KeyVault__Url",
             "value": "https://${{ parameters.keyVaultName }}.vault.azure.net/",
             "slotSetting": false
@@ -95,6 +107,11 @@ steps:
           {
             "name": "NetAppOptions__S3ServiceUuid",
             "value": "$(NetAppOptionsS3ServiceUuid)",
+            "slotSetting": false
+          },
+          {
+            "name": "NetAppOptions__SearchMaxSubstringScanItems",
+            "value": "$(NetAppOptionsSearchMaxSubstringScanItems)",
             "slotSetting": false
           },
           {
@@ -135,6 +152,16 @@ steps:
           {
             "name": "FileTransferPurgeRetentionSchedule",
             "value": "$(FileTransferPurgeRetentionSchedule)",
+            "slotSetting": false
+          },
+          {
+            "name": "FileTransfer__ManageMaterialsCleanup__MaxAgeHours",
+            "value": "$(FileTransferManageMaterialsCleanupMaxAgeHours)",
+            "slotSetting": false
+          },
+          {
+            "name": "ManageMaterialsCleanupSchedule",
+            "value": "$(ManageMaterialsCleanupSchedule)",
             "slotSetting": false
           },
           {
@@ -190,6 +217,11 @@ steps:
           {
             "name": "SessionTimeoutMinutes",
             "value": "$(SessionTimeoutMinutes)",
+            "slotSetting": false
+          },
+          {
+            "name": "FeatureFlags__ManageMaterials",
+            "value": "$(FeatureFlagsManageMaterials)",
             "slotSetting": false
           },
           {

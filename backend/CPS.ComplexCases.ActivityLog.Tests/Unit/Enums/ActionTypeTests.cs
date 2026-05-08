@@ -8,6 +8,7 @@ public class ActionTypeTests
     [Theory]
     [InlineData(ActionType.FolderCreated, "FOLDER_CREATED")]
     [InlineData(ActionType.FolderDeleted, "FOLDER_DELETED")]
+    [InlineData(ActionType.MaterialDeleted, "MATERIAL_DELETED")]
     [InlineData(ActionType.FolderRenamed, "FOLDER_RENAMED")]
     [InlineData(ActionType.FolderCopied, "FOLDER_COPIED")]
     [InlineData(ActionType.FolderMoved, "FOLDER_MOVED")]

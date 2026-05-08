@@ -1,5 +1,5 @@
 import { getMappedResolvePathFiles } from "./getMappedResolvePathFiles";
-import { IndexingError } from "../types/IndexingFileTransferResponse";
+import { type IndexingError } from "../../schemas";
 import { ResolvePathFileType } from "./getGroupedResolvePaths";
 
 describe("getMappedResolvePathFiles", () => {

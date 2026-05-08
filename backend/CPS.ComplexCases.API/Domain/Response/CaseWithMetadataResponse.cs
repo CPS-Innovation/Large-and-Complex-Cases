@@ -20,4 +20,22 @@ public class CaseWithMetadataResponse
   public string? NetappFolderPath { get; set; }
   [JsonPropertyName("activeTransferId")]
   public Guid? ActiveTransferId { get; set; }
+  [JsonPropertyName("activeManageMaterialsOperations")]
+  public List<ActiveManageMaterialsOperationResponse> ActiveManageMaterialsOperations { get; set; } = [];
+}
+
+public class ActiveManageMaterialsOperationResponse
+{
+  [JsonPropertyName("id")]
+  public Guid Id { get; set; }
+  [JsonPropertyName("operationType")]
+  public required string OperationType { get; set; }
+  [JsonPropertyName("sourcePaths")]
+  public required string SourcePaths { get; set; }
+  [JsonPropertyName("destinationPaths")]
+  public string? DestinationPaths { get; set; }
+  [JsonPropertyName("userName")]
+  public string? UserName { get; set; }
+  [JsonPropertyName("createdAt")]
+  public DateTime CreatedAt { get; set; }
 }
