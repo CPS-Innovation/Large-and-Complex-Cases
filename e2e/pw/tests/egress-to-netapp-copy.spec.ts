@@ -49,7 +49,7 @@ test.describe("Egress to NetApp Copy", () => {
     await caseMgmt.switchToTab("activity-log");
     const activityLog = new ActivityLogTab(page);
     await activityLog.waitForLogs();
-    await activityLog.verifyTransferLogged("Copy");
+    await activityLog.verifyTransferLogged("Copy", uploadSubfolder!);
 
     await activityLog.expandFileList();
     await activityLog.downloadCsv();

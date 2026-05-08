@@ -66,11 +66,11 @@ test.describe("Egress to NetApp Move (Default Mode)", () => {
     await caseMgmt.switchToTab("activity-log");
     const activityLog = new ActivityLogTab(page);
     await activityLog.waitForLogs();
-    await activityLog.verifyTransferLogged("Move");
+    await activityLog.verifyTransferLogged("Move", uploadSubfolder!);
 
     // Step 8: Download CSV and verify
-    await activityLog.expandFileList("Move");
-    await activityLog.downloadCsv("Move");
+    await activityLog.expandFileList();
+    await activityLog.downloadCsv();
     await activityLog.verifyDownloadSuccess();
   });
 });

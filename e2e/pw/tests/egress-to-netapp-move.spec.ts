@@ -52,10 +52,10 @@ test.describe("Egress to NetApp Move", () => {
     await caseMgmt.switchToTab("activity-log");
     const activityLog = new ActivityLogTab(page);
     await activityLog.waitForLogs();
-    await activityLog.verifyTransferLogged("Move");
+    await activityLog.verifyTransferLogged("Move", uploadSubfolder!);
 
-    await activityLog.expandFileList("Move");
-    await activityLog.downloadCsv("Move");
+    await activityLog.expandFileList();
+    await activityLog.downloadCsv();
     await activityLog.verifyDownloadSuccess();
   });
 });

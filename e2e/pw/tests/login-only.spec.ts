@@ -60,6 +60,6 @@ test.describe("Full-flow smoke", () => {
     await caseMgmt.switchToTab("activity-log");
     const activityLog = new ActivityLogTab(page);
     await activityLog.waitForLogs();
-    await activityLog.verifyTransferLogged("Copy");
+    await activityLog.verifyTransferLogged("Copy", uploadSubfolder!);
   });
 });

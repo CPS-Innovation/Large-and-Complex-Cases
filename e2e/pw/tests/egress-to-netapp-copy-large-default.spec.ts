@@ -60,7 +60,7 @@ test.describe("Egress to NetApp Copy - Large File 200MB (Default Mode)", () => {
     await caseMgmt.switchToTab("activity-log");
     const activityLog = new ActivityLogTab(page);
     await activityLog.waitForLogs();
-    await activityLog.verifyTransferLogged("Copy");
+    await activityLog.verifyTransferLogged("Copy", uploadSubfolder!);
 
     // Step 8: Download CSV and verify
     await activityLog.expandFileList();
