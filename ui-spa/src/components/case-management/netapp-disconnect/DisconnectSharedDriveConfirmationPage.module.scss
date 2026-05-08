@@ -1,0 +1,25 @@
+.buttonWrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  button {
+    margin: 0;
+  }
+}
+.contentWrapper {
+  margin-top: 1rem;
+  width: 66%;
+  & h1 {
+    font-size: 2.25rem;
+  }
+  & :global(.govuk-list) {
+    margin-top: 1rem;
+  }
+  & :global(.govuk-heading-xl) {
+    margin-bottom: 1.875rem;
+  }
+  & .errorSummaryWrapper {
+    margin-top: 1rem;
+    max-width: 30rem;
+  }
+}

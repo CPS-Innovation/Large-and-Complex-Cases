@@ -284,6 +284,19 @@ export const connectNetAppFolder = async ({
   return response;
 };
 
+export const disconnectNetAppFolder = async (caseId: number) => {
+  const url = `${GATEWAY_BASE_URL}/api/v1/netapp/connections/${caseId}`;
+  const response = await fetch(url, {
+    method: "DELETE",
+    credentials: "include",
+    headers: {
+      ...(await buildCommonHeaders()),
+    },
+  });
+
+  return response;
+};
+
 export const getCaseMetaData = async (caseId: string) => {
   const url = `${GATEWAY_BASE_URL}/api/v1/cases/${caseId}`;
 

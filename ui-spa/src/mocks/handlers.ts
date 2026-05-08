@@ -194,6 +194,10 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
         headers: { "Content-Type": "text/csv" },
       });
     }),
+    http.delete(`${baseUrl}/api/v1/netapp/connections/12`, async () => {
+      await delay(1500);
+      return HttpResponse.json({ success: false });
+    }),
   ];
 };
 
