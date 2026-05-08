@@ -131,6 +131,7 @@ $Config = @{
     CmsUsername   = if ($CmsUsername) { $CmsUsername } elseif ($env:LCC_CMS_USERNAME) { $env:LCC_CMS_USERNAME } else { "" }
     CmsPassword   = if ($CmsPassword) { $CmsPassword } elseif ($env:LCC_CMS_PASSWORD) { $env:LCC_CMS_PASSWORD } else { "" }
     DdeiAccessKey = if ($env:LCC_DDEI_ACCESS_KEY) { $env:LCC_DDEI_ACCESS_KEY } else { "" }
+    DdeiAccessKeyRegCase = if ($env:LCC_DDEI_ACCESS_KEY_REGCASE) { $env:LCC_DDEI_ACCESS_KEY_REGCASE } else { "" }
     BaseUrl       = if ($env:LCC_BASE_URL) { $env:LCC_BASE_URL } else { "" }
     CaseApiBaseUrl = if ($env:LCC_CASE_API_BASE_URL) { $env:LCC_CASE_API_BASE_URL } else { "" }
     EgressBaseUrl = if ($env:LCC_EGRESS_BASE_URL) { $env:LCC_EGRESS_BASE_URL } else { "" }
@@ -627,6 +628,7 @@ $secretVariables = @{
     "cmsUsername"   = $Config.CmsUsername
     "cmsPassword"   = $Config.CmsPassword
     "ddeiAccessKey" = $Config.DdeiAccessKey
+    "ddeiAccessKeyRegCase" = $Config.DdeiAccessKeyRegCase
     "lccApiClientSecret" = $Config.LccApiClientSecret
 }
 
