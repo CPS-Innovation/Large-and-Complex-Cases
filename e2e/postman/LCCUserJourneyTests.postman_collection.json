@@ -196,7 +196,7 @@
 							},
 							{
 								"key": "x-functions-key",
-								"value": "{{ddeiAccessKey}}"
+								"value": "{{ddeiAccessKeyRegCase}}"
 							},
 							{
 								"key": "Authorization",
@@ -2808,7 +2808,7 @@
 							},
 							{
 								"key": "x-functions-key",
-								"value": "{{ddeiAccessKey}}"
+								"value": "{{ddeiAccessKeyRegCase}}"
 							},
 							{
 								"key": "Authorization",
@@ -4631,7 +4631,7 @@
 							},
 							{
 								"key": "x-functions-key",
-								"value": "{{ddeiAccessKey}}"
+								"value": "{{ddeiAccessKeyRegCase}}"
 							},
 							{
 								"key": "Authorization",
@@ -6458,7 +6458,7 @@
 							},
 							{
 								"key": "x-functions-key",
-								"value": "{{ddeiAccessKey}}"
+								"value": "{{ddeiAccessKeyRegCase}}"
 							},
 							{
 								"key": "Authorization",
