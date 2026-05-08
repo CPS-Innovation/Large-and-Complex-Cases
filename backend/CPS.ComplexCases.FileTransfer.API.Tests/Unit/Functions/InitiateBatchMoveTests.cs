@@ -560,6 +560,67 @@ public class InitiateBatchMoveTests
     }
 
     [Fact]
+    public async Task Run_WhenFolderDestinationListingReturnsNullMidPagination_ReturnsInternalServerError()
+    {
+        const string destContinuationToken = "dest-page2-token";
+        var destFolderPrefix = $"{DestinationPrefix}OldFolder/";
+        var sourceFile = $"{FolderSourcePath}file1.pdf";
+
+        SetupValidRequest(CreateFolderRequest());
+        SetupNoActiveTransfer();
+        SetupFolderExists(FolderSourcePath, sourceFile);
+
+        // Page 1 of destination listing: success, but indicates a second page
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.Is<ListObjectsInBucketArg>(a =>
+                a.Prefix == destFolderPrefix && a.MaxKeys == null && a.ContinuationToken == null)))
+            .ReturnsAsync(MakeListResultWithContinuation([], destContinuationToken));
+
+        // Page 2 of destination listing: null — simulates a mid-pagination listing failure
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.Is<ListObjectsInBucketArg>(a =>
+                a.Prefix == destFolderPrefix && a.MaxKeys == null && a.ContinuationToken == destContinuationToken)))
+            .ReturnsAsync((ListNetAppObjectsDto?)null);
+
+        var result = await _function.Run(CreateHttpRequest(), _durableClientStub);
+
+        var objectResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(StatusCodes.Status500InternalServerError, objectResult.StatusCode);
+        var errors = Assert.IsAssignableFrom<IEnumerable<string>>(objectResult.Value);
+        Assert.Contains(errors, e => e.Contains(destFolderPrefix));
+    }
+
+    [Fact]
+    public async Task Run_WhenMaterialClashListingReturnsNullMidPagination_ReturnsInternalServerError()
+    {
+        const string page2Token = "clash-page2-token";
+
+        SetupValidRequest();
+        SetupNoActiveTransfer();
+        SetupMaterialSourceExists();
+        SetupMaterialDestinationMissing();
+
+        // Page 1 of clash listing: no clash, but indicates a second page
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.Is<ListObjectsInBucketArg>(a =>
+                a.Prefix == DestinationPrefix && a.MaxKeys == null && a.ContinuationToken == null)))
+            .ReturnsAsync(MakeListResultWithContinuation([$"{DestinationPrefix}other.pdf"], page2Token));
+
+        // Page 2 of clash listing: null — simulates a mid-pagination listing failure
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.Is<ListObjectsInBucketArg>(a =>
+                a.Prefix == DestinationPrefix && a.MaxKeys == null && a.ContinuationToken == page2Token)))
+            .ReturnsAsync((ListNetAppObjectsDto?)null);
+
+        var result = await _function.Run(CreateHttpRequest(), _durableClientStub);
+
+        var objectResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(StatusCodes.Status500InternalServerError, objectResult.StatusCode);
+        var errors = Assert.IsAssignableFrom<IEnumerable<string>>(objectResult.Value);
+        Assert.Contains(errors, e => e.Contains(MaterialSourcePath));
+    }
+
+    [Fact]
     public async Task Run_WhenFolderSourceListingReturnsNullOnSecondPage_ReturnsInternalServerError()
     {
         const string continuationToken = "page2-token";
@@ -689,6 +750,13 @@ public class InitiateBatchMoveTests
             .Setup(c => c.ListObjectsInBucketAsync(It.Is<ListObjectsInBucketArg>(a =>
                 a.Prefix == folderPrefix && a.MaxKeys == null)))
             .ReturnsAsync(MakeListResult(filePaths));
+
+        var folderName = Path.GetFileName(folderPrefix.TrimEnd('/'));
+        var destFolderPrefix = DestinationPrefix + folderName + "/";
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.Is<ListObjectsInBucketArg>(a =>
+                a.Prefix == destFolderPrefix && a.MaxKeys == null)))
+            .ReturnsAsync(EmptyListResult());
     }
 
     private void SetupFolderMissing(string folderPrefix) =>

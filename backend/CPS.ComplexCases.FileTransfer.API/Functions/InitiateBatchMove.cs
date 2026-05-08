@@ -151,6 +151,13 @@ public class InitiateBatchMove(
 
                 var existingDestKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 string? destContinuationToken = null;
+                var destPaginationFailed = false;
+
+                if (expandedFiles.Count == 0)
+                {
+                    // No source files to move; skip destination scan — there are no conflicts to check.
+                }
+                else
                 do
                 {
                     var destListArg = _netAppArgFactory.CreateListObjectsInBucketArg(
@@ -158,12 +165,25 @@ public class InitiateBatchMove(
                         continuationToken: destContinuationToken,
                         prefix: destFolderPrefix);
                     var destListResult = await _netAppClient.ListObjectsInBucketAsync(destListArg);
-                    if (destListResult == null) break;
+                    if (destListResult == null)
+                    {
+                        destPaginationFailed = true;
+                        break;
+                    }
                     foreach (var f in destListResult.Data.FileData)
                         existingDestKeys.Add(f.Path);
                     destContinuationToken = destListResult.Pagination.NextContinuationToken;
                 }
                 while (!string.IsNullOrEmpty(destContinuationToken));
+
+                if (destPaginationFailed)
+                {
+                    _logger.LogError(
+                        "Destination folder listing returned null mid-pagination for {DestFolderPrefix}. CaseId: {CaseId}. CorrelationId: {CorrelationId}",
+                        destFolderPrefix, request.CaseId, correlationId);
+                    preflightListingErrors.Add($"Failed to list destination folder contents: {destFolderPrefix}");
+                    continue;
+                }
 
                 // Schedule non-colliding files; track scheduled keys so WriteMoveActivityLog can
                 // compare all expected keys against successes and detect partial folder moves.
@@ -215,6 +235,7 @@ public class InitiateBatchMove(
                 }
 
                 var caseClashFound = false;
+                var caseClashListingFailed = false;
                 string? caseCheckToken = null;
                 do
                 {
@@ -223,7 +244,11 @@ public class InitiateBatchMove(
                         continuationToken: caseCheckToken,
                         prefix: request.DestinationPrefix);
                     var caseCheckResult = await _netAppClient.ListObjectsInBucketAsync(caseCheckArg);
-                    if (caseCheckResult == null) break;
+                    if (caseCheckResult == null)
+                    {
+                        caseClashListingFailed = true;
+                        break;
+                    }
 
                     if (caseCheckResult.Data.FileData.Any(f =>
                             string.Equals(Path.GetFileName(f.Path), fileName, StringComparison.OrdinalIgnoreCase)
@@ -236,6 +261,15 @@ public class InitiateBatchMove(
                     caseCheckToken = caseCheckResult.Pagination.NextContinuationToken;
                 }
                 while (!string.IsNullOrEmpty(caseCheckToken));
+
+                if (caseClashListingFailed)
+                {
+                    _logger.LogError(
+                        "Destination listing returned null mid-pagination during case-insensitive clash check for {SourcePath}. CaseId: {CaseId}. CorrelationId: {CorrelationId}",
+                        op.SourcePath, request.CaseId, correlationId);
+                    preflightListingErrors.Add($"Failed to list destination folder contents during clash check: {op.SourcePath}");
+                    continue;
+                }
 
                 if (caseClashFound)
                 {
