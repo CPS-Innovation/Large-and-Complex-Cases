@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 import dotenv from "dotenv";
-import path from "path";
+import path from "node:path";
 
 dotenv.config({
   path: path.resolve(__dirname, `.env.${process.env.ENVIRONMENT || "local"}`),
@@ -30,14 +30,14 @@ export default defineConfig({
     // workspace so AUTOMATION-TESTING* workspaces don't accumulate.
     {
       name: "register-case-setup",
-      testMatch: /.*register-case\.setup\.ts/,
+      testMatch: "**/register-case.setup.ts",
       teardown: "register-case-teardown",
       use: { ...devices["Desktop Chrome"] },
     },
 
     {
       name: "register-case-teardown",
-      testMatch: /.*register-case\.teardown\.ts/,
+      testMatch: "**/register-case.teardown.ts",
     },
 
     // Register-case specs reuse the connected case but re-do login per test.
@@ -52,7 +52,8 @@ export default defineConfig({
     // by the setup project.
     {
       name: "register-case-tests",
-      testMatch: /^(?!.*-default\.spec\.ts$).*\.spec\.ts$/,
+      testMatch: "**/*.spec.ts",
+      testIgnore: "**/*-default.spec.ts",
       dependencies: ["register-case-setup"],
       use: { ...devices["Desktop Chrome"] },
     },
@@ -61,7 +62,7 @@ export default defineConfig({
     // DEFAULT_WORKSPACE_ID / DEFAULT_CASE_URN and need no shared setup.
     {
       name: "default-mode-tests",
-      testMatch: /.*-default\.spec\.ts$/,
+      testMatch: "**/*-default.spec.ts",
       use: { ...devices["Desktop Chrome"] },
     },
 
@@ -71,7 +72,7 @@ export default defineConfig({
     // See README "Required NetApp fixture".
     {
       name: "seed-netapp-fixture",
-      testMatch: /.*seed-netapp-fixture\.setup\.ts/,
+      testMatch: "**/seed-netapp-fixture.setup.ts",
       use: { ...devices["Desktop Chrome"] },
     },
   ],
