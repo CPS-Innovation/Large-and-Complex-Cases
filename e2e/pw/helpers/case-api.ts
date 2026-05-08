@@ -1,12 +1,12 @@
+import { randomInt } from "node:crypto";
+
 export async function registerCase(
   caseApiBaseUrl: string,
   accessToken: string,
   cmsAuth: string,
   defendantSurname: string
 ): Promise<{ caseId: number; caseUrn: string }> {
-  const urnUniqueRef = String(
-    Math.floor(10000 + Math.random() * 90000)
-  ).padStart(5, "0");
+  const urnUniqueRef = String(randomInt(10000, 100000)).padStart(5, "0");
 
   const correlationId = crypto.randomUUID();
 

@@ -1,15 +1,12 @@
 import { test as base, expect } from "@playwright/test";
 import * as fs from "fs";
+import { randomInt } from "node:crypto";
 import { loadEnvConfig } from "../helpers/env-config";
 import {
   authenticateEgress,
   createFolder,
-  deleteFiles,
-  listEgressWorkspaceFilesByFolderId,
   uploadFile,
 } from "../helpers/egress-api";
-import { deleteNetAppFile } from "../helpers/netapp-api";
-import { getAuthTokens } from "../helpers/auth-api";
 import { REGISTER_CASE_NETAPP_FOLDER } from "../helpers/constants";
 import type { TestSetupResult, UploadedFile } from "../helpers/types";
 import {
@@ -17,6 +14,7 @@ import {
   type RegisterCaseSharedState,
 } from "../helpers/register-case-state";
 import { browserLogin } from "./setup-helper";
+import { teardownTestData } from "./teardown-helper";
 
 export interface RegisterCaseTestOptions {
   fileSizeMb: number;
@@ -59,7 +57,7 @@ export const test = base.extend<
     // Per-test subfolder isolates each spec's file list and destination
     // from its siblings inside the shared workspace. Same pattern used in
     // default mode; see README "Cleanup / Test Data Hygiene".
-    const rand = Math.floor(Math.random() * 10_000);
+    const rand = randomInt(0, 10_000);
     const uploadSubfolder = `e2e-${slugify(testInfo.title)}-${rand}`;
     const uploadPath = `${SOURCE_PARENT}/${uploadSubfolder}/`;
 
@@ -118,78 +116,20 @@ export const test = base.extend<
       uploadSubfolder,
     });
 
-    // Per-test teardown. Only delete on success — on failure we leave the
-    // uploaded files in the dated subfolder so they can be inspected in the
-    // Egress UI or via the Playwright trace. The shared workspace itself is
-    // torn down by the register-case-teardown project at end of run.
-    if (testInfo.status === "passed") {
-      const fileIds = files.map((f) => f.id).filter((id): id is string => !!id);
-      await deleteFiles(
-        config.egressBaseUrl,
-        token,
-        shared.workspace.id,
-        fileIds
-      );
-
-      // Egress destination cleanup. NetApp->Egress specs copy a file into
-      // "2. Counsel only/<uploadSubfolder>/"; the destination basename is
-      // chosen by the LCC backend, so we list by folder id and delete
-      // rather than predicting the name. Egress->NetApp specs don't
-      // write to this folder so the list comes back empty and the call
-      // is a no-op. Skipped when the folder id is unknown (rare —
-      // implies the per-test slug collided at setup time).
-      if (destinationSubfolderId) {
-        const expectFile = /netapp-to-egress/i.test(testInfo.file);
-        const destinationFiles = await listEgressWorkspaceFilesByFolderId(
-          config.egressBaseUrl,
-          token,
-          shared.workspace.id,
-          destinationSubfolderId,
-          expectFile
-        );
-        if (destinationFiles.length > 0) {
-          console.log(
-            `  [teardown] Deleting ${destinationFiles.length} destination file(s) from ${DESTINATION_PARENT}/${uploadSubfolder}/`
-          );
-          await deleteFiles(
-            config.egressBaseUrl,
-            token,
-            shared.workspace.id,
-            destinationFiles.map((f) => f.id)
-          );
-        }
-      }
-
-      // NetApp side cleanup. Egress->NetApp specs leave a copy at
-      // <REGISTER_CASE_NETAPP_FOLDER>/<fileName> (basename only — see
-      // deleteNetAppFile docs for why the relativePath is empty here).
-      // NetApp->Egress specs don't push there, so the DELETE 404s and is
-      // warned. Skipped if LCC_API_BASE_URL unset (e.g. prod run where
-      // the endpoint 403s anyway). Note: register-case mode uses a
-      // different NetApp folder than default mode, so we don't read
-      // NETAPP_OPERATION_NAME from env here.
-      if (config.lccApiBaseUrl) {
-        const { accessToken, cmsAuth } = await getAuthTokens(
-          config.tenantId,
-          config.clientId,
-          config.e2eAdUser,
-          config.e2eAdPassword,
-          config.ddeiBaseUrl,
-          config.ddeiAccessKey,
-          config.cmsUsername,
-          config.cmsPassword
-        );
-        for (const file of files) {
-          await deleteNetAppFile(
-            config.lccApiBaseUrl,
-            REGISTER_CASE_NETAPP_FOLDER,
-            file.fileName,
-            accessToken,
-            cmsAuth
-          );
-        }
-      }
-    }
+    // Per-test teardown. On failure we leave the uploaded files in the
+    // dated subfolder so they can be inspected in the Egress UI or via the
+    // Playwright trace. The shared workspace itself is torn down by the
+    // register-case-teardown project at end of run.
+    await teardownTestData({
+      workspaceId: shared.workspace.id,
+      files,
+      destinationSubfolderId,
+      uploadSubfolder,
+      destinationParentLabel: DESTINATION_PARENT,
+      netAppFolder: REGISTER_CASE_NETAPP_FOLDER,
+      testInfo,
+      egressToken: token,
+    });
   },
 });
 

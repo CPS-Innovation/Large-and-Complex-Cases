@@ -1,3 +1,4 @@
+import { randomInt } from "node:crypto";
 import type { UploadedFile } from "./types";
 
 export async function authenticateEgress(
@@ -115,7 +116,7 @@ export async function findNextWorkspaceName(
   }
 
   // Add random suffix to avoid race conditions when running tests in parallel
-  const randomSuffix = Math.floor(Math.random() * 900 + 100);
+  const randomSuffix = randomInt(100, 1000);
   return `AUTOMATION-TESTING${maxNumber + 1}-${randomSuffix}`;
 }
 
