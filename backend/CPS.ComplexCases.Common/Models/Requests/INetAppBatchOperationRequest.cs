@@ -1,7 +1,9 @@
+using CPS.ComplexCases.Data.Models.Requests;
+
 namespace CPS.ComplexCases.Common.Models.Requests;
 
-public interface INetAppBatchOperationRequest
+public interface INetAppBatchOperationRequest : INetAppBatchOperationBase
 {
     string Type { get; }
-    string SourcePath { get; }
+    string INetAppBatchOperationBase.TypeString => Type;
 }

@@ -1,13 +1,13 @@
-using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Helpers;
+using CPS.ComplexCases.Common.Validators;
 using CPS.ComplexCases.Data.Models.Requests;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Validators;
 
 public abstract class NetAppBatchDtoValidatorTestsBase<TDto, TOperation, TValidator>
-    where TDto : class, INetAppBatchDto<TOperation>
-    where TOperation : class, INetAppBatchOperationDto
-    where TValidator : NetAppBatchDtoValidatorBase<TDto, TOperation>, new()
+    where TDto : class, INetAppBatchBase<TOperation>
+    where TOperation : class, INetAppBatchOperationBase
+    where TValidator : NetAppBatchValidatorBase<TDto, TOperation>, new()
 {
     private readonly TValidator _validator = new();
 

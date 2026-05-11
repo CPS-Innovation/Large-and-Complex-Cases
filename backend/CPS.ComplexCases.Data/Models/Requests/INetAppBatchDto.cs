@@ -9,16 +9,13 @@ public enum NetAppBatchOperationType
     Folder
 }
 
-public interface INetAppBatchOperationDto
+public interface INetAppBatchOperationDto : INetAppBatchOperationBase
 {
     NetAppBatchOperationType Type { get; }
-    string SourcePath { get; }
+    string INetAppBatchOperationBase.TypeString => Type.ToString();
 }
 
-public interface INetAppBatchDto<TOperation>
+public interface INetAppBatchDto<TOperation> : INetAppBatchBase<TOperation>
     where TOperation : INetAppBatchOperationDto
 {
-    int CaseId { get; set; }
-    string DestinationPrefix { get; set; }
-    List<TOperation> Operations { get; set; }
 }

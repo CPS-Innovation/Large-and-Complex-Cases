@@ -2,19 +2,19 @@ using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Data.Models.Requests;
 using FluentValidation;
 
-namespace CPS.ComplexCases.API.Validators.Requests;
+namespace CPS.ComplexCases.Common.Validators;
 
-public abstract class NetAppBatchDtoValidatorBase<TDto, TOperation> : AbstractValidator<TDto>
-    where TDto : class, INetAppBatchDto<TOperation>
-    where TOperation : class, INetAppBatchOperationDto
+public abstract class NetAppBatchValidatorBase<TRequest, TOperation> : AbstractValidator<TRequest>
+    where TRequest : class, INetAppBatchBase<TOperation>
+    where TOperation : class, INetAppBatchOperationBase
 {
     public const int MaxOperations = NetAppBatchCopyValidationRules.MaxOperations;
 
-    protected NetAppBatchDtoValidatorBase()
+    protected NetAppBatchValidatorBase()
     {
         RuleFor(x => x.CaseId)
             .GreaterThan(0)
-            .WithMessage("CaseId must be a positive integer.");
+            .WithMessage("CaseId must be greater than 0.");
 
         RuleFor(x => x.DestinationPrefix)
             .NotEmpty()
@@ -52,18 +52,18 @@ public abstract class NetAppBatchDtoValidatorBase<TDto, TOperation> : AbstractVa
 
             op.RuleFor(x => x.SourcePath)
                 .Must((operation, path) =>
-                    !NetAppBatchCopyValidationRules.IsFolderType(operation.Type.ToString()) || path.EndsWith('/'))
+                    !NetAppBatchCopyValidationRules.IsFolderType(operation.TypeString) || path.EndsWith('/'))
                 .WithMessage("SourcePath for a Folder operation must end with a '/'.");
         });
 
         RuleFor(x => x)
-            .Custom((dto, context) =>
+            .Custom((request, context) =>
             {
-                if (dto.Operations == null || string.IsNullOrEmpty(dto.DestinationPrefix))
+                if (request.Operations == null || string.IsNullOrEmpty(request.DestinationPrefix))
                     return;
 
-                var projected = dto.Operations.Select(op => (op.Type.ToString(), op.SourcePath));
-                foreach (var error in NetAppBatchCopyValidationRules.GetCrossFieldErrors(projected, dto.DestinationPrefix))
+                var projected = request.Operations.Select(op => (op.TypeString, op.SourcePath));
+                foreach (var error in NetAppBatchCopyValidationRules.GetCrossFieldErrors(projected, request.DestinationPrefix))
                     context.AddFailure("Operations", error);
             });
     }
