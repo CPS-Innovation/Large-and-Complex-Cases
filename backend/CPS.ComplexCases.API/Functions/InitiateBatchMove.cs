@@ -6,8 +6,6 @@ using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.API.Clients.FileTransfer;
 using CPS.ComplexCases.API.Constants;
-using CPS.ComplexCases.API.Context;
-using CPS.ComplexCases.API.Extensions;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Attributes;
@@ -26,14 +24,8 @@ public class InitiateBatchMove(
     ISecurityGroupMetadataService securityGroupMetadataService,
     ICaseMetadataService caseMetadataService,
     IInitializationHandler initializationHandler)
+    : InitiateBatchOperationBase(logger, transferClient, requestValidator, securityGroupMetadataService, caseMetadataService, initializationHandler)
 {
-    private readonly ILogger<InitiateBatchMove> _logger = logger;
-    private readonly IFileTransferClient _transferClient = transferClient;
-    private readonly IRequestValidator _requestValidator = requestValidator;
-    private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
-    private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
-    private readonly IInitializationHandler _initializationHandler = initializationHandler;
-
     [Function(nameof(InitiateBatchMove))]
     [OpenApiOperation(operationId: nameof(InitiateBatchMove), tags: ["NetApp"], Description = "Initiates an asynchronous batch move of files and folders within NetApp. Returns a transferId that can be polled for status.")]
     [CmsAuthValuesAuth]
@@ -49,70 +41,21 @@ public class InitiateBatchMove(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "v1/netapp/move/batch")] HttpRequest req,
         FunctionContext functionContext)
     {
-        var context = functionContext.GetRequestContext();
-        _initializationHandler.Initialize(context.Username, context.CorrelationId);
-
-        _logger.LogInformation("InitiateBatchMove request received. CorrelationId: {CorrelationId}", context.CorrelationId);
-
-        var batchRequest = await _requestValidator.GetJsonBody<MoveNetAppBatchDto, MoveNetAppBatchRequestValidator>(req);
-
-        if (!batchRequest.IsValid)
-        {
-            _logger.LogWarning("Validation failed for InitiateBatchMove. CorrelationId: {CorrelationId}, Errors: {Errors}",
-                context.CorrelationId, batchRequest.ValidationErrors);
-            return new BadRequestObjectResult(batchRequest.ValidationErrors);
-        }
-
-        var caseMetadata = await _caseMetadataService.GetCaseMetadataForCaseIdAsync(batchRequest.Value.CaseId);
-
-        if (caseMetadata == null || string.IsNullOrEmpty(caseMetadata.NetappFolderPath))
-        {
-            _logger.LogWarning("Case metadata or NetApp folder path missing for CaseId: {CaseId}. CorrelationId: {CorrelationId}",
-                batchRequest.Value.CaseId, context.CorrelationId);
-            return new BadRequestObjectResult(new[] { "Case metadata or NetApp folder path is missing." });
-        }
-
-        var casePrefix = caseMetadata.NetappFolderPath.EndsWith('/')
-            ? caseMetadata.NetappFolderPath
-            : caseMetadata.NetappFolderPath + "/";
-
-        var invalidPaths = batchRequest.Value.Operations
-            .Where(op => !op.SourcePath.StartsWith(casePrefix, StringComparison.OrdinalIgnoreCase))
-            .Select(op => op.SourcePath)
-            .ToList();
-
-        if (invalidPaths.Count > 0)
-        {
-            _logger.LogWarning("Source paths outside case folder: {Paths}. CorrelationId: {CorrelationId}",
-                invalidPaths, context.CorrelationId);
-            return new BadRequestObjectResult(new[] { $"The following source paths are not within the case's NetApp folder: {string.Join(", ", invalidPaths)}" });
-        }
-
-        if (!batchRequest.Value.DestinationPrefix.StartsWith(casePrefix, StringComparison.OrdinalIgnoreCase))
-        {
-            _logger.LogWarning("Destination prefix '{DestinationPrefix}' is outside the case folder '{CasePrefix}'. CorrelationId: {CorrelationId}",
-                batchRequest.Value.DestinationPrefix, casePrefix, context.CorrelationId);
-            return new BadRequestObjectResult(new[] { "The destination prefix is not within the case's NetApp folder." });
-        }
-
-        var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
-
-        var moveRequest = new MoveNetAppBatchRequest
-        {
-            CaseId = batchRequest.Value.CaseId,
-            DestinationPrefix = batchRequest.Value.DestinationPrefix,
-            Operations = batchRequest.Value.Operations.Select(op => new MoveNetAppBatchOperationRequest
-            {
-                Type = op.Type == NetAppBatchOperationType.Folder ? "Folder" : "Material",
-                SourcePath = op.SourcePath,
-            }).ToList(),
-            BearerToken = context.BearerToken,
-            BucketName = securityGroups.First().BucketName,
-            UserName = context.Username,
-        };
-
-        var response = await _transferClient.InitiateBatchMoveAsync(moveRequest, context.CorrelationId);
-
-        return await response.ToActionResult();
+        return await RunAsync<MoveNetAppBatchDto, MoveNetAppBatchOperationDto, MoveNetAppBatchRequestValidator>(
+            req, functionContext, nameof(InitiateBatchMove),
+            (dto, bearerToken, bucketName, userName, correlationId) =>
+                _transferClient.InitiateBatchMoveAsync(new MoveNetAppBatchRequest
+                {
+                    CaseId = dto.CaseId,
+                    DestinationPrefix = dto.DestinationPrefix,
+                    Operations = dto.Operations.Select(op => new MoveNetAppBatchOperationRequest
+                    {
+                        Type = op.Type.ToString(),
+                        SourcePath = op.SourcePath,
+                    }).ToList(),
+                    BearerToken = bearerToken,
+                    BucketName = bucketName,
+                    UserName = userName,
+                }, correlationId));
     }
 }
