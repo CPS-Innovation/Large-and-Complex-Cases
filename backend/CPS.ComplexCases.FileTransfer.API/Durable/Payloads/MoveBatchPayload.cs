@@ -1,6 +1,6 @@
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 
-public class MoveBatchPayload
+public class MoveBatchPayload : IBatchPayload<MoveFileItem>
 {
     public Guid TransferId { get; set; }
     public int CaseId { get; set; }

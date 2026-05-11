@@ -16,43 +16,128 @@ using Microsoft.Extensions.Options;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Orchestration;
 
-public abstract class BatchOrchestratorBase(
+public abstract class BatchOrchestratorBase<TPayload, TFileItem>(
     IOptions<SizeConfig> sizeConfig,
     ITelemetryClient telemetryClient,
     IInitializationHandler initializationHandler)
+    where TPayload : IBatchPayload<TFileItem>
+    where TFileItem : IBatchFileItem
 {
-    protected readonly SizeConfig _sizeConfig = sizeConfig.Value;
+    private readonly SizeConfig _sizeConfig = sizeConfig.Value;
     protected readonly ITelemetryClient _telemetryClient = telemetryClient;
     protected readonly IInitializationHandler _initializationHandler = initializationHandler;
 
-    protected static async Task<EntityInstanceId> InitializeTransferAsync<TFileItem>(
+    protected abstract TransferType BatchTransferType { get; }
+
+    /// <summary>
+    /// Runs between the retry phase and FinalizeTransfer. Returns the list of
+    /// successfully transferred source keys to pass to the activity log.
+    /// For Copy this is a simple filter over allResults; for Move it also deletes
+    /// source files and empty folders.
+    /// </summary>
+    protected abstract Task<List<string>> GetSuccessfulSourceKeysAsync(
         TaskOrchestrationContext context,
-        Guid transferId,
-        int caseId,
-        string? userName,
-        Guid? correlationId,
-        string bearerToken,
-        IReadOnlyList<TFileItem> files,
-        TransferType transferType)
-        where TFileItem : IBatchFileItem
+        TPayload input,
+        List<TransferResult> allResults);
+
+    protected abstract Task WriteActivityLogAsync(
+        TaskOrchestrationContext context,
+        TPayload input,
+        List<string> successfulSourceKeys);
+
+    protected async Task RunOrchestratorAsync(TaskOrchestrationContext context, string orchestratorName)
+    {
+        ILogger logger = context.CreateReplaySafeLogger(orchestratorName);
+        logger.LogInformation("{OrchestratorName} started.", orchestratorName);
+
+        var input = context.GetInput<TPayload>();
+        if (input == null)
+        {
+            logger.LogError("{OrchestratorName} input is null.", orchestratorName);
+            throw new ArgumentNullException(nameof(input));
+        }
+
+        _initializationHandler.Initialize(input.UserName!, input.CorrelationId);
+
+        var telemetryEvent = new TransferOrchestrationEvent
+        {
+            TransferDirection = TransferDirection.NetAppToNetApp.ToString(),
+            TotalFiles = input.Files.Count,
+            BucketName = input.BucketName,
+            CaseId = input.CaseId,
+            OrchestrationStartTime = DateTime.UtcNow
+        };
+
+        var completedSuccessfully = false;
+        try
+        {
+            var entityId = await InitializeTransferAsync(context, input);
+
+            TransferFilePayload BuildPayload(TFileItem f) => BuildTransferFilePayload(
+                f, input.CaseId, input.TransferId, input.BearerToken,
+                input.BucketName, input.UserName!, input.CorrelationId, BatchTransferType);
+
+            var allResults = await FanOutTransferFilesAsync(context, input.Files, BuildPayload, entityId, telemetryEvent);
+
+            await RetryTransientFailuresAsync(context, entityId, input.Files, allResults, BuildPayload, telemetryEvent, logger, orchestratorName);
+
+            var successfulSourceKeys = await GetSuccessfulSourceKeysAsync(context, input, allResults);
+
+            await context.CallActivityAsync(
+                nameof(FinalizeTransfer),
+                new FinalizeTransferPayload { TransferId = input.TransferId });
+
+            await WriteActivityLogAsync(context, input, successfulSourceKeys);
+
+            telemetryEvent.IsSuccessful = telemetryEvent.TotalFilesFailed == 0;
+            completedSuccessfully = true;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "{OrchestratorName} failed for TransferId: {TransferId}. CorrelationId: {CorrelationId}",
+                orchestratorName, input.TransferId, input.CorrelationId);
+
+            await context.CallActivityAsync(
+                nameof(UpdateTransferStatus),
+                new UpdateTransferStatusPayload
+                {
+                    TransferId = input.TransferId,
+                    Status = TransferStatus.Failed,
+                });
+
+            throw;
+        }
+        finally
+        {
+            await context.CallActivityAsync(
+                nameof(RemoveActiveManageMaterialsOperation),
+                input.ManageMaterialsOperationId);
+
+            telemetryEvent.IsSuccessful = completedSuccessfully && telemetryEvent.TotalFilesFailed == 0;
+            telemetryEvent.OrchestrationEndTime = DateTime.UtcNow;
+            _telemetryClient.TrackEvent(telemetryEvent);
+        }
+    }
+
+    private async Task<EntityInstanceId> InitializeTransferAsync(TaskOrchestrationContext context, TPayload input)
     {
         var transferEntity = new TransferEntity
         {
-            Id = transferId,
+            Id = input.TransferId,
             Status = TransferStatus.Initiated,
             DestinationPath = string.Empty,
-            SourcePaths = files.Select(f => new TransferSourcePath { Path = f.SourceKey }).ToList(),
-            CaseId = caseId,
-            TransferType = transferType,
+            SourcePaths = input.Files.Select(f => new TransferSourcePath { Path = f.SourceKey }).ToList(),
+            CaseId = input.CaseId,
+            TransferType = BatchTransferType,
             Direction = TransferDirection.NetAppToNetApp,
-            TotalFiles = files.Count,
+            TotalFiles = input.Files.Count,
             IsRetry = false,
-            UserName = userName,
-            CorrelationId = correlationId,
-            BearerToken = bearerToken
+            UserName = input.UserName,
+            CorrelationId = input.CorrelationId,
+            BearerToken = input.BearerToken
         };
 
-        var entityId = new EntityInstanceId(nameof(TransferEntityState), transferId.ToString());
+        var entityId = new EntityInstanceId(nameof(TransferEntityState), input.TransferId.ToString());
 
         await context.Entities.CallEntityAsync(entityId, nameof(TransferEntityState.Initialize), transferEntity);
 
@@ -60,20 +145,19 @@ public abstract class BatchOrchestratorBase(
             nameof(UpdateTransferStatus),
             new UpdateTransferStatusPayload
             {
-                TransferId = transferId,
+                TransferId = input.TransferId,
                 Status = TransferStatus.InProgress,
             });
 
         return entityId;
     }
 
-    protected async Task<List<TransferResult>> FanOutTransferFilesAsync<TFileItem>(
+    private async Task<List<TransferResult>> FanOutTransferFilesAsync(
         TaskOrchestrationContext context,
-        IReadOnlyList<TFileItem> files,
+        List<TFileItem> files,
         Func<TFileItem, TransferFilePayload> buildPayload,
         EntityInstanceId entityId,
         TransferOrchestrationEvent telemetryEvent)
-        where TFileItem : IBatchFileItem
     {
         int batchSize = _sizeConfig.BatchSize;
         var batch = new List<Task<TransferResult>>();
@@ -102,16 +186,15 @@ public abstract class BatchOrchestratorBase(
         return allResults;
     }
 
-    protected async Task RetryTransientFailuresAsync<TFileItem>(
+    private async Task RetryTransientFailuresAsync(
         TaskOrchestrationContext context,
         EntityInstanceId entityId,
-        IReadOnlyList<TFileItem> files,
+        List<TFileItem> files,
         List<TransferResult> allResults,
         Func<TFileItem, TransferFilePayload> buildPayload,
         TransferOrchestrationEvent telemetryEvent,
         ILogger logger,
         string orchestratorName)
-        where TFileItem : IBatchFileItem
     {
         int maxOrchestratorRetries = _sizeConfig.MaxOrchestratorRetries;
         for (int attempt = 0; attempt < maxOrchestratorRetries; attempt++)
