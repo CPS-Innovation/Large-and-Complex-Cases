@@ -10,6 +10,7 @@ import TransferErrorPage from "./case-management/transfer-materials/TransferErro
 import TransferMovePermissionsErrorPage from "./case-management/transfer-materials/TransferMovePermissionsErrorPage";
 import DisconnectSharedDriveConfirmationPage from "./case-management/netapp-disconnect/DisconnectSharedDriveConfirmationPage";
 import DisconnectSharedDriveSuccessPage from "./case-management/netapp-disconnect/DisconnectSharedDriveSuccessPage";
+import DisconnectSharedDriveFailurePage from "./case-management/netapp-disconnect/DisconnectSharedDriveFailurePage";
 const AppRoutes = () => {
   return (
     <Routes>
@@ -72,6 +73,10 @@ const AppRoutes = () => {
       <Route
         path="/case/:caseId/case-management/disconnect-shared-drive-success"
         element={<DisconnectSharedDriveSuccessPage />}
+      />
+      <Route
+        path="/case/:caseId/case-management/disconnect-shared-drive-failure"
+        element={<DisconnectSharedDriveFailurePage />}
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

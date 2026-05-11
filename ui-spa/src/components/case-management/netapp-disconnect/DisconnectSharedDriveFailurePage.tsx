@@ -1,7 +1,7 @@
 import { Button } from "../../govuk";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { disconnectNetAppFolder } from "../../../apis/gateway-api";
-import styles from "./DisconnectSharedDriveConfirmationPage.module.scss";
+import styles from "./DisconnectSharedDriveFailurePage.module.scss";
 
 const DisconnectSharedDriveFailurePage = () => {
   const {
@@ -9,6 +9,7 @@ const DisconnectSharedDriveFailurePage = () => {
   }: {
     state: {
       caseId: number;
+      urn: string;
     };
   } = useLocation();
   const navigate = useNavigate();
@@ -30,9 +31,7 @@ const DisconnectSharedDriveFailurePage = () => {
       <p>If the problem continues, contact the product team for support.</p>
 
       <div className={styles.buttonWrapper}>
-        <Button type="submit" onClick={() => handleSubmit}>
-          Continue
-        </Button>
+        <Button onClick={handleSubmit}>Continue</Button>
         <Link to={`/case/${caseId}/case-management`}>cancel</Link>
       </div>
     </div>

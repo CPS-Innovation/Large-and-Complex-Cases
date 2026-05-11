@@ -285,7 +285,7 @@ export const connectNetAppFolder = async ({
 };
 
 export const disconnectNetAppFolder = async (caseId: number) => {
-  const url = `${GATEWAY_BASE_URL}/api/v1/netapp/connections/${caseId}`;
+  const url = `${GATEWAY_BASE_URL}/api/v1/netapp/connections?case-id=${caseId}`;
   const response = await fetch(url, {
     method: "DELETE",
     credentials: "include",

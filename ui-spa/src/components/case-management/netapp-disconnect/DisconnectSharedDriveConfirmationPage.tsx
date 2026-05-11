@@ -92,12 +92,19 @@ const DisconnectSharedDriveConfirmationPage = () => {
 
     if (!validateFormData()) return;
 
+    if (formData.disconnectSharedDriveRadio === "no") {
+      navigate(`/case/${caseId}/case-management`);
+      return;
+    }
+
     const response = await disconnectNetAppFolder(caseId);
-    if (!response.ok)
+    if (!response.ok) {
       navigate(
         `/case/${caseId}/case-management/disconnect-shared-drive-failure`,
         { state: { caseId, urn } },
       );
+      return;
+    }
 
     navigate(
       `/case/${caseId}/case-management/disconnect-shared-drive-success`,
@@ -159,9 +166,7 @@ const DisconnectSharedDriveConfirmationPage = () => {
           ></Radios>
         </div>
         <div className={styles.buttonWrapper}>
-          <Button type="submit" onClick={() => handleSubmit}>
-            Continue
-          </Button>
+          <Button type="submit">Continue</Button>
           <Link to={`/case/${caseId}/case-management`}>cancel</Link>
         </div>
       </form>

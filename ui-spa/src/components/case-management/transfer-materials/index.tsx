@@ -43,6 +43,7 @@ type TransferMaterialsPageProps = {
   egressWorkspaceId: string;
   netAppPath: string;
   activeTransferId: string | null;
+  urn: string;
 };
 
 const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
@@ -52,6 +53,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   egressWorkspaceId,
   netAppPath,
   activeTransferId,
+  urn,
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -655,6 +657,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         state: {
           isRouteValid: true,
           caseId: caseId,
+          urn: urn,
         },
       },
     );
