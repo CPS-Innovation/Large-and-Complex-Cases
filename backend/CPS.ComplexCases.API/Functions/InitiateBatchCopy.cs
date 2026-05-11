@@ -103,7 +103,7 @@ public class InitiateBatchCopy(
             DestinationPrefix = batchRequest.Value.DestinationPrefix,
             Operations = batchRequest.Value.Operations.Select(op => new CopyNetAppBatchOperationRequest
             {
-                Type = op.Type == NetAppCopyOperationType.Folder ? "Folder" : "Material",
+                Type = op.Type == NetAppBatchOperationType.Folder ? "Folder" : "Material",
                 SourcePath = op.SourcePath,
             }).ToList(),
             BearerToken = context.BearerToken,

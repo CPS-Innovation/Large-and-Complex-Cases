@@ -103,7 +103,7 @@ public class InitiateBatchMove(
             DestinationPrefix = batchRequest.Value.DestinationPrefix,
             Operations = batchRequest.Value.Operations.Select(op => new MoveNetAppBatchOperationRequest
             {
-                Type = op.Type == NetAppMoveOperationType.Folder ? "Folder" : "Material",
+                Type = op.Type == NetAppBatchOperationType.Folder ? "Folder" : "Material",
                 SourcePath = op.SourcePath,
             }).ToList(),
             BearerToken = context.BearerToken,

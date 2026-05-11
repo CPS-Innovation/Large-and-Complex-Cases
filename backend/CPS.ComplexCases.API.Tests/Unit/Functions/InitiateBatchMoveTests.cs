@@ -99,7 +99,7 @@ public class InitiateBatchMoveTests
     {
         CaseId = caseId,
         DestinationPrefix = $"{TestNetAppFolder}/Folder-B/",
-        Operations = [new() { Type = NetAppMoveOperationType.Material, SourcePath = $"{TestNetAppFolder}/file.txt" }]
+        Operations = [new() { Type = NetAppBatchOperationType.Material, SourcePath = $"{TestNetAppFolder}/file.txt" }]
     };
 
     [Fact]
@@ -135,7 +135,7 @@ public class InitiateBatchMoveTests
         {
             CaseId = 1,
             DestinationPrefix = $"{TestNetAppFolder}/Folder-B/",
-            Operations = [new() { Type = NetAppMoveOperationType.Material, SourcePath = "OtherCase/file.txt" }]
+            Operations = [new() { Type = NetAppBatchOperationType.Material, SourcePath = "OtherCase/file.txt" }]
         };
         SetupValidRequest(dto);
         var req = HttpRequestStubHelper.CreateHttpRequest(_testCorrelationId);
@@ -152,7 +152,7 @@ public class InitiateBatchMoveTests
         {
             CaseId = 1,
             DestinationPrefix = "OtherCase/Evidence/",
-            Operations = [new() { Type = NetAppMoveOperationType.Material, SourcePath = $"{TestNetAppFolder}/file.txt" }]
+            Operations = [new() { Type = NetAppBatchOperationType.Material, SourcePath = $"{TestNetAppFolder}/file.txt" }]
         };
         SetupValidRequest(dto);
         var req = HttpRequestStubHelper.CreateHttpRequest(_testCorrelationId);
@@ -173,7 +173,7 @@ public class InitiateBatchMoveTests
         {
             CaseId = 1,
             DestinationPrefix = "Cases/999/",
-            Operations = [new() { Type = NetAppMoveOperationType.Material, SourcePath = "Cases/123/file.pdf" }]
+            Operations = [new() { Type = NetAppBatchOperationType.Material, SourcePath = "Cases/123/file.pdf" }]
         };
         SetupValidRequest(dto);
         var req = HttpRequestStubHelper.CreateHttpRequest(_testCorrelationId);
@@ -224,8 +224,8 @@ public class InitiateBatchMoveTests
             DestinationPrefix = $"{TestNetAppFolder}/Dest/",
             Operations =
             [
-                new() { Type = NetAppMoveOperationType.Material, SourcePath = $"{TestNetAppFolder}/file.pdf" },
-                new() { Type = NetAppMoveOperationType.Folder, SourcePath = $"{TestNetAppFolder}/Sub/" },
+                new() { Type = NetAppBatchOperationType.Material, SourcePath = $"{TestNetAppFolder}/file.pdf" },
+                new() { Type = NetAppBatchOperationType.Folder, SourcePath = $"{TestNetAppFolder}/Sub/" },
             ]
         };
         SetupValidRequest(dto);
