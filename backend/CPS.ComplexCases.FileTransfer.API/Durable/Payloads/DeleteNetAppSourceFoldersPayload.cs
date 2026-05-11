@@ -14,5 +14,4 @@ public class DeleteNetAppSourceFoldersPayload
 public class SourceFolderDeleteSpec
 {
     public required string FolderPath { get; set; }
-    public required List<string> ExpectedSourceKeys { get; set; }
 }

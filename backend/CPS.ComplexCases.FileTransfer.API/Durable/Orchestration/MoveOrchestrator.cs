@@ -88,7 +88,6 @@ public class MoveOrchestrator(
             .Select(op => new SourceFolderDeleteSpec
             {
                 FolderPath = op.SourcePath,
-                ExpectedSourceKeys = op.ExpectedSourceKeys,
             })
             .ToList();
 

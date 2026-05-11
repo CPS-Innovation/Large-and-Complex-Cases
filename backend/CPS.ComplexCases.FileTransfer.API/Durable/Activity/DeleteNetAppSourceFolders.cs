@@ -30,48 +30,50 @@ public class DeleteNetAppSourceFolders(
         {
             try
             {
-                var sourcePrefix = folderSpec.FolderPath.EndsWith('/')
+                // The folder marker key is the prefix with a trailing slash (S3 convention).
+                var folderMarkerKey = folderSpec.FolderPath.EndsWith('/')
                     ? folderSpec.FolderPath
                     : folderSpec.FolderPath + "/";
 
-                var expectedKeys = new HashSet<string>(folderSpec.ExpectedSourceKeys, StringComparer.OrdinalIgnoreCase);
-
-                var (hasUnexpected, listingFailed) = await HasUnexpectedKeysAsync(
-                    payload.BearerToken, payload.BucketName, sourcePrefix, expectedKeys);
+                var (hasFiles, listingFailed) = await HasAnyFilesAsync(
+                    payload.BearerToken, payload.BucketName, folderMarkerKey);
 
                 if (listingFailed)
                 {
                     _logger.LogWarning(
-                        "Could not verify source folder {FolderPath} is clean before deletion (listing failed). Skipping deletion for transfer {TransferId}.",
+                        "Could not verify source folder {FolderPath} is empty before cleanup (listing failed). Skipping deletion for transfer {TransferId}.",
                         folderSpec.FolderPath, payload.TransferId);
                     continue;
                 }
 
-                if (hasUnexpected)
+                if (hasFiles)
                 {
                     _logger.LogWarning(
-                        "Source folder {FolderPath} contains unexpected files after move. Skipping recursive deletion to avoid data loss. TransferId: {TransferId}.",
+                        "Source folder {FolderPath} still contains file objects. Skipping folder-marker deletion to avoid data loss. TransferId: {TransferId}.",
                         folderSpec.FolderPath, payload.TransferId);
                     continue;
                 }
 
+                // Only the folder marker key is deleted (isFolder: false = non-recursive).
+                // Individual source files were already removed by DeleteNetAppFiles, so this
+                // only cleans up the zero-byte directory entry.
                 var arg = _netAppArgFactory.CreateDeleteFileOrFolderArg(
                     payload.BearerToken,
                     payload.BucketName,
                     "DeleteSourceFolder",
-                    folderSpec.FolderPath,
-                    isFolder: true);
+                    folderMarkerKey,
+                    isFolder: false);
 
                 var result = await _netAppClient.DeleteFileOrFolderAsync(arg);
 
                 if (result.Success)
                     _logger.LogInformation(
-                        "Deleted source folder {FolderPath} for transfer {TransferId}.",
-                        folderSpec.FolderPath, payload.TransferId);
+                        "Deleted source folder marker {FolderMarkerKey} for transfer {TransferId}.",
+                        folderMarkerKey, payload.TransferId);
                 else
                     _logger.LogWarning(
-                        "Failed to delete source folder {FolderPath} for transfer {TransferId}. Error: {Error}",
-                        folderSpec.FolderPath, payload.TransferId, result.ErrorMessage);
+                        "Failed to delete source folder marker {FolderMarkerKey} for transfer {TransferId}. Error: {Error}",
+                        folderMarkerKey, payload.TransferId, result.ErrorMessage);
             }
             catch (Exception ex)
             {
@@ -85,12 +87,11 @@ public class DeleteNetAppSourceFolders(
     }
 
     /// <summary>
-    /// Pages through <paramref name="sourcePrefix"/> and returns true if any listed file key is
-    /// not present in <paramref name="expectedKeys"/>. Returns (false, true) when a listing page
-    /// fails so callers can treat the result as unsafe.
+    /// Returns (true, false) if any file objects exist under <paramref name="folderPrefix"/>.
+    /// Returns (false, true) when a listing page fails so callers can treat the result as unsafe.
     /// </summary>
-    private async Task<(bool HasUnexpected, bool ListingFailed)> HasUnexpectedKeysAsync(
-        string bearerToken, string bucketName, string sourcePrefix, HashSet<string> expectedKeys)
+    private async Task<(bool HasFiles, bool ListingFailed)> HasAnyFilesAsync(
+        string bearerToken, string bucketName, string folderPrefix)
     {
         string? continuationToken = null;
 
@@ -99,12 +100,12 @@ public class DeleteNetAppSourceFolders(
             var arg = _netAppArgFactory.CreateListObjectsInBucketArg(
                 bearerToken, bucketName,
                 continuationToken: continuationToken,
-                prefix: sourcePrefix);
+                prefix: folderPrefix);
             var result = await _netAppClient.ListObjectsInBucketAsync(arg);
 
             if (result == null) return (false, true);
 
-            if (result.Data.FileData.Any(f => !expectedKeys.Contains(f.Path)))
+            if (result.Data.FileData.Any())
                 return (true, false);
 
             continuationToken = result.Pagination.NextContinuationToken;
