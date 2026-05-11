@@ -8,5 +8,11 @@ public class DeleteNetAppSourceFoldersPayload
     public required string UserName { get; set; }
     public Guid? CorrelationId { get; set; } = null;
     public int? CaseId { get; set; } = null;
-    public required List<string> SourceFolderPaths { get; set; }
+    public required List<SourceFolderDeleteSpec> SourceFolders { get; set; }
+}
+
+public class SourceFolderDeleteSpec
+{
+    public required string FolderPath { get; set; }
+    public required List<string> ExpectedSourceKeys { get; set; }
 }

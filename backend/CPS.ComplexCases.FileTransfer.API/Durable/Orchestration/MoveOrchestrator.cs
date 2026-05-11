@@ -85,7 +85,11 @@ public class MoveOrchestrator(
             .Where(op => string.Equals(op.Type, "Folder", StringComparison.OrdinalIgnoreCase)
                 && op.ExpectedSourceKeys.Count > 0
                 && op.ExpectedSourceKeys.All(k => successfulSourceKeySet.Contains(k)))
-            .Select(op => op.SourcePath)
+            .Select(op => new SourceFolderDeleteSpec
+            {
+                FolderPath = op.SourcePath,
+                ExpectedSourceKeys = op.ExpectedSourceKeys,
+            })
             .ToList();
 
         if (foldersToDelete.Count > 0)
@@ -100,7 +104,7 @@ public class MoveOrchestrator(
                     UserName = input.UserName!,
                     CorrelationId = input.CorrelationId,
                     CaseId = input.CaseId,
-                    SourceFolderPaths = foldersToDelete,
+                    SourceFolders = foldersToDelete,
                 });
         }
     }

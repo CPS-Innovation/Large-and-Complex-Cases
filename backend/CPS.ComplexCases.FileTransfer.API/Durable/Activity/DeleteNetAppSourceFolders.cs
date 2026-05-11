@@ -26,15 +26,40 @@ public class DeleteNetAppSourceFolders(
 
         _initializationHandler.Initialize(payload.UserName, payload.CorrelationId, payload.CaseId);
 
-        foreach (var folderPath in payload.SourceFolderPaths)
+        foreach (var folderSpec in payload.SourceFolders)
         {
             try
             {
+                var sourcePrefix = folderSpec.FolderPath.EndsWith('/')
+                    ? folderSpec.FolderPath
+                    : folderSpec.FolderPath + "/";
+
+                var expectedKeys = new HashSet<string>(folderSpec.ExpectedSourceKeys, StringComparer.OrdinalIgnoreCase);
+
+                var (hasUnexpected, listingFailed) = await HasUnexpectedKeysAsync(
+                    payload.BearerToken, payload.BucketName, sourcePrefix, expectedKeys);
+
+                if (listingFailed)
+                {
+                    _logger.LogWarning(
+                        "Could not verify source folder {FolderPath} is clean before deletion (listing failed). Skipping deletion for transfer {TransferId}.",
+                        folderSpec.FolderPath, payload.TransferId);
+                    continue;
+                }
+
+                if (hasUnexpected)
+                {
+                    _logger.LogWarning(
+                        "Source folder {FolderPath} contains unexpected files after move. Skipping recursive deletion to avoid data loss. TransferId: {TransferId}.",
+                        folderSpec.FolderPath, payload.TransferId);
+                    continue;
+                }
+
                 var arg = _netAppArgFactory.CreateDeleteFileOrFolderArg(
                     payload.BearerToken,
                     payload.BucketName,
                     "DeleteSourceFolder",
-                    folderPath,
+                    folderSpec.FolderPath,
                     isFolder: true);
 
                 var result = await _netAppClient.DeleteFileOrFolderAsync(arg);
@@ -42,11 +67,11 @@ public class DeleteNetAppSourceFolders(
                 if (result.Success)
                     _logger.LogInformation(
                         "Deleted source folder {FolderPath} for transfer {TransferId}.",
-                        folderPath, payload.TransferId);
+                        folderSpec.FolderPath, payload.TransferId);
                 else
                     _logger.LogWarning(
                         "Failed to delete source folder {FolderPath} for transfer {TransferId}. Error: {Error}",
-                        folderPath, payload.TransferId, result.ErrorMessage);
+                        folderSpec.FolderPath, payload.TransferId, result.ErrorMessage);
             }
             catch (Exception ex)
             {
@@ -54,8 +79,38 @@ public class DeleteNetAppSourceFolders(
                 // roll back or fail the orchestration.
                 _logger.LogError(ex,
                     "Unexpected error deleting source folder {FolderPath} for transfer {TransferId}.",
-                    folderPath, payload.TransferId);
+                    folderSpec.FolderPath, payload.TransferId);
             }
         }
+    }
+
+    /// <summary>
+    /// Pages through <paramref name="sourcePrefix"/> and returns true if any listed file key is
+    /// not present in <paramref name="expectedKeys"/>. Returns (false, true) when a listing page
+    /// fails so callers can treat the result as unsafe.
+    /// </summary>
+    private async Task<(bool HasUnexpected, bool ListingFailed)> HasUnexpectedKeysAsync(
+        string bearerToken, string bucketName, string sourcePrefix, HashSet<string> expectedKeys)
+    {
+        string? continuationToken = null;
+
+        do
+        {
+            var arg = _netAppArgFactory.CreateListObjectsInBucketArg(
+                bearerToken, bucketName,
+                continuationToken: continuationToken,
+                prefix: sourcePrefix);
+            var result = await _netAppClient.ListObjectsInBucketAsync(arg);
+
+            if (result == null) return (false, true);
+
+            if (result.Data.FileData.Any(f => !expectedKeys.Contains(f.Path)))
+                return (true, false);
+
+            continuationToken = result.Pagination.NextContinuationToken;
+        }
+        while (!string.IsNullOrEmpty(continuationToken));
+
+        return (false, false);
     }
 }

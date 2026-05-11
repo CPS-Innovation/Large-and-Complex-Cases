@@ -129,6 +129,19 @@ public class InitiateBatchMove(
             return new ConflictObjectResult(preflight409Errors);
         }
 
+        var duplicateDestKeys = moveFileItems
+            .GroupBy(f => f.DestinationPrefix + f.DestinationFileName, StringComparer.OrdinalIgnoreCase)
+            .Where(g => g.Count() > 1)
+            .Select(g => $"Duplicate destination within batch: {g.Key}")
+            .ToList();
+
+        if (duplicateDestKeys.Count > 0)
+        {
+            _logger.LogWarning("Duplicate destination keys in batch for CaseId: {CaseId}. CorrelationId: {CorrelationId}. Keys: {Keys}",
+                request.CaseId, correlationId, duplicateDestKeys);
+            return new BadRequestObjectResult(duplicateDestKeys);
+        }
+
         if (moveFileItems.Count == 0)
             return new BadRequestObjectResult("No files found to move after expanding all operations.");
 
@@ -278,7 +291,7 @@ public class InitiateBatchMove(
             return EmptyResult(error409: $"A file already exists at the destination: {computedDest}");
 
         var (caseClashFound, caseClashListingFailed) = await CheckCaseInsensitiveClashAsync(
-            request.BearerToken, request.BucketName, request.DestinationPrefix, fileName, computedDest);
+            request.BearerToken, request.BucketName, request.DestinationPrefix, computedDest);
 
         if (caseClashListingFailed)
         {
@@ -361,7 +374,7 @@ public class InitiateBatchMove(
     }
 
     private async Task<(bool ClashFound, bool ListingFailed)> CheckCaseInsensitiveClashAsync(
-        string bearerToken, string bucketName, string destinationPrefix, string fileName, string computedDest)
+        string bearerToken, string bucketName, string destinationPrefix, string computedDest)
     {
         string? continuationToken = null;
 
@@ -376,7 +389,7 @@ public class InitiateBatchMove(
             if (result == null) return (false, true);
 
             if (result.Data.FileData.Any(f =>
-                    string.Equals(Path.GetFileName(f.Path), fileName, StringComparison.OrdinalIgnoreCase)
+                    string.Equals(f.Path, computedDest, StringComparison.OrdinalIgnoreCase)
                     && !string.Equals(f.Path, computedDest, StringComparison.Ordinal)))
                 return (true, false);
 

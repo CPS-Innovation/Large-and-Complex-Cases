@@ -7,6 +7,7 @@ using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
+using CPS.ComplexCases.NetApp.Models.Dto;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -40,6 +41,18 @@ public class DeleteNetAppSourceFoldersTests
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
             .Returns((string bearer, string bucket, string op, string path, bool isFolder) =>
                 new DeleteFileOrFolderArg { BearerToken = bearer, BucketName = bucket, OperationName = op, Path = path });
+
+        _netAppArgFactoryMock
+            .Setup(f => f.CreateListObjectsInBucketArg(
+                It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<string>(), It.IsAny<bool>()))
+            .Returns((string bearer, string bucket, string? contToken, int? maxKeys, string? prefix, bool includeDelim) =>
+                new ListObjectsInBucketArg { BearerToken = bearer, BucketName = bucket, Prefix = prefix });
+
+        // Default: folder is empty — safe to delete.
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.IsAny<ListObjectsInBucketArg>()))
+            .ReturnsAsync(EmptyListResult());
 
         _activity = new DeleteNetAppSourceFolders(
             _netAppClientMock.Object,
@@ -206,7 +219,90 @@ public class DeleteNetAppSourceFoldersTests
             Times.Once);
     }
 
-    private DeleteNetAppSourceFoldersPayload CreatePayload(List<string> sourceFolderPaths) => new()
+    [Fact]
+    public async Task Run_WhenListingFails_SkipsDeletion()
+    {
+        var payload = CreatePayload(["Case/Folder"]);
+
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.IsAny<ListObjectsInBucketArg>()))
+            .ReturnsAsync((ListNetAppObjectsDto?)null);
+
+        await _activity.Run(payload, CancellationToken.None);
+
+        _netAppClientMock.Verify(
+            c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_WhenFolderContainsUnexpectedKey_SkipsDeletion()
+    {
+        var payload = CreatePayload(["Case/Folder"], expectedKeys: ["Case/Folder/expected.txt"]);
+
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.IsAny<ListObjectsInBucketArg>()))
+            .ReturnsAsync(ListResultWithFiles(["Case/Folder/expected.txt", "Case/Folder/unexpected.txt"]));
+
+        await _activity.Run(payload, CancellationToken.None);
+
+        _netAppClientMock.Verify(
+            c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_WhenFolderContainsOnlyExpectedKeys_ProceedsWithDeletion()
+    {
+        var folderPath = "Case/Folder";
+        var payload = CreatePayload([folderPath], expectedKeys: ["Case/Folder/file.txt"]);
+
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.IsAny<ListObjectsInBucketArg>()))
+            .ReturnsAsync(ListResultWithFiles(["Case/Folder/file.txt"]));
+
+        _netAppClientMock
+            .Setup(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()))
+            .ReturnsAsync(new DeleteNetAppResult(true, true, 1, null, null));
+
+        await _activity.Run(payload, CancellationToken.None);
+
+        _netAppClientMock.Verify(
+            c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_WhenOneOfTwoFoldersHasUnexpectedKey_DeletesOnlyCleanFolder()
+    {
+        var paths = new List<string> { "Case/Dirty", "Case/Clean" };
+        var payload = CreatePayload(paths);
+
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.Is<ListObjectsInBucketArg>(a => a.Prefix == "Case/Dirty/")))
+            .ReturnsAsync(ListResultWithFiles(["Case/Dirty/surprise.txt"]));
+
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.Is<ListObjectsInBucketArg>(a => a.Prefix == "Case/Clean/")))
+            .ReturnsAsync(EmptyListResult());
+
+        _netAppClientMock
+            .Setup(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()))
+            .ReturnsAsync(new DeleteNetAppResult(true, true, 1, null, null));
+
+        await _activity.Run(payload, CancellationToken.None);
+
+        _netAppClientMock.Verify(
+            c => c.DeleteFileOrFolderAsync(It.Is<DeleteFileOrFolderArg>(a => a.Path == "Case/Dirty")),
+            Times.Never);
+        _netAppClientMock.Verify(
+            c => c.DeleteFileOrFolderAsync(It.Is<DeleteFileOrFolderArg>(a => a.Path == "Case/Clean")),
+            Times.Once);
+    }
+
+    private DeleteNetAppSourceFoldersPayload CreatePayload(
+        List<string> folderPaths,
+        List<string>? expectedKeys = null) => new()
     {
         TransferId = _fixture.Create<Guid>(),
         BearerToken = BearerToken,
@@ -214,6 +310,32 @@ public class DeleteNetAppSourceFoldersTests
         UserName = UserName,
         CorrelationId = _fixture.Create<Guid>(),
         CaseId = _fixture.Create<int>(),
-        SourceFolderPaths = sourceFolderPaths,
+        SourceFolders = folderPaths
+            .Select(p => new SourceFolderDeleteSpec
+            {
+                FolderPath = p,
+                ExpectedSourceKeys = expectedKeys ?? [],
+            })
+            .ToList(),
+    };
+
+    private static ListNetAppObjectsDto EmptyListResult() =>
+        ListResultWithFiles([]);
+
+    private static ListNetAppObjectsDto ListResultWithFiles(IEnumerable<string> filePaths) => new()
+    {
+        Data = new ListNetAppDataDto
+        {
+            BucketName = BucketName,
+            FileData = filePaths.Select(p => new ListNetAppFileDataDto
+            {
+                Path = p,
+                Etag = "etag",
+                Filesize = 100,
+                LastModified = DateTime.UtcNow,
+            }),
+            FolderData = [],
+        },
+        Pagination = new PaginationDto(),
     };
 }
