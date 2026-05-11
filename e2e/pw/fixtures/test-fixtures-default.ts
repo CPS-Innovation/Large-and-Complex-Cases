@@ -25,6 +25,7 @@ export const test = base.extend<{ testData: TestSetupResult }>({
       uploadSubfolder: result.uploadSubfolder,
       destinationParentLabel: "2. Counsel only",
       netAppFolder: config.netAppOperationName,
+      caseId: result.caseId,
       testInfo,
     });
   }, { timeout: 300_000 }],

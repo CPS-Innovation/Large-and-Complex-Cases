@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit",
     "report": "npx playwright show-report ./playwright-report",
     "report:generate": "npx playwright test --reporter=html",
-    "report:junit": "npx playwright test --reporter=junit > test-results/results.xml"
+    "report:junit": "node -e \"require('fs').mkdirSync('test-results',{recursive:true})\" && npx playwright test --reporter=junit > test-results/results.xml"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",

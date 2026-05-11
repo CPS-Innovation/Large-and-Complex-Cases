@@ -37,7 +37,12 @@ export const test = base.extend<
 >({
   testOptions: [{ fileSizeMb: 100, fileCount: 1 }, { option: true }],
 
-  testData: async ({ testOptions, page }, use, testInfo) => {
+  // Fixture timeout bumped to 5 min to cover up to 200MB / 3x50MB uploads
+  // plus tactical + AAD login before the test body starts. test.setTimeout
+  // calls inside specs only kick in after this fixture finishes, so setup
+  // would otherwise be capped at the project-level 120s. Mirrors the same
+  // timeout the default-mode fixtures use.
+  testData: [async ({ testOptions, page }, use, testInfo) => {
     if (!fs.existsSync(STATE_FILE)) {
       throw new Error(
         `Shared register-case state missing at ${STATE_FILE}. ` +
@@ -127,10 +132,11 @@ export const test = base.extend<
       uploadSubfolder,
       destinationParentLabel: DESTINATION_PARENT,
       netAppFolder: REGISTER_CASE_NETAPP_FOLDER,
+      caseId: shared.caseId,
       testInfo,
       egressToken: token,
     });
-  },
+  }, { timeout: 300_000 }],
 });
 
 export { expect };

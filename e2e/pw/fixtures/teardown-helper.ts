@@ -4,7 +4,7 @@ import {
   deleteFiles,
   listEgressWorkspaceFilesByFolderId,
 } from "../helpers/egress-api";
-import { deleteNetAppFile } from "../helpers/netapp-api";
+import { deleteNetAppFiles } from "../helpers/netapp-api";
 import { getAuthTokens } from "../helpers/auth-api";
 import { loadEnvConfig } from "../helpers/env-config";
 import type { UploadedFile } from "../helpers/types";
@@ -16,6 +16,11 @@ export interface TeardownContext {
   uploadSubfolder?: string;
   destinationParentLabel: string;
   netAppFolder?: string;
+  // Case id is required for the NetApp batch-delete endpoint
+  // (DeleteNetAppBatch reads sourcePath against caseMetadata.NetappFolderPath).
+  // Undefined skips NetApp teardown — default mode only surfaces this when
+  // DEFAULT_CASE_ID is configured.
+  caseId?: number;
   testInfo: TestInfo;
   // Optional pre-acquired Egress token. When omitted, a fresh one is minted
   // from config.egressServiceAccountAuth so default-mode callers don't have
@@ -35,8 +40,9 @@ export interface TeardownContext {
  * 2. If destinationSubfolderId is known, list files the LCC backend wrote
  *    into "<destinationParentLabel>/<uploadSubfolder>/" during NetApp→Egress
  *    specs and delete them. Egress→NetApp specs leave this empty (no-op).
- * 3. If netAppFolder + lccApiBaseUrl are set, mint LCC auth tokens and
- *    delete the NetApp-side copies that Egress→NetApp specs left behind.
+ * 3. If netAppFolder + caseId + lccApiBaseUrl are set, mint LCC auth
+ *    tokens and POST /api/v1/netapp/delete/batch to remove the NetApp-side
+ *    copies that Egress→NetApp specs left behind.
  */
 export async function teardownTestData(ctx: TeardownContext): Promise<void> {
   if (ctx.testInfo.status !== "passed") return;
@@ -76,7 +82,7 @@ export async function teardownTestData(ctx: TeardownContext): Promise<void> {
     }
   }
 
-  if (ctx.netAppFolder && config.lccApiBaseUrl) {
+  if (ctx.netAppFolder && ctx.caseId && config.lccApiBaseUrl) {
     const { accessToken, cmsAuth } = await getAuthTokens(
       config.tenantId,
       config.clientId,
@@ -87,14 +93,13 @@ export async function teardownTestData(ctx: TeardownContext): Promise<void> {
       config.cmsUsername,
       config.cmsPassword
     );
-    for (const file of ctx.files) {
-      await deleteNetAppFile(
-        config.lccApiBaseUrl,
-        ctx.netAppFolder,
-        file.fileName,
-        accessToken,
-        cmsAuth
-      );
-    }
+    await deleteNetAppFiles(
+      config.lccApiBaseUrl,
+      ctx.caseId,
+      ctx.netAppFolder,
+      ctx.files.map((f) => f.fileName),
+      accessToken,
+      cmsAuth
+    );
   }
 }

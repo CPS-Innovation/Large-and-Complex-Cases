@@ -21,7 +21,11 @@ export async function registerCase(
     registeringUnitId: 2002,
     allocatedWcuId: 2012391,
     crest: "",
-    operationName: "",
+    // Set operationName so /api/v1/case-search returns a string here. The
+    // deployed frontend schema declares operationName as z.string()
+    // (non-nullable); empty/null operationName trips Zod and the search
+    // results page renders an error instead of the results table.
+    operationName: defendantSurname,
     courtLocationId: 0,
     courtLocationName: "",
     hearingDate: null,

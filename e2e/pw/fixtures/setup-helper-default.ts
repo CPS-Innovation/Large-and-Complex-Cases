@@ -166,10 +166,16 @@ export async function setupDefaultTestData(
 
   console.log("=== Browser Login Complete ===\n");
 
+  // Parse caseId for the NetApp batch-delete teardown. The string form is
+  // the env shape; the teardown helper needs a number, undefined when
+  // DEFAULT_CASE_ID isn't configured (NetApp teardown silently skips then).
+  const caseIdNum = caseId ? Number.parseInt(caseId, 10) : undefined;
+
   return {
     workspace: { id: workspaceId, name: workspaceName },
     files,
     caseUrn,
+    caseId: Number.isFinite(caseIdNum) ? caseIdNum : undefined,
     uploadSubfolder,
     destinationSubfolderId,
   };
