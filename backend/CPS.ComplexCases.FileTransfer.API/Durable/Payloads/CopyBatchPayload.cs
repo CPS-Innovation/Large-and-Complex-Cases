@@ -13,7 +13,7 @@ public class CopyBatchPayload
     public Guid ManageMaterialsOperationId { get; set; }
 }
 
-public class CopyFileItem
+public class CopyFileItem : IBatchFileItem
 {
     public required string SourceKey { get; set; }
     public required string DestinationPrefix { get; set; }
