@@ -20,7 +20,7 @@ public abstract class BatchOrchestratorBase<TPayload, TFileItem>(
     IOptions<SizeConfig> sizeConfig,
     ITelemetryClient telemetryClient,
     IInitializationHandler initializationHandler)
-    where TPayload : IBatchPayload<TFileItem>
+    where TPayload : class, IBatchPayload<TFileItem>
     where TFileItem : IBatchFileItem
 {
     private readonly SizeConfig _sizeConfig = sizeConfig.Value;
