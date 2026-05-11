@@ -24,33 +24,12 @@ public class WriteMoveActivityLog(
 
         var successfulKeySet = new HashSet<string>(payload.SuccessfulSourceKeys, StringComparer.OrdinalIgnoreCase);
 
-        var items = payload.OriginalOperations.Select(op =>
+        var items = payload.OriginalOperations.Select(op => new
         {
-            string outcome;
-
-            if (string.Equals(op.Type, "Folder", StringComparison.OrdinalIgnoreCase) && op.ExpectedSourceKeys.Count > 0)
-            {
-                var successCount = op.ExpectedSourceKeys.Count(key => successfulKeySet.Contains(key));
-                outcome = successCount == op.ExpectedSourceKeys.Count ? "Moved"
-                        : successCount > 0 ? "Partial"
-                        : "NotMoved";
-            }
-            else
-            {
-                outcome = successfulKeySet.Contains(op.SourcePath) ? "Moved" : "NotMoved";
-            }
-
-            var destinationPath = string.Equals(op.Type, "Folder", StringComparison.OrdinalIgnoreCase)
-                ? op.DestinationPrefix
-                : op.DestinationPrefix + Path.GetFileName(op.SourcePath);
-
-            return new
-            {
-                sourcePath = op.SourcePath,
-                destinationPath,
-                outcome,
-                type = op.Type
-            };
+            sourcePath = op.SourcePath,
+            destinationPath = GetDestinationPath(op),
+            outcome = DetermineOutcome(op, successfulKeySet),
+            type = op.Type
         }).ToList();
 
         var reportableOps = payload.OriginalOperations
@@ -93,4 +72,20 @@ public class WriteMoveActivityLog(
             _logger.LogError(ex, "Failed to write batch move activity log for CaseId: {CaseId}.", payload.CaseId);
         }
     }
+
+    private static string DetermineOutcome(MoveBatchOriginalOperation op, HashSet<string> successfulKeySet)
+    {
+        if (!string.Equals(op.Type, "Folder", StringComparison.OrdinalIgnoreCase) || op.ExpectedSourceKeys.Count == 0)
+            return successfulKeySet.Contains(op.SourcePath) ? "Moved" : "NotMoved";
+
+        var successCount = op.ExpectedSourceKeys.Count(key => successfulKeySet.Contains(key));
+        if (successCount == op.ExpectedSourceKeys.Count) return "Moved";
+        if (successCount > 0) return "Partial";
+        return "NotMoved";
+    }
+
+    private static string GetDestinationPath(MoveBatchOriginalOperation op) =>
+        string.Equals(op.Type, "Folder", StringComparison.OrdinalIgnoreCase)
+            ? op.DestinationPrefix
+            : op.DestinationPrefix + Path.GetFileName(op.SourcePath);
 }

@@ -33,7 +33,7 @@ public class MoveOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryClient 
         if (input == null)
         {
             logger.LogError("MoveOrchestrator input is null.");
-            throw new ArgumentNullException(nameof(input));
+            throw new ArgumentNullException(nameof(input));        
         }
 
         _initializationHandler.Initialize(input.UserName!, input.CorrelationId);
@@ -50,208 +50,23 @@ public class MoveOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryClient 
         var completedSuccessfully = false;
         try
         {
-            // 1. Initialize transfer entity
-            var transferEntity = new TransferEntity
-            {
-                Id = input.TransferId,
-                Status = TransferStatus.Initiated,
-                DestinationPath = string.Empty,
-                SourcePaths = input.Files.Select(f => new TransferSourcePath { Path = f.SourceKey }).ToList(),
-                CaseId = input.CaseId,
-                TransferType = TransferType.Move,
-                Direction = TransferDirection.NetAppToNetApp,
-                TotalFiles = input.Files.Count,
-                IsRetry = false,
-                UserName = input.UserName,
-                CorrelationId = input.CorrelationId,
-                BearerToken = input.BearerToken
-            };
+            var entityId = await InitializeTransferAsync(context, input);
 
-            var entityId = new EntityInstanceId(nameof(TransferEntityState), input.TransferId.ToString());
+            var allResults = await FanOutTransferFilesAsync(context, input, entityId, telemetryEvent);
 
-            await context.Entities.CallEntityAsync(
-                entityId,
-                nameof(TransferEntityState.Initialize),
-                transferEntity);
+            await RetryTransientFailuresAsync(context, entityId, input, allResults, telemetryEvent, logger);
 
-            // 2. Update status to InProgress
-            await context.CallActivityAsync(
-                nameof(UpdateTransferStatus),
-                new UpdateTransferStatusPayload
-                {
-                    TransferId = input.TransferId,
-                    Status = TransferStatus.InProgress,
-                });
+            var failedDeleteSourceKeySet = await DeleteCopiedSourceFilesAsync(context, input);
 
-            // 3. Fan-out TransferFile per MoveFileItem in batches (copy phase)
-            int batchSize = _sizeConfig.BatchSize;
-            var batch = new List<Task<TransferResult>>();
-            var allResults = new List<TransferResult>();
+            var successfulSourceKeySet = BuildSuccessfulSourceKeySet(allResults, failedDeleteSourceKeySet);
 
-            foreach (var fileItem in input.Files)
-            {
-                var transferFilePayload = new TransferFilePayload
-                {
-                    CaseId = input.CaseId,
-                    SourcePath = new TransferSourcePath
-                    {
-                        Path = fileItem.SourceKey,
-                        ModifiedPath = fileItem.DestinationFileName,
-                    },
-                    DestinationPath = fileItem.DestinationPrefix,
-                    TransferId = input.TransferId,
-                    TransferType = TransferType.Move,
-                    TransferDirection = TransferDirection.NetAppToNetApp,
-                    WorkspaceId = string.Empty,
-                    BearerToken = input.BearerToken,
-                    BucketName = input.BucketName,
-                    UserName = input.UserName!,
-                    CorrelationId = input.CorrelationId!,
-                };
+            await DeleteEmptySourceFoldersAsync(context, input, successfulSourceKeySet);
 
-                batch.Add(context.CallActivityAsync<TransferResult>(nameof(TransferFile), transferFilePayload));
-
-                if (batch.Count >= batchSize)
-                {
-                    var batchResults = await Task.WhenAll(batch);
-                    await ProcessTransferResults(context, entityId, batchResults, telemetryEvent);
-                    allResults.AddRange(batchResults);
-                    batch.Clear();
-                }
-            }
-
-            if (batch.Count > 0)
-            {
-                var remainingResults = await Task.WhenAll(batch);
-                await ProcessTransferResults(context, entityId, remainingResults, telemetryEvent);
-                allResults.AddRange(remainingResults);
-            }
-
-            // 4. Orchestrator-level retry for transient S3 failures
-            int maxOrchestratorRetries = _sizeConfig.MaxOrchestratorRetries;
-            for (int attempt = 0; attempt < maxOrchestratorRetries; attempt++)
-            {
-                var retryableFailures = allResults
-                    .Where(r => r != null && !r.IsSuccess && r.FailedItem?.ErrorCode == TransferErrorCode.Transient)
-                    .ToList();
-
-                if (retryableFailures.Count == 0) break;
-
-                logger.LogWarning(
-                    "MoveOrchestrator retry attempt {Attempt}/{MaxRetries}: re-attempting {Count} transiently failed files.",
-                    attempt + 1, maxOrchestratorRetries, retryableFailures.Count);
-
-                await context.CreateTimer(
-                    context.CurrentUtcDateTime.Add(TimeSpan.FromSeconds(30 * (attempt + 1))),
-                    CancellationToken.None);
-
-                var failedKeys = retryableFailures
-                    .Select(r => r.FailedItem!.SourcePath)
-                    .ToHashSet();
-
-                var retryFileItems = input.Files
-                    .Where(f => failedKeys.Contains(f.SourceKey))
-                    .ToList();
-
-                await context.Entities.CallEntityAsync(
-                    entityId,
-                    nameof(TransferEntityState.RemoveTransientFailures));
-
-                telemetryEvent.TotalFilesFailed -= retryableFailures.Count;
-
-                var retryBatch = retryFileItems.Select(fileItem =>
-                    context.CallActivityAsync<TransferResult>(
-                        nameof(TransferFile),
-                        new TransferFilePayload
-                        {
-                            CaseId = input.CaseId,
-                            SourcePath = new TransferSourcePath
-                            {
-                                Path = fileItem.SourceKey,
-                                ModifiedPath = fileItem.DestinationFileName,
-                            },
-                            DestinationPath = fileItem.DestinationPrefix,
-                            TransferId = input.TransferId,
-                            TransferType = TransferType.Move,
-                            TransferDirection = TransferDirection.NetAppToNetApp,
-                            WorkspaceId = string.Empty,
-                            BearerToken = input.BearerToken,
-                            BucketName = input.BucketName,
-                            UserName = input.UserName!,
-                            CorrelationId = input.CorrelationId!,
-                        })).ToList();
-
-                var retryResults = await Task.WhenAll(retryBatch);
-                await ProcessTransferResults(context, entityId, retryResults, telemetryEvent, isRetry: true);
-
-                allResults.RemoveAll(r => r != null && !r.IsSuccess && r.FailedItem?.ErrorCode == TransferErrorCode.Transient);
-                allResults.AddRange(retryResults);
-            }
-
-            // 5. Delete phase — remove source keys for all successfully copied files
-            var deletionErrors = await context.CallActivityAsync<List<DeletionError>>(
-                nameof(DeleteNetAppFiles),
-                new DeleteNetAppFilesPayload
-                {
-                    TransferId = input.TransferId,
-                    BearerToken = input.BearerToken,
-                    BucketName = input.BucketName,
-                    UserName = input.UserName!,
-                    CorrelationId = input.CorrelationId,
-                    CaseId = input.CaseId,
-                });
-
-            // Keys whose source could not be deleted are not truly moved — exclude them from all
-            // downstream consumers so the activity log and folder-deletion check reflect this.
-            var failedDeleteSourceKeySet = new HashSet<string>(
-                (deletionErrors ?? []).Select(e => e.FileId),
-                StringComparer.OrdinalIgnoreCase);
-
-            // 6. Delete now-empty source folders for Folder operations where every file was moved
-            var successfulSourceKeySet = new HashSet<string>(
-                allResults
-                    .Where(r => r.IsSuccess && r.SuccessfulItem != null
-                        && !failedDeleteSourceKeySet.Contains(r.SuccessfulItem.SourcePath))
-                    .Select(r => r.SuccessfulItem!.SourcePath),
-                StringComparer.OrdinalIgnoreCase);
-
-            var foldersToDelete = input.OriginalOperations
-                .Where(op => string.Equals(op.Type, "Folder", StringComparison.OrdinalIgnoreCase)
-                    && op.ExpectedSourceKeys.Count > 0
-                    && op.ExpectedSourceKeys.All(k => successfulSourceKeySet.Contains(k)))
-                .Select(op => op.SourcePath)
-                .ToList();
-
-            if (foldersToDelete.Count > 0)
-            {
-                await context.CallActivityAsync(
-                    nameof(DeleteNetAppSourceFolders),
-                    new DeleteNetAppSourceFoldersPayload
-                    {
-                        TransferId = input.TransferId,
-                        BearerToken = input.BearerToken,
-                        BucketName = input.BucketName,
-                        UserName = input.UserName!,
-                        CorrelationId = input.CorrelationId,
-                        CaseId = input.CaseId,
-                        SourceFolderPaths = foldersToDelete,
-                    });
-            }
-
-            // 7. Finalize transfer
             await context.CallActivityAsync(
                 nameof(FinalizeTransfer),
-                new FinalizeTransferPayload
-                {
-                    TransferId = input.TransferId,
-                });
+                new FinalizeTransferPayload { TransferId = input.TransferId });
 
-            // 8. Write activity log entries per original operation
-            var successfulSourceKeys = allResults
-                .Where(r => r.IsSuccess && r.SuccessfulItem != null
-                    && !failedDeleteSourceKeySet.Contains(r.SuccessfulItem.SourcePath))
-                .Select(r => r.SuccessfulItem!.SourcePath)
-                .ToList();
+            var successfulSourceKeys = successfulSourceKeySet.ToList();
 
             await context.CallActivityAsync(
                 nameof(WriteMoveActivityLog),
@@ -284,7 +99,6 @@ public class MoveOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryClient 
         }
         finally
         {
-            // 9. Remove case_active_manage_materials row — best effort; swallowed in the activity
             await context.CallActivityAsync(
                 nameof(RemoveActiveManageMaterialsOperation),
                 input.ManageMaterialsOperationId);
@@ -294,6 +108,192 @@ public class MoveOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryClient 
             _telemetryClient.TrackEvent(telemetryEvent);
         }
     }
+
+    private static async Task<EntityInstanceId> InitializeTransferAsync(TaskOrchestrationContext context, MoveBatchPayload input)
+    {
+        var transferEntity = new TransferEntity
+        {
+            Id = input.TransferId,
+            Status = TransferStatus.Initiated,
+            DestinationPath = string.Empty,
+            SourcePaths = input.Files.Select(f => new TransferSourcePath { Path = f.SourceKey }).ToList(),
+            CaseId = input.CaseId,
+            TransferType = TransferType.Move,
+            Direction = TransferDirection.NetAppToNetApp,
+            TotalFiles = input.Files.Count,
+            IsRetry = false,
+            UserName = input.UserName,
+            CorrelationId = input.CorrelationId,
+            BearerToken = input.BearerToken
+        };
+
+        var entityId = new EntityInstanceId(nameof(TransferEntityState), input.TransferId.ToString());
+
+        await context.Entities.CallEntityAsync(entityId, nameof(TransferEntityState.Initialize), transferEntity);
+
+        await context.CallActivityAsync(
+            nameof(UpdateTransferStatus),
+            new UpdateTransferStatusPayload
+            {
+                TransferId = input.TransferId,
+                Status = TransferStatus.InProgress,
+            });
+
+        return entityId;
+    }
+
+    private async Task<List<TransferResult>> FanOutTransferFilesAsync(
+        TaskOrchestrationContext context,
+        MoveBatchPayload input,
+        EntityInstanceId entityId,
+        TransferOrchestrationEvent telemetryEvent)
+    {
+        int batchSize = _sizeConfig.BatchSize;
+        var batch = new List<Task<TransferResult>>();
+        var allResults = new List<TransferResult>();
+
+        foreach (var fileItem in input.Files)
+        {
+            batch.Add(context.CallActivityAsync<TransferResult>(nameof(TransferFile), BuildTransferPayload(fileItem, input)));
+
+            if (batch.Count >= batchSize)
+            {
+                var batchResults = await Task.WhenAll(batch);
+                await ProcessTransferResults(context, entityId, batchResults, telemetryEvent);
+                allResults.AddRange(batchResults);
+                batch.Clear();
+            }
+        }
+
+        if (batch.Count > 0)
+        {
+            var remainingResults = await Task.WhenAll(batch);
+            await ProcessTransferResults(context, entityId, remainingResults, telemetryEvent);
+            allResults.AddRange(remainingResults);
+        }
+
+        return allResults;
+    }
+
+    private async Task RetryTransientFailuresAsync(
+        TaskOrchestrationContext context,
+        EntityInstanceId entityId,
+        MoveBatchPayload input,
+        List<TransferResult> allResults,
+        TransferOrchestrationEvent telemetryEvent,
+        ILogger logger)
+    {
+        int maxOrchestratorRetries = _sizeConfig.MaxOrchestratorRetries;
+        for (int attempt = 0; attempt < maxOrchestratorRetries; attempt++)
+        {
+            var retryableFailures = allResults
+                .Where(r => r != null && !r.IsSuccess && r.FailedItem?.ErrorCode == TransferErrorCode.Transient)
+                .ToList();
+
+            if (retryableFailures.Count == 0) break;
+
+            logger.LogWarning(
+                "MoveOrchestrator retry attempt {Attempt}/{MaxRetries}: re-attempting {Count} transiently failed files.",
+                attempt + 1, maxOrchestratorRetries, retryableFailures.Count);
+
+            await context.CreateTimer(
+                context.CurrentUtcDateTime.Add(TimeSpan.FromSeconds(30 * (attempt + 1))),
+                CancellationToken.None);
+
+            var failedKeys = retryableFailures.Select(r => r.FailedItem!.SourcePath).ToHashSet();
+            var retryFileItems = input.Files.Where(f => failedKeys.Contains(f.SourceKey)).ToList();
+
+            await context.Entities.CallEntityAsync(entityId, nameof(TransferEntityState.RemoveTransientFailures));
+
+            telemetryEvent.TotalFilesFailed -= retryableFailures.Count;
+
+            var retryBatch = retryFileItems
+                .Select(fileItem => context.CallActivityAsync<TransferResult>(nameof(TransferFile), BuildTransferPayload(fileItem, input)))
+                .ToList();
+
+            var retryResults = await Task.WhenAll(retryBatch);
+            await ProcessTransferResults(context, entityId, retryResults, telemetryEvent, isRetry: true);
+
+            allResults.RemoveAll(r => r != null && !r.IsSuccess && r.FailedItem?.ErrorCode == TransferErrorCode.Transient);
+            allResults.AddRange(retryResults);
+        }
+    }
+
+    private async Task<HashSet<string>> DeleteCopiedSourceFilesAsync(TaskOrchestrationContext context, MoveBatchPayload input)
+    {
+        var deletionErrors = await context.CallActivityAsync<List<DeletionError>>(
+            nameof(DeleteNetAppFiles),
+            new DeleteNetAppFilesPayload
+            {
+                TransferId = input.TransferId,
+                BearerToken = input.BearerToken,
+                BucketName = input.BucketName,
+                UserName = input.UserName!,
+                CorrelationId = input.CorrelationId,
+                CaseId = input.CaseId,
+            });
+
+        return new HashSet<string>(
+            (deletionErrors ?? []).Select(e => e.FileId),
+            StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static HashSet<string> BuildSuccessfulSourceKeySet(List<TransferResult> allResults, HashSet<string> failedDeleteSourceKeySet) =>
+        new(
+            allResults
+                .Where(r => r.IsSuccess && r.SuccessfulItem != null
+                    && !failedDeleteSourceKeySet.Contains(r.SuccessfulItem.SourcePath))
+                .Select(r => r.SuccessfulItem!.SourcePath),
+            StringComparer.OrdinalIgnoreCase);
+
+    private static async Task DeleteEmptySourceFoldersAsync(
+        TaskOrchestrationContext context,
+        MoveBatchPayload input,
+        HashSet<string> successfulSourceKeySet)
+    {
+        var foldersToDelete = input.OriginalOperations
+            .Where(op => string.Equals(op.Type, "Folder", StringComparison.OrdinalIgnoreCase)
+                && op.ExpectedSourceKeys.Count > 0
+                && op.ExpectedSourceKeys.All(k => successfulSourceKeySet.Contains(k)))
+            .Select(op => op.SourcePath)
+            .ToList();
+
+        if (foldersToDelete.Count > 0)
+        {
+            await context.CallActivityAsync(
+                nameof(DeleteNetAppSourceFolders),
+                new DeleteNetAppSourceFoldersPayload
+                {
+                    TransferId = input.TransferId,
+                    BearerToken = input.BearerToken,
+                    BucketName = input.BucketName,
+                    UserName = input.UserName!,
+                    CorrelationId = input.CorrelationId,
+                    CaseId = input.CaseId,
+                    SourceFolderPaths = foldersToDelete,
+                });
+        }
+    }
+
+    private static TransferFilePayload BuildTransferPayload(MoveFileItem fileItem, MoveBatchPayload input) =>
+        new()
+        {
+            CaseId = input.CaseId,
+            SourcePath = new TransferSourcePath
+            {
+                Path = fileItem.SourceKey,
+                ModifiedPath = fileItem.DestinationFileName,
+            },
+            DestinationPath = fileItem.DestinationPrefix,
+            TransferId = input.TransferId,
+            TransferType = TransferType.Move,
+            TransferDirection = TransferDirection.NetAppToNetApp,
+            WorkspaceId = string.Empty,
+            BearerToken = input.BearerToken,
+            BucketName = input.BucketName,
+            UserName = input.UserName!,
+            CorrelationId = input.CorrelationId!,
+        };
 
     private static async Task ProcessTransferResults(
         TaskOrchestrationContext context,
