@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace CPS.ComplexCases.Common.Models.Requests;
 
-public class MoveNetAppBatchRequest
+public class MoveNetAppBatchRequest : INetAppBatchRequest<MoveNetAppBatchOperationRequest>
 {
     [JsonPropertyName("caseId")]
     public int CaseId { get; set; }
@@ -23,7 +23,7 @@ public class MoveNetAppBatchRequest
     public string? UserName { get; set; }
 }
 
-public class MoveNetAppBatchOperationRequest
+public class MoveNetAppBatchOperationRequest : INetAppBatchOperationRequest
 {
     [JsonPropertyName("type")]
     public required string Type { get; set; }
