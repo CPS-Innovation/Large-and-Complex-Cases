@@ -1,4 +1,4 @@
-import * as GDS from "govuk-react-jsx";
+import { Panel as GDSPanel } from "govuk-react-jsx";
 import React from "react";
 
 type Props = {
@@ -6,4 +6,4 @@ type Props = {
   headingLevel?: 1 | 2 | 3 | 4 | 5 | 6;
   children?: React.ReactNode;
 };
-export const Panel: React.FC<Props> = (props) => <GDS.Panel {...props} />;
+export const Panel: React.FC<Props> = (props) => <GDSPanel {...props} />;

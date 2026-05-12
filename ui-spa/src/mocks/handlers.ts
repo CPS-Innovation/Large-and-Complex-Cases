@@ -196,7 +196,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
     }),
     http.delete(`${baseUrl}/api/v1/netapp/connections`, async () => {
       await delay(1500);
-      return new HttpResponse(null, { status: 500 });
+      return new HttpResponse(null, { status: 200 });
     }),
   ];
 };

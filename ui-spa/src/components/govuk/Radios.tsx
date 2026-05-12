@@ -16,12 +16,12 @@ export type RadiosProps = {
     children: React.ReactNode;
   };
   className?: string;
-  value: string | undefined;
+  value?: string;
   name: string;
   items: {
     reactListKey?: string;
     id?: string;
-    value?: string | undefined;
+    value?: string;
     children: React.ReactNode;
     conditional?: { children: React.ReactNode[] };
     disabled?: boolean; // disabling only children not parent takes effect
