@@ -12,7 +12,7 @@ const DisconnectSharedDriveSuccessPage = () => {
   return (
     <div className={styles.contentWrapper}>
       <Panel titleChildren="Shared Drive disconnected"></Panel>
-      <p>You&apos;ve disconnected the Shared Drive folder</p>
+      <p>You&apos;ve disconnected the Shared Drive folder.</p>
       <p>You can connect a different folder if you need to.</p>
       <Link
         to={`/search-results?urn=${urn}`}

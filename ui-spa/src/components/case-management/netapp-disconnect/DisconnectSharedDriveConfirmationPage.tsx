@@ -25,6 +25,8 @@ const DisconnectSharedDriveConfirmationPage = () => {
   };
   const errorSummaryRef = useRef<HTMLInputElement>(null);
 
+  const [disableButtons, setDisableButtons] = useState(false);
+
   const [formData, setFormData] = useState<{
     disconnectSharedDriveRadio?: GeneralRadioValue;
   }>({
@@ -37,7 +39,7 @@ const DisconnectSharedDriveConfirmationPage = () => {
     (errorKey: keyof FormDataErrors) => {
       return {
         children: formDataErrors[errorKey]?.errorSummaryText,
-        href: "#disconnect-shared-drive-yes",
+        href: "#disconnect-shared-drive-radio-yes",
         "data-testid": "disconnect-shared-drive-radio-link",
       };
     },
@@ -96,8 +98,9 @@ const DisconnectSharedDriveConfirmationPage = () => {
       navigate(`/case/${caseId}/case-management`);
       return;
     }
-
+    setDisableButtons(true);
     const response = await disconnectNetAppFolder(caseId);
+    setDisableButtons(false);
     if (!response.ok) {
       navigate(
         `/case/${caseId}/case-management/disconnect-shared-drive-failure`,
@@ -147,16 +150,16 @@ const DisconnectSharedDriveConfirmationPage = () => {
             }
             items={[
               {
-                id: "disconnect-shared-drive-yes",
-                children: "Yes, cancel registration and delete the information",
+                id: "disconnect-shared-drive-radio-yes",
+                children: "Yes, disconnect this folder",
                 value: "yes",
-                "data-testid": "disconnect-shared-drive-yes",
+                "data-testid": "disconnect-shared-drive-radio-yes",
               },
               {
-                id: "disconnect-shared-drive-no",
-                children: "No, go back and continue registration",
+                id: "disconnect-shared-drive-radio-no",
+                children: "No, keep this folder connected",
                 value: "no",
-                "data-testid": "disconnect-shared-drive-no",
+                "data-testid": "disconnect-shared-drive-radio-no",
               },
             ]}
             value={formData.disconnectSharedDriveRadio}
@@ -166,8 +169,12 @@ const DisconnectSharedDriveConfirmationPage = () => {
           ></Radios>
         </div>
         <div className={styles.buttonWrapper}>
-          <Button type="submit">Continue</Button>
-          <Link to={`/case/${caseId}/case-management`}>cancel</Link>
+          <Button type="submit" disabled={disableButtons}>
+            Continue
+          </Button>
+          {!disableButtons && (
+            <Link to={`/case/${caseId}/case-management`}>cancel</Link>
+          )}
         </div>
       </form>
     </div>

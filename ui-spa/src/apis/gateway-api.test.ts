@@ -15,6 +15,7 @@ import {
   handleFileTransferClear,
   getActivityLog,
   downloadActivityLog,
+  disconnectNetAppFolder,
 } from "./gateway-api";
 import { ApiError } from "../common/errors/ApiError";
 import { v4 } from "uuid";
@@ -1969,7 +1970,6 @@ describe("gateway apis", () => {
       );
     });
   });
-
   describe("downloadActivityLog", () => {
     it("downloadActivityLog - should succesfully make the fetch call and return the response", async () => {
       const mockBlob = new Blob(["hello"], { type: "text/csv" });
@@ -2019,6 +2019,57 @@ describe("gateway apis", () => {
         `gateway_url/api/v1/activity/test_activity_id/logs/download`,
         expect.objectContaining({
           method: "GET",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+  });
+  describe("disconnectNetAppFolder", () => {
+    it("disconnectNetAppFolder - should return correct response if the DELETE request is successful", async () => {
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: true,
+      });
+
+      const result = await disconnectNetAppFolder(123);
+      expect(result).toEqual({ ok: true });
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/v1/netapp/connections?case-id=123`,
+        expect.objectContaining({
+          method: "DELETE",
+          credentials: "include",
+          headers: {
+            Authorization: "Bearer access_token",
+            "Correlation-Id": "id_123",
+          },
+        }),
+      );
+    });
+
+    it("disconnectNetAppFolder - should return correct response if the DELETE request is unsuccessful", async () => {
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+      });
+
+      const result = await disconnectNetAppFolder(123);
+      expect(result).toEqual({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+      });
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/v1/netapp/connections?case-id=123`,
+        expect.objectContaining({
+          method: "DELETE",
           credentials: "include",
           headers: {
             Authorization: "Bearer access_token",

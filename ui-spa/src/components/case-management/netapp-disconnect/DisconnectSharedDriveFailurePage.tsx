@@ -1,38 +1,31 @@
 import { Button } from "../../govuk";
-import { useLocation, Link, useNavigate } from "react-router-dom";
-import { disconnectNetAppFolder } from "../../../apis/gateway-api";
+import { useLocation, useNavigate } from "react-router-dom";
 import styles from "./DisconnectSharedDriveFailurePage.module.scss";
 
 const DisconnectSharedDriveFailurePage = () => {
   const {
-    state: { caseId, urn },
+    state: { caseId },
   }: {
     state: {
       caseId: number;
-      urn: string;
     };
   } = useLocation();
   const navigate = useNavigate();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    const response = await disconnectNetAppFolder(caseId);
-    if (!response.ok) return;
-    navigate(
-      `/case/${caseId}/case-management/disconnect-shared-drive-success`,
-      { state: { urn } },
-    );
+
+    navigate(`/case/${caseId}/case-management`);
   };
 
   return (
     <div className={styles.contentWrapper}>
-      <h1>There is a problem</h1>
-      <p>The Shared Drive folder could not be disconnected. Try again.</p>
+      <h1>Could not disconnect the Shared Drive folder</h1>
+      <p>Try again.</p>
       <p>If the problem continues, contact the product team for support.</p>
 
       <div className={styles.buttonWrapper}>
-        <Button onClick={handleSubmit}>Continue</Button>
-        <Link to={`/case/${caseId}/case-management`}>cancel</Link>
+        <Button onClick={handleSubmit}>continue</Button>
       </div>
     </div>
   );
