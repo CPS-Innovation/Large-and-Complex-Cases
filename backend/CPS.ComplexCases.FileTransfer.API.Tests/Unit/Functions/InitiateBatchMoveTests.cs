@@ -581,6 +581,37 @@ public class InitiateBatchMoveTests
     }
 
     [Fact]
+    public async Task Run_WhenFolderContainsOnlyMarkerAlongsideValidMaterial_ReturnsBadRequest()
+    {
+        var folderMarker = FolderSourcePath;
+
+        SetupValidRequest(CreateMixedRequest());
+        SetupNoActiveTransfer();
+
+        // Folder probe finds the marker, so exists check passes
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.Is<ListObjectsInBucketArg>(a =>
+                a.Prefix == FolderSourcePath && a.MaxKeys == "1")))
+            .ReturnsAsync(MakeListResult([folderMarker]));
+
+        // Full expansion returns only the marker — filtered to zero movable files
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.Is<ListObjectsInBucketArg>(a =>
+                a.Prefix == FolderSourcePath && a.MaxKeys == null)))
+            .ReturnsAsync(MakeListResult([folderMarker]));
+
+        SetupMaterialSourceExists();
+        SetupMaterialDestinationMissing();
+        SetupNoClashAtDestination();
+
+        var result = await _function.Run(CreateHttpRequest(), _durableClientStub);
+
+        var bad = Assert.IsType<BadRequestObjectResult>(result);
+        var errors = Assert.IsAssignableFrom<IEnumerable<string>>(bad.Value);
+        Assert.Contains(errors, e => e.Contains(FolderSourcePath));
+    }
+
+    [Fact]
     public async Task Run_WhenNoFilesFoundAfterFolderExpansion_ReturnsBadRequest()
     {
         SetupValidRequest(CreateFolderRequest());
@@ -865,6 +896,20 @@ public class InitiateBatchMoveTests
         Operations =
         [
             new MoveNetAppBatchOperationRequest { Type = "Folder", SourcePath = FolderSourcePath }
+        ],
+        BearerToken = BearerToken,
+        BucketName = BucketName,
+        UserName = "user@example.com",
+    };
+
+    private static MoveNetAppBatchRequest CreateMixedRequest() => new()
+    {
+        CaseId = CaseId,
+        DestinationPrefix = DestinationPrefix,
+        Operations =
+        [
+            new MoveNetAppBatchOperationRequest { Type = "Folder", SourcePath = FolderSourcePath },
+            new MoveNetAppBatchOperationRequest { Type = "Material", SourcePath = MaterialSourcePath }
         ],
         BearerToken = BearerToken,
         BucketName = BucketName,

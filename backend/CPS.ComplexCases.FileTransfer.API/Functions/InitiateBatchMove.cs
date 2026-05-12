@@ -49,7 +49,8 @@ public class InitiateBatchMove(
         MoveBatchOriginalOperation? OriginalOperation,
         List<string> Errors404,
         List<string> Errors409,
-        List<string> ListingErrors);
+        List<string> ListingErrors,
+        List<string> Errors400);
 
     [Function(nameof(InitiateBatchMove))]
     [OpenApiOperation(operationId: nameof(InitiateBatchMove), tags: ["NetApp"], Description = "Accepts a batch of NetApp move operations for a single case and starts asynchronous processing. Returns a transferId for status polling.")]
@@ -94,6 +95,7 @@ public class InitiateBatchMove(
         var preflight409Errors = new List<string>();
         var preflight404Errors = new List<string>();
         var preflightListingErrors = new List<string>();
+        var preflight400Errors = new List<string>();
 
         foreach (var op in request.Operations)
         {
@@ -106,6 +108,7 @@ public class InitiateBatchMove(
             preflight404Errors.AddRange(result.Errors404);
             preflight409Errors.AddRange(result.Errors409);
             preflightListingErrors.AddRange(result.ListingErrors);
+            preflight400Errors.AddRange(result.Errors400);
         }
 
         if (preflightListingErrors.Count > 0)
@@ -127,6 +130,13 @@ public class InitiateBatchMove(
             _logger.LogWarning("Pre-flight conflict errors for CaseId: {CaseId}. CorrelationId: {CorrelationId}. Errors: {Errors}",
                 request.CaseId, correlationId, preflight409Errors);
             return new ConflictObjectResult(preflight409Errors);
+        }
+
+        if (preflight400Errors.Count > 0)
+        {
+            _logger.LogWarning("Pre-flight bad-request errors for CaseId: {CaseId}. CorrelationId: {CorrelationId}. Errors: {Errors}",
+                request.CaseId, correlationId, preflight400Errors);
+            return new BadRequestObjectResult(preflight400Errors);
         }
 
         var duplicateDestKeys = moveFileItems
@@ -249,9 +259,16 @@ public class InitiateBatchMove(
             return EmptyResult(listingError: $"Failed to list source folder contents: {op.SourcePath}");
         }
 
-        var (existingDestKeys, destPaginationFailed) = expandedFiles.Count > 0
-            ? await GetExistingDestKeysAsync(request.BearerToken, request.BucketName, destFolderPrefix)
-            : (new HashSet<string>(StringComparer.OrdinalIgnoreCase), false);
+        if (expandedFiles.Count == 0)
+        {
+            _logger.LogWarning(
+                "Folder '{SourcePath}' expanded to zero movable files (only a folder marker exists). CaseId: {CaseId}. CorrelationId: {CorrelationId}",
+                op.SourcePath, request.CaseId, correlationId);
+            return EmptyResult(error400: $"Folder contains no files to move: {op.SourcePath}");
+        }
+
+        var (existingDestKeys, destPaginationFailed) = await GetExistingDestKeysAsync(
+            request.BearerToken, request.BucketName, destFolderPrefix);
 
         if (destPaginationFailed)
         {
@@ -271,7 +288,7 @@ public class InitiateBatchMove(
             ExpectedSourceKeys = scheduledFolderKeys,
         };
 
-        return new OperationPreflightResult(fileItems, originalOp, [], errors409, []);
+        return new OperationPreflightResult(fileItems, originalOp, [], errors409, [], []);
     }
 
     private async Task<OperationPreflightResult> ProcessFileOperationAsync(
@@ -318,7 +335,7 @@ public class InitiateBatchMove(
             DestinationPrefix = request.DestinationPrefix,
         };
 
-        return new OperationPreflightResult([fileItem], originalOp, [], [], []);
+        return new OperationPreflightResult([fileItem], originalOp, [], [], [], []);
     }
 
     private async Task<(List<(string SourceKey, string RelativeKey)> Files, bool PaginationFailed)> ExpandSourceFilesAsync(
@@ -442,11 +459,13 @@ public class InitiateBatchMove(
     private static OperationPreflightResult EmptyResult(
         string? error404 = null,
         string? error409 = null,
-        string? listingError = null) =>
+        string? listingError = null,
+        string? error400 = null) =>
         new(
             [],
             null,
             error404 != null ? [error404] : [],
             error409 != null ? [error409] : [],
-            listingError != null ? [listingError] : []);
+            listingError != null ? [listingError] : [],
+            error400 != null ? [error400] : []);
 }
