@@ -1,5 +1,5 @@
 import { getTransferActivityStatusTagData } from "./getTransferActivityStatusTagData";
-import { ActivityItem } from "../types/ActivityLogResponse";
+import { type ActivityItem } from "../../schemas";
 
 describe("getTransferActivityStatusTagData", () => {
   const activity: ActivityItem = {
@@ -7,7 +7,8 @@ describe("getTransferActivityStatusTagData", () => {
     actionType: "TRANSFER_COMPLETED",
     timestamp: "2024-01-18T12:46:10.865517Z",
     userName: "dwight_schrute@cps.gov.uk",
-    caseId: "case_1",
+    caseId: 20,
+    resourceName: null,
     description: "Documents/folders copied from egress to shared drive",
     details: {
       transferId: "transfer-1",

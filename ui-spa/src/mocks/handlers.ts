@@ -26,8 +26,8 @@ import {
   activityLogDev,
   activityLogPlaywright,
 } from "./data";
-import { IndexingFileTransferPayload } from "../common/types/IndexingFileTransferPayload";
-import { InitiateFileTransferPayload } from "../common/types/InitiateFileTransferPayload";
+import { IndexingFileTransferPayload } from "../schemas/requests/indexingFileTransferPayload";
+import { InitiateFileTransferPayload } from "../schemas/requests/initiateFileTransferPayload";
 
 export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
   const isDevMock = () => apiMockSource === "dev";

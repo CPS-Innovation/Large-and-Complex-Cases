@@ -1,6 +1,6 @@
-import { CaseMetaDataResponse } from "../../common/types/CaseMetaDataResponse";
+import { type CaseMetaDataResponse } from "../../schemas";
 export const caseMetaDataDev: CaseMetaDataResponse = {
-  caseId: "12",
+  caseId: 12,
   egressWorkspaceId: "egress_1",
   netappFolderPath: "netapp/",
   operationName: "Thunderstruck",

@@ -311,6 +311,11 @@ ui-spa/playwright/.cache/
 ui-spa/playwright-report/
 ui-spa/playwright/integration-test-results.xml
 ui-spa/playwright/.nyc_output
+e2e/pw/test-results/
+e2e/pw/playwright-report/
+e2e/pw/.auth/
+e2e/pw/.state/
+e2e/pw/test-evidence/
 
 # Vite
 ui-spa/.vite/deps/
@@ -336,3 +341,9 @@ e2e/postman/newman-reports/
 e2e/postman/LCCTestEnvironment_updated.*
 e2e/postman/*_updated.postman_collection.json
 e2e/postman/*postman_collection_updated.json
+
+# Environment files — keep templates tracked, ignore environment-specific
+# values anywhere in the repo (e.g. e2e/pw/.env.local).
+.env.*
+!.env.template
+!.env.*.template

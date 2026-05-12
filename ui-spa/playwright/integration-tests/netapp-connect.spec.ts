@@ -167,11 +167,10 @@ test.describe("netapp connect", () => {
             rootPath: "",
             folders: [],
           },
+
           pagination: {
-            totalResults: 50,
-            skip: 0,
-            take: 50,
-            count: 25,
+            maxKeys: 100,
+            nextContinuationToken: null,
           },
         });
       }),
