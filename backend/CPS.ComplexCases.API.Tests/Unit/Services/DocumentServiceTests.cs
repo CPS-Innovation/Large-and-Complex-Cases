@@ -78,6 +78,39 @@ public class DocumentServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task GetMaterialPreviewAsync_ReturnsNull_WhenNetAppThrowsFileNotFoundException()
+    {
+        // Arrange
+        _netAppClientMock
+            .Setup(c => c.GetObjectAsync(It.IsAny<GetObjectArg>()))
+            .ThrowsAsync(new FileNotFoundException("Object not found in bucket."));
+
+        // Act
+        var result = await _service.GetMaterialPreviewAsync("/case/document.pdf", _testBearerToken, _testBucketName);
+
+        // Assert
+        Assert.Null(result);
+        _conversionServiceMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task GetMaterialPreviewAsync_DoesNotAttemptBlobCleanup_WhenNetAppThrowsFileNotFoundException()
+    {
+        // Arrange — exception is thrown before tmpFileName is set, so no blobs should be touched.
+        _netAppClientMock
+            .Setup(c => c.GetObjectAsync(It.IsAny<GetObjectArg>()))
+            .ThrowsAsync(new FileNotFoundException("Object not found in bucket."));
+
+        // Act
+        await _service.GetMaterialPreviewAsync("/case/document.pdf", _testBearerToken, _testBucketName);
+
+        // Assert
+        _blobContainerClientMock.Verify(
+            c => c.GetBlobClient(It.IsAny<string>()),
+            Times.Never);
+    }
+
+    [Fact]
     public async Task GetMaterialPreviewAsync_ReturnsNull_WhenNetAppReturnsNullResponse()
     {
         // Arrange

@@ -78,6 +78,11 @@ public class DocumentService(
                 FileDownloadName = $"{tmpFileName}.pdf"
             };
         }
+        catch (FileNotFoundException)
+        {
+            _logger.LogWarning("No document found in NetApp at path [{Path}]", path);
+            return null;
+        }
         catch (NotSupportedException)
         {
             throw;
