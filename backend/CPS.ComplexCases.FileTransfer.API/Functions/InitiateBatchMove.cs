@@ -338,7 +338,16 @@ public class InitiateBatchMove(
             if (listResult == null) return (files, true);
 
             foreach (var file in listResult.Data.FileData)
-                files.Add((file.Path, file.Path[sourcePrefix.Length..]));
+            {
+                var relativeKey = file.Path[sourcePrefix.Length..];
+                if (relativeKey.Length == 0)
+                {
+                    _logger.LogWarning("Empty relative key found for file: {FilePath}. SourcePrefix: {SourcePrefix}",
+                        file.Path, sourcePrefix);
+                    continue;
+                }
+                files.Add((file.Path, relativeKey));
+            }
 
             continuationToken = listResult.Pagination.NextContinuationToken;
         }

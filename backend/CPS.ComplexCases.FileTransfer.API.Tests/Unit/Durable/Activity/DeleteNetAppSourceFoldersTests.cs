@@ -259,6 +259,46 @@ public class DeleteNetAppSourceFoldersTests
     }
 
     [Fact]
+    public async Task Run_WhenListingReturnsOnlyFolderMarker_DeletesMarker()
+    {
+        var folderPath = "Case/Folder";
+        var folderMarkerKey = folderPath + "/";
+        var payload = CreatePayload([folderPath]);
+
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.IsAny<ListObjectsInBucketArg>()))
+            .ReturnsAsync(ListResultWithFiles([folderMarkerKey]));
+
+        _netAppClientMock
+            .Setup(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()))
+            .ReturnsAsync(new DeleteNetAppResult(true, true, 1, null, null));
+
+        await _activity.Run(payload, CancellationToken.None);
+
+        _netAppClientMock.Verify(
+            c => c.DeleteFileOrFolderAsync(It.Is<DeleteFileOrFolderArg>(a => a.Path == folderMarkerKey)),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_WhenListingReturnsFolderMarkerAndRealFiles_SkipsDeletion()
+    {
+        var folderPath = "Case/Folder";
+        var folderMarkerKey = folderPath + "/";
+        var payload = CreatePayload([folderPath]);
+
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.IsAny<ListObjectsInBucketArg>()))
+            .ReturnsAsync(ListResultWithFiles([folderMarkerKey, $"{folderMarkerKey}leftover.txt"]));
+
+        await _activity.Run(payload, CancellationToken.None);
+
+        _netAppClientMock.Verify(
+            c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()),
+            Times.Never);
+    }
+
+    [Fact]
     public async Task Run_WhenFolderContainsAnyFiles_SkipsDeletion()
     {
         var payload = CreatePayload(["Case/Folder"]);

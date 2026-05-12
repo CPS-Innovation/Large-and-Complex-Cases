@@ -539,6 +539,48 @@ public class InitiateBatchMoveTests
     }
 
     [Fact]
+    public async Task Run_WhenFolderListingIncludesFolderMarker_MarkerIsNotScheduledForTransfer()
+    {
+        var realFile = $"{FolderSourcePath}doc.pdf";
+        var folderMarker = FolderSourcePath;
+
+        SetupValidRequest(CreateFolderRequest());
+        SetupNoActiveTransfer();
+        SetupFolderExistsWithMarker(FolderSourcePath, folderMarker, realFile);
+        var client = CreateSchedulingClient(out var capturedCalls);
+
+        await _function.Run(CreateHttpRequest(), client.Object);
+
+        var payload = Assert.IsType<MoveBatchPayload>(capturedCalls[0].Input);
+        Assert.Single(payload.Files);
+        Assert.DoesNotContain(payload.Files, f => f.SourceKey == folderMarker);
+        Assert.Contains(payload.Files, f => f.SourceKey == realFile && f.DestinationFileName == "doc.pdf");
+    }
+
+    [Fact]
+    public async Task Run_WhenFolderListingContainsOnlyFolderMarker_ReturnsBadRequest()
+    {
+        var folderMarker = FolderSourcePath;
+
+        SetupValidRequest(CreateFolderRequest());
+        SetupNoActiveTransfer();
+
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.Is<ListObjectsInBucketArg>(a =>
+                a.Prefix == FolderSourcePath && a.MaxKeys == "1")))
+            .ReturnsAsync(MakeListResult([folderMarker]));
+
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.Is<ListObjectsInBucketArg>(a =>
+                a.Prefix == FolderSourcePath && a.MaxKeys == null)))
+            .ReturnsAsync(MakeListResult([folderMarker]));
+
+        var result = await _function.Run(CreateHttpRequest(), _durableClientStub);
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
     public async Task Run_WhenNoFilesFoundAfterFolderExpansion_ReturnsBadRequest()
     {
         SetupValidRequest(CreateFolderRequest());
@@ -750,6 +792,28 @@ public class InitiateBatchMoveTests
             .Setup(c => c.ListObjectsInBucketAsync(It.Is<ListObjectsInBucketArg>(a =>
                 a.Prefix == folderPrefix && a.MaxKeys == null)))
             .ReturnsAsync(MakeListResult(filePaths));
+
+        var folderName = Path.GetFileName(folderPrefix.TrimEnd('/'));
+        var destFolderPrefix = DestinationPrefix + folderName + "/";
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.Is<ListObjectsInBucketArg>(a =>
+                a.Prefix == destFolderPrefix && a.MaxKeys == null)))
+            .ReturnsAsync(EmptyListResult());
+    }
+
+    private void SetupFolderExistsWithMarker(string folderPrefix, string markerPath, params string[] filePaths)
+    {
+        var allPaths = filePaths.Prepend(markerPath).ToArray();
+
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.Is<ListObjectsInBucketArg>(a =>
+                a.Prefix == folderPrefix && a.MaxKeys == "1")))
+            .ReturnsAsync(MakeListResult(allPaths.Take(1).ToArray()));
+
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.Is<ListObjectsInBucketArg>(a =>
+                a.Prefix == folderPrefix && a.MaxKeys == null)))
+            .ReturnsAsync(MakeListResult(allPaths));
 
         var folderName = Path.GetFileName(folderPrefix.TrimEnd('/'));
         var destFolderPrefix = DestinationPrefix + folderName + "/";

@@ -105,7 +105,7 @@ public class DeleteNetAppSourceFolders(
 
             if (result == null) return (false, true);
 
-            if (result.Data.FileData.Any())
+            if (result.Data.FileData.Any(f => !string.Equals(f.Path, folderPrefix, StringComparison.Ordinal)))
                 return (true, false);
 
             continuationToken = result.Pagination.NextContinuationToken;
