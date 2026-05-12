@@ -3,10 +3,10 @@ using CPS.ComplexCases.FileTransfer.API.Validators;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Validators;
 
-public class CopyNetAppBatchRequestValidatorTests
-    : NetAppBatchRequestValidatorTestsBase<CopyNetAppBatchRequest, CopyNetAppBatchOperationRequest, CopyNetAppBatchRequestValidator>
+public class MoveNetAppBatchRequestValidatorTests
+    : NetAppBatchRequestValidatorTestsBase<MoveNetAppBatchRequest, MoveNetAppBatchOperationRequest, MoveNetAppBatchRequestValidator>
 {
-    protected override CopyNetAppBatchRequest CreateValidRequest(List<CopyNetAppBatchOperationRequest>? ops = null) => new()
+    protected override MoveNetAppBatchRequest CreateValidRequest(List<MoveNetAppBatchOperationRequest>? ops = null) => new()
     {
         CaseId = 1,
         DestinationPrefix = "CaseRoot/Folder-B/",
@@ -15,10 +15,10 @@ public class CopyNetAppBatchRequestValidatorTests
         Operations = ops ?? [new() { Type = "Material", SourcePath = "CaseRoot/file.txt" }]
     };
 
-    protected override CopyNetAppBatchOperationRequest CreateOperation(string type, string sourcePath) =>
+    protected override MoveNetAppBatchOperationRequest CreateOperation(string type, string sourcePath) =>
         new() { Type = type, SourcePath = sourcePath };
 
-    protected override CopyNetAppBatchRequest CreateRequest(int caseId, string destinationPrefix, string bearerToken, string bucketName, List<CopyNetAppBatchOperationRequest> operations) => new()
+    protected override MoveNetAppBatchRequest CreateRequest(int caseId, string destinationPrefix, string bearerToken, string bucketName, List<MoveNetAppBatchOperationRequest> operations) => new()
     {
         CaseId = caseId,
         DestinationPrefix = destinationPrefix,

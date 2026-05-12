@@ -19,15 +19,15 @@ using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions;
 
-public class InitiateBatchCopyTests
+public class InitiateBatchMoveTests
 {
-    private readonly Mock<ILogger<InitiateBatchCopy>> _loggerMock;
+    private readonly Mock<ILogger<InitiateBatchMove>> _loggerMock;
     private readonly Mock<IFileTransferClient> _fileTransferClientMock;
     private readonly Mock<IRequestValidator> _requestValidatorMock;
     private readonly Mock<ISecurityGroupMetadataService> _securityGroupMetadataServiceMock;
     private readonly Mock<ICaseMetadataService> _caseMetadataServiceMock;
     private readonly Mock<IInitializationHandler> _initializationHandlerMock;
-    private readonly InitiateBatchCopy _function;
+    private readonly InitiateBatchMove _function;
     private readonly Fixture _fixture;
 
     private readonly string _testBearerToken;
@@ -39,9 +39,9 @@ public class InitiateBatchCopyTests
 
     private const string TestNetAppFolder = "CaseRoot";
 
-    public InitiateBatchCopyTests()
+    public InitiateBatchMoveTests()
     {
-        _loggerMock = new Mock<ILogger<InitiateBatchCopy>>();
+        _loggerMock = new Mock<ILogger<InitiateBatchMove>>();
         _fileTransferClientMock = new Mock<IFileTransferClient>();
         _requestValidatorMock = new Mock<IRequestValidator>();
         _securityGroupMetadataServiceMock = new Mock<ISecurityGroupMetadataService>();
@@ -66,10 +66,10 @@ public class InitiateBatchCopyTests
             .ReturnsAsync(new CaseMetadata { CaseId = 1, NetappFolderPath = TestNetAppFolder });
 
         _fileTransferClientMock
-            .Setup(c => c.InitiateBatchCopyAsync(It.IsAny<CopyNetAppBatchRequest>(), It.IsAny<Guid>()))
+            .Setup(c => c.InitiateBatchMoveAsync(It.IsAny<MoveNetAppBatchRequest>(), It.IsAny<Guid>()))
             .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.Accepted));
 
-        _function = new InitiateBatchCopy(
+        _function = new InitiateBatchMove(
             _loggerMock.Object,
             _fileTransferClientMock.Object,
             _requestValidatorMock.Object,
@@ -81,21 +81,21 @@ public class InitiateBatchCopyTests
     private FunctionContext CreateFunctionContext() =>
         FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
-    private void SetupValidRequest(CopyNetAppBatchDto dto)
+    private void SetupValidRequest(MoveNetAppBatchDto dto)
     {
         _requestValidatorMock
-            .Setup(v => v.GetJsonBody<CopyNetAppBatchDto, API.Validators.Requests.CopyNetAppBatchRequestValidator>(It.IsAny<Microsoft.AspNetCore.Http.HttpRequest>()))
-            .ReturnsAsync(new ValidatableRequest<CopyNetAppBatchDto> { Value = dto, IsValid = true, ValidationErrors = [] });
+            .Setup(v => v.GetJsonBody<MoveNetAppBatchDto, API.Validators.Requests.MoveNetAppBatchRequestValidator>(It.IsAny<Microsoft.AspNetCore.Http.HttpRequest>()))
+            .ReturnsAsync(new ValidatableRequest<MoveNetAppBatchDto> { Value = dto, IsValid = true, ValidationErrors = [] });
     }
 
     private void SetupInvalidRequest()
     {
         _requestValidatorMock
-            .Setup(v => v.GetJsonBody<CopyNetAppBatchDto, API.Validators.Requests.CopyNetAppBatchRequestValidator>(It.IsAny<Microsoft.AspNetCore.Http.HttpRequest>()))
-            .ReturnsAsync(new ValidatableRequest<CopyNetAppBatchDto> { Value = null!, IsValid = false, ValidationErrors = ["CaseId must be a positive integer."] });
+            .Setup(v => v.GetJsonBody<MoveNetAppBatchDto, API.Validators.Requests.MoveNetAppBatchRequestValidator>(It.IsAny<Microsoft.AspNetCore.Http.HttpRequest>()))
+            .ReturnsAsync(new ValidatableRequest<MoveNetAppBatchDto> { Value = null!, IsValid = false, ValidationErrors = ["CaseId must be a positive integer."] });
     }
 
-    private static CopyNetAppBatchDto ValidDto(int caseId = 1) => new()
+    private static MoveNetAppBatchDto ValidDto(int caseId = 1) => new()
     {
         CaseId = caseId,
         DestinationPrefix = $"{TestNetAppFolder}/Folder-B/",
@@ -131,7 +131,7 @@ public class InitiateBatchCopyTests
     [Fact]
     public async Task Run_WhenSourcePathOutsideCaseFolder_ReturnsBadRequest()
     {
-        var dto = new CopyNetAppBatchDto
+        var dto = new MoveNetAppBatchDto
         {
             CaseId = 1,
             DestinationPrefix = $"{TestNetAppFolder}/Folder-B/",
@@ -148,7 +148,7 @@ public class InitiateBatchCopyTests
     [Fact]
     public async Task Run_WhenDestinationPrefixOutsideCaseFolder_ReturnsBadRequest()
     {
-        var dto = new CopyNetAppBatchDto
+        var dto = new MoveNetAppBatchDto
         {
             CaseId = 1,
             DestinationPrefix = "OtherCase/Evidence/",
@@ -169,7 +169,7 @@ public class InitiateBatchCopyTests
             .Setup(s => s.GetCaseMetadataForCaseIdAsync(It.IsAny<int>()))
             .ReturnsAsync(new CaseMetadata { CaseId = 1, NetappFolderPath = "Cases/123" });
 
-        var dto = new CopyNetAppBatchDto
+        var dto = new MoveNetAppBatchDto
         {
             CaseId = 1,
             DestinationPrefix = "Cases/999/",
@@ -182,7 +182,7 @@ public class InitiateBatchCopyTests
 
         Assert.IsType<BadRequestObjectResult>(result);
         _fileTransferClientMock.Verify(
-            c => c.InitiateBatchCopyAsync(It.IsAny<CopyNetAppBatchRequest>(), It.IsAny<Guid>()),
+            c => c.InitiateBatchMoveAsync(It.IsAny<MoveNetAppBatchRequest>(), It.IsAny<Guid>()),
             Times.Never);
     }
 
@@ -194,8 +194,8 @@ public class InitiateBatchCopyTests
 
         await _function.Run(req, CreateFunctionContext());
 
-        _fileTransferClientMock.Verify(c => c.InitiateBatchCopyAsync(
-            It.Is<CopyNetAppBatchRequest>(r =>
+        _fileTransferClientMock.Verify(c => c.InitiateBatchMoveAsync(
+            It.Is<MoveNetAppBatchRequest>(r =>
                 r.CaseId == 1 &&
                 r.BearerToken == _testBearerToken &&
                 r.BucketName == _testBucketName),
@@ -210,15 +210,15 @@ public class InitiateBatchCopyTests
 
         await _function.Run(req, CreateFunctionContext());
 
-        _fileTransferClientMock.Verify(c => c.InitiateBatchCopyAsync(
-            It.Is<CopyNetAppBatchRequest>(r => r.BucketName == _testBucketName),
+        _fileTransferClientMock.Verify(c => c.InitiateBatchMoveAsync(
+            It.Is<MoveNetAppBatchRequest>(r => r.BucketName == _testBucketName),
             It.IsAny<Guid>()), Times.Once);
     }
 
     [Fact]
     public async Task Run_WithValidRequest_MapsOperationsCorrectly()
     {
-        var dto = new CopyNetAppBatchDto
+        var dto = new MoveNetAppBatchDto
         {
             CaseId = 1,
             DestinationPrefix = $"{TestNetAppFolder}/Dest/",
@@ -233,8 +233,8 @@ public class InitiateBatchCopyTests
 
         await _function.Run(req, CreateFunctionContext());
 
-        _fileTransferClientMock.Verify(c => c.InitiateBatchCopyAsync(
-            It.Is<CopyNetAppBatchRequest>(r =>
+        _fileTransferClientMock.Verify(c => c.InitiateBatchMoveAsync(
+            It.Is<MoveNetAppBatchRequest>(r =>
                 r.Operations.Count == 2 &&
                 r.Operations.Any(op => op.Type == "Material" && op.SourcePath == $"{TestNetAppFolder}/file.pdf") &&
                 r.Operations.Any(op => op.Type == "Folder" && op.SourcePath == $"{TestNetAppFolder}/Sub/")),

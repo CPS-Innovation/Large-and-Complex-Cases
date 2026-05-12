@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace CPS.ComplexCases.Common.Models.Requests;
 
-public class CopyNetAppBatchRequest : INetAppBatchRequest<CopyNetAppBatchOperationRequest>
+public class MoveNetAppBatchRequest : INetAppBatchRequest<MoveNetAppBatchOperationRequest>
 {
     [JsonPropertyName("caseId")]
     public int CaseId { get; set; }
@@ -11,7 +11,7 @@ public class CopyNetAppBatchRequest : INetAppBatchRequest<CopyNetAppBatchOperati
     public required string DestinationPrefix { get; set; }
 
     [JsonPropertyName("operations")]
-    public required List<CopyNetAppBatchOperationRequest> Operations { get; set; }
+    public required List<MoveNetAppBatchOperationRequest> Operations { get; set; }
 
     [JsonPropertyName("bearerToken")]
     public required string BearerToken { get; set; }
@@ -23,7 +23,7 @@ public class CopyNetAppBatchRequest : INetAppBatchRequest<CopyNetAppBatchOperati
     public string? UserName { get; set; }
 }
 
-public class CopyNetAppBatchOperationRequest : INetAppBatchOperationRequest
+public class MoveNetAppBatchOperationRequest : INetAppBatchOperationRequest
 {
     [JsonPropertyName("type")]
     public required string Type { get; set; }
