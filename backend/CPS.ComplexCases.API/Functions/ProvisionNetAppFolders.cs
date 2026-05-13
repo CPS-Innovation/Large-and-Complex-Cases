@@ -18,9 +18,9 @@ using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
 using CPS.ComplexCases.DDEI.Services;
-using CPS.ComplexCases.NetApp.Client;
-using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Dto;
+using CPS.ComplexCases.API.Clients.FileTransfer;
+using CPS.ComplexCases.Common.Models.Requests;
 
 namespace CPS.ComplexCases.Api.Functions;
 
@@ -28,8 +28,7 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
     IDdeiClient ddeiClient,
     IDdeiArgFactory ddeiArgFactory,
     ICaseNamingService caseNamingService,
-    INetAppClient netAppClient,
-    INetAppArgFactory netAppArgFactory,
+    IFileTransferClient transferClient,
     IRequestValidator requestValidator,
     ISecurityGroupMetadataService securityGroupMetadataService,
     ICaseMetadataService caseMetadataService,
@@ -40,8 +39,7 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
     private readonly IDdeiClient _ddeiClient = ddeiClient;
     private readonly IDdeiArgFactory _ddeiArgFactory = ddeiArgFactory;
     private readonly ICaseNamingService _caseNamingService = caseNamingService;
-    private readonly INetAppClient _netAppClient = netAppClient;
-    private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
+    private readonly IFileTransferClient _transferClient = transferClient;
     private readonly IRequestValidator _requestValidator = requestValidator;
     private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
     private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
@@ -70,11 +68,11 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
 
         _logger.LogInformation("ProvisionNetAppFolders function triggered for caseId: {CaseId}", caseId);
 
-        var provisionNetAppFoldersRequest = await _requestValidator.GetJsonBody<ProvisionNetAppFoldersDto, ProvisionNetAppFoldersRequestValidator>(req);
+        var provisionFoldersRequest = await _requestValidator.GetJsonBody<ProvisionNetAppFoldersDto, ProvisionNetAppFoldersRequestValidator>(req);
 
-        if (!provisionNetAppFoldersRequest.IsValid)
+        if (!provisionFoldersRequest.IsValid)
         {
-            return new BadRequestObjectResult(provisionNetAppFoldersRequest.ValidationErrors);
+            return new BadRequestObjectResult(provisionFoldersRequest.ValidationErrors);
         }
 
         var cmsArg = _ddeiArgFactory.CreateCaseArg(context.CmsAuthValues, context.CorrelationId, caseId);
@@ -96,20 +94,23 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
             return new ConflictObjectResult("Cannot provision NetApp folders while there is an active transfer for the case.");
         }
 
-        var templateFolderPath = provisionNetAppFoldersRequest.Value.TemplateFolderPath;
-
         var caseName = await _caseNamingService.GenerateCaseName(cmsResponse);
         var folderPathName = caseName.EnsureTrailingSlash();
 
         var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
 
-        //var copyTemplateFolderArg = _netAppArgFactory.CreateCopyTemplateFolderArg(context.BearerToken, securityGroups.First().BucketName, templateFolderPath, folderPathName);
-        //var result = await _netAppClient.CopyTemplateFolderAsync(copyTemplateFolderArg);
+        var provisionNetAppFoldersRequest = new ProvisionNetAppFoldersRequest
+        {
+            CaseId = caseId,
+            Urn = cmsResponse.Urn,
+            TemplateName = provisionFoldersRequest.Value.TemplateFolderPath,
+            DestinationFolderPath = folderPathName,
+            BucketName = securityGroups.First().BucketName,
+            BearerToken = context.BearerToken,
+            UserName = context.Username
+        };
 
-        // if (result.CopiedItemCount == 0)
-        // {
-        //     return new BadRequestObjectResult("No folders or files were copied. Please check the template folder path and try again.");
-        // }
+        await _transferClient.ProvisionNetAppFoldersAsync(provisionNetAppFoldersRequest, context.CorrelationId);
 
         await _caseMetadataService.CreateNetAppConnectionAsync(new CreateNetAppConnectionDto
         {
