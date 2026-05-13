@@ -1,8 +1,5 @@
 import { UseApiResult } from "../../common/hooks/useApi";
-import {
-  SearchResultData,
-  SearchResult,
-} from "../../common/types/SearchResultResponse";
+import type { SearchResultData, SearchResult } from "../../schemas";
 import { Table, Tag } from "../govuk";
 import { Link } from "react-router";
 import { SearchFromData } from "../../common/hooks/useCaseSearchForm";
@@ -18,7 +15,10 @@ const SearchResults: React.FC<SearchResultsProps> = ({
   searchQueryString,
   searchApiResults,
 }) => {
-  const getConnectOrViewUrl = (data: SearchResult, operationName: string) => {
+  const getConnectOrViewUrl = (
+    data: SearchResult,
+    operationName: string | null,
+  ) => {
     if (!data.egressWorkspaceId)
       return `/case/${data.caseId}/egress-connect?workspace-name=${operationName}`;
     if (!data.netappFolderPath)

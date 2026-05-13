@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using AutoFixture;
 using CPS.ComplexCases.API.Domain.Response;
 using CPS.ComplexCases.API.Functions;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
 using CPS.ComplexCases.Common.Handlers;
+using CPS.ComplexCases.Common.Models.Configuration;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.DDEI.Client;
@@ -44,7 +46,8 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 _ddeiClientMock.Object,
                 _ddeiArgFactoryMock.Object,
                 _initializationHandlerMock.Object,
-                _caseActiveManageMaterialsServiceMock.Object);
+                _caseActiveManageMaterialsServiceMock.Object,
+                Options.Create(new FeatureFlagConfig { ManageMaterials = true }));
         }
 
         [Fact]
@@ -118,6 +121,54 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _caseClientMock.Verify(c => c.GetCaseMetadataForCaseIdAsync(caseId), Times.Once);
             _ddeiArgFactoryMock.VerifyNoOtherCalls();
             _ddeiClientMock.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public async Task Run_WhenManageMaterialsFlagIsDisabled_ReturnsEmptyActiveManageMaterialsOperations_AndDoesNotCallService()
+        {
+            // Arrange
+            var caseId = _fixture.Create<int>();
+            var correlationId = _fixture.Create<Guid>();
+            var cmsAuthValues = _fixture.Create<string>();
+            var caseMetadata = _fixture.Build<CaseMetadata>()
+                                      .With(c => c.CaseId, caseId)
+                                      .Create();
+            var cmsResponse = _fixture.Create<CaseDto>();
+            var caseArg = _fixture.Create<DdeiCaseIdArgDto>();
+
+            _caseClientMock
+                .Setup(c => c.GetCaseMetadataForCaseIdAsync(caseId))
+                .ReturnsAsync(caseMetadata);
+
+            _ddeiArgFactoryMock
+                .Setup(f => f.CreateCaseArg(cmsAuthValues, correlationId, caseId))
+                .Returns(caseArg);
+
+            _ddeiClientMock
+                .Setup(c => c.GetCaseAsync(caseArg))
+                .ReturnsAsync(cmsResponse);
+
+            var functionWithFlagOff = new GetCase(
+                _loggerMock.Object,
+                _caseClientMock.Object,
+                _ddeiClientMock.Object,
+                _ddeiArgFactoryMock.Object,
+                _initializationHandlerMock.Object,
+                _caseActiveManageMaterialsServiceMock.Object,
+                Options.Create(new FeatureFlagConfig { ManageMaterials = false }));
+
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, cmsAuthValues, _fixture.Create<string>(), _fixture.Create<string>());
+            var httpRequest = HttpRequestStubHelper.CreateHttpRequest(correlationId);
+
+            // Act
+            var result = await functionWithFlagOff.Run(httpRequest, functionContext, caseId);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<CaseWithMetadataResponse>(okResult.Value);
+
+            Assert.Empty(response.ActiveManageMaterialsOperations);
+            _caseActiveManageMaterialsServiceMock.Verify(s => s.GetActiveOperationsForCaseAsync(It.IsAny<int>()), Times.Never);
         }
     }
 }

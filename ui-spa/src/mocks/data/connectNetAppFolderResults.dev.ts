@@ -1,4 +1,4 @@
-import { ConnectNetAppFolderResponse } from "../../common/types/ConnectNetAppFolderData";
+import { type ConnectNetAppFolderResponse } from "../../schemas";
 export const netAppRootFolderResultsDev: ConnectNetAppFolderResponse = {
   data: {
     rootPath: "",
@@ -33,7 +33,7 @@ export const getConnectNetAppFolderResultsDev = (path: string) => {
     return {
       ...netAppRootFolderResultsDev,
       data: {
-        roothPath: path,
+        rootPath: path,
         folders: [],
       },
     };
@@ -47,7 +47,7 @@ export const getConnectNetAppFolderResultsDev = (path: string) => {
   return {
     ...netAppRootFolderResultsDev,
     data: {
-      roothPath: path,
+      rootPath: path,
       folders: newFolders,
     },
   };

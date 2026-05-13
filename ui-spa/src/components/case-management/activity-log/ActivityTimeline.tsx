@@ -1,14 +1,16 @@
 import { useState } from "react";
 import {
-  ActivityLogResponse,
-  ActivityItem,
-  BatchDeleteDetails,
-  BatchCopyDetails,
-  TransferDetails,
+  type ActivityLogResponse,
+  type ActivityItem,
+  type BatchDeleteDetails,
+  type BatchCopyDetails,
+  type BatchMoveDetails,
+  type TransferDetails,
   isBatchCopyDetails,
   isBatchDeleteDetails,
+  isBatchMoveDetails,
   isTransferDetails,
-} from "../../../common/types/ActivityLogResponse";
+} from "../../../schemas";
 import { Details, Tag, Button } from "../../govuk";
 import RelativePathFiles from "./RelativePathFiles";
 import { formatDate } from "../../../common/utils/formatDate";
@@ -107,10 +109,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
             {getCleanPath(details.sourcePath).replace(/\//g, " > ")}
           </span>
         </div>
-        <div
-          className={styles.locationData}
-          data-testid="transfer-destination"
-        >
+        <div className={styles.locationData} data-testid="transfer-destination">
           <span className={styles.locationTitle}>Destination:</span>
           <span className={styles.locationPath}>
             {getCleanPath(details.destinationPath).replace(/\//g, " > ")}
@@ -222,12 +221,54 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
     </div>
   );
 
+  const renderBatchMoveDetails = (details: BatchMoveDetails) => (
+    <div>
+      <Details summaryChildren="View moved items">
+        <ul className={styles.batchDeleteList}>
+          {details.items.map((item, i) => (
+            <li key={i} className={styles.batchCopyItem}>
+              <div className={styles.batchCopyPaths}>
+                <div data-testid="batch-move-source">
+                  <span className={styles.locationTitle}>Source:</span>
+                  <span className={styles.locationPath}>
+                    {getCleanPath(item.sourcePath).replace(/\//g, " > ")}
+                  </span>
+                </div>
+                {item.destinationPath && (
+                  <div data-testid="batch-move-destination">
+                    <span className={styles.locationTitle}>Destination:</span>
+                    <span className={styles.locationPath}>
+                      {getCleanPath(item.destinationPath).replace(/\//g, " > ")}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <Tag
+                gdsTagColour={item.outcome === "Moved" ? "green" : "grey"}
+                className={styles.batchDeleteTag}
+                data-testid="batch-move-outcome-tag"
+              >
+                {item.outcome}
+              </Tag>
+            </li>
+          ))}
+        </ul>
+      </Details>
+    </div>
+  );
+
+  const MOVE_ACTION_TYPES = ["FOLDER_MOVED", "MATERIAL_MOVED", "FOLDER_AND_MATERIAL_MOVED"];
+
   const renderDetails = (activity: ActivityItem) => {
     const { details } = activity;
     if (!details) return null;
 
     if (isTransferDetails(details)) {
       return renderTransferDetails(activity.id, activity.timestamp, details);
+    }
+
+    if (MOVE_ACTION_TYPES.includes(activity.actionType) && isBatchMoveDetails(details)) {
+      return renderBatchMoveDetails(details);
     }
 
     if (isBatchCopyDetails(details)) {

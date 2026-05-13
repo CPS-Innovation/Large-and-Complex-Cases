@@ -22,6 +22,7 @@ using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Common.Telemetry;
+using CPS.ComplexCases.Common.Models.Configuration;
 using CPS.ComplexCases.Data.Extensions;
 using CPS.ComplexCases.DDEI.Extensions;
 using CPS.ComplexCases.DDEI.Tactical.Extensions;
@@ -190,6 +191,9 @@ var host = new HostBuilder()
         services.AddSingleton<ITelemetryClient, TelemetryClient>();
         services.AddSingleton<ITelemetryAugmentationWrapper, TelemetryAugmentationWrapper>();
         services.AddSingleton<IInitializationHandler, InitializationHandler>();
+
+        services.Configure<FeatureFlagConfig>(
+            configuration.GetSection(FeatureFlagConfig.SectionName));
 
         services.AddScoped<ICaseMetadataService, CaseMetadataService>();
         services.AddScoped<ICaseActiveManageMaterialsService, CaseActiveManageMaterialsService>();

@@ -1,5 +1,4 @@
-import { type EgressFolderData } from "../types/EgressFolderData";
-import { type NetAppFolderData } from "../types/NetAppFolderData";
+import type { EgressFolderData, NetAppFolderData } from "../../schemas";
 import { type TransferAction } from "../types/TransferAction";
 import { getGroupedFolderFileData } from "./getGroupedFolderFileData";
 export const getDuplicateFoldersAndFiles = (
