@@ -252,6 +252,9 @@ const TreeView: React.FC<TreeViewProps> = ({
     const isLoading = loadingIds.has(node.id);
     const children = node.children ?? loadedChildren[node.id];
 
+    const domId = crypto.randomUUID();
+    const dataTestId = node.id.toLowerCase().replace(/\s+/g, "-");
+
     return (
       <li
         key={node.id}
@@ -262,10 +265,10 @@ const TreeView: React.FC<TreeViewProps> = ({
         aria-expanded={node.isFolder ? isExpanded : undefined}
         aria-busy={isLoading ? true : undefined}
         aria-level={level}
-        id={node.id}
-        data-testid={node.id}
+        id={domId}
+        data-testid={dataTestId}
         aria-selected={isSelected}
-        aria-labelledby={`name-${node.id}`}
+        aria-labelledby={`name-${domId}`}
         tabIndex={isFocused ? 0 : -1}
         className={`${styles.treeItem} ${isFocused ? styles.focused : ""}`}
         onKeyDown={(e) => {
@@ -290,7 +293,7 @@ const TreeView: React.FC<TreeViewProps> = ({
           )}
           {node.isFolder && (
             <button
-              id={`name-${node.id}`}
+              id={`name-${domId}`}
               className={` ${styles.folderNode} ${isSelected ? styles.selected : ""}`}
               onClick={() => handleClick(node)}
               aria-label={node.name.toLowerCase()}
@@ -304,7 +307,7 @@ const TreeView: React.FC<TreeViewProps> = ({
           )}
           {!node.isFolder && (
             <div
-              id={`name-${node.id}`}
+              id={`name-${domId}`}
               aria-label={node.name.toLowerCase()}
               className={` ${styles.fileNode}`}
             >

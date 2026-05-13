@@ -145,7 +145,7 @@ describe("TreeView", () => {
     await waitFor(() => {
       const focused = document.activeElement as HTMLElement | null;
       expect(focused).not.toBeNull();
-      expect(focused?.getAttribute("id")).toBe("a1");
+      expect(focused?.dataset.testid).toBe("a1");
     });
 
     // ArrowLeft from child should move focus back to parent
@@ -153,7 +153,7 @@ describe("TreeView", () => {
     await waitFor(() => {
       const focused = document.activeElement as HTMLElement | null;
       expect(focused).not.toBeNull();
-      expect(focused?.getAttribute("id")).toBe("a");
+      expect(focused?.dataset.testid).toBe("a");
     });
 
     // Home should focus first visible item and End should focus last
@@ -162,14 +162,14 @@ describe("TreeView", () => {
       const focused = document.activeElement as HTMLElement | null;
       expect(focused).not.toBeNull();
       // after expansion visible nodes are A, A1, B -> last is B
-      expect(focused?.getAttribute("id")).toBe("b");
+      expect(focused?.dataset.testid).toBe("b");
     });
 
     userEvent.keyboard("{Home}");
     await waitFor(() => {
       const focused = document.activeElement as HTMLElement | null;
       expect(focused).not.toBeNull();
-      expect(focused?.getAttribute("id")).toBe("a");
+      expect(focused?.dataset.testid).toBe("a");
     });
   });
 
