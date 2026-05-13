@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useApi } from "../../../common/hooks/useApi";
-import { LinkButton, InsetText, NotificationBanner } from "../../govuk";
+import { LinkButton, InsetText, NotificationBanner, Button } from "../../govuk";
 import NetAppFolderContainer from "./NetAppFolderContainer";
 import { Spinner } from "../../common/Spinner";
 import {
@@ -43,6 +43,7 @@ type TransferMaterialsPageProps = {
   egressWorkspaceId: string;
   netAppPath: string;
   activeTransferId: string | null;
+  urn: string;
 };
 
 const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
@@ -52,6 +53,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   egressWorkspaceId,
   netAppPath,
   activeTransferId,
+  urn,
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -648,6 +650,19 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     return unMounting.current;
   }, []);
 
+  const handleDisconnectSharedDrive = async () => {
+    navigate(
+      `/case/${caseId}/case-management/disconnect-shared-drive-confirmation`,
+      {
+        state: {
+          isRouteValid: true,
+          caseId: caseId,
+          urn: urn,
+        },
+      },
+    );
+  };
+
   useEffect(() => {
     unMounting.current = false;
     if (location.state) {
@@ -830,20 +845,29 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           <div>
             <div className={styles.headerText}>
               <h2>{`${transferSource === "egress" ? "Transfer materials to the Shared Drive" : "Transfer materials to Egress"}`}</h2>
-              <InsetText>
-                <>
-                  Select the files or folders you want to transfer and where you
-                  want to put them.
-                  <br />
-                  You can also transfer
-                </>
-                <LinkButton
-                  onClick={handleSwitchSource}
-                  ariaLabel={`${transferSource === "egress" ? "transfer from the Shared Drive to Egress" : "transfer from Egress to the Shared Drive"}`}
+              <div className={styles.insetTextWrapper}>
+                <InsetText>
+                  <>
+                    Select the files or folders you want to transfer and where
+                    you want to put them.
+                    <br />
+                    You can also transfer
+                  </>
+                  <LinkButton
+                    onClick={handleSwitchSource}
+                    ariaLabel={`${transferSource === "egress" ? "transfer from the Shared Drive to Egress" : "transfer from Egress to the Shared Drive"}`}
+                  >
+                    {`${transferSource === "egress" ? "from the Shared Drive to Egress" : "from Egress to the Shared Drive"}`}
+                  </LinkButton>
+                </InsetText>
+                <Button
+                  className={`govuk-button--secondary ${styles.disconnectButton}`}
+                  name="secondary"
+                  onClick={handleDisconnectSharedDrive}
                 >
-                  {`${transferSource === "egress" ? "from the Shared Drive to Egress" : "from Egress to the Shared Drive"}`}
-                </LinkButton>
-              </InsetText>
+                  Disconnect Shared Drive
+                </Button>
+              </div>
             </div>
             <div
               className={styles.mainContainer}
