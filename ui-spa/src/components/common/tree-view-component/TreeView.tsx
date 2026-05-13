@@ -97,8 +97,7 @@ const TreeView: React.FC<TreeViewProps> = ({
   const handleLoadingNodeChildren = useCallback(
     (node: TreeNode, id: string) => {
       const hasChildren =
-        (node.children && node.children.length > 0) ||
-        (loadedChildren?.[id] && loadedChildren[id].length > 0);
+        (node.children && node.children.length > 0) || loadedChildren?.[id];
 
       if (!hasChildren && onLoadChildren) {
         setLoadingIds((s) => new Set(s).add(id));
