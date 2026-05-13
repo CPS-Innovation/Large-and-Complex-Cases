@@ -110,14 +110,23 @@ const DisconnectSharedDriveConfirmationPage = () => {
       return;
     }
     setDisableButtons(true);
-    const response = await disconnectNetAppFolder(caseId);
-    setDisableButtons(false);
-    if (!response.ok) {
+    try {
+      const response = await disconnectNetAppFolder(caseId);
+      if (!response.ok) {
+        navigate(
+          `/case/${caseId}/case-management/disconnect-shared-drive-failure`,
+          { state: { caseId, urn, isRouteValid: true } },
+        );
+        return;
+      }
+    } catch (e) {
+      console.error(e);
       navigate(
         `/case/${caseId}/case-management/disconnect-shared-drive-failure`,
         { state: { caseId, urn, isRouteValid: true } },
       );
-      return;
+    } finally {
+      setDisableButtons(false);
     }
 
     navigate(
