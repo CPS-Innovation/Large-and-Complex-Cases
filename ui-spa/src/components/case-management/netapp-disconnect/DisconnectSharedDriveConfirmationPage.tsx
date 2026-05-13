@@ -9,13 +9,16 @@ type GeneralRadioValue = "yes" | "no" | "";
 const DisconnectSharedDriveConfirmationPage = () => {
   const navigate = useNavigate();
   const {
-    state: { caseId, urn },
+    state,
   }: {
-    state: {
+    state?: {
       caseId: number;
       urn: string;
+      isRouteValid: boolean;
     };
   } = useLocation();
+
+  const { caseId, urn, isRouteValid } = state || {};
   type ErrorText = {
     errorSummaryText: string;
     inputErrorText?: string;
@@ -26,6 +29,12 @@ const DisconnectSharedDriveConfirmationPage = () => {
   const errorSummaryRef = useRef<HTMLInputElement>(null);
 
   const [disableButtons, setDisableButtons] = useState(false);
+
+  useEffect(() => {
+    if (!isRouteValid) {
+      navigate(`/`);
+    }
+  }, []);
 
   const [formData, setFormData] = useState<{
     disconnectSharedDriveRadio?: GeneralRadioValue;
@@ -92,6 +101,8 @@ const DisconnectSharedDriveConfirmationPage = () => {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
+    if (!caseId || !urn) return;
+
     if (!validateFormData()) return;
 
     if (formData.disconnectSharedDriveRadio === "no") {
@@ -104,14 +115,14 @@ const DisconnectSharedDriveConfirmationPage = () => {
     if (!response.ok) {
       navigate(
         `/case/${caseId}/case-management/disconnect-shared-drive-failure`,
-        { state: { caseId, urn } },
+        { state: { caseId, urn, isRouteValid: true } },
       );
       return;
     }
 
     navigate(
       `/case/${caseId}/case-management/disconnect-shared-drive-success`,
-      { state: { urn } },
+      { state: { urn, isRouteValid: true } },
     );
   };
 

@@ -1,14 +1,23 @@
 import { Panel } from "../../govuk";
-import { useLocation, Link } from "react-router-dom";
+import { useEffect } from "react";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import styles from "./DisconnectSharedDriveSuccessPage.module.scss";
 const DisconnectSharedDriveSuccessPage = () => {
   const {
-    state: { urn },
+    state,
   }: {
     state: {
       urn: string;
+      isRouteValid: boolean;
     };
   } = useLocation();
+  const { urn, isRouteValid } = state || {};
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!isRouteValid) {
+      navigate(`/`);
+    }
+  }, []);
   return (
     <div className={styles.contentWrapper}>
       <Panel titleChildren="Shared Drive disconnected"></Panel>
