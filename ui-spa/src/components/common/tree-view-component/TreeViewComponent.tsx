@@ -8,7 +8,7 @@ import React, {
 import FolderIcon from "../../../components/svgs/folder.svg?react";
 import FileIcon from "../../../components/svgs/file.svg?react";
 import { Spinner } from "../Spinner";
-import styles from "./TreeView.module.scss";
+import styles from "./TreeViewComponent.module.scss";
 
 export type TreeNode = {
   id: string;
@@ -17,14 +17,14 @@ export type TreeNode = {
   children?: TreeNode[];
 };
 
-export type TreeViewProps = {
+export type TreeViewComponentProps = {
   data: TreeNode[];
   onSelect?: (node: TreeNode) => void;
   onLoadChildren?: (nodeId: string) => Promise<TreeNode[]>;
   className?: string;
 };
 
-const TreeView: React.FC<TreeViewProps> = ({
+const TreeViewComponent: React.FC<TreeViewComponentProps> = ({
   data,
   onSelect,
   onLoadChildren,
@@ -344,4 +344,4 @@ const TreeView: React.FC<TreeViewProps> = ({
   );
 };
 
-export default TreeView;
+export default TreeViewComponent;

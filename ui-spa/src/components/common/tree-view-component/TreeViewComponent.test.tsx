@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, vi, expect } from "vitest";
-import TreeView, { TreeNode } from "./TreeView";
+import TreeView, { TreeNode } from "./TreeViewComponent";
 
 describe("TreeView", () => {
   it("renders root nodes and exposes tree role", () => {
