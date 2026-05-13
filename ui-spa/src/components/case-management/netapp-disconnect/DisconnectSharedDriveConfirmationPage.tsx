@@ -125,6 +125,7 @@ const DisconnectSharedDriveConfirmationPage = () => {
         `/case/${caseId}/case-management/disconnect-shared-drive-failure`,
         { state: { caseId, urn, isRouteValid: true } },
       );
+      return;
     } finally {
       setDisableButtons(false);
     }
