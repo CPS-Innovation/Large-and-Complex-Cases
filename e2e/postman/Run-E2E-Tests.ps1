@@ -148,6 +148,7 @@ $Config = @{
 $missingConfig = @()
 if (-not $Config.TenantId) { $missingConfig += "LCC_TENANT_ID" }
 if (-not $Config.LccApiId) { $missingConfig += "LCC_API_ID" }
+if (-not $Config.RegisterCaseClientId) { $missingConfig += "LCC_REGISTER_CASE_CLIENT_ID" }
 if (-not $Config.AzureUsername) { $missingConfig += "LCC_AZURE_USERNAME (or -AzureUsername)" }
 if (-not $Config.AzurePassword) { $missingConfig += "LCC_AZURE_PASSWORD (or -AzurePassword)" }
 if (-not $Config.CmsUsername) { $missingConfig += "LCC_CMS_USERNAME (or -CmsUsername)" }
