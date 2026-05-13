@@ -1,8 +1,8 @@
 import { useCallback, useState } from "react";
-import TreeView from "../tree-view/TreeView";
+import TreeView from "../tree-view-component/TreeViewComponent";
 import { Button } from "../../../components/govuk/Button";
 import { Link } from "react-router-dom";
-import { type TreeNode } from "../tree-view/TreeView";
+import { type TreeNode } from "../tree-view-component/TreeViewComponent";
 import styles from "./TransferWidget.module.scss";
 export type TransferWidgetProps = {
   data: TreeNode[];

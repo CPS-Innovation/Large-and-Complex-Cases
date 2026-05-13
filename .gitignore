@@ -308,6 +308,7 @@ ui-spa/playwright/.cache/
 ui-spa/playwright-report/
 ui-spa/playwright/integration-test-results.xml
 ui-spa/playwright/.nyc_output
+ui-spa/unit-test-results.xml
 e2e/pw/test-results/
 e2e/pw/playwright-report/
 e2e/pw/.auth/
