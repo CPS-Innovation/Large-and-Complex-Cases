@@ -166,15 +166,16 @@ standard auth set.
 | `BASE_URL` | LCC UI URL | Yes |
 | `CMS_LOGIN_PAGE` | Tactical login endpoint | Yes |
 | `CASE_API_BASE_URL` | Case Management API | Yes |
-| `DDEI_BASE_URL` | DDEI API | Yes |
+| `DDEI_BASE_URL` | DDEI API | Register-case only |
 | `EGRESS_BASE_URL` | Egress API | Yes |
 | `TENANT_ID` | Azure AD tenant ID | Yes |
-| `CLIENT_ID` | Azure AD client ID | Yes |
+| `LCC_API_CLIENT_ID` | Azure AD client ID | Yes |
+| `CMRC_API_CLIENT_ID` | Azure AD client ID | Register-case only |
 | `E2E_AD_USER` | Azure AD test user email | Yes |
 | `E2E_AD_PASSWORD` | Azure AD test user password | Yes |
 | `CMS_USERNAME` | CMS username | Yes |
 | `CMS_PASSWORD` | CMS password | Yes |
-| `DDEI_ACCESS_KEY` | DDEI function key | Yes |
+| `DDEI_ACCESS_KEY_CASE_REGISTER` | DDEI function key | Register-case only |
 | `EGRESS_SERVICE_ACCOUNT_AUTH` | Egress service account (Base64) | Yes |
 | `EGRESS_TEMPLATE_ID` | Egress workspace template ID | No (has default) |
 | `EGRESS_ADMIN_ROLE_ID` | Egress admin role ID | No (has default) |
@@ -186,7 +187,6 @@ standard auth set.
 | `DEFAULT_CASE_URN` | Pre-existing case URN | Default mode only |
 | `LCC_API_BASE_URL` | LCC backend URL — used by NetApp file teardown + disassociate | Default mode (recommended); register-case (recommended) |
 | `NETAPP_OPERATION_NAME` | Connected NetApp folder for default mode | Default mode (recommended) |
-| `LCC_API_CLIENT_ID` | LCC API app registration client id (client-credentials flow) for case-disassociate at register-case teardown | Register-case (recommended) |
 | `LCC_API_CLIENT_SECRET` | Secret for `LCC_API_CLIENT_ID` | Register-case (recommended) |
 
 ## Environment Profiles

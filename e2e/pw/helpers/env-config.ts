@@ -27,9 +27,8 @@ export function loadEnvConfig() {
   return {
     baseUrl: requireEnv("BASE_URL"),
     cmsLoginPage: requireEnv("CMS_LOGIN_PAGE"),
-    ddeiBaseUrl: requireEnv("DDEI_BASE_URL"),
     egressBaseUrl: requireEnv("EGRESS_BASE_URL"),
-    // CMRC Base URL Required only for register-case.
+    // Required only for register-case.
     caseApiBaseUrl: process.env.CASE_API_BASE_URL || "",
 
     tenantId: requireEnv("TENANT_ID"),
@@ -41,16 +40,10 @@ export function loadEnvConfig() {
     e2eAdPassword: requireEnv("E2E_AD_PASSWORD"),
     cmsUsername: requireEnv("CMS_USERNAME"),
     cmsPassword: requireEnv("CMS_PASSWORD"),
-    ddeiAccessKey: requireEnv("DDEI_ACCESS_KEY"),
-    // Separate function key for the register-case endpoint. The
-    // register-case backend rejects the lcc-app DDEI key with HTTP 400
-    // "Unauthorized access to CMS"; only the register-case key is
-    // accepted there. All other DDEI auth flows still use ddeiAccessKey.
-    // Optional in shared config — only the register-case setup path
-    // (setup-helper.ts:setupTestData) reads this; default mode never
-    // registers cases, so npm run e2e:existing-case must not require it.
+    // DDEI base url and function key for the register-case endpoint. 
     // The register-case path validates presence at the callsite and
     // throws a clear error if missing.
+    ddeiBaseUrl: process.env.DDEI_BASE_URL || "",
     ddeiAccessKeyCaseRegister: process.env.DDEI_ACCESS_KEY_CASE_REGISTER || "",
 
     egressServiceAccountAuth: requireEnv("EGRESS_SERVICE_ACCOUNT_AUTH"),

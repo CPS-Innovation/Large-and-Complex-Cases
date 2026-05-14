@@ -33,8 +33,7 @@ export async function deleteNetAppFiles(
   caseId: number | undefined,
   netAppFolderPath: string,
   fileNames: string[],
-  accessToken: string,
-  cmsAuth: string
+  accessToken: string
 ): Promise<void> {
   if (!baseUrl || !caseId || !netAppFolderPath || fileNames.length === 0) {
     if (fileNames.length > 0) {
