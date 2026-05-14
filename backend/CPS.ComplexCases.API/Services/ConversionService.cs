@@ -230,6 +230,7 @@ public class ConversionService(ILogger<ConversionService> logger, BlobServiceCli
 
         using var presentation = new Aspose.Slides.Presentation(pptStream);
         using var slidePresentation = new Aspose.Slides.Presentation();
+        slidePresentation.Slides.RemoveAt(0);
 
         var convertAllSlides = !firstPageOnly && presentation.Slides.Count > 1;
 

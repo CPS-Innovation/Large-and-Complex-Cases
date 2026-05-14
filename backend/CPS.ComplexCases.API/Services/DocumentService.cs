@@ -45,7 +45,7 @@ public class DocumentService(
                 throw new NotSupportedException($"Unsupported file type for [{fileName}]");
             }
 
-            tmpFileName = fileName;
+            tmpFileName = $"{Guid.NewGuid():N}_{fileName}";
 
             using var responseStream = new HashValidationIgnoringStream(netAppResponse.ResponseStream);
             var saved = await _conversionService.SaveDocumentToTemporaryBlobAsync(responseStream, tmpFileName);

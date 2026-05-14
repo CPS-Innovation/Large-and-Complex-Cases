@@ -229,7 +229,7 @@ public class DocumentServiceTests : IDisposable
         // Assert
         var fileStreamResult = Assert.IsType<FileStreamResult>(result);
         Assert.Equal("application/pdf", fileStreamResult.ContentType);
-        Assert.Equal("document.pdf.pdf", fileStreamResult.FileDownloadName);
+        Assert.EndsWith("document.pdf.pdf", fileStreamResult.FileDownloadName);
     }
 
     [Fact]
@@ -256,8 +256,8 @@ public class DocumentServiceTests : IDisposable
         await _service.GetMaterialPreviewAsync("/case/document.pdf", _testBearerToken, _testBucketName);
 
         // Assert
-        _blobContainerClientMock.Verify(c => c.GetBlobClient("tmp_document.pdf"), Times.AtLeastOnce);
-        _blobContainerClientMock.Verify(c => c.GetBlobClient("preview_document.pdf.pdf"), Times.AtLeastOnce);
+        _blobContainerClientMock.Verify(c => c.GetBlobClient(It.Is<string>(s => s.EndsWith("_document.pdf"))), Times.AtLeastOnce);
+        _blobContainerClientMock.Verify(c => c.GetBlobClient(It.Is<string>(s => s.EndsWith("_document.pdf.pdf"))), Times.AtLeastOnce);
     }
 
     [Fact]
@@ -281,7 +281,7 @@ public class DocumentServiceTests : IDisposable
         catch (InvalidOperationException) { }
 
         // Assert
-        _blobContainerClientMock.Verify(c => c.GetBlobClient("tmp_document.pdf"), Times.AtLeastOnce);
+        _blobContainerClientMock.Verify(c => c.GetBlobClient(It.Is<string>(s => s.EndsWith("_document.pdf"))), Times.AtLeastOnce);
     }
 
     [Fact]
@@ -302,7 +302,7 @@ public class DocumentServiceTests : IDisposable
 
         // Assert
         _conversionServiceMock.Verify(
-            s => s.SaveDocumentToTemporaryBlobAsync(It.IsAny<Stream>(), "report.docx"),
+            s => s.SaveDocumentToTemporaryBlobAsync(It.IsAny<Stream>(), It.Is<string>(n => n.EndsWith("_report.docx"))),
             Times.Once);
     }
 }
