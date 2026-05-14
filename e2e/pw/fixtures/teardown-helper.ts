@@ -5,7 +5,7 @@ import {
   listEgressWorkspaceFilesByFolderId,
 } from "../helpers/egress-api";
 import { deleteNetAppFiles } from "../helpers/netapp-api";
-import { getAuthTokens } from "../helpers/auth-api";
+import { getAzureADToken } from "../helpers/auth-api";
 import { loadEnvConfig } from "../helpers/env-config";
 import type { UploadedFile } from "../helpers/types";
 
@@ -83,23 +83,18 @@ export async function teardownTestData(ctx: TeardownContext): Promise<void> {
   }
 
   if (ctx.netAppFolder && ctx.caseId && config.lccApiBaseUrl) {
-    const { accessToken, cmsAuth } = await getAuthTokens(
+    const accessToken = await getAzureADToken(
       config.tenantId,
       config.lccApiClientId,
       config.e2eAdUser,
       config.e2eAdPassword,
-      config.ddeiBaseUrl,
-      config.ddeiAccessKey,
-      config.cmsUsername,
-      config.cmsPassword
     );
     await deleteNetAppFiles(
       config.lccApiBaseUrl,
       ctx.caseId,
       ctx.netAppFolder,
       ctx.files.map((f) => f.fileName),
-      accessToken,
-      cmsAuth
+      accessToken
     );
   }
 }
