@@ -2,6 +2,8 @@ import { Routes, Route, Navigate } from "react-router";
 import CaseSearchPage from "./search-page";
 import CaseSearchResultPage from "./search-result-page";
 import EgressPage from "./egress-connect";
+import EgressConnectConfirmationPage from "./egress-connect/EgressConnectConfirmationPage";
+import EgressConnectFailurePage from "./egress-connect/EgressConnectFailurePage";
 import NetAppPage from "./netapp-connect";
 import CaseManagementPage from "./case-management";
 import MetaDataErrorPage from "./case-management/transfer-materials/MetaDataErrorPage";
@@ -11,21 +13,14 @@ import TransferMovePermissionsErrorPage from "./case-management/transfer-materia
 import DisconnectSharedDriveConfirmationPage from "./case-management/netapp-disconnect/DisconnectSharedDriveConfirmationPage";
 import DisconnectSharedDriveSuccessPage from "./case-management/netapp-disconnect/DisconnectSharedDriveSuccessPage";
 import DisconnectSharedDriveFailurePage from "./case-management/netapp-disconnect/DisconnectSharedDriveFailurePage";
+import ProtectedRoutes from "./ProtectedRoutes";
 const AppRoutes = () => {
   return (
     <Routes>
       <Route index element={<CaseSearchPage />} />
       <Route path="/search-results" element={<CaseSearchResultPage />} />
-      <Route path="/case/:caseId/egress-connect" element={<EgressPage />} />
+
       <Route path="/case/:caseId/netapp-connect" element={<NetAppPage />} />
-      <Route
-        path="/case/:caseId/egress-connect/confirmation"
-        element={<EgressPage />}
-      />
-      <Route
-        path="/case/:caseId/egress-connect/error"
-        element={<EgressPage />}
-      />
       <Route
         path="/case/:caseId/netapp-connect/confirmation"
         element={<NetAppPage />}
@@ -66,18 +61,29 @@ const AppRoutes = () => {
         path="/case/:caseId/case-management/connection-error"
         element={<FolderAccessErrorPage />}
       />
-      <Route
-        path="/case/:caseId/case-management/disconnect-shared-drive-confirmation"
-        element={<DisconnectSharedDriveConfirmationPage />}
-      />
-      <Route
-        path="/case/:caseId/case-management/disconnect-shared-drive-success"
-        element={<DisconnectSharedDriveSuccessPage />}
-      />
-      <Route
-        path="/case/:caseId/case-management/disconnect-shared-drive-failure"
-        element={<DisconnectSharedDriveFailurePage />}
-      />
+      <Route element={<ProtectedRoutes />}>
+        <Route
+          path="/case/:caseId/case-management/disconnect-shared-drive-confirmation"
+          element={<DisconnectSharedDriveConfirmationPage />}
+        />
+        <Route
+          path="/case/:caseId/case-management/disconnect-shared-drive-success"
+          element={<DisconnectSharedDriveSuccessPage />}
+        />
+        <Route
+          path="/case/:caseId/case-management/disconnect-shared-drive-failure"
+          element={<DisconnectSharedDriveFailurePage />}
+        />
+        <Route path="/case/:caseId/egress-connect" element={<EgressPage />} />
+        <Route
+          path="/case/:caseId/egress-connect/confirmation"
+          element={<EgressConnectConfirmationPage />}
+        />
+        <Route
+          path="/case/:caseId/egress-connect/error"
+          element={<EgressConnectFailurePage />}
+        />
+      </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

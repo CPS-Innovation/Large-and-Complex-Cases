@@ -15,15 +15,43 @@ const SearchResults: React.FC<SearchResultsProps> = ({
   searchQueryString,
   searchApiResults,
 }) => {
-  const getConnectOrViewUrl = (
-    data: SearchResult,
-    operationName: string | null,
-  ) => {
-    if (!data.egressWorkspaceId)
-      return `/case/${data.caseId}/egress-connect?workspace-name=${operationName}`;
-    if (!data.netappFolderPath)
-      return `/case/${data.caseId}/netapp-connect?operation-name=${operationName}`;
-    return `/case/${data.caseId}/case-management`;
+  const renderLink = (data: SearchResult, operationName: string | null) => {
+    if (!data.egressWorkspaceId) {
+      return (
+        <Link
+          to={`/case/${data.caseId}/egress-connect?workspace-name=${operationName}`}
+          state={{
+            searchQueryString: searchQueryString,
+            isNetAppConnected: !!data.netappFolderPath,
+            isRouteValid: true,
+          }}
+          className={styles.link}
+        >
+          Connect
+        </Link>
+      );
+    }
+    if (!data.netappFolderPath) {
+      return (
+        <Link
+          to={`/case/${data.caseId}/netapp-connect?operation-name=${operationName}`}
+          state={{
+            searchQueryString: searchQueryString,
+            isNetAppConnected: !!data.netappFolderPath,
+            isRouteValid: true,
+          }}
+          className={styles.link}
+        >
+          Connect
+        </Link>
+      );
+    }
+
+    return (
+      <Link to={`/case/${data.caseId}/case-management`} className={styles.link}>
+        View
+      </Link>
+    );
   };
   const getTableRowData = () => {
     if (!searchApiResults.data) return [];
@@ -68,20 +96,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
             children: formatDate(data.registrationDate),
           },
           {
-            children: (
-              <Link
-                to={getConnectOrViewUrl(data, operationName)}
-                state={{
-                  searchQueryString: searchQueryString,
-                  isNetAppConnected: !!data.netappFolderPath,
-                }}
-                className={styles.link}
-              >
-                {!data.egressWorkspaceId || !data.netappFolderPath
-                  ? "Connect"
-                  : "View"}
-              </Link>
-            ),
+            children: renderLink(data, operationName),
           },
         ],
       };

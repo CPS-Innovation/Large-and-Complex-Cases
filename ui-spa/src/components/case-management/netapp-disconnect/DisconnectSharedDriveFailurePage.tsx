@@ -1,5 +1,4 @@
 import { Button } from "../../govuk";
-import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import styles from "./DisconnectSharedDriveFailurePage.module.scss";
 
@@ -9,17 +8,10 @@ const DisconnectSharedDriveFailurePage = () => {
   }: {
     state: {
       caseId: number;
-      isRouteValid: boolean;
     };
   } = useLocation();
-  const { caseId, isRouteValid } = state || {};
+  const { caseId } = state || {};
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!isRouteValid) {
-      navigate(`/`);
-    }
-  }, []);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();

@@ -1,21 +1,65 @@
 import { useState } from "react";
 import { Button, Radios, BackLink } from "../govuk";
+import { useLocation, useNavigate } from "react-router-dom";
+import { connectEgressWorkspace } from "../../apis/gateway-api";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
 import styles from "./EgressConnectConfirmationPage.module.scss";
-type EgressConnectConfirmationPageProps = {
-  selectedWorkspaceName: string;
-  backLinkUrl: string;
-  handleContinue: (value: boolean) => void;
-};
-const EgressConnectConfirmationPage: React.FC<
-  EgressConnectConfirmationPageProps
-> = ({ selectedWorkspaceName, backLinkUrl, handleContinue }) => {
+
+const EgressConnectConfirmationPage: React.FC = () => {
+  const {
+    state,
+  }: {
+    state?: {
+      caseId: string;
+      isNetAppConnected: boolean;
+      selectedWorkspace: {
+        name: string;
+        id: string;
+      };
+      backLinkUrl: string;
+    };
+  } = useLocation();
+
+  const { caseId, backLinkUrl, selectedWorkspace } = state || {};
   const [formValue, setFormValue] = useState("yes");
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (formValue === "no" && state?.backLinkUrl) {
+      navigate(state.backLinkUrl, {
+        state: {
+          isRouteValid: true,
+        },
+      });
+      return;
+    }
+    try {
+      if (state?.selectedWorkspace.id && state?.caseId) {
+        await connectEgressWorkspace({
+          workspaceId: state?.selectedWorkspace.id,
+          caseId: state?.caseId,
+        });
+      }
 
-    handleContinue(formValue === "yes");
+      if (!state?.isNetAppConnected)
+        navigate(
+          `/case/${state?.caseId}/netapp-connect?operation-name=${state?.selectedWorkspace.name}`,
+          {
+            state: {
+              searchQueryString: "",
+            },
+          },
+        );
+      else navigate(`/case/${caseId}/case-management`);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (e) {
+      navigate(`/case/${caseId}/egress-connect/error`, {
+        state: {
+          isRouteValid: true,
+        },
+      });
+    }
   };
   return (
     <div className={styles.confirmationWrapper}>
@@ -33,7 +77,7 @@ const EgressConnectConfirmationPage: React.FC<
                     </h1>{" "}
                     <span>
                       Confirm you want to link{" "}
-                      <b>&quot;{selectedWorkspaceName}&quot;</b> on Egress to
+                      <b>&quot;{selectedWorkspace?.name}&quot;</b> on Egress to
                       the case?
                     </span>
                   </>

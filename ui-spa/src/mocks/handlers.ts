@@ -57,7 +57,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
     }),
 
     http.post(`${baseUrl}/api/v1/egress/connections`, async () => {
-      return HttpResponse.json({});
+      return new HttpResponse(null, { status: 500 });
     }),
 
     http.get(`${baseUrl}/api/v1/netapp/folders`, async (req) => {
