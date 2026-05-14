@@ -85,7 +85,7 @@ export async function teardownTestData(ctx: TeardownContext): Promise<void> {
   if (ctx.netAppFolder && ctx.caseId && config.lccApiBaseUrl) {
     const { accessToken, cmsAuth } = await getAuthTokens(
       config.tenantId,
-      config.clientId,
+      config.lccApiClientId,
       config.e2eAdUser,
       config.e2eAdPassword,
       config.ddeiBaseUrl,

@@ -56,7 +56,6 @@ export async function deleteNetAppFiles(
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        Cookie: `Cms-Auth-Values=${cmsAuth}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ caseId, operations }),
@@ -67,7 +66,7 @@ export async function deleteNetAppFiles(
         `  [teardown] deleteNetAppFiles (${fileNames.length} file(s)) failed (${response.status}): ${text.slice(0, 200)}`
       );
       return;
-    }
+    } 
     const body = (await response.json()) as {
       status: string;
       succeeded: number;
@@ -76,7 +75,11 @@ export async function deleteNetAppFiles(
     };
     if (body.failed > 0) {
       console.warn(
-        `  [teardown] deleteNetAppFiles: ${body.failed} of ${fileNames.length} failed (status=${body.status})`
+        `  [teardown] deleteNetAppFiles partial success: ${body.succeeded}/${fileNames.length} succeeded, ${body.failed} failed`
+      );
+    } else {
+      console.log(
+        `  [teardown] deleteNetAppFiles success: ${body.succeeded} file(s) deleted`
       );
     }
   } catch (err) {

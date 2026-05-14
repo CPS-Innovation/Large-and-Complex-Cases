@@ -15,8 +15,6 @@ variables:
     value: "20.x"
   - name: workingDir
     value: "ui-spa"
-  - name: webAppName
-    value: "lacc-app-ui-spa-${{ parameters.environment }}"
 
 steps:
   - task: UseNode@1
@@ -39,7 +37,7 @@ steps:
     workingDirectory: $(workingDir)
     displayName: "Run Lighthouse Test"
     env:
-      BASE_URL: "https://$(webAppName).azurewebsites.net"
+      BASE_URL: $(RedirectUrlLccUi)
       AZURE_AD_USERNAME: $(AadUserName)
       AZURE_AD_PASSWORD: $(AadUserPassword)
       AZURE_AD_TENANT_ID: $(TenantId)
