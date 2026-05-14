@@ -17,7 +17,7 @@ function positiveIntEnv(name: string, defaultValue: string): number {
   const parsed = Number.parseInt(raw, 10);
   if (!Number.isFinite(parsed) || parsed <= 0) {
     throw new Error(
-      `Invalid ${name}: expected a positive integer, got "${raw}"`
+      `Invalid ${name}: expected a positive integer, got "${raw}"`,
     );
   }
   return parsed;
@@ -27,21 +27,24 @@ export function loadEnvConfig() {
   return {
     baseUrl: requireEnv("BASE_URL"),
     cmsLoginPage: requireEnv("CMS_LOGIN_PAGE"),
-    caseApiBaseUrl: requireEnv("CASE_API_BASE_URL"),
     ddeiBaseUrl: requireEnv("DDEI_BASE_URL"),
     egressBaseUrl: requireEnv("EGRESS_BASE_URL"),
+    // CMRC Base URL Required only for register-case.
+    caseApiBaseUrl: process.env.CASE_API_BASE_URL || "",
 
     tenantId: requireEnv("TENANT_ID"),
-    clientId: requireEnv("CLIENT_ID"),
+    lccApiClientId: requireEnv("LCC_API_CLIENT_ID"),
+    // CMRC Client ID, required only for register-case.
+    cmrcApiClientId: process.env.CMRC_API_CLIENT_ID || "",
 
     e2eAdUser: requireEnv("E2E_AD_USER"),
     e2eAdPassword: requireEnv("E2E_AD_PASSWORD"),
     cmsUsername: requireEnv("CMS_USERNAME"),
     cmsPassword: requireEnv("CMS_PASSWORD"),
     ddeiAccessKey: requireEnv("DDEI_ACCESS_KEY"),
-    // Separate function key for the case-register endpoint. The
-    // case-register backend rejects the lcc-app DDEI key with HTTP 400
-    // "Unauthorized access to CMS"; only the case-register key is
+    // Separate function key for the register-case endpoint. The
+    // register-case backend rejects the lcc-app DDEI key with HTTP 400
+    // "Unauthorized access to CMS"; only the register-case key is
     // accepted there. All other DDEI auth flows still use ddeiAccessKey.
     // Optional in shared config — only the register-case setup path
     // (setup-helper.ts:setupTestData) reads this; default mode never
@@ -52,7 +55,10 @@ export function loadEnvConfig() {
 
     egressServiceAccountAuth: requireEnv("EGRESS_SERVICE_ACCOUNT_AUTH"),
     egressTemplateId: optionalEnv("EGRESS_TEMPLATE_ID", EGRESS_TEMPLATE_ID),
-    egressAdminRoleId: optionalEnv("EGRESS_ADMIN_ROLE_ID", EGRESS_ADMIN_ROLE_ID),
+    egressAdminRoleId: optionalEnv(
+      "EGRESS_ADMIN_ROLE_ID",
+      EGRESS_ADMIN_ROLE_ID,
+    ),
 
     testFileSizeMb: positiveIntEnv("TEST_FILE_SIZE_MB", "100"),
     testFileCount: positiveIntEnv("TEST_FILE_COUNT", "1"),
@@ -76,7 +82,6 @@ export function loadEnvConfig() {
     // by disassociate-NetApp-connection in register-case teardown —
     // that endpoint requires an app-only token, not user-delegated.
     // Optional: if unset, disassociation is silently skipped.
-    lccApiClientId: process.env.LCC_API_CLIENT_ID || "",
     lccApiClientSecret: process.env.LCC_API_CLIENT_SECRET || "",
   };
 }
