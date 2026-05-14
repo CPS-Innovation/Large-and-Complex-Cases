@@ -1,25 +1,62 @@
 import { useState } from "react";
 import { Button, Radios, BackLink } from "../govuk";
+import { useLocation, useNavigate } from "react-router-dom";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
+import { connectNetAppFolder } from "../../apis/gateway-api";
+import { getFolderNameFromPath } from "../../common/utils/getFolderNameFromPath";
 import styles from "./NetAppConnectConfirmationPage.module.scss";
-type NetAppConnectConfirmationPageProps = {
-  selectedFolderName: string;
-  backLinkUrl: string;
-  handleContinue: (value: boolean) => void;
-};
-const NetAppConnectConfirmationPage: React.FC<
-  NetAppConnectConfirmationPageProps
-> = ({ selectedFolderName, backLinkUrl, handleContinue }) => {
+
+const NetAppConnectConfirmationPage: React.FC = () => {
+  const {
+    state,
+  }: {
+    state?: {
+      caseId: string;
+      operationName: string;
+      selectedWorkspace: {
+        folderPath: string;
+      };
+      backLinkUrl: string;
+    };
+  } = useLocation();
   const [formValue, setFormValue] = useState("yes");
+  const { caseId, operationName, backLinkUrl, selectedWorkspace } = state || {};
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    handleContinue(formValue === "yes");
+    if (formValue === "no" && state?.backLinkUrl) {
+      navigate(state.backLinkUrl, {
+        state: {
+          isRouteValid: true,
+        },
+      });
+      return;
+    }
+    try {
+      if (selectedWorkspace?.folderPath && caseId && operationName) {
+        await connectNetAppFolder({
+          operationName: operationName,
+          folderPath: selectedWorkspace?.folderPath,
+          caseId: caseId,
+        });
+        navigate(`/case/${caseId}/case-management`);
+      }
+    } catch (error) {
+      if (error)
+        navigate(`/case/${caseId}/netapp-connect/error`, {
+          state: {
+            isRouteValid: true,
+            backLinkUrl,
+          },
+        });
+    }
   };
   return (
     <div className={styles.confirmationWrapper}>
-      <BackLink to={backLinkUrl}>Back</BackLink>
+      <BackLink to={backLinkUrl} state={{ isRouteValid: true }}>
+        Back
+      </BackLink>
       <PageContentWrapper>
         <form onSubmit={handleSubmit}>
           <Radios
@@ -33,8 +70,14 @@ const NetAppConnectConfirmationPage: React.FC<
                     </h1>{" "}
                     <span>
                       Confirm you want to link{" "}
-                      <b>&quot;{selectedFolderName}&quot;</b> Shared Drive
-                      folder to the case?
+                      <b>
+                        &quot;
+                        {getFolderNameFromPath(
+                          selectedWorkspace?.folderPath || "",
+                        )}
+                        &quot;
+                      </b>{" "}
+                      Shared Drive folder to the case?
                     </span>
                   </>
                 ),

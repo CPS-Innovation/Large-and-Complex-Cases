@@ -40,18 +40,18 @@ const EgressConnectConfirmationPage: React.FC = () => {
           workspaceId: state?.selectedWorkspace.id,
           caseId: state?.caseId,
         });
-      }
 
-      if (!state?.isNetAppConnected)
-        navigate(
-          `/case/${state?.caseId}/netapp-connect?operation-name=${state?.selectedWorkspace.name}`,
-          {
-            state: {
-              searchQueryString: "",
+        if (!state?.isNetAppConnected)
+          navigate(
+            `/case/${state?.caseId}/netapp-connect?operation-name=${state?.selectedWorkspace.name}`,
+            {
+              state: {
+                searchQueryString: "",
+              },
             },
-          },
-        );
-      else navigate(`/case/${caseId}/case-management`);
+          );
+        else navigate(`/case/${caseId}/case-management`);
+      }
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       navigate(`/case/${caseId}/egress-connect/error`, {
@@ -63,7 +63,9 @@ const EgressConnectConfirmationPage: React.FC = () => {
   };
   return (
     <div className={styles.confirmationWrapper}>
-      <BackLink to={backLinkUrl}>Back</BackLink>
+      <BackLink to={backLinkUrl} state={{ isRouteValid: true }}>
+        Back
+      </BackLink>
       <PageContentWrapper>
         <form onSubmit={handleSubmit}>
           <Radios

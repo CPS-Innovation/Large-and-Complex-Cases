@@ -5,6 +5,8 @@ import EgressPage from "./egress-connect";
 import EgressConnectConfirmationPage from "./egress-connect/EgressConnectConfirmationPage";
 import EgressConnectFailurePage from "./egress-connect/EgressConnectFailurePage";
 import NetAppPage from "./netapp-connect";
+import NetAppConnectConfirmationPage from "./netapp-connect/NetAppConnectConfirmationPage";
+import NetAppConnectFailurePage from "./netapp-connect/NetAppConnectFailurePage";
 import CaseManagementPage from "./case-management";
 import MetaDataErrorPage from "./case-management/transfer-materials/MetaDataErrorPage";
 import FolderAccessErrorPage from "./case-management/transfer-materials/FolderAccessErrorPage";
@@ -13,22 +15,13 @@ import TransferMovePermissionsErrorPage from "./case-management/transfer-materia
 import DisconnectSharedDriveConfirmationPage from "./case-management/netapp-disconnect/DisconnectSharedDriveConfirmationPage";
 import DisconnectSharedDriveSuccessPage from "./case-management/netapp-disconnect/DisconnectSharedDriveSuccessPage";
 import DisconnectSharedDriveFailurePage from "./case-management/netapp-disconnect/DisconnectSharedDriveFailurePage";
+
 import ProtectedRoutes from "./ProtectedRoutes";
 const AppRoutes = () => {
   return (
     <Routes>
       <Route index element={<CaseSearchPage />} />
       <Route path="/search-results" element={<CaseSearchResultPage />} />
-
-      <Route path="/case/:caseId/netapp-connect" element={<NetAppPage />} />
-      <Route
-        path="/case/:caseId/netapp-connect/confirmation"
-        element={<NetAppPage />}
-      />
-      <Route
-        path="/case/:caseId/netapp-connect/error"
-        element={<NetAppPage />}
-      />
       <Route
         path="/case/:caseId/case-management"
         element={<CaseManagementPage />}
@@ -82,6 +75,15 @@ const AppRoutes = () => {
         <Route
           path="/case/:caseId/egress-connect/error"
           element={<EgressConnectFailurePage />}
+        />
+        <Route path="/case/:caseId/netapp-connect" element={<NetAppPage />} />
+        <Route
+          path="/case/:caseId/netapp-connect/confirmation"
+          element={<NetAppConnectConfirmationPage />}
+        />
+        <Route
+          path="/case/:caseId/netapp-connect/error"
+          element={<NetAppConnectFailurePage />}
         />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

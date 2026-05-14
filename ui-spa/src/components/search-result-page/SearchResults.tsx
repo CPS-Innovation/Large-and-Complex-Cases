@@ -37,7 +37,6 @@ const SearchResults: React.FC<SearchResultsProps> = ({
           to={`/case/${data.caseId}/netapp-connect?operation-name=${operationName}`}
           state={{
             searchQueryString: searchQueryString,
-            isNetAppConnected: !!data.netappFolderPath,
             isRouteValid: true,
           }}
           className={styles.link}

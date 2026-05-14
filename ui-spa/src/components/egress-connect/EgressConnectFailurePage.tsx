@@ -15,7 +15,9 @@ const EgressConnectFailurePage: React.FC = () => {
   const { backLinkUrl } = state || {};
   return (
     <div>
-      <BackLink to={backLinkUrl}>Back</BackLink>
+      <BackLink to={backLinkUrl} state={{ isRouteValid: true }}>
+        Back
+      </BackLink>
 
       <PageContentWrapper>
         <div className={styles.contentWrapper}>
