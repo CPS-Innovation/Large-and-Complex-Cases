@@ -338,7 +338,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           `/case/${caseId}/case-management/egress-connection-error?operation-name=${operationName}`,
           {
             state: {
-              isValid: true,
+              isRouteValid: true,
             },
           },
         );
@@ -358,7 +358,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
           `/case/${caseId}/case-management/shared-drive-connection-error?operation-name=${operationName}`,
           {
             state: {
-              isValid: true,
+              isRouteValid: true,
             },
           },
         );

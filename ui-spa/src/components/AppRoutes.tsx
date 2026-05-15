@@ -42,14 +42,7 @@ const AppRoutes = () => {
         path="/case/:caseId/case-management/transfer-permissions-error"
         element={<TransferMovePermissionsErrorPage />}
       />
-      <Route
-        path="/case/:caseId/case-management/egress-connection-error"
-        element={<MetaDataErrorPage />}
-      />
-      <Route
-        path="/case/:caseId/case-management/shared-drive-connection-error"
-        element={<MetaDataErrorPage />}
-      />
+
       <Route
         path="/case/:caseId/case-management/connection-error"
         element={<FolderAccessErrorPage />}
@@ -84,6 +77,14 @@ const AppRoutes = () => {
         <Route
           path="/case/:caseId/netapp-connect/error"
           element={<NetAppConnectFailurePage />}
+        />
+        <Route
+          path="/case/:caseId/case-management/egress-connection-error"
+          element={<MetaDataErrorPage />}
+        />
+        <Route
+          path="/case/:caseId/case-management/shared-drive-connection-error"
+          element={<MetaDataErrorPage />}
         />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
