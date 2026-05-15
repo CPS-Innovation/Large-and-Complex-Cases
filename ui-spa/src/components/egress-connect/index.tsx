@@ -12,16 +12,21 @@ import EgressSearchPage from "./EgressSearchPage";
 const EgressPage = () => {
   const navigate = useNavigate();
   const { caseId } = useParams();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   const [workspaceName, setWorkspaceName] = useState("");
-  const [initialLocationState, setInitialLocationState] = useState<{
-    searchQueryString: string;
-    isNetAppConnected: boolean;
-  }>();
   const [formDataErrorText, setFormDataErrorText] = useState("");
   const [formValue, setFormValue] = useState("");
+  const {
+    state,
+  }: {
+    state?: {
+      isNetAppConnected: boolean;
+      searchQueryString: string;
+    };
+  } = useLocation();
+
+  const { isNetAppConnected, searchQueryString } = state || {};
 
   const egressSearchApi = useApi(
     getEgressSearchResults,
@@ -30,39 +35,19 @@ const EgressPage = () => {
   );
 
   useEffect(() => {
-    if (location.pathname.endsWith("/egress-connect")) {
-      const name = searchParams.get("workspace-name");
-      if (!name) {
-        setFormDataErrorText("egress folder name should not be empty");
-        return;
-      }
-      setWorkspaceName(name);
-      setFormValue(name);
+    const name = searchParams.get("workspace-name");
+    if (!name) {
+      setFormDataErrorText("egress folder name should not be empty");
+      return;
     }
-  }, [searchParams, location.pathname]);
-
-  useEffect(() => {
-    if (
-      location.state?.searchQueryString !== undefined ||
-      location.state?.isNetAppConnected !== undefined
-    ) {
-      setInitialLocationState({
-        searchQueryString: location.state?.searchQueryString,
-        isNetAppConnected: location.state?.isNetAppConnected,
-      });
-    }
-  }, [location]);
+    setWorkspaceName(name);
+    setFormValue(name);
+  }, [searchParams]);
 
   useEffect(() => {
     if (workspaceName) egressSearchApi.refetch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceName]);
-
-  useEffect(() => {
-    return () => {
-      window.history.replaceState({}, "");
-    };
-  }, []);
 
   useEffect(() => {
     if (egressSearchApi.status === "failed")
@@ -75,7 +60,13 @@ const EgressPage = () => {
       return;
     }
     setFormDataErrorText("");
-    setSearchParams({ "workspace-name": formValue });
+    navigate(`/case/${caseId}/egress-connect?workspace-name=${formValue}`, {
+      state: {
+        isRouteValid: true,
+        searchQueryString,
+        isNetAppConnected,
+      },
+    });
   };
 
   const handleFormChange = (value: string) => {
@@ -90,6 +81,10 @@ const EgressPage = () => {
     navigate(`/case/${caseId}/egress-connect/confirmation`, {
       state: {
         isRouteValid: true,
+        backLinkUrl: `/case/${caseId}/egress-connect?workspace-name=${workspaceName}`,
+        caseId,
+        searchQueryString,
+        isNetAppConnected: isNetAppConnected,
         selectedWorkspace: {
           id: selectedWorkSpace?.id,
           name: selectedWorkSpace?.name,
@@ -100,11 +95,7 @@ const EgressPage = () => {
 
   return (
     <EgressSearchPage
-      backLinkUrl={
-        initialLocationState?.searchQueryString
-          ? `/search-results?${initialLocationState?.searchQueryString}`
-          : "/search-results"
-      }
+      backLinkUrl={`/search-results?${searchQueryString}`}
       workspaceName={workspaceName}
       searchValue={formValue}
       formDataErrorText={formDataErrorText}

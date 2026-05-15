@@ -10,12 +10,18 @@ const EgressConnectFailurePage: React.FC = () => {
   }: {
     state?: {
       backLinkUrl: string;
+      searchQueryString: string;
+      isNetAppConnected: boolean;
     };
   } = useLocation();
-  const { backLinkUrl } = state || {};
+  const { backLinkUrl, searchQueryString, isNetAppConnected } = state || {};
+  console.log("state>>>>", state);
   return (
     <div>
-      <BackLink to={backLinkUrl} state={{ isRouteValid: true }}>
+      <BackLink
+        to={backLinkUrl}
+        state={{ isRouteValid: true, searchQueryString, isNetAppConnected }}
+      >
         Back
       </BackLink>
 

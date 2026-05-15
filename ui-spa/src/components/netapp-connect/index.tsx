@@ -14,12 +14,17 @@ const NetAppPage = () => {
   const { caseId } = useParams();
   const [searchParams] = useSearchParams();
   const location = useLocation();
+  const {
+    state,
+  }: {
+    state?: {
+      searchQueryString: string;
+    };
+  } = useLocation();
+
+  const { searchQueryString } = state || {};
 
   const [operationName, setOperationName] = useState<string | null>("");
-  const [initialLocationState, setInitialLocationState] = useState<{
-    searchQueryString: string;
-  }>();
-
   const [rootFolderPath, setRootFolderPath] = useState("");
 
   const netAppFolderApiResults = useApi(
@@ -59,6 +64,7 @@ const NetAppPage = () => {
         isRouteValid: true,
         operationName,
         caseId,
+        searchQueryString,
         backLinkUrl: `/case/${caseId}/netapp-connect?operation-name=${operationName}`,
         selectedWorkspace: {
           folderPath: path,
@@ -67,21 +73,9 @@ const NetAppPage = () => {
     });
   };
 
-  useEffect(() => {
-    if (location.state?.searchQueryString !== undefined) {
-      setInitialLocationState({
-        searchQueryString: location.state?.searchQueryString,
-      });
-    }
-  }, [location]);
-
   return (
     <NetAppFolderResultsPage
-      backLinkUrl={
-        initialLocationState?.searchQueryString
-          ? `/search-results?${initialLocationState?.searchQueryString}`
-          : "/search-results"
-      }
+      backLinkUrl={`/search-results?${searchQueryString}`}
       rootFolderPath={rootFolderPath}
       netAppFolderApiResults={netAppFolderApiResults}
       handleConnectFolder={handleConnectFolder}

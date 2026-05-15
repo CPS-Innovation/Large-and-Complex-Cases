@@ -12,6 +12,7 @@ const EgressConnectConfirmationPage: React.FC = () => {
     state?: {
       caseId: string;
       isNetAppConnected: boolean;
+      searchQueryString: string;
       selectedWorkspace: {
         name: string;
         id: string;
@@ -20,7 +21,13 @@ const EgressConnectConfirmationPage: React.FC = () => {
     };
   } = useLocation();
 
-  const { caseId, backLinkUrl, selectedWorkspace } = state || {};
+  const {
+    caseId,
+    backLinkUrl,
+    selectedWorkspace,
+    searchQueryString,
+    isNetAppConnected,
+  } = state || {};
   const [formValue, setFormValue] = useState("yes");
   const navigate = useNavigate();
 
@@ -30,6 +37,8 @@ const EgressConnectConfirmationPage: React.FC = () => {
       navigate(state.backLinkUrl, {
         state: {
           isRouteValid: true,
+          searchQueryString,
+          isNetAppConnected,
         },
       });
       return;
@@ -46,7 +55,8 @@ const EgressConnectConfirmationPage: React.FC = () => {
             `/case/${state?.caseId}/netapp-connect?operation-name=${state?.selectedWorkspace.name}`,
             {
               state: {
-                searchQueryString: "",
+                isRouteValid: true,
+                searchQueryString: searchQueryString,
               },
             },
           );
@@ -57,13 +67,26 @@ const EgressConnectConfirmationPage: React.FC = () => {
       navigate(`/case/${caseId}/egress-connect/error`, {
         state: {
           isRouteValid: true,
+          backLinkUrl,
+          searchQueryString,
+          isNetAppConnected,
         },
       });
     }
   };
+
+  console.log("backLinkUrl:", backLinkUrl);
+
+  console.log("searchQueryString:", searchQueryString);
+
+  console.log("isNetAppConnected:", isNetAppConnected);
+
   return (
     <div className={styles.confirmationWrapper}>
-      <BackLink to={backLinkUrl} state={{ isRouteValid: true }}>
+      <BackLink
+        to={backLinkUrl}
+        state={{ isRouteValid: true, searchQueryString, isNetAppConnected }}
+      >
         Back
       </BackLink>
       <PageContentWrapper>

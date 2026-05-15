@@ -10,12 +10,16 @@ const NetAppConnectFailurePage: React.FC = () => {
   }: {
     state?: {
       backLinkUrl: string;
+      searchQueryString: string;
     };
   } = useLocation();
-  const { backLinkUrl } = state || {};
+  const { backLinkUrl, searchQueryString } = state || {};
   return (
     <div>
-      <BackLink to={backLinkUrl} state={{ isRouteValid: true }}>
+      <BackLink
+        to={backLinkUrl}
+        state={{ isRouteValid: true, searchQueryString }}
+      >
         Back
       </BackLink>
       <PageContentWrapper>

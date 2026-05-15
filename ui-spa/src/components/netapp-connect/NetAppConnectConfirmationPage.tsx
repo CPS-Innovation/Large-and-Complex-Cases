@@ -5,6 +5,7 @@ import { PageContentWrapper } from "../govuk/PageContentWrapper";
 import { connectNetAppFolder } from "../../apis/gateway-api";
 import { getFolderNameFromPath } from "../../common/utils/getFolderNameFromPath";
 import styles from "./NetAppConnectConfirmationPage.module.scss";
+import { is } from "zod/v4/locales";
 
 const NetAppConnectConfirmationPage: React.FC = () => {
   const {
@@ -13,6 +14,7 @@ const NetAppConnectConfirmationPage: React.FC = () => {
     state?: {
       caseId: string;
       operationName: string;
+      searchQueryString: string;
       selectedWorkspace: {
         folderPath: string;
       };
@@ -20,7 +22,13 @@ const NetAppConnectConfirmationPage: React.FC = () => {
     };
   } = useLocation();
   const [formValue, setFormValue] = useState("yes");
-  const { caseId, operationName, backLinkUrl, selectedWorkspace } = state || {};
+  const {
+    caseId,
+    operationName,
+    backLinkUrl,
+    selectedWorkspace,
+    searchQueryString,
+  } = state || {};
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -29,6 +37,7 @@ const NetAppConnectConfirmationPage: React.FC = () => {
       navigate(state.backLinkUrl, {
         state: {
           isRouteValid: true,
+          searchQueryString,
         },
       });
       return;
@@ -48,13 +57,17 @@ const NetAppConnectConfirmationPage: React.FC = () => {
           state: {
             isRouteValid: true,
             backLinkUrl,
+            searchQueryString,
           },
         });
     }
   };
   return (
     <div className={styles.confirmationWrapper}>
-      <BackLink to={backLinkUrl} state={{ isRouteValid: true }}>
+      <BackLink
+        to={backLinkUrl}
+        state={{ isRouteValid: true, searchQueryString }}
+      >
         Back
       </BackLink>
       <PageContentWrapper>
