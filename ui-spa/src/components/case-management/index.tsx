@@ -46,7 +46,7 @@ const CaseManagementPage = () => {
           `/case/${caseId}/case-management/egress-connection-error?operation-name=${caseMetaData.data?.operationName}`,
           {
             state: {
-              isValid: true,
+              isRouteValid: true,
             },
           },
         );
@@ -59,7 +59,7 @@ const CaseManagementPage = () => {
           `/case/${caseId}/case-management/shared-drive-connection-error?operation-name=${caseMetaData.data?.operationName}`,
           {
             state: {
-              isValid: true,
+              isRouteValid: true,
             },
           },
         );

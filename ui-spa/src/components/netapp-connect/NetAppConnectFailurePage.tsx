@@ -1,16 +1,27 @@
 import { BackLink } from "../govuk";
 import { Link } from "react-router";
+import { useLocation } from "react-router-dom";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
 import styles from "./NetAppConnectFailurePage.module.scss";
-type NetAppConnectFailurePageProps = {
-  backLinkUrl: string;
-};
-const NetAppConnectFailurePage: React.FC<NetAppConnectFailurePageProps> = ({
-  backLinkUrl,
-}) => {
+
+const NetAppConnectFailurePage: React.FC = () => {
+  const {
+    state,
+  }: {
+    state?: {
+      backLinkUrl: string;
+      searchQueryString: string;
+    };
+  } = useLocation();
+  const { backLinkUrl, searchQueryString } = state || {};
   return (
     <div>
-      <BackLink to={backLinkUrl}>Back</BackLink>
+      <BackLink
+        to={backLinkUrl}
+        state={{ isRouteValid: true, searchQueryString }}
+      >
+        Back
+      </BackLink>
       <PageContentWrapper>
         <div className={styles.contentWrapper}>
           <h1 className="govuk-heading-xl">

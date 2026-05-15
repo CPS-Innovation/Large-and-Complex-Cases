@@ -1,9 +1,6 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useApi } from "../../common/hooks/useApi";
-import {
-  getEgressSearchResults,
-  connectEgressWorkspace,
-} from "../../apis/gateway-api";
+import { getEgressSearchResults } from "../../apis/gateway-api";
 import {
   useNavigate,
   useSearchParams,
@@ -11,23 +8,25 @@ import {
   useParams,
 } from "react-router-dom";
 import EgressSearchPage from "./EgressSearchPage";
-import EgressConnectConfirmationPage from "./EgressConnectConfirmationPage";
-import EgressConnectFailurePage from "./EgressConnectFailurePage";
 
 const EgressPage = () => {
   const navigate = useNavigate();
   const { caseId } = useParams();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   const [workspaceName, setWorkspaceName] = useState("");
-  const [initialLocationState, setInitialLocationState] = useState<{
-    searchQueryString: string;
-    isNetAppConnected: boolean;
-  }>();
-  const [selectedFolderId, setSelectedFolderId] = useState("");
   const [formDataErrorText, setFormDataErrorText] = useState("");
   const [formValue, setFormValue] = useState("");
+  const {
+    state,
+  }: {
+    state?: {
+      isNetAppConnected: boolean;
+      searchQueryString: string;
+    };
+  } = useLocation();
+
+  const { isNetAppConnected, searchQueryString } = state || {};
 
   const egressSearchApi = useApi(
     getEgressSearchResults,
@@ -36,39 +35,19 @@ const EgressPage = () => {
   );
 
   useEffect(() => {
-    if (location.pathname.endsWith("/egress-connect")) {
-      const name = searchParams.get("workspace-name");
-      if (!name) {
-        setFormDataErrorText("egress folder name should not be empty");
-        return;
-      }
-      setWorkspaceName(name);
-      setFormValue(name);
+    const name = searchParams.get("workspace-name");
+    if (!name) {
+      setFormDataErrorText("egress folder name should not be empty");
+      return;
     }
-  }, [searchParams, location.pathname]);
-
-  useEffect(() => {
-    if (
-      location.state?.searchQueryString !== undefined ||
-      location.state?.isNetAppConnected !== undefined
-    ) {
-      setInitialLocationState({
-        searchQueryString: location.state?.searchQueryString,
-        isNetAppConnected: location.state?.isNetAppConnected,
-      });
-    }
-  }, [location]);
+    setWorkspaceName(name);
+    setFormValue(name);
+  }, [searchParams]);
 
   useEffect(() => {
     if (workspaceName) egressSearchApi.refetch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceName]);
-
-  useEffect(() => {
-    return () => {
-      window.history.replaceState({}, "");
-    };
-  }, []);
 
   useEffect(() => {
     if (egressSearchApi.status === "failed")
@@ -81,7 +60,13 @@ const EgressPage = () => {
       return;
     }
     setFormDataErrorText("");
-    setSearchParams({ "workspace-name": formValue });
+    navigate(`/case/${caseId}/egress-connect?workspace-name=${formValue}`, {
+      state: {
+        isRouteValid: true,
+        searchQueryString,
+        isNetAppConnected,
+      },
+    });
   };
 
   const handleFormChange = (value: string) => {
@@ -89,87 +74,28 @@ const EgressPage = () => {
   };
 
   const handleConnectFolder = (id: string) => {
-    setSelectedFolderId(id);
-    navigate(`/case/${caseId}/egress-connect/confirmation`);
-  };
-  const handleContinue = async (connect: boolean) => {
-    if (!connect) {
-      navigate(
-        `/case/${caseId}/egress-connect?workspace-name=${workspaceName}`,
-      );
-      return;
-    }
-    try {
-      await connectEgressWorkspace({
-        workspaceId: selectedFolderId,
-        caseId: caseId!,
-      });
-
-      if (!initialLocationState?.isNetAppConnected)
-        navigate(
-          `/case/${caseId}/netapp-connect?operation-name=${workspaceName}`,
-          {
-            state: {
-              searchQueryString: initialLocationState?.searchQueryString,
-            },
-          },
-        );
-      else navigate(`/case/${caseId}/case-management`);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (e) {
-      navigate(`/case/${caseId}/egress-connect/error`);
-    }
+    const selectedWorkSpace = egressSearchApi.data?.find(
+      (data) => data.id === id,
+    );
+    if (!selectedWorkSpace) return;
+    navigate(`/case/${caseId}/egress-connect/confirmation`, {
+      state: {
+        isRouteValid: true,
+        backLinkUrl: `/case/${caseId}/egress-connect?workspace-name=${workspaceName}`,
+        caseId,
+        searchQueryString,
+        isNetAppConnected: isNetAppConnected,
+        selectedWorkspace: {
+          id: selectedWorkSpace?.id,
+          name: selectedWorkSpace?.name,
+        },
+      },
+    });
   };
 
-  const validateRoute = useCallback(() => {
-    let validRoute = true;
-    if (
-      location.pathname.endsWith("/egress-connect") &&
-      initialLocationState?.isNetAppConnected === undefined &&
-      location.state?.isNetAppConnected === undefined
-    ) {
-      validRoute = false;
-    }
-    if (location.pathname.endsWith("/confirmation") && !selectedFolderId)
-      validRoute = false;
-    if (location.pathname.endsWith("/error") && !selectedFolderId)
-      validRoute = false;
-    if (!validRoute) navigate(`/`);
-  }, [location, initialLocationState, navigate, selectedFolderId]);
-
-  useEffect(() => {
-    validateRoute();
-  }, [location, validateRoute]);
-
-  const selectedWorkSpaceName = useMemo(() => {
-    if (egressSearchApi.status !== "succeeded") return "";
-    return (
-      egressSearchApi.data?.find((data) => data.id === selectedFolderId)
-        ?.name ?? ""
-    );
-  }, [egressSearchApi, selectedFolderId]);
-
-  if (location.pathname.endsWith("/error"))
-    return (
-      <EgressConnectFailurePage
-        backLinkUrl={`/case/${caseId}/egress-connect?workspace-name=${workspaceName}`}
-      />
-    );
-  if (location.pathname.endsWith("/confirmation"))
-    return (
-      <EgressConnectConfirmationPage
-        selectedWorkspaceName={selectedWorkSpaceName}
-        backLinkUrl={`/case/${caseId}/egress-connect?workspace-name=${workspaceName}`}
-        handleContinue={handleContinue}
-      />
-    );
   return (
     <EgressSearchPage
-      backLinkUrl={
-        initialLocationState?.searchQueryString
-          ? `/search-results?${initialLocationState?.searchQueryString}`
-          : "/search-results"
-      }
+      backLinkUrl={`/search-results?${searchQueryString}`}
       workspaceName={workspaceName}
       searchValue={formValue}
       formDataErrorText={formDataErrorText}

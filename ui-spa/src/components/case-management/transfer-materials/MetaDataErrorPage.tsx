@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useCallback } from "react";
+import { useMemo } from "react";
 import { Button, LinkButton, BackLink } from "../../govuk";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import styles from "./MetaDataErrorPage.module.scss";
@@ -23,6 +23,7 @@ const MetaDataErrorPage = () => {
         `/case/${caseId}/egress-connect?workspace-name=${operationName}`,
         {
           state: {
+            isRouteValid: true,
             searchQueryString: "",
             isNetAppConnected: true,
           },
@@ -33,21 +34,12 @@ const MetaDataErrorPage = () => {
       `/case/${caseId}/netapp-connect?operation-name=${operationName}`,
       {
         state: {
+          isRouteValid: true,
           searchQueryString: "",
         },
       },
     );
   };
-
-  const validateRoute = useCallback(() => {
-    if (location?.state?.isValid === undefined) {
-      navigate(`/`);
-    }
-  }, [location, navigate]);
-
-  useEffect(() => {
-    validateRoute();
-  }, [location, validateRoute]);
 
   return (
     <div>

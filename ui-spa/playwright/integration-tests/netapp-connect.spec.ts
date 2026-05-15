@@ -453,7 +453,7 @@ test.describe("netapp connect", () => {
     await expect(
       page.getByTestId("netapp-folder-table-loader"),
     ).not.toBeVisible();
-    await validateFolderPath(page, ["Home", "thunderstrike"]);
+    await validateFolderPath(page, ["Home"]);
     await page.locator('role=button[name="Connect"]').nth(0).click();
     await expect(page).toHaveURL("/case/14/netapp-connect/confirmation");
     await expect(page.locator("h1")).toHaveText(`Are you sure?`);
@@ -461,7 +461,12 @@ test.describe("netapp connect", () => {
     await expect(
       page.getByTestId("netapp-folder-table-loader"),
     ).not.toBeVisible();
-    await validateFolderPath(page, ["Home", "thunderstrike"]);
+    await validateFolderPath(page, ["Home"]);
+    await page.locator('role=button[name="thunderstrike"]').click();
+    await expect(page.getByTestId("netapp-folder-table-loader")).toBeVisible();
+    await expect(
+      page.getByText(`Loading folders from Network Shared Drive`),
+    ).toBeVisible();
     await page.locator('role=button[name="folder-0"]').click();
     await expect(page.getByTestId("netapp-folder-table-loader")).toBeVisible();
     await expect(
