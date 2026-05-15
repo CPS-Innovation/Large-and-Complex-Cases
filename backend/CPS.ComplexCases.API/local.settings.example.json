@@ -39,7 +39,9 @@
     "SessionTimeoutMinutes": "60",
     "RateLimiting__PermitLimit": "100",
     "RateLimiting__IntervalInSeconds": "60",
-    "FeatureFlags__ManageMaterials": true
+    "FeatureFlags__ManageMaterials": true,
+    "BlobStorageAccountUrl": "https://<blob-storage-account-url>.blob.core.windows.net",
+    "BlobContainerName": "aspose-templates"
   },
   "Host": {
     "LocalHttpPort": 7071,
