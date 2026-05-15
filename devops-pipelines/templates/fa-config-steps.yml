@@ -225,6 +225,16 @@ steps:
             "slotSetting": false
           },
           {
+            "name": "BlobStorageAccountUrl",
+            "value": "$(BlobStorageAccountUrl)",
+            "slotSetting": false
+          },
+          {
+            "name": "BlobContainerName",
+            "value": "$(BlobContainerName)",
+            "slotSetting": false
+          },
+          {
             "name": "RateLimiting__PermitLimit",
             "value": "$(RateLimitingPermitLimit)",
             "slotSetting": false
