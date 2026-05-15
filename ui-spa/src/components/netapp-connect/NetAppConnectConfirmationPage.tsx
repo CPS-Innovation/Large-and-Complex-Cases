@@ -5,7 +5,6 @@ import { PageContentWrapper } from "../govuk/PageContentWrapper";
 import { connectNetAppFolder } from "../../apis/gateway-api";
 import { getFolderNameFromPath } from "../../common/utils/getFolderNameFromPath";
 import styles from "./NetAppConnectConfirmationPage.module.scss";
-import { is } from "zod/v4/locales";
 
 const NetAppConnectConfirmationPage: React.FC = () => {
   const {

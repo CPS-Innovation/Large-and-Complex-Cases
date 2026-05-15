@@ -34,19 +34,7 @@ const AppRoutes = () => {
         path="/case/:caseId/case-management/transfer-rename-file"
         element={<CaseManagementPage />}
       />
-      <Route
-        path="/case/:caseId/case-management/transfer-errors"
-        element={<TransferErrorPage />}
-      />
-      <Route
-        path="/case/:caseId/case-management/transfer-permissions-error"
-        element={<TransferMovePermissionsErrorPage />}
-      />
 
-      <Route
-        path="/case/:caseId/case-management/connection-error"
-        element={<FolderAccessErrorPage />}
-      />
       <Route element={<ProtectedRoutes />}>
         <Route
           path="/case/:caseId/case-management/disconnect-shared-drive-confirmation"
@@ -85,6 +73,18 @@ const AppRoutes = () => {
         <Route
           path="/case/:caseId/case-management/shared-drive-connection-error"
           element={<MetaDataErrorPage />}
+        />
+        <Route
+          path="/case/:caseId/case-management/transfer-errors"
+          element={<TransferErrorPage />}
+        />
+        <Route
+          path="/case/:caseId/case-management/transfer-permissions-error"
+          element={<TransferMovePermissionsErrorPage />}
+        />
+        <Route
+          path="/case/:caseId/case-management/connection-error"
+          element={<FolderAccessErrorPage />}
         />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

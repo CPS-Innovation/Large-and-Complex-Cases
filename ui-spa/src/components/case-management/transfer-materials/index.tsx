@@ -347,6 +347,11 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       if (egressError.code === 401) {
         navigate(
           `/case/${caseId}/case-management/connection-error?type=egress`,
+          {
+            state: {
+              isRouteValid: true,
+            },
+          },
         );
         return;
       } else {
@@ -367,6 +372,11 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       if (netAppError.code === 401) {
         navigate(
           `/case/${caseId}/case-management/connection-error?type=shareddrive`,
+          {
+            state: {
+              isRouteValid: true,
+            },
+          },
         );
         return;
       } else {
