@@ -15,7 +15,7 @@ const EgressConnectFailurePage: React.FC = () => {
     };
   } = useLocation();
   const { backLinkUrl, searchQueryString, isNetAppConnected } = state || {};
-  console.log("state>>>>", state);
+
   return (
     <div>
       <BackLink
