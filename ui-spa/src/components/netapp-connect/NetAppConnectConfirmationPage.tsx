@@ -32,8 +32,8 @@ const NetAppConnectConfirmationPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (formValue === "no" && state?.backLinkUrl) {
-      navigate(state.backLinkUrl, {
+    if (formValue === "no" && backLinkUrl) {
+      navigate(backLinkUrl, {
         state: {
           isRouteValid: true,
           searchQueryString,

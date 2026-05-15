@@ -33,8 +33,8 @@ const EgressConnectConfirmationPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (formValue === "no" && state?.backLinkUrl) {
-      navigate(state.backLinkUrl, {
+    if (formValue === "no" && backLinkUrl) {
+      navigate(backLinkUrl, {
         state: {
           isRouteValid: true,
           searchQueryString,
@@ -44,15 +44,15 @@ const EgressConnectConfirmationPage: React.FC = () => {
       return;
     }
     try {
-      if (state?.selectedWorkspace.id && state?.caseId) {
+      if (selectedWorkspace?.id && caseId) {
         await connectEgressWorkspace({
-          workspaceId: state?.selectedWorkspace.id,
-          caseId: state?.caseId,
+          workspaceId: selectedWorkspace.id,
+          caseId: caseId,
         });
 
-        if (!state?.isNetAppConnected)
+        if (!isNetAppConnected) {
           navigate(
-            `/case/${state?.caseId}/netapp-connect?operation-name=${state?.selectedWorkspace.name}`,
+            `/case/${caseId}/netapp-connect?operation-name=${selectedWorkspace.name}`,
             {
               state: {
                 isRouteValid: true,
@@ -60,26 +60,23 @@ const EgressConnectConfirmationPage: React.FC = () => {
               },
             },
           );
-        else navigate(`/case/${caseId}/case-management`);
+          return;
+        }
+        navigate(`/case/${caseId}/case-management`);
       }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (e) {
-      navigate(`/case/${caseId}/egress-connect/error`, {
-        state: {
-          isRouteValid: true,
-          backLinkUrl,
-          searchQueryString,
-          isNetAppConnected,
-        },
-      });
+    } catch (error) {
+      if (error) {
+        navigate(`/case/${caseId}/egress-connect/error`, {
+          state: {
+            isRouteValid: true,
+            backLinkUrl,
+            searchQueryString,
+            isNetAppConnected,
+          },
+        });
+      }
     }
   };
-
-  console.log("backLinkUrl:", backLinkUrl);
-
-  console.log("searchQueryString:", searchQueryString);
-
-  console.log("isNetAppConnected:", isNetAppConnected);
 
   return (
     <div className={styles.confirmationWrapper}>
