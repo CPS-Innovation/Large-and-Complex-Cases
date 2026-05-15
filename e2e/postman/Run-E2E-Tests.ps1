@@ -474,6 +474,30 @@ New-Item -ItemType Directory -Path $ReportsDir -Force | Out-Null
 Write-Success "Reports directory: $ReportsDir"
 
 # ============================================================
+# INVALIDATE STALE CACHE
+# ============================================================
+# Update-EnvironmentFile / Update-CollectionVariables reuse any existing
+# _updated.json. Without this step, source-collection edits (pre-request
+# scripts, request bodies) and removed config keys from a previous run
+# get masked by the stale cache. Within a single top-level run the cache
+# is still useful (caseId is propagated across folders), so we only
+# invalidate at the start of a fresh top-level invocation.
+$collBase = [System.IO.Path]::GetFileNameWithoutExtension($CollectionPath)
+$collExt  = [System.IO.Path]::GetExtension($CollectionPath)
+$staleArtifacts = @(
+    (Join-Path $ScriptDir "${collBase}_updated${collExt}"),
+    (Join-Path $ScriptDir "${collBase}_updated_updated${collExt}"),
+    (Join-Path $ScriptDir "LCCTestEnvironment_updated.postman_environment.json"),
+    (Join-Path $ScriptDir "LCCTestEnvironment_exported.postman_environment.json")
+)
+foreach ($p in $staleArtifacts) {
+    if (Test-Path $p) {
+        Remove-Item $p -Force -ErrorAction SilentlyContinue
+        Write-Host "[CACHE] Invalidated $(Split-Path -Leaf $p)" -ForegroundColor Gray
+    }
+}
+
+# ============================================================
 # STEP 1: Upload to Egress (or use existing workspace)
 # ============================================================
 if (-not $SkipUpload) {
@@ -527,6 +551,16 @@ if (-not $SkipUpload) {
     $EgressFileIds = ""
     $EgressFileNames = ""
     $EgressFileCount = "1"
+    $EgressCopyFileId = ""
+    $EgressCopyFileName = ""
+    $EgressCopyFileIds = ""
+    $EgressCopyFileNames = ""
+    $EgressCopyFileCount = "0"
+    $EgressMoveFileId = ""
+    $EgressMoveFileName = ""
+    $EgressMoveFileIds = ""
+    $EgressMoveFileNames = ""
+    $EgressMoveFileCount = "0"
 
     # Try to parse JSON output first
     $uploadLines = $uploadLog -split "`r?`n"
@@ -539,10 +573,31 @@ if (-not $SkipUpload) {
                 $EgressFileCount = [string]$jsonData.fileCount
 
                 if ($jsonData.files -and $jsonData.files.Count -gt 0) {
-                    $EgressFileId = $jsonData.files[0].fileId
-                    $EgressFileName = $jsonData.files[0].fileName
-                    $EgressFileIds = ($jsonData.files | ForEach-Object { $_.fileId }) -join ","
-                    $EgressFileNames = ($jsonData.files | ForEach-Object { $_.fileName }) -join ","
+                    $copyFilesJson = @($jsonData.files | Where-Object { $_.journey -eq "copy" })
+                    $moveFilesJson = @($jsonData.files | Where-Object { $_.journey -eq "move" })
+
+                    # Legacy egressFile* = Copy file set (backward compat).
+                    $primarySet = if ($copyFilesJson.Count -gt 0) { $copyFilesJson } else { $jsonData.files }
+                    $EgressFileId = $primarySet[0].fileId
+                    $EgressFileName = $primarySet[0].fileName
+                    $EgressFileIds = ($primarySet | ForEach-Object { $_.fileId }) -join ","
+                    $EgressFileNames = ($primarySet | ForEach-Object { $_.fileName }) -join ","
+                    $EgressFileCount = [string]$primarySet.Count
+
+                    if ($copyFilesJson.Count -gt 0) {
+                        $EgressCopyFileId = $copyFilesJson[0].fileId
+                        $EgressCopyFileName = $copyFilesJson[0].fileName
+                        $EgressCopyFileIds = ($copyFilesJson | ForEach-Object { $_.fileId }) -join ","
+                        $EgressCopyFileNames = ($copyFilesJson | ForEach-Object { $_.fileName }) -join ","
+                        $EgressCopyFileCount = [string]$copyFilesJson.Count
+                    }
+                    if ($moveFilesJson.Count -gt 0) {
+                        $EgressMoveFileId = $moveFilesJson[0].fileId
+                        $EgressMoveFileName = $moveFilesJson[0].fileName
+                        $EgressMoveFileIds = ($moveFilesJson | ForEach-Object { $_.fileId }) -join ","
+                        $EgressMoveFileNames = ($moveFilesJson | ForEach-Object { $_.fileName }) -join ","
+                        $EgressMoveFileCount = [string]$moveFilesJson.Count
+                    }
                 }
                 Write-Host "[JSON] Successfully parsed JSON output" -ForegroundColor Green
                 break
@@ -619,6 +674,16 @@ if ($EgressFileName) { $variables["egressFileName"] = $EgressFileName }
 if ($EgressFileIds) { $variables["egressFileIds"] = $EgressFileIds }
 if ($EgressFileNames) { $variables["egressFileNames"] = $EgressFileNames }
 if ($EgressFileCount) { $variables["egressFileCount"] = $EgressFileCount }
+if ($EgressCopyFileId) { $variables["egressCopyFileId"] = $EgressCopyFileId }
+if ($EgressCopyFileName) { $variables["egressCopyFileName"] = $EgressCopyFileName }
+if ($EgressCopyFileIds) { $variables["egressCopyFileIds"] = $EgressCopyFileIds }
+if ($EgressCopyFileNames) { $variables["egressCopyFileNames"] = $EgressCopyFileNames }
+if ($EgressCopyFileCount) { $variables["egressCopyFileCount"] = $EgressCopyFileCount }
+if ($EgressMoveFileId) { $variables["egressMoveFileId"] = $EgressMoveFileId }
+if ($EgressMoveFileName) { $variables["egressMoveFileName"] = $EgressMoveFileName }
+if ($EgressMoveFileIds) { $variables["egressMoveFileIds"] = $EgressMoveFileIds }
+if ($EgressMoveFileNames) { $variables["egressMoveFileNames"] = $EgressMoveFileNames }
+if ($EgressMoveFileCount) { $variables["egressMoveFileCount"] = $EgressMoveFileCount }
 
 # Separate secrets from non-secret variables.
 # Secrets go ONLY into the environment file (loaded via Newman --environment).
