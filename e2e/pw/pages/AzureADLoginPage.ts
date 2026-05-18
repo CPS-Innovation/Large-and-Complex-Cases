@@ -1,4 +1,5 @@
 import { Locator, Page } from "@playwright/test";
+import { fillSecretInput } from "../helpers/secret-input";
 
 export class AzureADLoginPage {
   private readonly page: Page;
@@ -23,7 +24,7 @@ export class AzureADLoginPage {
     await this.page.waitForSelector('input[type="password"]', {
       state: "visible",
     });
-    await this.passwordInput.fill(password);
+    await fillSecretInput(this.passwordInput, password);
     await this.submitButton.click();
 
     // Step 3: Handle "Stay signed in?" prompt if it appears

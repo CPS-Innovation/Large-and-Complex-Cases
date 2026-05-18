@@ -65,7 +65,7 @@ jobs:
           publishRunAttachments: false
         condition: succeededOrFailed()   
 
-      - publish: "$(workingDir)/playwright-report/index.html"
-        artifact: "e2e-html-report"
-        displayName: "Publish Report Artifact (HTML)"
+      - publish: "$(workingDir)/playwright-report"
+        artifact: "e2e-playwright-report"
+        displayName: "Publish Report Artifact"
         condition: succeededOrFailed()
