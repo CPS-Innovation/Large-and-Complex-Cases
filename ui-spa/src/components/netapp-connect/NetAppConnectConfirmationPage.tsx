@@ -14,6 +14,7 @@ const NetAppConnectConfirmationPage: React.FC = () => {
       caseId: string;
       operationName: string;
       searchQueryString: string;
+      netappRootFolderPath: string;
       selectedWorkspace: {
         folderPath: string;
       };
@@ -27,6 +28,7 @@ const NetAppConnectConfirmationPage: React.FC = () => {
     backLinkUrl,
     selectedWorkspace,
     searchQueryString,
+    netappRootFolderPath,
   } = state || {};
   const navigate = useNavigate();
 
@@ -37,6 +39,7 @@ const NetAppConnectConfirmationPage: React.FC = () => {
         state: {
           isRouteValid: true,
           searchQueryString,
+          netappRootFolderPath,
         },
       });
       return;
@@ -65,7 +68,7 @@ const NetAppConnectConfirmationPage: React.FC = () => {
     <div className={styles.confirmationWrapper}>
       <BackLink
         to={backLinkUrl}
-        state={{ isRouteValid: true, searchQueryString }}
+        state={{ isRouteValid: true, searchQueryString, netappRootFolderPath }}
       >
         Back
       </BackLink>

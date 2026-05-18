@@ -36,6 +36,7 @@ const MetaDataErrorPage = () => {
         state: {
           isRouteValid: true,
           searchQueryString: "",
+          netappRootFolderPath: "",
         },
       },
     );

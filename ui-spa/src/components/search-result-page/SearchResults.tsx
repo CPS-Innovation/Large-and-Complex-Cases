@@ -38,6 +38,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
           state={{
             searchQueryString: searchQueryString,
             isRouteValid: true,
+            netappRootFolderPath: "",
           }}
           className={styles.link}
         >

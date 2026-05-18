@@ -57,6 +57,7 @@ const EgressConnectConfirmationPage: React.FC = () => {
               state: {
                 isRouteValid: true,
                 searchQueryString: searchQueryString,
+                netappRootFolderPath: "",
               },
             },
           );

@@ -19,13 +19,16 @@ const NetAppPage = () => {
   }: {
     state?: {
       searchQueryString: string;
+      netappRootFolderPath: string;
     };
   } = useLocation();
 
-  const { searchQueryString } = state || {};
+  const { searchQueryString, netappRootFolderPath } = state || {};
 
   const [operationName, setOperationName] = useState<string | null>("");
-  const [rootFolderPath, setRootFolderPath] = useState("");
+  const [rootFolderPath, setRootFolderPath] = useState(
+    netappRootFolderPath ?? "",
+  );
 
   const netAppFolderApiResults = useApi(
     getConnectNetAppFolders,
@@ -65,6 +68,7 @@ const NetAppPage = () => {
         operationName,
         caseId,
         searchQueryString,
+        netappRootFolderPath: rootFolderPath,
         backLinkUrl: `/case/${caseId}/netapp-connect?operation-name=${operationName}`,
         selectedWorkspace: {
           folderPath: path,
