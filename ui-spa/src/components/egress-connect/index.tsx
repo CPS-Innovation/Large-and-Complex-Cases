@@ -60,7 +60,10 @@ const EgressPage = () => {
       return;
     }
     setFormDataErrorText("");
-    navigate(`/case/${caseId}/egress-connect?workspace-name=${formValue}`, {
+    const search = new URLSearchParams({
+      "workspace-name": formValue,
+    });
+    navigate(`/case/${caseId}/egress-connect?${search}`, {
       state: {
         isRouteValid: true,
         searchQueryString,
@@ -78,10 +81,13 @@ const EgressPage = () => {
       (data) => data.id === id,
     );
     if (!selectedWorkSpace) return;
+    const search = new URLSearchParams({
+      "workspace-name": formValue,
+    });
     navigate(`/case/${caseId}/egress-connect/confirmation`, {
       state: {
         isRouteValid: true,
-        backLinkUrl: `/case/${caseId}/egress-connect?workspace-name=${workspaceName}`,
+        backLinkUrl: `/case/${caseId}/egress-connect?${search}`,
         caseId,
         searchQueryString,
         isNetAppConnected: isNetAppConnected,
