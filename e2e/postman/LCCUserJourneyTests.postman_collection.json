@@ -196,7 +196,7 @@
 							},
 							{
 								"key": "x-functions-key",
-								"value": "{{ddeiAccessKeyRegCase}}"
+								"value": "{{ddeiAccessKey}}"
 							},
 							{
 								"key": "Authorization",
@@ -3745,7 +3745,7 @@
 									"// Source files are uploaded as disjoint copy-*/move-* sets so the two",
 									"// journeys don't share state. Pick the right set for this folder before",
 									"// the existing lookup runs.",
-									"const _journeyPath = (pm.execution && pm.execution.location && pm.execution.location.path) || [];",
+									"const _journeyPath = (pm.execution && pm.execution.location) || [];",
 									"const _inMove = _journeyPath.some(p => /Egress to NetApp Move/i.test(String(p)));",
 									"const _journeyPrefix = _inMove ? 'egressMove' : 'egressCopy';",
 									"const _journeyNames = pm.environment.get(_journeyPrefix + 'FileNames');",
@@ -5605,7 +5605,7 @@
 									"// Source files are uploaded as disjoint copy-*/move-* sets so the two",
 									"// journeys don't share state. Pick the right set for this folder before",
 									"// the existing lookup runs.",
-									"const _journeyPath = (pm.execution && pm.execution.location && pm.execution.location.path) || [];",
+									"const _journeyPath = (pm.execution && pm.execution.location) || [];",
 									"const _inMove = _journeyPath.some(p => /Egress to NetApp Move/i.test(String(p)));",
 									"const _journeyPrefix = _inMove ? 'egressMove' : 'egressCopy';",
 									"const _journeyNames = pm.environment.get(_journeyPrefix + 'FileNames');",

@@ -148,7 +148,6 @@ $Config = @{
 $missingConfig = @()
 if (-not $Config.TenantId) { $missingConfig += "LCC_TENANT_ID" }
 if (-not $Config.LccApiId) { $missingConfig += "LCC_API_ID" }
-if (-not $Config.RegisterCaseClientId) { $missingConfig += "LCC_REGISTER_CASE_CLIENT_ID" }
 if (-not $Config.AzureUsername) { $missingConfig += "LCC_AZURE_USERNAME (or -AzureUsername)" }
 if (-not $Config.AzurePassword) { $missingConfig += "LCC_AZURE_PASSWORD (or -AzurePassword)" }
 if (-not $Config.CmsUsername) { $missingConfig += "LCC_CMS_USERNAME (or -CmsUsername)" }
@@ -158,6 +157,14 @@ if (-not $Config.BaseUrl) { $missingConfig += "LCC_BASE_URL" }
 if (-not $Config.CaseApiBaseUrl) { $missingConfig += "LCC_CASE_API_BASE_URL" }
 if (-not $Config.EgressBaseUrl) { $missingConfig += "LCC_EGRESS_BASE_URL" }
 if (-not $Config.DdeiBaseUrl) { $missingConfig += "LCC_DDEI_BASE_URL" }
+
+# RegisterCase mode needs case-register Azure client + the case-register
+# DDEI key (separate from the LCC-app DDEI key). Default mode reuses an
+# existing case and does not exercise these.
+if ($RegisterCase) {
+    if (-not $Config.RegisterCaseClientId) { $missingConfig += "LCC_REGISTER_CASE_CLIENT_ID (required for -RegisterCase)" }
+    if (-not $Config.DdeiAccessKeyRegCase) { $missingConfig += "LCC_DDEI_ACCESS_KEY_REGCASE (required for -RegisterCase)" }
+}
 
 # Default mode requires pre-existing case and workspace config
 if (-not $RegisterCase) {
