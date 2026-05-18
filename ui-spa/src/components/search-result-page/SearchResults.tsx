@@ -4,6 +4,8 @@ import { Table, Tag } from "../govuk";
 import { Link } from "react-router";
 import { SearchFromData } from "../../common/hooks/useCaseSearchForm";
 import { formatDate } from "../../common/utils/formatDate";
+import { SharedDriveConnectRouteState } from "../../common/types/SharedDriveConnectRouteState";
+import { EgressConnectRouteState } from "../../common/types/EgressConnectRouteState";
 import styles from "./SearchResults.module.scss";
 
 type SearchResultsProps = {
@@ -17,14 +19,15 @@ const SearchResults: React.FC<SearchResultsProps> = ({
 }) => {
   const renderLink = (data: SearchResult, operationName: string | null) => {
     if (!data.egressWorkspaceId) {
+      const payload: EgressConnectRouteState = {
+        isRouteValid: true,
+        searchQueryString: searchQueryString,
+        isNetAppConnected: !!data.netappFolderPath,
+      };
       return (
         <Link
           to={`/case/${data.caseId}/egress-connect?workspace-name=${operationName}`}
-          state={{
-            searchQueryString: searchQueryString,
-            isNetAppConnected: !!data.netappFolderPath,
-            isRouteValid: true,
-          }}
+          state={payload}
           className={styles.link}
         >
           Connect
@@ -32,14 +35,15 @@ const SearchResults: React.FC<SearchResultsProps> = ({
       );
     }
     if (!data.netappFolderPath) {
+      const payload: SharedDriveConnectRouteState = {
+        isRouteValid: true,
+        searchQueryString,
+        netappRootFolderPath: "",
+      };
       return (
         <Link
           to={`/case/${data.caseId}/netapp-connect?operation-name=${operationName}`}
-          state={{
-            searchQueryString: searchQueryString,
-            isRouteValid: true,
-            netappRootFolderPath: "",
-          }}
+          state={payload}
           className={styles.link}
         >
           Connect

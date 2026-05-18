@@ -4,22 +4,16 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
 import { connectNetAppFolder } from "../../apis/gateway-api";
 import { getFolderNameFromPath } from "../../common/utils/getFolderNameFromPath";
+import { SharedDriveConnectConfirmationRouteState } from "../../common/types/SharedDriveConnectConfirmationRouteState";
+import { SharedDriveConnectFailureRouteState } from "../../common/types/SharedDriveConnectFailureRouteState";
+import { SharedDriveConnectRouteState } from "../../common/types/SharedDriveConnectRouteState";
 import styles from "./NetAppConnectConfirmationPage.module.scss";
 
 const NetAppConnectConfirmationPage: React.FC = () => {
   const {
     state,
   }: {
-    state?: {
-      caseId: string;
-      operationName: string;
-      searchQueryString: string;
-      netappRootFolderPath: string;
-      selectedWorkspace: {
-        folderPath: string;
-      };
-      backLinkUrl: string;
-    };
+    state: SharedDriveConnectConfirmationRouteState;
   } = useLocation();
   const [formValue, setFormValue] = useState("yes");
   const {
@@ -29,7 +23,7 @@ const NetAppConnectConfirmationPage: React.FC = () => {
     selectedWorkspace,
     searchQueryString,
     netappRootFolderPath,
-  } = state || {};
+  } = state;
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -54,22 +48,27 @@ const NetAppConnectConfirmationPage: React.FC = () => {
         navigate(`/case/${caseId}/case-management`);
       }
     } catch (error) {
-      if (error)
+      if (error) {
+        const payload: SharedDriveConnectFailureRouteState = {
+          isRouteValid: true,
+          backLinkUrl,
+          searchQueryString,
+          netappRootFolderPath,
+        };
         navigate(`/case/${caseId}/netapp-connect/error`, {
-          state: {
-            isRouteValid: true,
-            backLinkUrl,
-            searchQueryString,
-          },
+          state: payload,
         });
+      }
     }
+  };
+  const backLinkPayload: SharedDriveConnectRouteState = {
+    isRouteValid: true,
+    searchQueryString,
+    netappRootFolderPath,
   };
   return (
     <div className={styles.confirmationWrapper}>
-      <BackLink
-        to={backLinkUrl}
-        state={{ isRouteValid: true, searchQueryString, netappRootFolderPath }}
-      >
+      <BackLink to={backLinkUrl} state={backLinkPayload}>
         Back
       </BackLink>
       <PageContentWrapper>

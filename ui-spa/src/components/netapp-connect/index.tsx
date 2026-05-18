@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import NetAppFolderResultsPage from "./NetAppFolderResultsPage";
 import { useApi } from "../../common/hooks/useApi";
 import { getConnectNetAppFolders } from "../../apis/gateway-api";
+import { SharedDriveConnectRouteState } from "../../common/types/SharedDriveConnectRouteState";
+import { SharedDriveConnectConfirmationRouteState } from "../../common/types/SharedDriveConnectConfirmationRouteState";
 import {
   useNavigate,
   useSearchParams,
@@ -17,13 +19,10 @@ const NetAppPage = () => {
   const {
     state,
   }: {
-    state?: {
-      searchQueryString: string;
-      netappRootFolderPath: string;
-    };
+    state: SharedDriveConnectRouteState;
   } = useLocation();
 
-  const { searchQueryString, netappRootFolderPath } = state || {};
+  const { searchQueryString, netappRootFolderPath } = state;
 
   const [operationName, setOperationName] = useState<string | null>("");
   const [rootFolderPath, setRootFolderPath] = useState(
@@ -62,18 +61,19 @@ const NetAppPage = () => {
   };
 
   const handleConnectFolder = (path: string) => {
-    navigate(`/case/${caseId}/netapp-connect/confirmation`, {
-      state: {
-        isRouteValid: true,
-        operationName,
-        caseId,
-        searchQueryString,
-        netappRootFolderPath: rootFolderPath,
-        backLinkUrl: `/case/${caseId}/netapp-connect?operation-name=${operationName}`,
-        selectedWorkspace: {
-          folderPath: path,
-        },
+    const payload: SharedDriveConnectConfirmationRouteState = {
+      isRouteValid: true,
+      operationName: operationName!,
+      caseId: caseId!,
+      searchQueryString: searchQueryString,
+      netappRootFolderPath: rootFolderPath,
+      backLinkUrl: `/case/${caseId}/netapp-connect?operation-name=${operationName}`,
+      selectedWorkspace: {
+        folderPath: path,
       },
+    };
+    navigate(`/case/${caseId}/netapp-connect/confirmation`, {
+      state: payload,
     });
   };
 

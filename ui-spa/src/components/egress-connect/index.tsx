@@ -7,6 +7,8 @@ import {
   useLocation,
   useParams,
 } from "react-router-dom";
+import { EgressConnectRouteState } from "../../common/types/EgressConnectRouteState";
+import { EgressConnectConfirmationRouteState } from "../../common/types/EgressConnectConfirmationRouteState";
 import EgressSearchPage from "./EgressSearchPage";
 
 const EgressPage = () => {
@@ -20,13 +22,10 @@ const EgressPage = () => {
   const {
     state,
   }: {
-    state?: {
-      isNetAppConnected: boolean;
-      searchQueryString: string;
-    };
+    state: EgressConnectRouteState;
   } = useLocation();
 
-  const { isNetAppConnected, searchQueryString } = state || {};
+  const { isNetAppConnected, searchQueryString } = state;
 
   const egressSearchApi = useApi(
     getEgressSearchResults,
@@ -63,12 +62,13 @@ const EgressPage = () => {
     const search = new URLSearchParams({
       "workspace-name": formValue,
     });
+    const payload: EgressConnectRouteState = {
+      isRouteValid: true,
+      searchQueryString,
+      isNetAppConnected,
+    };
     navigate(`/case/${caseId}/egress-connect?${search}`, {
-      state: {
-        isRouteValid: true,
-        searchQueryString,
-        isNetAppConnected,
-      },
+      state: payload,
     });
   };
 
@@ -84,18 +84,19 @@ const EgressPage = () => {
     const search = new URLSearchParams({
       "workspace-name": formValue,
     });
-    navigate(`/case/${caseId}/egress-connect/confirmation`, {
-      state: {
-        isRouteValid: true,
-        backLinkUrl: `/case/${caseId}/egress-connect?${search}`,
-        caseId,
-        searchQueryString,
-        isNetAppConnected: isNetAppConnected,
-        selectedWorkspace: {
-          id: selectedWorkSpace?.id,
-          name: selectedWorkSpace?.name,
-        },
+    const payload: EgressConnectConfirmationRouteState = {
+      isRouteValid: true,
+      backLinkUrl: `/case/${caseId}/egress-connect?${search}`,
+      caseId: caseId!,
+      searchQueryString,
+      isNetAppConnected,
+      selectedWorkspace: {
+        id: selectedWorkSpace?.id,
+        name: selectedWorkSpace?.name,
       },
+    };
+    navigate(`/case/${caseId}/egress-connect/confirmation`, {
+      state: payload,
     });
   };
 
