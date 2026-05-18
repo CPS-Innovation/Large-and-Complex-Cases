@@ -149,6 +149,34 @@ describe("gateway apis", () => {
         "An error occurred contacting the server at gateway_url/api/v1/case-search?defendant-name=husband%26wife&area=10: response schema validation failed; status - OK (200)",
       );
     });
+    it("getCaseSearchResults - response schema validation should fail if both operationName and leadDefendantName are null", async () => {
+      const mockData = [
+        {
+          operationName: null,
+          urn: "urn",
+          caseId: "123",
+          leadDefendantName: null,
+          egressWorkspaceId: "abcdef",
+          netappFolderPath: null,
+          registrationDate: null,
+        },
+      ];
+      (globalThis.fetch as any).mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        json: async () => mockData,
+      });
+
+      await expect(
+        getCaseSearchResults({ urn: "45EL7752025" }),
+      ).rejects.toBeInstanceOf(ApiError);
+      await expect(
+        getCaseSearchResults({ urn: "45EL7752025" }),
+      ).rejects.toThrow(
+        "An error occurred contacting the server at gateway_url/api/v1/case-search?urn=45EL7752025: response schema validation failed; status - OK (200)",
+      );
+    });
   });
 
   describe("getCaseDivisionsOrAreas", () => {

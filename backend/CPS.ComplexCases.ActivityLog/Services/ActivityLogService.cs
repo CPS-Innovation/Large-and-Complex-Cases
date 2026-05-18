@@ -283,6 +283,9 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
             ActionType.FolderCopied => "Folder(s) copied",
             ActionType.MaterialCopied => "Material(s) copied",
             ActionType.FolderAndMaterialCopied => "Folder(s) and material(s) copied",
+            ActionType.FolderMoved => "Folder(s) moved",
+            ActionType.MaterialMoved => "Material(s) moved",
+            ActionType.FolderAndMaterialMoved => "Folder(s) and material(s) moved",
             _ => $"Performed action {actionType} on resource {resourceName}"
         };
     }

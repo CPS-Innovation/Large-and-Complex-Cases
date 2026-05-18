@@ -271,4 +271,14 @@ public class NetAppStorageClient(
     {
         throw new NotImplementedException();
     }
+
+    public Task<bool> CreateFolderAsync(string folderPath, string? workspaceId = null, string? bearerToken = null, string? bucketName = null)
+    {
+        var arg = _netAppArgFactory.CreateCreateFolderArg(
+            bearerToken ?? throw new ArgumentNullException(nameof(bearerToken), "Bearer token cannot be null."),
+            bucketName ?? throw new ArgumentNullException(nameof(bucketName), "Bucket name cannot be null."),
+            folderPath ?? throw new ArgumentNullException(nameof(folderPath), "Folder path cannot be null."));
+
+        return _netAppClient.CreateFolderAsync(arg);
+    }
 }

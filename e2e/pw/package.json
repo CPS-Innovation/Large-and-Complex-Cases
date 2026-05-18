@@ -1,0 +1,25 @@
+{
+  "name": "e2e-pw",
+  "version": "1.0.0",
+  "scripts": {
+    "e2e": "npx playwright test --ui",
+    "e2e:ci": "npx playwright test",
+    "e2e:existing-case": "npx playwright test --project=default-mode-tests",
+    "e2e:existing-case:ui": "npx playwright test --ui --project=default-mode-tests",
+    "e2e:register-case": "npx playwright test --project=register-case-tests",
+    "e2e:register-case:ui": "npx playwright test --ui --project=register-case-tests",
+    "e2e:headed": "npx playwright test --headed",
+    "typecheck": "tsc --noEmit",
+    "report": "npx playwright show-report ./playwright-report",
+    "report:generate": "npx playwright test --reporter=html",
+    "report:junit": "node -e \"require('fs').mkdirSync('test-results',{recursive:true})\" && npx playwright test --reporter=junit > test-results/results.xml"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^22.13.13",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7"
+  }
+}

@@ -26,8 +26,10 @@ public class TransferEntityState : TaskEntity<TransferEntity>
 
     public void FinalizeTransfer()
     {
-        // if any items failed then its partially completed, if all items succeeded then its completed
-        State.Status = State.FailedItems.Count > 0 ? TransferStatus.PartiallyCompleted : TransferStatus.Completed;
+        // partially completed if any copy failed OR any source delete failed
+        State.Status = (State.FailedItems.Count > 0 || State.DeletionErrors.Count > 0)
+            ? TransferStatus.PartiallyCompleted
+            : TransferStatus.Completed;
         State.CompletedAt = DateTime.UtcNow;
         State.UpdatedAt = DateTime.UtcNow;
     }

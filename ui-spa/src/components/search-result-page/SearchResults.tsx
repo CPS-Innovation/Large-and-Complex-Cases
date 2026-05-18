@@ -15,7 +15,10 @@ const SearchResults: React.FC<SearchResultsProps> = ({
   searchQueryString,
   searchApiResults,
 }) => {
-  const getConnectOrViewUrl = (data: SearchResult, operationName: string) => {
+  const getConnectOrViewUrl = (
+    data: SearchResult,
+    operationName: string | null,
+  ) => {
     if (!data.egressWorkspaceId)
       return `/case/${data.caseId}/egress-connect?workspace-name=${operationName}`;
     if (!data.netappFolderPath)

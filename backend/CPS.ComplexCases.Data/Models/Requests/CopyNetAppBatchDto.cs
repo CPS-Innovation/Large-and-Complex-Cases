@@ -2,14 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace CPS.ComplexCases.Data.Models.Requests;
 
-[JsonConverter(typeof(JsonStringEnumConverter))]
-public enum NetAppCopyOperationType
-{
-    Material,
-    Folder
-}
-
-public class CopyNetAppBatchDto
+public class CopyNetAppBatchDto : INetAppBatchDto<CopyNetAppBatchOperationDto>
 {
     [JsonPropertyName("caseId")]
     public required int CaseId { get; set; }
@@ -21,10 +14,10 @@ public class CopyNetAppBatchDto
     public required List<CopyNetAppBatchOperationDto> Operations { get; set; }
 }
 
-public class CopyNetAppBatchOperationDto
+public class CopyNetAppBatchOperationDto : INetAppBatchOperationDto
 {
     [JsonPropertyName("type")]
-    public required NetAppCopyOperationType Type { get; set; }
+    public required NetAppBatchOperationType Type { get; set; }
 
     [JsonPropertyName("sourcePath")]
     public required string SourcePath { get; set; }

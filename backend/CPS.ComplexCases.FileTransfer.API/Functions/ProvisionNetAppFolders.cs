@@ -4,11 +4,9 @@ using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models.Domain;
-using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.FileTransfer.API.Durable.Orchestration;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
-using CPS.ComplexCases.FileTransfer.API.Models.Responses;
 using CPS.ComplexCases.FileTransfer.API.Validators;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
@@ -40,9 +38,8 @@ public class ProvisionNetAppFolders(
     [OpenApiOperation(operationId: nameof(ProvisionNetAppFolders), tags: ["NetApp"], Description = "Provisions NetApp folders for a new case based on a predefined template.")]
     [OpenApiParameter(name: HttpHeaderKeys.CorrelationId, In = Microsoft.OpenApi.Models.ParameterLocation.Header, Required = true, Type = typeof(string), Description = "Correlation identifier for tracking the request.")]
     [OpenApiRequestBody(contentType: ContentType.ApplicationJson, bodyType: typeof(ProvisionNetAppFoldersRequest), Required = true)]
-    [OpenApiResponseWithBody(statusCode: HttpStatusCode.Accepted, contentType: ContentType.ApplicationJson, bodyType: typeof(TransferResponse), Description = "Copy batch accepted.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(IEnumerable<FileTransferInfo>), Description = "Provisioning scheduled successfully. Returns the list of template objects.")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.ApplicationJson, bodyType: typeof(IEnumerable<string>), Description = ApiResponseDescriptions.BadRequest)]
-    [OpenApiResponseWithBody(statusCode: HttpStatusCode.Conflict, contentType: ContentType.ApplicationJson, bodyType: typeof(string), Description = ApiResponseDescriptions.Conflict)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, bodyType: typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
     public async Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Function, "post", Route = "netapp/provision")] HttpRequest req,
@@ -62,14 +59,6 @@ public class ProvisionNetAppFolders(
         var request = validatedRequest.Value;
         _initializationHandler.Initialize(request.UserName ?? string.Empty, correlationId, request.CaseId);
 
-        var selectedTemplate = new List<TransferEntityDto>
-        {
-            new() {
-                Path = request.TemplateName,
-                IsFolder = true
-            }
-        };
-
         var templateObjects = new List<FileTransferInfo>();
         var copyFileItems = new List<CopyFileItem>();
 
@@ -78,7 +67,7 @@ public class ProvisionNetAppFolders(
             request.BearerToken ?? throw new ArgumentNullException(nameof(request.BearerToken), "Bearer token cannot be null."),
             request.BucketName ?? throw new ArgumentNullException(nameof(request.BucketName), "Bucket name cannot be null."));
 
-        if (files != null)
+        if (files != null && files.Any())
         {
             templateObjects.AddRange(files.Select(file => new FileTransferInfo
             {
@@ -99,13 +88,12 @@ public class ProvisionNetAppFolders(
             copyFileItems.Add(new CopyFileItem
             {
                 SourceKey = obj.SourcePath,
-                DestinationPrefix = request.DestinationFolderPath ?? string.Empty,
+                DestinationPrefix = request.DestinationFolderPath,
                 DestinationFileName = obj.RelativePath!,
             });
         }
 
         var transferId = Guid.NewGuid();
-        var now = DateTime.UtcNow;
 
         try
         {
@@ -122,6 +110,7 @@ public class ProvisionNetAppFolders(
                     Files = copyFileItems,
                     OriginalOperations = [],
                     ManageMaterialsOperationId = transferId,
+                    IncludeEmptyFolders = true
                 },
                 new StartOrchestrationOptions
                 {
@@ -130,9 +119,8 @@ public class ProvisionNetAppFolders(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to schedule copy orchestration for TransferId: {TransferId}, CaseId: {CaseId}. CorrelationId: {CorrelationId}. Removing active-operation row.",
+            _logger.LogError(ex, "Failed to schedule copy orchestration for TransferId: {TransferId}, CaseId: {CaseId}. CorrelationId: {CorrelationId}.",
                 transferId, request.CaseId, correlationId);
-            //await _caseActiveManageMaterialsService.DeleteOperationAsync(transferId);
             throw;
         }
 
