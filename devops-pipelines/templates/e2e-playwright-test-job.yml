@@ -58,7 +58,7 @@ jobs:
           NETAPP_OPERATION_NAME: $(E2eNetAppFolderName)  
 
       - task: PublishTestResults@2
-        displayName: 'Publish Test Results (JUnit)'
+        displayName: "Publish Test Results (JUnit)"
         inputs:
           testResultsFormat: JUnit
           testResultsFiles: "$(workingDir)/playwright-report/e2e-test-report.xml"
@@ -66,6 +66,6 @@ jobs:
         condition: succeededOrFailed()   
 
       - publish: "$(workingDir)/playwright-report"
-        artifact: "e2e-playwright-report"
+        artifact: "$(System.JobId)-e2e-playwright-report"
         displayName: "Publish Report Artifact"
         condition: succeededOrFailed()
