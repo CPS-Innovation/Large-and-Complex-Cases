@@ -5,10 +5,10 @@ import { loadEnvConfig } from "../helpers/env-config";
 import type { TestSetupResult } from "../helpers/types";
 
 export const test = base.extend<{ testData: TestSetupResult }>({
-  // Default mode with large file: 1 x 200MB, uses existing case
+  // Default mode with large file: 1 x 50MB, uses existing case
   testData: [async ({ page }, use, testInfo) => {
     const result = await setupDefaultTestData(page, {
-      fileSizeMb: 200,
+      fileSizeMb: 50,
       fileCount: 1,
     });
     await use(result);

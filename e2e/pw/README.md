@@ -15,12 +15,12 @@ Tests run in two modes:
 
 | Test | Files | Default Mode | Register Case Mode |
 |------|-------|--------------|--------------------|
-| Egress to NetApp Copy | 100MB x 1 | ✓ | ✓ |
-| Egress to NetApp Copy - Large | 200MB x 1 | ✓ | ✓ |
-| Egress to NetApp Copy - Multifile | 50MB x 3 | -- | ✓ |
-| Egress to NetApp Move | 100MB x 1 | ✓ | ✓ |
-| NetApp to Egress Copy | 100MB x 1 | ✓ (uses seeded fixture) | ✓ (sort + row 0) |
-| Full Flow (login, search, connect) | 100MB x 1 | -- | ✓ |
+| Egress to NetApp Copy | 10MB x 1 | ✓ | ✓ |
+| Egress to NetApp Copy - Large | 50MB x 1 | ✓ | ✓ |
+| Egress to NetApp Copy - Multifile | 10MB x 3 | -- | ✓ |
+| Egress to NetApp Move | 10MB x 1 | ✓ | ✓ |
+| NetApp to Egress Copy | 10MB x 1 | ✓ (uses seeded fixture) | ✓ (sort + row 0) |
+| Full Flow (login, search, connect) | 10MB x 1 | -- | ✓ |
 
 NetApp -> Egress Move is descoped — the product UI doesn't expose a Move
 button in that direction (`EgressFolderContainer.tsx` has no Move
@@ -36,8 +36,8 @@ e2e/pw/
     setup-helper.ts                   # Register-case API + login (used by setup project)
     setup-helper-default.ts           # Default-mode setup (upload to pre-connected case)
     test-fixtures-register-case.ts    # Shared register-case fixture (per-test file upload)
-    test-fixtures-default.ts          # Default mode fixture (100MB x 1)
-    test-fixtures-default-large.ts    # Default mode fixture (200MB x 1)
+    test-fixtures-default.ts          # Default mode fixture (10MB x 1)
+    test-fixtures-default-large.ts    # Default mode fixture (50MB x 1)
   helpers/
     auth-api.ts                       # Azure AD + CMS authentication
     case-api.ts                       # Case registration API
@@ -113,7 +113,7 @@ deterministic source file. Picking the newest row of NetApp's listing
 isn't viable in default mode: the panel doesn't toggle descending date
 sort, has no search/filter, and pagination isn't triggered by Playwright
 scrolls — so a just-uploaded file is buried, and the existing
-accumulated `generated-100MB-2026-01-20-12-23-11.txt` at row 0 hits a
+accumulated `generated-10MB-2026-01-20-12-23-11.txt` at row 0 hits a
 backend transfer-rejection state.
 
 The contract: a single canonical file lives at
@@ -151,7 +151,7 @@ destination folder", and the seed catches that error path explicitly
 (see `tests/seed-netapp-fixture.setup.ts`).
 
 The fixture's name pattern (`lcc-e2e-fixture-*`) is intentionally
-distinct from the per-test `generated-100MB-*` artefacts, so the
+distinct from the per-test `generated-10MB-*` artefacts, so the
 automated cleanup helpers (`deleteNetAppFile`, 24h workspace sweep) will
 never remove it.
 
@@ -428,7 +428,7 @@ first run of the following day.
   Registered cases accumulate and need an ops-side archive process.
 - **The NetApp source fixture** — `lcc-e2e-fixture-source.txt` is
   intentionally exempt from cleanup helpers (its name pattern doesn't
-  match `generated-100MB-*`) so it persists across runs. Re-seed via
+  match `generated-10MB-*`) so it persists across runs. Re-seed via
   the `seed-netapp-fixture` opt-in project if it goes missing.
 - **Empty subfolders** — `deleteFiles` removes files but leaves the
   `e2e-*` folders behind. Cheap clutter; periodic ops prune if needed.

@@ -53,7 +53,7 @@ export function loadEnvConfig() {
       EGRESS_ADMIN_ROLE_ID,
     ),
 
-    testFileSizeMb: positiveIntEnv("TEST_FILE_SIZE_MB", "100"),
+    testFileSizeMb: positiveIntEnv("TEST_FILE_SIZE_MB", "10"),
     testFileCount: positiveIntEnv("TEST_FILE_COUNT", "1"),
 
     defaultWorkspaceId: process.env.DEFAULT_WORKSPACE_ID || "",

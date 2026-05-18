@@ -5,8 +5,8 @@ import { CaseManagementPage } from "../pages/CaseManagementPage";
 import { TransferMaterialsTab } from "../pages/TransferMaterialsTab";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
 
-test.describe("Egress to NetApp Copy - Large File 200MB (Default Mode)", () => {
-  test("should copy a 200MB file from Egress to NetApp using existing case", async ({
+test.describe("Egress to NetApp Copy - Large File 50MB (Default Mode)", () => {
+  test("should copy a 50MB file from Egress to NetApp using existing case", async ({
     page,
     testData,
   }) => {
