@@ -4,6 +4,7 @@ import {
   FEATURE_FLAG_TRANSFER_MOVE,
   FEATURE_FLAG_GLOBAL_NAV,
   GLOBAL_NAV_SCRIPT_URL,
+  FEATURE_FLAG_DISCONNECT_SHARED_DRIVE,
   PRIVATE_BETA_FEATURE_USER_GROUP2,
 } from "../../config";
 import { useUserDetails } from "../../auth";
@@ -64,6 +65,15 @@ export const useUserGroupsFeatureFlag = (): FeatureFlagData => {
         userDetails.username,
         FEATURE_FLAG_GLOBAL_NAV && !!GLOBAL_NAV_SCRIPT_URL,
         searchParams?.get("global-nav"),
+        {
+          groups: groups,
+          groupKey: PRIVATE_BETA_FEATURE_USER_GROUP2,
+        },
+      ),
+      disconnectSharedDrive: shouldShowFeature(
+        userDetails.username,
+        FEATURE_FLAG_DISCONNECT_SHARED_DRIVE,
+        searchParams?.get("disconnect-shared-drive"),
         {
           groups: groups,
           groupKey: PRIVATE_BETA_FEATURE_USER_GROUP2,

@@ -34,6 +34,7 @@ import {
   type EgressTransferPayloadSourcePath,
   type NetAppTransferPayloadSourcePath,
 } from "../../../schemas/requests/initiateFileTransferPayload";
+import { useUserGroupsFeatureFlag } from "../../../common/hooks/useUserGroupsFeatureFlag";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
@@ -55,6 +56,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   activeTransferId,
   urn,
 }) => {
+  const featureFlags = useUserGroupsFeatureFlag();
   const navigate = useNavigate();
   const location = useLocation();
   const { username } = useUserDetails();
@@ -860,13 +862,15 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
                     {`${transferSource === "egress" ? "from the Shared Drive to Egress" : "from Egress to the Shared Drive"}`}
                   </LinkButton>
                 </InsetText>
-                <Button
-                  className={`govuk-button--secondary ${styles.disconnectButton}`}
-                  name="secondary"
-                  onClick={handleDisconnectSharedDrive}
-                >
-                  Disconnect Shared Drive
-                </Button>
+                {featureFlags.disconnectSharedDrive && (
+                  <Button
+                    className={`govuk-button--secondary ${styles.disconnectButton}`}
+                    name="secondary"
+                    onClick={handleDisconnectSharedDrive}
+                  >
+                    Disconnect Shared Drive
+                  </Button>
+                )}
               </div>
             </div>
             <div
