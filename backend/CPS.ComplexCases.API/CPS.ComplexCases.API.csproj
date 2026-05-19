@@ -7,7 +7,6 @@
     <Nullable>enable</Nullable>
     <FunctionsInDependencies>true</FunctionsInDependencies>
     <_FunctionsSkipCleanOutput>true</_FunctionsSkipCleanOutput>
-    <_WorkerExtensionsTargetFramework>net10.0</_WorkerExtensionsTargetFramework>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
