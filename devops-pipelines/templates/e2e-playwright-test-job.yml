@@ -37,7 +37,7 @@ jobs:
           command: "ci"
           workingDir: "$(workingDir)"
 
-      - script: npx playwright install chromium --with-deps
+      - script: node_modules/.bin/playwright install chromium
         displayName: "Install Browsers"
         workingDirectory: $(workingDir)
 
