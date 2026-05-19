@@ -39,7 +39,9 @@ export class CaseSearchPage {
     await this.page.getByRole("button", { name: "Search" }).click();
   }
 
-  async searchByUrn(urn: string) {
+  async searchByUrn(urn: string) { 
+    this.page.on("request", r => console.log("→", r.method(), r.url()));
+    this.page.on("response", r => console.log("←", r.status(), r.url()));
     await this.goto();
     await this.selectUrnSearch();
     await this.fillUrn(urn);
