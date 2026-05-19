@@ -59,7 +59,7 @@ jobs:
           DEFAULT_WORKSPACE_ID: $(E2eEgressWorkspaceId)
           DEFAULT_WORKSPACE_NAME: $(E2eEgressWorkspaceName)
           DEFAULT_CASE_URN: $(E2eTestCaseUrn)
-          DEFAULT_CASE_ID: $(E2eTestsCaseId)
+          DEFAULT_CASE_ID: $(E2eTestCaseId)
           LCC_API_BASE_URL: $(LccApiBaseUrl)
           NETAPP_OPERATION_NAME: $(E2eNetAppFolderName)  
 

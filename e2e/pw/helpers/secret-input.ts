@@ -9,7 +9,7 @@ export async function fillSecretInput(
 
     const nativeInputValueSetter =
       Object.getOwnPropertyDescriptor(
-        window.HTMLInputElement.prototype,
+        globalThis.HTMLInputElement.prototype,
         "value"
       )?.set;
 
