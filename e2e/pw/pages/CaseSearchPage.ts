@@ -12,11 +12,19 @@ export class CaseSearchPage {
     await this.page.goto(CaseSearchPage.route, {
       waitUntil: "domcontentloaded"
     })
-    // Wait for radios to be *enabled*, not just present. Tactical login must
-    // be fresh before the LCC app enables the search form — a stale tactical
-    // cookie leaves the radios rendered but disabled, and any submit from
-    // that state gets rejected by /api/v1/case-search with HTTP 400.
     await expect(this.page.getByTestId("radio-search-operation-name")).toBeEnabled({ timeout: 60_000 });
+  }
+
+  // Wait for radios to be *enabled*, not just present. Tactical login must
+  // be fresh before the LCC app enables the search form — a stale tactical
+  // cookie leaves the radios rendered but disabled, and any submit from
+  // that state gets rejected by /api/v1/case-search with HTTP 400.
+  async waitForRadioButtons() {
+    await Promise.all([
+      expect(this.page.getByTestId("radio-search-urn")).toBeEnabled({ timeout: 60_000 }),
+      expect(this.page.getByTestId("radio-search-defendant-name")).toBeEnabled({ timeout: 60_000 }),
+      expect(this.page.getByTestId("radio-search-operation-name")).toBeEnabled({ timeout: 60_000 }),
+    ]);
   }
 
   async selectUrnSearch() {
