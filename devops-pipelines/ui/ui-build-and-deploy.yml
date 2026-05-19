@@ -25,6 +25,13 @@ stages:
       approvers: $(preprodApprovers)
       deployToSlot: true
       slotName: 'stg'
+
+  - stage: Run_E2E_Tests
+    displayName: 'Run E2E tests'
+    jobs:
+      - template: ../templates/e2e-playwright-test-job.yml
+        parameters:
+          environment: staging
       
   - template: ../templates/ui-build-and-deploy-stages.yml
     parameters:
