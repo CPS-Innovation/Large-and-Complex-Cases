@@ -3,6 +3,7 @@ import { Button, LinkButton, BackLink } from "../../govuk";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { EgressConnectRouteState } from "../../../common/types/EgressConnectRouteState";
 import { SharedDriveConnectRouteState } from "../../../common/types/SharedDriveConnectRouteState";
+import { getUrlSearchParam } from "../../../common/utils/getUrlSearchParam";
 import styles from "./MetaDataErrorPage.module.scss";
 
 const MetaDataErrorPage = () => {
@@ -27,7 +28,7 @@ const MetaDataErrorPage = () => {
         isNetAppConnected: true,
       };
       return navigate(
-        `/case/${caseId}/egress-connect?workspace-name=${operationName}`,
+        `/case/${caseId}/egress-connect?${getUrlSearchParam("workspace-name", operationName)}`,
         {
           state: payload,
         },
@@ -40,7 +41,7 @@ const MetaDataErrorPage = () => {
       netappRootFolderPath: "",
     };
     return navigate(
-      `/case/${caseId}/netapp-connect?operation-name=${operationName}`,
+      `/case/${caseId}/netapp-connect?${getUrlSearchParam("operation-name", operationName)}`,
       {
         state: payload,
       },

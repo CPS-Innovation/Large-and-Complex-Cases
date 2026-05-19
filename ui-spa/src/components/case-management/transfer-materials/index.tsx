@@ -34,6 +34,7 @@ import {
   type EgressTransferPayloadSourcePath,
   type NetAppTransferPayloadSourcePath,
 } from "../../../schemas/requests/initiateFileTransferPayload";
+import { getUrlSearchParam } from "../../../common/utils/getUrlSearchParam";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
@@ -335,7 +336,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     if (egressStatus === "failed" && egressError) {
       if (egressError.code === 404) {
         navigate(
-          `/case/${caseId}/case-management/egress-connection-error?operation-name=${operationName}`,
+          `/case/${caseId}/case-management/egress-connection-error?${getUrlSearchParam("operation-name", operationName)}`,
           {
             state: {
               isRouteValid: true,
@@ -360,7 +361,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     } else if (netAppStatus === "failed" && netAppError) {
       if (netAppError.code === 404) {
         navigate(
-          `/case/${caseId}/case-management/shared-drive-connection-error?operation-name=${operationName}`,
+          `/case/${caseId}/case-management/shared-drive-connection-error?${getUrlSearchParam("operation-name", operationName)}`,
           {
             state: {
               isRouteValid: true,

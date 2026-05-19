@@ -6,6 +6,7 @@ import { SearchFromData } from "../../common/hooks/useCaseSearchForm";
 import { formatDate } from "../../common/utils/formatDate";
 import { SharedDriveConnectRouteState } from "../../common/types/SharedDriveConnectRouteState";
 import { EgressConnectRouteState } from "../../common/types/EgressConnectRouteState";
+import { getUrlSearchParam } from "../../common/utils/getUrlSearchParam";
 import styles from "./SearchResults.module.scss";
 
 type SearchResultsProps = {
@@ -13,11 +14,12 @@ type SearchResultsProps = {
   searchApiResults: UseApiResult<SearchResultData>;
   searchType: SearchFromData["searchType"];
 };
+
 const SearchResults: React.FC<SearchResultsProps> = ({
   searchQueryString,
   searchApiResults,
 }) => {
-  const renderLink = (data: SearchResult, operationName: string | null) => {
+  const renderLink = (data: SearchResult, operationName: string) => {
     if (!data.egressWorkspaceId) {
       const payload: EgressConnectRouteState = {
         isRouteValid: true,
@@ -26,7 +28,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
       };
       return (
         <Link
-          to={`/case/${data.caseId}/egress-connect?workspace-name=${operationName}`}
+          to={`/case/${data.caseId}/egress-connect?${getUrlSearchParam("workspace-name", operationName)}`}
           state={payload}
           className={styles.link}
         >
@@ -42,7 +44,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
       };
       return (
         <Link
-          to={`/case/${data.caseId}/netapp-connect?operation-name=${operationName}`}
+          to={`/case/${data.caseId}/netapp-connect?${getUrlSearchParam("operation-name", operationName)}`}
           state={payload}
           className={styles.link}
         >
@@ -62,7 +64,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
     return searchApiResults.data.map((data) => {
       const operationName = data.operationName
         ? data.operationName
-        : data.leadDefendantName;
+        : data.leadDefendantName!;
       return {
         cells: [
           {

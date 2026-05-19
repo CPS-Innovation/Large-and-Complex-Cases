@@ -11,6 +11,7 @@ import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useUserGroupsFeatureFlag } from "../../common/hooks/useUserGroupsFeatureFlag";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
 import TransferTreeViewPage from "../case-management/transfer-materials/TransferTreeViewPage";
+import { getUrlSearchParam } from "../../common/utils/getUrlSearchParam";
 
 import styles from "./index.module.scss";
 
@@ -43,7 +44,7 @@ const CaseManagementPage = () => {
         caseMetaData.data?.netappFolderPath
       ) {
         navigate(
-          `/case/${caseId}/case-management/egress-connection-error?operation-name=${caseMetaData.data?.operationName}`,
+          `/case/${caseId}/case-management/egress-connection-error?${getUrlSearchParam("operation-name", caseMetaData.data?.operationName)}`,
           {
             state: {
               isRouteValid: true,
@@ -56,7 +57,7 @@ const CaseManagementPage = () => {
         !caseMetaData.data?.netappFolderPath
       ) {
         navigate(
-          `/case/${caseId}/case-management/shared-drive-connection-error?operation-name=${caseMetaData.data?.operationName}`,
+          `/case/${caseId}/case-management/shared-drive-connection-error?${getUrlSearchParam("operation-name", caseMetaData.data?.operationName)}`,
           {
             state: {
               isRouteValid: true,

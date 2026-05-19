@@ -4,6 +4,7 @@ import { useApi } from "../../common/hooks/useApi";
 import { getConnectNetAppFolders } from "../../apis/gateway-api";
 import { SharedDriveConnectRouteState } from "../../common/types/SharedDriveConnectRouteState";
 import { SharedDriveConnectConfirmationRouteState } from "../../common/types/SharedDriveConnectConfirmationRouteState";
+import { getUrlSearchParam } from "../../common/utils/getUrlSearchParam";
 import {
   useNavigate,
   useSearchParams,
@@ -67,7 +68,7 @@ const NetAppPage = () => {
       caseId: caseId!,
       searchQueryString: searchQueryString,
       netappRootFolderPath: rootFolderPath,
-      backLinkUrl: `/case/${caseId}/netapp-connect?operation-name=${operationName}`,
+      backLinkUrl: `/case/${caseId}/netapp-connect?${getUrlSearchParam("operation-name", operationName)}`,
       selectedWorkspace: {
         folderPath: path,
       },

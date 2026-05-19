@@ -9,6 +9,7 @@ import {
 } from "react-router-dom";
 import { EgressConnectRouteState } from "../../common/types/EgressConnectRouteState";
 import { EgressConnectConfirmationRouteState } from "../../common/types/EgressConnectConfirmationRouteState";
+import { getUrlSearchParam } from "../../common/utils/getUrlSearchParam";
 import EgressSearchPage from "./EgressSearchPage";
 
 const EgressPage = () => {
@@ -59,17 +60,18 @@ const EgressPage = () => {
       return;
     }
     setFormDataErrorText("");
-    const search = new URLSearchParams({
-      "workspace-name": formValue,
-    });
+
     const payload: EgressConnectRouteState = {
       isRouteValid: true,
       searchQueryString,
       isNetAppConnected,
     };
-    navigate(`/case/${caseId}/egress-connect?${search}`, {
-      state: payload,
-    });
+    navigate(
+      `/case/${caseId}/egress-connect?${getUrlSearchParam("workspace-name", formValue)}`,
+      {
+        state: payload,
+      },
+    );
   };
 
   const handleFormChange = (value: string) => {
@@ -81,12 +83,10 @@ const EgressPage = () => {
       (data) => data.id === id,
     );
     if (!selectedWorkSpace) return;
-    const search = new URLSearchParams({
-      "workspace-name": formValue,
-    });
+
     const payload: EgressConnectConfirmationRouteState = {
       isRouteValid: true,
-      backLinkUrl: `/case/${caseId}/egress-connect?${search}`,
+      backLinkUrl: `/case/${caseId}/egress-connect?${getUrlSearchParam("workspace-name", formValue)}`,
       caseId: caseId!,
       searchQueryString,
       isNetAppConnected,

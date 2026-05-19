@@ -7,6 +7,7 @@ import { SharedDriveConnectRouteState } from "../../common/types/SharedDriveConn
 import { EgressConnectConfirmationRouteState } from "../../common/types/EgressConnectConfirmationRouteState";
 import { EgressConnectRouteState } from "../../common/types/EgressConnectRouteState";
 import { EgressConnectFailureRouteState } from "../../common/types/EgressConnectFailureRouteState";
+import { getUrlSearchParam } from "../../common/utils/getUrlSearchParam";
 import styles from "./EgressConnectConfirmationPage.module.scss";
 
 const EgressConnectConfirmationPage: React.FC = () => {
@@ -52,7 +53,7 @@ const EgressConnectConfirmationPage: React.FC = () => {
             netappRootFolderPath: "",
           };
           navigate(
-            `/case/${caseId}/netapp-connect?operation-name=${selectedWorkspace.name}`,
+            `/case/${caseId}/netapp-connect?${getUrlSearchParam("operation-name", selectedWorkspace.name)}`,
             {
               state: payload,
             },
