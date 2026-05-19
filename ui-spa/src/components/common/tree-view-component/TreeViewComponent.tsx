@@ -6,30 +6,28 @@ import React, {
   KeyboardEvent,
 } from "react";
 import FolderIcon from "../../../components/svgs/folder.svg?react";
+import FileIcon from "../../../components/svgs/file.svg?react";
 import { Spinner } from "../Spinner";
-import styles from "./TreeView.module.scss";
+import styles from "./TreeViewComponent.module.scss";
 
 export type TreeNode = {
   id: string;
   name: string;
-  path?: string;
   isFolder: boolean;
   children?: TreeNode[];
 };
 
-export type TreeViewProps = {
+export type TreeViewComponentProps = {
   data: TreeNode[];
   onSelect?: (node: TreeNode) => void;
   onLoadChildren?: (nodeId: string) => Promise<TreeNode[]>;
-  selectedId?: string | null;
   className?: string;
 };
 
-const TreeView: React.FC<TreeViewProps> = ({
+const TreeViewComponent: React.FC<TreeViewComponentProps> = ({
   data,
   onSelect,
   onLoadChildren,
-  selectedId: controlledSelectedId,
   className,
 }) => {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set([]));
@@ -44,8 +42,6 @@ const TreeView: React.FC<TreeViewProps> = ({
   const [loadedChildren, setLoadedChildren] = useState<
     Record<string, TreeNode[]>
   >({});
-
-  const selectedId = controlledSelectedId ?? uncontrolledSelectedId;
 
   const refs = useRef<Record<string, HTMLElement | null>>({});
 
@@ -98,9 +94,35 @@ const TreeView: React.FC<TreeViewProps> = ({
     [loadedChildren],
   );
 
+  const handleLoadingNodeChildren = useCallback(
+    (node: TreeNode, id: string) => {
+      const hasChildren =
+        (node.children && node.children.length > 0) || loadedChildren?.[id];
+
+      if (!hasChildren && onLoadChildren) {
+        setLoadingIds((s) => new Set(s).add(id));
+
+        onLoadChildren(node.id)
+          .then((children: TreeNode[]) => {
+            setLoadedChildren((prev) => ({ ...prev, [id]: children }));
+          })
+          .catch(() => {
+            console.error("Error loading children for node:", id);
+          })
+          .finally(() => {
+            setLoadingIds((s) => {
+              const nextSet = new Set(s);
+              nextSet.delete(id);
+              return nextSet;
+            });
+          });
+      }
+    },
+    [onLoadChildren, loadedChildren],
+  );
+
   const toggle = useCallback(
     (id: string) => {
-      console.log("Toggling node:", id);
       setExpandedIds((prev) => {
         const next = new Set(prev);
         if (next.has(id)) {
@@ -110,34 +132,13 @@ const TreeView: React.FC<TreeViewProps> = ({
           const node = findNodeById(data, id);
 
           if (node) {
-            const hasChildren =
-              (node.children && node.children.length > 0) ||
-              (loadedChildren?.[id] && loadedChildren[id].length > 0);
-
-            if (!hasChildren && onLoadChildren) {
-              setLoadingIds((s) => new Set(s).add(id));
-
-              onLoadChildren(node.id)
-                .then((children: TreeNode[]) => {
-                  setLoadedChildren((prev) => ({ ...prev, [id]: children }));
-                })
-                .catch(() => {
-                  console.error("Error loading children for node:", id);
-                })
-                .finally(() => {
-                  setLoadingIds((s) => {
-                    const nextSet = new Set(s);
-                    nextSet.delete(id);
-                    return nextSet;
-                  });
-                });
-            }
+            handleLoadingNodeChildren(node, id);
           }
         }
         return next;
       });
     },
-    [data, findNodeById, onLoadChildren, loadedChildren],
+    [data, findNodeById, handleLoadingNodeChildren],
   );
 
   useEffect(() => {
@@ -169,6 +170,30 @@ const TreeView: React.FC<TreeViewProps> = ({
     if (last) setFocusedId(last.id);
   };
 
+  const openOrChangeFocus = (node: TreeNode) => {
+    if (node.isFolder) {
+      if (!expandedIds.has(node.id)) {
+        toggle(node.id);
+      } else if (node.children && node.children.length > 0) {
+        setFocusedId(node.children[0].id);
+      } else if (
+        loadedChildren[node.id] &&
+        loadedChildren[node.id].length > 0
+      ) {
+        setFocusedId(loadedChildren[node.id][0].id);
+      }
+    }
+  };
+
+  const closeOrChangeFocus = (node: TreeNode) => {
+    if (node.isFolder && expandedIds.has(node.id)) {
+      toggle(node.id);
+    } else {
+      const parentId = findParentId(data, node.id);
+      if (parentId) setFocusedId(parentId);
+    }
+  };
+
   const onKeyDown = (e: KeyboardEvent) => {
     if (!focusedId) return;
     const node = findNodeById(data, focusedId);
@@ -185,27 +210,11 @@ const TreeView: React.FC<TreeViewProps> = ({
         break;
       case "ArrowRight":
         e.preventDefault();
-        if (node.isFolder) {
-          if (!expandedIds.has(node.id)) {
-            toggle(node.id);
-          } else if (node.children && node.children.length > 0) {
-            setFocusedId(node.children[0].id);
-          } else if (
-            loadedChildren[node.id] &&
-            loadedChildren[node.id].length > 0
-          ) {
-            setFocusedId(loadedChildren[node.id][0].id);
-          }
-        }
+        openOrChangeFocus(node);
         break;
       case "ArrowLeft":
         e.preventDefault();
-        if (node.isFolder && expandedIds.has(node.id)) {
-          toggle(node.id);
-        } else {
-          const parentId = findParentId(data, node.id);
-          if (parentId) setFocusedId(parentId);
-        }
+        closeOrChangeFocus(node);
         break;
       case "Home":
         e.preventDefault();
@@ -217,9 +226,11 @@ const TreeView: React.FC<TreeViewProps> = ({
         break;
       case "Enter":
       case " ":
-        e.preventDefault();
-        if (!controlledSelectedId) setUncontrolledSelectedId(node.id);
-        onSelect?.(node);
+        if (node.isFolder) {
+          e.preventDefault();
+          setUncontrolledSelectedId(node.id);
+          onSelect?.(node);
+        }
 
         break;
       default:
@@ -229,20 +240,23 @@ const TreeView: React.FC<TreeViewProps> = ({
 
   const handleClick = (node: TreeNode) => {
     setFocusedId(node.id);
-    if (!controlledSelectedId) setUncontrolledSelectedId(node.id);
+    setUncontrolledSelectedId(node.id);
     onSelect?.(node);
   };
 
   const renderNode = (node: TreeNode, level: number) => {
     const isExpanded = node.isFolder && expandedIds.has(node.id);
-    const isSelected = selectedId === node.id;
+    const isSelected = uncontrolledSelectedId === node.id;
     const isFocused = focusedId === node.id;
     const isLoading = loadingIds.has(node.id);
     const children = node.children ?? loadedChildren[node.id];
 
+    const domId = crypto.randomUUID();
+    const dataTestId = node.id.toLowerCase().replace(/\s+/g, "-");
+
     return (
       <li
-        key={node.id + level}
+        key={node.id}
         role="treeitem"
         ref={(el) => {
           refs.current[node.id] = el;
@@ -250,9 +264,10 @@ const TreeView: React.FC<TreeViewProps> = ({
         aria-expanded={node.isFolder ? isExpanded : undefined}
         aria-busy={isLoading ? true : undefined}
         aria-level={level}
-        data-id={node.id}
+        id={domId}
+        data-testid={dataTestId}
         aria-selected={isSelected}
-        aria-labelledby={`name-${node.id}`}
+        aria-labelledby={`name-${domId}`}
         tabIndex={isFocused ? 0 : -1}
         className={`${styles.treeItem} ${isFocused ? styles.focused : ""}`}
         onKeyDown={(e) => {
@@ -265,30 +280,46 @@ const TreeView: React.FC<TreeViewProps> = ({
             {isLoading ? "Loading sub folders" : ""}
           </div>
 
-          <button
-            onClick={() => toggle(node.id)}
-            className={styles.toggleIcon}
-            aria-label={isExpanded ? "minus" : "plus"}
-            tabIndex={-1}
-          >
-            {isExpanded ? "-" : "+"}
-          </button>
-          <button
-            id={`name-${node.id}`}
-            className={`folderNode ${styles.folderNode} ${isSelected ? styles.selected : ""}`}
-            onClick={() => handleClick(node)}
-            aria-label={node.name.toLowerCase()}
-            tabIndex={-1}
-          >
-            <div aria-hidden={true}>
-              <FolderIcon />
+          {node.isFolder && (
+            <button
+              onClick={() => toggle(node.id)}
+              className={styles.toggleIcon}
+              aria-label={isExpanded ? "minus" : "plus"}
+              tabIndex={-1}
+            >
+              {isExpanded ? "-" : "+"}
+            </button>
+          )}
+          {node.isFolder && (
+            <button
+              id={`name-${domId}`}
+              className={` ${styles.folderNode} ${isSelected ? styles.selected : ""}`}
+              onClick={() => handleClick(node)}
+              aria-label={node.name.toLowerCase()}
+              tabIndex={-1}
+            >
+              <div aria-hidden={true}>
+                <FolderIcon />
+              </div>
+              {node.name}
+            </button>
+          )}
+          {!node.isFolder && (
+            <div
+              id={`name-${domId}`}
+              aria-label={node.name.toLowerCase()}
+              className={` ${styles.fileNode}`}
+            >
+              <div aria-hidden={true}>
+                <FileIcon />
+              </div>
+              {node.name}
             </div>
-            {node.name}
-          </button>
+          )}
         </div>
         {isLoading && (
           <div className={styles.loadingIconWrapper} aria-hidden>
-            <Spinner data-testid="transfer-spinner" diameterPx={15} />
+            <Spinner data-testid="loading-spinner" diameterPx={15} />
           </div>
         )}
         {!isLoading &&
@@ -305,7 +336,7 @@ const TreeView: React.FC<TreeViewProps> = ({
   };
 
   return (
-    <div className={`${styles.tree} ${className ?? ""}`}>
+    <div className={`${className ?? ""}`}>
       <ul role="tree" aria-label="Folders" className={styles.treeList}>
         {data.map((node) => renderNode(node, 1))}
       </ul>
@@ -313,4 +344,4 @@ const TreeView: React.FC<TreeViewProps> = ({
   );
 };
 
-export default TreeView;
+export default TreeViewComponent;

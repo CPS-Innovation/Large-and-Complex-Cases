@@ -28,6 +28,8 @@ using CPS.ComplexCases.DDEI.Extensions;
 using CPS.ComplexCases.DDEI.Tactical.Extensions;
 using CPS.ComplexCases.Egress.Extensions;
 using CPS.ComplexCases.NetApp.Extensions;
+using Azure.Identity;
+using Azure.Storage.Blobs;
 using FluentValidation;
 using ThrottlingTroll;
 
@@ -83,6 +85,25 @@ static string ExtractIdentityFromRequest(IReadOnlyDictionary<string, Microsoft.E
     catch
     {
         return "unknown";
+    }
+}
+
+static void SetAsposeLicence(ILogger logger)
+{
+    try
+    {
+        const string licenceFileName = "Licenses/Aspose.Total.NET.lic";
+
+        new Aspose.Cells.License().SetLicense(licenceFileName);
+        new Aspose.Email.License().SetLicense(licenceFileName);
+        new Aspose.Imaging.License().SetLicense(licenceFileName);
+        new Aspose.Pdf.License().SetLicense(licenceFileName);
+        new Aspose.Slides.License().SetLicense(licenceFileName);
+        new Aspose.Words.License().SetLicense(licenceFileName);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Aspose license not found or invalid. Running in evaluation mode.");
     }
 }
 
@@ -199,11 +220,25 @@ var host = new HostBuilder()
         services.AddScoped<ICaseActiveManageMaterialsService, CaseActiveManageMaterialsService>();
         services.AddScoped<ICaseEnrichmentService, CaseEnrichmentService>();
         services.AddScoped<IInitService, InitService>();
+        services.AddScoped<IDocumentService, DocumentService>();
+        services.AddScoped<IConversionService, ConversionService>();
         services.AddSingleton<IOpenApiConfigurationOptions, OpenApiConfigurationOptions>();
         services.AddSingleton<IRequestValidator, RequestValidator>();
         services.AddSingleton<ISecurityGroupMetadataService, SecurityGroupMetadataService>();
 
+        services.AddSingleton<BlobServiceClient>(provider =>
+        {
+            var blobStorageAccountUrl = configuration["BlobStorageAccountUrl"];
+            if (string.IsNullOrEmpty(blobStorageAccountUrl))
+            {
+                throw new InvalidOperationException("BlobStorageAccountUrl configuration value is missing or empty.");
+            }
+            return new BlobServiceClient(new Uri(blobStorageAccountUrl), new DefaultAzureCredential());
+        });
+
         services.AddValidatorsFromAssemblyContaining<SearchNetAppFoldersRequestValidator>();
+
+        SetAsposeLicence(logger);
     })
     .Build();
 

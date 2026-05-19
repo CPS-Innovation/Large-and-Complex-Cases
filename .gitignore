@@ -13,6 +13,9 @@ AzuriteConfig
 # Azure Functions localsettings file
 local.settings.json
 
+# Aspose License
+backend/CPS.ComplexCases.API/Licenses/Aspose.Total.NET.lic
+
 # Integration tests settings (contains secrets)
 **/CPS.ComplexCases.API.Integration.Tests/appsettings.json
 
@@ -308,6 +311,7 @@ ui-spa/playwright/.cache/
 ui-spa/playwright-report/
 ui-spa/playwright/integration-test-results.xml
 ui-spa/playwright/.nyc_output
+ui-spa/unit-test-results.xml
 e2e/pw/test-results/
 e2e/pw/playwright-report/
 e2e/pw/.auth/

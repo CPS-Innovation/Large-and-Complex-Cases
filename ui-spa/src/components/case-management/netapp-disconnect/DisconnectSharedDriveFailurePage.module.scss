@@ -1,0 +1,14 @@
+.contentWrapper {
+  margin-top: 1rem;
+  width: 66%;
+}
+
+.buttonWrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 3rem;
+  button {
+    margin: 0;
+  }
+}

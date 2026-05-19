@@ -8,6 +8,9 @@ import MetaDataErrorPage from "./case-management/transfer-materials/MetaDataErro
 import FolderAccessErrorPage from "./case-management/transfer-materials/FolderAccessErrorPage";
 import TransferErrorPage from "./case-management/transfer-materials/TransferErrorPage";
 import TransferMovePermissionsErrorPage from "./case-management/transfer-materials/TransferMovePermissionsErrorPage";
+import DisconnectSharedDriveConfirmationPage from "./case-management/netapp-disconnect/DisconnectSharedDriveConfirmationPage";
+import DisconnectSharedDriveSuccessPage from "./case-management/netapp-disconnect/DisconnectSharedDriveSuccessPage";
+import DisconnectSharedDriveFailurePage from "./case-management/netapp-disconnect/DisconnectSharedDriveFailurePage";
 const AppRoutes = () => {
   return (
     <Routes>
@@ -62,6 +65,18 @@ const AppRoutes = () => {
       <Route
         path="/case/:caseId/case-management/connection-error"
         element={<FolderAccessErrorPage />}
+      />
+      <Route
+        path="/case/:caseId/case-management/disconnect-shared-drive-confirmation"
+        element={<DisconnectSharedDriveConfirmationPage />}
+      />
+      <Route
+        path="/case/:caseId/case-management/disconnect-shared-drive-success"
+        element={<DisconnectSharedDriveSuccessPage />}
+      />
+      <Route
+        path="/case/:caseId/case-management/disconnect-shared-drive-failure"
+        element={<DisconnectSharedDriveFailurePage />}
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

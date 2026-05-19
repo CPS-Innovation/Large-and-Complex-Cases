@@ -3,6 +3,7 @@ import { useApi } from "../../../common/hooks/useApi";
 import { getNetAppFolders, getCaseMetaData } from "../../../apis/gateway-api";
 import TransferWidget from "../../common/transfer-widget/TransferWidget";
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
+import { getFileNameFromPath } from "../../../common/utils/getFileNameFromPath";
 
 export type TransferTreeViewPageProps = {
   caseId: string;
@@ -40,7 +41,16 @@ const TransferTreeViewPage = ({ caseId }: TransferTreeViewPageProps) => {
                 isFolder: true,
               };
             });
-            return folders;
+
+            const files = data.fileData.map((file) => {
+              return {
+                id: file.path,
+                name: getFileNameFromPath(file.path),
+                path: file.path,
+                isFolder: false,
+              };
+            });
+            return [...folders, ...files];
           }}
           transferAction="Copy"
         />

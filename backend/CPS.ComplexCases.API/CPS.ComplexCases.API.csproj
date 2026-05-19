@@ -11,7 +11,14 @@
   </PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Ardalis.SmartEnum" Version="8.2.0" />
+    <PackageReference Include="Aspose.Cells" Version="25.1.2" />
+    <PackageReference Include="Aspose.Email" Version="25.1.0" />
+    <PackageReference Include="Aspose.Imaging" Version="25.2.0" />
+    <PackageReference Include="Aspose.PDF.Drawing" Version="25.1.0" />
+    <PackageReference Include="Aspose.Slides.NET" Version="25.2.0" />
+    <PackageReference Include="Aspose.Words" Version="25.2.0" />    
+    <PackageReference Include="Ardalis.SmartEnum" Version="8.2.0" />    
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.27.0" />
     <PackageReference Include="FluentValidation" Version="11.11.0" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.OpenApi" Version="1.5.1" />
@@ -49,6 +56,9 @@
     <None Update="local.settings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </None>
+    <None Update="Licenses/Aspose.Total.NET.lic">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>

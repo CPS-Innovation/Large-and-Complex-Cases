@@ -101,6 +101,7 @@ const CaseManagementPage = () => {
             activeTransferId={
               location?.state?.transferId ?? caseMetaData?.data.activeTransferId
             }
+            urn={caseMetaData.data.urn}
           />
         ) : (
           <></>
