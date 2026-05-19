@@ -272,8 +272,8 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
         return actionType switch
         {
             ActionType.ConnectionToEgress => $"Connected to Egress workspace {resourceName}",
-            ActionType.ConnectionToNetApp => $"Connected to NetApp folder {resourceName}",
-            ActionType.DisconnectionFromNetApp => $"Disconnected from NetApp folder {resourceName}",
+            ActionType.ConnectionToNetApp => $"Connected to Shared Drive folder {resourceName}",
+            ActionType.DisconnectionFromNetApp => $"Disconnected from Shared Drive folder {resourceName}",
             ActionType.TransferInitiated => $"Transfer initiated between {resourceName}",
             ActionType.TransferCompleted => $"Transfer completed between {resourceName}",
             ActionType.TransferFailed => $"Transfer failed between {resourceName}",
