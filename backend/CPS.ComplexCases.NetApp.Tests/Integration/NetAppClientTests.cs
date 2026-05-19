@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -159,7 +160,9 @@ namespace CPS.ComplexCases.NetApp.Tests.Integration
 
             _netAppS3HttpArgFactory = new NetAppS3HttpArgFactory();
 
-            var testCert = new X509Certificate2([]);
+            using var rsa = RSA.Create(2048);
+            var certReq = new CertificateRequest("CN=TestCA", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            var testCert = certReq.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddYears(1));
             var testCertCollection = new X509Certificate2Collection { testCert };
 
             _mockNetAppCertFactory

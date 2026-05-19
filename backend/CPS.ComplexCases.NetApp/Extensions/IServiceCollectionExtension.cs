@@ -2,6 +2,7 @@ using System.Net;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Http.Resilience;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
 using CPS.ComplexCases.NetApp.Client;
@@ -11,8 +12,6 @@ using CPS.ComplexCases.NetApp.Services;
 using CPS.ComplexCases.NetApp.Telemetry;
 using CPS.ComplexCases.NetApp.Wrappers;
 using Polly;
-using Polly.Contrib.WaitAndRetry;
-using Polly.Wrap;
 
 namespace CPS.ComplexCases.NetApp.Extensions;
 
@@ -67,7 +66,7 @@ public static class IServiceCollectionExtension
 		})
 		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment))
 		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
-		.AddPolicyHandler(GetRetryPolicy());
+		.AddResilienceHandler("netapp-retry", ConfigureResiliencePipeline);
 
 		services.AddHttpClient<INetAppS3HttpClient, NetAppS3HttpClient>(client =>
 		{
@@ -83,7 +82,7 @@ public static class IServiceCollectionExtension
 		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment)
 		)
 		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
-		.AddPolicyHandler(GetRetryPolicy());
+		.AddResilienceHandler("netapp-s3-retry", ConfigureResiliencePipeline);
 
 		services.AddTransient<NetAppStorageClient>();
 	}
@@ -115,30 +114,31 @@ public static class IServiceCollectionExtension
 		}
 	}
 
-	private static AsyncPolicyWrap<HttpResponseMessage> GetRetryPolicy()
+	private static void ConfigureResiliencePipeline(ResiliencePipelineBuilder<HttpResponseMessage> pipeline)
 	{
-		var bulkheadPolicy = Policy.BulkheadAsync<HttpResponseMessage>(
-			maxParallelization: 30,
-			maxQueuingActions: int.MaxValue
-		);
+		// Limit concurrent requests to avoid overwhelming NetApp (equivalent to Polly v7 bulkhead)
+		pipeline.AddConcurrencyLimiter(permitLimit: 30, queueLimit: int.MaxValue);
 
-		// https://learn.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/implement-http-call-retries-exponential-backoff-polly#add-a-jitter-strategy-to-the-retry-policy
-		var delay = Backoff.DecorrelatedJitterBackoffV2(
-			medianFirstRetryDelay: TimeSpan.FromSeconds(FirstRetryDelaySeconds),
-			retryCount: RetryAttempts);
+		// https://learn.microsoft.com/en-us/dotnet/core/resilience/http-resilience
+		pipeline.AddRetry(new HttpRetryStrategyOptions
+		{
+			MaxRetryAttempts = RetryAttempts,
+			Delay = TimeSpan.FromSeconds(FirstRetryDelaySeconds),
+			BackoffType = DelayBackoffType.Exponential,
+			UseJitter = true,
+			ShouldHandle = static args =>
+			{
+				if (args.Outcome.Result is null)
+					return ValueTask.FromResult(false);
 
-		static bool responseStatusCodePredicate(HttpResponseMessage response) =>
-			response.StatusCode >= HttpStatusCode.InternalServerError
-			|| response.StatusCode == HttpStatusCode.TooManyRequests;
+				var response = args.Outcome.Result;
+				var isRetryableStatus = response.StatusCode >= HttpStatusCode.InternalServerError
+					|| response.StatusCode == HttpStatusCode.TooManyRequests;
+				var isRetryableMethod = response.RequestMessage?.Method != HttpMethod.Post
+					&& response.RequestMessage?.Method != HttpMethod.Put;
 
-		static bool methodPredicate(HttpResponseMessage response) =>
-			response.RequestMessage?.Method != HttpMethod.Post
-			&& response.RequestMessage?.Method != HttpMethod.Put;
-
-		var retryPolicy = Policy<HttpResponseMessage>
-			.HandleResult(r => responseStatusCodePredicate(r) && methodPredicate(r))
-			.WaitAndRetryAsync(delay);
-
-		return Policy.WrapAsync(bulkheadPolicy, retryPolicy);
+				return ValueTask.FromResult(isRetryableStatus && isRetryableMethod);
+			}
+		});
 	}
 }

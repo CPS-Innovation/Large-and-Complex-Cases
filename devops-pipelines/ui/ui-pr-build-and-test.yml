@@ -70,7 +70,7 @@ stages:
             displayName: 'Use .NET SDK to publish Code Coverage'
             inputs:
               packageType: 'sdk'
-              version: '8.x'
+              version: '10.x'
 
           - script: |
               export PATH="$PATH:$HOME/.dotnet/tools"
