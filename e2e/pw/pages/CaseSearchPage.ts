@@ -9,10 +9,27 @@ export class CaseSearchPage {
   }
 
   async goto() {
+    const t0 = Date.now();
+
+    console.log("BEFORE GOTO");
+
     await this.page.goto(CaseSearchPage.route, {
-      waitUntil: "domcontentloaded"
-    })
-    await expect(this.page.getByTestId("radio-search-operation-name")).toBeEnabled({ timeout: 60_000 });
+      waitUntil: "commit"
+    });
+
+    console.log("AFTER GOTO", Date.now() - t0);
+
+    const locator = this.page.getByTestId(
+      "radio-search-operation-name"
+    );
+
+    console.log("BEFORE EXPECT");
+
+    await expect(locator).toBeEnabled({
+      timeout: 60_000
+    });
+
+    console.log("AFTER EXPECT", Date.now() - t0);
   }
 
   // Wait for radios to be *enabled*, not just present. Tactical login must
