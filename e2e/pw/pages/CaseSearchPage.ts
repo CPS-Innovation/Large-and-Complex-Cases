@@ -9,27 +9,11 @@ export class CaseSearchPage {
   }
 
   async goto() {
-    const t0 = Date.now();
-
-    console.log("BEFORE GOTO");
-
     await this.page.goto(CaseSearchPage.route, {
       waitUntil: "commit"
-    });
-
-    console.log("AFTER GOTO", Date.now() - t0);
-
-    const locator = this.page.getByTestId(
-      "radio-search-operation-name"
-    );
-
-    console.log("BEFORE EXPECT");
-
-    await expect(locator).toBeEnabled({
-      timeout: 60_000
-    });
-
-    console.log("AFTER EXPECT", Date.now() - t0);
+    })
+    await this.page.waitForSelector("h1");
+    await this.waitForRadioButtons();
   }
 
   // Wait for radios to be *enabled*, not just present. Tactical login must
@@ -56,9 +40,7 @@ export class CaseSearchPage {
     await this.page.getByRole("button", { name: "Search" }).click();
   }
 
-  async searchByUrn(urn: string) { 
-    this.page.on("request", r => console.log("→", r.method(), r.url()));
-    this.page.on("response", r => console.log("←", r.status(), r.url()));
+  async searchByUrn(urn: string) {
     await this.goto();
     await this.selectUrnSearch();
     await this.fillUrn(urn);
