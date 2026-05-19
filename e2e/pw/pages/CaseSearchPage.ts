@@ -10,7 +10,7 @@ export class CaseSearchPage {
 
   async goto() {
     await this.page.goto(CaseSearchPage.route, {
-      waitUntil: "commit"
+      waitUntil: "domcontentloaded"
     })
     await this.page.waitForSelector("h1");
     await this.waitForRadioButtons();
