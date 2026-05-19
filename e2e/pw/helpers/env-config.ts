@@ -55,6 +55,7 @@ export function loadEnvConfig() {
 
     testFileSizeMb: positiveIntEnv("TEST_FILE_SIZE_MB", "10"),
     testFileCount: positiveIntEnv("TEST_FILE_COUNT", "1"),
+    largeTestFileSizeMb: positiveIntEnv("LARGE_TEST_FILE_SIZE_MB", "50"),
 
     defaultWorkspaceId: process.env.DEFAULT_WORKSPACE_ID || "",
     defaultWorkspaceName: process.env.DEFAULT_WORKSPACE_NAME || "",
