@@ -330,6 +330,7 @@ public class ProvisionNetAppFoldersTests
         var dto = _fixture.Create<ProvisionNetAppFoldersDto>();
         var cmsArg = _fixture.Create<DdeiCaseIdArgDto>();
         var caseResponse = _fixture.Create<CaseDto>();
+        var expectedFolderPath = $"{_caseNameDto.CaseName}/";
 
         SetupValidRequest(dto, cmsArg);
         SetupSuccessfulTransfer(caseResponse, "Completed");
@@ -342,7 +343,7 @@ public class ProvisionNetAppFoldersTests
 
         // Assert — the gateway returns the CaseName (not the folder path)
         var ok = Assert.IsType<OkObjectResult>(result);
-        Assert.Equal(_caseNameDto.CaseName, ok.Value);
+        Assert.Equal(expectedFolderPath, ok.Value);
     }
 
     [Fact]
