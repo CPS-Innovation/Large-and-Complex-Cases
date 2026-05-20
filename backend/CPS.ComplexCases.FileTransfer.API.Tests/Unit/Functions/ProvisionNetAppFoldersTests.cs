@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.DurableTask;
+using Microsoft.DurableTask.Client;
 using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.Common.Constants;
 using CPS.ComplexCases.Common.Handlers;
@@ -10,6 +11,8 @@ using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.FileTransfer.API.Durable.Orchestration;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Functions;
+using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
+using CPS.ComplexCases.FileTransfer.API.Models.Responses;
 using CPS.ComplexCases.FileTransfer.API.Tests.Unit.Stubs;
 using CPS.ComplexCases.FileTransfer.API.Validators;
 using CPS.ComplexCases.NetApp.Client;
@@ -264,6 +267,21 @@ public class ProvisionNetAppFoldersTests
     }
 
     [Fact]
+    public async Task Run_WhenOrchestrationCompletes_ReturnsTransferResponseWithCompletedStatus()
+    {
+        SetupValidRequest();
+        SetupTemplateFiles("_templates/appeal/file1.txt");
+        var client = CreateSchedulingClient(out _);
+
+        var result = await _function.Run(CreateHttpRequest(), client.Object);
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<TransferResponse>(ok.Value);
+        Assert.Equal(TransferStatus.Completed, response.Status);
+        Assert.NotEqual(Guid.Empty, response.Id);
+    }
+
+    [Fact]
     public async Task Run_WhenNetAppClientReturnsNullResponse_ReturnsBadRequest()
     {
         // When the NetApp client returns null, ListFilesInFolder returns null/empty
@@ -388,6 +406,8 @@ public class ProvisionNetAppFoldersTests
                     BucketName = BucketName,
                     BearerToken = BearerToken,
                     UserName = UserName,
+                    CaseName = "TestCase-12AB3456",
+                    OperationName = "TestCase",
                 }
             });
 
@@ -410,10 +430,16 @@ public class ProvisionNetAppFoldersTests
     }
 
     private Mock<DurableTaskClientStub> CreateSchedulingClient(
-        out List<(string Name, object? Input, StartOrchestrationOptions? Options)> capturedCalls)
+        out List<(string Name, object? Input, StartOrchestrationOptions? Options)> capturedCalls,
+        OrchestrationRuntimeStatus completionStatus = OrchestrationRuntimeStatus.Completed)
     {
         var calls = new List<(string, object?, StartOrchestrationOptions?)>();
         capturedCalls = calls;
+
+        var completedMetadata = new OrchestrationMetadata(new TaskName("CopyOrchestrator"), "test-instance-id")
+        {
+            RuntimeStatus = completionStatus
+        };
 
         var mock = new Mock<DurableTaskClientStub>(_entityClientStub) { CallBase = true };
         mock.Setup(c => c.ScheduleNewOrchestrationInstanceAsync(
@@ -422,6 +448,10 @@ public class ProvisionNetAppFoldersTests
             .Callback<TaskName, object, StartOrchestrationOptions, CancellationToken>(
                 (name, input, options, _) => calls.Add((name.Name, input, options)))
             .ReturnsAsync("test-instance-id");
+
+        mock.Setup(c => c.WaitForInstanceCompletionAsync(
+                It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(completedMetadata);
 
         return mock;
     }

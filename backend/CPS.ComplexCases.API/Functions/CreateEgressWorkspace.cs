@@ -72,7 +72,8 @@ public class CreateEgressWorkspace(
         var cmsArg = _ddeiArgFactory.CreateCaseArg(functionContext.GetRequestContext().CmsAuthValues, functionContext.GetRequestContext().CorrelationId, request.Value.CaseId);
         var cmsResponse = await _ddeiClient.GetCaseAsync(cmsArg);
 
-        string workspaceName = await _caseNamingService.GenerateCaseName(cmsResponse);
+        var caseNameDto = await _caseNamingService.GenerateCaseName(cmsResponse);
+        string workspaceName = caseNameDto.CaseName;
 
         var arg = _egressArgFactory.CreateEgressWorkspaceArg(
             workspaceName,

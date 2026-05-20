@@ -170,7 +170,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
 
             _caseNamingServiceMock
                 .Setup(s => s.GenerateCaseName(caseResponse))
-                .ReturnsAsync(expectedWorkspaceName);
+                .ReturnsAsync(new CaseNameDto { CaseName = expectedWorkspaceName, OperationName = _operationName });
 
             _caseMetadataServiceMock
                 .Setup(s => s.CreateEgressConnectionAsync(It.Is<CreateEgressConnectionDto>(
@@ -293,7 +293,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
 
             _caseNamingServiceMock
                 .Setup(s => s.GenerateCaseName(caseResponse))
-                .ReturnsAsync(expectedWorkspaceName);
+                .ReturnsAsync(new CaseNameDto { CaseName = expectedWorkspaceName, OperationName = string.Empty });
 
             _caseMetadataServiceMock
                 .Setup(s => s.CreateEgressConnectionAsync(It.Is<CreateEgressConnectionDto>(
@@ -410,7 +410,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
 
             _caseNamingServiceMock
                 .Setup(s => s.GenerateCaseName(caseResponse))
-                .ReturnsAsync(expectedWorkspaceName);
+                .ReturnsAsync(new CaseNameDto { CaseName = expectedWorkspaceName, OperationName = string.Empty });
 
             _egressArgFactoryMock
                 .Setup(f => f.CreateEgressWorkspaceArg(expectedWorkspaceName, _description, _templateId))

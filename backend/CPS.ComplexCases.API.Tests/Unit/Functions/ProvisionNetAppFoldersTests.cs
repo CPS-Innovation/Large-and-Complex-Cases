@@ -1,3 +1,6 @@
+using System.Net;
+using System.Text;
+using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -49,6 +52,8 @@ public class ProvisionNetAppFoldersTests
     private readonly int _caseId;
     private readonly string _bucketName;
     private readonly string _caseName;
+    private readonly string _operationName;
+    private readonly CaseNameDto _caseNameDto;
 
     public ProvisionNetAppFoldersTests()
     {
@@ -71,6 +76,8 @@ public class ProvisionNetAppFoldersTests
         _caseId = Math.Abs(_fixture.Create<int>()) + 1; // ensure > 0
         _bucketName = _fixture.Create<string>();
         _caseName = _fixture.Create<string>();
+        _operationName = _fixture.Create<string>();
+        _caseNameDto = new CaseNameDto { CaseName = _caseName, OperationName = _operationName };
 
         _securityGroupMetadataServiceMock
             .Setup(s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()))
@@ -244,22 +251,7 @@ public class ProvisionNetAppFoldersTests
         var caseResponse = _fixture.Create<CaseDto>();
 
         SetupValidRequest(dto, cmsArg);
-
-        _ddeiClientMock
-            .Setup(c => c.GetCaseAsync(cmsArg))
-            .ReturnsAsync(caseResponse);
-
-        _caseMetadataServiceMock
-            .Setup(s => s.GetCaseMetadataForCaseIdAsync(_caseId))
-            .ReturnsAsync((CaseMetadata?)null);
-
-        _caseNamingServiceMock
-            .Setup(s => s.GenerateCaseName(caseResponse))
-            .ReturnsAsync(_caseName);
-
-        _fileTransferClientMock
-            .Setup(c => c.ProvisionNetAppFoldersAsync(It.IsAny<ProvisionNetAppFoldersRequest>(), _correlationId))
-            .ReturnsAsync(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
+        SetupSuccessfulTransfer(caseResponse, "Completed");
 
         var request = HttpRequestStubHelper.CreateHttpRequestFor(dto);
         var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
@@ -288,22 +280,7 @@ public class ProvisionNetAppFoldersTests
         var expectedFolderPath = $"{_caseName}/";
 
         SetupValidRequest(dto, cmsArg);
-
-        _ddeiClientMock
-            .Setup(c => c.GetCaseAsync(cmsArg))
-            .ReturnsAsync(caseResponse);
-
-        _caseMetadataServiceMock
-            .Setup(s => s.GetCaseMetadataForCaseIdAsync(_caseId))
-            .ReturnsAsync((CaseMetadata?)null);
-
-        _caseNamingServiceMock
-            .Setup(s => s.GenerateCaseName(caseResponse))
-            .ReturnsAsync(_caseName);
-
-        _fileTransferClientMock
-            .Setup(c => c.ProvisionNetAppFoldersAsync(It.IsAny<ProvisionNetAppFoldersRequest>(), _correlationId))
-            .ReturnsAsync(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
+        SetupSuccessfulTransfer(caseResponse, "Completed");
 
         var request = HttpRequestStubHelper.CreateHttpRequestFor(dto);
         var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
@@ -327,22 +304,7 @@ public class ProvisionNetAppFoldersTests
         var caseResponse = _fixture.Create<CaseDto>();
 
         SetupValidRequest(dto, cmsArg);
-
-        _ddeiClientMock
-            .Setup(c => c.GetCaseAsync(cmsArg))
-            .ReturnsAsync(caseResponse);
-
-        _caseMetadataServiceMock
-            .Setup(s => s.GetCaseMetadataForCaseIdAsync(_caseId))
-            .ReturnsAsync((CaseMetadata?)null);
-
-        _caseNamingServiceMock
-            .Setup(s => s.GenerateCaseName(caseResponse))
-            .ReturnsAsync(_caseName);
-
-        _fileTransferClientMock
-            .Setup(c => c.ProvisionNetAppFoldersAsync(It.IsAny<ProvisionNetAppFoldersRequest>(), _correlationId))
-            .ReturnsAsync(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
+        SetupSuccessfulTransfer(caseResponse, "Completed");
 
         var request = HttpRequestStubHelper.CreateHttpRequestFor(dto);
         var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
@@ -362,31 +324,15 @@ public class ProvisionNetAppFoldersTests
     }
 
     [Fact]
-    public async Task Run_WhenRequestIsValid_ReturnsOkWithFolderPath()
+    public async Task Run_WhenRequestIsValid_ReturnsOkWithCaseName()
     {
         // Arrange
         var dto = _fixture.Create<ProvisionNetAppFoldersDto>();
         var cmsArg = _fixture.Create<DdeiCaseIdArgDto>();
         var caseResponse = _fixture.Create<CaseDto>();
-        var expectedFolderPath = $"{_caseName}/";
 
         SetupValidRequest(dto, cmsArg);
-
-        _ddeiClientMock
-            .Setup(c => c.GetCaseAsync(cmsArg))
-            .ReturnsAsync(caseResponse);
-
-        _caseMetadataServiceMock
-            .Setup(s => s.GetCaseMetadataForCaseIdAsync(_caseId))
-            .ReturnsAsync((CaseMetadata?)null);
-
-        _caseNamingServiceMock
-            .Setup(s => s.GenerateCaseName(caseResponse))
-            .ReturnsAsync(_caseName);
-
-        _fileTransferClientMock
-            .Setup(c => c.ProvisionNetAppFoldersAsync(It.IsAny<ProvisionNetAppFoldersRequest>(), _correlationId))
-            .ReturnsAsync(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
+        SetupSuccessfulTransfer(caseResponse, "Completed");
 
         var request = HttpRequestStubHelper.CreateHttpRequestFor(dto);
         var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
@@ -394,9 +340,9 @@ public class ProvisionNetAppFoldersTests
         // Act
         var result = await _function.Run(request, functionContext, _caseId);
 
-        // Assert
+        // Assert — the gateway returns the CaseName (not the folder path)
         var ok = Assert.IsType<OkObjectResult>(result);
-        Assert.Equal(expectedFolderPath, ok.Value);
+        Assert.Equal(_caseNameDto.CaseName, ok.Value);
     }
 
     [Fact]
@@ -408,22 +354,7 @@ public class ProvisionNetAppFoldersTests
         var caseResponse = _fixture.Create<CaseDto>();
 
         SetupValidRequest(dto, cmsArg);
-
-        _ddeiClientMock
-            .Setup(c => c.GetCaseAsync(cmsArg))
-            .ReturnsAsync(caseResponse);
-
-        _caseMetadataServiceMock
-            .Setup(s => s.GetCaseMetadataForCaseIdAsync(_caseId))
-            .ReturnsAsync((CaseMetadata?)null);
-
-        _caseNamingServiceMock
-            .Setup(s => s.GenerateCaseName(caseResponse))
-            .ReturnsAsync(_caseName);
-
-        _fileTransferClientMock
-            .Setup(c => c.ProvisionNetAppFoldersAsync(It.IsAny<ProvisionNetAppFoldersRequest>(), _correlationId))
-            .ReturnsAsync(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
+        SetupSuccessfulTransfer(caseResponse, "Completed");
 
         var request = HttpRequestStubHelper.CreateHttpRequestFor(dto);
         var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
@@ -434,6 +365,137 @@ public class ProvisionNetAppFoldersTests
         // Assert
         Assert.IsType<OkObjectResult>(result);
         _fileTransferClientMock.Verify(c => c.ProvisionNetAppFoldersAsync(It.IsAny<ProvisionNetAppFoldersRequest>(), _correlationId), Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_WhenOrchestrationReturnsFailed_Returns500()
+    {
+        // Arrange
+        var dto = _fixture.Create<ProvisionNetAppFoldersDto>();
+        var cmsArg = _fixture.Create<DdeiCaseIdArgDto>();
+        var caseResponse = _fixture.Create<CaseDto>();
+
+        SetupValidRequest(dto, cmsArg);
+        SetupSuccessfulTransfer(caseResponse, "Failed");
+
+        var request = HttpRequestStubHelper.CreateHttpRequestFor(dto);
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
+
+        // Act
+        var result = await _function.Run(request, functionContext, _caseId);
+
+        // Assert
+        var objectResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(500, objectResult.StatusCode);
+        _caseMetadataServiceMock.Verify(s => s.CreateNetAppConnectionAsync(It.IsAny<CreateNetAppConnectionDto>()), Times.Never);
+        _activityLogServiceMock.Verify(s => s.CreateActivityLogAsync(
+            It.IsAny<ActionType>(), It.IsAny<ResourceType>(),
+            It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<string>(), null), Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_WhenOrchestrationReturnsPartiallyCompleted_ReturnsOkAndWritesConnectionRecord()
+    {
+        // Arrange
+        var dto = _fixture.Create<ProvisionNetAppFoldersDto>();
+        var cmsArg = _fixture.Create<DdeiCaseIdArgDto>();
+        var caseResponse = _fixture.Create<CaseDto>();
+
+        SetupValidRequest(dto, cmsArg);
+        SetupSuccessfulTransfer(caseResponse, "PartiallyCompleted");
+
+        var request = HttpRequestStubHelper.CreateHttpRequestFor(dto);
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
+
+        // Act
+        var result = await _function.Run(request, functionContext, _caseId);
+
+        // Assert
+        Assert.IsType<OkObjectResult>(result);
+        _caseMetadataServiceMock.Verify(s => s.CreateNetAppConnectionAsync(It.IsAny<CreateNetAppConnectionDto>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_WhenFileTransferReturns202_PollsForCompletion()
+    {
+        // Arrange
+        var dto = _fixture.Create<ProvisionNetAppFoldersDto>();
+        var cmsArg = _fixture.Create<DdeiCaseIdArgDto>();
+        var caseResponse = _fixture.Create<CaseDto>();
+        var transferId = Guid.NewGuid();
+
+        SetupValidRequest(dto, cmsArg);
+
+        _ddeiClientMock.Setup(c => c.GetCaseAsync(cmsArg)).ReturnsAsync(caseResponse);
+        _caseMetadataServiceMock.Setup(s => s.GetCaseMetadataForCaseIdAsync(_caseId)).ReturnsAsync((CaseMetadata?)null);
+        _caseNamingServiceMock.Setup(s => s.GenerateCaseName(caseResponse)).ReturnsAsync(_caseNameDto);
+
+        _fileTransferClientMock
+            .Setup(c => c.ProvisionNetAppFoldersAsync(It.IsAny<ProvisionNetAppFoldersRequest>(), _correlationId))
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.Accepted)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(new { id = transferId }), Encoding.UTF8, "application/json")
+            });
+
+        _fileTransferClientMock
+            .Setup(c => c.GetFileTransferStatusAsync(transferId.ToString(), _correlationId))
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(new { status = "Completed" }), Encoding.UTF8, "application/json")
+            });
+
+        var request = HttpRequestStubHelper.CreateHttpRequestFor(dto);
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
+
+        // Act
+        var result = await _function.Run(request, functionContext, _caseId);
+
+        // Assert
+        Assert.IsType<OkObjectResult>(result);
+        _fileTransferClientMock.Verify(c => c.GetFileTransferStatusAsync(transferId.ToString(), _correlationId), Times.Once);
+        _caseMetadataServiceMock.Verify(s => s.CreateNetAppConnectionAsync(It.IsAny<CreateNetAppConnectionDto>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_WhenFileTransferReturns202AndOrchestrationFails_Returns500()
+    {
+        // Arrange
+        var dto = _fixture.Create<ProvisionNetAppFoldersDto>();
+        var cmsArg = _fixture.Create<DdeiCaseIdArgDto>();
+        var caseResponse = _fixture.Create<CaseDto>();
+        var transferId = Guid.NewGuid();
+
+        SetupValidRequest(dto, cmsArg);
+
+        _ddeiClientMock.Setup(c => c.GetCaseAsync(cmsArg)).ReturnsAsync(caseResponse);
+        _caseMetadataServiceMock.Setup(s => s.GetCaseMetadataForCaseIdAsync(_caseId)).ReturnsAsync((CaseMetadata?)null);
+        _caseNamingServiceMock.Setup(s => s.GenerateCaseName(caseResponse)).ReturnsAsync(_caseNameDto);
+
+        _fileTransferClientMock
+            .Setup(c => c.ProvisionNetAppFoldersAsync(It.IsAny<ProvisionNetAppFoldersRequest>(), _correlationId))
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.Accepted)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(new { id = transferId }), Encoding.UTF8, "application/json")
+            });
+
+        _fileTransferClientMock
+            .Setup(c => c.GetFileTransferStatusAsync(transferId.ToString(), _correlationId))
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(new { status = "Failed" }), Encoding.UTF8, "application/json")
+            });
+
+        var request = HttpRequestStubHelper.CreateHttpRequestFor(dto);
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
+
+        // Act
+        var result = await _function.Run(request, functionContext, _caseId);
+
+        // Assert
+        var objectResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(500, objectResult.StatusCode);
+        _caseMetadataServiceMock.Verify(s => s.CreateNetAppConnectionAsync(It.IsAny<CreateNetAppConnectionDto>()), Times.Never);
     }
 
     private void SetupValidRequest(ProvisionNetAppFoldersDto dto, DdeiCaseIdArgDto cmsArg)
@@ -449,5 +511,32 @@ public class ProvisionNetAppFoldersTests
         _ddeiArgFactoryMock
             .Setup(f => f.CreateCaseArg(_cmsAuthValues, _correlationId, _caseId))
             .Returns(cmsArg);
+    }
+
+    private void SetupSuccessfulTransfer(CaseDto caseResponse, string terminalStatus)
+    {
+        var transferId = Guid.NewGuid();
+
+        _ddeiClientMock.Setup(c => c.GetCaseAsync(It.IsAny<DdeiCaseIdArgDto>())).ReturnsAsync(caseResponse);
+        _caseMetadataServiceMock.Setup(s => s.GetCaseMetadataForCaseIdAsync(_caseId)).ReturnsAsync((CaseMetadata?)null);
+        _caseNamingServiceMock.Setup(s => s.GenerateCaseName(caseResponse)).ReturnsAsync(_caseNameDto);
+
+        _fileTransferClientMock
+            .Setup(c => c.ProvisionNetAppFoldersAsync(It.IsAny<ProvisionNetAppFoldersRequest>(), _correlationId))
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    JsonSerializer.Serialize(new { id = transferId }),
+                    Encoding.UTF8, "application/json")
+            });
+
+        _fileTransferClientMock
+            .Setup(c => c.GetFileTransferStatusAsync(transferId.ToString(), _correlationId))
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    JsonSerializer.Serialize(new { status = terminalStatus }),
+                    Encoding.UTF8, "application/json")
+            });
     }
 }

@@ -4,5 +4,5 @@ namespace CPS.ComplexCases.DDEI.Services;
 
 public interface ICaseNamingService
 {
-    Task<string> GenerateCaseName(CaseDto caseDto);
+    Task<CaseNameDto> GenerateCaseName(CaseDto caseDto);
 }

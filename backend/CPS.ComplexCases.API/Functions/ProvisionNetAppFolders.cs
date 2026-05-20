@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
@@ -14,7 +15,6 @@ using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Services;
-using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
 using CPS.ComplexCases.DDEI.Services;
@@ -94,8 +94,8 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
             return new ConflictObjectResult("Cannot provision NetApp folders while there is an active transfer for the case.");
         }
 
-        var caseName = await _caseNamingService.GenerateCaseName(cmsResponse);
-        var folderPathName = caseName.EnsureTrailingSlash();
+        var caseNameDto = await _caseNamingService.GenerateCaseName(cmsResponse);
+        var folderPathName = caseNameDto.CaseName.EnsureTrailingSlash();
 
         var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
 
@@ -107,28 +107,103 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
             DestinationFolderPath = folderPathName,
             BucketName = securityGroups.First().BucketName,
             BearerToken = context.BearerToken,
+            CaseName = caseNameDto.CaseName,
+            OperationName = caseNameDto.OperationName,
             UserName = context.Username
         };
 
-        await _transferClient.ProvisionNetAppFoldersAsync(provisionNetAppFoldersRequest, context.CorrelationId);
+        var response = await _transferClient.ProvisionNetAppFoldersAsync(provisionNetAppFoldersRequest, context.CorrelationId);
 
-        await _caseMetadataService.CreateNetAppConnectionAsync(new CreateNetAppConnectionDto
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogError("Failed to provision NetApp folders for caseId: {CaseId}. StatusCode: {StatusCode}, Response: {Response}",
+                caseId, response.StatusCode, await response.Content.ReadAsStringAsync());
+
+            return response.StatusCode switch
+            {
+                HttpStatusCode.BadRequest => new BadRequestObjectResult("Invalid request to provision NetApp folders."),
+                HttpStatusCode.Unauthorized => new UnauthorizedObjectResult("Unauthorized to provision NetApp folders."),
+                HttpStatusCode.Forbidden => new ForbidResult("Forbidden from provisioning NetApp folders."),
+                HttpStatusCode.NotFound => new NotFoundObjectResult("Template folder not found for provisioning NetApp folders."),
+                _ => new ObjectResult("An error occurred while provisioning NetApp folders.") { StatusCode = (int)HttpStatusCode.InternalServerError }
+            };
+        }
+
+        var responseBody = await response.Content.ReadAsStringAsync();
+        var parsedResponse = JsonSerializer.Deserialize<JsonElement>(responseBody);
+        var transferId = parsedResponse.GetProperty("id").GetString() ?? string.Empty;
+
+        var finalStatus = response.StatusCode == HttpStatusCode.Accepted
+            ? await PollForTerminalStatusAsync(transferId, context.CorrelationId)
+            : await GetTransferStatusAsync(transferId, context.CorrelationId);
+
+        if (finalStatus == null || finalStatus == "Failed")
+        {
+            _logger.LogError("NetApp folder provisioning failed for caseId: {CaseId}, TransferId: {TransferId}, Status: {Status}",
+                caseId, transferId, finalStatus ?? "timeout");
+            return new ObjectResult("NetApp folder provisioning failed.") { StatusCode = (int)HttpStatusCode.InternalServerError };
+        }
+
+        if (finalStatus == "PartiallyCompleted")
+        {
+            _logger.LogWarning("NetApp folder provisioning partially completed for caseId: {CaseId}, TransferId: {TransferId}. Some files may not have been copied.",
+                caseId, transferId);
+        }
+
+        await _caseMetadataService.CreateNetAppConnectionAsync(new Data.Models.Requests.CreateNetAppConnectionDto
         {
             CaseId = caseId,
             NetAppFolderPath = folderPathName,
-            OperationName = cmsResponse.OperationName ?? cmsResponse.LeadDefendantSurname ?? caseName
+            OperationName = caseNameDto.OperationName
         });
 
-        await _activityLogService.CreateActivityLogAsync(
-            ActivityLog.Enums.ActionType.ConnectionToNetApp,
-            ActivityLog.Enums.ResourceType.StorageConnection,
-            caseId,
-            caseName,
-            caseName,
-            context.Username);
+        try
+        {
+            await _activityLogService.CreateActivityLogAsync(
+                ActivityLog.Enums.ActionType.ConnectionToNetApp,
+                ActivityLog.Enums.ResourceType.StorageConnection,
+                caseId,
+                caseNameDto.CaseName,
+                caseNameDto.CaseName,
+                context.Username);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to write activity log for NetApp provisioning for case {CaseId}.", caseId);
+        }
 
         _logger.LogInformation("ProvisionNetAppFolders function completed for caseId: {CaseId}", caseId);
 
         return new OkObjectResult(folderPathName);
+    }
+
+    private async Task<string?> PollForTerminalStatusAsync(string transferId, Guid correlationId)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(55);
+        while (DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(3));
+            var status = await GetTransferStatusAsync(transferId, correlationId);
+            if (status is not (null or "Initiated" or "InProgress"))
+            {
+                return status;
+            }
+        }
+        _logger.LogWarning("Polling timed out for transfer {TransferId}.", transferId);
+        return null;
+    }
+
+    private async Task<string?> GetTransferStatusAsync(string transferId, Guid correlationId)
+    {
+        var statusResponse = await _transferClient.GetFileTransferStatusAsync(transferId, correlationId);
+        if (!statusResponse.IsSuccessStatusCode)
+        {
+            _logger.LogWarning("Unexpected HTTP {StatusCode} from GetFileTransferStatus for transfer {TransferId}.",
+                statusResponse.StatusCode, transferId);
+            return null;
+        }
+        var body = await statusResponse.Content.ReadAsStringAsync();
+        var parsed = JsonSerializer.Deserialize<JsonElement>(body);
+        return parsed.GetProperty("status").GetString();
     }
 }

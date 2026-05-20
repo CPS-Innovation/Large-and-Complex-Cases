@@ -4,17 +4,20 @@ namespace CPS.ComplexCases.DDEI.Services;
 
 public class CaseNamingService : ICaseNamingService
 {
-    public Task<string> GenerateCaseName(CaseDto caseDto)
+    public Task<CaseNameDto> GenerateCaseName(CaseDto caseDto)
     {
-        string caseName;
-        if (!string.IsNullOrWhiteSpace(caseDto.OperationName))
+        string operationName = !string.IsNullOrWhiteSpace(caseDto.OperationName)
+            ? caseDto.OperationName
+            : !string.IsNullOrWhiteSpace(caseDto.LeadDefendantSurname)
+                ? caseDto.LeadDefendantSurname
+                : "Unknown";
+
+        var caseNameDto = new CaseNameDto
         {
-            caseName = $"{caseDto.OperationName}-{caseDto.Urn}";
-        }
-        else
-        {
-            caseName = $"{caseDto.LeadDefendantSurname}-{caseDto.Urn}";
-        }
-        return Task.FromResult(caseName);
+            CaseName = $"{operationName}-{caseDto.Urn}",
+            OperationName = operationName
+        };
+
+        return Task.FromResult(caseNameDto);
     }
 }

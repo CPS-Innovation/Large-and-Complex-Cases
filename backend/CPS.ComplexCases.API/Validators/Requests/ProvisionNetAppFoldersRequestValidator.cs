@@ -9,7 +9,8 @@ public class ProvisionNetAppFoldersRequestValidator : AbstractValidator<Provisio
     {
         RuleFor(x => x.TemplateFolderPath)
             .NotEmpty().WithMessage("Path is required.")
-            .Must(path => !path.Contains("..")).WithMessage("Path cannot contain '..' to navigate up directories.")
-            .Must(path => !path.StartsWith('/')).WithMessage("Path cannot start with a '/'.");
+            .Must(path => path.StartsWith("_templates/", StringComparison.OrdinalIgnoreCase))
+            .Must(path => path.EndsWith('/'))
+            .Must(path => !path.Contains("..")).WithMessage("Path cannot contain '..' to navigate up directories.");
     }
 }

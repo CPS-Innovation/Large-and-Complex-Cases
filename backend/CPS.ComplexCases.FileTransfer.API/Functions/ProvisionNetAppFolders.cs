@@ -7,6 +7,8 @@ using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.FileTransfer.API.Durable.Orchestration;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
+using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
+using CPS.ComplexCases.FileTransfer.API.Models.Responses;
 using CPS.ComplexCases.FileTransfer.API.Validators;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
@@ -38,7 +40,8 @@ public class ProvisionNetAppFolders(
     [OpenApiOperation(operationId: nameof(ProvisionNetAppFolders), tags: ["NetApp"], Description = "Provisions NetApp folders for a new case based on a predefined template.")]
     [OpenApiParameter(name: HttpHeaderKeys.CorrelationId, In = Microsoft.OpenApi.Models.ParameterLocation.Header, Required = true, Type = typeof(string), Description = "Correlation identifier for tracking the request.")]
     [OpenApiRequestBody(contentType: ContentType.ApplicationJson, bodyType: typeof(ProvisionNetAppFoldersRequest), Required = true)]
-    [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(IEnumerable<FileTransferInfo>), Description = "Provisioning scheduled successfully. Returns the list of template objects.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(TransferResponse), Description = "Provisioning completed within the timeout window.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.Accepted, contentType: ContentType.ApplicationJson, bodyType: typeof(TransferResponse), Description = "Provisioning scheduled but not yet complete. The caller should poll for completion.")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.ApplicationJson, bodyType: typeof(IEnumerable<string>), Description = ApiResponseDescriptions.BadRequest)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, bodyType: typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
     public async Task<IActionResult> Run(
@@ -127,7 +130,44 @@ public class ProvisionNetAppFolders(
         _logger.LogInformation("Batch copy scheduled. TransferId: {TransferId}, CaseId: {CaseId}, Files: {FileCount}. CorrelationId: {CorrelationId}",
             transferId, request.CaseId, copyFileItems.Count, correlationId);
 
-        return new OkObjectResult(templateObjects); // Return immediately while the provisioning continues asynchronously
+        var timeout = TimeSpan.FromSeconds(25);
+        using var cts = new CancellationTokenSource(timeout);
+
+        OrchestrationMetadata? metadata = null;
+        try
+        {
+            metadata = await orchestrationClient.WaitForInstanceCompletionAsync(
+                transferId.ToString(),
+                getInputsAndOutputs: false,
+                cancellation: cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation(
+                "Orchestration still running after timeout. Returning 202. TransferId: {TransferId}, CorrelationId: {CorrelationId}",
+                transferId, correlationId);
+            return new AcceptedResult($"/api/v1/filetransfer/{transferId}/status", new TransferResponse
+            {
+                Id = transferId,
+                Status = TransferStatus.Initiated,
+                CreatedAt = DateTime.UtcNow,
+            });
+        }
+
+        if (metadata.RuntimeStatus == OrchestrationRuntimeStatus.Failed)
+        {
+            _logger.LogError(
+                "Orchestration failed. TransferId: {TransferId}, CaseId: {CaseId}. CorrelationId: {CorrelationId}",
+                transferId, request.CaseId, correlationId);
+            throw new InvalidOperationException($"Orchestration {transferId} failed.");
+        }
+
+        return new OkObjectResult(new TransferResponse
+        {
+            Id = transferId,
+            Status = TransferStatus.Completed,
+            CreatedAt = DateTime.UtcNow,
+        });
     }
 
     public async Task<IEnumerable<FileTransferInfo>?> ListFilesInFolder(string path, string bearerToken, string bucketName)
