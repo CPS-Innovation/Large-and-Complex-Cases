@@ -6,14 +6,14 @@ describe("getUrlSearchParam", () => {
     expect(params.toString()).toBe("workspace-name=my-workspace");
   });
 
-  it("uses backtick placeholder when value is null", () => {
+  it("should return correctly when value is null", () => {
     const params = getUrlSearchParam("workspace-name", null);
-    expect(params.toString()).toBe("workspace-name=%60");
+    expect(params.toString()).toBe("workspace-name=");
   });
 
-  it("uses backtick placeholder when value is undefined", () => {
+  it("should return correctly when value is undefined", () => {
     const params = getUrlSearchParam("workspace-name", undefined);
-    expect(params.toString()).toBe("workspace-name=%60");
+    expect(params.toString()).toBe("workspace-name=");
   });
 
   it("encodes special characters properly in the param value", () => {
