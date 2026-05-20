@@ -66,8 +66,12 @@ param(
     [Parameter(Mandatory=$false)]
     [int]$FileCount = 1,
 
+    # Default 0 so standalone invocations (e.g. .\Setup-EgressWorkspaceAndUpload.ps1
+    # -SizeMB 100) keep producing one file, matching the helper's historical
+    # behaviour. Run-E2E-Tests.ps1 passes MoveFileCount explicitly based on
+    # -TestsToRun, so the orchestrated split-source behaviour is unaffected.
     [Parameter(Mandatory=$false)]
-    [int]$MoveFileCount = 1,
+    [int]$MoveFileCount = 0,
 
     [Parameter(Mandatory=$false)]
     [string]$WorkspaceName = "",
