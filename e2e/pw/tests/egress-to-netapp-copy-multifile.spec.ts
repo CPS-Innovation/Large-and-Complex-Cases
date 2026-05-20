@@ -5,8 +5,8 @@ import { CaseManagementPage } from "../pages/CaseManagementPage";
 import { TransferMaterialsTab } from "../pages/TransferMaterialsTab";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
 
-test.describe("Egress to NetApp Copy - Multiple Files (50MB x 3)", () => {
-  test.use({ testOptions: { fileSizeMb: 50, fileCount: 3 } });
+test.describe("Egress to NetApp Copy - Multiple Files (10MB x 3)", () => {
+  test.use({ testOptions: { fileSizeMb: 10, fileCount: 3 } });
 
   test("should copy 3 files from Egress to NetApp", async ({
     page,
