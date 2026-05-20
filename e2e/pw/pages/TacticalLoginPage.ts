@@ -1,4 +1,5 @@
 import { Locator, Page } from "@playwright/test";
+import { fillSecretInput } from "../helpers/secret-input";
 
 export class TacticalLoginPage {
   private readonly page: Page;
@@ -15,7 +16,7 @@ export class TacticalLoginPage {
 
   async login(username: string, password: string) {
     await this.usernameInput.fill(username);
-    await this.passwordInput.fill(password);
+    await fillSecretInput(this.passwordInput, password);
     await this.submitButton.click();
     await this.page.waitForSelector("strong[data-testid='login-ok']");
   }

@@ -26,8 +26,10 @@ $env:LCC_AZURE_PASSWORD = "your-azure-password"
 $env:LCC_CMS_USERNAME = "YourName.CIN3"
 $env:LCC_CMS_PASSWORD = "your-cms-password"
 
-# DDEI Access Key
-$env:LCC_DDEI_ACCESS_KEY = "your-ddei-access-key"
+# DDEI Access Keys (two separate keys: one for the LCC app DDEI auth,
+# one for the Case Register DDEI auth)
+$env:LCC_DDEI_ACCESS_KEY = "your-ddei-access-key-lcc-app"
+$env:LCC_DDEI_ACCESS_KEY_REGCASE = "your-ddei-access-key-case-register"
 
 # API Endpoints
 $env:LCC_BASE_URL = "your-lacc-api-base-url"
