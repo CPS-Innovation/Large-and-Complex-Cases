@@ -2744,6 +2744,29 @@
 					"name": "1. Get Azure AD Token",
 					"event": [
 						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Default mode: skip the register-case Azure token call entirely.",
+									"// This request uses {{registerCaseClientId}}, which is only required",
+									"// when -RegisterCase is passed. Without this guard the request still",
+									"// fires against Azure with an empty/invalid client_id and 400s before",
+									"// the post-response skip can run.",
+									"if (pm.variables.get('registerCase') !== 'true') {",
+									"    pm.environment.set('caseId', pm.variables.get('defaultCaseId'));",
+									"    pm.environment.set('caseUrn', pm.variables.get('defaultCaseUrn'));",
+									"    console.log('[skip] registerCase!=true; using defaultCaseId:', pm.variables.get('defaultCaseId'));",
+									"    if (typeof pm.execution.skipRequest === 'function') pm.execution.skipRequest();",
+									"    pm.execution.setNextRequest('1b. Get LCC API Token');",
+									"    return;",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
 							"listen": "test",
 							"script": {
 								"exec": [
@@ -4603,6 +4626,29 @@
 				{
 					"name": "1. Get Azure AD Token",
 					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Default mode: skip the register-case Azure token call entirely.",
+									"// This request uses {{registerCaseClientId}}, which is only required",
+									"// when -RegisterCase is passed. Without this guard the request still",
+									"// fires against Azure with an empty/invalid client_id and 400s before",
+									"// the post-response skip can run.",
+									"if (pm.variables.get('registerCase') !== 'true') {",
+									"    pm.environment.set('caseId', pm.variables.get('defaultCaseId'));",
+									"    pm.environment.set('caseUrn', pm.variables.get('defaultCaseUrn'));",
+									"    console.log('[skip] registerCase!=true; using defaultCaseId:', pm.variables.get('defaultCaseId'));",
+									"    if (typeof pm.execution.skipRequest === 'function') pm.execution.skipRequest();",
+									"    pm.execution.setNextRequest('1b. Get LCC API Token');",
+									"    return;",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
 						{
 							"listen": "test",
 							"script": {
@@ -6467,6 +6513,29 @@
 				{
 					"name": "1. Get Azure AD Token",
 					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Default mode: skip the register-case Azure token call entirely.",
+									"// This request uses {{registerCaseClientId}}, which is only required",
+									"// when -RegisterCase is passed. Without this guard the request still",
+									"// fires against Azure with an empty/invalid client_id and 400s before",
+									"// the post-response skip can run.",
+									"if (pm.variables.get('registerCase') !== 'true') {",
+									"    pm.environment.set('caseId', pm.variables.get('defaultCaseId'));",
+									"    pm.environment.set('caseUrn', pm.variables.get('defaultCaseUrn'));",
+									"    console.log('[skip] registerCase!=true; using defaultCaseId:', pm.variables.get('defaultCaseId'));",
+									"    if (typeof pm.execution.skipRequest === 'function') pm.execution.skipRequest();",
+									"    pm.execution.setNextRequest('1b. Get LCC API Token');",
+									"    return;",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
 						{
 							"listen": "test",
 							"script": {

@@ -522,7 +522,16 @@ if (-not $SkipUpload) {
         $uploadArgs["SizeGB"] = $SizeGB
     }
     $uploadArgs["ChunkSizeMB"] = $ChunkSizeMB
-    $uploadArgs["FileCount"] = $FileCount
+
+    # Only upload the journey-specific source files we actually need.
+    # Avoids burning upload time on a Move source when the Move folder
+    # is not in scope, and vice versa. NetApp -> Egress reads from
+    # NetApp, so it does not need either Egress source set.
+    $needsCopy = $TestsToRun -in @('all', 'copy')
+    $needsMove = $TestsToRun -in @('all', 'move')
+    $uploadArgs["FileCount"] = if ($needsCopy) { $FileCount } else { 0 }
+    $uploadArgs["MoveFileCount"] = if ($needsMove) { $FileCount } else { 0 }
+    Write-Host "  Upload plan: $($uploadArgs.FileCount) copy file(s), $($uploadArgs.MoveFileCount) move file(s) (TestsToRun=$TestsToRun)" -ForegroundColor Gray
 
     # Pass through CLI credential overrides to upload script
     if ($AzureUsername) { $uploadArgs["UserEmail"] = $AzureUsername }
@@ -569,12 +578,23 @@ if (-not $SkipUpload) {
     $EgressMoveFileNames = ""
     $EgressMoveFileCount = "0"
 
-    # Try to parse JSON output first
+    # Try to parse JSON output first. Match by shape (has workspaceId
+    # and files), not by which property happens to be first - PowerShell
+    # hashtable iteration order is not guaranteed, and any reorder in
+    # Setup-EgressWorkspaceAndUpload.ps1 would silently break the
+    # parser and drop the new egressCopyFile*/egressMoveFile* values.
     $uploadLines = $uploadLog -split "`r?`n"
     foreach ($line in $uploadLines) {
-        if ($line -match '^\s*\{"workspaceId"') {
+        $trimmed = $line.Trim()
+        if (-not $trimmed.StartsWith('{')) { continue }
+        try {
+            $jsonData = $trimmed | ConvertFrom-Json -ErrorAction Stop
+        }
+        catch {
+            continue
+        }
+        if ($jsonData.workspaceId -and $jsonData.files) {
             try {
-                $jsonData = $line.Trim() | ConvertFrom-Json
                 $EgressWorkspaceId = $jsonData.workspaceId
                 $EgressWorkspaceName = $jsonData.workspaceName
                 $EgressFileCount = [string]$jsonData.fileCount
@@ -615,18 +635,53 @@ if (-not $SkipUpload) {
         }
     }
 
-    # Fallback: regex parsing
+    # Fallback: regex parsing for the POSTMAN VARIABLES key=value lines.
+    # Used when the JSON summary line is missing (e.g. caller skipped
+    # upload, or older Setup-EgressWorkspaceAndUpload.ps1 in the workspace).
     if (-not $EgressWorkspaceId -and $uploadLog -match "egressWorkspaceId\s*=\s*([a-f0-9]{24})") {
         $EgressWorkspaceId = $matches[1]
     }
-    if (-not $EgressWorkspaceName -and $uploadLog -match "egressWorkspaceName\s*=\s*(AUTOMATION-TESTING\d+|[A-Z0-9\-_]+)") {
+    if (-not $EgressWorkspaceName -and $uploadLog -match "egressWorkspaceName\s*=\s*(\S+)") {
         $EgressWorkspaceName = $matches[1]
     }
     if (-not $EgressFileId -and $uploadLog -match "egressFileId\s*=\s*([a-f0-9]{24})") {
         $EgressFileId = $matches[1]
     }
-    if (-not $EgressFileName -and $uploadLog -match "egressFileName\s*=\s*(generated-[^\s]+\.txt|[^\s]+\.(txt|bin))") {
+    if (-not $EgressFileName -and $uploadLog -match "egressFileName\s*=\s*(\S+\.\S+)") {
         $EgressFileName = $matches[1]
+    }
+    # Journey-aware fallback. Without these the Move journey would
+    # silently fall back to the legacy egressFile* aliases (which are
+    # the Copy set) and consume Copy's source.
+    if (-not $EgressCopyFileId -and $uploadLog -match "egressCopyFileId\s*=\s*([a-f0-9]{24})") {
+        $EgressCopyFileId = $matches[1]
+    }
+    if (-not $EgressCopyFileName -and $uploadLog -match "egressCopyFileName\s*=\s*(\S+\.\S+)") {
+        $EgressCopyFileName = $matches[1]
+    }
+    if (-not $EgressCopyFileIds -and $uploadLog -match "egressCopyFileIds\s*=\s*(\S+)") {
+        $EgressCopyFileIds = $matches[1]
+    }
+    if (-not $EgressCopyFileNames -and $uploadLog -match "egressCopyFileNames\s*=\s*(\S+)") {
+        $EgressCopyFileNames = $matches[1]
+    }
+    if ($EgressCopyFileCount -eq "0" -and $uploadLog -match "egressCopyFileCount\s*=\s*(\d+)") {
+        $EgressCopyFileCount = $matches[1]
+    }
+    if (-not $EgressMoveFileId -and $uploadLog -match "egressMoveFileId\s*=\s*([a-f0-9]{24})") {
+        $EgressMoveFileId = $matches[1]
+    }
+    if (-not $EgressMoveFileName -and $uploadLog -match "egressMoveFileName\s*=\s*(\S+\.\S+)") {
+        $EgressMoveFileName = $matches[1]
+    }
+    if (-not $EgressMoveFileIds -and $uploadLog -match "egressMoveFileIds\s*=\s*(\S+)") {
+        $EgressMoveFileIds = $matches[1]
+    }
+    if (-not $EgressMoveFileNames -and $uploadLog -match "egressMoveFileNames\s*=\s*(\S+)") {
+        $EgressMoveFileNames = $matches[1]
+    }
+    if ($EgressMoveFileCount -eq "0" -and $uploadLog -match "egressMoveFileCount\s*=\s*(\d+)") {
+        $EgressMoveFileCount = $matches[1]
     }
 
     Remove-Item $tempOutputFile -Force -ErrorAction SilentlyContinue

@@ -151,8 +151,11 @@ if ([string]::IsNullOrEmpty($UserEmail)) {
 Write-Host "[CONFIG] Egress URL: $BaseUrl" -ForegroundColor Gray
 Write-Host "[CONFIG] User Email: $(if ($UserEmail) { $UserEmail } else { '(not set)' })" -ForegroundColor Gray
 
-# Validate file counts
-if ($FileCount -lt 1) { $FileCount = 1 }
+# Validate file counts. Both default to 1, but either can be set to 0
+# when the caller (e.g. Run-E2E-Tests.ps1 with -TestsToRun move) only
+# needs the other journey's source files. Total may legitimately be 0
+# for callers that just need a workspace touched/created.
+if ($FileCount -lt 0) { $FileCount = 0 }
 if ($FileCount -gt 100) { $FileCount = 100 }  # Safety limit
 if ($MoveFileCount -lt 0) { $MoveFileCount = 0 }
 if ($MoveFileCount -gt 100) { $MoveFileCount = 100 }
@@ -181,7 +184,7 @@ if (-not $curlExe) {
 # ============================================================
 # VALIDATE PARAMETERS
 # ============================================================
-if (-not $SkipUpload) {
+if (-not $SkipUpload -and $TotalFileCount -gt 0) {
     if ($SizeGB -le 0 -and $SizeMB -le 0) {
         Write-Host ""
         Write-Host "ERROR: File size required!" -ForegroundColor Red
@@ -862,7 +865,12 @@ if (-not $SkipUpload -and $UploadedFiles.Count -gt 0) {
     Write-Host "  JSON OUTPUT (for programmatic parsing)" -ForegroundColor DarkGray
     Write-Host "========================================================" -ForegroundColor DarkGray
 
-    $jsonOutput = @{
+    # [ordered] so the emitted JSON property order is deterministic.
+    # Run-E2E-Tests.ps1 now matches the upload-summary line by shape
+    # (workspaceId + files present) rather than the literal first
+    # property, but keeping a stable order makes the log easier to
+    # diff between runs and avoids surprising any downstream consumer.
+    $jsonOutput = [ordered]@{
         workspaceId = $WorkspaceId
         workspaceName = $WorkspaceName
         folderId = $FolderId
@@ -870,7 +878,7 @@ if (-not $SkipUpload -and $UploadedFiles.Count -gt 0) {
         copyFileCount = $copyFiles.Count
         moveFileCount = $moveFiles.Count
         files = $UploadedFiles | ForEach-Object {
-            @{
+            [ordered]@{
                 index = $_.Index
                 journey = $_.Journey
                 journeyIndex = $_.JourneyIndex
