@@ -4,6 +4,9 @@ import { Table, Tag } from "../govuk";
 import { Link } from "react-router";
 import { SearchFromData } from "../../common/hooks/useCaseSearchForm";
 import { formatDate } from "../../common/utils/formatDate";
+import { SharedDriveConnectRouteState } from "../../common/types/SharedDriveConnectRouteState";
+import { EgressConnectRouteState } from "../../common/types/EgressConnectRouteState";
+import { getUrlSearchParam } from "../../common/utils/getUrlSearchParam";
 import styles from "./SearchResults.module.scss";
 
 type SearchResultsProps = {
@@ -11,26 +14,57 @@ type SearchResultsProps = {
   searchApiResults: UseApiResult<SearchResultData>;
   searchType: SearchFromData["searchType"];
 };
+
 const SearchResults: React.FC<SearchResultsProps> = ({
   searchQueryString,
   searchApiResults,
 }) => {
-  const getConnectOrViewUrl = (
-    data: SearchResult,
-    operationName: string | null,
-  ) => {
-    if (!data.egressWorkspaceId)
-      return `/case/${data.caseId}/egress-connect?workspace-name=${operationName}`;
-    if (!data.netappFolderPath)
-      return `/case/${data.caseId}/netapp-connect?operation-name=${operationName}`;
-    return `/case/${data.caseId}/case-management`;
+  const renderLink = (data: SearchResult, operationName: string) => {
+    if (!data.egressWorkspaceId) {
+      const payload: EgressConnectRouteState = {
+        isRouteValid: true,
+        searchQueryString: searchQueryString,
+        isNetAppConnected: !!data.netappFolderPath,
+      };
+      return (
+        <Link
+          to={`/case/${data.caseId}/egress-connect?${getUrlSearchParam("workspace-name", operationName)}`}
+          state={payload}
+          className={styles.link}
+        >
+          Connect
+        </Link>
+      );
+    }
+    if (!data.netappFolderPath) {
+      const payload: SharedDriveConnectRouteState = {
+        isRouteValid: true,
+        searchQueryString,
+        netappRootFolderPath: "",
+      };
+      return (
+        <Link
+          to={`/case/${data.caseId}/netapp-connect?${getUrlSearchParam("operation-name", operationName)}`}
+          state={payload}
+          className={styles.link}
+        >
+          Connect
+        </Link>
+      );
+    }
+
+    return (
+      <Link to={`/case/${data.caseId}/case-management`} className={styles.link}>
+        View
+      </Link>
+    );
   };
   const getTableRowData = () => {
     if (!searchApiResults.data) return [];
     return searchApiResults.data.map((data) => {
       const operationName = data.operationName
         ? data.operationName
-        : data.leadDefendantName;
+        : data.leadDefendantName!;
       return {
         cells: [
           {
@@ -68,20 +102,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
             children: formatDate(data.registrationDate),
           },
           {
-            children: (
-              <Link
-                to={getConnectOrViewUrl(data, operationName)}
-                state={{
-                  searchQueryString: searchQueryString,
-                  isNetAppConnected: !!data.netappFolderPath,
-                }}
-                className={styles.link}
-              >
-                {!data.egressWorkspaceId || !data.netappFolderPath
-                  ? "Connect"
-                  : "View"}
-              </Link>
-            ),
+            children: renderLink(data, operationName),
           },
         ],
       };

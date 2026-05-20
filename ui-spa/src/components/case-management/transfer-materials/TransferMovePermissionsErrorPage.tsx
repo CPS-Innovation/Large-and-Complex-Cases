@@ -1,20 +1,11 @@
-import { useEffect } from "react";
 import { Button, BackLink } from "../../govuk";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { PageContentWrapper } from "../../govuk/PageContentWrapper";
 import styles from "./TransferMovePermissionsErrorPage.module.scss";
 
 const TransferMovePermissionsErrorPage = () => {
-  const { state }: { state: { isRouteValid: boolean } } = useLocation();
-  const { isRouteValid = false } = state || {};
   const { caseId } = useParams();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!isRouteValid) {
-      navigate(`/`);
-    }
-  }, []);
 
   const handleButtonClick = () => {
     navigate(`/case/${caseId}/case-management`, {

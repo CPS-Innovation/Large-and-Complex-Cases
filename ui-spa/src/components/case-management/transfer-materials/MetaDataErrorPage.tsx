@@ -1,6 +1,9 @@
-import { useMemo, useEffect, useCallback } from "react";
+import { useMemo } from "react";
 import { Button, LinkButton, BackLink } from "../../govuk";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { EgressConnectRouteState } from "../../../common/types/EgressConnectRouteState";
+import { SharedDriveConnectRouteState } from "../../../common/types/SharedDriveConnectRouteState";
+import { getUrlSearchParam } from "../../../common/utils/getUrlSearchParam";
 import styles from "./MetaDataErrorPage.module.scss";
 
 const MetaDataErrorPage = () => {
@@ -18,36 +21,32 @@ const MetaDataErrorPage = () => {
     navigate("/");
   };
   const handleReconnect = () => {
-    if (errorType === "egress")
+    if (errorType === "egress") {
+      const payload: EgressConnectRouteState = {
+        isRouteValid: true,
+        searchQueryString: "",
+        isNetAppConnected: true,
+      };
       return navigate(
-        `/case/${caseId}/egress-connect?workspace-name=${operationName}`,
+        `/case/${caseId}/egress-connect?${getUrlSearchParam("workspace-name", operationName)}`,
         {
-          state: {
-            searchQueryString: "",
-            isNetAppConnected: true,
-          },
+          state: payload,
         },
       );
+    }
 
+    const payload: SharedDriveConnectRouteState = {
+      isRouteValid: true,
+      searchQueryString: "",
+      netappRootFolderPath: "",
+    };
     return navigate(
-      `/case/${caseId}/netapp-connect?operation-name=${operationName}`,
+      `/case/${caseId}/netapp-connect?${getUrlSearchParam("operation-name", operationName)}`,
       {
-        state: {
-          searchQueryString: "",
-        },
+        state: payload,
       },
     );
   };
-
-  const validateRoute = useCallback(() => {
-    if (location?.state?.isValid === undefined) {
-      navigate(`/`);
-    }
-  }, [location, navigate]);
-
-  useEffect(() => {
-    validateRoute();
-  }, [location, validateRoute]);
 
   return (
     <div>

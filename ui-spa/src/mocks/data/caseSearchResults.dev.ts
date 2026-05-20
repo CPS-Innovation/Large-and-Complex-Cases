@@ -13,7 +13,7 @@ export const casesSearchResultsDev: SearchResultData = [
   {
     operationName: "Thunderstruck",
     urn: "ABCDEF2",
-    caseId: 13,
+    caseId: 12,
     leadDefendantName: "abc2",
     egressWorkspaceId: null,
     netappFolderPath: "abc/def",
