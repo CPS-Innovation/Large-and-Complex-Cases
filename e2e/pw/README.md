@@ -179,8 +179,9 @@ standard auth set.
 | `EGRESS_SERVICE_ACCOUNT_AUTH` | Egress service account (Base64) | Yes |
 | `EGRESS_TEMPLATE_ID` | Egress workspace template ID | No (has default) |
 | `EGRESS_ADMIN_ROLE_ID` | Egress admin role ID | No (has default) |
-| `TEST_FILE_SIZE_MB` | Test file size in MB | No (default: 100) |
+| `TEST_FILE_SIZE_MB` | Test file size in MB | No (default: 10) |
 | `TEST_FILE_COUNT` | Number of test files to upload | No (default: 1) |
+| `LARGE_TEST_FILE_SIZE_MB` | Large test file size in MB | No (default: 50) |
 | `DEFAULT_WORKSPACE_ID` | Pre-existing Egress workspace ID | Default mode only |
 | `DEFAULT_WORKSPACE_NAME` | Pre-existing Egress workspace name | Default mode only |
 | `DEFAULT_CASE_ID` | Pre-existing case ID | Default mode only |
