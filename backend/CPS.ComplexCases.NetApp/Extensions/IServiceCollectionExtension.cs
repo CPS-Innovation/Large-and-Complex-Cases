@@ -1,25 +1,20 @@
-using System.Net;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Http.Resilience;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
+using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Services;
 using CPS.ComplexCases.NetApp.Telemetry;
 using CPS.ComplexCases.NetApp.Wrappers;
-using Polly;
 
 namespace CPS.ComplexCases.NetApp.Extensions;
 
 public static class IServiceCollectionExtension
 {
-	private const int RetryAttempts = 3;
-	private const int FirstRetryDelaySeconds = 1;
-
 	public static void AddNetAppClient(this IServiceCollection services, IConfiguration configuration)
 	{
 		services.AddDefaultAWSOptions(configuration.GetAWSOptions());
@@ -66,7 +61,7 @@ public static class IServiceCollectionExtension
 		})
 		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment))
 		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
-		.AddResilienceHandler("netapp-retry", ConfigureResiliencePipeline);
+		.AddResilienceHandler("netapp-retry", p => p.AddStandardHttpResilience());
 
 		services.AddHttpClient<INetAppS3HttpClient, NetAppS3HttpClient>(client =>
 		{
@@ -82,7 +77,7 @@ public static class IServiceCollectionExtension
 		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment)
 		)
 		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
-		.AddResilienceHandler("netapp-s3-retry", ConfigureResiliencePipeline);
+		.AddResilienceHandler("netapp-s3-retry", p => p.AddStandardHttpResilience());
 
 		services.AddTransient<NetAppStorageClient>();
 	}
@@ -114,31 +109,4 @@ public static class IServiceCollectionExtension
 		}
 	}
 
-	private static void ConfigureResiliencePipeline(ResiliencePipelineBuilder<HttpResponseMessage> pipeline)
-	{
-		// Limit concurrent requests to avoid overwhelming NetApp (equivalent to Polly v7 bulkhead)
-		pipeline.AddConcurrencyLimiter(permitLimit: 30, queueLimit: int.MaxValue);
-
-		// https://learn.microsoft.com/en-us/dotnet/core/resilience/http-resilience
-		pipeline.AddRetry(new HttpRetryStrategyOptions
-		{
-			MaxRetryAttempts = RetryAttempts,
-			Delay = TimeSpan.FromSeconds(FirstRetryDelaySeconds),
-			BackoffType = DelayBackoffType.Exponential,
-			UseJitter = true,
-			ShouldHandle = static args =>
-			{
-				if (args.Outcome.Result is null)
-					return ValueTask.FromResult(false);
-
-				var response = args.Outcome.Result;
-				var isRetryableStatus = response.StatusCode >= HttpStatusCode.InternalServerError
-					|| response.StatusCode == HttpStatusCode.TooManyRequests;
-				var isRetryableMethod = response.RequestMessage?.Method != HttpMethod.Post
-					&& response.RequestMessage?.Method != HttpMethod.Put;
-
-				return ValueTask.FromResult(isRetryableStatus && isRetryableMethod);
-			}
-		});
-	}
 }
