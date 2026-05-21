@@ -1,7 +1,7 @@
 resources:
   pipelines:
   - pipeline: build
-    source: 'LACC-BE-build'
+    source: 'LACC-BE-build-and-deploy'
 
 parameters:
   - name: environment

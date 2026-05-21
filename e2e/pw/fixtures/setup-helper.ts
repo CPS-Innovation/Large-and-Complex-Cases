@@ -21,7 +21,7 @@ export interface SetupOptions {
 
 export async function setupTestData(
   page: Page,
-  options: SetupOptions = {}
+  options: SetupOptions = {},
 ): Promise<TestSetupResult> {
   const config = loadEnvConfig();
   const fileSizeMb = options.fileSizeMb ?? config.testFileSizeMb;
@@ -42,13 +42,13 @@ export async function setupTestData(
   console.log("[1/5] Authenticating with Egress...");
   const egressToken = await authenticateEgress(
     config.egressBaseUrl,
-    config.egressServiceAccountAuth
+    config.egressServiceAccountAuth,
   );
 
   console.log("[2/5] Finding next workspace name...");
   const workspaceName = await findNextWorkspaceName(
     config.egressBaseUrl,
-    egressToken
+    egressToken,
   );
   console.log(`  Workspace: ${workspaceName}`);
 
@@ -57,7 +57,7 @@ export async function setupTestData(
     config.egressBaseUrl,
     egressToken,
     workspaceName,
-    config.egressTemplateId
+    config.egressTemplateId,
   );
 
   console.log("[4/5] Adding test user...");
@@ -66,10 +66,12 @@ export async function setupTestData(
     egressToken,
     workspaceId,
     config.e2eAdUser,
-    config.egressAdminRoleId
+    config.egressAdminRoleId,
   );
 
-  console.log(`[5/5] Uploading ${fileCount} test file(s) of ${fileSizeMb}MB each...`);
+  console.log(
+    `[5/5] Uploading ${fileCount} test file(s) of ${fileSizeMb}MB each...`,
+  );
   const fileSizeBytes = fileSizeMb * 1024 * 1024;
   const files: UploadedFile[] = [];
 
@@ -85,7 +87,7 @@ export async function setupTestData(
       egressToken,
       workspaceId,
       fileSizeBytes,
-      fileName
+      fileName,
     );
     files.push(file);
   }
@@ -99,20 +101,20 @@ export async function setupTestData(
     throw new Error(
       "DDEI_ACCESS_KEY_CASE_REGISTER is required for the register-case setup path " +
         "(case registration uses a different DDEI function key from the lcc-app key " +
-        "in DDEI_ACCESS_KEY). Set it in .env.local. Default-mode runs do not need this."
+        "in DDEI_ACCESS_KEY). Set it in .env.local. Default-mode runs do not need this.",
     );
   }
 
   console.log("  Getting auth tokens (case-register key)...");
   const { accessToken, cmsAuth } = await getAuthTokens(
     config.tenantId,
-    config.clientId,
+    config.cmrcApiClientId,
     config.e2eAdUser,
     config.e2eAdPassword,
     config.ddeiBaseUrl,
     config.ddeiAccessKeyCaseRegister,
     config.cmsUsername,
-    config.cmsPassword
+    config.cmsPassword,
   );
 
   console.log("  Registering fresh case...");
@@ -120,7 +122,7 @@ export async function setupTestData(
     config.caseApiBaseUrl,
     accessToken,
     cmsAuth,
-    workspaceName
+    workspaceName,
   );
   console.log(`  Case: ${caseUrn} (ID: ${caseId})`);
 
@@ -184,7 +186,9 @@ export async function browserLogin(page: Page): Promise<void> {
     // Radios stayed disabled — typically a tactical-session race where
     // the LCC backend hadn't acknowledged tactical cookies before the
     // case-search page loaded. Re-do tactical login once and retry.
-    console.log("  Radios disabled on first attempt — retrying tactical login...");
+    console.log(
+      "  Radios disabled on first attempt — retrying tactical login...",
+    );
     await page.goto(CMS_LOGIN_PAGE!);
     await tacticalLogin.login(CMS_USERNAME!, CMS_PASSWORD!);
     await page.waitForTimeout(3000);

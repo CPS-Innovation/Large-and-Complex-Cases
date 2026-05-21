@@ -14,11 +14,10 @@ const DisconnectSharedDriveConfirmationPage = () => {
     state?: {
       caseId: number;
       urn: string;
-      isRouteValid: boolean;
     };
   } = useLocation();
 
-  const { caseId, urn, isRouteValid } = state || {};
+  const { caseId, urn } = state || {};
   type ErrorText = {
     errorSummaryText: string;
     inputErrorText?: string;
@@ -29,12 +28,6 @@ const DisconnectSharedDriveConfirmationPage = () => {
   const errorSummaryRef = useRef<HTMLInputElement>(null);
 
   const [disableButtons, setDisableButtons] = useState(false);
-
-  useEffect(() => {
-    if (!isRouteValid) {
-      navigate(`/`);
-    }
-  }, []);
 
   const [formData, setFormData] = useState<{
     disconnectSharedDriveRadio?: GeneralRadioValue;

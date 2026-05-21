@@ -231,7 +231,7 @@ steps:
           },
           {
             "name": "BlobContainerName",
-            "value": "$(BlobContainerName)",
+            "value": "aspose-templates",
             "slotSetting": false
           },
           {

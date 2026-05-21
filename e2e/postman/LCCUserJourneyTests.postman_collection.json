@@ -324,6 +324,34 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
+									"// === Register Case guard ===",
+									"// Enforce registerCase=false at the request level so that running this",
+									"// request from any entry point (single-folder Runner pass, manual Send,",
+									"// or a folder whose upstream skip guard never fired) does not create a",
+									"// new case in CMS. When caseId is already set, reuse it. When",
+									"// registerCase=false and defaultCaseId is populated, copy it into the",
+									"// active caseId / caseUrn so subsequent requests work, then skip.",
+									"const _existingCaseId = pm.environment.get('caseId');",
+									"const _registerCase = pm.environment.get('registerCase');",
+									"const _defaultCaseId = pm.environment.get('defaultCaseId');",
+									"const _defaultCaseUrn = pm.environment.get('defaultCaseUrn');",
+									"if (_existingCaseId) {",
+									"    console.log('[register-case-guard] caseId already set:', _existingCaseId);",
+									"    if (typeof pm.execution.skipRequest === 'function') pm.execution.skipRequest();",
+									"    return;",
+									"}",
+									"if (_registerCase === 'false') {",
+									"    if (_defaultCaseId) {",
+									"        pm.environment.set('caseId', _defaultCaseId);",
+									"        pm.environment.set('caseUrn', _defaultCaseUrn);",
+									"        console.log('[register-case-guard] registerCase=false; using defaultCaseId:', _defaultCaseId);",
+									"    } else {",
+									"        console.log('[register-case-guard] registerCase=false and no defaultCaseId; skipping silently');",
+									"    }",
+									"    if (typeof pm.execution.skipRequest === 'function') pm.execution.skipRequest();",
+									"    return;",
+									"}",
+									"",
 									"// Generate new unique ref for this request",
 									"const uniqueRef = String(Math.floor(10000 + Math.random() * 90000));",
 									"pm.environment.set(\"urnUniqueRef\", uniqueRef);",
@@ -422,6 +450,34 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
+									"// === Register Case guard ===",
+									"// Enforce registerCase=false at the request level so that running this",
+									"// request from any entry point (single-folder Runner pass, manual Send,",
+									"// or a folder whose upstream skip guard never fired) does not create a",
+									"// new case in CMS. When caseId is already set, reuse it. When",
+									"// registerCase=false and defaultCaseId is populated, copy it into the",
+									"// active caseId / caseUrn so subsequent requests work, then skip.",
+									"const _existingCaseId = pm.environment.get('caseId');",
+									"const _registerCase = pm.environment.get('registerCase');",
+									"const _defaultCaseId = pm.environment.get('defaultCaseId');",
+									"const _defaultCaseUrn = pm.environment.get('defaultCaseUrn');",
+									"if (_existingCaseId) {",
+									"    console.log('[register-case-guard] caseId already set:', _existingCaseId);",
+									"    if (typeof pm.execution.skipRequest === 'function') pm.execution.skipRequest();",
+									"    return;",
+									"}",
+									"if (_registerCase === 'false') {",
+									"    if (_defaultCaseId) {",
+									"        pm.environment.set('caseId', _defaultCaseId);",
+									"        pm.environment.set('caseUrn', _defaultCaseUrn);",
+									"        console.log('[register-case-guard] registerCase=false; using defaultCaseId:', _defaultCaseId);",
+									"    } else {",
+									"        console.log('[register-case-guard] registerCase=false and no defaultCaseId; skipping silently');",
+									"    }",
+									"    if (typeof pm.execution.skipRequest === 'function') pm.execution.skipRequest();",
+									"    return;",
+									"}",
+									"",
 									"const uniqueRef = String(Math.floor(10000 + Math.random() * 90000));",
 									"pm.environment.set(\"urnUniqueRef\", uniqueRef);",
 									"console.log(\"Generated URN Ref:\", uniqueRef);"
@@ -602,7 +658,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net",
+								"value": "{{uiUrl}}",
 								"type": "text"
 							}
 						],
@@ -704,7 +760,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net",
+								"value": "{{uiUrl}}",
 								"type": "text"
 							}
 						],
@@ -791,7 +847,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net",
+								"value": "{{uiUrl}}",
 								"type": "text"
 							}
 						],
@@ -909,7 +965,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net",
+								"value": "{{uiUrl}}",
 								"type": "text"
 							}
 						],
@@ -1195,7 +1251,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net",
+								"value": "{{uiUrl}}",
 								"type": "text"
 							}
 						],
@@ -1585,6 +1641,34 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
+									"// === Register Case guard ===",
+									"// Enforce registerCase=false at the request level so that running this",
+									"// request from any entry point (single-folder Runner pass, manual Send,",
+									"// or a folder whose upstream skip guard never fired) does not create a",
+									"// new case in CMS. When caseId is already set, reuse it. When",
+									"// registerCase=false and defaultCaseId is populated, copy it into the",
+									"// active caseId / caseUrn so subsequent requests work, then skip.",
+									"const _existingCaseId = pm.environment.get('caseId');",
+									"const _registerCase = pm.environment.get('registerCase');",
+									"const _defaultCaseId = pm.environment.get('defaultCaseId');",
+									"const _defaultCaseUrn = pm.environment.get('defaultCaseUrn');",
+									"if (_existingCaseId) {",
+									"    console.log('[register-case-guard] caseId already set:', _existingCaseId);",
+									"    if (typeof pm.execution.skipRequest === 'function') pm.execution.skipRequest();",
+									"    return;",
+									"}",
+									"if (_registerCase === 'false') {",
+									"    if (_defaultCaseId) {",
+									"        pm.environment.set('caseId', _defaultCaseId);",
+									"        pm.environment.set('caseUrn', _defaultCaseUrn);",
+									"        console.log('[register-case-guard] registerCase=false; using defaultCaseId:', _defaultCaseId);",
+									"    } else {",
+									"        console.log('[register-case-guard] registerCase=false and no defaultCaseId; skipping silently');",
+									"    }",
+									"    if (typeof pm.execution.skipRequest === 'function') pm.execution.skipRequest();",
+									"    return;",
+									"}",
+									"",
 									"// Generate unique ref",
 									"const uniqueRef = String(Math.floor(10000 + Math.random() * 90000));",
 									"pm.environment.set(\"urnUniqueRef\", uniqueRef);",
@@ -1744,7 +1828,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net",
+								"value": "{{uiUrl}}",
 								"type": "text"
 							}
 						],
@@ -1840,7 +1924,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net",
+								"value": "{{uiUrl}}",
 								"type": "text"
 							}
 						],
@@ -1958,7 +2042,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net",
+								"value": "{{uiUrl}}",
 								"type": "text"
 							}
 						],
@@ -2038,7 +2122,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -2129,7 +2213,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"body": {
@@ -2204,7 +2288,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"body": {
@@ -2287,7 +2371,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -2402,7 +2486,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -2488,7 +2572,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -2660,6 +2744,33 @@
 					"name": "1. Get Azure AD Token",
 					"event": [
 						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Default mode: skip the register-case Azure token call entirely.",
+									"// This request uses {{registerCaseClientId}}, which is only required",
+									"// when -RegisterCase is passed. Without this guard the request still",
+									"// fires against Azure with an empty/invalid client_id and 400s before",
+									"// the post-response skip can run.",
+									"if (pm.variables.get('registerCase') !== 'true') {",
+									"    pm.environment.set('caseId', pm.variables.get('defaultCaseId'));",
+									"    pm.environment.set('caseUrn', pm.variables.get('defaultCaseUrn'));",
+									"    console.log('[skip] registerCase!=true; using defaultCaseId:', pm.variables.get('defaultCaseId'));",
+									"    // setNextRequest must precede skipRequest - skipRequest aborts",
+									"    // the rest of the pre-request script, so anything after it never",
+									"    // runs and the runner would advance to the natural next item",
+									"    // (1a. Get CMS Auth for Register Case) instead.",
+									"    pm.execution.setNextRequest('1b. Get LCC API Token');",
+									"    if (typeof pm.execution.skipRequest === 'function') pm.execution.skipRequest();",
+									"    return;",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
 							"listen": "test",
 							"script": {
 								"exec": [
@@ -2808,7 +2919,7 @@
 							},
 							{
 								"key": "x-functions-key",
-								"value": "{{ddeiAccessKey}}"
+								"value": "{{ddeiAccessKeyRegCase}}"
 							},
 							{
 								"key": "Authorization",
@@ -2847,11 +2958,31 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
-									"// Skip registration if caseId is already set (pre-populate caseId in env to reuse an existing case)\r",
-									"const existingCaseId = pm.environment.get('caseId');\r",
-									"if (existingCaseId) {\r",
-									"    console.log('Using existing caseId:', existingCaseId);\r",
-									"    pm.execution.setNextRequest('1b. Get LCC API Token');\r",
+									"// === Register Case guard ===\r",
+									"// Enforce registerCase=false at the request level so that running this\r",
+									"// request from any entry point (single-folder Runner pass, manual Send,\r",
+									"// or a folder whose upstream skip guard never fired) does not create a\r",
+									"// new case in CMS. When caseId is already set, reuse it. When\r",
+									"// registerCase=false and defaultCaseId is populated, copy it into the\r",
+									"// active caseId / caseUrn so subsequent requests work, then skip.\r",
+									"const _existingCaseId = pm.environment.get('caseId');\r",
+									"const _registerCase = pm.environment.get('registerCase');\r",
+									"const _defaultCaseId = pm.environment.get('defaultCaseId');\r",
+									"const _defaultCaseUrn = pm.environment.get('defaultCaseUrn');\r",
+									"if (_existingCaseId) {\r",
+									"    console.log('[register-case-guard] caseId already set:', _existingCaseId);\r",
+									"    if (typeof pm.execution.skipRequest === 'function') pm.execution.skipRequest();\r",
+									"    return;\r",
+									"}\r",
+									"if (_registerCase === 'false') {\r",
+									"    if (_defaultCaseId) {\r",
+									"        pm.environment.set('caseId', _defaultCaseId);\r",
+									"        pm.environment.set('caseUrn', _defaultCaseUrn);\r",
+									"        console.log('[register-case-guard] registerCase=false; using defaultCaseId:', _defaultCaseId);\r",
+									"    } else {\r",
+									"        console.log('[register-case-guard] registerCase=false and no defaultCaseId; skipping silently');\r",
+									"    }\r",
+									"    if (typeof pm.execution.skipRequest === 'function') pm.execution.skipRequest();\r",
 									"    return;\r",
 									"}\r",
 									"\r",
@@ -2898,7 +3029,7 @@
 									"    console.log(\"=== CASE CREATED ===\");\r",
 									"    console.log(\"Case ID:\", responseBody.caseId);\r",
 									"    console.log(\"URN:\", responseBody.urn);\r",
-									"    console.log(\"Defendant:\", defendantSurname);\r",
+									"    console.log(\"Defendant:\", pm.environment.get(\"defendantSurname\"));\r",
 									"}\r",
 									"pm.execution.setNextRequest('1b. Get LCC API Token')"
 								],
@@ -3198,7 +3329,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -3276,7 +3407,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"body": {
@@ -3355,7 +3486,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -3447,7 +3578,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"body": {
@@ -3571,7 +3702,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -3636,6 +3767,23 @@
 									"",
 									"console.log('=== List Files in Folder (Step 7b) ===');",
 									"console.log('Files found:', files.length);",
+									"",
+									"// === Journey selector (Copy vs Move source files) ===",
+									"// Source files are uploaded as disjoint copy-*/move-* sets so the two",
+									"// journeys don't share state. Pick the right set for this folder before",
+									"// the existing lookup runs.",
+									"const _journeyPath = (pm.execution && pm.execution.location) || [];",
+									"const _inMove = _journeyPath.some(p => /Egress to NetApp Move/i.test(String(p)));",
+									"const _journeyPrefix = _inMove ? 'egressMove' : 'egressCopy';",
+									"const _journeyNames = pm.environment.get(_journeyPrefix + 'FileNames');",
+									"if (_journeyNames) {",
+									"    pm.environment.set('egressFileNames', _journeyNames);",
+									"    pm.environment.set('egressFileName', pm.environment.get(_journeyPrefix + 'FileName') || '');",
+									"    pm.environment.set('egressFileIds', pm.environment.get(_journeyPrefix + 'FileIds') || '');",
+									"    pm.environment.set('egressFileId', pm.environment.get(_journeyPrefix + 'FileId') || '');",
+									"    pm.environment.set('egressFileCount', pm.environment.get(_journeyPrefix + 'FileCount') || '1');",
+									"    console.log('[journey]', _journeyPrefix, '->', _journeyNames);",
+									"}",
 									"",
 									"// Get preset file names from upload script",
 									"const presetFileNames = pm.environment.get('egressFileNames') || '';",
@@ -3726,7 +3874,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -3894,7 +4042,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"body": {
@@ -4044,7 +4192,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"body": {
@@ -4199,7 +4347,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -4356,7 +4504,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -4450,7 +4598,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -4482,6 +4630,33 @@
 				{
 					"name": "1. Get Azure AD Token",
 					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Default mode: skip the register-case Azure token call entirely.",
+									"// This request uses {{registerCaseClientId}}, which is only required",
+									"// when -RegisterCase is passed. Without this guard the request still",
+									"// fires against Azure with an empty/invalid client_id and 400s before",
+									"// the post-response skip can run.",
+									"if (pm.variables.get('registerCase') !== 'true') {",
+									"    pm.environment.set('caseId', pm.variables.get('defaultCaseId'));",
+									"    pm.environment.set('caseUrn', pm.variables.get('defaultCaseUrn'));",
+									"    console.log('[skip] registerCase!=true; using defaultCaseId:', pm.variables.get('defaultCaseId'));",
+									"    // setNextRequest must precede skipRequest - skipRequest aborts",
+									"    // the rest of the pre-request script, so anything after it never",
+									"    // runs and the runner would advance to the natural next item",
+									"    // (1a. Get CMS Auth for Register Case) instead.",
+									"    pm.execution.setNextRequest('1b. Get LCC API Token');",
+									"    if (typeof pm.execution.skipRequest === 'function') pm.execution.skipRequest();",
+									"    return;",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
 						{
 							"listen": "test",
 							"script": {
@@ -4631,7 +4806,7 @@
 							},
 							{
 								"key": "x-functions-key",
-								"value": "{{ddeiAccessKey}}"
+								"value": "{{ddeiAccessKeyRegCase}}"
 							},
 							{
 								"key": "Authorization",
@@ -4670,11 +4845,31 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
-									"// Skip registration if caseId is already set (pre-populate caseId in env to reuse an existing case)\r",
-									"const existingCaseId = pm.environment.get('caseId');\r",
-									"if (existingCaseId) {\r",
-									"    console.log('Using existing caseId:', existingCaseId);\r",
-									"    pm.execution.setNextRequest('1b. Get LCC API Token');\r",
+									"// === Register Case guard ===\r",
+									"// Enforce registerCase=false at the request level so that running this\r",
+									"// request from any entry point (single-folder Runner pass, manual Send,\r",
+									"// or a folder whose upstream skip guard never fired) does not create a\r",
+									"// new case in CMS. When caseId is already set, reuse it. When\r",
+									"// registerCase=false and defaultCaseId is populated, copy it into the\r",
+									"// active caseId / caseUrn so subsequent requests work, then skip.\r",
+									"const _existingCaseId = pm.environment.get('caseId');\r",
+									"const _registerCase = pm.environment.get('registerCase');\r",
+									"const _defaultCaseId = pm.environment.get('defaultCaseId');\r",
+									"const _defaultCaseUrn = pm.environment.get('defaultCaseUrn');\r",
+									"if (_existingCaseId) {\r",
+									"    console.log('[register-case-guard] caseId already set:', _existingCaseId);\r",
+									"    if (typeof pm.execution.skipRequest === 'function') pm.execution.skipRequest();\r",
+									"    return;\r",
+									"}\r",
+									"if (_registerCase === 'false') {\r",
+									"    if (_defaultCaseId) {\r",
+									"        pm.environment.set('caseId', _defaultCaseId);\r",
+									"        pm.environment.set('caseUrn', _defaultCaseUrn);\r",
+									"        console.log('[register-case-guard] registerCase=false; using defaultCaseId:', _defaultCaseId);\r",
+									"    } else {\r",
+									"        console.log('[register-case-guard] registerCase=false and no defaultCaseId; skipping silently');\r",
+									"    }\r",
+									"    if (typeof pm.execution.skipRequest === 'function') pm.execution.skipRequest();\r",
 									"    return;\r",
 									"}\r",
 									"\r",
@@ -4721,7 +4916,7 @@
 									"    console.log(\"=== CASE CREATED ===\");\r",
 									"    console.log(\"Case ID:\", responseBody.caseId);\r",
 									"    console.log(\"URN:\", responseBody.urn);\r",
-									"    console.log(\"Defendant:\", defendantSurname);\r",
+									"    console.log(\"Defendant:\", pm.environment.get(\"defendantSurname\"));\r",
 									"}\r",
 									"pm.execution.setNextRequest('1b. Get LCC API Token')"
 								],
@@ -5021,7 +5216,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -5099,7 +5294,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"body": {
@@ -5182,7 +5377,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"body": {
@@ -5261,7 +5456,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -5394,7 +5589,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -5459,6 +5654,23 @@
 									"",
 									"console.log('=== List Files in Folder (Step 7b) ===');",
 									"console.log('Files found:', files.length);",
+									"",
+									"// === Journey selector (Copy vs Move source files) ===",
+									"// Source files are uploaded as disjoint copy-*/move-* sets so the two",
+									"// journeys don't share state. Pick the right set for this folder before",
+									"// the existing lookup runs.",
+									"const _journeyPath = (pm.execution && pm.execution.location) || [];",
+									"const _inMove = _journeyPath.some(p => /Egress to NetApp Move/i.test(String(p)));",
+									"const _journeyPrefix = _inMove ? 'egressMove' : 'egressCopy';",
+									"const _journeyNames = pm.environment.get(_journeyPrefix + 'FileNames');",
+									"if (_journeyNames) {",
+									"    pm.environment.set('egressFileNames', _journeyNames);",
+									"    pm.environment.set('egressFileName', pm.environment.get(_journeyPrefix + 'FileName') || '');",
+									"    pm.environment.set('egressFileIds', pm.environment.get(_journeyPrefix + 'FileIds') || '');",
+									"    pm.environment.set('egressFileId', pm.environment.get(_journeyPrefix + 'FileId') || '');",
+									"    pm.environment.set('egressFileCount', pm.environment.get(_journeyPrefix + 'FileCount') || '1');",
+									"    console.log('[journey]', _journeyPrefix, '->', _journeyNames);",
+									"}",
 									"",
 									"// Get preset file names from upload script",
 									"const presetFileNames = pm.environment.get('egressFileNames') || '';",
@@ -5549,7 +5761,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -5717,7 +5929,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"body": {
@@ -5867,7 +6079,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"body": {
@@ -6022,7 +6234,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -6179,7 +6391,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -6277,7 +6489,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -6309,6 +6521,33 @@
 				{
 					"name": "1. Get Azure AD Token",
 					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Default mode: skip the register-case Azure token call entirely.",
+									"// This request uses {{registerCaseClientId}}, which is only required",
+									"// when -RegisterCase is passed. Without this guard the request still",
+									"// fires against Azure with an empty/invalid client_id and 400s before",
+									"// the post-response skip can run.",
+									"if (pm.variables.get('registerCase') !== 'true') {",
+									"    pm.environment.set('caseId', pm.variables.get('defaultCaseId'));",
+									"    pm.environment.set('caseUrn', pm.variables.get('defaultCaseUrn'));",
+									"    console.log('[skip] registerCase!=true; using defaultCaseId:', pm.variables.get('defaultCaseId'));",
+									"    // setNextRequest must precede skipRequest - skipRequest aborts",
+									"    // the rest of the pre-request script, so anything after it never",
+									"    // runs and the runner would advance to the natural next item",
+									"    // (1a. Get CMS Auth for Register Case) instead.",
+									"    pm.execution.setNextRequest('1b. Get LCC API Token');",
+									"    if (typeof pm.execution.skipRequest === 'function') pm.execution.skipRequest();",
+									"    return;",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
 						{
 							"listen": "test",
 							"script": {
@@ -6458,7 +6697,7 @@
 							},
 							{
 								"key": "x-functions-key",
-								"value": "{{ddeiAccessKey}}"
+								"value": "{{ddeiAccessKeyRegCase}}"
 							},
 							{
 								"key": "Authorization",
@@ -6497,11 +6736,31 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
-									"// Skip registration if caseId is already set (pre-populate caseId in env to reuse an existing case)\r",
-									"const existingCaseId = pm.environment.get('caseId');\r",
-									"if (existingCaseId) {\r",
-									"    console.log('Using existing caseId:', existingCaseId);\r",
-									"    pm.execution.setNextRequest('4. Search Case');\r",
+									"// === Register Case guard ===\r",
+									"// Enforce registerCase=false at the request level so that running this\r",
+									"// request from any entry point (single-folder Runner pass, manual Send,\r",
+									"// or a folder whose upstream skip guard never fired) does not create a\r",
+									"// new case in CMS. When caseId is already set, reuse it. When\r",
+									"// registerCase=false and defaultCaseId is populated, copy it into the\r",
+									"// active caseId / caseUrn so subsequent requests work, then skip.\r",
+									"const _existingCaseId = pm.environment.get('caseId');\r",
+									"const _registerCase = pm.environment.get('registerCase');\r",
+									"const _defaultCaseId = pm.environment.get('defaultCaseId');\r",
+									"const _defaultCaseUrn = pm.environment.get('defaultCaseUrn');\r",
+									"if (_existingCaseId) {\r",
+									"    console.log('[register-case-guard] caseId already set:', _existingCaseId);\r",
+									"    if (typeof pm.execution.skipRequest === 'function') pm.execution.skipRequest();\r",
+									"    return;\r",
+									"}\r",
+									"if (_registerCase === 'false') {\r",
+									"    if (_defaultCaseId) {\r",
+									"        pm.environment.set('caseId', _defaultCaseId);\r",
+									"        pm.environment.set('caseUrn', _defaultCaseUrn);\r",
+									"        console.log('[register-case-guard] registerCase=false; using defaultCaseId:', _defaultCaseId);\r",
+									"    } else {\r",
+									"        console.log('[register-case-guard] registerCase=false and no defaultCaseId; skipping silently');\r",
+									"    }\r",
+									"    if (typeof pm.execution.skipRequest === 'function') pm.execution.skipRequest();\r",
 									"    return;\r",
 									"}\r",
 									"\r",
@@ -6548,7 +6807,7 @@
 									"    console.log(\"=== CASE CREATED ===\");\r",
 									"    console.log(\"Case ID:\", responseBody.caseId);\r",
 									"    console.log(\"URN:\", responseBody.urn);\r",
-									"    console.log(\"Defendant:\", defendantSurname);\r",
+									"    console.log(\"Defendant:\", pm.environment.get(\"defendantSurname\"));\r",
 									"}\r",
 									"pm.execution.setNextRequest('1b. Get LCC API Token');"
 								],
@@ -6850,7 +7109,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -6928,7 +7187,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"body": {
@@ -7011,7 +7270,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"body": {
@@ -7090,7 +7349,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -7234,7 +7493,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -7363,7 +7622,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -7486,7 +7745,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"body": {
@@ -7610,7 +7869,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"body": {
@@ -7757,7 +8016,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -7898,7 +8157,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -7984,7 +8243,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -8090,7 +8349,7 @@
 					},
 					{
 						"key": "Origin",
-						"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+						"value": "{{uiUrl}}"
 					}
 				],
 				"body": {

@@ -15,12 +15,12 @@ Tests run in two modes:
 
 | Test | Files | Default Mode | Register Case Mode |
 |------|-------|--------------|--------------------|
-| Egress to NetApp Copy | 100MB x 1 | ✓ | ✓ |
-| Egress to NetApp Copy - Large | 200MB x 1 | ✓ | ✓ |
-| Egress to NetApp Copy - Multifile | 50MB x 3 | -- | ✓ |
-| Egress to NetApp Move | 100MB x 1 | ✓ | ✓ |
-| NetApp to Egress Copy | 100MB x 1 | ✓ (uses seeded fixture) | ✓ (sort + row 0) |
-| Full Flow (login, search, connect) | 100MB x 1 | -- | ✓ |
+| Egress to NetApp Copy | 10MB x 1 | ✓ | ✓ |
+| Egress to NetApp Copy - Large | 50MB x 1 | ✓ | ✓ |
+| Egress to NetApp Copy - Multifile | 10MB x 3 | -- | ✓ |
+| Egress to NetApp Move | 10MB x 1 | ✓ | ✓ |
+| NetApp to Egress Copy | 10MB x 1 | ✓ (uses seeded fixture) | ✓ (sort + row 0) |
+| Full Flow (login, search, connect) | 10MB x 1 | -- | ✓ |
 
 NetApp -> Egress Move is descoped — the product UI doesn't expose a Move
 button in that direction (`EgressFolderContainer.tsx` has no Move
@@ -36,8 +36,8 @@ e2e/pw/
     setup-helper.ts                   # Register-case API + login (used by setup project)
     setup-helper-default.ts           # Default-mode setup (upload to pre-connected case)
     test-fixtures-register-case.ts    # Shared register-case fixture (per-test file upload)
-    test-fixtures-default.ts          # Default mode fixture (100MB x 1)
-    test-fixtures-default-large.ts    # Default mode fixture (200MB x 1)
+    test-fixtures-default.ts          # Default mode fixture (10MB x 1)
+    test-fixtures-default-large.ts    # Default mode fixture (50MB x 1)
   helpers/
     auth-api.ts                       # Azure AD + CMS authentication
     case-api.ts                       # Case registration API
@@ -113,7 +113,7 @@ deterministic source file. Picking the newest row of NetApp's listing
 isn't viable in default mode: the panel doesn't toggle descending date
 sort, has no search/filter, and pagination isn't triggered by Playwright
 scrolls — so a just-uploaded file is buried, and the existing
-accumulated `generated-100MB-2026-01-20-12-23-11.txt` at row 0 hits a
+accumulated `generated-10MB-2026-01-20-12-23-11.txt` at row 0 hits a
 backend transfer-rejection state.
 
 The contract: a single canonical file lives at
@@ -151,7 +151,7 @@ destination folder", and the seed catches that error path explicitly
 (see `tests/seed-netapp-fixture.setup.ts`).
 
 The fixture's name pattern (`lcc-e2e-fixture-*`) is intentionally
-distinct from the per-test `generated-100MB-*` artefacts, so the
+distinct from the per-test `generated-10MB-*` artefacts, so the
 automated cleanup helpers (`deleteNetAppFile`, 24h workspace sweep) will
 never remove it.
 
@@ -166,27 +166,28 @@ standard auth set.
 | `BASE_URL` | LCC UI URL | Yes |
 | `CMS_LOGIN_PAGE` | Tactical login endpoint | Yes |
 | `CASE_API_BASE_URL` | Case Management API | Yes |
-| `DDEI_BASE_URL` | DDEI API | Yes |
+| `DDEI_BASE_URL` | DDEI API | Register-case only |
 | `EGRESS_BASE_URL` | Egress API | Yes |
 | `TENANT_ID` | Azure AD tenant ID | Yes |
-| `CLIENT_ID` | Azure AD client ID | Yes |
+| `LCC_API_CLIENT_ID` | Azure AD client ID | Yes |
+| `CMRC_API_CLIENT_ID` | Azure AD client ID | Register-case only |
 | `E2E_AD_USER` | Azure AD test user email | Yes |
 | `E2E_AD_PASSWORD` | Azure AD test user password | Yes |
 | `CMS_USERNAME` | CMS username | Yes |
 | `CMS_PASSWORD` | CMS password | Yes |
-| `DDEI_ACCESS_KEY` | DDEI function key | Yes |
+| `DDEI_ACCESS_KEY_CASE_REGISTER` | DDEI function key | Register-case only |
 | `EGRESS_SERVICE_ACCOUNT_AUTH` | Egress service account (Base64) | Yes |
 | `EGRESS_TEMPLATE_ID` | Egress workspace template ID | No (has default) |
 | `EGRESS_ADMIN_ROLE_ID` | Egress admin role ID | No (has default) |
-| `TEST_FILE_SIZE_MB` | Test file size in MB | No (default: 100) |
+| `TEST_FILE_SIZE_MB` | Test file size in MB | No (default: 10) |
 | `TEST_FILE_COUNT` | Number of test files to upload | No (default: 1) |
+| `LARGE_TEST_FILE_SIZE_MB` | Large test file size in MB | No (default: 50) |
 | `DEFAULT_WORKSPACE_ID` | Pre-existing Egress workspace ID | Default mode only |
 | `DEFAULT_WORKSPACE_NAME` | Pre-existing Egress workspace name | Default mode only |
 | `DEFAULT_CASE_ID` | Pre-existing case ID | Default mode only |
 | `DEFAULT_CASE_URN` | Pre-existing case URN | Default mode only |
 | `LCC_API_BASE_URL` | LCC backend URL — used by NetApp file teardown + disassociate | Default mode (recommended); register-case (recommended) |
 | `NETAPP_OPERATION_NAME` | Connected NetApp folder for default mode | Default mode (recommended) |
-| `LCC_API_CLIENT_ID` | LCC API app registration client id (client-credentials flow) for case-disassociate at register-case teardown | Register-case (recommended) |
 | `LCC_API_CLIENT_SECRET` | Secret for `LCC_API_CLIENT_ID` | Register-case (recommended) |
 
 ## Environment Profiles
@@ -428,7 +429,7 @@ first run of the following day.
   Registered cases accumulate and need an ops-side archive process.
 - **The NetApp source fixture** — `lcc-e2e-fixture-source.txt` is
   intentionally exempt from cleanup helpers (its name pattern doesn't
-  match `generated-100MB-*`) so it persists across runs. Re-seed via
+  match `generated-10MB-*`) so it persists across runs. Re-seed via
   the `seed-netapp-fixture` opt-in project if it goes missing.
 - **Empty subfolders** — `deleteFiles` removes files but leaves the
   `e2e-*` folders behind. Cheap clutter; periodic ops prune if needed.
