@@ -15,6 +15,7 @@ using CPS.ComplexCases.Common.Services;
 
 using ContentType = CPS.ComplexCases.API.Constants.ContentType;
 using ApiResponseDescriptions = CPS.ComplexCases.API.Constants.ApiResponseDescriptions;
+using CPS.ComplexCases.API.Extensions;
 
 namespace CPS.ComplexCases.API.Functions;
 
@@ -42,10 +43,9 @@ public class DisconnectEgressConnection(ILogger<DisconnectEgressConnection> logg
     {
         var context = functionContext.GetRequestContext();
 
-        var caseIdQuery = req.Query[InputParameters.CaseId];
-        if (string.IsNullOrEmpty(caseIdQuery) || !int.TryParse(caseIdQuery, out var caseId))
+        if (!req.TryGetCaseId(out var caseId, out var caseIdError))
         {
-            return new BadRequestObjectResult("Invalid or missing caseId query parameter.");
+            return caseIdError!;
         }
 
         _initializationHandler.Initialize(context.Username, context.CorrelationId, caseId);

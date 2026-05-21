@@ -8,6 +8,7 @@ using Microsoft.OpenApi.Models;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
+using CPS.ComplexCases.API.Extensions;
 using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Common.Enums;
 using CPS.ComplexCases.Common.Handlers;
@@ -42,10 +43,9 @@ public class DisconnectNetAppConnection(ILogger<DisconnectNetAppConnection> logg
     {
         var context = functionContext.GetRequestContext();
 
-        var caseIdQuery = req.Query[InputParameters.CaseId];
-        if (string.IsNullOrEmpty(caseIdQuery) || !int.TryParse(caseIdQuery, out var caseId))
+        if (!req.TryGetCaseId(out var caseId, out var caseIdError))
         {
-            return new BadRequestObjectResult("Invalid or missing caseId query parameter.");
+            return caseIdError!;
         }
 
         _initializationHandler.Initialize(context.Username, context.CorrelationId, caseId);
