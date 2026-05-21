@@ -147,7 +147,7 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
         if (finalStatus == null || finalStatus == "Failed")
         {
             _logger.LogError("NetApp folder provisioning failed for caseId: {CaseId}, TransferId: {TransferId}, Status: {Status}",
-                caseId, transferId, finalStatus ?? "timeout");
+                caseId, transferId, finalStatus);
             return new ObjectResult("NetApp folder provisioning failed.") { StatusCode = (int)HttpStatusCode.InternalServerError };
         }
 
