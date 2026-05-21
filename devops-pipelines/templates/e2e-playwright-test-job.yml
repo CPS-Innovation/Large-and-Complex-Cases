@@ -19,7 +19,6 @@ jobs:
     variables:
       - group: lacc-automated-testing-${{ parameters.environment }}
       - group: lacc-backend-config-${{ parameters.environment }}
-      - group: lacc-backend-secrets-${{ parameters.environment }}
       - name: nodeVersion
         value: "20.x"
       - name: workingDir

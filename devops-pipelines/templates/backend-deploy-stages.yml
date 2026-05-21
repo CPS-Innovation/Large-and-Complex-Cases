@@ -70,7 +70,6 @@ stages:
       - template: ./variables/fa-config-${{parameters.environment}}.yml
       - ${{ if eq(parameters.runPostmanSmokeTest, true) }}:
           - group: lacc-automated-testing-${{ parameters.environment }}
-          - group: lacc-backend-secrets-${{ parameters.environment }}
     pool: ${{ parameters.agentPool }}
     jobs:
       - deployment: Deploy_Database_Changes
