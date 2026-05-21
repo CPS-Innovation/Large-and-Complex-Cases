@@ -396,7 +396,7 @@ public class ProvisionNetAppFoldersTests
     }
 
     [Fact]
-    public async Task Run_WhenOrchestrationReturnsPartiallyCompleted_ReturnsOkAndWritesConnectionRecord()
+    public async Task Run_WhenOrchestrationReturnsPartiallyCompleted_ReturnsBadRequest()
     {
         // Arrange
         var dto = _fixture.Create<ProvisionNetAppFoldersDto>();
@@ -413,8 +413,13 @@ public class ProvisionNetAppFoldersTests
         var result = await _function.Run(request, functionContext, _caseId);
 
         // Assert
-        Assert.IsType<OkObjectResult>(result);
-        _caseMetadataServiceMock.Verify(s => s.CreateNetAppConnectionAsync(It.IsAny<CreateNetAppConnectionDto>()), Times.Once);
+        var objectResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(400, objectResult.StatusCode);
+        _caseMetadataServiceMock.Verify(s => s.CreateNetAppConnectionAsync(It.IsAny<CreateNetAppConnectionDto>()), Times.Never);
+        _activityLogServiceMock.Verify(s => s.CreateActivityLogAsync(
+            It.IsAny<ActionType>(), It.IsAny<ResourceType>(),
+            It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<string>(), null), Times.Never);
     }
 
     [Fact]

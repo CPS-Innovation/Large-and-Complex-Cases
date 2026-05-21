@@ -201,6 +201,223 @@ public class ProvisionNetAppFoldersTests
     }
 
     [Fact]
+    public async Task Run_TxtTemplateFile_DestinationFileNameDoesNotGainExtraExtension()
+    {
+        // _templates/appeal/note.txt  →  RelativePath = "note.txt"
+        // The payload DestinationFileName must be exactly "note.txt", not "note.txt.txt".
+        const string templateRoot = "_templates/appeal/";
+        const string sourceKey = "_templates/appeal/note.txt";
+
+        _requestValidatorMock
+            .Setup(v => v.GetJsonBody<ProvisionNetAppFoldersRequest, ProvisionNetAppFoldersRequestValidator>(It.IsAny<HttpRequest>()))
+            .ReturnsAsync(new ValidatableRequest<ProvisionNetAppFoldersRequest>
+            {
+                IsValid = true,
+                Value = new ProvisionNetAppFoldersRequest
+                {
+                    CaseId = CaseId,
+                    Urn = "12AB3456",
+                    TemplateName = templateRoot,
+                    DestinationFolderPath = DestinationFolderPath,
+                    BucketName = BucketName,
+                    BearerToken = BearerToken,
+                    UserName = UserName,
+                    CaseName = "OperationName-12AB3456",
+                    OperationName = "OperationName",
+                }
+            });
+
+        _netAppClientMock
+            .SetupSequence(c => c.ListObjectsInBucketAsync(It.IsAny<ListObjectsInBucketArg>()))
+            .ReturnsAsync(MakeListResult([sourceKey], [], nextToken: null))
+            .ReturnsAsync(MakeListResult([], [], nextToken: null));
+
+        var client = CreateSchedulingClient(out var calls);
+        await _function.Run(CreateHttpRequest(), client.Object);
+
+        var payload = Assert.IsType<CopyBatchPayload>(calls[0].Input);
+        var item = Assert.Single(payload.Files);
+
+        // RelativePath strip: "note.txt" — no double extension
+        Assert.Equal("note.txt", item.DestinationFileName);
+        Assert.NotEqual("note.txt.txt", item.DestinationFileName);
+
+        var expectedKey = (item.DestinationPrefix.TrimEnd('/') + "/" + item.DestinationFileName).Replace('\\', '/');
+        Assert.Equal($"{DestinationFolderPath}note.txt", expectedKey);
+        Assert.DoesNotContain("note.txt.txt", expectedKey);
+    }
+
+    [Fact]
+    public async Task Run_TxtTemplateFile_SinglePutPath_DestinationFileNameDoesNotGainExtraExtension()
+    {
+        // Same assertion via the DestinationFileName field on the payload item,
+        // which drives both the single-PUT and multipart upload paths in TransferFile.
+        const string sourceKey = "_templates/appeal/note.txt";
+
+        SetupValidRequest();
+
+        // Call 1: template listing > returns the file
+        // Call 2: destination check > empty (clean slate, provisioning can proceed)
+        _netAppClientMock
+            .SetupSequence(c => c.ListObjectsInBucketAsync(It.IsAny<ListObjectsInBucketArg>()))
+            .ReturnsAsync(MakeListResult([sourceKey], [], nextToken: null))
+            .ReturnsAsync(MakeListResult([], [], nextToken: null));
+
+        var client = CreateSchedulingClient(out var calls);
+        await _function.Run(CreateHttpRequest(), client.Object);
+
+        var payload = Assert.IsType<CopyBatchPayload>(calls[0].Input);
+        var item = Assert.Single(payload.Files);
+
+        // Both single-PUT and multipart use item.DestinationFileName as the object name.
+        Assert.Equal("note.txt", item.DestinationFileName);
+    }
+
+    [Fact]
+    public async Task Run_WhenTemplateListingHasNoFilesAndNoFolders_ReturnsBadRequest()
+    {
+        // ListObjectsInBucketAsync returns a response with empty FileData AND empty FolderData.
+        // The function must treat this as "template not found / invalid" and return 400.
+        SetupValidRequest();
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.IsAny<ListObjectsInBucketArg>()))
+            .ReturnsAsync(MakeListResult([], [], nextToken: null));
+
+        var result = await _function.Run(CreateHttpRequest(), _durableClientStub);
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task Run_WhenTemplateListingHasNoFilesAndNoFolders_DoesNotScheduleOrchestrator()
+    {
+        SetupValidRequest();
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(It.IsAny<ListObjectsInBucketArg>()))
+            .ReturnsAsync(MakeListResult([], [], nextToken: null));
+
+        var client = CreateSchedulingClient(out var calls);
+        await _function.Run(CreateHttpRequest(), client.Object);
+
+        Assert.Empty(calls);
+    }
+
+    [Fact]
+    public async Task Run_WhenDestinationAlreadyHasFiles_ReturnsConflict()
+    {
+        SetupValidRequest();
+
+        // First call (template listing) returns files; second call (destination check) returns an existing file.
+        _netAppClientMock
+            .SetupSequence(c => c.ListObjectsInBucketAsync(It.IsAny<ListObjectsInBucketArg>()))
+            .ReturnsAsync(MakeListResult(["_templates/appeal/file1.txt"], [], nextToken: null))
+            .ReturnsAsync(MakeListResult([$"{DestinationFolderPath}file1.txt"], [], nextToken: null));
+
+        var result = await _function.Run(CreateHttpRequest(), _durableClientStub);
+
+        Assert.IsType<ConflictObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task Run_WhenDestinationAlreadyHasFolders_ReturnsConflict()
+    {
+        SetupValidRequest();
+
+        _netAppClientMock
+            .SetupSequence(c => c.ListObjectsInBucketAsync(It.IsAny<ListObjectsInBucketArg>()))
+            .ReturnsAsync(MakeListResult(["_templates/appeal/file1.txt"], [], nextToken: null))
+            .ReturnsAsync(MakeListResult([], [$"{DestinationFolderPath}subfolder/"], nextToken: null));
+
+        var result = await _function.Run(CreateHttpRequest(), _durableClientStub);
+
+        Assert.IsType<ConflictObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task Run_WhenDestinationAlreadyExists_DoesNotScheduleOrchestrator()
+    {
+        SetupValidRequest();
+
+        _netAppClientMock
+            .SetupSequence(c => c.ListObjectsInBucketAsync(It.IsAny<ListObjectsInBucketArg>()))
+            .ReturnsAsync(MakeListResult(["_templates/appeal/file1.txt"], [], nextToken: null))
+            .ReturnsAsync(MakeListResult([$"{DestinationFolderPath}file1.txt"], [], nextToken: null));
+
+        var client = CreateSchedulingClient(out var calls);
+        await _function.Run(CreateHttpRequest(), client.Object);
+
+        Assert.Empty(calls);
+    }
+
+    [Fact]
+    public async Task Run_WhenDestinationIsEmpty_ProceedsToScheduleOrchestrator()
+    {
+        SetupValidRequest();
+
+        // Template listing returns a file; destination check returns empty (clean slate).
+        _netAppClientMock
+            .SetupSequence(c => c.ListObjectsInBucketAsync(It.IsAny<ListObjectsInBucketArg>()))
+            .ReturnsAsync(MakeListResult(["_templates/appeal/file1.txt"], [], nextToken: null))
+            .ReturnsAsync(MakeListResult([], [], nextToken: null));
+
+        var client = CreateSchedulingClient(out var calls);
+        await _function.Run(CreateHttpRequest(), client.Object);
+
+        Assert.Single(calls);
+    }
+
+    [Fact]
+    public async Task Run_WhenDestinationCheckReturnsNull_ProceedsToScheduleOrchestrator()
+    {
+        // A null response from the NetApp client for the destination check should be
+        // treated as "nothing exists there" and not block provisioning.
+        SetupValidRequest();
+
+        _netAppClientMock
+            .SetupSequence(c => c.ListObjectsInBucketAsync(It.IsAny<ListObjectsInBucketArg>()))
+            .ReturnsAsync(MakeListResult(["_templates/appeal/file1.txt"], [], nextToken: null))
+            .ReturnsAsync((ListNetAppObjectsDto?)null);
+
+        var client = CreateSchedulingClient(out var calls);
+        await _function.Run(CreateHttpRequest(), client.Object);
+
+        Assert.Single(calls);
+    }
+
+    [Fact]
+    public async Task Run_WhenDestinationCheckUsesMaxKeysOne_OnlyRequestsOneObject()
+    {
+        // The destination pre-flight must use MaxKeys = 1 — there is no need to list
+        // every existing object; a single result is sufficient to detect a conflict.
+        SetupValidRequest();
+
+        _netAppClientMock
+            .SetupSequence(c => c.ListObjectsInBucketAsync(It.IsAny<ListObjectsInBucketArg>()))
+            .ReturnsAsync(MakeListResult(["_templates/appeal/file1.txt"], [], nextToken: null))
+            .ReturnsAsync(MakeListResult([], [], nextToken: null));
+
+        _netAppArgFactoryMock
+            .Setup(f => f.CreateListObjectsInBucketArg(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(),
+                It.Is<int?>(m => m == 1), It.Is<string?>(p => p == DestinationFolderPath), It.IsAny<bool>()))
+            .Returns(new ListObjectsInBucketArg
+            {
+                BearerToken = BearerToken,
+                BucketName = BucketName,
+                MaxKeys = "1",
+                Prefix = DestinationFolderPath
+            })
+            .Verifiable();
+
+        var client = CreateSchedulingClient(out _);
+        await _function.Run(CreateHttpRequest(), client.Object);
+
+        _netAppArgFactoryMock.Verify(f => f.CreateListObjectsInBucketArg(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(),
+            1, DestinationFolderPath, It.IsAny<bool>()), Times.Once);
+    }
+
+    [Fact]
     public async Task Run_WhenSchedulerThrows_ExceptionPropagates()
     {
         SetupValidRequest();
@@ -411,10 +628,15 @@ public class ProvisionNetAppFoldersTests
                 }
             });
 
-    private void SetupTemplateFiles(params string[] filePaths) =>
+    private void SetupTemplateFiles(params string[] filePaths)
+    {
+        // Call 1: template listing  →  returns the supplied files
+        // Call 2: destination check →  returns empty (clean slate, provisioning can proceed)
         _netAppClientMock
-            .Setup(c => c.ListObjectsInBucketAsync(It.IsAny<ListObjectsInBucketArg>()))
-            .ReturnsAsync(MakeListResult(filePaths, [], nextToken: null));
+            .SetupSequence(c => c.ListObjectsInBucketAsync(It.IsAny<ListObjectsInBucketArg>()))
+            .ReturnsAsync(MakeListResult(filePaths, [], nextToken: null))
+            .ReturnsAsync(MakeListResult([], [], nextToken: null));
+    }
 
     private void SetupTemplateWithFolderAndFiles(string subFolder, string fileInSubfolder)
     {

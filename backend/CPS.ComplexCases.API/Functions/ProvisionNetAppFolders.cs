@@ -137,17 +137,18 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
             ? await PollForTerminalStatusAsync(transferId, context.CorrelationId)
             : await GetTransferStatusAsync(transferId, context.CorrelationId);
 
+        if (finalStatus == null || finalStatus == "Initiated" || finalStatus == "InProgress" || finalStatus == "PartiallyCompleted")
+        {
+            _logger.LogError("NetApp folder provisioning did not complete for caseId: {CaseId}, TransferId: {TransferId}, Status: {Status}",
+                caseId, transferId, finalStatus ?? "timeout");
+            return new ObjectResult("NetApp folder provisioning did not complete.") { StatusCode = (int)HttpStatusCode.BadRequest };
+        }
+
         if (finalStatus == null || finalStatus == "Failed")
         {
             _logger.LogError("NetApp folder provisioning failed for caseId: {CaseId}, TransferId: {TransferId}, Status: {Status}",
                 caseId, transferId, finalStatus ?? "timeout");
             return new ObjectResult("NetApp folder provisioning failed.") { StatusCode = (int)HttpStatusCode.InternalServerError };
-        }
-
-        if (finalStatus == "PartiallyCompleted")
-        {
-            _logger.LogWarning("NetApp folder provisioning partially completed for caseId: {CaseId}, TransferId: {TransferId}. Some files may not have been copied.",
-                caseId, transferId);
         }
 
         await _caseMetadataService.CreateNetAppConnectionAsync(new Data.Models.Requests.CreateNetAppConnectionDto

@@ -43,6 +43,7 @@ public class ProvisionNetAppFolders(
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(TransferResponse), Description = "Provisioning completed within the timeout window.")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Accepted, contentType: ContentType.ApplicationJson, bodyType: typeof(TransferResponse), Description = "Provisioning scheduled but not yet complete. The caller should poll for completion.")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.ApplicationJson, bodyType: typeof(IEnumerable<string>), Description = ApiResponseDescriptions.BadRequest)]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.Conflict, contentType: ContentType.TextPlain, bodyType: typeof(string), Description = "Destination folder already exists; a previous provisioning attempt may have partially completed.")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, bodyType: typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
     public async Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Function, "post", Route = "netapp/provision")] HttpRequest req,
@@ -94,6 +95,23 @@ public class ProvisionNetAppFolders(
                 DestinationPrefix = request.DestinationFolderPath,
                 DestinationFileName = obj.RelativePath!,
             });
+        }
+
+        var destinationCheckArg = _netAppArgFactory.CreateListObjectsInBucketArg(
+            request.BearerToken,
+            request.BucketName,
+            maxKeys: 1,
+            prefix: request.DestinationFolderPath);
+
+        var destinationCheck = await _netAppClient.ListObjectsInBucketAsync(destinationCheckArg);
+
+        if (destinationCheck?.Data.FileData.Any() == true || destinationCheck?.Data.FolderData.Any() == true)
+        {
+            _logger.LogWarning(
+                "Destination folder already exists for CaseId: {CaseId}, Destination: {Destination}. CorrelationId: {CorrelationId}",
+                request.CaseId, request.DestinationFolderPath, correlationId);
+            return new ConflictObjectResult(
+                $"Destination folder '{request.DestinationFolderPath}' already exists. A previous provisioning attempt may have partially completed.");
         }
 
         var transferId = Guid.NewGuid();
@@ -205,20 +223,17 @@ public class ProvisionNetAppFolders(
             // Recursively process all subdirectories
             if (response.Data.FolderData.Any())
             {
-                foreach (var folder in response.Data.FolderData)
+                foreach (var folderPath in response.Data.FolderData.Where(f => !string.IsNullOrEmpty(f.Path)).Select(folder => folder.Path))
                 {
-                    if (!string.IsNullOrEmpty(folder.Path))
+                    filesForTransfer.Add(new FileTransferInfo
                     {
-                        filesForTransfer.Add(new FileTransferInfo
-                        {
-                            SourcePath = folder.Path
-                        });
+                        SourcePath = folderPath!
+                    });
 
-                        var subFiles = await ListFilesInFolder(folder.Path, bearerToken, bucketName);
-                        if (subFiles != null)
-                        {
-                            filesForTransfer.AddRange(subFiles);
-                        }
+                    var subFiles = await ListFilesInFolder(folderPath!, bearerToken, bucketName);
+                    if (subFiles != null)
+                    {
+                        filesForTransfer.AddRange(subFiles);
                     }
                 }
             }

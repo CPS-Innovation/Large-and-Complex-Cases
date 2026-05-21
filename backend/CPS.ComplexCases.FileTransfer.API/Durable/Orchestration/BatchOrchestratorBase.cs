@@ -188,7 +188,7 @@ public abstract class BatchOrchestratorBase<TPayload, TFileItem>(
         var batch = new List<Task<TransferResult>>();
         var allResults = new List<TransferResult>();
 
-        foreach (var fileItem in files)
+        foreach (var fileItem in files.Where(f => !f.IsFolder))
         {
             batch.Add(context.CallActivityAsync<TransferResult>(nameof(TransferFile), buildPayload(fileItem)));
 
