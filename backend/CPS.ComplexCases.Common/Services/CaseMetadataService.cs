@@ -221,4 +221,42 @@ public class CaseMetadataService : ICaseMetadataService
       throw;
     }
   }
+
+  public async Task<ClearFolderPathResult> ClearEgressConnectionAsync(int caseId)
+  {
+    _logger.LogInformation("Clearing Egress workspace connection for case {CaseId}", caseId);
+    try
+    {
+      var existingMetadata = await _caseMetadataRepository.GetByCaseIdAsync(caseId);
+
+      if (existingMetadata != null)
+      {
+        if (existingMetadata.ActiveTransferId.HasValue)
+        {
+          _logger.LogWarning("Cannot clear Egress workspace connection for case {CaseId} because there is an active transfer", caseId);
+          return new ClearFolderPathResult { State = CaseMetadataState.TransferIsActive };
+        }
+        else if (string.IsNullOrEmpty(existingMetadata.EgressWorkspaceId))
+        {
+          _logger.LogWarning("No Egress workspace connection to clear for case {CaseId}", caseId);
+          return new ClearFolderPathResult { State = CaseMetadataState.EgressConnectionIsNull };
+        }
+
+        var existingPath = existingMetadata.EgressWorkspaceId;
+        existingMetadata.EgressWorkspaceId = null;
+        await _caseMetadataRepository.UpdateAsync(existingMetadata);
+        return new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = existingPath };
+      }
+      else
+      {
+        _logger.LogWarning("No metadata found for case {CaseId} to clear Egress workspace connection", caseId);
+        return new ClearFolderPathResult { State = CaseMetadataState.NoCaseMetadataFound };
+      }
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error clearing Egress workspace connection for case {CaseId}", caseId);
+      throw;
+    }
+  }
 }
