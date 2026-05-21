@@ -105,7 +105,18 @@ public class ProvisionNetAppFolders(
 
         var destinationCheck = await _netAppClient.ListObjectsInBucketAsync(destinationCheckArg);
 
-        if (destinationCheck?.Data.FileData.Any() == true || destinationCheck?.Data.FolderData.Any() == true)
+        if (destinationCheck == null)
+        {
+            _logger.LogError(
+                "Destination preflight check failed (null response) for CaseId: {CaseId}, Destination: {Destination}. CorrelationId: {CorrelationId}",
+                request.CaseId, request.DestinationFolderPath, correlationId);
+            return new ObjectResult("Unable to verify destination folder state. Provisioning aborted.")
+            {
+                StatusCode = (int)HttpStatusCode.ServiceUnavailable
+            };
+        }
+
+        if (destinationCheck.Data.FileData.Any() || destinationCheck.Data.FolderData.Any())
         {
             _logger.LogWarning(
                 "Destination folder already exists for CaseId: {CaseId}, Destination: {Destination}. CorrelationId: {CorrelationId}",

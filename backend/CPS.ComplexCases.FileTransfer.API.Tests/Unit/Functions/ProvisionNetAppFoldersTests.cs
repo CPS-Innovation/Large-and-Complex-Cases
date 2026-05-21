@@ -367,10 +367,10 @@ public class ProvisionNetAppFoldersTests
     }
 
     [Fact]
-    public async Task Run_WhenDestinationCheckReturnsNull_ProceedsToScheduleOrchestrator()
+    public async Task Run_WhenDestinationCheckReturnsNull_Returns503AndDoesNotScheduleOrchestrator()
     {
-        // A null response from the NetApp client for the destination check should be
-        // treated as "nothing exists there" and not block provisioning.
+        // A null response from the NetApp client means the preflight check failed.
+        // We must fail closed — do not proceed to schedule the copy.
         SetupValidRequest();
 
         _netAppClientMock
@@ -379,9 +379,11 @@ public class ProvisionNetAppFoldersTests
             .ReturnsAsync((ListNetAppObjectsDto?)null);
 
         var client = CreateSchedulingClient(out var calls);
-        await _function.Run(CreateHttpRequest(), client.Object);
+        var result = await _function.Run(CreateHttpRequest(), client.Object);
 
-        Assert.Single(calls);
+        var objectResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(503, objectResult.StatusCode);
+        Assert.Empty(calls);
     }
 
     [Fact]
@@ -649,6 +651,12 @@ public class ProvisionNetAppFoldersTests
             .Setup(c => c.ListObjectsInBucketAsync(
                 It.Is<ListObjectsInBucketArg>(a => a.Prefix == subFolder)))
             .ReturnsAsync(MakeListResult([fileInSubfolder], [], nextToken: null));
+
+        // Destination preflight check — return empty so provisioning can proceed.
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(
+                It.Is<ListObjectsInBucketArg>(a => a.Prefix == DestinationFolderPath)))
+            .ReturnsAsync(MakeListResult([], [], nextToken: null));
     }
 
     private Mock<DurableTaskClientStub> CreateSchedulingClient(

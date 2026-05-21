@@ -121,10 +121,12 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
 
             return response.StatusCode switch
             {
-                HttpStatusCode.BadRequest => new BadRequestObjectResult("Invalid request to provision NetApp folders."),
                 HttpStatusCode.Unauthorized => new UnauthorizedObjectResult("Unauthorized to provision NetApp folders."),
+                HttpStatusCode.BadRequest => new BadRequestObjectResult("Invalid request to provision NetApp folders."),
+                HttpStatusCode.Conflict => new ConflictObjectResult(await response.Content.ReadAsStringAsync()),
                 HttpStatusCode.Forbidden => new ForbidResult("Forbidden from provisioning NetApp folders."),
                 HttpStatusCode.NotFound => new NotFoundObjectResult("Template folder not found for provisioning NetApp folders."),
+                HttpStatusCode.ServiceUnavailable => new ObjectResult("NetApp service is currently unavailable.") { StatusCode = (int)HttpStatusCode.ServiceUnavailable },
                 _ => new ObjectResult("An error occurred while provisioning NetApp folders.") { StatusCode = (int)HttpStatusCode.InternalServerError }
             };
         }

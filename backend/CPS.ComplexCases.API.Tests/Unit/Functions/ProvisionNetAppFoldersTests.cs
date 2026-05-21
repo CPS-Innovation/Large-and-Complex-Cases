@@ -464,6 +464,73 @@ public class ProvisionNetAppFoldersTests
     }
 
     [Fact]
+    public async Task Run_WhenFileTransferReturnsConflict_ReturnsConflict()
+    {
+        // Arrange
+        var dto = _fixture.Create<ProvisionNetAppFoldersDto>();
+        var cmsArg = _fixture.Create<DdeiCaseIdArgDto>();
+        var caseResponse = _fixture.Create<CaseDto>();
+        var conflictMessage = "Conflict: resource already exists.";
+
+        SetupValidRequest(dto, cmsArg);
+
+        _ddeiClientMock.Setup(c => c.GetCaseAsync(cmsArg)).ReturnsAsync(caseResponse);
+        _caseMetadataServiceMock.Setup(s => s.GetCaseMetadataForCaseIdAsync(_caseId)).ReturnsAsync((CaseMetadata?)null);
+        _caseNamingServiceMock.Setup(s => s.GenerateCaseName(caseResponse)).ReturnsAsync(_caseNameDto);
+
+        _fileTransferClientMock
+            .Setup(c => c.ProvisionNetAppFoldersAsync(It.IsAny<ProvisionNetAppFoldersRequest>(), _correlationId))
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.Conflict)
+            {
+                Content = new StringContent(conflictMessage, Encoding.UTF8, "text/plain")
+            });
+
+        var request = HttpRequestStubHelper.CreateHttpRequestFor(dto);
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
+
+        // Act
+        var result = await _function.Run(request, functionContext, _caseId);
+
+        // Assert
+        var conflict = Assert.IsType<ConflictObjectResult>(result);
+        Assert.Equal(conflictMessage, conflict.Value?.ToString());
+        _caseMetadataServiceMock.Verify(s => s.CreateNetAppConnectionAsync(It.IsAny<CreateNetAppConnectionDto>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_WhenFileTransferReturnsServiceUnavailable_Returns503()
+    {
+        // Arrange
+        var dto = _fixture.Create<ProvisionNetAppFoldersDto>();
+        var cmsArg = _fixture.Create<DdeiCaseIdArgDto>();
+        var caseResponse = _fixture.Create<CaseDto>();
+
+        SetupValidRequest(dto, cmsArg);
+
+        _ddeiClientMock.Setup(c => c.GetCaseAsync(cmsArg)).ReturnsAsync(caseResponse);
+        _caseMetadataServiceMock.Setup(s => s.GetCaseMetadataForCaseIdAsync(_caseId)).ReturnsAsync((CaseMetadata?)null);
+        _caseNamingServiceMock.Setup(s => s.GenerateCaseName(caseResponse)).ReturnsAsync(_caseNameDto);
+
+        _fileTransferClientMock
+            .Setup(c => c.ProvisionNetAppFoldersAsync(It.IsAny<ProvisionNetAppFoldersRequest>(), _correlationId))
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)
+            {
+                Content = new StringContent("Unable to verify destination folder state. Provisioning aborted.", Encoding.UTF8, "text/plain")
+            });
+
+        var request = HttpRequestStubHelper.CreateHttpRequestFor(dto);
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
+
+        // Act
+        var result = await _function.Run(request, functionContext, _caseId);
+
+        // Assert
+        var objectResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(503, objectResult.StatusCode);
+        _caseMetadataServiceMock.Verify(s => s.CreateNetAppConnectionAsync(It.IsAny<CreateNetAppConnectionDto>()), Times.Never);
+    }
+
+    [Fact]
     public async Task Run_WhenFileTransferReturns202AndOrchestrationFails_Returns500()
     {
         // Arrange
