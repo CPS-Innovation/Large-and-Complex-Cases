@@ -25,7 +25,7 @@ steps:
 - script: |
     newman run ${{parameters.postmanCollectionPath}} \
     --env-var "baseUrl=https://${{parameters.appInstance}}.azurewebsites.net" \
-    --env-var "uiUrl=https://lacc-app-ui-spa-${{parameters.environment}}.azurewebsites.net" \
+    --env-var "uiUrl=$(RedirectUrlLccUi)" \
     --env-var "tenantId=$(TenantId)" \
     --env-var "apiClientId=$(CallingAppValidAudience)" \
     --env-var "aadUsername=$(AadUserName)" \
