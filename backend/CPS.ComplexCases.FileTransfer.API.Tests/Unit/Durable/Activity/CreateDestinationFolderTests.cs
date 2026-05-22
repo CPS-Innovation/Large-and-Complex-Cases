@@ -148,6 +148,22 @@ public class CreateDestinationFolderTests
     }
 
     [Fact]
+    public async Task Run_WhenCreateFolderReturnsFalse_ThrowsInvalidOperationException()
+    {
+        var payload = CreateValidPayload();
+
+        _storageClientMock
+            .Setup(c => c.CreateFolderAsync(
+                It.IsAny<string>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>()))
+            .ReturnsAsync(false);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _activity.Run(payload));
+    }
+
+    [Fact]
     public async Task Run_WhenCreateFolderThrows_ExceptionIsPropagated()
     {
         // Arrange

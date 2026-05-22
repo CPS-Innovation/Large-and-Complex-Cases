@@ -34,7 +34,14 @@ public class CreateDestinationFolder(ILogger<CreateDestinationFolder> logger, IS
 
         try
         {
-            await storageClient.CreateFolderAsync(payload.DestinationFolderPath, null, payload.BearerToken, payload.BucketName);
+            var created = await storageClient.CreateFolderAsync(payload.DestinationFolderPath, null, payload.BearerToken, payload.BucketName);
+
+            if (!created)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to create destination folder '{payload.DestinationFolderPath}' in bucket '{payload.BucketName}'.");
+            }
+
             _logger.LogInformation("Successfully created destination folder: {BucketName}", payload.BucketName);
         }
         catch (Exception ex)
