@@ -5,6 +5,7 @@ public interface IBatchFileItem
     string SourceKey { get; }
     string DestinationPrefix { get; }
     string DestinationFileName { get; }
+    bool IsFolder { get; }
 }
 
 public interface IBatchPayload<TFileItem> where TFileItem : IBatchFileItem
@@ -17,4 +18,5 @@ public interface IBatchPayload<TFileItem> where TFileItem : IBatchFileItem
     string BucketName { get; }
     List<TFileItem> Files { get; }
     Guid ManageMaterialsOperationId { get; }
+    bool IncludeEmptyFolders { get; }
 }

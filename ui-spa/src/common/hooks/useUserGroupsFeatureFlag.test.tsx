@@ -28,6 +28,7 @@ vi.mock("react-router-dom", () => {
 const mockConfig = configModule as {
   FEATURE_FLAG_CASE_DETAILS: boolean;
   FEATURE_FLAG_TRANSFER_MOVE: boolean;
+  FEATURE_FLAG_DISCONNECT_SHARED_DRIVE: boolean;
   PRIVATE_BETA_FEATURE_USER_GROUP2: string;
 };
 
@@ -306,6 +307,143 @@ describe("useUserGroupsFeatureFlag", () => {
         "private_beta_feature_group2";
       const { result } = renderHook(() => useUserGroupsFeatureFlag());
       expect(result?.current?.transferMove).toStrictEqual(false);
+    });
+  });
+
+  describe("disconnect shared drive flag", () => {
+    test("Should return disconnectSharedDrive feature false, if FEATURE_FLAG_DISCONNECT_SHARED_DRIVE is false for normal user", () => {
+      (msalInstanceModule.msalInstance.getAllAccounts as Mock).mockReturnValue([
+        {
+          username: "test_username",
+          name: "test_name",
+          idTokenClaims: {
+            groups: ["private_beta_feature_group2"],
+          },
+        },
+      ]);
+      mockConfig.FEATURE_FLAG_DISCONNECT_SHARED_DRIVE = false;
+      mockConfig.PRIVATE_BETA_FEATURE_USER_GROUP2 =
+        "private_beta_feature_group2";
+      const { result } = renderHook(() => useUserGroupsFeatureFlag());
+      expect(result?.current?.disconnectSharedDrive).toStrictEqual(false);
+    });
+    test("Should return disconnectSharedDrive feature false, if FEATURE_FLAG_DISCONNECT_SHARED_DRIVE is false for automation test user ", () => {
+      (auth.useUserDetails as Mock).mockReturnValue({
+        username: "dev_user@example.org",
+      });
+      (msalInstanceModule.msalInstance.getAllAccounts as Mock).mockReturnValue([
+        {
+          username: "dev_user@example.org",
+          name: "dev_user",
+          idTokenClaims: {
+            groups: ["private_beta_feature_group2"],
+          },
+        },
+      ]);
+      mockConfig.FEATURE_FLAG_DISCONNECT_SHARED_DRIVE = false;
+      mockConfig.PRIVATE_BETA_FEATURE_USER_GROUP2 =
+        "private_beta_feature_group2";
+      const { result } = renderHook(() => useUserGroupsFeatureFlag());
+      expect(result?.current?.disconnectSharedDrive).toStrictEqual(false);
+    });
+    test("Should return disconnectSharedDrive feature false, if FEATURE_FLAG_DISCONNECT_SHARED_DRIVE is true and the user is not added to PRIVATE_BETA_FEATURE_USER_GROUP2 for normal user", () => {
+      (msalInstanceModule.msalInstance.getAllAccounts as Mock).mockReturnValue([
+        {
+          username: "test_username",
+          name: "test_name",
+          idTokenClaims: {
+            groups: ["private_beta_feature_group1"],
+          },
+        },
+      ]);
+      mockConfig.FEATURE_FLAG_DISCONNECT_SHARED_DRIVE = true;
+      mockConfig.PRIVATE_BETA_FEATURE_USER_GROUP2 =
+        "private_beta_feature_group2";
+      const { result } = renderHook(() => useUserGroupsFeatureFlag());
+      expect(result?.current?.disconnectSharedDrive).toStrictEqual(false);
+    });
+    test("Should return disconnectSharedDrive feature true, if FEATURE_FLAG_DISCONNECT_SHARED_DRIVE is true and the user is added to PRIVATE_BETA_FEATURE_USER_GROUP2 for normal user", () => {
+      (msalInstanceModule.msalInstance.getAllAccounts as Mock).mockReturnValue([
+        {
+          username: "test_username",
+          name: "test_name",
+          idTokenClaims: {
+            groups: ["private_beta_feature_group2"],
+          },
+        },
+      ]);
+      mockConfig.FEATURE_FLAG_DISCONNECT_SHARED_DRIVE = true;
+      mockConfig.PRIVATE_BETA_FEATURE_USER_GROUP2 =
+        "private_beta_feature_group2";
+      const { result } = renderHook(() => useUserGroupsFeatureFlag());
+      expect(result?.current?.disconnectSharedDrive).toStrictEqual(true);
+    });
+    test("Should return disconnectSharedDrive feature true, if FEATURE_FLAG_DISCONNECT_SHARED_DRIVE is true even if the user is not added to PRIVATE_BETA_FEATURE_USER_GROUP2 for automation user", () => {
+      (auth.useUserDetails as Mock).mockReturnValue({
+        username: "dev_user@example.org",
+      });
+      (msalInstanceModule.msalInstance.getAllAccounts as Mock).mockReturnValue([
+        {
+          username: "test_username",
+          name: "test_name",
+          idTokenClaims: {
+            groups: ["private_beta_feature_group1"],
+          },
+        },
+      ]);
+      mockConfig.FEATURE_FLAG_DISCONNECT_SHARED_DRIVE = true;
+      mockConfig.PRIVATE_BETA_FEATURE_USER_GROUP2 =
+        "private_beta_feature_group2";
+      const { result } = renderHook(() => useUserGroupsFeatureFlag());
+      expect(result?.current?.disconnectSharedDrive).toStrictEqual(true);
+    });
+    test("Should return disconnectSharedDrive feature true, if it is an automation user with search param disconnect-shared-drive=true, search param take priority for automation user", () => {
+      (auth.useUserDetails as Mock).mockReturnValue({
+        username: "dev_user@example.org",
+      });
+      (router.useSearchParams as Mock).mockReturnValue([
+        new URLSearchParams("disconnect-shared-drive=true"),
+        vi.fn(),
+      ]);
+
+      (msalInstanceModule.msalInstance.getAllAccounts as Mock).mockReturnValue([
+        {
+          username: "test_username",
+          name: "test_name",
+          idTokenClaims: {
+            groups: ["private_beta_feature_group1"],
+          },
+        },
+      ]);
+      mockConfig.FEATURE_FLAG_DISCONNECT_SHARED_DRIVE = false;
+      mockConfig.PRIVATE_BETA_FEATURE_USER_GROUP2 =
+        "private_beta_feature_group2";
+      const { result } = renderHook(() => useUserGroupsFeatureFlag());
+      expect(result?.current?.disconnectSharedDrive).toStrictEqual(true);
+    });
+    test("Should return disconnectSharedDrive feature false, if it is an automation user with search param disconnect-shared-drive=false,search param take priority for automation user", () => {
+      (auth.useUserDetails as Mock).mockReturnValue({
+        username: "dev_user@example.org",
+      });
+      (router.useSearchParams as Mock).mockReturnValue([
+        new URLSearchParams("disconnect-shared-drive=false"),
+        vi.fn(),
+      ]);
+
+      (msalInstanceModule.msalInstance.getAllAccounts as Mock).mockReturnValue([
+        {
+          username: "test_username",
+          name: "test_name",
+          idTokenClaims: {
+            groups: ["private_beta_feature_group1"],
+          },
+        },
+      ]);
+      mockConfig.FEATURE_FLAG_DISCONNECT_SHARED_DRIVE = true;
+      mockConfig.PRIVATE_BETA_FEATURE_USER_GROUP2 =
+        "private_beta_feature_group2";
+      const { result } = renderHook(() => useUserGroupsFeatureFlag());
+      expect(result?.current?.disconnectSharedDrive).toStrictEqual(false);
     });
   });
 });
