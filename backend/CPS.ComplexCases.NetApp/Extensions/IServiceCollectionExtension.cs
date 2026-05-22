@@ -1,26 +1,20 @@
-using System.Net;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
+using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Services;
 using CPS.ComplexCases.NetApp.Telemetry;
 using CPS.ComplexCases.NetApp.Wrappers;
-using Polly;
-using Polly.Contrib.WaitAndRetry;
-using Polly.Wrap;
 
 namespace CPS.ComplexCases.NetApp.Extensions;
 
 public static class IServiceCollectionExtension
 {
-	private const int RetryAttempts = 3;
-	private const int FirstRetryDelaySeconds = 1;
-
 	public static void AddNetAppClient(this IServiceCollection services, IConfiguration configuration)
 	{
 		services.AddDefaultAWSOptions(configuration.GetAWSOptions());
@@ -67,7 +61,7 @@ public static class IServiceCollectionExtension
 		})
 		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment))
 		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
-		.AddPolicyHandler(GetRetryPolicy());
+		.AddResilienceHandler("netapp-retry", p => p.AddStandardHttpResilience());
 
 		services.AddHttpClient<INetAppS3HttpClient, NetAppS3HttpClient>(client =>
 		{
@@ -83,7 +77,7 @@ public static class IServiceCollectionExtension
 		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment)
 		)
 		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
-		.AddPolicyHandler(GetRetryPolicy());
+		.AddResilienceHandler("netapp-s3-retry", p => p.AddStandardHttpResilience());
 
 		services.AddTransient<NetAppStorageClient>();
 	}
@@ -115,30 +109,4 @@ public static class IServiceCollectionExtension
 		}
 	}
 
-	private static AsyncPolicyWrap<HttpResponseMessage> GetRetryPolicy()
-	{
-		var bulkheadPolicy = Policy.BulkheadAsync<HttpResponseMessage>(
-			maxParallelization: 30,
-			maxQueuingActions: int.MaxValue
-		);
-
-		// https://learn.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/implement-http-call-retries-exponential-backoff-polly#add-a-jitter-strategy-to-the-retry-policy
-		var delay = Backoff.DecorrelatedJitterBackoffV2(
-			medianFirstRetryDelay: TimeSpan.FromSeconds(FirstRetryDelaySeconds),
-			retryCount: RetryAttempts);
-
-		static bool responseStatusCodePredicate(HttpResponseMessage response) =>
-			response.StatusCode >= HttpStatusCode.InternalServerError
-			|| response.StatusCode == HttpStatusCode.TooManyRequests;
-
-		static bool methodPredicate(HttpResponseMessage response) =>
-			response.RequestMessage?.Method != HttpMethod.Post
-			&& response.RequestMessage?.Method != HttpMethod.Put;
-
-		var retryPolicy = Policy<HttpResponseMessage>
-			.HandleResult(r => responseStatusCodePredicate(r) && methodPredicate(r))
-			.WaitAndRetryAsync(delay);
-
-		return Policy.WrapAsync(bulkheadPolicy, retryPolicy);
-	}
 }

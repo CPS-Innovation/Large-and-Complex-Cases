@@ -118,7 +118,7 @@ try {
 }
 catch {
     Write-Host "ERROR .NET SDK not found" -ForegroundColor Red
-    Write-Host "Please install .NET 8 SDK from https://dotnet.microsoft.com/download" -ForegroundColor Yellow
+    Write-Host "Please install .NET 10 SDK from https://dotnet.microsoft.com/download" -ForegroundColor Yellow
     exit 1
 }
 

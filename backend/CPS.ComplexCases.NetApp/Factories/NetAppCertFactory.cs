@@ -28,7 +28,7 @@ public class NetAppCertFactory(ILogger<NetAppCertFactory> logger, IOptions<NetAp
             try
             {
                 var rootCaBytes = Convert.FromBase64String(rootCaBase64);
-                var rootCaCert = new X509Certificate2(rootCaBytes);
+                var rootCaCert = X509CertificateLoader.LoadCertificate(rootCaBytes);
                 _trustedCaCertificates.Add(rootCaCert);
             }
             catch (Exception ex)
@@ -46,7 +46,7 @@ public class NetAppCertFactory(ILogger<NetAppCertFactory> logger, IOptions<NetAp
             try
             {
                 var issuingCaBytes = Convert.FromBase64String(issuingCaBase64);
-                var issuingCaCert = new X509Certificate2(issuingCaBytes);
+                var issuingCaCert = X509CertificateLoader.LoadCertificate(issuingCaBytes);
                 _trustedCaCertificates.Add(issuingCaCert);
             }
             catch (Exception ex)
@@ -64,7 +64,7 @@ public class NetAppCertFactory(ILogger<NetAppCertFactory> logger, IOptions<NetAp
             try
             {
                 var issuingCa2Bytes = Convert.FromBase64String(issuingCa2Base64);
-                var issuingCa2Cert = new X509Certificate2(issuingCa2Bytes);
+                var issuingCa2Cert = X509CertificateLoader.LoadCertificate(issuingCa2Bytes);
                 _trustedCaCertificates.Add(issuingCa2Cert);
             }
             catch (Exception ex)
