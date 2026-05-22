@@ -6,7 +6,7 @@ public interface IFileTransferClient
 {
     Task<HttpResponseMessage> InitiateFileTransferAsync(TransferRequest transferRequest, Guid correlationId);
     Task<HttpResponseMessage> ListFilesForTransferAsync(ListFilesForTransferRequest request, Guid correlationId);
-    Task<HttpResponseMessage> GetFileTransferStatusAsync(string transferId, Guid correlationId);
+    Task<HttpResponseMessage> GetFileTransferStatusAsync(string transferId, Guid correlationId, string? ifNoneMatch = null);
     Task<HttpResponseMessage> RenameNetAppMaterialAsync(RenameNetAppMaterialRequest request, Guid correlationId);
     Task<HttpResponseMessage> InitiateBatchCopyAsync(CopyNetAppBatchRequest request, Guid correlationId);
     Task<HttpResponseMessage> InitiateBatchMoveAsync(MoveNetAppBatchRequest request, Guid correlationId);

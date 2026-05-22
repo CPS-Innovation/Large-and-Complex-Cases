@@ -476,7 +476,10 @@ export const initiateFileTransfer = async (
   return result;
 };
 
-export const getTransferStatus = async (transferId: string) => {
+export const getTransferStatus = async (
+  transferId: string,
+  etag?: string,
+): Promise<{ data: TransferStatusResponse | null; etag: string | null }> => {
   const url = `${GATEWAY_BASE_URL}/api/v1/filetransfer/${transferId}/status`;
 
   const response = await fetch(url, {
@@ -484,19 +487,25 @@ export const getTransferStatus = async (transferId: string) => {
     credentials: "include",
     headers: {
       ...(await buildCommonHeaders()),
+      ...(etag ? { "If-None-Match": etag } : {}),
     },
   });
+
+  if (response.status === 304) {
+    return { data: null, etag: etag ?? null };
+  }
 
   if (!response.ok) {
     throw new ApiError(`Getting case transfer status failed`, url, response);
   }
+
   const result = await parseAndValidateResponse<TransferStatusResponse>(
     response,
     url,
     transferStatusResponseSchema,
     "transferStatusResponseSchema",
   );
-  return result;
+  return { data: result, etag: response.headers.get("ETag") };
 };
 
 export const handleFileTransferClear = async (transferId: string) => {

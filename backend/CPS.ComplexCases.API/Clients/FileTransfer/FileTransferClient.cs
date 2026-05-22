@@ -27,12 +27,12 @@ public class FileTransferClient(IRequestFactory requestFactory, HttpClient httpC
             correlationId,
             new StringContent(JsonSerializer.Serialize(transferRequest), Encoding.UTF8, ContentType.ApplicationJson));
     }
-    public async Task<HttpResponseMessage> GetFileTransferStatusAsync(string transferId, Guid correlationId)
+    public async Task<HttpResponseMessage> GetFileTransferStatusAsync(string transferId, Guid correlationId, string? ifNoneMatch = null)
     {
-        return await SendRequestAsync(
-            HttpMethod.Get,
-            $"transfer/{transferId}/status",
-            correlationId);
+        var request = _requestFactory.Create(HttpMethod.Get, $"transfer/{transferId}/status", correlationId);
+        if (!string.IsNullOrEmpty(ifNoneMatch))
+            request.Headers.TryAddWithoutValidation("If-None-Match", ifNoneMatch);
+        return await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
     }
 
     public async Task<HttpResponseMessage> RenameNetAppMaterialAsync(RenameNetAppMaterialRequest request, Guid correlationId)

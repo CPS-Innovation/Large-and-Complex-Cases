@@ -7,6 +7,11 @@ vi.mock("../../apis/gateway-api", () => ({
   getTransferStatus: vi.fn(),
 }));
 
+const mockStatus = (status: string) => ({
+  data: { status },
+  etag: null,
+});
+
 describe("pollTransferStatus", async () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -18,9 +23,7 @@ describe("pollTransferStatus", async () => {
     const handleResponse = vi.fn();
     const handleError = vi.fn();
     const shouldStopPolling = vi.fn(() => --stopAfter <= 0);
-    (getTransferStatus as Mock).mockResolvedValue({
-      status: "InProgress",
-    });
+    (getTransferStatus as Mock).mockResolvedValue(mockStatus("InProgress"));
 
     pollTransferStatus(
       "id-1",
@@ -42,9 +45,7 @@ describe("pollTransferStatus", async () => {
     const handleResponse = vi.fn();
     const handleError = vi.fn();
     const shouldStopPolling = vi.fn(() => false);
-    (getTransferStatus as Mock).mockResolvedValue({
-      status: "Initiated",
-    });
+    (getTransferStatus as Mock).mockResolvedValue(mockStatus("Initiated"));
 
     pollTransferStatus(
       "id-1",
@@ -60,26 +61,20 @@ describe("pollTransferStatus", async () => {
     expect(handleResponse).to.toHaveBeenCalledWith({ status: "Initiated" });
     expect(getTransferStatus).to.toHaveBeenCalledTimes(1);
     expect(handleError).to.toHaveBeenCalledTimes(0);
-    (getTransferStatus as Mock).mockResolvedValue({
-      status: "Initiated",
-    });
+    (getTransferStatus as Mock).mockResolvedValue(mockStatus("Initiated"));
     await vi.advanceTimersByTimeAsync(99);
     expect(shouldStopPolling).to.toHaveBeenCalledTimes(2);
     expect(handleResponse).to.toHaveBeenCalledTimes(2);
     expect(getTransferStatus).to.toHaveBeenCalledTimes(2);
     expect(handleError).to.toHaveBeenCalledTimes(0);
-    (getTransferStatus as Mock).mockResolvedValue({
-      status: "InProgress",
-    });
+    (getTransferStatus as Mock).mockResolvedValue(mockStatus("InProgress"));
     await vi.advanceTimersByTimeAsync(99);
     expect(shouldStopPolling).to.toHaveBeenCalledTimes(3);
     expect(handleResponse).to.toHaveBeenCalledTimes(3);
     expect(handleResponse).to.toHaveBeenCalledWith({ status: "InProgress" });
     expect(getTransferStatus).to.toHaveBeenCalledTimes(3);
     expect(handleError).to.toHaveBeenCalledTimes(0);
-    (getTransferStatus as Mock).mockResolvedValue({
-      status: "Completed",
-    });
+    (getTransferStatus as Mock).mockResolvedValue(mockStatus("Completed"));
     await vi.advanceTimersByTimeAsync(99);
     expect(shouldStopPolling).to.toHaveBeenCalledTimes(4);
     expect(handleResponse).to.toHaveBeenCalledWith({ status: "Completed" });
@@ -118,18 +113,14 @@ describe("pollTransferStatus", async () => {
     expect(handleResponse).to.toHaveBeenCalledTimes(0);
     expect(getTransferStatus).to.toHaveBeenCalledTimes(1);
     expect(handleError).to.toHaveBeenCalledTimes(0);
-    (getTransferStatus as Mock).mockResolvedValue({
-      status: "Initiated",
-    });
+    (getTransferStatus as Mock).mockResolvedValue(mockStatus("Initiated"));
     await vi.advanceTimersByTimeAsync(99);
     expect(shouldStopPolling).to.toHaveBeenCalledTimes(2);
     expect(handleResponse).to.toHaveBeenCalledTimes(1);
     expect(getTransferStatus).to.toHaveBeenCalledTimes(2);
     expect(handleError).to.toHaveBeenCalledTimes(0);
     expect(handleError).to.toHaveBeenCalledTimes(0);
-    (getTransferStatus as Mock).mockResolvedValue({
-      status: "Completed",
-    });
+    (getTransferStatus as Mock).mockResolvedValue(mockStatus("Completed"));
     await vi.advanceTimersByTimeAsync(99);
     expect(shouldStopPolling).to.toHaveBeenCalledTimes(3);
     expect(handleResponse).to.toHaveBeenCalledTimes(2);
@@ -169,9 +160,7 @@ describe("pollTransferStatus", async () => {
         statusText: "notFound",
       }),
     );
-    (getTransferStatus as Mock).mockResolvedValue({
-      status: "Initiated",
-    });
+    (getTransferStatus as Mock).mockResolvedValue(mockStatus("Initiated"));
     await vi.advanceTimersByTimeAsync(99);
     expect(shouldStopPolling).to.toHaveBeenCalledTimes(1);
     expect(handleResponse).to.toHaveBeenCalledTimes(0);
