@@ -30,23 +30,21 @@ parameters:
     default: ''
 
 stages:
-- stage: Approve_Deployment_${{ parameters.environment }}
-  displayName: 'LACC ${{ parameters.environment }} - Approve Deployment'
-  condition: and(succeeded(), ${{ eq(parameters.requireValidation, true) }})
-  jobs:
-  - template: ./manual-validation-jobs.yml
-    parameters:
-      instructions: 'Please verify the deployment to the lower environment worked as expected before approving deployment to ${{parameters.environment}}.'
-      notifyUsers: ${{ parameters.notifyUsers }}
-      approvers: ${{ parameters.approvers }}
-      agentPool: ${{ parameters.agentPool }}
+- ${{ if eq(parameters.requireValidation, true) }}:
+  - stage: Approve_Deployment_${{ parameters.environment }}
+    displayName: 'LACC ${{ parameters.environment }} - Approve Deployment'
+    jobs:
+    - template: ./manual-validation-jobs.yml
+      parameters:
+        instructions: 'Please verify the deployment to the lower environment worked as expected before approving deployment to ${{parameters.environment}}.'
+        notifyUsers: ${{ parameters.notifyUsers }}
+        approvers: ${{ parameters.approvers }}
+        agentPool: ${{ parameters.agentPool }}
 
 - stage: Build_Deploy_${{ parameters.environment }}
   displayName: '${{ parameters.environment }} - Build & Deploy Web App'
   ${{ if eq(parameters.requireValidation, true) }}:
     dependsOn: Approve_Deployment_${{ parameters.environment }}
-  ${{ else }}:
-    dependsOn: []
   variables:
     buildArtifact: 'lacc-ui-${{ parameters.environment }}-drop'
   jobs:
@@ -90,6 +88,7 @@ stages:
             VITE_FEATURE_FLAG_TRANSFER_MOVE: $(VITE_FEATURE_FLAG_TRANSFER_MOVE)
             VITE_FEATURE_FLAG_GLOBAL_NAV: $(VITE_FEATURE_FLAG_GLOBAL_NAV)
             VITE_GLOBAL_NAV_SCRIPT_URL: $(VITE_GLOBAL_NAV_SCRIPT_URL)
+            VITE_FEATURE_FLAG_DISCONNECT_SHARED_DRIVE: $(VITE_FEATURE_FLAG_DISCONNECT_SHARED_DRIVE)
 
         - task: PublishPipelineArtifact@1
           displayName: 'Publish Web App Package'

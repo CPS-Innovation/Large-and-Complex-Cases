@@ -1,12 +1,15 @@
 import { test } from "../fixtures/test-fixtures-default-large";
+import { loadEnvConfig } from "../helpers/env-config";
 import { CaseSearchPage } from "../pages/CaseSearchPage";
 import { SearchResultsPage } from "../pages/SearchResultsPage";
 import { CaseManagementPage } from "../pages/CaseManagementPage";
 import { TransferMaterialsTab } from "../pages/TransferMaterialsTab";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
 
-test.describe("Egress to NetApp Copy - Large File 200MB (Default Mode)", () => {
-  test("should copy a 200MB file from Egress to NetApp using existing case", async ({
+const fileSize = loadEnvConfig().largeTestFileSizeMb;
+
+test.describe(`Egress to NetApp Copy - Large File ${fileSize}MB (Default Mode)`, () => {
+  test(`should copy a ${fileSize}MB file from Egress to NetApp using existing case`, async ({
     page,
     testData,
   }) => {

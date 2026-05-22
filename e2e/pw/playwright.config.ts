@@ -12,7 +12,11 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: 1,
-  reporter: [["list"], ["html", { outputFolder: "./playwright-report" }]],
+  reporter: [
+    ["list"], 
+    ["html", { outputFolder: "./playwright-report" }],
+    ["junit", { outputFile: "./playwright-report/e2e-test-report.xml" }]
+  ],
   timeout: 120_000,
   expect: { timeout: 120_000 },
   use: {

@@ -56,7 +56,7 @@ const TransferResolveFilePathPage = () => {
 
   useEffect(() => {
     setAriaLiveText(
-      "indexing transfer error,  shorten file names or folder paths",
+      "indexing transfer error, file paths are too long to transfer",
     );
   }, []);
 
@@ -197,31 +197,36 @@ const TransferResolveFilePathPage = () => {
         )}
         <div className={styles.contentWrapper}>
           <h1 className="govuk-heading-xl">
-            Shorten file names or folder paths
+            File paths are too long to transfer
           </h1>
           <InsetText data-testid="resolve-file-path-inset-text">
             {largePathFilesCount === 1 ? (
               <p>
-                <b>1 file</b> is longer than the 260 character limit{" "}
+                <b>1 file</b> file exceed the 260 character limit.
               </p>
             ) : (
               <p>
-                <b>{largePathFilesCount} files</b> are longer than the 260
-                character limit{" "}
+                <b>{largePathFilesCount} files</b> exceed the 260 character
+                limit.
               </p>
             )}
 
             <div>
-              <p>The 260 character limit includes:</p>
+              <p>The full file path includes:</p>
               <ul>
-                <li> the file name </li>
-                <li> all the folder names in the file path </li>
+                <li>the destination folder</li>
+                <li> the existing folder structure</li>
+                <li> the file name</li>
               </ul>
             </div>
-            <p>
-              You must shorten the file name or move the file before you can
-              start the transfer.
-            </p>
+
+            <div>
+              <p>To continue, you can:</p>
+              <ul>
+                <li>shorten the file names</li>
+                <li>move the files to a folder with a shorter path</li>
+              </ul>
+            </div>
           </InsetText>
 
           <div>

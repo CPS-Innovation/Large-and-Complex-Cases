@@ -47,7 +47,7 @@ jobs:
           workingDirectory: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/test-automation-cleanup'
           script: |
             $folders = @(
-              '3. Unused - disclosed'
+              '2. Counsel only'
               '4. Served Evidence'
             )
 

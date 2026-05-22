@@ -1,16 +1,28 @@
 import { BackLink } from "../govuk";
 import { Link } from "react-router";
+import { useLocation } from "react-router-dom";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
+import { SharedDriveConnectFailureRouteState } from "../../common/types/SharedDriveConnectFailureRouteState";
+import { SharedDriveConnectRouteState } from "../../common/types/SharedDriveConnectRouteState";
 import styles from "./NetAppConnectFailurePage.module.scss";
-type NetAppConnectFailurePageProps = {
-  backLinkUrl: string;
-};
-const NetAppConnectFailurePage: React.FC<NetAppConnectFailurePageProps> = ({
-  backLinkUrl,
-}) => {
+
+const NetAppConnectFailurePage: React.FC = () => {
+  const {
+    state,
+  }: {
+    state: SharedDriveConnectFailureRouteState;
+  } = useLocation();
+  const { backLinkUrl, searchQueryString, netappRootFolderPath } = state;
+  const backLinkPayload: SharedDriveConnectRouteState = {
+    isRouteValid: true,
+    searchQueryString,
+    netappRootFolderPath,
+  };
   return (
     <div>
-      <BackLink to={backLinkUrl}>Back</BackLink>
+      <BackLink to={backLinkUrl} state={backLinkPayload}>
+        Back
+      </BackLink>
       <PageContentWrapper>
         <div className={styles.contentWrapper}>
           <h1 className="govuk-heading-xl">
