@@ -13,10 +13,10 @@ variables:
   - group: lacc-deployment-global
   - name: buildConfiguration
     value: 'Release'
-- name: dotNetVersion
-  value: '10.x'
-- name: efVersion
-  value: '10.0.*'
+  - name: dotNetVersion
+    value: '10.x'
+  - name: efVersion
+    value: '10.0.*'
   - name: asposeLicenceFileName
     value: 'Aspose.Total.NET.lic'
 
