@@ -501,31 +501,84 @@ public class ProvisionNetAppFoldersTests
     }
 
     [Fact]
-    public async Task Run_WhenNetAppClientReturnsNullResponse_ReturnsBadRequest()
+    public async Task Run_WhenNetAppClientReturnsNullResponse_Returns503AndDoesNotScheduleOrchestrator()
     {
-        // When the NetApp client returns null, ListFilesInFolder returns null/empty
-        // and Run short-circuits with a BadRequest before scheduling the orchestrator.
+        // A null response from the NetApp client during template listing means the list
+        // call failed — we must fail closed rather than treat it as an empty template.
         SetupValidRequest();
         _netAppClientMock
             .Setup(c => c.ListObjectsInBucketAsync(It.IsAny<ListObjectsInBucketArg>()))
             .ReturnsAsync((ListNetAppObjectsDto?)null);
 
-        var result = await _function.Run(CreateHttpRequest(), _durableClientStub);
+        var client = CreateSchedulingClient(out var calls);
+        var result = await _function.Run(CreateHttpRequest(), client.Object);
 
-        Assert.IsType<BadRequestObjectResult>(result);
+        var objectResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(503, objectResult.StatusCode);
+        Assert.Empty(calls);
     }
 
     [Fact]
-    public async Task ListFilesInFolder_WhenResponseIsNull_ReturnsEmptyList()
+    public async Task Run_WhenNestedFolderListingReturnsNull_Returns503AndDoesNotScheduleOrchestrator()
     {
+        // The root template listing succeeds and returns a subfolder, but the recursive
+        // listing for that subfolder fails (null). We must fail closed — partial template
+        // enumeration must not result in a copy being scheduled.
+        const string subFolder = "_templates/appeal/Evidence/";
+        SetupValidRequest();
+
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(
+                It.Is<ListObjectsInBucketArg>(a => a.Prefix == TemplateName)))
+            .ReturnsAsync(MakeListResult([], [subFolder], nextToken: null));
+
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(
+                It.Is<ListObjectsInBucketArg>(a => a.Prefix == subFolder)))
+            .ReturnsAsync((ListNetAppObjectsDto?)null);
+
+        var client = CreateSchedulingClient(out var calls);
+        var result = await _function.Run(CreateHttpRequest(), client.Object);
+
+        var objectResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(503, objectResult.StatusCode);
+        Assert.Empty(calls);
+    }
+
+    [Fact]
+    public async Task ListFilesInFolder_WhenResponseIsNull_ReturnsNull()
+    {
+        // A null response signals a listing failure; null propagates to the caller
+        // so that Run can return 503 rather than treating it as an empty folder.
         _netAppClientMock
             .Setup(c => c.ListObjectsInBucketAsync(It.IsAny<ListObjectsInBucketArg>()))
             .ReturnsAsync((ListNetAppObjectsDto?)null);
 
         var result = await _function.ListFilesInFolder(TemplateName, BearerToken, BucketName);
 
-        Assert.NotNull(result);
-        Assert.Empty(result);
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task ListFilesInFolder_WhenNestedFolderListingReturnsNull_ReturnsNull()
+    {
+        // Root listing succeeds and returns a subfolder, but the recursive call for
+        // that subfolder fails. The failure must propagate as null, not partial results.
+        const string subFolder = "_templates/appeal/Evidence/";
+
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(
+                It.Is<ListObjectsInBucketArg>(a => a.Prefix == TemplateName)))
+            .ReturnsAsync(MakeListResult([], [subFolder], nextToken: null));
+
+        _netAppClientMock
+            .Setup(c => c.ListObjectsInBucketAsync(
+                It.Is<ListObjectsInBucketArg>(a => a.Prefix == subFolder)))
+            .ReturnsAsync((ListNetAppObjectsDto?)null);
+
+        var result = await _function.ListFilesInFolder(TemplateName, BearerToken, BucketName);
+
+        Assert.Null(result);
     }
 
     [Fact]

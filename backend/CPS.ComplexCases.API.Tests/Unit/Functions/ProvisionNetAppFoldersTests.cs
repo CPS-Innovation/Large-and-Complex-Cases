@@ -423,6 +423,50 @@ public class ProvisionNetAppFoldersTests
     }
 
     [Fact]
+    public async Task Run_WhenFileTransferReturns200AndStatusIsInitiallyInProgress_PollsUntilCompleted()
+    {
+        var dto = _fixture.Create<ProvisionNetAppFoldersDto>();
+        var cmsArg = _fixture.Create<DdeiCaseIdArgDto>();
+        var caseResponse = _fixture.Create<CaseDto>();
+        var transferId = Guid.NewGuid();
+
+        SetupValidRequest(dto, cmsArg);
+
+        _ddeiClientMock.Setup(c => c.GetCaseAsync(cmsArg)).ReturnsAsync(caseResponse);
+        _caseMetadataServiceMock.Setup(s => s.GetCaseMetadataForCaseIdAsync(_caseId)).ReturnsAsync((CaseMetadata?)null);
+        _caseNamingServiceMock.Setup(s => s.GenerateCaseName(caseResponse)).ReturnsAsync(_caseNameDto);
+
+        _fileTransferClientMock
+            .Setup(c => c.ProvisionNetAppFoldersAsync(It.IsAny<ProvisionNetAppFoldersRequest>(), _correlationId))
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(new { id = transferId }), Encoding.UTF8, "application/json")
+            });
+
+        _fileTransferClientMock
+            .SetupSequence(c => c.GetFileTransferStatusAsync(transferId.ToString(), _correlationId))
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(new { status = "InProgress" }), Encoding.UTF8, "application/json")
+            })
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(new { status = "Completed" }), Encoding.UTF8, "application/json")
+            });
+
+        var request = HttpRequestStubHelper.CreateHttpRequestFor(dto);
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, _cmsAuthValues, _username, _bearerToken);
+
+        // Act
+        var result = await _function.Run(request, functionContext, _caseId);
+
+        // Assert
+        Assert.IsType<OkObjectResult>(result);
+        _fileTransferClientMock.Verify(c => c.GetFileTransferStatusAsync(transferId.ToString(), _correlationId), Times.Exactly(2));
+        _caseMetadataServiceMock.Verify(s => s.CreateNetAppConnectionAsync(It.IsAny<CreateNetAppConnectionDto>()), Times.Once);
+    }
+
+    [Fact]
     public async Task Run_WhenFileTransferReturns202_PollsForCompletion()
     {
         // Arrange

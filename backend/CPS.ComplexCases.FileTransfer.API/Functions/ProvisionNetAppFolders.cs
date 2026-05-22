@@ -71,21 +71,28 @@ public class ProvisionNetAppFolders(
             request.BearerToken ?? throw new ArgumentNullException(nameof(request.BearerToken), "Bearer token cannot be null."),
             request.BucketName ?? throw new ArgumentNullException(nameof(request.BucketName), "Bucket name cannot be null."));
 
-        if (files != null && files.Any())
+        if (files == null)
         {
-            templateObjects.AddRange(files.Select(file => new FileTransferInfo
+            _logger.LogError("Template listing failed (null response) for TemplateName: {TemplateName}. CorrelationId: {CorrelationId}",
+                request.TemplateName, correlationId);
+            return new ObjectResult("Unable to list template folder contents. Provisioning aborted.")
             {
-                SourcePath = file.SourcePath,
-                RelativePath = file.SourcePath.RemovePathPrefix(request.TemplateName)
-            }));
+                StatusCode = (int)HttpStatusCode.ServiceUnavailable
+            };
         }
-        else
+
+        if (!files.Any())
         {
             _logger.LogWarning("No files found in the specified template folder. CorrelationId: {CorrelationId}, TemplateName: {TemplateName}",
                 correlationId, request.TemplateName);
-
             return new BadRequestObjectResult($"No files found in the specified template folder: {request.TemplateName}");
         }
+
+        templateObjects.AddRange(files.Select(file => new FileTransferInfo
+        {
+            SourcePath = file.SourcePath,
+            RelativePath = file.SourcePath.RemovePathPrefix(request.TemplateName)
+        }));
 
         foreach (var obj in templateObjects)
         {
@@ -218,7 +225,7 @@ public class ProvisionNetAppFolders(
 
             if (response == null)
             {
-                return filesForTransfer;
+                return null;
             }
 
             // Add all files from current level
@@ -242,10 +249,11 @@ public class ProvisionNetAppFolders(
                     });
 
                     var subFiles = await ListFilesInFolder(folderPath!, bearerToken, bucketName);
-                    if (subFiles != null)
+                    if (subFiles == null)
                     {
-                        filesForTransfer.AddRange(subFiles);
+                        return null;
                     }
+                    filesForTransfer.AddRange(subFiles);
                 }
             }
 

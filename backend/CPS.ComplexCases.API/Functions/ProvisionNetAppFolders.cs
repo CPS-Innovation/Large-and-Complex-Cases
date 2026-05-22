@@ -135,9 +135,10 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
         var parsedResponse = JsonSerializer.Deserialize<JsonElement>(responseBody);
         var transferId = parsedResponse.GetProperty("id").GetString() ?? string.Empty;
 
-        var finalStatus = response.StatusCode == HttpStatusCode.Accepted
-            ? await PollForTerminalStatusAsync(transferId, context.CorrelationId)
-            : await GetTransferStatusAsync(transferId, context.CorrelationId);
+        // Always poll for a terminal status. When File Transfer returns 200 the durable
+        // orchestration has completed, but FinalizeTransfer signals the transfer entity
+        // asynchronously, so the entity may still show InProgress on the first read.
+        var finalStatus = await PollForTerminalStatusAsync(transferId, context.CorrelationId);
 
         if (finalStatus == null || finalStatus == "Initiated" || finalStatus == "InProgress" || finalStatus == "PartiallyCompleted")
         {
