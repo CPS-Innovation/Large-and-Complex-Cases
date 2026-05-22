@@ -25,4 +25,4 @@ steps:
       echo "Running yamllint..."
       yamllint . -f colored
     workingDirectory: $(System.DefaultWorkingDirectory)/devops-pipelines
-    displayName: Validate YAML files
+    displayName: Validate YAML syntax
