@@ -82,11 +82,11 @@ steps:
         inputs:
           command: "test"
           projects: "${{ parameters.projectPath }}"
-          arguments: |
+          arguments: >
             --configuration ${{ parameters.buildConfiguration }}
             --no-build
-            --collect:"XPlat Code Coverage;Format=cobertura"
-            --settings backend/CodeCoverage.runsettings
+            --collect "XPlat Code Coverage;Format=cobertura"
+            --settings "$(Build.SourcesDirectory)/backend/CodeCoverage.runsettings"
           publishTestResults: true
           testResultsFormat: "VSTest"
           testResultsFiles: "**/*.trx"
@@ -109,7 +109,7 @@ steps:
           command: "publish"
           projects: "${{ parameters.projectPath }}"
           publishWebProjects: false
-          arguments: |
+          arguments: >
             --configuration ${{ parameters.buildConfiguration }}
             --output $(Build.ArtifactStagingDirectory)/${{ parameters.projectName }}
             --no-restore
