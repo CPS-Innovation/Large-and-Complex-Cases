@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using AutoFixture;
+using CPS.ComplexCases.ActivityLog.Enums;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Constants;
-using CPS.ComplexCases.API.Functions;
+using CPS.ComplexCases.API.Handlers;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
 using CPS.ComplexCases.Common.Enums;
 using CPS.ComplexCases.Common.Handlers;
@@ -11,25 +12,25 @@ using CPS.ComplexCases.Common.Models.Results;
 using CPS.ComplexCases.Common.Services;
 using Moq;
 
-namespace CPS.ComplexCases.API.Tests.Unit.Functions
+namespace CPS.ComplexCases.API.Tests.Unit.Handlers
 {
-    public class DisconnectNetAppConnectionTests
+    public class DisconnectConnectionHandlerTests
     {
-        private readonly Mock<ILogger<DisconnectNetAppConnection>> _loggerMock;
+        private readonly Mock<ILogger<DisconnectConnectionHandler>> _loggerMock;
         private readonly Mock<ICaseMetadataService> _caseMetadataServiceMock;
         private readonly Mock<IActivityLogService> _activityLogServiceMock;
         private readonly Mock<IInitializationHandler> _initializationHandlerMock;
-        private readonly DisconnectNetAppConnection _function;
+        private readonly DisconnectConnectionHandler _handler;
         private readonly Fixture _fixture;
         private readonly Guid _testCorrelationId;
         private readonly string _testUsername;
         private readonly string _testCmsAuthValues;
         private readonly string _testBearerToken;
 
-        public DisconnectNetAppConnectionTests()
+        public DisconnectConnectionHandlerTests()
         {
             _fixture = new Fixture();
-            _loggerMock = new Mock<ILogger<DisconnectNetAppConnection>>();
+            _loggerMock = new Mock<ILogger<DisconnectConnectionHandler>>();
             _caseMetadataServiceMock = new Mock<ICaseMetadataService>();
             _activityLogServiceMock = new Mock<IActivityLogService>();
             _initializationHandlerMock = new Mock<IInitializationHandler>();
@@ -39,43 +40,43 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _testCmsAuthValues = _fixture.Create<string>();
             _testBearerToken = _fixture.Create<string>();
 
-            _function = new DisconnectNetAppConnection(
+            _handler = new DisconnectConnectionHandler(
                 _loggerMock.Object,
+                _initializationHandlerMock.Object,
                 _caseMetadataServiceMock.Object,
-                _activityLogServiceMock.Object,
-                _initializationHandlerMock.Object);
+                _activityLogServiceMock.Object);
         }
 
         [Fact]
-        public async Task Run_WhenCaseIdIsMissing_ReturnsBadRequest()
+        public async Task RunAsync_WhenCaseIdIsMissing_ReturnsBadRequest()
         {
             // Arrange
             var request = HttpRequestStubHelper.CreateHttpRequest(_testCorrelationId);
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
-            var result = await _function.Run(request, functionContext);
+            var result = await _handler.RunAsync(request, functionContext, StorageConnectionType.NetApp);
 
             // Assert
             Assert.IsType<BadRequestObjectResult>(result);
         }
 
         [Fact]
-        public async Task Run_WhenCaseIdIsNotAnInteger_ReturnsBadRequest()
+        public async Task RunAsync_WhenCaseIdIsNotAnInteger_ReturnsBadRequest()
         {
             // Arrange
             var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameter(InputParameters.CaseId, "not-an-int", _testCorrelationId);
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
-            var result = await _function.Run(request, functionContext);
+            var result = await _handler.RunAsync(request, functionContext, StorageConnectionType.NetApp);
 
             // Assert
             Assert.IsType<BadRequestObjectResult>(result);
         }
 
         [Fact]
-        public async Task Run_WhenNoConnectionExists_ReturnsNotFound()
+        public async Task RunAsync_WhenNoConnectionExists_ReturnsNotFound()
         {
             // Arrange
             var caseId = _fixture.Create<int>();
@@ -87,7 +88,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
-            var result = await _function.Run(request, functionContext);
+            var result = await _handler.RunAsync(request, functionContext, StorageConnectionType.NetApp);
 
             // Assert
             var notFound = Assert.IsType<NotFoundObjectResult>(result);
@@ -95,7 +96,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         }
 
         [Fact]
-        public async Task Run_WhenTransferIsActive_ReturnsConflict()
+        public async Task RunAsync_WhenTransferIsActive_ReturnsConflict()
         {
             // Arrange
             var caseId = _fixture.Create<int>();
@@ -107,7 +108,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
-            var result = await _function.Run(request, functionContext);
+            var result = await _handler.RunAsync(request, functionContext, StorageConnectionType.NetApp);
 
             // Assert
             var conflict = Assert.IsType<ConflictObjectResult>(result);
@@ -115,95 +116,47 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         }
 
         [Fact]
-        public async Task Run_WhenNetAppFolderPathIsNull_ReturnsBadRequest()
+        public async Task RunAsync_WhenSuccessful_ReturnsOk()
         {
             // Arrange
             var caseId = _fixture.Create<int>();
+            var clearedPath = _fixture.Create<string>();
             _caseMetadataServiceMock
                 .Setup(x => x.ClearNetAppFolderPathAsync(caseId))
-                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.NetAppFolderPathIsNull });
+                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = clearedPath });
 
             var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameter(InputParameters.CaseId, caseId.ToString(), _testCorrelationId);
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
-            var result = await _function.Run(request, functionContext);
-
-            // Assert
-            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Contains(caseId.ToString(), badRequest.Value?.ToString());
-        }
-
-        [Fact]
-        public async Task Run_WhenSuccessful_ReturnsOk()
-        {
-            // Arrange
-            var caseId = _fixture.Create<int>();
-            var folderPath = _fixture.Create<string>();
-            _caseMetadataServiceMock
-                .Setup(x => x.ClearNetAppFolderPathAsync(caseId))
-                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = folderPath });
-
-            var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameter(InputParameters.CaseId, caseId.ToString(), _testCorrelationId);
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
-
-            // Act
-            var result = await _function.Run(request, functionContext);
+            var result = await _handler.RunAsync(request, functionContext, StorageConnectionType.NetApp);
 
             // Assert
             Assert.IsType<OkResult>(result);
         }
 
         [Fact]
-        public async Task Run_WhenSuccessful_CreatesActivityLog()
+        public async Task RunAsync_WhenSuccessful_InitializesHandler()
         {
             // Arrange
             var caseId = _fixture.Create<int>();
-            var folderPath = _fixture.Create<string>();
+            var clearedPath = _fixture.Create<string>();
             _caseMetadataServiceMock
                 .Setup(x => x.ClearNetAppFolderPathAsync(caseId))
-                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = folderPath });
+                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = clearedPath });
 
             var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameter(InputParameters.CaseId, caseId.ToString(), _testCorrelationId);
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
-            await _function.Run(request, functionContext);
-
-            // Assert
-            _activityLogServiceMock.Verify(x => x.CreateActivityLogAsync(
-                ActivityLog.Enums.ActionType.DisconnectionFromNetApp,
-                ActivityLog.Enums.ResourceType.StorageConnection,
-                caseId,
-                folderPath,
-                folderPath,
-                _testUsername,
-                null),
-                Times.Once);
-        }
-
-        [Fact]
-        public async Task Run_WhenSuccessful_InitializesHandler()
-        {
-            // Arrange
-            var caseId = _fixture.Create<int>();
-            var folderPath = _fixture.Create<string>();
-            _caseMetadataServiceMock
-                .Setup(x => x.ClearNetAppFolderPathAsync(caseId))
-                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = folderPath });
-
-            var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameter(InputParameters.CaseId, caseId.ToString(), _testCorrelationId);
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
-
-            // Act
-            await _function.Run(request, functionContext);
+            await _handler.RunAsync(request, functionContext, StorageConnectionType.NetApp);
 
             // Assert
             _initializationHandlerMock.Verify(x => x.Initialize(_testUsername, _testCorrelationId, caseId), Times.Once);
         }
 
         [Fact]
-        public async Task Run_WhenNoConnectionExists_DoesNotCreateActivityLog()
+        public async Task RunAsync_WhenNoConnectionExists_DoesNotCreateActivityLog()
         {
             // Arrange
             var caseId = _fixture.Create<int>();
@@ -215,12 +168,12 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
-            await _function.Run(request, functionContext);
+            await _handler.RunAsync(request, functionContext, StorageConnectionType.NetApp);
 
             // Assert
             _activityLogServiceMock.Verify(x => x.CreateActivityLogAsync(
-                It.IsAny<ActivityLog.Enums.ActionType>(),
-                It.IsAny<ActivityLog.Enums.ResourceType>(),
+                It.IsAny<ActionType>(),
+                It.IsAny<ResourceType>(),
                 It.IsAny<int>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
@@ -230,7 +183,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         }
 
         [Fact]
-        public async Task Run_WhenTransferIsActive_DoesNotCreateActivityLog()
+        public async Task RunAsync_WhenTransferIsActive_DoesNotCreateActivityLog()
         {
             // Arrange
             var caseId = _fixture.Create<int>();
@@ -242,12 +195,12 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
-            await _function.Run(request, functionContext);
+            await _handler.RunAsync(request, functionContext, StorageConnectionType.NetApp);
 
             // Assert
             _activityLogServiceMock.Verify(x => x.CreateActivityLogAsync(
-                It.IsAny<ActivityLog.Enums.ActionType>(),
-                It.IsAny<ActivityLog.Enums.ResourceType>(),
+                It.IsAny<ActionType>(),
+                It.IsAny<ResourceType>(),
                 It.IsAny<int>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
@@ -257,46 +210,19 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         }
 
         [Fact]
-        public async Task Run_WhenNetAppFolderPathIsNull_DoesNotCreateActivityLog()
+        public async Task RunAsync_WhenActivityLogThrows_StillReturnsOk()
         {
             // Arrange
             var caseId = _fixture.Create<int>();
+            var clearedPath = _fixture.Create<string>();
             _caseMetadataServiceMock
                 .Setup(x => x.ClearNetAppFolderPathAsync(caseId))
-                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.NetAppFolderPathIsNull });
-
-            var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameter(InputParameters.CaseId, caseId.ToString(), _testCorrelationId);
-            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
-
-            // Act
-            await _function.Run(request, functionContext);
-
-            // Assert
-            _activityLogServiceMock.Verify(x => x.CreateActivityLogAsync(
-                It.IsAny<ActivityLog.Enums.ActionType>(),
-                It.IsAny<ActivityLog.Enums.ResourceType>(),
-                It.IsAny<int>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                null),
-                Times.Never);
-        }
-
-        [Fact]
-        public async Task Run_WhenActivityLogThrows_StillReturnsOk()
-        {
-            // Arrange
-            var caseId = _fixture.Create<int>();
-            var folderPath = _fixture.Create<string>();
-            _caseMetadataServiceMock
-                .Setup(x => x.ClearNetAppFolderPathAsync(caseId))
-                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = folderPath });
+                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = clearedPath });
 
             _activityLogServiceMock
                 .Setup(x => x.CreateActivityLogAsync(
-                    It.IsAny<ActivityLog.Enums.ActionType>(),
-                    It.IsAny<ActivityLog.Enums.ResourceType>(),
+                    It.IsAny<ActionType>(),
+                    It.IsAny<ResourceType>(),
                     It.IsAny<int>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
@@ -308,10 +234,96 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             // Act
-            var result = await _function.Run(request, functionContext);
+            var result = await _handler.RunAsync(request, functionContext, StorageConnectionType.NetApp);
 
-            // Assert — disconnection succeeded; logging failure must not surface as an error
+            // Assert
             Assert.IsType<OkResult>(result);
+        }
+
+        [Theory]
+        [InlineData(StorageConnectionType.NetApp, CaseMetadataState.NetAppFolderPathIsNull)]
+        [InlineData(StorageConnectionType.Egress, CaseMetadataState.EgressConnectionIsNull)]
+        public async Task RunAsync_WhenConnectionIsAlreadyNull_ReturnsBadRequest(
+            StorageConnectionType connectionType, CaseMetadataState missingState)
+        {
+            // Arrange
+            var caseId = _fixture.Create<int>();
+            SetupClearConnection(connectionType, caseId, new ClearFolderPathResult { State = missingState });
+
+            var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameter(InputParameters.CaseId, caseId.ToString(), _testCorrelationId);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+            // Act
+            var result = await _handler.RunAsync(request, functionContext, connectionType);
+
+            // Assert
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Contains(caseId.ToString(), badRequest.Value?.ToString());
+        }
+
+        [Theory]
+        [InlineData(StorageConnectionType.NetApp, CaseMetadataState.NetAppFolderPathIsNull)]
+        [InlineData(StorageConnectionType.Egress, CaseMetadataState.EgressConnectionIsNull)]
+        public async Task RunAsync_WhenConnectionIsAlreadyNull_DoesNotCreateActivityLog(
+            StorageConnectionType connectionType, CaseMetadataState missingState)
+        {
+            // Arrange
+            var caseId = _fixture.Create<int>();
+            SetupClearConnection(connectionType, caseId, new ClearFolderPathResult { State = missingState });
+
+            var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameter(InputParameters.CaseId, caseId.ToString(), _testCorrelationId);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+            // Act
+            await _handler.RunAsync(request, functionContext, connectionType);
+
+            // Assert
+            _activityLogServiceMock.Verify(x => x.CreateActivityLogAsync(
+                It.IsAny<ActionType>(),
+                It.IsAny<ResourceType>(),
+                It.IsAny<int>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                null),
+                Times.Never);
+        }
+
+        [Theory]
+        [InlineData(StorageConnectionType.NetApp, ActionType.DisconnectionFromNetApp)]
+        [InlineData(StorageConnectionType.Egress, ActionType.DisconnectionFromEgress)]
+        public async Task RunAsync_WhenSuccessful_CreatesActivityLogWithCorrectActionType(
+            StorageConnectionType connectionType, ActionType expectedAction)
+        {
+            // Arrange
+            var caseId = _fixture.Create<int>();
+            var clearedPath = _fixture.Create<string>();
+            SetupClearConnection(connectionType, caseId, new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = clearedPath });
+
+            var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameter(InputParameters.CaseId, caseId.ToString(), _testCorrelationId);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+            // Act
+            await _handler.RunAsync(request, functionContext, connectionType);
+
+            // Assert
+            _activityLogServiceMock.Verify(x => x.CreateActivityLogAsync(
+                expectedAction,
+                ResourceType.StorageConnection,
+                caseId,
+                clearedPath,
+                clearedPath,
+                _testUsername,
+                null),
+                Times.Once);
+        }
+
+        private void SetupClearConnection(StorageConnectionType connectionType, int caseId, ClearFolderPathResult result)
+        {
+            if (connectionType == StorageConnectionType.NetApp)
+                _caseMetadataServiceMock.Setup(x => x.ClearNetAppFolderPathAsync(caseId)).ReturnsAsync(result);
+            else
+                _caseMetadataServiceMock.Setup(x => x.ClearEgressConnectionAsync(caseId)).ReturnsAsync(result);
         }
     }
 }

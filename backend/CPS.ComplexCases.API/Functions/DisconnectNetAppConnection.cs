@@ -3,31 +3,19 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
-using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Constants;
-using CPS.ComplexCases.API.Context;
-using CPS.ComplexCases.API.Extensions;
+using CPS.ComplexCases.API.Handlers;
 using CPS.ComplexCases.Common.Attributes;
-using CPS.ComplexCases.Common.Enums;
-using CPS.ComplexCases.Common.Handlers;
-using CPS.ComplexCases.Common.Services;
 
 using ContentType = CPS.ComplexCases.API.Constants.ContentType;
 using ApiResponseDescriptions = CPS.ComplexCases.API.Constants.ApiResponseDescriptions;
 
 namespace CPS.ComplexCases.API.Functions;
 
-public class DisconnectNetAppConnection(ILogger<DisconnectNetAppConnection> logger,
-    ICaseMetadataService caseMetadataService,
-    IActivityLogService activityLogService,
-    IInitializationHandler initializationHandler)
+public class DisconnectNetAppConnection(IDisconnectConnectionHandler disconnectConnectionHandler)
 {
-    private readonly ILogger<DisconnectNetAppConnection> _logger = logger;
-    private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
-    private readonly IActivityLogService _activityLogService = activityLogService;
-    private readonly IInitializationHandler _initializationHandler = initializationHandler;
+    private readonly IDisconnectConnectionHandler _disconnectConnectionHandler = disconnectConnectionHandler;
 
     [Function(nameof(DisconnectNetAppConnection))]
     [OpenApiOperation(operationId: nameof(DisconnectNetAppConnection), tags: ["NetApp"], Description = "Disconnect a NetApp folder from a case.")]
@@ -41,45 +29,9 @@ public class DisconnectNetAppConnection(ILogger<DisconnectNetAppConnection> logg
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
     public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "v1/netapp/connections")] HttpRequest req, FunctionContext functionContext)
     {
-        var context = functionContext.GetRequestContext();
-
-        if (!req.TryGetCaseId(out var caseId, out var caseIdError))
-        {
-            return caseIdError!;
-        }
-
-        _initializationHandler.Initialize(context.Username, context.CorrelationId, caseId);
-
-        var result = await _caseMetadataService.ClearNetAppFolderPathAsync(caseId);
-
-        if (result.State == CaseMetadataState.NoCaseMetadataFound)
-        {
-            return new NotFoundObjectResult($"No NetApp connection found for case ID {caseId}.");
-        }
-        else if (result.State == CaseMetadataState.TransferIsActive)
-        {
-            return new ConflictObjectResult($"Cannot disconnect NetApp connection for case ID {caseId} because there is an active transfer.");
-        }
-        else if (result.State == CaseMetadataState.NetAppFolderPathIsNull)
-        {
-            return new BadRequestObjectResult($"Case ID {caseId} does not have an active NetApp connection.");
-        }
-
-        try
-        {
-            await _activityLogService.CreateActivityLogAsync(
-                ActivityLog.Enums.ActionType.DisconnectionFromNetApp,
-                ActivityLog.Enums.ResourceType.StorageConnection,
-                caseId,
-                result.ClearedPath!,
-                result.ClearedPath,
-                context.Username);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to write activity log for NetApp connection disconnection for case {CaseId}.", caseId);
-        }
-
-        return new OkResult();
+        return await _disconnectConnectionHandler.RunAsync(
+            req,
+            functionContext,
+            StorageConnectionType.NetApp);
     }
 }
