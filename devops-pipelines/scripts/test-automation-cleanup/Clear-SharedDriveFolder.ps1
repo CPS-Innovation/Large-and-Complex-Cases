@@ -23,77 +23,64 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+Import-Module (Join-Path $PSScriptRoot 'SharedDriveCleanupHelperModule.psm1')
+
+# Normalise Folder Path input
+$FolderPath = ($FolderPath.TrimEnd('/')) + '/'
+
 # ============================================================
 # GET AZURE AD TOKEN
 # ============================================================
-Write-Host "Requesting Azure AD access token..." -ForegroundColor Yellow
-
-$body = @{
-    client_id     = $ClientId
-    scope         = "api://$ClientId/user_impersonation"
-    username      = $AadUsername
-    password      = $AadPassword
-    grant_type    = "password"
-}
+Write-Host "[1/3] Authenticating with Azure AD..." -ForegroundColor Yellow
 
 try {
-  $tokenObj = Invoke-RestMethod -Method Post `
-    -Uri "https://login.microsoftonline.com/$TenantId/oauth2/v2.0/token" `
-    -ContentType 'application/x-www-form-urlencoded' `
-    -Body $body
+  $authHeader = Get-AzureAdBearerHeader `
+    -ClientId $ClientId `
+    -TenantId $TenantId `
+    -AadUsername $AadUsername `
+    -AadPassword $AadPassword
 }
 catch {
-  Write-Error $_.Exception.Message
-  exit 1
+  throw
 }
 
-$aadToken = $tokenObj.access_token
-
-if (-not $aadToken) {
-  Write-Error "The request was successful but the response does not contain an access token."
-  Write-Error $tokenObj
-  exit 1
-}
-
-Write-Host "  [OK] AAD Token obtained" -ForegroundColor Green
-
-$authHeader = @{
-  Authorization = "Bearer $aadToken"
-}
+Write-Host "  [OK] Authenticated" -ForegroundColor Green
 
 # ============================================================
 # DELETE FOLDER
 # ============================================================
-Write-Host "Attempting to delete folder $FolderPath..." -ForegroundColor Yellow
+Write-Host "[2/3] Attempting to delete folder $FolderPath..." -ForegroundColor Yellow
 
-$body = @{
-  caseId = $CaseId
-  operations = @(
-    @{
-      type = "Folder"     
-      sourcePath = "$FolderPath/"
-    }
-  )
-} | ConvertTo-Json
+$objectsToDelete = @(
+  @{
+    Type = "Folder"
+    Path = $FolderPath
+  }
+)
 
 try {
-  $response = Invoke-RestMethod -Method Post `
-    -Uri "$BaseUrl/api/v1/netapp/delete/batch" `
-    -Headers $authHeader `
-    -ContentType 'application/json' `
-    -Body $body
+  $result = Remove-SharedDriveObjects `
+    -AuthHeader $authHeader `
+    -BaseUrl $BaseUrl `
+    -CaseId $CaseId `
+    -ObjectsToDelete $objectsToDelete |
+  Select-Object -First 1
   
-  if ($response.status -eq 'Completed' -and $response.succeeded -gt 0) {
-    Write-Host "  [OK] Folder $FolderPath successfully deleted. Keys deleted: $($response.results[0].keysDeleted)" -ForegroundColor Green
+  if ($result.Status -ne "Deleted") {
+    $msg = "Failed to delete folder '$FolderPath'. Status: $($result.Status)"
+
+    if ($result.Error) {
+      $msg += " | Error: $($result.Error)"
+    }
+
+    throw $msg
   }
   else {
-    Write-Error $response.results[0].error
-    exit 1
+    Write-Host "  [OK] Folder $FolderPath successfully deleted." -ForegroundColor Green
   }
 }
 catch {
-  Write-Error "Failed to delete folder: $_"
-  exit 1
+  throw $_
 }
 
 # ============================================================
@@ -102,7 +89,7 @@ catch {
 Write-Host "Attempting to recreate folder $FolderPath..." -ForegroundColor Yellow
 
 $body = @{
-  path = "$FolderPath/"
+  path   = $FolderPath
   caseId = $CaseId
 } | ConvertTo-Json
 
@@ -115,13 +102,12 @@ try {
   
   if ($response -eq $true) {
     Write-Host "  [OK] Folder $FolderPath successfully recreated." -ForegroundColor Green
-  } else {
-    Write-Error "Failed to recreate folder $FolderPath." -ForegroundColor Red
-    exit 1
+  }
+  else {
+    throw "Failed to recreate folder $FolderPath."
   }
 } 
 catch {
-  Write-Error "Error during folder recreation: $_"
-  exit 1
+  throw "Error during folder recreation: $_"
 }
 
