@@ -26,7 +26,7 @@ $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'SharedDriveCleanupHelperModule.psm1')
 
 # Normalise Folder Path input
-$FolderPath = ($FolderPath.TrimEnd('/')) + '/'
+$FolderPath = $FolderPath.TrimEnd('/')
 
 # ============================================================
 # GET AZURE AD TOKEN
@@ -54,7 +54,7 @@ Write-Host "[2/3] Attempting to delete folder $FolderPath..." -ForegroundColor Y
 $objectsToDelete = @(
   @{
     Type = "Folder"
-    Path = $FolderPath
+    Path = "$FolderPath/"
   }
 )
 
@@ -76,7 +76,7 @@ try {
     throw $msg
   }
   else {
-    Write-Host "  [OK] Folder $FolderPath successfully deleted." -ForegroundColor Green
+    Write-Host "  [OK] Folder $FolderPath successfully deleted. Keys deleted: $($result.KeysDeleted)" -ForegroundColor Green
   }
 }
 catch {
@@ -86,10 +86,10 @@ catch {
 # ============================================================
 # RECREATE FOLDER
 # ============================================================
-Write-Host "Attempting to recreate folder $FolderPath..." -ForegroundColor Yellow
+Write-Host "[3/3] Attempting to recreate folder $FolderPath..." -ForegroundColor Yellow
 
 $body = @{
-  path   = $FolderPath
+  path   = "$FolderPath/"
   caseId = $CaseId
 } | ConvertTo-Json
 

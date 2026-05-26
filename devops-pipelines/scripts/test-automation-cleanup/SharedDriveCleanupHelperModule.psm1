@@ -79,8 +79,6 @@ function Remove-SharedDriveObjects {
     caseId     = $CaseId
     operations = $operations
   } | ConvertTo-Json -Depth 5
-
-  Write-Host $body
   
   try {
     $response = Invoke-RestMethod -Method Post `
@@ -97,16 +95,42 @@ function Remove-SharedDriveObjects {
       Write-Error "$($response.failed) item(s) failed to delete."
     }
 
-    # Return structured per-item results
-    $results = foreach ($item in $response.results) {
-      [PSCustomObject]@{
-        Path        = $item.sourcePath
-        Status      = $item.status
-        Succeeded   = ($item.status -eq "Deleted")
-        NotFound    = ($item.status -eq "NotFound")
-        Failed      = ($item.status -eq "Failed")
-        KeysDeleted = $item.keysDeleted
-        Error       = $item.error
+    $results = @{
+      Succeeded = @()
+      NotFound  = @()
+      Failed    = @()
+    }
+
+    foreach ($item in $response.results) {
+      switch ($item.status) {
+
+        "Deleted" {
+          $results.Succeeded += [PSCustomObject]@{
+            Path        = $item.sourcePath
+            KeysDeleted = $item.keysDeleted
+          }
+        }
+
+        "NotFound" {
+          $results.NotFound += [PSCustomObject]@{
+            Path = $item.sourcePath
+          }
+        }
+
+        "Failed" {
+          $results.Failed += [PSCustomObject]@{
+            Path  = $item.sourcePath
+            Error = $item.error
+          }
+        }
+
+        default {
+          # Optional: treat unknown as failure
+          $results.Failed += [PSCustomObject]@{
+            Path  = $item.sourcePath
+            Error = "Unknown status: $($item.status)"
+          }
+        }
       }
     }
 
