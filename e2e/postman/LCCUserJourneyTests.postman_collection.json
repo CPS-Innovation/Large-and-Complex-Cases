@@ -599,7 +599,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -677,7 +677,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"body": {
@@ -756,7 +756,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -848,7 +848,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"body": {
@@ -971,7 +971,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -1276,7 +1276,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -1444,7 +1444,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"body": {
@@ -1594,7 +1594,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"body": {
@@ -1749,7 +1749,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -1906,7 +1906,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -1999,7 +1999,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -2167,7 +2167,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -2335,7 +2335,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"body": {
@@ -2485,7 +2485,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"body": {
@@ -2640,7 +2640,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -2797,7 +2797,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -2894,7 +2894,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -3026,7 +3026,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -3149,7 +3149,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"body": {
@@ -3273,7 +3273,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"body": {
@@ -3433,7 +3433,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -3574,7 +3574,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
@@ -3660,7 +3660,7 @@
 							},
 							{
 								"key": "Origin",
-								"value": "https://lacc-app-ui-spa-dev.azurewebsites.net"
+								"value": "{{uiUrl}}"
 							}
 						],
 						"url": {
