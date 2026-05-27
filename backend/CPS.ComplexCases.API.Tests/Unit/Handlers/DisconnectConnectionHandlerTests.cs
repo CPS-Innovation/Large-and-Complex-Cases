@@ -210,6 +210,26 @@ namespace CPS.ComplexCases.API.Tests.Unit.Handlers
         }
 
         [Fact]
+        public async Task RunAsync_WhenSuccessful_CallsClearConnectionOnService()
+        {
+            // Arrange
+            var caseId = _fixture.Create<int>();
+            var clearedPath = _fixture.Create<string>();
+            _caseMetadataServiceMock
+                .Setup(x => x.ClearNetAppFolderPathAsync(caseId))
+                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = clearedPath });
+
+            var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameter(InputParameters.CaseId, caseId.ToString(), _testCorrelationId);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+            // Act
+            await _handler.RunAsync(request, functionContext, StorageConnectionType.NetApp);
+
+            // Assert
+            _caseMetadataServiceMock.Verify(x => x.ClearNetAppFolderPathAsync(caseId), Times.Once);
+        }
+
+        [Fact]
         public async Task RunAsync_WhenActivityLogThrows_StillReturnsOk()
         {
             // Arrange
@@ -238,6 +258,46 @@ namespace CPS.ComplexCases.API.Tests.Unit.Handlers
 
             // Assert
             Assert.IsType<OkResult>(result);
+        }
+
+        [Fact]
+        public async Task RunAsync_WhenActivityLogThrows_LogsTheError()
+        {
+            // Arrange
+            var caseId = _fixture.Create<int>();
+            var clearedPath = _fixture.Create<string>();
+            var activityLogException = new Exception("Activity log unavailable");
+
+            _caseMetadataServiceMock
+                .Setup(x => x.ClearNetAppFolderPathAsync(caseId))
+                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = clearedPath });
+
+            _activityLogServiceMock
+                .Setup(x => x.CreateActivityLogAsync(
+                    It.IsAny<ActionType>(),
+                    It.IsAny<ResourceType>(),
+                    It.IsAny<int>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    null))
+                .ThrowsAsync(activityLogException);
+
+            var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameter(InputParameters.CaseId, caseId.ToString(), _testCorrelationId);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+            // Act
+            await _handler.RunAsync(request, functionContext, StorageConnectionType.NetApp);
+
+            // Assert
+            _loggerMock.Verify(
+                x => x.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(caseId.ToString())),
+                    activityLogException,
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
         }
 
         [Theory]
