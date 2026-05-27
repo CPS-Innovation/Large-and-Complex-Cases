@@ -184,40 +184,62 @@ public class CaseMetadataService : ICaseMetadataService
     }
   }
 
-  public async Task<ClearFolderPathResult> ClearNetAppFolderPathAsync(int caseId)
+  public Task<ClearFolderPathResult> ClearNetAppFolderPathAsync(int caseId) =>
+    ClearConnectionAsync(
+      caseId,
+      logContext: "NetApp folder path",
+      getValue: m => m.NetappFolderPath,
+      clearValue: m => m.NetappFolderPath = null,
+      missingValueState: CaseMetadataState.NetAppFolderPathIsNull
+    );
+
+  public Task<ClearFolderPathResult> ClearEgressConnectionAsync(int caseId) =>
+    ClearConnectionAsync(
+      caseId,
+      logContext: "Egress workspace connection",
+      getValue: m => m.EgressWorkspaceId,
+      clearValue: m => m.EgressWorkspaceId = null,
+      missingValueState: CaseMetadataState.EgressConnectionIsNull
+    );
+
+  private async Task<ClearFolderPathResult> ClearConnectionAsync(
+    int caseId,
+    string logContext,
+    Func<CaseMetadata, string?> getValue,
+    Action<CaseMetadata> clearValue,
+    CaseMetadataState missingValueState)
   {
-    _logger.LogInformation("Clearing NetApp folder path for case {CaseId}", caseId);
+    _logger.LogInformation("Clearing {LogContext} for case {CaseId}", logContext, caseId);
     try
     {
       var existingMetadata = await _caseMetadataRepository.GetByCaseIdAsync(caseId);
 
-      if (existingMetadata != null)
+      if (existingMetadata == null)
       {
-        if (existingMetadata.ActiveTransferId.HasValue)
-        {
-          _logger.LogWarning("Cannot clear NetApp folder path for case {CaseId} because there is an active transfer", caseId);
-          return new ClearFolderPathResult { State = CaseMetadataState.TransferIsActive };
-        }
-        else if (string.IsNullOrEmpty(existingMetadata.NetappFolderPath))
-        {
-          _logger.LogWarning("No NetApp folder path to clear for case {CaseId}", caseId);
-          return new ClearFolderPathResult { State = CaseMetadataState.NetAppFolderPathIsNull };
-        }
-
-        var existingPath = existingMetadata.NetappFolderPath;
-        existingMetadata.NetappFolderPath = null;
-        await _caseMetadataRepository.UpdateAsync(existingMetadata);
-        return new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = existingPath };
-      }
-      else
-      {
-        _logger.LogWarning("No metadata found for case {CaseId} to clear NetApp folder path", caseId);
+        _logger.LogWarning("No metadata found for case {CaseId} to clear {LogContext}", caseId, logContext);
         return new ClearFolderPathResult { State = CaseMetadataState.NoCaseMetadataFound };
       }
+
+      if (existingMetadata.ActiveTransferId.HasValue)
+      {
+        _logger.LogWarning("Cannot clear {LogContext} for case {CaseId} because there is an active transfer", logContext, caseId);
+        return new ClearFolderPathResult { State = CaseMetadataState.TransferIsActive };
+      }
+
+      var existingValue = getValue(existingMetadata);
+      if (string.IsNullOrEmpty(existingValue))
+      {
+        _logger.LogWarning("No {LogContext} to clear for case {CaseId}", logContext, caseId);
+        return new ClearFolderPathResult { State = missingValueState };
+      }
+
+      clearValue(existingMetadata);
+      await _caseMetadataRepository.UpdateAsync(existingMetadata);
+      return new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = existingValue };
     }
     catch (Exception ex)
     {
-      _logger.LogError(ex, "Error clearing NetApp folder path for case {CaseId}", caseId);
+      _logger.LogError(ex, "Error clearing {LogContext} for case {CaseId}", logContext, caseId);
       throw;
     }
   }

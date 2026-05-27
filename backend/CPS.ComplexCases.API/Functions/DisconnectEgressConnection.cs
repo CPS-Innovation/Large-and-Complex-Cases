@@ -13,12 +13,12 @@ using ApiResponseDescriptions = CPS.ComplexCases.API.Constants.ApiResponseDescri
 
 namespace CPS.ComplexCases.API.Functions;
 
-public class DisconnectNetAppConnection(IDisconnectConnectionHandler disconnectConnectionHandler)
+public class DisconnectEgressConnection(IDisconnectConnectionHandler disconnectConnectionHandler)
 {
     private readonly IDisconnectConnectionHandler _disconnectConnectionHandler = disconnectConnectionHandler;
 
-    [Function(nameof(DisconnectNetAppConnection))]
-    [OpenApiOperation(operationId: nameof(DisconnectNetAppConnection), tags: ["NetApp"], Description = "Disconnect a NetApp folder from a case.")]
+    [Function(nameof(DisconnectEgressConnection))]
+    [OpenApiOperation(operationId: nameof(DisconnectEgressConnection), tags: ["Egress"], Description = "Disconnect a Egress workspace from a case.")]
     [CmsAuthValuesAuth]
     [BearerTokenAuth]
     [OpenApiParameter(name: InputParameters.CaseId, In = ParameterLocation.Query, Required = true, Type = typeof(int), Description = "The case ID to disconnect from.")]
@@ -27,11 +27,11 @@ public class DisconnectNetAppConnection(IDisconnectConnectionHandler disconnectC
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Conflict, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Conflict)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.NotFound, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.NotFound)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "v1/netapp/connections")] HttpRequest req, FunctionContext functionContext)
+    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "v1/egress/connections")] HttpRequest req, FunctionContext functionContext)
     {
         return await _disconnectConnectionHandler.RunAsync(
             req,
             functionContext,
-            StorageConnectionType.NetApp);
+            StorageConnectionType.Egress);
     }
 }

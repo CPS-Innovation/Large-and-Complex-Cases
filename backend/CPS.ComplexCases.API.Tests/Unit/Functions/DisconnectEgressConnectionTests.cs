@@ -10,17 +10,17 @@ using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions
 {
-    public class DisconnectNetAppConnectionTests
+    public class DisconnectEgressConnectionTests
     {
         private readonly Mock<IDisconnectConnectionHandler> _disconnectConnectionHandlerMock;
-        private readonly DisconnectNetAppConnection _function;
+        private readonly DisconnectEgressConnection _function;
         private readonly Fixture _fixture;
         private readonly Guid _testCorrelationId;
         private readonly string _testUsername;
         private readonly string _testCmsAuthValues;
         private readonly string _testBearerToken;
 
-        public DisconnectNetAppConnectionTests()
+        public DisconnectEgressConnectionTests()
         {
             _fixture = new Fixture();
             _disconnectConnectionHandlerMock = new Mock<IDisconnectConnectionHandler>();
@@ -30,18 +30,18 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _testCmsAuthValues = _fixture.Create<string>();
             _testBearerToken = _fixture.Create<string>();
 
-            _function = new DisconnectNetAppConnection(_disconnectConnectionHandlerMock.Object);
+            _function = new DisconnectEgressConnection(_disconnectConnectionHandlerMock.Object);
         }
 
         [Fact]
-        public async Task Run_DelegatesToHandlerWithNetAppConnectionType()
+        public async Task Run_DelegatesToHandlerWithEgressConnectionType()
         {
             // Arrange
             var request = HttpRequestStubHelper.CreateHttpRequest(_testCorrelationId);
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             _disconnectConnectionHandlerMock
-                .Setup(x => x.RunAsync(It.IsAny<HttpRequest>(), It.IsAny<FunctionContext>(), StorageConnectionType.NetApp))
+                .Setup(x => x.RunAsync(It.IsAny<HttpRequest>(), It.IsAny<FunctionContext>(), StorageConnectionType.Egress))
                 .ReturnsAsync(new OkResult());
 
             // Act
@@ -49,7 +49,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
 
             // Assert
             _disconnectConnectionHandlerMock.Verify(
-                x => x.RunAsync(request, functionContext, StorageConnectionType.NetApp),
+                x => x.RunAsync(request, functionContext, StorageConnectionType.Egress),
                 Times.Once);
         }
 
@@ -62,7 +62,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
 
             _disconnectConnectionHandlerMock
-                .Setup(x => x.RunAsync(It.IsAny<HttpRequest>(), It.IsAny<FunctionContext>(), StorageConnectionType.NetApp))
+                .Setup(x => x.RunAsync(It.IsAny<HttpRequest>(), It.IsAny<FunctionContext>(), StorageConnectionType.Egress))
                 .ReturnsAsync(expectedResult);
 
             // Act
@@ -73,7 +73,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         }
 
         [Fact]
-        public async Task Run_DoesNotDelegatesToEgressConnectionType()
+        public async Task Run_DoesNotDelegatesToNetAppConnectionType()
         {
             // Arrange
             var request = HttpRequestStubHelper.CreateHttpRequest(_testCorrelationId);
@@ -88,7 +88,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
 
             // Assert
             _disconnectConnectionHandlerMock.Verify(
-                x => x.RunAsync(It.IsAny<HttpRequest>(), It.IsAny<FunctionContext>(), StorageConnectionType.Egress),
+                x => x.RunAsync(It.IsAny<HttpRequest>(), It.IsAny<FunctionContext>(), StorageConnectionType.NetApp),
                 Times.Never);
         }
     }
