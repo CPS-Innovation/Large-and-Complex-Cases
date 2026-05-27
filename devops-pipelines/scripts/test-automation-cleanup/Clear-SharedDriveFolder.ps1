@@ -49,7 +49,7 @@ Write-Host "  [OK] Authenticated" -ForegroundColor Green
 # ============================================================
 # DELETE FOLDER
 # ============================================================
-Write-Host "[2/3] Attempting to delete folder $FolderPath..." -ForegroundColor Yellow
+Write-Host "[2/3] Attempting to delete folder '$FolderPath'..." -ForegroundColor Yellow
 
 $objectsToDelete = @(
   @{
@@ -59,24 +59,34 @@ $objectsToDelete = @(
 )
 
 try {
-  $result = Remove-SharedDriveObjects `
+  $results = Remove-SharedDriveObjects `
     -AuthHeader $authHeader `
     -BaseUrl $BaseUrl `
     -CaseId $CaseId `
-    -ObjectsToDelete $objectsToDelete |
-  Select-Object -First 1
+    -ObjectsToDelete $objectsToDelete
   
-  if ($result.Status -ne "Deleted") {
-    $msg = "Failed to delete folder '$FolderPath'. Status: $($result.Status)"
+  if ($results.Succeeded.Count -gt 0) {
+    $deleted = $results.Succeeded[0]
 
-    if ($result.Error) {
-      $msg += " | Error: $($result.Error)"
+    if ($deleted.Path -eq "$FolderPath/") {
+      Write-Host "  [OK] Folder '$FolderPath' successfully deleted. Keys deleted: $($deleted.KeysDeleted)" -ForegroundColor Green
+    }
+    else {
+      throw "An unexpected item was deleted: $($deleted.Path)"
+    } 
+  }
+  else {
+    $msg = "Failed to delete folder '$FolderPath'."
+
+    if ($results.NotFound.Count -gt 0) {
+      $msg += " Status is 'NotFound'."
+    }
+
+    if ($results.Failed.Count -gt 0) {
+      $msg += " Status is 'Failed' | Error: $($results.Failed[0].Error)"
     }
 
     throw $msg
-  }
-  else {
-    Write-Host "  [OK] Folder $FolderPath successfully deleted. Keys deleted: $($result.KeysDeleted)" -ForegroundColor Green
   }
 }
 catch {
@@ -101,10 +111,10 @@ try {
     -Body $body
   
   if ($response -eq $true) {
-    Write-Host "  [OK] Folder $FolderPath successfully recreated." -ForegroundColor Green
+    Write-Host "  [OK] Folder '$FolderPath' successfully recreated." -ForegroundColor Green
   }
   else {
-    throw "Failed to recreate folder $FolderPath."
+    throw "Failed to recreate folder '$FolderPath'."
   }
 } 
 catch {

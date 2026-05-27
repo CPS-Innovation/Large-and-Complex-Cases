@@ -83,7 +83,7 @@ while ($true) {
 
 if (-not $workspacesToRemove) {
   Write-Host "  [OK] No workspaces found with the specified name prefix - nothing to delete." -ForegroundColor Green
-  exit 0
+  return
 }
 
 Write-Host "Workspaces to be deleted:" -ForegroundColor Cyan
@@ -103,7 +103,7 @@ if (-not $Force) {
 
   if ($confirmation -ne 'yes') {
     Write-Host "Deletion cancelled by user." -ForegroundColor Cyan
-    exit 0
+    return
   }
 }
 else {
@@ -136,11 +136,12 @@ foreach ($ws in $workspacesToRemove) {
 }
 
 if ($failed) {
-  Write-Error "Failed to delete one or more workspaces:"
+  $msg = "Failed to delete one or more workspaces:`n"
   foreach ($f in $failed) {
-    Write-Error " - $($f.Name) [$($f.Id)]: $($f.Error)"
+    $msg += " - $($f.Name) [$($f.Id)]: $($f.Error)`n"
   }
-  exit 1
+  
+  throw $msg
 }
 
 Write-Host "  [OK] All workspaces deleted successfully." -ForegroundColor Green

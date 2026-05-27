@@ -70,7 +70,7 @@ while ($true) {
 
 if (-not $filesToDelete) {
   Write-Host "  [OK] Folder is empty - nothing to delete." -ForegroundColor Green
-  exit 0
+  return
 }
 
 Write-Host "Files to be deleted:" -ForegroundColor Cyan
@@ -90,7 +90,7 @@ if (-not $Force) {
 
   if ($confirmation -ne 'yes') {
     Write-Host "Deletion cancelled by user." -ForegroundColor Cyan
-    exit 0
+    return
   }
 }
 else {

@@ -92,7 +92,7 @@ function Remove-SharedDriveObjects {
     }
 
     if ($response.failed -gt 0) {
-      Write-Error "$($response.failed) item(s) failed to delete."
+      Write-Warning "$($response.failed) item(s) failed to delete."
     }
 
     $results = @{
@@ -125,7 +125,7 @@ function Remove-SharedDriveObjects {
         }
 
         default {
-          # Optional: treat unknown as failure
+          # treat unknown as failure
           $results.Failed += [PSCustomObject]@{
             Path  = $item.sourcePath
             Error = "Unknown status: $($item.status)"
