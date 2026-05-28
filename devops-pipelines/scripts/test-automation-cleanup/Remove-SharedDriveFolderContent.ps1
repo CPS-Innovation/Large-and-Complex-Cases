@@ -20,11 +20,11 @@ param (
   [Parameter(Mandatory = $true)]
   [string]$BaseUrl,
 
-	# Include pattern (regex) – only items that MATCH will be returned
-	[string]$IncludePattern,
+	# Include patterns (regex) – only items that MATCH will be returned
+	[string[]]$IncludePatterns,
 
-	# Exclude pattern (regex) – items that MATCH will be removed
-	[string]$ExcludePattern,
+	# Exclude patterns (regex) – items that MATCH will be removed
+	[string[]]$ExcludePatterns,
 
 	[switch]$Force
 )
@@ -38,11 +38,32 @@ Import-Module (Join-Path $PSScriptRoot 'SharedDriveCleanupHelperModule.psm1')
 # ============================================================
 $FolderPath = ($FolderPath.TrimEnd('/'))  + '/'
 
-if (-not [string]::IsNullOrWhiteSpace($IncludePattern) -and $IncludePattern.Length -lt 5) {
-  throw "IncludePattern must be at least 5 characters long."
+# Validate include patterns
+if ($IncludePatterns -and $IncludePatterns.Count -gt 0) {
+	foreach ($pattern in $IncludePatterns) {
+
+		if ([string]::IsNullOrWhiteSpace($pattern)) {
+			throw "IncludePatterns cannot contain null or empty values."
+		}
+
+		if ($pattern.Length -lt 5) {
+			throw "Include pattern '$pattern' must be at least 5 characters long."
+		}
+	}
 }
-if (-not [string]::IsNullOrWhiteSpace($ExcludePattern) -and $ExcludePattern.Length -lt 5) {
-	throw "ExcludePattern must be at least 5 characters long."
+
+# Validate exclude patterns
+if ($ExcludePatterns -and $ExcludePatterns.Count -gt 0) {
+	foreach ($pattern in $ExcludePatterns) {
+
+		if ([string]::IsNullOrWhiteSpace($pattern)) {
+			throw "ExcludePatterns cannot contain null or empty values."
+		}
+
+		if ($pattern.Length -lt 5) {
+			throw "Exclude pattern '$pattern' must be at least 5 characters long."
+		}
+	}
 }
 
 # ============================================================
@@ -66,6 +87,7 @@ Write-Host "  [OK] Authenticated" -ForegroundColor Green
 # ============================================================
 # LIST FOLDER CONTENTS
 # ============================================================
+Write-Host "[2/3] Listing items for deletion..." -ForegroundColor Yellow
 
 $objectsToDelete = New-Object System.Collections.Generic.List[object]
 $continuationToken = $null
@@ -75,12 +97,25 @@ function Test-PathFilter($path) {
 	$includePass = $true
 	$excludePass = $true
 
-	if ($IncludePattern) {
-			$includePass = $path -match $IncludePattern
+	# INCLUDE logic: if any include pattern exists, path must match at least ONE
+	if ($IncludePatterns -and $IncludePatterns.Count -gt 0) {
+		$includePass = $false
+		foreach ($pattern in $IncludePatterns) {
+			if ($path -match $pattern) {
+				$includePass = $true
+				break
+			}
+		}
 	}
 
-	if ($ExcludePattern) {
-			$excludePass = -not ($path -match $ExcludePattern)
+	# EXCLUDE logic: if ANY exclude pattern matches, reject the path
+	if ($ExcludePatterns -and $ExcludePatterns.Count -gt 0) {
+		foreach ($pattern in $ExcludePatterns) {
+			if ($path -match $pattern) {
+				$excludePass = $false
+				break
+			}
+		}
 	}
 
 	$result = ($includePass -and $excludePass)
@@ -151,12 +186,12 @@ until ([string]::IsNullOrWhiteSpace($continuationToken))
 
 
 if ($objectsToDelete.Count -eq 0) {
-	Write-Warning "No items were marked for deletion.`n
+	Write-Warning "No matching items were found.`n
 		Please check correct filter patterns were supplied as input."
 	return
 }
 
-Write-Host "$($objectsToDelete.Count) item(s) will be deleted:" -ForegroundColor Cyan
+Write-Host "  [OK] $($objectsToDelete.Count) matching item(s) found:" -ForegroundColor Green
 
 $objectsToDelete | ForEach-Object {
 	Write-Host " - $($_.Path) ($($_.Type))" -ForegroundColor Cyan
@@ -168,7 +203,7 @@ $objectsToDelete | ForEach-Object {
 
 if (-not $Force) {
   Write-Host ""
-  Write-Host "About to delete $($objectsToDelete.Count) items." -ForegroundColor Yellow
+  Write-Host "About to delete $($objectsToDelete.Count) item(s)." -ForegroundColor Yellow
   $confirmation = Read-Host "Type 'yes' to confirm"
 
   if ($confirmation -ne 'yes') {
@@ -183,6 +218,7 @@ else {
 # ============================================================
 # DELETE ITEMS
 # ============================================================
+Write-Host "[3/3] Deleting $($objectsToDelete.Count) item(s)...." -ForegroundColor Yellow
 
 # Batching objectsToDelete into arrays of max 100 items to avoid exceeding command‑line length limit:
 $batchSize = 100

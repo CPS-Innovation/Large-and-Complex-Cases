@@ -82,11 +82,11 @@ while ($true) {
 }
 
 if (-not $workspacesToRemove) {
-  Write-Host "  [OK] No workspaces found with the specified name prefix - nothing to delete." -ForegroundColor Green
+  Write-Host "  No workspaces found with the specified name prefix - nothing to delete." -ForegroundColor Green
   return
 }
 
-Write-Host "Workspaces to be deleted:" -ForegroundColor Cyan
+Write-Host "  [OK] $($workspacesToRemove.Count) matching workspace(s) found:" -ForegroundColor Green
 
 $workspacesToRemove | ForEach-Object {
   Write-Host " - $($_.name) [$($_.id)]" -ForegroundColor Cyan
