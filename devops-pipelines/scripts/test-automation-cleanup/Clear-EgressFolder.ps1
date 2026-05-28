@@ -113,7 +113,7 @@ for ($i = 0; $i -lt $fileIds.Count; $i += $batchSize) {
   $batchIndex = [int]($i / $batchSize) + 1
 
   Write-Host ("Deleting batch {0}/{1} ({2} file(s))..." -f `
-    $batchIndex, $totalBatches, $batch.Count)
+      $batchIndex, $totalBatches, $batch.Count)
 
   try {
     Remove-EgressFiles `
@@ -123,7 +123,7 @@ for ($i = 0; $i -lt $fileIds.Count; $i += $batchSize) {
       -FileIds $batch
       
     Write-Host ("Batch {0}/{1} completed successfully." -f `
-      $batchIndex, $totalBatches)
+        $batchIndex, $totalBatches)
 
   }
   catch {

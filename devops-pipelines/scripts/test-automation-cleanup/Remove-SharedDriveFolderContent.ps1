@@ -1,24 +1,24 @@
 param (
 	[Parameter(Mandatory = $true)]
-  [string]$ClientId,
+	[string]$ClientId,
 
-  [Parameter(Mandatory = $true)]
-  [string]$TenantId,
+	[Parameter(Mandatory = $true)]
+	[string]$TenantId,
 
-  [Parameter(Mandatory = $true)]
-  [string]$AadUsername,
+	[Parameter(Mandatory = $true)]
+	[string]$AadUsername,
 
-  [Parameter(Mandatory = $true)]
-  [string]$AadPassword,
+	[Parameter(Mandatory = $true)]
+	[string]$AadPassword,
 
-  [Parameter(Mandatory = $true)]
-  [int]$CaseId,
+	[Parameter(Mandatory = $true)]
+	[int]$CaseId,
 
-  [Parameter(Mandatory = $true)]
-  [string]$FolderPath,
+	[Parameter(Mandatory = $true)]
+	[string]$FolderPath,
 
-  [Parameter(Mandatory = $true)]
-  [string]$BaseUrl,
+	[Parameter(Mandatory = $true)]
+	[string]$BaseUrl,
 
 	# Include patterns (regex) – only items that MATCH will be returned
 	[string[]]$IncludePatterns,
@@ -36,7 +36,7 @@ Import-Module (Join-Path $PSScriptRoot 'SharedDriveCleanupHelperModule.psm1')
 # ============================================================
 # VALIDATE INPUT
 # ============================================================
-$FolderPath = ($FolderPath.TrimEnd('/'))  + '/'
+$FolderPath = ($FolderPath.TrimEnd('/')) + '/'
 
 # Validate include patterns
 if ($IncludePatterns -and $IncludePatterns.Count -gt 0) {
@@ -72,14 +72,14 @@ if ($ExcludePatterns -and $ExcludePatterns.Count -gt 0) {
 Write-Host "[1/3] Authenticating with Azure AD..." -ForegroundColor Yellow
 
 try {
-  $authHeader = Get-AzureAdBearerHeader `
-    -ClientId $ClientId `
-    -TenantId $TenantId `
-    -AadUsername $AadUsername `
-    -AadPassword $AadPassword
+	$authHeader = Get-AzureAdBearerHeader `
+		-ClientId $ClientId `
+		-TenantId $TenantId `
+		-AadUsername $AadUsername `
+		-AadPassword $AadPassword
 }
 catch {
-  throw
+	throw
 }
 
 Write-Host "  [OK] Authenticated" -ForegroundColor Green
@@ -131,11 +131,11 @@ do {
 		$encodedPath = [uri]::EscapeDataString($FolderPath)
 
 		if ($continuationToken) {
-				$encodedToken = [uri]::EscapeDataString($continuationToken)
-				$uri = "$BaseUrl/api/v1/netapp/files?path=$encodedPath&continuation-token=$encodedToken"
+			$encodedToken = [uri]::EscapeDataString($continuationToken)
+			$uri = "$BaseUrl/api/v1/netapp/files?path=$encodedPath&continuation-token=$encodedToken"
 		}
 		else {
-				$uri = "$BaseUrl/api/v1/netapp/files?path=$encodedPath"
+			$uri = "$BaseUrl/api/v1/netapp/files?path=$encodedPath"
 		}
 
 		Write-Verbose "GET $uri"
@@ -186,8 +186,7 @@ until ([string]::IsNullOrWhiteSpace($continuationToken))
 
 
 if ($objectsToDelete.Count -eq 0) {
-	Write-Warning "No matching items were found.`n
-		Please check correct filter patterns were supplied as input."
+	Write-Warning "No matching items were found. Please check correct filter patterns were supplied as input."
 	return
 }
 
@@ -202,17 +201,17 @@ $objectsToDelete | ForEach-Object {
 # ============================================================
 
 if (-not $Force) {
-  Write-Host ""
-  Write-Host "About to delete $($objectsToDelete.Count) item(s)." -ForegroundColor Yellow
-  $confirmation = Read-Host "Type 'yes' to confirm"
+	Write-Host ""
+	Write-Host "About to delete $($objectsToDelete.Count) item(s)." -ForegroundColor Yellow
+	$confirmation = Read-Host "Type 'yes' to confirm"
 
-  if ($confirmation -ne 'yes') {
-    Write-Host "Deletion cancelled by user." -ForegroundColor Cyan
-    return
-  }
+	if ($confirmation -ne 'yes') {
+		Write-Host "Deletion cancelled by user." -ForegroundColor Cyan
+		return
+	}
 }
 else {
-  Write-Host "Confirmation bypassed (-Force specified)." -ForegroundColor DarkYellow
+	Write-Host "Confirmation bypassed (-Force specified)." -ForegroundColor DarkYellow
 }
 
 # ============================================================
@@ -225,16 +224,16 @@ $batchSize = 100
 $totalBatches = [math]::Ceiling($objectsToDelete.Count / $batchSize)
 $success = $true
 $failed = @{
-	NotFound  = @()
-  Failed    = @()
+	NotFound = @()
+	Failed   = @()
 }
 
 for ($i = 0; $i -lt $objectsToDelete.Count; $i += $batchSize) {
-  $batch = $objectsToDelete[$i..([math]::Min($i + $batchSize - 1, $objectsToDelete.Count - 1))]  
-  $batchIndex = [int]($i / $batchSize) + 1
+	$batch = $objectsToDelete[$i..([math]::Min($i + $batchSize - 1, $objectsToDelete.Count - 1))]  
+	$batchIndex = [int]($i / $batchSize) + 1
 
-  Write-Host ("Deleting batch {0}/{1} ({2} item(s))..." -f `
-    $batchIndex, $totalBatches, $batch.Count)
+	Write-Host ("Deleting batch {0}/{1} ({2} item(s))..." -f `
+			$batchIndex, $totalBatches, $batch.Count)
 	
 	Write-Debug "Batch payload:`n$($batch | ConvertTo-Json -Depth 5)"
 	
@@ -255,11 +254,11 @@ for ($i = 0; $i -lt $objectsToDelete.Count; $i += $batchSize) {
 		$failed.Failed += $results.Failed
 
 		Write-Warning ("Batch {0}/{1} completed with some issues." -f `
-		$batchIndex, $totalBatches)
+				$batchIndex, $totalBatches)
 	}
 	else {
 		Write-Host ("Batch {0}/{1} completed successfully." -f `
-		$batchIndex, $totalBatches)
+				$batchIndex, $totalBatches)
 	}
 }
 
