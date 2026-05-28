@@ -16,5 +16,7 @@ export const PRIVATE_BETA_FEATURE_USER_GROUP2 = `${import.meta.env.VITE_PRIVATE_
 export const GLOBAL_NAV_SCRIPT_URL = `${import.meta.env.VITE_GLOBAL_NAV_SCRIPT_URL}`;
 export const FEATURE_FLAG_GLOBAL_NAV =
   `${import.meta.env.VITE_FEATURE_FLAG_GLOBAL_NAV}` === "true";
+export const FEATURE_FLAG_MANAGE_MATERIALS =
+  `${import.meta.env.VITE_FEATURE_FLAG_MANAGE_MATERIALS}` === "true";
 
 console.log(JSON.stringify(import.meta.env));

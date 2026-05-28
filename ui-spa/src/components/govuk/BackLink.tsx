@@ -8,6 +8,7 @@ export type BackLinkProps = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   state?: any;
   replace?: boolean;
+  onClick?: React.MouseEventHandler<HTMLAnchorElement>;
   children: ReactNode;
 };
 

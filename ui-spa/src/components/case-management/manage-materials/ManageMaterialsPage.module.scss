@@ -1,0 +1,49 @@
+.pageWrapper {
+  margin-top: 1.25rem;
+}
+
+.successBanner {
+  margin-bottom: 1rem;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.nameCell {
+  max-width: 22.5rem;
+  display: flex;
+  align-items: baseline;
+
+  & svg {
+    flex: 0 0 auto;
+  }
+
+  & button {
+    overflow-wrap: break-word;
+    word-break: break-all;
+    text-align: left;
+  }
+
+  & span {
+    margin-left: 0.25rem;
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: break-all;
+  }
+}
+
+.spinnerWrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.spinnerText {
+  margin-top: 1rem;
+}

@@ -1,0 +1,13 @@
+.treeWrapper {
+  margin-bottom: 1.5rem;
+}
+
+.actionWrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+
+  & button {
+    margin-bottom: 0;
+  }
+}

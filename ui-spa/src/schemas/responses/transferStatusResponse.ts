@@ -19,7 +19,7 @@ export const transferStatusResponseSchema = z.object({
     "Failed",
   ]),
   transferType: z.enum(["Copy", "Move"]),
-  direction: z.enum(["EgressToNetApp", "NetAppToEgress"]),
+  direction: z.enum(["EgressToNetApp", "NetAppToEgress", "NetAppToNetApp"]),
   completedAt: z.string().nullable(),
   failedItems: z.array(transferFailedItemSchema),
   userName: z.string(),

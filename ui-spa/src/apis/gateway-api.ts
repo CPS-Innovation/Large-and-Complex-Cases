@@ -25,6 +25,9 @@ import {
   type InitiateFileTransferPayload,
   type ConnectEgressPayload,
   type ConnectNetAppPayload,
+  type BatchOperationPayload,
+  type BatchOperationResponse,
+  type ManageMaterialsActiveResponse,
   caseDivisionsOrAreaResponseSchema,
   searchResultDataSchema,
   egressSearchResultResponseSchema,
@@ -40,6 +43,9 @@ import {
   initiateFileTransferPayloadSchema,
   connectEgressPayloadSchema,
   connectNetAppPayloadSchema,
+  batchOperationPayloadSchema,
+  batchOperationResponseSchema,
+  manageMaterialsActiveResponseSchema,
 } from "../schemas";
 import { type CaseSearchParams } from "../common/types/CaseSearchParams";
 import { ApiError } from "../common/errors/ApiError";
@@ -565,4 +571,99 @@ export const downloadActivityLog = async (activityId: string) => {
     throw new ApiError(`Downloading activity log failed`, url, response);
   }
   return response;
+};
+
+const initiateBatchOperation = async (
+  endpoint: string,
+  payload: BatchOperationPayload,
+): Promise<BatchOperationResponse> => {
+  const validatedData = batchOperationPayloadSchema.safeParse(payload);
+  if (!validatedData.success) {
+    console.warn(
+      `Invalid batch operation request payload: ${validatedData.error}`,
+    );
+    throw new Error(`Invalid batch operation request payload`);
+  }
+
+  const url = `${GATEWAY_BASE_URL}${endpoint}`;
+  const response = await fetch(url, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      ...(await buildCommonHeaders()),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    if (response.status === 409) {
+      let conflictMessage: string | undefined;
+      try {
+        const text = await response.text();
+        try {
+          const parsed = JSON.parse(text);
+          conflictMessage = Array.isArray(parsed) ? parsed.join("\n") : text;
+        } catch {
+          conflictMessage = text;
+        }
+      } catch {
+        // ignore body read failure
+      }
+      throw new ApiError(
+        `Conflict: ${endpoint}`,
+        url,
+        response,
+        undefined,
+        conflictMessage,
+      );
+    }
+    throw new ApiError(`Batch operation failed: ${endpoint}`, url, response);
+  }
+
+  return parseAndValidateResponse<BatchOperationResponse>(
+    response,
+    url,
+    batchOperationResponseSchema,
+    "batchOperationResponseSchema",
+  );
+};
+
+export const initiateBatchCopy = async (
+  payload: BatchOperationPayload,
+): Promise<BatchOperationResponse> =>
+  initiateBatchOperation("/api/v1/netapp/copy/batch", payload);
+
+export const initiateBatchMove = async (
+  payload: BatchOperationPayload,
+): Promise<BatchOperationResponse> =>
+  initiateBatchOperation("/api/v1/netapp/move/batch", payload);
+
+export const getActiveManageMaterialsOperations = async (
+  caseId: string,
+): Promise<ManageMaterialsActiveResponse> => {
+  const url = `${GATEWAY_BASE_URL}/api/v1/cases/${caseId}/manage-materials/active`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      ...(await buildCommonHeaders()),
+    },
+  });
+
+  if (!response.ok) {
+    throw new ApiError(
+      `Getting active manage materials operations failed`,
+      url,
+      response,
+    );
+  }
+
+  return parseAndValidateResponse<ManageMaterialsActiveResponse>(
+    response,
+    url,
+    manageMaterialsActiveResponseSchema,
+    "manageMaterialsActiveResponseSchema",
+  );
 };

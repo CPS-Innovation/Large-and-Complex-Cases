@@ -11,6 +11,7 @@ import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useUserGroupsFeatureFlag } from "../../common/hooks/useUserGroupsFeatureFlag";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
 import TransferTreeViewPage from "../case-management/transfer-materials/TransferTreeViewPage";
+import ManageMaterialsPage from "../case-management/manage-materials/ManageMaterialsPage";
 import { getUrlSearchParam } from "../../common/utils/getUrlSearchParam";
 
 import styles from "./index.module.scss";
@@ -137,6 +138,26 @@ const CaseManagementPage = () => {
             <h3> Case Details</h3>
             <TransferTreeViewPage caseId={caseId} />
           </div>
+        ) : (
+          <></>
+        ),
+      },
+    });
+  }
+
+  if (featureFlags.manageMaterials) {
+    items.push({
+      id: "manage-materials",
+      label: "Manage materials",
+      panel: {
+        children: caseMetaData?.data ? (
+          <ManageMaterialsPage
+            caseId={caseId}
+            netAppPath={caseMetaData.data.netappFolderPath}
+            operationName={caseMetaData.data.operationName}
+            isTabActive={activeTabId === "manage-materials"}
+            initialActiveOps={caseMetaData.data.activeManageMaterialsOperations}
+          />
         ) : (
           <></>
         ),
