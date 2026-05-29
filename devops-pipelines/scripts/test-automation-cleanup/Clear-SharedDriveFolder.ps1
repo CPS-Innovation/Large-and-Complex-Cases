@@ -73,7 +73,7 @@ try {
     }
     else {
       throw "An unexpected item was deleted: $($deleted.Path)"
-    } 
+    }
   }
   else {
     $msg = "Failed to delete folder '$FolderPath'."
@@ -120,4 +120,3 @@ try {
 catch {
   throw "Error during folder recreation: $_"
 }
-

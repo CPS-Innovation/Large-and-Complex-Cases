@@ -79,7 +79,7 @@ function Remove-SharedDriveObjects {
     caseId     = $CaseId
     operations = $operations
   } | ConvertTo-Json -Depth 5
-  
+
   try {
     $response = Invoke-RestMethod -Method Post `
       -Uri "$BaseUrl/api/v1/netapp/delete/batch" `

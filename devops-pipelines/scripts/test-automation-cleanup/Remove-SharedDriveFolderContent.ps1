@@ -139,7 +139,7 @@ do {
 		}
 
 		Write-Verbose "GET $uri"
-		
+
 		$response = Invoke-RestMethod -Method Get `
 			-Uri $Uri `
 			-Headers $authHeader `
@@ -181,7 +181,7 @@ do {
 
 	$continuationToken = $response.pagination.nextContinuationToken
 	Write-Verbose "Next continuation token: $continuationToken"
-} 
+}
 until ([string]::IsNullOrWhiteSpace($continuationToken))
 
 
@@ -229,23 +229,23 @@ $failed = @{
 }
 
 for ($i = 0; $i -lt $objectsToDelete.Count; $i += $batchSize) {
-	$batch = $objectsToDelete[$i..([math]::Min($i + $batchSize - 1, $objectsToDelete.Count - 1))]  
+	$batch = $objectsToDelete[$i..([math]::Min($i + $batchSize - 1, $objectsToDelete.Count - 1))]
 	$batchIndex = [int]($i / $batchSize) + 1
 
 	Write-Host ("Deleting batch {0}/{1} ({2} item(s))..." -f `
 			$batchIndex, $totalBatches, $batch.Count)
-	
+
 	Write-Debug "Batch payload:`n$($batch | ConvertTo-Json -Depth 5)"
-	
+
 	$results = Remove-SharedDriveObjects `
 		-AuthHeader $authHeader `
 		-BaseUrl $BaseUrl `
 		-CaseId $CaseId `
 		-ObjectsToDelete $batch
 
-	Write-Verbose "Batch $batchIndex results: 
-		Succeeded=$($results.Succeeded.Count), 
-		NotFound=$($results.NotFound.Count), 
+	Write-Verbose "Batch $batchIndex results:
+		Succeeded=$($results.Succeeded.Count),
+		NotFound=$($results.NotFound.Count),
 		Failed=$($results.Failed.Count)"
 
 	if ($results.Succeeded.Count -ne $batch.Count) {
