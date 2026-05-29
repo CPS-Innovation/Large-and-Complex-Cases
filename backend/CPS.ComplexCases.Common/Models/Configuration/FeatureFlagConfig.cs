@@ -8,4 +8,8 @@ public class FeatureFlagConfig
     /// Enables case_active_manage_materials table access on GetCase API.
     /// </summary>
     public bool ManageMaterials { get; set; } = false;
+
+    // ----- Added for rollback test ----------------------
+    public bool SimulateEndpointFailure { get; set; } = false;
+    // ---------------------------------------------------
 }

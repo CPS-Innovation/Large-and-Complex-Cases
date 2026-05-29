@@ -124,49 +124,52 @@ stages:
             displayName: 'Publish Database Scripts'
             condition: eq(variables.runDbMigrationSteps, true)
 
-      - job: Build_FileTransfer_API
-        displayName: 'Build FileTransfer API'
-        steps:
-          - template: ../templates/dotnet-build-steps.yml
-            parameters:
-              projectPath: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
-              projectName: 'lacc-filetransfer-api'
-              buildConfiguration: $(buildConfiguration)
-              dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: true
-              publishOutput: true
-              runTests: false
+      # - job: Build_FileTransfer_API
+      #   displayName: 'Build FileTransfer API'
+      #   steps:
+      #     - template: ../templates/dotnet-build-steps.yml
+      #       parameters:
+      #         projectPath: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
+      #         projectName: 'lacc-filetransfer-api'
+      #         buildConfiguration: $(buildConfiguration)
+      #         dotNetVersion: $(dotNetVersion)
+      #         useLocalNuGet: true
+      #         publishOutput: true
+      #         runTests: false
 
   # Deployment stages:
   - template: ../templates/backend-deploy-stages.yml
     parameters:
       environment: dev
       requireValidation: false
-
-  - template: ../templates/backend-deploy-stages.yml
-    parameters:
-      environment: staging
-      requireValidation: true
-      notifyUsers: $(preprodNotifyUsers)
-      approvers: $(preprodApprovers)
       deployToSlot: true
       slotName: 'stg'
       runPostmanSmokeTest: true
 
-  - stage: Run_E2E_Tests
-    displayName: 'Run E2E tests'
-    jobs:
-      - template: ../templates/e2e-playwright-test-job.yml
-        parameters:
-          environment: staging
+  # - template: ../templates/backend-deploy-stages.yml
+  #   parameters:
+  #     environment: staging
+  #     requireValidation: true
+  #     notifyUsers: $(preprodNotifyUsers)
+  #     approvers: $(preprodApprovers)
+  #     deployToSlot: true
+  #     slotName: 'stg'
+  #     runPostmanSmokeTest: true
 
-  - template: ../templates/backend-deploy-stages.yml
-    parameters:
-      environment: prod
-      requireValidation: true
-      notifyUsers: $(prodNotifyUsers)
-      approvers: $(prodApprovers)
-      agentPool: 'LACC Prod Pool'
-      azureSubscription: 'Azure Pipeline: Large and Complex Cases - Prod'
-      deployToSlot: true
-      slotName: 'stg'
+  # - stage: Run_E2E_Tests
+  #   displayName: 'Run E2E tests'
+  #   jobs:
+  #     - template: ../templates/e2e-playwright-test-job.yml
+  #       parameters:
+  #         environment: staging
+
+  # - template: ../templates/backend-deploy-stages.yml
+  #   parameters:
+  #     environment: prod
+  #     requireValidation: true
+  #     notifyUsers: $(prodNotifyUsers)
+  #     approvers: $(prodApprovers)
+  #     agentPool: 'LACC Prod Pool'
+  #     azureSubscription: 'Azure Pipeline: Large and Complex Cases - Prod'
+  #     deployToSlot: true
+  #     slotName: 'stg'
