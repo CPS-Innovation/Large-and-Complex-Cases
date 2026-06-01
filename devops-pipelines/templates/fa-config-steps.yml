@@ -41,7 +41,7 @@ steps:
         [
           {
             "name": "FeatureFlags__SimulateEndpointFailure",
-            "value": "true",
+            "value": "false",
             "slotSetting": false
           },
           {
