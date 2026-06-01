@@ -35,6 +35,8 @@ const EgressPage = () => {
       retry: false,
       enabled: true,
       throwOnError: true,
+      staleTime: 0,
+      gcTime: 0,
     });
 
   useEffect(() => {

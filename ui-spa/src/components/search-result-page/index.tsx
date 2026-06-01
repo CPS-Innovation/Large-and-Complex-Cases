@@ -70,6 +70,8 @@ const CaseSearchResultPage = () => {
     retry: false,
     enabled: triggerSearchApi,
     throwOnError: true,
+    staleTime: 0,
+    gcTime: 0,
   });
   const { isLoading: isDivisionsOrAreasLoading } = useGetCaseDivisionsOrAreas();
 

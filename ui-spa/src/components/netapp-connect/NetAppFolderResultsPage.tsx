@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { Button, InsetText, BackLink, LinkButton } from "../govuk";
-import { UseApiResult } from "../../common/hooks/useApi";
 import { type ConnectNetAppFolderData } from "../../schemas";
 import { sortByStringProperty } from "../../common/utils/sortUtils";
 import { getFolderNameFromPath } from "../../common/utils/getFolderNameFromPath";
@@ -12,7 +11,8 @@ import styles from "./NetAppFolderResultsPage.module.scss";
 type NetAppFolderResultsPageProps = {
   backLinkUrl: string;
   rootFolderPath: string;
-  netAppFolderApiResults: UseApiResult<ConnectNetAppFolderData>;
+  netAppFolderResults: ConnectNetAppFolderData;
+  isNetAppFolderResultsLoading: boolean;
   handleGetFolderContent: (folderId: string) => void;
   handleConnectFolder: (id: string) => void;
 };
@@ -20,7 +20,8 @@ type NetAppFolderResultsPageProps = {
 const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
   backLinkUrl,
   rootFolderPath,
-  netAppFolderApiResults,
+  netAppFolderResults,
+  isNetAppFolderResultsLoading,
   handleConnectFolder,
   handleGetFolderContent,
 }) => {
@@ -30,16 +31,16 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
   }>();
 
   const netappFolderData = useMemo(() => {
-    if (!netAppFolderApiResults?.data?.folders) return [];
+    if (!netAppFolderResults?.folders) return [];
     if (sortValues?.name === "folder-name")
       return sortByStringProperty(
-        netAppFolderApiResults.data.folders,
+        netAppFolderResults.folders,
         "folderPath",
         sortValues.type,
       );
 
-    return netAppFolderApiResults.data.folders;
-  }, [netAppFolderApiResults, sortValues]);
+    return netAppFolderResults.folders;
+  }, [netAppFolderResults, sortValues]);
 
   const folders = useMemo(() => {
     const parts = rootFolderPath.split("/").filter(Boolean);
@@ -139,7 +140,7 @@ const NetAppFolderResultsPage: React.FC<NetAppFolderResultsPageProps> = ({
             tableName={"netapp"}
             folders={folders}
             loaderText="Loading folders from Network Shared Drive"
-            folderResultsStatus={netAppFolderApiResults.status}
+            isLoading={isNetAppFolderResultsLoading}
             folderResultsLength={netappFolderData.length}
             handleFolderPathClick={handleFolderPathClick}
             getTableRowData={getTableRowData}
