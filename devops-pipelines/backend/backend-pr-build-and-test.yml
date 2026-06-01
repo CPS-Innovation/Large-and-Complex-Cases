@@ -95,52 +95,52 @@ stages:
               publishOutput: false
               runTests: false
 
-      - job: Build_FileTransfer_API
-        displayName: 'Build FileTransfer API'
-        dependsOn: Build_And_Test_Solution
-        steps:
-          # Build and publish FileTransfer API
-          - template: ../templates/dotnet-build-steps.yml
-            parameters:
-              projectPath: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
-              projectName: 'lacc-filetransfer-api-drop'
-              buildConfiguration: $(buildConfiguration)
-              dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: false
-              publishOutput: false
-              runTests: false
+      # - job: Build_FileTransfer_API
+      #   displayName: 'Build FileTransfer API'
+      #   dependsOn: Build_And_Test_Solution
+      #   steps:
+      #     # Build and publish FileTransfer API
+      #     - template: ../templates/dotnet-build-steps.yml
+      #       parameters:
+      #         projectPath: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
+      #         projectName: 'lacc-filetransfer-api-drop'
+      #         buildConfiguration: $(buildConfiguration)
+      #         dotNetVersion: $(dotNetVersion)
+      #         useLocalNuGet: false
+      #         publishOutput: false
+      #         runTests: false
 
-      - job: Package_Database_Scripts
-        displayName: 'Package Database Migration Scripts'
-        dependsOn:
-          - Build_And_Test_Solution
-          - Check_DB_Diff
-        condition: and(succeeded(), eq(dependencies.Check_DB_Diff.outputs['Diff_Check.packageDatabase'], 'true'))
-        steps:
-          # Build Data project with dependencies
-          - template: ../templates/dotnet-build-steps.yml
-            parameters:
-              projectPath: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
-              projectName: 'Database'
-              buildConfiguration: $(buildConfiguration)
-              dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: true
-              publishOutput: false
-              runTests: false
+      # - job: Package_Database_Scripts
+      #   displayName: 'Package Database Migration Scripts'
+      #   dependsOn:
+      #     - Build_And_Test_Solution
+      #     - Check_DB_Diff
+      #   condition: and(succeeded(), eq(dependencies.Check_DB_Diff.outputs['Diff_Check.packageDatabase'], 'true'))
+      #   steps:
+      #     # Build Data project with dependencies
+      #     - template: ../templates/dotnet-build-steps.yml
+      #       parameters:
+      #         projectPath: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
+      #         projectName: 'Database'
+      #         buildConfiguration: $(buildConfiguration)
+      #         dotNetVersion: $(dotNetVersion)
+      #         useLocalNuGet: true
+      #         publishOutput: false
+      #         runTests: false
 
-          - task: Bash@3
-            displayName: 'Generate Migration Scripts'
-            inputs:
-              targetType: 'inline'
-              script: |
-                export PATH="$PATH:$HOME/.dotnet/tools"
+      #     - task: Bash@3
+      #       displayName: 'Generate Migration Scripts'
+      #       inputs:
+      #         targetType: 'inline'
+      #         script: |
+      #           export PATH="$PATH:$HOME/.dotnet/tools"
 
-                if ! dotnet ef --version &> /dev/null; then
-                  dotnet tool install --global dotnet-ef --version $(efVersion)
-                fi
+      #           if ! dotnet ef --version &> /dev/null; then
+      #             dotnet tool install --global dotnet-ef --version $(efVersion)
+      #           fi
 
-                dotnet ef migrations script \
-                --idempotent \
-                --output $(Build.ArtifactStagingDirectory)/migration-script.sql \
-                --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
-                --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
+      #           dotnet ef migrations script \
+      #           --idempotent \
+      #           --output $(Build.ArtifactStagingDirectory)/migration-script.sql \
+      #           --project backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj \
+      #           --startup-project backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj
