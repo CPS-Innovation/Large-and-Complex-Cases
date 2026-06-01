@@ -9,6 +9,7 @@ import {
 } from "../../common/hooks/useCaseSearchForm";
 import SearchResults from "./SearchResults";
 import { useFormattedAreaValues } from "../../common/hooks/useFormattedAreaValues";
+import { useGetCaseDivisionsOrAreas } from "../../common/hooks/useGetCaseDivisionsOrAreas";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
 import { useQuery } from "@tanstack/react-query";
 import styles from "./index.module.scss";
@@ -61,9 +62,7 @@ const CaseSearchResultPage = () => {
     getSearchParams,
   } = useCaseSearchForm(getInitialState());
 
-  const formattedAreaValues = useFormattedAreaValues(
-    formData[SearchFormField.searchType] === "urn",
-  );
+  const formattedAreaValues = useFormattedAreaValues();
 
   const { data: searchResults, isLoading: isSearchResultsLoading } = useQuery({
     queryKey: [`caseSearchResult-${queryString}`],
@@ -72,6 +71,7 @@ const CaseSearchResultPage = () => {
     enabled: triggerSearchApi,
     throwOnError: true,
   });
+  const { isLoading: isDivisionsOrAreasLoading } = useGetCaseDivisionsOrAreas();
 
   useEffect(() => {
     if (formData[SearchFormField.searchType] === "urn" || validatedAreaValues) {
@@ -343,7 +343,7 @@ const CaseSearchResultPage = () => {
     }
   };
   console.log("searchResults", searchResults);
-  if (isSearchResultsLoading) {
+  if ((isSearchResultsLoading || isDivisionsOrAreasLoading) && !searchResults) {
     return <div>Loading...</div>;
   }
   return (

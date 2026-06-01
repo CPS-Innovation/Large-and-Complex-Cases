@@ -8,6 +8,7 @@ import {
 } from "../../common/hooks/useCaseSearchForm";
 import { useLocation } from "react-router";
 import { useFormattedAreaValues } from "../../common/hooks/useFormattedAreaValues";
+import { useGetCaseDivisionsOrAreas } from "../../common/hooks/useGetCaseDivisionsOrAreas";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
 
 import styles from "./index.module.scss";
@@ -15,6 +16,7 @@ import styles from "./index.module.scss";
 const CaseSearchPage = () => {
   const errorSummaryRef = useRef<HTMLInputElement>(null);
   const { navigateWithParams } = useSearchNavigation();
+  useGetCaseDivisionsOrAreas();
   const formattedAreaValues = useFormattedAreaValues();
   const location = useLocation();
 
