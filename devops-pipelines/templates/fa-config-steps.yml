@@ -37,8 +37,13 @@ steps:
       appName: ${{ parameters.functionAppName }}
       resourceGroupName: ${{ parameters.resourceGroupName }}
       slotName: ${{ parameters.slotName }}
-      appSettings: |
+      appSettings: | # first block added for rollback test
         [
+          {
+            "name": "FeatureFlags__SimulateEndpointFailure",
+            "value": "true",
+            "slotSetting": false
+          },
           {
             "name": "ConnectionStrings__CaseManagementDatastoreConnection",
             "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=ConnectionStrings--CaseManagementDatastoreConnection)",
