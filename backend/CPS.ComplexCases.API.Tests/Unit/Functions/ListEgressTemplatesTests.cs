@@ -28,13 +28,6 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         private readonly ListEgressTemplates _function;
         private readonly Guid _correlationId;
 
-        // ----- Added for rollback test -----------------------
-        var featureFlags = Options.Create(new FeatureFlagConfig
-        {
-            SimulateEndpointFailure = false
-        });
-        // -----------------------------------------------------
-
         public ListEgressTemplatesTests()
         {
             _loggerMock = new Mock<ILogger<ListEgressTemplates>>();
@@ -42,6 +35,14 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _egressArgFactoryMock = new Mock<IEgressArgFactory>();
             _initializationHandlerMock = new Mock<IInitializationHandler>();
             _fixture = new Fixture();
+
+            // ----- Added for rollback test -----------------------
+            var featureFlags = Options.Create(new FeatureFlagConfig
+            {
+                SimulateEndpointFailure = false
+            });
+            // -----------------------------------------------------
+
             _function = new ListEgressTemplates(
                 _loggerMock.Object,
                 _egressClientMock.Object,
