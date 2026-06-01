@@ -532,7 +532,7 @@ test.describe("Case Search/Results", async () => {
       ).toBeVisible();
       await expect(
         page.getByText(
-          "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/areas: Getting case areas failed; status - Internal Server Error (500)",
+          "API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/areas: Getting case areas failed; status - Internal Server Error (500)",
         ),
       ).toBeVisible();
     });
@@ -559,7 +559,7 @@ test.describe("Case Search/Results", async () => {
       ).toBeVisible();
       await expect(
         page.getByText(
-          "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/areas: Getting case areas failed; status - Internal Server Error (500)",
+          "API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/areas: Getting case areas failed; status - Internal Server Error (500)",
         ),
       ).toBeVisible();
     });
@@ -587,7 +587,7 @@ test.describe("Case Search/Results", async () => {
       ).toBeVisible();
       await expect(
         page.getByText(
-          "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/case-search?operation-name=ww&area=1001: Searching for cases failed; status - Internal Server Error (500)",
+          "API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/case-search?operation-name=ww&area=1001: Searching for cases failed; status - Internal Server Error (500)",
         ),
       ).toBeVisible();
 
@@ -604,7 +604,7 @@ test.describe("Case Search/Results", async () => {
       ).toBeVisible();
       await expect(
         page.getByText(
-          "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/case-search?defendant-name=ww&area=1001: Searching for cases failed; status - Internal Server Error (500)",
+          "API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/case-search?defendant-name=ww&area=1001: Searching for cases failed; status - Internal Server Error (500)",
         ),
       ).toBeVisible();
 
@@ -620,7 +620,7 @@ test.describe("Case Search/Results", async () => {
       ).toBeVisible();
       await expect(
         page.getByText(
-          "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/case-search?urn=11AA2222233: Searching for cases failed; status - Internal Server Error (500)",
+          "API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/case-search?urn=11AA2222233: Searching for cases failed; status - Internal Server Error (500)",
         ),
       ).toBeVisible();
     });

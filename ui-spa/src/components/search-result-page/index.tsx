@@ -383,13 +383,13 @@ const CaseSearchResultPage = () => {
           {!searchResults?.length && <div>{getNoResultsText()}</div>}
         </div>
 
-        {!!searchResults?.length && (
+        {
           <SearchResults
             searchQueryString={queryString}
-            searchApiResults={searchResults}
+            searchApiResults={searchResults ?? []}
             searchType={formData[SearchFormField.searchType]}
           />
-        )}
+        }
       </PageContentWrapper>
     </div>
   );

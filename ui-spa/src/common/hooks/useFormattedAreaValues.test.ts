@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { renderHook } from "@testing-library/react";
 import { useFormattedAreaValues } from "./useFormattedAreaValues";
 import { vi, Mock } from "vitest";
 import { useMainStateContext } from "../../providers/MainStateProvider";
