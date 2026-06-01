@@ -16,7 +16,11 @@ using CPS.ComplexCases.NetApp.Models.Dto;
 
 namespace CPS.ComplexCases.API.Functions;
 
-public class ListNetAppFiles(ILogger<ListNetAppFiles> logger, INetAppClient netAppClient, INetAppArgFactory netAppArgFactory, ISecurityGroupMetadataService securityGroupMetadataService, IInitializationHandler initializationHandler)
+public class ListNetAppFiles(ILogger<ListNetAppFiles> logger, 
+    INetAppClient netAppClient, 
+    INetAppArgFactory netAppArgFactory, 
+    ISecurityGroupMetadataService securityGroupMetadataService,
+    IInitializationHandler initializationHandler)
 {
     private readonly ILogger<ListNetAppFiles> _logger = logger;
     private readonly INetAppClient _netAppClient = netAppClient;

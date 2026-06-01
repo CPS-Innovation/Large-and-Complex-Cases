@@ -13,17 +13,29 @@ using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models.Dto;
 
+// ----- Added for rollback test ------------------
+using Microsoft.Extensions.Options;
+using CPS.ComplexCases.Common.Models.Configuration;
+// ------------------------------------------------
+
 namespace CPS.ComplexCases.API.Functions;
 
 public class ListEgressTemplates(ILogger<ListEgressTemplates> logger,
     IEgressClient egressClient,
     IEgressArgFactory egressArgFactory,
+    // ----- Added for rollback test ------------------
+    IOptions<FeatureFlagConfig> featureFlags,
+    // ------------------------------------------------
     IInitializationHandler initializationHandler)
 {
     private readonly ILogger<ListEgressTemplates> _logger = logger;
     private readonly IEgressClient _egressClient = egressClient;
     private readonly IEgressArgFactory _egressArgFactory = egressArgFactory;
     private readonly IInitializationHandler _initializationHandler = initializationHandler;
+
+    // ----- Added for rollback test --------------------------------------
+    private readonly FeatureFlagConfig _featureFlags = featureFlags.Value;
+    // --------------------------------------------------------------------
 
     [Function(nameof(ListEgressTemplates))]
     [OpenApiOperation(operationId: nameof(ListEgressTemplates), tags: ["Egress"], Description = "Paginated list of workspace templates from Egress")]
@@ -40,6 +52,14 @@ public class ListEgressTemplates(ILogger<ListEgressTemplates> logger,
     {
         var context = functionContext.GetRequestContext();
         _initializationHandler.Initialize(context.Username, context.CorrelationId);
+
+        // ----- Added for rollback test -----------------------------------------
+        if (_featureFlags.SimulateEndpointFailure)
+        {
+            _logger.LogError("Simulated endpoint failure for rollback testing.");
+            throw new InvalidOperationException("Simulated failure for rollback testing.");
+        }
+        // ------------------------------------------------------------------------
 
         var skip = int.TryParse(req.Query[InputParameters.Skip], out var skipValue) ? skipValue : 0;
         var take = int.TryParse(req.Query[InputParameters.Take], out var takeValue) ? takeValue : 100;
