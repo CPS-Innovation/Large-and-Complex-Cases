@@ -11,6 +11,11 @@ using CPS.ComplexCases.Egress.Models.Args;
 using CPS.ComplexCases.Egress.Models.Dto;
 using Moq;
 
+// ----- Added for rollback test ------------------
+using Microsoft.Extensions.Options;
+using CPS.ComplexCases.Common.Models.Configuration;
+// ------------------------------------------------
+
 namespace CPS.ComplexCases.API.Tests.Unit.Functions
 {
     public class ListEgressTemplatesTests
@@ -23,6 +28,13 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         private readonly ListEgressTemplates _function;
         private readonly Guid _correlationId;
 
+        // ----- Added for rollback test -----------------------
+        var featureFlags = Options.Create(new FeatureFlagConfig
+        {
+            SimulateEndpointFailure = false
+        });
+        // -----------------------------------------------------
+
         public ListEgressTemplatesTests()
         {
             _loggerMock = new Mock<ILogger<ListEgressTemplates>>();
@@ -34,6 +46,9 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 _loggerMock.Object,
                 _egressClientMock.Object,
                 _egressArgFactoryMock.Object,
+                // ---- Added for rollback test ----
+                featureFlags,
+                // ---------------------------------
                 _initializationHandlerMock.Object);
             _correlationId = _fixture.Create<Guid>();
         }

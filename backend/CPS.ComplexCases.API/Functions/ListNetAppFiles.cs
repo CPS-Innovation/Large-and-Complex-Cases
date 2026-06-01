@@ -14,22 +14,12 @@ using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Dto;
 
-// ----- Added for rollback test ------------------
-using Microsoft.Extensions.Options;
-using CPS.ComplexCases.Common.Models.Configuration;
-// ------------------------------------------------
-
 namespace CPS.ComplexCases.API.Functions;
 
 public class ListNetAppFiles(ILogger<ListNetAppFiles> logger, 
     INetAppClient netAppClient, 
     INetAppArgFactory netAppArgFactory, 
     ISecurityGroupMetadataService securityGroupMetadataService,
-
-    // ----- Added for rollback test --------
-    IOptions<FeatureFlagConfig> featureFlags,
-    // --------------------------------------
-
     IInitializationHandler initializationHandler)
 {
     private readonly ILogger<ListNetAppFiles> _logger = logger;
@@ -37,10 +27,6 @@ public class ListNetAppFiles(ILogger<ListNetAppFiles> logger,
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
     private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
     private readonly IInitializationHandler _initializationHandler = initializationHandler;
-
-    // ----- Added for rollback test --------------------------------------
-    private readonly FeatureFlagConfig _featureFlags = featureFlags.Value;
-    // --------------------------------------------------------------------
 
     [Function(nameof(ListNetAppFiles))]
     [OpenApiOperation(operationId: nameof(ListNetAppFiles), tags: ["NetApp"], Description = "Lists files in a NetApp bucket.")]
@@ -58,14 +44,6 @@ public class ListNetAppFiles(ILogger<ListNetAppFiles> logger,
     {
         var context = functionContext.GetRequestContext();
         _initializationHandler.Initialize(context.Username, context.CorrelationId);
-
-        // ----- Added for rollback test -----------------------------------------
-        if (_featureFlags.SimulateEndpointFailure)
-        {
-            _logger.LogError("Simulated endpoint failure for rollback testing.");
-            throw new InvalidOperationException("Simulated failure for rollback testing.");
-        }
-        // ------------------------------------------------------------------------
 
         var continuationToken = req.Query[InputParameters.ContinuationToken];
         var take = int.TryParse(req.Query[InputParameters.Take], out var takeValue) ? takeValue : 100;

@@ -13,11 +13,6 @@ using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Models.Dto;
 using Moq;
 
-// ----- Added for rollback test ------------------
-using Microsoft.Extensions.Options;
-using CPS.ComplexCases.Common.Models.Configuration;
-// ------------------------------------------------
-
 namespace CPS.ComplexCases.API.Tests.Unit.Functions;
 
 public class ListNetAppFilesTests
@@ -61,21 +56,11 @@ public class ListNetAppFilesTests
                     }
                 ]);
 
-        // ----- Added for rollback test -----------------------
-        var featureFlags = Options.Create(new FeatureFlagConfig
-        {
-            SimulateEndpointFailure = false
-        });
-        // -----------------------------------------------------
-
         _function = new ListNetAppFiles(
             _loggerMock.Object,
             _netAppClientMock.Object,
             _netAppArgFactoryMock.Object,
             _securityGroupMetadataServiceMock.Object,
-            // ---- Added for rollback test ----
-            featureFlags,
-            // ---------------------------------
             _initializationHandlerMock.Object);
     }
 
