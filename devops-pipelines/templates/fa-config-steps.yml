@@ -37,11 +37,21 @@ steps:
       appName: ${{ parameters.functionAppName }}
       resourceGroupName: ${{ parameters.resourceGroupName }}
       slotName: ${{ parameters.slotName }}
-      appSettings: | # first block added for rollback test
+      appSettings: | # first 3 blocks added for rollback test
         [
           {
             "name": "FeatureFlags__SimulateEndpointFailure",
             "value": "true",
+            "slotSetting": false
+          },
+          {
+            "name": "WEBSITE_SWAP_WARMUP_PING_PATH",
+            "value": "/api/status",
+            "slotSetting": false
+          },
+          {
+            "name": "WEBSITE_SWAP_WARMUP_PING_STATUSES",
+            "value": "200",
             "slotSetting": false
           },
           {
