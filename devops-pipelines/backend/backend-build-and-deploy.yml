@@ -144,7 +144,6 @@ stages:
       requireValidation: false
       deployToSlot: true
       slotName: 'stg'
-      runPostmanSmokeTest: true
 
   # - template: ../templates/backend-deploy-stages.yml
   #   parameters:
