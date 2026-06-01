@@ -1,5 +1,4 @@
 import { useRef, useState, useEffect } from "react";
-import { useApi } from "../../common/hooks/useApi";
 import { Button, Input, Select, ErrorSummary, BackLink } from "../govuk";
 import { getCaseSearchResults } from "../../apis/gateway-api";
 import useSearchNavigation from "../../common/hooks/useSearchNavigation";
@@ -11,6 +10,7 @@ import {
 import SearchResults from "./SearchResults";
 import { useFormattedAreaValues } from "../../common/hooks/useFormattedAreaValues";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
+import { useQuery } from "@tanstack/react-query";
 import styles from "./index.module.scss";
 
 const CaseSearchResultPage = () => {
@@ -65,16 +65,13 @@ const CaseSearchResultPage = () => {
     formData[SearchFormField.searchType] === "urn",
   );
 
-  const caseSearchApi = useApi(
-    getCaseSearchResults,
-    [searchParams],
-    triggerSearchApi,
-  );
-
-  useEffect(() => {
-    if (caseSearchApi.status === "failed")
-      throw new Error(`${caseSearchApi.error}`);
-  }, [caseSearchApi]);
+  const { data: searchResults, isLoading: isSearchResultsLoading } = useQuery({
+    queryKey: [`caseSearchResult-${queryString}`],
+    queryFn: () => getCaseSearchResults(searchParams),
+    retry: false,
+    enabled: triggerSearchApi,
+    throwOnError: true,
+  });
 
   useEffect(() => {
     if (formData[SearchFormField.searchType] === "urn" || validatedAreaValues) {
@@ -345,14 +342,8 @@ const CaseSearchResultPage = () => {
         );
     }
   };
-
-  if (
-    ((caseSearchApi.status === "loading" ||
-      caseSearchApi.status === "initial") &&
-      !errorList.length) ||
-    (formData[SearchFormField.searchType] !== "urn" &&
-      !formattedAreaValues.options.length)
-  ) {
+  console.log("searchResults", searchResults);
+  if (isSearchResultsLoading) {
     return <div>Loading...</div>;
   }
   return (
@@ -384,19 +375,21 @@ const CaseSearchResultPage = () => {
               </div>
             </div>
           </form>
-          {!!caseSearchApi.data?.length && (
+          {!!searchResults?.length && (
             <div className={styles.searchResultsCount}>
-              {getResultsCountText(caseSearchApi.data.length)}
+              {getResultsCountText(searchResults.length)}
             </div>
           )}
-          {!caseSearchApi.data?.length && <div>{getNoResultsText()}</div>}
+          {!searchResults?.length && <div>{getNoResultsText()}</div>}
         </div>
 
-        <SearchResults
-          searchQueryString={queryString}
-          searchApiResults={caseSearchApi}
-          searchType={formData[SearchFormField.searchType]}
-        />
+        {!!searchResults?.length && (
+          <SearchResults
+            searchQueryString={queryString}
+            searchApiResults={searchResults}
+            searchType={formData[SearchFormField.searchType]}
+          />
+        )}
       </PageContentWrapper>
     </div>
   );

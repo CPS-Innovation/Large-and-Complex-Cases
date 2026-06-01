@@ -43,7 +43,8 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       const caseSearchResults = isDevMock()
         ? casesSearchResultsDev
         : casesSearchResultsPlaywright;
-      await delay(RESPONSE_DELAY);
+      await delay(5000);
+      // return new HttpResponse(null, { status: 500 });
       return HttpResponse.json(caseSearchResults);
     }),
 
