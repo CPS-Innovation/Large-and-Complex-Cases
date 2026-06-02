@@ -30,7 +30,7 @@ const EgressPage = () => {
 
   const { data: egressSearchResults, isLoading: isEgressSearchResultLoading } =
     useQuery({
-      queryKey: [`egressSearch-${workspaceName}`],
+      queryKey: [workspaceName],
       queryFn: () => getEgressSearchResults(workspaceName),
       retry: false,
       enabled: true,

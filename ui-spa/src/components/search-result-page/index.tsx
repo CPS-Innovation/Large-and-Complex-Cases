@@ -65,7 +65,7 @@ const CaseSearchResultPage = () => {
   const formattedAreaValues = useFormattedAreaValues();
 
   const { data: searchResults, isLoading: isSearchResultsLoading } = useQuery({
-    queryKey: [`caseSearchResult-${queryString}`],
+    queryKey: [searchParams],
     queryFn: () => getCaseSearchResults(searchParams),
     retry: false,
     enabled: triggerSearchApi,
