@@ -265,13 +265,10 @@ test.describe("Case Search/Results", async () => {
       await expect(page).toHaveURL("search-results?urn=11AA2222233");
     });
 
-    test("Should disable the search by operation name and search by defendant last name options if areas api failed but users should be able to do the URN search", async ({
-      page,
-      worker,
-    }) => {
+    test("Should throw error if areas api failed", async ({ page, worker }) => {
       await worker.use(
         http.get("https://mocked-out-api/api/v1/areas", async () => {
-          await delay(10);
+          await delay(100);
           return new HttpResponse(null, { status: 500 });
         }),
       );
@@ -282,15 +279,17 @@ test.describe("Case Search/Results", async () => {
       await expect(
         page.getByRole("radio", { name: "Defendant last name" }),
       ).toBeDisabled();
-      await expect(page.locator("#case-search-types-3")).toBeChecked();
-      await page.getByTestId("search-urn").fill("11AA2222233");
-      await page.getByTestId("search-urn").press("Enter");
-      await expect(page).toHaveURL("search-results?urn=11AA2222233");
-      await expect(page).toHaveURL("search-results?urn=11AA2222233");
-      await expect(page.locator("h1")).toHaveText("Search results");
+      await expect(page.locator("h1")).toHaveText(
+        "Sorry, there is a problem with the service",
+      );
       await expect(
         page.getByText(
-          "4 cases found. Select view to transfer files or folders or connect to setup storage locations.",
+          "Please try this case again later. If the problem continues, contact the product team.",
+        ),
+      ).toBeVisible();
+      await expect(
+        page.getByText(
+          "API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/areas: Getting case areas failed; status - Internal Server Error (500)",
         ),
       ).toBeVisible();
     });

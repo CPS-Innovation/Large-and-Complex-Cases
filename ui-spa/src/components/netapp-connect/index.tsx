@@ -25,7 +25,7 @@ const NetAppPage = () => {
 
   const { searchQueryString, netappRootFolderPath } = state;
 
-  const [operationName, setOperationName] = useState<string | null>("");
+  const [operationName, setOperationName] = useState<string>("");
   const [rootFolderPath, setRootFolderPath] = useState(
     netappRootFolderPath ?? "",
   );
@@ -33,7 +33,7 @@ const NetAppPage = () => {
   const { data: netAppFolderResults, isLoading: isNetAppFolderResultsLoading } =
     useQuery({
       queryKey: [operationName, rootFolderPath],
-      queryFn: () => getConnectNetAppFolders(operationName!, rootFolderPath),
+      queryFn: () => getConnectNetAppFolders(operationName, rootFolderPath),
       retry: false,
       enabled: !!operationName,
       throwOnError: true,
@@ -45,7 +45,7 @@ const NetAppPage = () => {
     if (location.pathname.endsWith("/netapp-connect")) {
       const opName = searchParams.get("operation-name");
       if (!opName) {
-        setOperationName(null);
+        setOperationName("");
         return;
       }
       setOperationName(opName);
@@ -59,7 +59,7 @@ const NetAppPage = () => {
   const handleConnectFolder = (path: string) => {
     const payload: SharedDriveConnectConfirmationRouteState = {
       isRouteValid: true,
-      operationName: operationName!,
+      operationName: operationName,
       caseId: caseId!,
       searchQueryString: searchQueryString,
       netappRootFolderPath: rootFolderPath,

@@ -44,7 +44,6 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
         ? casesSearchResultsDev
         : casesSearchResultsPlaywright;
       await delay(RESPONSE_DELAY);
-      // return new HttpResponse(null, { status: 500 });
       return HttpResponse.json(caseSearchResults);
     }),
 
