@@ -123,7 +123,7 @@ jobs:
             -TenantId $(TenantId)
             -AadUsername $(AadUserName)
             -AadPassword $(AadUserPassword)
-            -CaseId $(E2eTestsCaseId)
+            -CaseId $(E2eTestCaseId)
             -FolderPath "existingCaseAutomation"
             -BaseUrl $(LccApiBaseUrl)
             -ExcludePatterns "lcc-e2e-fixture-source"
