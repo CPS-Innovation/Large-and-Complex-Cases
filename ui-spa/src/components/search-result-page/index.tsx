@@ -344,7 +344,6 @@ const CaseSearchResultPage = () => {
         );
     }
   };
-  console.log("searchResults", searchResults);
   if ((isSearchResultsLoading || isDivisionsOrAreasLoading) && !searchResults) {
     return <div>Loading...</div>;
   }

@@ -33,7 +33,7 @@ const EgressPage = () => {
       queryKey: [workspaceName],
       queryFn: () => getEgressSearchResults(workspaceName),
       retry: false,
-      enabled: true,
+      enabled: !!workspaceName,
       throwOnError: true,
       staleTime: 0,
       gcTime: 0,
