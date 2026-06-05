@@ -259,7 +259,7 @@ test.describe("egress connect", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/egress/workspaces: Searching for Egress workspaces failed; status - Internal Server Error (500)",
+        "API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/egress/workspaces: Searching for Egress workspaces failed; status - Internal Server Error (500)",
       ),
     ).toBeVisible();
   });

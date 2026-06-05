@@ -1,4 +1,3 @@
-import { UseApiResult } from "../../common/hooks/useApi";
 import type { SearchResultData, SearchResult } from "../../schemas";
 import { Table, Tag } from "../govuk";
 import { Link } from "react-router";
@@ -11,7 +10,7 @@ import styles from "./SearchResults.module.scss";
 
 type SearchResultsProps = {
   searchQueryString: string;
-  searchApiResults: UseApiResult<SearchResultData>;
+  searchApiResults: SearchResultData;
   searchType: SearchFromData["searchType"];
 };
 
@@ -60,8 +59,8 @@ const SearchResults: React.FC<SearchResultsProps> = ({
     );
   };
   const getTableRowData = () => {
-    if (!searchApiResults.data) return [];
-    return searchApiResults.data.map((data) => {
+    if (!searchApiResults) return [];
+    return searchApiResults.map((data) => {
       const operationName = data.operationName
         ? data.operationName
         : data.leadDefendantName!;
@@ -110,53 +109,51 @@ const SearchResults: React.FC<SearchResultsProps> = ({
   };
   return (
     <div className={styles.results}>
-      {searchApiResults.status === "succeeded" &&
-        !!searchApiResults.data?.length && (
-          <Table
-            caption="Case search result table"
-            captionClassName="govuk-visually-hidden"
-            head={[
-              {
-                children: "Defendant or operation name",
-              },
-              {
-                children: "URN",
-              },
-              {
-                children: "Lead defendants",
-              },
-              {
-                children: "Egress",
-              },
-              {
-                children: "Shared Drive",
-              },
-              {
-                children: "Case created",
-              },
-              {
-                children: "",
-              },
-            ]}
-            rows={getTableRowData()}
-          ></Table>
-        )}
-      {searchApiResults.status === "succeeded" &&
-        !searchApiResults.data?.length && (
-          <div className={styles.noResultsContent}>
-            <div>
-              <span>You can:</span>
-            </div>
-            <ul className="govuk-list govuk-list--bullet">
-              <li>check for spelling or typing errors</li>
-              <li>
-                check the case exists and you have access on the Case Management
-                System
-              </li>
-              <li>contact the product team if you need help</li>
-            </ul>
+      {searchApiResults.length > 0 && (
+        <Table
+          caption="Case search result table"
+          captionClassName="govuk-visually-hidden"
+          head={[
+            {
+              children: "Defendant or operation name",
+            },
+            {
+              children: "URN",
+            },
+            {
+              children: "Lead defendants",
+            },
+            {
+              children: "Egress",
+            },
+            {
+              children: "Shared Drive",
+            },
+            {
+              children: "Case created",
+            },
+            {
+              children: "",
+            },
+          ]}
+          rows={getTableRowData()}
+        ></Table>
+      )}
+      {!searchApiResults.length && (
+        <div className={styles.noResultsContent}>
+          <div>
+            <span>You can:</span>
           </div>
-        )}
+          <ul className="govuk-list govuk-list--bullet">
+            <li>check for spelling or typing errors</li>
+            <li>
+              check the case exists and you have access on the Case Management
+              System
+            </li>
+            <li>contact the product team if you need help</li>
+          </ul>
+        </div>
+      )}
     </div>
   );
 };

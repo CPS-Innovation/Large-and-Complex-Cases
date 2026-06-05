@@ -3,34 +3,16 @@ import * as areaLookups from "./utils/mapAreaLookups";
 
 describe("mainStateReducer", () => {
   const initialState = {
-    caseDivisionsOrAreas: { status: "loading" as const },
+    apiData: {
+      caseDivisionsOrAreas: null,
+    },
   };
   it("Should return the state, if there are no matching action types found", () => {
     const newState = mainStateReducer(initialState, {} as any);
     expect(newState).toStrictEqual(initialState);
   });
-  describe("UPDATE_CASE_DIVISIONS_OR_AREAS action", () => {
-    it("Should update the state correctly when the payload status is failed", () => {
-      const newState = mainStateReducer(initialState, {
-        type: "UPDATE_CASE_DIVISIONS_OR_AREAS",
-        payload: { status: "failed", error: "error message" },
-      });
-      expect(newState).toStrictEqual({
-        ...initialState,
-        caseDivisionsOrAreas: {
-          status: "failed",
-          error: "error message",
-        },
-      });
-    });
-    it("Should update the state correctly when the payload status is loading", () => {
-      const newState = mainStateReducer(initialState, {
-        type: "UPDATE_CASE_DIVISIONS_OR_AREAS",
-        payload: { status: "loading" },
-      });
-      expect(newState).toStrictEqual(initialState);
-    });
-    it("Should update the state correctly when the payload status is succeeded", () => {
+  describe("SET_CASE_DIVISIONS_OR_AREAS action", () => {
+    it("SET_CASE_DIVISIONS_OR_AREAS should update the state correctly", () => {
       const areaLookupData = {
         allAreas: [
           {
@@ -85,14 +67,16 @@ describe("mainStateReducer", () => {
       };
       const mapAreaLookupsSpy = vi.spyOn(areaLookups, "mapAreaLookups");
       const newState = mainStateReducer(initialState, {
-        type: "UPDATE_CASE_DIVISIONS_OR_AREAS",
-        payload: { status: "succeeded", data: areaLookupData },
+        type: "SET_CASE_DIVISIONS_OR_AREAS",
+        payload: { caseDivisionsOrAreas: areaLookupData },
       });
       expect(mapAreaLookupsSpy).toHaveBeenCalledTimes(1);
       expect(mapAreaLookupsSpy).toHaveBeenCalledWith(areaLookupData);
       expect(newState).toStrictEqual({
         ...initialState,
-        caseDivisionsOrAreas: { status: "succeeded", data: expectedData },
+        apiData: {
+          caseDivisionsOrAreas: { ...expectedData },
+        },
       });
     });
   });
