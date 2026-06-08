@@ -1,0 +1,116 @@
+.mainContainer {
+  .titleWrapper {
+    background: #f3f2f1;
+    padding: 0.25rem 0.5rem;
+    display: block;
+    h3 {
+      margin: 0.5rem;
+    }
+  }
+  .tableContainer {
+    padding: 0 1rem;
+  }
+  .sourceContainer {
+    width: 60%;
+    border: 1px solid #b1b4b6;
+    min-height: 21.875rem;
+
+    & :global(.govuk-checkboxes__input) {
+      width: 30px;
+      height: 30px;
+    }
+    & :global(.govuk-checkboxes__label::before) {
+      width: 30px;
+      height: 30px;
+    }
+    & :global(.govuk-checkboxes__label::after) {
+      top: 9px;
+      left: 7px;
+      width: 15px;
+      height: 8px;
+      border-width: 0 0 3px 3px;
+    }
+    & :global(.govuk-table) {
+      table-layout: fixed;
+    }
+    & :global(.govuk-table__header:nth-of-type(1)) {
+      width: 1.25rem;
+      & :global(.govuk-checkboxes__item) {
+        padding: 0;
+      }
+    }
+    & :global(.govuk-table__header:nth-of-type(2)) {
+      width: 15.625rem;
+    }
+    & :global(.govuk-table__header:nth-of-type(3)) {
+      width: 9.375rem;
+    }
+    & :global(.govuk-table__header:nth-of-type(4)) {
+      width: 6.25rem;
+    }
+    & :global(.govuk-table__cell:nth-of-type(2)) {
+      button {
+        width: 15.625rem;
+        overflow-wrap: break-word;
+        word-break: break-all;
+        text-align: left;
+      }
+    }
+  }
+  .destinationContainer {
+    width: 40%;
+    border: 1px solid #b1b4b6;
+    min-height: 21.875rem;
+  }
+}
+
+.transferContent {
+  position: relative;
+}
+.spinnerWrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: absolute;
+  top: 5rem;
+  & .spinnerText {
+    margin-top: 1rem;
+  }
+}
+
+.successBanner {
+  margin-top: 2rem;
+  width: 50%;
+  .successMessage {
+    font-size: 1.5rem;
+  }
+}
+
+.inlineHeading {
+  display: inline-block;
+}
+
+.regionHead {
+  font-weight: bold;
+  font-size: 1.4rem;
+  margin: 0.5rem;
+}
+.transferProgressMetrics {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-direction: column;
+  text-align: center;
+}
+
+.insetTextWrapper {
+  position: relative;
+  .disconnectButton {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin-bottom: 0;
+    margin-top: 1.875rem;
+  }
+}

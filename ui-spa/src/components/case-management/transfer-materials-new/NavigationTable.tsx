@@ -9,7 +9,6 @@ type NavigationTableProps = {
   isLoading: boolean;
   folderResultsLength: number;
   loaderText: string;
-  handleFolderPathClick: (folderPath: string) => void;
   getTableRowData: () => {
     cells: {
       children: React.ReactElement;

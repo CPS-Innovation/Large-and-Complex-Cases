@@ -12,16 +12,14 @@ import {
   type EgressFolder,
   type NetAppFileFolder,
 } from "../../../schemas";
-import { TransferAction } from "../../../common/types/TransferAction";
 
 import styles from "./EgressFolderContainer.module.scss";
 
-type EgressNavigationTableContainerProps = {
+type TransferSourceNavigationTableContainerProps = {
   folderData:
     | { type: "egress"; data: EgressFolderData }
     | { type: "netapp"; data: NetAppFolderData };
-  egressDataStatus: "loading" | "succeeded" | "failed" | "initial";
-  handleFolderPathClick: (path: string) => void;
+  isLoading: boolean;
   handleFolderClick: (data: EgressFolder | NetAppFileFolder) => void;
   handleTableSort: (
     sortName: string,
@@ -29,15 +27,13 @@ type EgressNavigationTableContainerProps = {
   ) => void;
   handleCheckboxChange: (id: string, checked: boolean) => void;
   isSourceFolderChecked: (checkboxId: string) => boolean;
-  handleSelectedActionType: (transferAction: TransferAction) => void;
 };
 
-const EgressNavigationTableContainer: React.FC<
-  EgressNavigationTableContainerProps
+const TransferSourceNavigationTableContainer: React.FC<
+  TransferSourceNavigationTableContainerProps
 > = ({
   folderData,
-  egressDataStatus,
-  handleFolderPathClick,
+  isLoading,
   handleFolderClick,
   handleTableSort,
   handleCheckboxChange,
@@ -179,9 +175,8 @@ const EgressNavigationTableContainer: React.FC<
         caption="egress files and folders table, column headers with buttons are sortable"
         tableName="egress"
         loaderText="Loading folders from Egress"
-        isLoading={egressDataStatus === "loading"}
+        isLoading={isLoading}
         folderResultsLength={folderData.data.length}
-        handleFolderPathClick={handleFolderPathClick}
         getTableRowData={getTableRowData}
         getTableHeadData={getTableHeadData}
         handleTableSort={handleTableSort}
@@ -190,4 +185,4 @@ const EgressNavigationTableContainer: React.FC<
   );
 };
 
-export default EgressNavigationTableContainer;
+export default TransferSourceNavigationTableContainer;
