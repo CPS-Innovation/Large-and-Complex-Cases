@@ -1227,11 +1227,24 @@
 									"    console.log('[OK] Updated environment with LCC API file IDs:');",
 									"    console.log('    egressFileIds:', lccIds);",
 									"    console.log('    egressFileCount:', matchedFiles.length);",
+									"} else if (targetNames.length > 0) {",
+									"    // Configured target file(s) aren't present. Fail loudly instead",
+									"    // of falling back to \"use latest\" -- on the Move journey that",
+									"    // wrong file would then be moved/deleted, and on Copy it'd be the",
+									"    // wrong file transferred. Manual operator runs that want \"whatever is",
+									"    // latest\" can clear egressFileNames/egressFileName in the env first.",
+									"    const _missing = targetNames.join(', ');",
+									"    console.error('[ERROR] Configured source file(s) not found in folder:', _missing);",
+									"    console.error('[ERROR] Folder contains:', files.map(f => f.name).join(', ') || '(empty)');",
+									"    pm.test('Configured source files exist in folder', function () {",
+									"        pm.expect.fail('Expected files [' + _missing + '] not present. ' +",
+									"            'Re-run the upload step (or clear egressFileNames to pick latest manually).');",
+									"    });",
 									"} else if (files.length > 0) {",
-									"    // No match by name, use latest files",
-									"    console.log('[WARN] No exact name matches, using latest files');",
+									"    // No targetNames configured (standalone operator run). Keep the",
+									"    // legacy \"use latest\" so manual exploration still works.",
+									"    console.log('[WARN] No egressFileNames configured; using latest files');",
 									"    const sortedFiles = files.sort((a, b) => new Date(b.dateUpdated) - new Date(a.dateUpdated));",
-									"    ",
 									"    pm.environment.set('egressFileIds', sortedFiles.map(f => f.id).join(','));",
 									"    pm.environment.set('egressFileNames', sortedFiles.map(f => f.name).join(','));",
 									"    pm.environment.set('egressFileId', sortedFiles[0].id);",
@@ -1330,6 +1343,21 @@
 									"});",
 									"pm.environment.set('correlationId', correlationId);",
 									"",
+									"// Per-run unique subfolder. Forward (Egress->NetApp) deposits the file here",
+									"// and the matching back-direction journey lists the same path; both compute",
+									"// the same suffix because it's derived from egressWorkspaceId, which is",
+									"// stable within a top-level run (same post-setup env every Newman folder",
+									"// reads). Without this, a second import-and-run cycle against the same",
+									"// generated env would FileExists-collide on the prior run leftover.",
+									"const _baseUniqDest = (pm.environment.get('netappFolderPath') || 'Automation-Testing/').replace(/\\/+$/, '/');",
+									"const _wsId = pm.environment.get('egressWorkspaceId') || 'unknown';",
+									"if (_wsId !== 'unknown' && !/\\/ws-[^/]+\\/$/.test(_baseUniqDest)) {",
+									"    const _uniqueUniqDest = _baseUniqDest + 'ws-' + _wsId + '/';",
+									"    pm.environment.set('netappFolderPath', _uniqueUniqDest);",
+									"    console.log('[uniquify] netappFolderPath ->', _uniqueUniqDest);",
+									"} else {",
+									"    console.log('[uniquify] netappFolderPath unchanged:', _baseUniqDest);",
+									"}",
 									"// Build sourcePaths for VALIDATE endpoint",
 									"// Format: { fileId, path: FULL_PATH, isFolder: false }",
 									"let sourcePaths = [];",
@@ -2121,11 +2149,24 @@
 									"    console.log('[OK] Updated environment with LCC API file IDs:');",
 									"    console.log('    egressFileIds:', lccIds);",
 									"    console.log('    egressFileCount:', matchedFiles.length);",
+									"} else if (targetNames.length > 0) {",
+									"    // Configured target file(s) aren't present. Fail loudly instead",
+									"    // of falling back to \"use latest\" -- on the Move journey that",
+									"    // wrong file would then be moved/deleted, and on Copy it'd be the",
+									"    // wrong file transferred. Manual operator runs that want \"whatever is",
+									"    // latest\" can clear egressFileNames/egressFileName in the env first.",
+									"    const _missing = targetNames.join(', ');",
+									"    console.error('[ERROR] Configured source file(s) not found in folder:', _missing);",
+									"    console.error('[ERROR] Folder contains:', files.map(f => f.name).join(', ') || '(empty)');",
+									"    pm.test('Configured source files exist in folder', function () {",
+									"        pm.expect.fail('Expected files [' + _missing + '] not present. ' +",
+									"            'Re-run the upload step (or clear egressFileNames to pick latest manually).');",
+									"    });",
 									"} else if (files.length > 0) {",
-									"    // No match by name, use latest files",
-									"    console.log('[WARN] No exact name matches, using latest files');",
+									"    // No targetNames configured (standalone operator run). Keep the",
+									"    // legacy \"use latest\" so manual exploration still works.",
+									"    console.log('[WARN] No egressFileNames configured; using latest files');",
 									"    const sortedFiles = files.sort((a, b) => new Date(b.dateUpdated) - new Date(a.dateUpdated));",
-									"    ",
 									"    pm.environment.set('egressFileIds', sortedFiles.map(f => f.id).join(','));",
 									"    pm.environment.set('egressFileNames', sortedFiles.map(f => f.name).join(','));",
 									"    pm.environment.set('egressFileId', sortedFiles[0].id);",
@@ -2262,6 +2303,21 @@
 									"});",
 									"pm.environment.set('correlationId', correlationId);",
 									"",
+									"// Per-run unique subfolder. Forward (Egress->NetApp) deposits the file here",
+									"// and the matching back-direction journey lists the same path; both compute",
+									"// the same suffix because it's derived from egressWorkspaceId, which is",
+									"// stable within a top-level run (same post-setup env every Newman folder",
+									"// reads). Without this, a second import-and-run cycle against the same",
+									"// generated env would FileExists-collide on the prior run leftover.",
+									"const _baseUniqDest = (pm.environment.get('netappMoveFolderPath') || 'Automation-Testing-Move/').replace(/\\/+$/, '/');",
+									"const _wsId = pm.environment.get('egressWorkspaceId') || 'unknown';",
+									"if (_wsId !== 'unknown' && !/\\/ws-[^/]+\\/$/.test(_baseUniqDest)) {",
+									"    const _uniqueUniqDest = _baseUniqDest + 'ws-' + _wsId + '/';",
+									"    pm.environment.set('netappMoveFolderPath', _uniqueUniqDest);",
+									"    console.log('[uniquify] netappMoveFolderPath ->', _uniqueUniqDest);",
+									"} else {",
+									"    console.log('[uniquify] netappMoveFolderPath unchanged:', _baseUniqDest);",
+									"}",
 									"// Build sourcePaths for VALIDATE endpoint",
 									"// Format: { fileId, path: FULL_PATH, isFolder: false }",
 									"let sourcePaths = [];",
@@ -2938,6 +2994,23 @@
 								"exec": [
 									"const correlationId = pm.variables.replaceIn('{{$guid}}');\r",
 									"pm.environment.set('correlationId', correlationId);\r",
+									"",
+									"// Per-run unique subfolder. Forward (Egress->NetApp) deposits the file here",
+									"// and the matching back-direction journey lists the same path; both compute",
+									"// the same suffix because it's derived from egressWorkspaceId, which is",
+									"// stable within a top-level run (same post-setup env every Newman folder",
+									"// reads). Without this, a second import-and-run cycle against the same",
+									"// generated env would FileExists-collide on the prior run leftover.",
+									"const _baseUniqDest = (pm.environment.get('netappFolderPath') || 'Automation-Testing/').replace(/\\/+$/, '/');",
+									"const _wsId = pm.environment.get('egressWorkspaceId') || 'unknown';",
+									"if (_wsId !== 'unknown' && !/\\/ws-[^/]+\\/$/.test(_baseUniqDest)) {",
+									"    const _uniqueUniqDest = _baseUniqDest + 'ws-' + _wsId + '/';",
+									"    pm.environment.set('netappFolderPath', _uniqueUniqDest);",
+									"    console.log('[uniquify] netappFolderPath ->', _uniqueUniqDest);",
+									"} else {",
+									"    console.log('[uniquify] netappFolderPath unchanged:', _baseUniqDest);",
+									"}",
+									"",
 									"\r",
 									"console.log('=== LIST NETAPP FILES ===');\r",
 									"console.log('Folder:', pm.environment.get('netappFolderPath'));"
@@ -3008,15 +3081,9 @@
 									"        pm.environment.set('netappFilePath', fallback.path);",
 									"        pm.environment.set('netappFileName', fileName);",
 									"        pm.environment.set('netappFileSize', fallback.filesize);",
-									"        // The picked file is whatever's latest in NetApp, which is usually",
-									"        // the file the most recent full-E2E run round-tripped through Egress",
-									"        // `3. Unused - disclosed/` -- so depositing it back there with the",
-									"        // shared destination would FileExists-collide. Uniquify the",
-									"        // destination per standalone run.",
-									"        const _baseDest = (pm.environment.get('egressDestinationFolder') || '3. Unused - disclosed/').replace(/\\/+$/, '/');",
-									"        const _uniqueDest = _baseDest + 'standalone-' + Date.now() + '/';",
-									"        pm.environment.set('egressDestinationFolder', _uniqueDest);",
-									"        console.warn('[FALLBACK] Standalone destination uniquified to:', _uniqueDest);",
+									"        // Destination uniquification is now handled centrally by",
+									"        // 10. Validate Transfer NetApp to Egress (prerequest), so it",
+									"        // applies to both the full E2E path and this standalone path.",
 									"    } else {",
 									"        console.error('[ERROR] NetApp folder has no files to transfer.');",
 									"        pm.test('NetApp folder has a file to transfer', function() {",
@@ -3058,7 +3125,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/netapp/files?path=Automation-Testing%2F&take=500&continuation-token=",
+							"raw": "{{baseUrl}}/api/v1/netapp/files?path={{netappFolderPath}}&take=500&continuation-token=",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -3071,7 +3138,7 @@
 							"query": [
 								{
 									"key": "path",
-									"value": "Automation-Testing%2F"
+									"value": "{{netappFolderPath}}"
 								},
 								{
 									"key": "take",
@@ -3098,6 +3165,23 @@
 							"script": {
 								"exec": [
 									"// Build sourcePaths for NetApp to Egress VALIDATE",
+									"",
+									"// Per-run unique subfolder. Forward (Egress->NetApp) deposits the file here",
+									"// and the matching back-direction journey lists the same path; both compute",
+									"// the same suffix because it's derived from egressWorkspaceId, which is",
+									"// stable within a top-level run (same post-setup env every Newman folder",
+									"// reads). Without this, a second import-and-run cycle against the same",
+									"// generated env would FileExists-collide on the prior run leftover.",
+									"const _baseUniqDest = (pm.environment.get('egressDestinationFolder') || '3. Unused - disclosed/').replace(/\\/+$/, '/');",
+									"const _wsId = pm.environment.get('egressWorkspaceId') || 'unknown';",
+									"if (_wsId !== 'unknown' && !/\\/ws-[^/]+\\/$/.test(_baseUniqDest)) {",
+									"    const _uniqueUniqDest = _baseUniqDest + 'ws-' + _wsId + '/';",
+									"    pm.environment.set('egressDestinationFolder', _uniqueUniqDest);",
+									"    console.log('[uniquify] egressDestinationFolder ->', _uniqueUniqDest);",
+									"} else {",
+									"    console.log('[uniquify] egressDestinationFolder unchanged:', _baseUniqDest);",
+									"}",
+									"",
 									"const netappFilePath = pm.environment.get('netappFilePath') || '';",
 									"const netappFolderPath = pm.environment.get('netappFolderPath') || 'Automation-Testing/';",
 									"",
@@ -3631,6 +3715,821 @@
 				},
 				{
 					"name": "14. Download Activity Log",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const correlationId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {",
+									"    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);",
+									"    return v.toString(16);",
+									"});",
+									"pm.environment.set('correlationId', correlationId);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"console.log('========================================');",
+									"console.log('  E2E TEST COMPLETE!');",
+									"console.log('========================================');",
+									"console.log('Transfer Status:', pm.environment.get('transferStatus'));",
+									"console.log('Activity Log Downloaded: OK');",
+									"",
+									"// Cleanup",
+									"pm.environment.unset('transferPollCount');",
+									"pm.execution.setNextRequest(null);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "*/*"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{lccAccessToken}}"
+							},
+							{
+								"key": "Cookie",
+								"value": "Cms-Auth-Values={{cmsAuth}}"
+							},
+							{
+								"key": "Correlation-Id",
+								"value": "{{correlationId}}"
+							},
+							{
+								"key": "Origin",
+								"value": "{{uiUrl}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/activity/{{latestActivityId}}/logs/download",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"activity",
+								"{{latestActivityId}}",
+								"logs",
+								"download"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "End-to-end test: Copy file from Egress to NetApp with activity log verification.\n\n## Flow (9 steps)\n\n1. Get Azure AD Token\n    \n2. Get CMS Auth\n    \n3. Search Case\n    \n4. List Egress Files (gets latest by timestamp)\n    \n5. Validate Transfer\n    \n6. Initiate Transfer\n    \n7. Poll Status (loops until complete)\n    \n8. Verify Activity Log\n    \n9. Download Activity Log\n    \n\n## Response Validation\n\nEach request validates:\n\n- HTTP 200 status\n    \n- Required response fields\n    \n- Data structure"
+		},
+		{
+			"name": "E2E: Netapp Move to Egress Copy",
+			"item": [
+				{
+					"name": "[NME] 9. List Netapp Files",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const correlationId = pm.variables.replaceIn('{{$guid}}');\r",
+									"pm.environment.set('correlationId', correlationId);\r",
+									"",
+									"// Per-run unique subfolder. Forward (Egress->NetApp) deposits the file here",
+									"// and the matching back-direction journey lists the same path; both compute",
+									"// the same suffix because it's derived from egressWorkspaceId, which is",
+									"// stable within a top-level run (same post-setup env every Newman folder",
+									"// reads). Without this, a second import-and-run cycle against the same",
+									"// generated env would FileExists-collide on the prior run leftover.",
+									"const _baseUniqDest = (pm.environment.get('netappMoveFolderPath') || 'Automation-Testing-Move/').replace(/\\/+$/, '/');",
+									"const _wsId = pm.environment.get('egressWorkspaceId') || 'unknown';",
+									"if (_wsId !== 'unknown' && !/\\/ws-[^/]+\\/$/.test(_baseUniqDest)) {",
+									"    const _uniqueUniqDest = _baseUniqDest + 'ws-' + _wsId + '/';",
+									"    pm.environment.set('netappMoveFolderPath', _uniqueUniqDest);",
+									"    console.log('[uniquify] netappMoveFolderPath ->', _uniqueUniqDest);",
+									"} else {",
+									"    console.log('[uniquify] netappMoveFolderPath unchanged:', _baseUniqDest);",
+									"}",
+									"",
+									"\r",
+									"console.log('=== LIST NETAPP FILES ===');\r",
+									"console.log('Folder:', pm.environment.get('netappMoveFolderPath'));"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    const files = response.data?.fileData || [];",
+									"    ",
+									"    console.log('=== NETAPP FILES ===');",
+									"    console.log('Root path:', response.data?.rootPath);",
+									"    console.log('Total files found:', files.length);",
+									"    ",
+									"    const validFiles = files.filter(f => f.filesize > 0);",
+									"    console.log('Valid files (non-zero size):', validFiles.length);",
+									"    ",
+									"    // Deterministically pick the file Egress->NetApp Move deposited this run.",
+									"    // 'latest by lastModified' was unsafe -- it picked stale files from prior",
+									"    // runs whose namesakes already exist in Egress 3. Unused - disclosed/,",
+									"    // producing PartiallyCompleted at destination.",
+									"    const expectedName = pm.environment.get('egressMoveFileName');",
+									"    let selectedFile = null;",
+									"    if (expectedName) {",
+									"        selectedFile = validFiles.find(f => f.path.split('/').pop() === expectedName);",
+									"    }",
+									"    ",
+									"    if (selectedFile) {",
+									"        const fileName = selectedFile.path.split('/').pop();",
+									"        console.log('[SELECTED] File deposited by Egress->NetApp Move this run:');",
+									"        console.log('  Path:', selectedFile.path, '| Size:', selectedFile.filesize, '| Modified:', selectedFile.lastModified);",
+									"        pm.environment.set('netappFilePath', selectedFile.path);",
+									"        pm.environment.set('netappFileName', fileName);",
+									"        pm.environment.set('netappFileSize', selectedFile.filesize);",
+									"    } else if (expectedName) {",
+									"        // NetApp listing may not reflect the just-copied file yet. Fall back",
+									"        // to a constructed path -- the Copy journey deposited the file at",
+									"        // Automation-Testing-Move/<egressMoveFileName>; the transfer service will",
+									"        // resolve it by path regardless of whether the listing has caught up.",
+									"        const constructedPath = (pm.environment.get('netappMoveFolderPath') || pm.environment.get('netappFolderPath') || 'Automation-Testing-Move/') + expectedName;",
+									"        console.warn('[FALLBACK] Expected file not in NetApp listing yet:', expectedName);",
+									"        console.warn('[FALLBACK] Using constructed path:', constructedPath);",
+									"        pm.environment.set('netappFilePath', constructedPath);",
+									"        pm.environment.set('netappFileName', expectedName);",
+									"        // Size unknown; the transfer validate call doesn't rely on it.",
+									"        pm.environment.set('netappFileSize', '0');",
+									"    } else if (validFiles.length > 0) {",
+									"        // Standalone `-TestsToRun netapp-to-egress`: no Copy journey ran,",
+									"        // so egressMoveFileName isn't set. Fall back to the most-recently-",
+									"        // modified file in the folder so this mode keeps working against",
+									"        // whatever file the operator manually placed. The full E2E flow",
+									"        // always takes the deterministic branch above.",
+									"        const sortedFiles = validFiles.slice().sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));",
+									"        const fallback = sortedFiles[0];",
+									"        const fileName = fallback.path.split('/').pop();",
+									"        console.warn('[FALLBACK] No egressMoveFileName in env; picking most-recent file:', fileName);",
+									"        pm.environment.set('netappFilePath', fallback.path);",
+									"        pm.environment.set('netappFileName', fileName);",
+									"        pm.environment.set('netappFileSize', fallback.filesize);",
+									"        // Destination uniquification is now handled centrally by",
+									"        // 10. Validate Transfer NetApp to Egress (prerequest), so it",
+									"        // applies to both the full E2E path and this standalone path.",
+									"    } else {",
+									"        console.error('[ERROR] NetApp folder has no files to transfer.');",
+									"        pm.test('NetApp folder has a file to transfer', function() {",
+									"            pm.expect.fail('No valid files in NetApp Automation-Testing-Move/');",
+									"        });",
+									"    }",
+									"}",
+									"",
+									"pm.execution.setNextRequest('[NME] 10. Validate Transfer NetApp to Egress');"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{lccAccessToken}}"
+							},
+							{
+								"key": "Accept",
+								"value": "*/*"
+							},
+							{
+								"key": "Cookie",
+								"value": "Cms-Auth-Values={{cmsAuth}}"
+							},
+							{
+								"key": "Correlation-Id",
+								"value": "{{correlationId}}"
+							},
+							{
+								"key": "Origin",
+								"value": "{{uiUrl}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/netapp/files?path={{netappMoveFolderPath}}&take=500&continuation-token=",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"netapp",
+								"files"
+							],
+							"query": [
+								{
+									"key": "path",
+									"value": "{{netappMoveFolderPath}}"
+								},
+								{
+									"key": "take",
+									"value": "500"
+								},
+								{
+									"key": "continuation-token",
+									"value": ""
+								}
+							]
+						},
+						"description": "Lists files in a NetApp folder via GET {{baseUrl}}/api/v1/netapp/files. Requires Azure AD bearer token and CMS auth cookie. Returns paginated file listing for the specified path.",
+						"auth": {
+							"type": "noauth"
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[NME] 10. Validate Transfer NetApp to Egress",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Build sourcePaths for NetApp to Egress VALIDATE",
+									"",
+									"// Per-run unique subfolder. Forward (Egress->NetApp) deposits the file here",
+									"// and the matching back-direction journey lists the same path; both compute",
+									"// the same suffix because it's derived from egressWorkspaceId, which is",
+									"// stable within a top-level run (same post-setup env every Newman folder",
+									"// reads). Without this, a second import-and-run cycle against the same",
+									"// generated env would FileExists-collide on the prior run leftover.",
+									"const _baseUniqDest = (pm.environment.get('egressDestinationFolder') || '3. Unused - disclosed/').replace(/\\/+$/, '/');",
+									"const _wsId = pm.environment.get('egressWorkspaceId') || 'unknown';",
+									"if (_wsId !== 'unknown' && !/\\/ws-[^/]+\\/$/.test(_baseUniqDest)) {",
+									"    const _uniqueUniqDest = _baseUniqDest + 'ws-' + _wsId + '/';",
+									"    pm.environment.set('egressDestinationFolder', _uniqueUniqDest);",
+									"    console.log('[uniquify] egressDestinationFolder ->', _uniqueUniqDest);",
+									"} else {",
+									"    console.log('[uniquify] egressDestinationFolder unchanged:', _baseUniqDest);",
+									"}",
+									"",
+									"const netappFilePath = pm.environment.get('netappFilePath') || '';",
+									"",
+									"let sourcePaths = [];",
+									"",
+									"if (netappFilePath) {",
+									"    // Validate just needs path",
+									"    sourcePaths.push({",
+									"        path: netappFilePath",
+									"    });",
+									"    console.log('[VALIDATE NetApp->Egress] Source path:', netappFilePath);",
+									"} else {",
+									"    console.error('[ERROR] No netappFilePath set!');",
+									"}",
+									"",
+									"pm.environment.set('sourcePathsJson', JSON.stringify(sourcePaths));",
+									"console.log('[DEBUG] sourcePathsJson:', JSON.stringify(sourcePaths));"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"if (pm.response.code === 200) {\r",
+									"    const response = pm.response.json();\r",
+									"    \r",
+									"    console.log('=== Transfer Validation ===');\r",
+									"    console.log('Valid:', !response.isInvalid);\r",
+									"    console.log('Files:', response.files?.length || 0);\r",
+									"    \r",
+									"    if (response.validationErrors?.length > 0) {\r",
+									"        console.error('Errors:', response.validationErrors);\r",
+									"    }\r",
+									"    \r",
+									"    pm.test('Transfer is valid', function() {\r",
+									"        pm.expect(response.isInvalid).to.be.false;\r",
+									"    });\r",
+									"}\r",
+									"pm.execution.setNextRequest('[NME] 11. Initiate Transfer (NetApp to Egress)')"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "*/*"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{lccAccessToken}}"
+							},
+							{
+								"key": "Cookie",
+								"value": "Cms-Auth-Values={{cmsAuth}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Correlation-Id",
+								"value": "{{correlationId}}"
+							},
+							{
+								"key": "Origin",
+								"value": "{{uiUrl}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"caseId\": {{caseId}},\n    \"transferDirection\": \"NetAppToEgress\",\n    \"transferType\": \"Copy\",\n    \"sourcePaths\": {{sourcePathsJson}},\n    \"destinationPath\": \"{{egressDestinationFolder}}\",\n    \"workspaceId\": \"{{egressWorkspaceId}}\",\n    \"sourceRootFolderPath\": \"{{netappMoveFolderPath}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/filetransfer/files",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"filetransfer",
+								"files"
+							]
+						},
+						"description": "Validates a NetApp-to-Egress file transfer via POST {{baseUrl}}/api/v1/filetransfer/files. Requires Azure AD bearer token and CMS auth cookie. Checks transfer parameters before initiation.",
+						"auth": {
+							"type": "noauth"
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[NME] 11. Initiate Transfer (NetApp to Egress)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Build sourcePaths for NetApp to Egress INITIATE",
+									"const netappFilePath = pm.environment.get('netappFilePath') || '';",
+									"const netappFileName = pm.environment.get('netappFileName') || '';",
+									"",
+									"let sourcePaths = [];",
+									"",
+									"if (netappFilePath) {",
+									"    // Initiate needs path AND relativePath",
+									"    sourcePaths.push({",
+									"        path: netappFilePath,",
+									"        relativePath: netappFileName || netappFilePath.split('/').pop()",
+									"    });",
+									"    console.log('[INITIATE NetApp->Egress] Source path:', netappFilePath);",
+									"    console.log('[INITIATE NetApp->Egress] Relative path:', netappFileName);",
+									"} else {",
+									"    console.error('[ERROR] No netappFilePath set!');",
+									"}",
+									"",
+									"pm.environment.set('sourcePathsJson', JSON.stringify(sourcePaths));",
+									"console.log('[DEBUG] sourcePathsJson:', JSON.stringify(sourcePaths));"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 202', function() {\r",
+									"    pm.response.to.have.status(202);\r",
+									"});\r",
+									"\r",
+									"pm.test('Response has transfer initiation structure', function() {\r",
+									"    const response = pm.response.json();\r",
+									"    pm.expect(response).to.have.property('id');\r",
+									"    pm.expect(response).to.have.property('status');\r",
+									"    pm.expect(response).to.have.property('createdAt');\r",
+									"});\r",
+									"\r",
+									"const response = pm.response.json();\r",
+									"if (response.id) {\r",
+									"    pm.environment.set('transferId', response.id);\r",
+									"    pm.environment.set('transferPollCount', '0');\r",
+									"    \r",
+									"    console.log('[OK] Transfer initiated');\r",
+									"    console.log('    ID:', response.id);\r",
+									"    console.log('    Status:', response.status);\r",
+									"    pm.execution.setNextRequest('[NME] 12. Poll Transfer Status');\r",
+									"} else {\r",
+									"    console.error('Failed to initiate');\r",
+									"    pm.execution.setNextRequest(null);\r",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{lccAccessToken}}"
+							},
+							{
+								"key": "Accept",
+								"value": "*/*"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Cookie",
+								"value": "Cms-Auth-Values={{cmsAuth}}"
+							},
+							{
+								"key": "Correlation-Id",
+								"value": "{{correlationId}}"
+							},
+							{
+								"key": "Origin",
+								"value": "{{uiUrl}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"caseId\": {{caseId}},\n    \"destinationPath\": \"{{egressDestinationFolder}}\",\n    \"workspaceId\": \"{{egressWorkspaceId}}\",\n    \"sourceRootFolderPath\": \"\",\n    \"sourcePaths\": {{sourcePathsJson}},\n    \"transferType\": \"Copy\",\n    \"transferDirection\": \"NetAppToEgress\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/filetransfer/initiate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"filetransfer",
+								"initiate"
+							]
+						},
+						"description": "Initiates a NetApp-to-Egress file transfer via POST {{baseUrl}}/api/v1/filetransfer/initiate. Requires Azure AD bearer token and CMS auth cookie. Returns transfer ID and status for polling.",
+						"auth": {
+							"type": "noauth"
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[NME] 12. Poll Transfer Status",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const correlationId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {",
+									"    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);",
+									"    return v.toString(16);",
+									"});",
+									"pm.environment.set('correlationId', correlationId);",
+									"",
+									"// Add delay between polls",
+									"const pollCount = parseInt(pm.environment.get('transferPollCount') || '0');",
+									"if (pollCount > 0) {",
+									"    const waitTime = 2000;",
+									"    const start = Date.now();",
+									"    while (Date.now() - start < waitTime) {}",
+									"}",
+									"console.log('Polling status (attempt ' + (pollCount + 1) + ')...');"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Handle both 200 and 404 (transfer might not be immediately available)",
+									"const statusCode = pm.response.code;",
+									"const pollCount = parseInt(pm.environment.get('transferPollCount') || '0');",
+									"",
+									"if (statusCode === 404) {",
+									"    // Transfer not yet available, retry",
+									"    console.log('Transfer not found yet (attempt ' + (pollCount + 1) + '), retrying...');",
+									"    pm.environment.set('transferPollCount', (pollCount + 1).toString());",
+									"    pm.execution.setNextRequest('[NME] 12. Poll Transfer Status');",
+									"} else if (statusCode === 200) {",
+									"    pm.test('Status code is 200', function() {",
+									"        pm.response.to.have.status(200);",
+									"    });",
+									"    ",
+									"    pm.test('Response has status structure', function() {",
+									"        const response = pm.response.json();",
+									"        pm.expect(response).to.have.property('id');",
+									"        pm.expect(response).to.have.property('status');",
+									"    });",
+									"    ",
+									"    const response = pm.response.json();",
+									"    const status = response.status;",
+									"    ",
+									"    console.log('[Poll ' + (pollCount + 1) + '] Status:', status);",
+									"    console.log('    Progress:', (response.completedFilesCount || 0) + '/' + (response.totalFilesCount || 0), 'files');",
+									"    ",
+									"    // Log individual file statuses if available",
+									"    if (response.fileStatuses && response.fileStatuses.length > 0) {",
+									"        response.fileStatuses.forEach(file => {",
+									"            if (file.status === 'Failed' || file.status === 'Error') {",
+									"                console.log('    [FAILED] ' + file.fileName + ': ' + (file.errorCode || 'Unknown error'));",
+									"            }",
+									"        });",
+									"    }",
+									"    ",
+									"    pm.environment.set('transferStatus', status);",
+									"    ",
+									"    // Terminal statuses: Completed, PartiallyCompleted, Failed",
+									"    // Keep polling for: Initiated, InProgress",
+									"    if (status === 'Completed' || status === 'PartiallyCompleted' || status === 'Failed') {",
+									"        console.log('[DONE] Transfer finished with status:', status);",
+									"        ",
+									"        if (response.completedAt) {",
+									"            console.log('    Completed At:', response.completedAt);",
+									"        }",
+									"        ",
+									"        // FAIL the test if status is not 'Completed'",
+									"        pm.test('Transfer status is Completed (not PartiallyCompleted or Failed)', function() {",
+									"            pm.expect(status).to.equal('Completed');",
+									"        });",
+									"        ",
+									"        if (status === 'Completed') {",
+									"            console.log('[OK] Transfer completed successfully!');",
+									"        } else if (status === 'PartiallyCompleted') {",
+									"            console.log('[ERROR] Transfer PARTIALLY COMPLETED - some files failed!');",
+									"        } else if (status === 'Failed') {",
+									"            console.log('[ERROR] Transfer FAILED!');",
+									"        }",
+									"        ",
+									"        pm.execution.setNextRequest('[NME] 13. Verify Activity Log');",
+									"    } else {",
+									"        // Still in progress, continue polling",
+									"        pm.environment.set('transferPollCount', (pollCount + 1).toString());",
+									"        pm.execution.setNextRequest('[NME] 12. Poll Transfer Status');",
+									"    }",
+									"} else {",
+									"    pm.test('Status code is 200 or 404', function() {",
+									"        pm.expect(statusCode).to.be.oneOf([200, 404]);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "*/*"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{lccAccessToken}}"
+							},
+							{
+								"key": "Cookie",
+								"value": "Cms-Auth-Values={{cmsAuth}}"
+							},
+							{
+								"key": "Correlation-Id",
+								"value": "{{correlationId}}"
+							},
+							{
+								"key": "Origin",
+								"value": "{{uiUrl}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/filetransfer/{{transferId}}/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"filetransfer",
+								"{{transferId}}",
+								"status"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[NME] 13. Verify Activity Log",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const correlationId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {",
+									"    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);",
+									"    return v.toString(16);",
+									"});",
+									"pm.environment.set('correlationId', correlationId);",
+									"",
+									"// Wait for activity log to be recorded",
+									"const start = Date.now();",
+									"while (Date.now() - start < 2000) {}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has correct structure', function() {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('data');",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"const activities = response.data || [];",
+									"const transferId = pm.environment.get('transferId');",
+									"",
+									"console.log('=== Activity Log Verification ===');",
+									"console.log('Looking for transfer:', transferId);",
+									"",
+									"// Find all activities for this transfer",
+									"const transferActivities = activities.filter(a => ",
+									"    a.details && a.details.transferId === transferId",
+									");",
+									"",
+									"// Find TRANSFER_COMPLETED or TRANSFER_FAILED activity",
+									"const completedActivity = transferActivities.find(a => a.actionType === 'TRANSFER_COMPLETED');",
+									"const failedActivity = transferActivities.find(a => a.actionType === 'TRANSFER_FAILED');",
+									"const initiatedActivity = transferActivities.find(a => a.actionType === 'TRANSFER_INITIATED');",
+									"",
+									"// Use completed activity for download, or failed, or initiated as fallback",
+									"const activityForDownload = completedActivity || failedActivity || initiatedActivity;",
+									"",
+									"pm.test('Transfer activity was logged', function() {",
+									"    pm.expect(activityForDownload).to.not.be.undefined;",
+									"});",
+									"",
+									"if (activityForDownload) {",
+									"    // Store activity ID for download",
+									"    pm.environment.set('latestActivityId', activityForDownload.id);",
+									"    pm.environment.set('activityId', activityForDownload.id);",
+									"    ",
+									"    const actionType = activityForDownload.actionType || '';",
+									"    ",
+									"    console.log('[OK] Transfer activity found:');",
+									"    console.log('    Activity ID:', activityForDownload.id);",
+									"    console.log('    Action Type:', actionType);",
+									"    console.log('    Time:', activityForDownload.createdAt);",
+									"    ",
+									"    // Get all action types for this transfer",
+									"    const allActions = transferActivities.map(a => a.actionType);",
+									"    console.log('    Actions logged:', allActions.join(', '));",
+									"    ",
+									"    // FAIL test if actionType is TRANSFER_FAILED",
+									"    pm.test('Transfer did not fail (actionType !== TRANSFER_FAILED)', function() {",
+									"        pm.expect(actionType).to.not.equal('TRANSFER_FAILED');",
+									"    });",
+									"    ",
+									"    // Log status",
+									"    if (actionType === 'TRANSFER_COMPLETED') {",
+									"        console.log('[OK] Transfer completed successfully!');",
+									"    } else if (actionType === 'TRANSFER_FAILED') {",
+									"        console.log('[ERROR] Transfer FAILED!');",
+									"    } else {",
+									"        console.log('[INFO] Transfer actionType:', actionType);",
+									"    }",
+									"}",
+									"",
+									"pm.execution.setNextRequest('[NME] 14. Download Activity Log');"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "*/*"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{lccAccessToken}}"
+							},
+							{
+								"key": "Cookie",
+								"value": "Cms-Auth-Values={{cmsAuth}}"
+							},
+							{
+								"key": "Correlation-Id",
+								"value": "{{correlationId}}"
+							},
+							{
+								"key": "Origin",
+								"value": "{{uiUrl}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/activity/logs?caseId={{caseId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"activity",
+								"logs"
+							],
+							"query": [
+								{
+									"key": "caseId",
+									"value": "{{caseId}}"
+								}
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[NME] 14. Download Activity Log",
 					"event": [
 						{
 							"listen": "prerequest",

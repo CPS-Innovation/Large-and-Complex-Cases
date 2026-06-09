@@ -82,7 +82,7 @@ param(
     [string]$EgressWorkspaceName = "",
 
     [Parameter(Mandatory=$false)]
-    [ValidateSet("all", "copy", "move", "netapp-to-egress")]
+    [ValidateSet("all", "copy", "move", "netapp-to-egress", "netapp-move-to-egress")]
     [string]$TestsToRun = "all",
 
     [Parameter(Mandatory=$false)]
@@ -205,6 +205,7 @@ $E2EFolderMap = @{
     "copy" = "E2E: Egress to NetApp Copy"
     "move" = "E2E: Egress to NetApp Move"
     "netapp-to-egress" = "E2E: Netapp to Egress Copy"
+    "netapp-move-to-egress" = "E2E: Netapp Move to Egress Copy"
 }
 
 # ============================================================
@@ -788,10 +789,14 @@ $UpdatedCollectionPath = Update-CollectionVariables -CollectionPath $CollectionP
 $foldersToRun = @()
 
 if ($TestsToRun -eq "all") {
+    # Order: Copy forward -> NetApp-to-Egress (copies Copy output back) ->
+    # Move forward -> Netapp-Move-to-Egress (copies Move output back). Each
+    # forward journey deposits the file the matching back-journey then asserts.
     $foldersToRun = @(
         "E2E: Egress to NetApp Copy",
         "E2E: Netapp to Egress Copy",
-        "E2E: Egress to NetApp Move"
+        "E2E: Egress to NetApp Move",
+        "E2E: Netapp Move to Egress Copy"
     )
 }
 else {
