@@ -1,34 +1,21 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { LinkButton, InsetText, NotificationBanner, Button } from "../../govuk";
+import { NotificationBanner, Button } from "../../govuk";
 import { Spinner } from "../../common/Spinner";
 import {
   getEgressFolders,
   getNetAppFolders,
-  indexingFileTransfer,
-  initiateFileTransfer,
   handleFileTransferClear,
 } from "../../../apis/gateway-api";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { TransferAction } from "../../../common/types/TransferAction";
+
 import { getFormattedEgressFolderData } from "../../../common/utils/getFormattedEgressFolderData";
 import { mapToNetAppFolderData } from "../../../common/utils/mapToNetAppFolderData";
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
-import { InitiateFileTransferPayload } from "../../../schemas/requests/initiateFileTransferPayload";
-import { IndexingFileTransferPayload } from "../../../schemas/requests/indexingFileTransferPayload";
-import type {
-  TransferStatusResponse,
-  IndexingFileTransferResponse,
-  InitiateFileTransferResponse,
-} from "../../../schemas";
+import type { TransferStatusResponse } from "../../../schemas";
 import { useUserDetails } from "../../../auth";
 import { ApiError } from "../../../common/errors/ApiError";
 import { pollTransferStatus } from "../../../common/utils/pollTransferStatus";
-import { getCommonPath } from "../../../common/utils/getCommonPath";
-import {
-  type EgressTransferPayloadSourcePath,
-  type NetAppTransferPayloadSourcePath,
-} from "../../../schemas/requests/initiateFileTransferPayload";
 import { useUserGroupsFeatureFlag } from "../../../common/hooks/useUserGroupsFeatureFlag";
 import { getUrlSearchParam } from "../../../common/utils/getUrlSearchParam";
 import TransferSourceNavigationTableContainer from "./TransferSourceNavigationTableContainer";
@@ -39,7 +26,7 @@ import {
   type NetAppFileFolder,
 } from "../../../schemas";
 import TransferControls from "./TransferControls";
-import FolderPath, { Folder } from "../../common/FolderPath";
+import FolderPath from "../../common/FolderPath";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
@@ -63,7 +50,6 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
 }) => {
   const featureFlags = useUserGroupsFeatureFlag();
   const navigate = useNavigate();
-  const location = useLocation();
   const { username } = useUserDetails();
   const [transferSource, setTransferSource] = useState<
     "egress" | "sharedDrive"
@@ -116,8 +102,6 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
 
   const [selectedSourceFoldersOrFiles, setSelectedSourceFoldersOrFiles] =
     useState<string[]>([]);
-  const [selectedTransferAction, setSelectedTransferAction] =
-    useState<TransferAction | null>(null);
 
   const [transferStatus, setTransferStatus] = useState<
     | "validating"
@@ -327,21 +311,15 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
     }
   }, [apiRequestError]);
 
-  const getIndexingFileTransferPayload = (): IndexingFileTransferPayload => {
-    if (!selectedTransferAction) {
-      throw new Error(
-        "selected transfer destination details should not be null",
-      );
-    }
-    let sourcePaths:
-      | {
-          fileId: string;
-          path: string;
-          isFolder: boolean;
-        }[]
-      | { path: string }[] = [];
-    if (selectedTransferAction.destinationFolder.sourceType === "egress") {
-      sourcePaths = egressFolderData
+  const getTransferSourcePath = ():
+    | {
+        fileId: string;
+        path: string;
+        isFolder: boolean;
+      }[]
+    | { path: string }[] => {
+    if (transferSource === "egress") {
+      return egressFolderData
         .filter((data) => selectedSourceFoldersOrFiles.includes(data.path))
         .map((data) => ({
           fileId: data.id,
@@ -349,165 +327,26 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
           isFolder: data.isFolder,
         }));
     } else {
-      sourcePaths = selectedSourceFoldersOrFiles.map((path) => ({
+      return selectedSourceFoldersOrFiles.map((path) => ({
         path: path,
       }));
     }
-
-    const paths = sourcePaths.map(({ path }) => path);
-
-    const payload = {
-      caseId: parseInt(caseId),
-      transferDirection:
-        selectedTransferAction.destinationFolder.sourceType === "egress"
-          ? ("EgressToNetApp" as const)
-          : ("NetAppToEgress" as const),
-      transferType:
-        selectedTransferAction.actionType === "copy"
-          ? ("Copy" as const)
-          : ("Move" as const),
-      sourcePaths: sourcePaths,
-      destinationPath: selectedTransferAction.destinationFolder.path,
-      workspaceId: egressWorkspaceId,
-      sourceRootFolderPath: getCommonPath(paths),
-    };
-    return payload;
   };
 
-  const getInitiateTransferPayload = (
-    response: IndexingFileTransferResponse,
-  ): InitiateFileTransferPayload => {
-    if (!selectedTransferAction) {
-      throw new Error(
-        "selected transfer destination details should not be null",
-      );
-    }
-
-    if (response.transferDirection === "EgressToNetApp") {
-      const sourcePaths: EgressTransferPayloadSourcePath[] = response.files.map(
-        (data) => ({
-          fileId: data.id ?? undefined,
-          path: data.sourcePath,
-          fullFilePath: data.fullFilePath ?? undefined,
-        }),
-      );
-
-      const payload = {
-        caseId: Number.parseInt(caseId),
-        destinationPath: response.destinationPath,
-        workspaceId: egressWorkspaceId,
-        sourceRootFolderPath: response.sourceRootFolderPath,
-        sourcePaths: sourcePaths,
-        transferType:
-          selectedTransferAction.actionType === "copy"
-            ? ("Copy" as const)
-            : ("Move" as const),
-        transferDirection: response.transferDirection,
-      };
-      return payload;
-    }
-
-    const sourcePaths: NetAppTransferPayloadSourcePath[] = response.files.map(
-      (data) => ({
-        path: data.sourcePath,
-        relativePath: data.relativePath ?? undefined,
-      }),
-    );
-
-    const payload = {
-      caseId: Number.parseInt(caseId),
-      destinationPath: response.destinationPath,
-      workspaceId: egressWorkspaceId,
-      sourceRootFolderPath: response.sourceRootFolderPath,
-      sourcePaths: sourcePaths,
-      transferType: "Copy" as const,
-      transferDirection: response.transferDirection,
-    };
-
-    return payload;
-  };
-
-  const handleInitiateTransfer = () => {
-    handleValidateTransfer();
-  };
-
-  const handleValidateTransfer = async () => {
-    // setShowTransferConfirmationModal(false);
-    setSelectedSourceFoldersOrFiles([]);
-    setSelectedTransferAction(null);
-
-    let response: IndexingFileTransferResponse;
-    const validationPayload = getIndexingFileTransferPayload();
-    try {
-      setTransferStatus("validating");
-      response = await indexingFileTransfer(validationPayload);
-      if (response.isInvalid) {
-        setTransferStatus("validated-with-errors");
-        navigate(`/case/${caseId}/case-management/transfer-resolve-file-path`, {
-          state: {
-            isRouteValid: true,
-            validationErrors: response.validationErrors,
-            destinationPath: response.destinationPath,
-            initiateTransferPayload: getInitiateTransferPayload(response),
-            baseFolderName:
-              "folderName" in currentEgressFolder
-                ? currentEgressFolder.folderName
-                : "",
-          },
-        });
-        return;
-      }
-
-      const initiateTransferPayload = getInitiateTransferPayload(response);
-      handleInitiateFileTransfer(initiateTransferPayload);
-    } catch (error) {
-      if (
-        error instanceof ApiError &&
-        error.code == 403 &&
-        validationPayload.transferType === "Move"
-      ) {
-        navigate(`/case/${caseId}/case-management/transfer-permissions-error`, {
-          state: {
-            isRouteValid: true,
-          },
-        });
-        return;
-      }
-      const newError =
-        error instanceof ApiError || error instanceof Error
-          ? error
-          : new Error(`${error}`);
-      setApiRequestError(newError);
-      return;
-    }
-  };
-
-  const handleInitiateFileTransfer = async (
-    initiatePayload: InitiateFileTransferPayload,
-  ) => {
-    setTransferStatus("transferring");
-    setTransferStatusData({
-      username: username,
-      direction:
-        transferSource === "egress" ? "EgressToNetApp" : "NetAppToEgress",
-      transferType: initiatePayload.transferType,
-      transferMetrics: null,
+  const handleTransferAction = (type: "copy" | "move") => {
+    // setSelectedTransferAction(type);
+    navigate(`/case/${caseId}/case-management/transfer-destination-page`, {
+      state: {
+        isRouteValid: true,
+        transferSource: transferSource,
+        selectedTransferAction: type,
+        sourcePaths: getTransferSourcePath(),
+        egressWorkspaceId,
+        caseId,
+        netAppFolderPath,
+        operationName,
+      },
     });
-    let initiateFileTransferResponse: InitiateFileTransferResponse;
-    try {
-      initiateFileTransferResponse =
-        await initiateFileTransfer(initiatePayload);
-
-      if (!initiateFileTransferResponse.id) {
-        throw new Error(
-          "Invalid initiate transfer response, id does not exist",
-        );
-      }
-      setTransferId(initiateFileTransferResponse.id);
-    } catch (error) {
-      setApiRequestError(error as Error);
-      return;
-    }
   };
 
   const handleStatusResponse = useCallback(
@@ -828,8 +667,8 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
                   transferSource={transferSource}
                   toggleTransferDirection={toggleTransferDirection}
                   disableControls={!selectedSourceFoldersOrFiles.length}
-                  onCopy={handleInitiateTransfer}
-                  onMove={handleInitiateTransfer}
+                  onCopy={() => handleTransferAction("copy")}
+                  onMove={() => handleTransferAction("move")}
                 />
                 {featureFlags.disconnectSharedDrive && (
                   <Button
@@ -865,8 +704,8 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
               transferSource={transferSource}
               toggleTransferDirection={toggleTransferDirection}
               disableControls={!selectedSourceFoldersOrFiles.length}
-              onCopy={handleInitiateTransfer}
-              onMove={handleInitiateTransfer}
+              onCopy={() => handleTransferAction("copy")}
+              onMove={() => handleTransferAction("move")}
             />
           </div>
         )}
