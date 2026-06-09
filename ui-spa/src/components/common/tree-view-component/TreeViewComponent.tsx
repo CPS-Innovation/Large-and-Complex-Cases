@@ -13,6 +13,7 @@ import styles from "./TreeViewComponent.module.scss";
 export type TreeNode = {
   id: string;
   name: string;
+  path: string;
   isFolder: boolean;
   children?: TreeNode[];
 };

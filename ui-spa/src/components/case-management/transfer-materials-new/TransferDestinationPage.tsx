@@ -23,6 +23,7 @@ import TransferWidget from "../../common/transfer-widget/TransferWidget";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
 import { ApiError } from "../../../common/errors/ApiError";
+import { type TreeNode } from "../../common/tree-view-component/TreeViewComponent";
 
 const TransferDestinationPage: React.FC = () => {
   const {
@@ -97,7 +98,9 @@ const TransferDestinationPage: React.FC = () => {
 
   const navigate = useNavigate();
 
-  const getIndexingFileTransferPayload = (): IndexingFileTransferPayload => {
+  const getIndexingFileTransferPayload = (
+    destinationPath: string,
+  ): IndexingFileTransferPayload => {
     const paths = sourcePaths.map(({ path }) => path);
 
     const payload = {
@@ -111,7 +114,7 @@ const TransferDestinationPage: React.FC = () => {
           ? ("Copy" as const)
           : ("Move" as const),
       sourcePaths: sourcePaths,
-      destinationPath: "",
+      destinationPath: destinationPath,
       workspaceId: egressWorkspaceId,
       sourceRootFolderPath: getCommonPath(paths),
     };
@@ -170,13 +173,13 @@ const TransferDestinationPage: React.FC = () => {
           ? ("Copy" as const)
           : ("Move" as const),
       transferDirection: transferDirection,
-    };
+    } as InitiateFileTransferPayload;
 
     return payload;
   };
 
-  const handleValidateTransfer = async () => {
-    const validationPayload = getIndexingFileTransferPayload();
+  const handleValidateTransfer = async (destinationPath: string) => {
+    const validationPayload = getIndexingFileTransferPayload(destinationPath);
     try {
       setTransferStatus("validating");
       const response: IndexingFileTransferResponse =
@@ -242,12 +245,17 @@ const TransferDestinationPage: React.FC = () => {
           return {
             id: data.id,
             name: data.name,
-            path: data.path,
+            path: data.path ? `${data.path}/${data.name}/` : `${data.name}/`,
             isFolder: data.isFolder,
           };
         });
       return folders;
     }
+  };
+
+  const handleTransfer = (selectedNode: TreeNode) => {
+    console.log("Selected node for transfer:", selectedNode.path);
+    handleValidateTransfer(selectedNode.path);
   };
 
   return (
@@ -281,8 +289,9 @@ const TransferDestinationPage: React.FC = () => {
                 ? initialNetAppFolderData
                 : initialEgressFolderData
             }
+            transferAction={selectedTransferAction === "copy" ? "Copy" : "Move"}
             onLoadChildren={handleLoadChildren}
-            transferAction="Copy"
+            handleTransfer={handleTransfer}
           />
         </div>
       </PageContentWrapper>

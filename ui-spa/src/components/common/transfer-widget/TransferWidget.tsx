@@ -8,16 +8,24 @@ export type TransferWidgetProps = {
   data: TreeNode[];
   onLoadChildren: (nodeId: string) => Promise<TreeNode[]>;
   transferAction: "Copy" | "Move";
+  handleTransfer: (selectedNode: TreeNode) => void;
 };
 const TransferWidget: React.FC<TransferWidgetProps> = ({
   data,
   onLoadChildren,
   transferAction,
+  handleTransfer,
 }) => {
   const [selectedNode, setSelectedNode] = useState<TreeNode | null>(null);
   const onSelect = useCallback((node: TreeNode) => {
     setSelectedNode(node);
   }, []);
+
+  const handleBtnClickHandler = () => {
+    if (selectedNode) {
+      handleTransfer(selectedNode);
+    }
+  };
 
   return (
     <div>
@@ -29,7 +37,7 @@ const TransferWidget: React.FC<TransferWidgetProps> = ({
       />
       <div className={styles.actionWrapper}>
         <Button
-          onClick={() => console.log("Transfer files")}
+          onClick={handleBtnClickHandler}
           className={styles.transferButton}
         >
           {selectedNode

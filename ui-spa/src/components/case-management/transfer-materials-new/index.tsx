@@ -342,7 +342,7 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
         selectedTransferAction: type,
         sourcePaths: getTransferSourcePath(),
         egressWorkspaceId,
-        caseId,
+        caseId: parseInt(caseId),
         netAppFolderPath,
         operationName,
       },
