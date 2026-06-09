@@ -1,6 +1,6 @@
 import { type TransferStatusResponse } from "../../schemas";
 export const egressToNetAppTransferStatusPlaywright: TransferStatusResponse = {
-  id: "00000000-0000-0000-0000-000000000001",
+  id: "00000000-0000-4000-8000-000000000001",
   status: "Completed",
   transferType: "Copy",
   direction: "EgressToNetApp",
@@ -15,7 +15,7 @@ export const egressToNetAppTransferStatusPlaywright: TransferStatusResponse = {
 };
 
 export const netAppToEgressTransferStatusPlaywright: TransferStatusResponse = {
-  id: "00000000-0000-0000-0000-000000000002",
+  id: "00000000-0000-4000-8000-000000000002",
   status: "Completed",
   transferType: "Copy",
   direction: "NetAppToEgress",

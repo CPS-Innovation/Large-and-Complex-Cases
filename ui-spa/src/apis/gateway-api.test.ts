@@ -1695,7 +1695,7 @@ describe("gateway apis", () => {
   describe("getTransferStatus", () => {
     it("getTransferStatus - should return transferStatus when fetch is successful", async () => {
       const mockData = {
-        id: "00000000-0000-0000-0000-000000000001",
+        id: "00000000-0000-4000-8000-000000000001",
         status: "Completed",
         transferType: "Copy",
         direction: "EgressToNetApp",
@@ -1735,7 +1735,7 @@ describe("gateway apis", () => {
 
     it("getTransferStatus - should return transferStatus with etag when server sends ETag header", async () => {
       const mockData = {
-        id: "00000000-0000-0000-0000-000000000001",
+        id: "00000000-0000-4000-8000-000000000001",
         status: "InProgress",
         transferType: "Copy",
         direction: "EgressToNetApp",
@@ -1777,7 +1777,7 @@ describe("gateway apis", () => {
 
     it("getTransferStatus - should send If-None-Match header when etag is provided", async () => {
       const mockData = {
-        id: "00000000-0000-0000-0000-000000000001",
+        id: "00000000-0000-4000-8000-000000000001",
         status: "Completed",
         transferType: "Copy",
         direction: "EgressToNetApp",
