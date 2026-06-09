@@ -8,7 +8,7 @@ type FolderNavigationTableProps = {
   caption: string;
   tableName: string;
   folders: Folder[];
-  folderResultsStatus: "loading" | "succeeded" | "failed" | "initial";
+  isLoading: boolean;
   folderResultsLength: number;
   loaderText: string;
   handleFolderPathClick: (folderPath: string) => void;
@@ -35,7 +35,7 @@ const FolderNavigationTable: React.FC<FolderNavigationTableProps> = ({
   tableName,
   folders,
   loaderText,
-  folderResultsStatus,
+  isLoading,
   folderResultsLength,
   handleFolderPathClick,
   getTableRowData,
@@ -45,10 +45,8 @@ const FolderNavigationTable: React.FC<FolderNavigationTableProps> = ({
   getInsetElement,
 }) => {
   const showInset = useMemo(() => {
-    return (
-      folderResultsStatus === "succeeded" && showInsetElement && getInsetElement
-    );
-  }, [folderResultsStatus, showInsetElement, getInsetElement]);
+    return !isLoading && showInsetElement && getInsetElement;
+  }, [isLoading, showInsetElement, getInsetElement]);
 
   const statusText = useMemo(() => {
     const tableType = tableName === "egress" ? "egress" : "shared drive";
@@ -56,16 +54,16 @@ const FolderNavigationTable: React.FC<FolderNavigationTableProps> = ({
       folders.length > 1
         ? `folder ${folders[folders.length - 1].folderName}`
         : "";
-    if (folderResultsStatus === "loading") {
+    if (isLoading) {
       return `loading files and folders from ${tableType}  ${folderText}`;
     }
-    if (folderResultsStatus === "succeeded") {
+    if (!isLoading) {
       return folderResultsLength
         ? "files and folders loaded successfully"
         : "There are no documents currently in this folder";
     }
     return "";
-  }, [folderResultsStatus, folders, tableName, folderResultsLength]);
+  }, [isLoading, folders, tableName, folderResultsLength]);
   return (
     <div className={styles.results} data-testid={`${tableName}-table-wrapper`}>
       <div aria-live="polite" className="govuk-visually-hidden">
@@ -75,12 +73,12 @@ const FolderNavigationTable: React.FC<FolderNavigationTableProps> = ({
         {
           <FolderPath
             folders={folders}
-            disabled={folderResultsStatus === "loading"}
+            disabled={isLoading}
             handleFolderPathClick={handleFolderPathClick}
           />
         }
         {showInset && getInsetElement!()}
-        {folderResultsStatus === "succeeded" && (
+        {!isLoading && (
           <>
             <SortableTable
               captionClassName="govuk-visually-hidden"
@@ -96,7 +94,7 @@ const FolderNavigationTable: React.FC<FolderNavigationTableProps> = ({
             )}
           </>
         )}
-        {folderResultsStatus === "loading" && (
+        {isLoading && (
           <div className={styles.spinnerWrapper}>
             <Spinner
               data-testid={`${tableName}-folder-table-loader`}

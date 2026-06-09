@@ -19,9 +19,9 @@ jobs:
     displayName: 'Cleanup Test Files from Egress and Shared Drive'
     steps:
       - script: |
-          if command -v pwsh &> /dev/null; then 
+          if command -v pwsh &> /dev/null; then
             echo "PowerShell already installed. Skipping installation."
-          else 
+          else
             echo "Installing PowerShell..."
             bash '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/installPowershell.sh'
             echo "Powershel version: $(pwsh -v)"
@@ -112,7 +112,7 @@ jobs:
             -FolderPath "integration-tests"
             -BaseUrl $(LccApiBaseUrl)
 
-      # # The following step is disabled while Kamesh is working on the E2E tests. 
+      # # The following step is disabled while Kamesh is working on the E2E tests.
       # # Once E2E test are merged, the following should be enabled:
 
       # - task: PowerShell@2
@@ -127,4 +127,3 @@ jobs:
       #       -AadPassword $(AadUserPassword)
       #       -CaseId $(E2eTestsCaseId)
       #       -FolderPath "existingCaseAutomation"
-  

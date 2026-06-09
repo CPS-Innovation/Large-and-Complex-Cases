@@ -360,7 +360,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
           tableName={"netapp"}
           folders={folders}
           loaderText="Loading folders from Shared Drive"
-          folderResultsStatus={netAppFolderDataStatus}
+          isLoading={netAppFolderDataStatus === "loading"}
           folderResultsLength={netAppDataSorted.length}
           handleFolderPathClick={handleFolderPathClick}
           getTableRowData={getTableRowData}

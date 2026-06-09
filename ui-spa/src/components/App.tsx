@@ -6,18 +6,22 @@ import AppRoutes from "./AppRoutes";
 import { MainStateProvider } from "../providers/MainStateProvider";
 import { ErrorBoundary } from "react-error-boundary";
 import { ErrorBoundaryFallback } from "./ErrorBoundaryFallback";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+const queryClient = new QueryClient();
 
 function App() {
   return (
     <BrowserRouter>
       <ErrorBoundary fallbackRender={ErrorBoundaryFallback}>
-        <Auth>
-          <MainStateProvider>
-            <Layout>
-              <AppRoutes />
-            </Layout>
-          </MainStateProvider>
-        </Auth>
+        <QueryClientProvider client={queryClient}>
+          <Auth>
+            <MainStateProvider>
+              <Layout>
+                <AppRoutes />
+              </Layout>
+            </MainStateProvider>
+          </Auth>
+        </QueryClientProvider>
       </ErrorBoundary>
     </BrowserRouter>
   );

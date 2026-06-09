@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import NetAppFolderResultsPage from "./NetAppFolderResultsPage";
-import { useApi } from "../../common/hooks/useApi";
 import { getConnectNetAppFolders } from "../../apis/gateway-api";
 import { SharedDriveConnectRouteState } from "../../common/types/SharedDriveConnectRouteState";
 import { SharedDriveConnectConfirmationRouteState } from "../../common/types/SharedDriveConnectConfirmationRouteState";
 import { getUrlSearchParam } from "../../common/utils/getUrlSearchParam";
+import { useQuery } from "@tanstack/react-query";
 import {
   useNavigate,
   useSearchParams,
@@ -25,37 +25,32 @@ const NetAppPage = () => {
 
   const { searchQueryString, netappRootFolderPath } = state;
 
-  const [operationName, setOperationName] = useState<string | null>("");
+  const [operationName, setOperationName] = useState<string>("");
   const [rootFolderPath, setRootFolderPath] = useState(
     netappRootFolderPath ?? "",
   );
 
-  const netAppFolderApiResults = useApi(
-    getConnectNetAppFolders,
-    [operationName, rootFolderPath],
-    false,
-  );
-
-  useEffect(() => {
-    if (operationName) netAppFolderApiResults.refetch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rootFolderPath, operationName]);
+  const { data: netAppFolderResults, isLoading: isNetAppFolderResultsLoading } =
+    useQuery({
+      queryKey: [operationName, rootFolderPath],
+      queryFn: () => getConnectNetAppFolders(operationName, rootFolderPath),
+      retry: false,
+      enabled: !!operationName,
+      throwOnError: true,
+      staleTime: 0,
+      gcTime: 0,
+    });
 
   useEffect(() => {
     if (location.pathname.endsWith("/netapp-connect")) {
       const opName = searchParams.get("operation-name");
       if (!opName) {
-        setOperationName(null);
+        setOperationName("");
         return;
       }
       setOperationName(opName);
     }
   }, [location, setOperationName, searchParams]);
-
-  useEffect(() => {
-    if (netAppFolderApiResults.status === "failed")
-      throw new Error(`${netAppFolderApiResults.error}`);
-  }, [netAppFolderApiResults]);
 
   const handleGetFolderContent = (path: string) => {
     setRootFolderPath(path);
@@ -64,7 +59,7 @@ const NetAppPage = () => {
   const handleConnectFolder = (path: string) => {
     const payload: SharedDriveConnectConfirmationRouteState = {
       isRouteValid: true,
-      operationName: operationName!,
+      operationName: operationName,
       caseId: caseId!,
       searchQueryString: searchQueryString,
       netappRootFolderPath: rootFolderPath,
@@ -82,7 +77,8 @@ const NetAppPage = () => {
     <NetAppFolderResultsPage
       backLinkUrl={`/search-results?${searchQueryString}`}
       rootFolderPath={rootFolderPath}
-      netAppFolderApiResults={netAppFolderApiResults}
+      netAppFolderResults={netAppFolderResults ?? { rootPath: "", folders: [] }}
+      isNetAppFolderResultsLoading={isNetAppFolderResultsLoading}
       handleConnectFolder={handleConnectFolder}
       handleGetFolderContent={handleGetFolderContent}
     />

@@ -229,6 +229,11 @@ public class EgressStorageClient(
             await GetWorkspaceToken());
     }
 
+    public Task<bool> CreateFolderAsync(string folderPath, string? workspaceId = null, string? bearerToken = null, string? bucketName = null)
+    {
+        throw new NotImplementedException();
+    }
+
     private async Task CreateFolderStructureAsync(string folderPath, string workspaceId, string token)
     {
         if (string.IsNullOrEmpty(folderPath) || folderPath == "/" || folderPath == "\\")

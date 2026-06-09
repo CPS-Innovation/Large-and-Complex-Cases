@@ -1,6 +1,6 @@
 parameters:
   workingDirectory: $(Pipeline.Workspace)
-  buildArtifact: ''
+  buildArtifact: ""
   condition: succeededOrFailed()
 
 steps:
@@ -8,7 +8,7 @@ steps:
     displayName: "Cleanup Downloaded Artifact"
     condition: ${{ parameters.condition }}
     inputs:
-      targetType: 'inline'
+      targetType: "inline"
       workingDirectory: ${{ parameters.workingDirectory }}
       script: |
         echo "Attempting to clean up downloaded artifact directory ${{ parameters.buildArtifact }}..."

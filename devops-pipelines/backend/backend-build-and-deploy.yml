@@ -24,48 +24,48 @@ stages:
   - stage: Preflight
     displayName: 'Preflight Checks & Preparation'
     pool: 'LACC PreProd Pool'
-    jobs: 
-    - job: Check_DB_Diff
-      displayName: 'Check for Database Migration Changes'
-      steps:
-        - checkout: self
-          fetchDepth: 0
+    jobs:
+      - job: Check_DB_Diff
+        displayName: 'Check for Database Migration Changes'
+        steps:
+          - checkout: self
+            fetchDepth: 0
 
-        - task: Bash@3
-          name: Diff_Check
-          displayName: 'Detect Database Migration Changes'
-          inputs:
-            targetType: filePath
-            filePath: $(System.DefaultWorkingDirectory)/devops-pipelines/scripts/detectGitDiff.sh
-          env:
-            PATH_TO_CHECK: $(System.DefaultWorkingDirectory)/backend/CPS.ComplexCases.Data/Migrations
-            OUTPUT_VAR_NAME: runDbMigrationSteps
+          - task: Bash@3
+            name: Diff_Check
+            displayName: 'Detect Database Migration Changes'
+            inputs:
+              targetType: filePath
+              filePath: $(System.DefaultWorkingDirectory)/devops-pipelines/scripts/detectGitDiff.sh
+            env:
+              PATH_TO_CHECK: $(System.DefaultWorkingDirectory)/backend/CPS.ComplexCases.Data/Migrations
+              OUTPUT_VAR_NAME: runDbMigrationSteps
 
-    - job: Package_NuGet
-      displayName: 'Pack and Publish NuGet Package'
-      steps:
-        - template: ../templates/dotnet-build-steps.yml
-          parameters:
-            projectPath: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-            projectName: 'HttpTelemetry'
-            buildConfiguration: $(buildConfiguration)
-            dotNetVersion: $(dotNetVersion)
-            useLocalNuGet: false
-            publishOutput: false
-            runTests: false
+      - job: Package_NuGet
+        displayName: 'Pack and Publish NuGet Package'
+        steps:
+          - template: ../templates/dotnet-build-steps.yml
+            parameters:
+              projectPath: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+              projectName: 'HttpTelemetry'
+              buildConfiguration: $(buildConfiguration)
+              dotNetVersion: $(dotNetVersion)
+              useLocalNuGet: false
+              publishOutput: false
+              runTests: false
 
-        - task: DotNetCoreCLI@2
-          displayName: 'Pack HttpTelemetry'
-          inputs:
-            command: 'pack'
-            packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-            outputDir: '$(Build.ArtifactStagingDirectory)'
-            arguments: '--configuration $(buildConfiguration) --no-build'
+          - task: DotNetCoreCLI@2
+            displayName: 'Pack HttpTelemetry'
+            inputs:
+              command: 'pack'
+              packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
+              outputDir: '$(Build.ArtifactStagingDirectory)'
+              arguments: '--configuration $(buildConfiguration) --no-build'
 
-        - publish: '$(Build.ArtifactStagingDirectory)'
-          artifact: 'localnuget'
-          displayName: 'Publish HttpTelemetry Package'
-  
+          - publish: '$(Build.ArtifactStagingDirectory)'
+            artifact: 'localnuget'
+            displayName: 'Publish HttpTelemetry Package'
+
   - stage: Build_API
     displayName: 'Build APIs for Deployment'
     dependsOn: Preflight
@@ -98,7 +98,7 @@ stages:
               useLocalNuGet: true
               publishOutput: true
               runTests: false
-          
+
           - task: DotNetCoreCLI@2
             condition: eq(variables.runDbMigrationSteps, true)
             displayName: 'Build Database Project'
@@ -136,8 +136,8 @@ stages:
               useLocalNuGet: true
               publishOutput: true
               runTests: false
-             
-# Deployment stages:
+
+  # Deployment stages:
   - template: ../templates/backend-deploy-stages.yml
     parameters:
       environment: dev

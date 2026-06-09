@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
 using CPS.ComplexCases.DDEI.Mappers;
+using CPS.ComplexCases.DDEI.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -29,6 +30,7 @@ public static class IServiceCollectionExtension
     services.AddTransient<ICaseDetailsMapper, CaseDetailsMapper>();
     services.AddTransient<IAreasMapper, AreasMapper>();
     services.AddTransient<IMockSwitch, MockSwitch>();
+    services.AddSingleton<ICaseNamingService, CaseNamingService>();
   }
 
   internal static void AddDdeiClient(IServiceProvider configuration, HttpClient client)

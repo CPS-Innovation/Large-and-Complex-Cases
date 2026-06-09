@@ -158,7 +158,7 @@ test.describe("egress meta data issues", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/cases/12: Getting case metadata failed; status - Internal Server Error (500)",
+        "API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/cases/12: Getting case metadata failed; status - Internal Server Error (500)",
       ),
     ).toBeVisible();
   });
@@ -189,7 +189,7 @@ test.describe("egress meta data issues", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/egress/workspaces/egress_1/files?folder-id=&skip=0&take=50: Getting egress folders failed; status - Internal Server Error (500)",
+        "API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/egress/workspaces/egress_1/files?folder-id=&skip=0&take=50: Getting egress folders failed; status - Internal Server Error (500)",
       ),
     ).toBeVisible();
   });
@@ -325,7 +325,7 @@ test.describe("netapp meta data issues", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/netapp/files: getting netapp files/folders failed; status - Internal Server Error (500)",
+        "API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/netapp/files: getting netapp files/folders failed; status - Internal Server Error (500)",
       ),
     ).toBeVisible();
   });

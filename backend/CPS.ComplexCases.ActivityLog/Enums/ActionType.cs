@@ -14,6 +14,8 @@ namespace CPS.ComplexCases.ActivityLog.Enums
         ConnectionToEgress,
         [AlternateValue("CONNECTION_TO_NETAPP")]
         ConnectionToNetApp,
+        [AlternateValue("DISCONNECTION_FROM_EGRESS")]
+        DisconnectionFromEgress,
         [AlternateValue("DISCONNECTION_FROM_NETAPP")]
         DisconnectionFromNetApp,
         [AlternateValue("FOLDER_CREATED")]

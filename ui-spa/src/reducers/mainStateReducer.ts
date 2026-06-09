@@ -1,19 +1,23 @@
 import { type CaseDivisionsOrAreaResponse } from "../schemas";
-import { ApiResult } from "../common/types/ApiResult";
-import { AsyncResult } from "../common/types/AsyncResult";
 import { mapAreaLookups } from "./utils/mapAreaLookups";
 
 export type MainState = {
-  caseDivisionsOrAreas: AsyncResult<CaseDivisionsOrAreaResponse>;
+  apiData: {
+    caseDivisionsOrAreas: CaseDivisionsOrAreaResponse | null;
+  };
 };
 
 export const initialState: MainState = {
-  caseDivisionsOrAreas: { status: "loading" },
+  apiData: {
+    caseDivisionsOrAreas: null,
+  },
 };
 
 export type MainStateActions = {
-  type: "UPDATE_CASE_DIVISIONS_OR_AREAS";
-  payload: ApiResult<CaseDivisionsOrAreaResponse>;
+  type: "SET_CASE_DIVISIONS_OR_AREAS";
+  payload: {
+    caseDivisionsOrAreas: CaseDivisionsOrAreaResponse;
+  };
 };
 
 export type DispatchType = React.Dispatch<MainStateActions>;
@@ -23,32 +27,16 @@ export const mainStateReducer = (
   action: MainStateActions,
 ): MainState => {
   switch (action.type) {
-    case "UPDATE_CASE_DIVISIONS_OR_AREAS": {
-      switch (action.payload.status) {
-        case "loading":
-          return {
-            ...state,
-            caseDivisionsOrAreas: action.payload,
-          };
-        case "succeeded":
-          return {
-            ...state,
-            caseDivisionsOrAreas: {
-              ...action.payload,
-              data: mapAreaLookups(action.payload.data),
-            },
-          };
-        case "failed": {
-          return {
-            ...state,
-            caseDivisionsOrAreas: {
-              ...action.payload,
-            },
-          };
-        }
-        default:
-          return state;
-      }
+    case "SET_CASE_DIVISIONS_OR_AREAS": {
+      return {
+        ...state,
+        apiData: {
+          ...state.apiData,
+          caseDivisionsOrAreas: mapAreaLookups(
+            action.payload.caseDivisionsOrAreas,
+          ),
+        },
+      };
     }
 
     default:
