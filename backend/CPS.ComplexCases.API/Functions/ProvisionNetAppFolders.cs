@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
 using CPS.ComplexCases.ActivityLog.Services;
+using CPS.ComplexCases.API.Clients.FileTransfer;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Services;
@@ -14,13 +16,12 @@ using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
+using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
 using CPS.ComplexCases.DDEI.Services;
 using CPS.ComplexCases.NetApp.Models.Dto;
-using CPS.ComplexCases.API.Clients.FileTransfer;
-using CPS.ComplexCases.Common.Models.Requests;
 
 namespace CPS.ComplexCases.Api.Functions;
 
@@ -50,6 +51,7 @@ public class ProvisionNetAppFolders(ILogger<ProvisionNetAppFolders> logger,
     [OpenApiOperation(operationId: nameof(ProvisionNetAppFolders), tags: ["NetApp"], Description = "Create the NetApp folder structure from a template for a case.")]
     [CmsAuthValuesAuth]
     [BearerTokenAuth]
+    [OpenApiParameter(name: "caseId", In = ParameterLocation.Path, Required = true, Type = typeof(int), Description = "The case ID to provision NetApp folders for.")]
     [OpenApiRequestBody(ContentType.ApplicationJson, typeof(ProvisionNetAppFoldersDto), Description = "Body containing the NetApp folder template to provision")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(string), Description = ApiResponseDescriptions.Success)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
