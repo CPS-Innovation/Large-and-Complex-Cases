@@ -11,7 +11,7 @@ export const transferFailedItemSchema = z.object({
 });
 
 export const transferStatusResponseSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().uuid().optional(),
   status: z.enum([
     "Initiated",
     "InProgress",
@@ -21,14 +21,14 @@ export const transferStatusResponseSchema = z.object({
   ]),
   transferType: z.enum(["Copy", "Move"]),
   direction: z.enum(["EgressToNetApp", "NetAppToEgress"]),
-  startedAt: z.string().nullable(),
+  startedAt: z.string().nullable().optional(),
   completedAt: z.string().nullable(),
   failedItems: z.array(transferFailedItemSchema),
   userName: z.string(),
   totalFiles: z.number(),
   processedFiles: z.number(),
-  successfulFiles: z.number(),
-  failedFiles: z.number(),
+  successfulFiles: z.number().optional(),
+  failedFiles: z.number().optional(),
 });
 
 export type TransferStatusResponse = z.infer<
