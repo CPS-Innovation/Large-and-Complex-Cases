@@ -51,7 +51,7 @@ function Remove-EgressFiles {
     [string[]]$FileIds
   )
 
-  $headers =  $AuthorizationHeader
+  $headers = $AuthorizationHeader
 
   $body = @{
     file_ids = $FileIds
