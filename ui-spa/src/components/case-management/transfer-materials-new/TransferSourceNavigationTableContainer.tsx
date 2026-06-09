@@ -13,7 +13,7 @@ import {
   type NetAppFileFolder,
 } from "../../../schemas";
 
-import styles from "./EgressFolderContainer.module.scss";
+import styles from "./TransferSourceNavigationTableContainer.module.scss";
 
 type TransferSourceNavigationTableContainerProps = {
   folderData:
@@ -170,11 +170,25 @@ const TransferSourceNavigationTableContainer: React.FC<
   }, [folderData]);
 
   return (
-    <div className={hideFirstColumn ? styles.hideFirstColumn : ""}>
+    <div
+      className={
+        hideFirstColumn
+          ? `${styles.sourceContainer} ${styles.hideFirstColumn}`
+          : styles.sourceContainer
+      }
+    >
       <NavigationTable
-        caption="egress files and folders table, column headers with buttons are sortable"
-        tableName="egress"
-        loaderText="Loading folders from Egress"
+        caption={
+          folderData.type === "egress"
+            ? "egress files and folders table, column headers with buttons are sortable"
+            : "shared drive files and folders table, column headers with buttons are sortable"
+        }
+        tableName={folderData.type === "egress" ? "egress" : "shared drive"}
+        loaderText={
+          folderData.type === "egress"
+            ? "Loading folders from Egress"
+            : "Loading folders from Shared Drive"
+        }
         isLoading={isLoading}
         folderResultsLength={folderData.data.length}
         getTableRowData={getTableRowData}

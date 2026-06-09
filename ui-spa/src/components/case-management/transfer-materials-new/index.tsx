@@ -827,6 +827,7 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
                 <TransferControls
                   transferSource={transferSource}
                   toggleTransferDirection={toggleTransferDirection}
+                  disableControls={!selectedSourceFoldersOrFiles.length}
                   onCopy={handleInitiateTransfer}
                   onMove={handleInitiateTransfer}
                 />
@@ -863,6 +864,7 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
             <TransferControls
               transferSource={transferSource}
               toggleTransferDirection={toggleTransferDirection}
+              disableControls={!selectedSourceFoldersOrFiles.length}
               onCopy={handleInitiateTransfer}
               onMove={handleInitiateTransfer}
             />

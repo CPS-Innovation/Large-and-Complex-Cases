@@ -47,7 +47,10 @@ const NavigationTable: React.FC<NavigationTableProps> = ({
     return "";
   }, [isLoading, loaderText, folderResultsLength]);
   return (
-    <div className={styles.results} data-testid={`${tableName}-table-wrapper`}>
+    <div
+      className={styles.navigationTable}
+      data-testid={`${tableName}-table-wrapper`}
+    >
       <div aria-live="polite" className="govuk-visually-hidden">
         {statusText}
       </div>

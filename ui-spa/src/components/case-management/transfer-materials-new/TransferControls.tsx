@@ -3,6 +3,7 @@ import styles from "./TransferControls.module.scss";
 
 type TransferControlsProps = {
   transferSource: "egress" | "sharedDrive";
+  disableControls: boolean;
   toggleTransferDirection: () => void;
   onCopy?: () => void;
   onMove?: () => void;
@@ -11,16 +12,25 @@ type TransferControlsProps = {
 const TransferControls = ({
   onCopy,
   onMove,
+  disableControls,
   transferSource,
   toggleTransferDirection,
 }: TransferControlsProps) => {
   return (
     <div className={styles.transferControls}>
-      <Button className="govuk-button--secondary" onClick={onCopy}>
+      <Button
+        className="govuk-button--secondary"
+        onClick={onCopy}
+        disabled={disableControls}
+      >
         Copy selected
       </Button>
       {transferSource === "egress" && (
-        <Button className="govuk-button--secondary" onClick={onMove}>
+        <Button
+          className="govuk-button--secondary"
+          onClick={onMove}
+          disabled={disableControls}
+        >
           Move selected
         </Button>
       )}
