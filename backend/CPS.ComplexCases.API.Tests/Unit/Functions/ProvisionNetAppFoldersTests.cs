@@ -444,7 +444,7 @@ public class ProvisionNetAppFoldersTests
             });
 
         _fileTransferClientMock
-            .SetupSequence(c => c.GetFileTransferStatusAsync(transferId.ToString(), _correlationId))
+            .SetupSequence(c => c.GetFileTransferStatusAsync(transferId.ToString(), _correlationId, null))
             .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent(JsonSerializer.Serialize(new { status = "InProgress" }), Encoding.UTF8, "application/json")
@@ -462,7 +462,7 @@ public class ProvisionNetAppFoldersTests
 
         // Assert
         Assert.IsType<OkObjectResult>(result);
-        _fileTransferClientMock.Verify(c => c.GetFileTransferStatusAsync(transferId.ToString(), _correlationId), Times.Exactly(2));
+        _fileTransferClientMock.Verify(c => c.GetFileTransferStatusAsync(transferId.ToString(), _correlationId, null), Times.Exactly(2));
         _caseMetadataServiceMock.Verify(s => s.CreateNetAppConnectionAsync(It.IsAny<CreateNetAppConnectionDto>()), Times.Once);
     }
 
@@ -489,7 +489,7 @@ public class ProvisionNetAppFoldersTests
             });
 
         _fileTransferClientMock
-            .Setup(c => c.GetFileTransferStatusAsync(transferId.ToString(), _correlationId))
+            .Setup(c => c.GetFileTransferStatusAsync(transferId.ToString(), _correlationId, null))
             .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent(JsonSerializer.Serialize(new { status = "Completed" }), Encoding.UTF8, "application/json")
@@ -503,7 +503,7 @@ public class ProvisionNetAppFoldersTests
 
         // Assert
         Assert.IsType<OkObjectResult>(result);
-        _fileTransferClientMock.Verify(c => c.GetFileTransferStatusAsync(transferId.ToString(), _correlationId), Times.Once);
+        _fileTransferClientMock.Verify(c => c.GetFileTransferStatusAsync(transferId.ToString(), _correlationId, null), Times.Once);
         _caseMetadataServiceMock.Verify(s => s.CreateNetAppConnectionAsync(It.IsAny<CreateNetAppConnectionDto>()), Times.Once);
     }
 
@@ -597,7 +597,7 @@ public class ProvisionNetAppFoldersTests
             });
 
         _fileTransferClientMock
-            .Setup(c => c.GetFileTransferStatusAsync(transferId.ToString(), _correlationId))
+            .Setup(c => c.GetFileTransferStatusAsync(transferId.ToString(), _correlationId, null))
             .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent(JsonSerializer.Serialize(new { status = "Failed" }), Encoding.UTF8, "application/json")
@@ -648,7 +648,7 @@ public class ProvisionNetAppFoldersTests
             });
 
         _fileTransferClientMock
-            .Setup(c => c.GetFileTransferStatusAsync(transferId.ToString(), _correlationId))
+            .Setup(c => c.GetFileTransferStatusAsync(transferId.ToString(), _correlationId, null))
             .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent(

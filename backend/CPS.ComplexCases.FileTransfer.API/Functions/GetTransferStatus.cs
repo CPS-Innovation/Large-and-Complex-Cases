@@ -10,6 +10,7 @@ using CPS.ComplexCases.Common.Constants;
 using Microsoft.DurableTask.Entities;
 using CPS.ComplexCases.FileTransfer.API.Durable.State;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
+using CPS.ComplexCases.FileTransfer.API.Dtos;
 
 namespace CPS.ComplexCases.FileTransfer.API.Functions;
 
@@ -27,7 +28,7 @@ public class GetTransferStatus
     [OpenApiSecurity("FunctionKey", Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey, Name = "x-functions-key", In = Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Enums.OpenApiSecurityLocationType.Header)]
     [OpenApiParameter(name: "transferId", In = Microsoft.OpenApi.Models.ParameterLocation.Path, Required = true, Type = typeof(string), Description = "The unique identifier of the transfer to retrieve status for.")]
     [OpenApiParameter(name: HttpHeaderKeys.CorrelationId, In = Microsoft.OpenApi.Models.ParameterLocation.Header, Required = true, Type = typeof(string), Description = "Correlation identifier for tracking the request.")]
-    [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(TransferEntity), Description = "Transfer status retrieved successfully.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(TransferStatusDto), Description = "Transfer status retrieved successfully.")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.NotFound, contentType: ContentType.ApplicationJson, bodyType: typeof(object), Description = ApiResponseDescriptions.NotFound)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, bodyType: typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
     public async Task<IActionResult> Run(
@@ -57,10 +58,20 @@ public class GetTransferStatus
         }
 
         var transferState = entityStateResponse.State;
+        var etag = $"\"{transferState.UpdatedAt.Ticks}\"";
+        req.HttpContext.Response.Headers["ETag"] = etag;
+
+        var ifNoneMatch = req.Headers["If-None-Match"].FirstOrDefault();
+        if (!string.IsNullOrEmpty(ifNoneMatch) && ifNoneMatch == etag)
+        {
+            _logger.LogInformation("Transfer status unchanged for ID: {TransferId}, returning 304, CorrelationId: {CorrelationId}",
+                transferId, currentCorrelationId);
+            return new StatusCodeResult(304);
+        }
 
         _logger.LogInformation("Successfully retrieved transfer status for ID: {TransferId}, Status: {Status}, CorrelationId: {CorrelationId}",
             transferId, transferState.Status, currentCorrelationId);
 
-        return new OkObjectResult(transferState);
+        return new OkObjectResult(TransferStatusDto.From(transferState));
     }
 }
