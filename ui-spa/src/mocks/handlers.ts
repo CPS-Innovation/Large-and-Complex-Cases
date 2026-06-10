@@ -25,9 +25,38 @@ import {
   // egressToNetAppIndexingErrorDev,
   activityLogDev,
   activityLogPlaywright,
+  manageMaterialsActiveDev,
+  manageMaterialsLockedPathsDev,
+  netAppToNetAppTransferStatusDev,
 } from "./data";
 import { IndexingFileTransferPayload } from "../schemas/requests/indexingFileTransferPayload";
 import { InitiateFileTransferPayload } from "../schemas/requests/initiateFileTransferPayload";
+import { BatchOperationPayload } from "../schemas/requests/batchOperationPayload";
+
+const normalisePath = (path: string) => path.toLowerCase().replace(/\/+$/, "");
+
+const mockPathsOverlap = (a: string, b: string) => {
+  const la = normalisePath(a);
+  const lb = normalisePath(b);
+  return la === lb || la.startsWith(`${lb}/`) || lb.startsWith(`${la}/`);
+};
+
+// Mirrors the backend blocking rules: 409 when the new operation's source or
+// destination overlaps the mocked active operation's locked folder areas.
+const overlapsLockedPaths = (payload: BatchOperationPayload) => {
+  const requestedPaths = [
+    payload.destinationPrefix,
+    ...payload.operations.map((operation) => operation.sourcePath),
+  ];
+  return requestedPaths.some((requested) =>
+    manageMaterialsLockedPathsDev.some((locked) =>
+      mockPathsOverlap(requested, locked),
+    ),
+  );
+};
+
+const CONFLICT_MESSAGE =
+  "A conflicting manage materials operation is already in progress for one or more of the specified paths.";
 
 export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
   const isDevMock = () => apiMockSource === "dev";
@@ -166,6 +195,51 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
         return HttpResponse.json(response);
       },
     ),
+    http.get(`${baseUrl}/api/v1/cases/12/manage-materials/active`, async () => {
+      await delay(RESPONSE_DELAY);
+      return HttpResponse.json(manageMaterialsActiveDev);
+    }),
+
+    http.post(`${baseUrl}/api/v1/netapp/copy/batch`, async ({ request }) => {
+      const payload = (await request.json()) as BatchOperationPayload;
+      await delay(1000);
+      if (overlapsLockedPaths(payload)) {
+        return new HttpResponse(CONFLICT_MESSAGE, { status: 409 });
+      }
+      return HttpResponse.json(
+        {
+          id: "transfer-id-netapp-to-netapp",
+          status: "Initiated",
+          createdAt: new Date().toISOString(),
+        },
+        { status: 202 },
+      );
+    }),
+
+    http.post(`${baseUrl}/api/v1/netapp/move/batch`, async ({ request }) => {
+      const payload = (await request.json()) as BatchOperationPayload;
+      await delay(1000);
+      if (overlapsLockedPaths(payload)) {
+        return new HttpResponse(CONFLICT_MESSAGE, { status: 409 });
+      }
+      return HttpResponse.json(
+        {
+          id: "transfer-id-netapp-to-netapp",
+          status: "Initiated",
+          createdAt: new Date().toISOString(),
+        },
+        { status: 202 },
+      );
+    }),
+
+    http.get(
+      `${baseUrl}/api/v1/filetransfer/transfer-id-netapp-to-netapp/status`,
+      async () => {
+        await delay(1500);
+        return HttpResponse.json(netAppToNetAppTransferStatusDev);
+      },
+    ),
+
     http.get(`${baseUrl}/api/v1/activity/logs`, async () => {
       const response = isDevMock() ? activityLogDev : activityLogPlaywright;
 

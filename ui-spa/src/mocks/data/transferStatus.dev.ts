@@ -20,3 +20,14 @@ export const netAppToEgressTransferStatusDev: TransferStatusResponse = {
   totalFiles: 30,
   processedFiles: 30,
 };
+
+export const netAppToNetAppTransferStatusDev: TransferStatusResponse = {
+  status: "Completed",
+  transferType: "Copy",
+  direction: "NetAppToNetApp",
+  completedAt: null,
+  failedItems: [],
+  userName: "dev_user@example.org",
+  totalFiles: 5,
+  processedFiles: 5,
+};

@@ -1,4 +1,5 @@
 import { type CaseMetaDataResponse } from "../../schemas";
+import { manageMaterialsActiveDev } from "./manageMaterialsActive.dev";
 export const caseMetaDataDev: CaseMetaDataResponse = {
   caseId: 12,
   egressWorkspaceId: "egress_1",
@@ -6,4 +7,5 @@ export const caseMetaDataDev: CaseMetaDataResponse = {
   operationName: "Thunderstruck",
   urn: "45AA2098221",
   activeTransferId: "",
+  activeManageMaterialsOperations: manageMaterialsActiveDev,
 };

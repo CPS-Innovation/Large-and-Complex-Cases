@@ -25,7 +25,12 @@ export {
 export {
   egressToNetAppTransferStatusDev,
   netAppToEgressTransferStatusDev,
+  netAppToNetAppTransferStatusDev,
 } from "./transferStatus.dev";
+export {
+  manageMaterialsActiveDev,
+  manageMaterialsLockedPathsDev,
+} from "./manageMaterialsActive.dev";
 export {
   egressToNetAppTransferStatusPlaywright,
   netAppToEgressTransferStatusPlaywright,

@@ -50,10 +50,13 @@ const parsePaths = (jsonStr: string | null | undefined): string[] => {
   }
 };
 
+// Matches the backend rules: case-insensitive, trailing slashes ignored,
+// parent and child folders count as the same area. Comparison is on whole
+// path segments so siblings like "Interviews" and "Interviews v2" don't clash.
 const pathsOverlap = (a: string, b: string): boolean => {
-  const la = a.toLowerCase();
-  const lb = b.toLowerCase();
-  return la.startsWith(lb) || lb.startsWith(la);
+  const la = a.toLowerCase().replace(/\/+$/, "");
+  const lb = b.toLowerCase().replace(/\/+$/, "");
+  return la === lb || la.startsWith(`${lb}/`) || lb.startsWith(`${la}/`);
 };
 
 const collectLockedPaths = (ops: ManageMaterialsOperation[]): string[] =>
