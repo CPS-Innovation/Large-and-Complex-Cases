@@ -97,7 +97,8 @@ public class CreateEgressWorkspace(
         await _caseMetadataService.CreateEgressConnectionAsync(new CreateEgressConnectionDto
         {
             CaseId = request.Value.CaseId,
-            EgressWorkspaceId = workspace.Id
+            EgressWorkspaceId = workspace.Id,
+            EgressWorkspaceName = workspaceName
         });
 
         await _activityLogService.CreateActivityLogAsync(
@@ -105,7 +106,7 @@ public class CreateEgressWorkspace(
           ActivityLog.Enums.ResourceType.StorageConnection,
           request.Value.CaseId,
           workspace.Id,
-          workspace.Id,
+          workspace.Name,
           context.Username);
 
         return new OkObjectResult(workspace);

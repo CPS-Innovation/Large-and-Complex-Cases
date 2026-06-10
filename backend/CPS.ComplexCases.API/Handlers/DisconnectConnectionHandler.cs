@@ -52,11 +52,13 @@ public class DisconnectConnectionHandler(ILogger<DisconnectConnectionHandler> lo
 
         try
         {
+            var resourceId = result.Key ?? result.ClearedPath ?? "Unknown";
+
             await _activityLogService.CreateActivityLogAsync(
                 config.ActivityLogAction,
                 ResourceType.StorageConnection,
                 caseId,
-                result.ClearedPath!,
+                resourceId,
                 result.ClearedPath,
                 context.Username);
         }

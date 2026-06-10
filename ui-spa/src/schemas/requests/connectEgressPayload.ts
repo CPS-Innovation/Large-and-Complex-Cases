@@ -3,6 +3,7 @@ import { z } from "zod";
 export const connectEgressPayloadSchema = z.object({
   egressWorkspaceId: z.string(),
   caseId: z.number(),
+  egressWorkspaceName: z.string(),
 });
 
 export type ConnectEgressPayload = z.infer<typeof connectEgressPayloadSchema>;
