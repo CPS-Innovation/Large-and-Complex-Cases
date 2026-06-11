@@ -98,7 +98,7 @@ public class CreateEgressWorkspace(
         {
             CaseId = request.Value.CaseId,
             EgressWorkspaceId = workspace.Id,
-            EgressWorkspaceName = workspaceName
+            EgressWorkspaceName = workspace.Name
         });
 
         await _activityLogService.CreateActivityLogAsync(
