@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { NotificationBanner, Button } from "../../govuk";
+import { NotificationBanner, Button, Details } from "../../govuk";
 import { Spinner } from "../../common/Spinner";
 import {
   getEgressFolders,
@@ -25,8 +25,10 @@ import {
   type EgressFolder,
   type NetAppFileFolder,
 } from "../../../schemas";
+import RelativePathFiles from "../activity-log/RelativePathFiles";
 import TransferControls from "./TransferControls";
 import FolderPath from "../../common/FolderPath";
+import { getCommonPath } from "../../../common/utils/getCommonPath";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
@@ -62,6 +64,10 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
       totalFiles: number;
       processedFiles: number;
     } | null;
+    destinationFolderName: string;
+    destinationPath: string;
+    destinationId: string;
+    successItems: { path: string }[];
   }>(null);
 
   const [egressPathFolders, setEgressPathFolders] = useState<
@@ -361,6 +367,10 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
             totalFiles: response.totalFiles,
             processedFiles: response.processedFiles,
           },
+          destinationFolderName: response.destinationFolderName ?? "",
+          destinationPath: response.destinationPath ?? "",
+          destinationId: response.destinationId ?? "",
+          successItems: response.successItems ?? [],
         });
         return;
       }
@@ -374,6 +384,10 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
             totalFiles: response.totalFiles,
             processedFiles: response.processedFiles,
           },
+          destinationFolderName: response.destinationFolderName ?? "",
+          destinationPath: response.destinationPath ?? "",
+          destinationId: response.destinationId ?? "",
+          successItems: response.successItems ?? [],
         });
         if (response.userName === username)
           handleFileTransferClear(transferId!);
@@ -633,12 +647,28 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
               data-testid="transfer-success-notification-banner"
             >
               <b className={styles.successMessage}>
-                Files{" "}
-                {transferStatusData.transferType === "Copy"
-                  ? "copied"
-                  : "moved"}{" "}
-                successfully
+                The materials have been transferred.
               </b>
+              <p>
+                They are in :{" "}
+                <strong>{transferStatusData?.destinationFolderName}</strong>
+              </p>
+
+              <Details
+                summaryChildren={
+                  transferStatusData.transferType === "Copy"
+                    ? "Show copied materials"
+                    : "Show moved materials"
+                }
+              >
+                <RelativePathFiles
+                  successFiles={transferStatusData?.successItems}
+                  errorFiles={[]}
+                  sourcePath={getCommonPath(
+                    transferStatusData?.successItems.map(({ path }) => path),
+                  )}
+                />
+              </Details>
             </NotificationBanner>
           </div>
         )}

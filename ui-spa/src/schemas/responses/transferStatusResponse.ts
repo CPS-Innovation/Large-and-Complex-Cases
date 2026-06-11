@@ -29,6 +29,16 @@ export const transferStatusResponseSchema = z.object({
   processedFiles: z.number(),
   successfulFiles: z.number(),
   failedFiles: z.number(),
+  successItems: z
+    .array(
+      z.object({
+        path: z.string(),
+      }),
+    )
+    .optional(),
+  destinationFolderName: z.string().optional(),
+  destinationPath: z.string().optional(),
+  destinationId: z.string().optional(),
 });
 
 export type TransferStatusResponse = z.infer<

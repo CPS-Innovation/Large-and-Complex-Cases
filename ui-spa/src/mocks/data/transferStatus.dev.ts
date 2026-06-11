@@ -12,6 +12,20 @@ export const egressToNetAppTransferStatusDev: TransferStatusResponse = {
   processedFiles: 30,
   successfulFiles: 30,
   failedFiles: 0,
+  successItems: [
+    {
+      path: "folder1/folder2/file1.txt",
+    },
+    {
+      path: "folder1/folder2/file2.txt",
+    },
+    {
+      path: "folder1/folder3/file3.txt",
+    },
+  ],
+  destinationFolderName: "demo-statements",
+  destinationPath: "netapp/folder-1-1/",
+  destinationId: "",
 };
 
 export const netAppToEgressTransferStatusDev: TransferStatusResponse = {
