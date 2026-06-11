@@ -439,6 +439,7 @@ describe("gateway apis", () => {
 
       const result = await connectEgressWorkspace({
         workspaceId: "thunder_1",
+        workspaceName: "thunder",
         caseId: "123",
       });
       expect(result).toEqual({ ok: true });
@@ -453,6 +454,7 @@ describe("gateway apis", () => {
           },
           body: JSON.stringify({
             egressWorkspaceId: "thunder_1",
+            egressWorkspaceName: "thunder",
             caseId: 123,
           }),
         }),
@@ -471,6 +473,7 @@ describe("gateway apis", () => {
       await expect(
         connectEgressWorkspace({
           workspaceId: "thunder_1",
+          workspaceName: "thunder",
           caseId: "123",
         }),
       ).rejects.toThrow(ApiError);
@@ -486,6 +489,7 @@ describe("gateway apis", () => {
           },
           body: JSON.stringify({
             egressWorkspaceId: "thunder_1",
+            egressWorkspaceName: "thunder",
             caseId: 123,
           }),
         }),

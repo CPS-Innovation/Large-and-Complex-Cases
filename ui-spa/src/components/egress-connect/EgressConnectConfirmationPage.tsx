@@ -43,6 +43,7 @@ const EgressConnectConfirmationPage: React.FC = () => {
       if (selectedWorkspace?.id && caseId) {
         await connectEgressWorkspace({
           workspaceId: selectedWorkspace.id,
+          workspaceName: selectedWorkspace.name,
           caseId: caseId,
         });
 

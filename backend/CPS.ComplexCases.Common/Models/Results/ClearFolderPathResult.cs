@@ -6,4 +6,5 @@ public class ClearFolderPathResult
 {
     public CaseMetadataState State { get; set; }
     public string? ClearedPath { get; set; }
+    public string? Key { get; set; }
 }

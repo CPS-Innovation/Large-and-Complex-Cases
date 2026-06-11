@@ -71,7 +71,7 @@ public class CreateEgressConnection(
       ActivityLog.Enums.ResourceType.StorageConnection,
       egressConnectionRequest.Value.CaseId,
       egressConnectionRequest.Value.EgressWorkspaceId,
-      egressConnectionRequest.Value.EgressWorkspaceId,
+      egressConnectionRequest.Value.EgressWorkspaceName,
       context.Username);
 
     return new OkResult();

@@ -165,14 +165,17 @@ export const getEgressSearchResults = async (
 
 export const connectEgressWorkspace = async ({
   workspaceId,
+  workspaceName,
   caseId,
 }: {
   workspaceId: string;
+  workspaceName: string;
   caseId: string;
 }) => {
   const payload: ConnectEgressPayload = {
     egressWorkspaceId: workspaceId,
-    caseId: parseInt(caseId),
+    egressWorkspaceName: workspaceName,
+    caseId: Number.parseInt(caseId),
   };
   const validatedData = connectEgressPayloadSchema.safeParse(payload);
   if (!validatedData.success) {
@@ -258,7 +261,7 @@ export const connectNetAppFolder = async ({
   const payload: ConnectNetAppPayload = {
     operationName: operationName,
     folderPath: folderPath,
-    caseId: parseInt(caseId),
+    caseId: Number.parseInt(caseId),
   };
   const validatedData = connectNetAppPayloadSchema.safeParse(payload);
   if (!validatedData.success) {
