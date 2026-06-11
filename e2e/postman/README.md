@@ -39,7 +39,7 @@ The scripts automatically load credentials from `secrets.config.ps1`.
 | **Case** | Pre-existing case | Registers one case on the first folder, reuses it for remaining folders |
 | **Workspace** | Uploads to existing workspace | Creates new workspace |
 | **Connections** | Skipped (already exist) | Created (Egress + NetApp) |
-| **Speed** | Approx. 4 min (all 4 journeys) | Approx. 6 min (all 4 journeys) |
+| **Speed** | Faster — skips registration and connection setup | Slower — adds case registration and connection creation on top of default-mode timing |
 | **Use case** | Day-to-day testing, CI/CD | Testing case registration flow |
 
 The four journey folders are `E2E: Egress to NetApp Copy`, `E2E: Netapp to Egress Copy`, `E2E: Egress to NetApp Move`, and `E2E: Netapp Move to Egress Copy`. They run in this order so each back-direction journey finds the file its forward counterpart just deposited.

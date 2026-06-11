@@ -724,13 +724,9 @@ $variables = @{
     "registerCaseClientId" = $Config.RegisterCaseClientId
     "lccApiId" = $Config.LccApiId
     "netappFolderPath" = "Automation-Testing/"
-    # NetApp -> Egress copy-back destination. Must NOT equal the upload
-    # folder (`4. Served Evidence/`) or every run produces PartiallyCompleted
-    # with FileExists, because the file being copied back from NetApp is the
-    # one the upload step just put in `4. Served Evidence/`. Per issue #4,
-    # `3. Unused - disclosed/` is the documented default and collisions
-    # there only occur if the same timestamped filename is reused, which
-    # the upload script avoids.
+    # NetApp -> Egress copy-back destination base. Collection appends a per-run
+    # `e2e-run-<id>/` sub-folder (in 10./[NME] 10. Validate prerequest) -- that
+    # is the actual FileExists guard. Must not equal `4. Served Evidence/`.
     "egressDestinationFolder" = "3. Unused - disclosed/"
     "registerCase" = if ($RegisterCase) { "true" } else { "false" }
     "defaultCaseId" = $Config.DefaultCaseId
