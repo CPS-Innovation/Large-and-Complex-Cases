@@ -716,6 +716,15 @@ else {
 # ============================================================
 Write-Header "STEP 2: Update Variables"
 
+# Scale the per-transfer poll cap with file size. Default is 60 attempts
+# (~3 min at ~3s/poll) which covers small files; a 1 GB transfer can take
+# longer than that, so add ~1.5 min of poll budget per 100 MB above 100 MB,
+# capped at 600 (~30 min) to still fail loudly if something stalls outright.
+$effectiveSizeMB = if ($SizeMB -gt 0) { $SizeMB } else { $SizeGB * 1024 }
+$totalSizeMB = $effectiveSizeMB * [Math]::Max(1, [int]$FileCount)
+$additional = [Math]::Max(0, [int][Math]::Ceiling(($totalSizeMB - 100) / 100.0)) * 30
+$maxPollAttempts = [Math]::Min(600, 60 + $additional)
+
 $variables = @{
     "egressWorkspaceId" = $EgressWorkspaceId
     "egressWorkspaceName" = $EgressWorkspaceName
@@ -728,6 +737,7 @@ $variables = @{
     # `e2e-run-<id>/` sub-folder (in 10./[NME] 10. Validate prerequest) -- that
     # is the actual FileExists guard. Must not equal `4. Served Evidence/`.
     "egressDestinationFolder" = "3. Unused - disclosed/"
+    "maxPollAttempts" = $maxPollAttempts.ToString()
     "registerCase" = if ($RegisterCase) { "true" } else { "false" }
     "defaultCaseId" = $Config.DefaultCaseId
     "defaultCaseUrn" = $Config.DefaultCaseUrn
