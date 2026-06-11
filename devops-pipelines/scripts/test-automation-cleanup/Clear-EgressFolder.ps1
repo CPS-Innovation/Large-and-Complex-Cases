@@ -70,7 +70,7 @@ while ($true) {
 
 if (-not $filesToDelete) {
   Write-Host "  [OK] Folder is empty - nothing to delete." -ForegroundColor Green
-  exit 0
+  return
 }
 
 Write-Host "Files to be deleted:" -ForegroundColor Cyan
@@ -90,7 +90,7 @@ if (-not $Force) {
 
   if ($confirmation -ne 'yes') {
     Write-Host "Deletion cancelled by user." -ForegroundColor Cyan
-    exit 0
+    return
   }
 }
 else {
@@ -113,7 +113,7 @@ for ($i = 0; $i -lt $fileIds.Count; $i += $batchSize) {
   $batchIndex = [int]($i / $batchSize) + 1
 
   Write-Host ("Deleting batch {0}/{1} ({2} file(s))..." -f `
-    $batchIndex, $totalBatches, $batch.Count)
+      $batchIndex, $totalBatches, $batch.Count)
 
   try {
     Remove-EgressFiles `
@@ -123,7 +123,7 @@ for ($i = 0; $i -lt $fileIds.Count; $i += $batchSize) {
       -FileIds $batch
       
     Write-Host ("Batch {0}/{1} completed successfully." -f `
-      $batchIndex, $totalBatches)
+        $batchIndex, $totalBatches)
 
   }
   catch {
