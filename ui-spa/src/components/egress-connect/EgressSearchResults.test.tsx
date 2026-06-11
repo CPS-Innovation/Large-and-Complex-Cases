@@ -20,42 +20,38 @@ vi.mock("../govuk", async () => {
 
 describe("EgressSearchResults", () => {
   const handleConnectFolderMock = vi.fn();
-  const egressSearchApiResults = {
-    status: "succeeded" as const,
-    data: [
-      {
-        id: "1",
-        dateCreated: "2000-01-25",
-        name: "thunderstrike",
-        caseId: null,
-      },
-      {
-        id: "2",
-        dateCreated: "2000-01-26",
-        name: "thunderstrikeab",
-        caseId: 123,
-      },
-      {
-        id: "3",
-        dateCreated: "2000-01-27",
-        name: "thunderstrikeabc",
-        caseId: null,
-      },
-      {
-        id: "4",
-        dateCreated: "2000-01-28",
-        name: "ahunderstrikeabcd",
-        caseId: null,
-      },
-    ],
-    refetch: vi.fn(),
-  };
+  const egressSearchResults = [
+    {
+      id: "1",
+      dateCreated: "2000-01-25",
+      name: "thunderstrike",
+      caseId: null,
+    },
+    {
+      id: "2",
+      dateCreated: "2000-01-26",
+      name: "thunderstrikeab",
+      caseId: 123,
+    },
+    {
+      id: "3",
+      dateCreated: "2000-01-27",
+      name: "thunderstrikeabc",
+      caseId: null,
+    },
+    {
+      id: "4",
+      dateCreated: "2000-01-28",
+      name: "ahunderstrikeabcd",
+      caseId: null,
+    },
+  ];
 
   it("It renders the table with given search results", async () => {
     const { rerender } = render(
       <EgressSearchResults
         workspaceName="thunder"
-        egressSearchApi={egressSearchApiResults}
+        egressSearchResults={egressSearchResults}
         handleConnectFolder={handleConnectFolderMock}
       />,
     );
@@ -92,15 +88,12 @@ describe("EgressSearchResults", () => {
       "There are 4 cases matching thunder.",
     );
 
-    const newResults = {
-      ...egressSearchApiResults,
-      data: [egressSearchApiResults.data[0]],
-    };
+    const newResults = [egressSearchResults[0]];
     //rerender with single result
     rerender(
       <EgressSearchResults
         workspaceName="thunder"
-        egressSearchApi={newResults}
+        egressSearchResults={newResults}
         handleConnectFolder={handleConnectFolderMock}
       />,
     );
@@ -124,7 +117,7 @@ describe("EgressSearchResults", () => {
     render(
       <EgressSearchResults
         workspaceName="thunder"
-        egressSearchApi={egressSearchApiResults}
+        egressSearchResults={egressSearchResults}
         handleConnectFolder={handleConnectFolderMock}
       />,
     );
@@ -193,7 +186,7 @@ describe("EgressSearchResults", () => {
     render(
       <EgressSearchResults
         workspaceName="thunder"
-        egressSearchApi={egressSearchApiResults}
+        egressSearchResults={egressSearchResults}
         handleConnectFolder={handleConnectFolderMock}
       />,
     );
@@ -264,7 +257,7 @@ describe("EgressSearchResults", () => {
     render(
       <EgressSearchResults
         workspaceName="thunder"
-        egressSearchApi={egressSearchApiResults}
+        egressSearchResults={egressSearchResults}
         handleConnectFolder={handleConnectFolderMock}
       />,
     );
@@ -335,7 +328,7 @@ describe("EgressSearchResults", () => {
     render(
       <EgressSearchResults
         workspaceName="thunder"
-        egressSearchApi={egressSearchApiResults}
+        egressSearchResults={egressSearchResults}
         handleConnectFolder={handleConnectFolderMock}
       />,
     );

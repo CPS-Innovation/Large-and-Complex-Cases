@@ -62,6 +62,15 @@ public class FileTransferClient(IRequestFactory requestFactory, HttpClient httpC
             new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, ContentType.ApplicationJson));
     }
 
+    public async Task<HttpResponseMessage> ProvisionNetAppFoldersAsync(ProvisionNetAppFoldersRequest request, Guid correlationId)
+    {
+        return await SendRequestAsync(
+            HttpMethod.Post,
+            "netapp/provision",
+            correlationId,
+            new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, ContentType.ApplicationJson));
+    }
+
     private async Task<HttpResponseMessage> SendRequestAsync(HttpMethod httpMethod, string requestUri, Guid correlationId, HttpContent? content = null)
     {
         var request = _requestFactory.Create(httpMethod, requestUri, correlationId, content);

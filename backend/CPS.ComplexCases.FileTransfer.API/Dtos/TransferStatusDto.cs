@@ -6,25 +6,33 @@ namespace CPS.ComplexCases.FileTransfer.API.Dtos;
 
 public class TransferStatusDto
 {
+    public Guid Id { get; init; }
     public TransferStatus Status { get; init; }
     public TransferType TransferType { get; init; }
     public TransferDirection Direction { get; init; }
+    public DateTime? StartedAt { get; init; }
     public DateTime? CompletedAt { get; init; }
     public List<TransferFailedItemDto> FailedItems { get; init; } = [];
     public string? UserName { get; init; }
     public int TotalFiles { get; init; }
     public int ProcessedFiles { get; init; }
+    public int SuccessfulFiles { get; init; }
+    public int FailedFiles { get; init; }
 
     public static TransferStatusDto From(TransferEntity entity) => new()
     {
+        Id = entity.Id,
         Status = entity.Status,
         TransferType = entity.TransferType,
         Direction = entity.Direction,
+        StartedAt = entity.StartedAt,
         CompletedAt = entity.CompletedAt,
         FailedItems = entity.FailedItems.Select(TransferFailedItemDto.From).ToList(),
         UserName = entity.UserName,
         TotalFiles = entity.TotalFiles,
         ProcessedFiles = entity.ProcessedFiles,
+        SuccessfulFiles = entity.SuccessfulFiles,
+        FailedFiles = entity.FailedFiles,
     };
 }
 

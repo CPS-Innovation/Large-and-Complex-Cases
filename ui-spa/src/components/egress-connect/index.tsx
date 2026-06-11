@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useApi } from "../../common/hooks/useApi";
 import { getEgressSearchResults } from "../../apis/gateway-api";
 import {
   useNavigate,
@@ -10,6 +9,7 @@ import {
 import { EgressConnectRouteState } from "../../common/types/EgressConnectRouteState";
 import { EgressConnectConfirmationRouteState } from "../../common/types/EgressConnectConfirmationRouteState";
 import { getUrlSearchParam } from "../../common/utils/getUrlSearchParam";
+import { useQuery } from "@tanstack/react-query";
 import EgressSearchPage from "./EgressSearchPage";
 
 const EgressPage = () => {
@@ -28,11 +28,16 @@ const EgressPage = () => {
 
   const { isNetAppConnected, searchQueryString } = state;
 
-  const egressSearchApi = useApi(
-    getEgressSearchResults,
-    [workspaceName],
-    false,
-  );
+  const { data: egressSearchResults, isLoading: isEgressSearchResultLoading } =
+    useQuery({
+      queryKey: [workspaceName],
+      queryFn: () => getEgressSearchResults(workspaceName),
+      retry: false,
+      enabled: !!workspaceName,
+      throwOnError: true,
+      staleTime: 0,
+      gcTime: 0,
+    });
 
   useEffect(() => {
     const name = searchParams.get("workspace-name");
@@ -43,16 +48,6 @@ const EgressPage = () => {
     setWorkspaceName(name);
     setFormValue(name);
   }, [searchParams]);
-
-  useEffect(() => {
-    if (workspaceName) egressSearchApi.refetch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workspaceName]);
-
-  useEffect(() => {
-    if (egressSearchApi.status === "failed")
-      throw new Error(`${egressSearchApi.error}`);
-  }, [egressSearchApi]);
 
   const handleSearch = () => {
     if (!formValue) {
@@ -79,7 +74,7 @@ const EgressPage = () => {
   };
 
   const handleConnectFolder = (id: string) => {
-    const selectedWorkSpace = egressSearchApi.data?.find(
+    const selectedWorkSpace = egressSearchResults?.find(
       (data) => data.id === id,
     );
     if (!selectedWorkSpace) return;
@@ -106,7 +101,8 @@ const EgressPage = () => {
       workspaceName={workspaceName}
       searchValue={formValue}
       formDataErrorText={formDataErrorText}
-      egressSearchApi={egressSearchApi}
+      egressSearchResults={egressSearchResults}
+      isEgressSearchResultLoading={isEgressSearchResultLoading}
       handleFormChange={handleFormChange}
       handleSearch={handleSearch}
       handleConnectFolder={handleConnectFolder}

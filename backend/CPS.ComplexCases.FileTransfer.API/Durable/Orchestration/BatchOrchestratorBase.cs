@@ -73,6 +73,13 @@ public abstract class BatchOrchestratorBase<TPayload, TFileItem>(
         {
             var entityId = await InitializeTransferAsync(context, input);
 
+            if (input.IncludeEmptyFolders)
+            {
+                var folders = input.Files.Where(f => f.IsFolder).ToList();
+                if (folders.Count > 0)
+                    await CreateFolderStructure(context, input, folders);
+            }
+
             TransferFilePayload BuildPayload(TFileItem f) => BuildTransferFilePayload(
                 f, input.CaseId, input.TransferId, input.BearerToken,
                 input.BucketName, input.UserName!, input.CorrelationId, BatchTransferType);
@@ -152,6 +159,24 @@ public abstract class BatchOrchestratorBase<TPayload, TFileItem>(
         return entityId;
     }
 
+    private async Task CreateFolderStructure(TaskOrchestrationContext context, TPayload input, List<TFileItem> folderItems)
+    {
+        var createFolderTasks = folderItems.Select(folder => context.CallActivityAsync(
+            nameof(CreateDestinationFolder),
+            new CreateDestinationFolderPayload
+            {
+                CaseId = input.CaseId,
+                UserName = input.UserName,
+                CorrelationId = input.CorrelationId,
+                BucketName = input.BucketName,
+                BearerToken = input.BearerToken,
+                DestinationFolderPath = folder.DestinationPrefix + folder.DestinationFileName,
+                TransferDirection = TransferDirection.NetAppToNetApp,
+            })).ToList();
+
+        await Task.WhenAll(createFolderTasks);
+    }
+
     private async Task<List<TransferResult>> FanOutTransferFilesAsync(
         TaskOrchestrationContext context,
         List<TFileItem> files,
@@ -163,7 +188,7 @@ public abstract class BatchOrchestratorBase<TPayload, TFileItem>(
         var batch = new List<Task<TransferResult>>();
         var allResults = new List<TransferResult>();
 
-        foreach (var fileItem in files)
+        foreach (var fileItem in files.Where(f => !f.IsFolder))
         {
             batch.Add(context.CallActivityAsync<TransferResult>(nameof(TransferFile), buildPayload(fileItem)));
 

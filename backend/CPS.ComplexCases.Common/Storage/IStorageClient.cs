@@ -14,4 +14,5 @@ public interface IStorageClient
     Task<DeleteFilesResult> DeleteFilesAsync(List<DeletionEntityDto> filesToDelete, string? workspaceId = null, string? bearerToken = null, string? bucketName = null);
     Task<bool> FileExistsAsync(string path, string? workspaceId = null, string? bearerToken = null, string? bucketName = null);
     Task<List<FileTransferInfo>> GetAllFilesFromFolderAsync(string folderPath, string? workspaceId = null);
+    Task<bool> CreateFolderAsync(string folderPath, string? workspaceId = null, string? bearerToken = null, string? bucketName = null);
 }

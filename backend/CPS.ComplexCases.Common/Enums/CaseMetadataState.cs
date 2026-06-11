@@ -4,6 +4,7 @@ public enum CaseMetadataState
 {
     NoCaseMetadataFound,
     TransferIsActive,
+    EgressConnectionIsNull,
     NetAppFolderPathIsNull,
     Success
 }

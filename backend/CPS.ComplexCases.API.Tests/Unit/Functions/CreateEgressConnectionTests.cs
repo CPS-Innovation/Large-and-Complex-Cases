@@ -54,7 +54,6 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 _caseMetadataServiceMock.Object,
                 _egressClientMock.Object,
                 _egressArgFactoryMock.Object,
-                _loggerMock.Object,
                 _activityLogServiceMock.Object,
                 _requestValidatorMock.Object,
                 _initializationHandlerMock.Object);

@@ -7,10 +7,10 @@ parameters:
       - prod
   - name: agentPool
     type: string
-    default: 'LACC PreProd Pool'
+    default: "LACC PreProd Pool"
     values:
-      - 'LACC PreProd Pool'
-      - 'LACC Prod Pool'
+      - "LACC PreProd Pool"
+      - "LACC Prod Pool"
 
 jobs:
   - job: runE2ETests
@@ -48,7 +48,7 @@ jobs:
           CI: true
           BASE_URL: $(RedirectUrlLccUi)
           CMS_LOGIN_PAGE: "$(LccApiBaseUrl)/api/tactical/login"
-          EGRESS_BASE_URL: $(EgressOptionsUrl)   
+          EGRESS_BASE_URL: $(EgressOptionsUrl)
           TENANT_ID: $(TenantId)
           LCC_API_CLIENT_ID: $(CallingAppValidAudience)
           E2E_AD_USER: $(AadUserName)
@@ -58,10 +58,10 @@ jobs:
           EGRESS_SERVICE_ACCOUNT_AUTH: $(EgressServiceAccountAuth)
           DEFAULT_WORKSPACE_ID: $(E2eEgressWorkspaceId)
           DEFAULT_WORKSPACE_NAME: $(E2eEgressWorkspaceName)
-          DEFAULT_CASE_URN: $(E2eTestCaseUrn)
-          DEFAULT_CASE_ID: $(E2eTestCaseId)
+          DEFAULT_CASE_URN: $(E2eTestsCaseUrn)
+          DEFAULT_CASE_ID: $(E2eTestsCaseId)
           LCC_API_BASE_URL: $(LccApiBaseUrl)
-          NETAPP_OPERATION_NAME: $(E2eNetAppFolderName)  
+          NETAPP_OPERATION_NAME: $(E2eNetAppFolderName)
 
       - task: PublishTestResults@2
         displayName: "Publish Test Results (JUnit)"
@@ -69,7 +69,7 @@ jobs:
           testResultsFormat: JUnit
           testResultsFiles: "$(workingDir)/playwright-report/e2e-test-report.xml"
           publishRunAttachments: false
-        condition: succeededOrFailed()   
+        condition: succeededOrFailed()
 
       - publish: "$(workingDir)/playwright-report"
         artifact: "$(System.JobId)-e2e-playwright-report"

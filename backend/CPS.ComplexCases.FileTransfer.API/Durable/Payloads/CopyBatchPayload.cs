@@ -11,6 +11,7 @@ public class CopyBatchPayload : IBatchPayload<CopyFileItem>
     public required List<CopyFileItem> Files { get; set; }
     public required List<CopyBatchOriginalOperation> OriginalOperations { get; set; }
     public Guid ManageMaterialsOperationId { get; set; }
+    public bool IncludeEmptyFolders { get; set; }
 }
 
 public class CopyFileItem : IBatchFileItem
@@ -18,6 +19,7 @@ public class CopyFileItem : IBatchFileItem
     public required string SourceKey { get; set; }
     public required string DestinationPrefix { get; set; }
     public required string DestinationFileName { get; set; }
+    public bool IsFolder => SourceKey.EndsWith('/');
 }
 
 public class CopyBatchOriginalOperation

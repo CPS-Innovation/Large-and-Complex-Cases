@@ -330,7 +330,7 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
         tableName="egress"
         folders={egressPathFolders}
         loaderText="Loading folders from Egress"
-        folderResultsStatus={egressDataStatus}
+        isLoading={egressDataStatus === "loading"}
         folderResultsLength={egressDataSorted.length}
         handleFolderPathClick={handleFolderPathClick}
         getTableRowData={getTableRowData}

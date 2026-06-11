@@ -1,5 +1,4 @@
 import { useRef, useState, useEffect } from "react";
-import { useApi } from "../../common/hooks/useApi";
 import { Button, Input, Select, ErrorSummary, BackLink } from "../govuk";
 import { getCaseSearchResults } from "../../apis/gateway-api";
 import useSearchNavigation from "../../common/hooks/useSearchNavigation";
@@ -10,7 +9,9 @@ import {
 } from "../../common/hooks/useCaseSearchForm";
 import SearchResults from "./SearchResults";
 import { useFormattedAreaValues } from "../../common/hooks/useFormattedAreaValues";
+import { useGetCaseDivisionsOrAreas } from "../../common/hooks/useGetCaseDivisionsOrAreas";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
+import { useQuery } from "@tanstack/react-query";
 import styles from "./index.module.scss";
 
 const CaseSearchResultPage = () => {
@@ -61,20 +62,18 @@ const CaseSearchResultPage = () => {
     getSearchParams,
   } = useCaseSearchForm(getInitialState());
 
-  const formattedAreaValues = useFormattedAreaValues(
-    formData[SearchFormField.searchType] === "urn",
-  );
+  const formattedAreaValues = useFormattedAreaValues();
 
-  const caseSearchApi = useApi(
-    getCaseSearchResults,
-    [searchParams],
-    triggerSearchApi,
-  );
-
-  useEffect(() => {
-    if (caseSearchApi.status === "failed")
-      throw new Error(`${caseSearchApi.error}`);
-  }, [caseSearchApi]);
+  const { data: searchResults, isLoading: isSearchResultsLoading } = useQuery({
+    queryKey: [searchParams],
+    queryFn: () => getCaseSearchResults(searchParams),
+    retry: false,
+    enabled: triggerSearchApi,
+    throwOnError: true,
+    staleTime: 0,
+    gcTime: 0,
+  });
+  const { isLoading: isDivisionsOrAreasLoading } = useGetCaseDivisionsOrAreas();
 
   useEffect(() => {
     if (formData[SearchFormField.searchType] === "urn" || validatedAreaValues) {
@@ -345,14 +344,7 @@ const CaseSearchResultPage = () => {
         );
     }
   };
-
-  if (
-    ((caseSearchApi.status === "loading" ||
-      caseSearchApi.status === "initial") &&
-      !errorList.length) ||
-    (formData[SearchFormField.searchType] !== "urn" &&
-      !formattedAreaValues.options.length)
-  ) {
+  if ((isSearchResultsLoading || isDivisionsOrAreasLoading) && !searchResults) {
     return <div>Loading...</div>;
   }
   return (
@@ -384,19 +376,21 @@ const CaseSearchResultPage = () => {
               </div>
             </div>
           </form>
-          {!!caseSearchApi.data?.length && (
+          {!!searchResults?.length && (
             <div className={styles.searchResultsCount}>
-              {getResultsCountText(caseSearchApi.data.length)}
+              {getResultsCountText(searchResults.length)}
             </div>
           )}
-          {!caseSearchApi.data?.length && <div>{getNoResultsText()}</div>}
+          {!searchResults?.length && <div>{getNoResultsText()}</div>}
         </div>
 
-        <SearchResults
-          searchQueryString={queryString}
-          searchApiResults={caseSearchApi}
-          searchType={formData[SearchFormField.searchType]}
-        />
+        {
+          <SearchResults
+            searchQueryString={queryString}
+            searchApiResults={searchResults ?? []}
+            searchType={formData[SearchFormField.searchType]}
+          />
+        }
       </PageContentWrapper>
     </div>
   );

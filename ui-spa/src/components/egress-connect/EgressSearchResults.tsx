@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { type EgressSearchResultData } from "../../schemas";
 import { Button, SortableTable, Tag } from "../govuk";
 import { formatDate } from "../../common/utils/formatDate";
-import { UseApiResult } from "../../common/hooks/useApi";
 import {
   sortByStringProperty,
   sortByDateProperty,
@@ -11,12 +10,12 @@ import styles from "./EgressSearchResults.module.scss";
 
 type EgressSearchResultsProps = {
   workspaceName: string;
-  egressSearchApi: UseApiResult<EgressSearchResultData>;
+  egressSearchResults: EgressSearchResultData;
   handleConnectFolder: (id: string) => void;
 };
 const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
   workspaceName,
-  egressSearchApi,
+  egressSearchResults,
   handleConnectFolder,
 }) => {
   const [sortValues, setSortValues] = useState<{
@@ -35,23 +34,19 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
   };
 
   const egressSearchResultsData = useMemo(() => {
-    if (!egressSearchApi?.data) return [];
+    if (!egressSearchResults) return [];
     if (sortValues?.name === "workspace-name")
-      return sortByStringProperty(
-        egressSearchApi.data,
-        "name",
-        sortValues.type,
-      );
+      return sortByStringProperty(egressSearchResults, "name", sortValues.type);
     if (sortValues?.name === "date-created")
       return sortByDateProperty(
-        egressSearchApi.data,
+        egressSearchResults,
         "dateCreated",
         sortValues.type,
       );
     if (sortValues?.name === "status")
-      return sortByStatus(egressSearchApi.data, sortValues.type);
-    return egressSearchApi.data;
-  }, [egressSearchApi, sortValues]);
+      return sortByStatus(egressSearchResults, sortValues.type);
+    return egressSearchResults;
+  }, [egressSearchResults, sortValues]);
 
   const handleConnect = (id: string) => {
     handleConnectFolder(id);
@@ -105,10 +100,6 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
   ) => {
     setSortValues({ name: sortName, type: sortType });
   };
-
-  if (egressSearchApi.status !== "succeeded") {
-    return <></>;
-  }
 
   return (
     <div className={styles.results}>

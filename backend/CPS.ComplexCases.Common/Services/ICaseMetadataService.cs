@@ -16,4 +16,5 @@ public interface ICaseMetadataService
   Task UpdateActiveTransferIdAsync(int caseId, Guid? activeTransferId);
   Task<bool> ClearActiveTransferIdAsync(Guid transferId);
   Task<ClearFolderPathResult> ClearNetAppFolderPathAsync(int caseId);
+  Task<ClearFolderPathResult> ClearEgressConnectionAsync(int caseId);
 }

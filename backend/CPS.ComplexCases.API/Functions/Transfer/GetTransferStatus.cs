@@ -38,7 +38,10 @@ public class GetTransferStatus(ILogger<GetTransferStatus> logger, IFileTransferC
         var response = await _transferClient.GetFileTransferStatusAsync(transferId, context.CorrelationId, ifNoneMatch);
 
         if (response.Headers.TryGetValues("ETag", out var etags))
+        {
             req.HttpContext.Response.Headers["ETag"] = etags.First();
+            req.HttpContext.Response.Headers["Access-Control-Expose-Headers"] = "ETag";
+        }
 
         return await response.ToActionResult();
     }
