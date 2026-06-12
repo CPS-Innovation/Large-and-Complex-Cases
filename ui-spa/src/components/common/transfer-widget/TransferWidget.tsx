@@ -39,6 +39,7 @@ const TransferWidget: React.FC<TransferWidgetProps> = ({
         <Button
           onClick={handleBtnClickHandler}
           className={styles.transferButton}
+          disabled={!selectedNode}
         >
           {selectedNode
             ? `${transferAction} to ${selectedNode?.name}`

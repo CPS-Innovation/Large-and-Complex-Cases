@@ -53,12 +53,15 @@
 }
 
 .insetTextWrapper {
-  position: relative;
+  border-bottom: 1px solid #b1b4b6;
+}
+
+.controlWrapper {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1.875rem;
   .disconnectButton {
-    position: absolute;
-    top: 0;
-    right: 0;
     margin-bottom: 0;
-    margin-top: 1.875rem;
+    margin-top: 0;
   }
 }

@@ -74,8 +74,8 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
     { folderName: string; folderPath: string; folderId: string }[]
   >([
     {
-      folderName: "Home",
-      folderPath: "Home/",
+      folderName: `Egress: ${operationName ?? ""}`,
+      folderPath: "",
       folderId: "",
     },
   ]);
@@ -98,7 +98,7 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
     }));
     const withHome = [
       {
-        folderName: getFolderNameFromPath(netAppPath),
+        folderName: `Shared Drive: ${getFolderNameFromPath(netAppPath)}`,
         folderPath: netAppPath,
       },
       ...result,
@@ -239,14 +239,14 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
           folderId: "",
         },
       ]);
-    if (!egressPathFolders.length && egressData)
-      setEgressPathFolders([
-        {
-          folderName: "Home",
-          folderPath: "Home/",
-          folderId: "",
-        },
-      ]);
+    // if (!egressPathFolders.length && egressData)
+    //   setEgressPathFolders([
+    //     {
+    //       folderName: "Home",
+    //       folderPath: "Home/",
+    //       folderId: "",
+    //     },
+    //   ]);
   }, [egressPathFolders, egressData, egressWorkspaceId]);
 
   useEffect(() => {
@@ -680,19 +680,21 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
               <h2>{getMainTexts().title}</h2>
               <div className={styles.insetTextWrapper}>
                 <p>{getMainTexts().description}</p>
-                <FolderPath
-                  folders={
-                    transferSource === "egress"
-                      ? egressPathFolders
-                      : netAppPathFolders
-                  }
-                  disabled={
-                    transferSource === "egress"
-                      ? isEgressFolderDataLoading
-                      : isNetAppFolderDataLoading
-                  }
-                  handleFolderPathClick={handleFolderPathClick}
-                />
+              </div>
+              <FolderPath
+                folders={
+                  transferSource === "egress"
+                    ? egressPathFolders
+                    : netAppPathFolders
+                }
+                disabled={
+                  transferSource === "egress"
+                    ? isEgressFolderDataLoading
+                    : isNetAppFolderDataLoading
+                }
+                handleFolderPathClick={handleFolderPathClick}
+              />
+              <div className={styles.controlWrapper}>
                 <TransferControls
                   transferSource={transferSource}
                   toggleTransferDirection={toggleTransferDirection}
@@ -730,13 +732,15 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
                 isSourceFolderChecked={isSourceFolderChecked}
               />
             </div>
-            <TransferControls
-              transferSource={transferSource}
-              toggleTransferDirection={toggleTransferDirection}
-              disableControls={!selectedSourceFoldersOrFiles.length}
-              onCopy={() => handleTransferAction("copy")}
-              onMove={() => handleTransferAction("move")}
-            />
+            <div className={styles.controlWrapper}>
+              <TransferControls
+                transferSource={transferSource}
+                toggleTransferDirection={toggleTransferDirection}
+                disableControls={!selectedSourceFoldersOrFiles.length}
+                onCopy={() => handleTransferAction("copy")}
+                onMove={() => handleTransferAction("move")}
+              />
+            </div>
           </div>
         )}
     </div>

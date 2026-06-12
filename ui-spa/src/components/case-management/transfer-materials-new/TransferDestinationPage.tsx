@@ -2,7 +2,11 @@ import { BackLink } from "../../govuk";
 import { useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { PageContentWrapper } from "../../govuk/PageContentWrapper";
-import { type EgressFolderData, type NetAppFolderData } from "../../../schemas";
+import {
+  type EgressFolderData,
+  type NetAppFolderData,
+  type NetAppFolder,
+} from "../../../schemas";
 import { getNetAppFolders, getEgressFolders } from "../../../apis/gateway-api";
 import { InitiateFileTransferPayload } from "../../../schemas/requests/initiateFileTransferPayload";
 import { IndexingFileTransferPayload } from "../../../schemas/requests/indexingFileTransferPayload";
@@ -54,6 +58,33 @@ const TransferDestinationPage: React.FC = () => {
     };
   } = useLocation();
 
+  const {
+    data: netAppData,
+    refetch: netAppRefetch,
+    isLoading: isNetAppFolderDataLoading,
+  } = useQuery({
+    queryKey: [netAppFolderPath],
+    queryFn: () => getNetAppFolders(netAppFolderPath),
+    retry: false,
+    enabled: transferSource === "egress",
+    throwOnError: true,
+    staleTime: 0,
+    gcTime: 0,
+  });
+
+  const getNetAppTreeViewData = (folderData: NetAppFolder[]): TreeNode[] => {
+    const folders = folderData.map((folder) => {
+      return {
+        id: folder.path,
+        name: getFolderNameFromPath(folder.path),
+        path: folder.path,
+        isFolder: true,
+        isRootNode: false,
+      };
+    });
+
+    return folders;
+  };
   const initialNetAppFolderData = useMemo(() => {
     const folders = [
       {
@@ -61,16 +92,20 @@ const TransferDestinationPage: React.FC = () => {
         name: `Shared drive: ${getFolderNameFromPath(netAppFolderPath)}`,
         path: netAppFolderPath,
         isFolder: true,
+        isRootNode: true,
+        children: netAppData?.folderData
+          ? getNetAppTreeViewData(netAppData?.folderData)
+          : [],
       },
     ];
 
     return folders;
-  }, [netAppFolderPath]);
+  }, [netAppFolderPath, netAppData]);
 
   const initialEgressFolderData = useMemo(() => {
     const folders = [
       {
-        id: "",
+        id: "root",
         name: `Egress : ${operationName}`,
         path: "",
         isFolder: true,
@@ -233,12 +268,14 @@ const TransferDestinationPage: React.FC = () => {
           name: getFolderNameFromPath(folder.path),
           path: folder.path,
           isFolder: true,
+          isRootNode: true,
         };
       });
 
       return folders;
     } else {
-      const folderData = await getEgressFolders(egressWorkspaceId, nodeId);
+      const newId = nodeId === "root" ? "" : nodeId;
+      const folderData = await getEgressFolders(egressWorkspaceId, newId);
       const folders = folderData
         .filter((data) => data.isFolder)
         .map((data) => {
