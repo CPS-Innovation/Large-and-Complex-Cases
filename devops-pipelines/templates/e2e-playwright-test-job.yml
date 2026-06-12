@@ -47,7 +47,7 @@ jobs:
           if [[ "${{ parameters.environment }}" == "dev" ]]; then
             npm run e2e:existing-case
           else
-            npx --no-install playwright test --project=default-mode-tests-no-move
+            npx --no-install --ignore-scripts playwright test --project=default-mode-tests-no-move
           fi
         workingDirectory: $(workingDir)
         displayName: "Run E2E Tests"
