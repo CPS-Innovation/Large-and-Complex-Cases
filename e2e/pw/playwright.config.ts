@@ -70,6 +70,15 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
 
+    // TEMPORARY ADDITION - run without the Move tests 
+    // while functionality is unstable
+    {
+      name: "default-mode-tests-no-move",
+      testMatch: "**/*-default.spec.ts",
+      testIgnore: "egress-to-netapp-move-default.spec.ts",
+      use: { ...devices["Desktop Chrome"] },
+    },
+
     // One-off project for seeding the canonical NetApp source fixture in
     // default mode. Run manually via:
     //   npx playwright test --project=seed-netapp-fixture
