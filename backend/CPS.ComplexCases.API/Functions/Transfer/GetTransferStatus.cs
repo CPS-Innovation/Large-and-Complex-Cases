@@ -37,6 +37,8 @@ public class GetTransferStatus(ILogger<GetTransferStatus> logger, IFileTransferC
 
         var response = await _transferClient.GetFileTransferStatusAsync(transferId, context.CorrelationId, ifNoneMatch);
 
+        req.HttpContext.Response.Headers.CacheControl = "no-store";
+
         if (response.Headers.TryGetValues("ETag", out var etags))
         {
             req.HttpContext.Response.Headers["ETag"] = etags.First();
