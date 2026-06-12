@@ -673,8 +673,15 @@ if ($SkipUpload) {
 
         $FileId = ""
         $ActualFilePath = ""
-        $retryCount = if ($IsLargeFile) { $MaxFileIdRetries } else { 5 }
-        $retryDelay = if ($IsLargeFile) { $FileIdRetryDelaySeconds } else { 2 }
+        # Polling window: must be generous enough for Egress to register the
+        # canonical file ID before we give up and substitute the upload-session
+        # ID as a fallback. The fallback technically works for some downstream
+        # flows (the Copy journey) but trips up others (the Move journey hits
+        # 404 from EgressStorageClient.OpenReadStreamAsync) because Egress's
+        # storage layer can't always resolve an upload-session ID into a blob.
+        # 10s (the previous small-file default of 5x2s) was reliably too short.
+        $retryCount = if ($IsLargeFile) { $MaxFileIdRetries } else { 20 }
+        $retryDelay = if ($IsLargeFile) { $FileIdRetryDelaySeconds } else { 3 }
 
         for ($i = 1; $i -le $retryCount; $i++) {
             Write-Host "  Attempt $i/$retryCount..." -NoNewline
