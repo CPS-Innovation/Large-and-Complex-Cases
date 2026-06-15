@@ -8,4 +8,6 @@ public class CreateEgressConnectionDto
   public required int CaseId { get; set; }
   [JsonPropertyName("egressWorkspaceId")]
   public required string EgressWorkspaceId { get; set; }
+  [JsonPropertyName("egressWorkspaceName")]
+  public required string EgressWorkspaceName { get; set; }
 }

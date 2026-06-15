@@ -174,7 +174,9 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
 
             _caseMetadataServiceMock
                 .Setup(s => s.CreateEgressConnectionAsync(It.Is<CreateEgressConnectionDto>(
-                    dto => dto.CaseId == _caseId && dto.EgressWorkspaceId == _workspaceId)))
+                    dto => dto.CaseId == _caseId &&
+                    dto.EgressWorkspaceId == _workspaceId &&
+                    dto.EgressWorkspaceName == expectedWorkspaceName)))
                 .Returns(Task.CompletedTask);
 
             _activityLogServiceMock
@@ -183,7 +185,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                     ResourceType.StorageConnection,
                     _caseId,
                     _workspaceId,
-                    _workspaceId,
+                    expectedWorkspaceName,
                     _username, null))
                 .Returns(Task.CompletedTask);
 
@@ -206,13 +208,15 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _egressArgFactoryMock.Verify(f => f.CreateGrantWorkspacePermissionArg(_workspaceId, _username, _administratorRoleId), Times.Once);
             _egressClientMock.Verify(c => c.GrantWorkspacePermission(grantPermissionArg), Times.Once);
             _caseMetadataServiceMock.Verify(s => s.CreateEgressConnectionAsync(It.Is<CreateEgressConnectionDto>(
-                dto => dto.CaseId == _caseId && dto.EgressWorkspaceId == _workspaceId)), Times.Once);
+                dto => dto.CaseId == _caseId &&
+                dto.EgressWorkspaceId == _workspaceId &&
+                dto.EgressWorkspaceName == expectedWorkspaceName)), Times.Once);
             _activityLogServiceMock.Verify(s => s.CreateActivityLogAsync(
                 ActionType.ConnectionToEgress,
                 ResourceType.StorageConnection,
                 _caseId,
                 _workspaceId,
-                _workspaceId,
+                expectedWorkspaceName,
                 _username,
                 null), Times.Once);
         }
@@ -306,7 +310,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                     ResourceType.StorageConnection,
                     _caseId,
                     _workspaceId,
-                    _workspaceId,
+                    expectedWorkspaceName,
                     _username, null))
                 .Returns(Task.CompletedTask);
 

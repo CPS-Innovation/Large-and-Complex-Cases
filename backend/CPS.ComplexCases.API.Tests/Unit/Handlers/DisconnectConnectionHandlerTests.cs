@@ -121,9 +121,10 @@ namespace CPS.ComplexCases.API.Tests.Unit.Handlers
             // Arrange
             var caseId = _fixture.Create<int>();
             var clearedPath = _fixture.Create<string>();
+            var key = _fixture.Create<string>();
             _caseMetadataServiceMock
                 .Setup(x => x.ClearNetAppFolderPathAsync(caseId))
-                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = clearedPath });
+                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = clearedPath, Key = key });
 
             var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameter(InputParameters.CaseId, caseId.ToString(), _testCorrelationId);
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
@@ -141,9 +142,10 @@ namespace CPS.ComplexCases.API.Tests.Unit.Handlers
             // Arrange
             var caseId = _fixture.Create<int>();
             var clearedPath = _fixture.Create<string>();
+            var key = _fixture.Create<string>();
             _caseMetadataServiceMock
                 .Setup(x => x.ClearNetAppFolderPathAsync(caseId))
-                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = clearedPath });
+                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = clearedPath, Key = key });
 
             var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameter(InputParameters.CaseId, caseId.ToString(), _testCorrelationId);
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
@@ -215,9 +217,10 @@ namespace CPS.ComplexCases.API.Tests.Unit.Handlers
             // Arrange
             var caseId = _fixture.Create<int>();
             var clearedPath = _fixture.Create<string>();
+            var key = _fixture.Create<string>();
             _caseMetadataServiceMock
                 .Setup(x => x.ClearNetAppFolderPathAsync(caseId))
-                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = clearedPath });
+                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = clearedPath, Key = key });
 
             var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameter(InputParameters.CaseId, caseId.ToString(), _testCorrelationId);
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
@@ -235,9 +238,10 @@ namespace CPS.ComplexCases.API.Tests.Unit.Handlers
             // Arrange
             var caseId = _fixture.Create<int>();
             var clearedPath = _fixture.Create<string>();
+            var key = _fixture.Create<string>();
             _caseMetadataServiceMock
                 .Setup(x => x.ClearNetAppFolderPathAsync(caseId))
-                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = clearedPath });
+                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = clearedPath, Key = key });
 
             _activityLogServiceMock
                 .Setup(x => x.CreateActivityLogAsync(
@@ -266,11 +270,12 @@ namespace CPS.ComplexCases.API.Tests.Unit.Handlers
             // Arrange
             var caseId = _fixture.Create<int>();
             var clearedPath = _fixture.Create<string>();
+            var key = _fixture.Create<string>();
             var activityLogException = new Exception("Activity log unavailable");
 
             _caseMetadataServiceMock
                 .Setup(x => x.ClearNetAppFolderPathAsync(caseId))
-                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = clearedPath });
+                .ReturnsAsync(new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = clearedPath, Key = key });
 
             _activityLogServiceMock
                 .Setup(x => x.CreateActivityLogAsync(
@@ -358,7 +363,8 @@ namespace CPS.ComplexCases.API.Tests.Unit.Handlers
             // Arrange
             var caseId = _fixture.Create<int>();
             var clearedPath = _fixture.Create<string>();
-            SetupClearConnection(connectionType, caseId, new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = clearedPath });
+            var key = _fixture.Create<string>();
+            SetupClearConnection(connectionType, caseId, new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = clearedPath, Key = key });
 
             var request = HttpRequestStubHelper.CreateHttpRequestWithQueryParameter(InputParameters.CaseId, caseId.ToString(), _testCorrelationId);
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
@@ -371,7 +377,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Handlers
                 expectedAction,
                 ResourceType.StorageConnection,
                 caseId,
-                clearedPath,
+                key,
                 clearedPath,
                 _testUsername,
                 null),

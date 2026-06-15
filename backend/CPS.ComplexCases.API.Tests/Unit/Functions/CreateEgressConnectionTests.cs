@@ -153,7 +153,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                     ActivityLog.Enums.ResourceType.StorageConnection,
                     egressConnectionRequest.CaseId,
                     egressConnectionRequest.EgressWorkspaceId,
-                    egressConnectionRequest.EgressWorkspaceId,
+                    egressConnectionRequest.EgressWorkspaceName,
                     _testUsername,
                     null))
                 .Returns(Task.CompletedTask);
@@ -173,7 +173,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 ActivityLog.Enums.ResourceType.StorageConnection,
                 egressConnectionRequest.CaseId,
                 egressConnectionRequest.EgressWorkspaceId,
-                egressConnectionRequest.EgressWorkspaceId,
+                egressConnectionRequest.EgressWorkspaceName,
                 _testUsername,
                 null), Times.Once);
         }

@@ -81,14 +81,19 @@ public class IntegrationTestFixture : IAsyncLifetime
         });
     }
 
-    public Task InitializeAsync()
+    public async Task InitializeAsync()
     {
         InitializeEgressClients();
         InitializeDdeiClient();
         InitializeDbContext();
         InitializeNetAppClient();
 
-        return Task.CompletedTask;
+        if (DbContext != null)
+        {
+            await DbContext.Database.MigrateAsync();
+        }
+
+        return;
     }
 
     public Task DisposeAsync()

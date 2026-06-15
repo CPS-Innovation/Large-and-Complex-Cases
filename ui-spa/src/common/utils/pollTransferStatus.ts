@@ -12,7 +12,9 @@ const MID_INTERVAL_MS = 3000;
  * Interval strategy:
  * - Base interval scales with transfer size: Math.min(pollingInterval + (totalFiles * 10), 5000)ms
  *   e.g. 50 files → ~1.5s, 200 files → ~3s, 400+ files → 5s cap
- * - 304 Not Modified responses trigger stepped backoff: 0–1 → base; 2–3 → 3s; 4+ → 5s
+ * - 304 Not Modified responses trigger stepped backoff: 0–1 → base; 2–3 → 3s; 4+ → 5s.
+ *   The stepped value is a floor, not an override: the interval never drops below the
+ *   size-based base, so large transfers already polling at the 5s cap stay at 5s.
  * - Backoff resets on each 200 response (entity has changed)
  * - pollingInterval overrides the 1000ms default for test isolation
  */
@@ -58,12 +60,13 @@ export const pollTransferStatus = async (
       }
     }
 
-    const interval =
+    const steppedValue =
       noChangeCount >= 4
         ? MAX_INTERVAL_MS
         : noChangeCount >= 2
           ? MID_INTERVAL_MS
           : adaptiveBase;
-    await delay(interval);
+    // Backoff is a floor: never poll faster than the size-based base interval
+    await delay(Math.max(adaptiveBase, steppedValue));
   }
 };

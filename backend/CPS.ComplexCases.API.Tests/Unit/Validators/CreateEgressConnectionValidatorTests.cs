@@ -20,6 +20,7 @@ public class CreateEgressConnectionValidatorTests
         {
             CaseId = 0,
             EgressWorkspaceId = "TestWorkspace",
+            EgressWorkspaceName = "Test Workspace Name",
         };
 
         // Act
@@ -38,6 +39,7 @@ public class CreateEgressConnectionValidatorTests
         {
             CaseId = 1,
             EgressWorkspaceId = string.Empty,
+            EgressWorkspaceName = "Test Workspace Name",
         };
 
         // Act
@@ -49,6 +51,25 @@ public class CreateEgressConnectionValidatorTests
     }
 
     [Fact]
+    public void Validate_WhenEgressWorkspaceNameIsEmpty_ReturnsValidationError()
+    {
+        // Arrange
+        var request = new CreateEgressConnectionDto
+        {
+            CaseId = 1,
+            EgressWorkspaceId = "TestWorkspace",
+            EgressWorkspaceName = string.Empty,
+        };
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Single(result.Errors, e => e.PropertyName == nameof(request.EgressWorkspaceName) && e.ErrorMessage == "EgressWorkspaceName is required.");
+    }
+
+    [Fact]
     public void Validate_WhenAllFieldsAreValid_ReturnsNoValidationError()
     {
         // Arrange
@@ -56,6 +77,7 @@ public class CreateEgressConnectionValidatorTests
         {
             CaseId = 1,
             EgressWorkspaceId = "TestWorkspace",
+            EgressWorkspaceName = "Test Workspace Name",
         };
 
         // Act
