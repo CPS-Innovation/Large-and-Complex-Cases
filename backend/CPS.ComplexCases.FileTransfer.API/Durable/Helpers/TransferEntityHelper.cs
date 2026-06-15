@@ -8,13 +8,11 @@ using Microsoft.Extensions.Logging;
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
 
 public class TransferEntityHelper(
-    DurableTaskClient durableClient,
     ILogger<TransferEntityHelper> logger) : ITransferEntityHelper
 {
-    private readonly DurableTaskClient _durableClient = durableClient;
     private readonly ILogger<TransferEntityHelper> _logger = logger;
 
-    public Task DeleteMovedItemsCompleted(Guid transferId, List<DeletionError> failedItems, CancellationToken cancellationToken = default)
+    public Task DeleteMovedItemsCompleted(DurableTaskClient client, Guid transferId, List<DeletionError> failedItems, CancellationToken cancellationToken = default)
     {
         var entityId = GetEntityInstanceId(transferId);
 
@@ -22,10 +20,14 @@ public class TransferEntityHelper(
             "Signalling Durable entity {EntityName}/{EntityKey} for DeleteMovedItemsCompleted. TransferId={TransferId}, FailedItemCount={FailedCount}",
             entityId.Name, entityId.Key, transferId, failedItems.Count);
 
-        return _durableClient.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.DeleteMovedItemsCompleted), failedItems, null, cancellationToken);
+        return DurableEntityRetry.ExecuteAsync(
+            nameof(DeleteMovedItemsCompleted),
+            () => client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.DeleteMovedItemsCompleted), failedItems, null, cancellationToken),
+            _logger,
+            cancellationToken);
     }
 
-    public async Task<EntityMetadata<TransferEntity>?> GetTransferEntityAsync(Guid transferId, CancellationToken cancellationToken = default)
+    public async Task<EntityMetadata<TransferEntity>?> GetTransferEntityAsync(DurableTaskClient client, Guid transferId, CancellationToken cancellationToken = default)
     {
         var entityId = GetEntityInstanceId(transferId);
 
@@ -35,8 +37,10 @@ public class TransferEntityHelper(
 
         try
         {
-            var entity = await _durableClient.Entities.GetEntityAsync<TransferEntity>(
-                entityId,
+            var entity = await DurableEntityRetry.ExecuteAsync(
+                nameof(GetTransferEntityAsync),
+                () => client.Entities.GetEntityAsync<TransferEntity>(entityId, cancellationToken),
+                _logger,
                 cancellationToken);
 
             _logger.LogInformation(
