@@ -20,6 +20,7 @@ export type DropdownButtonProps = {
   disabled?: boolean;
   showLastItemSeparator?: boolean;
   icon?: React.ReactElement;
+  className?: string;
 };
 
 export const DropdownButton: React.FC<DropdownButtonProps> = ({
@@ -31,6 +32,7 @@ export const DropdownButton: React.FC<DropdownButtonProps> = ({
   disabled = false,
   showLastItemSeparator = false,
   icon = <DownArrow />,
+  className,
 }) => {
   const dropDownBtnRef = useRef<HTMLButtonElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -49,7 +51,11 @@ export const DropdownButton: React.FC<DropdownButtonProps> = ({
   };
 
   return (
-    <div className={classes.dropDownButtonWrapper}>
+    <div
+      className={`${classes.dropDownButtonWrapper}${
+        className ? ` ${className}` : ""
+      }`}
+    >
       <LinkButton
         id={dataTestId}
         dataTestId={dataTestId}

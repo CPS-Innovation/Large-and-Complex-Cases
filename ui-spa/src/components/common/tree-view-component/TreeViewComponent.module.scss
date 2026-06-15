@@ -54,6 +54,15 @@
   background: rgba(129, 139, 152, 0.15);
 }
 
+.disabled {
+  color: #6f777b;
+  cursor: not-allowed;
+
+  svg {
+    opacity: 0.5;
+  }
+}
+
 .loadingIconWrapper {
   width: 1rem;
   height: 1rem;

@@ -22,6 +22,7 @@ export type TreeViewComponentProps = {
   onSelect?: (node: TreeNode) => void;
   onLoadChildren?: (nodeId: string) => Promise<TreeNode[]>;
   className?: string;
+  isNodeSelectable?: (node: TreeNode) => boolean;
 };
 
 const TreeViewComponent: React.FC<TreeViewComponentProps> = ({
@@ -29,6 +30,7 @@ const TreeViewComponent: React.FC<TreeViewComponentProps> = ({
   onSelect,
   onLoadChildren,
   className,
+  isNodeSelectable,
 }) => {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set([]));
   const [focusedId, setFocusedId] = useState<string | null>(() => {
@@ -228,6 +230,7 @@ const TreeViewComponent: React.FC<TreeViewComponentProps> = ({
       case " ":
         if (node.isFolder) {
           e.preventDefault();
+          if (isNodeSelectable && !isNodeSelectable(node)) break;
           setUncontrolledSelectedId(node.id);
           onSelect?.(node);
         }
@@ -240,6 +243,7 @@ const TreeViewComponent: React.FC<TreeViewComponentProps> = ({
 
   const handleClick = (node: TreeNode) => {
     setFocusedId(node.id);
+    if (node.isFolder && isNodeSelectable && !isNodeSelectable(node)) return;
     setUncontrolledSelectedId(node.id);
     onSelect?.(node);
   };
@@ -250,6 +254,8 @@ const TreeViewComponent: React.FC<TreeViewComponentProps> = ({
     const isFocused = focusedId === node.id;
     const isLoading = loadingIds.has(node.id);
     const children = node.children ?? loadedChildren[node.id];
+    const isSelectable =
+      !node.isFolder || (isNodeSelectable?.(node) ?? true);
 
     const domId = crypto.randomUUID();
     const dataTestId = node.id.toLowerCase().replace(/\s+/g, "-");
@@ -293,9 +299,10 @@ const TreeViewComponent: React.FC<TreeViewComponentProps> = ({
           {node.isFolder && (
             <button
               id={`name-${domId}`}
-              className={` ${styles.folderNode} ${isSelected ? styles.selected : ""}`}
+              className={` ${styles.folderNode} ${isSelected ? styles.selected : ""} ${!isSelectable ? styles.disabled : ""}`}
               onClick={() => handleClick(node)}
               aria-label={node.name.toLowerCase()}
+              aria-disabled={!isSelectable || undefined}
               tabIndex={-1}
             >
               <div aria-hidden={true}>

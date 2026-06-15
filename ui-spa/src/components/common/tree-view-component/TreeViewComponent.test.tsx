@@ -221,6 +221,71 @@ describe("TreeView", () => {
     expect(onSelect).toHaveBeenCalledTimes(0);
   });
 
+  it("does not select a non-selectable folder on click or Enter but still expands it", async () => {
+    const data: TreeNode[] = [
+      {
+        id: "locked",
+        name: "Locked Folder",
+        isFolder: true,
+        children: [{ id: "locked-child", name: "Child", isFolder: false }],
+      },
+    ];
+
+    const onSelect = vi.fn();
+    const isNodeSelectable = (node: TreeNode) => node.id !== "locked";
+
+    render(
+      <TreeView
+        data={data}
+        onSelect={onSelect}
+        isNodeSelectable={isNodeSelectable}
+      />,
+    );
+
+    const folderBtn = screen.getByRole("button", { name: /locked folder/i });
+    expect(folderBtn).toHaveAttribute("aria-disabled", "true");
+
+    // clicking the locked folder label should NOT select it
+    userEvent.click(folderBtn);
+    expect(onSelect).not.toHaveBeenCalled();
+
+    // Enter on the focused locked folder should NOT select it
+    const folderLi = screen
+      .getByText("Locked Folder")
+      .closest("li") as HTMLElement;
+    folderLi.focus();
+    userEvent.keyboard("{Enter}");
+    expect(onSelect).not.toHaveBeenCalled();
+
+    // but the folder can still be expanded to reach its children
+    const toggle = within(folderLi).getByRole("button", {
+      name: /plus|minus|\+|-/i,
+    });
+    userEvent.click(toggle);
+    await waitFor(() => expect(screen.getByText("Child")).toBeInTheDocument());
+  });
+
+  it("still selects a selectable folder when a predicate is provided", () => {
+    const data: TreeNode[] = [
+      { id: "open", name: "Open Folder", isFolder: true },
+    ];
+
+    const onSelect = vi.fn();
+    render(
+      <TreeView
+        data={data}
+        onSelect={onSelect}
+        isNodeSelectable={() => true}
+      />,
+    );
+
+    const folderBtn = screen.getByRole("button", { name: /open folder/i });
+    expect(folderBtn).not.toHaveAttribute("aria-disabled");
+    userEvent.click(folderBtn);
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(onSelect.mock.calls[0][0].id).toBe("open");
+  });
+
   it("folder with pre-populated children does not call onLoadChildren when toggled", async () => {
     const data: TreeNode[] = [
       {

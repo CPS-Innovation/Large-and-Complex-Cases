@@ -10,6 +10,10 @@ import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPa
 import { getFileNameFromPath } from "../../../common/utils/getFileNameFromPath";
 import { pollTransferStatus } from "../../../common/utils/pollTransferStatus";
 import { pollActiveManageMaterialsOperations } from "../../../common/utils/pollActiveManageMaterialsOperations";
+import {
+  collectLockedPaths,
+  isPathLocked,
+} from "../../../common/utils/manageMaterialsLocks";
 import { ApiError } from "../../../common/errors/ApiError";
 import type { TransferStatusResponse, ManageMaterialsOperation } from "../../../schemas";
 import { SortableTable, LinkButton, NotificationBanner } from "../../govuk";
@@ -39,31 +43,6 @@ type ManageMaterialsPageProps = {
   isTabActive: boolean;
   initialActiveOps: ManageMaterialsOperation[];
 };
-
-const parsePaths = (jsonStr: string | null | undefined): string[] => {
-  if (!jsonStr) return [];
-  try {
-    const parsed = JSON.parse(jsonStr);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-};
-
-// Matches the backend rules: case-insensitive, trailing slashes ignored,
-// parent and child folders count as the same area. Comparison is on whole
-// path segments so siblings like "Interviews" and "Interviews v2" don't clash.
-const pathsOverlap = (a: string, b: string): boolean => {
-  const la = a.toLowerCase().replace(/\/+$/, "");
-  const lb = b.toLowerCase().replace(/\/+$/, "");
-  return la === lb || la.startsWith(`${lb}/`) || lb.startsWith(`${la}/`);
-};
-
-const collectLockedPaths = (ops: ManageMaterialsOperation[]): string[] =>
-  ops.flatMap((op) => [
-    ...parsePaths(op.sourcePaths),
-    ...parsePaths(op.destinationPaths),
-  ]);
 
 const ManageMaterialsPage: React.FC<ManageMaterialsPageProps> = ({
   caseId,
@@ -118,7 +97,7 @@ const ManageMaterialsPage: React.FC<ManageMaterialsPageProps> = ({
       if (ops.length > 0) {
         const locked = collectLockedPaths(ops);
         setSelectedItems((prev) =>
-          prev.filter((path) => !locked.some((lp) => pathsOverlap(path, lp))),
+          prev.filter((path) => !isPathLocked(path, locked)),
         );
       }
       return ops.length > 0;
@@ -166,8 +145,7 @@ const ManageMaterialsPage: React.FC<ManageMaterialsPageProps> = ({
 
   const lockedPaths = useMemo(() => collectLockedPaths(activeOps), [activeOps]);
 
-  const isLocked = (path: string) =>
-    lockedPaths.some((lp) => pathsOverlap(path, lp));
+  const isLocked = (path: string) => isPathLocked(path, lockedPaths);
 
   const lockedItemCount = useMemo(
     () => sortedFolderData.filter((item) => isLocked(item.path)).length,
@@ -330,7 +308,7 @@ const ManageMaterialsPage: React.FC<ManageMaterialsPageProps> = ({
   const tableHead = [
     {
       children: (
-        <div className={styles.nameCell}>
+        <div className={`${styles.nameCell} ${styles.headerNameCell}`}>
           {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events */}
           <div onClick={(e) => e.stopPropagation()}>
             <Checkbox
@@ -396,6 +374,7 @@ const ManageMaterialsPage: React.FC<ManageMaterialsPageProps> = ({
         action={view.action}
         selectedCount={selectedItems.length}
         conflictError={view.conflictError}
+        lockedPaths={lockedPaths}
         onConfirm={handleDestinationConfirm}
         onCancel={handleDestinationCancel}
       />
@@ -461,6 +440,7 @@ const ManageMaterialsPage: React.FC<ManageMaterialsPageProps> = ({
 
       <div className={styles.toolbar}>
         <DropdownButton
+          className={styles.actionsDropdown}
           name="Actions on selection"
           disabled={selectedItems.length === 0}
           dropDownItems={[

@@ -13,10 +13,42 @@
   margin-bottom: 1rem;
 }
 
+// Grey GOV.UK secondary-style button, scoped to this page only.
+.actionsDropdown {
+  button {
+    background-color: #f3f2f1;
+    color: #0b0c0c;
+    // border: 1px solid #0b0c0c;
+    padding: 0.5rem 0.9375rem;
+    box-shadow: 0 2px 0 #0b0c0c;
+
+    svg {
+      fill: #0b0c0c;
+    }
+
+    &:hover:not(:disabled):not(:focus) {
+      background-color: #dbdad9;
+
+      svg {
+        fill: #0b0c0c;
+      }
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+}
+
 .nameCell {
   max-width: 22.5rem;
   display: flex;
   align-items: baseline;
+
+  &.headerNameCell {
+    align-items: center;
+  }
 
   & svg {
     flex: 0 0 auto;

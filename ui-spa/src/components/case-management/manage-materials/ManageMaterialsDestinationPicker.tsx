@@ -5,6 +5,7 @@ import TreeViewComponent, {
 } from "../../common/tree-view-component/TreeViewComponent";
 import { getNetAppFolders } from "../../../apis/gateway-api";
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
+import { isPathLocked } from "../../../common/utils/manageMaterialsLocks";
 import styles from "./ManageMaterialsDestinationPicker.module.scss";
 
 type ManageMaterialsDestinationPickerProps = {
@@ -13,6 +14,7 @@ type ManageMaterialsDestinationPickerProps = {
   action: "copy" | "move";
   selectedCount: number;
   conflictError: string | null;
+  lockedPaths: string[];
   onConfirm: (destinationPath: string, destinationName: string) => void;
   onCancel: () => void;
 };
@@ -25,6 +27,7 @@ const ManageMaterialsDestinationPicker: React.FC<
   action,
   selectedCount,
   conflictError,
+  lockedPaths,
   onConfirm,
   onCancel,
 }) => {
@@ -67,6 +70,11 @@ const ManageMaterialsDestinationPicker: React.FC<
     }
   };
 
+  const isNodeSelectable = useCallback(
+    (node: TreeNode) => !isPathLocked(node.id, lockedPaths),
+    [lockedPaths],
+  );
+
   const itemText = selectedCount === 1 ? "item" : "items";
 
   return (
@@ -93,11 +101,21 @@ const ManageMaterialsDestinationPicker: React.FC<
         </NotificationBanner>
       )}
 
+      {!conflictError && lockedPaths.length > 0 && (
+        <NotificationBanner type="important">
+          <p className="govuk-body">
+            A copy or move operation is in progress for this case. Some folders
+            are locked and cannot be selected as a destination.
+          </p>
+        </NotificationBanner>
+      )}
+
       <div className={styles.treeWrapper}>
         <TreeViewComponent
           data={rootNode}
           onSelect={handleSelect}
           onLoadChildren={handleLoadChildren}
+          isNodeSelectable={isNodeSelectable}
         />
       </div>
 
