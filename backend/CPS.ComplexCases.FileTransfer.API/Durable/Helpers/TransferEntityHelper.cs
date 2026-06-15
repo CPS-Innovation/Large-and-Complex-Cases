@@ -33,19 +33,33 @@ public class TransferEntityHelper(
             "Getting Durable entity {EntityName}/{EntityKey} for TransferId={TransferId}",
             entityId.Name, entityId.Key, transferId);
 
-        var entity = await _durableClient.Entities.GetEntityAsync<TransferEntity>(
-            entityId,
-            cancellationToken);
+        try
+        {
+            var entity = await _durableClient.Entities.GetEntityAsync<TransferEntity>(
+                entityId,
+                cancellationToken);
 
-        _logger.LogInformation(
-            "Got Durable entity {EntityName}/{EntityKey} for TransferId={TransferId}. EntityFound={EntityFound}, HasState={HasState}",
-            entityId.Name,
-            entityId.Key,
-            transferId,
-            entity is not null,
-            entity?.State is not null);
+            _logger.LogInformation(
+                "Got Durable entity {EntityName}/{EntityKey} for TransferId={TransferId}. EntityFound={EntityFound}, HasState={HasState}",
+                entityId.Name,
+                entityId.Key,
+                transferId,
+                entity is not null,
+                entity?.State is not null);
 
-        return entity;
+            return entity;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to get Durable entity {EntityName}/{EntityKey} for TransferId={TransferId}",
+                entityId.Name,
+                entityId.Key,
+                transferId);
+
+            throw;
+        }
     }
 
     private static EntityInstanceId GetEntityInstanceId(Guid transferId)
