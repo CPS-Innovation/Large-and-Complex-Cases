@@ -37,6 +37,9 @@ public static class IServiceCollectionExtension
 		services.AddSingleton<IS3TelemetryHandler, S3TelemetryHandler>();
 		services.AddSingleton<INetAppCertFactory, NetAppCertFactory>();
 
+		services.AddTransient<IOntapArgFactory, OntapArgFactory>();
+		services.AddTransient<IOntapRequestFactory, OntapRequestFactory>();
+
 		services.AddSingleton<IKeyVaultService>(sp =>
 		{
 			var logger = sp.GetRequiredService<ILogger<KeyVaultService>>();
@@ -82,6 +85,21 @@ public static class IServiceCollectionExtension
 		})
 		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment)
 		)
+		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
+		.AddPolicyHandler(GetRetryPolicy());
+
+		services.AddHttpClient<IOntapHttpClient, OntapHttpClient>(client =>
+		{
+			var ontapBaseUrl = configuration["NetAppOptions:OntapUrl"];
+			if (string.IsNullOrEmpty(ontapBaseUrl))
+			{
+				throw new ArgumentNullException(nameof(ontapBaseUrl), "NetAppOptions:OntapUrl configuration is missing or empty.");
+			}
+			client.BaseAddress = new Uri(ontapBaseUrl);
+			client.Timeout = TimeSpan.FromMinutes(10);
+
+		})
+		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment))
 		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
 		.AddPolicyHandler(GetRetryPolicy());
 

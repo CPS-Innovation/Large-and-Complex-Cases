@@ -304,7 +304,8 @@ public class IntegrationTestFixture : IAsyncLifetime
             RegionName = Settings.NetApp.RegionName!,
             S3ServiceUuid = Settings.NetApp.S3ServiceUuid,
             SessionDurationSeconds = Settings.NetApp.SessionDurationSeconds,
-            PepperVersion = Settings.NetApp.PepperVersion
+            PepperVersion = Settings.NetApp.PepperVersion,
+            OntapVolumeUuid = Settings.NetApp.OntapVolumeUuid ?? string.Empty
         };
 
         var netAppOptionsWrapper = new OptionsWrapper<NetAppOptions>(netAppOptions);
