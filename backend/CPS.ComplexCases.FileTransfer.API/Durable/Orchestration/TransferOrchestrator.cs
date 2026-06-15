@@ -45,7 +45,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
             TotalFiles = input.SourcePaths.Count,
             BucketName = input.BucketName,
             CaseId = input.CaseId,
-            OrchestrationStartTime = DateTime.UtcNow
+            OrchestrationStartTime = context.CurrentUtcDateTime
         };
 
         try
@@ -276,7 +276,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                 });
 
             transferOrchestrationEvent.IsSuccessful = transferOrchestrationEvent.TotalFilesFailed == 0;
-            transferOrchestrationEvent.OrchestrationEndTime = DateTime.UtcNow;
+            transferOrchestrationEvent.OrchestrationEndTime = context.CurrentUtcDateTime;
             _telemetryClient.TrackEvent(transferOrchestrationEvent);
         }
         catch (Exception ex)
@@ -306,7 +306,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
         }
         finally
         {
-            transferOrchestrationEvent.OrchestrationEndTime = DateTime.UtcNow;
+            transferOrchestrationEvent.OrchestrationEndTime = context.CurrentUtcDateTime;
             _telemetryClient.TrackEvent(transferOrchestrationEvent);
         }
     }
