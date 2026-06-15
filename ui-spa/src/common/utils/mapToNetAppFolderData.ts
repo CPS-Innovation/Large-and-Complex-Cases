@@ -7,7 +7,7 @@ export const mapToNetAppFolderData = (
   const folderData = responseData.folderData.map((folder) => ({
     path: folder.path,
     name: getFolderNameFromPath(folder.path),
-    dateUpdated: "",
+    // dateUpdated: "",
     filesize: 0,
     lastModified: "",
     isFolder: true,
@@ -15,7 +15,7 @@ export const mapToNetAppFolderData = (
   const fileData = responseData.fileData.map((file) => ({
     path: file.path,
     name: getFileNameFromPath(file.path),
-    dateUpdated: file.lastModified,
+    // dateUpdated: file.lastModified,
     filesize: file.filesize,
     lastModified: file.lastModified,
     isFolder: false,

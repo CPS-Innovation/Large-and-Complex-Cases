@@ -13,9 +13,9 @@ import styles from "./TreeViewComponent.module.scss";
 export type TreeNode = {
   id: string;
   name: string;
-  path: string;
   isFolder: boolean;
   isRootNode: boolean;
+  path: string;
   children?: TreeNode[];
 };
 
@@ -32,10 +32,10 @@ const TreeViewComponent: React.FC<TreeViewComponentProps> = ({
   onSelect,
   onLoadChildren,
   className,
-  isRootNodeOpened = true,
+  isRootNodeOpened = false,
 }) => {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(
-    isRootNodeOpened ? new Set([data[0]?.id]) : new Set(),
+    isRootNodeOpened ? new Set([data[0]?.id]) : new Set([]),
   );
   const [focusedId, setFocusedId] = useState<string | null>(() => {
     return data.length > 0 ? data[0].id : null;

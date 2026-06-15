@@ -147,7 +147,13 @@ const TransferSourceNavigationTableContainer: React.FC<
             ),
           },
           {
-            children: <span>{formatDate(data?.dateUpdated)}</span>,
+            children: (
+              <span>
+                {"dateUpdated" in data
+                  ? formatDate(data.dateUpdated)
+                  : formatDate(data.lastModified)}
+              </span>
+            ),
           },
           {
             children: (

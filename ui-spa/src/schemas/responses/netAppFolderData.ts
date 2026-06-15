@@ -33,7 +33,6 @@ export const netAppFolderDataSchema = z.array(
   z.object({
     path: z.string(),
     name: z.string(),
-    dateUpdated: z.string(),
     lastModified: z.string(),
     filesize: z.number(),
     isFolder: z.boolean(),

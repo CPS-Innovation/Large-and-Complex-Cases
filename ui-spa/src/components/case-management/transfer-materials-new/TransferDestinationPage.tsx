@@ -100,7 +100,9 @@ const TransferDestinationPage: React.FC = () => {
         return {
           id: folder.id,
           name: folder.name,
-          path: folder.id,
+          path: folder.path
+            ? `${folder.path}/${folder.name}/`
+            : `${folder.name}/`,
           isFolder: true,
           isRootNode: false,
         };
