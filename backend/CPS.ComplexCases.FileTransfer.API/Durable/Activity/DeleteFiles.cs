@@ -44,7 +44,7 @@ public class DeleteFiles(ITransferEntityHelper transferEntityHelper, IStorageCli
             throw new ArgumentException("Invalid transfer direction for DeleteFiles activity.", nameof(payload));
         }
 
-       var entity = await GetTransferEntityWithRetryAsync(payload.TransferId, cancellationToken);
+        var entity = await GetTransferEntityWithRetryAsync(payload.TransferId, cancellationToken);
 
         if (entity == null)
         {
@@ -107,7 +107,7 @@ public class DeleteFiles(ITransferEntityHelper transferEntityHelper, IStorageCli
     private async Task<Microsoft.DurableTask.Client.Entities.EntityMetadata<TransferEntity>?>
         GetTransferEntityWithRetryAsync(Guid transferId, CancellationToken cancellationToken)
     {
-        const int maxAttempts = 2;     // minimal retry
+        const int maxAttempts = 3;     // minimal retry
         const int delayMs = 1000;
 
         for (var attempt = 1; attempt <= maxAttempts; attempt++)
