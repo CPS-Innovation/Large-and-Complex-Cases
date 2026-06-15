@@ -18,7 +18,9 @@
       "Azure.Core": "Warning",
       "Azure.Identity": "Warning",
       "Worker": "Warning",
-      "Grpc.Net.Client": "Warning",
+      "Grpc.Net.Client": "Information", 
+      "Microsoft.DurableTask": "Information",
+      "Microsoft.Azure.Functions.Worker.Extensions.DurableTask": "Information",
       "Microsoft.Azure.WebJobs.Script": "Warning"
     }
   },
