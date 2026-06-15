@@ -2,11 +2,8 @@ import { BackLink } from "../../govuk";
 import { useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { PageContentWrapper } from "../../govuk/PageContentWrapper";
-import {
-  type EgressFolderData,
-  type NetAppFolderData,
-  type NetAppFolder,
-} from "../../../schemas";
+import { Spinner } from "../../common/Spinner";
+import { type EgressFolderData, type NetAppFolder } from "../../../schemas";
 import { getNetAppFolders, getEgressFolders } from "../../../apis/gateway-api";
 import { InitiateFileTransferPayload } from "../../../schemas/requests/initiateFileTransferPayload";
 import { IndexingFileTransferPayload } from "../../../schemas/requests/indexingFileTransferPayload";
@@ -28,6 +25,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
 import { ApiError } from "../../../common/errors/ApiError";
 import { type TreeNode } from "../../common/tree-view-component/TreeViewComponent";
+import styles from "./TransferDestinationPage.module.scss";
 
 const TransferDestinationPage: React.FC = () => {
   const {
@@ -58,15 +56,21 @@ const TransferDestinationPage: React.FC = () => {
     };
   } = useLocation();
 
-  const {
-    data: netAppData,
-    refetch: netAppRefetch,
-    isLoading: isNetAppFolderDataLoading,
-  } = useQuery({
+  const { data: netAppData, isLoading: isNetAppFolderDataLoading } = useQuery({
     queryKey: [netAppFolderPath],
     queryFn: () => getNetAppFolders(netAppFolderPath),
     retry: false,
     enabled: transferSource === "egress",
+    throwOnError: true,
+    staleTime: 0,
+    gcTime: 0,
+  });
+
+  const { data: egressData, isLoading: isEgressFolderDataLoading } = useQuery({
+    queryKey: [egressWorkspaceId, ""],
+    queryFn: () => getEgressFolders(egressWorkspaceId, ""),
+    retry: false,
+    enabled: transferSource === "netapp",
     throwOnError: true,
     staleTime: 0,
     gcTime: 0,
@@ -85,6 +89,44 @@ const TransferDestinationPage: React.FC = () => {
 
     return folders;
   };
+
+  const getEgressTreeViewData = (folderData: EgressFolderData): TreeNode[] => {
+    const folders = folderData
+      .filter((folder) => {
+        return folder.isFolder;
+      })
+      .map((folder) => {
+        return {
+          id: folder.id,
+          name: folder.name,
+          path: folder.id,
+          isFolder: true,
+          isRootNode: false,
+        };
+      });
+
+    return folders;
+  };
+
+  const initialLoadingState = useMemo(() => {
+    if (transferSource === "egress" && isNetAppFolderDataLoading) {
+      return {
+        isLoading: true,
+        loaderText: "Loading NetApp folders...",
+      };
+    }
+    if (transferSource === "netapp" && isEgressFolderDataLoading) {
+      return {
+        isLoading: true,
+        loaderText: "Loading Egress folders...",
+      };
+    }
+    return {
+      isLoading: false,
+      loaderText: "",
+    };
+  }, [isNetAppFolderDataLoading, isEgressFolderDataLoading, transferSource]);
+
   const initialNetAppFolderData = useMemo(() => {
     const folders = [
       {
@@ -109,11 +151,13 @@ const TransferDestinationPage: React.FC = () => {
         name: `Egress : ${operationName}`,
         path: "",
         isFolder: true,
+        isRootNode: true,
+        children: egressData ? getEgressTreeViewData(egressData) : [],
       },
     ];
 
     return folders;
-  }, [operationName]);
+  }, [operationName, egressData]);
 
   const [transferStatus, setTransferStatus] = useState<
     "validating" | "transferring" | null
@@ -259,33 +303,18 @@ const TransferDestinationPage: React.FC = () => {
     }
   };
 
-  const handleLoadChildren = async (nodeId: string) => {
+  const handleLoadChildren = async (nodePathOrId: string) => {
     if (transferSource === "egress") {
-      const data = await getNetAppFolders(nodeId);
-      const folders = data.folderData.map((folder) => {
-        return {
-          id: folder.path,
-          name: getFolderNameFromPath(folder.path),
-          path: folder.path,
-          isFolder: true,
-          isRootNode: true,
-        };
-      });
+      const data = await getNetAppFolders(nodePathOrId);
 
+      const folders = data?.folderData
+        ? getNetAppTreeViewData(data?.folderData)
+        : [];
       return folders;
     } else {
-      const newId = nodeId === "root" ? "" : nodeId;
+      const newId = nodePathOrId === "root" ? "" : nodePathOrId;
       const folderData = await getEgressFolders(egressWorkspaceId, newId);
-      const folders = folderData
-        .filter((data) => data.isFolder)
-        .map((data) => {
-          return {
-            id: data.id,
-            name: data.name,
-            path: data.path ? `${data.path}/${data.name}/` : `${data.name}/`,
-            isFolder: data.isFolder,
-          };
-        });
+      const folders = getEgressTreeViewData(folderData);
       return folders;
     }
   };
@@ -319,17 +348,30 @@ const TransferDestinationPage: React.FC = () => {
           </p>
         </div>
 
-        <div>
-          <TransferWidget
-            data={
-              transferSource === "egress"
-                ? initialNetAppFolderData
-                : initialEgressFolderData
-            }
-            transferAction={selectedTransferAction === "copy" ? "Copy" : "Move"}
-            onLoadChildren={handleLoadChildren}
-            handleTransfer={handleTransfer}
-          />
+        <div className={styles.transferWidgetWrapper}>
+          {initialLoadingState.isLoading && (
+            <div className={styles.spinnerWrapper}>
+              <Spinner data-testid={`destination-loader`} diameterPx={50} />
+              <div className={styles.spinnerText} aria-live="polite">
+                {initialLoadingState.loaderText}
+              </div>
+            </div>
+          )}
+          {!initialLoadingState.isLoading && (
+            <TransferWidget
+              data={
+                transferSource === "egress"
+                  ? initialNetAppFolderData
+                  : initialEgressFolderData
+              }
+              transferAction={
+                selectedTransferAction === "copy" ? "Copy" : "Move"
+              }
+              cancelLink={`/case/${caseId}/case-management`}
+              onLoadChildren={handleLoadChildren}
+              handleTransfer={handleTransfer}
+            />
+          )}
         </div>
       </PageContentWrapper>
     </div>

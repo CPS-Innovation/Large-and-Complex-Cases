@@ -8,12 +8,14 @@ export type TransferWidgetProps = {
   data: TreeNode[];
   onLoadChildren: (nodeId: string) => Promise<TreeNode[]>;
   transferAction: "Copy" | "Move";
+  cancelLink: string;
   handleTransfer: (selectedNode: TreeNode) => void;
 };
 const TransferWidget: React.FC<TransferWidgetProps> = ({
   data,
-  onLoadChildren,
   transferAction,
+  cancelLink,
+  onLoadChildren,
   handleTransfer,
 }) => {
   const [selectedNode, setSelectedNode] = useState<TreeNode | null>(null);
@@ -45,7 +47,7 @@ const TransferWidget: React.FC<TransferWidgetProps> = ({
             ? `${transferAction} to ${selectedNode?.name}`
             : transferAction}
         </Button>
-        <Link to="/somewhere-else" className="govuk-link--no-visited-state">
+        <Link to={cancelLink} className="govuk-link--no-visited-state">
           Cancel
         </Link>
       </div>
