@@ -3,11 +3,12 @@ import { useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { PageContentWrapper } from "../../govuk/PageContentWrapper";
 import { Spinner } from "../../common/Spinner";
-import { type EgressFolderData, type NetAppFolder } from "../../../schemas";
 import { getNetAppFolders, getEgressFolders } from "../../../apis/gateway-api";
 import { InitiateFileTransferPayload } from "../../../schemas/requests/initiateFileTransferPayload";
 import { IndexingFileTransferPayload } from "../../../schemas/requests/indexingFileTransferPayload";
 import type {
+  EgressFolderData,
+  NetAppFolder,
   IndexingFileTransferResponse,
   InitiateFileTransferResponse,
 } from "../../../schemas";
@@ -159,9 +160,9 @@ const TransferDestinationPage: React.FC = () => {
     return folders;
   }, [operationName, egressData]);
 
-  const [transferStatus, setTransferStatus] = useState<
-    "validating" | "transferring" | null
-  >(null);
+  const [transferStatus, setTransferStatus] = useState<"validating" | null>(
+    null,
+  );
 
   const initiateFileTransferMutation = useMutation({
     mutationFn: initiateFileTransfer,
@@ -203,8 +204,6 @@ const TransferDestinationPage: React.FC = () => {
   const handleInitiateFileTransfer = async (
     initiatePayload: InitiateFileTransferPayload,
   ) => {
-    setTransferStatus("transferring");
-
     const initiateFileTransferResponse: InitiateFileTransferResponse =
       await initiateFileTransferMutation.mutateAsync(initiatePayload);
 
@@ -324,6 +323,29 @@ const TransferDestinationPage: React.FC = () => {
     handleValidateTransfer(selectedNode.path);
   };
 
+  const activeTransferMessage = useMemo(() => {
+    if (transferStatus === "validating") {
+      if (transferSource === "egress") {
+        return {
+          ariaLabelText: "Indexing transfer from egress to shared drive",
+          spinnerTextContent: (
+            <span>
+              Indexing transfer from <b>Egress to Shared Drive...</b>
+            </span>
+          ),
+        };
+      }
+      return {
+        ariaLabelText: "Indexing transfer from shared drive to egress",
+        spinnerTextContent: (
+          <span>
+            Indexing transfer from <b>Shared Drive to Egress...</b>
+          </span>
+        ),
+      };
+    }
+  }, [transferStatus, transferSource]);
+
   return (
     <div>
       <BackLink to={`/case/${caseId}/case-management`} replace>
@@ -349,6 +371,16 @@ const TransferDestinationPage: React.FC = () => {
         </div>
 
         <div className={styles.transferWidgetWrapper}>
+          {transferStatus && (
+            <div className={styles.transferContent}>
+              <div className={styles.spinnerWrapper}>
+                <Spinner data-testid="transfer-spinner" diameterPx={50} />
+                <div className={styles.spinnerText}>
+                  {activeTransferMessage?.spinnerTextContent}
+                </div>
+              </div>
+            </div>
+          )}
           {initialLoadingState.isLoading && (
             <div className={styles.spinnerWrapper}>
               <Spinner data-testid={`destination-loader`} diameterPx={50} />
@@ -357,7 +389,7 @@ const TransferDestinationPage: React.FC = () => {
               </div>
             </div>
           )}
-          {!initialLoadingState.isLoading && (
+          {!initialLoadingState.isLoading && !transferStatus && (
             <TransferWidget
               data={
                 transferSource === "egress"
