@@ -1,8 +1,10 @@
+using CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.State;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask.Client;
 using Microsoft.DurableTask.Entities;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 
@@ -13,6 +15,10 @@ public class FinalizeTransfer
     {
         var entityId = new EntityInstanceId(nameof(TransferEntityState), finalizeTransferPayload.TransferId.ToString());
 
-        await client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.FinalizeTransfer), cancellationToken);
+        await DurableEntityRetry.ExecuteAsync(
+            nameof(FinalizeTransfer),
+            () => client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.FinalizeTransfer), cancellationToken),
+            NullLogger.Instance,
+            cancellationToken);
     }
 }
