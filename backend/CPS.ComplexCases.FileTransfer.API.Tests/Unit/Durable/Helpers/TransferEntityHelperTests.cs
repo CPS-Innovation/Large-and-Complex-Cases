@@ -4,6 +4,7 @@ using CPS.ComplexCases.FileTransfer.API.Durable.State;
 using CPS.ComplexCases.FileTransfer.API.Tests.Unit.Stubs;
 using Microsoft.DurableTask.Client.Entities;
 using Microsoft.DurableTask.Entities;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Helpers;
 
@@ -17,7 +18,7 @@ public class TransferEntityHelperTests
     {
         _entityClientStub = new DurableEntityClientStub("TestEntityClient");
         _durableTaskClientStub = new DurableTaskClientStub(_entityClientStub);
-        _helper = new TransferEntityHelper(_durableTaskClientStub);
+        _helper = new TransferEntityHelper(_durableTaskClientStub, NullLogger<TransferEntityHelper>.Instance);
     }
 
     [Fact]
