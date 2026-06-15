@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Tabs } from "../common/tabs/Tabs";
 import { TabId } from "../../common/types/CaseManagement";
 import { ItemProps } from "../common/tabs/types";
@@ -86,50 +86,58 @@ const CaseManagementPage = () => {
     validateRoute();
   }, [location, validateRoute]);
 
-  const items: ItemProps<TabId>[] = [
-    {
-      id: "transfer-materials",
-      label: "Transfer materials",
-      panel: {
-        children: caseMetaData ? (
-          <TransferMaterialsPage
-            isTabActive={activeTabId === "transfer-materials"}
-            caseId={caseId}
-            operationName={caseMetaData.operationName}
-            egressWorkspaceId={caseMetaData.egressWorkspaceId}
-            netAppPath={caseMetaData.netappFolderPath}
-            activeTransferId={
-              location?.state?.transferId ?? caseMetaData.activeTransferId
-            }
-            urn={caseMetaData.urn}
-          />
-        ) : (
-          <></>
-        ),
-      },
-    },
-    {
-      id: "transfer-materials-new",
-      label: "Transfer materials new",
-      panel: {
-        children: caseMetaData ? (
-          <TransferMaterialsNewPage
-            isTabActive={activeTabId === "transfer-materials-new"}
-            caseId={caseId}
-            operationName={caseMetaData.operationName}
-            egressWorkspaceId={caseMetaData.egressWorkspaceId}
-            netAppPath={caseMetaData.netappFolderPath}
-            activeTransferId={
-              location?.state?.transferId ?? caseMetaData.activeTransferId
-            }
-            urn={caseMetaData.urn}
-          />
-        ) : (
-          <></>
-        ),
-      },
-    },
-    {
+  const tabItems = useMemo(() => {
+    const items: ItemProps<TabId>[] = [];
+
+    if (featureFlags.transferMaterialsV1) {
+      items.push({
+        id: "transfer-materials",
+        label: "Transfer materials",
+        panel: {
+          children: caseMetaData ? (
+            <TransferMaterialsNewPage
+              isTabActive={activeTabId === "transfer-materials"}
+              caseId={caseId}
+              operationName={caseMetaData.operationName}
+              egressWorkspaceId={caseMetaData.egressWorkspaceId}
+              netAppPath={caseMetaData.netappFolderPath}
+              activeTransferId={
+                location?.state?.transferId ?? caseMetaData.activeTransferId
+              }
+              urn={caseMetaData.urn}
+            />
+          ) : (
+            <></>
+          ),
+        },
+      });
+    }
+
+    if (!featureFlags.transferMaterialsV1) {
+      items.push({
+        id: "transfer-materials",
+        label: "Transfer materials",
+        panel: {
+          children: caseMetaData ? (
+            <TransferMaterialsPage
+              isTabActive={activeTabId === "transfer-materials"}
+              caseId={caseId}
+              operationName={caseMetaData.operationName}
+              egressWorkspaceId={caseMetaData.egressWorkspaceId}
+              netAppPath={caseMetaData.netappFolderPath}
+              activeTransferId={
+                location?.state?.transferId ?? caseMetaData.activeTransferId
+              }
+              urn={caseMetaData.urn}
+            />
+          ) : (
+            <></>
+          ),
+        },
+      });
+    }
+
+    items.push({
       id: "activity-log",
       label: "Activity log",
       panel: {
@@ -144,25 +152,32 @@ const CaseManagementPage = () => {
           <></>
         ),
       },
-    },
-  ];
-
-  if (featureFlags.caseDetails) {
-    items.push({
-      id: "case-details",
-      label: "Case Details",
-      panel: {
-        children: caseMetaData ? (
-          <div>
-            <h3> Case Details</h3>
-            <TransferTreeViewPage caseId={caseId} />
-          </div>
-        ) : (
-          <></>
-        ),
-      },
     });
-  }
+    if (featureFlags.caseDetails) {
+      items.push({
+        id: "case-details",
+        label: "Case Details",
+        panel: {
+          children: caseMetaData ? (
+            <div>
+              <h3> Case Details</h3>
+              <TransferTreeViewPage caseId={caseId} />
+            </div>
+          ) : (
+            <></>
+          ),
+        },
+      });
+    }
+    return items;
+  }, [
+    activeTabId,
+    caseId,
+    caseMetaData,
+    featureFlags.caseDetails,
+    featureFlags.transferMaterialsV1,
+    location?.state?.transferId,
+  ]);
   if (isCaseMetaDataLoading) {
     return <PageContentWrapper>loading...</PageContentWrapper>;
   }
@@ -179,7 +194,7 @@ const CaseManagementPage = () => {
         <span>{caseMetaData?.urn}</span>
       </div>
       <Tabs
-        items={items.map((item) => ({
+        items={tabItems.map((item) => ({
           id: item.id,
           label: item.label,
           panel: item.panel,
