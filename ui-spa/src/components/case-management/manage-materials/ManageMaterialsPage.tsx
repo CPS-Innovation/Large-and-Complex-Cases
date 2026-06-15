@@ -429,8 +429,8 @@ const ManageMaterialsPage: React.FC<ManageMaterialsPageProps> = ({
               <>
                 {" "}
                 {lockedItemCount === 1
-                  ? "1 item in this folder is"
-                  : `${lockedItemCount} items in this folder are`}{" "}
+                  ? "1 item in this case is"
+                  : `${lockedItemCount} items in this case are`}{" "}
                 locked and cannot be selected.
               </>
             )}
