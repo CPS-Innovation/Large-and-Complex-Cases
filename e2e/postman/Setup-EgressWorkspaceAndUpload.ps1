@@ -683,12 +683,18 @@ if ($SkipUpload) {
         $retryCount = if ($IsLargeFile) { $MaxFileIdRetries } else { 20 }
         $retryDelay = if ($IsLargeFile) { $FileIdRetryDelaySeconds } else { 3 }
 
+        # Verify by folder_path -- uploads above use folder_path, not folder_id,
+        # so the listing has to match. Path is URL-encoded (spaces).
+        $encodedFolder = [uri]::EscapeDataString($ActualFolderPath)
+
         for ($i = 1; $i -le $retryCount; $i++) {
+            # Check first, sleep on miss -- a file that indexes instantly used
+            # to still pay the first $retryDelay before its only successful
+            # check.
+            if ($i -gt 1) { Start-Sleep -Seconds $retryDelay }
             Write-Host "  Attempt $i/$retryCount..." -NoNewline
 
-            Start-Sleep -Seconds $retryDelay
-
-            $filesResult = curl.exe --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId/files?folder_id=$FolderId" `
+            $filesResult = curl.exe --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId/files?folder_path=$encodedFolder" `
                 --header "Authorization: Basic $TokenBase64"
 
             try {
