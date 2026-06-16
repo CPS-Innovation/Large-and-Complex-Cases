@@ -16,6 +16,7 @@ export type TreeNode = {
   isFolder: boolean;
   isRootNode: boolean;
   path: string;
+  disabled?: boolean;
   children?: TreeNode[];
 };
 
@@ -238,7 +239,7 @@ const TreeViewComponent: React.FC<TreeViewComponentProps> = ({
         break;
       case "Enter":
       case " ":
-        if (node.isFolder) {
+        if (node.isFolder && !node.disabled) {
           e.preventDefault();
           setUncontrolledSelectedId(node.id);
           onSelect?.(node);
@@ -310,6 +311,7 @@ const TreeViewComponent: React.FC<TreeViewComponentProps> = ({
               onClick={() => handleClick(node)}
               aria-label={node.name.toLowerCase()}
               tabIndex={-1}
+              disabled={node.disabled}
             >
               <div aria-hidden={true}>
                 <FolderIcon />

@@ -155,6 +155,7 @@ const TransferDestinationPage: React.FC = () => {
         path: "",
         isFolder: true,
         isRootNode: true,
+        disabled: true,
         children: egressData ? getEgressTreeViewData(egressData) : [],
       },
     ];
