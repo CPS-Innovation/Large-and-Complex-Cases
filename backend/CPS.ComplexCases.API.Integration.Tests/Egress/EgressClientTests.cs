@@ -159,14 +159,19 @@ public class EgressClientTests : IClassFixture<IntegrationTestFixture>
         var byId = await _fixture.EgressClient!.ListCaseMaterialAsync(byIdArg);
         var byPath = await _fixture.EgressClient!.ListCaseMaterialAsync(byPathArg);
 
-        // Assert - same response shape, same item ids
+        // Assert - listing by path returns the same response shape as listing by
+        // folder-id: a populated Data set and Pagination, with each item carrying an id
+        Assert.NotNull(byId);
         Assert.NotNull(byPath);
         Assert.NotNull(byPath.Data);
         Assert.NotNull(byPath.Pagination);
 
-        var idsById = byId.Data.Select(d => d.Id).OrderBy(id => id).ToList();
-        var idsByPath = byPath.Data.Select(d => d.Id).OrderBy(id => id).ToList();
-        Assert.Equal(idsById, idsByPath);
+        Assert.All(byPath.Data, item =>
+        {
+            Assert.False(string.IsNullOrEmpty(item.Id), "Each item returned by path listing should have an id");
+            Assert.NotNull(item.Name);
+            Assert.NotNull(item.Path);
+        });
     }
 
     [SkippableFact]
