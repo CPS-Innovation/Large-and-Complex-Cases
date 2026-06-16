@@ -29,7 +29,8 @@ public class ListEgressMaterials(ILogger<ListEgressMaterials> logger,
     [OpenApiOperation(operationId: nameof(ListEgressMaterials), tags: ["Egress"], Description = "Lists files and folders in Egress for a workspace.")]
     [CmsAuthValuesAuth]
     [BearerTokenAuth]
-    [OpenApiParameter(name: InputParameters.FolderId, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The folder-id to search for files/folders within.")]
+    [OpenApiParameter(name: InputParameters.FolderId, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The folder-id to search for files/folders within. Takes precedence over 'path' when both are supplied.")]
+    [OpenApiParameter(name: InputParameters.Path, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The folder path to search for files/folders within. Ignored when 'folder-id' is also supplied.")]
     [OpenApiParameter(name: InputParameters.Skip, In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The number of items to skip.")]
     [OpenApiParameter(name: InputParameters.Take, In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The number of items to take.")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(ListCaseMaterialDto), Description = ApiResponseDescriptions.Success)]
@@ -43,10 +44,14 @@ public class ListEgressMaterials(ILogger<ListEgressMaterials> logger,
         _initializationHandler.Initialize(context.Username, context.CorrelationId);
 
         var folderId = req.Query[InputParameters.FolderId];
+        var path = req.Query[InputParameters.Path];
         var skip = int.TryParse(req.Query[InputParameters.Skip], out var skipValue) ? skipValue : 0;
         var take = int.TryParse(req.Query[InputParameters.Take], out var takeValue) ? takeValue : 100;
 
-        var listMaterialsArg = _egressArgFactory.CreateListWorkspaceMaterialArg(workspaceId, skip, take, folderId, null);
+        // folder-id takes precedence over path when both are supplied.
+        var pathArg = string.IsNullOrEmpty(folderId) ? path.FirstOrDefault() : null;
+
+        var listMaterialsArg = _egressArgFactory.CreateListWorkspaceMaterialArg(workspaceId, skip, take, folderId, null, pathArg);
         var permissionsArg = _egressArgFactory.CreateGetWorkspacePermissionArg(workspaceId, context.Username);
 
         try

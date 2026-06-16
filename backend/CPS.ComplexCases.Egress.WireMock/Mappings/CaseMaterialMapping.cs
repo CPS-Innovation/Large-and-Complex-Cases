@@ -11,7 +11,64 @@ public class CaseMaterialMapping : IWireMockMapping
   {
     ConfigureRootFilesListing(server);
     ConfigureFolderFilesListing(server);
+    ConfigurePathFilesListing(server);
     ConfigureFileExistsScenario(server);
+  }
+
+  private static void ConfigurePathFilesListing(WireMockServer server)
+  {
+    server
+        .Given(Request.Create()
+            .WithPath("/api/v1/workspaces/workspace-id/files")
+            .UsingGet()
+            .WithParam("view", "full")
+            .WithParam("path", "folder-path"))
+        .RespondWith(Response.Create()
+            .WithStatusCode(200)
+            .WithBodyAsJson(new
+            {
+              data = new[]
+                {
+                  new
+                  {
+                    id = "nested-file-id",
+                    filename = "nested-file-name",
+                    path = "folder-path/file-path",
+                    date_updated = "2022-01-01T00:00:00Z",
+                    is_folder = false,
+                    version = 1
+                  },
+                },
+              data_info = new
+              {
+                num_returned = 1,
+                skip = 0,
+                limit = 10,
+                total_results = 1
+              }
+            }));
+
+    // A path that does not exist returns an empty data set with total_results = 0,
+    // which the UI can distinguish from a populated folder.
+    server
+        .Given(Request.Create()
+            .WithPath("/api/v1/workspaces/workspace-id/files")
+            .UsingGet()
+            .WithParam("view", "full")
+            .WithParam("path", "non-existent-path"))
+        .RespondWith(Response.Create()
+            .WithStatusCode(200)
+            .WithBodyAsJson(new
+            {
+              data = new object[0],
+              data_info = new
+              {
+                num_returned = 0,
+                skip = 0,
+                limit = 10,
+                total_results = 0
+              }
+            }));
   }
 
   private static void ConfigureRootFilesListing(WireMockServer server)
