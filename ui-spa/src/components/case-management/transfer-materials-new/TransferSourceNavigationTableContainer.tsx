@@ -20,6 +20,7 @@ type TransferSourceNavigationTableContainerProps = {
     | { type: "egress"; data: EgressFolderData }
     | { type: "netapp"; data: NetAppFolderData };
   isLoading: boolean;
+  hideCheckboxesColumn: boolean;
   handleFolderClick: (data: EgressFolder | NetAppFileFolder) => void;
   handleTableSort: (
     sortName: string,
@@ -34,44 +35,12 @@ const TransferSourceNavigationTableContainer: React.FC<
 > = ({
   folderData,
   isLoading,
+  hideCheckboxesColumn,
   handleFolderClick,
   handleTableSort,
   handleCheckboxChange,
   isSourceFolderChecked,
 }) => {
-  //   const [sortValues, setSortValues] = useState<{
-  //     name: string;
-  //     type: "ascending" | "descending";
-  //   }>();
-
-  //   const egressDataSorted = useMemo(() => {
-  //     if (sortValues?.name === "folder-name")
-  //       return sortByStringProperty(egressFolderData, "name", sortValues.type);
-
-  //     if (sortValues?.name === "date-updated")
-  //       return sortByDateProperty(
-  //         egressFolderData,
-  //         "dateUpdated",
-  //         sortValues.type,
-  //       );
-
-  //     if (sortValues?.name === "file-size")
-  //       return sortByNumberProperty(
-  //         egressFolderData,
-  //         "filesize",
-  //         sortValues.type,
-  //       );
-
-  //     return egressFolderData;
-  //   }, [egressFolderData, sortValues]);
-
-  //   const handleTableSort = (
-  //     sortName: string,
-  //     sortType: "ascending" | "descending",
-  //   ) => {
-  //     setSortValues({ name: sortName, type: sortType });
-  //   };
-
   const getTableHeadData = () => {
     const tableHeadData = [
       {
@@ -168,17 +137,10 @@ const TransferSourceNavigationTableContainer: React.FC<
     return rowData;
   };
 
-  const hideFirstColumn = useMemo(() => {
-    const { data, type } = folderData;
-    if (!data.length) return true;
-    //below condition is to check for the root egress folder
-    return type === "egress" ? data[0]?.path === `${data[0]?.name}/` : false;
-  }, [folderData]);
-
   return (
     <div
       className={
-        hideFirstColumn
+        hideCheckboxesColumn
           ? `${styles.sourceContainer} ${styles.hideFirstColumn}`
           : styles.sourceContainer
       }

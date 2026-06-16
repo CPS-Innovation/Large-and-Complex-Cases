@@ -12,7 +12,6 @@ import { useQuery } from "@tanstack/react-query";
 import { getFormattedEgressFolderData } from "../../../common/utils/getFormattedEgressFolderData";
 import { mapToNetAppFolderData } from "../../../common/utils/mapToNetAppFolderData";
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
-import type { TransferStatusResponse } from "../../../schemas";
 import { useUserDetails } from "../../../auth";
 import { ApiError } from "../../../common/errors/ApiError";
 import { pollTransferStatus } from "../../../common/utils/pollTransferStatus";
@@ -20,15 +19,19 @@ import { useUserGroupsFeatureFlag } from "../../../common/hooks/useUserGroupsFea
 import { getUrlSearchParam } from "../../../common/utils/getUrlSearchParam";
 import TransferSourceNavigationTableContainer from "./TransferSourceNavigationTableContainer";
 import {
-  // type EgressFolderData,
-  // type NetAppFolderData,
   type EgressFolder,
   type NetAppFileFolder,
+  type TransferStatusResponse,
 } from "../../../schemas";
 import RelativePathFiles from "../activity-log/RelativePathFiles";
 import TransferControls from "./TransferControls";
 import FolderPath from "../../common/FolderPath";
 import { getCommonPath } from "../../../common/utils/getCommonPath";
+import {
+  sortByStringProperty,
+  sortByDateProperty,
+  sortByNumberProperty,
+} from "../../../common/utils/sortUtils";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
@@ -81,8 +84,8 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
   ]);
 
   const currentEgressFolder = useMemo(() => {
-    if (egressPathFolders.length)
-      return egressPathFolders[egressPathFolders.length - 1];
+    const last = egressPathFolders.at(-1);
+    if (last) return last;
     return { folderId: "", folderPath: "", folderName: "" };
   }, [egressPathFolders]);
 
@@ -119,6 +122,18 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
   >(null);
   const [transferId, setTransferId] = useState(activeTransferId);
   const [apiRequestError, setApiRequestError] = useState<null | Error>(null);
+  const [sortValues, setSortValues] = useState<{
+    name: string;
+    type: "ascending" | "descending";
+  }>();
+
+  const handleTableSort = (
+    sortName: string,
+    sortType: "ascending" | "descending",
+  ) => {
+    console.log("Table sorted:", { sortName, sortType });
+    setSortValues({ name: sortName, type: sortType });
+  };
 
   const {
     data: egressData,
@@ -140,6 +155,28 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
     [egressData],
   );
 
+  const egressDataSorted = useMemo(() => {
+    if (transferSource === "egress") {
+      if (sortValues?.name === "folder-name")
+        return sortByStringProperty(egressFolderData, "name", sortValues.type);
+
+      if (sortValues?.name === "date-updated")
+        return sortByDateProperty(
+          egressFolderData,
+          "dateUpdated",
+          sortValues.type,
+        );
+
+      if (sortValues?.name === "file-size")
+        return sortByNumberProperty(
+          egressFolderData,
+          "filesize",
+          sortValues.type,
+        );
+    }
+    return egressFolderData;
+  }, [egressFolderData, sortValues, transferSource]);
+
   const {
     data: netAppData,
     refetch: netAppRefetch,
@@ -160,6 +197,35 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
     () => (netAppData ? mapToNetAppFolderData(netAppData) : []),
     [netAppData],
   );
+
+  const netAppDataSorted = useMemo(() => {
+    if (transferSource === "sharedDrive") {
+      if (sortValues?.name === "folder-name")
+        return sortByStringProperty(netAppFolderData, "path", sortValues.type);
+      if (sortValues?.name === "file-size")
+        return sortByNumberProperty(
+          netAppFolderData,
+          "filesize",
+          sortValues.type,
+        );
+      if (sortValues?.name === "date-updated")
+        return sortByDateProperty(
+          netAppFolderData,
+          "lastModified",
+          sortValues.type,
+        );
+    }
+
+    return netAppFolderData;
+  }, [transferSource, netAppFolderData, sortValues]);
+
+  const hideCheckboxesColumn = useMemo(() => {
+    if (transferSource === "egress")
+      return !egressFolderData.length || !currentEgressFolder.folderId;
+
+    return !netAppFolderData.length;
+  }, [egressFolderData, currentEgressFolder, transferSource, netAppFolderData]);
+
   const unMounting = useRef(false);
 
   const handleEgressFolderPathClick = (path: string) => {
@@ -167,9 +233,9 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
       (item) => item.folderPath === path,
     );
     const newData =
-      index !== -1
-        ? egressPathFolders.slice(0, index + 1)
-        : [...egressPathFolders];
+      index === -1
+        ? [...egressPathFolders]
+        : egressPathFolders.slice(0, index + 1);
     setEgressPathFolders(newData);
     setSelectedSourceFoldersOrFiles([]);
   };
@@ -205,12 +271,12 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
       } else {
         updatedFolders = [];
       }
-    } else if (!checked) {
+    } else if (checked) {
+      updatedFolders = [...selectedSourceFoldersOrFiles, checkboxId];
+    } else {
       updatedFolders = selectedSourceFoldersOrFiles.filter(
         (item) => item !== checkboxId,
       );
-    } else {
-      updatedFolders = [...selectedSourceFoldersOrFiles, checkboxId];
     }
 
     setSelectedSourceFoldersOrFiles(updatedFolders);
@@ -229,25 +295,25 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
     setTransferSource("egress");
   };
 
-  useEffect(() => {
-    console.log("egressPathFolders>>", egressPathFolders);
-    if (!egressPathFolders.length && egressData?.[0]?.path)
-      setEgressPathFolders([
-        {
-          folderName: getFolderNameFromPath(egressData[0].path),
-          folderPath: egressData[0].path,
-          folderId: "",
-        },
-      ]);
-    // if (!egressPathFolders.length && egressData)
-    //   setEgressPathFolders([
-    //     {
-    //       folderName: "Home",
-    //       folderPath: "Home/",
-    //       folderId: "",
-    //     },
-    //   ]);
-  }, [egressPathFolders, egressData, egressWorkspaceId]);
+  // useEffect(() => {
+  //   console.log("egressPathFolders>>", egressPathFolders);
+  //   if (!egressPathFolders.length && egressData?.[0]?.path)
+  //     setEgressPathFolders([
+  //       {
+  //         folderName: getFolderNameFromPath(egressData[0].path),
+  //         folderPath: egressData[0].path,
+  //         folderId: "",
+  //       },
+  //     ]);
+  //   // if (!egressPathFolders.length && egressData)
+  //   //   setEgressPathFolders([
+  //   //     {
+  //   //       folderName: "Home",
+  //   //       folderPath: "Home/",
+  //   //       folderId: "",
+  //   //     },
+  //   //   ]);
+  // }, [egressPathFolders, egressData, egressWorkspaceId]);
 
   useEffect(() => {
     if (isEgressError && egressError) {
@@ -340,7 +406,6 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
   };
 
   const handleTransferAction = (type: "copy" | "move") => {
-    // setSelectedTransferAction(type);
     navigate(`/case/${caseId}/case-management/transfer-destination-page`, {
       state: {
         isRouteValid: true,
@@ -348,7 +413,7 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
         selectedTransferAction: type,
         sourcePaths: getTransferSourcePath(),
         egressWorkspaceId,
-        caseId: parseInt(caseId),
+        caseId: Number.parseInt(caseId),
         netAppFolderPath,
         operationName,
       },
@@ -584,13 +649,6 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
     }
   };
 
-  const handleTableSort = (
-    sortName: string,
-    sortType: "ascending" | "descending",
-  ) => {
-    console.log("Table sorted:", { sortName, sortType });
-  };
-
   const getMainTexts = useCallback(() => {
     if (transferSource === "egress") {
       return {
@@ -605,6 +663,7 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
         "Select the files or folders you want to transfer. Then choose where to save them on Egress.",
     };
   }, [transferSource]);
+
   if (!isTabActive) return <> </>;
 
   return (
@@ -720,12 +779,13 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
               <TransferSourceNavigationTableContainer
                 folderData={
                   transferSource === "egress"
-                    ? { type: "egress", data: egressFolderData }
-                    : { type: "netapp", data: netAppFolderData }
+                    ? { type: "egress", data: egressDataSorted }
+                    : { type: "netapp", data: netAppDataSorted }
                 }
                 isLoading={
                   isEgressFolderDataLoading || isNetAppFolderDataLoading
                 }
+                hideCheckboxesColumn={hideCheckboxesColumn}
                 handleFolderClick={handleFolderClick}
                 handleTableSort={handleTableSort}
                 handleCheckboxChange={handleCheckboxChange}

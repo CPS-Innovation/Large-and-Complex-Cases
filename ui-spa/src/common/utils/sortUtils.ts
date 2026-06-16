@@ -15,18 +15,27 @@ export const sortByStringProperty = <T>(
 
 export const sortByDateProperty = <T>(
   data: T[],
-  dateProperty: keyof T, //expected in  ISO 8601 format (YYYY-MM-DD)
+  dateProperty: keyof T,
   order: "ascending" | "descending",
 ): T[] => {
   return [...data].sort((a, b) => {
-    const dateA = new Date(a[dateProperty] as string).getTime();
-    const dateB = new Date(b[dateProperty] as string).getTime();
+    let dateA = new Date(a[dateProperty] as string).getTime();
+    let dateB = new Date(b[dateProperty] as string).getTime();
 
-    if (order === "ascending") {
-      return dateA - dateB;
-    } else {
-      return dateB - dateA;
-    }
+    if (Number.isNaN(dateA))
+      dateA =
+        order === "ascending"
+          ? Number.POSITIVE_INFINITY
+          : Number.NEGATIVE_INFINITY;
+    if (Number.isNaN(dateB))
+      dateB =
+        order === "ascending"
+          ? Number.POSITIVE_INFINITY
+          : Number.NEGATIVE_INFINITY;
+
+    if (order === "ascending") return dateA - dateB;
+
+    return dateB - dateA;
   });
 };
 
@@ -36,8 +45,19 @@ export const sortByNumberProperty = <T>(
   order: "ascending" | "descending",
 ): T[] => {
   return [...data].sort((a, b) => {
-    const sizeA = typeof a[numberProperty] === "number" ? a[numberProperty] : 0;
-    const sizeB = typeof b[numberProperty] === "number" ? b[numberProperty] : 0;
+    let sizeA = a[numberProperty] as number;
+    let sizeB = b[numberProperty] as number;
+
+    if (!sizeA)
+      sizeA =
+        order === "ascending"
+          ? Number.POSITIVE_INFINITY
+          : Number.NEGATIVE_INFINITY;
+    if (!sizeB)
+      sizeB =
+        order === "ascending"
+          ? Number.POSITIVE_INFINITY
+          : Number.NEGATIVE_INFINITY;
 
     if (order === "ascending") return sizeA - sizeB;
     return sizeB - sizeA;
