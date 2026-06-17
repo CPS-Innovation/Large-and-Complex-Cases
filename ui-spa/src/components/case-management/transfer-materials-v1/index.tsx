@@ -34,7 +34,7 @@ import {
 } from "../../../common/utils/sortUtils";
 import styles from "./index.module.scss";
 
-type TransferMaterialsPageProps = {
+type TransferMaterialsV1PageProps = {
   isTabActive: boolean;
   caseId: string;
   operationName: string;
@@ -44,7 +44,7 @@ type TransferMaterialsPageProps = {
   urn: string;
 };
 
-const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
+const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
   isTabActive,
   caseId,
   operationName,
@@ -787,4 +787,4 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
   );
 };
 
-export default TransferMaterialsNewPage;
+export default TransferMaterialsV1Page;

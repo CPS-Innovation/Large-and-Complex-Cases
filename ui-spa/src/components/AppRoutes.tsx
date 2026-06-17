@@ -15,7 +15,7 @@ import TransferMovePermissionsErrorPage from "./case-management/transfer-materia
 import DisconnectSharedDriveConfirmationPage from "./case-management/netapp-disconnect/DisconnectSharedDriveConfirmationPage";
 import DisconnectSharedDriveSuccessPage from "./case-management/netapp-disconnect/DisconnectSharedDriveSuccessPage";
 import DisconnectSharedDriveFailurePage from "./case-management/netapp-disconnect/DisconnectSharedDriveFailurePage";
-import TransferDestinationPage from "./case-management/transfer-materials-new/TransferDestinationPage";
+import TransferDestinationPage from "./case-management/transfer-materials-v1/TransferDestinationPage";
 
 import ProtectedRoutes from "./ProtectedRoutes";
 const AppRoutes = () => {

@@ -3,7 +3,7 @@ import { Tabs } from "../common/tabs/Tabs";
 import { TabId } from "../../common/types/CaseManagement";
 import { ItemProps } from "../common/tabs/types";
 import TransferMaterialsPage from "./transfer-materials";
-import TransferMaterialsNewPage from "./transfer-materials-new";
+import TransferMaterialsV1Page from "./transfer-materials-v1";
 import TransferResolveFilePathPage from "./transfer-materials/TransferResolveFilePathPage";
 import ActivityLogPage from "./activity-log/index";
 import { getCaseMetaData } from "../../apis/gateway-api";
@@ -95,7 +95,7 @@ const CaseManagementPage = () => {
         label: "Transfer materials",
         panel: {
           children: caseMetaData ? (
-            <TransferMaterialsNewPage
+            <TransferMaterialsV1Page
               isTabActive={activeTabId === "transfer-materials"}
               caseId={caseId}
               operationName={caseMetaData.operationName}
