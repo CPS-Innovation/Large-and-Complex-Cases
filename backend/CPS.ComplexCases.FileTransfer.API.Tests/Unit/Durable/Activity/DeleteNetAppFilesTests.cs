@@ -1,3 +1,4 @@
+using Microsoft.DurableTask.Client;
 using Microsoft.DurableTask.Client.Entities;
 using Microsoft.DurableTask.Entities;
 using Microsoft.Extensions.Logging;
@@ -17,6 +18,7 @@ using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
+using CPS.ComplexCases.FileTransfer.API.Tests.Unit.Stubs;
 using Moq;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Durable.Activity;
@@ -30,6 +32,7 @@ public class DeleteNetAppFilesTests
     private readonly Mock<ILogger<DeleteNetAppFiles>> _loggerMock;
     private readonly Mock<IInitializationHandler> _initializationHandlerMock;
     private readonly Mock<ITelemetryClient> _telemetryClientMock;
+    private readonly DurableTaskClientStub _durableTaskClientStub;
     private readonly DeleteNetAppFiles _activity;
     private readonly Guid _transferId;
     private const string BearerToken = "test-bearer";
@@ -56,8 +59,10 @@ public class DeleteNetAppFilesTests
                 new DeleteFileOrFolderArg { BearerToken = bearer, BucketName = bucket, OperationName = op, Path = path });
 
         _transferEntityHelperMock
-            .Setup(h => h.DeleteMovedItemsCompleted(It.IsAny<Guid>(), It.IsAny<List<DeletionError>>(), It.IsAny<CancellationToken>()))
+            .Setup(h => h.DeleteMovedItemsCompleted(It.IsAny<DurableTaskClient>(), It.IsAny<Guid>(), It.IsAny<List<DeletionError>>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
+
+        _durableTaskClientStub = new DurableTaskClientStub(new DurableEntityClientStub("TestEntityClient"));
 
         _activity = new DeleteNetAppFiles(
             _transferEntityHelperMock.Object,
@@ -72,7 +77,7 @@ public class DeleteNetAppFilesTests
     public async Task Run_WhenPayloadIsNull_ThrowsArgumentNullException()
     {
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            _activity.Run(null, CancellationToken.None));
+            _activity.Run(null, _durableTaskClientStub, CancellationToken.None));
     }
 
     [Fact]
@@ -81,11 +86,11 @@ public class DeleteNetAppFilesTests
         var payload = CreatePayload();
 
         _transferEntityHelperMock
-            .Setup(h => h.GetTransferEntityAsync(payload.TransferId, It.IsAny<CancellationToken>()))
+            .Setup(h => h.GetTransferEntityAsync(It.IsAny<DurableTaskClient>(), payload.TransferId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((EntityMetadata<TransferEntity>?)null);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _activity.Run(payload, CancellationToken.None));
+            _activity.Run(payload, _durableTaskClientStub, CancellationToken.None));
     }
 
     [Fact]
@@ -94,7 +99,7 @@ public class DeleteNetAppFilesTests
         var payload = CreatePayload();
         SetupEntity(payload.TransferId, []);
 
-        await _activity.Run(payload, CancellationToken.None);
+        await _activity.Run(payload, _durableTaskClientStub, CancellationToken.None);
 
         _netAppClientMock.Verify(
             c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()),
@@ -107,10 +112,11 @@ public class DeleteNetAppFilesTests
         var payload = CreatePayload();
         SetupEntity(payload.TransferId, []);
 
-        await _activity.Run(payload, CancellationToken.None);
+        await _activity.Run(payload, _durableTaskClientStub, CancellationToken.None);
 
         _transferEntityHelperMock.Verify(
             h => h.DeleteMovedItemsCompleted(
+                It.IsAny<DurableTaskClient>(),
                 payload.TransferId,
                 It.Is<List<DeletionError>>(l => l.Count == 0),
                 It.IsAny<CancellationToken>()),
@@ -132,7 +138,7 @@ public class DeleteNetAppFilesTests
             .Setup(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()))
             .ReturnsAsync(new DeleteNetAppResult(true, true, 1, null, null));
 
-        await _activity.Run(payload, CancellationToken.None);
+        await _activity.Run(payload, _durableTaskClientStub, CancellationToken.None);
 
         _netAppClientMock.Verify(
             c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()),
@@ -153,10 +159,11 @@ public class DeleteNetAppFilesTests
             .Setup(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()))
             .ReturnsAsync(new DeleteNetAppResult(true, true, 1, null, null));
 
-        await _activity.Run(payload, CancellationToken.None);
+        await _activity.Run(payload, _durableTaskClientStub, CancellationToken.None);
 
         _transferEntityHelperMock.Verify(
             h => h.DeleteMovedItemsCompleted(
+                It.IsAny<DurableTaskClient>(),
                 payload.TransferId,
                 It.Is<List<DeletionError>>(l => l.Count == 0),
                 It.IsAny<CancellationToken>()),
@@ -177,10 +184,11 @@ public class DeleteNetAppFilesTests
             .Setup(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()))
             .ReturnsAsync(new DeleteNetAppResult(false, true, 0, "Permission denied", 403));
 
-        await _activity.Run(payload, CancellationToken.None);
+        await _activity.Run(payload, _durableTaskClientStub, CancellationToken.None);
 
         _transferEntityHelperMock.Verify(
             h => h.DeleteMovedItemsCompleted(
+                It.IsAny<DurableTaskClient>(),
                 payload.TransferId,
                 It.Is<List<DeletionError>>(l =>
                     l.Count == 1 &&
@@ -208,10 +216,11 @@ public class DeleteNetAppFilesTests
             .Setup(c => c.DeleteFileOrFolderAsync(It.Is<DeleteFileOrFolderArg>(a => a.Path == "CaseRoot/free.pdf")))
             .ReturnsAsync(new DeleteNetAppResult(true, true, 1, null, null));
 
-        await _activity.Run(payload, CancellationToken.None);
+        await _activity.Run(payload, _durableTaskClientStub, CancellationToken.None);
 
         _transferEntityHelperMock.Verify(
             h => h.DeleteMovedItemsCompleted(
+                It.IsAny<DurableTaskClient>(),
                 payload.TransferId,
                 It.Is<List<DeletionError>>(l =>
                     l.Count == 1 &&
@@ -235,7 +244,7 @@ public class DeleteNetAppFilesTests
             .Setup(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()))
             .ThrowsAsync(new AmazonS3Exception("locked", ErrorType.Sender, "Locked", "req1", (System.Net.HttpStatusCode)423));
 
-        var ex = await Record.ExceptionAsync(() => _activity.Run(payload, CancellationToken.None));
+        var ex = await Record.ExceptionAsync(() => _activity.Run(payload, _durableTaskClientStub, CancellationToken.None));
         Assert.Null(ex);
     }
 
@@ -258,10 +267,11 @@ public class DeleteNetAppFilesTests
             .Setup(c => c.DeleteFileOrFolderAsync(It.Is<DeleteFileOrFolderArg>(a => a.Path == "CaseRoot/ok.pdf")))
             .ReturnsAsync(new DeleteNetAppResult(true, true, 1, null, null));
 
-        await _activity.Run(payload, CancellationToken.None);
+        await _activity.Run(payload, _durableTaskClientStub, CancellationToken.None);
 
         _transferEntityHelperMock.Verify(
             h => h.DeleteMovedItemsCompleted(
+                It.IsAny<DurableTaskClient>(),
                 payload.TransferId,
                 It.Is<List<DeletionError>>(l =>
                     l.Count == 1 &&
@@ -285,7 +295,7 @@ public class DeleteNetAppFilesTests
             .Setup(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()))
             .ThrowsAsync(new Exception("Unexpected storage failure"));
 
-        var ex = await Record.ExceptionAsync(() => _activity.Run(payload, CancellationToken.None));
+        var ex = await Record.ExceptionAsync(() => _activity.Run(payload, _durableTaskClientStub, CancellationToken.None));
         Assert.Null(ex);
     }
 
@@ -303,10 +313,10 @@ public class DeleteNetAppFilesTests
             .Setup(c => c.DeleteFileOrFolderAsync(It.IsAny<DeleteFileOrFolderArg>()))
             .ThrowsAsync(new AmazonS3Exception("locked", ErrorType.Sender, "Locked", "req1", (System.Net.HttpStatusCode)423));
 
-        await _activity.Run(payload, CancellationToken.None);
+        await _activity.Run(payload, _durableTaskClientStub, CancellationToken.None);
 
         _transferEntityHelperMock.Verify(
-            h => h.DeleteMovedItemsCompleted(payload.TransferId, It.IsAny<List<DeletionError>>(), It.IsAny<CancellationToken>()),
+            h => h.DeleteMovedItemsCompleted(It.IsAny<DurableTaskClient>(), payload.TransferId, It.IsAny<List<DeletionError>>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -332,7 +342,7 @@ public class DeleteNetAppFilesTests
             });
 
         _transferEntityHelperMock
-            .Setup(h => h.GetTransferEntityAsync(transferId, It.IsAny<CancellationToken>()))
+            .Setup(h => h.GetTransferEntityAsync(It.IsAny<DurableTaskClient>(), transferId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
     }
 }

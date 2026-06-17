@@ -8,6 +8,7 @@ using CPS.ComplexCases.ActivityLog.Models;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
+using CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Durable.State;
@@ -31,7 +32,10 @@ public class UpdateActivityLog(IActivityLogService activityLogService, ILogger<U
         }
 
         var entityId = new EntityInstanceId(nameof(TransferEntityState), payload.TransferId.ToString());
-        var entity = await client.Entities.GetEntityAsync<TransferEntity>(entityId);
+        var entity = await DurableEntityRetry.ExecuteAsync(
+            nameof(UpdateActivityLog),
+            () => client.Entities.GetEntityAsync<TransferEntity>(entityId),
+            _logger);
 
         if (entity == null)
         {
