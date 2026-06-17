@@ -29,6 +29,7 @@ public class ListEgressMaterials(ILogger<ListEgressMaterials> logger,
     [OpenApiOperation(operationId: nameof(ListEgressMaterials), tags: ["Egress"], Description = "Lists files and folders in Egress for a workspace.")]
     [CmsAuthValuesAuth]
     [BearerTokenAuth]
+    [OpenApiParameter(name: "workspaceId", In = ParameterLocation.Path, Required = true, Type = typeof(string), Description = "The Egress workspace ID to list files/folders for.")]
     [OpenApiParameter(name: InputParameters.FolderId, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The folder-id to search for files/folders within. Takes precedence over 'path' when both are supplied.")]
     [OpenApiParameter(name: InputParameters.Path, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The folder path to search for files/folders within. Ignored when 'folder-id' is also supplied.")]
     [OpenApiParameter(name: InputParameters.Skip, In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The number of items to skip.")]
