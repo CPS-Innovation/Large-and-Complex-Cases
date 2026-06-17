@@ -40,15 +40,7 @@ jobs:
         displayName: "Install Browsers"
         workingDirectory: $(workingDir)
 
-      # TEMPORARY FIX: 
-      # While the Move functionality is unstable in staging,
-      # only run the move tests when testing against dev
-      - script: |
-          if [[ "${{ parameters.environment }}" == "dev" ]]; then
-            npm run e2e:existing-case
-          else
-            npx --no-install --ignore-scripts playwright test --project=default-mode-tests-no-move
-          fi
+      - script: npm run e2e:existing-case
         workingDirectory: $(workingDir)
         displayName: "Run E2E Tests"
         env:

@@ -104,70 +104,8 @@ public class DeleteFiles(ITransferEntityHelper transferEntityHelper, IStorageCli
         _telemetryClient.TrackEvent(telemetryEvent);
     }
 
-    //------------- Add Private Helpers for Retry and Logging to debug gRPC issue ------------
-    private async Task<Microsoft.DurableTask.Client.Entities.EntityMetadata<TransferEntity>?>
-        GetTransferEntityWithRetryAsync(Guid transferId, CancellationToken cancellationToken)
-    {
-        const int maxAttempts = 3;     // minimal retry
-        const int delayMs = 1000;
-
-        for (var attempt = 1; attempt <= maxAttempts; attempt++)
-        {
-            try
-            {
-                _logger.LogInformation(
-                    "Attempt {Attempt} to fetch Durable transfer entity for TransferId={TransferId}",
-                    attempt, transferId);
-
-                var entity = await _transferEntityHelper.GetTransferEntityAsync(
-                    transferId,
-                    cancellationToken);
-
-                _logger.LogInformation(
-                    "Fetched Durable transfer entity for TransferId={TransferId}. EntityFound={EntityFound}, HasState={HasState}",
-                    transferId,
-                    entity is not null,
-                    entity?.State is not null);
-
-                return entity;
-            }
-            catch (Exception ex) when (IsGrpcUnavailableSocket(ex) && attempt < maxAttempts)
-            {
-                _logger.LogWarning(
-                    ex,
-                    "Transient gRPC Unavailable/socket exception when fetching TransferEntity for TransferId={TransferId} on attempt {Attempt}. Will retry.",
-                    transferId,
-                    attempt);
-
-                await Task.Delay(delayMs, cancellationToken);
-            }
-        }
-
-        // Final attempt – let any exception bubble up as before
-        _logger.LogInformation(
-            "Final attempt to fetch Durable transfer entity for TransferId={TransferId}",
-            transferId);
-
-        return await _transferEntityHelper.GetTransferEntityAsync(
-            transferId,
-            cancellationToken);
-    }
-
-    private static bool IsGrpcUnavailableSocket(Exception ex)
-    {
-        // String-based match on the exact failure you’re seeing
-        var s = ex.ToString();
-
-        return s.Contains("StatusCode=\"Unavailable\"", StringComparison.OrdinalIgnoreCase)
-            && s.Contains("Error connecting to subchannel", StringComparison.OrdinalIgnoreCase)
-            && s.Contains("SocketException", StringComparison.OrdinalIgnoreCase)
-            && s.Contains("forbidden by its access permissions", StringComparison.OrdinalIgnoreCase);
-    }
-    //---------------------------------------------------------------------------------------------------
-
     private static readonly HashSet<TransferDirection> AllowedDirections =
     [
         TransferDirection.EgressToNetApp
     ];
 }
-
