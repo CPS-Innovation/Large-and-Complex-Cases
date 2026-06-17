@@ -1725,6 +1725,8 @@ describe("gateway apis", () => {
         processedFiles: 30,
         successfulFiles: 30,
         failedFiles: 0,
+        successfulItems: [],
+        destinationPath: "",
       };
 
       (v4 as any).mockReturnValue("id_123");
@@ -1765,6 +1767,8 @@ describe("gateway apis", () => {
         processedFiles: 5,
         successfulFiles: 5,
         failedFiles: 0,
+        successfulItems: [],
+        destinationPath: "",
       };
 
       (v4 as any).mockReturnValue("id_123");
@@ -1809,6 +1813,8 @@ describe("gateway apis", () => {
         processedFiles: 30,
         successfulFiles: 30,
         failedFiles: 0,
+        successfulItems: [],
+        destinationPath: "",
       };
 
       (v4 as any).mockReturnValue("id_123");
@@ -1890,6 +1896,8 @@ describe("gateway apis", () => {
         userName: "dev_user@example.org",
         totalFiles: 30,
         processedFiles: 30,
+        successfulItems: [],
+        destinationPath: "",
       };
 
       (v4 as any).mockReturnValue("id_123");
