@@ -20,13 +20,13 @@ public static class DurableEntityRetry
         ILogger logger,
         CancellationToken cancellationToken = default)
     {
-        for (var attempt = 1; ; attempt++)
+        for (var attempt = 1; attempt < MaxAttempts; attempt++)
         {
             try
             {
                 return await action();
             }
-            catch (Exception ex) when (attempt < MaxAttempts && IsTransient(ex))
+            catch (Exception ex) when (IsTransient(ex))
             {
                 logger.LogWarning(
                     ex,
@@ -36,6 +36,9 @@ public static class DurableEntityRetry
                 await Task.Delay(Delay, cancellationToken);
             }
         }
+
+        // Final attempt: let any failure (transient or not) propagate to the caller.
+        return await action();
     }
 
     public static Task ExecuteAsync(
