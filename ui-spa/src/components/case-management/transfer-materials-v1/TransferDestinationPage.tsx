@@ -3,7 +3,6 @@ import { useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { PageContentWrapper } from "../../govuk/PageContentWrapper";
 import { Spinner } from "../../common/Spinner";
-import { getNetAppFolders, getEgressFolders } from "../../../apis/gateway-api";
 import { InitiateFileTransferPayload } from "../../../schemas/requests/initiateFileTransferPayload";
 import { IndexingFileTransferPayload } from "../../../schemas/requests/indexingFileTransferPayload";
 import type {
@@ -20,6 +19,8 @@ import { getCommonPath } from "../../../common/utils/getCommonPath";
 import {
   indexingFileTransfer,
   initiateFileTransfer,
+  getNetAppFolders,
+  getEgressFolders,
 } from "../../../apis/gateway-api";
 import TransferWidget from "../../common/transfer-widget/TransferWidget";
 import { useMutation, useQuery } from "@tanstack/react-query";

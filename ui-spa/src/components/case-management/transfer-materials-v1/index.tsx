@@ -434,8 +434,8 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
           destinationId: response.destinationId ?? "",
           successItems: response.successItems ?? [],
         });
-        if (response.userName === username)
-          handleFileTransferClear(transferId!);
+        if (response.userName === username && transferId)
+          handleFileTransferClear(transferId);
 
         setTransferId("");
         if (transferSource === "netapp") {
@@ -457,8 +457,8 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
             failedItems: response.failedItems,
           },
         });
-        if (response.userName === username)
-          handleFileTransferClear(transferId!);
+        if (response.userName === username && transferId)
+          handleFileTransferClear(transferId);
         setTransferId("");
         setTransferStatusData(null);
       }
