@@ -42,7 +42,7 @@ public class EgressRequestFactory : IEgressRequestFactory
 
     if (!string.IsNullOrEmpty(arg.Path))
     {
-      relativeUrl.Append($"&path={arg.Path}");
+      relativeUrl.Append($"&path={Uri.EscapeDataString(arg.Path)}");
     }
 
     if (arg.ViewFullDetails.HasValue && arg.ViewFullDetails.Value)
