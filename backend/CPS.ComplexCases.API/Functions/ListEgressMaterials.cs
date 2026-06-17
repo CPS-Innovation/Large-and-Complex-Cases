@@ -43,13 +43,13 @@ public class ListEgressMaterials(ILogger<ListEgressMaterials> logger,
         var context = functionContext.GetRequestContext();
         _initializationHandler.Initialize(context.Username, context.CorrelationId);
 
-        var folderId = req.Query[InputParameters.FolderId];
-        var path = req.Query[InputParameters.Path];
+        var folderId = req.Query[InputParameters.FolderId].FirstOrDefault();
+        var path = req.Query[InputParameters.Path].FirstOrDefault();
         var skip = int.TryParse(req.Query[InputParameters.Skip], out var skipValue) ? skipValue : 0;
         var take = int.TryParse(req.Query[InputParameters.Take], out var takeValue) ? takeValue : 100;
 
         // folder-id takes precedence over path when both are supplied.
-        var pathArg = string.IsNullOrEmpty(folderId) ? path.FirstOrDefault() : null;
+        var pathArg = string.IsNullOrEmpty(folderId) ? path : null;
 
         var listMaterialsArg = _egressArgFactory.CreateListWorkspaceMaterialArg(workspaceId, skip, take, folderId, null, pathArg);
         var permissionsArg = _egressArgFactory.CreateGetWorkspacePermissionArg(workspaceId, context.Username);
