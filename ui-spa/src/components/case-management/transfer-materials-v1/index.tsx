@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { NotificationBanner, Button, Details } from "../../govuk";
+import { NotificationBanner, Button, Details, LinkButton } from "../../govuk";
 import { Spinner } from "../../common/Spinner";
 import {
   getEgressFolders,
@@ -67,47 +67,49 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
       totalFiles: number;
       processedFiles: number;
     } | null;
-    destinationFolderName: string;
     destinationPath: string;
-    destinationId: string;
-    successItems: { path: string }[];
+    successfulItems: { path: string }[];
   }>(null);
 
-  const [egressPathFolders, setEgressPathFolders] = useState<
-    { folderName: string; folderPath: string; folderId: string }[]
-  >([
-    {
-      folderName: `Egress: ${operationName ?? ""}`,
-      folderPath: "",
-      folderId: "",
-    },
-  ]);
+  const getPathFolders = useCallback(
+    (
+      currentFolderPath: string,
+      homeName: string,
+      rootPath: string,
+      operationName: string,
+    ) => {
+      const replacedString = currentFolderPath.replace(rootPath, "");
+      const parts = replacedString.split("/").filter(Boolean);
 
-  const currentEgressFolder = useMemo(() => {
-    const last = egressPathFolders.at(-1);
-    if (last) return last;
-    return { folderId: "", folderPath: "", folderName: "" };
-  }, [egressPathFolders]);
+      const result = parts.map((folderName, index) => ({
+        folderName,
+        folderPath: `${rootPath}${parts.slice(0, index + 1).join("/")}/`,
+      }));
+      const withHome = [
+        {
+          folderName: `${homeName}: ${operationName}`,
+          folderPath: rootPath,
+        },
+        ...result,
+      ];
+      return withHome;
+    },
+    [],
+  );
 
   const [netAppFolderPath, setNetAppFolderPath] = useState(netAppPath);
-
+  const [egressFolderPath, setEgressFolderPath] = useState("");
+  const egressPathFolders = useMemo(() => {
+    return getPathFolders(egressFolderPath, "Egress", "", operationName);
+  }, [egressFolderPath, getPathFolders, operationName]);
   const netAppPathFolders = useMemo(() => {
-    const replacedString = netAppFolderPath.replace(netAppPath, "");
-    const parts = replacedString.split("/").filter(Boolean);
-
-    const result = parts.map((folderName, index) => ({
-      folderName,
-      folderPath: `${netAppPath}${parts.slice(0, index + 1).join("/")}/`,
-    }));
-    const withHome = [
-      {
-        folderName: `Shared Drive: ${getFolderNameFromPath(netAppPath)}`,
-        folderPath: netAppPath,
-      },
-      ...result,
-    ];
-    return withHome;
-  }, [netAppFolderPath, netAppPath]);
+    return getPathFolders(
+      netAppFolderPath,
+      "Shared Drive",
+      netAppPath,
+      operationName,
+    );
+  }, [netAppFolderPath, netAppPath, getPathFolders, operationName]);
 
   const [selectedSourceFoldersOrFiles, setSelectedSourceFoldersOrFiles] =
     useState<string[]>([]);
@@ -142,9 +144,9 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
     isError: isEgressError,
     error: egressError,
   } = useQuery({
-    queryKey: [egressWorkspaceId, currentEgressFolder.folderId],
+    queryKey: [egressWorkspaceId, egressFolderPath],
     queryFn: () =>
-      getEgressFolders(egressWorkspaceId, currentEgressFolder.folderId),
+      getEgressFolders(egressWorkspaceId, egressFolderPath, "path"),
     retry: false,
     enabled: !!egressWorkspaceId,
     staleTime: 0,
@@ -221,22 +223,15 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
 
   const hideCheckboxesColumn = useMemo(() => {
     if (transferSource === "egress")
-      return !egressFolderData.length || !currentEgressFolder.folderId;
+      return !egressFolderData.length || !egressFolderPath;
 
     return !netAppFolderData.length;
-  }, [egressFolderData, currentEgressFolder, transferSource, netAppFolderData]);
+  }, [egressFolderData, egressFolderPath, transferSource, netAppFolderData]);
 
   const unMounting = useRef(false);
 
   const handleEgressFolderPathClick = (path: string) => {
-    const index = egressPathFolders.findIndex(
-      (item) => item.folderPath === path,
-    );
-    const newData =
-      index === -1
-        ? [...egressPathFolders]
-        : egressPathFolders.slice(0, index + 1);
-    setEgressPathFolders(newData);
+    setEgressFolderPath(path);
     setSelectedSourceFoldersOrFiles([]);
   };
 
@@ -402,38 +397,27 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
 
   const handleStatusResponse = useCallback(
     (response: TransferStatusResponse) => {
+      const transferStatusData = {
+        username: response.userName,
+        direction: response.direction,
+        transferType: response.transferType,
+        transferMetrics: {
+          totalFiles: response.totalFiles,
+          processedFiles: response.processedFiles,
+        },
+        destinationPath: response.destinationPath,
+        successfulItems: response.successfulItems.map((item) => ({
+          path: item.sourcePath,
+        })),
+      };
       if (response.status === "Initiated" || response.status === "InProgress") {
         setTransferStatus("transferring");
-        setTransferStatusData({
-          username: response.userName,
-          direction: response.direction,
-          transferType: response.transferType,
-          transferMetrics: {
-            totalFiles: response.totalFiles,
-            processedFiles: response.processedFiles,
-          },
-          destinationFolderName: response.destinationFolderName ?? "",
-          destinationPath: response.destinationPath ?? "",
-          destinationId: response.destinationId ?? "",
-          successItems: response.successItems ?? [],
-        });
+        setTransferStatusData(transferStatusData);
         return;
       }
       if (response.status === "Completed") {
         setTransferStatus("completed");
-        setTransferStatusData({
-          username: response.userName,
-          direction: response.direction,
-          transferType: response.transferType,
-          transferMetrics: {
-            totalFiles: response.totalFiles,
-            processedFiles: response.processedFiles,
-          },
-          destinationFolderName: response.destinationFolderName ?? "",
-          destinationPath: response.destinationPath ?? "",
-          destinationId: response.destinationId ?? "",
-          successItems: response.successItems ?? [],
-        });
+        setTransferStatusData(transferStatusData);
         if (response.userName === username && transferId)
           handleFileTransferClear(transferId);
 
@@ -610,22 +594,30 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
 
   const handleFolderClick = (data: EgressFolder | NetAppFileFolder) => {
     if (transferSource === "egress" && "id" in data) {
-      console.log("Folder clicked:", data);
-      // TypeScript now narrows `data` to EgressFolder within this block
-      setEgressPathFolders((prevItems) => [
-        ...prevItems,
-        {
-          folderId: data.id,
-          folderPath: data.path,
-          folderName: data.name,
-        },
-      ]);
+      setEgressFolderPath(data.path);
       if (transferSource === "egress") setSelectedSourceFoldersOrFiles([]);
     }
     if (transferSource === "netapp") {
       console.log("NetApp folder clicked:", data);
       setNetAppFolderPath(data.path);
       if (transferSource === "netapp") setSelectedSourceFoldersOrFiles([]);
+    }
+  };
+
+  const handleGotoFolderClick = () => {
+    if (transferSource === "egress" && transferStatusData) {
+      setTransferSource("netapp");
+      // Ensure transfer source is updated first, then set the egress path
+      setTimeout(() => {
+        setNetAppFolderPath(transferStatusData.destinationPath);
+        setTransferStatusData(null);
+      }, 0);
+    } else if (transferSource === "netapp" && transferStatusData) {
+      setTransferSource("egress");
+      setTimeout(() => {
+        setEgressFolderPath(transferStatusData.destinationPath);
+        setTransferStatusData(null);
+      }, 0);
     }
   };
 
@@ -690,7 +682,9 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
               </b>
               <p>
                 They are in :{" "}
-                <strong>{transferStatusData?.destinationFolderName}</strong>
+                <LinkButton onClick={handleGotoFolderClick}>
+                  {getFolderNameFromPath(transferStatusData?.destinationPath)}
+                </LinkButton>
               </p>
 
               <Details
@@ -701,10 +695,10 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
                 }
               >
                 <RelativePathFiles
-                  successFiles={transferStatusData?.successItems}
+                  successFiles={transferStatusData?.successfulItems ?? []}
                   errorFiles={[]}
                   sourcePath={getCommonPath(
-                    transferStatusData?.successItems.map(({ path }) => path),
+                    transferStatusData?.successfulItems.map(({ path }) => path),
                   )}
                 />
               </Details>

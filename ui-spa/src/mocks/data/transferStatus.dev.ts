@@ -1,7 +1,7 @@
 import { type TransferStatusResponse } from "../../schemas";
 export const egressToNetAppTransferStatusDev: TransferStatusResponse = {
   id: "00000000-0000-4000-8000-000000000001",
-  status: "PartiallyCompleted",
+  status: "Completed",
   transferType: "Copy",
   direction: "EgressToNetApp",
   startedAt: null,
@@ -29,20 +29,18 @@ export const egressToNetAppTransferStatusDev: TransferStatusResponse = {
   processedFiles: 28,
   successfulFiles: 28,
   failedFiles: 0,
-  successItems: [
+  successfulItems: [
     {
-      path: "folder1/folder2/file1.txt",
+      sourcePath: "folder1/folder2/file1.txt",
     },
     {
-      path: "folder1/folder2/file2.txt",
+      sourcePath: "folder1/folder2/file2.txt",
     },
     {
-      path: "folder1/folder3/file3.txt",
+      sourcePath: "folder1/folder3/file3.txt",
     },
   ],
-  destinationFolderName: "demo-statements",
-  destinationPath: "netapp/folder-1-1/",
-  destinationId: "",
+  destinationPath: "egress/folder-1-1/",
 };
 
 export const netAppToEgressTransferStatusDev: TransferStatusResponse = {
@@ -53,6 +51,8 @@ export const netAppToEgressTransferStatusDev: TransferStatusResponse = {
   startedAt: null,
   completedAt: null,
   failedItems: [],
+  successfulItems: [],
+  destinationPath: "netapp/folder1/folder2/",
   userName: "dev_user@example.org",
   totalFiles: 30,
   processedFiles: 30,

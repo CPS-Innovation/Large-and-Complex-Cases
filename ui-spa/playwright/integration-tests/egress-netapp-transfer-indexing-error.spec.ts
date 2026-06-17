@@ -165,6 +165,8 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
               userName: "dev_user@example.org",
               totalFiles: 2,
               processedFiles: 1,
+              successfulItems: [],
+              destinationPath: "",
             });
           },
         ),
@@ -395,6 +397,8 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
               totalFiles: 2,
               processedFiles: 2,
               successfulFiles: 2,
+              successfulItems: [],
+              destinationPath: "",
             });
           },
         ),
