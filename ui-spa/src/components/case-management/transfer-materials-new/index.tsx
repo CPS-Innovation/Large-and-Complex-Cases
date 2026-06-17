@@ -56,9 +56,9 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
   const featureFlags = useUserGroupsFeatureFlag();
   const navigate = useNavigate();
   const { username } = useUserDetails();
-  const [transferSource, setTransferSource] = useState<
-    "egress" | "sharedDrive"
-  >("egress");
+  const [transferSource, setTransferSource] = useState<"egress" | "netapp">(
+    "egress",
+  );
   const [transferStatusData, setTransferStatusData] = useState<null | {
     username: string;
     direction: "EgressToNetApp" | "NetAppToEgress";
@@ -199,7 +199,7 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
   );
 
   const netAppDataSorted = useMemo(() => {
-    if (transferSource === "sharedDrive") {
+    if (transferSource === "netapp") {
       if (sortValues?.name === "folder-name")
         return sortByStringProperty(netAppFolderData, "path", sortValues.type);
       if (sortValues?.name === "file-size")
@@ -263,7 +263,7 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
             "all-folders",
             ...egressFolderData.map((data) => data.path),
           ];
-        if (transferSource === "sharedDrive")
+        if (transferSource === "netapp")
           updatedFolders = [
             "all-folders",
             ...netAppFolderData.map((data) => data.path),
@@ -289,31 +289,11 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
   const toggleTransferDirection = () => {
     setSelectedSourceFoldersOrFiles([]);
     if (transferSource === "egress") {
-      setTransferSource("sharedDrive");
+      setTransferSource("netapp");
       return;
     }
     setTransferSource("egress");
   };
-
-  // useEffect(() => {
-  //   console.log("egressPathFolders>>", egressPathFolders);
-  //   if (!egressPathFolders.length && egressData?.[0]?.path)
-  //     setEgressPathFolders([
-  //       {
-  //         folderName: getFolderNameFromPath(egressData[0].path),
-  //         folderPath: egressData[0].path,
-  //         folderId: "",
-  //       },
-  //     ]);
-  //   // if (!egressPathFolders.length && egressData)
-  //   //   setEgressPathFolders([
-  //   //     {
-  //   //       folderName: "Home",
-  //   //       folderPath: "Home/",
-  //   //       folderId: "",
-  //   //     },
-  //   //   ]);
-  // }, [egressPathFolders, egressData, egressWorkspaceId]);
 
   useEffect(() => {
     if (isEgressError && egressError) {
@@ -458,7 +438,7 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
           handleFileTransferClear(transferId!);
 
         setTransferId("");
-        if (transferSource === "sharedDrive") {
+        if (transferSource === "netapp") {
           egressRefetch();
           return;
         }
@@ -642,10 +622,10 @@ const TransferMaterialsNewPage: React.FC<TransferMaterialsPageProps> = ({
       ]);
       if (transferSource === "egress") setSelectedSourceFoldersOrFiles([]);
     }
-    if (transferSource === "sharedDrive") {
+    if (transferSource === "netapp") {
       console.log("NetApp folder clicked:", data);
       setNetAppFolderPath(data.path);
-      if (transferSource === "sharedDrive") setSelectedSourceFoldersOrFiles([]);
+      if (transferSource === "netapp") setSelectedSourceFoldersOrFiles([]);
     }
   };
 

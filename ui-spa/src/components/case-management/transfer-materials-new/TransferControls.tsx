@@ -2,7 +2,7 @@ import { Button, LinkButton } from "../../govuk";
 import styles from "./TransferControls.module.scss";
 
 type TransferControlsProps = {
-  transferSource: "egress" | "sharedDrive";
+  transferSource: "egress" | "netapp";
   disableControls: boolean;
   toggleTransferDirection: () => void;
   onCopy?: () => void;
