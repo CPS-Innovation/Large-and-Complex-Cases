@@ -55,14 +55,9 @@ public class TransferEntityHelper(
         }
         catch (Exception ex)
         {
-            _logger.LogError(
-                ex,
-                "Failed to get Durable entity {EntityName}/{EntityKey} for TransferId={TransferId}",
-                entityId.Name,
-                entityId.Key,
-                transferId);
-
-            throw;
+            throw new InvalidOperationException(
+                $"Failed to get Durable entity {entityId.Name}/{entityId.Key} for TransferId={transferId}",
+                ex);
         }
     }
 
