@@ -22,7 +22,4 @@
   <ItemGroup>
       <ProjectReference Include="..\CPS.ComplexCases.Common\CPS.ComplexCases.Common.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <InternalsVisibleTo Include="$(MSBuildProjectName).Tests" />
-  </ItemGroup>
 </Project>

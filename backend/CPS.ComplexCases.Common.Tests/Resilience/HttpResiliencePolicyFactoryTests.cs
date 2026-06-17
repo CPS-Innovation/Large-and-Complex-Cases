@@ -1,18 +1,19 @@
 using System.Net;
-using CPS.ComplexCases.DDEI.Extensions;
+using CPS.ComplexCases.Common.Resilience;
 using Microsoft.Extensions.Logging.Abstractions;
 using Polly;
 using Polly.CircuitBreaker;
 
-namespace CPS.ComplexCases.DDEI.Tests.Extensions;
+namespace CPS.ComplexCases.Common.Tests.Resilience;
 
-public class DdeiResiliencePolicyTests
+public class HttpResiliencePolicyFactoryTests
 {
   private const int MinimumThroughput = 4;
 
   private static IAsyncPolicy<HttpResponseMessage> CreateBreaker(TimeSpan? durationOfBreak = null) =>
-      IServiceCollectionExtension.GetCircuitBreakerPolicy(
+      HttpResiliencePolicyFactory.CreateCircuitBreakerPolicy(
           NullLogger.Instance,
+          serviceName: "Test",
           failureThreshold: 0.5,
           samplingDuration: TimeSpan.FromSeconds(10),
           minimumThroughput: MinimumThroughput,
@@ -79,17 +80,19 @@ public class DdeiResiliencePolicyTests
     Assert.Equal(HttpStatusCode.OK, subsequent.StatusCode);
   }
 
-  [Fact]
-  public async Task CircuitBreaker_DoesNotOpenForNotFoundResponses()
+  [Theory]
+  [InlineData(HttpStatusCode.NotFound)]
+  [InlineData(HttpStatusCode.TooManyRequests)]
+  public async Task CircuitBreaker_DoesNotOpenForNonServerErrorResponses(HttpStatusCode statusCode)
   {
     var policy = CreateBreaker();
 
     for (var i = 0; i < MinimumThroughput * 2; i++)
     {
-      await policy.ExecuteAsync(() => Respond(HttpStatusCode.NotFound));
+      await policy.ExecuteAsync(() => Respond(statusCode));
     }
 
-    var response = await policy.ExecuteAsync(() => Respond(HttpStatusCode.NotFound));
-    Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    var response = await policy.ExecuteAsync(() => Respond(statusCode));
+    Assert.Equal(statusCode, response.StatusCode);
   }
 }

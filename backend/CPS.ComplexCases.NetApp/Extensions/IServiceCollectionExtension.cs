@@ -10,8 +10,8 @@ using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Services;
 using CPS.ComplexCases.NetApp.Telemetry;
 using CPS.ComplexCases.NetApp.Wrappers;
+using CPS.ComplexCases.Common.Resilience;
 using Polly;
-using Polly.Contrib.WaitAndRetry;
 
 namespace CPS.ComplexCases.NetApp.Extensions;
 
@@ -132,61 +132,28 @@ public static class IServiceCollectionExtension
 	{
 		var logger = loggerFactory.CreateLogger("CPS.ComplexCases.NetApp.CircuitBreaker");
 
-		var bulkheadPolicy = Policy.BulkheadAsync<HttpResponseMessage>(
-			maxParallelization: 30,
-			maxQueuingActions: int.MaxValue
-		);
+		// 429s are expected rate limiting, so they are retried but excluded from the breaker.
+		static bool shouldRetry(HttpResponseMessage response) =>
+			(response.StatusCode >= HttpStatusCode.InternalServerError
+				|| response.StatusCode == HttpStatusCode.TooManyRequests)
+			&& HttpResiliencePolicyFactory.ExcludesPostAndPut(response);
 
-		var circuitBreaker = GetCircuitBreakerPolicy(
+		var retryPolicy = HttpResiliencePolicyFactory.CreateRetryPolicy(
+			RetryAttempts,
+			TimeSpan.FromSeconds(FirstRetryDelaySeconds),
+			shouldRetry,
+			handleHttpRequestException: false);
+
+		var circuitBreaker = HttpResiliencePolicyFactory.CreateCircuitBreakerPolicy(
 			logger,
+			"NetApp",
 			CircuitBreakerFailureThreshold,
 			TimeSpan.FromSeconds(CircuitBreakerSamplingDurationSeconds),
 			CircuitBreakerMinimumThroughput,
 			TimeSpan.FromSeconds(CircuitBreakerDurationOfBreakSeconds));
 
-		// https://learn.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/implement-http-call-retries-exponential-backoff-polly#add-a-jitter-strategy-to-the-retry-policy
-		var delay = Backoff.DecorrelatedJitterBackoffV2(
-			medianFirstRetryDelay: TimeSpan.FromSeconds(FirstRetryDelaySeconds),
-			retryCount: RetryAttempts);
-
-		static bool responseStatusCodePredicate(HttpResponseMessage response) =>
-			response.StatusCode >= HttpStatusCode.InternalServerError
-			|| response.StatusCode == HttpStatusCode.TooManyRequests;
-
-		static bool methodPredicate(HttpResponseMessage response) =>
-			response.RequestMessage?.Method != HttpMethod.Post
-			&& response.RequestMessage?.Method != HttpMethod.Put;
-
-		var retryPolicy = Policy<HttpResponseMessage>
-			.HandleResult(r => responseStatusCodePredicate(r) && methodPredicate(r))
-			.WaitAndRetryAsync(delay);
+		var bulkheadPolicy = HttpResiliencePolicyFactory.CreateBulkheadPolicy(maxParallelization: 30);
 
 		return Policy.WrapAsync(retryPolicy, circuitBreaker, bulkheadPolicy);
-	}
-
-	// Only "service is down" signals (5xx and connection failures) trip the breaker. 429s are expected
-	// rate limiting, not a service outage, so they are deliberately excluded.
-	internal static IAsyncPolicy<HttpResponseMessage> GetCircuitBreakerPolicy(
-		ILogger logger,
-		double failureThreshold,
-		TimeSpan samplingDuration,
-		int minimumThroughput,
-		TimeSpan durationOfBreak)
-	{
-		return Policy<HttpResponseMessage>
-			.Handle<HttpRequestException>()
-			.OrResult(r => r.StatusCode >= HttpStatusCode.InternalServerError)
-			.AdvancedCircuitBreakerAsync(
-				failureThreshold,
-				samplingDuration,
-				minimumThroughput,
-				durationOfBreak,
-				onBreak: (outcome, breakDelay) => logger.LogError(
-					outcome.Exception,
-					"NetApp circuit opened for {BreakDelaySeconds}s after status {StatusCode}.",
-					breakDelay.TotalSeconds,
-					outcome.Result?.StatusCode),
-				onReset: () => logger.LogInformation("NetApp circuit reset; calls are flowing again."),
-				onHalfOpen: () => logger.LogInformation("NetApp circuit half-open; testing the next call."));
 	}
 }

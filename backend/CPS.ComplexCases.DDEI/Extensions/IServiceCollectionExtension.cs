@@ -5,12 +5,12 @@ using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
 using CPS.ComplexCases.DDEI.Mappers;
 using CPS.ComplexCases.DDEI.Services;
+using CPS.ComplexCases.Common.Resilience;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Polly;
-using Polly.Contrib.WaitAndRetry;
 
 namespace CPS.ComplexCases.DDEI.Extensions;
 
@@ -61,60 +61,27 @@ public static class IServiceCollectionExtension
   internal static IAsyncPolicy<HttpResponseMessage> GetResiliencePolicy(ILoggerFactory loggerFactory)
   {
     var logger = loggerFactory.CreateLogger("CPS.ComplexCases.DDEI.CircuitBreaker");
-    var circuitBreaker = GetCircuitBreakerPolicy(
+
+    // A 404 is retried but is not a health signal, so it is deliberately excluded from the breaker.
+    static bool shouldRetry(HttpResponseMessage response) =>
+        (response.StatusCode >= HttpStatusCode.InternalServerError
+            || response.StatusCode == HttpStatusCode.NotFound)
+        && HttpResiliencePolicyFactory.ExcludesPostAndPut(response);
+
+    var retryPolicy = HttpResiliencePolicyFactory.CreateRetryPolicy(
+        RetryAttempts,
+        TimeSpan.FromSeconds(FirstRetryDelaySeconds),
+        shouldRetry,
+        handleHttpRequestException: true);
+
+    var circuitBreaker = HttpResiliencePolicyFactory.CreateCircuitBreakerPolicy(
         logger,
+        "MDS (DDEI)",
         CircuitBreakerFailureThreshold,
         TimeSpan.FromSeconds(CircuitBreakerSamplingDurationSeconds),
         CircuitBreakerMinimumThroughput,
         TimeSpan.FromSeconds(CircuitBreakerDurationOfBreakSeconds));
 
-    return Policy.WrapAsync(GetRetryPolicy(), circuitBreaker);
-  }
-
-  private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
-  {
-    // https://learn.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/implement-http-call-retries-exponential-backoff-polly#add-a-jitter-strategy-to-the-retry-policy
-    var delay = Backoff.DecorrelatedJitterBackoffV2(
-        medianFirstRetryDelay: TimeSpan.FromSeconds(FirstRetryDelaySeconds),
-        retryCount: RetryAttempts);
-
-    static bool responseStatusCodePredicate(HttpResponseMessage response) =>
-        response.StatusCode >= HttpStatusCode.InternalServerError
-        || response.StatusCode == HttpStatusCode.NotFound;
-
-    static bool methodPredicate(HttpResponseMessage response) =>
-        response.RequestMessage?.Method != HttpMethod.Post
-        && response.RequestMessage?.Method != HttpMethod.Put;
-
-    return Policy
-        .Handle<HttpRequestException>()
-        .OrResult<HttpResponseMessage>(r => responseStatusCodePredicate(r) && methodPredicate(r))
-        .WaitAndRetryAsync(delay);
-  }
-
-  // Only "service is down" signals (5xx and connection failures) trip the breaker. A 404 is not a
-  // health signal, so it is deliberately excluded here even though retry handles it.
-  internal static IAsyncPolicy<HttpResponseMessage> GetCircuitBreakerPolicy(
-      ILogger logger,
-      double failureThreshold,
-      TimeSpan samplingDuration,
-      int minimumThroughput,
-      TimeSpan durationOfBreak)
-  {
-    return Policy<HttpResponseMessage>
-        .Handle<HttpRequestException>()
-        .OrResult(r => r.StatusCode >= HttpStatusCode.InternalServerError)
-        .AdvancedCircuitBreakerAsync(
-            failureThreshold,
-            samplingDuration,
-            minimumThroughput,
-            durationOfBreak,
-            onBreak: (outcome, breakDelay) => logger.LogError(
-                outcome.Exception,
-                "MDS (DDEI) circuit opened for {BreakDelaySeconds}s after status {StatusCode}.",
-                breakDelay.TotalSeconds,
-                outcome.Result?.StatusCode),
-            onReset: () => logger.LogInformation("MDS (DDEI) circuit reset; calls are flowing again."),
-            onHalfOpen: () => logger.LogInformation("MDS (DDEI) circuit half-open; testing the next call."));
+    return Policy.WrapAsync(retryPolicy, circuitBreaker);
   }
 }
