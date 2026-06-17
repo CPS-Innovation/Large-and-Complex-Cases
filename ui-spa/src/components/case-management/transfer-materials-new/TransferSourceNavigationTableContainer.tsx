@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { LinkButton } from "../../govuk";
 import Checkbox from "../../common/Checkbox";
 import NavigationTable from "./NavigationTable";
