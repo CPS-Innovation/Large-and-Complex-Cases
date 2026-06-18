@@ -40,7 +40,7 @@ export const egressToNetAppTransferStatusDev: TransferStatusResponse = {
       sourcePath: "folder1/folder3/file3.txt",
     },
   ],
-  destinationPath: "egress/folder-1-1/",
+  destinationPath: "folder-1-0/folder-2-0/",
 };
 
 export const netAppToEgressTransferStatusDev: TransferStatusResponse = {
@@ -52,7 +52,7 @@ export const netAppToEgressTransferStatusDev: TransferStatusResponse = {
   completedAt: null,
   failedItems: [],
   successfulItems: [],
-  destinationPath: "netapp/folder1/folder2/",
+  destinationPath: "folder-1-0/folder-2-0/",
   userName: "dev_user@example.org",
   totalFiles: 30,
   processedFiles: 30,

@@ -519,19 +519,22 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
   };
 
   const handleGotoFolderClick = () => {
-    if (transferSource === "egress" && activeTransferData) {
+    if (
+      transferSource === "egress" &&
+      activeTransferData?.direction === "EgressToNetApp"
+    ) {
       setTransferSource("netapp");
       // Ensure transfer source is updated first, then set the egress path
       setTimeout(() => {
         setNetAppFolderPath(activeTransferData.destinationPath);
         setActiveTransferData(null);
       }, 0);
-    } else if (transferSource === "netapp" && activeTransferData) {
-      setTransferSource("egress");
-      setTimeout(() => {
-        setEgressFolderPath(activeTransferData.destinationPath);
-        setActiveTransferData(null);
-      }, 0);
+    } else if (
+      transferSource === "egress" &&
+      activeTransferData?.direction === "NetAppToEgress"
+    ) {
+      setEgressFolderPath(activeTransferData.destinationPath);
+      setActiveTransferData(null);
     }
   };
 
