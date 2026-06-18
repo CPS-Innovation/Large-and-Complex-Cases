@@ -3,7 +3,7 @@ export const getTransferSourceTableHeadData = (
   handleCheckboxChange: (id: string, checked: boolean) => void,
   isSourceFolderChecked: (checkboxId: string) => boolean,
 ) => {
-  const tableHeadData = [
+  return [
     {
       children: (
         <Checkbox
@@ -31,5 +31,4 @@ export const getTransferSourceTableHeadData = (
       sortName: "file-size",
     },
   ];
-  return tableHeadData;
 };

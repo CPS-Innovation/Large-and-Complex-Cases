@@ -16,7 +16,6 @@ import { type EgressFolderData } from "../../../schemas";
 import { DropdownButton } from "../../common/DropdownButton";
 import { TransferAction } from "../../../common/types/TransferAction";
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
-import { getTransferSourceTableHeadData } from "../../../common/utils/getTransferSourceTableHeadData";
 
 import styles from "./EgressFolderContainer.module.scss";
 
@@ -83,10 +82,35 @@ const EgressFolderContainer: React.FC<EgressFolderContainerProps> = ({
   };
 
   const getTableSourceHeadData = () => {
-    return getTransferSourceTableHeadData(
-      handleCheckboxChange,
-      isSourceFolderChecked,
-    );
+    const tableHeadData = [
+      {
+        children: (
+          <Checkbox
+            id={"all-folders"}
+            checked={isSourceFolderChecked("all-folders")}
+            onChange={handleCheckboxChange}
+            ariaLabel="Select folders and files"
+          />
+        ),
+        sortable: false,
+      },
+      {
+        children: <>Folder/file name</>,
+        sortable: true,
+        sortName: "folder-name",
+      },
+      {
+        children: <>Last modified date</>,
+        sortable: true,
+        sortName: "date-updated",
+      },
+      {
+        children: <>Size</>,
+        sortable: true,
+        sortName: "file-size",
+      },
+    ];
+    return tableHeadData;
   };
 
   const getTableDestinationHeadData = () => {
