@@ -59,7 +59,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
   const [transferSource, setTransferSource] = useState<"egress" | "netapp">(
     "egress",
   );
-  const [transferStatusData, setTransferStatusData] = useState<null | {
+  const [activeTransferData, setActiveTransferData] = useState<null | {
     username: string;
     direction: "EgressToNetApp" | "NetAppToEgress";
     transferType: "Move" | "Copy";
@@ -250,24 +250,24 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
       };
     }
     if (transferStatus === "transferring") {
-      if (!transferStatusData) {
+      if (!activeTransferData) {
         return {
           ariaLabelText: "Completing transfer",
           spinnerTextContent: <span> Completing transfer</span>,
         };
       }
-      if (transferStatusData?.username !== username) {
+      if (activeTransferData?.username !== username) {
         return {
-          ariaLabelText: `${transferStatusData?.username} is currently transferring`,
+          ariaLabelText: `${activeTransferData?.username} is currently transferring`,
           spinnerTextContent: (
             <span>
-              <b>{transferStatusData?.username}</b> is currently transferring
+              <b>{activeTransferData?.username}</b> is currently transferring
             </span>
           ),
         };
       }
 
-      if (transferStatusData?.direction === "EgressToNetApp")
+      if (activeTransferData?.direction === "EgressToNetApp")
         return {
           ariaLabelText: "Completing transfer from Egress to Shared Drive",
           spinnerTextContent: (
@@ -285,30 +285,30 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
         ),
       };
     }
-  }, [transferStatusData, username, transferStatus, transferSource]);
+  }, [activeTransferData, username, transferStatus, transferSource]);
 
   const transferProgressMetrics = useMemo(() => {
     const defaultMetricsData = {
       progressAriaLiveText: "",
       progressContent: "",
     };
-    if (!transferStatusData?.transferMetrics) return defaultMetricsData;
+    if (!activeTransferData?.transferMetrics) return defaultMetricsData;
 
-    if (!transferStatusData?.transferMetrics?.totalFiles) {
+    if (!activeTransferData?.transferMetrics?.totalFiles) {
       return defaultMetricsData;
     }
-    const progressAriaLiveText = `Transfer progress, ${transferStatusData.transferMetrics.processedFiles} out of ${transferStatusData.transferMetrics.totalFiles} files processed`;
+    const progressAriaLiveText = `Transfer progress, ${activeTransferData.transferMetrics.processedFiles} out of ${activeTransferData.transferMetrics.totalFiles} files processed`;
     const progressContent = (
       <div
         className={styles.transferProgressMetrics}
         data-testid="transfer-progress-metrics"
       >
         <span>
-          total files : {transferStatusData?.transferMetrics?.totalFiles}
+          total files : {activeTransferData?.transferMetrics?.totalFiles}
         </span>
         <span>
           files processed :{" "}
-          {transferStatusData?.transferMetrics?.processedFiles}
+          {activeTransferData?.transferMetrics?.processedFiles}
         </span>
       </div>
     );
@@ -316,7 +316,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
       progressAriaLiveText,
       progressContent,
     };
-  }, [transferStatusData]);
+  }, [activeTransferData]);
 
   const unMounting = useRef(false);
 
@@ -519,18 +519,18 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
   };
 
   const handleGotoFolderClick = () => {
-    if (transferSource === "egress" && transferStatusData) {
+    if (transferSource === "egress" && activeTransferData) {
       setTransferSource("netapp");
       // Ensure transfer source is updated first, then set the egress path
       setTimeout(() => {
-        setNetAppFolderPath(transferStatusData.destinationPath);
-        setTransferStatusData(null);
+        setNetAppFolderPath(activeTransferData.destinationPath);
+        setActiveTransferData(null);
       }, 0);
-    } else if (transferSource === "netapp" && transferStatusData) {
+    } else if (transferSource === "netapp" && activeTransferData) {
       setTransferSource("egress");
       setTimeout(() => {
-        setEgressFolderPath(transferStatusData.destinationPath);
-        setTransferStatusData(null);
+        setEgressFolderPath(activeTransferData.destinationPath);
+        setActiveTransferData(null);
       }, 0);
     }
   };
@@ -587,7 +587,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
   }, [transferSource]);
   const handleStatusResponse = useCallback(
     (response: TransferStatusResponse) => {
-      const transferStatusData = {
+      const activeTransferData = {
         username: response.userName,
         direction: response.direction,
         transferType: response.transferType,
@@ -602,12 +602,12 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
       };
       if (response.status === "Initiated" || response.status === "InProgress") {
         setTransferStatus("transferring");
-        setTransferStatusData(transferStatusData);
+        setActiveTransferData(activeTransferData);
         return;
       }
       if (response.status === "Completed") {
         setTransferStatus("completed");
-        setTransferStatusData(transferStatusData);
+        setActiveTransferData(activeTransferData);
         if (response.userName === username && transferId)
           handleFileTransferClear(transferId);
 
@@ -634,7 +634,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
         if (response.userName === username && transferId)
           handleFileTransferClear(transferId);
         setTransferId("");
-        setTransferStatusData(null);
+        setActiveTransferData(null);
       }
     },
     [
@@ -677,7 +677,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
     <div>
       {renderActiveTransferMessage()}
       {transferStatus === "completed" &&
-        transferStatusData?.username === username && (
+        activeTransferData?.username === username && (
           <div className={styles.successBanner}>
             <NotificationBanner
               type="success"
@@ -689,22 +689,22 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
               <p>
                 They are in :{" "}
                 <LinkButton onClick={handleGotoFolderClick}>
-                  {getFolderNameFromPath(transferStatusData?.destinationPath)}
+                  {getFolderNameFromPath(activeTransferData?.destinationPath)}
                 </LinkButton>
               </p>
 
               <Details
                 summaryChildren={
-                  transferStatusData.transferType === "Copy"
+                  activeTransferData.transferType === "Copy"
                     ? "Show copied materials"
                     : "Show moved materials"
                 }
               >
                 <RelativePathFiles
-                  successFiles={transferStatusData?.successfulItems ?? []}
+                  successFiles={activeTransferData?.successfulItems ?? []}
                   errorFiles={[]}
                   sourcePath={getCommonPath(
-                    transferStatusData?.successfulItems.map(({ path }) => path),
+                    activeTransferData?.successfulItems.map(({ path }) => path),
                   )}
                 />
               </Details>
