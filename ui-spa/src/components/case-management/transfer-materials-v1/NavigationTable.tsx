@@ -55,8 +55,18 @@ const NavigationTable: React.FC<NavigationTableProps> = ({
         {statusText}
       </div>
       <div>
-        {!isLoading && (
-          <>
+        {isLoading ? (
+          <div className={styles.spinnerWrapper}>
+            <Spinner
+              data-testid={`${tableName}-folder-table-loader`}
+              diameterPx={50}
+            />
+            <div className={styles.spinnerText} aria-live="polite">
+              {loaderText}
+            </div>
+          </div>
+        ) : (
+          <div>
             <SortableTable
               captionClassName="govuk-visually-hidden"
               caption={caption}
@@ -69,17 +79,6 @@ const NavigationTable: React.FC<NavigationTableProps> = ({
                 There are no documents currently in this folder
               </p>
             )}
-          </>
-        )}
-        {isLoading && (
-          <div className={styles.spinnerWrapper}>
-            <Spinner
-              data-testid={`${tableName}-folder-table-loader`}
-              diameterPx={50}
-            />
-            <div className={styles.spinnerText} aria-live="polite">
-              {loaderText}
-            </div>
           </div>
         )}
       </div>
