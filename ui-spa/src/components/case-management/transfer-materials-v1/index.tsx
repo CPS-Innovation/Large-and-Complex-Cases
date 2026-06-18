@@ -228,67 +228,97 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
     return !netAppFolderData.length;
   }, [egressFolderData, egressFolderPath, transferSource, netAppFolderData]);
 
-  const unMounting = useRef(false);
-
-  const handleEgressFolderPathClick = (path: string) => {
-    setEgressFolderPath(path);
-    setSelectedSourceFoldersOrFiles([]);
-  };
-
-  const handleNetAppFolderPathClick = (path: string) => {
-    setNetAppFolderPath(path);
-    setSelectedSourceFoldersOrFiles([]);
-  };
-
-  const handleFolderPathClick = (path: string) => {
-    if (transferSource === "egress") {
-      handleEgressFolderPathClick(path);
-    } else {
-      handleNetAppFolderPathClick(path);
-    }
-  };
-
-  const handleCheckboxChange = (checkboxId: string, checked: boolean) => {
-    let updatedFolders: string[] = [];
-
-    if (checkboxId === "all-folders") {
-      if (checked) {
-        if (transferSource === "egress")
-          updatedFolders = [
-            "all-folders",
-            ...egressFolderData.map((data) => data.path),
-          ];
-        if (transferSource === "netapp")
-          updatedFolders = [
-            "all-folders",
-            ...netAppFolderData.map((data) => data.path),
-          ];
-      } else {
-        updatedFolders = [];
+  const activeTransferMessage = useMemo(() => {
+    if (transferStatus === "validating") {
+      if (transferSource === "egress") {
+        return {
+          ariaLabelText: "Indexing transfer from egress to shared drive",
+          spinnerTextContent: (
+            <span>
+              Indexing transfer from <b>Egress to Shared Drive...</b>
+            </span>
+          ),
+        };
       }
-    } else if (checked) {
-      updatedFolders = [...selectedSourceFoldersOrFiles, checkboxId];
-    } else {
-      updatedFolders = selectedSourceFoldersOrFiles.filter(
-        (item) => item !== checkboxId,
-      );
+      return {
+        ariaLabelText: "Indexing transfer from shared drive to egress",
+        spinnerTextContent: (
+          <span>
+            Indexing transfer from <b>Shared Drive to Egress...</b>
+          </span>
+        ),
+      };
     }
+    if (transferStatus === "transferring") {
+      if (!transferStatusData) {
+        return {
+          ariaLabelText: "Completing transfer",
+          spinnerTextContent: <span> Completing transfer</span>,
+        };
+      }
+      if (transferStatusData?.username !== username) {
+        return {
+          ariaLabelText: `${transferStatusData?.username} is currently transferring`,
+          spinnerTextContent: (
+            <span>
+              <b>{transferStatusData?.username}</b> is currently transferring
+            </span>
+          ),
+        };
+      }
 
-    setSelectedSourceFoldersOrFiles(updatedFolders);
-  };
-
-  const isSourceFolderChecked = (id: string) => {
-    return selectedSourceFoldersOrFiles.includes(id);
-  };
-
-  const toggleTransferDirection = () => {
-    setSelectedSourceFoldersOrFiles([]);
-    if (transferSource === "egress") {
-      setTransferSource("netapp");
-      return;
+      if (transferStatusData?.direction === "EgressToNetApp")
+        return {
+          ariaLabelText: "Completing transfer from Egress to Shared Drive",
+          spinnerTextContent: (
+            <span>
+              Completing transfer from <b>Egress to Shared Drive...</b>
+            </span>
+          ),
+        };
+      return {
+        ariaLabelText: "Completing transfer from Shared Drive to Egress",
+        spinnerTextContent: (
+          <span>
+            Completing transfer from <b>Shared Drive to Egress...</b>
+          </span>
+        ),
+      };
     }
-    setTransferSource("egress");
-  };
+  }, [transferStatusData, username, transferStatus, transferSource]);
+
+  const transferProgressMetrics = useMemo(() => {
+    const defaultMetricsData = {
+      progressAriaLiveText: "",
+      progressContent: "",
+    };
+    if (!transferStatusData?.transferMetrics) return defaultMetricsData;
+
+    if (!transferStatusData?.transferMetrics?.totalFiles) {
+      return defaultMetricsData;
+    }
+    const progressAriaLiveText = `Transfer progress, ${transferStatusData.transferMetrics.processedFiles} out of ${transferStatusData.transferMetrics.totalFiles} files processed`;
+    const progressContent = (
+      <div
+        className={styles.transferProgressMetrics}
+        data-testid="transfer-progress-metrics"
+      >
+        <span>
+          total files : {transferStatusData?.transferMetrics?.totalFiles}
+        </span>
+        <span>
+          files processed :{" "}
+          {transferStatusData?.transferMetrics?.processedFiles}
+        </span>
+      </div>
+    );
+    return {
+      progressAriaLiveText,
+      progressContent,
+    };
+  }, [transferStatusData]);
+
+  const unMounting = useRef(false);
 
   useEffect(() => {
     if (isEgressError && egressError) {
@@ -358,6 +388,74 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
     }
   }, [apiRequestError]);
 
+  useEffect(() => {
+    unMounting.current = false;
+
+    return () => {
+      unMounting.current = true;
+    };
+  }, []);
+
+  const handleEgressFolderPathClick = (path: string) => {
+    setEgressFolderPath(path);
+    setSelectedSourceFoldersOrFiles([]);
+  };
+
+  const handleNetAppFolderPathClick = (path: string) => {
+    setNetAppFolderPath(path);
+    setSelectedSourceFoldersOrFiles([]);
+  };
+
+  const handleFolderPathClick = (path: string) => {
+    if (transferSource === "egress") {
+      handleEgressFolderPathClick(path);
+    } else {
+      handleNetAppFolderPathClick(path);
+    }
+  };
+
+  const handleCheckboxChange = (checkboxId: string, checked: boolean) => {
+    let updatedFolders: string[] = [];
+
+    if (checkboxId === "all-folders") {
+      if (checked) {
+        if (transferSource === "egress")
+          updatedFolders = [
+            "all-folders",
+            ...egressFolderData.map((data) => data.path),
+          ];
+        if (transferSource === "netapp")
+          updatedFolders = [
+            "all-folders",
+            ...netAppFolderData.map((data) => data.path),
+          ];
+      } else {
+        updatedFolders = [];
+      }
+    } else if (checked) {
+      updatedFolders = [...selectedSourceFoldersOrFiles, checkboxId];
+    } else {
+      updatedFolders = selectedSourceFoldersOrFiles.filter(
+        (item) => item !== checkboxId,
+      );
+    }
+
+    setSelectedSourceFoldersOrFiles(updatedFolders);
+  };
+
+  const isSourceFolderChecked = (id: string) => {
+    return selectedSourceFoldersOrFiles.includes(id);
+  };
+
+  const toggleTransferDirection = () => {
+    setSelectedSourceFoldersOrFiles([]);
+    if (transferSource === "egress") {
+      setTransferSource("netapp");
+      return;
+    }
+    setTransferSource("egress");
+  };
+
   const getTransferSourcePath = ():
     | {
         fileId: string;
@@ -395,6 +493,98 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
     });
   };
 
+  const handleDisconnectSharedDrive = async () => {
+    navigate(
+      `/case/${caseId}/case-management/disconnect-shared-drive-confirmation`,
+      {
+        state: {
+          isRouteValid: true,
+          caseId: caseId,
+          urn: urn,
+        },
+      },
+    );
+  };
+
+  const handleFolderClick = (data: EgressFolder | NetAppFileFolder) => {
+    if (transferSource === "egress" && "id" in data) {
+      setEgressFolderPath(data.path);
+      if (transferSource === "egress") setSelectedSourceFoldersOrFiles([]);
+    }
+    if (transferSource === "netapp") {
+      console.log("NetApp folder clicked:", data);
+      setNetAppFolderPath(data.path);
+      if (transferSource === "netapp") setSelectedSourceFoldersOrFiles([]);
+    }
+  };
+
+  const handleGotoFolderClick = () => {
+    if (transferSource === "egress" && transferStatusData) {
+      setTransferSource("netapp");
+      // Ensure transfer source is updated first, then set the egress path
+      setTimeout(() => {
+        setNetAppFolderPath(transferStatusData.destinationPath);
+        setTransferStatusData(null);
+      }, 0);
+    } else if (transferSource === "netapp" && transferStatusData) {
+      setTransferSource("egress");
+      setTimeout(() => {
+        setEgressFolderPath(transferStatusData.destinationPath);
+        setTransferStatusData(null);
+      }, 0);
+    }
+  };
+
+  const renderActiveTransferMessage = () => {
+    return (
+      <div>
+        <output aria-live="polite" className="govuk-visually-hidden">
+          {activeTransferMessage?.ariaLabelText}
+          {transferProgressMetrics.progressAriaLiveText && (
+            <>{transferProgressMetrics.progressAriaLiveText}</>
+          )}
+        </output>
+        {transferStatus === "transferring" && (
+          <div className={styles.transferContent}>
+            <div className={styles.spinnerWrapper}>
+              <Spinner data-testid="transfer-spinner" diameterPx={50} />
+              <div className={styles.spinnerText}>
+                {activeTransferMessage?.spinnerTextContent}
+                {transferProgressMetrics.progressContent && (
+                  <>{transferProgressMetrics.progressContent}</>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        {transferStatus === "validating" && (
+          <div className={styles.transferContent}>
+            <div className={styles.spinnerWrapper}>
+              <Spinner data-testid="transfer-spinner" diameterPx={50} />
+              <div className={styles.spinnerText}>
+                {activeTransferMessage?.spinnerTextContent}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const getMainTexts = useCallback(() => {
+    if (transferSource === "egress") {
+      return {
+        title: "Transfer from Egress to the Shared Drive",
+        description:
+          "Select the files or folders you want to transfer. Then choose where to save them on the Shared Drive.",
+      };
+    }
+    return {
+      title: "Transfer from Shared Drive to Egress",
+      description:
+        "Select the files or folders you want to transfer. Then choose where to save them on Egress.",
+    };
+  }, [transferSource]);
   const handleStatusResponse = useCallback(
     (response: TransferStatusResponse) => {
       const transferStatusData = {
@@ -463,27 +653,6 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
     return unMounting.current;
   }, []);
 
-  const handleDisconnectSharedDrive = async () => {
-    navigate(
-      `/case/${caseId}/case-management/disconnect-shared-drive-confirmation`,
-      {
-        state: {
-          isRouteValid: true,
-          caseId: caseId,
-          urn: urn,
-        },
-      },
-    );
-  };
-
-  useEffect(() => {
-    unMounting.current = false;
-
-    return () => {
-      unMounting.current = true;
-    };
-  }, []);
-
   useEffect(() => {
     if (!transferId) {
       return;
@@ -501,176 +670,6 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
     isComponentUnmounted,
     handleStatusResponse,
   ]);
-
-  const transferProgressMetrics = useMemo(() => {
-    const defaultMetricsData = {
-      progressAriaLiveText: "",
-      progressContent: "",
-    };
-    if (!transferStatusData?.transferMetrics) return defaultMetricsData;
-
-    if (!transferStatusData?.transferMetrics?.totalFiles) {
-      return defaultMetricsData;
-    }
-    const progressAriaLiveText = `Transfer progress, ${transferStatusData.transferMetrics.processedFiles} out of ${transferStatusData.transferMetrics.totalFiles} files processed`;
-    const progressContent = (
-      <div
-        className={styles.transferProgressMetrics}
-        data-testid="transfer-progress-metrics"
-      >
-        <span>
-          total files : {transferStatusData?.transferMetrics?.totalFiles}
-        </span>
-        <span>
-          files processed :{" "}
-          {transferStatusData?.transferMetrics?.processedFiles}
-        </span>
-      </div>
-    );
-    return {
-      progressAriaLiveText,
-      progressContent,
-    };
-  }, [transferStatusData]);
-
-  const activeTransferMessage = useMemo(() => {
-    if (transferStatus === "transferring") {
-      if (!transferStatusData) {
-        return {
-          ariaLabelText: "Completing transfer",
-          spinnerTextContent: <span> Completing transfer</span>,
-        };
-      }
-      if (transferStatusData?.username !== username) {
-        return {
-          ariaLabelText: `${transferStatusData?.username} is currently transferring`,
-          spinnerTextContent: (
-            <span>
-              <b>{transferStatusData?.username}</b> is currently transferring
-            </span>
-          ),
-        };
-      }
-
-      if (transferStatusData?.direction === "EgressToNetApp")
-        return {
-          ariaLabelText: "Completing transfer from Egress to Shared Drive",
-          spinnerTextContent: (
-            <span>
-              Completing transfer from <b>Egress to Shared Drive...</b>
-            </span>
-          ),
-        };
-      return {
-        ariaLabelText: "Completing transfer from Shared Drive to Egress",
-        spinnerTextContent: (
-          <span>
-            Completing transfer from <b>Shared Drive to Egress...</b>
-          </span>
-        ),
-      };
-    }
-    if (transferStatus === "validating") {
-      if (transferSource === "egress") {
-        return {
-          ariaLabelText: "Indexing transfer from egress to shared drive",
-          spinnerTextContent: (
-            <span>
-              Indexing transfer from <b>Egress to Shared Drive...</b>
-            </span>
-          ),
-        };
-      }
-      return {
-        ariaLabelText: "Indexing transfer from shared drive to egress",
-        spinnerTextContent: (
-          <span>
-            Indexing transfer from <b>Shared Drive to Egress...</b>
-          </span>
-        ),
-      };
-    }
-  }, [transferStatusData, username, transferStatus, transferSource]);
-
-  const handleFolderClick = (data: EgressFolder | NetAppFileFolder) => {
-    if (transferSource === "egress" && "id" in data) {
-      setEgressFolderPath(data.path);
-      if (transferSource === "egress") setSelectedSourceFoldersOrFiles([]);
-    }
-    if (transferSource === "netapp") {
-      console.log("NetApp folder clicked:", data);
-      setNetAppFolderPath(data.path);
-      if (transferSource === "netapp") setSelectedSourceFoldersOrFiles([]);
-    }
-  };
-
-  const handleGotoFolderClick = () => {
-    if (transferSource === "egress" && transferStatusData) {
-      setTransferSource("netapp");
-      // Ensure transfer source is updated first, then set the egress path
-      setTimeout(() => {
-        setNetAppFolderPath(transferStatusData.destinationPath);
-        setTransferStatusData(null);
-      }, 0);
-    } else if (transferSource === "netapp" && transferStatusData) {
-      setTransferSource("egress");
-      setTimeout(() => {
-        setEgressFolderPath(transferStatusData.destinationPath);
-        setTransferStatusData(null);
-      }, 0);
-    }
-  };
-
-  const getMainTexts = useCallback(() => {
-    if (transferSource === "egress") {
-      return {
-        title: "Transfer from Egress to the Shared Drive",
-        description:
-          "Select the files or folders you want to transfer. Then choose where to save them on the Shared Drive.",
-      };
-    }
-    return {
-      title: "Transfer from Shared Drive to Egress",
-      description:
-        "Select the files or folders you want to transfer. Then choose where to save them on Egress.",
-    };
-  }, [transferSource]);
-
-  const renderActiveTransferMessage = () => {
-    return (
-      <div>
-        <output aria-live="polite" className="govuk-visually-hidden">
-          {activeTransferMessage?.ariaLabelText}
-          {transferProgressMetrics.progressAriaLiveText && (
-            <>{transferProgressMetrics.progressAriaLiveText}</>
-          )}
-        </output>
-        {transferStatus === "transferring" && (
-          <div className={styles.transferContent}>
-            <div className={styles.spinnerWrapper}>
-              <Spinner data-testid="transfer-spinner" diameterPx={50} />
-              <div className={styles.spinnerText}>
-                {activeTransferMessage?.spinnerTextContent}
-                {transferProgressMetrics.progressContent && (
-                  <>{transferProgressMetrics.progressContent}</>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-        {transferStatus === "validating" && (
-          <div className={styles.transferContent}>
-            <div className={styles.spinnerWrapper}>
-              <Spinner data-testid="transfer-spinner" diameterPx={50} />
-              <div className={styles.spinnerText}>
-                {activeTransferMessage?.spinnerTextContent}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
 
   if (!isTabActive) return <> </>;
 
