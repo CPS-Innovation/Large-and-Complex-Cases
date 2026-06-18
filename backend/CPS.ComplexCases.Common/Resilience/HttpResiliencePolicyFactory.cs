@@ -61,6 +61,37 @@ public static class HttpResiliencePolicyFactory
     return Policy.BulkheadAsync<HttpResponseMessage>(maxParallelization, maxQueuingActions);
   }
 
+  // Standard policy for rate-limited HTTP services (e.g. Egress, NetApp) 5xx and 429 are retried
+  // (excluding POST/PUT), but only 5xx and connection failures trip the breaker since 429 is expected
+  // rate limiting rather than a service outage.
+  public static IAsyncPolicy<HttpResponseMessage> CreateRateLimitedResiliencePolicy(
+      ILogger logger,
+      HttpResilienceOptions options)
+  {
+    static bool shouldRetry(HttpResponseMessage response) =>
+        (response.StatusCode >= HttpStatusCode.InternalServerError
+            || response.StatusCode == HttpStatusCode.TooManyRequests)
+        && ExcludesPostAndPut(response);
+
+    var retryPolicy = CreateRetryPolicy(
+        options.RetryAttempts,
+        options.FirstRetryDelay,
+        shouldRetry,
+        handleHttpRequestException: false);
+
+    var circuitBreaker = CreateCircuitBreakerPolicy(
+        logger,
+        options.ServiceName,
+        options.CircuitBreakerFailureThreshold,
+        options.CircuitBreakerSamplingDuration,
+        options.CircuitBreakerMinimumThroughput,
+        options.CircuitBreakerDurationOfBreak);
+
+    var bulkheadPolicy = CreateBulkheadPolicy(options.BulkheadMaxParallelization);
+
+    return Policy.WrapAsync(retryPolicy, circuitBreaker, bulkheadPolicy);
+  }
+
   // Retries are only safe for idempotent methods, so POST and PUT are excluded.
   public static bool ExcludesPostAndPut(HttpResponseMessage response) =>
       response.RequestMessage?.Method != HttpMethod.Post

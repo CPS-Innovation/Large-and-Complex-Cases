@@ -1,4 +1,3 @@
-using System.Net;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
@@ -58,35 +57,20 @@ public static class IServiceCollectionExtension
     .AddPolicyHandler((sp, _) => _egressStorageClientPolicy ??= GetResiliencePolicy(sp.GetRequiredService<ILoggerFactory>()));
   }
 
-  // Retry is kept outermost so a retry attempt re-enters the (possibly open) circuit and fails fast.
-  // The circuit breaker sits between retry and the bulkhead so an open circuit short-circuits before
-  // consuming a bulkhead slot.
   internal static IAsyncPolicy<HttpResponseMessage> GetResiliencePolicy(ILoggerFactory loggerFactory)
   {
     var logger = loggerFactory.CreateLogger("CPS.ComplexCases.Egress.CircuitBreaker");
 
-    // Egress API has a rate limiting policy, so 429s are retried but excluded from the breaker.
-    static bool shouldRetry(HttpResponseMessage response) =>
-        (response.StatusCode >= HttpStatusCode.InternalServerError
-            || response.StatusCode == HttpStatusCode.TooManyRequests)
-        && HttpResiliencePolicyFactory.ExcludesPostAndPut(response);
-
-    var retryPolicy = HttpResiliencePolicyFactory.CreateRetryPolicy(
-        RetryAttempts,
-        TimeSpan.FromSeconds(FirstRetryDelaySeconds),
-        shouldRetry,
-        handleHttpRequestException: false);
-
-    var circuitBreaker = HttpResiliencePolicyFactory.CreateCircuitBreakerPolicy(
-        logger,
-        "Egress",
-        CircuitBreakerFailureThreshold,
-        TimeSpan.FromSeconds(CircuitBreakerSamplingDurationSeconds),
-        CircuitBreakerMinimumThroughput,
-        TimeSpan.FromSeconds(CircuitBreakerDurationOfBreakSeconds));
-
-    var bulkheadPolicy = HttpResiliencePolicyFactory.CreateBulkheadPolicy(maxParallelization: 30);
-
-    return Policy.WrapAsync(retryPolicy, circuitBreaker, bulkheadPolicy);
+    return HttpResiliencePolicyFactory.CreateRateLimitedResiliencePolicy(logger, new HttpResilienceOptions
+    {
+      ServiceName = "Egress",
+      RetryAttempts = RetryAttempts,
+      FirstRetryDelay = TimeSpan.FromSeconds(FirstRetryDelaySeconds),
+      CircuitBreakerFailureThreshold = CircuitBreakerFailureThreshold,
+      CircuitBreakerSamplingDuration = TimeSpan.FromSeconds(CircuitBreakerSamplingDurationSeconds),
+      CircuitBreakerMinimumThroughput = CircuitBreakerMinimumThroughput,
+      CircuitBreakerDurationOfBreak = TimeSpan.FromSeconds(CircuitBreakerDurationOfBreakSeconds),
+      BulkheadMaxParallelization = 30,
+    });
   }
 }

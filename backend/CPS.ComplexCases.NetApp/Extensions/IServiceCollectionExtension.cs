@@ -1,4 +1,3 @@
-using System.Net;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -125,35 +124,20 @@ public static class IServiceCollectionExtension
 		}
 	}
 
-	// Retry is kept outermost so a retry attempt re-enters the (possibly open) circuit and fails fast.
-	// The circuit breaker sits between retry and the bulkhead so an open circuit short-circuits before
-	// consuming a bulkhead slot.
 	internal static IAsyncPolicy<HttpResponseMessage> GetResiliencePolicy(ILoggerFactory loggerFactory)
 	{
 		var logger = loggerFactory.CreateLogger("CPS.ComplexCases.NetApp.CircuitBreaker");
 
-		// 429s are expected rate limiting, so they are retried but excluded from the breaker.
-		static bool shouldRetry(HttpResponseMessage response) =>
-			(response.StatusCode >= HttpStatusCode.InternalServerError
-				|| response.StatusCode == HttpStatusCode.TooManyRequests)
-			&& HttpResiliencePolicyFactory.ExcludesPostAndPut(response);
-
-		var retryPolicy = HttpResiliencePolicyFactory.CreateRetryPolicy(
-			RetryAttempts,
-			TimeSpan.FromSeconds(FirstRetryDelaySeconds),
-			shouldRetry,
-			handleHttpRequestException: false);
-
-		var circuitBreaker = HttpResiliencePolicyFactory.CreateCircuitBreakerPolicy(
-			logger,
-			"NetApp",
-			CircuitBreakerFailureThreshold,
-			TimeSpan.FromSeconds(CircuitBreakerSamplingDurationSeconds),
-			CircuitBreakerMinimumThroughput,
-			TimeSpan.FromSeconds(CircuitBreakerDurationOfBreakSeconds));
-
-		var bulkheadPolicy = HttpResiliencePolicyFactory.CreateBulkheadPolicy(maxParallelization: 30);
-
-		return Policy.WrapAsync(retryPolicy, circuitBreaker, bulkheadPolicy);
+		return HttpResiliencePolicyFactory.CreateRateLimitedResiliencePolicy(logger, new HttpResilienceOptions
+		{
+			ServiceName = "NetApp",
+			RetryAttempts = RetryAttempts,
+			FirstRetryDelay = TimeSpan.FromSeconds(FirstRetryDelaySeconds),
+			CircuitBreakerFailureThreshold = CircuitBreakerFailureThreshold,
+			CircuitBreakerSamplingDuration = TimeSpan.FromSeconds(CircuitBreakerSamplingDurationSeconds),
+			CircuitBreakerMinimumThroughput = CircuitBreakerMinimumThroughput,
+			CircuitBreakerDurationOfBreak = TimeSpan.FromSeconds(CircuitBreakerDurationOfBreakSeconds),
+			BulkheadMaxParallelization = 30,
+		});
 	}
 }
