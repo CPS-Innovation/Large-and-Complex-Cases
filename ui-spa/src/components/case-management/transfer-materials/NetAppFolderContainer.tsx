@@ -17,6 +17,7 @@ import { formatDate } from "../../../common/utils/formatDate";
 import { DropdownButton } from "../../common/DropdownButton";
 import { TransferAction } from "../../../common/types/TransferAction";
 import { useUserGroupsFeatureFlag } from "../../../common/hooks/useUserGroupsFeatureFlag";
+import { getTransferSourceTableHeadData } from "../../../common/utils/getTransferSourceTableHeadData";
 import styles from "./NetAppFolderContainer.module.scss";
 
 type NetAppFolderContainerProps = {
@@ -82,35 +83,10 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
   }, [currentFolderPath, connectedFolderPath]);
 
   const getTableSourceHeadData = () => {
-    const tableHeadData = [
-      {
-        children: (
-          <Checkbox
-            id={"all-folders"}
-            checked={isSourceFolderChecked("all-folders")}
-            onChange={handleCheckboxChange}
-            ariaLabel="Select folders and files"
-          />
-        ),
-        sortable: false,
-      },
-      {
-        children: <>Folder/file name</>,
-        sortable: true,
-        sortName: "folder-name",
-      },
-      {
-        children: <>Last modified date</>,
-        sortable: true,
-        sortName: "date-updated",
-      },
-      {
-        children: <>Size</>,
-        sortable: true,
-        sortName: "file-size",
-      },
-    ];
-    return tableHeadData;
+    return getTransferSourceTableHeadData(
+      handleCheckboxChange,
+      isSourceFolderChecked,
+    );
   };
 
   const getTableDestinationHeadData = () => {
