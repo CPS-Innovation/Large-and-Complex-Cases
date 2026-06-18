@@ -3,6 +3,7 @@ using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.State;
 using CPS.ComplexCases.FileTransfer.API.Tests.Unit.Stubs;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Durable.Activity;
 
@@ -14,7 +15,7 @@ public class UpdateTransferStatusTests
     public UpdateTransferStatusTests()
     {
         _fixture = new Fixture();
-        _activity = new UpdateTransferStatus();
+        _activity = new UpdateTransferStatus(NullLogger<UpdateTransferStatus>.Instance);
     }
 
     [Fact]

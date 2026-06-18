@@ -12,7 +12,8 @@ public class TransferEntityHelper(
 {
     private readonly ILogger<TransferEntityHelper> _logger = logger;
 
-    public Task DeleteMovedItemsCompleted(DurableTaskClient client, Guid transferId, List<DeletionError> failedItems, CancellationToken cancellationToken = default)
+    public Task DeleteMovedItemsCompleted(DurableTaskClient client, Guid transferId, List<DeletionError> failedItems,
+        CancellationToken cancellationToken = default)
     {
         var entityId = GetEntityInstanceId(transferId);
 
@@ -22,12 +23,14 @@ public class TransferEntityHelper(
 
         return DurableEntityRetry.ExecuteAsync(
             nameof(DeleteMovedItemsCompleted),
-            () => client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.DeleteMovedItemsCompleted), failedItems, null, cancellationToken),
+            () => client.Entities.SignalEntityAsync(entityId, nameof(TransferEntityState.DeleteMovedItemsCompleted),
+                failedItems, null, cancellationToken),
             _logger,
             cancellationToken);
     }
 
-    public async Task<EntityMetadata<TransferEntity>?> GetTransferEntityAsync(DurableTaskClient client, Guid transferId, CancellationToken cancellationToken = default)
+    public async Task<EntityMetadata<TransferEntity>?> GetTransferEntityAsync(DurableTaskClient client, Guid transferId,
+        CancellationToken cancellationToken = default)
     {
         var entityId = GetEntityInstanceId(transferId);
 
@@ -35,30 +38,21 @@ public class TransferEntityHelper(
             "Getting Durable entity {EntityName}/{EntityKey} for TransferId={TransferId}",
             entityId.Name, entityId.Key, transferId);
 
-        try
-        {
-            var entity = await DurableEntityRetry.ExecuteAsync(
-                nameof(GetTransferEntityAsync),
-                () => client.Entities.GetEntityAsync<TransferEntity>(entityId, cancellationToken),
-                _logger,
-                cancellationToken);
+        var entity = await DurableEntityRetry.ExecuteAsync(
+            nameof(GetTransferEntityAsync),
+            () => client.Entities.GetEntityAsync<TransferEntity>(entityId, cancellationToken),
+            _logger,
+            cancellationToken);
 
-            _logger.LogInformation(
-                "Got Durable entity {EntityName}/{EntityKey} for TransferId={TransferId}. EntityFound={EntityFound}, HasState={HasState}",
-                entityId.Name,
-                entityId.Key,
-                transferId,
-                entity is not null,
-                entity?.State is not null);
+        _logger.LogInformation(
+            "Got Durable entity {EntityName}/{EntityKey} for TransferId={TransferId}. EntityFound={EntityFound}, HasState={HasState}",
+            entityId.Name,
+            entityId.Key,
+            transferId,
+            entity is not null,
+            entity?.State is not null);
 
-            return entity;
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException(
-                $"Failed to get Durable entity {entityId.Name}/{entityId.Key} for TransferId={transferId}",
-                ex);
-        }
+        return entity;
     }
 
     private static EntityInstanceId GetEntityInstanceId(Guid transferId)
