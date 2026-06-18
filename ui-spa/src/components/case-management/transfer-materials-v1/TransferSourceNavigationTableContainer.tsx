@@ -5,6 +5,7 @@ import { formatFileSize } from "../../../common/utils/formatFileSize";
 import FolderIcon from "../../../components/svgs/folder.svg?react";
 import FileIcon from "../../../components/svgs/file.svg?react";
 import { formatDate } from "../../../common/utils/formatDate";
+import { getTransferSourceTableHeadData } from "../../../common/utils/getTransferSourceTableHeadData";
 import {
   type EgressFolderData,
   type NetAppFolderData,
@@ -41,35 +42,10 @@ const TransferSourceNavigationTableContainer: React.FC<
   isSourceFolderChecked,
 }) => {
   const getTableHeadData = () => {
-    const tableHeadData = [
-      {
-        children: (
-          <Checkbox
-            id={"all-folders"}
-            checked={isSourceFolderChecked("all-folders")}
-            onChange={handleCheckboxChange}
-            ariaLabel="Select folders and files"
-          />
-        ),
-        sortable: false,
-      },
-      {
-        children: <>Folder/file name</>,
-        sortable: true,
-        sortName: "folder-name",
-      },
-      {
-        children: <>Last modified date</>,
-        sortable: true,
-        sortName: "date-updated",
-      },
-      {
-        children: <>Size</>,
-        sortable: true,
-        sortName: "file-size",
-      },
-    ];
-    return tableHeadData;
+    return getTransferSourceTableHeadData(
+      handleCheckboxChange,
+      isSourceFolderChecked,
+    );
   };
 
   const getTableRowData = () => {
