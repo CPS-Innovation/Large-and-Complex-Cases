@@ -636,40 +636,47 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
     };
   }, [transferSource]);
 
+  const renderActiveTransferMessage = () => {
+    return (
+      <div>
+        <output aria-live="polite" className="govuk-visually-hidden">
+          {activeTransferMessage?.ariaLabelText}
+          {transferProgressMetrics.progressAriaLiveText && (
+            <>{transferProgressMetrics.progressAriaLiveText}</>
+          )}
+        </output>
+        {transferStatus === "validating" && (
+          <div className={styles.transferContent}>
+            <div className={styles.spinnerWrapper}>
+              <Spinner data-testid="transfer-spinner" diameterPx={50} />
+              <div className={styles.spinnerText}>
+                {activeTransferMessage?.spinnerTextContent}
+              </div>
+            </div>
+          </div>
+        )}
+        {transferStatus === "transferring" && (
+          <div className={styles.transferContent}>
+            <div className={styles.spinnerWrapper}>
+              <Spinner data-testid="transfer-spinner" diameterPx={50} />
+              <div className={styles.spinnerText}>
+                {activeTransferMessage?.spinnerTextContent}
+                {transferProgressMetrics.progressContent && (
+                  <>{transferProgressMetrics.progressContent}</>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   if (!isTabActive) return <> </>;
 
   return (
     <div>
-      <output aria-live="polite" className="govuk-visually-hidden">
-        {activeTransferMessage?.ariaLabelText}
-        {transferProgressMetrics.progressAriaLiveText && (
-          <>{transferProgressMetrics.progressAriaLiveText}</>
-        )}
-      </output>
-      {transferStatus === "validating" && (
-        <div className={styles.transferContent}>
-          <div className={styles.spinnerWrapper}>
-            <Spinner data-testid="transfer-spinner" diameterPx={50} />
-            <div className={styles.spinnerText}>
-              {activeTransferMessage?.spinnerTextContent}
-            </div>
-          </div>
-        </div>
-      )}
-      {transferStatus === "transferring" && (
-        <div className={styles.transferContent}>
-          <div className={styles.spinnerWrapper}>
-            <Spinner data-testid="transfer-spinner" diameterPx={50} />
-            <div className={styles.spinnerText}>
-              {activeTransferMessage?.spinnerTextContent}
-              {transferProgressMetrics.progressContent && (
-                <>{transferProgressMetrics.progressContent}</>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
+      {renderActiveTransferMessage()}
       {transferStatus === "completed" &&
         transferStatusData?.username === username && (
           <div className={styles.successBanner}>
