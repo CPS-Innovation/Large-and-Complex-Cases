@@ -82,7 +82,7 @@ param(
     [string]$EgressWorkspaceName = "",
 
     [Parameter(Mandatory=$false)]
-    [ValidateSet("all", "copy", "move", "netapp-to-egress")]
+    [ValidateSet("all", "copy", "move", "netapp-to-egress", "netapp-move-to-egress")]
     [string]$TestsToRun = "all",
 
     [Parameter(Mandatory=$false)]
@@ -205,6 +205,7 @@ $E2EFolderMap = @{
     "copy" = "E2E: Egress to NetApp Copy"
     "move" = "E2E: Egress to NetApp Move"
     "netapp-to-egress" = "E2E: Netapp to Egress Copy"
+    "netapp-move-to-egress" = "E2E: Netapp Move to Egress Copy"
 }
 
 # ============================================================
@@ -715,6 +716,15 @@ else {
 # ============================================================
 Write-Header "STEP 2: Update Variables"
 
+# Scale the per-transfer poll cap with file size. Default is 60 attempts
+# (~3 min at ~3s/poll) which covers small files; a 1 GB transfer can take
+# longer than that, so add ~1.5 min of poll budget per 100 MB above 100 MB,
+# capped at 600 (~30 min) to still fail loudly if something stalls outright.
+$effectiveSizeMB = if ($SizeMB -gt 0) { $SizeMB } else { $SizeGB * 1024 }
+$totalSizeMB = $effectiveSizeMB * [Math]::Max(1, [int]$FileCount)
+$additional = [Math]::Max(0, [int][Math]::Ceiling(($totalSizeMB - 100) / 100.0)) * 30
+$maxPollAttempts = [Math]::Min(600, 60 + $additional)
+
 $variables = @{
     "egressWorkspaceId" = $EgressWorkspaceId
     "egressWorkspaceName" = $EgressWorkspaceName
@@ -723,7 +733,11 @@ $variables = @{
     "registerCaseClientId" = $Config.RegisterCaseClientId
     "lccApiId" = $Config.LccApiId
     "netappFolderPath" = "Automation-Testing/"
-    "egressDestinationFolder" = "4. Served Evidence/"
+    # NetApp -> Egress copy-back destination base. Collection appends a per-run
+    # `e2e-run-<id>/` sub-folder (in 10./[NME] 10. Validate prerequest) -- that
+    # is the actual FileExists guard. Must not equal `4. Served Evidence/`.
+    "egressDestinationFolder" = "3. Unused - disclosed/"
+    "maxPollAttempts" = $maxPollAttempts.ToString()
     "registerCase" = if ($RegisterCase) { "true" } else { "false" }
     "defaultCaseId" = $Config.DefaultCaseId
     "defaultCaseUrn" = $Config.DefaultCaseUrn
@@ -781,10 +795,14 @@ $UpdatedCollectionPath = Update-CollectionVariables -CollectionPath $CollectionP
 $foldersToRun = @()
 
 if ($TestsToRun -eq "all") {
+    # Order: Copy forward -> NetApp-to-Egress (copies Copy output back) ->
+    # Move forward -> Netapp-Move-to-Egress (copies Move output back). Each
+    # forward journey deposits the file the matching back-journey then asserts.
     $foldersToRun = @(
         "E2E: Egress to NetApp Copy",
         "E2E: Netapp to Egress Copy",
-        "E2E: Egress to NetApp Move"
+        "E2E: Egress to NetApp Move",
+        "E2E: Netapp Move to Egress Copy"
     )
 }
 else {
@@ -801,105 +819,82 @@ Write-Host ""
 # ============================================================
 $results = @{}
 $allPassed = $true
-$isFirstRun = $true
 
-Write-Header "STEP 4: Run E2E Tests"
+Write-Header "STEP 4: Run E2E Setup (once)"
 Write-Host "Workspace: $EgressWorkspaceId ($EgressWorkspaceName)" -ForegroundColor Cyan
-if ($RegisterCase -and $foldersToRun.Count -gt 1) {
-    Write-Host "RegisterCase: Will register once on first folder, then reuse for remaining folders" -ForegroundColor Cyan
+if ($RegisterCase) {
+    Write-Host "RegisterCase: case will be registered in the Setup pass" -ForegroundColor Cyan
+} else {
+    Write-Host "Default mode: register-case requests skip themselves; caseId/caseUrn come from defaults" -ForegroundColor Cyan
 }
 Write-Host ""
 
-foreach ($folder in $foldersToRun) {
-    Write-Host ""
-    Write-Host "─────────────────────────────────────────────────────────────" -ForegroundColor DarkGray
-    Write-Host "Preparing: $folder" -ForegroundColor Cyan
-    Write-Host "─────────────────────────────────────────────────────────────" -ForegroundColor DarkGray
-    
-    # When RegisterCase is set and running multiple folders, export environment
-    # from the first run so we can capture the caseId/caseUrn for subsequent runs
-    $exportEnvPath = ""
-    if ($RegisterCase -and $isFirstRun -and $foldersToRun.Count -gt 1) {
-        $exportEnvPath = Join-Path $ScriptDir "LCCTestEnvironment_exported.postman_environment.json"
-        Write-Info "First RegisterCase run - will capture caseId for subsequent folders"
-    }
-    
-    $result = Run-NewmanFolder `
-        -CollectionPath $UpdatedCollectionPath `
-        -FolderName $folder `
-        -EnvironmentPath $UpdatedEnvPath `
-        -ReportsDir $ReportsDir `
-        -ExportEnvironmentPath $exportEnvPath
-    
-    $results[$folder] = $result
-    
-    # After the first RegisterCase run, capture caseId/caseUrn and disable
-    # registration for subsequent folders to prevent creating multiple cases
-    if ($RegisterCase -and $isFirstRun -and $foldersToRun.Count -gt 1) {
-        $isFirstRun = $false
-        
-        if ($result.Success -and $exportEnvPath -and (Test-Path $exportEnvPath)) {
-            Write-Info "Capturing registered case for subsequent test folders..."
-            
-            $exportedEnv = Get-Content $exportEnvPath -Raw | ConvertFrom-Json
-            $capturedCaseId = ""
-            $capturedCaseUrn = ""
-            
-            foreach ($val in $exportedEnv.values) {
-                if ($val.key -eq "caseId") { $capturedCaseId = $val.value }
-                if ($val.key -eq "caseUrn") { $capturedCaseUrn = $val.value }
-            }
-            
-            if ($capturedCaseId) {
-                Write-Success "Captured caseId: $capturedCaseId, caseUrn: $capturedCaseUrn"
-                Write-Info "Subsequent folders will reuse this case (registerCase=false)"
-                
-                # Update environment file: disable registration, inject captured case
-                $reuseVars = @{
-                    "registerCase"  = "false"
-                    "defaultCaseId" = $capturedCaseId
-                    "defaultCaseUrn" = $capturedCaseUrn
-                    "caseId"        = $capturedCaseId
-                    "caseUrn"       = $capturedCaseUrn
-                }
-                $UpdatedEnvPath = Update-EnvironmentFile -EnvironmentPath $UpdatedEnvPath -Variables $reuseVars -OutputDir $ScriptDir
-                
-                # Also update collection variables
-                $UpdatedCollectionPath = Update-CollectionVariables -CollectionPath $UpdatedCollectionPath -Variables $reuseVars -OutputDir $ScriptDir
-            } else {
-                Write-Err "Failed to capture caseId from first run - subsequent runs may register new cases"
-            }
-            
-            # Clean up exported env file
-            Remove-Item $exportEnvPath -Force -ErrorAction SilentlyContinue
-        } elseif (-not $result.Success) {
-            Write-Err "First RegisterCase run failed - cannot capture caseId for reuse"
-        }
-    } else {
-        $isFirstRun = $false
-    }
-    
-    if (-not $result.Success) {
-        $allPassed = $false
-        
-        if ($StopOnFailure) {
-            Write-Err "Stopping due to -StopOnFailure flag"
-            break
-        }
-        
-        if ([Environment]::UserInteractive -eq $false) {
-            Write-Host "Non-interactive mode: auto-continuing after failure" -ForegroundColor Yellow
-        } else {
-            Write-Host ""
-            Write-Host "Test failed. Continue with remaining tests? (Y/N)" -ForegroundColor Yellow -NoNewline
-            $continue = Read-Host " "
-            if ($continue -notin @('Y', 'y')) {
+# Setup folder runs ONCE and exports its end-state (tokens, caseId/caseUrn,
+# connection IDs, etc.). Every journey folder then runs as a separate
+# Newman invocation against that exported environment - the setup chain
+# is no longer duplicated across the three E2E folders, and Register Case
+# only ever runs once per top-level invocation.
+$postSetupEnvPath = Join-Path $ScriptDir "LCCTestEnvironment_post-setup.postman_environment.json"
+
+$setupResult = Run-NewmanFolder `
+    -CollectionPath $UpdatedCollectionPath `
+    -FolderName "0. E2E Setup" `
+    -EnvironmentPath $UpdatedEnvPath `
+    -ReportsDir $ReportsDir `
+    -ExportEnvironmentPath $postSetupEnvPath
+
+if (-not $setupResult.Success) {
+    Write-Err "Setup folder failed - cannot run any journey folders"
+    $allPassed = $false
+    # Leave journey results unset so the summary shows them as [SKIP].
+} elseif (-not (Test-Path $postSetupEnvPath)) {
+    Write-Err "Setup folder reported success but the post-setup environment file was not written"
+    $allPassed = $false
+    # Leave journey results unset so the summary shows them as [SKIP].
+} else {
+    Write-Success "Setup complete - post-setup environment captured at: $postSetupEnvPath"
+
+    # ============================================================
+    # STEP 5: Run journey folders against the post-setup environment
+    # ============================================================
+    Write-Header "STEP 5: Run E2E Journey Folders"
+
+    foreach ($folder in $foldersToRun) {
+        Write-Host ""
+        Write-Host "─────────────────────────────────────────────────────────────" -ForegroundColor DarkGray
+        Write-Host "Preparing: $folder" -ForegroundColor Cyan
+        Write-Host "─────────────────────────────────────────────────────────────" -ForegroundColor DarkGray
+
+        $result = Run-NewmanFolder `
+            -CollectionPath $UpdatedCollectionPath `
+            -FolderName $folder `
+            -EnvironmentPath $postSetupEnvPath `
+            -ReportsDir $ReportsDir
+
+        $results[$folder] = $result
+
+        if (-not $result.Success) {
+            $allPassed = $false
+
+            if ($StopOnFailure) {
+                Write-Err "Stopping due to -StopOnFailure flag"
                 break
             }
+
+            if ([Environment]::UserInteractive -eq $false) {
+                Write-Host "Non-interactive mode: auto-continuing after failure" -ForegroundColor Yellow
+            } else {
+                Write-Host ""
+                Write-Host "Test failed. Continue with remaining tests? (Y/N)" -ForegroundColor Yellow -NoNewline
+                $continue = Read-Host " "
+                if ($continue -notin @('Y', 'y')) {
+                    break
+                }
+            }
         }
+
+        Start-Sleep -Seconds 3
     }
-    
-    Start-Sleep -Seconds 3
 }
 
 # ============================================================
