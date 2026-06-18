@@ -26,9 +26,12 @@ public static class IServiceCollectionExtension
 	private const int CircuitBreakerMinimumThroughput = 5;
 	private const int CircuitBreakerDurationOfBreakSeconds = 60;
 
-	// Created once on first request and reused so circuit-breaker state is shared across all calls per client.
-	private static IAsyncPolicy<HttpResponseMessage>? _netAppHttpClientPolicy;
-	private static IAsyncPolicy<HttpResponseMessage>? _netAppS3HttpClientPolicy;
+	// Built once per client and reused so circuit-breaker state is shared across all calls for that client.
+	private static IServiceProvider? _serviceProvider;
+	private static readonly Lazy<IAsyncPolicy<HttpResponseMessage>> _netAppHttpClientPolicy =
+		new(() => GetResiliencePolicy(_serviceProvider!.GetRequiredService<ILoggerFactory>()));
+	private static readonly Lazy<IAsyncPolicy<HttpResponseMessage>> _netAppS3HttpClientPolicy =
+		new(() => GetResiliencePolicy(_serviceProvider!.GetRequiredService<ILoggerFactory>()));
 
 	public static void AddNetAppClient(this IServiceCollection services, IConfiguration configuration)
 	{
@@ -76,7 +79,11 @@ public static class IServiceCollectionExtension
 		})
 		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment))
 		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
-		.AddPolicyHandler((sp, _) => _netAppHttpClientPolicy ??= GetResiliencePolicy(sp.GetRequiredService<ILoggerFactory>()));
+		.AddPolicyHandler((sp, _) =>
+		{
+			_serviceProvider ??= sp;
+			return _netAppHttpClientPolicy.Value;
+		});
 
 		services.AddHttpClient<INetAppS3HttpClient, NetAppS3HttpClient>(client =>
 		{
@@ -92,7 +99,11 @@ public static class IServiceCollectionExtension
 		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment)
 		)
 		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
-		.AddPolicyHandler((sp, _) => _netAppS3HttpClientPolicy ??= GetResiliencePolicy(sp.GetRequiredService<ILoggerFactory>()));
+		.AddPolicyHandler((sp, _) =>
+		{
+			_serviceProvider ??= sp;
+			return _netAppS3HttpClientPolicy.Value;
+		});
 
 		services.AddTransient<NetAppStorageClient>();
 	}
