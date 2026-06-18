@@ -3,6 +3,7 @@
         "id": "39836c67-1947-4104-b7a9-bff7123b87e7",
         "displayName": "CPS-ComplexCases-Default",
         "bucketName": "flexgroup4",
+        "volumeUuid": "76b98847-d505-11f0-b4f1-002248c7e77a",
         "description": "Default security group for CPS Complex Cases"
     }
 ]

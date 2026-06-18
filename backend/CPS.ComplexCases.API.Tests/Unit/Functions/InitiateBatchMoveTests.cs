@@ -55,7 +55,7 @@ public class InitiateBatchMoveTests
         _testUsername = _fixture.Create<string>();
         _testCmsAuthValues = _fixture.Create<string>();
 
-        _defaultSecurityGroups = [new() { Id = _fixture.Create<Guid>(), BucketName = _testBucketName, DisplayName = "Test" }];
+        _defaultSecurityGroups = [new() { Id = _fixture.Create<Guid>(), BucketName = _testBucketName, VolumeUuid = _fixture.Create<Guid>(), DisplayName = "Test" }];
 
         _securityGroupMetadataServiceMock
             .Setup(s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()))

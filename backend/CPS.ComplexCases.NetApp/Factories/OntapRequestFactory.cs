@@ -9,12 +9,12 @@ public class OntapRequestFactory : IOntapRequestFactory
 {
     public HttpRequestMessage CreateRenameMaterialRequest(MaterialRenameArg arg)
     {
-        var encodedCurrentPath = Uri.EscapeDataString(arg.CurrentFolderPath);
+        var encodedCurrentPath = Uri.EscapeDataString(arg.CurrentFilePath);
         var url = $"/api/storage/volumes/{arg.OntapVolumeUuid}/files/{encodedCurrentPath}";
 
         var payload = new MaterialRenameDto
         {
-            Path = arg.NewFolderPath
+            Path = arg.NewFilePath
         };
 
         var request = new HttpRequestMessage(HttpMethod.Patch, url)

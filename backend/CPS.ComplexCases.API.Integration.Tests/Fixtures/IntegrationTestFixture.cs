@@ -338,7 +338,7 @@ public class IntegrationTestFixture : IAsyncLifetime
         };
         var netAppRequestFactory = new NetAppRequestFactory();
         var netAppHttpClientLogger = _loggerFactory.CreateLogger<NetAppHttpClient>();
-        var netAppClient = new NetAppHttpClient(netAppHttpClient, netAppRequestFactory, netAppHttpClientLogger);
+        var netAppClient = new NetAppHttpClient(netAppHttpClient, netAppRequestFactory, netAppHttpClientLogger, new HttpResponseHandler());
 
         NetAppArgFactory = new NetAppArgFactory();
         var netAppArgFactory = new NetAppArgFactory();

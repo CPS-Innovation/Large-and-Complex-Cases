@@ -11,6 +11,5 @@ namespace CPS.ComplexCases.NetApp.Models
         public string IssuingCaCert { get; set; } = string.Empty;
         public string IssuingCaCert2 { get; set; } = string.Empty;
         public int SearchMaxSubstringScanItems { get; set; } = 10000;
-        public string OntapVolumeUuid { get; set; } = string.Empty;
     }
 }

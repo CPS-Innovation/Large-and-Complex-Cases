@@ -10,8 +10,8 @@ public class OntapArgFactory : IOntapArgFactory
         {
             BearerToken = bearerToken,
             OntapVolumeUuid = ontapVolumeUuid,
-            CurrentFolderPath = currentPath,
-            NewFolderPath = newPath
+            CurrentFilePath = currentPath,
+            NewFilePath = newPath
         };
     }
 }

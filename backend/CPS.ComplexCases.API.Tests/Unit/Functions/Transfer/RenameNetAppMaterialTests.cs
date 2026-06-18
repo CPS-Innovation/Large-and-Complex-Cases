@@ -52,6 +52,7 @@ public class RenameNetAppMaterialTests
                 {
                     Id = _fixture.Create<Guid>(),
                     BucketName = BucketName,
+                    VolumeUuid = _fixture.Create<Guid>(),
                     DisplayName = "Test Security Group"
                 }
             ]);

@@ -70,6 +70,7 @@ public class DeleteNetAppBatchTests
             new() {
                 Id = _fixture.Create<Guid>(),
                 BucketName = _testBucketName,
+                VolumeUuid = _fixture.Create<Guid>(),
                 DisplayName = "Test Security Group"
             }
         ];
@@ -800,8 +801,8 @@ public class DeleteNetAppBatchTests
             .Setup(s => s.GetUserSecurityGroupsAsync(_testBearerToken))
             .ReturnsAsync(
             [
-                new() { Id = _fixture.Create<Guid>(), BucketName = firstBucket, DisplayName = "First" },
-                new() { Id = _fixture.Create<Guid>(), BucketName = secondBucket, DisplayName = "Second" }
+                new() { Id = _fixture.Create<Guid>(), BucketName = firstBucket, VolumeUuid = _fixture.Create<Guid>(), DisplayName = "First" },
+                new() { Id = _fixture.Create<Guid>(), BucketName = secondBucket, VolumeUuid = _fixture.Create<Guid>(), DisplayName = "Second" }
             ]);
 
         _netAppClientMock

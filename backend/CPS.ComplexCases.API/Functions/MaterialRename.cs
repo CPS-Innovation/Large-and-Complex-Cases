@@ -2,13 +2,13 @@ using System.Net;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
+using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models.Configuration;
 using CPS.ComplexCases.NetApp.Client;
-using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Requests;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -22,15 +22,15 @@ public class MaterialRename(
   IActivityLogService activityLogService,
   IRequestValidator requestValidator,
   IInitializationHandler initializationHandler,
+  ISecurityGroupMetadataService securityGroupMetadataService,
   IOntapHttpClient ontapHttpClient,
-  IOptions<NetAppOptions> netAppOptions,
   IOptions<FeatureFlagConfig> featureFlags)
 {
     private readonly IActivityLogService _activityLogService = activityLogService;
     private readonly IRequestValidator _requestValidator = requestValidator;
     private readonly IInitializationHandler _initializationHandler = initializationHandler;
-    private readonly IOntapHttpClient ontapHttpClient = ontapHttpClient;
-    private readonly NetAppOptions _netAppOptions = netAppOptions.Value;
+    private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
+    private readonly IOntapHttpClient _ontapHttpClient = ontapHttpClient;
     private readonly FeatureFlagConfig _featureFlags = featureFlags.Value;
 
     [Function(nameof(MaterialRename))]
@@ -61,11 +61,18 @@ public class MaterialRename(
 
         _initializationHandler.Initialize(context.Username, context.CorrelationId, renameRequest.Value.CaseId);
 
-        var result = await ontapHttpClient.RenameMaterialAsync(
+        var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
+
+        var result = await _ontapHttpClient.RenameMaterialAsync(
             context.BearerToken,
-            Guid.Parse(_netAppOptions.OntapVolumeUuid),
+            securityGroups.First().VolumeUuid,
             renameRequest.Value.CurrentPath,
             renameRequest.Value.NewPath);
+
+        if (result is not OkResult)
+        {
+            return result;
+        }
 
         await _activityLogService.CreateActivityLogAsync(
             ActivityLog.Enums.ActionType.MaterialRenamed,

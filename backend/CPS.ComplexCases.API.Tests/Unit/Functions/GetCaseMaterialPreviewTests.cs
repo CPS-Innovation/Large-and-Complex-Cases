@@ -44,6 +44,7 @@ public class GetCaseMaterialPreviewTests
                 {
                     Id = _fixture.Create<Guid>(),
                     BucketName = _testBucketName,
+                    VolumeUuid = _fixture.Create<Guid>(),
                     DisplayName = "Test Security Group"
                 }
             ]);
