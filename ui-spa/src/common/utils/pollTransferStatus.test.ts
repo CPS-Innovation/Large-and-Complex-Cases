@@ -254,8 +254,7 @@ describe("pollTransferStatus", async () => {
       100,
     );
 
-    // 12 consecutive 404s at the 100ms base interval. The 12th poll fires at
-    // t = 11 * 100 = 1100ms, so advancing 1200ms covers the whole grace window.
+    // 12 consecutive 404s at the 100ms base interval
     await vi.advanceTimersByTimeAsync(1200);
     expect(getTransferStatus).to.toHaveBeenCalledTimes(12);
     expect(handleResponse).to.toHaveBeenCalledTimes(0);
