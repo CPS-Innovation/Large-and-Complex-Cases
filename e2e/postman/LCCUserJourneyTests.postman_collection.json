@@ -1118,7 +1118,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{egressBaseUrl}}/api/v1/workspaces/{{egressWorkspaceId}}/files?folder_path={{egressUploadFolderPath}}",
+							"raw": "{{egressBaseUrl}}/api/v1/workspaces/{{egressWorkspaceId}}/files?path={{egressUploadFolderPath}}",
 							"host": [
 								"{{egressBaseUrl}}"
 							],
@@ -1131,7 +1131,7 @@
 							],
 							"query": [
 								{
-									"key": "folder_path",
+									"key": "path",
 									"value": "{{egressUploadFolderPath}}"
 								}
 							]
