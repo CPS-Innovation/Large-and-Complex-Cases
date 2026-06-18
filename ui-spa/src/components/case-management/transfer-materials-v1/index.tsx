@@ -645,16 +645,6 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
             <>{transferProgressMetrics.progressAriaLiveText}</>
           )}
         </output>
-        {transferStatus === "validating" && (
-          <div className={styles.transferContent}>
-            <div className={styles.spinnerWrapper}>
-              <Spinner data-testid="transfer-spinner" diameterPx={50} />
-              <div className={styles.spinnerText}>
-                {activeTransferMessage?.spinnerTextContent}
-              </div>
-            </div>
-          </div>
-        )}
         {transferStatus === "transferring" && (
           <div className={styles.transferContent}>
             <div className={styles.spinnerWrapper}>
@@ -664,6 +654,16 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
                 {transferProgressMetrics.progressContent && (
                   <>{transferProgressMetrics.progressContent}</>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+        {transferStatus === "validating" && (
+          <div className={styles.transferContent}>
+            <div className={styles.spinnerWrapper}>
+              <Spinner data-testid="transfer-spinner" diameterPx={50} />
+              <div className={styles.spinnerText}>
+                {activeTransferMessage?.spinnerTextContent}
               </div>
             </div>
           </div>
