@@ -17,6 +17,13 @@ describe("pollTransferStatus", async () => {
     vi.clearAllMocks();
     vi.resetAllMocks();
   });
+  afterEach(() => {
+    // Several tests start a poll loop with shouldStopPolling = () => false,
+    // which never terminates on its own. Clear any pending timers and restore
+    // real timers so a leaked loop cannot bleed into the next test.
+    vi.clearAllTimers();
+    vi.useRealTimers();
+  });
   it("Should poll for the getTransferStatus endpoint until shouldStopPolling return true", async () => {
     vi.useFakeTimers();
     let stopAfter = 3;
@@ -224,6 +231,78 @@ describe("pollTransferStatus", async () => {
     // 200 response resets the backoff: next poll is back at the 200ms base
     await vi.advanceTimersByTimeAsync(200);
     expect(getTransferStatus).to.toHaveBeenCalledTimes(5);
+    expect(handleError).to.toHaveBeenCalledTimes(0);
+  });
+
+  it("Should call handleError and stop polling after a bounded run of consecutive 404s", async () => {
+    vi.useFakeTimers();
+    const handleResponse = vi.fn();
+    const handleError = vi.fn();
+    const shouldStopPolling = vi.fn(() => false);
+    (getTransferStatus as Mock).mockRejectedValue(
+      new ApiError("not found", "abc/", {
+        status: 404,
+        statusText: "notFound",
+      }),
+    );
+
+    pollTransferStatus(
+      "id-1",
+      shouldStopPolling,
+      handleResponse,
+      handleError,
+      100,
+    );
+
+    // 12 consecutive 404s at the 100ms base interval. The 12th poll fires at
+    // t = 11 * 100 = 1100ms, so advancing 1200ms covers the whole grace window.
+    await vi.advanceTimersByTimeAsync(1200);
+    expect(getTransferStatus).to.toHaveBeenCalledTimes(12);
+    expect(handleResponse).to.toHaveBeenCalledTimes(0);
+    expect(handleError).to.toHaveBeenCalledTimes(1);
+
+    const errorArg = (handleError as Mock).mock.calls[0][0];
+    expect(errorArg).toBeInstanceOf(ApiError);
+    expect((errorArg as ApiError).code).toBe(404);
+
+    // The loop has given up: no further polling and no further errors.
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(getTransferStatus).to.toHaveBeenCalledTimes(12);
+    expect(handleError).to.toHaveBeenCalledTimes(1);
+  });
+
+  it("Should reset the 404 grace window when the entity appears, so an interrupted run of 404s does not give up", async () => {
+    vi.useFakeTimers();
+    const handleResponse = vi.fn();
+    const handleError = vi.fn();
+    const shouldStopPolling = vi.fn(() => false);
+    const notFound = new ApiError("not found", "abc/", {
+      status: 404,
+      statusText: "notFound",
+    });
+
+    // 11 404s (one short of the cap), a 200 that resets the window, then
+    // another 11 404s. Without a reset this would exceed the cap, but the 200
+    // in the middle keeps the loop alive.
+    for (let i = 0; i < 11; i++) {
+      (getTransferStatus as Mock).mockRejectedValueOnce(notFound);
+    }
+    (getTransferStatus as Mock).mockResolvedValueOnce(mockStatus("InProgress"));
+    for (let i = 0; i < 11; i++) {
+      (getTransferStatus as Mock).mockRejectedValueOnce(notFound);
+    }
+    (getTransferStatus as Mock).mockResolvedValue(mockStatus("InProgress"));
+
+    pollTransferStatus(
+      "id-1",
+      shouldStopPolling,
+      handleResponse,
+      handleError,
+      100,
+    );
+
+    await vi.advanceTimersByTimeAsync(100 * 30);
+    expect(handleResponse).to.toHaveBeenCalled();
     expect(handleError).to.toHaveBeenCalledTimes(0);
   });
 
