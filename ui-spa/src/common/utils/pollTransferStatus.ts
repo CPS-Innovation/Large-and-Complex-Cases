@@ -6,15 +6,15 @@ const MAX_INTERVAL_MS = 5000;
 const MID_INTERVAL_MS = 3000;
 
 /**
- * Upper bound on consecutive 404s tolerated before giving up. A 404 means the
- * Durable entity TransferEntityState/{transferId} does not exist yet. This is
- * expected for a short window between InitiateTransfer returning Accepted and
- * the orchestrator creating the entity, so we allow a grace window. Past this
- * cap we treat the transfer as missing and surface an error instead of polling
- * forever (e.g. an orchestration that failed before the entity was created, or
- * a stale/incorrect transfer ID).
+ * How long (wall-clock) we tolerate consecutive 404s before giving up. A 404
+ * means the Durable entity TransferEntityState/{transferId} does not exist yet.
+ * This is expected for a short window between InitiateTransfer returning
+ * Accepted and the orchestrator creating the entity, so we allow a grace
+ * window. Past this we treat the transfer as missing and surface an error
+ * instead of polling forever (e.g. an orchestration that failed before the
+ * entity was created, or a stale/incorrect transfer ID).
  */
-const MAX_CONSECUTIVE_NOT_FOUND = 12;
+const NOT_FOUND_GRACE_MS = 30000;
 
 /**
  * Polls the transfer status endpoint with adaptive backoff until a terminal state is reached
@@ -41,7 +41,7 @@ export const pollTransferStatus = async (
     new Promise<void>((resolve) => setTimeout(resolve, ms));
 
   let noChangeCount = 0;
-  let consecutiveNotFound = 0;
+  let firstNotFoundAt: number | null = null;
   let adaptiveBase = pollingInterval;
   let lastEtag: string | null = null;
 
@@ -55,7 +55,7 @@ export const pollTransferStatus = async (
 
       // A non-throwing response (200 or 304) means the entity exists, so the
       // create race is over: reset the 404 grace window.
-      consecutiveNotFound = 0;
+      firstNotFoundAt = null;
 
       if (data !== null) {
         adaptiveBase = Math.min(
@@ -76,8 +76,8 @@ export const pollTransferStatus = async (
         break;
       }
 
-      consecutiveNotFound++;
-      if (consecutiveNotFound >= MAX_CONSECUTIVE_NOT_FOUND) {
+      firstNotFoundAt ??= Date.now();
+      if (Date.now() - firstNotFoundAt >= NOT_FOUND_GRACE_MS) {
         handleError(
           new ApiError(
             "Transfer not found",
