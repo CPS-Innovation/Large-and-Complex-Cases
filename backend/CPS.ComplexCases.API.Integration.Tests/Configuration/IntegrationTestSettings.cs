@@ -93,7 +93,6 @@ public class NetAppSettings
     public Guid S3ServiceUuid { get; set; } = Guid.Empty;
     public int SessionDurationSeconds { get; set; } = 1800;
     public string PepperVersion { get; set; } = "v1";
-    public string? OntapVolumeUuid { get; set; }
     public string? TestFolderPrefix { get; set; }
 
     public bool IsConfigured => !string.IsNullOrEmpty(Url)
