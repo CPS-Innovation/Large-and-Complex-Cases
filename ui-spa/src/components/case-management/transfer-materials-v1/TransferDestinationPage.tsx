@@ -323,7 +323,6 @@ const TransferDestinationPage: React.FC = () => {
   };
 
   const handleTransfer = (selectedNode: TreeNode) => {
-    console.log("Selected node for transfer:", selectedNode.path);
     handleValidateTransfer(selectedNode.path);
   };
 
@@ -358,19 +357,15 @@ const TransferDestinationPage: React.FC = () => {
       <PageContentWrapper>
         <div>
           <h1>
-            {transferSource === "egress"
-              ? "Choose a Shared Drive folder"
-              : "Choose an Egress folder"}
+            {`Choose ${transferSource === "egress" ? "a Shared Drive" : "an Egress"} folder`}
           </h1>
           <p>
-            {sourcePaths.length === 1
-              ? "You are copying 1 item."
-              : `You are copying ${sourcePaths.length} items.`}
+            {`You are ${selectedTransferAction === "copy" ? "copying" : "moving"} ${sourcePaths.length} item${
+              sourcePaths.length === 1 ? "" : "s"
+            }.`}
           </p>
           <p>
-            {transferSource === "egress"
-              ? "Select the Shared Drive folder you want to copy them into."
-              : "Select the Egress folder you want to copy them into."}
+            {`Select the ${transferSource === "egress" ? "Shared Drive" : "Egress"} folder you want to ${selectedTransferAction} them into.`}
           </p>
         </div>
 

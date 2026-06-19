@@ -133,7 +133,6 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
     sortName: string,
     sortType: "ascending" | "descending",
   ) => {
-    console.log("Table sorted:", { sortName, sortType });
     setSortValues({ name: sortName, type: sortType });
   };
 
@@ -512,7 +511,6 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
       if (transferSource === "egress") setSelectedSourceFoldersOrFiles([]);
     }
     if (transferSource === "netapp") {
-      console.log("NetApp folder clicked:", data);
       setNetAppFolderPath(data.path);
       if (transferSource === "netapp") setSelectedSourceFoldersOrFiles([]);
     }
