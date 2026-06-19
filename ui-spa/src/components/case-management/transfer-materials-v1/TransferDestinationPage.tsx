@@ -37,7 +37,7 @@ const TransferDestinationPage: React.FC = () => {
       caseId,
       egressWorkspaceId,
       selectedTransferAction,
-      netAppFolderPath,
+      netAppPath,
       operationName,
     },
   }: {
@@ -53,14 +53,14 @@ const TransferDestinationPage: React.FC = () => {
       egressWorkspaceId: string;
       selectedTransferAction: "copy" | "move";
       caseId: number;
-      netAppFolderPath: string;
+      netAppPath: string;
       operationName: string;
     };
   } = useLocation();
 
   const { data: netAppData, isLoading: isNetAppFolderDataLoading } = useQuery({
-    queryKey: [netAppFolderPath],
-    queryFn: () => getNetAppFolders(netAppFolderPath),
+    queryKey: [netAppPath],
+    queryFn: () => getNetAppFolders(netAppPath),
     retry: false,
     enabled: transferSource === "egress",
     throwOnError: true,
@@ -134,9 +134,9 @@ const TransferDestinationPage: React.FC = () => {
   const initialNetAppFolderData = useMemo(() => {
     const folders = [
       {
-        id: netAppFolderPath,
-        name: `Shared drive: ${getFolderNameFromPath(netAppFolderPath)}`,
-        path: netAppFolderPath,
+        id: netAppPath,
+        name: `Shared drive: ${getFolderNameFromPath(netAppPath)}`,
+        path: netAppPath,
         isFolder: true,
         isRootNode: true,
         children: netAppData?.folderData
@@ -146,7 +146,7 @@ const TransferDestinationPage: React.FC = () => {
     ];
 
     return folders;
-  }, [netAppFolderPath, netAppData]);
+  }, [netAppPath, netAppData]);
 
   const initialEgressFolderData = useMemo(() => {
     const folders = [
@@ -205,6 +205,18 @@ const TransferDestinationPage: React.FC = () => {
     return payload;
   };
 
+  const caseManagementRouteState = useMemo(() => {
+    const paths = sourcePaths.map(({ path }) => path);
+    const sourceCurrentFolderPath = getCommonPath(paths);
+    return {
+      transferSource: transferSource,
+      transferEgressFolderPathInitialValue:
+        transferSource === "egress" ? sourceCurrentFolderPath : undefined,
+      transferNetAppFolderPathInitialValue:
+        transferSource === "netapp" ? sourceCurrentFolderPath : undefined,
+    };
+  }, [sourcePaths, transferSource]);
+
   const handleInitiateFileTransfer = async (
     initiatePayload: InitiateFileTransferPayload,
   ) => {
@@ -215,6 +227,7 @@ const TransferDestinationPage: React.FC = () => {
       replace: true,
       state: {
         transferId: initiateFileTransferResponse.id,
+        ...caseManagementRouteState,
       },
     });
   };
@@ -326,6 +339,15 @@ const TransferDestinationPage: React.FC = () => {
     handleValidateTransfer(selectedNode.path);
   };
 
+  const handleCancelClick = () => {
+    navigate(`/case/${caseId}/case-management`, {
+      replace: true,
+      state: {
+        ...caseManagementRouteState,
+      },
+    });
+  };
+
   const activeTransferMessage = useMemo(() => {
     if (transferStatus === "validating") {
       if (transferSource === "egress") {
@@ -351,7 +373,13 @@ const TransferDestinationPage: React.FC = () => {
 
   return (
     <div>
-      <BackLink to={`/case/${caseId}/case-management`} replace>
+      <BackLink
+        to={`/case/${caseId}/case-management`}
+        state={{
+          ...caseManagementRouteState,
+        }}
+        replace
+      >
         Back
       </BackLink>
       <PageContentWrapper>
@@ -398,7 +426,7 @@ const TransferDestinationPage: React.FC = () => {
               transferAction={
                 selectedTransferAction === "copy" ? "Copy" : "Move"
               }
-              cancelLink={`/case/${caseId}/case-management`}
+              handleCancelClick={handleCancelClick}
               onLoadChildren={handleLoadChildren}
               handleTransfer={handleTransfer}
             />

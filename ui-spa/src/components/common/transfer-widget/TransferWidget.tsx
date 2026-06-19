@@ -1,20 +1,19 @@
 import { useCallback, useState } from "react";
 import TreeView from "../tree-view-component/TreeViewComponent";
-import { Button } from "../../../components/govuk/Button";
-import { Link } from "react-router-dom";
+import { Button, LinkButton } from "../../../components/govuk";
 import { type TreeNode } from "../tree-view-component/TreeViewComponent";
 import styles from "./TransferWidget.module.scss";
 export type TransferWidgetProps = {
   data: TreeNode[];
   onLoadChildren: (nodeId: string) => Promise<TreeNode[]>;
   transferAction: "Copy" | "Move";
-  cancelLink: string;
+  handleCancelClick: () => void;
   handleTransfer: (selectedNode: TreeNode) => void;
 };
 const TransferWidget: React.FC<TransferWidgetProps> = ({
   data,
   transferAction,
-  cancelLink,
+  handleCancelClick,
   onLoadChildren,
   handleTransfer,
 }) => {
@@ -47,9 +46,8 @@ const TransferWidget: React.FC<TransferWidgetProps> = ({
             ? `${transferAction} to ${selectedNode?.name}`
             : transferAction}
         </Button>
-        <Link to={cancelLink} className="govuk-link--no-visited-state">
-          Cancel
-        </Link>
+
+        <LinkButton onClick={handleCancelClick}>Cancel</LinkButton>
       </div>
     </div>
   );

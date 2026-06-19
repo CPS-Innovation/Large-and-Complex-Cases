@@ -42,6 +42,9 @@ type TransferMaterialsV1PageProps = {
   netAppPath: string;
   activeTransferId: string | null;
   urn: string;
+  transferEgressFolderPathInitialValue: string | null;
+  transferNetAppFolderPathInitialValue: string | null;
+  transferSourceInitialValue: "egress" | "netapp";
 };
 
 const CHECKBOX_ALL_FOLDERS_PATH = "all-folders";
@@ -53,12 +56,15 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
   netAppPath,
   activeTransferId,
   urn,
+  transferSourceInitialValue,
+  transferEgressFolderPathInitialValue,
+  transferNetAppFolderPathInitialValue,
 }) => {
   const featureFlags = useUserGroupsFeatureFlag();
   const navigate = useNavigate();
   const { username } = useUserDetails();
   const [transferSource, setTransferSource] = useState<"egress" | "netapp">(
-    "egress",
+    transferSourceInitialValue,
   );
   const [activeTransferData, setActiveTransferData] = useState<null | {
     username: string;
@@ -98,8 +104,12 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
     [],
   );
 
-  const [netAppFolderPath, setNetAppFolderPath] = useState(netAppPath);
-  const [egressFolderPath, setEgressFolderPath] = useState("");
+  const [netAppFolderPath, setNetAppFolderPath] = useState(
+    transferNetAppFolderPathInitialValue ?? netAppPath,
+  );
+  const [egressFolderPath, setEgressFolderPath] = useState(
+    transferEgressFolderPathInitialValue ?? "",
+  );
   const egressPathFolders = useMemo(() => {
     return getPathFolders(egressFolderPath, "Egress", "", operationName);
   }, [egressFolderPath, getPathFolders, operationName]);
@@ -489,7 +499,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
         sourcePaths: getTransferSourcePath(),
         egressWorkspaceId,
         caseId: Number.parseInt(caseId),
-        netAppFolderPath,
+        netAppPath,
         operationName,
       },
     });
@@ -520,21 +530,33 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
   };
 
   const handleGotoFolderClick = () => {
-    if (
-      transferSource === "egress" &&
-      activeTransferData?.direction === "EgressToNetApp"
-    ) {
-      setTransferSource("netapp");
-      // Ensure transfer source is updated first, then set the egress path
-      setTimeout(() => {
+    if (transferSource === "egress" && activeTransferData) {
+      if (activeTransferData.direction === "EgressToNetApp") {
         setNetAppFolderPath(activeTransferData.destinationPath);
-        setActiveTransferData(null);
-      }, 0);
-    } else if (
-      transferSource === "egress" &&
+        // Ensure transfer path is updated first, then switch the source
+        setTimeout(() => {
+          setTransferSource("netapp");
+        }, 0);
+      } else {
+        setEgressFolderPath(activeTransferData.destinationPath);
+      }
+
+      setActiveTransferData(null);
+      return;
+    }
+    if (
+      transferSource === "netapp" &&
       activeTransferData?.direction === "NetAppToEgress"
     ) {
-      setEgressFolderPath(activeTransferData.destinationPath);
+      if (activeTransferData?.direction === "NetAppToEgress") {
+        setEgressFolderPath(activeTransferData.destinationPath);
+        // Ensure transfer path is updated first, then switch the source
+        setTimeout(() => {
+          setTransferSource("egress");
+        }, 0);
+      } else {
+        setNetAppFolderPath(activeTransferData.destinationPath);
+      }
       setActiveTransferData(null);
     }
   };
@@ -661,6 +683,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
     if (!transferId) {
       return;
     }
+
     setTransferStatus("transferring");
     pollTransferStatus(
       transferId,

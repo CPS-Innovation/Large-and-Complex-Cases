@@ -19,6 +19,16 @@ import styles from "./index.module.scss";
 const CaseManagementPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const {
+    state: routeState,
+  }: {
+    state?: {
+      transferId: string;
+      transferSource: "egress" | "netapp";
+      transferEgressFolderPathInitialValue?: string;
+      transferNetAppFolderPathInitialValue?: string;
+    };
+  } = location;
   const { caseId } = useParams() as { caseId: string };
   if (!caseId) throw new Error("missing caseId in the url");
 
@@ -102,9 +112,18 @@ const CaseManagementPage = () => {
               egressWorkspaceId={caseMetaData.egressWorkspaceId}
               netAppPath={caseMetaData.netappFolderPath}
               activeTransferId={
-                location?.state?.transferId ?? caseMetaData.activeTransferId
+                routeState?.transferId ?? caseMetaData.activeTransferId
               }
               urn={caseMetaData.urn}
+              transferSourceInitialValue={
+                routeState?.transferSource ?? "egress"
+              }
+              transferEgressFolderPathInitialValue={
+                routeState?.transferEgressFolderPathInitialValue ?? null
+              }
+              transferNetAppFolderPathInitialValue={
+                routeState?.transferNetAppFolderPathInitialValue ?? null
+              }
             />
           ) : (
             <></>
@@ -126,7 +145,7 @@ const CaseManagementPage = () => {
               egressWorkspaceId={caseMetaData.egressWorkspaceId}
               netAppPath={caseMetaData.netappFolderPath}
               activeTransferId={
-                location?.state?.transferId ?? caseMetaData.activeTransferId
+                routeState?.transferId ?? caseMetaData.activeTransferId
               }
               urn={caseMetaData.urn}
             />
@@ -174,9 +193,9 @@ const CaseManagementPage = () => {
     activeTabId,
     caseId,
     caseMetaData,
+    routeState,
     featureFlags.caseDetails,
     featureFlags.transferMaterialsV1,
-    location?.state?.transferId,
   ]);
   if (isCaseMetaDataLoading) {
     return <PageContentWrapper>loading...</PageContentWrapper>;
