@@ -5,12 +5,12 @@ using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
 using CPS.ComplexCases.DDEI.Mappers;
 using CPS.ComplexCases.DDEI.Services;
+using CPS.ComplexCases.Common.Resilience;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Polly;
-using Polly.Contrib.WaitAndRetry;
-using Polly.Retry;
 
 namespace CPS.ComplexCases.DDEI.Extensions;
 
@@ -19,13 +19,29 @@ public static class IServiceCollectionExtension
   private const int RetryAttempts = 1;
   private const int FirstRetryDelaySeconds = 1;
 
+  // MDS (via DDEI) is a standard request/response service, so a 30s sampling window
+  // with a moderate throughput requirement is enough to spot a failing service quickly.
+  private const double CircuitBreakerFailureThreshold = 0.5;
+  private const int CircuitBreakerSamplingDurationSeconds = 30;
+  private const int CircuitBreakerMinimumThroughput = 10;
+  private const int CircuitBreakerDurationOfBreakSeconds = 30;
+
+  // Built once and reused so circuit-breaker state is shared across all calls
+  private static IServiceProvider? _serviceProvider;
+  private static readonly Lazy<IAsyncPolicy<HttpResponseMessage>> _resiliencePolicy =
+      new(() => GetResiliencePolicy(_serviceProvider!.GetRequiredService<ILoggerFactory>()));
+
   public static void AddDdeiClient(this IServiceCollection services, IConfiguration configuration)
   {
     services.Configure<DDEIOptions>(configuration.GetSection(nameof(DDEIOptions)));
     services.AddTransient<IDdeiArgFactory, DdeiArgFactory>();
     services.AddHttpClient<IDdeiClient, DdeiClient>(AddDdeiClient)
       .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-      .AddPolicyHandler(GetRetryPolicy());
+      .AddPolicyHandler((sp, _) =>
+      {
+        _serviceProvider ??= sp;
+        return _resiliencePolicy.Value;
+      });
     services.AddTransient<IDdeiRequestFactory, DdeiRequestFactory>();
     services.AddTransient<ICaseDetailsMapper, CaseDetailsMapper>();
     services.AddTransient<IAreasMapper, AreasMapper>();
@@ -46,24 +62,32 @@ public static class IServiceCollectionExtension
     }
   }
 
-  private static AsyncRetryPolicy<HttpResponseMessage> GetRetryPolicy()
+  // Retry is kept outermost so a retry attempt re-enters the (possibly open) circuit and fails fast
+  // instead of bypassing the breaker.
+  internal static IAsyncPolicy<HttpResponseMessage> GetResiliencePolicy(ILoggerFactory loggerFactory)
   {
-    // https://learn.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/implement-http-call-retries-exponential-backoff-polly#add-a-jitter-strategy-to-the-retry-policy
-    var delay = Backoff.DecorrelatedJitterBackoffV2(
-        medianFirstRetryDelay: TimeSpan.FromSeconds(FirstRetryDelaySeconds),
-        retryCount: RetryAttempts);
+    var logger = loggerFactory.CreateLogger("CPS.ComplexCases.DDEI.CircuitBreaker");
 
-    static bool responseStatusCodePredicate(HttpResponseMessage response) =>
-        response.StatusCode >= HttpStatusCode.InternalServerError
-        || response.StatusCode == HttpStatusCode.NotFound;
+    // A 404 is retried but is not a health signal, so it is deliberately excluded from the breaker.
+    static bool shouldRetry(HttpResponseMessage response) =>
+        (response.StatusCode >= HttpStatusCode.InternalServerError
+            || response.StatusCode == HttpStatusCode.NotFound)
+        && HttpResiliencePolicyFactory.ExcludesPostAndPut(response);
 
-    static bool methodPredicate(HttpResponseMessage response) =>
-        response.RequestMessage?.Method != HttpMethod.Post
-        && response.RequestMessage?.Method != HttpMethod.Put;
+    var retryPolicy = HttpResiliencePolicyFactory.CreateRetryPolicy(
+        RetryAttempts,
+        TimeSpan.FromSeconds(FirstRetryDelaySeconds),
+        shouldRetry,
+        handleHttpRequestException: true);
 
-    return Policy
-        .Handle<HttpRequestException>()
-        .OrResult<HttpResponseMessage>(r => responseStatusCodePredicate(r) && methodPredicate(r))
-        .WaitAndRetryAsync(delay);
+    var circuitBreaker = HttpResiliencePolicyFactory.CreateCircuitBreakerPolicy(
+        logger,
+        "MDS (DDEI)",
+        CircuitBreakerFailureThreshold,
+        TimeSpan.FromSeconds(CircuitBreakerSamplingDurationSeconds),
+        CircuitBreakerMinimumThroughput,
+        TimeSpan.FromSeconds(CircuitBreakerDurationOfBreakSeconds));
+
+    return Policy.WrapAsync(retryPolicy, circuitBreaker);
   }
 }
