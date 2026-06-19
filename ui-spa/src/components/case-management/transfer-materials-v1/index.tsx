@@ -44,6 +44,7 @@ type TransferMaterialsV1PageProps = {
   urn: string;
 };
 
+const CHECKBOX_ALL_FOLDERS_PATH = "all-folders";
 const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
   isTabActive,
   caseId,
@@ -416,16 +417,16 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
   const handleCheckboxChange = (checkboxId: string, checked: boolean) => {
     let updatedFolders: string[] = [];
 
-    if (checkboxId === "all-folders") {
+    if (checkboxId === CHECKBOX_ALL_FOLDERS_PATH) {
       if (checked) {
         if (transferSource === "egress")
           updatedFolders = [
-            "all-folders",
+            CHECKBOX_ALL_FOLDERS_PATH,
             ...egressFolderData.map((data) => data.path),
           ];
         if (transferSource === "netapp")
           updatedFolders = [
-            "all-folders",
+            CHECKBOX_ALL_FOLDERS_PATH,
             ...netAppFolderData.map((data) => data.path),
           ];
       } else {
@@ -471,9 +472,11 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
           isFolder: data.isFolder,
         }));
     } else {
-      return selectedSourceFoldersOrFiles.map((path) => ({
-        path: path,
-      }));
+      return selectedSourceFoldersOrFiles
+        .filter((path) => path !== CHECKBOX_ALL_FOLDERS_PATH)
+        .map((path) => ({
+          path: path,
+        }));
     }
   };
 
