@@ -544,10 +544,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
       setActiveTransferData(null);
       return;
     }
-    if (
-      transferSource === "netapp" &&
-      activeTransferData?.direction === "NetAppToEgress"
-    ) {
+    if (transferSource === "netapp" && activeTransferData) {
       if (activeTransferData?.direction === "NetAppToEgress") {
         setEgressFolderPath(activeTransferData.destinationPath);
         // Ensure transfer path is updated first, then switch the source
