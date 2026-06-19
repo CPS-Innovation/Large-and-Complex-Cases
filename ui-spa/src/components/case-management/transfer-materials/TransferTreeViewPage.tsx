@@ -55,7 +55,7 @@ const TransferTreeViewPage = ({ caseId }: TransferTreeViewPageProps) => {
             });
             return [...folders, ...files];
           }}
-          cancelLink=""
+          handleCancelClick={() => {}}
           handleTransfer={() => {}}
           transferAction="Copy"
         />
