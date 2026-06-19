@@ -39,8 +39,10 @@ The scripts automatically load credentials from `secrets.config.ps1`.
 | **Case** | Pre-existing case | Registers one case on the first folder, reuses it for remaining folders |
 | **Workspace** | Uploads to existing workspace | Creates new workspace |
 | **Connections** | Skipped (already exist) | Created (Egress + NetApp) |
-| **Speed** | Approx. 4 min (all 3 tests) | Approx. 6 min (all 3 tests) |
+| **Speed** | Faster — skips registration and connection setup | Slower — adds case registration and connection creation on top of default-mode timing |
 | **Use case** | Day-to-day testing, CI/CD | Testing case registration flow |
+
+The four journey folders are `E2E: Egress to NetApp Copy`, `E2E: Netapp to Egress Copy`, `E2E: Egress to NetApp Move`, and `E2E: Netapp Move to Egress Copy`. They run in this order so each back-direction journey finds the file its forward counterpart just deposited.
 
 ---
 
@@ -138,7 +140,7 @@ Priority order: CLI parameters > Environment variables > secrets.config.ps1
 Main test orchestrator. Uploads files to Egress and runs Newman tests.
 
 ```powershell
-# Default mode, all 3 tests
+# Default mode, all 4 journeys
 .\Run-E2E-Tests.ps1 -SizeMB 100
 
 # Default mode, specific test only
@@ -164,7 +166,7 @@ Parameters:
 | `-SizeMB` | File size in MB | - |
 | `-SizeGB` | File size in GB | 1 |
 | `-FileCount` | Number of files to upload | 1 |
-| `-TestsToRun` | all, copy, move, netapp-to-egress | all |
+| `-TestsToRun` | all, copy, move, netapp-to-egress, netapp-move-to-egress | all |
 | `-RegisterCase` | Register a new case. Without this flag, uses pre-existing case. | false |
 | `-SkipUpload` | Skip file upload step | false |
 | `-StopOnFailure` | Stop on first test failure | false |
@@ -200,6 +202,73 @@ Creates an Egress workspace and uploads test files.
 | `newman-reports/` | Newman HTML/JSON test reports | No |
 | `LCCTestEnvironment_updated.*` | Auto-generated updated env files | No |
 | `README.md` | This file | Yes |
+
+---
+
+## Execution models
+
+The collection can be driven three ways. Pick whichever fits the workflow.
+
+### 1. PowerShell + Newman — full E2E orchestration
+
+`Run-E2E-Tests.ps1` is the canonical entry point and the only path with full support for both Copy and Move journeys. Each invocation:
+
+1. Loads credentials (`secrets.config.ps1` / env vars / CLI parameters).
+2. Calls `Setup-EgressWorkspaceAndUpload.ps1` to upload the Copy source (`copy-<size>-…-fileN.txt` to `1. New evidence/`) and the Move source (`move-<size>-…-fileN.txt` to `4. Served Evidence/`) into Egress.
+3. Materialises `LCCTestEnvironment_updated.postman_environment.json` and `LCCUserJourneyTests.postman_collection_updated.json` with the upload outputs spliced in.
+4. Runs the `0. E2E Setup` folder once in Newman with `--export-environment LCCTestEnvironment_post-setup.postman_environment.json`. Setup acquires auth tokens, registers the case (RegisterCase mode) or skips to the pre-existing case (default mode), and stamps a fresh `e2eRunId = {{$guid}}` for per-run path uniquification.
+5. Runs each journey folder as its own Newman invocation, all sharing the post-setup env, and writes HTML reports under `newman-reports/`.
+
+### 2. Postman Runner — replay the generated artefacts
+
+After a `Run-E2E-Tests.ps1` pass, the `_updated` collection + `LCCTestEnvironment_post-setup.postman_environment.json` can be imported into Postman; pressing **Run** on the collection executes all four journey folders end-to-end. The Setup folder re-runs and re-stamps `e2eRunId` on every Runner pass, so destination paths are per-run unique (see "Replay safety" below).
+
+| Postman Runner can ✓ | Postman Runner can't ✗ |
+|---|---|
+| Run all four journeys in one pass after an initial PowerShell run. | Provision an Egress workspace or upload sources — that's `Setup-EgressWorkspaceAndUpload.ps1`. |
+| Replay the Copy journeys twice in a row against the same imported env (per-run sub-folders). | Replay the Move journey twice without re-running PowerShell — see below. |
+| Pick a subset of folders via the folder filter in the Runner UI. | Substitute for `Run-E2E-Tests.ps1` for full E2E coverage. |
+
+### 3. PowerShell + Newman — single-journey subsets
+
+`-TestsToRun copy | move | netapp-to-egress | netapp-move-to-egress` runs only the named journey. The orchestrator still runs the Setup folder once. The two back-direction journeys (`netapp-to-egress`, `netapp-move-to-egress`) depend on their forward counterparts having deposited a file in NetApp; running them standalone against a fresh workspace fails fast with a clear "run forward first" message rather than silently transferring a file that doesn't exist.
+
+---
+
+## Collection internals
+
+### `0. E2E Setup` folder
+
+Runs once at the start of every top-level execution (Newman invocation, Postman Runner pass, or single-journey subset). It:
+
+- Acquires the Azure AD token, LCC API token, and CMS session.
+- In RegisterCase mode, registers the case and creates the Egress + NetApp connections. In default mode, those requests skip themselves and the pre-existing `defaultCaseId` / `defaultCaseUrn` are copied into the active `caseId` / `caseUrn`.
+- Stamps `e2eRunId = {{$guid}}` (consumed by the per-run uniquify blocks in every journey folder).
+
+`Run-E2E-Tests.ps1` exports the resulting env to `LCCTestEnvironment_post-setup.postman_environment.json` so the journey folders can share it.
+
+### Per-journey file-set variables
+
+Each forward journey reads its own disjoint source set so Move can't accidentally select a Copy file (or vice versa):
+
+| Variables | Used by | Source |
+|---|---|---|
+| `egressCopyFileName` / `egressCopyFileNames` / `egressCopyFileId` / `egressCopyFileIds` / `egressCopyFileCount` | `E2E: Egress to NetApp Copy` (`[ENC]`) | Uploaded to `1. New evidence/` |
+| `egressMoveFileName` / `egressMoveFileNames` / `egressMoveFileId` / `egressMoveFileIds` / `egressMoveFileCount` | `E2E: Egress to NetApp Move` (`[ENM]`) | Uploaded to `4. Served Evidence/` |
+
+`[ENC]/[ENM] 7b. List Files in Folder` hardcodes the prefix per folder and copies the right values into the generic `egressFile*` variables the rest of the journey reads — no `pm.execution.location` sniffing.
+
+### Replay safety
+
+The collection is designed so that **importing the generated env and pressing Run a second time succeeds without re-running PowerShell** — with one caveat for the Move journeys.
+
+How it works:
+
+- `0. E2E Setup / 1. Get Azure AD Token` stamps a fresh `e2eRunId` (`{{$guid}}`) on every pass.
+- Each journey folder reads `e2eRunId` and rewrites `netappFolderPath`, `netappMoveFolderPath`, and `egressDestinationFolder` to a per-run sub-folder (e.g. `Automation-Testing/e2e-run-<id>/`).
+- A second Runner pass re-runs Setup, stamps a new `e2eRunId`, and writes to a new sub-folder — no `FileExists` collision with the prior pass.
+
+**Move journey limitation (by design).** A second Runner pass cannot complete `E2E: Egress to NetApp Move` (or its back-direction copy) without re-uploading the Move source. The backend deletes the Egress source on Move (`TransferOrchestrator.cs:243-248`), so on the second pass the configured `egressMoveFileName` is no longer in `4. Served Evidence/` and the strict assertion in `[ENM] 7b. List Files in Folder` fails loudly with the configured file name. To replay the Move journey, re-run `Run-E2E-Tests.ps1` (the upload step re-stages a fresh Move source); the Copy journeys remain replay-safe with or without the re-upload.
 
 ---
 

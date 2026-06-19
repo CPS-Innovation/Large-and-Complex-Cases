@@ -58,7 +58,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             var permissionsArg = _fixture.Create<GetWorkspacePermissionArg>();
 
             _egressArgFactoryMock
-                .Setup(f => f.CreateListWorkspaceMaterialArg(workspaceId, skip, take, folderId, null))
+                .Setup(f => f.CreateListWorkspaceMaterialArg(workspaceId, skip, take, folderId, null, null))
                 .Returns(listMaterialsArg);
 
             _egressArgFactoryMock
@@ -89,10 +89,114 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             var okResult = Assert.IsType<OkObjectResult>(result);
             Assert.Equal(listMaterialsResponse, okResult.Value);
 
-            _egressArgFactoryMock.Verify(f => f.CreateListWorkspaceMaterialArg(workspaceId, skip, take, folderId, null), Times.Once);
+            _egressArgFactoryMock.Verify(f => f.CreateListWorkspaceMaterialArg(workspaceId, skip, take, folderId, null, null), Times.Once);
             _egressArgFactoryMock.Verify(f => f.CreateGetWorkspacePermissionArg(workspaceId, username), Times.Once);
             _egressClientMock.Verify(c => c.GetWorkspacePermission(permissionsArg), Times.Once);
             _egressClientMock.Verify(c => c.ListCaseMaterialAsync(listMaterialsArg), Times.Once);
+        }
+
+        [Fact]
+        public async Task Run_ForwardsPath_WhenPathSuppliedWithoutFolderId()
+        {
+            // Arrange
+            var workspaceId = _fixture.Create<string>();
+            var username = _fixture.Create<string>();
+
+            var path = "/uploads/some-folder";
+            var skip = _fixture.Create<int>();
+            var take = _fixture.Create<int>();
+
+            var listMaterialsResponse = _fixture.Create<ListCaseMaterialDto>();
+            var listMaterialsArg = _fixture.Create<ListWorkspaceMaterialArg>();
+            var permissionsArg = _fixture.Create<GetWorkspacePermissionArg>();
+
+            _egressArgFactoryMock
+                .Setup(f => f.CreateListWorkspaceMaterialArg(workspaceId, skip, take, It.Is<string?>(s => string.IsNullOrEmpty(s)), null, path))
+                .Returns(listMaterialsArg);
+
+            _egressArgFactoryMock
+                .Setup(f => f.CreateGetWorkspacePermissionArg(workspaceId, username))
+                .Returns(permissionsArg);
+
+            _egressClientMock
+                .Setup(c => c.GetWorkspacePermission(permissionsArg))
+                .ReturnsAsync(true);
+
+            _egressClientMock
+                .Setup(c => c.ListCaseMaterialAsync(listMaterialsArg))
+                .ReturnsAsync(listMaterialsResponse);
+
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, username, _testBearerToken);
+            var queryParams = new Dictionary<string, string>
+            {
+                [InputParameters.Path] = path,
+                [InputParameters.Skip] = skip.ToString(),
+                [InputParameters.Take] = take.ToString()
+            };
+            var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(queryParams, _testCorrelationId);
+
+            // Act
+            var result = await _function.Run(httpRequest, functionContext, workspaceId);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(listMaterialsResponse, okResult.Value);
+
+            _egressArgFactoryMock.Verify(f => f.CreateListWorkspaceMaterialArg(workspaceId, skip, take, It.Is<string?>(s => string.IsNullOrEmpty(s)), null, path), Times.Once);
+            _egressClientMock.Verify(c => c.ListCaseMaterialAsync(listMaterialsArg), Times.Once);
+        }
+
+        [Fact]
+        public async Task Run_FolderIdTakesPrecedence_WhenBothFolderIdAndPathSupplied()
+        {
+            // Arrange
+            var workspaceId = _fixture.Create<string>();
+            var username = _fixture.Create<string>();
+
+            var folderId = _fixture.Create<string>();
+            var path = "/uploads/some-folder";
+            var skip = _fixture.Create<int>();
+            var take = _fixture.Create<int>();
+
+            var listMaterialsResponse = _fixture.Create<ListCaseMaterialDto>();
+            var listMaterialsArg = _fixture.Create<ListWorkspaceMaterialArg>();
+            var permissionsArg = _fixture.Create<GetWorkspacePermissionArg>();
+
+            _egressArgFactoryMock
+                .Setup(f => f.CreateListWorkspaceMaterialArg(workspaceId, skip, take, folderId, null, null))
+                .Returns(listMaterialsArg);
+
+            _egressArgFactoryMock
+                .Setup(f => f.CreateGetWorkspacePermissionArg(workspaceId, username))
+                .Returns(permissionsArg);
+
+            _egressClientMock
+                .Setup(c => c.GetWorkspacePermission(permissionsArg))
+                .ReturnsAsync(true);
+
+            _egressClientMock
+                .Setup(c => c.ListCaseMaterialAsync(listMaterialsArg))
+                .ReturnsAsync(listMaterialsResponse);
+
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, username, _testBearerToken);
+            var queryParams = new Dictionary<string, string>
+            {
+                [InputParameters.FolderId] = folderId,
+                [InputParameters.Path] = path,
+                [InputParameters.Skip] = skip.ToString(),
+                [InputParameters.Take] = take.ToString()
+            };
+            var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(queryParams, _testCorrelationId);
+
+            // Act
+            var result = await _function.Run(httpRequest, functionContext, workspaceId);
+
+            // Assert — path is ignored (null passed) because folder-id wins
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(listMaterialsResponse, okResult.Value);
+
+            _egressArgFactoryMock.Verify(f => f.CreateListWorkspaceMaterialArg(workspaceId, skip, take, folderId, null, null), Times.Once);
+            _egressArgFactoryMock.Verify(f => f.CreateListWorkspaceMaterialArg(workspaceId, skip, take, folderId, null, path), Times.Never);
         }
 
         [Fact]
