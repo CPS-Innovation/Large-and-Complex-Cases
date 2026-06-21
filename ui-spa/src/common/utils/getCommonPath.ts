@@ -1,7 +1,10 @@
 import commonPathPrefix from "common-path-prefix";
 import { getRelativePathFromPath } from "../utils/getRelativePathFromPath";
+
 export const getCommonPath = (filePaths: string[]) => {
-  return filePaths.length === 1
-    ? `${getRelativePathFromPath(filePaths[0])}/`
-    : commonPathPrefix(filePaths, "/");
+  if (filePaths.length === 1) {
+    if (filePaths[0] === "") return "";
+    return `${getRelativePathFromPath(filePaths[0])}/`;
+  }
+  return commonPathPrefix(filePaths, "/");
 };
