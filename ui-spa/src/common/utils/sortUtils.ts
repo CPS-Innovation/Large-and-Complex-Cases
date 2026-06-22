@@ -48,12 +48,12 @@ export const sortByNumberProperty = <T>(
     let sizeA = a[numberProperty] as number;
     let sizeB = b[numberProperty] as number;
 
-    if (!sizeA)
+    if (!Number.isFinite(sizeA))
       sizeA =
         order === "ascending"
           ? Number.POSITIVE_INFINITY
           : Number.NEGATIVE_INFINITY;
-    if (!sizeB)
+    if (!Number.isFinite(sizeB))
       sizeB =
         order === "ascending"
           ? Number.POSITIVE_INFINITY

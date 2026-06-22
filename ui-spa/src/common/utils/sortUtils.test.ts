@@ -84,19 +84,19 @@ describe("SortUtils", () => {
   describe("sortByNumberProperty", () => {
     it("Should be able to sort an array of objects based on file size property in ascending order", () => {
       const data = [
-        { id: 5, name: "file5.txt", filesize: 0 },
         { id: 1, name: "file1.txt", filesize: 200 },
+        { id: 5, name: "file5.txt", filesize: 0 },
         { id: 2, name: "file2.txt", filesize: 100 },
         { id: 3, name: "file3.txt", filesize: 600 },
         { id: 4, name: "file4.txt", filesize: 300 },
       ];
 
       const expectedResult = [
+        { id: 5, name: "file5.txt", filesize: 0 },
         { id: 2, name: "file2.txt", filesize: 100 },
         { id: 1, name: "file1.txt", filesize: 200 },
         { id: 4, name: "file4.txt", filesize: 300 },
         { id: 3, name: "file3.txt", filesize: 600 },
-        { id: 5, name: "file5.txt", filesize: 0 },
       ];
 
       const sortedData = sortByNumberProperty(data, "filesize", "ascending");
