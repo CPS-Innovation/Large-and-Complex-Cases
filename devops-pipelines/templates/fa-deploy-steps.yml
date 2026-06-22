@@ -102,12 +102,12 @@ steps:
           postmanCollectionPath: ${{parameters.postmanCollectionPath}}
           appInstance: $(instanceName)
 
-  - task: AzureAppServiceManage@0
-    condition: and(succeeded(), ${{ eq(parameters.deployToSlot, true) }})
-    displayName: "Perform Slot Swap"
-    inputs:
-      azureSubscription: ${{ parameters.azureSubscription }}
-      WebAppName: ${{ parameters.functionAppName }}
-      ResourceGroupName: ${{ parameters.resourceGroupName }}
-      SourceSlot: ${{ parameters.slotName }}
-      SwapWithProduction: true
+  # - task: AzureAppServiceManage@0
+  #   condition: and(succeeded(), ${{ eq(parameters.deployToSlot, true) }})
+  #   displayName: "Perform Slot Swap"
+  #   inputs:
+  #     azureSubscription: ${{ parameters.azureSubscription }}
+  #     WebAppName: ${{ parameters.functionAppName }}
+  #     ResourceGroupName: ${{ parameters.resourceGroupName }}
+  #     SourceSlot: ${{ parameters.slotName }}
+  #     SwapWithProduction: true

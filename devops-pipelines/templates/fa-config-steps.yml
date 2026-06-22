@@ -37,8 +37,23 @@ steps:
       appName: ${{ parameters.functionAppName }}
       resourceGroupName: ${{ parameters.resourceGroupName }}
       slotName: ${{ parameters.slotName }}
-      appSettings: |
+      appSettings: | # first 3 blocks added for rollback test
         [
+          {
+            "name": "FeatureFlags__SimulateEndpointFailure",
+            "value": "false",
+            "slotSetting": false
+          },
+          {
+            "name": "WEBSITE_SWAP_WARMUP_PING_PATH",
+            "value": "/api/status",
+            "slotSetting": false
+          },
+          {
+            "name": "WEBSITE_SWAP_WARMUP_PING_STATUSES",
+            "value": "200",
+            "slotSetting": false
+          },
           {
             "name": "ConnectionStrings__CaseManagementDatastoreConnection",
             "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=ConnectionStrings--CaseManagementDatastoreConnection)",

@@ -165,23 +165,23 @@ stages:
                   parameters:
                     buildArtifact: "lacc-main-api-drop"
 
-      - deployment: Deploy_FileTransfer_API
-        dependsOn: Deploy_Database_Changes
-        displayName: "${{ parameters.environment }} - Deploy FileTransfer API Function App"
-        environment: "LACC-Backend-${{ parameters.environment }}"
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - template: ./fa-deploy-steps.yml
-                  parameters:
-                    environment: ${{ parameters.environment }}
-                    azureSubscription: ${{ parameters.azureSubscription }}
-                    functionAppName: "fa-lacc-filetransfer-api-${{ parameters.environment }}"
-                    buildArtifactName: "lacc-filetransfer-api-drop"
-                    deployToSlot: ${{ parameters.deployToSlot }}
-                    slotName: ${{ parameters.slotName }}
+      # - deployment: Deploy_FileTransfer_API
+      #   dependsOn: Deploy_Database_Changes
+      #   displayName: "${{ parameters.environment }} - Deploy FileTransfer API Function App"
+      #   environment: "LACC-Backend-${{ parameters.environment }}"
+      #   strategy:
+      #     runOnce:
+      #       deploy:
+      #         steps:
+      #           - template: ./fa-deploy-steps.yml
+      #             parameters:
+      #               environment: ${{ parameters.environment }}
+      #               azureSubscription: ${{ parameters.azureSubscription }}
+      #               functionAppName: "fa-lacc-filetransfer-api-${{ parameters.environment }}"
+      #               buildArtifactName: "lacc-filetransfer-api-drop"
+      #               deployToSlot: ${{ parameters.deployToSlot }}
+      #               slotName: ${{ parameters.slotName }}
 
-                - template: ./runner-cleanup-steps.yml
-                  parameters:
-                    buildArtifact: "lacc-filetransfer-api-drop"
+      #           - template: ./runner-cleanup-steps.yml
+      #             parameters:
+      #               buildArtifact: "lacc-filetransfer-api-drop"
