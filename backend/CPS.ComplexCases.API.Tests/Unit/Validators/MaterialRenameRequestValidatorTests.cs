@@ -340,6 +340,31 @@ public class MaterialRenameRequestValidatorTests
         result.ShouldHaveValidationErrorFor("Operations[0].NewPath");
     }
 
+    [Fact]
+    public void Should_Have_Error_When_CurrentPath_Equals_NewPath()
+    {
+        var request = CreateValidRequest();
+        request.Operations[0].NewPath = request.Operations[0].CurrentPath;
+
+        var result = _validator.TestValidate(request);
+
+        result.ShouldHaveValidationErrorFor("Operations[0].CurrentPath")
+            .WithErrorMessage("CurrentPath and NewPath cannot be the same.");
+    }
+
+    [Fact]
+    public void Should_Have_Error_When_CurrentPath_Equals_NewPath_CaseInsensitive()
+    {
+        var request = CreateValidRequest();
+        request.Operations[0].CurrentPath = "case/file.pdf";
+        request.Operations[0].NewPath = "case/FILE.PDF";
+
+        var result = _validator.TestValidate(request);
+
+        result.ShouldHaveValidationErrorFor("Operations[0].CurrentPath")
+            .WithErrorMessage("CurrentPath and NewPath cannot be the same.");
+    }
+
     private static MaterialRenameRequestDto CreateValidRequest() =>
         new()
         {

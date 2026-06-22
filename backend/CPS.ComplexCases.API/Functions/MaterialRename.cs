@@ -100,7 +100,7 @@ public class MaterialRename(
                 {
                     PreviousPath = operation.CurrentPath,
                     NewPath = operation.NewPath,
-                    Status = "Failed",
+                    Status = OperationResultStatus.Failed,
                     Error = "Path is not within the case's NetApp folder."
                 });
                 continue;
@@ -112,15 +112,14 @@ public class MaterialRename(
             {
                 var result = await _ontapHttpClient.RenameMaterialAsync(arg);
 
-                if (!result.Success)
+                if (result.Success)
                 {
-                    _logger.LogInformation("Failed to rename material from {CurrentPath} to {NewPath}. Error: {ErrorMessage}", operation.CurrentPath, operation.NewPath, result.ErrorMessage);
                     results.Add(new MaterialRenameBatchItemResult
                     {
                         PreviousPath = operation.CurrentPath,
                         NewPath = operation.NewPath,
-                        Status = OperationResultStatus.Failed,
-                        Error = result.ErrorMessage
+                        Status = OperationResultStatus.Renamed,
+                        KeysRenamed = result.KeysRenamed > 1 ? result.KeysRenamed : null
                     });
                 }
                 else if (!result.WasFound)
@@ -135,12 +134,13 @@ public class MaterialRename(
                 }
                 else
                 {
+                    _logger.LogInformation("Failed to rename material from {CurrentPath} to {NewPath}. Error: {ErrorMessage}", operation.CurrentPath, operation.NewPath, result.ErrorMessage);
                     results.Add(new MaterialRenameBatchItemResult
                     {
                         PreviousPath = operation.CurrentPath,
                         NewPath = operation.NewPath,
-                        Status = OperationResultStatus.Renamed,
-                        KeysRenamed = result.KeysRenamed > 1 ? result.KeysRenamed : null
+                        Status = OperationResultStatus.Failed,
+                        Error = result.ErrorMessage
                     });
                 }
             }

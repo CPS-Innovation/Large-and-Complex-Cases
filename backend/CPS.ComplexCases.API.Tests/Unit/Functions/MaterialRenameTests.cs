@@ -200,6 +200,34 @@ public class MaterialRenameTests
             Times.Never);
     }
 
+    [Fact]
+    public async Task Run_WhenMaterialNotFound_IncludesNotFoundInResults()
+    {
+        // Arrange
+        var requestDto = CreateValidRequestDto();
+        SetupRequestValidator(requestDto, isValid: true);
+        SetupCaseMetadata(requestDto.CaseId);
+        SetupSecurityGroups();
+        SetupOntapClientForNotFoundResult();
+
+        var function = CreateFunction(materialRenameEnabled: true);
+        var request = HttpRequestStubHelper.CreateHttpRequestFor(requestDto);
+        var context = CreateFunctionContext();
+
+        // Act
+        var result = await function.Run(request, context);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<MaterialRenameBatchResponse>(okResult.Value);
+        Assert.Equal(1, response.TotalRequested);
+        Assert.Equal(1, response.NotFound);
+        Assert.Equal(0, response.Failed);
+        _ontapHttpClientMock.Verify(
+            c => c.RenameMaterialAsync(It.IsAny<MaterialRenameArg>()),
+            Times.Once);
+    }
+
     private MaterialRename CreateFunction(bool materialRenameEnabled)
     {
         var featureFlags = Options.Create(new FeatureFlagConfig
@@ -279,6 +307,28 @@ public class MaterialRenameTests
         _ontapHttpClientMock
             .Setup(c => c.RenameMaterialAsync(It.IsAny<MaterialRenameArg>()))
             .ReturnsAsync(new MaterialRenameResult(Success: true, WasFound: true, KeysRenamed: 1, ErrorMessage: null, ErrorStatusCode: null));
+    }
+
+    private void SetupOntapClientForNotFoundResult()
+    {
+        _ontapArgFactoryMock
+            .Setup(f => f.CreateMaterialRenameArg(
+                It.IsAny<string>(),
+                It.IsAny<Guid>(),
+                It.IsAny<string>(),
+                It.IsAny<string>()))
+            .Returns((string token, Guid uuid, string currentPath, string newPath) =>
+                new MaterialRenameArg
+                {
+                    BearerToken = token,
+                    OntapVolumeUuid = uuid,
+                    CurrentFilePath = currentPath,
+                    NewFilePath = newPath
+                });
+
+        _ontapHttpClientMock
+            .Setup(c => c.RenameMaterialAsync(It.IsAny<MaterialRenameArg>()))
+            .ReturnsAsync(new MaterialRenameResult(Success: false, WasFound: false, KeysRenamed: 0, ErrorMessage: "Not found", ErrorStatusCode: 404));
     }
 
     private FunctionContext CreateFunctionContext() =>

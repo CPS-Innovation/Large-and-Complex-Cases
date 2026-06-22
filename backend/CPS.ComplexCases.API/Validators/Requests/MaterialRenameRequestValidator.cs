@@ -52,13 +52,13 @@ public class MaterialRenameRequestValidator : AbstractValidator<MaterialRenameRe
                 .Must(path => !path.StartsWith('/'))
                 .WithMessage("CurrentPath cannot start with a '/'.");
 
-            op.RuleFor(x => x.CurrentPath)
-                .Must(path => !path.StartsWith('/'))
-                .WithMessage("CurrentPath cannot start with a '/'.");
-
             op.RuleFor(x => x.NewPath)
                 .Must(path => !path.StartsWith('/'))
                 .WithMessage("NewPath cannot start with a '/'.");
+
+            op.RuleFor(x => x.CurrentPath)
+                .Must((operation, path) => !path.Equals(operation.NewPath, StringComparison.OrdinalIgnoreCase))
+                .WithMessage("CurrentPath and NewPath cannot be the same.");
 
             op.RuleFor(x => x.CurrentPath)
                 .Must((operation, path) => operation.Type != NetAppOperationType.Folder || path.EndsWith('/'))
