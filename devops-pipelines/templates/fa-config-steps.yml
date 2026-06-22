@@ -268,5 +268,15 @@ steps:
             "name": "DOTNET_FRAMEWORK_VERSION",
             "value": "v8.0",
             "slotSetting": false
+          },
+          {
+            "name": "ASPNETCORE_ENVIRONMENT",
+            "value": "$(AspNetCoreEnvironment)",
+            "slotSetting": false
+          },
+          {
+            "name": "AZURE_FUNCTIONS_ENVIRONMENT",
+            "value": "$(AzureFunctionsEnvironment)",
+            "slotSetting": false
           }
         ]
