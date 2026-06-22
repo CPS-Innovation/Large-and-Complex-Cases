@@ -1,8 +1,9 @@
-using Microsoft.AspNetCore.Mvc;
+using CPS.ComplexCases.NetApp.Models;
+using CPS.ComplexCases.NetApp.Models.Args;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
 public interface IOntapHttpClient
 {
-    Task<IActionResult> RenameMaterialAsync(string bearerToken, Guid ontapVolumeUuid, string currentFolderPath, string newFolderPath);
+    Task<MaterialRenameResult> RenameMaterialAsync(MaterialRenameArg arg);
 }

@@ -4,14 +4,12 @@ using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Exceptions;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
-using Microsoft.AspNetCore.Mvc;
 using Moq;
 
 namespace CPS.ComplexCases.NetApp.Tests.Unit;
 
 public class OntapHttpClientTests
 {
-    private readonly Mock<IOntapArgFactory> _ontapArgFactoryMock = new();
     private readonly Mock<IOntapRequestFactory> _ontapRequestFactoryMock = new();
     private readonly Mock<IHttpResponseHandler> _httpResponseHandlerMock = new();
     private readonly HttpClient _httpClient = new();
@@ -22,7 +20,6 @@ public class OntapHttpClientTests
     {
         _client = new OntapHttpClient(
             _httpClient,
-            _ontapArgFactoryMock.Object,
             _ontapRequestFactoryMock.Object,
             _httpResponseHandlerMock.Object);
     }
@@ -30,24 +27,9 @@ public class OntapHttpClientTests
     [Fact]
     public async Task RenameMaterialAsync_ReturnsOkResult_WhenResponseIsSuccessful()
     {
-        var bearerToken = "token";
-        var ontapVolumeUuid = Guid.NewGuid();
-        var currentFolderPath = "path/current-name.pdf";
-        var newFolderPath = "path/new-name.pdf";
-
-        var materialRenameArg = new MaterialRenameArg
-        {
-            BearerToken = bearerToken,
-            OntapVolumeUuid = ontapVolumeUuid,
-            CurrentFilePath = currentFolderPath,
-            NewFilePath = newFolderPath
-        };
+        var materialRenameArg = CreateRenameArg();
 
         var request = new HttpRequestMessage(HttpMethod.Patch, OntapUrl);
-
-        _ontapArgFactoryMock
-            .Setup(f => f.CreateMaterialRenameArg(bearerToken, ontapVolumeUuid, currentFolderPath, newFolderPath))
-            .Returns(materialRenameArg);
 
         _ontapRequestFactoryMock
             .Setup(f => f.CreateRenameMaterialRequest(materialRenameArg))
@@ -57,36 +39,32 @@ public class OntapHttpClientTests
             .Setup(h => h.SendAsync(_httpClient, request, It.IsAny<HttpResponseHandlerConfig>(), It.IsAny<HttpStatusCode[]>()))
             .ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.OK });
 
-        var result = await _client.RenameMaterialAsync(bearerToken, ontapVolumeUuid, currentFolderPath, newFolderPath);
+        var result = await _client.RenameMaterialAsync(materialRenameArg);
 
-        Assert.IsType<OkResult>(result);
-        _ontapArgFactoryMock.Verify(
-            f => f.CreateMaterialRenameArg(bearerToken, ontapVolumeUuid, currentFolderPath, newFolderPath),
-            Times.Once);
+        Assert.True(result.Success);
+        Assert.True(result.WasFound);
+        Assert.Equal(1, result.KeysRenamed);
+        Assert.Null(result.ErrorMessage);
+        Assert.Null(result.ErrorStatusCode);
         _ontapRequestFactoryMock.Verify(f => f.CreateRenameMaterialRequest(materialRenameArg), Times.Once);
         _httpResponseHandlerMock.Verify(
-            h => h.SendAsync(_httpClient, request, It.IsAny<HttpResponseHandlerConfig>(), It.Is<HttpStatusCode[]>(codes => codes.Length == 0)),
+            h => h.SendAsync(
+                _httpClient,
+                request,
+                It.IsAny<HttpResponseHandlerConfig>(),
+                It.Is<HttpStatusCode[]>(codes =>
+                    codes.Length == 2 &&
+                    codes.Contains(HttpStatusCode.NotFound) &&
+                    codes.Contains(HttpStatusCode.Conflict))),
             Times.Once);
     }
 
     [Fact]
     public async Task RenameMaterialAsync_ReturnsNotFoundObjectResult_WhenResponseIsNotFound()
     {
-        var ontapVolumeUuid = Guid.NewGuid();
-        var currentFolderPath = "path/current-name.pdf";
-        var newFolderPath = "path/new-name.pdf";
-        var materialRenameArg = new MaterialRenameArg
-        {
-            BearerToken = "token",
-            OntapVolumeUuid = ontapVolumeUuid,
-            CurrentFilePath = "path/current-name.pdf",
-            NewFilePath = "path/new-name.pdf"
-        };
+        var materialRenameArg = CreateRenameArg();
         var request = new HttpRequestMessage(HttpMethod.Patch, OntapUrl);
 
-        _ontapArgFactoryMock
-            .Setup(f => f.CreateMaterialRenameArg(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>()))
-            .Returns(materialRenameArg);
         _ontapRequestFactoryMock
             .Setup(f => f.CreateRenameMaterialRequest(materialRenameArg))
             .Returns(request);
@@ -94,30 +72,21 @@ public class OntapHttpClientTests
             .Setup(h => h.SendAsync(_httpClient, request, It.IsAny<HttpResponseHandlerConfig>(), It.IsAny<HttpStatusCode[]>()))
             .ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.NotFound });
 
-        var result = await _client.RenameMaterialAsync("token", ontapVolumeUuid, currentFolderPath, newFolderPath);
+        var result = await _client.RenameMaterialAsync(materialRenameArg);
 
-        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
-        Assert.Equal($"Material not found at path: {currentFolderPath}", notFoundResult.Value);
+        Assert.False(result.Success);
+        Assert.False(result.WasFound);
+        Assert.Equal(0, result.KeysRenamed);
+        Assert.Equal($"Material not found at path: {materialRenameArg.CurrentFilePath}", result.ErrorMessage);
+        Assert.Equal((int)HttpStatusCode.NotFound, result.ErrorStatusCode);
     }
 
     [Fact]
     public async Task RenameMaterialAsync_ReturnsConflictObjectResult_WhenResponseIsConflict()
     {
-        var ontapVolumeUuid = Guid.NewGuid();
-        var currentFolderPath = "path/current-name.pdf";
-        var newFolderPath = "path/new-name.pdf";
-        var materialRenameArg = new MaterialRenameArg
-        {
-            BearerToken = "token",
-            OntapVolumeUuid = ontapVolumeUuid,
-            CurrentFilePath = currentFolderPath,
-            NewFilePath = newFolderPath
-        };
+        var materialRenameArg = CreateRenameArg();
         var request = new HttpRequestMessage(HttpMethod.Patch, OntapUrl);
 
-        _ontapArgFactoryMock
-            .Setup(f => f.CreateMaterialRenameArg(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>()))
-            .Returns(materialRenameArg);
         _ontapRequestFactoryMock
             .Setup(f => f.CreateRenameMaterialRequest(materialRenameArg))
             .Returns(request);
@@ -125,27 +94,21 @@ public class OntapHttpClientTests
             .Setup(h => h.SendAsync(_httpClient, request, It.IsAny<HttpResponseHandlerConfig>(), It.IsAny<HttpStatusCode[]>()))
             .ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.Conflict });
 
-        var result = await _client.RenameMaterialAsync("token", ontapVolumeUuid, currentFolderPath, newFolderPath);
+        var result = await _client.RenameMaterialAsync(materialRenameArg);
 
-        var conflictResult = Assert.IsType<ConflictObjectResult>(result);
-        Assert.Equal($"Conflict occurred while renaming material from {currentFolderPath} to {newFolderPath}", conflictResult.Value);
+        Assert.False(result.Success);
+        Assert.True(result.WasFound);
+        Assert.Equal(0, result.KeysRenamed);
+        Assert.Equal($"Conflict occurred while renaming material from {materialRenameArg.CurrentFilePath} to {materialRenameArg.NewFilePath}", result.ErrorMessage);
+        Assert.Equal((int)HttpStatusCode.Conflict, result.ErrorStatusCode);
     }
 
     [Fact]
     public async Task RenameMaterialAsync_ThrowsOntapClientException_WhenResponseStatusCodeIsUnexpected()
     {
-        var materialRenameArg = new MaterialRenameArg
-        {
-            BearerToken = "token",
-            OntapVolumeUuid = Guid.NewGuid(),
-            CurrentFilePath = "path/current-name.pdf",
-            NewFilePath = "path/new-name.pdf"
-        };
+        var materialRenameArg = CreateRenameArg();
         var request = new HttpRequestMessage(HttpMethod.Patch, OntapUrl);
 
-        _ontapArgFactoryMock
-            .Setup(f => f.CreateMaterialRenameArg(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>()))
-            .Returns(materialRenameArg);
         _ontapRequestFactoryMock
             .Setup(f => f.CreateRenameMaterialRequest(materialRenameArg))
             .Returns(request);
@@ -154,7 +117,7 @@ public class OntapHttpClientTests
             .ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.BadRequest });
 
         var exception = await Assert.ThrowsAsync<OntapClientException>(() =>
-            _client.RenameMaterialAsync("token", Guid.NewGuid(), "path/current-name.pdf", "path/new-name.pdf"));
+            _client.RenameMaterialAsync(materialRenameArg));
 
         Assert.Equal(HttpStatusCode.BadRequest, exception.StatusCode);
         Assert.NotNull(exception.InnerException);
@@ -162,21 +125,36 @@ public class OntapHttpClientTests
     }
 
     [Fact]
-    public async Task RenameMaterialAsync_PassesExpectedStatusCodeExceptionFactories_ToResponseHandler()
+    public async Task RenameMaterialAsync_PassesExpectedUnhappyStatusCodes_ToResponseHandler()
     {
-        HttpResponseHandlerConfig? capturedConfig = null;
-        var materialRenameArg = new MaterialRenameArg
-        {
-            BearerToken = "token",
-            OntapVolumeUuid = Guid.NewGuid(),
-            CurrentFilePath = "path/current-name.pdf",
-            NewFilePath = "path/new-name.pdf"
-        };
+        HttpStatusCode[]? capturedExpectedUnhappyStatusCodes = null;
+        var materialRenameArg = CreateRenameArg();
         var request = new HttpRequestMessage(HttpMethod.Patch, OntapUrl);
 
-        _ontapArgFactoryMock
-            .Setup(f => f.CreateMaterialRenameArg(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>()))
-            .Returns(materialRenameArg);
+        _ontapRequestFactoryMock
+            .Setup(f => f.CreateRenameMaterialRequest(materialRenameArg))
+            .Returns(request);
+        _httpResponseHandlerMock
+            .Setup(h => h.SendAsync(_httpClient, request, It.IsAny<HttpResponseHandlerConfig>(), It.IsAny<HttpStatusCode[]>()))
+            .Callback<HttpClient, HttpRequestMessage, HttpResponseHandlerConfig, HttpStatusCode[]>((_, _, _, expectedUnhappyStatusCodes) =>
+                capturedExpectedUnhappyStatusCodes = expectedUnhappyStatusCodes)
+            .ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.OK });
+
+        await _client.RenameMaterialAsync(materialRenameArg);
+
+        Assert.NotNull(capturedExpectedUnhappyStatusCodes);
+        Assert.Equal(2, capturedExpectedUnhappyStatusCodes.Length);
+        Assert.Contains(HttpStatusCode.NotFound, capturedExpectedUnhappyStatusCodes);
+        Assert.Contains(HttpStatusCode.Conflict, capturedExpectedUnhappyStatusCodes);
+    }
+
+    [Fact]
+    public async Task RenameMaterialAsync_PassesExpectedStatusCodeExceptionFactory_ForUnauthorized_ToResponseHandler()
+    {
+        HttpResponseHandlerConfig? capturedConfig = null;
+        var materialRenameArg = CreateRenameArg();
+        var request = new HttpRequestMessage(HttpMethod.Patch, OntapUrl);
+
         _ontapRequestFactoryMock
             .Setup(f => f.CreateRenameMaterialRequest(materialRenameArg))
             .Returns(request);
@@ -185,7 +163,7 @@ public class OntapHttpClientTests
             .Callback<HttpClient, HttpRequestMessage, HttpResponseHandlerConfig, HttpStatusCode[]>((_, _, config, _) => capturedConfig = config)
             .ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.OK });
 
-        await _client.RenameMaterialAsync("token", Guid.NewGuid(), "path/current-name.pdf", "path/new-name.pdf");
+        await _client.RenameMaterialAsync(materialRenameArg);
 
         Assert.NotNull(capturedConfig);
 
@@ -193,34 +171,15 @@ public class OntapHttpClientTests
             new HttpResponseMessage { ReasonPhrase = "Unauthorized reason" });
         Assert.IsType<OntapUnauthorizedException>(unauthorized);
         Assert.Equal("Unauthorized reason", unauthorized.Message);
-
-        var notFound = capturedConfig.StatusCodeExceptionFactories[HttpStatusCode.NotFound](
-            new HttpResponseMessage { ReasonPhrase = "Not found reason" });
-        Assert.IsType<OntapNotFoundException>(notFound);
-        Assert.Equal("Not found reason", notFound.Message);
-
-        var conflict = capturedConfig.StatusCodeExceptionFactories[HttpStatusCode.Conflict](
-            new HttpResponseMessage { ReasonPhrase = "Conflict reason" });
-        Assert.IsType<OntapConflictException>(conflict);
-        Assert.Equal("Conflict reason", conflict.Message);
     }
 
     [Fact]
     public async Task RenameMaterialAsync_PassesDefaultExceptionFactory_ToResponseHandler()
     {
         HttpResponseHandlerConfig? capturedConfig = null;
-        var materialRenameArg = new MaterialRenameArg
-        {
-            BearerToken = "token",
-            OntapVolumeUuid = Guid.NewGuid(),
-            CurrentFilePath = "path/current-name.pdf",
-            NewFilePath = "path/new-name.pdf"
-        };
+        var materialRenameArg = CreateRenameArg();
         var request = new HttpRequestMessage(HttpMethod.Patch, OntapUrl);
 
-        _ontapArgFactoryMock
-            .Setup(f => f.CreateMaterialRenameArg(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>()))
-            .Returns(materialRenameArg);
         _ontapRequestFactoryMock
             .Setup(f => f.CreateRenameMaterialRequest(materialRenameArg))
             .Returns(request);
@@ -229,7 +188,7 @@ public class OntapHttpClientTests
             .Callback<HttpClient, HttpRequestMessage, HttpResponseHandlerConfig, HttpStatusCode[]>((_, _, config, _) => capturedConfig = config)
             .ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.OK });
 
-        await _client.RenameMaterialAsync("token", Guid.NewGuid(), "path/current-name.pdf", "path/new-name.pdf");
+        await _client.RenameMaterialAsync(materialRenameArg);
 
         Assert.NotNull(capturedConfig);
 
@@ -239,5 +198,65 @@ public class OntapHttpClientTests
         var ontapException = Assert.IsType<OntapClientException>(exception);
         Assert.Equal(HttpStatusCode.InternalServerError, ontapException.StatusCode);
         Assert.Same(innerException, ontapException.InnerException);
+    }
+
+    [Fact]
+    public async Task RenameMaterialAsync_WithRealHttpResponseHandler_ReturnsNotFoundObjectResult_WhenOntapReturnsNotFound()
+    {
+        var materialRenameArg = CreateRenameArg();
+
+        var client = CreateClientWithRealResponseHandler(HttpStatusCode.NotFound);
+
+        var result = await client.RenameMaterialAsync(materialRenameArg);
+
+        Assert.False(result.Success);
+        Assert.False(result.WasFound);
+        Assert.Equal(0, result.KeysRenamed);
+        Assert.Equal($"Material not found at path: {materialRenameArg.CurrentFilePath}", result.ErrorMessage);
+        Assert.Equal((int)HttpStatusCode.NotFound, result.ErrorStatusCode);
+    }
+
+    [Fact]
+    public async Task RenameMaterialAsync_WithRealHttpResponseHandler_ReturnsConflictObjectResult_WhenOntapReturnsConflict()
+    {
+        var materialRenameArg = CreateRenameArg();
+
+        var client = CreateClientWithRealResponseHandler(HttpStatusCode.Conflict);
+
+        var result = await client.RenameMaterialAsync(materialRenameArg);
+
+        Assert.False(result.Success);
+        Assert.True(result.WasFound);
+        Assert.Equal(0, result.KeysRenamed);
+        Assert.Equal($"Conflict occurred while renaming material from {materialRenameArg.CurrentFilePath} to {materialRenameArg.NewFilePath}", result.ErrorMessage);
+        Assert.Equal((int)HttpStatusCode.Conflict, result.ErrorStatusCode);
+    }
+
+    private static OntapHttpClient CreateClientWithRealResponseHandler(HttpStatusCode responseStatusCode)
+    {
+        var requestFactoryMock = new Mock<IOntapRequestFactory>();
+
+        var request = new HttpRequestMessage(HttpMethod.Patch, OntapUrl);
+        requestFactoryMock
+            .Setup(f => f.CreateRenameMaterialRequest(It.IsAny<MaterialRenameArg>()))
+            .Returns(request);
+
+        var httpClient = new HttpClient(new StubHttpMessageHandler(responseStatusCode));
+
+        return new OntapHttpClient(httpClient, requestFactoryMock.Object, new HttpResponseHandler());
+    }
+
+    private static MaterialRenameArg CreateRenameArg() => new()
+    {
+        BearerToken = "token",
+        OntapVolumeUuid = Guid.NewGuid(),
+        CurrentFilePath = "path/current-name.pdf",
+        NewFilePath = "path/new-name.pdf"
+    };
+
+    private sealed class StubHttpMessageHandler(HttpStatusCode statusCode) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            => Task.FromResult(new HttpResponseMessage { StatusCode = statusCode });
     }
 }

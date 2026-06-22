@@ -2,7 +2,7 @@ using System.Net;
 
 namespace CPS.ComplexCases.NetApp.Exceptions;
 
-public class OntapNotFoundException : Exception
+public class OntapNotFoundException : Exception, IHttpStatusCodeException
 {
     public OntapNotFoundException(string message)
         : base(message)
@@ -14,5 +14,5 @@ public class OntapNotFoundException : Exception
     {
     }
 
-    public static HttpStatusCode StatusCode => HttpStatusCode.NotFound;
+    public HttpStatusCode StatusCode { get; } = HttpStatusCode.NotFound;
 }

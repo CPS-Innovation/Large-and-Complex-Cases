@@ -25,4 +25,15 @@ public static class PathExtensions
             ? path
             : path + Path.AltDirectorySeparatorChar;
     }
+
+    public static string RemoveTrailingSlash(this string path)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            return string.Empty;
+        }
+        return path.EndsWith(Path.DirectorySeparatorChar) || path.EndsWith(Path.AltDirectorySeparatorChar)
+            ? path[..^1]
+            : path;
+    }
 }

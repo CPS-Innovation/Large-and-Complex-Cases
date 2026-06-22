@@ -2,7 +2,7 @@ using System.Net;
 
 namespace CPS.ComplexCases.NetApp.Exceptions;
 
-public class OntapConflictException : Exception
+public class OntapConflictException : Exception, IHttpStatusCodeException
 {
     public OntapConflictException()
         : base("Conflict occurred while accessing ONTAP API.")
@@ -14,5 +14,5 @@ public class OntapConflictException : Exception
     {
     }
 
-    public static HttpStatusCode StatusCode => HttpStatusCode.Conflict;
+    public HttpStatusCode StatusCode { get; } = HttpStatusCode.Conflict;
 }

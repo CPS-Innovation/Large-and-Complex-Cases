@@ -30,9 +30,13 @@ public class ExceptionHandlingMiddleware : IFunctionsWorkerMiddleware
       var statusCode = exception switch
       {
         ArgumentNullException or BadRequestException => HttpStatusCode.BadRequest,
-        CmsUnauthorizedException or CpsAuthenticationException or NetAppUnauthorizedException => HttpStatusCode.Unauthorized,
+        CmsUnauthorizedException or CpsAuthenticationException or NetAppUnauthorizedException or OntapUnauthorizedException => HttpStatusCode.Unauthorized,
         MissingSecurityGroupException or NetAppAccessDeniedException => HttpStatusCode.Forbidden,
+        NetAppNotFoundException or OntapNotFoundException => HttpStatusCode.NotFound,
+        NetAppConflictException or OntapConflictException => HttpStatusCode.Conflict,
         DdeiClientException ddeiException => ddeiException.StatusCode,
+        NetAppClientException netAppException => netAppException.StatusCode,
+        OntapClientException ontapException => ontapException.StatusCode,
         _ => HttpStatusCode.InternalServerError,
       };
 

@@ -2,7 +2,7 @@ using System.Net;
 
 namespace CPS.ComplexCases.NetApp.Exceptions;
 
-public class NetAppNotFoundException : Exception
+public class NetAppNotFoundException : Exception, IHttpStatusCodeException
 {
     public NetAppNotFoundException(string message)
         : base(message)
@@ -14,5 +14,5 @@ public class NetAppNotFoundException : Exception
     {
     }
 
-    public static HttpStatusCode StatusCode => HttpStatusCode.NotFound;
+    public HttpStatusCode StatusCode { get; } = HttpStatusCode.NotFound;
 }
