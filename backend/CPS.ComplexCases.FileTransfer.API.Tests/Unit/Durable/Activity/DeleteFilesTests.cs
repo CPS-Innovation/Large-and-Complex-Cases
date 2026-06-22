@@ -1,6 +1,8 @@
+using Microsoft.DurableTask.Client;
 using Microsoft.DurableTask.Client.Entities;
 using Microsoft.DurableTask.Entities;
 using Microsoft.Extensions.Logging;
+using CPS.ComplexCases.FileTransfer.API.Tests.Unit.Stubs;
 using AutoFixture;
 using AutoFixture.AutoMoq;
 using CPS.ComplexCases.Common.Handlers;
@@ -29,6 +31,7 @@ public class DeleteFilesTests
     private readonly Mock<ITransferEntityHelper> _transferEntityHelperMock;
     private readonly Mock<IInitializationHandler> _initializationHandlerMock;
     private readonly Mock<ITelemetryClient> _telemetryClientMock;
+    private readonly DurableTaskClientStub _durableTaskClientStub;
     private readonly DeleteFiles _activity;
     private readonly string _workspaceId;
     private readonly string _destinationPath;
@@ -50,6 +53,7 @@ public class DeleteFilesTests
         _workspaceId = _fixture.Create<string>();
         _destinationPath = _fixture.Create<string>();
         _bearerToken = _fixture.Create<string>();
+        _durableTaskClientStub = new DurableTaskClientStub(new DurableEntityClientStub("TestEntityClient"));
 
         _activity = new DeleteFiles(_transferEntityHelperMock.Object, _storageClientFactoryMock.Object, _loggerMock.Object, _initializationHandlerMock.Object, _telemetryClientMock.Object);
     }
@@ -59,7 +63,7 @@ public class DeleteFilesTests
     {
         // Act and Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            _activity.Run(null, CancellationToken.None));
+            _activity.Run(null, _durableTaskClientStub, CancellationToken.None));
     }
 
     [Fact]
@@ -75,7 +79,7 @@ public class DeleteFilesTests
 
         // Act and Assert
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            _activity.Run(payload, CancellationToken.None));
+            _activity.Run(payload, _durableTaskClientStub, CancellationToken.None));
     }
 
     [Fact]
@@ -91,12 +95,12 @@ public class DeleteFilesTests
 
         _transferEntityHelperMock
             .Setup(c => c.GetTransferEntityAsync(
-                It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                It.IsAny<DurableTaskClient>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((EntityMetadata<TransferEntity>?)null);
 
         // Act and Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _activity.Run(payload, CancellationToken.None));
+            _activity.Run(payload, _durableTaskClientStub, CancellationToken.None));
     }
 
     [Fact]
@@ -125,11 +129,11 @@ public class DeleteFilesTests
 
         _transferEntityHelperMock
             .Setup(c => c.GetTransferEntityAsync(
-                It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                It.IsAny<DurableTaskClient>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
 
         // Act
-        await _activity.Run(payload, CancellationToken.None);
+        await _activity.Run(payload, _durableTaskClientStub, CancellationToken.None);
 
         // Assert
         _loggerMock.Verify(
@@ -184,12 +188,12 @@ public class DeleteFilesTests
 
         _transferEntityHelperMock
              .Setup(c => c.GetTransferEntityAsync(
-                 It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                 It.IsAny<DurableTaskClient>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
              .ReturnsAsync(entity);
 
         _transferEntityHelperMock
             .Setup(c => c.DeleteMovedItemsCompleted(
-                It.IsAny<Guid>(), It.IsAny<List<DeletionError>>(), It.IsAny<CancellationToken>()))
+                It.IsAny<DurableTaskClient>(), It.IsAny<Guid>(), It.IsAny<List<DeletionError>>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         _storageClientFactoryMock
@@ -205,7 +209,7 @@ public class DeleteFilesTests
             .ReturnsAsync(new DeleteFilesResult());
 
         // Act
-        await _activity.Run(payload, CancellationToken.None);
+        await _activity.Run(payload, _durableTaskClientStub, CancellationToken.None);
 
         // Assert
         _storageClientMock.Verify(
@@ -261,7 +265,7 @@ public class DeleteFilesTests
         );
 
         _transferEntityHelperMock
-            .Setup(x => x.GetTransferEntityAsync(payload.TransferId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetTransferEntityAsync(It.IsAny<DurableTaskClient>(), payload.TransferId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
 
         _storageClientFactoryMock
@@ -276,7 +280,7 @@ public class DeleteFilesTests
         var sut = new DeleteFiles(_transferEntityHelperMock.Object, _storageClientFactoryMock.Object, _loggerMock.Object, _initializationHandlerMock.Object, _telemetryClientMock.Object);
 
         // Act
-        await sut.Run(payload, CancellationToken.None);
+        await sut.Run(payload, _durableTaskClientStub, CancellationToken.None);
 
         // Assert
         _loggerMock.Verify(

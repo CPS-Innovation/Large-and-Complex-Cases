@@ -1,4 +1,5 @@
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.DurableTask.Client;
 using Microsoft.Extensions.Logging;
 using Amazon.S3;
 using CPS.ComplexCases.Common.Handlers;
@@ -30,7 +31,7 @@ public class DeleteNetAppFiles(
     private readonly ITelemetryClient _telemetryClient = telemetryClient;
 
     [Function(nameof(DeleteNetAppFiles))]
-    public async Task<List<DeletionError>> Run([ActivityTrigger] DeleteNetAppFilesPayload? payload, CancellationToken cancellationToken = default)
+    public async Task<List<DeletionError>> Run([ActivityTrigger] DeleteNetAppFilesPayload? payload, [DurableClient] DurableTaskClient client, CancellationToken cancellationToken = default)
     {
         _initializationHandler.Initialize(payload?.UserName!, payload?.CorrelationId, payload?.CaseId);
 
@@ -46,7 +47,7 @@ public class DeleteNetAppFiles(
             throw new ArgumentNullException(nameof(payload), "DeleteNetAppFilesPayload cannot be null.");
         }
 
-        var entity = await _transferEntityHelper.GetTransferEntityAsync(payload.TransferId, cancellationToken);
+        var entity = await _transferEntityHelper.GetTransferEntityAsync(client, payload.TransferId, cancellationToken);
 
         if (entity == null)
         {
@@ -62,7 +63,7 @@ public class DeleteNetAppFiles(
         if (filesToDelete.Count == 0)
         {
             _logger.LogInformation("No files to delete for transfer ID {TransferId}.", payload.TransferId);
-            await _transferEntityHelper.DeleteMovedItemsCompleted(payload.TransferId, new List<DeletionError>(), cancellationToken);
+            await _transferEntityHelper.DeleteMovedItemsCompleted(client, payload.TransferId, new List<DeletionError>(), cancellationToken);
             return new List<DeletionError>();
         }
 
@@ -132,7 +133,7 @@ public class DeleteNetAppFiles(
                 deletedCount, payload.TransferId);
         }
 
-        await _transferEntityHelper.DeleteMovedItemsCompleted(payload.TransferId, failedItems, cancellationToken);
+        await _transferEntityHelper.DeleteMovedItemsCompleted(client, payload.TransferId, failedItems, cancellationToken);
 
         telemetryEvent.TotalFilesDeleted = deletedCount;
         telemetryEvent.TotalFilesFailedToDelete = failedItems.Count;
