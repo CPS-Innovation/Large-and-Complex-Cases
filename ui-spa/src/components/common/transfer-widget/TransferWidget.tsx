@@ -9,10 +9,12 @@ export type TransferWidgetProps = {
   transferAction: "Copy" | "Move";
   handleCancelClick: () => void;
   handleTransfer: (selectedNode: TreeNode) => void;
+  isRootNodeOpened: boolean;
 };
 const TransferWidget: React.FC<TransferWidgetProps> = ({
   data,
   transferAction,
+  isRootNodeOpened,
   handleCancelClick,
   onLoadChildren,
   handleTransfer,
@@ -35,6 +37,7 @@ const TransferWidget: React.FC<TransferWidgetProps> = ({
         data={data}
         onSelect={onSelect}
         onLoadChildren={onLoadChildren}
+        isRootNodeOpened={isRootNodeOpened}
       />
       <div className={styles.actionWrapper}>
         <Button

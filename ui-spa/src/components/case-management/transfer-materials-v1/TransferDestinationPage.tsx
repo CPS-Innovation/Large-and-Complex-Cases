@@ -429,6 +429,7 @@ const TransferDestinationPage: React.FC = () => {
               handleCancelClick={handleCancelClick}
               onLoadChildren={handleLoadChildren}
               handleTransfer={handleTransfer}
+              isRootNodeOpened={true}
             />
           )}
         </div>

@@ -30,7 +30,7 @@ describe("getCommonPath", () => {
     expect(getCommonPath(["abc/def/def/ggg/lmn"])).toEqual("abc/def/def/ggg/");
   });
   it("Should return empty string as relative path if the input paths array is empty", () => {
-    expect(getCommonPath(["", ""])).toEqual("");
+    expect(getCommonPath([])).toEqual("");
   });
   it("Should return empty string as relative path if the input paths array contains only one empty string path", () => {
     expect(getCommonPath([""])).toEqual("");

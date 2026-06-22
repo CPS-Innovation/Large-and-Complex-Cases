@@ -58,6 +58,7 @@ const TransferTreeViewPage = ({ caseId }: TransferTreeViewPageProps) => {
           handleCancelClick={() => {}}
           handleTransfer={() => {}}
           transferAction="Copy"
+          isRootNodeOpened={true}
         />
       )}
     </div>
