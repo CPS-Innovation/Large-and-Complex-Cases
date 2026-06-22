@@ -31,15 +31,7 @@ import styles from "./TransferDestinationPage.module.scss";
 
 const TransferDestinationPage: React.FC = () => {
   const {
-    state: {
-      transferSource,
-      sourcePaths,
-      caseId,
-      egressWorkspaceId,
-      selectedTransferAction,
-      netAppPath,
-      operationName,
-    },
+    state,
   }: {
     state: {
       sourcePaths:
@@ -57,6 +49,16 @@ const TransferDestinationPage: React.FC = () => {
       operationName: string;
     };
   } = useLocation();
+
+  const {
+    transferSource,
+    sourcePaths,
+    caseId,
+    egressWorkspaceId,
+    selectedTransferAction,
+    netAppPath,
+    operationName,
+  } = state || {};
 
   const { data: netAppData, isLoading: isNetAppFolderDataLoading } = useQuery({
     queryKey: [netAppPath],
