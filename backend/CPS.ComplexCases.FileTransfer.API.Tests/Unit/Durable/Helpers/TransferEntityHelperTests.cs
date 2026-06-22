@@ -4,6 +4,7 @@ using CPS.ComplexCases.FileTransfer.API.Durable.State;
 using CPS.ComplexCases.FileTransfer.API.Tests.Unit.Stubs;
 using Microsoft.DurableTask.Client.Entities;
 using Microsoft.DurableTask.Entities;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Helpers;
 
@@ -17,7 +18,7 @@ public class TransferEntityHelperTests
     {
         _entityClientStub = new DurableEntityClientStub("TestEntityClient");
         _durableTaskClientStub = new DurableTaskClientStub(_entityClientStub);
-        _helper = new TransferEntityHelper(_durableTaskClientStub);
+        _helper = new TransferEntityHelper(NullLogger<TransferEntityHelper>.Instance);
     }
 
     [Fact]
@@ -33,7 +34,7 @@ public class TransferEntityHelperTests
         var cts = new CancellationTokenSource();
 
         // Act
-        await _helper.DeleteMovedItemsCompleted(transferId, failedItems, cts.Token);
+        await _helper.DeleteMovedItemsCompleted(_durableTaskClientStub, transferId, failedItems, cts.Token);
 
         // Assert
         Assert.True(_entityClientStub.SignalEntityAsyncCalled);
@@ -58,7 +59,7 @@ public class TransferEntityHelperTests
         };
 
         // Act
-        var result = await _helper.GetTransferEntityAsync(transferId);
+        var result = await _helper.GetTransferEntityAsync(_durableTaskClientStub, transferId);
 
         // Assert
         Assert.NotNull(result);
@@ -73,7 +74,7 @@ public class TransferEntityHelperTests
         _entityClientStub.OnGetEntityAsync = (id, cancellation) => Task.FromResult<EntityMetadata<TransferEntity>?>(null);
 
         // Act
-        var result = await _helper.GetTransferEntityAsync(transferId);
+        var result = await _helper.GetTransferEntityAsync(_durableTaskClientStub, transferId);
 
         // Assert
         Assert.Null(result);
@@ -87,6 +88,6 @@ public class TransferEntityHelperTests
         _entityClientStub.OnGetEntityAsync = null!;
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _helper.GetTransferEntityAsync(transferId));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _helper.GetTransferEntityAsync(_durableTaskClientStub, transferId));
     }
 }

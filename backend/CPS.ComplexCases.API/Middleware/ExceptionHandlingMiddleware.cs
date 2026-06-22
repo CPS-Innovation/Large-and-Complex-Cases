@@ -7,6 +7,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Azure.Functions.Worker.Middleware;
 using Microsoft.Extensions.Logging;
+using Polly.CircuitBreaker;
 
 namespace CPS.ComplexCases.API.Middleware;
 
@@ -27,18 +28,7 @@ public class ExceptionHandlingMiddleware : IFunctionsWorkerMiddleware
     }
     catch (Exception exception)
     {
-      var statusCode = exception switch
-      {
-        ArgumentNullException or BadRequestException => HttpStatusCode.BadRequest,
-        CmsUnauthorizedException or CpsAuthenticationException or NetAppUnauthorizedException or OntapUnauthorizedException => HttpStatusCode.Unauthorized,
-        MissingSecurityGroupException or NetAppAccessDeniedException => HttpStatusCode.Forbidden,
-        NetAppNotFoundException or OntapNotFoundException => HttpStatusCode.NotFound,
-        NetAppConflictException or OntapConflictException => HttpStatusCode.Conflict,
-        DdeiClientException ddeiException => ddeiException.StatusCode,
-        NetAppClientException netAppException => netAppException.StatusCode,
-        OntapClientException ontapException => ontapException.StatusCode,
-        _ => HttpStatusCode.InternalServerError,
-      };
+      var statusCode = MapExceptionToStatusCode(exception);
 
       var httpRequestData = await context.GetHttpRequestDataAsync();
 
@@ -56,10 +46,14 @@ public class ExceptionHandlingMiddleware : IFunctionsWorkerMiddleware
 
         _logger.LogError(exception, "Unhandled exception. CorrelationId: {CorrelationId}", correlationId);
 
+        var errorMessage = statusCode == HttpStatusCode.ServiceUnavailable
+          ? "A downstream service is temporarily unavailable. Please retry shortly."
+          : "An unexpected error occurred. Please contact support with the CorrelationId.";
+
         var response = httpRequestData.CreateResponse(statusCode);
         await response.WriteAsJsonAsync(new
         {
-          ErrorMessage = "An unexpected error occurred. Please contact support with the CorrelationId.",
+          ErrorMessage = errorMessage,
           CorrelationId = correlationId
         });
 
@@ -82,6 +76,22 @@ public class ExceptionHandlingMiddleware : IFunctionsWorkerMiddleware
       }
     }
   }
+
+  // An open circuit surfaces as a BrokenCircuitException; map it to 503 so callers get a clear
+  // "try again" signal rather than an unhandled 500.
+  internal static HttpStatusCode MapExceptionToStatusCode(Exception exception) => exception switch
+  {
+    ArgumentNullException or BadRequestException => HttpStatusCode.BadRequest,
+    CmsUnauthorizedException or CpsAuthenticationException or NetAppUnauthorizedException or OntapUnauthorizedException => HttpStatusCode.Unauthorized,
+    MissingSecurityGroupException or NetAppAccessDeniedException => HttpStatusCode.Forbidden,
+    NetAppNotFoundException or OntapNotFoundException => HttpStatusCode.NotFound,
+    NetAppConflictException or OntapConflictException => HttpStatusCode.Conflict,
+    DdeiClientException ddeiException => ddeiException.StatusCode,
+    NetAppClientException netAppException => netAppException.StatusCode,
+    OntapClientException ontapException => ontapException.StatusCode,
+    BrokenCircuitException => HttpStatusCode.ServiceUnavailable,
+    _ => HttpStatusCode.InternalServerError,
+  };
 
   private static OutputBindingData<HttpResponseData>? GetHttpOutputBindingFromMultipleOutputBinding(FunctionContext context)
   {

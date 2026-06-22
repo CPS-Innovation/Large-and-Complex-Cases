@@ -1,12 +1,11 @@
-using System.Net;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
+using CPS.ComplexCases.Common.Resilience;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Polly;
-using Polly.Contrib.WaitAndRetry;
-using Polly.Wrap;
 
 namespace CPS.ComplexCases.Egress.Extensions;
 
@@ -14,6 +13,21 @@ public static class IServiceCollectionExtension
 {
   private const int RetryAttempts = 3;
   private const int FirstRetryDelaySeconds = 1;
+
+  // Egress rate-limits us with 429s (excluded from the breaker), so a slightly longer sampling window
+  // avoids tripping on normal throttling while still catching a genuinely failing service.
+  private const double CircuitBreakerFailureThreshold = 0.5;
+  private const int CircuitBreakerSamplingDurationSeconds = 60;
+  private const int CircuitBreakerMinimumThroughput = 10;
+  private const int CircuitBreakerDurationOfBreakSeconds = 30;
+
+  // Built once per client and reused so circuit-breaker state is shared across all calls for that client.
+  private static IServiceProvider? _serviceProvider;
+  private static readonly Lazy<IAsyncPolicy<HttpResponseMessage>> _egressClientPolicy =
+      new(() => GetResiliencePolicy(_serviceProvider!.GetRequiredService<ILoggerFactory>()));
+  private static readonly Lazy<IAsyncPolicy<HttpResponseMessage>> _egressStorageClientPolicy =
+      new(() => GetResiliencePolicy(_serviceProvider!.GetRequiredService<ILoggerFactory>()));
+
   public static void AddEgressClient(this IServiceCollection services, IConfiguration configuration)
   {
     services.AddTransient<IEgressRequestFactory, EgressRequestFactory>();
@@ -30,7 +44,11 @@ public static class IServiceCollectionExtension
       client.Timeout = TimeSpan.FromMinutes(10);
     })
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-    .AddPolicyHandler(GetRetryPolicy());
+    .AddPolicyHandler((sp, _) =>
+    {
+      _serviceProvider ??= sp;
+      return _egressClientPolicy.Value;
+    });
 
     services.AddHttpClient<EgressStorageClient>(client =>
     {
@@ -43,35 +61,27 @@ public static class IServiceCollectionExtension
       client.Timeout = TimeSpan.FromMinutes(10);
     })
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-    .AddPolicyHandler(GetRetryPolicy());
+    .AddPolicyHandler((sp, _) =>
+    {
+      _serviceProvider ??= sp;
+      return _egressStorageClientPolicy.Value;
+    });
   }
 
-  private static AsyncPolicyWrap<HttpResponseMessage> GetRetryPolicy()
+  internal static IAsyncPolicy<HttpResponseMessage> GetResiliencePolicy(ILoggerFactory loggerFactory)
   {
+    var logger = loggerFactory.CreateLogger("CPS.ComplexCases.Egress.CircuitBreaker");
 
-    // Egress API has rate limiting policy so we need to respect that and handle 429s
-    var bulkheadPolicy = Policy.BulkheadAsync<HttpResponseMessage>(
-        maxParallelization: 30,
-        maxQueuingActions: int.MaxValue
-    );
-
-    // https://learn.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/implement-http-call-retries-exponential-backoff-polly#add-a-jitter-strategy-to-the-retry-policy
-    var delay = Backoff.DecorrelatedJitterBackoffV2(
-        medianFirstRetryDelay: TimeSpan.FromSeconds(FirstRetryDelaySeconds),
-        retryCount: RetryAttempts);
-
-    static bool responseStatusCodePredicate(HttpResponseMessage response) =>
-        response.StatusCode >= HttpStatusCode.InternalServerError
-        || response.StatusCode == HttpStatusCode.TooManyRequests;
-
-    static bool methodPredicate(HttpResponseMessage response) =>
-        response.RequestMessage?.Method != HttpMethod.Post
-        && response.RequestMessage?.Method != HttpMethod.Put;
-
-    var retryPolicy = Policy<HttpResponseMessage>
-        .HandleResult(r => responseStatusCodePredicate(r) && methodPredicate(r))
-        .WaitAndRetryAsync(delay);
-
-    return Policy.WrapAsync(bulkheadPolicy, retryPolicy);
+    return HttpResiliencePolicyFactory.CreateRateLimitedResiliencePolicy(logger, new HttpResilienceOptions
+    {
+      ServiceName = "Egress",
+      RetryAttempts = RetryAttempts,
+      FirstRetryDelay = TimeSpan.FromSeconds(FirstRetryDelaySeconds),
+      CircuitBreakerFailureThreshold = CircuitBreakerFailureThreshold,
+      CircuitBreakerSamplingDuration = TimeSpan.FromSeconds(CircuitBreakerSamplingDurationSeconds),
+      CircuitBreakerMinimumThroughput = CircuitBreakerMinimumThroughput,
+      CircuitBreakerDurationOfBreak = TimeSpan.FromSeconds(CircuitBreakerDurationOfBreakSeconds),
+      BulkheadMaxParallelization = 30,
+    });
   }
 }

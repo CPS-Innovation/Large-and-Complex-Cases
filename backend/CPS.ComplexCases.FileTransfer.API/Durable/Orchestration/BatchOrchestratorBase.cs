@@ -65,7 +65,7 @@ public abstract class BatchOrchestratorBase<TPayload, TFileItem>(
             TotalFiles = input.Files.Count,
             BucketName = input.BucketName,
             CaseId = input.CaseId,
-            OrchestrationStartTime = DateTime.UtcNow
+            OrchestrationStartTime = context.CurrentUtcDateTime
         };
 
         var completedSuccessfully = false;
@@ -121,7 +121,7 @@ public abstract class BatchOrchestratorBase<TPayload, TFileItem>(
                 input.ManageMaterialsOperationId);
 
             telemetryEvent.IsSuccessful = completedSuccessfully && telemetryEvent.TotalFilesFailed == 0;
-            telemetryEvent.OrchestrationEndTime = DateTime.UtcNow;
+            telemetryEvent.OrchestrationEndTime = context.CurrentUtcDateTime;
             _telemetryClient.TrackEvent(telemetryEvent);
         }
     }

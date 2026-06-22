@@ -673,31 +673,47 @@ if ($SkipUpload) {
 
         $FileId = ""
         $ActualFilePath = ""
-        $retryCount = if ($IsLargeFile) { $MaxFileIdRetries } else { 5 }
-        $retryDelay = if ($IsLargeFile) { $FileIdRetryDelaySeconds } else { 2 }
+        # Polling window: must be generous enough for Egress to register the
+        # canonical file ID before we give up and substitute the upload-session
+        # ID as a fallback. The fallback technically works for some downstream
+        # flows (the Copy journey) but trips up others (the Move journey hits
+        # 404 from EgressStorageClient.OpenReadStreamAsync) because Egress's
+        # storage layer can't always resolve an upload-session ID into a blob.
+        # 10s (the previous small-file default of 5x2s) was reliably too short.
+        $retryCount = if ($IsLargeFile) { $MaxFileIdRetries } else { 20 }
+        $retryDelay = if ($IsLargeFile) { $FileIdRetryDelaySeconds } else { 3 }
+
+        # Verify via the Egress list endpoint, which is filtered by ?path=<folder>
+        # (the same contract Clear-EgressFolder.ps1 uses). The folder must have no
+        # trailing slash; spaces are encoded per segment so the '/' separators stay
+        # literal -- EscapeDataString on the whole path turns '/' into %2F and
+        # breaks the match.
+        $folderForQuery = $ActualFolderPath.TrimEnd('/')
+        $encodedFolder = ($folderForQuery -split '/' | ForEach-Object { [uri]::EscapeDataString($_) }) -join '/'
 
         for ($i = 1; $i -le $retryCount; $i++) {
+            # Check first, sleep on miss -- a file that indexes instantly used
+            # to still pay the first $retryDelay before its only successful
+            # check.
+            if ($i -gt 1) { Start-Sleep -Seconds $retryDelay }
             Write-Host "  Attempt $i/$retryCount..." -NoNewline
 
-            Start-Sleep -Seconds $retryDelay
-
-            $filesResult = curl.exe --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId/files?folder_id=$FolderId" `
+            $filesResult = curl.exe --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId/files?path=$encodedFolder" `
                 --header "Authorization: Basic $TokenBase64"
 
             try {
+                # Egress wraps results in { "data": [...] } and entries expose
+                # `filename` + `id`; there is no isFolder/filesize field. Filename
+                # is the practical key here -- names are timestamped per upload and
+                # the folder is cleared per run, so it's unambiguous.
                 $filesObj = $filesResult | ConvertFrom-Json
-                $uploadedFile = $filesObj | Where-Object { $_.name -eq $CurrentFileName -and $_.isFolder -eq $false }
+                $uploadedFile = $filesObj.data | Where-Object { $_.filename -eq $CurrentFileName } | Select-Object -First 1
 
                 if ($uploadedFile) {
                     $FileId = $uploadedFile.id
-                    $ActualFilePath = if ($uploadedFile.path) { $uploadedFile.path + "/" } else { "" }
-
-                    if ($uploadedFile.filesize -eq $FileSize) {
-                        Write-Host " FOUND!" -ForegroundColor Green
-                        break
-                    } else {
-                        Write-Host " SIZE MISMATCH" -ForegroundColor Yellow
-                    }
+                    $ActualFilePath = if ($uploadedFile.path) { $uploadedFile.path + "/" } else { $ActualFolderPath }
+                    Write-Host " FOUND ($FileId)" -ForegroundColor Green
+                    break
                 } else {
                     Write-Host " not indexed yet" -ForegroundColor Gray
                 }

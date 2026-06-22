@@ -1,4 +1,3 @@
-using System.Net;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -11,9 +10,8 @@ using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Services;
 using CPS.ComplexCases.NetApp.Telemetry;
 using CPS.ComplexCases.NetApp.Wrappers;
+using CPS.ComplexCases.Common.Resilience;
 using Polly;
-using Polly.Contrib.WaitAndRetry;
-using Polly.Wrap;
 
 namespace CPS.ComplexCases.NetApp.Extensions;
 
@@ -21,6 +19,20 @@ public static class IServiceCollectionExtension
 {
 	private const int RetryAttempts = 3;
 	private const int FirstRetryDelaySeconds = 1;
+
+	// NetApp transfers can legitimately run for minutes and run at lower request volumes, so the
+	// breaker uses a longer sampling window, a lower throughput requirement and a longer break.
+	private const double CircuitBreakerFailureThreshold = 0.5;
+	private const int CircuitBreakerSamplingDurationSeconds = 120;
+	private const int CircuitBreakerMinimumThroughput = 5;
+	private const int CircuitBreakerDurationOfBreakSeconds = 60;
+
+	// Built once per client and reused so circuit-breaker state is shared across all calls for that client.
+	private static IServiceProvider? _serviceProvider;
+	private static readonly Lazy<IAsyncPolicy<HttpResponseMessage>> _netAppHttpClientPolicy =
+		new(() => GetResiliencePolicy(_serviceProvider!.GetRequiredService<ILoggerFactory>()));
+	private static readonly Lazy<IAsyncPolicy<HttpResponseMessage>> _netAppS3HttpClientPolicy =
+		new(() => GetResiliencePolicy(_serviceProvider!.GetRequiredService<ILoggerFactory>()));
 
 	public static void AddNetAppClient(this IServiceCollection services, IConfiguration configuration)
 	{
@@ -72,7 +84,11 @@ public static class IServiceCollectionExtension
 		})
 		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment))
 		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
-		.AddPolicyHandler(GetRetryPolicy());
+		.AddPolicyHandler((sp, _) =>
+		{
+			_serviceProvider ??= sp;
+			return _netAppHttpClientPolicy.Value;
+		});
 
 		services.AddHttpClient<INetAppS3HttpClient, NetAppS3HttpClient>(client =>
 		{
@@ -88,7 +104,11 @@ public static class IServiceCollectionExtension
 		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment)
 		)
 		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
-		.AddPolicyHandler(GetRetryPolicy());
+		.AddPolicyHandler((sp, _) =>
+		{
+			_serviceProvider ??= sp;
+			return _netAppS3HttpClientPolicy.Value;
+		});
 
 		services.AddHttpClient<IOntapHttpClient, OntapHttpClient>(client =>
 		{
@@ -135,30 +155,20 @@ public static class IServiceCollectionExtension
 		}
 	}
 
-	private static AsyncPolicyWrap<HttpResponseMessage> GetRetryPolicy()
+	internal static IAsyncPolicy<HttpResponseMessage> GetResiliencePolicy(ILoggerFactory loggerFactory)
 	{
-		var bulkheadPolicy = Policy.BulkheadAsync<HttpResponseMessage>(
-			maxParallelization: 30,
-			maxQueuingActions: int.MaxValue
-		);
+		var logger = loggerFactory.CreateLogger("CPS.ComplexCases.NetApp.CircuitBreaker");
 
-		// https://learn.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/implement-http-call-retries-exponential-backoff-polly#add-a-jitter-strategy-to-the-retry-policy
-		var delay = Backoff.DecorrelatedJitterBackoffV2(
-			medianFirstRetryDelay: TimeSpan.FromSeconds(FirstRetryDelaySeconds),
-			retryCount: RetryAttempts);
-
-		static bool responseStatusCodePredicate(HttpResponseMessage response) =>
-			response.StatusCode >= HttpStatusCode.InternalServerError
-			|| response.StatusCode == HttpStatusCode.TooManyRequests;
-
-		static bool methodPredicate(HttpResponseMessage response) =>
-			response.RequestMessage?.Method != HttpMethod.Post
-			&& response.RequestMessage?.Method != HttpMethod.Put;
-
-		var retryPolicy = Policy<HttpResponseMessage>
-			.HandleResult(r => responseStatusCodePredicate(r) && methodPredicate(r))
-			.WaitAndRetryAsync(delay);
-
-		return Policy.WrapAsync(bulkheadPolicy, retryPolicy);
+		return HttpResiliencePolicyFactory.CreateRateLimitedResiliencePolicy(logger, new HttpResilienceOptions
+		{
+			ServiceName = "NetApp",
+			RetryAttempts = RetryAttempts,
+			FirstRetryDelay = TimeSpan.FromSeconds(FirstRetryDelaySeconds),
+			CircuitBreakerFailureThreshold = CircuitBreakerFailureThreshold,
+			CircuitBreakerSamplingDuration = TimeSpan.FromSeconds(CircuitBreakerSamplingDurationSeconds),
+			CircuitBreakerMinimumThroughput = CircuitBreakerMinimumThroughput,
+			CircuitBreakerDurationOfBreak = TimeSpan.FromSeconds(CircuitBreakerDurationOfBreakSeconds),
+			BulkheadMaxParallelization = 30,
+		});
 	}
 }
