@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Tabs } from "../common/tabs/Tabs";
 import { TabId } from "../../common/types/CaseManagement";
 import { ItemProps } from "../common/tabs/types";
 import TransferMaterialsPage from "./transfer-materials";
+import TransferMaterialsV1Page from "./transfer-materials-v1";
 import TransferResolveFilePathPage from "./transfer-materials/TransferResolveFilePathPage";
 import ActivityLogPage from "./activity-log/index";
 import { getCaseMetaData } from "../../apis/gateway-api";
@@ -18,6 +19,16 @@ import styles from "./index.module.scss";
 const CaseManagementPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const {
+    state: routeState,
+  }: {
+    state?: {
+      transferId: string;
+      transferSource: "egress" | "netapp";
+      transferEgressFolderPathInitialValue?: string;
+      transferNetAppFolderPathInitialValue?: string;
+    };
+  } = location;
   const { caseId } = useParams() as { caseId: string };
   if (!caseId) throw new Error("missing caseId in the url");
 
@@ -85,29 +96,67 @@ const CaseManagementPage = () => {
     validateRoute();
   }, [location, validateRoute]);
 
-  const items: ItemProps<TabId>[] = [
-    {
-      id: "transfer-materials",
-      label: "Transfer materials",
-      panel: {
-        children: caseMetaData ? (
-          <TransferMaterialsPage
-            isTabActive={activeTabId === "transfer-materials"}
-            caseId={caseId}
-            operationName={caseMetaData.operationName}
-            egressWorkspaceId={caseMetaData.egressWorkspaceId}
-            netAppPath={caseMetaData.netappFolderPath}
-            activeTransferId={
-              location?.state?.transferId ?? caseMetaData.activeTransferId
-            }
-            urn={caseMetaData.urn}
-          />
-        ) : (
-          <></>
-        ),
-      },
-    },
-    {
+  const tabItems = useMemo(() => {
+    const items: ItemProps<TabId>[] = [];
+
+    if (featureFlags.transferMaterialsV1) {
+      items.push({
+        id: "transfer-materials",
+        label: "Transfer materials",
+        panel: {
+          children: caseMetaData ? (
+            <TransferMaterialsV1Page
+              isTabActive={activeTabId === "transfer-materials"}
+              caseId={caseId}
+              operationName={caseMetaData.operationName}
+              egressWorkspaceId={caseMetaData.egressWorkspaceId}
+              netAppPath={caseMetaData.netappFolderPath}
+              activeTransferId={
+                routeState?.transferId ?? caseMetaData.activeTransferId
+              }
+              urn={caseMetaData.urn}
+              transferSourceInitialValue={
+                routeState?.transferSource ?? "egress"
+              }
+              transferEgressFolderPathInitialValue={
+                routeState?.transferEgressFolderPathInitialValue ?? null
+              }
+              transferNetAppFolderPathInitialValue={
+                routeState?.transferNetAppFolderPathInitialValue ?? null
+              }
+            />
+          ) : (
+            <></>
+          ),
+        },
+      });
+    }
+
+    if (!featureFlags.transferMaterialsV1) {
+      items.push({
+        id: "transfer-materials",
+        label: "Transfer materials",
+        panel: {
+          children: caseMetaData ? (
+            <TransferMaterialsPage
+              isTabActive={activeTabId === "transfer-materials"}
+              caseId={caseId}
+              operationName={caseMetaData.operationName}
+              egressWorkspaceId={caseMetaData.egressWorkspaceId}
+              netAppPath={caseMetaData.netappFolderPath}
+              activeTransferId={
+                routeState?.transferId ?? caseMetaData.activeTransferId
+              }
+              urn={caseMetaData.urn}
+            />
+          ) : (
+            <></>
+          ),
+        },
+      });
+    }
+
+    items.push({
       id: "activity-log",
       label: "Activity log",
       panel: {
@@ -122,25 +171,32 @@ const CaseManagementPage = () => {
           <></>
         ),
       },
-    },
-  ];
-
-  if (featureFlags.caseDetails) {
-    items.push({
-      id: "case-details",
-      label: "Case Details",
-      panel: {
-        children: caseMetaData ? (
-          <div>
-            <h3> Case Details</h3>
-            <TransferTreeViewPage caseId={caseId} />
-          </div>
-        ) : (
-          <></>
-        ),
-      },
     });
-  }
+    if (featureFlags.caseDetails) {
+      items.push({
+        id: "case-details",
+        label: "Case Details",
+        panel: {
+          children: caseMetaData ? (
+            <div>
+              <h3> Case Details</h3>
+              <TransferTreeViewPage caseId={caseId} />
+            </div>
+          ) : (
+            <></>
+          ),
+        },
+      });
+    }
+    return items;
+  }, [
+    activeTabId,
+    caseId,
+    caseMetaData,
+    routeState,
+    featureFlags.caseDetails,
+    featureFlags.transferMaterialsV1,
+  ]);
   if (isCaseMetaDataLoading) {
     return <PageContentWrapper>loading...</PageContentWrapper>;
   }
@@ -157,7 +213,7 @@ const CaseManagementPage = () => {
         <span>{caseMetaData?.urn}</span>
       </div>
       <Tabs
-        items={items.map((item) => ({
+        items={tabItems.map((item) => ({
           id: item.id,
           label: item.label,
           panel: item.panel,

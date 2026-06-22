@@ -91,9 +91,13 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
         const url = new URL(req.request.url);
 
         const folderId = url.searchParams.get("folder-id");
+        const path = url.searchParams.get("path");
         const netAppRootFolderResults = isDevMock()
-          ? getEgressFolderResultsDev(folderId as string)
-          : getEgressFolderResultsPlaywright(folderId as string);
+          ? getEgressFolderResultsDev(folderId as string, path as string)
+          : getEgressFolderResultsPlaywright(
+              folderId as string,
+              path as string,
+            );
         await delay(500);
 
         return HttpResponse.json(netAppRootFolderResults);

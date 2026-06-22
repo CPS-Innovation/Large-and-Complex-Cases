@@ -60,30 +60,35 @@ describe("getGroupedFolderFileData", () => {
         lastModified: "02/01/2000",
         filesize: 0,
         path: "ab/def/abc",
+        name: "abc",
       },
       {
         isFolder: true,
         lastModified: "03/01/2000",
         filesize: 0,
         path: "ab/def/abc1",
+        name: "abc1",
       },
       {
         isFolder: true,
         lastModified: "04/01/2000",
         filesize: 0,
         path: "ab/def/abc2",
+        name: "abc2",
       },
       {
         isFolder: false,
         lastModified: "03/01/2000",
         filesize: 100,
         path: "ab/def/pqr.pdf",
+        name: "pqr.pdf",
       },
       {
         isFolder: false,
         lastModified: "04/01/2000",
         filesize: 100,
         path: "ab/def/pqr1.pdf",
+        name: "pqr1.pdf",
       },
     ];
     const selectedIds = ["ab/def/abc", "ab/def/abc1", "ab/def/pqr.pdf"];

@@ -103,8 +103,17 @@ export function getLastSegment(input: string): string {
     .filter(Boolean);
   return parts.length ? parts[parts.length - 1] : "";
 }
-export const getEgressFolderResultsDev = (id: string): EgressFolderResponse => {
-  if (!id) return egressRootFolderResultsDev;
+export const getEgressFolderResultsDev = (
+  id: string,
+  path: string,
+): EgressFolderResponse => {
+  if (!id && !path) return egressRootFolderResultsDev;
+  if (!id) {
+    id = path
+      .split("/")
+      .map((part) => part.replace("folder-", ""))
+      .join(",");
+  }
   const lastSegment = getLastSegment(id);
   const newId = parseInt(lastSegment.split("-")[0]) + 1;
   if (newId > 3) {
