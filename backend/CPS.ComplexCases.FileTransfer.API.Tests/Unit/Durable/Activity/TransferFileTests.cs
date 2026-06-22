@@ -11,6 +11,7 @@ using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.Common.Telemetry;
+using CPS.ComplexCases.Egress.Models;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Factories;
@@ -30,13 +31,20 @@ public class TransferFileTests
     private readonly Mock<IInitializationHandler> _initializationHandlerMock = new();
     private readonly Mock<ITelemetryClient> _telemetryClientMock = new();
     private readonly IOptions<SizeConfig> _sizeConfig = Options.Create(new SizeConfig { ChunkSizeBytes = 4 });
+    private readonly IOptions<EgressOptions> _egressOptions = Options.Create(new EgressOptions
+    {
+        Username = "test",
+        Password = "test",
+        Url = "https://example.test",
+        TransferTimeoutSeconds = 300
+    });
 
     private readonly TransferFile _activity;
 
     public TransferFileTests()
     {
         _activity = new TransferFile(_storageClientFactoryMock.Object, _loggerMock.Object, _sizeConfig,
-            _initializationHandlerMock.Object, _telemetryClientMock.Object);
+            _egressOptions, _initializationHandlerMock.Object, _telemetryClientMock.Object);
     }
 
     private static TransferFilePayload CreatePayload()
@@ -1110,5 +1118,85 @@ public class TransferFileTests
         Assert.Equal(TransferErrorCode.Transient, result.FailedItem.ErrorCode);
         Assert.Contains("Transient stream error", result.FailedItem.ErrorMessage);
         Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
+    }
+
+    [Fact]
+    public async Task Run_MultipartUpload_StalledSourceRead_ReturnsTransientErrorBeforeFunctionTimeout()
+    {
+        // A source stream whose ReadAsync never makes progress must be killed by the per-read idle
+        // timeout (linked to the activity token), not left to hang until the 12h function timeout.
+        var payload = CreatePayload();
+        var contentLength = 10L;
+        using var stalledStream = new StalledReadStream(contentLength);
+        var session = new UploadSession { UploadId = Guid.NewGuid().ToString() };
+
+        var activity = new TransferFile(
+            _storageClientFactoryMock.Object,
+            _loggerMock.Object,
+            _sizeConfig,
+            Options.Create(new EgressOptions
+            {
+                Username = "test",
+                Password = "test",
+                Url = "https://example.test",
+                TransferTimeoutSeconds = 1
+            }),
+            _initializationHandlerMock.Object,
+            _telemetryClientMock.Object);
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(payload.SourcePath.Path,
+                payload.WorkspaceId,
+                payload.SourcePath.FileId,
+                payload.BearerToken,
+                payload.BucketName))
+            .ReturnsAsync((stalledStream, contentLength));
+
+        _destinationClientMock
+            .Setup(x => x.InitiateUploadAsync(
+                payload.DestinationPath,
+                contentLength,
+                payload.SourcePath.Path,
+                payload.WorkspaceId,
+                payload.SourcePath.RelativePath,
+                payload.SourceRootFolderPath,
+                payload.BearerToken,
+                payload.BucketName))
+            .ReturnsAsync(session);
+
+        var startedAt = DateTime.UtcNow;
+        var result = await activity.Run(payload);
+        var elapsed = DateTime.UtcNow - startedAt;
+
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.FailedItem);
+        Assert.Equal(TransferErrorCode.Transient, result.FailedItem.ErrorCode);
+        Assert.Contains("Transient stream timeout", result.FailedItem.ErrorMessage);
+        // Comfortably under the 12h function timeout; the 1s idle timeout should fire quickly.
+        Assert.True(elapsed < TimeSpan.FromSeconds(30), $"Stalled read took {elapsed} to fail.");
+    }
+
+    // Stream that reports a length but whose ReadAsync never completes until the supplied token is
+    // cancelled, simulating a silently dropped socket mid-download.
+    private sealed class StalledReadStream(long length) : Stream
+    {
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => length;
+        public override long Position { get; set; }
+
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+            => new(Task.Delay(Timeout.Infinite, cancellationToken).ContinueWith(_ => 0, cancellationToken));
+
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override void Flush() { }
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 }

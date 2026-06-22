@@ -57,7 +57,9 @@ public abstract class BaseEgressClient(
     // The HttpClient for storage operations is registered with an infinite timeout because a
     // streamed download's body read is bound by HttpClient.Timeout. Each request therefore enforces
     // its own timeout here: management calls use ManagementTimeoutSeconds, chunk uploads pass the
-    // longer TransferTimeoutSeconds, and for streamed downloads the token only covers the header read
+    // longer TransferTimeoutSeconds, and for streamed downloads the token only covers the header read.
+    // The body read of a streamed download is bounded separately by the consumer (TransferFile applies
+    // a per-read idle timeout to the returned stream).
     protected async Task<HttpResponseMessage> SendRequestAsync(HttpRequestMessage request, bool streamResponse = false,
         TimeSpan? timeout = null,
         [CallerMemberName] string callerMemberName = "")
