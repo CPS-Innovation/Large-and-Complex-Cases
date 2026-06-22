@@ -33,6 +33,8 @@ public static class IServiceCollectionExtension
 		new(() => GetResiliencePolicy(_serviceProvider!.GetRequiredService<ILoggerFactory>()));
 	private static readonly Lazy<IAsyncPolicy<HttpResponseMessage>> _netAppS3HttpClientPolicy =
 		new(() => GetResiliencePolicy(_serviceProvider!.GetRequiredService<ILoggerFactory>()));
+	private static readonly Lazy<IAsyncPolicy<HttpResponseMessage>> _ontapHttpClientPolicy =
+		new(() => GetResiliencePolicy(_serviceProvider!.GetRequiredService<ILoggerFactory>()));
 
 	public static void AddNetAppClient(this IServiceCollection services, IConfiguration configuration)
 	{
@@ -123,7 +125,11 @@ public static class IServiceCollectionExtension
 		})
 		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment))
 		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
-		.AddPolicyHandler(GetRetryPolicy());
+		.AddPolicyHandler((sp, _) =>
+		{
+			_serviceProvider ??= sp;
+			return _ontapHttpClientPolicy.Value;
+		});
 
 		services.AddTransient<NetAppStorageClient>();
 	}
