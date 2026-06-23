@@ -39,3 +39,5 @@ variables:
     value: "10000"
   - name: FeatureFlagsManageMaterials
     value: "false"
+  - name: FeatureFlagsMaterialRename
+    value: "false"
