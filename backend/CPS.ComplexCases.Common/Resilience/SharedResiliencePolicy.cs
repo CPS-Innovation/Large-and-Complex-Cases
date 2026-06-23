@@ -12,7 +12,8 @@ public sealed class SharedResiliencePolicy
 {
   private readonly Func<ILoggerFactory, IAsyncPolicy<HttpResponseMessage>> _policyFactory;
   private readonly object _gate = new();
-  private IAsyncPolicy<HttpResponseMessage>? _policy;
+  // volatile so the fast-path read outside the lock cannot observe a non-null reference
+  private volatile IAsyncPolicy<HttpResponseMessage>? _policy;
 
   public SharedResiliencePolicy(Func<ILoggerFactory, IAsyncPolicy<HttpResponseMessage>> policyFactory)
   {
