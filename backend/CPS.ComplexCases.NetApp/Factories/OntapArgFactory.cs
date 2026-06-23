@@ -14,4 +14,15 @@ public class OntapArgFactory : IOntapArgFactory
             NewFilePath = newPath
         };
     }
+
+    public GetFileLockArg CreateGetFileLockArg(string bearerToken, string bucketName, Guid volumeUuid, string filePath)
+    {
+        return new GetFileLockArg
+        {
+            BearerToken = bearerToken,
+            BucketName = bucketName,
+            VolumeUuid = volumeUuid,
+            FilePath = filePath
+        };
+    }
 }

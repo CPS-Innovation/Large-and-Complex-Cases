@@ -1,5 +1,12 @@
 using System.Net;
+using System.Text.Json;
+using CPS.ComplexCases.API.Context;
+using CPS.ComplexCases.API.Services;
+using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.NetApp.Client;
+using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Requests;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
@@ -8,9 +15,18 @@ using Microsoft.OpenApi.Models;
 
 namespace CPS.ComplexCases.API.Functions;
 
-public class GetFileLock(ILogger<GetFileLock> logger)
+public class GetFileLock(
+    ILogger<GetFileLock> logger,
+    ICaseMetadataService caseMetadataService,
+    ISecurityGroupMetadataService securityGroupMetadataService,
+    IOntapArgFactory ontapArgFactory,
+    IOntapHttpClient ontapHttpClient)
 {
     private readonly ILogger<GetFileLock> _logger = logger;
+    private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
+    private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
+    private readonly IOntapArgFactory _ontapArgFactory = ontapArgFactory;
+    private readonly IOntapHttpClient _ontapHttpClient = ontapHttpClient;
 
     [Function("GetFileLock")]
     [OpenApiOperation(operationId: "GetFileLock", tags: new[] { "NetApp", "Material" }, Summary = "Gets the lock information for a specified file.", Description = "Returns details about the lock on a file, including who holds the lock.")]
@@ -21,8 +37,41 @@ public class GetFileLock(ILogger<GetFileLock> logger)
     [OpenApiResponseWithoutBody(statusCode: HttpStatusCode.Unauthorized, Summary = "Unauthorized access.", Description = "Occurs when authentication fails or credentials are missing.")]
     [OpenApiResponseWithoutBody(statusCode: HttpStatusCode.Forbidden, Summary = "Forbidden access.", Description = "Occurs when the user does not have permission to access the resource.")]
     [OpenApiResponseWithoutBody(statusCode: HttpStatusCode.NotFound, Summary = "File not found.", Description = "Occurs when the specified file does not exist in the given volume.")]
-    public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequestData req)
+    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequestData req, FunctionContext functionContext)
     {
-        return req.CreateResponse(HttpStatusCode.OK);
+        var context = functionContext.GetRequestContext();
+
+        GetFileLockRequestDto getFileLockRequest;
+
+        try
+        {
+            var json = await new StreamReader(req.Body).ReadToEndAsync();
+            getFileLockRequest = JsonSerializer.Deserialize<GetFileLockRequestDto>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                ?? throw new InvalidOperationException("Request body is invalid.");
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "Failed to deserialize request body.");
+            return new BadRequestObjectResult("Invalid request body format.");
+        }
+
+        var caseMetadata = await _caseMetadataService.GetCaseMetadataForCaseIdAsync(getFileLockRequest.CaseId);
+
+        if (caseMetadata == null || string.IsNullOrEmpty(caseMetadata.NetappFolderPath))
+            return new BadRequestObjectResult("Case metadata or NetApp folder path is missing.");
+
+        var casePrefix = caseMetadata.NetappFolderPath.EndsWith('/')
+            ? caseMetadata.NetappFolderPath
+            : caseMetadata.NetappFolderPath + "/";
+
+        var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
+        var bucketName = securityGroups[0].BucketName;
+        var volumeUuid = securityGroups[0].VolumeUuid;
+
+        if (!getFileLockRequest.Path.StartsWith(casePrefix, StringComparison.OrdinalIgnoreCase))
+            return new BadRequestObjectResult("File path is outside the allowed case folder.");
+
+        var arg = _ontapArgFactory.CreateGetFileLockArg(context.BearerToken, bucketName, volumeUuid, getFileLockRequest.Path);
+        var result = await _ontapHttpClient.GetFileLockAsync(arg);
     }
 }

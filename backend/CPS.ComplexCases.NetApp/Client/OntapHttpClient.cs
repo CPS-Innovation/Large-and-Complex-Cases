@@ -40,6 +40,20 @@ public class OntapHttpClient(
         };
     }
 
+    public async Task<GetFileLockResult> GetFileLockAsync(GetFileLockArg arg)
+    {
+        var request = _ontapRequestFactory.CreateGetFileLockRequest(arg);
+
+        var response = await CallOntap(request, HttpStatusCode.NotFound);
+
+        return response.StatusCode switch
+        {
+            HttpStatusCode.OK => new GetFileLockResult(true, "LockedByUser", null, null), // Replace with actual parsing logic
+            HttpStatusCode.NotFound => new GetFileLockResult(false, null, $"File not found at path: {arg.FilePath}", (int)HttpStatusCode.NotFound),
+            _ => throw new OntapClientException(response.StatusCode, new HttpRequestException($"Unexpected status code: {response.StatusCode}")),
+        };
+    }
+
     private Task<HttpResponseMessage> CallOntap(HttpRequestMessage request, params HttpStatusCode[] expectedUnhappyStatusCodes)
         => _httpResponseHandler.SendAsync(_httpClient, request, HttpResponseHandlerConfig, expectedUnhappyStatusCodes);
 }
