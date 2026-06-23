@@ -26,22 +26,13 @@ public static class IServiceCollectionExtension
   private const int CircuitBreakerMinimumThroughput = 10;
   private const int CircuitBreakerDurationOfBreakSeconds = 30;
 
-  // Built once and reused so circuit-breaker state is shared across all calls
-  private static IServiceProvider? _serviceProvider;
-  private static readonly Lazy<IAsyncPolicy<HttpResponseMessage>> _resiliencePolicy =
-      new(() => GetResiliencePolicy(_serviceProvider!.GetRequiredService<ILoggerFactory>()));
-
   public static void AddDdeiClient(this IServiceCollection services, IConfiguration configuration)
   {
     services.Configure<DDEIOptions>(configuration.GetSection(nameof(DDEIOptions)));
     services.AddTransient<IDdeiArgFactory, DdeiArgFactory>();
     services.AddHttpClient<IDdeiClient, DdeiClient>(AddDdeiClient)
       .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-      .AddPolicyHandler((sp, _) =>
-      {
-        _serviceProvider ??= sp;
-        return _resiliencePolicy.Value;
-      });
+      .AddResiliencePolicyHandler(GetResiliencePolicy);
     services.AddTransient<IDdeiRequestFactory, DdeiRequestFactory>();
     services.AddTransient<ICaseDetailsMapper, CaseDetailsMapper>();
     services.AddTransient<IAreasMapper, AreasMapper>();

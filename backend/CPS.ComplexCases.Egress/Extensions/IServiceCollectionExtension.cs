@@ -21,13 +21,6 @@ public static class IServiceCollectionExtension
   private const int CircuitBreakerMinimumThroughput = 10;
   private const int CircuitBreakerDurationOfBreakSeconds = 30;
 
-  // Built once per client and reused so circuit-breaker state is shared across all calls for that client.
-  private static IServiceProvider? _serviceProvider;
-  private static readonly Lazy<IAsyncPolicy<HttpResponseMessage>> _egressClientPolicy =
-      new(() => GetResiliencePolicy(_serviceProvider!.GetRequiredService<ILoggerFactory>()));
-  private static readonly Lazy<IAsyncPolicy<HttpResponseMessage>> _egressStorageClientPolicy =
-      new(() => GetResiliencePolicy(_serviceProvider!.GetRequiredService<ILoggerFactory>()));
-
   public static void AddEgressClient(this IServiceCollection services, IConfiguration configuration)
   {
     services.AddTransient<IEgressRequestFactory, EgressRequestFactory>();
@@ -44,11 +37,7 @@ public static class IServiceCollectionExtension
       client.Timeout = TimeSpan.FromSeconds(configuration.GetValue("EgressOptions:ManagementTimeoutSeconds", 100));
     })
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-    .AddPolicyHandler((sp, _) =>
-    {
-      _serviceProvider ??= sp;
-      return _egressClientPolicy.Value;
-    });
+    .AddResiliencePolicyHandler(GetResiliencePolicy);
 
     services.AddHttpClient<EgressStorageClient>(client =>
     {
@@ -65,11 +54,7 @@ public static class IServiceCollectionExtension
       client.Timeout = Timeout.InfiniteTimeSpan;
     })
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-    .AddPolicyHandler((sp, _) =>
-    {
-      _serviceProvider ??= sp;
-      return _egressStorageClientPolicy.Value;
-    });
+    .AddResiliencePolicyHandler(GetResiliencePolicy);
   }
 
   internal static IAsyncPolicy<HttpResponseMessage> GetResiliencePolicy(ILoggerFactory loggerFactory)
