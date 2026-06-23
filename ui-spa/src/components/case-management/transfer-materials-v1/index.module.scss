@@ -1,0 +1,67 @@
+.mainContainer {
+  .titleWrapper {
+    background: #f3f2f1;
+    padding: 0.25rem 0.5rem;
+    display: block;
+    h3 {
+      margin: 0.5rem;
+    }
+  }
+  .tableContainer {
+    padding: 0 1rem;
+  }
+}
+
+.transferContent {
+  position: relative;
+}
+.spinnerWrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: absolute;
+  top: 5rem;
+  & .spinnerText {
+    margin-top: 1rem;
+  }
+}
+
+.successBanner {
+  margin-top: 2rem;
+  width: 50%;
+  .successMessage {
+    font-size: 1.5rem;
+  }
+}
+
+.inlineHeading {
+  display: inline-block;
+}
+
+.regionHead {
+  font-weight: bold;
+  font-size: 1.4rem;
+  margin: 0.5rem;
+}
+.transferProgressMetrics {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-direction: column;
+  text-align: center;
+}
+
+.insetTextWrapper {
+  border-bottom: 1px solid #b1b4b6;
+}
+
+.controlWrapper {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1.875rem;
+  .disconnectButton {
+    margin-bottom: 0;
+    margin-top: 0;
+  }
+}

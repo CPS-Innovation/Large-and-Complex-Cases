@@ -56,8 +56,16 @@ export function getLastSegment(input: string): string {
 }
 export const getEgressFolderResultsPlaywright = (
   id: string,
+  path: string,
 ): EgressFolderResponse => {
-  if (!id) return egressRootFolderResultsPlaywright;
+  if (!id && !path) return egressRootFolderResultsPlaywright;
+  if (!id) {
+    id = path
+      .split("/")
+      .map((part) => part.replace("folder-", ""))
+      .join(",");
+  }
+
   const lastSegment = getLastSegment(id);
   const newId = parseInt(lastSegment.split("-")[0]) + 1;
   if (newId > 3) {

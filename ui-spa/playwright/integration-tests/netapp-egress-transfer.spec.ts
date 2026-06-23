@@ -446,6 +446,8 @@ test.describe("netapp-egress-transfer", () => {
             userName: "dev_user@example.org",
             totalFiles: 0,
             processedFiles: 0,
+            successfulItems: [],
+            destinationPath: "",
           });
         },
       ),
@@ -484,6 +486,8 @@ test.describe("netapp-egress-transfer", () => {
             userName: "dev_user@example.org",
             totalFiles: 10,
             processedFiles: 0,
+            successfulItems: [],
+            destinationPath: "",
           });
         },
       ),
@@ -508,6 +512,8 @@ test.describe("netapp-egress-transfer", () => {
             userName: "dev_user@example.org",
             totalFiles: 30,
             processedFiles: 20,
+            successfulItems: [],
+            destinationPath: "",
           });
         },
       ),
@@ -543,6 +549,8 @@ test.describe("netapp-egress-transfer", () => {
             totalFiles: 30,
             processedFiles: 30,
             successfulFiles: 30,
+            successfulItems: [],
+            destinationPath: "",
           });
         },
       ),
@@ -596,6 +604,8 @@ test.describe("netapp-egress-transfer", () => {
             userName: "abc@example.org",
             totalFiles: 30,
             processedFiles: 0,
+            successfulItems: [],
+            destinationPath: "",
           });
         },
       ),
@@ -631,6 +641,8 @@ test.describe("netapp-egress-transfer", () => {
             userName: "abc@example.org",
             totalFiles: 30,
             processedFiles: 10,
+            successfulItems: [],
+            destinationPath: "",
           });
         },
       ),
@@ -661,6 +673,8 @@ test.describe("netapp-egress-transfer", () => {
             totalFiles: 30,
             processedFiles: 30,
             successfulFiles: 30,
+            successfulItems: [],
+            destinationPath: "",
           });
         },
       ),
@@ -715,6 +729,8 @@ test.describe("netapp-egress-transfer", () => {
             userName: "abc@example.org",
             totalFiles: 0,
             processedFiles: 0,
+            successfulItems: [],
+            destinationPath: "",
           });
         },
       ),

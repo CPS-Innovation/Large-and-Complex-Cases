@@ -29,6 +29,7 @@ describe("getDuplicateFoldersAndFiles", () => {
     const netappData: NetAppFolderData = [
       {
         path: "netapp/f1/",
+        name: "f1",
         isFolder: true,
         lastModified: "2020-01-01",
         filesize: 0,
@@ -67,6 +68,7 @@ describe("getDuplicateFoldersAndFiles", () => {
     const netappData: NetAppFolderData = [
       {
         path: "netapp/f1/",
+        name: "f1",
         isFolder: true,
         lastModified: "2020-01-01",
         filesize: 0,
@@ -122,18 +124,21 @@ describe("getDuplicateFoldersAndFiles", () => {
     const netappData: NetAppFolderData = [
       {
         path: "netapp/f1/",
+        name: "f1",
         isFolder: true,
         lastModified: "2020-01-01",
         filesize: 0,
       },
       {
         path: "netapp/other/",
+        name: "other",
         isFolder: true,
         lastModified: "2020-01-01",
         filesize: 0,
       },
       {
         path: "netapp/file.pdf",
+        name: "file.pdf",
         isFolder: false,
         lastModified: "2020-01-01",
         filesize: 0,
@@ -194,12 +199,14 @@ describe("getDuplicateFoldersAndFiles", () => {
     const netappData: NetAppFolderData = [
       {
         path: "netapp/f1/",
+        name: "f1",
         isFolder: true,
         lastModified: "2020-01-01",
         filesize: 0,
       },
       {
         path: "netapp/file1.pdf",
+        name: "file1.pdf",
         isFolder: false,
         lastModified: "2020-01-02",
         filesize: 5,
@@ -260,18 +267,21 @@ describe("getDuplicateFoldersAndFiles", () => {
     const netappData: NetAppFolderData = [
       {
         path: "netapp/f1/",
+        name: "f1",
         isFolder: true,
         lastModified: "2020-01-01",
         filesize: 0,
       },
       {
         path: "netapp/other/",
+        name: "other",
         isFolder: true,
         lastModified: "2020-01-01",
         filesize: 0,
       },
       {
         path: "netapp/file.pdf",
+        name: "file.pdf",
         isFolder: false,
         lastModified: "2020-01-01",
         filesize: 0,

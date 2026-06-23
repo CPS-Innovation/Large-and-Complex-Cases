@@ -1,23 +1,34 @@
 import { useCallback, useState } from "react";
 import TreeView from "../tree-view-component/TreeViewComponent";
-import { Button } from "../../../components/govuk/Button";
-import { Link } from "react-router-dom";
+import { Button, LinkButton } from "../../../components/govuk";
 import { type TreeNode } from "../tree-view-component/TreeViewComponent";
 import styles from "./TransferWidget.module.scss";
 export type TransferWidgetProps = {
   data: TreeNode[];
   onLoadChildren: (nodeId: string) => Promise<TreeNode[]>;
   transferAction: "Copy" | "Move";
+  handleCancelClick: () => void;
+  handleTransfer: (selectedNode: TreeNode) => void;
+  isRootNodeOpened: boolean;
 };
 const TransferWidget: React.FC<TransferWidgetProps> = ({
   data,
-  onLoadChildren,
   transferAction,
+  isRootNodeOpened,
+  handleCancelClick,
+  onLoadChildren,
+  handleTransfer,
 }) => {
   const [selectedNode, setSelectedNode] = useState<TreeNode | null>(null);
   const onSelect = useCallback((node: TreeNode) => {
     setSelectedNode(node);
   }, []);
+
+  const handleBtnClickHandler = () => {
+    if (selectedNode) {
+      handleTransfer(selectedNode);
+    }
+  };
 
   return (
     <div>
@@ -26,19 +37,20 @@ const TransferWidget: React.FC<TransferWidgetProps> = ({
         data={data}
         onSelect={onSelect}
         onLoadChildren={onLoadChildren}
+        isRootNodeOpened={isRootNodeOpened}
       />
       <div className={styles.actionWrapper}>
         <Button
-          onClick={() => console.log("Transfer files")}
+          onClick={handleBtnClickHandler}
           className={styles.transferButton}
+          disabled={!selectedNode}
         >
           {selectedNode
             ? `${transferAction} to ${selectedNode?.name}`
             : transferAction}
         </Button>
-        <Link to="/somewhere-else" className="govuk-link--no-visited-state">
-          Cancel
-        </Link>
+
+        <LinkButton onClick={handleCancelClick}>Cancel</LinkButton>
       </div>
     </div>
   );

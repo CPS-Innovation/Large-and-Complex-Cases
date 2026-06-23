@@ -933,7 +933,14 @@ describe("gateway apis", () => {
         json: async () => mockData,
       });
 
-      const result = await getEgressFolders("thunder", "folder-1", 0, 50, []);
+      const result = await getEgressFolders(
+        "thunder",
+        "folder-1",
+        "folder-id",
+        0,
+        50,
+        [],
+      );
       expect(result).toEqual(mockData.data);
       expect(fetch).toHaveBeenCalledWith(
         "gateway_url/api/v1/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50",
@@ -965,7 +972,14 @@ describe("gateway apis", () => {
         json: async () => mockData,
       });
 
-      const result = await getEgressFolders("thunder", "folder-1", 0, 50, []);
+      const result = await getEgressFolders(
+        "thunder",
+        "folder-1",
+        "folder-id",
+        0,
+        50,
+        [],
+      );
       expect(result).toEqual(mockData.data);
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenNthCalledWith(
@@ -1004,7 +1018,7 @@ describe("gateway apis", () => {
       });
 
       await expect(
-        getEgressFolders("thunder", "folder-1", 0, 50, []),
+        getEgressFolders("thunder", "folder-1", "folder-id", 0, 50, []),
       ).rejects.toThrow(
         new ApiError(
           `Getting egress folders failed`,
@@ -1039,10 +1053,10 @@ describe("gateway apis", () => {
       });
 
       await expect(
-        getEgressFolders("thunder", "folder-1", 0, 50, []),
+        getEgressFolders("thunder", "folder-1", "folder-id", 0, 50, []),
       ).rejects.toBeInstanceOf(ApiError);
       await expect(
-        getEgressFolders("thunder", "folder-1", 0, 50, []),
+        getEgressFolders("thunder", "folder-1", "folder-id", 0, 50, []),
       ).rejects.toThrow(
         "An error occurred contacting the server at gateway_url/api/v1/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50: SyntaxError: Unexpected token < in JSON",
       );
@@ -1068,10 +1082,10 @@ describe("gateway apis", () => {
       });
 
       await expect(
-        getEgressFolders("thunder", "folder-1", 0, 50, []),
+        getEgressFolders("thunder", "folder-1", "folder-id", 0, 50, []),
       ).rejects.toBeInstanceOf(ApiError);
       await expect(
-        getEgressFolders("thunder", "folder-1", 0, 50, []),
+        getEgressFolders("thunder", "folder-1", "folder-id", 0, 50, []),
       ).rejects.toThrow(
         "An error occurred contacting the server at gateway_url/api/v1/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50: response schema validation failed; status - OK (200)",
       );
@@ -1711,6 +1725,8 @@ describe("gateway apis", () => {
         processedFiles: 30,
         successfulFiles: 30,
         failedFiles: 0,
+        successfulItems: [],
+        destinationPath: "",
       };
 
       (v4 as any).mockReturnValue("id_123");
@@ -1751,6 +1767,8 @@ describe("gateway apis", () => {
         processedFiles: 5,
         successfulFiles: 5,
         failedFiles: 0,
+        successfulItems: [],
+        destinationPath: "",
       };
 
       (v4 as any).mockReturnValue("id_123");
@@ -1759,7 +1777,9 @@ describe("gateway apis", () => {
         ok: true,
         status: 200,
         json: async () => mockData,
-        headers: { get: (name: string) => (name === "ETag" ? '"12345"' : null) },
+        headers: {
+          get: (name: string) => (name === "ETag" ? '"12345"' : null),
+        },
       });
 
       const result = await getTransferStatus("transfer_id_1");
@@ -1793,6 +1813,8 @@ describe("gateway apis", () => {
         processedFiles: 30,
         successfulFiles: 30,
         failedFiles: 0,
+        successfulItems: [],
+        destinationPath: "",
       };
 
       (v4 as any).mockReturnValue("id_123");
@@ -1874,6 +1896,8 @@ describe("gateway apis", () => {
         userName: "dev_user@example.org",
         totalFiles: 30,
         processedFiles: 30,
+        successfulItems: [],
+        destinationPath: "",
       };
 
       (v4 as any).mockReturnValue("id_123");

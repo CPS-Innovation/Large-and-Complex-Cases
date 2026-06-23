@@ -43,6 +43,7 @@ describe("SortUtils", () => {
   describe("sortByDateProperty", () => {
     it("Should be able to sort an array of objects based on date value property in ascending(oldest first) order", () => {
       const data = [
+        { id: 4, name: "def", dateCreated: "" },
         { id: 2, name: "abc", dateCreated: "2022/12/21" },
         { id: 3, name: "lmn", dateCreated: "2022/03/01" },
         { id: 1, name: "def", dateCreated: "2022/10/02" },
@@ -52,6 +53,7 @@ describe("SortUtils", () => {
         { id: 3, name: "lmn", dateCreated: "2022/03/01" },
         { id: 1, name: "def", dateCreated: "2022/10/02" },
         { id: 2, name: "abc", dateCreated: "2022/12/21" },
+        { id: 4, name: "def", dateCreated: "" },
       ];
 
       const sortedData = sortByDateProperty(data, "dateCreated", "ascending");
@@ -59,6 +61,7 @@ describe("SortUtils", () => {
     });
     it("Should be able to sort an array of objects based on date value property in descending(newest first) order", () => {
       const data = [
+        { id: 5, name: "def", dateCreated: "" },
         { id: 3, name: "lmn", dateCreated: "2022/12/2" },
         { id: 4, name: "lmn1", dateCreated: null },
         { id: 1, name: "def", dateCreated: "2022/12/08" },
@@ -70,6 +73,7 @@ describe("SortUtils", () => {
         { id: 1, name: "def", dateCreated: "2022/12/08" },
         { id: 3, name: "lmn", dateCreated: "2022/12/2" },
         { id: 4, name: "lmn1", dateCreated: null },
+        { id: 5, name: "def", dateCreated: "" },
       ];
 
       const sortedData = sortByDateProperty(data, "dateCreated", "descending");
@@ -81,12 +85,14 @@ describe("SortUtils", () => {
     it("Should be able to sort an array of objects based on file size property in ascending order", () => {
       const data = [
         { id: 1, name: "file1.txt", filesize: 200 },
+        { id: 5, name: "file5.txt", filesize: 0 },
         { id: 2, name: "file2.txt", filesize: 100 },
         { id: 3, name: "file3.txt", filesize: 600 },
         { id: 4, name: "file4.txt", filesize: 300 },
       ];
 
       const expectedResult = [
+        { id: 5, name: "file5.txt", filesize: 0 },
         { id: 2, name: "file2.txt", filesize: 100 },
         { id: 1, name: "file1.txt", filesize: 200 },
         { id: 4, name: "file4.txt", filesize: 300 },
@@ -99,6 +105,7 @@ describe("SortUtils", () => {
 
     it("Should be able to sort an array of objects based on file size property in descending order", () => {
       const data = [
+        { id: 5, name: "file5.txt", filesize: 0 },
         { id: 1, name: "file1.txt", filesize: 200 },
         { id: 2, name: "file2.txt", filesize: 100 },
         { id: 3, name: "file3.txt", filesize: 600 },
@@ -110,6 +117,7 @@ describe("SortUtils", () => {
         { id: 4, name: "file4.txt", filesize: 300 },
         { id: 1, name: "file1.txt", filesize: 200 },
         { id: 2, name: "file2.txt", filesize: 100 },
+        { id: 5, name: "file5.txt", filesize: 0 },
       ];
 
       const sortedData = sortByNumberProperty(data, "filesize", "descending");
