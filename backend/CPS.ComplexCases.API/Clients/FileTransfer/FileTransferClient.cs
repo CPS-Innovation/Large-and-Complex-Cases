@@ -35,15 +35,6 @@ public class FileTransferClient(IRequestFactory requestFactory, HttpClient httpC
         return await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
     }
 
-    public async Task<HttpResponseMessage> RenameNetAppMaterialAsync(RenameNetAppMaterialRequest request, Guid correlationId)
-    {
-        return await SendRequestAsync(
-            HttpMethod.Post,
-            "netapp/materials/rename",
-            correlationId,
-            new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, ContentType.ApplicationJson));
-    }
-
     public async Task<HttpResponseMessage> InitiateBatchCopyAsync(CopyNetAppBatchRequest request, Guid correlationId)
     {
         return await SendRequestAsync(

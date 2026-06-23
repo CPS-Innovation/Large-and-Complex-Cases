@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
@@ -32,6 +33,8 @@ public static class IServiceCollectionExtension
 		new(() => GetResiliencePolicy(_serviceProvider!.GetRequiredService<ILoggerFactory>()));
 	private static readonly Lazy<IAsyncPolicy<HttpResponseMessage>> _netAppS3HttpClientPolicy =
 		new(() => GetResiliencePolicy(_serviceProvider!.GetRequiredService<ILoggerFactory>()));
+	private static readonly Lazy<IAsyncPolicy<HttpResponseMessage>> _ontapHttpClientPolicy =
+		new(() => GetResiliencePolicy(_serviceProvider!.GetRequiredService<ILoggerFactory>()));
 
 	public static void AddNetAppClient(this IServiceCollection services, IConfiguration configuration)
 	{
@@ -49,11 +52,15 @@ public static class IServiceCollectionExtension
 		services.AddSingleton<IS3TelemetryHandler, S3TelemetryHandler>();
 		services.AddSingleton<INetAppCertFactory, NetAppCertFactory>();
 
+		services.AddTransient<IOntapArgFactory, OntapArgFactory>();
+		services.AddTransient<IOntapRequestFactory, OntapRequestFactory>();
+		services.AddTransient<IHttpResponseHandler, HttpResponseHandler>();
+
 		services.AddSingleton<IKeyVaultService>(sp =>
 		{
 			var logger = sp.GetRequiredService<ILogger<KeyVaultService>>();
 			var keyVaultUrl = configuration["KeyVault:Url"]
-				?? throw new ArgumentNullException("KeyVault:Url", "KeyVault:Url configuration is missing or empty.");
+				?? throw new InvalidOperationException("KeyVault:Url configuration is missing or empty.");
 
 			var secretClient = new SecretClient(
 				new Uri(keyVaultUrl),
@@ -71,7 +78,7 @@ public static class IServiceCollectionExtension
 			var netAppServiceUrl = configuration["NetAppOptions:ClusterUrl"];
 			if (string.IsNullOrEmpty(netAppServiceUrl))
 			{
-				throw new ArgumentNullException(nameof(netAppServiceUrl), "NetAppOptions:ClusterUrl configuration is missing or empty.");
+				throw new InvalidOperationException("NetAppOptions:ClusterUrl configuration is missing or empty.");
 			}
 			client.BaseAddress = new Uri(netAppServiceUrl);
 			client.Timeout = TimeSpan.FromSeconds(configuration.GetValue("NetAppOptions:RequestTimeoutSeconds", 100));
@@ -90,7 +97,7 @@ public static class IServiceCollectionExtension
 			var netAppServiceUrl = configuration["NetAppOptions:Url"];
 			if (string.IsNullOrEmpty(netAppServiceUrl))
 			{
-				throw new ArgumentNullException(nameof(netAppServiceUrl), "NetAppOptions:Url configuration is missing or empty.");
+				throw new InvalidOperationException("NetAppOptions:Url configuration is missing or empty.");
 			}
 			client.BaseAddress = new Uri(netAppServiceUrl);
 			client.Timeout = TimeSpan.FromSeconds(configuration.GetValue("NetAppOptions:RequestTimeoutSeconds", 100));
@@ -103,6 +110,25 @@ public static class IServiceCollectionExtension
 		{
 			_serviceProvider ??= sp;
 			return _netAppS3HttpClientPolicy.Value;
+		});
+
+		services.AddHttpClient<IOntapHttpClient, OntapHttpClient>(client =>
+		{
+			var ontapBaseUrl = configuration["NetAppOptions:ClusterUrl"];
+			if (string.IsNullOrEmpty(ontapBaseUrl))
+			{
+				throw new InvalidOperationException("NetAppOptions:ClusterUrl configuration is missing or empty.");
+			}
+			client.BaseAddress = new Uri(ontapBaseUrl);
+			client.Timeout = TimeSpan.FromMinutes(10);
+
+		})
+		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment))
+		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
+		.AddPolicyHandler((sp, _) =>
+		{
+			_serviceProvider ??= sp;
+			return _ontapHttpClientPolicy.Value;
 		});
 
 		services.AddTransient<NetAppStorageClient>();

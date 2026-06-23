@@ -40,9 +40,9 @@ public class SecurityGroupMetadataServiceTests
 
         var securityGroups = new List<SecurityGroup>
         {
-            new() { Id = groupId1, DisplayName = "Group1", BucketName = "Bucket1", Description = "Test Group 1" },
-            new() { Id = groupId2, DisplayName = "Group2", BucketName = "Bucket2", Description = "Test Group 2" },
-            new() { Id = Guid.NewGuid(), DisplayName = "Group3", BucketName = "Bucket3", Description = "Test Group 3" }
+            new() { Id = groupId1, DisplayName = "Group1", BucketName = "Bucket1", VolumeUuid = Guid.NewGuid(), Description = "Test Group 1" },
+            new() { Id = groupId2, DisplayName = "Group2", BucketName = "Bucket2", VolumeUuid = Guid.NewGuid(), Description = "Test Group 2" },
+            new() { Id = Guid.NewGuid(), DisplayName = "Group3", BucketName = "Bucket3", VolumeUuid = Guid.NewGuid(), Description = "Test Group 3" }
         };
 
         var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.PreProd.json");
@@ -107,7 +107,7 @@ public class SecurityGroupMetadataServiceTests
 
         var securityGroups = new List<SecurityGroup>
         {
-            new () { Id = groupId2, DisplayName = "Group1", BucketName = "Bucket1", Description = "Test Group 1" }
+            new () { Id = groupId2, DisplayName = "Group1", BucketName = "Bucket1", VolumeUuid = Guid.NewGuid(), Description = "Test Group 1" }
         };
 
         var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.PreProd.json");
@@ -210,7 +210,7 @@ public class SecurityGroupMetadataServiceTests
 
         var securityGroups = new List<SecurityGroup>
         {
-            new() { Id = validGroupId, DisplayName = "Group1", BucketName = "Bucket1", Description = "Test Group 1" }
+            new() { Id = validGroupId, DisplayName = "Group1", BucketName = "Bucket1", VolumeUuid = Guid.NewGuid(), Description = "Test Group 1" }
         };
 
         var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.PreProd.json");
@@ -293,7 +293,7 @@ public class SecurityGroupMetadataServiceTests
 
         var securityGroups = new List<SecurityGroup>
         {
-            new() { Id = groupId, DisplayName = "Group1", BucketName = "Bucket1", Description = "Test Group 1" }
+            new() { Id = groupId, DisplayName = "Group1", BucketName = "Bucket1", VolumeUuid = Guid.NewGuid(), Description = "Test Group 1" }
         };
 
         var filePath = Path.Combine(Directory.GetCurrentDirectory(), "SourceFiles/SecurityGroupMappings.PreProd.json");

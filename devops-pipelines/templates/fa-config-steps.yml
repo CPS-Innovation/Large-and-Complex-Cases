@@ -250,6 +250,11 @@ steps:
             "slotSetting": false
           },
           {
+            "name": "FeatureFlags__MaterialRename",
+            "value": "$(FeatureFlagsMaterialRename)",
+            "slotSetting": false
+          },
+          {
             "name": "BlobStorageAccountUrl",
             "value": "$(BlobStorageAccountUrl)",
             "slotSetting": false

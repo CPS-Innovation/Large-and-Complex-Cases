@@ -3,6 +3,7 @@ using Azure.Core;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
 using CPS.ComplexCases.API.Integration.Tests.Configuration;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.Data;
 using CPS.ComplexCases.DDEI;
@@ -337,7 +338,7 @@ public class IntegrationTestFixture : IAsyncLifetime
         };
         var netAppRequestFactory = new NetAppRequestFactory();
         var netAppHttpClientLogger = _loggerFactory.CreateLogger<NetAppHttpClient>();
-        var netAppClient = new NetAppHttpClient(netAppHttpClient, netAppRequestFactory, netAppHttpClientLogger);
+        var netAppClient = new NetAppHttpClient(netAppHttpClient, netAppRequestFactory, netAppHttpClientLogger, new HttpResponseHandler());
 
         NetAppArgFactory = new NetAppArgFactory();
         var netAppArgFactory = new NetAppArgFactory();

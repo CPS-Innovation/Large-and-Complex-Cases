@@ -45,6 +45,7 @@
     "RateLimiting__PermitLimit": "100",
     "RateLimiting__IntervalInSeconds": "60",
     "FeatureFlags__ManageMaterials": true,
+    "FeatureFlags__MaterialRename": false,
     "BlobStorageAccountUrl": "https://<blob-storage-account-url>.blob.core.windows.net",
     "BlobContainerName": "aspose-templates"
   },

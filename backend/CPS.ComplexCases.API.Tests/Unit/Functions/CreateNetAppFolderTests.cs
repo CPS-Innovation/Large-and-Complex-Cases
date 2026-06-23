@@ -63,6 +63,7 @@ public class CreateNetAppFolderTests
             new() {
                 Id = _fixture.Create<Guid>(),
                 BucketName = _testBucketName,
+                VolumeUuid = _fixture.Create<Guid>(),
                 DisplayName = "Test Security Group"
             }
         ];
@@ -516,8 +517,8 @@ public class CreateNetAppFolderTests
 
         var securityGroups = new List<SecurityGroup>
         {
-            new() { Id = _fixture.Create<Guid>(), BucketName = firstBucketName, DisplayName = "First" },
-            new() { Id = _fixture.Create<Guid>(), BucketName = secondBucketName, DisplayName = "Second" }
+            new() { Id = _fixture.Create<Guid>(), BucketName = firstBucketName, VolumeUuid = _fixture.Create<Guid>(), DisplayName = "First" },
+            new() { Id = _fixture.Create<Guid>(), BucketName = secondBucketName, VolumeUuid = _fixture.Create<Guid>(), DisplayName = "Second" }
         };
         _securityGroupMetadataServiceMock
             .Setup(s => s.GetUserSecurityGroupsAsync(_testBearerToken))

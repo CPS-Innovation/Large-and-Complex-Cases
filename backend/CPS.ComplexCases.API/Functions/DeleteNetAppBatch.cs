@@ -15,8 +15,10 @@ using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.Data.Enums;
 using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.NetApp.Client;
+using CPS.ComplexCases.NetApp.Constants;
 using CPS.ComplexCases.NetApp.Factories;
 
 namespace CPS.ComplexCases.API.Functions;
@@ -86,13 +88,13 @@ public class DeleteNetAppBatch(
                 results.Add(new DeleteNetAppBatchItemResult
                 {
                     SourcePath = op.SourcePath,
-                    Status = "Failed",
+                    Status = OperationResultStatus.Failed,
                     Error = "Path is not within the case's NetApp folder."
                 });
                 continue;
             }
 
-            var isFolder = op.Type == NetAppDeleteOperationType.Folder;
+            var isFolder = op.Type == NetAppOperationType.Folder;
             var arg = _netAppArgFactory.CreateDeleteFileOrFolderArg(
                 context.BearerToken, bucket, string.Empty, op.SourcePath, isFolder);
 
@@ -109,7 +111,7 @@ public class DeleteNetAppBatch(
                     results.Add(new DeleteNetAppBatchItemResult
                     {
                         SourcePath = op.SourcePath,
-                        Status = "Failed",
+                        Status = OperationResultStatus.Failed,
                         Error = result.ErrorMessage
                     });
                 }
@@ -119,7 +121,7 @@ public class DeleteNetAppBatch(
                     results.Add(new DeleteNetAppBatchItemResult
                     {
                         SourcePath = op.SourcePath,
-                        Status = "NotFound"
+                        Status = OperationResultStatus.NotFound,
                     });
                 }
                 else
@@ -127,7 +129,7 @@ public class DeleteNetAppBatch(
                     results.Add(new DeleteNetAppBatchItemResult
                     {
                         SourcePath = op.SourcePath,
-                        Status = "Deleted",
+                        Status = OperationResultStatus.Deleted,
                         KeysDeleted = result.KeysDeleted > 1 ? result.KeysDeleted : null
                     });
                 }
@@ -138,7 +140,7 @@ public class DeleteNetAppBatch(
                 results.Add(new DeleteNetAppBatchItemResult
                 {
                     SourcePath = op.SourcePath,
-                    Status = "Failed",
+                    Status = OperationResultStatus.Failed,
                     Error = "File is open via SMB (HTTP 423). Close the file and retry."
                 });
             }
@@ -148,22 +150,22 @@ public class DeleteNetAppBatch(
                 results.Add(new DeleteNetAppBatchItemResult
                 {
                     SourcePath = op.SourcePath,
-                    Status = "Failed",
+                    Status = OperationResultStatus.Failed,
                     Error = ex.Message
                 });
             }
         }
 
-        var succeeded = results.Count(r => r.Status == "Deleted");
-        var notFound = results.Count(r => r.Status == "NotFound");
-        var failed = results.Count(r => r.Status == "Failed");
+        var succeeded = results.Count(r => r.Status == OperationResultStatus.Deleted);
+        var notFound = results.Count(r => r.Status == OperationResultStatus.NotFound);
+        var failed = results.Count(r => r.Status == OperationResultStatus.Failed);
 
         if (succeeded > 0 || notFound > 0)
         {
             try
             {
                 var auditedPaths = results
-                    .Where(r => r.Status is "Deleted" or "NotFound")
+                    .Where(r => r.Status is OperationResultStatus.Deleted or OperationResultStatus.NotFound)
                     .Select(r => r.SourcePath)
                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -171,8 +173,8 @@ public class DeleteNetAppBatch(
                     .Where(op => auditedPaths.Contains(op.SourcePath))
                     .ToList();
 
-                var hasFolder = auditedOps.Any(op => op.Type == NetAppDeleteOperationType.Folder);
-                var hasMaterial = auditedOps.Any(op => op.Type == NetAppDeleteOperationType.Material);
+                var hasFolder = auditedOps.Any(op => op.Type == NetAppOperationType.Folder);
+                var hasMaterial = auditedOps.Any(op => op.Type == NetAppOperationType.Material);
 
                 var (actionType, resourceType) = (hasFolder, hasMaterial) switch
                 {
