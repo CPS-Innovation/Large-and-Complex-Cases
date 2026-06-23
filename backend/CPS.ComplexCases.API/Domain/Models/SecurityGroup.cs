@@ -10,6 +10,8 @@ public class SecurityGroup
     public required string DisplayName { get; set; }
     [JsonPropertyName("bucketName")]
     public required string BucketName { get; set; }
+    [JsonPropertyName("volumeUuid")]
+    public required Guid VolumeUuid { get; set; }
     [JsonPropertyName("description")]
     public string Description { get; set; } = string.Empty;
 }

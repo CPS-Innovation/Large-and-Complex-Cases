@@ -55,6 +55,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                     {
                         Id = _fixture.Create<Guid>(),
                         BucketName = _testBucketName,
+                        VolumeUuid = _fixture.Create<Guid>(),
                         DisplayName = "Test Security Group"
                     }
                 ]);

@@ -2,7 +2,7 @@ using System.Net;
 
 namespace CPS.ComplexCases.NetApp.Exceptions;
 
-public class NetAppAccessDeniedException : Exception
+public class NetAppAccessDeniedException : Exception, IHttpStatusCodeException
 {
     public string BucketName { get; }
 
@@ -12,5 +12,5 @@ public class NetAppAccessDeniedException : Exception
         BucketName = bucketName;
     }
 
-    public static HttpStatusCode StatusCode => HttpStatusCode.Forbidden;
+    public HttpStatusCode StatusCode { get; } = HttpStatusCode.Forbidden;
 }
