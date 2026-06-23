@@ -48,7 +48,7 @@ public class MaterialBatchRename(
     private readonly FeatureFlagConfig _featureFlags = featureFlags.Value;
 
     [Function(nameof(MaterialBatchRename))]
-    [OpenApiOperation(operationId: nameof(MaterialBatchRename), tags: ["Material"], Description = "Rename one or more files and folders from NetApp in a single batch request.")]
+    [OpenApiOperation(operationId: nameof(MaterialBatchRename), tags: ["NetApp"], Description = "Rename one or more files and folders from NetApp in a single batch request.")]
     [CmsAuthValuesAuth]
     [BearerTokenAuth]
     [OpenApiRequestBody(ContentType.ApplicationJson, typeof(MaterialBatchRenameRequestDto), Description = "Body containing the material rename information")]
