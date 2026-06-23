@@ -43,3 +43,13 @@ variables:
     value: "10000"
   - name: FeatureFlagsManageMaterials
     value: "true"
+  - name: DDEIOptionsRequestTimeoutSeconds
+    value: "100"
+  - name: EgressOptionsManagementTimeoutSeconds
+    value: "100"
+  - name: EgressOptionsTransferTimeoutSeconds
+    value: "300"
+  - name: NetAppOptionsRequestTimeoutSeconds
+    value: "100"
+  - name: FileTransferApiOptionsRequestTimeoutSeconds
+    value: "100"
