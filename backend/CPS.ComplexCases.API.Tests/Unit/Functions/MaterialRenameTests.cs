@@ -19,6 +19,7 @@ using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Enums;
 using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.NetApp.Factories;
+using CPS.ComplexCases.NetApp.Exceptions;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Models.Requests;
@@ -27,9 +28,9 @@ using CPS.ComplexCases.NetApp.Client;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions;
 
-public class MaterialRenameTests
+public class MaterialBatchRenameTests
 {
-    private readonly Mock<ILogger<MaterialRename>> _loggerMock;
+    private readonly Mock<ILogger<MaterialBatchRename>> _loggerMock;
     private readonly Mock<IActivityLogService> _activityLogServiceMock;
     private readonly Mock<IRequestValidator> _requestValidatorMock;
     private readonly Mock<IInitializationHandler> _initializationHandlerMock;
@@ -44,9 +45,9 @@ public class MaterialRenameTests
     private readonly string _testCmsAuthValues;
     private readonly string _testBearerToken;
 
-    public MaterialRenameTests()
+    public MaterialBatchRenameTests()
     {
-        _loggerMock = new Mock<ILogger<MaterialRename>>();
+        _loggerMock = new Mock<ILogger<MaterialBatchRename>>();
         _activityLogServiceMock = new Mock<IActivityLogService>();
         _requestValidatorMock = new Mock<IRequestValidator>();
         _initializationHandlerMock = new Mock<IInitializationHandler>();
@@ -76,7 +77,7 @@ public class MaterialRenameTests
         // Assert
         Assert.IsType<NotFoundResult>(result);
         _requestValidatorMock.Verify(
-            v => v.GetJsonBody<MaterialRenameRequestDto, MaterialRenameRequestValidator>(It.IsAny<HttpRequest>()),
+            v => v.GetJsonBody<MaterialBatchRenameRequestDto, MaterialRenameRequestValidator>(It.IsAny<HttpRequest>()),
             Times.Never);
         _securityGroupMetadataServiceMock.Verify(
             s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()),
@@ -166,7 +167,7 @@ public class MaterialRenameTests
     public async Task Run_WhenOperationPathIsOutsideCaseFolder_IncludesFailureInResults()
     {
         // Arrange
-        var requestDto = new MaterialRenameRequestDto
+        var requestDto = new MaterialBatchRenameRequestDto
         {
             CaseId = 42,
             Operations = new List<RenameNetAppMaterialBatchOperationDto>
@@ -228,14 +229,56 @@ public class MaterialRenameTests
             Times.Once);
     }
 
-    private MaterialRename CreateFunction(bool materialRenameEnabled)
+    [Fact]
+    public async Task Run_WhenOntapUnauthorizedExceptionOccurs_PropagatesUnauthorized()
+    {
+        // Arrange
+        var requestDto = CreateValidRequestDto();
+        SetupRequestValidator(requestDto, isValid: true);
+        SetupCaseMetadata(requestDto.CaseId);
+        SetupSecurityGroups();
+        SetupOntapClientForException(new OntapUnauthorizedException("Unauthorized access to ONTAP."));
+
+        var function = CreateFunction(materialRenameEnabled: true);
+        var request = HttpRequestStubHelper.CreateHttpRequestFor(requestDto);
+        var context = CreateFunctionContext();
+
+        // Act
+        var exception = await Assert.ThrowsAsync<OntapUnauthorizedException>(() => function.Run(request, context));
+
+        // Assert
+        Assert.Equal("Unauthorized access to ONTAP.", exception.Message);
+    }
+
+    [Fact]
+    public async Task Run_WhenOntapForbiddenExceptionOccurs_PropagatesForbidden()
+    {
+        // Arrange
+        var requestDto = CreateValidRequestDto();
+        SetupRequestValidator(requestDto, isValid: true);
+        SetupCaseMetadata(requestDto.CaseId);
+        SetupSecurityGroups();
+        SetupOntapClientForException(new OntapClientException(System.Net.HttpStatusCode.Forbidden, new HttpRequestException("Forbidden access to ONTAP.")));
+
+        var function = CreateFunction(materialRenameEnabled: true);
+        var request = HttpRequestStubHelper.CreateHttpRequestFor(requestDto);
+        var context = CreateFunctionContext();
+
+        // Act
+        var exception = await Assert.ThrowsAsync<OntapClientException>(() => function.Run(request, context));
+
+        // Assert
+        Assert.Equal(System.Net.HttpStatusCode.Forbidden, exception.StatusCode);
+    }
+
+    private MaterialBatchRename CreateFunction(bool materialRenameEnabled)
     {
         var featureFlags = Options.Create(new FeatureFlagConfig
         {
             MaterialRename = materialRenameEnabled
         });
 
-        return new MaterialRename(
+        return new MaterialBatchRename(
             _loggerMock.Object,
             _activityLogServiceMock.Object,
             _requestValidatorMock.Object,
@@ -247,11 +290,11 @@ public class MaterialRenameTests
             featureFlags);
     }
 
-    private void SetupRequestValidator(MaterialRenameRequestDto dto, bool isValid, List<string>? validationErrors = null)
+    private void SetupRequestValidator(MaterialBatchRenameRequestDto dto, bool isValid, List<string>? validationErrors = null)
     {
         _requestValidatorMock
-            .Setup(v => v.GetJsonBody<MaterialRenameRequestDto, MaterialRenameRequestValidator>(It.IsAny<HttpRequest>()))
-            .ReturnsAsync(new ValidatableRequest<MaterialRenameRequestDto>
+            .Setup(v => v.GetJsonBody<MaterialBatchRenameRequestDto, MaterialRenameRequestValidator>(It.IsAny<HttpRequest>()))
+            .ReturnsAsync(new ValidatableRequest<MaterialBatchRenameRequestDto>
             {
                 Value = dto,
                 IsValid = isValid,
@@ -331,6 +374,28 @@ public class MaterialRenameTests
             .ReturnsAsync(new MaterialRenameResult(Success: false, WasFound: false, KeysRenamed: 0, ErrorMessage: "Not found", ErrorStatusCode: 404));
     }
 
+    private void SetupOntapClientForException(Exception exception)
+    {
+        _ontapArgFactoryMock
+            .Setup(f => f.CreateMaterialRenameArg(
+                It.IsAny<string>(),
+                It.IsAny<Guid>(),
+                It.IsAny<string>(),
+                It.IsAny<string>()))
+            .Returns((string token, Guid uuid, string currentPath, string newPath) =>
+                new MaterialRenameArg
+                {
+                    BearerToken = token,
+                    OntapVolumeUuid = uuid,
+                    CurrentFilePath = currentPath,
+                    NewFilePath = newPath
+                });
+
+        _ontapHttpClientMock
+            .Setup(c => c.RenameMaterialAsync(It.IsAny<MaterialRenameArg>()))
+            .ThrowsAsync(exception);
+    }
+
     private FunctionContext CreateFunctionContext() =>
         FunctionContextStubHelper.CreateFunctionContextStub(
             _testCorrelationId,
@@ -338,7 +403,7 @@ public class MaterialRenameTests
             _testUsername,
             _testBearerToken);
 
-    private static MaterialRenameRequestDto CreateValidRequestDto() =>
+    private static MaterialBatchRenameRequestDto CreateValidRequestDto() =>
         new()
         {
             CaseId = 42,

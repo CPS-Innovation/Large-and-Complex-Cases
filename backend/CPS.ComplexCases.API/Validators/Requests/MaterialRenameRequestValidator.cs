@@ -4,7 +4,7 @@ using FluentValidation;
 
 namespace CPS.ComplexCases.API.Validators.Requests;
 
-public class MaterialRenameRequestValidator : AbstractValidator<MaterialRenameRequestDto>
+public class MaterialRenameRequestValidator : AbstractValidator<MaterialBatchRenameRequestDto>
 {
     public const int MaxOperations = 100;
 

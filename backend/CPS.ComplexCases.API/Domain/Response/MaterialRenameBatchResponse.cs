@@ -23,5 +23,4 @@ public class MaterialRenameBatchItemResult
     public string NewPath { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public string? Error { get; set; }
-    public int? KeysRenamed { get; set; }
 }
