@@ -115,8 +115,23 @@ steps:
             "slotSetting": false
           },
           {
+            "name": "NetAppOptions__RequestTimeoutSeconds",
+            "value": "$(NetAppOptionsRequestTimeoutSeconds)",
+            "slotSetting": false
+          },
+          {
             "name": "EgressOptions__Url",
             "value": "$(EgressOptionsUrl)",
+            "slotSetting": false
+          },
+          {
+            "name": "EgressOptions__ManagementTimeoutSeconds",
+            "value": "$(EgressOptionsManagementTimeoutSeconds)",
+            "slotSetting": false
+          },
+          {
+            "name": "EgressOptions__TransferTimeoutSeconds",
+            "value": "$(EgressOptionsTransferTimeoutSeconds)",
             "slotSetting": false
           },
           {
@@ -135,6 +150,11 @@ steps:
             "slotSetting": false
           },
           {
+            "name": "DDEIOptions__RequestTimeoutSeconds",
+            "value": "$(DDEIOptionsRequestTimeoutSeconds)",
+            "slotSetting": false
+          },
+          {
             "name": "FileTransferApiOptions__RetryAttempts",
             "value": "$(FileTransferApiOptionsRetryAttempts)",
             "slotSetting": false
@@ -142,6 +162,11 @@ steps:
           {
             "name": "FileTransferApiOptions__FirstRetryDelaySeconds",
             "value": "$(FileTransferApiOptionsFirstRetryDelaySeconds)",
+            "slotSetting": false
+          },
+          {
+            "name": "FileTransferApiOptions__RequestTimeoutSeconds",
+            "value": "$(FileTransferApiOptionsRequestTimeoutSeconds)",
             "slotSetting": false
           },
           {
@@ -272,6 +297,16 @@ steps:
           {
             "name": "DOTNET_FRAMEWORK_VERSION",
             "value": "v8.0",
+            "slotSetting": false
+          },
+          {
+            "name": "ASPNETCORE_ENVIRONMENT",
+            "value": "$(AspNetCoreEnvironment)",
+            "slotSetting": false
+          },
+          {
+            "name": "AZURE_FUNCTIONS_ENVIRONMENT",
+            "value": "$(AzureFunctionsEnvironment)",
             "slotSetting": false
           }
         ]

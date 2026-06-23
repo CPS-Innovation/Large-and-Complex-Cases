@@ -33,30 +33,35 @@ describe("mapToNetAppFolderData", () => {
     const expectedResult: NetAppFolderData = [
       {
         path: "netapp/folder-1-0/",
+        name: "folder-1-0",
         filesize: 0,
         lastModified: "",
         isFolder: true,
       },
       {
         path: "netapp/folder-1-1/",
+        name: "folder-1-1",
         filesize: 0,
         lastModified: "",
         isFolder: true,
       },
       {
         path: "netapp/folder-1-2/",
+        name: "folder-1-2",
         filesize: 0,
         lastModified: "",
         isFolder: true,
       },
       {
         path: "netapp/file-1-0.pdf",
+        name: "file-1-0.pdf",
         lastModified: "2000-01-02",
         filesize: 1234,
         isFolder: false,
       },
       {
         path: "netapp/file-1-0.pdf",
+        name: "file-1-0.pdf",
         lastModified: "2000-01-03",
         filesize: 2268979,
         isFolder: false,

@@ -41,7 +41,7 @@ public static class IServiceCollectionExtension
         throw new ArgumentNullException(nameof(egressServiceUrl), "EgressOptions:Url configuration is missing or empty.");
       }
       client.BaseAddress = new Uri(egressServiceUrl);
-      client.Timeout = TimeSpan.FromMinutes(10);
+      client.Timeout = TimeSpan.FromSeconds(configuration.GetValue("EgressOptions:ManagementTimeoutSeconds", 100));
     })
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
     .AddPolicyHandler((sp, _) =>
@@ -58,7 +58,11 @@ public static class IServiceCollectionExtension
         throw new ArgumentNullException(nameof(egressServiceUrl), "EgressOptions:Url configuration is missing or empty.");
       }
       client.BaseAddress = new Uri(egressServiceUrl);
-      client.Timeout = TimeSpan.FromMinutes(10);
+      // EgressStorageClient mixes short management calls with file streamed downloads and
+      // chunk uploads. The body read of a streamed download is bound by HttpClient.Timeout, so a
+      // single short value would break large downloads. Per-operation timeouts are enforced inside
+      // BaseEgressClient via CancellationToken instead, leaving the client itself uncapped.
+      client.Timeout = Timeout.InfiniteTimeSpan;
     })
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
     .AddPolicyHandler((sp, _) =>

@@ -325,13 +325,20 @@ export const getCaseMetaData = async (caseId: string) => {
 
 export const getEgressFolders = async (
   workspaceId: string,
-  folderId: string,
+  folderIdOrPath: string,
+  folderParamKey: "folder-id" | "path" = "folder-id",
   skip: number = 0,
   take: number = 50,
   collected: EgressFolderData = [],
 ): Promise<EgressFolderData> => {
+  let folderParam: { "folder-id"?: string } | { path?: string } = {
+    "folder-id": folderIdOrPath,
+  };
+
+  if (folderParamKey === "path")
+    folderParam = { path: folderIdOrPath.replace(/\/$/, "") };
   const params = new URLSearchParams({
-    "folder-id": folderId,
+    ...folderParam,
     skip: `${skip}`,
     take: `${take}`,
   });
@@ -359,7 +366,14 @@ export const getEgressFolders = async (
   if (skip + take >= pagination.totalResults) {
     return updated;
   }
-  return getEgressFolders(workspaceId, folderId, skip + take, take, updated);
+  return getEgressFolders(
+    workspaceId,
+    folderIdOrPath,
+    folderParamKey,
+    skip + take,
+    take,
+    updated,
+  );
 };
 
 export const getNetAppFolders = async (

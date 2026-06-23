@@ -81,7 +81,7 @@ public static class IServiceCollectionExtension
 				throw new InvalidOperationException("NetAppOptions:ClusterUrl configuration is missing or empty.");
 			}
 			client.BaseAddress = new Uri(netAppServiceUrl);
-			client.Timeout = TimeSpan.FromMinutes(10);
+			client.Timeout = TimeSpan.FromSeconds(configuration.GetValue("NetAppOptions:RequestTimeoutSeconds", 100));
 
 		})
 		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment))
@@ -100,7 +100,7 @@ public static class IServiceCollectionExtension
 				throw new InvalidOperationException("NetAppOptions:Url configuration is missing or empty.");
 			}
 			client.BaseAddress = new Uri(netAppServiceUrl);
-			client.Timeout = TimeSpan.FromMinutes(10);
+			client.Timeout = TimeSpan.FromSeconds(configuration.GetValue("NetAppOptions:RequestTimeoutSeconds", 100));
 
 		})
 		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment)

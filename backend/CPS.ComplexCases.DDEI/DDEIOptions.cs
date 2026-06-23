@@ -9,4 +9,5 @@ public class DDEIOptions
     public required string BaseUrl { get; set; }
     public required string AccessKey { get; set; }
     public required string MockBaseUrl { get; set; }
+    public int RequestTimeoutSeconds { get; set; } = 100;
 }

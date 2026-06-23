@@ -54,7 +54,7 @@ public static class IServiceCollectionExtension
     var opts = configuration.GetService<IOptions<DDEIOptions>>()?.Value ?? throw new ArgumentNullException(nameof(DDEIOptions));
     client.DefaultRequestHeaders.Add(DDEIOptions.FunctionKey, opts.AccessKey);
     client.DefaultRequestHeaders.CacheControl = new CacheControlHeaderValue { NoCache = true };
-    client.Timeout = TimeSpan.FromMinutes(10);
+    client.Timeout = TimeSpan.FromSeconds(opts.RequestTimeoutSeconds);
 
     if (opts.BaseUrl.Contains(DDEIOptions.DevtunnelUrlFragment) && !string.IsNullOrWhiteSpace(DDEIOptions.DevtunnelTokenKey))
     {

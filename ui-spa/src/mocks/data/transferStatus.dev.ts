@@ -6,12 +6,41 @@ export const egressToNetAppTransferStatusDev: TransferStatusResponse = {
   direction: "EgressToNetApp",
   startedAt: null,
   completedAt: null,
-  failedItems: [],
+  failedItems: [
+    {
+      sourcePath: "folder1/folder2/file1.txt",
+      errorCode: "FileExists",
+    },
+    {
+      sourcePath: "folder1/folder2/file2.txt",
+      errorCode: "FileExists",
+    },
+    {
+      sourcePath: "folder1/folder3/file2.txt",
+      errorCode: "FileExists",
+    },
+    {
+      sourcePath: "folder1/folder2/file2.txt",
+      errorCode: "GeneralError",
+    },
+  ],
   userName: "dev_user@example.org",
   totalFiles: 30,
-  processedFiles: 30,
-  successfulFiles: 30,
+  processedFiles: 28,
+  successfulFiles: 28,
   failedFiles: 0,
+  successfulItems: [
+    {
+      sourcePath: "folder1/folder2/file1.txt",
+    },
+    {
+      sourcePath: "folder1/folder2/file2.txt",
+    },
+    {
+      sourcePath: "folder1/folder3/file3.txt",
+    },
+  ],
+  destinationPath: "folder-1-0/folder-2-0/",
 };
 
 export const netAppToEgressTransferStatusDev: TransferStatusResponse = {
@@ -22,6 +51,8 @@ export const netAppToEgressTransferStatusDev: TransferStatusResponse = {
   startedAt: null,
   completedAt: null,
   failedItems: [],
+  successfulItems: [],
+  destinationPath: "folder-1-0/folder-2-0/",
   userName: "dev_user@example.org",
   totalFiles: 30,
   processedFiles: 30,

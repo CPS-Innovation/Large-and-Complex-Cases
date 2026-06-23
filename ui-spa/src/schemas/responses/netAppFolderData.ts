@@ -21,9 +21,18 @@ export const netAppFolderResponseSchema = z.object({
   }),
 });
 
+export const netAppFileFolderSchema = z.object({
+  path: z.string(),
+  name: z.string(),
+  lastModified: z.string(),
+  filesize: z.number(),
+  isFolder: z.boolean(),
+});
+
 export const netAppFolderDataSchema = z.array(
   z.object({
     path: z.string(),
+    name: z.string(),
     lastModified: z.string(),
     filesize: z.number(),
     isFolder: z.boolean(),
@@ -37,3 +46,4 @@ export type NetAppFolderDataResponse = z.infer<
 >;
 export type NetAppFolderResponse = z.infer<typeof netAppFolderResponseSchema>;
 export type NetAppFolderData = z.infer<typeof netAppFolderDataSchema>;
+export type NetAppFileFolder = z.infer<typeof netAppFileFolderSchema>;

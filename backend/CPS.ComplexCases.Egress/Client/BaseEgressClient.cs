@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -46,14 +47,21 @@ public abstract class BaseEgressClient(
     protected async Task<T> SendRequestAsync<T>(HttpRequestMessage request,
         [CallerMemberName] string callerMemberName = "")
     {
-        using var response = await SendRequestAsync(request, false, callerMemberName);
+        using var response = await SendRequestAsync(request, streamResponse: false, callerMemberName: callerMemberName);
         var responseContent = await response.Content.ReadAsStringAsync();
         var result = JsonSerializer.Deserialize<T>(responseContent)
                      ?? throw new InvalidOperationException("Deserialization returned null.");
         return result;
     }
 
+    // The HttpClient for storage operations is registered with an infinite timeout because a
+    // streamed download's body read is bound by HttpClient.Timeout. Each request therefore enforces
+    // its own timeout here: management calls use ManagementTimeoutSeconds, chunk uploads pass the
+    // longer TransferTimeoutSeconds, and for streamed downloads the token only covers the header read.
+    // The body read of a streamed download is bounded separately by the consumer (TransferFile applies
+    // a per-read idle timeout to the returned stream).
     protected async Task<HttpResponseMessage> SendRequestAsync(HttpRequestMessage request, bool streamResponse = false,
+        TimeSpan? timeout = null,
         [CallerMemberName] string callerMemberName = "")
     {
         var completionOption = streamResponse
@@ -62,7 +70,22 @@ public abstract class BaseEgressClient(
 
         var telemetryEvent = new ExternalApiCallEvent(nameof(EgressClient), request, callerMemberName);
 
-        var response = await _httpClient.SendAsync(request, completionOption);
+        var effectiveTimeout = timeout ?? TimeSpan.FromSeconds(_egressOptions.ManagementTimeoutSeconds);
+        using var timeoutCts = new CancellationTokenSource(effectiveTimeout);
+        var stopwatch = Stopwatch.StartNew();
+
+        HttpResponseMessage response;
+        try
+        {
+            response = await _httpClient.SendAsync(request, completionOption, timeoutCts.Token);
+        }
+        catch (OperationCanceledException ex) when (timeoutCts.IsCancellationRequested)
+        {
+            _logger.LogError(ex,
+                "Egress request {Caller} timed out after {ElapsedSeconds:F1}s (configured timeout {TimeoutSeconds}s).",
+                callerMemberName, stopwatch.Elapsed.TotalSeconds, effectiveTimeout.TotalSeconds);
+            throw;
+        }
 
         telemetryEvent.CallEndTime = DateTime.UtcNow;
         telemetryEvent.ResponseStatusCode = response.StatusCode;

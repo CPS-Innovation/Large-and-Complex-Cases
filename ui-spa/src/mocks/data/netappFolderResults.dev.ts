@@ -3,12 +3,12 @@ export const netAppRootFolderResultsDev: NetAppFolderResponse = {
   data: {
     fileData: [
       {
-        path: "netapp/file-1-0.pdf",
+        path: "netapp/netapp/file-1-0.pdf",
         lastModified: "2000-01-02",
         filesize: 1234,
       },
       {
-        path: "eweweweweewweewwewewewewewewweewerwrrwwrwrrrrrrwrwrwrwweewweeewweweeweweweew.pdf",
+        path: "netapp/eweweweweewweewwewewewewewewweewerwrrwwrwrrrrrrwrwrwrwweewweeewweweeweweweew.pdf",
         lastModified: "2000-01-03",
         filesize: 2268979,
       },

@@ -11,5 +11,10 @@ namespace CPS.ComplexCases.NetApp.Models
         public string IssuingCaCert { get; set; } = string.Empty;
         public string IssuingCaCert2 { get; set; } = string.Empty;
         public int SearchMaxSubstringScanItems { get; set; } = 10000;
+
+        // Both NetApp HTTP clients carry only tiny management/metadata calls (RegisterUser,
+        // RegenerateUserKeys, HEAD object, zero-byte folder-marker PUT). Bulk file transfers go
+        // through the AWS SDK S3 client, which is configured separately and unaffected by this value.
+        public int RequestTimeoutSeconds { get; set; } = 100;
     }
 }
