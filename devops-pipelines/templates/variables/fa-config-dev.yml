@@ -40,4 +40,4 @@ variables:
   - name: FeatureFlagsManageMaterials
     value: "true"
   - name: FeatureFlagsMaterialRename
-    value: "false"
+    value: "true"
