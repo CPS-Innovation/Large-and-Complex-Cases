@@ -11,6 +11,7 @@ using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.Egress.Client;
+using CPS.ComplexCases.Egress.Models;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Factories;
@@ -29,6 +30,7 @@ public class TransferFile(
     IStorageClientFactory storageClientFactory,
     ILogger<TransferFile> logger,
     IOptions<SizeConfig> sizeConfig,
+    IOptions<EgressOptions> egressOptions,
     IInitializationHandler initializationHandler,
     ITelemetryClient telemetryClient) : ITransferFile
 {
@@ -37,6 +39,11 @@ public class TransferFile(
     private readonly SizeConfig _sizeConfig = sizeConfig.Value;
     private readonly IInitializationHandler _initializationHandler = initializationHandler;
     private readonly ITelemetryClient _telemetryClient = telemetryClient;
+
+    // The storage HttpClient runs with an infinite timeout so large streamed downloads are not
+    // capped as a whole. Each individual source-stream read instead gets this idle deadline, so a
+    // stalled socket fails in minutes rather than hanging until the 12h function timeout.
+    private readonly TimeSpan _readIdleTimeout = TimeSpan.FromSeconds(egressOptions.Value.TransferTimeoutSeconds);
 
     [Function(nameof(TransferFile))]
     public async Task<TransferResult> Run([ActivityTrigger] TransferFilePayload payload,
@@ -76,12 +83,17 @@ public class TransferFile(
                 }
             }
 
-            var (sourceStream, totalSize) = await sourceClient.OpenReadStreamAsync(
+            var (rawSourceStream, totalSize) = await sourceClient.OpenReadStreamAsync(
                 payload.SourcePath.Path,
                 payload.WorkspaceId,
                 payload.SourcePath.FileId,
                 payload.BearerToken,
                 payload.BucketName);
+
+            // Bound every read of the download with an idle timeout linked to the activity token, so a
+            // stalled socket fails in minutes regardless of which upload path consumes the stream (the
+            // multipart loop or the NetApp single PUT, which reads it via the AWS SDK with no token).
+            var sourceStream = new IdleTimeoutReadStream(rawSourceStream, _readIdleTimeout, cancellationToken);
 
             using (sourceStream)
             {
@@ -181,6 +193,18 @@ public class TransferFile(
         {
             var errorMessage = $"Transient stream error: {ex.Message}";
             _logger.LogWarning(ex, "Source stream ended prematurely during transfer: {Path}", payload.SourcePath.Path);
+            telemetryEvent.ErrorCode = TransferErrorCode.Transient.ToString();
+            telemetryEvent.ErrorMessage = errorMessage;
+            return CreateFailureResult(
+                payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
+                TransferErrorCode.Transient,
+                errorMessage,
+                ex);
+        }
+        catch (TimeoutException ex)
+        {
+            var errorMessage = $"Transient stream timeout: {ex.Message}";
+            _logger.LogWarning(ex, "Source stream read stalled during transfer: {Path}", payload.SourcePath.Path);
             telemetryEvent.ErrorCode = TransferErrorCode.Transient.ToString();
             telemetryEvent.ErrorMessage = errorMessage;
             return CreateFailureResult(
@@ -290,6 +314,10 @@ public class TransferFile(
                         while (partOffset < targetPartSize)
                         {
                             int bytesToRead = targetPartSize - partOffset;
+
+                            // sourceStream is an IdleTimeoutReadStream, so each read already carries a
+                            // per-read idle timeout linked to the activity token; a stalled download
+                            // surfaces as a TimeoutException rather than hanging.
                             int bytesRead = await sourceStream.ReadAsync(
                                 partData.AsMemory(partOffset, bytesToRead),
                                 cancellationToken);

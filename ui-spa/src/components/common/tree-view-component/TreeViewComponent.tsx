@@ -14,6 +14,9 @@ export type TreeNode = {
   id: string;
   name: string;
   isFolder: boolean;
+  isRootNode: boolean;
+  path: string;
+  disabled?: boolean;
   children?: TreeNode[];
 };
 
@@ -22,6 +25,7 @@ export type TreeViewComponentProps = {
   onSelect?: (node: TreeNode) => void;
   onLoadChildren?: (nodeId: string) => Promise<TreeNode[]>;
   className?: string;
+  isRootNodeOpened?: boolean;
 };
 
 const TreeViewComponent: React.FC<TreeViewComponentProps> = ({
@@ -29,8 +33,11 @@ const TreeViewComponent: React.FC<TreeViewComponentProps> = ({
   onSelect,
   onLoadChildren,
   className,
+  isRootNodeOpened = false,
 }) => {
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set([]));
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(
+    isRootNodeOpened ? new Set([data[0]?.id]) : new Set([]),
+  );
   const [focusedId, setFocusedId] = useState<string | null>(() => {
     return data.length > 0 ? data[0].id : null;
   });
@@ -44,7 +51,7 @@ const TreeViewComponent: React.FC<TreeViewComponentProps> = ({
   >({});
 
   const refs = useRef<Record<string, HTMLElement | null>>({});
-
+  const rootElementFocussed = useRef<boolean | null>(null);
   const getVisibleNodes = useCallback(() => {
     const out: TreeNode[] = [];
     const walk = (nodes: TreeNode[]) => {
@@ -142,7 +149,7 @@ const TreeViewComponent: React.FC<TreeViewComponentProps> = ({
   );
 
   useEffect(() => {
-    if (focusedId) {
+    if (focusedId && rootElementFocussed.current) {
       const el = refs.current[focusedId];
       el?.focus();
     }
@@ -203,30 +210,36 @@ const TreeViewComponent: React.FC<TreeViewComponentProps> = ({
       case "ArrowDown":
         e.preventDefault();
         focusNext(focusedId);
+        rootElementFocussed.current = true;
         break;
       case "ArrowUp":
         e.preventDefault();
         focusPrev(focusedId);
+        rootElementFocussed.current = true;
         break;
       case "ArrowRight":
         e.preventDefault();
         openOrChangeFocus(node);
+        rootElementFocussed.current = true;
         break;
       case "ArrowLeft":
         e.preventDefault();
         closeOrChangeFocus(node);
+        rootElementFocussed.current = true;
         break;
       case "Home":
         e.preventDefault();
         focusFirst();
+        rootElementFocussed.current = true;
         break;
       case "End":
         e.preventDefault();
         focusLast();
+        rootElementFocussed.current = true;
         break;
       case "Enter":
       case " ":
-        if (node.isFolder) {
+        if (node.isFolder && !node.disabled) {
           e.preventDefault();
           setUncontrolledSelectedId(node.id);
           onSelect?.(node);
@@ -242,6 +255,7 @@ const TreeViewComponent: React.FC<TreeViewComponentProps> = ({
     setFocusedId(node.id);
     setUncontrolledSelectedId(node.id);
     onSelect?.(node);
+    rootElementFocussed.current = true;
   };
 
   const renderNode = (node: TreeNode, level: number) => {
@@ -297,6 +311,7 @@ const TreeViewComponent: React.FC<TreeViewComponentProps> = ({
               onClick={() => handleClick(node)}
               aria-label={node.name.toLowerCase()}
               tabIndex={-1}
+              disabled={node.disabled}
             >
               <div aria-hidden={true}>
                 <FolderIcon />

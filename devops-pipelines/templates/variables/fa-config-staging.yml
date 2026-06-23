@@ -1,4 +1,8 @@
 variables:
+  - name: AspNetCoreEnvironment
+    value: "Development"
+  - name: AzureFunctionsEnvironment
+    value: "PreProd"
   - name: CryptoOptionsKeySizeBytes
     value: "32"
   - name: CryptoOptionsNonceSizeBytes
@@ -39,3 +43,15 @@ variables:
     value: "10000"
   - name: FeatureFlagsManageMaterials
     value: "true"
+  - name: FeatureFlagsMaterialRename
+    value: "true"
+  - name: DDEIOptionsRequestTimeoutSeconds
+    value: "100"
+  - name: EgressOptionsManagementTimeoutSeconds
+    value: "100"
+  - name: EgressOptionsTransferTimeoutSeconds
+    value: "300"
+  - name: NetAppOptionsRequestTimeoutSeconds
+    value: "100"
+  - name: FileTransferApiOptionsRequestTimeoutSeconds
+    value: "100"

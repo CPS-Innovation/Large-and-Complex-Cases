@@ -14,6 +14,7 @@ using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Enums;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Constants;
+using CPS.ComplexCases.NetApp.Exceptions;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Requests;
 using Microsoft.AspNetCore.Http;
@@ -25,8 +26,8 @@ using Microsoft.Extensions.Options;
 
 namespace CPS.ComplexCases.API.Functions;
 
-public class MaterialRename(
-    ILogger<MaterialRename> logger,
+public class MaterialBatchRename(
+    ILogger<MaterialBatchRename> logger,
     IActivityLogService activityLogService,
     IRequestValidator requestValidator,
     IInitializationHandler initializationHandler,
@@ -36,7 +37,7 @@ public class MaterialRename(
     IOntapHttpClient ontapHttpClient,
     IOptions<FeatureFlagConfig> featureFlags)
 {
-    private readonly ILogger<MaterialRename> _logger = logger;
+    private readonly ILogger<MaterialBatchRename> _logger = logger;
     private readonly IActivityLogService _activityLogService = activityLogService;
     private readonly IRequestValidator _requestValidator = requestValidator;
     private readonly IInitializationHandler _initializationHandler = initializationHandler;
@@ -46,17 +47,17 @@ public class MaterialRename(
     private readonly IOntapHttpClient _ontapHttpClient = ontapHttpClient;
     private readonly FeatureFlagConfig _featureFlags = featureFlags.Value;
 
-    [Function(nameof(MaterialRename))]
-    [OpenApiOperation(operationId: nameof(MaterialRename), tags: ["Material"], Description = "Rename a material folder for a case.")]
+    [Function(nameof(MaterialBatchRename))]
+    [OpenApiOperation(operationId: nameof(MaterialBatchRename), tags: ["NetApp"], Description = "Rename one or more files and folders from NetApp in a single batch request.")]
     [CmsAuthValuesAuth]
     [BearerTokenAuth]
-    [OpenApiRequestBody(ContentType.ApplicationJson, typeof(MaterialRenameRequestDto), Description = "Body containing the material rename information")]
+    [OpenApiRequestBody(ContentType.ApplicationJson, typeof(MaterialBatchRenameRequestDto), Description = "Body containing the material rename information")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(MaterialRenameBatchResponse), Description = ApiResponseDescriptions.Success)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Forbidden, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Forbidden)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
-    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "patch", Route = "v1/material/rename")] HttpRequest req, FunctionContext functionContext)
+    public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "patch", Route = "v1/netapp/rename/batch")] HttpRequest req, FunctionContext functionContext)
     {
         if (!_featureFlags.MaterialRename)
         {
@@ -65,7 +66,7 @@ public class MaterialRename(
 
         var context = functionContext.GetRequestContext();
 
-        var renameRequest = await _requestValidator.GetJsonBody<MaterialRenameRequestDto, MaterialRenameRequestValidator>(req);
+        var renameRequest = await _requestValidator.GetJsonBody<MaterialBatchRenameRequestDto, MaterialRenameRequestValidator>(req);
 
         if (!renameRequest.IsValid)
         {
@@ -100,7 +101,7 @@ public class MaterialRename(
                 {
                     PreviousPath = operation.CurrentPath,
                     NewPath = operation.NewPath,
-                    Status = "Failed",
+                    Status = OperationResultStatus.Failed,
                     Error = "Path is not within the case's NetApp folder."
                 });
                 continue;
@@ -112,15 +113,13 @@ public class MaterialRename(
             {
                 var result = await _ontapHttpClient.RenameMaterialAsync(arg);
 
-                if (!result.Success)
+                if (result.Success)
                 {
-                    _logger.LogInformation("Failed to rename material from {CurrentPath} to {NewPath}. Error: {ErrorMessage}", operation.CurrentPath, operation.NewPath, result.ErrorMessage);
                     results.Add(new MaterialRenameBatchItemResult
                     {
                         PreviousPath = operation.CurrentPath,
                         NewPath = operation.NewPath,
-                        Status = OperationResultStatus.Failed,
-                        Error = result.ErrorMessage
+                        Status = OperationResultStatus.Renamed
                     });
                 }
                 else if (!result.WasFound)
@@ -135,14 +134,19 @@ public class MaterialRename(
                 }
                 else
                 {
+                    _logger.LogInformation("Failed to rename material from {CurrentPath} to {NewPath}. Error: {ErrorMessage}", operation.CurrentPath, operation.NewPath, result.ErrorMessage);
                     results.Add(new MaterialRenameBatchItemResult
                     {
                         PreviousPath = operation.CurrentPath,
                         NewPath = operation.NewPath,
-                        Status = OperationResultStatus.Renamed,
-                        KeysRenamed = result.KeysRenamed > 1 ? result.KeysRenamed : null
+                        Status = OperationResultStatus.Failed,
+                        Error = result.ErrorMessage
                     });
                 }
+            }
+            catch (Exception ex) when (ex is OntapUnauthorizedException or OntapClientException { StatusCode: HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden })
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -190,8 +194,7 @@ public class MaterialRename(
                         previousPath = r.PreviousPath,
                         newPath = r.NewPath,
                         outcome = r.Status,
-                        error = r.Error,
-                        keysRenamed = r.KeysRenamed
+                        error = r.Error
                     })
                 }.SerializeToJsonDocument(_logger);
 

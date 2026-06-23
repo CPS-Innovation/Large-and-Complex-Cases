@@ -20,6 +20,7 @@ const TransferTreeViewPage = ({ caseId }: TransferTreeViewPageProps) => {
         name: getFolderNameFromPath(caseMetaData.data?.netappFolderPath),
         path: caseMetaData.data?.netappFolderPath,
         isFolder: true,
+        isRootNode: true,
       },
     ];
 
@@ -39,6 +40,7 @@ const TransferTreeViewPage = ({ caseId }: TransferTreeViewPageProps) => {
                 name: getFolderNameFromPath(folder.path),
                 path: folder.path,
                 isFolder: true,
+                isRootNode: false,
               };
             });
 
@@ -48,11 +50,15 @@ const TransferTreeViewPage = ({ caseId }: TransferTreeViewPageProps) => {
                 name: getFileNameFromPath(file.path),
                 path: file.path,
                 isFolder: false,
+                isRootNode: false,
               };
             });
             return [...folders, ...files];
           }}
+          handleCancelClick={() => {}}
+          handleTransfer={() => {}}
           transferAction="Copy"
+          isRootNodeOpened={true}
         />
       )}
     </div>

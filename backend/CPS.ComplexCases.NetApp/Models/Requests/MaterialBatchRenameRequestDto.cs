@@ -3,7 +3,7 @@ using CPS.ComplexCases.Data.Enums;
 
 namespace CPS.ComplexCases.NetApp.Models.Requests;
 
-public class MaterialRenameRequestDto
+public class MaterialBatchRenameRequestDto
 {
     [JsonPropertyName("caseId")]
     public required int CaseId { get; set; }

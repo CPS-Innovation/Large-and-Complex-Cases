@@ -93,6 +93,8 @@ test.describe("transfer-error-page", () => {
             totalFiles: 4,
             processedFiles: 4,
             failedFiles: 3,
+            successfulItems: [],
+            destinationPath: "",
           } as TransferStatusResponse);
         },
       ),
@@ -218,6 +220,8 @@ test.describe("transfer-error-page", () => {
             totalFiles: 4,
             processedFiles: 4,
             failedFiles: 3,
+            successfulItems: [],
+            destinationPath: "",
           } as TransferStatusResponse);
         },
       ),
@@ -323,6 +327,8 @@ test.describe("transfer-error-page", () => {
             totalFiles: 4,
             processedFiles: 4,
             failedFiles: 3,
+            successfulItems: [],
+            destinationPath: "",
           } as TransferStatusResponse);
         },
       ),
