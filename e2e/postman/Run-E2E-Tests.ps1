@@ -135,8 +135,9 @@ $Config = @{
     BaseUrl       = if ($env:LCC_BASE_URL) { $env:LCC_BASE_URL } else { "" }
     UiUrl         = if ($env:LCC_UI_URL) { $env:LCC_UI_URL } else { "" }
     CaseApiBaseUrl = if ($env:LCC_CASE_API_BASE_URL) { $env:LCC_CASE_API_BASE_URL } else { "" }
+    DdeiBaseUrl   = if ($env:LCC_DDEI_BASE_URL) { $env:LCC_DDEI_BASE_URL } else { "" }
     EgressBaseUrl = if ($env:LCC_EGRESS_BASE_URL) { $env:LCC_EGRESS_BASE_URL } else { "" }
-    LccApiId      = if ($env:LCC_API_ID) { $env:LCC_API_ID } else { "" }
+    LccApiClientId      = if ($env:LCC_API_CLIENT_ID) { $env:LCC_API_CLIENT_ID } else { "" }
     LccApiClientSecret = if ($env:LCC_API_CLIENT_SECRET) { $env:LCC_API_CLIENT_SECRET } else { "" }
     DefaultCaseId      = if ($env:LCC_DEFAULT_CASE_ID) { $env:LCC_DEFAULT_CASE_ID } else { "" }
     DefaultCaseUrn     = if ($env:LCC_DEFAULT_CASE_URN) { $env:LCC_DEFAULT_CASE_URN } else { "" }
@@ -788,9 +789,11 @@ $variables = @{
     "registerCase" = if ($RegisterCase) { "true" } else { "false" }
     "defaultCaseId" = $Config.DefaultCaseId
     "defaultCaseUrn" = $Config.DefaultCaseUrn
+    "baseUrl" = $Config.BaseUrl
     "uiUrl" = $Config.UiUrl
     "caseApiBaseUrl" = $Config.CaseApiBaseUrl
     "egressBaseUrl" = $Config.EgressBaseUrl
+    "ddeiBaseUrl" = $Config.DdeiBaseUrl
 }
 
 if ($EgressFileId) { $variables["egressFileId"] = $EgressFileId }
