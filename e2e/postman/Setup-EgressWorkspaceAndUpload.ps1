@@ -713,7 +713,7 @@ if ($SkipUpload) {
 
             Start-Sleep -Seconds $retryDelay
 
-            $filesResult = & $curl --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId/files?folder_id=$FolderId" `
+            $filesResult = & $curl --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId/files?path=$encodedFolder" `
                 --header "Authorization: Basic $TokenBase64"
 
             try {
