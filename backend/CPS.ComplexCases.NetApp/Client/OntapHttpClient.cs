@@ -1,9 +1,11 @@
 using System.Net;
+using System.Text.Json;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.NetApp.Exceptions;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
+using CPS.ComplexCases.NetApp.Models.Ontap;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
@@ -40,18 +42,58 @@ public class OntapHttpClient(
         };
     }
 
-    public async Task<GetFileLockResult> GetFileLockAsync(GetFileLockArg arg)
+    public async Task<GetFileLockProtocolResult> GetFileLockAsync(GetFileLockArg arg)
     {
         var request = _ontapRequestFactory.CreateGetFileLockRequest(arg);
-
         var response = await CallOntap(request, HttpStatusCode.NotFound);
 
-        return response.StatusCode switch
+        var result = await DeserializeResponse<GetFileLockProtocolResult>(response);
+        result.StatusCode = response.StatusCode;
+
+        return result.StatusCode switch
         {
-            HttpStatusCode.OK => new GetFileLockResult(true, "LockedByUser", null, null), // Replace with actual parsing logic
-            HttpStatusCode.NotFound => new GetFileLockResult(false, null, $"File not found at path: {arg.FilePath}", (int)HttpStatusCode.NotFound),
-            _ => throw new OntapClientException(response.StatusCode, new HttpRequestException($"Unexpected status code: {response.StatusCode}")),
+            HttpStatusCode.OK => result,
+            HttpStatusCode.NotFound => new GetFileLockProtocolResult { StatusCode = HttpStatusCode.NotFound, Records = null },
+            _ => throw new OntapClientException(result.StatusCode, new HttpRequestException($"Unexpected status code: {result.StatusCode}")),
         };
+    }
+
+    public async Task<GetCifsSessionUserResult> GetCifsSessionUserAsync(GetCifsSessionUserArg arg)
+    {
+        var request = _ontapRequestFactory.CreateGetCifsSessionUserRequest(arg);
+        var response = await CallOntap(request, HttpStatusCode.NotFound);
+
+        var result = await DeserializeResponse<GetCifsSessionUserResult>(response);
+        result.StatusCode = response.StatusCode;
+
+        return result.StatusCode switch
+        {
+            HttpStatusCode.OK => result,
+            HttpStatusCode.NotFound => new GetCifsSessionUserResult { StatusCode = HttpStatusCode.NotFound, Records = null },
+            _ => throw new OntapClientException(result.StatusCode, new HttpRequestException($"Unexpected status code: {result.StatusCode}")),
+        };
+    }
+
+    private async Task<T> DeserializeResponse<T>(HttpResponseMessage response) where T : class
+    {
+        var content = await response.Content.ReadAsStringAsync();
+
+        T? result;
+        try
+        {
+            result = JsonSerializer.Deserialize<T>(content);
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidOperationException($"Failed to deserialize response to {typeof(T).Name}", ex);
+        }
+
+        if (result == null)
+        {
+            throw new InvalidOperationException($"Deserialization to {typeof(T).Name} returned null.");
+        }
+
+        return result;
     }
 
     private Task<HttpResponseMessage> CallOntap(HttpRequestMessage request, params HttpStatusCode[] expectedUnhappyStatusCodes)

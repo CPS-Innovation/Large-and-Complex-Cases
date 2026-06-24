@@ -31,8 +31,22 @@ public class OntapRequestFactory : IOntapRequestFactory
 
     public HttpRequestMessage CreateGetFileLockRequest(GetFileLockArg arg)
     {
-        var encodedFilePath = Uri.EscapeDataString(arg.FilePath.RemoveTrailingSlash());
-        var url = $"/api/protocols/locks/?volume.uuid={arg.VolumeUuid}&return_timeout=15&fields=client_address";
+        var filePath = "/FlexGroup-Vol04/" + arg.FilePath;
+        var encodedFilePath = Uri.EscapeDataString(filePath.RemoveTrailingSlash());
+        var returnTimeout = 15; // The number of seconds to allow the call to execute before returning. When iterating over a collection, the default is 15 seconds. ONTAP returns earlier if either max records or the end of the collection is reached. Default value: 15, Max value: 120, Min value: 0
+        var fields = "client_address,type"; // The fields to return in the response.
+        var url = $"/api/protocols/locks/?volume.uuid={arg.VolumeUuid}&return_timeout={returnTimeout}&fields={fields}&path={encodedFilePath}";
+
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", arg.BearerToken);
+
+        return request;
+    }
+
+    public HttpRequestMessage CreateGetCifsSessionUserRequest(GetCifsSessionUserArg arg)
+    {
+        var fields = "user"; // The fields to return in the response.
+        var url = $"/api/protocols/cifs/sessions/?client_ip={arg.ClientIp}&fields={fields}";
 
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", arg.BearerToken);

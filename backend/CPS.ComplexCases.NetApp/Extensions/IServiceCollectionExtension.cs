@@ -55,6 +55,7 @@ public static class IServiceCollectionExtension
 		services.AddTransient<IOntapArgFactory, OntapArgFactory>();
 		services.AddTransient<IOntapRequestFactory, OntapRequestFactory>();
 		services.AddTransient<IHttpResponseHandler, HttpResponseHandler>();
+		services.AddTransient<IOntapService, OntapService>();
 
 		services.AddSingleton<IKeyVaultService>(sp =>
 		{

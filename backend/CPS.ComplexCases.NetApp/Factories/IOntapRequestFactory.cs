@@ -6,4 +6,5 @@ public interface IOntapRequestFactory
 {
     HttpRequestMessage CreateRenameMaterialRequest(MaterialRenameArg arg);
     HttpRequestMessage CreateGetFileLockRequest(GetFileLockArg arg);
+    HttpRequestMessage CreateGetCifsSessionUserRequest(GetCifsSessionUserArg arg);
 }

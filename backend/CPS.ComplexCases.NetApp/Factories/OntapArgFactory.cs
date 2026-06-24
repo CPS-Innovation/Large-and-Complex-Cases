@@ -25,4 +25,13 @@ public class OntapArgFactory : IOntapArgFactory
             FilePath = filePath
         };
     }
+
+    public GetCifsSessionUserArg CreateGetCifsSessionUserArg(string bearerToken, string clientIp)
+    {
+        return new GetCifsSessionUserArg
+        {
+            BearerToken = bearerToken,
+            ClientIp = clientIp,
+        };
+    }
 }
