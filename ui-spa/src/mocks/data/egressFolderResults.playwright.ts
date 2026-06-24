@@ -65,7 +65,6 @@ export const getEgressFolderResultsPlaywright = (
       .map((part) => part.replace("folder-", ""))
       .join(",");
   }
-
   const lastSegment = getLastSegment(id);
   const newId = parseInt(lastSegment.split("-")[0]) + 1;
   if (newId > 3) {

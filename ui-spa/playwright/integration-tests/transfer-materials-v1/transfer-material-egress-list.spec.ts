@@ -1,0 +1,327 @@
+import { delay, HttpResponse, http } from "msw";
+import { expect, test } from "../utils/test";
+import { TransferMaterialsSourcePage } from "../pages/transfer-material-source";
+import { a } from "vitest/dist/chunks/suite.qtkXWc6R.js";
+
+test.describe("transfer material egress list", () => {
+  // validateFolderPath moved to shared fixture
+  // Trigger the shared navigation fixture for every test in this suite so
+  // individual tests don't need to include it in their signature.
+  // test.beforeEach(async ({ openTransferMaterialsPage }) => {
+  //   // destructuring the fixture triggers it; mark as used to satisfy linters
+  //   openTransferMaterialsPage;
+  // });
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/case/12/case-management");
+  });
+
+  test("Should show the transfer material tab with correct initial content", async ({
+    page,
+  }) => {
+    const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
+    await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
+    await transferMaterialsSourcePage.verifyPageElements();
+    await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
+    await transferMaterialsSourcePage.verifyTransferSourceTableSpinner(
+      "egress",
+    );
+    await transferMaterialsSourcePage.verifyFolderPath([
+      "Egress: Thunderstruck",
+    ]);
+    await transferMaterialsSourcePage.validateTableColumnHeaders();
+
+    const folderRows = [
+      ["", "folder-1-0", "02/01/2000", "--"],
+      ["", "folder-1-1", "03/01/2000", "--"],
+      ["", "file-1-2.pdf", "03/01/2000", "1.23 KB"],
+    ];
+    await transferMaterialsSourcePage.validateTableRowValues(folderRows);
+  });
+
+  // test("Should show the egress folders results correctly when egress is the source table", async ({
+  //   page,
+  //   validateFolderPath,
+  // }) => {
+  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
+  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
+  //   await expect(
+  //     page.getByTestId("egress-folder-table-loader"),
+  //   ).not.toBeVisible();
+  //   const egressTableWrapper = page.getByTestId("egress-table-wrapper");
+  //   await validateFolderPath(page, ["Home"]);
+  //   const tableHeadValues = await egressTableWrapper
+  //     .locator("table thead tr:nth-child(1) th")
+  //     .allTextContents();
+  //   expect(tableHeadValues).toEqual([
+  //     "",
+  //     " Folder/file name",
+  //     " Last modified date",
+  //     " Size",
+  //   ]);
+  //   // helper to express row values as an array
+  //   const rowValues = async (wrapper: any, rowIndex: number) =>
+  //     await wrapper
+  //       .locator(`table tbody tr:nth-child(${rowIndex}) td`)
+  //       .allTextContents();
+
+  //   expect(await rowValues(egressTableWrapper, 1)).toEqual([
+  //     "",
+  //     "folder-1-0",
+  //     "02/01/2000",
+  //     "--",
+  //   ]);
+  //   expect(await rowValues(egressTableWrapper, 2)).toEqual([
+  //     "",
+  //     "folder-1-1",
+  //     "03/01/2000",
+  //     "--",
+  //   ]);
+  //   expect(await rowValues(egressTableWrapper, 3)).toEqual([
+  //     "",
+  //     "file-1-2.pdf",
+  //     "03/01/2000",
+  //     "1.23 KB",
+  //   ]);
+  // });
+
+  // test("Should show the egress folders results correctly when egress is the destination table", async ({
+  //   page,
+  //   validateFolderPath,
+  // }) => {
+  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
+  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
+  //   await expect(
+  //     page.getByTestId("egress-folder-table-loader"),
+  //   ).not.toBeVisible();
+  //   await page
+  //     .getByRole("button", { name: "from the Shared Drive to Egress" })
+  //     .click();
+  //   await expect(
+  //     page.getByTestId("tab-content-transfer-materials").locator("h2"),
+  //   ).toHaveText("Transfer materials to Egress");
+  //   const egressTableWrapper = page.getByTestId("egress-table-wrapper");
+  //   await validateFolderPath(page, ["Home"]);
+  //   const tableHeadValues = await egressTableWrapper
+  //     .locator("table thead tr:nth-child(1) th")
+  //     .allTextContents();
+  //   expect(tableHeadValues).toEqual([" Folder/file name", " Size"]);
+  //   const row1Values = await egressTableWrapper
+  //     .locator("table tbody tr:nth-child(1) td")
+  //     .allTextContents();
+  //   expect(row1Values).toEqual(["folder-1-0", "--"]);
+  //   // reuse the same rowValues helper
+  //   const rowValues = async (wrapper: any, rowIndex: number) =>
+  //     await wrapper
+  //       .locator(`table tbody tr:nth-child(${rowIndex}) td`)
+  //       .allTextContents();
+
+  //   expect(await rowValues(egressTableWrapper, 1)).toEqual([
+  //     "folder-1-0",
+  //     "--",
+  //   ]);
+  //   expect(await rowValues(egressTableWrapper, 2)).toEqual([
+  //     "folder-1-1",
+  //     "--",
+  //   ]);
+  //   expect(await rowValues(egressTableWrapper, 3)).toEqual([
+  //     "file-1-2.pdf",
+  //     "1.23 KB",
+  //   ]);
+  // });
+
+  // test("Should correctly navigate through the egress folders", async ({
+  //   page,
+  //   validateFolderPath,
+  // }) => {
+  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
+  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
+  //   await expect(
+  //     page.getByTestId("egress-folder-table-loader"),
+  //   ).not.toBeVisible();
+  //   const egressTableWrapper = page.getByTestId("egress-table-wrapper");
+  //   await validateFolderPath(page, ["Home"]);
+  //   await egressTableWrapper.locator('role=button[name="folder-1-0"]').click();
+  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
+  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
+  //   await expect(
+  //     page.getByTestId("egress-folder-table-loader"),
+  //   ).not.toBeVisible();
+  //   await validateFolderPath(page, ["Home", "folder-1-0"]);
+  //   await egressTableWrapper.locator('role=button[name="folder-2-0"]').click();
+  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
+  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
+  //   await expect(
+  //     page.getByTestId("egress-folder-table-loader"),
+  //   ).not.toBeVisible();
+  //   await validateFolderPath(page, ["Home", "folder-1-0", "folder-2-0"]);
+  //   await egressTableWrapper.locator('role=button[name="folder-3-0"]').click();
+  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
+  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
+  //   await expect(
+  //     page.getByTestId("egress-folder-table-loader"),
+  //   ).not.toBeVisible();
+  //   await egressTableWrapper.locator('role=button[name="folder-1-0"]').click();
+  //   await validateFolderPath(page, ["Home", "folder-1-0"]);
+  //   await egressTableWrapper.locator('role=button[name="folder-2-1"]').click();
+  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
+  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
+  //   await expect(
+  //     page.getByTestId("egress-folder-table-loader"),
+  //   ).not.toBeVisible();
+  //   await validateFolderPath(page, ["Home", "folder-1-0", "folder-2-1"]);
+  //   await egressTableWrapper.locator('role=button[name="folder-3-1"]').click();
+  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
+  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
+  //   await expect(
+  //     page.getByTestId("egress-folder-table-loader"),
+  //   ).not.toBeVisible();
+  //   await validateFolderPath(page, [
+  //     "Home",
+  //     "folder-1-0",
+  //     "folder-2-1",
+  //     "folder-3-1",
+  //   ]);
+  //   await egressTableWrapper.locator('role=button[name="folder-2-1"]').click();
+  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
+  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
+  //   await expect(
+  //     page.getByTestId("egress-folder-table-loader"),
+  //   ).not.toBeVisible();
+  //   await validateFolderPath(page, ["Home", "folder-1-0", "folder-2-1"]);
+  //   await expect(page.locator('role=button[name="folder-3-0"]')).toBeVisible();
+  //   await expect(page.locator('role=button[name="folder-3-1"]')).toBeVisible();
+  //   await egressTableWrapper.locator('role=button[name="Home"]').click();
+  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
+  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
+  //   await validateFolderPath(page, ["Home"]);
+  //   await expect(page.locator('role=button[name="folder-1-0"]')).toBeVisible();
+  //   await expect(page.locator('role=button[name="folder-1-1"]')).toBeVisible();
+  // });
+
+  // test("Should show no results page if the egress folders return empty results", async ({
+  //   page,
+  //   worker,
+  //   validateFolderPath,
+  // }) => {
+  //   await worker.use(
+  //     http.get(
+  //       "https://mocked-out-api/api/v1/egress/workspaces/egress_1/files",
+  //       async () => {
+  //         await delay(500);
+  //         return HttpResponse.json({
+  //           data: [],
+  //           pagination: {
+  //             totalResults: 50,
+  //             skip: 0,
+  //             take: 50,
+  //             count: 25,
+  //           },
+  //         });
+  //       },
+  //     ),
+  //   );
+  //   await page.goto("/case/12/case-management");
+  //   await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
+  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
+  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
+  //   await expect(
+  //     page.getByTestId("egress-folder-table-loader"),
+  //   ).not.toBeVisible();
+  //   await validateFolderPath(page, ["Home"]);
+
+  //   await expect(
+  //     page.getByTestId("egress-container").getByTestId("no-documents-text"),
+  //   ).toBeVisible();
+  //   await expect(
+  //     page.getByTestId("egress-container").getByTestId("no-documents-text"),
+  //   ).toHaveText("There are no documents currently in this folder");
+  // });
+
+  // test("Should hide checkboxes from the root egress folders and show checkboxes for the rest of the folders, when the egress is the source table", async ({
+  //   page,
+  //   validateFolderPath,
+  // }) => {
+  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
+  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
+  //   await expect(
+  //     page.getByTestId("egress-folder-table-loader"),
+  //   ).not.toBeVisible();
+  //   const egressTableWrapper = page.getByTestId("egress-table-wrapper");
+  //   await validateFolderPath(page, ["Home"]);
+  //   const checkboxes = await egressTableWrapper
+  //     .locator('table input[type="checkbox"]')
+  //     .all();
+
+  //   await Promise.all(
+  //     checkboxes.map((checkbox) => expect(checkbox).toBeHidden()),
+  //   );
+  //   await egressTableWrapper.locator('role=button[name="folder-1-0"]').click();
+  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
+  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
+  //   await expect(
+  //     page.getByTestId("egress-folder-table-loader"),
+  //   ).not.toBeVisible();
+  //   await validateFolderPath(page, ["Home", "folder-1-0"]);
+  //   await Promise.all(
+  //     checkboxes.map((checkbox) => expect(checkbox).not.toBeHidden()),
+  //   );
+  //   await egressTableWrapper.locator('role=button[name="folder-2-0"]').click();
+  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
+  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
+  //   await expect(
+  //     page.getByTestId("egress-folder-table-loader"),
+  //   ).not.toBeVisible();
+  //   await validateFolderPath(page, ["Home", "folder-1-0", "folder-2-0"]);
+  //   await Promise.all(
+  //     checkboxes.map((checkbox) => expect(checkbox).not.toBeHidden()),
+  //   );
+  //   await egressTableWrapper.locator('role=button[name="Home"]').click();
+  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
+  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
+  //   await validateFolderPath(page, ["Home"]);
+  //   await expect(
+  //     page.getByTestId("egress-folder-table-loader"),
+  //   ).not.toBeVisible();
+  //   await Promise.all(
+  //     checkboxes.map((checkbox) => expect(checkbox).toBeHidden()),
+  //   );
+  // });
+
+  // test("Should hide checkboxes from the table head, if there are not contents inside the folder, when the egress is the source table", async ({
+  //   page,
+  //   validateFolderPath,
+  // }) => {
+  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
+  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
+  //   await expect(
+  //     page.getByTestId("egress-folder-table-loader"),
+  //   ).not.toBeVisible();
+  //   const egressTableWrapper = page.getByTestId("egress-table-wrapper");
+  //   await validateFolderPath(page, ["Home"]);
+  //   const checkboxes = await egressTableWrapper
+  //     .locator('table input[type="checkbox"]')
+  //     .all();
+
+  //   await Promise.all(
+  //     checkboxes.map((checkbox) => expect(checkbox).toBeHidden()),
+  //   );
+  //   await egressTableWrapper.locator('role=button[name="folder-1-0"]').click();
+  //   await validateFolderPath(page, ["Home", "folder-1-0"]);
+  //   await egressTableWrapper.locator('role=button[name="folder-2-0"]').click();
+  //   await validateFolderPath(page, ["Home", "folder-1-0", "folder-2-0"]);
+  //   await egressTableWrapper.locator('role=button[name="folder-3-0"]').click();
+  //   await validateFolderPath(page, [
+  //     "Home",
+  //     "folder-1-0",
+  //     "folder-2-0",
+  //     "folder-3-0",
+  //   ]);
+
+  //   await expect(
+  //     page.getByTestId("egress-container").getByTestId("no-documents-text"),
+  //   ).toBeVisible();
+  //   await expect(
+  //     page.getByTestId("egress-container").getByTestId("no-documents-text"),
+  //   ).toHaveText("There are no documents currently in this folder");
+  // });
+});

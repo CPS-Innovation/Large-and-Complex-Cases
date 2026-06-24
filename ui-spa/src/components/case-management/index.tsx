@@ -209,7 +209,7 @@ const CaseManagementPage = () => {
   return (
     <PageContentWrapper>
       <h1 className={styles.workspaceName}>{caseMetaData?.operationName}</h1>
-      <div className={styles.urnText}>
+      <div className={styles.urnText} data-testid="case-urn">
         <span>{caseMetaData?.urn}</span>
       </div>
       <Tabs

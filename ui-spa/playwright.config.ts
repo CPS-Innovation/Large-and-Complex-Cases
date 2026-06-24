@@ -35,9 +35,16 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
+    // {
+    //   name: "transfer-material-v0",
+    //   use: { ...devices["Desktop Chrome"] },
+    //   testMatch: ["*.spec.ts", "transfer-materials-v0/*.spec.ts"],
+    //   // use: { ...devices["Desktop Chrome"], baseURL: "http://localhost:5173" },
+    // },
     {
-      name: "chromium",
+      name: "transfer-material-v1",
       use: { ...devices["Desktop Chrome"] },
+      testMatch: ["*.spec.ts", "transfer-materials-v1/*.spec.ts"],
     },
   ],
 

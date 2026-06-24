@@ -57,10 +57,7 @@ const NavigationTable: React.FC<NavigationTableProps> = ({
       <div>
         {isLoading ? (
           <div className={styles.spinnerWrapper}>
-            <Spinner
-              data-testid={`${tableName}-folder-table-loader`}
-              diameterPx={50}
-            />
+            <Spinner data-testid={"folder-table-loader"} diameterPx={50} />
             <div className={styles.spinnerText} aria-live="polite">
               {loaderText}
             </div>

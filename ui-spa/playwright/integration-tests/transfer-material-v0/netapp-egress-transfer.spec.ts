@@ -1,4 +1,4 @@
-import { expect, test } from "./utils/test";
+import { expect, test } from "../utils/test";
 import { delay, HttpResponse, http } from "msw";
 
 const MOCK_TRANSFER_ID = "00000000-0000-4000-8000-000000000001";

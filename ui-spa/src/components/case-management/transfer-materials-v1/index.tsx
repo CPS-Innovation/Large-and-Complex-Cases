@@ -735,11 +735,12 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
         transferStatus !== "validating" &&
         transferStatus !== "transferring" && (
           <div>
-            <div className={styles.headerText}>
+            <div>
               <h2>{getMainTexts().title}</h2>
-              <div className={styles.insetTextWrapper}>
-                <p>{getMainTexts().description}</p>
-              </div>
+              <p data-testid="transfer-source-description">
+                {getMainTexts().description}
+              </p>
+
               <FolderPath
                 folders={
                   transferSource === "egress"
