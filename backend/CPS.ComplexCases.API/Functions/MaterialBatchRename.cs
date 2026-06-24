@@ -183,6 +183,7 @@ public class MaterialBatchRename(
 
                 var (actionType, resourceType) = (hasFolder, hasMaterial) switch
                 {
+                    (true, true) => (ActivityLog.Enums.ActionType.FolderAndMaterialRenamed, ActivityLog.Enums.ResourceType.Material),
                     (true, false) => (ActivityLog.Enums.ActionType.FolderRenamed, ActivityLog.Enums.ResourceType.NetAppFolder),
                     _ => (ActivityLog.Enums.ActionType.MaterialRenamed, ActivityLog.Enums.ResourceType.Material)
                 };

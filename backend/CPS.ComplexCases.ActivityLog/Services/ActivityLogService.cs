@@ -287,6 +287,9 @@ public class ActivityLogService(IActivityLogRepository activityLogRepository, IL
             ActionType.FolderMoved => "Folder(s) moved",
             ActionType.MaterialMoved => "Material(s) moved",
             ActionType.FolderAndMaterialMoved => "Folder(s) and material(s) moved",
+            ActionType.FolderRenamed => "Folder(s) renamed",
+            ActionType.MaterialRenamed => "Material(s) renamed",
+            ActionType.FolderAndMaterialRenamed => "Folder(s) and material(s) renamed",
             _ => $"Performed action {actionType} on resource {resourceName}"
         };
     }

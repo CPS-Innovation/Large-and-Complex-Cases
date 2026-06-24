@@ -36,6 +36,8 @@ namespace CPS.ComplexCases.ActivityLog.Enums
         MaterialRenamed,
         [AlternateValue("MATERIAL_MOVED")]
         MaterialMoved,
+        [AlternateValue("FOLDER_AND_MATERIAL_RENAMED")]
+        FolderAndMaterialRenamed,
         [AlternateValue("MATERIAL_COPIED")]
         MaterialCopied,
         [AlternateValue("FOLDER_AND_MATERIAL_COPIED")]

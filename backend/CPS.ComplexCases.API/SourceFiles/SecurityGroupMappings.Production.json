@@ -3,18 +3,21 @@
     "id": "09abbcd6-345f-468f-a46b-d2ef64072eff",
     "displayName": "York-CTD-Cases",
     "bucketName": "yfhctd",
+    "volumeUuid": "3b24e815-d0b7-4d33-87cd-1e494f36c68e",
     "description": "York CTD Users security group for CPS Complex Cases"
   },
   {
     "id": "086813d3-b340-44cc-b6dd-5ebb8487c13d",
     "displayName": "Manchester-Cases",
     "bucketName": "mslpublic",
+    "volumeUuid": "a766013f-888e-491b-9f32-eac7c559dfb6",
     "description": "Manchester Users security group for CPS Complex Cases"
   },
   {
     "id": "39836c67-1947-4104-b7a9-bff7123b87e7",
     "displayName": "CPS-ComplexCases-Default",
     "bucketName": "flexgroup1",
+    "volumeUuid": "5f62c81a-0bfe-11f1-b39a-00224800d727",
     "description": "Default security group for CPS Complex Cases"
   }
 ]
