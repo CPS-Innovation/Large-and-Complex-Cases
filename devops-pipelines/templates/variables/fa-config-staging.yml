@@ -1,6 +1,6 @@
 variables:
   - name: AspNetCoreEnvironment
-    value: "Development"
+    value: "PreProd"
   - name: AzureFunctionsEnvironment
     value: "PreProd"
   - name: CryptoOptionsKeySizeBytes
