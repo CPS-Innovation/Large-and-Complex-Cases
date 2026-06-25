@@ -24,6 +24,12 @@ export function isBatchMoveDetails(
   return batchMoveDetailsSchema.safeParse(details).success;
 }
 
+export function isBatchRenameDetails(
+  details: ActivityDetails | null,
+): details is BatchRenameDetails {
+  return batchRenameDetailsSchema.safeParse(details).success;
+}
+
 export const transferDetailsSchema = z.object({
   transferId: z.string(),
   sourcePath: z.string(),
@@ -70,11 +76,23 @@ export const batchMoveDetailsSchema = z.object({
   items: z.array(batchMoveItemSchema),
 });
 
+export const batchRenameItemSchema = z.object({
+  previousPath: z.string(),
+  newPath: z.string().optional(),
+  outcome: z.string(),
+  error: z.string().nullable(),
+});
+
+export const batchRenameDetailsSchema = z.object({
+  items: z.array(batchRenameItemSchema),
+});
+
 export const activityDetailsSchema = z.union([
   transferDetailsSchema,
   batchDeleteDetailsSchema,
   batchCopyDetailsSchema,
   batchMoveDetailsSchema,
+  batchRenameDetailsSchema,
 ]);
 
 export const activityItemSchema = z.object({
@@ -100,10 +118,13 @@ export type BatchCopyItem = z.infer<typeof batchCopyItemSchema>;
 export type BatchCopyDetails = z.infer<typeof batchCopyDetailsSchema>;
 export type BatchMoveItem = z.infer<typeof batchMoveItemSchema>;
 export type BatchMoveDetails = z.infer<typeof batchMoveDetailsSchema>;
+export type BatchRenameItem = z.infer<typeof batchRenameItemSchema>;
+export type BatchRenameDetails = z.infer<typeof batchRenameDetailsSchema>;
 export type ActivityItem = z.infer<typeof activityItemSchema>;
 export type ActivityLogResponse = z.infer<typeof activityLogResponseSchema>;
 export type ActivityDetails =
   | TransferDetails
   | BatchDeleteDetails
   | BatchCopyDetails
-  | BatchMoveDetails;
+  | BatchMoveDetails
+  | BatchRenameDetails;
