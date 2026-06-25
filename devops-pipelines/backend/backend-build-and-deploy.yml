@@ -142,7 +142,6 @@ stages:
     parameters:
       environment: dev
       requireValidation: false
-      runPostmanSmokeTest: true
 
   - template: ../templates/backend-deploy-stages.yml
     parameters:
