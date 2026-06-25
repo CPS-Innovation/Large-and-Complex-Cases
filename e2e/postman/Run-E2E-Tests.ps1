@@ -122,6 +122,12 @@ if (Test-Path $SecretsFile) {
     Write-Host "[CONFIG] Using environment variables (no secrets.config.ps1 found)" -ForegroundColor Yellow
 }
 
+$defaultNetappFolderName = if ($RegisterCase) {
+    "Automation-Testing/"
+} else {
+    "existingCaseAutomation/"
+}
+
 # Load config with priority: CLI params > env vars > defaults
 $Config = @{
     TenantId      = if ($env:LCC_TENANT_ID) { $env:LCC_TENANT_ID } else { "" }
@@ -133,7 +139,6 @@ $Config = @{
     DdeiAccessKey = if ($env:LCC_DDEI_ACCESS_KEY) { $env:LCC_DDEI_ACCESS_KEY } else { "" }
     DdeiAccessKeyRegCase = if ($env:LCC_DDEI_ACCESS_KEY_REGCASE) { $env:LCC_DDEI_ACCESS_KEY_REGCASE } else { "" }
     BaseUrl       = if ($env:LCC_BASE_URL) { $env:LCC_BASE_URL } else { "" }
-    UiUrl         = if ($env:LCC_UI_URL) { $env:LCC_UI_URL } else { "" }
     CaseApiBaseUrl = if ($env:LCC_CASE_API_BASE_URL) { $env:LCC_CASE_API_BASE_URL } else { "" }
     DdeiBaseUrl   = if ($env:LCC_DDEI_BASE_URL) { $env:LCC_DDEI_BASE_URL } else { "" }
     EgressBaseUrl = if ($env:LCC_EGRESS_BASE_URL) { $env:LCC_EGRESS_BASE_URL } else { "" }
@@ -142,21 +147,21 @@ $Config = @{
     DefaultCaseId      = if ($env:LCC_DEFAULT_CASE_ID) { $env:LCC_DEFAULT_CASE_ID } else { "" }
     DefaultCaseUrn     = if ($env:LCC_DEFAULT_CASE_URN) { $env:LCC_DEFAULT_CASE_URN } else { "" }
     DefaultWorkspaceId   = if ($env:LCC_DEFAULT_WORKSPACE_ID) { $env:LCC_DEFAULT_WORKSPACE_ID } else { "" }
-    DefaultWorkspaceName = if ($env:LCC_DEFAULT_WORKSPACE_NAME) { $env:LCC_DEFAULT_WORKSPACE_NAME } else { "" }
+    DefaultWorkspaceName = if ($env:LCC_DEFAULT_WORKSPACE_NAME) { $env:LCC_DEFAULT_WORKSPACE_NAME } else { "ExistingCaseAutomation" }
+    NetappFolderPath = if ($env:LCC_NETAPP_FOLDER_PATH) { $env:LCC_NETAPP_FOLDER_PATH } else { "${defaultNetappFolderName}/" }
+    NetappMoveFolderPath = if ($env:LCC_NETAPP_MOVE_FOLDER_PATH) { $env:LCC_NETAPP_MOVE_FOLDER_PATH } else { "Automation-Testing-Move/" }
 }
 
 # Validate required config
 $missingConfig = @()
 if (-not $Config.TenantId) { $missingConfig += "LCC_TENANT_ID" }
-if (-not $Config.lccApiClientId) { $missingConfig += "LCC_API_CLIENT_ID" }
+if (-not $Config.LccApiClientId) { $missingConfig += "LCC_API_CLIENT_ID" }
 if (-not $Config.AzureUsername) { $missingConfig += "LCC_AZURE_USERNAME (or -AzureUsername)" }
 if (-not $Config.AzurePassword) { $missingConfig += "LCC_AZURE_PASSWORD (or -AzurePassword)" }
 if (-not $Config.CmsUsername) { $missingConfig += "LCC_CMS_USERNAME (or -CmsUsername)" }
 if (-not $Config.CmsPassword) { $missingConfig += "LCC_CMS_PASSWORD (or -CmsPassword)" }
 if (-not $Config.DdeiAccessKey) { $missingConfig += "LCC_DDEI_ACCESS_KEY" }
 if (-not $Config.BaseUrl) { $missingConfig += "LCC_BASE_URL" }
-if (-not $Config.UiUrl) { $missingConfig += "LCC_UI_URL" }
-if (-not $Config.CaseApiBaseUrl) { $missingConfig += "LCC_CASE_API_BASE_URL" }
 if (-not $Config.EgressBaseUrl) { $missingConfig += "LCC_EGRESS_BASE_URL" }
 if (-not $Config.DdeiBaseUrl) { $missingConfig += "LCC_DDEI_BASE_URL" }
 
@@ -166,6 +171,7 @@ if (-not $Config.DdeiBaseUrl) { $missingConfig += "LCC_DDEI_BASE_URL" }
 if ($RegisterCase) {
     if (-not $Config.RegisterCaseClientId) { $missingConfig += "LCC_REGISTER_CASE_CLIENT_ID (required for -RegisterCase)" }
     if (-not $Config.DdeiAccessKeyRegCase) { $missingConfig += "LCC_DDEI_ACCESS_KEY_REGCASE (required for -RegisterCase)" }
+    if (-not $Config.CaseApiBaseUrl) { $missingConfig += "LCC_CASE_API_BASE_URL" }
 }
 
 # Default mode requires pre-existing case and workspace config
@@ -174,8 +180,6 @@ if (-not $RegisterCase) {
     if (-not $Config.DefaultCaseUrn) { $missingConfig += "LCC_DEFAULT_CASE_URN (required for default mode)" }
     if (-not $Config.DefaultWorkspaceId) { $missingConfig += "LCC_DEFAULT_WORKSPACE_ID (required for default mode)" }
     if (-not $Config.DefaultWorkspaceName) { $missingConfig += "LCC_DEFAULT_WORKSPACE_NAME (required for default mode)" }
-} else {
-    if (-not $Config.CaseApiBaseUrl) { $missingConfig += "LCC_CASE_API_BASE_URL" }
 }
 
 # Warn about optional config that may cause issues if missing
@@ -778,9 +782,11 @@ $variables = @{
     "egressWorkspaceId" = $EgressWorkspaceId
     "egressWorkspaceName" = $EgressWorkspaceName
     "defendantSurname" = $EgressWorkspaceName
+    "tenantId" = $Config.TenantId
     "registerCaseClientId" = $Config.RegisterCaseClientId
-    "lccApiClientId" = $Config.lccApiClientId
-    "netappFolderPath" = "Automation-Testing/"
+    "lccApiClientId" = $Config.LccApiClientId
+    "netappFolderPath" = $Config.NetappFolderPath
+    "netappMoveFolderPath" = $Config.NetappMoveFolderPath
     # NetApp -> Egress copy-back destination base. Collection appends a per-run
     # `e2e-run-<id>/` sub-folder (in 10./[NME] 10. Validate prerequest) -- that
     # is the actual FileExists guard. Must not equal `4. Served Evidence/`.
@@ -790,7 +796,6 @@ $variables = @{
     "defaultCaseId" = $Config.DefaultCaseId
     "defaultCaseUrn" = $Config.DefaultCaseUrn
     "baseUrl" = $Config.BaseUrl
-    "uiUrl" = $Config.UiUrl
     "caseApiBaseUrl" = $Config.CaseApiBaseUrl
     "egressBaseUrl" = $Config.EgressBaseUrl
     "ddeiBaseUrl" = $Config.DdeiBaseUrl

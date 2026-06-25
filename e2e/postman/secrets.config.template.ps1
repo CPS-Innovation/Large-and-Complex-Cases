@@ -33,7 +33,6 @@ $env:LCC_DDEI_ACCESS_KEY_REGCASE = "your-ddei-access-key-case-register"
 
 # API Endpoints
 $env:LCC_BASE_URL = "your-lacc-api-base-url"
-$env:LCC_UI_URL
 $env:LCC_CASE_API_BASE_URL = "your-case-api-base-url"
 $env:LCC_DDEI_BASE_URL = "your-ddei-api-base-url"
 
