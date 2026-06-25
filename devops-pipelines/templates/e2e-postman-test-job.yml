@@ -69,7 +69,7 @@ jobs:
 
           echo "Moving HTML reports into a newly created html-reports directory..."
           mkdir html-reports
-          mv *.html html-reports
+          mv -- *.html html-reports
 
           echo "Showing contents of html-reports directory:"
           ls html-reports
