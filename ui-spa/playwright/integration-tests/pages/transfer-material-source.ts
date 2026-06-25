@@ -70,9 +70,9 @@ export class TransferMaterialsSourcePage {
     ).toHaveText(
       "Select the files or folders you want to transfer. Then choose where to save them on Egress.",
     );
-    await expect(this.page.getByTestId("toggle-transfer-direction")).toHaveText(
-      "View Egress",
-    );
+    await expect(
+      this.page.getByTestId("toggle-transfer-direction").first(),
+    ).toHaveText("View Egress");
     await expect(this.page.getByTestId("transfer-controls")).toHaveCount(2);
   }
 
@@ -138,5 +138,9 @@ export class TransferMaterialsSourcePage {
         ),
       );
     }
+  }
+
+  async clickToggleTransferDirection() {
+    await this.page.getByTestId("toggle-transfer-direction").first().click();
   }
 }

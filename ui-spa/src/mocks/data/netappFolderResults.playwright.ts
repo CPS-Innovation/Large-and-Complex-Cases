@@ -3,22 +3,17 @@ export const netAppRootFolderResultsPlaywright: NetAppFolderResponse = {
   data: {
     fileData: [
       {
-        path: "netapp/file-1-0.pdf",
+        path: "netapp/netapp-file-1-0.pdf",
         lastModified: "2000-01-02",
         filesize: 1234,
-      },
-      {
-        path: "netapp/file-1-1.pdf",
-        lastModified: "2000-01-03",
-        filesize: 2268979,
       },
     ],
     folderData: [
       {
-        path: "netapp/folder-1-0/",
+        path: "netapp/netapp-folder-1-0/",
       },
       {
-        path: "netapp/folder-1-1/",
+        path: "netapp/netapp-folder-1-1/",
       },
     ],
   },
@@ -46,13 +41,16 @@ export const getNetAppFolderResultsPlaywright = (path: string) => {
     (item, index) => {
       return {
         ...item,
-        path: `${path}folder-${levels.length}-${index}/`,
+        path: `${path}netapp-folder-${levels.length}-${index}/`,
       };
     },
   );
   const newFiles = netAppRootFolderResultsPlaywright.data.fileData.map(
     (item, index) => {
-      return { ...item, path: `${path}files-${levels.length}-${index}.pdf` };
+      return {
+        ...item,
+        path: `${path}netapp-file-${levels.length}-${index}.pdf`,
+      };
     },
   );
 
