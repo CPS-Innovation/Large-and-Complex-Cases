@@ -42,7 +42,7 @@ jobs:
             -SizeMB 7 
             -StopOnFailure
         env:
-          LCC_BASE_URL: "https://fa-lacc-api-${{parameters.environment}}.azurewebsites.net"
+          LCC_BASE_URL: $(LccApiBaseUrl)
           LCC_TENANT_ID: $(TenantId)
           LCC_API_CLIENT_ID: $(CallingAppValidAudience)
           LCC_AZURE_USERNAME: $(AadUserName)

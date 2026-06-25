@@ -142,6 +142,7 @@ stages:
     parameters:
       environment: dev
       requireValidation: false
+      runPostmanSmokeTest: true
 
   - template: ../templates/backend-deploy-stages.yml
     parameters:
@@ -153,10 +154,10 @@ stages:
       slotName: 'stg'
       runPostmanSmokeTest: true
 
-  - stage: Run_E2E_Tests
-    displayName: 'Run E2E tests'
+  - stage: Run_Postman_Tests
+    displayName: 'Run backend E2E tests'
     jobs:
-      - template: ../templates/e2e-playwright-test-job.yml
+      - template: ../templates/e2e-postman-test-job.yml
         parameters:
           environment: staging
 
