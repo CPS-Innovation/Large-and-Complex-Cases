@@ -160,6 +160,7 @@ if (-not $Config.AzureUsername) { $missingConfig += "LCC_AZURE_USERNAME (or -Azu
 if (-not $Config.AzurePassword) { $missingConfig += "LCC_AZURE_PASSWORD (or -AzurePassword)" }
 if (-not $Config.CmsUsername) { $missingConfig += "LCC_CMS_USERNAME (or -CmsUsername)" }
 if (-not $Config.CmsPassword) { $missingConfig += "LCC_CMS_PASSWORD (or -CmsPassword)" }
+    if (-not $Config.DdeiBaseUrl) { $missingConfig += "LCC_DDEI_BASE_URL" }
 if (-not $Config.DdeiAccessKey) { $missingConfig += "LCC_DDEI_ACCESS_KEY" }
 if (-not $Config.BaseUrl) { $missingConfig += "LCC_BASE_URL" }
 if (-not $Config.EgressBaseUrl) { $missingConfig += "LCC_EGRESS_BASE_URL" }
@@ -169,7 +170,6 @@ if (-not $Config.EgressBaseUrl) { $missingConfig += "LCC_EGRESS_BASE_URL" }
 # existing case and does not exercise these.
 if ($RegisterCase) {
     if (-not $Config.RegisterCaseClientId) { $missingConfig += "LCC_REGISTER_CASE_CLIENT_ID (required for -RegisterCase)" }
-    if (-not $Config.DdeiBaseUrl) { $missingConfig += "LCC_DDEI_BASE_URL" }
     if (-not $Config.DdeiAccessKeyRegCase) { $missingConfig += "LCC_DDEI_ACCESS_KEY_REGCASE (required for -RegisterCase)" }
     if (-not $Config.CaseApiBaseUrl) { $missingConfig += "LCC_CASE_API_BASE_URL" }
 }

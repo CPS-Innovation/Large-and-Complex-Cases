@@ -49,6 +49,7 @@ jobs:
           LCC_AZURE_PASSWORD: $(AadUserPassword)
           LCC_CMS_USERNAME: $(CmsUserName)
           LCC_CMS_PASSWORD: $(CmsUserPassword)
+          LCC_DDEI_BASE_URL: $(DDEIOptionsBaseUrl)
           LCC_DDEI_ACCESS_KEY: $(DDEIOptionsAccessKey)
           LCC_EGRESS_BASE_URL: $(EgressOptionsUrl)
           LCC_EGRESS_SERVICE_ACCOUNT_AUTH: $(EgressServiceAccountAuth)
