@@ -119,4 +119,24 @@ export class TransferMaterialsSourcePage {
       "There are no documents currently in this folder",
     );
   }
+
+  async verifyCheckboxesVisibility(visible: boolean, count: number) {
+    const checkboxes = await this.page
+      .locator('table input[type="checkbox"]')
+      .all();
+    expect(checkboxes.length).toBe(count);
+    if (visible) {
+      await Promise.all(
+        checkboxes.map((checkbox) =>
+          expect(checkbox).toBeVisible({ timeout: 30000 }),
+        ),
+      );
+    } else {
+      await Promise.all(
+        checkboxes.map((checkbox) =>
+          expect(checkbox).toBeHidden({ timeout: 30000 }),
+        ),
+      );
+    }
+  }
 }
