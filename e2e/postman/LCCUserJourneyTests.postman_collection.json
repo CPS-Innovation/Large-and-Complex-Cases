@@ -571,7 +571,7 @@
                   "    const caseData = response[0];",
                   "    pm.environment.set('caseId', caseData.caseId);",
                   "    pm.environment.set('egressWorkspaceId', caseData.egressWorkspaceId || pm.environment.get('egressWorkspaceId'));",
-                  "    pm.environment.set('netappPath', caseData.netappFolderPath || 'capricorn/');",
+                  "    pm.environment.set('netappPath', caseData.netappFolderPath || pm.environment.get('netappFolderPath'));",
                   "    ",
                   "    console.log('[OK] Case found:', caseData.caseId);",
                   "    console.log('    URN:', caseData.urn);",

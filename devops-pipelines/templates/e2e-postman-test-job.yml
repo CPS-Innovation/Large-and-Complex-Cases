@@ -49,14 +49,14 @@ jobs:
           LCC_AZURE_PASSWORD: $(AadUserPassword)
           LCC_CMS_USERNAME: $(CmsUserName)
           LCC_CMS_PASSWORD: $(CmsUserPassword)
-          LCC_DDEI_BASE_URL: $(DDEIOptionsBaseUrl)
           LCC_DDEI_ACCESS_KEY: $(DDEIOptionsAccessKey)
           LCC_EGRESS_BASE_URL: $(EgressOptionsUrl)
           LCC_EGRESS_SERVICE_ACCOUNT_AUTH: $(EgressServiceAccountAuth)
-          LCC_DEFAULT_CASE_ID: $(CmsTestCaseId)
-          LCC_DEFAULT_CASE_URN: $(CmsTestUrn)
-          LCC_DEFAULT_WORKSPACE_ID: $(EgressWorkspaceId)
-          LCC_DEFAULT_WORKSPACE_NAME: $(CmsTestOperationName)
+          LCC_DEFAULT_CASE_ID: $(E2eTestsCaseId)
+          LCC_DEFAULT_CASE_URN: $(E2eTestsCaseUrn)
+          LCC_DEFAULT_WORKSPACE_ID: $(E2eEgressWorkspaceId)
+          LCC_DEFAULT_WORKSPACE_NAME: $(ExistingCaseAutomation)
+          LCC_NETAPP_FOLDER_PATH: $(E2eNetAppFolderName)
 
       - script: |
           echo "Moving newman reports to Artifact Staging Directory..."
