@@ -55,7 +55,7 @@ jobs:
           LCC_DEFAULT_CASE_ID: $(E2eTestsCaseId)
           LCC_DEFAULT_CASE_URN: $(E2eTestsCaseUrn)
           LCC_DEFAULT_WORKSPACE_ID: $(E2eEgressWorkspaceId)
-          LCC_DEFAULT_WORKSPACE_NAME: $(ExistingCaseAutomation)
+          LCC_DEFAULT_WORKSPACE_NAME: $(E2eEgressWorkspaceName)
           LCC_NETAPP_FOLDER_PATH: $(E2eNetAppFolderName)
 
       - script: |
