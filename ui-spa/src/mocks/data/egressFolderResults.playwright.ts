@@ -78,7 +78,10 @@ export const getEgressFolderResultsPlaywright = (
       return {
         ...item,
         id: `${id},${newId}-${index}`,
-        name: index === 8 ? `files-${newId}-0.pdf` : `folder-${newId}-${index}`,
+        name:
+          index === 2
+            ? `file-${newId}-${index}.pdf`
+            : `folder-${newId}-${index}`,
         path: `${getFolderPathFromId(id)}`,
       };
     },

@@ -22,14 +22,28 @@ export class TransferMaterialsSourcePage {
     );
   }
 
-  async verifyTransferSourceTableSpinner(
+  async verifyTransferSourceTableLoader(
     transferSource: "egress" | "shared-drive",
+    visible: boolean,
   ) {
-    if (transferSource === "egress") {
-      await this.verifyEgressTransferSourceElements();
-    } else {
-      await this.verifySharedDriveTransferSourceElements();
+    if (visible) {
+      await expect(this.page.getByTestId("folder-table-loader")).toBeVisible({
+        timeout: 30000,
+      });
+      if (transferSource === "egress") {
+        await expect(this.page.getByTestId("folder-table-loader")).toHaveText(
+          "Loading folders from Egress",
+        );
+      } else {
+        await expect(this.page.getByTestId("folder-table-loader")).toHaveText(
+          "Loading folders from Shared Drive",
+        );
+      }
+      return;
     }
+    await expect(this.page.getByTestId("folder-table-loader")).not.toBeVisible({
+      timeout: 30000,
+    });
   }
 
   async verifyEgressTransferSourceElements() {
@@ -93,5 +107,16 @@ export class TransferMaterialsSourcePage {
       const actual = await getRow(i + 1);
       expect(actual).toEqual(expectedRowValues[i]);
     }
+  }
+
+  async handleFolderClick(folderName: string) {
+    await this.page.getByRole("button", { name: folderName }).click();
+  }
+
+  async verifyNoResults() {
+    await expect(this.page.getByTestId("no-documents-text")).toBeVisible();
+    await expect(this.page.getByTestId("no-documents-text")).toHaveText(
+      "There are no documents currently in this folder",
+    );
   }
 }

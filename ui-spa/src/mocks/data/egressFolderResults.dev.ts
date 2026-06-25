@@ -19,56 +19,7 @@ export const egressRootFolderResultsDev: EgressFolderResponse = {
     },
     {
       id: "1-2",
-      name: "folder-1-2",
-      isFolder: true,
-      dateUpdated: "2000-01-02",
-      filesize: 0,
-      path: "",
-    },
-    {
-      id: "1-3",
-      name: "folder-1-3",
-      isFolder: true,
-      dateUpdated: "2000-01-03",
-      filesize: 0,
-      path: "",
-    },
-    {
-      id: "1-4",
-      name: "folder-1-4",
-      isFolder: true,
-      dateUpdated: "2000-01-02",
-      filesize: 0,
-      path: "",
-    },
-    {
-      id: "1-5",
-      name: "folder-1-5",
-      isFolder: true,
-      dateUpdated: "2000-01-03",
-      filesize: 0,
-      path: "",
-    },
-    {
-      id: "1-6",
-      name: "folder-1-6",
-      isFolder: true,
-      dateUpdated: "2000-01-02",
-      filesize: 0,
-      path: "",
-    },
-    {
-      id: "1-7",
-      name: "folder-1-7",
-      isFolder: true,
-      dateUpdated: "2000-01-03",
-      filesize: 0,
-      path: "",
-    },
-
-    {
-      id: "1-8",
-      name: "file3qeeweweweweewweewwewewewewewewweewerwrrwwrwrrrrrrwrwrwrwweewweeewweweeweweweew.pdf",
+      name: "file-1-2.pdf",
       isFolder: false,
       dateUpdated: "2000-01-03",
       filesize: 1234,
@@ -126,7 +77,8 @@ export const getEgressFolderResultsDev = (
     return {
       ...item,
       id: `${id},${newId}-${index}`,
-      name: index === 8 ? `files-${newId}-0.pdf` : `folder-${newId}-${index}`,
+      name:
+        index === 2 ? `file-${newId}-${index}.pdf` : `folder-${newId}-${index}`,
       path: `${getFolderPathFromId(id)}`,
     };
   });

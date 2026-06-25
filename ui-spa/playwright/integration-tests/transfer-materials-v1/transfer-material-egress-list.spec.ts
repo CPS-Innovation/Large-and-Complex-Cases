@@ -22,8 +22,13 @@ test.describe("transfer material egress list", () => {
     await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
     await transferMaterialsSourcePage.verifyPageElements();
     await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
-    await transferMaterialsSourcePage.verifyTransferSourceTableSpinner(
+    await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
       "egress",
+      true,
+    );
+    await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
+      "egress",
+      false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
       "Egress: Thunderstruck",
@@ -38,165 +43,124 @@ test.describe("transfer material egress list", () => {
     await transferMaterialsSourcePage.validateTableRowValues(folderRows);
   });
 
-  // test("Should show the egress folders results correctly when egress is the source table", async ({
-  //   page,
-  //   validateFolderPath,
-  // }) => {
-  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
-  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
-  //   await expect(
-  //     page.getByTestId("egress-folder-table-loader"),
-  //   ).not.toBeVisible();
-  //   const egressTableWrapper = page.getByTestId("egress-table-wrapper");
-  //   await validateFolderPath(page, ["Home"]);
-  //   const tableHeadValues = await egressTableWrapper
-  //     .locator("table thead tr:nth-child(1) th")
-  //     .allTextContents();
-  //   expect(tableHeadValues).toEqual([
-  //     "",
-  //     " Folder/file name",
-  //     " Last modified date",
-  //     " Size",
-  //   ]);
-  //   // helper to express row values as an array
-  //   const rowValues = async (wrapper: any, rowIndex: number) =>
-  //     await wrapper
-  //       .locator(`table tbody tr:nth-child(${rowIndex}) td`)
-  //       .allTextContents();
+  test("Should correctly navigate through the egress folders", async ({
+    page,
+  }) => {
+    const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
+    await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
+    await transferMaterialsSourcePage.verifyPageElements();
+    await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
+    await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
+      "egress",
+      true,
+    );
+    await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
+      "egress",
+      false,
+    );
+    await transferMaterialsSourcePage.verifyFolderPath([
+      "Egress: Thunderstruck",
+    ]);
+    await transferMaterialsSourcePage.validateTableColumnHeaders();
 
-  //   expect(await rowValues(egressTableWrapper, 1)).toEqual([
-  //     "",
-  //     "folder-1-0",
-  //     "02/01/2000",
-  //     "--",
-  //   ]);
-  //   expect(await rowValues(egressTableWrapper, 2)).toEqual([
-  //     "",
-  //     "folder-1-1",
-  //     "03/01/2000",
-  //     "--",
-  //   ]);
-  //   expect(await rowValues(egressTableWrapper, 3)).toEqual([
-  //     "",
-  //     "file-1-2.pdf",
-  //     "03/01/2000",
-  //     "1.23 KB",
-  //   ]);
-  // });
+    await transferMaterialsSourcePage.validateTableRowValues([
+      ["", "folder-1-0", "02/01/2000", "--"],
+      ["", "folder-1-1", "03/01/2000", "--"],
+      ["", "file-1-2.pdf", "03/01/2000", "1.23 KB"],
+    ]);
+    await transferMaterialsSourcePage.handleFolderClick("folder-1-0");
+    await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
+      "egress",
+      true,
+    );
+    await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
+      "egress",
+      false,
+    );
+    await transferMaterialsSourcePage.verifyFolderPath([
+      "Egress: Thunderstruck",
+      "folder-1-0",
+    ]);
+    await transferMaterialsSourcePage.validateTableRowValues([
+      ["", "folder-2-0", "02/01/2000", "--"],
+      ["", "folder-2-1", "03/01/2000", "--"],
+      ["", "file-2-2.pdf", "03/01/2000", "1.23 KB"],
+    ]);
+    await transferMaterialsSourcePage.handleFolderClick("folder-2-0");
+    await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
+      "egress",
+      true,
+    );
+    await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
+      "egress",
+      false,
+    );
+    await transferMaterialsSourcePage.verifyFolderPath([
+      "Egress: Thunderstruck",
+      "folder-1-0",
+      "folder-2-0",
+    ]);
+    await transferMaterialsSourcePage.validateTableRowValues([
+      ["", "folder-3-0", "02/01/2000", "--"],
+      ["", "folder-3-1", "03/01/2000", "--"],
+      ["", "file-3-2.pdf", "03/01/2000", "1.23 KB"],
+    ]);
 
-  // test("Should show the egress folders results correctly when egress is the destination table", async ({
-  //   page,
-  //   validateFolderPath,
-  // }) => {
-  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
-  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
-  //   await expect(
-  //     page.getByTestId("egress-folder-table-loader"),
-  //   ).not.toBeVisible();
-  //   await page
-  //     .getByRole("button", { name: "from the Shared Drive to Egress" })
-  //     .click();
-  //   await expect(
-  //     page.getByTestId("tab-content-transfer-materials").locator("h2"),
-  //   ).toHaveText("Transfer materials to Egress");
-  //   const egressTableWrapper = page.getByTestId("egress-table-wrapper");
-  //   await validateFolderPath(page, ["Home"]);
-  //   const tableHeadValues = await egressTableWrapper
-  //     .locator("table thead tr:nth-child(1) th")
-  //     .allTextContents();
-  //   expect(tableHeadValues).toEqual([" Folder/file name", " Size"]);
-  //   const row1Values = await egressTableWrapper
-  //     .locator("table tbody tr:nth-child(1) td")
-  //     .allTextContents();
-  //   expect(row1Values).toEqual(["folder-1-0", "--"]);
-  //   // reuse the same rowValues helper
-  //   const rowValues = async (wrapper: any, rowIndex: number) =>
-  //     await wrapper
-  //       .locator(`table tbody tr:nth-child(${rowIndex}) td`)
-  //       .allTextContents();
+    await transferMaterialsSourcePage.handleFolderClick("folder-3-0");
+    await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
+      "egress",
+      true,
+    );
+    await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
+      "egress",
+      false,
+    );
+    await transferMaterialsSourcePage.verifyFolderPath([
+      "Egress: Thunderstruck",
+      "folder-1-0",
+      "folder-2-0",
+      "folder-3-0",
+    ]);
+    await transferMaterialsSourcePage.verifyNoResults();
 
-  //   expect(await rowValues(egressTableWrapper, 1)).toEqual([
-  //     "folder-1-0",
-  //     "--",
-  //   ]);
-  //   expect(await rowValues(egressTableWrapper, 2)).toEqual([
-  //     "folder-1-1",
-  //     "--",
-  //   ]);
-  //   expect(await rowValues(egressTableWrapper, 3)).toEqual([
-  //     "file-1-2.pdf",
-  //     "1.23 KB",
-  //   ]);
-  // });
-
-  // test("Should correctly navigate through the egress folders", async ({
-  //   page,
-  //   validateFolderPath,
-  // }) => {
-  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
-  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
-  //   await expect(
-  //     page.getByTestId("egress-folder-table-loader"),
-  //   ).not.toBeVisible();
-  //   const egressTableWrapper = page.getByTestId("egress-table-wrapper");
-  //   await validateFolderPath(page, ["Home"]);
-  //   await egressTableWrapper.locator('role=button[name="folder-1-0"]').click();
-  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
-  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
-  //   await expect(
-  //     page.getByTestId("egress-folder-table-loader"),
-  //   ).not.toBeVisible();
-  //   await validateFolderPath(page, ["Home", "folder-1-0"]);
-  //   await egressTableWrapper.locator('role=button[name="folder-2-0"]').click();
-  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
-  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
-  //   await expect(
-  //     page.getByTestId("egress-folder-table-loader"),
-  //   ).not.toBeVisible();
-  //   await validateFolderPath(page, ["Home", "folder-1-0", "folder-2-0"]);
-  //   await egressTableWrapper.locator('role=button[name="folder-3-0"]').click();
-  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
-  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
-  //   await expect(
-  //     page.getByTestId("egress-folder-table-loader"),
-  //   ).not.toBeVisible();
-  //   await egressTableWrapper.locator('role=button[name="folder-1-0"]').click();
-  //   await validateFolderPath(page, ["Home", "folder-1-0"]);
-  //   await egressTableWrapper.locator('role=button[name="folder-2-1"]').click();
-  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
-  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
-  //   await expect(
-  //     page.getByTestId("egress-folder-table-loader"),
-  //   ).not.toBeVisible();
-  //   await validateFolderPath(page, ["Home", "folder-1-0", "folder-2-1"]);
-  //   await egressTableWrapper.locator('role=button[name="folder-3-1"]').click();
-  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
-  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
-  //   await expect(
-  //     page.getByTestId("egress-folder-table-loader"),
-  //   ).not.toBeVisible();
-  //   await validateFolderPath(page, [
-  //     "Home",
-  //     "folder-1-0",
-  //     "folder-2-1",
-  //     "folder-3-1",
-  //   ]);
-  //   await egressTableWrapper.locator('role=button[name="folder-2-1"]').click();
-  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
-  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
-  //   await expect(
-  //     page.getByTestId("egress-folder-table-loader"),
-  //   ).not.toBeVisible();
-  //   await validateFolderPath(page, ["Home", "folder-1-0", "folder-2-1"]);
-  //   await expect(page.locator('role=button[name="folder-3-0"]')).toBeVisible();
-  //   await expect(page.locator('role=button[name="folder-3-1"]')).toBeVisible();
-  //   await egressTableWrapper.locator('role=button[name="Home"]').click();
-  //   await expect(page.getByTestId("egress-folder-table-loader")).toBeVisible();
-  //   await expect(page.getByText(`Loading folders from Egress`)).toBeVisible();
-  //   await validateFolderPath(page, ["Home"]);
-  //   await expect(page.locator('role=button[name="folder-1-0"]')).toBeVisible();
-  //   await expect(page.locator('role=button[name="folder-1-1"]')).toBeVisible();
-  // });
+    await transferMaterialsSourcePage.handleFolderClick("folder-1-0");
+    await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
+      "egress",
+      true,
+    );
+    await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
+      "egress",
+      false,
+    );
+    await transferMaterialsSourcePage.verifyFolderPath([
+      "Egress: Thunderstruck",
+      "folder-1-0",
+    ]);
+    await transferMaterialsSourcePage.validateTableRowValues([
+      ["", "folder-2-0", "02/01/2000", "--"],
+      ["", "folder-2-1", "03/01/2000", "--"],
+      ["", "file-2-2.pdf", "03/01/2000", "1.23 KB"],
+    ]);
+    await transferMaterialsSourcePage.handleFolderClick(
+      "Egress: Thunderstruck",
+    );
+    await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
+      "egress",
+      true,
+    );
+    await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
+      "egress",
+      false,
+    );
+    await transferMaterialsSourcePage.verifyFolderPath([
+      "Egress: Thunderstruck",
+    ]);
+    await transferMaterialsSourcePage.validateTableRowValues([
+      ["", "folder-1-0", "02/01/2000", "--"],
+      ["", "folder-1-1", "03/01/2000", "--"],
+      ["", "file-1-2.pdf", "03/01/2000", "1.23 KB"],
+    ]);
+  });
 
   // test("Should show no results page if the egress folders return empty results", async ({
   //   page,
