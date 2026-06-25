@@ -241,7 +241,7 @@ function Write-Info {
     Write-Host "[INFO] $Text" -ForegroundColor Yellow
 }
 
-function Check-Newman {
+function Install-Newman {
     $npm = Get-Command npm -ErrorAction SilentlyContinue
     if (-not $npm) {
         Write-Err "npm is not installed. Cannot install Newman."
@@ -252,14 +252,14 @@ function Check-Newman {
 
     $newman = Get-Command newman -ErrorAction SilentlyContinue
     if (-not $newman) {
-        Write-Host "Newman not found. Installing..." -ForegroundColor Yellow
+        Write-Ouput "Newman not found. Installing..." -ForegroundColor Yellow
         npm install -g --ignore-scripts newman
         $packageInstalled = $true
     }
 
     $htmlExtra = Get-Command newman-reporter-htmlextra -ErrorAction SilentlyContinue
     if (-not $htmlExtra) {
-        Write-Host "newman-reporter-htmlextra not found. Installing..." -ForegroundColor Yellow
+        Write-Output "newman-reporter-htmlextra not found. Installing..." -ForegroundColor Yellow
         npm install -g --ignore-scripts newman-reporter-htmlextra
         $packageInstalled = $true
     }
@@ -270,9 +270,9 @@ function Check-Newman {
 
     if ($newman -and $htmlExtra) {
         if ($packageInstalled) {
-            Write-Host "Newman and required reporters installed successfully." -ForegroundColor Green
+            Write-Output "Newman and required reporters installed successfully." -ForegroundColor Green
         } else {
-            Write-Host "Newman and reporters already installed." -ForegroundColor Green
+            Write-Output "Newman and reporters already installed." -ForegroundColor Green
         }
         return $true
     }
@@ -508,7 +508,7 @@ Write-Host ""
 # ============================================================
 Write-Info "Checking prerequisites..."
 
-if (-not (Check-Newman)) {
+if (-not (Install-Newman)) {
     exit 1
 }
 
