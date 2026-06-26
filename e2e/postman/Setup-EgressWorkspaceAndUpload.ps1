@@ -185,11 +185,24 @@ if ([string]::IsNullOrWhiteSpace($TempFolder)) {
     $TempFolder = "/tmp"
 }
 
+$curlOptions = @("curl.exe", "curl")
 
-$curl = "curl.exe"
-# Otherwise, fallback to curl for Linux/macOS
-if (-not (Get-Command $curl -ErrorAction SilentlyContinue)) {
-    $curl = "curl"
+$curl = $null
+foreach ($c in $curlOptions) {
+    if (Get-Command $c -ErrorAction SilentlyContinue) {
+        $curl = $c
+        break
+    }
+}
+
+if (-not $curl) {
+    if ($env:OS -eq "Windows_NT") {
+        Write-Host "ERROR: curl.exe is not available!" -ForegroundColor Red
+        Write-Host "Install curl or ensure Windows 10 1803+ / Server 2019+." -ForegroundColor Yellow
+    } else {
+        Write-Host "ERROR: curl is not installed." -ForegroundColor Red
+    }
+    exit 1
 }
 
 # ============================================================
