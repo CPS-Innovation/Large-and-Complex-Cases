@@ -404,7 +404,7 @@ function Run-NewmanFolder {
     
     $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
     $reportName = ($FolderName -replace '[^a-zA-Z0-9]', '_') + "_$timestamp"
-    $htmlReport = Join-Path $ReportsDir "$reportName.html"
+
     
     Write-Host "Folder: $FolderName" -ForegroundColor Gray
     
