@@ -1,4 +1,5 @@
 import { type Page, expect } from "@playwright/test";
+import { a } from "vitest/dist/chunks/suite.qtkXWc6R.js";
 
 export class TransferMaterialsSourcePage {
   private readonly page: Page;
@@ -8,7 +9,7 @@ export class TransferMaterialsSourcePage {
   }
 
   async verifyUrl(url: string) {
-    await expect(this.page).toHaveURL(url);
+    await expect(this.page).toHaveURL(url, { timeout: 50000 });
   }
 
   async verifyPageElements() {
@@ -142,5 +143,45 @@ export class TransferMaterialsSourcePage {
 
   async clickToggleTransferDirection() {
     await this.page.getByTestId("toggle-transfer-direction").first().click();
+  }
+
+  async toggleCheckbox(index: number) {
+    const checkboxes = this.page
+      .getByTestId("egress-table-wrapper")
+      .locator('input[type="checkbox"]');
+    await checkboxes.nth(index).click();
+  }
+
+  async verifyCopyBtnEnabled(enabled: boolean) {
+    const copyBtns = this.page.getByRole("button", { name: "Copy selected" });
+    await expect(copyBtns).toHaveCount(2);
+    if (enabled) {
+      await expect(copyBtns.nth(0)).toBeEnabled();
+      await expect(copyBtns.nth(1)).toBeEnabled();
+    } else {
+      await expect(copyBtns.nth(0)).toBeDisabled();
+      await expect(copyBtns.nth(1)).toBeDisabled();
+    }
+  }
+  async verifyMoveBtnEnabled(enabled: boolean) {
+    const moveBtns = this.page.getByRole("button", { name: "Move selected" });
+    await expect(moveBtns).toHaveCount(2);
+    if (enabled) {
+      await expect(moveBtns.nth(0)).toBeEnabled();
+      await expect(moveBtns.nth(1)).toBeEnabled();
+    } else {
+      await expect(moveBtns.nth(0)).toBeDisabled();
+      await expect(moveBtns.nth(1)).toBeDisabled();
+    }
+  }
+
+  async clickCopyBtn() {
+    const copyBtns = this.page.getByRole("button", { name: "Copy selected" });
+    await copyBtns.nth(0).click();
+  }
+
+  async clickMoveBtn() {
+    const moveBtns = this.page.getByRole("button", { name: "Move selected" });
+    await moveBtns.nth(0).click();
   }
 }

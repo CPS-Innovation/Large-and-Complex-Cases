@@ -118,7 +118,7 @@ const TransferDestinationPage: React.FC = () => {
     if (transferSource === "egress" && isNetAppFolderDataLoading) {
       return {
         isLoading: true,
-        loaderText: "Loading NetApp folders...",
+        loaderText: "Loading Shared Drive folders...",
       };
     }
     if (transferSource === "netapp" && isEgressFolderDataLoading) {
@@ -137,7 +137,7 @@ const TransferDestinationPage: React.FC = () => {
     const folders = [
       {
         id: netAppPath,
-        name: `Shared drive: ${getFolderNameFromPath(netAppPath)}`,
+        name: `Shared Drive: ${operationName}`,
         path: netAppPath,
         isFolder: true,
         isRootNode: true,
@@ -148,7 +148,7 @@ const TransferDestinationPage: React.FC = () => {
     ];
 
     return folders;
-  }, [netAppPath, netAppData]);
+  }, [netAppPath, netAppData, operationName]);
 
   const initialEgressFolderData = useMemo(() => {
     const folders = [
