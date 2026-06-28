@@ -708,7 +708,10 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
               </b>
               <p>
                 They are in :{" "}
-                <LinkButton onClick={handleGotoFolderClick}>
+                <LinkButton
+                  onClick={handleGotoFolderClick}
+                  dataTestId="transfer-success-destination-folder"
+                >
                   {getFolderNameFromPath(activeTransferData?.destinationPath)}
                 </LinkButton>
               </p>
@@ -726,6 +729,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
                   sourcePath={getCommonPath(
                     activeTransferData?.successfulItems.map(({ path }) => path),
                   )}
+                  name="transfer"
                 />
               </Details>
             </NotificationBanner>

@@ -122,5 +122,15 @@ test.describe("transfer material egress list", () => {
     await transferMaterialsDestinationPage.clickTransferActionButton();
     await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
     await transferMaterialsSourcePage.verifyPageElements();
+    await transferMaterialsSourcePage.validateTransferSuccessBanner([
+      {
+        folderPath: "folder2",
+        files: ["file1.txt", "file2.txt"],
+      },
+      {
+        folderPath: "folder3",
+        files: ["file3.txt"],
+      },
+    ]);
   });
 });

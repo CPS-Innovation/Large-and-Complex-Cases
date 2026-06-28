@@ -184,4 +184,57 @@ export class TransferMaterialsSourcePage {
     const moveBtns = this.page.getByRole("button", { name: "Move selected" });
     await moveBtns.nth(0).click();
   }
+
+  async validateTransferSuccessBanner(
+    relativePaths: { folderPath: string; files: string[] }[],
+  ) {
+    const successBanner = this.page.getByTestId(
+      "transfer-success-notification-banner",
+    );
+    await expect(successBanner).toBeVisible();
+
+    await expect(successBanner.locator("h2")).toHaveText("Success");
+    await expect(successBanner.locator("b")).toHaveText(
+      "The materials have been transferred.",
+    );
+    await expect(
+      successBanner.getByTestId("transfer-success-destination-folder"),
+    ).toBeVisible();
+    await expect(
+      successBanner.getByTestId("transfer-success-destination-folder"),
+    ).toHaveText("folder-2-0");
+
+    await expect(successBanner.locator("details>summary")).toHaveText(
+      "Show copied materials",
+    );
+    await expect(successBanner.getByTestId("transfer-files")).not.toBeVisible();
+    await successBanner.locator("details>summary").click();
+    await expect(successBanner.getByTestId("transfer-files")).toBeVisible();
+    const activityFileSections = successBanner
+      .getByTestId("transfer-files")
+      .locator("section");
+
+    await expect(activityFileSections).toHaveCount(relativePaths.length);
+    await Promise.all(
+      relativePaths.map(async (relativePath, index) => {
+        await expect(
+          activityFileSections.nth(index).getByTestId("transfer-relative-path"),
+        ).toHaveText(relativePath.folderPath);
+        await expect(
+          activityFileSections.nth(index).locator("ul").locator("li"),
+        ).toHaveCount(relativePath.files.length);
+        const fileItems = activityFileSections
+          .nth(index)
+          .locator("ul")
+          .locator("li");
+        relativePath.files.forEach(async (file, i) => {
+          await expect(fileItems.nth(i)).toHaveText(file);
+        });
+      }),
+    );
+    await successBanner.locator("details>summary").click();
+    await expect(successBanner.getByTestId("transfer-files")).not.toBeVisible({
+      timeout: 50000,
+    });
+  }
 }
