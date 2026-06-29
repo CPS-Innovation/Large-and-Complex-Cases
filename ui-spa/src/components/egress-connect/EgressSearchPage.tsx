@@ -1,7 +1,6 @@
 import { useRef, useEffect } from "react";
 import { Button, Input, InsetText, ErrorSummary, BackLink } from "../govuk";
 import EgressSearchResults from "./EgressSearchResults";
-import { UseApiResult } from "../../common/hooks/useApi";
 import { type EgressSearchResultData } from "../../schemas";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
 import styles from "./EgressSearchPage.module.scss";
@@ -11,7 +10,8 @@ type EgressSearchPageProps = {
   searchValue: string;
   formDataErrorText: string;
   workspaceName: string;
-  egressSearchApi: UseApiResult<EgressSearchResultData>;
+  egressSearchResults: EgressSearchResultData | undefined;
+  isEgressSearchResultLoading: boolean;
   handleFormChange: (value: string) => void;
   handleSearch: () => void;
   handleConnectFolder: (id: string) => void;
@@ -20,7 +20,8 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
   backLinkUrl,
   searchValue,
   formDataErrorText,
-  egressSearchApi,
+  egressSearchResults,
+  isEgressSearchResultLoading,
   workspaceName,
   handleFormChange,
   handleSearch,
@@ -37,8 +38,6 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
   useEffect(() => {
     if (formDataErrorText) errorSummaryRef.current?.focus();
   }, [formDataErrorText]);
-
-  if (egressSearchApi.status === "loading") return <div>Loading...</div>;
 
   return (
     <div>
@@ -106,11 +105,13 @@ const EgressSearchPage: React.FC<EgressSearchPageProps> = ({
           </div>
         </form>
 
-        <EgressSearchResults
-          workspaceName={workspaceName}
-          egressSearchApi={egressSearchApi}
-          handleConnectFolder={handleConnectFolder}
-        />
+        {!isEgressSearchResultLoading && egressSearchResults && (
+          <EgressSearchResults
+            workspaceName={workspaceName}
+            egressSearchResults={egressSearchResults}
+            handleConnectFolder={handleConnectFolder}
+          />
+        )}
       </PageContentWrapper>
     </div>
   );

@@ -14,21 +14,21 @@ parameters:
 
 steps:
   - ${{ if ne(parameters.environment, 'prod') }}:
-    - task: AzureAppServiceSettings@1
-      displayName: "Configure Function App Settings (PreProd Only)"
-      inputs:
-        azureSubscription: ${{ parameters.azureSubscription }}
-        appName: ${{ parameters.functionAppName }}
-        resourceGroupName: ${{ parameters.resourceGroupName }}
-        slotName: ${{ parameters.slotName }}
-        appSettings: |
-          [  
-            {
-              "name": "NetAppOptions__IssuingCaCert2",
-              "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=NetAppOptions--IssuingCaCert2)",
-              "slotSetting": false
-            }
-          ]
+      - task: AzureAppServiceSettings@1
+        displayName: "Configure Function App Settings (PreProd Only)"
+        inputs:
+          azureSubscription: ${{ parameters.azureSubscription }}
+          appName: ${{ parameters.functionAppName }}
+          resourceGroupName: ${{ parameters.resourceGroupName }}
+          slotName: ${{ parameters.slotName }}
+          appSettings: |
+            [
+              {
+                "name": "NetAppOptions__IssuingCaCert2",
+                "value": "@Microsoft.KeyVault(VaultName=${{ parameters.keyVaultName }};SecretName=NetAppOptions--IssuingCaCert2)",
+                "slotSetting": false
+              }
+            ]
 
   - task: AzureAppServiceSettings@1
     displayName: "Configure Function App Settings (All Environments)"
@@ -115,8 +115,23 @@ steps:
             "slotSetting": false
           },
           {
+            "name": "NetAppOptions__RequestTimeoutSeconds",
+            "value": "$(NetAppOptionsRequestTimeoutSeconds)",
+            "slotSetting": false
+          },
+          {
             "name": "EgressOptions__Url",
             "value": "$(EgressOptionsUrl)",
+            "slotSetting": false
+          },
+          {
+            "name": "EgressOptions__ManagementTimeoutSeconds",
+            "value": "$(EgressOptionsManagementTimeoutSeconds)",
+            "slotSetting": false
+          },
+          {
+            "name": "EgressOptions__TransferTimeoutSeconds",
+            "value": "$(EgressOptionsTransferTimeoutSeconds)",
             "slotSetting": false
           },
           {
@@ -135,6 +150,11 @@ steps:
             "slotSetting": false
           },
           {
+            "name": "DDEIOptions__RequestTimeoutSeconds",
+            "value": "$(DDEIOptionsRequestTimeoutSeconds)",
+            "slotSetting": false
+          },
+          {
             "name": "FileTransferApiOptions__RetryAttempts",
             "value": "$(FileTransferApiOptionsRetryAttempts)",
             "slotSetting": false
@@ -142,6 +162,11 @@ steps:
           {
             "name": "FileTransferApiOptions__FirstRetryDelaySeconds",
             "value": "$(FileTransferApiOptionsFirstRetryDelaySeconds)",
+            "slotSetting": false
+          },
+          {
+            "name": "FileTransferApiOptions__RequestTimeoutSeconds",
+            "value": "$(FileTransferApiOptionsRequestTimeoutSeconds)",
             "slotSetting": false
           },
           {
@@ -225,6 +250,21 @@ steps:
             "slotSetting": false
           },
           {
+            "name": "FeatureFlags__MaterialRename",
+            "value": "$(FeatureFlagsMaterialRename)",
+            "slotSetting": false
+          },
+          {
+            "name": "BlobStorageAccountUrl",
+            "value": "$(BlobStorageAccountUrl)",
+            "slotSetting": false
+          },
+          {
+            "name": "BlobContainerName",
+            "value": "aspose-templates",
+            "slotSetting": false
+          },
+          {
             "name": "RateLimiting__PermitLimit",
             "value": "$(RateLimitingPermitLimit)",
             "slotSetting": false
@@ -257,6 +297,16 @@ steps:
           {
             "name": "DOTNET_FRAMEWORK_VERSION",
             "value": "v10.0",
+            "slotSetting": false
+          },
+          {
+            "name": "ASPNETCORE_ENVIRONMENT",
+            "value": "$(AspNetCoreEnvironment)",
+            "slotSetting": false
+          },
+          {
+            "name": "AZURE_FUNCTIONS_ENVIRONMENT",
+            "value": "$(AzureFunctionsEnvironment)",
             "slotSetting": false
           }
         ]

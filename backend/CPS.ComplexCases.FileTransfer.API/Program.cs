@@ -2,7 +2,6 @@ using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.ApplicationInsights.WorkerService;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Abstractions;
-using Microsoft.DurableTask.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -90,7 +89,6 @@ var host = new HostBuilder()
         services.AddScoped<ITransferEntityHelper, TransferEntityHelper>();
         services.AddScoped<ITransferFile, TransferFile>();
 
-        services.AddDurableTaskClient(x => { x.UseGrpc(); });
         // Configure OpenAPI
         services.AddSingleton<IOpenApiConfigurationOptions, FileTransferApiOpenApiConfigurationOptions>();
     })

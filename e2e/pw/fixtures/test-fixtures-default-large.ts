@@ -5,10 +5,12 @@ import { loadEnvConfig } from "../helpers/env-config";
 import type { TestSetupResult } from "../helpers/types";
 
 export const test = base.extend<{ testData: TestSetupResult }>({
-  // Default mode with large file: 1 x 200MB, uses existing case
+  // Default mode with large file, uses existing case
   testData: [async ({ page }, use, testInfo) => {
+    const config = loadEnvConfig();
+
     const result = await setupDefaultTestData(page, {
-      fileSizeMb: 200,
+      fileSizeMb: config.largeTestFileSizeMb,
       fileCount: 1,
     });
     await use(result);
@@ -16,7 +18,6 @@ export const test = base.extend<{ testData: TestSetupResult }>({
     // Per-test teardown mirrors test-fixtures-default.ts. Only delete on
     // success so a failing run's large file stays in the dated subfolder
     // for inspection. NEVER delete the shared workspace.
-    const config = loadEnvConfig();
     await teardownTestData({
       workspaceId: result.workspace.id,
       files: result.files,

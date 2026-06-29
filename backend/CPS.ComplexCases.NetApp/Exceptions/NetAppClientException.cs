@@ -2,7 +2,7 @@ using System.Net;
 
 namespace CPS.ComplexCases.NetApp.Exceptions;
 
-public class NetAppClientException(HttpStatusCode statusCode, HttpRequestException httpRequestException) : Exception($"The HTTP request failed with status code {statusCode}", httpRequestException)
+public class NetAppClientException(HttpStatusCode statusCode, HttpRequestException httpRequestException) : Exception($"The HTTP request failed with status code {statusCode}", httpRequestException), IHttpStatusCodeException
 {
-    public HttpStatusCode StatusCode { get; private set; } = statusCode;
+    public HttpStatusCode StatusCode { get; } = statusCode;
 }

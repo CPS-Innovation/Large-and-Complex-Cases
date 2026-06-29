@@ -19,9 +19,9 @@ jobs:
     displayName: 'Cleanup Test Files from Egress and Shared Drive'
     steps:
       - script: |
-          if command -v pwsh &> /dev/null; then 
+          if command -v pwsh &> /dev/null; then
             echo "PowerShell already installed. Skipping installation."
-          else 
+          else
             echo "Installing PowerShell..."
             bash '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/installPowershell.sh'
             echo "Powershel version: $(pwsh -v)"
@@ -47,6 +47,7 @@ jobs:
           workingDirectory: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/test-automation-cleanup'
           script: |
             $folders = @(
+              '2. Counsel only'
               '3. Unused - disclosed'
               '4. Served Evidence'
             )
@@ -112,19 +113,18 @@ jobs:
             -FolderPath "integration-tests"
             -BaseUrl $(LccApiBaseUrl)
 
-      # # The following step is disabled while Kamesh is working on the E2E tests. 
-      # # Once E2E test are merged, the following should be enabled:
-
-      # - task: PowerShell@2
-      #   displayName: 'Clear E2E tests NetApp folder'
-      #   condition: succeededOrFailed()
-      #   inputs:
-      #     filePath: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/test-automation-cleanup/Clear-SharedDriveFolder.ps1'
-      #     arguments: >
-      #       -ClientId $(CallingAppValidAudience)
-      #       -TenantId $(TenantId)
-      #       -AadUsername $(AadUserName)
-      #       -AadPassword $(AadUserPassword)
-      #       -CaseId $(E2eTestsCaseId)
-      #       -FolderPath "existingCaseAutomation"
-  
+      - task: PowerShell@2
+        displayName: 'Cleanup E2E tests NetApp folder'
+        condition: succeededOrFailed()
+        inputs:
+          filePath: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/test-automation-cleanup/Remove-SharedDriveFolderContent.ps1'
+          arguments: >
+            -ClientId $(CallingAppValidAudience)
+            -TenantId $(TenantId)
+            -AadUsername $(AadUserName)
+            -AadPassword $(AadUserPassword)
+            -CaseId $(E2eTestsCaseId)
+            -FolderPath "existingCaseAutomation"
+            -BaseUrl $(LccApiBaseUrl)
+            -ExcludePatterns "lcc-e2e-fixture-source"
+            -Force

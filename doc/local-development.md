@@ -68,6 +68,7 @@ VITE_MOCK_AUTH=<true|false>
 VITE_FEATURE_FLAG_TRANSFER_MOVE=<true|false>
 VITE_FEATURE_FLAG_GLOBAL_NAV=<true|false>
 VITE_GLOBAL_NAV_SCRIPT_URL=<GLOBAL NAV URL>
+VITE_FEATURE_FLAG_DISCONNECT_SHARED_DRIVE=<true|false>
 ```
 **Sample `.env.local` file:**
 ```
@@ -80,6 +81,7 @@ VITE_MOCK_AUTH=true
 VITE_FEATURE_FLAG_TRANSFER_MOVE=true
 VITE_FEATURE_FLAG_GLOBAL_NAV=false
 VITE_GLOBAL_NAV_SCRIPT_URL=
+VITE_FEATURE_FLAG_DISCONNECT_SHARED_DRIVE=true
 ```
 **To use:**  
 - Create a `.env.local` file in `ui-spa/` and set the above variables as needed.

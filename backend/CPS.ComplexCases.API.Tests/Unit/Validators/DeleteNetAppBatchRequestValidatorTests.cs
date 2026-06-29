@@ -1,4 +1,5 @@
 using CPS.ComplexCases.API.Validators.Requests;
+using CPS.ComplexCases.Data.Enums;
 using CPS.ComplexCases.Data.Models.Requests;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Validators;
@@ -23,7 +24,7 @@ public class DeleteNetAppBatchRequestValidatorTests
             CaseId = caseId,
             Operations =
             [
-                new DeleteNetAppBatchOperationDto { Type = NetAppDeleteOperationType.Material, SourcePath = "folder/file.txt" }
+                new DeleteNetAppBatchOperationDto { Type = NetAppOperationType.Material, SourcePath = "folder/file.txt" }
             ]
         };
 
@@ -58,7 +59,7 @@ public class DeleteNetAppBatchRequestValidatorTests
     {
         // Arrange
         var operations = Enumerable.Range(1, DeleteNetAppBatchRequestValidator.MaxOperations + 1)
-            .Select(i => new DeleteNetAppBatchOperationDto { Type = NetAppDeleteOperationType.Material, SourcePath = $"folder/file{i}.txt" })
+            .Select(i => new DeleteNetAppBatchOperationDto { Type = NetAppOperationType.Material, SourcePath = $"folder/file{i}.txt" })
             .ToList();
 
         var request = new DeleteNetAppBatchDto { CaseId = 1, Operations = operations };
@@ -76,7 +77,7 @@ public class DeleteNetAppBatchRequestValidatorTests
     {
         // Arrange
         var operations = Enumerable.Range(1, DeleteNetAppBatchRequestValidator.MaxOperations)
-            .Select(i => new DeleteNetAppBatchOperationDto { Type = NetAppDeleteOperationType.Material, SourcePath = $"folder/file{i}.txt" })
+            .Select(i => new DeleteNetAppBatchOperationDto { Type = NetAppOperationType.Material, SourcePath = $"folder/file{i}.txt" })
             .ToList();
 
         var request = new DeleteNetAppBatchDto { CaseId = 1, Operations = operations };
@@ -97,8 +98,8 @@ public class DeleteNetAppBatchRequestValidatorTests
             CaseId = 1,
             Operations =
             [
-                new DeleteNetAppBatchOperationDto { Type = NetAppDeleteOperationType.Material, SourcePath = "folder/file.txt" },
-                new DeleteNetAppBatchOperationDto { Type = NetAppDeleteOperationType.Material, SourcePath = "folder/file.txt" }
+                new DeleteNetAppBatchOperationDto { Type = NetAppOperationType.Material, SourcePath = "folder/file.txt" },
+                new DeleteNetAppBatchOperationDto { Type = NetAppOperationType.Material, SourcePath = "folder/file.txt" }
             ]
         };
 
@@ -119,8 +120,8 @@ public class DeleteNetAppBatchRequestValidatorTests
             CaseId = 1,
             Operations =
             [
-                new DeleteNetAppBatchOperationDto { Type = NetAppDeleteOperationType.Material, SourcePath = "folder/file.txt" },
-                new DeleteNetAppBatchOperationDto { Type = NetAppDeleteOperationType.Material, SourcePath = "FOLDER/FILE.TXT" }
+                new DeleteNetAppBatchOperationDto { Type = NetAppOperationType.Material, SourcePath = "folder/file.txt" },
+                new DeleteNetAppBatchOperationDto { Type = NetAppOperationType.Material, SourcePath = "FOLDER/FILE.TXT" }
             ]
         };
 
@@ -141,7 +142,7 @@ public class DeleteNetAppBatchRequestValidatorTests
             CaseId = 1,
             Operations =
             [
-                new DeleteNetAppBatchOperationDto { Type = NetAppDeleteOperationType.Material, SourcePath = string.Empty }
+                new DeleteNetAppBatchOperationDto { Type = NetAppOperationType.Material, SourcePath = string.Empty }
             ]
         };
 
@@ -162,7 +163,7 @@ public class DeleteNetAppBatchRequestValidatorTests
             CaseId = 1,
             Operations =
             [
-                new DeleteNetAppBatchOperationDto { Type = NetAppDeleteOperationType.Material, SourcePath = "folder/../file.txt" }
+                new DeleteNetAppBatchOperationDto { Type = NetAppOperationType.Material, SourcePath = "folder/../file.txt" }
             ]
         };
 
@@ -183,7 +184,7 @@ public class DeleteNetAppBatchRequestValidatorTests
             CaseId = 1,
             Operations =
             [
-                new DeleteNetAppBatchOperationDto { Type = NetAppDeleteOperationType.Material, SourcePath = "/folder/file.txt" }
+                new DeleteNetAppBatchOperationDto { Type = NetAppOperationType.Material, SourcePath = "/folder/file.txt" }
             ]
         };
 
@@ -204,7 +205,7 @@ public class DeleteNetAppBatchRequestValidatorTests
             CaseId = 1,
             Operations =
             [
-                new DeleteNetAppBatchOperationDto { Type = NetAppDeleteOperationType.Material, SourcePath = "/../file.txt" }
+                new DeleteNetAppBatchOperationDto { Type = NetAppOperationType.Material, SourcePath = "/../file.txt" }
             ]
         };
 
@@ -227,8 +228,8 @@ public class DeleteNetAppBatchRequestValidatorTests
             CaseId = 1,
             Operations =
             [
-                new DeleteNetAppBatchOperationDto { Type = NetAppDeleteOperationType.Material, SourcePath = "/folder/file.txt" },
-                new DeleteNetAppBatchOperationDto { Type = NetAppDeleteOperationType.Folder, SourcePath = "folder/../subfolder" }
+                new DeleteNetAppBatchOperationDto { Type = NetAppOperationType.Material, SourcePath = "/folder/file.txt" },
+                new DeleteNetAppBatchOperationDto { Type = NetAppOperationType.Folder, SourcePath = "folder/../subfolder" }
             ]
         };
 
@@ -250,7 +251,7 @@ public class DeleteNetAppBatchRequestValidatorTests
             CaseId = 1,
             Operations =
             [
-                new DeleteNetAppBatchOperationDto { Type = NetAppDeleteOperationType.Folder, SourcePath = "folder/subfolder" }
+                new DeleteNetAppBatchOperationDto { Type = NetAppOperationType.Folder, SourcePath = "folder/subfolder" }
             ]
         };
 
@@ -273,7 +274,7 @@ public class DeleteNetAppBatchRequestValidatorTests
             CaseId = 1,
             Operations =
             [
-                new DeleteNetAppBatchOperationDto { Type = NetAppDeleteOperationType.Folder, SourcePath = "folder/subfolder/" }
+                new DeleteNetAppBatchOperationDto { Type = NetAppOperationType.Folder, SourcePath = "folder/subfolder/" }
             ]
         };
 
@@ -294,8 +295,8 @@ public class DeleteNetAppBatchRequestValidatorTests
             CaseId = 1,
             Operations =
             [
-                new DeleteNetAppBatchOperationDto { Type = NetAppDeleteOperationType.Material, SourcePath = "folder/file.txt" },
-                new DeleteNetAppBatchOperationDto { Type = NetAppDeleteOperationType.Folder, SourcePath = "folder/subfolder/" }
+                new DeleteNetAppBatchOperationDto { Type = NetAppOperationType.Material, SourcePath = "folder/file.txt" },
+                new DeleteNetAppBatchOperationDto { Type = NetAppOperationType.Folder, SourcePath = "folder/subfolder/" }
             ]
         };
 

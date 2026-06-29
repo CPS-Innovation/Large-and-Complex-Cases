@@ -11,6 +11,7 @@ public class MoveBatchPayload : IBatchPayload<MoveFileItem>
     public required List<MoveFileItem> Files { get; set; }
     public required List<MoveBatchOriginalOperation> OriginalOperations { get; set; }
     public Guid ManageMaterialsOperationId { get; set; }
+    public bool IncludeEmptyFolders => false;
 }
 
 public class MoveFileItem : IBatchFileItem
@@ -18,6 +19,7 @@ public class MoveFileItem : IBatchFileItem
     public required string SourceKey { get; set; }
     public required string DestinationPrefix { get; set; }
     public required string DestinationFileName { get; set; }
+    public bool IsFolder => false;
 }
 
 public class MoveBatchOriginalOperation

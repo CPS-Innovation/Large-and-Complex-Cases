@@ -1,0 +1,29 @@
+trigger:
+  batch: true
+  branches:
+    exclude:
+      - main
+  paths:
+    include:
+      - devops-pipelines/*
+
+pool: LACC PreProd Pool
+
+steps:
+  - script: |
+      echo "Checking if yamllint is installed..."
+
+      if command -v yamllint &> /dev/null; then
+        echo "yamllint is already installed"
+        yamllint --version
+      else
+        echo "yamllint not found, installing..."
+        sudo apt-get update
+        sudo apt-get install yamllint -y
+      fi
+
+      echo "###################"
+      echo "Running yamllint..."
+      yamllint . -f colored
+    workingDirectory: $(System.DefaultWorkingDirectory)/devops-pipelines
+    displayName: Validate YAML syntax

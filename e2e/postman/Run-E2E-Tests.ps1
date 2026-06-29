@@ -82,7 +82,7 @@ param(
     [string]$EgressWorkspaceName = "",
 
     [Parameter(Mandatory=$false)]
-    [ValidateSet("all", "copy", "move", "netapp-to-egress")]
+    [ValidateSet("all", "copy", "move", "netapp-to-egress", "netapp-move-to-egress")]
     [string]$TestsToRun = "all",
 
     [Parameter(Mandatory=$false)]
@@ -131,7 +131,9 @@ $Config = @{
     CmsUsername   = if ($CmsUsername) { $CmsUsername } elseif ($env:LCC_CMS_USERNAME) { $env:LCC_CMS_USERNAME } else { "" }
     CmsPassword   = if ($CmsPassword) { $CmsPassword } elseif ($env:LCC_CMS_PASSWORD) { $env:LCC_CMS_PASSWORD } else { "" }
     DdeiAccessKey = if ($env:LCC_DDEI_ACCESS_KEY) { $env:LCC_DDEI_ACCESS_KEY } else { "" }
+    DdeiAccessKeyRegCase = if ($env:LCC_DDEI_ACCESS_KEY_REGCASE) { $env:LCC_DDEI_ACCESS_KEY_REGCASE } else { "" }
     BaseUrl       = if ($env:LCC_BASE_URL) { $env:LCC_BASE_URL } else { "" }
+    UiUrl         = if ($env:LCC_UI_URL) { $env:LCC_UI_URL } else { "" }
     CaseApiBaseUrl = if ($env:LCC_CASE_API_BASE_URL) { $env:LCC_CASE_API_BASE_URL } else { "" }
     EgressBaseUrl = if ($env:LCC_EGRESS_BASE_URL) { $env:LCC_EGRESS_BASE_URL } else { "" }
     DdeiBaseUrl   = if ($env:LCC_DDEI_BASE_URL) { $env:LCC_DDEI_BASE_URL } else { "" }
@@ -153,9 +155,18 @@ if (-not $Config.CmsUsername) { $missingConfig += "LCC_CMS_USERNAME (or -CmsUser
 if (-not $Config.CmsPassword) { $missingConfig += "LCC_CMS_PASSWORD (or -CmsPassword)" }
 if (-not $Config.DdeiAccessKey) { $missingConfig += "LCC_DDEI_ACCESS_KEY" }
 if (-not $Config.BaseUrl) { $missingConfig += "LCC_BASE_URL" }
+if (-not $Config.UiUrl) { $missingConfig += "LCC_UI_URL" }
 if (-not $Config.CaseApiBaseUrl) { $missingConfig += "LCC_CASE_API_BASE_URL" }
 if (-not $Config.EgressBaseUrl) { $missingConfig += "LCC_EGRESS_BASE_URL" }
 if (-not $Config.DdeiBaseUrl) { $missingConfig += "LCC_DDEI_BASE_URL" }
+
+# RegisterCase mode needs case-register Azure client + the case-register
+# DDEI key (separate from the LCC-app DDEI key). Default mode reuses an
+# existing case and does not exercise these.
+if ($RegisterCase) {
+    if (-not $Config.RegisterCaseClientId) { $missingConfig += "LCC_REGISTER_CASE_CLIENT_ID (required for -RegisterCase)" }
+    if (-not $Config.DdeiAccessKeyRegCase) { $missingConfig += "LCC_DDEI_ACCESS_KEY_REGCASE (required for -RegisterCase)" }
+}
 
 # Default mode requires pre-existing case and workspace config
 if (-not $RegisterCase) {
@@ -194,6 +205,7 @@ $E2EFolderMap = @{
     "copy" = "E2E: Egress to NetApp Copy"
     "move" = "E2E: Egress to NetApp Move"
     "netapp-to-egress" = "E2E: Netapp to Egress Copy"
+    "netapp-move-to-egress" = "E2E: Netapp Move to Egress Copy"
 }
 
 # ============================================================
@@ -472,6 +484,30 @@ New-Item -ItemType Directory -Path $ReportsDir -Force | Out-Null
 Write-Success "Reports directory: $ReportsDir"
 
 # ============================================================
+# INVALIDATE STALE CACHE
+# ============================================================
+# Update-EnvironmentFile / Update-CollectionVariables reuse any existing
+# _updated.json. Without this step, source-collection edits (pre-request
+# scripts, request bodies) and removed config keys from a previous run
+# get masked by the stale cache. Within a single top-level run the cache
+# is still useful (caseId is propagated across folders), so we only
+# invalidate at the start of a fresh top-level invocation.
+$collBase = [System.IO.Path]::GetFileNameWithoutExtension($CollectionPath)
+$collExt  = [System.IO.Path]::GetExtension($CollectionPath)
+$staleArtifacts = @(
+    (Join-Path $ScriptDir "${collBase}_updated${collExt}"),
+    (Join-Path $ScriptDir "${collBase}_updated_updated${collExt}"),
+    (Join-Path $ScriptDir "LCCTestEnvironment_updated.postman_environment.json"),
+    (Join-Path $ScriptDir "LCCTestEnvironment_exported.postman_environment.json")
+)
+foreach ($p in $staleArtifacts) {
+    if (Test-Path $p) {
+        Remove-Item $p -Force -ErrorAction SilentlyContinue
+        Write-Host "[CACHE] Invalidated $(Split-Path -Leaf $p)" -ForegroundColor Gray
+    }
+}
+
+# ============================================================
 # STEP 1: Upload to Egress (or use existing workspace)
 # ============================================================
 if (-not $SkipUpload) {
@@ -489,7 +525,16 @@ if (-not $SkipUpload) {
         $uploadArgs["SizeGB"] = $SizeGB
     }
     $uploadArgs["ChunkSizeMB"] = $ChunkSizeMB
-    $uploadArgs["FileCount"] = $FileCount
+
+    # Only upload the journey-specific source files we actually need.
+    # Avoids burning upload time on a Move source when the Move folder
+    # is not in scope, and vice versa. NetApp -> Egress reads from
+    # NetApp, so it does not need either Egress source set.
+    $needsCopy = $TestsToRun -in @('all', 'copy')
+    $needsMove = $TestsToRun -in @('all', 'move')
+    $uploadArgs["FileCount"] = if ($needsCopy) { $FileCount } else { 0 }
+    $uploadArgs["MoveFileCount"] = if ($needsMove) { $FileCount } else { 0 }
+    Write-Host "  Upload plan: $($uploadArgs.FileCount) copy file(s), $($uploadArgs.MoveFileCount) move file(s) (TestsToRun=$TestsToRun)" -ForegroundColor Gray
 
     # Pass through CLI credential overrides to upload script
     if ($AzureUsername) { $uploadArgs["UserEmail"] = $AzureUsername }
@@ -525,22 +570,64 @@ if (-not $SkipUpload) {
     $EgressFileIds = ""
     $EgressFileNames = ""
     $EgressFileCount = "1"
+    $EgressCopyFileId = ""
+    $EgressCopyFileName = ""
+    $EgressCopyFileIds = ""
+    $EgressCopyFileNames = ""
+    $EgressCopyFileCount = "0"
+    $EgressMoveFileId = ""
+    $EgressMoveFileName = ""
+    $EgressMoveFileIds = ""
+    $EgressMoveFileNames = ""
+    $EgressMoveFileCount = "0"
 
-    # Try to parse JSON output first
+    # Try to parse JSON output first. Match by shape (has workspaceId
+    # and files), not by which property happens to be first - PowerShell
+    # hashtable iteration order is not guaranteed, and any reorder in
+    # Setup-EgressWorkspaceAndUpload.ps1 would silently break the
+    # parser and drop the new egressCopyFile*/egressMoveFile* values.
     $uploadLines = $uploadLog -split "`r?`n"
     foreach ($line in $uploadLines) {
-        if ($line -match '^\s*\{"workspaceId"') {
+        $trimmed = $line.Trim()
+        if (-not $trimmed.StartsWith('{')) { continue }
+        try {
+            $jsonData = $trimmed | ConvertFrom-Json -ErrorAction Stop
+        }
+        catch {
+            continue
+        }
+        if ($jsonData.workspaceId -and $jsonData.files) {
             try {
-                $jsonData = $line.Trim() | ConvertFrom-Json
                 $EgressWorkspaceId = $jsonData.workspaceId
                 $EgressWorkspaceName = $jsonData.workspaceName
                 $EgressFileCount = [string]$jsonData.fileCount
 
                 if ($jsonData.files -and $jsonData.files.Count -gt 0) {
-                    $EgressFileId = $jsonData.files[0].fileId
-                    $EgressFileName = $jsonData.files[0].fileName
-                    $EgressFileIds = ($jsonData.files | ForEach-Object { $_.fileId }) -join ","
-                    $EgressFileNames = ($jsonData.files | ForEach-Object { $_.fileName }) -join ","
+                    $copyFilesJson = @($jsonData.files | Where-Object { $_.journey -eq "copy" })
+                    $moveFilesJson = @($jsonData.files | Where-Object { $_.journey -eq "move" })
+
+                    # Legacy egressFile* = Copy file set (backward compat).
+                    $primarySet = if ($copyFilesJson.Count -gt 0) { $copyFilesJson } else { $jsonData.files }
+                    $EgressFileId = $primarySet[0].fileId
+                    $EgressFileName = $primarySet[0].fileName
+                    $EgressFileIds = ($primarySet | ForEach-Object { $_.fileId }) -join ","
+                    $EgressFileNames = ($primarySet | ForEach-Object { $_.fileName }) -join ","
+                    $EgressFileCount = [string]$primarySet.Count
+
+                    if ($copyFilesJson.Count -gt 0) {
+                        $EgressCopyFileId = $copyFilesJson[0].fileId
+                        $EgressCopyFileName = $copyFilesJson[0].fileName
+                        $EgressCopyFileIds = ($copyFilesJson | ForEach-Object { $_.fileId }) -join ","
+                        $EgressCopyFileNames = ($copyFilesJson | ForEach-Object { $_.fileName }) -join ","
+                        $EgressCopyFileCount = [string]$copyFilesJson.Count
+                    }
+                    if ($moveFilesJson.Count -gt 0) {
+                        $EgressMoveFileId = $moveFilesJson[0].fileId
+                        $EgressMoveFileName = $moveFilesJson[0].fileName
+                        $EgressMoveFileIds = ($moveFilesJson | ForEach-Object { $_.fileId }) -join ","
+                        $EgressMoveFileNames = ($moveFilesJson | ForEach-Object { $_.fileName }) -join ","
+                        $EgressMoveFileCount = [string]$moveFilesJson.Count
+                    }
                 }
                 Write-Host "[JSON] Successfully parsed JSON output" -ForegroundColor Green
                 break
@@ -551,18 +638,53 @@ if (-not $SkipUpload) {
         }
     }
 
-    # Fallback: regex parsing
+    # Fallback: regex parsing for the POSTMAN VARIABLES key=value lines.
+    # Used when the JSON summary line is missing (e.g. caller skipped
+    # upload, or older Setup-EgressWorkspaceAndUpload.ps1 in the workspace).
     if (-not $EgressWorkspaceId -and $uploadLog -match "egressWorkspaceId\s*=\s*([a-f0-9]{24})") {
         $EgressWorkspaceId = $matches[1]
     }
-    if (-not $EgressWorkspaceName -and $uploadLog -match "egressWorkspaceName\s*=\s*(AUTOMATION-TESTING\d+|[A-Z0-9\-_]+)") {
+    if (-not $EgressWorkspaceName -and $uploadLog -match "egressWorkspaceName\s*=\s*(\S+)") {
         $EgressWorkspaceName = $matches[1]
     }
     if (-not $EgressFileId -and $uploadLog -match "egressFileId\s*=\s*([a-f0-9]{24})") {
         $EgressFileId = $matches[1]
     }
-    if (-not $EgressFileName -and $uploadLog -match "egressFileName\s*=\s*(generated-[^\s]+\.txt|[^\s]+\.(txt|bin))") {
+    if (-not $EgressFileName -and $uploadLog -match "egressFileName\s*=\s*(\S+\.\S+)") {
         $EgressFileName = $matches[1]
+    }
+    # Journey-aware fallback. Without these the Move journey would
+    # silently fall back to the legacy egressFile* aliases (which are
+    # the Copy set) and consume Copy's source.
+    if (-not $EgressCopyFileId -and $uploadLog -match "egressCopyFileId\s*=\s*([a-f0-9]{24})") {
+        $EgressCopyFileId = $matches[1]
+    }
+    if (-not $EgressCopyFileName -and $uploadLog -match "egressCopyFileName\s*=\s*(\S+\.\S+)") {
+        $EgressCopyFileName = $matches[1]
+    }
+    if (-not $EgressCopyFileIds -and $uploadLog -match "egressCopyFileIds\s*=\s*(\S+)") {
+        $EgressCopyFileIds = $matches[1]
+    }
+    if (-not $EgressCopyFileNames -and $uploadLog -match "egressCopyFileNames\s*=\s*(\S+)") {
+        $EgressCopyFileNames = $matches[1]
+    }
+    if ($EgressCopyFileCount -eq "0" -and $uploadLog -match "egressCopyFileCount\s*=\s*(\d+)") {
+        $EgressCopyFileCount = $matches[1]
+    }
+    if (-not $EgressMoveFileId -and $uploadLog -match "egressMoveFileId\s*=\s*([a-f0-9]{24})") {
+        $EgressMoveFileId = $matches[1]
+    }
+    if (-not $EgressMoveFileName -and $uploadLog -match "egressMoveFileName\s*=\s*(\S+\.\S+)") {
+        $EgressMoveFileName = $matches[1]
+    }
+    if (-not $EgressMoveFileIds -and $uploadLog -match "egressMoveFileIds\s*=\s*(\S+)") {
+        $EgressMoveFileIds = $matches[1]
+    }
+    if (-not $EgressMoveFileNames -and $uploadLog -match "egressMoveFileNames\s*=\s*(\S+)") {
+        $EgressMoveFileNames = $matches[1]
+    }
+    if ($EgressMoveFileCount -eq "0" -and $uploadLog -match "egressMoveFileCount\s*=\s*(\d+)") {
+        $EgressMoveFileCount = $matches[1]
     }
 
     Remove-Item $tempOutputFile -Force -ErrorAction SilentlyContinue
@@ -594,6 +716,15 @@ else {
 # ============================================================
 Write-Header "STEP 2: Update Variables"
 
+# Scale the per-transfer poll cap with file size. Default is 60 attempts
+# (~3 min at ~3s/poll) which covers small files; a 1 GB transfer can take
+# longer than that, so add ~1.5 min of poll budget per 100 MB above 100 MB,
+# capped at 600 (~30 min) to still fail loudly if something stalls outright.
+$effectiveSizeMB = if ($SizeMB -gt 0) { $SizeMB } else { $SizeGB * 1024 }
+$totalSizeMB = $effectiveSizeMB * [Math]::Max(1, [int]$FileCount)
+$additional = [Math]::Max(0, [int][Math]::Ceiling(($totalSizeMB - 100) / 100.0)) * 30
+$maxPollAttempts = [Math]::Min(600, 60 + $additional)
+
 $variables = @{
     "egressWorkspaceId" = $EgressWorkspaceId
     "egressWorkspaceName" = $EgressWorkspaceName
@@ -602,11 +733,16 @@ $variables = @{
     "registerCaseClientId" = $Config.RegisterCaseClientId
     "lccApiId" = $Config.LccApiId
     "netappFolderPath" = "Automation-Testing/"
-    "egressDestinationFolder" = "4. Served Evidence/"
+    # NetApp -> Egress copy-back destination base. Collection appends a per-run
+    # `e2e-run-<id>/` sub-folder (in 10./[NME] 10. Validate prerequest) -- that
+    # is the actual FileExists guard. Must not equal `4. Served Evidence/`.
+    "egressDestinationFolder" = "3. Unused - disclosed/"
+    "maxPollAttempts" = $maxPollAttempts.ToString()
     "registerCase" = if ($RegisterCase) { "true" } else { "false" }
     "defaultCaseId" = $Config.DefaultCaseId
     "defaultCaseUrn" = $Config.DefaultCaseUrn
     "baseUrl" = $Config.BaseUrl
+    "uiUrl" = $Config.UiUrl
     "caseApiBaseUrl" = $Config.CaseApiBaseUrl
     "egressBaseUrl" = $Config.EgressBaseUrl
     "ddeiBaseUrl" = $Config.DdeiBaseUrl
@@ -617,6 +753,16 @@ if ($EgressFileName) { $variables["egressFileName"] = $EgressFileName }
 if ($EgressFileIds) { $variables["egressFileIds"] = $EgressFileIds }
 if ($EgressFileNames) { $variables["egressFileNames"] = $EgressFileNames }
 if ($EgressFileCount) { $variables["egressFileCount"] = $EgressFileCount }
+if ($EgressCopyFileId) { $variables["egressCopyFileId"] = $EgressCopyFileId }
+if ($EgressCopyFileName) { $variables["egressCopyFileName"] = $EgressCopyFileName }
+if ($EgressCopyFileIds) { $variables["egressCopyFileIds"] = $EgressCopyFileIds }
+if ($EgressCopyFileNames) { $variables["egressCopyFileNames"] = $EgressCopyFileNames }
+if ($EgressCopyFileCount) { $variables["egressCopyFileCount"] = $EgressCopyFileCount }
+if ($EgressMoveFileId) { $variables["egressMoveFileId"] = $EgressMoveFileId }
+if ($EgressMoveFileName) { $variables["egressMoveFileName"] = $EgressMoveFileName }
+if ($EgressMoveFileIds) { $variables["egressMoveFileIds"] = $EgressMoveFileIds }
+if ($EgressMoveFileNames) { $variables["egressMoveFileNames"] = $EgressMoveFileNames }
+if ($EgressMoveFileCount) { $variables["egressMoveFileCount"] = $EgressMoveFileCount }
 
 # Separate secrets from non-secret variables.
 # Secrets go ONLY into the environment file (loaded via Newman --environment).
@@ -627,6 +773,7 @@ $secretVariables = @{
     "cmsUsername"   = $Config.CmsUsername
     "cmsPassword"   = $Config.CmsPassword
     "ddeiAccessKey" = $Config.DdeiAccessKey
+    "ddeiAccessKeyRegCase" = $Config.DdeiAccessKeyRegCase
     "lccApiClientSecret" = $Config.LccApiClientSecret
 }
 
@@ -648,10 +795,14 @@ $UpdatedCollectionPath = Update-CollectionVariables -CollectionPath $CollectionP
 $foldersToRun = @()
 
 if ($TestsToRun -eq "all") {
+    # Order: Copy forward -> NetApp-to-Egress (copies Copy output back) ->
+    # Move forward -> Netapp-Move-to-Egress (copies Move output back). Each
+    # forward journey deposits the file the matching back-journey then asserts.
     $foldersToRun = @(
         "E2E: Egress to NetApp Copy",
         "E2E: Netapp to Egress Copy",
-        "E2E: Egress to NetApp Move"
+        "E2E: Egress to NetApp Move",
+        "E2E: Netapp Move to Egress Copy"
     )
 }
 else {
@@ -668,105 +819,82 @@ Write-Host ""
 # ============================================================
 $results = @{}
 $allPassed = $true
-$isFirstRun = $true
 
-Write-Header "STEP 4: Run E2E Tests"
+Write-Header "STEP 4: Run E2E Setup (once)"
 Write-Host "Workspace: $EgressWorkspaceId ($EgressWorkspaceName)" -ForegroundColor Cyan
-if ($RegisterCase -and $foldersToRun.Count -gt 1) {
-    Write-Host "RegisterCase: Will register once on first folder, then reuse for remaining folders" -ForegroundColor Cyan
+if ($RegisterCase) {
+    Write-Host "RegisterCase: case will be registered in the Setup pass" -ForegroundColor Cyan
+} else {
+    Write-Host "Default mode: register-case requests skip themselves; caseId/caseUrn come from defaults" -ForegroundColor Cyan
 }
 Write-Host ""
 
-foreach ($folder in $foldersToRun) {
-    Write-Host ""
-    Write-Host "─────────────────────────────────────────────────────────────" -ForegroundColor DarkGray
-    Write-Host "Preparing: $folder" -ForegroundColor Cyan
-    Write-Host "─────────────────────────────────────────────────────────────" -ForegroundColor DarkGray
-    
-    # When RegisterCase is set and running multiple folders, export environment
-    # from the first run so we can capture the caseId/caseUrn for subsequent runs
-    $exportEnvPath = ""
-    if ($RegisterCase -and $isFirstRun -and $foldersToRun.Count -gt 1) {
-        $exportEnvPath = Join-Path $ScriptDir "LCCTestEnvironment_exported.postman_environment.json"
-        Write-Info "First RegisterCase run - will capture caseId for subsequent folders"
-    }
-    
-    $result = Run-NewmanFolder `
-        -CollectionPath $UpdatedCollectionPath `
-        -FolderName $folder `
-        -EnvironmentPath $UpdatedEnvPath `
-        -ReportsDir $ReportsDir `
-        -ExportEnvironmentPath $exportEnvPath
-    
-    $results[$folder] = $result
-    
-    # After the first RegisterCase run, capture caseId/caseUrn and disable
-    # registration for subsequent folders to prevent creating multiple cases
-    if ($RegisterCase -and $isFirstRun -and $foldersToRun.Count -gt 1) {
-        $isFirstRun = $false
-        
-        if ($result.Success -and $exportEnvPath -and (Test-Path $exportEnvPath)) {
-            Write-Info "Capturing registered case for subsequent test folders..."
-            
-            $exportedEnv = Get-Content $exportEnvPath -Raw | ConvertFrom-Json
-            $capturedCaseId = ""
-            $capturedCaseUrn = ""
-            
-            foreach ($val in $exportedEnv.values) {
-                if ($val.key -eq "caseId") { $capturedCaseId = $val.value }
-                if ($val.key -eq "caseUrn") { $capturedCaseUrn = $val.value }
-            }
-            
-            if ($capturedCaseId) {
-                Write-Success "Captured caseId: $capturedCaseId, caseUrn: $capturedCaseUrn"
-                Write-Info "Subsequent folders will reuse this case (registerCase=false)"
-                
-                # Update environment file: disable registration, inject captured case
-                $reuseVars = @{
-                    "registerCase"  = "false"
-                    "defaultCaseId" = $capturedCaseId
-                    "defaultCaseUrn" = $capturedCaseUrn
-                    "caseId"        = $capturedCaseId
-                    "caseUrn"       = $capturedCaseUrn
-                }
-                $UpdatedEnvPath = Update-EnvironmentFile -EnvironmentPath $UpdatedEnvPath -Variables $reuseVars -OutputDir $ScriptDir
-                
-                # Also update collection variables
-                $UpdatedCollectionPath = Update-CollectionVariables -CollectionPath $UpdatedCollectionPath -Variables $reuseVars -OutputDir $ScriptDir
-            } else {
-                Write-Err "Failed to capture caseId from first run - subsequent runs may register new cases"
-            }
-            
-            # Clean up exported env file
-            Remove-Item $exportEnvPath -Force -ErrorAction SilentlyContinue
-        } elseif (-not $result.Success) {
-            Write-Err "First RegisterCase run failed - cannot capture caseId for reuse"
-        }
-    } else {
-        $isFirstRun = $false
-    }
-    
-    if (-not $result.Success) {
-        $allPassed = $false
-        
-        if ($StopOnFailure) {
-            Write-Err "Stopping due to -StopOnFailure flag"
-            break
-        }
-        
-        if ([Environment]::UserInteractive -eq $false) {
-            Write-Host "Non-interactive mode: auto-continuing after failure" -ForegroundColor Yellow
-        } else {
-            Write-Host ""
-            Write-Host "Test failed. Continue with remaining tests? (Y/N)" -ForegroundColor Yellow -NoNewline
-            $continue = Read-Host " "
-            if ($continue -notin @('Y', 'y')) {
+# Setup folder runs ONCE and exports its end-state (tokens, caseId/caseUrn,
+# connection IDs, etc.). Every journey folder then runs as a separate
+# Newman invocation against that exported environment - the setup chain
+# is no longer duplicated across the three E2E folders, and Register Case
+# only ever runs once per top-level invocation.
+$postSetupEnvPath = Join-Path $ScriptDir "LCCTestEnvironment_post-setup.postman_environment.json"
+
+$setupResult = Run-NewmanFolder `
+    -CollectionPath $UpdatedCollectionPath `
+    -FolderName "0. E2E Setup" `
+    -EnvironmentPath $UpdatedEnvPath `
+    -ReportsDir $ReportsDir `
+    -ExportEnvironmentPath $postSetupEnvPath
+
+if (-not $setupResult.Success) {
+    Write-Err "Setup folder failed - cannot run any journey folders"
+    $allPassed = $false
+    # Leave journey results unset so the summary shows them as [SKIP].
+} elseif (-not (Test-Path $postSetupEnvPath)) {
+    Write-Err "Setup folder reported success but the post-setup environment file was not written"
+    $allPassed = $false
+    # Leave journey results unset so the summary shows them as [SKIP].
+} else {
+    Write-Success "Setup complete - post-setup environment captured at: $postSetupEnvPath"
+
+    # ============================================================
+    # STEP 5: Run journey folders against the post-setup environment
+    # ============================================================
+    Write-Header "STEP 5: Run E2E Journey Folders"
+
+    foreach ($folder in $foldersToRun) {
+        Write-Host ""
+        Write-Host "─────────────────────────────────────────────────────────────" -ForegroundColor DarkGray
+        Write-Host "Preparing: $folder" -ForegroundColor Cyan
+        Write-Host "─────────────────────────────────────────────────────────────" -ForegroundColor DarkGray
+
+        $result = Run-NewmanFolder `
+            -CollectionPath $UpdatedCollectionPath `
+            -FolderName $folder `
+            -EnvironmentPath $postSetupEnvPath `
+            -ReportsDir $ReportsDir
+
+        $results[$folder] = $result
+
+        if (-not $result.Success) {
+            $allPassed = $false
+
+            if ($StopOnFailure) {
+                Write-Err "Stopping due to -StopOnFailure flag"
                 break
             }
+
+            if ([Environment]::UserInteractive -eq $false) {
+                Write-Host "Non-interactive mode: auto-continuing after failure" -ForegroundColor Yellow
+            } else {
+                Write-Host ""
+                Write-Host "Test failed. Continue with remaining tests? (Y/N)" -ForegroundColor Yellow -NoNewline
+                $continue = Read-Host " "
+                if ($continue -notin @('Y', 'y')) {
+                    break
+                }
+            }
         }
+
+        Start-Sleep -Seconds 3
     }
-    
-    Start-Sleep -Seconds 3
 }
 
 # ============================================================

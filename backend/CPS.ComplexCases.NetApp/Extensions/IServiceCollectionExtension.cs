@@ -1,20 +1,36 @@
+using System.Net;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Logging;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
 using CPS.ComplexCases.Common.Extensions;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Services;
 using CPS.ComplexCases.NetApp.Telemetry;
 using CPS.ComplexCases.NetApp.Wrappers;
+using CPS.ComplexCases.Common.Resilience;
+using Polly;
 
 namespace CPS.ComplexCases.NetApp.Extensions;
 
 public static class IServiceCollectionExtension
 {
+	private const int RetryAttempts = 3;
+	private const int FirstRetryDelaySeconds = 1;
+	private const int ConcurrencyLimit = 30;
+
+	// NetApp transfers can legitimately run for minutes and run at lower request volumes, so the
+	// breaker uses a longer sampling window, a lower throughput requirement and a longer break.
+	private const double CircuitBreakerFailureThreshold = 0.5;
+	private const int CircuitBreakerSamplingDurationSeconds = 120;
+	private const int CircuitBreakerMinimumThroughput = 5;
+	private const int CircuitBreakerDurationOfBreakSeconds = 60;
+
 	public static void AddNetAppClient(this IServiceCollection services, IConfiguration configuration)
 	{
 		services.AddDefaultAWSOptions(configuration.GetAWSOptions());
@@ -31,11 +47,15 @@ public static class IServiceCollectionExtension
 		services.AddSingleton<IS3TelemetryHandler, S3TelemetryHandler>();
 		services.AddSingleton<INetAppCertFactory, NetAppCertFactory>();
 
+		services.AddTransient<IOntapArgFactory, OntapArgFactory>();
+		services.AddTransient<IOntapRequestFactory, OntapRequestFactory>();
+		services.AddTransient<IHttpResponseHandler, HttpResponseHandler>();
+
 		services.AddSingleton<IKeyVaultService>(sp =>
 		{
 			var logger = sp.GetRequiredService<ILogger<KeyVaultService>>();
 			var keyVaultUrl = configuration["KeyVault:Url"]
-				?? throw new ArgumentNullException("KeyVault:Url", "KeyVault:Url configuration is missing or empty.");
+				?? throw new InvalidOperationException("KeyVault:Url configuration is missing or empty.");
 
 			var secretClient = new SecretClient(
 				new Uri(keyVaultUrl),
@@ -53,31 +73,46 @@ public static class IServiceCollectionExtension
 			var netAppServiceUrl = configuration["NetAppOptions:ClusterUrl"];
 			if (string.IsNullOrEmpty(netAppServiceUrl))
 			{
-				throw new ArgumentNullException(nameof(netAppServiceUrl), "NetAppOptions:ClusterUrl configuration is missing or empty.");
+				throw new InvalidOperationException("NetAppOptions:ClusterUrl configuration is missing or empty.");
 			}
 			client.BaseAddress = new Uri(netAppServiceUrl);
-			client.Timeout = TimeSpan.FromMinutes(10);
+			client.Timeout = TimeSpan.FromSeconds(configuration.GetValue("NetAppOptions:RequestTimeoutSeconds", 100));
 
 		})
 		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment))
 		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
-		.AddResilienceHandler("netapp-retry", p => p.AddStandardHttpResilience());
+		.AddResilienceHandler("netapp-resilience", ConfigureResiliencePipeline);
 
 		services.AddHttpClient<INetAppS3HttpClient, NetAppS3HttpClient>(client =>
 		{
 			var netAppServiceUrl = configuration["NetAppOptions:Url"];
 			if (string.IsNullOrEmpty(netAppServiceUrl))
 			{
-				throw new ArgumentNullException(nameof(netAppServiceUrl), "NetAppOptions:Url configuration is missing or empty.");
+				throw new InvalidOperationException("NetAppOptions:Url configuration is missing or empty.");
 			}
 			client.BaseAddress = new Uri(netAppServiceUrl);
-			client.Timeout = TimeSpan.FromMinutes(10);
+			client.Timeout = TimeSpan.FromSeconds(configuration.GetValue("NetAppOptions:RequestTimeoutSeconds", 100));
 
 		})
 		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment)
 		)
 		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
-		.AddResilienceHandler("netapp-s3-retry", p => p.AddStandardHttpResilience());
+		.AddResilienceHandler("netapp-s3-resilience", ConfigureResiliencePipeline);
+
+		services.AddHttpClient<IOntapHttpClient, OntapHttpClient>(client =>
+		{
+			var ontapBaseUrl = configuration["NetAppOptions:ClusterUrl"];
+			if (string.IsNullOrEmpty(ontapBaseUrl))
+			{
+				throw new InvalidOperationException("NetAppOptions:ClusterUrl configuration is missing or empty.");
+			}
+			client.BaseAddress = new Uri(ontapBaseUrl);
+			client.Timeout = TimeSpan.FromSeconds(configuration.GetValue("NetAppOptions:RequestTimeoutSeconds", 100));
+
+		})
+		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment))
+		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
+		.AddResilienceHandler("ontap-resilience", ConfigureResiliencePipeline);
 
 		services.AddTransient<NetAppStorageClient>();
 	}
@@ -109,4 +144,25 @@ public static class IServiceCollectionExtension
 		}
 	}
 
+	private static void ConfigureResiliencePipeline(
+		ResiliencePipelineBuilder<HttpResponseMessage> pipeline,
+		ResilienceHandlerContext context)
+	{
+		var logger = context.ServiceProvider
+			.GetRequiredService<ILoggerFactory>()
+			.CreateLogger("CPS.ComplexCases.NetApp.CircuitBreaker");
+
+		pipeline.AddStandardHttpResilience(new HttpResilienceOptions
+		{
+			ServiceName = "NetApp",
+			RetryAttempts = RetryAttempts,
+			FirstRetryDelay = TimeSpan.FromSeconds(FirstRetryDelaySeconds),
+			CircuitBreakerFailureThreshold = CircuitBreakerFailureThreshold,
+			CircuitBreakerSamplingDuration = TimeSpan.FromSeconds(CircuitBreakerSamplingDurationSeconds),
+			CircuitBreakerMinimumThroughput = CircuitBreakerMinimumThroughput,
+			CircuitBreakerDurationOfBreak = TimeSpan.FromSeconds(CircuitBreakerDurationOfBreakSeconds),
+			ConcurrencyLimit = ConcurrencyLimit,
+			AdditionalRetryableStatusCodes = [HttpStatusCode.TooManyRequests],
+		}, logger);
+	}
 }

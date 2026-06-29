@@ -112,9 +112,9 @@ stages:
 
       - job: Package_Database_Scripts
         displayName: 'Package Database Migration Scripts'
-        dependsOn: 
-        - Build_And_Test_Solution
-        - Check_DB_Diff
+        dependsOn:
+          - Build_And_Test_Solution
+          - Check_DB_Diff
         condition: and(succeeded(), eq(dependencies.Check_DB_Diff.outputs['Diff_Check.packageDatabase'], 'true'))
         steps:
           # Build Data project with dependencies
@@ -134,7 +134,7 @@ stages:
               targetType: 'inline'
               script: |
                 export PATH="$PATH:$HOME/.dotnet/tools"
-                
+
                 if ! dotnet ef --version &> /dev/null; then
                   dotnet tool install --global dotnet-ef --version $(efVersion)
                 fi

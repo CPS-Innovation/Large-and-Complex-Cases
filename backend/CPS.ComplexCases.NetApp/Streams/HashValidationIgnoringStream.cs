@@ -31,14 +31,42 @@ public class HashValidationIgnoringStream : Stream
 
     public override void Flush() => _innerStream.Flush();
 
-    public override int Read(byte[] buffer, int offset, int count) =>
-        _innerStream.Read(buffer, offset, count);
+    public override int Read(byte[] buffer, int offset, int count)
+    {
+        try
+        {
+            return _innerStream.Read(buffer, offset, count);
+        }
+        catch (AmazonClientException ex) when (ex.Message.Contains("Expected hash not equal to calculated hash"))
+        {
+            // Hash check fires at EOF after all bytes are already in the buffer — signal end-of-stream.
+            return 0;
+        }
+    }
 
-    public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
-        _innerStream.ReadAsync(buffer, offset, count, cancellationToken);
+    public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _innerStream.ReadAsync(buffer, offset, count, cancellationToken);
+        }
+        catch (AmazonClientException ex) when (ex.Message.Contains("Expected hash not equal to calculated hash"))
+        {
+            return 0;
+        }
+    }
 
-    public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) =>
-        _innerStream.ReadAsync(buffer, cancellationToken);
+    public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await _innerStream.ReadAsync(buffer, cancellationToken);
+        }
+        catch (AmazonClientException ex) when (ex.Message.Contains("Expected hash not equal to calculated hash"))
+        {
+            return 0;
+        }
+    }
 
     public override long Seek(long offset, SeekOrigin origin) =>
         _innerStream.Seek(offset, origin);

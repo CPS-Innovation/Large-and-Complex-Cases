@@ -28,7 +28,10 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
         {
             // Arrange
             var transferId = "transfer-123";
+            var httpContext = new DefaultHttpContext();
             var httpRequestMock = new Mock<HttpRequest>();
+            httpRequestMock.Setup(r => r.Headers).Returns(new HeaderDictionary());
+            httpRequestMock.Setup(r => r.HttpContext).Returns(httpContext);
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, "cmsAuthValues", "testUser", "bearerToken");
 
             var transferEntity = new
@@ -49,7 +52,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
             };
 
             _transferClientMock
-                .Setup(c => c.GetFileTransferStatusAsync(transferId, _correlationId))
+                .Setup(c => c.GetFileTransferStatusAsync(transferId, _correlationId, It.IsAny<string?>()))
                 .ReturnsAsync(response);
 
             // Act
@@ -63,9 +66,39 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
             Assert.Equal(transferEntity.Id.ToString(), returnedEntity.GetProperty("Id").GetString());
             Assert.Equal(transferEntity.CaseId, returnedEntity.GetProperty("CaseId").GetInt32());
             Assert.Equal(transferEntity.TotalFiles, returnedEntity.GetProperty("TotalFiles").GetInt32());
+            Assert.Equal("no-store", httpContext.Response.Headers.CacheControl);
 
+            _transferClientMock.Verify(c => c.GetFileTransferStatusAsync(transferId, _correlationId, It.IsAny<string?>()), Times.Once);
+        }
 
-            _transferClientMock.Verify(c => c.GetFileTransferStatusAsync(transferId, _correlationId), Times.Once);
+        [Fact]
+        public async Task Run_TransferNotModified_Returns304WithCacheControlAndETag()
+        {
+            // Arrange
+            var transferId = "transfer-123";
+            var etag = "\"abc123\"";
+            var httpContext = new DefaultHttpContext();
+            var httpRequestMock = new Mock<HttpRequest>();
+            httpRequestMock.Setup(r => r.Headers).Returns(new HeaderDictionary { ["If-None-Match"] = etag });
+            httpRequestMock.Setup(r => r.HttpContext).Returns(httpContext);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, "cmsAuthValues", "testUser", "bearerToken");
+
+            var response = new HttpResponseMessage(HttpStatusCode.NotModified);
+            response.Headers.TryAddWithoutValidation("ETag", etag);
+
+            _transferClientMock
+                .Setup(c => c.GetFileTransferStatusAsync(transferId, _correlationId, etag))
+                .ReturnsAsync(response);
+
+            // Act
+            var result = await _function.Run(httpRequestMock.Object, functionContext, transferId);
+
+            // Assert
+            var statusCodeResult = Assert.IsType<StatusCodeResult>(result);
+            Assert.Equal(304, statusCodeResult.StatusCode);
+            Assert.Equal("no-store", httpContext.Response.Headers.CacheControl);
+            Assert.Equal(etag, httpContext.Response.Headers.ETag);
+            Assert.Equal("ETag", httpContext.Response.Headers["Access-Control-Expose-Headers"]);
         }
 
         [Fact]
@@ -73,7 +106,10 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
         {
             // Arrange
             var transferId = "transfer-404";
+            var httpContext = new DefaultHttpContext();
             var httpRequestMock = new Mock<HttpRequest>();
+            httpRequestMock.Setup(r => r.Headers).Returns(new HeaderDictionary());
+            httpRequestMock.Setup(r => r.HttpContext).Returns(httpContext);
             var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_correlationId, "cmsAuthValues", "testUser", "bearerToken");
 
             var response = new HttpResponseMessage(HttpStatusCode.NotFound)
@@ -82,7 +118,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
             };
 
             _transferClientMock
-                .Setup(c => c.GetFileTransferStatusAsync(transferId, _correlationId))
+                .Setup(c => c.GetFileTransferStatusAsync(transferId, _correlationId, It.IsAny<string?>()))
                 .ReturnsAsync(response);
 
             // Act
@@ -92,7 +128,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
             var notFoundResult = Assert.IsType<StatusCodeResult>(result);
             Assert.Equal(404, notFoundResult.StatusCode);
 
-            _transferClientMock.Verify(c => c.GetFileTransferStatusAsync(transferId, _correlationId), Times.Once);
+            _transferClientMock.Verify(c => c.GetFileTransferStatusAsync(transferId, _correlationId, It.IsAny<string?>()), Times.Once);
         }
 
     }

@@ -57,7 +57,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
     }),
 
     http.post(`${baseUrl}/api/v1/egress/connections`, async () => {
-      return HttpResponse.json({});
+      return new HttpResponse(null, { status: 200 });
     }),
 
     http.get(`${baseUrl}/api/v1/netapp/folders`, async (req) => {
@@ -91,9 +91,13 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
         const url = new URL(req.request.url);
 
         const folderId = url.searchParams.get("folder-id");
+        const path = url.searchParams.get("path");
         const netAppRootFolderResults = isDevMock()
-          ? getEgressFolderResultsDev(folderId as string)
-          : getEgressFolderResultsPlaywright(folderId as string);
+          ? getEgressFolderResultsDev(folderId as string, path as string)
+          : getEgressFolderResultsPlaywright(
+              folderId as string,
+              path as string,
+            );
         await delay(500);
 
         return HttpResponse.json(netAppRootFolderResults);

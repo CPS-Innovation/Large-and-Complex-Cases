@@ -14,6 +14,8 @@ namespace CPS.ComplexCases.ActivityLog.Enums
         ConnectionToEgress,
         [AlternateValue("CONNECTION_TO_NETAPP")]
         ConnectionToNetApp,
+        [AlternateValue("DISCONNECTION_FROM_EGRESS")]
+        DisconnectionFromEgress,
         [AlternateValue("DISCONNECTION_FROM_NETAPP")]
         DisconnectionFromNetApp,
         [AlternateValue("FOLDER_CREATED")]
@@ -34,6 +36,8 @@ namespace CPS.ComplexCases.ActivityLog.Enums
         MaterialRenamed,
         [AlternateValue("MATERIAL_MOVED")]
         MaterialMoved,
+        [AlternateValue("FOLDER_AND_MATERIAL_RENAMED")]
+        FolderAndMaterialRenamed,
         [AlternateValue("MATERIAL_COPIED")]
         MaterialCopied,
         [AlternateValue("FOLDER_AND_MATERIAL_COPIED")]

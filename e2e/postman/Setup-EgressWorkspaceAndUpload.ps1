@@ -66,6 +66,13 @@ param(
     [Parameter(Mandatory=$false)]
     [int]$FileCount = 1,
 
+    # Default 0 so standalone invocations (e.g. .\Setup-EgressWorkspaceAndUpload.ps1
+    # -SizeMB 100) keep producing one file, matching the helper's historical
+    # behaviour. Run-E2E-Tests.ps1 passes MoveFileCount explicitly based on
+    # -TestsToRun, so the orchestrated split-source behaviour is unaffected.
+    [Parameter(Mandatory=$false)]
+    [int]$MoveFileCount = 0,
+
     [Parameter(Mandatory=$false)]
     [string]$WorkspaceName = "",
 
@@ -148,9 +155,15 @@ if ([string]::IsNullOrEmpty($UserEmail)) {
 Write-Host "[CONFIG] Egress URL: $BaseUrl" -ForegroundColor Gray
 Write-Host "[CONFIG] User Email: $(if ($UserEmail) { $UserEmail } else { '(not set)' })" -ForegroundColor Gray
 
-# Validate file count
-if ($FileCount -lt 1) { $FileCount = 1 }
+# Validate file counts. Both default to 1, but either can be set to 0
+# when the caller (e.g. Run-E2E-Tests.ps1 with -TestsToRun move) only
+# needs the other journey's source files. Total may legitimately be 0
+# for callers that just need a workspace touched/created.
+if ($FileCount -lt 0) { $FileCount = 0 }
 if ($FileCount -gt 100) { $FileCount = 100 }  # Safety limit
+if ($MoveFileCount -lt 0) { $MoveFileCount = 0 }
+if ($MoveFileCount -gt 100) { $MoveFileCount = 100 }
+$TotalFileCount = $FileCount + $MoveFileCount
 
 # Validate and set chunk size (min 1MB, max 100MB)
 if ($ChunkSizeMB -lt 1) { $ChunkSizeMB = 1 }
@@ -175,7 +188,7 @@ if (-not $curlExe) {
 # ============================================================
 # VALIDATE PARAMETERS
 # ============================================================
-if (-not $SkipUpload) {
+if (-not $SkipUpload -and $TotalFileCount -gt 0) {
     if ($SizeGB -le 0 -and $SizeMB -le 0) {
         Write-Host ""
         Write-Host "ERROR: File size required!" -ForegroundColor Red
@@ -208,7 +221,7 @@ $TotalChunks = if ($FileSize -gt 0) { [Math]::Ceiling($FileSize / $ChunkSizeByte
 $IsLargeFile = $FileSize -gt (500 * 1024 * 1024)  # > 500MB
 
 # Calculate total upload size
-$TotalUploadSize = $FileSize * $FileCount
+$TotalUploadSize = $FileSize * $TotalFileCount
 $TotalUploadLabel = if ($TotalUploadSize -ge 1GB) {
     "$([Math]::Round($TotalUploadSize / 1GB, 2)) GB"
 } else {
@@ -223,7 +236,7 @@ Write-Host "========================================================" -Foregroun
 Write-Host "  EGRESS WORKSPACE SETUP & MULTI-FILE UPLOAD" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 if (-not $SkipUpload) {
-    Write-Host "File Count:   $FileCount file(s)"
+    Write-Host "File Count:   $TotalFileCount file(s) ($FileCount copy + $MoveFileCount move)"
     Write-Host "File Size:    $([Math]::Round($FileSize / 1MB, 2)) MB ($SizeLabel) each"
     Write-Host "Total Size:   $TotalUploadLabel"
     Write-Host "Chunk Size:   $ChunkSizeMB MB"
@@ -416,22 +429,26 @@ if ($SkipUpload) {
     # ============================================================
     $OverallStartTime = Get-Date
 
-    for ($fileIndex = 1; $fileIndex -le $FileCount; $fileIndex++) {
+    for ($fileIndex = 1; $fileIndex -le $TotalFileCount; $fileIndex++) {
+        if ($fileIndex -le $FileCount) {
+            $Journey = "copy"
+            $JourneyIndex = $fileIndex
+        } else {
+            $Journey = "move"
+            $JourneyIndex = $fileIndex - $FileCount
+        }
+
         Write-Host ""
         Write-Host "========================================================" -ForegroundColor Magenta
-        Write-Host "  UPLOADING FILE $fileIndex OF $FileCount" -ForegroundColor Magenta
+        Write-Host "  UPLOADING FILE $fileIndex OF $TotalFileCount ($Journey #$JourneyIndex)" -ForegroundColor Magenta
         Write-Host "========================================================" -ForegroundColor Magenta
 
         # Generate unique filename for this file
         $timestamp = Get-Date -Format "yyyy-MM-dd-HH-mm-ss"
         if ([string]::IsNullOrEmpty($FileName)) {
-            $CurrentFileName = "generated-$SizeLabel-$timestamp-file$fileIndex.txt"
+            $CurrentFileName = "$Journey-$SizeLabel-$timestamp-file$JourneyIndex.txt"
         } else {
-            if ($FileCount -gt 1) {
-                $CurrentFileName = "$FileName-$fileIndex.txt"
-            } else {
-                $CurrentFileName = "$FileName.txt"
-            }
+            $CurrentFileName = "$FileName-$Journey-$JourneyIndex.txt"
         }
 
         Write-Host "[6/8] Initiating upload for: $CurrentFileName" -ForegroundColor Yellow
@@ -525,7 +542,7 @@ if ($SkipUpload) {
                     [void]$sb.AppendLine("============================================================")
                     [void]$sb.AppendLine("Generated:   $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')")
                     [void]$sb.AppendLine("Filename:    $CurrentFileName")
-                    [void]$sb.AppendLine("File:        $fileIndex of $FileCount")
+                    [void]$sb.AppendLine("File:        $fileIndex of $TotalFileCount ($Journey #$JourneyIndex)")
                     [void]$sb.AppendLine("Size:        $([Math]::Round($FileSize / 1GB, 3)) GB ($FileSize bytes)")
                     [void]$sb.AppendLine("Workspace:   $WorkspaceName")
                     [void]$sb.AppendLine("WorkspaceId: $WorkspaceId")
@@ -656,31 +673,47 @@ if ($SkipUpload) {
 
         $FileId = ""
         $ActualFilePath = ""
-        $retryCount = if ($IsLargeFile) { $MaxFileIdRetries } else { 5 }
-        $retryDelay = if ($IsLargeFile) { $FileIdRetryDelaySeconds } else { 2 }
+        # Polling window: must be generous enough for Egress to register the
+        # canonical file ID before we give up and substitute the upload-session
+        # ID as a fallback. The fallback technically works for some downstream
+        # flows (the Copy journey) but trips up others (the Move journey hits
+        # 404 from EgressStorageClient.OpenReadStreamAsync) because Egress's
+        # storage layer can't always resolve an upload-session ID into a blob.
+        # 10s (the previous small-file default of 5x2s) was reliably too short.
+        $retryCount = if ($IsLargeFile) { $MaxFileIdRetries } else { 20 }
+        $retryDelay = if ($IsLargeFile) { $FileIdRetryDelaySeconds } else { 3 }
+
+        # Verify via the Egress list endpoint, which is filtered by ?path=<folder>
+        # (the same contract Clear-EgressFolder.ps1 uses). The folder must have no
+        # trailing slash; spaces are encoded per segment so the '/' separators stay
+        # literal -- EscapeDataString on the whole path turns '/' into %2F and
+        # breaks the match.
+        $folderForQuery = $ActualFolderPath.TrimEnd('/')
+        $encodedFolder = ($folderForQuery -split '/' | ForEach-Object { [uri]::EscapeDataString($_) }) -join '/'
 
         for ($i = 1; $i -le $retryCount; $i++) {
+            # Check first, sleep on miss -- a file that indexes instantly used
+            # to still pay the first $retryDelay before its only successful
+            # check.
+            if ($i -gt 1) { Start-Sleep -Seconds $retryDelay }
             Write-Host "  Attempt $i/$retryCount..." -NoNewline
 
-            Start-Sleep -Seconds $retryDelay
-
-            $filesResult = curl.exe --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId/files?folder_id=$FolderId" `
+            $filesResult = curl.exe --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId/files?path=$encodedFolder" `
                 --header "Authorization: Basic $TokenBase64"
 
             try {
+                # Egress wraps results in { "data": [...] } and entries expose
+                # `filename` + `id`; there is no isFolder/filesize field. Filename
+                # is the practical key here -- names are timestamped per upload and
+                # the folder is cleared per run, so it's unambiguous.
                 $filesObj = $filesResult | ConvertFrom-Json
-                $uploadedFile = $filesObj | Where-Object { $_.name -eq $CurrentFileName -and $_.isFolder -eq $false }
+                $uploadedFile = $filesObj.data | Where-Object { $_.filename -eq $CurrentFileName } | Select-Object -First 1
 
                 if ($uploadedFile) {
                     $FileId = $uploadedFile.id
-                    $ActualFilePath = if ($uploadedFile.path) { $uploadedFile.path + "/" } else { "" }
-
-                    if ($uploadedFile.filesize -eq $FileSize) {
-                        Write-Host " FOUND!" -ForegroundColor Green
-                        break
-                    } else {
-                        Write-Host " SIZE MISMATCH" -ForegroundColor Yellow
-                    }
+                    $ActualFilePath = if ($uploadedFile.path) { $uploadedFile.path + "/" } else { $ActualFolderPath }
+                    Write-Host " FOUND ($FileId)" -ForegroundColor Green
+                    break
                 } else {
                     Write-Host " not indexed yet" -ForegroundColor Gray
                 }
@@ -701,6 +734,8 @@ if ($SkipUpload) {
         # Add to tracking array
         $UploadedFiles += @{
             Index = $fileIndex
+            Journey = $Journey
+            JourneyIndex = $JourneyIndex
             FileName = $CurrentFileName
             FileId = $FileId
             UploadId = $UploadId
@@ -731,11 +766,11 @@ Write-Host "  User:           $UserEmail"
 Write-Host ""
 
 if (-not $SkipUpload -and $UploadedFiles.Count -gt 0) {
-    Write-Host "UPLOADED FILES ($($UploadedFiles.Count) of $FileCount):" -ForegroundColor Cyan
+    Write-Host "UPLOADED FILES ($($UploadedFiles.Count) of $TotalFileCount):" -ForegroundColor Cyan
     Write-Host ""
 
     foreach ($file in $UploadedFiles) {
-        Write-Host "  File $($file.Index):" -ForegroundColor White
+        Write-Host "  File $($file.Index) [$($file.Journey)]:" -ForegroundColor White
         Write-Host "    Name:     $($file.FileName)"
         Write-Host "    ID:       $($file.FileId)"
         Write-Host "    Size:     $([Math]::Round($file.FileSize / 1MB, 2)) MB"
@@ -759,20 +794,47 @@ Write-Host "========================================================" -Foregroun
 Write-Host "egressWorkspaceId = $WorkspaceId"
 Write-Host "egressWorkspaceName = $WorkspaceName"
 if (-not $SkipUpload -and $UploadedFiles.Count -gt 0) {
-    $firstFile = $UploadedFiles[0]
+    $copyFiles = @($UploadedFiles | Where-Object { $_.Journey -eq "copy" })
+    $moveFiles = @($UploadedFiles | Where-Object { $_.Journey -eq "move" })
+
+    # Backward-compat: egressFile* aliases the Copy file set so existing
+    # consumers (NetApp->Egress journey, etc.) keep working.
+    $firstFile = if ($copyFiles.Count -gt 0) { $copyFiles[0] } else { $UploadedFiles[0] }
     Write-Host "egressFileId = $($firstFile.FileId)"
     Write-Host "egressUploadId = $($firstFile.UploadId)"
     Write-Host "egressFolderId = $FolderId"
     Write-Host "egressFileName = $($firstFile.FileName)"
     Write-Host "egressUploadFolderPath = $($firstFile.FilePath)"
 
-    $allFileNames = ($UploadedFiles | ForEach-Object { $_.FileName }) -join ","
-    $allFileIds = ($UploadedFiles | ForEach-Object { $_.FileId }) -join ","
+    $copyFileNames = ($copyFiles | ForEach-Object { $_.FileName }) -join ","
+    $copyFileIds   = ($copyFiles | ForEach-Object { $_.FileId })   -join ","
+    $moveFileNames = ($moveFiles | ForEach-Object { $_.FileName }) -join ","
+    $moveFileIds   = ($moveFiles | ForEach-Object { $_.FileId })   -join ","
+
     Write-Host ""
-    Write-Host "# All files (comma-separated):"
-    Write-Host "egressFileNames = $allFileNames"
-    Write-Host "egressFileIds = $allFileIds"
-    Write-Host "egressFileCount = $($UploadedFiles.Count)"
+    Write-Host "# Copy journey files (comma-separated):"
+    Write-Host "egressCopyFileId = $($firstFile.FileId)"
+    Write-Host "egressCopyFileName = $($firstFile.FileName)"
+    Write-Host "egressCopyFileIds = $copyFileIds"
+    Write-Host "egressCopyFileNames = $copyFileNames"
+    Write-Host "egressCopyFileCount = $($copyFiles.Count)"
+
+    Write-Host ""
+    Write-Host "# Move journey files (comma-separated):"
+    if ($moveFiles.Count -gt 0) {
+        $firstMoveFile = $moveFiles[0]
+        Write-Host "egressMoveFileId = $($firstMoveFile.FileId)"
+        Write-Host "egressMoveFileName = $($firstMoveFile.FileName)"
+    }
+    Write-Host "egressMoveFileIds = $moveFileIds"
+    Write-Host "egressMoveFileNames = $moveFileNames"
+    Write-Host "egressMoveFileCount = $($moveFiles.Count)"
+
+    Write-Host ""
+    Write-Host "# Legacy alias (= Copy set):"
+    Write-Host "egressFileNames = $copyFileNames"
+    Write-Host "egressFileIds = $copyFileIds"
+    Write-Host "egressFileCount = $($copyFiles.Count)"
 }
 Write-Host ""
 
@@ -782,18 +844,29 @@ Write-Host "========================================================" -Foregroun
 Write-Host "##vso[task.setvariable variable=egressWorkspaceId]$WorkspaceId"
 Write-Host "##vso[task.setvariable variable=egressWorkspaceName]$WorkspaceName"
 if (-not $SkipUpload -and $UploadedFiles.Count -gt 0) {
-    $firstFile = $UploadedFiles[0]
     Write-Host "##vso[task.setvariable variable=egressFileId]$($firstFile.FileId)"
     Write-Host "##vso[task.setvariable variable=egressUploadId]$($firstFile.UploadId)"
     Write-Host "##vso[task.setvariable variable=egressFolderId]$FolderId"
     Write-Host "##vso[task.setvariable variable=egressFileName]$($firstFile.FileName)"
     Write-Host "##vso[task.setvariable variable=egressUploadFolderPath]$($firstFile.FilePath)"
 
-    $allFileNames = ($UploadedFiles | ForEach-Object { $_.FileName }) -join ","
-    $allFileIds = ($UploadedFiles | ForEach-Object { $_.FileId }) -join ","
-    Write-Host "##vso[task.setvariable variable=egressFileNames]$allFileNames"
-    Write-Host "##vso[task.setvariable variable=egressFileIds]$allFileIds"
-    Write-Host "##vso[task.setvariable variable=egressFileCount]$($UploadedFiles.Count)"
+    Write-Host "##vso[task.setvariable variable=egressCopyFileId]$($firstFile.FileId)"
+    Write-Host "##vso[task.setvariable variable=egressCopyFileName]$($firstFile.FileName)"
+    Write-Host "##vso[task.setvariable variable=egressCopyFileIds]$copyFileIds"
+    Write-Host "##vso[task.setvariable variable=egressCopyFileNames]$copyFileNames"
+    Write-Host "##vso[task.setvariable variable=egressCopyFileCount]$($copyFiles.Count)"
+
+    if ($moveFiles.Count -gt 0) {
+        Write-Host "##vso[task.setvariable variable=egressMoveFileId]$($firstMoveFile.FileId)"
+        Write-Host "##vso[task.setvariable variable=egressMoveFileName]$($firstMoveFile.FileName)"
+    }
+    Write-Host "##vso[task.setvariable variable=egressMoveFileIds]$moveFileIds"
+    Write-Host "##vso[task.setvariable variable=egressMoveFileNames]$moveFileNames"
+    Write-Host "##vso[task.setvariable variable=egressMoveFileCount]$($moveFiles.Count)"
+
+    Write-Host "##vso[task.setvariable variable=egressFileNames]$copyFileNames"
+    Write-Host "##vso[task.setvariable variable=egressFileIds]$copyFileIds"
+    Write-Host "##vso[task.setvariable variable=egressFileCount]$($copyFiles.Count)"
 }
 Write-Host ""
 
@@ -812,14 +885,23 @@ if (-not $SkipUpload -and $UploadedFiles.Count -gt 0) {
     Write-Host "  JSON OUTPUT (for programmatic parsing)" -ForegroundColor DarkGray
     Write-Host "========================================================" -ForegroundColor DarkGray
 
-    $jsonOutput = @{
+    # [ordered] so the emitted JSON property order is deterministic.
+    # Run-E2E-Tests.ps1 now matches the upload-summary line by shape
+    # (workspaceId + files present) rather than the literal first
+    # property, but keeping a stable order makes the log easier to
+    # diff between runs and avoids surprising any downstream consumer.
+    $jsonOutput = [ordered]@{
         workspaceId = $WorkspaceId
         workspaceName = $WorkspaceName
         folderId = $FolderId
         fileCount = $UploadedFiles.Count
+        copyFileCount = $copyFiles.Count
+        moveFileCount = $moveFiles.Count
         files = $UploadedFiles | ForEach-Object {
-            @{
+            [ordered]@{
                 index = $_.Index
+                journey = $_.Journey
+                journeyIndex = $_.JourneyIndex
                 fileName = $_.FileName
                 fileId = $_.FileId
                 uploadId = $_.UploadId

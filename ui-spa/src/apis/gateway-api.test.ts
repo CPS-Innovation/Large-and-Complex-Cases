@@ -439,6 +439,7 @@ describe("gateway apis", () => {
 
       const result = await connectEgressWorkspace({
         workspaceId: "thunder_1",
+        workspaceName: "thunder",
         caseId: "123",
       });
       expect(result).toEqual({ ok: true });
@@ -453,6 +454,7 @@ describe("gateway apis", () => {
           },
           body: JSON.stringify({
             egressWorkspaceId: "thunder_1",
+            egressWorkspaceName: "thunder",
             caseId: 123,
           }),
         }),
@@ -471,6 +473,7 @@ describe("gateway apis", () => {
       await expect(
         connectEgressWorkspace({
           workspaceId: "thunder_1",
+          workspaceName: "thunder",
           caseId: "123",
         }),
       ).rejects.toThrow(ApiError);
@@ -486,6 +489,7 @@ describe("gateway apis", () => {
           },
           body: JSON.stringify({
             egressWorkspaceId: "thunder_1",
+            egressWorkspaceName: "thunder",
             caseId: 123,
           }),
         }),
@@ -929,7 +933,14 @@ describe("gateway apis", () => {
         json: async () => mockData,
       });
 
-      const result = await getEgressFolders("thunder", "folder-1", 0, 50, []);
+      const result = await getEgressFolders(
+        "thunder",
+        "folder-1",
+        "folder-id",
+        0,
+        50,
+        [],
+      );
       expect(result).toEqual(mockData.data);
       expect(fetch).toHaveBeenCalledWith(
         "gateway_url/api/v1/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50",
@@ -961,7 +972,14 @@ describe("gateway apis", () => {
         json: async () => mockData,
       });
 
-      const result = await getEgressFolders("thunder", "folder-1", 0, 50, []);
+      const result = await getEgressFolders(
+        "thunder",
+        "folder-1",
+        "folder-id",
+        0,
+        50,
+        [],
+      );
       expect(result).toEqual(mockData.data);
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenNthCalledWith(
@@ -1000,7 +1018,7 @@ describe("gateway apis", () => {
       });
 
       await expect(
-        getEgressFolders("thunder", "folder-1", 0, 50, []),
+        getEgressFolders("thunder", "folder-1", "folder-id", 0, 50, []),
       ).rejects.toThrow(
         new ApiError(
           `Getting egress folders failed`,
@@ -1035,10 +1053,10 @@ describe("gateway apis", () => {
       });
 
       await expect(
-        getEgressFolders("thunder", "folder-1", 0, 50, []),
+        getEgressFolders("thunder", "folder-1", "folder-id", 0, 50, []),
       ).rejects.toBeInstanceOf(ApiError);
       await expect(
-        getEgressFolders("thunder", "folder-1", 0, 50, []),
+        getEgressFolders("thunder", "folder-1", "folder-id", 0, 50, []),
       ).rejects.toThrow(
         "An error occurred contacting the server at gateway_url/api/v1/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50: SyntaxError: Unexpected token < in JSON",
       );
@@ -1064,10 +1082,10 @@ describe("gateway apis", () => {
       });
 
       await expect(
-        getEgressFolders("thunder", "folder-1", 0, 50, []),
+        getEgressFolders("thunder", "folder-1", "folder-id", 0, 50, []),
       ).rejects.toBeInstanceOf(ApiError);
       await expect(
-        getEgressFolders("thunder", "folder-1", 0, 50, []),
+        getEgressFolders("thunder", "folder-1", "folder-id", 0, 50, []),
       ).rejects.toThrow(
         "An error occurred contacting the server at gateway_url/api/v1/egress/workspaces/thunder/files?folder-id=folder-1&skip=0&take=50: response schema validation failed; status - OK (200)",
       );
@@ -1695,25 +1713,33 @@ describe("gateway apis", () => {
   describe("getTransferStatus", () => {
     it("getTransferStatus - should return transferStatus when fetch is successful", async () => {
       const mockData = {
+        id: "00000000-0000-4000-8000-000000000001",
         status: "Completed",
         transferType: "Copy",
         direction: "EgressToNetApp",
+        startedAt: null,
         completedAt: null,
         failedItems: [],
         userName: "dev_user@example.org",
         totalFiles: 30,
         processedFiles: 30,
+        successfulFiles: 30,
+        failedFiles: 0,
+        successfulItems: [],
+        destinationPath: "",
       };
 
       (v4 as any).mockReturnValue("id_123");
       (getAccessToken as any).mockResolvedValue("access_token");
       (fetch as any).mockResolvedValue({
         ok: true,
+        status: 200,
         json: async () => mockData,
+        headers: { get: () => null },
       });
 
       const result = await getTransferStatus("transfer_id_1");
-      expect(result).toEqual(mockData);
+      expect(result).toEqual({ data: mockData, etag: null });
       expect(fetch).toHaveBeenCalledWith(
         `gateway_url/api/v1/filetransfer/transfer_id_1/status`,
         expect.objectContaining({
@@ -1723,6 +1749,90 @@ describe("gateway apis", () => {
             Authorization: "Bearer access_token",
             "Correlation-Id": "id_123",
           },
+        }),
+      );
+    });
+
+    it("getTransferStatus - should return transferStatus with etag when server sends ETag header", async () => {
+      const mockData = {
+        id: "00000000-0000-4000-8000-000000000001",
+        status: "InProgress",
+        transferType: "Copy",
+        direction: "EgressToNetApp",
+        startedAt: null,
+        completedAt: null,
+        failedItems: [],
+        userName: "dev_user@example.org",
+        totalFiles: 10,
+        processedFiles: 5,
+        successfulFiles: 5,
+        failedFiles: 0,
+        successfulItems: [],
+        destinationPath: "",
+      };
+
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => mockData,
+        headers: {
+          get: (name: string) => (name === "ETag" ? '"12345"' : null),
+        },
+      });
+
+      const result = await getTransferStatus("transfer_id_1");
+      expect(result).toEqual({ data: mockData, etag: '"12345"' });
+    });
+
+    it("getTransferStatus - should return null data on 304 Not Modified", async () => {
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: false,
+        status: 304,
+        headers: { get: () => null },
+      });
+
+      const result = await getTransferStatus("transfer_id_1", '"12345"');
+      expect(result).toEqual({ data: null, etag: '"12345"' });
+    });
+
+    it("getTransferStatus - should send If-None-Match header when etag is provided", async () => {
+      const mockData = {
+        id: "00000000-0000-4000-8000-000000000001",
+        status: "Completed",
+        transferType: "Copy",
+        direction: "EgressToNetApp",
+        startedAt: null,
+        completedAt: null,
+        failedItems: [],
+        userName: "dev_user@example.org",
+        totalFiles: 30,
+        processedFiles: 30,
+        successfulFiles: 30,
+        failedFiles: 0,
+        successfulItems: [],
+        destinationPath: "",
+      };
+
+      (v4 as any).mockReturnValue("id_123");
+      (getAccessToken as any).mockResolvedValue("access_token");
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => mockData,
+        headers: { get: () => null },
+      });
+
+      await getTransferStatus("transfer_id_1", '"previous-etag"');
+      expect(fetch).toHaveBeenCalledWith(
+        `gateway_url/api/v1/filetransfer/transfer_id_1/status`,
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            "If-None-Match": '"previous-etag"',
+          }),
         }),
       );
     });
@@ -1766,6 +1876,7 @@ describe("gateway apis", () => {
         statusText: "OK",
         json: () =>
           Promise.reject(new SyntaxError("Unexpected token < in JSON")),
+        headers: { get: () => null },
       });
 
       await expect(getTransferStatus("transfer_id_1")).rejects.toBeInstanceOf(
@@ -1785,6 +1896,8 @@ describe("gateway apis", () => {
         userName: "dev_user@example.org",
         totalFiles: 30,
         processedFiles: 30,
+        successfulItems: [],
+        destinationPath: "",
       };
 
       (v4 as any).mockReturnValue("id_123");
@@ -1794,6 +1907,7 @@ describe("gateway apis", () => {
         status: 200,
         statusText: "OK",
         json: async () => mockData,
+        headers: { get: () => null },
       });
 
       await expect(getTransferStatus("transfer_id_1")).rejects.toBeInstanceOf(

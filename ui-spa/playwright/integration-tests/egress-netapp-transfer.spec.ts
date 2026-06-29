@@ -1,5 +1,14 @@
 import { expect, test } from "./utils/test";
 import { delay, HttpResponse, http } from "msw";
+
+const MOCK_TRANSFER_ID = "00000000-0000-4000-8000-000000000001";
+const BASE_TRANSFER_STATUS = {
+  id: MOCK_TRANSFER_ID,
+  startedAt: null,
+  successfulFiles: 0,
+  failedFiles: 0,
+};
+
 test.describe("egress-netapp-transfer", () => {
   test.describe("egress-netapp: transfer selection, confirmation and happy path", () => {
     test.beforeEach(async ({ page }) => {
@@ -431,6 +440,7 @@ test.describe("egress-netapp-transfer", () => {
           async () => {
             await delay(10);
             return HttpResponse.json({
+              ...BASE_TRANSFER_STATUS,
               status: "Completed",
               transferType: "Move",
               direction: "EgressToNetApp",
@@ -439,6 +449,9 @@ test.describe("egress-netapp-transfer", () => {
               userName: "dev_user@example.org",
               totalFiles: 2,
               processedFiles: 2,
+              successfulFiles: 2,
+              successfulItems: [],
+              destinationPath: "",
             });
           },
         ),
@@ -532,6 +545,7 @@ test.describe("egress-netapp-transfer", () => {
         async () => {
           await delay(10);
           return HttpResponse.json({
+            ...BASE_TRANSFER_STATUS,
             status: "Initiated",
             transferType: "Copy",
             direction: "EgressToNetApp",
@@ -540,6 +554,8 @@ test.describe("egress-netapp-transfer", () => {
             userName: "dev_user@example.org",
             totalFiles: 0,
             processedFiles: 0,
+            successfulItems: [],
+            destinationPath: "",
           });
         },
       ),
@@ -570,6 +586,7 @@ test.describe("egress-netapp-transfer", () => {
         async () => {
           await delay(10);
           return HttpResponse.json({
+            ...BASE_TRANSFER_STATUS,
             status: "Initiated",
             transferType: "Copy",
             direction: "EgressToNetApp",
@@ -578,6 +595,8 @@ test.describe("egress-netapp-transfer", () => {
             userName: "dev_user@example.org",
             totalFiles: 10,
             processedFiles: 0,
+            successfulItems: [],
+            destinationPath: "",
           });
         },
       ),
@@ -592,6 +611,7 @@ test.describe("egress-netapp-transfer", () => {
         async () => {
           await delay(10);
           return HttpResponse.json({
+            ...BASE_TRANSFER_STATUS,
             status: "InProgress",
             transferType: "Copy",
             direction: "EgressToNetApp",
@@ -600,6 +620,8 @@ test.describe("egress-netapp-transfer", () => {
             userName: "dev_user@example.org",
             totalFiles: 30,
             processedFiles: 20,
+            successfulItems: [],
+            destinationPath: "",
           });
         },
       ),
@@ -625,6 +647,7 @@ test.describe("egress-netapp-transfer", () => {
         async () => {
           await delay(10);
           return HttpResponse.json({
+            ...BASE_TRANSFER_STATUS,
             status: "Completed",
             transferType: "Copy",
             direction: "EgressToNetApp",
@@ -633,6 +656,9 @@ test.describe("egress-netapp-transfer", () => {
             userName: "dev_user@example.org",
             totalFiles: 30,
             processedFiles: 30,
+            successfulFiles: 30,
+            successfulItems: [],
+            destinationPath: "",
           });
         },
       ),
@@ -677,6 +703,7 @@ test.describe("egress-netapp-transfer", () => {
         async () => {
           await delay(10);
           return HttpResponse.json({
+            ...BASE_TRANSFER_STATUS,
             status: "Initiated",
             transferType: "Copy",
             direction: "EgressToNetApp",
@@ -685,6 +712,8 @@ test.describe("egress-netapp-transfer", () => {
             userName: "abc@example.org",
             totalFiles: 30,
             processedFiles: 0,
+            successfulItems: [],
+            destinationPath: "",
           });
         },
       ),
@@ -711,6 +740,7 @@ test.describe("egress-netapp-transfer", () => {
         async () => {
           await delay(10);
           return HttpResponse.json({
+            ...BASE_TRANSFER_STATUS,
             status: "InProgress",
             transferType: "Copy",
             direction: "EgressToNetApp",
@@ -719,6 +749,8 @@ test.describe("egress-netapp-transfer", () => {
             userName: "abc@example.org",
             totalFiles: 30,
             processedFiles: 20,
+            successfulItems: [],
+            destinationPath: "",
           });
         },
       ),
@@ -739,6 +771,7 @@ test.describe("egress-netapp-transfer", () => {
         "https://mocked-out-api/api/v1/filetransfer/mock-transfer-id/status",
         async () => {
           return HttpResponse.json({
+            ...BASE_TRANSFER_STATUS,
             status: "Completed",
             transferType: "Copy",
             direction: "EgressToNetApp",
@@ -747,6 +780,9 @@ test.describe("egress-netapp-transfer", () => {
             userName: "abc@example.org",
             totalFiles: 30,
             processedFiles: 30,
+            successfulFiles: 30,
+            successfulItems: [],
+            destinationPath: "",
           });
         },
       ),
@@ -881,6 +917,7 @@ test.describe("egress-netapp-transfer", () => {
         async () => {
           await delay(10);
           return HttpResponse.json({
+            ...BASE_TRANSFER_STATUS,
             status: "InProgress",
             transferType: "Copy",
             direction: "EgressToNetApp",
@@ -889,6 +926,8 @@ test.describe("egress-netapp-transfer", () => {
             userName: "abc@example.org",
             totalFiles: 30,
             processedFiles: 2,
+            successfulItems: [],
+            destinationPath: "",
           });
         },
       ),

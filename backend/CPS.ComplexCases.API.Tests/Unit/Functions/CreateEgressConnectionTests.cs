@@ -54,7 +54,6 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 _caseMetadataServiceMock.Object,
                 _egressClientMock.Object,
                 _egressArgFactoryMock.Object,
-                _loggerMock.Object,
                 _activityLogServiceMock.Object,
                 _requestValidatorMock.Object,
                 _initializationHandlerMock.Object);
@@ -154,7 +153,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                     ActivityLog.Enums.ResourceType.StorageConnection,
                     egressConnectionRequest.CaseId,
                     egressConnectionRequest.EgressWorkspaceId,
-                    egressConnectionRequest.EgressWorkspaceId,
+                    egressConnectionRequest.EgressWorkspaceName,
                     _testUsername,
                     null))
                 .Returns(Task.CompletedTask);
@@ -174,7 +173,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 ActivityLog.Enums.ResourceType.StorageConnection,
                 egressConnectionRequest.CaseId,
                 egressConnectionRequest.EgressWorkspaceId,
-                egressConnectionRequest.EgressWorkspaceId,
+                egressConnectionRequest.EgressWorkspaceName,
                 _testUsername,
                 null), Times.Once);
         }

@@ -165,14 +165,17 @@ export const getEgressSearchResults = async (
 
 export const connectEgressWorkspace = async ({
   workspaceId,
+  workspaceName,
   caseId,
 }: {
   workspaceId: string;
+  workspaceName: string;
   caseId: string;
 }) => {
   const payload: ConnectEgressPayload = {
     egressWorkspaceId: workspaceId,
-    caseId: parseInt(caseId),
+    egressWorkspaceName: workspaceName,
+    caseId: Number.parseInt(caseId),
   };
   const validatedData = connectEgressPayloadSchema.safeParse(payload);
   if (!validatedData.success) {
@@ -258,7 +261,7 @@ export const connectNetAppFolder = async ({
   const payload: ConnectNetAppPayload = {
     operationName: operationName,
     folderPath: folderPath,
-    caseId: parseInt(caseId),
+    caseId: Number.parseInt(caseId),
   };
   const validatedData = connectNetAppPayloadSchema.safeParse(payload);
   if (!validatedData.success) {
@@ -322,13 +325,20 @@ export const getCaseMetaData = async (caseId: string) => {
 
 export const getEgressFolders = async (
   workspaceId: string,
-  folderId: string,
+  folderIdOrPath: string,
+  folderParamKey: "folder-id" | "path" = "folder-id",
   skip: number = 0,
   take: number = 50,
   collected: EgressFolderData = [],
 ): Promise<EgressFolderData> => {
+  let folderParam: { "folder-id"?: string } | { path?: string } = {
+    "folder-id": folderIdOrPath,
+  };
+
+  if (folderParamKey === "path")
+    folderParam = { path: folderIdOrPath.replace(/\/$/, "") };
   const params = new URLSearchParams({
-    "folder-id": folderId,
+    ...folderParam,
     skip: `${skip}`,
     take: `${take}`,
   });
@@ -356,7 +366,14 @@ export const getEgressFolders = async (
   if (skip + take >= pagination.totalResults) {
     return updated;
   }
-  return getEgressFolders(workspaceId, folderId, skip + take, take, updated);
+  return getEgressFolders(
+    workspaceId,
+    folderIdOrPath,
+    folderParamKey,
+    skip + take,
+    take,
+    updated,
+  );
 };
 
 export const getNetAppFolders = async (
@@ -476,7 +493,10 @@ export const initiateFileTransfer = async (
   return result;
 };
 
-export const getTransferStatus = async (transferId: string) => {
+export const getTransferStatus = async (
+  transferId: string,
+  etag?: string,
+): Promise<{ data: TransferStatusResponse | null; etag: string | null }> => {
   const url = `${GATEWAY_BASE_URL}/api/v1/filetransfer/${transferId}/status`;
 
   const response = await fetch(url, {
@@ -484,19 +504,25 @@ export const getTransferStatus = async (transferId: string) => {
     credentials: "include",
     headers: {
       ...(await buildCommonHeaders()),
+      ...(etag ? { "If-None-Match": etag } : {}),
     },
   });
+
+  if (response.status === 304) {
+    return { data: null, etag: etag ?? null };
+  }
 
   if (!response.ok) {
     throw new ApiError(`Getting case transfer status failed`, url, response);
   }
+
   const result = await parseAndValidateResponse<TransferStatusResponse>(
     response,
     url,
     transferStatusResponseSchema,
     "transferStatusResponseSchema",
   );
-  return result;
+  return { data: result, etag: response.headers.get("ETag") };
 };
 
 export const handleFileTransferClear = async (transferId: string) => {

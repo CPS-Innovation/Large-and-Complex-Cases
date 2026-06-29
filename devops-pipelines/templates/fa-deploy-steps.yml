@@ -1,19 +1,19 @@
 parameters:
-  environment: ''
-  functionAppName: ''
-  buildArtifactName: ''
-  pipelineResource: 'current'
+  environment: ""
+  functionAppName: ""
+  buildArtifactName: ""
+  pipelineResource: "current"
   keyVaultName: $(keyVaultName)
-  azureSubscription: ''
+  azureSubscription: ""
   resourceGroupName: $(resourceGroupName)
   deployToSlot: false
   runPostmanSmokeTest: false
-  postmanCollectionPath: ''
-  slotName: ''
+  postmanCollectionPath: ""
+  slotName: ""
 
 steps:
-  - download: '${{ parameters.pipelineResource}}'
-    artifact: '${{ parameters.buildArtifactName }}'
+  - download: "${{ parameters.pipelineResource}}"
+    artifact: "${{ parameters.buildArtifactName }}"
 
   - template: ../templates/fa-config-steps.yml
     parameters:
@@ -25,17 +25,17 @@ steps:
       slotName: ${{ parameters.slotName }}
 
   - task: AzureFunctionApp@2
-    displayName: 'Deploy Package to Azure Function App'
+    displayName: "Deploy Package to Azure Function App"
     inputs:
       azureSubscription: ${{ parameters.azureSubscription }}
-      appType: 'functionApp'
+      appType: "functionApp"
       appName: ${{ parameters.functionAppName }}
-      ${{ if eq(parameters.pipelineResource, 'current') }}: 
-        package: '$(Pipeline.Workspace)/${{ parameters.buildArtifactName }}/*.zip'
+      ${{ if eq(parameters.pipelineResource, 'current') }}:
+        package: "$(Pipeline.Workspace)/${{ parameters.buildArtifactName }}/*.zip"
       ${{ else }}:
-        package: '$(Pipeline.Workspace)/${{ parameters.pipelineResource}}/${{ parameters.buildArtifactName }}/*.zip'
-      runtimeStack: 'DOTNET-ISOLATED|10.0'
-      deploymentMethod: 'runFromPackage'
+        package: "$(Pipeline.Workspace)/${{ parameters.pipelineResource}}/${{ parameters.buildArtifactName }}/*.zip"
+      runtimeStack: "DOTNET-ISOLATED|10.0"
+      deploymentMethod: "runFromPackage"
       deployToSlotOrASE: ${{ parameters.deployToSlot }}
       slotName: ${{ parameters.slotName }}
       resourceGroupName: ${{ parameters.resourceGroupName }}
@@ -45,12 +45,12 @@ steps:
     fetchDepth: 1
 
   - task: Bash@3
-    displayName: 'Ensure Azure CLI'
+    displayName: "Ensure Azure CLI"
     inputs:
-      targetType: 'inline'
+      targetType: "inline"
       script: |
         echo "Checking if Azure CLI is installed..."
-        
+
         # Check if az command exists
         if command -v az &> /dev/null; then
           echo "Azure CLI is already installed"
@@ -62,11 +62,11 @@ steps:
         bash '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/installAzureCli.sh'
 
   - task: AzureCLI@2
-    displayName: 'Verify Function App Deployment'
+    displayName: "Verify Function App Deployment"
     inputs:
       azureSubscription: ${{ parameters.azureSubscription }}
-      scriptType: 'bash'
-      scriptLocation: 'inlineScript'
+      scriptType: "bash"
+      scriptLocation: "inlineScript"
       inlineScript: |
         bash '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/verifyDeployment.sh'
     env:
@@ -77,15 +77,15 @@ steps:
       SLOT_NAME: ${{ parameters.slotName }}
 
   - task: Bash@3
-    displayName: 'Check Function App Health'
+    displayName: "Check Function App Health"
     condition: and(succeeded(), ${{ eq(parameters.runPostmanSmokeTest, false) }})
     inputs:
-      targetType: 'inline'
+      targetType: "inline"
       script: |
         # Curl the app's Health API endpoint
         echo "CURLing the live instance's Health API endpoint..."
         HTTP_CODE=$(curl -X GET -s -o /dev/null -I -w "%{http_code}" "https://$(instanceName).azurewebsites.net/api/status")
-        
+
         if [ "$HTTP_CODE" != "200" ]; then
           echo "##[error]The endpoint did not return a 200 response."
           echo "##[error]The HTTP code recieved was: "$HTTP_CODE"."
@@ -96,11 +96,11 @@ steps:
         echo "✅ Function app is responsive and in a healthy state."
 
   - ${{ if eq(parameters.runPostmanSmokeTest, true) }}:
-    - template: ../templates/smoke-test-steps.yml
-      parameters:
-        environment: ${{parameters.environment}}
-        postmanCollectionPath: ${{parameters.postmanCollectionPath}}
-        appInstance: $(instanceName)
+      - template: ../templates/smoke-test-steps.yml
+        parameters:
+          environment: ${{parameters.environment}}
+          postmanCollectionPath: ${{parameters.postmanCollectionPath}}
+          appInstance: $(instanceName)
 
   - task: AzureAppServiceManage@0
     condition: and(succeeded(), ${{ eq(parameters.deployToSlot, true) }})
@@ -110,4 +110,4 @@ steps:
       WebAppName: ${{ parameters.functionAppName }}
       ResourceGroupName: ${{ parameters.resourceGroupName }}
       SourceSlot: ${{ parameters.slotName }}
-      SwapWithProduction: true 
+      SwapWithProduction: true

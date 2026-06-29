@@ -8,6 +8,7 @@ using AutoFixture.AutoMoq;
 using CPS.ComplexCases.Common.Constants;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Requests;
+using CPS.ComplexCases.FileTransfer.API.Dtos;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Functions;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
@@ -39,6 +40,8 @@ public class GetTransferStatusTests
         _correlationId = _fixture.Create<Guid>().ToString();
 
         _httpRequestMock.Setup(r => r.Headers).Returns(_headersMock.Object);
+        _httpRequestMock.Setup(r => r.HttpContext).Returns(new DefaultHttpContext());
+
         _headersMock.Setup(h => h[HttpHeaderKeys.CorrelationId])
             .Returns(new StringValues(_correlationId));
 
@@ -53,7 +56,7 @@ public class GetTransferStatusTests
     }
 
     [Fact]
-    public async Task Run_WithValidTransferId_ReturnsOkResultWithTransferState()
+    public async Task Run_WithValidTransferId_ReturnsOkResultWithTransferStatusDto()
     {
         // Arrange
         var transferEntity = CreateValidTransferEntity();
@@ -71,18 +74,79 @@ public class GetTransferStatusTests
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
         Assert.NotNull(okResult.Value);
-        var returnedEntity = Assert.IsType<TransferEntity>(okResult.Value);
-        Assert.Equal(transferEntity.Id, returnedEntity.Id);
-        Assert.Equal(transferEntity.Status, returnedEntity.Status);
-        Assert.Equal(transferEntity.DestinationPath, returnedEntity.DestinationPath);
-        Assert.Equal(transferEntity.SourcePaths, returnedEntity.SourcePaths);
-        Assert.Equal(transferEntity.CaseId, returnedEntity.CaseId);
-        Assert.Equal(transferEntity.TransferType, returnedEntity.TransferType);
-        Assert.Equal(transferEntity.Direction, returnedEntity.Direction);
-        Assert.Equal(transferEntity.TotalFiles, returnedEntity.TotalFiles);
-        Assert.Equal(transferEntity.IsRetry, returnedEntity.IsRetry);
-        Assert.Equal(transferEntity.CreatedAt, returnedEntity.CreatedAt);
-        Assert.Equal(transferEntity.UpdatedAt, returnedEntity.UpdatedAt);
+        var returnedDto = Assert.IsType<TransferStatusDto>(okResult.Value);
+        Assert.Equal(transferEntity.Status, returnedDto.Status);
+        Assert.Equal(transferEntity.TransferType, returnedDto.TransferType);
+        Assert.Equal(transferEntity.Direction, returnedDto.Direction);
+        Assert.Equal(transferEntity.DestinationPath, returnedDto.DestinationPath);
+        Assert.Equal(transferEntity.TotalFiles, returnedDto.TotalFiles);
+        Assert.Equal(transferEntity.ProcessedFiles, returnedDto.ProcessedFiles);
+        Assert.Equal(transferEntity.UserName, returnedDto.UserName);
+    }
+
+    [Fact]
+    public async Task Run_WithValidTransferId_SetsETagResponseHeader()
+    {
+        // Arrange
+        var transferEntity = CreateValidTransferEntity();
+        var httpContext = new DefaultHttpContext();
+        _httpRequestMock.Setup(r => r.HttpContext).Returns(httpContext);
+
+        var stub = new DurableEntityClientStub("FileTransferEntities")
+        {
+            OnGetEntityAsync = (id, _) => Task.FromResult<EntityMetadata<TransferEntity>?>(new EntityMetadata<TransferEntity>(id, transferEntity))
+        };
+        var durableTaskClientStub = new DurableTaskClientStub(stub);
+
+        // Act
+        await _function.Run(_httpRequestMock.Object, durableTaskClientStub, _transferId);
+
+        // Assert
+        Assert.True(httpContext.Response.Headers.ContainsKey("ETag"));
+        Assert.Equal($"\"{transferEntity.UpdatedAt.Ticks}\"", httpContext.Response.Headers["ETag"].ToString());
+    }
+
+    [Fact]
+    public async Task Run_WhenIfNoneMatchMatchesETag_Returns304()
+    {
+        // Arrange
+        var transferEntity = CreateValidTransferEntity();
+        var etag = $"\"{transferEntity.UpdatedAt.Ticks}\"";
+
+        _headersMock.Setup(h => h["If-None-Match"]).Returns(new StringValues(etag));
+
+        var stub = new DurableEntityClientStub("FileTransferEntities")
+        {
+            OnGetEntityAsync = (id, _) => Task.FromResult<EntityMetadata<TransferEntity>?>(new EntityMetadata<TransferEntity>(id, transferEntity))
+        };
+        var durableTaskClientStub = new DurableTaskClientStub(stub);
+
+        // Act
+        var result = await _function.Run(_httpRequestMock.Object, durableTaskClientStub, _transferId);
+
+        // Assert
+        var statusResult = Assert.IsType<StatusCodeResult>(result);
+        Assert.Equal(304, statusResult.StatusCode);
+    }
+
+    [Fact]
+    public async Task Run_WhenIfNoneMatchDiffersFromETag_ReturnsOkWithDto()
+    {
+        // Arrange
+        var transferEntity = CreateValidTransferEntity();
+        _headersMock.Setup(h => h["If-None-Match"]).Returns(new StringValues("\"stale-etag\""));
+
+        var stub = new DurableEntityClientStub("FileTransferEntities")
+        {
+            OnGetEntityAsync = (id, _) => Task.FromResult<EntityMetadata<TransferEntity>?>(new EntityMetadata<TransferEntity>(id, transferEntity))
+        };
+        var durableTaskClientStub = new DurableTaskClientStub(stub);
+
+        // Act
+        var result = await _function.Run(_httpRequestMock.Object, durableTaskClientStub, _transferId);
+
+        // Assert
+        Assert.IsType<OkObjectResult>(result);
     }
 
     [Fact]
@@ -131,7 +195,7 @@ public class GetTransferStatusTests
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            var returned = Assert.IsType<TransferEntity>(okResult.Value);
+            var returned = Assert.IsType<TransferStatusDto>(okResult.Value);
             Assert.Equal(status, returned.Status);
         }
     }
@@ -169,6 +233,125 @@ public class GetTransferStatusTests
         // Assert
         var notFound = Assert.IsType<NotFoundObjectResult>(result);
         Assert.NotNull(notFound.Value);
+    }
+
+    [Fact]
+    public async Task Run_ResponseDtoExcludesSensitiveFields()
+    {
+        // Arrange — entity has BearerToken and large lists that should not appear in the DTO
+        var transferEntity = CreateValidTransferEntity();
+        transferEntity.Status = TransferStatus.Completed;
+        transferEntity.BearerToken = "sensitive-bearer-token";
+        transferEntity.SuccessfulItems.Add(new TransferItem
+        {
+            SourcePath = "/path/file.txt",
+            Status = TransferItemStatus.Completed,
+            IsRenamed = false,
+            Size = 1024
+        });
+
+        var stub = new DurableEntityClientStub("FileTransferEntities")
+        {
+            OnGetEntityAsync = (id, _) => Task.FromResult<EntityMetadata<TransferEntity>?>(new EntityMetadata<TransferEntity>(id, transferEntity))
+        };
+        var durableTaskClientStub = new DurableTaskClientStub(stub);
+
+        // Act
+        var result = await _function.Run(_httpRequestMock.Object, durableTaskClientStub, _transferId);
+
+        // Assert — result is a DTO, not the full entity
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var dto = Assert.IsType<TransferStatusDto>(okResult.Value);
+        Assert.IsNotType<TransferEntity>(okResult.Value);
+
+        // Successful items only expose SourcePath and Size, not timing/chunking internals
+        var item = Assert.Single(dto.SuccessfulItems);
+        Assert.Equal("/path/file.txt", item.SourcePath);
+        Assert.Equal(1024, item.Size);
+        Assert.Equal(2, typeof(TransferSuccessfulItemDto).GetProperties().Length);
+    }
+
+    [Theory]
+    [InlineData(TransferStatus.Initiated)]
+    [InlineData(TransferStatus.InProgress)]
+    public async Task Run_WhenTransferInFlight_ReturnsEmptySuccessfulItems(TransferStatus status)
+    {
+        // Arrange
+        var transferEntity = CreateValidTransferEntity();
+        transferEntity.Status = status;
+        transferEntity.SuccessfulItems.Add(new TransferItem
+        {
+            SourcePath = "/path/file.txt",
+            Status = TransferItemStatus.Completed,
+            IsRenamed = false,
+            Size = 1024
+        });
+
+        var stub = new DurableEntityClientStub("FileTransferEntities")
+        {
+            OnGetEntityAsync = (id, _) => Task.FromResult<EntityMetadata<TransferEntity>?>(new EntityMetadata<TransferEntity>(id, transferEntity))
+        };
+        var durableTaskClientStub = new DurableTaskClientStub(stub);
+
+        // Act
+        var result = await _function.Run(_httpRequestMock.Object, durableTaskClientStub, _transferId);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var dto = Assert.IsType<TransferStatusDto>(okResult.Value);
+        Assert.Empty(dto.SuccessfulItems);
+    }
+
+    [Theory]
+    [InlineData(TransferStatus.Completed)]
+    [InlineData(TransferStatus.PartiallyCompleted)]
+    [InlineData(TransferStatus.Failed)]
+    public async Task Run_WhenTransferFinished_ReturnsSuccessfulItemsWithSourcePathAndSize(TransferStatus status)
+    {
+        // Arrange
+        var transferEntity = CreateValidTransferEntity();
+        transferEntity.Status = status;
+        transferEntity.SuccessfulItems.AddRange(new[]
+        {
+            new TransferItem
+            {
+                SourcePath = "/path/file-1.txt",
+                Status = TransferItemStatus.Completed,
+                IsRenamed = false,
+                Size = 111
+            },
+            new TransferItem
+            {
+                SourcePath = "/path/file-2.txt",
+                Status = TransferItemStatus.Completed,
+                IsRenamed = true,
+                Size = 222
+            }
+        });
+
+        var stub = new DurableEntityClientStub("FileTransferEntities")
+        {
+            OnGetEntityAsync = (id, _) => Task.FromResult<EntityMetadata<TransferEntity>?>(new EntityMetadata<TransferEntity>(id, transferEntity))
+        };
+        var durableTaskClientStub = new DurableTaskClientStub(stub);
+
+        // Act
+        var result = await _function.Run(_httpRequestMock.Object, durableTaskClientStub, _transferId);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var dto = Assert.IsType<TransferStatusDto>(okResult.Value);
+        Assert.Collection(dto.SuccessfulItems,
+            first =>
+            {
+                Assert.Equal("/path/file-1.txt", first.SourcePath);
+                Assert.Equal(111, first.Size);
+            },
+            second =>
+            {
+                Assert.Equal("/path/file-2.txt", second.SourcePath);
+                Assert.Equal(222, second.Size);
+            });
     }
 
     private TransferEntity CreateValidTransferEntity()

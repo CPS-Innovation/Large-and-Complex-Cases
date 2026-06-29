@@ -159,6 +159,11 @@ namespace CPS.ComplexCases.Data.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("egress_workspace_id");
 
+                    b.Property<string>("EgressWorkspaceName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("egress_workspace_name");
+
                     b.Property<string>("NetappFolderPath")
                         .HasMaxLength(260)
                         .HasColumnType("character varying(260)")

@@ -9,5 +9,6 @@ public class CreateEgressConnectionValidator : AbstractValidator<CreateEgressCon
   {
     RuleFor(x => x.CaseId).NotEmpty().WithMessage("CaseId is required.");
     RuleFor(x => x.EgressWorkspaceId).NotEmpty().WithMessage("EgressWorkspaceId is required.");
+    RuleFor(x => x.EgressWorkspaceName).NotEmpty().WithMessage("EgressWorkspaceName is required.");
   }
 }

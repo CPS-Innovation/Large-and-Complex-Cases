@@ -20,7 +20,7 @@ public class CaseMetadataService : ICaseMetadataService
 
   public async Task CreateEgressConnectionAsync(CreateEgressConnectionDto createEgressConnectionDto)
   {
-    _logger.LogInformation("Creating egress connection for case {CaseId}", createEgressConnectionDto.CaseId);
+    _logger.LogInformation("Creating Egress connection for case {CaseId}", createEgressConnectionDto.CaseId);
     try
     {
       var existingMetadata = await _caseMetadataRepository.GetByCaseIdAsync(createEgressConnectionDto.CaseId);
@@ -28,6 +28,7 @@ public class CaseMetadataService : ICaseMetadataService
       if (existingMetadata != null)
       {
         existingMetadata.EgressWorkspaceId = createEgressConnectionDto.EgressWorkspaceId;
+        existingMetadata.EgressWorkspaceName = createEgressConnectionDto.EgressWorkspaceName;
         await _caseMetadataRepository.UpdateAsync(existingMetadata);
         return;
       }
@@ -36,7 +37,8 @@ public class CaseMetadataService : ICaseMetadataService
         var newMetadata = new CaseMetadata
         {
           CaseId = createEgressConnectionDto.CaseId,
-          EgressWorkspaceId = createEgressConnectionDto.EgressWorkspaceId
+          EgressWorkspaceId = createEgressConnectionDto.EgressWorkspaceId,
+          EgressWorkspaceName = createEgressConnectionDto.EgressWorkspaceName
         };
         await _caseMetadataRepository.AddAsync(newMetadata);
         return;
@@ -44,14 +46,14 @@ public class CaseMetadataService : ICaseMetadataService
     }
     catch (Exception ex)
     {
-      _logger.LogError(ex, "Error creating egress connection for case {CaseId}", createEgressConnectionDto.CaseId);
+      _logger.LogError(ex, "Error creating Egress connection for case {CaseId}", createEgressConnectionDto.CaseId);
       throw;
     }
   }
 
   public async Task CreateNetAppConnectionAsync(CreateNetAppConnectionDto createNetAppConnectionDto)
   {
-    _logger.LogInformation("Creating egress connection for case {CaseId}", createNetAppConnectionDto.CaseId);
+    _logger.LogInformation("Creating NetApp connection for case {CaseId}", createNetAppConnectionDto.CaseId);
     try
     {
       var existingMetadata = await _caseMetadataRepository.GetByCaseIdAsync(createNetAppConnectionDto.CaseId);
@@ -184,40 +186,71 @@ public class CaseMetadataService : ICaseMetadataService
     }
   }
 
-  public async Task<ClearFolderPathResult> ClearNetAppFolderPathAsync(int caseId)
+  public Task<ClearFolderPathResult> ClearNetAppFolderPathAsync(int caseId) =>
+    ClearConnectionAsync(
+      caseId,
+      logContext: "NetApp folder path",
+      getDisplayValue: m => m.NetappFolderPath,
+      getKeyValue: m => m.NetappFolderPath,
+      clearValue: m => m.NetappFolderPath = null,
+      missingValueState: CaseMetadataState.NetAppFolderPathIsNull
+    );
+
+  public Task<ClearFolderPathResult> ClearEgressConnectionAsync(int caseId) =>
+    ClearConnectionAsync(
+      caseId,
+      logContext: "Egress workspace connection",
+      getDisplayValue: m => m.EgressWorkspaceName ?? m.EgressWorkspaceId,
+      getKeyValue: m => m.EgressWorkspaceId,
+      clearValue: m =>
+      {
+        m.EgressWorkspaceId = null;
+        m.EgressWorkspaceName = null;
+      },
+      missingValueState: CaseMetadataState.EgressConnectionIsNull
+    );
+
+  private async Task<ClearFolderPathResult> ClearConnectionAsync(
+    int caseId,
+    string logContext,
+    Func<CaseMetadata, string?> getDisplayValue,
+    Func<CaseMetadata, string?> getKeyValue,
+    Action<CaseMetadata> clearValue,
+    CaseMetadataState missingValueState)
   {
-    _logger.LogInformation("Clearing NetApp folder path for case {CaseId}", caseId);
+    _logger.LogInformation("Clearing {LogContext} for case {CaseId}", logContext, caseId);
     try
     {
       var existingMetadata = await _caseMetadataRepository.GetByCaseIdAsync(caseId);
 
-      if (existingMetadata != null)
+      if (existingMetadata == null)
       {
-        if (existingMetadata.ActiveTransferId.HasValue)
-        {
-          _logger.LogWarning("Cannot clear NetApp folder path for case {CaseId} because there is an active transfer", caseId);
-          return new ClearFolderPathResult { State = CaseMetadataState.TransferIsActive };
-        }
-        else if (string.IsNullOrEmpty(existingMetadata.NetappFolderPath))
-        {
-          _logger.LogWarning("No NetApp folder path to clear for case {CaseId}", caseId);
-          return new ClearFolderPathResult { State = CaseMetadataState.NetAppFolderPathIsNull };
-        }
-
-        var existingPath = existingMetadata.NetappFolderPath;
-        existingMetadata.NetappFolderPath = null;
-        await _caseMetadataRepository.UpdateAsync(existingMetadata);
-        return new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = existingPath };
-      }
-      else
-      {
-        _logger.LogWarning("No metadata found for case {CaseId} to clear NetApp folder path", caseId);
+        _logger.LogWarning("No metadata found for case {CaseId} to clear {LogContext}", caseId, logContext);
         return new ClearFolderPathResult { State = CaseMetadataState.NoCaseMetadataFound };
       }
+
+      if (existingMetadata.ActiveTransferId.HasValue)
+      {
+        _logger.LogWarning("Cannot clear {LogContext} for case {CaseId} because there is an active transfer", logContext, caseId);
+        return new ClearFolderPathResult { State = CaseMetadataState.TransferIsActive };
+      }
+
+      var existingValue = getDisplayValue(existingMetadata);
+      if (string.IsNullOrEmpty(existingValue))
+      {
+        _logger.LogWarning("No {LogContext} to clear for case {CaseId}", logContext, caseId);
+        return new ClearFolderPathResult { State = missingValueState };
+      }
+
+      var existingKey = getKeyValue(existingMetadata) ?? existingValue;
+
+      clearValue(existingMetadata);
+      await _caseMetadataRepository.UpdateAsync(existingMetadata);
+      return new ClearFolderPathResult { State = CaseMetadataState.Success, ClearedPath = existingValue, Key = existingKey };
     }
     catch (Exception ex)
     {
-      _logger.LogError(ex, "Error clearing NetApp folder path for case {CaseId}", caseId);
+      _logger.LogError(ex, "Error clearing {LogContext} for case {CaseId}", logContext, caseId);
       throw;
     }
   }

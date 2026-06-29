@@ -13,6 +13,9 @@ AzuriteConfig
 # Azure Functions localsettings file
 local.settings.json
 
+# Aspose License
+backend/CPS.ComplexCases.API/Licenses/Aspose.Total.NET.lic
+
 # Integration tests settings (contains secrets)
 **/CPS.ComplexCases.API.Integration.Tests/appsettings.json
 
@@ -332,7 +335,7 @@ nuget.config
 *.postman_environment.json
 
 # E2E Postman Tests
-e2e/postman/secrets.config.ps1
+e2e/*/secrets.config.ps1
 e2e/postman/*.postman_environment
 !e2e/postman/*.postman_environment.template
 e2e/postman/newman-reports/

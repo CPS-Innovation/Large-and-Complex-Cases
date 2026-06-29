@@ -237,6 +237,152 @@ public class CopyOrchestratorTests
     }
 
     [Fact]
+    public async Task RunOrchestrator_WhenIncludeEmptyFoldersIsTrue_AndFolderItemsExist_CallsCreateDestinationFolderForEachFolder()
+    {
+        // Folders have SourceKey ending with '/' (IsFolder == true)
+        var folderItem1 = new CopyFileItem { SourceKey = "CaseRoot/Folder-A/", DestinationPrefix = "CaseRoot/Dest/", DestinationFileName = "Folder-A/" };
+        var folderItem2 = new CopyFileItem { SourceKey = "CaseRoot/Folder-B/", DestinationPrefix = "CaseRoot/Dest/", DestinationFileName = "Folder-B/" };
+        var fileItem = new CopyFileItem { SourceKey = "CaseRoot/Folder-A/file.txt", DestinationPrefix = "CaseRoot/Dest/Folder-A/", DestinationFileName = "file.txt" };
+
+        var payload = new CopyBatchPayload
+        {
+            TransferId = _fixture.Create<Guid>(),
+            CaseId = 1,
+            UserName = "testuser",
+            CorrelationId = _fixture.Create<Guid>(),
+            BearerToken = "bearer-token",
+            BucketName = "test-bucket",
+            Files = [folderItem1, folderItem2, fileItem],
+            OriginalOperations = [],
+            ManageMaterialsOperationId = _fixture.Create<Guid>(),
+            IncludeEmptyFolders = true,
+        };
+
+        var capturedFolderPayloads = new List<CreateDestinationFolderPayload>();
+
+        _contextMock.Setup(c => c.GetInput<CopyBatchPayload>()).Returns(payload);
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.CompletedTask)
+            .Callback<TaskName, object, TaskOptions>((name, arg, _) =>
+            {
+                if (name.Name == nameof(CreateDestinationFolder) && arg is CreateDestinationFolderPayload p)
+                    capturedFolderPayloads.Add(p);
+            });
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.FromResult(new TransferResult { IsSuccess = true }));
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask);
+
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        Assert.Equal(2, capturedFolderPayloads.Count);
+        Assert.Contains(capturedFolderPayloads, p => p.DestinationFolderPath == folderItem1.DestinationPrefix + folderItem1.DestinationFileName);
+        Assert.Contains(capturedFolderPayloads, p => p.DestinationFolderPath == folderItem2.DestinationPrefix + folderItem2.DestinationFileName);
+    }
+
+    [Fact]
+    public async Task RunOrchestrator_WhenIncludeEmptyFoldersIsTrue_ButNoFolderItems_DoesNotCallCreateDestinationFolder()
+    {
+        var payload = CreateValidPayload(); // files only, no SourceKey ending with '/'
+        payload.IncludeEmptyFolders = true;
+
+        _contextMock.Setup(c => c.GetInput<CopyBatchPayload>()).Returns(payload);
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.CompletedTask);
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.FromResult(new TransferResult { IsSuccess = true }));
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask);
+
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        _contextMock.Verify(c => c.CallActivityAsync(
+            It.Is<TaskName>(n => n.Name == nameof(CreateDestinationFolder)),
+            It.IsAny<object>(),
+            It.IsAny<TaskOptions>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RunOrchestrator_WhenIncludeEmptyFoldersIsFalse_DoesNotCallCreateDestinationFolder()
+    {
+        var folderItem = new CopyFileItem { SourceKey = "CaseRoot/Folder-A/", DestinationPrefix = "CaseRoot/Dest/", DestinationFileName = "Folder-A/" };
+
+        var payload = new CopyBatchPayload
+        {
+            TransferId = _fixture.Create<Guid>(),
+            CaseId = 1,
+            UserName = "testuser",
+            BearerToken = "bearer-token",
+            BucketName = "test-bucket",
+            Files = [folderItem],
+            OriginalOperations = [],
+            ManageMaterialsOperationId = _fixture.Create<Guid>(),
+            IncludeEmptyFolders = false,
+        };
+
+        _contextMock.Setup(c => c.GetInput<CopyBatchPayload>()).Returns(payload);
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.CompletedTask);
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.FromResult(new TransferResult { IsSuccess = true }));
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask);
+
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        _contextMock.Verify(c => c.CallActivityAsync(
+            It.Is<TaskName>(n => n.Name == nameof(CreateDestinationFolder)),
+            It.IsAny<object>(),
+            It.IsAny<TaskOptions>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RunOrchestrator_WhenIncludeEmptyFoldersIsTrue_CreateDestinationFolderPayloadHasCorrectProperties()
+    {
+        var folderItem = new CopyFileItem { SourceKey = "CaseRoot/Sub/", DestinationPrefix = "CaseRoot/Dest/", DestinationFileName = "Sub/" };
+
+        var payload = new CopyBatchPayload
+        {
+            TransferId = _fixture.Create<Guid>(),
+            CaseId = 42,
+            UserName = "testuser",
+            CorrelationId = _fixture.Create<Guid>(),
+            BearerToken = "bearer-token",
+            BucketName = "test-bucket",
+            Files = [folderItem],
+            OriginalOperations = [],
+            ManageMaterialsOperationId = _fixture.Create<Guid>(),
+            IncludeEmptyFolders = true,
+        };
+
+        CreateDestinationFolderPayload? capturedPayload = null;
+
+        _contextMock.Setup(c => c.GetInput<CopyBatchPayload>()).Returns(payload);
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.CompletedTask)
+            .Callback<TaskName, object, TaskOptions>((name, arg, _) =>
+            {
+                if (name.Name == nameof(CreateDestinationFolder) && arg is CreateDestinationFolderPayload p)
+                    capturedPayload = p;
+            });
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.FromResult(new TransferResult { IsSuccess = true }));
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask);
+
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        Assert.NotNull(capturedPayload);
+        Assert.Equal(payload.CaseId, capturedPayload!.CaseId);
+        Assert.Equal(payload.UserName, capturedPayload.UserName);
+        Assert.Equal(payload.CorrelationId, capturedPayload.CorrelationId);
+        Assert.Equal(payload.BucketName, capturedPayload.BucketName);
+        Assert.Equal(payload.BearerToken, capturedPayload.BearerToken);
+        Assert.Equal(folderItem.DestinationPrefix + folderItem.DestinationFileName, capturedPayload.DestinationFolderPath);
+        Assert.Equal(Common.Models.Domain.Enums.TransferDirection.NetAppToNetApp, capturedPayload.TransferDirection);
+    }
+
+    [Fact]
     public async Task RunOrchestrator_WithValidInput_EachTransferFilePayloadHasCorrectDestinationPath()
     {
         var file1 = new CopyFileItem { SourceKey = "CaseRoot/Folder-A/report.pdf", DestinationPrefix = "CaseRoot/Folder-B/", DestinationFileName = "report.pdf" };

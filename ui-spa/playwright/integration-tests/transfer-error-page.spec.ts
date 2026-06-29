@@ -3,6 +3,14 @@ import { delay, HttpResponse, http } from "msw";
 import { type TransferStatusResponse } from "../../src/schemas";
 import { Page } from "@playwright/test";
 
+const MOCK_TRANSFER_ID = "00000000-0000-4000-8000-000000000001";
+const BASE_TRANSFER_STATUS = {
+  id: MOCK_TRANSFER_ID,
+  startedAt: null,
+  successfulFiles: 0,
+  failedFiles: 0,
+};
+
 test.describe("transfer-error-page", () => {
   const startTransfer = async (page: Page) => {
     await page.goto("/case/12/case-management");
@@ -62,6 +70,7 @@ test.describe("transfer-error-page", () => {
         async () => {
           await delay(10);
           return HttpResponse.json({
+            ...BASE_TRANSFER_STATUS,
             status: "PartiallyCompleted",
             transferType: "Copy",
             direction: "EgressToNetApp",
@@ -83,6 +92,9 @@ test.describe("transfer-error-page", () => {
             userName: "dev_user@example.org",
             totalFiles: 4,
             processedFiles: 4,
+            failedFiles: 3,
+            successfulItems: [],
+            destinationPath: "",
           } as TransferStatusResponse);
         },
       ),
@@ -185,6 +197,7 @@ test.describe("transfer-error-page", () => {
         async () => {
           await delay(10);
           return HttpResponse.json({
+            ...BASE_TRANSFER_STATUS,
             status: "Failed",
             transferType: "Copy",
             direction: "EgressToNetApp",
@@ -206,6 +219,9 @@ test.describe("transfer-error-page", () => {
             userName: "dev_user@example.org",
             totalFiles: 4,
             processedFiles: 4,
+            failedFiles: 3,
+            successfulItems: [],
+            destinationPath: "",
           } as TransferStatusResponse);
         },
       ),
@@ -288,6 +304,7 @@ test.describe("transfer-error-page", () => {
         async () => {
           await delay(10);
           return HttpResponse.json({
+            ...BASE_TRANSFER_STATUS,
             status: "Failed",
             transferType: "Copy",
             direction: "EgressToNetApp",
@@ -309,6 +326,9 @@ test.describe("transfer-error-page", () => {
             userName: "dev_user@example.org",
             totalFiles: 4,
             processedFiles: 4,
+            failedFiles: 3,
+            successfulItems: [],
+            destinationPath: "",
           } as TransferStatusResponse);
         },
       ),

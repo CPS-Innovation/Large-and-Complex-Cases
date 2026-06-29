@@ -23,6 +23,7 @@ public static class IServiceCollectionExtension
                 throw new ArgumentNullException(nameof(options.BaseUrl), "FileTransferApiBaseUrl configuration is missing or empty.");
             }
             client.BaseAddress = new Uri(options.BaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(options.RequestTimeoutSeconds);
         })
         .AddResilienceHandler("file-transfer-retry", (pipeline, context) =>
         {

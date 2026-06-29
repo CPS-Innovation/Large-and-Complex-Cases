@@ -11,8 +11,11 @@ using Microsoft.Extensions.Logging.ApplicationInsights;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.Net.Http.Headers;
+using Azure.Identity;
+using Azure.Storage.Blobs;
 using CPS.ComplexCases.ActivityLog.Extensions;
 using CPS.ComplexCases.API.Extensions;
+using CPS.ComplexCases.API.Handlers;
 using CPS.ComplexCases.API.Middleware;
 using CPS.ComplexCases.API.OpenApi;
 using CPS.ComplexCases.API.Services;
@@ -20,9 +23,9 @@ using CPS.ComplexCases.API.Validators;
 using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
+using CPS.ComplexCases.Common.Models.Configuration;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Common.Telemetry;
-using CPS.ComplexCases.Common.Models.Configuration;
 using CPS.ComplexCases.Data.Extensions;
 using CPS.ComplexCases.DDEI.Extensions;
 using CPS.ComplexCases.DDEI.Tactical.Extensions;
@@ -83,6 +86,25 @@ static string ExtractIdentityFromRequest(IReadOnlyDictionary<string, Microsoft.E
     catch
     {
         return "unknown";
+    }
+}
+
+static void SetAsposeLicence(ILogger logger)
+{
+    try
+    {
+        const string licenceFileName = "Licenses/Aspose.Total.NET.lic";
+
+        new Aspose.Cells.License().SetLicense(licenceFileName);
+        new Aspose.Email.License().SetLicense(licenceFileName);
+        new Aspose.Imaging.License().SetLicense(licenceFileName);
+        new Aspose.Pdf.License().SetLicense(licenceFileName);
+        new Aspose.Slides.License().SetLicense(licenceFileName);
+        new Aspose.Words.License().SetLicense(licenceFileName);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Aspose license not found or invalid. Running in evaluation mode.");
     }
 }
 
@@ -199,11 +221,26 @@ var host = new HostBuilder()
         services.AddScoped<ICaseActiveManageMaterialsService, CaseActiveManageMaterialsService>();
         services.AddScoped<ICaseEnrichmentService, CaseEnrichmentService>();
         services.AddScoped<IInitService, InitService>();
+        services.AddScoped<IDocumentService, DocumentService>();
+        services.AddScoped<IConversionService, ConversionService>();
+        services.AddScoped<IDisconnectConnectionHandler, DisconnectConnectionHandler>();
         services.AddSingleton<IOpenApiConfigurationOptions, OpenApiConfigurationOptions>();
         services.AddSingleton<IRequestValidator, RequestValidator>();
         services.AddSingleton<ISecurityGroupMetadataService, SecurityGroupMetadataService>();
 
+        services.AddSingleton<BlobServiceClient>(provider =>
+        {
+            var blobStorageAccountUrl = configuration["BlobStorageAccountUrl"];
+            if (string.IsNullOrEmpty(blobStorageAccountUrl))
+            {
+                throw new InvalidOperationException("BlobStorageAccountUrl configuration value is missing or empty.");
+            }
+            return new BlobServiceClient(new Uri(blobStorageAccountUrl), new DefaultAzureCredential());
+        });
+
         services.AddValidatorsFromAssemblyContaining<SearchNetAppFoldersRequestValidator>();
+
+        SetAsposeLicence(logger);
     })
     .Build();
 

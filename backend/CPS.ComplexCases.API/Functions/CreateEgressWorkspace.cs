@@ -19,6 +19,7 @@ using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
+using CPS.ComplexCases.DDEI.Services;
 
 namespace CPS.ComplexCases.API.Functions;
 
@@ -28,6 +29,7 @@ public class CreateEgressWorkspace(
     IEgressArgFactory egressArgFactory,
     IDdeiClient ddeiClient,
     IDdeiArgFactory ddeiArgFactory,
+    ICaseNamingService caseNamingService,
     ILogger<CreateEgressWorkspace> logger,
     IActivityLogService activityLogService,
     IRequestValidator requestValidator,
@@ -42,6 +44,7 @@ public class CreateEgressWorkspace(
     private readonly IEgressArgFactory _egressArgFactory = egressArgFactory;
     private readonly IDdeiClient _ddeiClient = ddeiClient;
     private readonly IDdeiArgFactory _ddeiArgFactory = ddeiArgFactory;
+    private readonly ICaseNamingService _caseNamingService = caseNamingService;
 
     [Function(nameof(CreateEgressWorkspace))]
     [OpenApiOperation(operationId: nameof(CreateEgressWorkspace), tags: ["Egress"], Description = "Create an egress workspace")]
@@ -69,15 +72,8 @@ public class CreateEgressWorkspace(
         var cmsArg = _ddeiArgFactory.CreateCaseArg(functionContext.GetRequestContext().CmsAuthValues, functionContext.GetRequestContext().CorrelationId, request.Value.CaseId);
         var cmsResponse = await _ddeiClient.GetCaseAsync(cmsArg);
 
-        string workspaceName;
-        if (!string.IsNullOrWhiteSpace(cmsResponse.OperationName))
-        {
-            workspaceName = $"{cmsResponse.OperationName}-{cmsResponse.Urn}";
-        }
-        else
-        {
-            workspaceName = $"{cmsResponse.LeadDefendantSurname}-{cmsResponse.Urn}";
-        }
+        var caseNameDto = await _caseNamingService.GenerateCaseName(cmsResponse);
+        string workspaceName = caseNameDto.CaseName;
 
         var arg = _egressArgFactory.CreateEgressWorkspaceArg(
             workspaceName,
@@ -101,7 +97,8 @@ public class CreateEgressWorkspace(
         await _caseMetadataService.CreateEgressConnectionAsync(new CreateEgressConnectionDto
         {
             CaseId = request.Value.CaseId,
-            EgressWorkspaceId = workspace.Id
+            EgressWorkspaceId = workspace.Id,
+            EgressWorkspaceName = workspace.Name
         });
 
         await _activityLogService.CreateActivityLogAsync(
@@ -109,7 +106,7 @@ public class CreateEgressWorkspace(
           ActivityLog.Enums.ResourceType.StorageConnection,
           request.Value.CaseId,
           workspace.Id,
-          workspace.Id,
+          workspace.Name,
           context.Username);
 
         return new OkObjectResult(workspace);

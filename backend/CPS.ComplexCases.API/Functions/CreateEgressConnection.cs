@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
-using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Constants;
@@ -23,12 +22,10 @@ public class CreateEgressConnection(
   ICaseMetadataService caseMetadataService,
   IEgressClient egressClient,
   IEgressArgFactory egressArgFactory,
-  ILogger<CreateEgressConnection> logger,
   IActivityLogService activityLogService,
   IRequestValidator requestValidator,
   IInitializationHandler initializationHandler)
 {
-  private readonly ILogger<CreateEgressConnection> _logger = logger;
   private readonly IActivityLogService _activityLogService = activityLogService;
   private readonly IRequestValidator _requestValidator = requestValidator;
   private readonly IInitializationHandler _initializationHandler = initializationHandler;
@@ -74,7 +71,7 @@ public class CreateEgressConnection(
       ActivityLog.Enums.ResourceType.StorageConnection,
       egressConnectionRequest.Value.CaseId,
       egressConnectionRequest.Value.EgressWorkspaceId,
-      egressConnectionRequest.Value.EgressWorkspaceId,
+      egressConnectionRequest.Value.EgressWorkspaceName,
       context.Username);
 
     return new OkResult();

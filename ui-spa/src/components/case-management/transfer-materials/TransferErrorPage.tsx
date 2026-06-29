@@ -4,7 +4,6 @@ import { PageContentWrapper } from "../../govuk/PageContentWrapper";
 import FileIcon from "../../../components/svgs/file.svg?react";
 import { type TransferFailedItem } from "../../../schemas";
 import styles from "./TransferErrorPage.module.scss";
-import { useEffect } from "react";
 
 const TransferErrorPage: React.FC = () => {
   const {
@@ -13,23 +12,12 @@ const TransferErrorPage: React.FC = () => {
     state: {
       transferId: string;
       failedItems: TransferFailedItem[];
-      isRouteValid: boolean;
     };
   } = useLocation();
 
-  const {
-    transferId = "",
-    failedItems = [],
-    isRouteValid = false,
-  } = state || {};
+  const { transferId = "", failedItems = [] } = state || {};
   const { caseId } = useParams();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!isRouteValid) {
-      navigate(`/`);
-    }
-  }, []);
 
   const handleButtonClick = () => {
     navigate(`/case/${caseId}/case-management`, {

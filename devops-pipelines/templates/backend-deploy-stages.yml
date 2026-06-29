@@ -37,32 +37,32 @@ parameters:
 
 stages:
   - ${{ if eq(parameters.requireValidation, true) }}:
-    - stage: Approve_Deployment_${{ parameters.environment }}
-      ${{ if eq(parameters.environment, 'staging') }}:
-        dependsOn: Deploy_Backend_dev
-      ${{ if eq(parameters.environment, 'prod') }}:
-        dependsOn: Deploy_Backend_staging
-      displayName: "${{ parameters.environment }} - Approve Deployment"
-      jobs:
-        - template: ./manual-validation-jobs.yml
-          parameters:
-            instructions: "Please verify the deployment to the lower environment worked as expected before approving deployment to ${{parameters.environment}}."
-            notifyUsers: ${{ parameters.notifyUsers }}
-            approvers: ${{ parameters.approvers }}
-            agentPool: ${{ parameters.agentPool }}
+      - stage: Approve_Deployment_${{ parameters.environment }}
+        ${{ if eq(parameters.environment, 'staging') }}:
+          dependsOn: Deploy_Backend_dev
+        ${{ if eq(parameters.environment, 'prod') }}:
+          dependsOn: Run_E2E_Tests
+        displayName: "${{ parameters.environment }} - Approve Deployment"
+        jobs:
+          - template: ./manual-validation-jobs.yml
+            parameters:
+              instructions: "Please verify the deployment to the lower environment worked as expected before approving deployment to ${{parameters.environment}}."
+              notifyUsers: ${{ parameters.notifyUsers }}
+              approvers: ${{ parameters.approvers }}
+              agentPool: ${{ parameters.agentPool }}
 
   - stage: Deploy_Backend_${{ parameters.environment }}
     ${{ if eq(parameters.requireValidation, true) }}:
       dependsOn:
         - Approve_Deployment_${{ parameters.environment }}
-        - Preflight # Stage 'Preflight' is defined in the caller pipeline
+        - Preflight  # Stage 'Preflight' is defined in the caller pipeline
     ${{ else }}:
       dependsOn:
-        - Build_API # Stage 'Build_API' is defined in the caller pipeline
+        - Build_API  # Stage 'Build_API' is defined in the caller pipeline
         - Preflight
     displayName: "${{ parameters.environment }} - Deploy Backend Services"
     variables:
-      - name: runDbMigration # The Preflight stage outputs the flag 'runDbMigrationSteps'
+      - name: runDbMigration  # The Preflight stage outputs the flag 'runDbMigrationSteps'
         value: $[ eq(stageDependencies.Preflight.Check_DB_Diff.outputs['Diff_Check.runDbMigrationSteps'],'true') ]
       - template: ./variables/backend-deploy-vars.yml
         parameters:
@@ -70,7 +70,6 @@ stages:
       - template: ./variables/fa-config-${{parameters.environment}}.yml
       - ${{ if eq(parameters.runPostmanSmokeTest, true) }}:
           - group: lacc-automated-testing-${{ parameters.environment }}
-          - group: lacc-backend-secrets-${{ parameters.environment }}
     pool: ${{ parameters.agentPool }}
     jobs:
       - deployment: Deploy_Database_Changes
@@ -120,7 +119,7 @@ stages:
                     scriptType: "bash"
                     scriptLocation: "inlineScript"
                     inlineScript: |
-                      # Get the clientId of the service principal used for the current deployment 
+                      # Get the clientId of the service principal used for the current deployment
                       appId=$(az account show --query user.name -o tsv)
 
                       # Get the service principal's app registration display name

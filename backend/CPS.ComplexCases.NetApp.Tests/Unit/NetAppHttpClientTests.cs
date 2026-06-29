@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using AutoFixture;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Exceptions;
 using CPS.ComplexCases.NetApp.Factories;
@@ -28,7 +29,7 @@ public class NetAppHttpClientTests
             httpClient.BaseAddress = new Uri("http://localhost/");
         }
         _loggerMock = new Mock<ILogger<NetAppHttpClient>>();
-        _client = new NetAppHttpClient(httpClient, _requestFactoryMock.Object, _loggerMock.Object);
+        _client = new NetAppHttpClient(httpClient, _requestFactoryMock.Object, _loggerMock.Object, new HttpResponseHandler());
         _fixture = new Fixture();
     }
 

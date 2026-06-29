@@ -6,8 +6,20 @@ import TreeView, { TreeNode } from "./TreeViewComponent";
 describe("TreeView", () => {
   it("renders root nodes and exposes tree role", () => {
     const data: TreeNode[] = [
-      { id: "f1", name: "Folder 1", isFolder: true },
-      { id: "file1", name: "File 1", isFolder: false },
+      {
+        id: "f1",
+        name: "Folder 1",
+        isFolder: true,
+        path: "/Folder 1",
+        isRootNode: false,
+      },
+      {
+        id: "file1",
+        name: "File 1",
+        isFolder: false,
+        path: "/File 1",
+        isRootNode: false,
+      },
     ];
 
     render(<TreeView data={data} />);
@@ -18,12 +30,25 @@ describe("TreeView", () => {
   });
 
   it("calls onLoadChildren when expanding a folder and shows children after load", async () => {
-    const data: TreeNode[] = [{ id: "f1", name: "Folder 1", isFolder: true }];
+    const data: TreeNode[] = [
+      {
+        id: "f1",
+        name: "Folder 1",
+        path: "/Folder 1",
+        isFolder: true,
+        isRootNode: false,
+      },
+    ];
 
     const onLoadChildren = vi.fn((nodeId: string) => {
       if (nodeId === "f1") {
         return Promise.resolve([
-          { id: "f1-child-1", name: "Child 1", isFolder: false },
+          {
+            id: "f1-child-1",
+            name: "Child 1",
+            isFolder: false,
+            isRootNode: false,
+          },
         ] as TreeNode[]);
       }
       return Promise.resolve([] as TreeNode[]);
@@ -52,7 +77,15 @@ describe("TreeView", () => {
   });
 
   it("supports nested loading (expand parent then child)", async () => {
-    const data: TreeNode[] = [{ id: "p1", name: "Parent", isFolder: true }];
+    const data: TreeNode[] = [
+      {
+        id: "p1",
+        name: "Parent",
+        path: "/Parent",
+        isFolder: true,
+        isRootNode: false,
+      },
+    ];
 
     const onLoadChildren = vi.fn((nodeId: string) => {
       if (nodeId === "p1") {
@@ -106,10 +139,20 @@ describe("TreeView", () => {
       {
         id: "a",
         name: "A",
+        path: "/A",
         isFolder: true,
-        children: [{ id: "a1", name: "A1", isFolder: false }],
+        isRootNode: true,
+        children: [
+          {
+            id: "a1",
+            name: "A1",
+            path: "/A/A1",
+            isFolder: false,
+            isRootNode: false,
+          },
+        ],
       },
-      { id: "b", name: "B", isFolder: false },
+      { id: "b", name: "B", path: "/B", isFolder: false, isRootNode: false },
     ];
 
     const onSelect = vi.fn();
@@ -175,8 +218,20 @@ describe("TreeView", () => {
 
   it("selects folders on click", async () => {
     const data: TreeNode[] = [
-      { id: "f1", name: "Folder 1", isFolder: true },
-      { id: "file1", name: "File 1", isFolder: false },
+      {
+        id: "f1",
+        name: "Folder 1",
+        path: "/Folder 1",
+        isFolder: true,
+        isRootNode: false,
+      },
+      {
+        id: "file1",
+        name: "File 1",
+        path: "/File 1",
+        isFolder: false,
+        isRootNode: false,
+      },
     ];
 
     const onSelect = vi.fn();
@@ -191,7 +246,15 @@ describe("TreeView", () => {
   });
 
   it("file nodes do not call onLoadChildren and are selectable", async () => {
-    const data: TreeNode[] = [{ id: "fileX", name: "File X", isFolder: false }];
+    const data: TreeNode[] = [
+      {
+        id: "fileX",
+        name: "File X",
+        path: "/File X",
+        isFolder: false,
+        isRootNode: false,
+      },
+    ];
 
     const onLoadChildren = vi.fn();
     const onSelect = vi.fn();
@@ -226,8 +289,18 @@ describe("TreeView", () => {
       {
         id: "pf",
         name: "PrePopulated",
+        path: "/PrePopulated",
         isFolder: true,
-        children: [{ id: "pf-c1", name: "ChildX", isFolder: false }],
+        isRootNode: true,
+        children: [
+          {
+            id: "pf-c1",
+            name: "ChildX",
+            path: "/PrePopulated/ChildX",
+            isFolder: false,
+            isRootNode: false,
+          },
+        ],
       },
     ];
 
@@ -254,7 +327,9 @@ describe("TreeView", () => {
       {
         id: "a",
         name: "folder a",
+        path: "/folder a",
         isFolder: true,
+        isRootNode: true,
       },
     ];
     const onLoadChildren = vi.fn((nodeId: string) => {
@@ -297,7 +372,7 @@ describe("TreeView", () => {
     );
     expect(onLoadChildren).toHaveBeenCalledTimes(1);
     userEvent.click(toggleFolderA);
-
+    //clicking toggle does not call onLoadChildren again
     expect(onLoadChildren).toHaveBeenCalledTimes(1);
     expect(screen.queryByTestId("loading-spinner")).not.toBeInTheDocument();
     await waitFor(() =>
@@ -332,5 +407,63 @@ describe("TreeView", () => {
     await waitFor(() =>
       expect(screen.getByText("folder c")).toBeInTheDocument(),
     );
+  });
+  it("should open the root node and show its children, if the isRootNodeOpened prop is true and  should not call onLoadChildren on toggle btn clicked", async () => {
+    const data: TreeNode[] = [
+      {
+        id: "f1",
+        name: "Folder 1",
+        path: "/Folder 1",
+        isFolder: true,
+        isRootNode: true,
+        children: [
+          {
+            id: "f1-child-1",
+            name: "Child 1",
+            path: "/Folder 1/Child 1",
+            isFolder: false,
+            isRootNode: false,
+          },
+        ],
+      },
+    ];
+
+    const onLoadChildren = vi.fn((nodeId: string) => {
+      if (nodeId === "f1") {
+        return Promise.resolve([
+          {
+            id: "f1-child-1",
+            name: "Child 1",
+            isFolder: false,
+            isRootNode: false,
+          },
+        ] as TreeNode[]);
+      }
+      return Promise.resolve([] as TreeNode[]);
+    });
+
+    render(
+      <TreeView
+        data={data}
+        onLoadChildren={onLoadChildren}
+        isRootNodeOpened={true}
+      />,
+    );
+    const folder = screen.getByText("Folder 1").closest("li");
+    expect(folder).toBeTruthy();
+    expect(screen.getByText("Child 1")).toBeInTheDocument();
+
+    const toggleBtn = within(folder as HTMLElement).getByRole("button", {
+      name: /plus|minus|\+|-/i,
+    });
+    userEvent.click(toggleBtn);
+    await waitFor(() =>
+      expect(screen.queryByText("Child 1")).not.toBeInTheDocument(),
+    );
+    userEvent.click(toggleBtn);
+    await waitFor(() =>
+      expect(screen.queryByText("Child 1")).toBeInTheDocument(),
+    );
+    expect(onLoadChildren).not.toHaveBeenCalled();
   });
 });

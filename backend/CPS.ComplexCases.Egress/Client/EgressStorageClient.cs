@@ -103,7 +103,9 @@ public class EgressStorageClient(
             TotalSize = totalSize
         };
 
-        await SendRequestAsync(_egressRequestFactory.UploadChunkRequest(uploadArg, token));
+        await SendRequestAsync(
+            _egressRequestFactory.UploadChunkRequest(uploadArg, token),
+            timeout: TimeSpan.FromSeconds(_egressOptions.TransferTimeoutSeconds));
 
         return new UploadChunkResult(TransferDirection.NetAppToEgress);
     }
@@ -229,6 +231,11 @@ public class EgressStorageClient(
             await GetWorkspaceToken());
     }
 
+    public Task<bool> CreateFolderAsync(string folderPath, string? workspaceId = null, string? bearerToken = null, string? bucketName = null)
+    {
+        throw new NotImplementedException();
+    }
+
     private async Task CreateFolderStructureAsync(string folderPath, string workspaceId, string token)
     {
         if (string.IsNullOrEmpty(folderPath) || folderPath == "/" || folderPath == "\\")
@@ -271,7 +278,10 @@ public class EgressStorageClient(
         {
             var request = _egressRequestFactory.CreateFolderRequest(arg, token);
 
-            var response = await _httpClient.SendAsync(request);
+            // The storage HttpClient has an infinite timeout, so this direct send (which bypasses
+            // SendRequestAsync) needs its own management-scoped timeout.
+            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(_egressOptions.ManagementTimeoutSeconds));
+            var response = await _httpClient.SendAsync(request, timeoutCts.Token);
 
             if (response.IsSuccessStatusCode)
             {

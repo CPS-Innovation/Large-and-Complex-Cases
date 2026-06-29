@@ -243,7 +243,7 @@ test.describe("netapp connect", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        "Error: API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/netapp/folders: getting netapp folders failed; status - Internal Server Error (500)",
+        "API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/netapp/folders: getting netapp folders failed; status - Internal Server Error (500)",
       ),
     ).toBeVisible();
   });

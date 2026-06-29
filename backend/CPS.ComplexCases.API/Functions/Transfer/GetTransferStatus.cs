@@ -33,8 +33,17 @@ public class GetTransferStatus(ILogger<GetTransferStatus> logger, IFileTransferC
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "v1/filetransfer/{transferId}/status")] HttpRequest req, FunctionContext functionContext, string transferId)
     {
         var context = functionContext.GetRequestContext();
+        var ifNoneMatch = req.Headers["If-None-Match"].FirstOrDefault();
 
-        var response = await _transferClient.GetFileTransferStatusAsync(transferId, context.CorrelationId);
+        var response = await _transferClient.GetFileTransferStatusAsync(transferId, context.CorrelationId, ifNoneMatch);
+
+        req.HttpContext.Response.Headers.CacheControl = "no-store";
+
+        if (response.Headers.TryGetValues("ETag", out var etags))
+        {
+            req.HttpContext.Response.Headers["ETag"] = etags.First();
+            req.HttpContext.Response.Headers["Access-Control-Expose-Headers"] = "ETag";
+        }
 
         return await response.ToActionResult();
     }

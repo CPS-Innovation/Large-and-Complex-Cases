@@ -1,6 +1,15 @@
 import { expect, test } from "./utils/test";
 import { delay, HttpResponse, http } from "msw";
 import { Page, Locator } from "@playwright/test";
+
+const MOCK_TRANSFER_ID = "00000000-0000-4000-8000-000000000001";
+const BASE_TRANSFER_STATUS = {
+  id: MOCK_TRANSFER_ID,
+  startedAt: null,
+  successfulFiles: 0,
+  failedFiles: 0,
+};
+
 test.describe("egress-netapp-transfer-indexing-error", () => {
   const caseManagementPageLoad = async (page: Page) => {
     await page.goto("/case/12/case-management");
@@ -147,6 +156,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
           async () => {
             await delay(10);
             return HttpResponse.json({
+              ...BASE_TRANSFER_STATUS,
               status: "InProgress",
               transferType: "Copy",
               direction: "EgressToNetApp",
@@ -155,6 +165,8 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
               userName: "dev_user@example.org",
               totalFiles: 2,
               processedFiles: 1,
+              successfulItems: [],
+              destinationPath: "",
             });
           },
         ),
@@ -165,7 +177,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
         "/case/12/case-management/transfer-resolve-file-path",
       );
       await expect(page.locator("h1")).toHaveText(
-        "Shorten file names or folder paths",
+        "File paths are too long to transfer",
       );
       await expect(
         page.getByTestId("resolve-file-path-inset-text"),
@@ -173,15 +185,9 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(
         page
           .getByTestId("resolve-file-path-inset-text")
-          .getByText("2 files are longer than the 260 character limit"),
+          .getByText("2 files exceed the 260 character limit."),
       ).toBeVisible();
-      await expect(
-        page
-          .getByTestId("resolve-file-path-inset-text")
-          .getByText(
-            "You must shorten the file name or move the file before you can start the transfer.",
-          ),
-      ).toBeVisible();
+
       await expect(page.locator("section")).toHaveCount(2);
       const sections = await page.locator("section").all();
 
@@ -381,6 +387,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
           async () => {
             await delay(10);
             return HttpResponse.json({
+              ...BASE_TRANSFER_STATUS,
               status: "Completed",
               transferType: "Copy",
               direction: "EgressToNetApp",
@@ -389,6 +396,9 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
               userName: "dev_user@example.org",
               totalFiles: 2,
               processedFiles: 2,
+              successfulFiles: 2,
+              successfulItems: [],
+              destinationPath: "",
             });
           },
         ),
@@ -464,7 +474,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
         "/case/12/case-management/transfer-resolve-file-path",
       );
       await expect(page.locator("h1")).toHaveText(
-        "Shorten file names or folder paths",
+        "File paths are too long to transfer",
       );
       await expect(
         page.getByRole("button", { name: "Start transfer" }),
@@ -480,7 +490,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
         "/case/12/case-management/transfer-resolve-file-path",
       );
       await expect(page.locator("h1")).toHaveText(
-        "Shorten file names or folder paths",
+        "File paths are too long to transfer",
       );
       await expect(
         page.getByRole("button", { name: "Start transfer" }),
@@ -546,7 +556,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
         "/case/12/case-management/transfer-resolve-file-path",
       );
       await expect(page.locator("h1")).toHaveText(
-        "Shorten file names or folder paths",
+        "File paths are too long to transfer",
       );
       const renameBtns = await page
         .getByRole("button", { name: "Rename" })
@@ -568,7 +578,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
         "/case/12/case-management/transfer-resolve-file-path",
       );
       await expect(page.locator("h1")).toHaveText(
-        "Shorten file names or folder paths",
+        "File paths are too long to transfer",
       );
       await renameBtns[1].click();
       await expect(page).toHaveURL(
@@ -587,7 +597,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
         "/case/12/case-management/transfer-resolve-file-path",
       );
       await expect(page.locator("h1")).toHaveText(
-        "Shorten file names or folder paths",
+        "File paths are too long to transfer",
       );
       await page.getByRole("link", { name: "Back" }).click();
       await expect(page).toHaveURL("/case/12/case-management");
@@ -670,7 +680,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
         "/case/12/case-management/transfer-resolve-file-path",
       );
       await expect(page.locator("h1")).toHaveText(
-        "Shorten file names or folder paths",
+        "File paths are too long to transfer",
       );
 
       const sections = await page.locator("section").all();

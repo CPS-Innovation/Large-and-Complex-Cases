@@ -34,6 +34,8 @@ import {
   type EgressTransferPayloadSourcePath,
   type NetAppTransferPayloadSourcePath,
 } from "../../../schemas/requests/initiateFileTransferPayload";
+import { useUserGroupsFeatureFlag } from "../../../common/hooks/useUserGroupsFeatureFlag";
+import { getUrlSearchParam } from "../../../common/utils/getUrlSearchParam";
 import styles from "./index.module.scss";
 
 type TransferMaterialsPageProps = {
@@ -55,6 +57,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   activeTransferId,
   urn,
 }) => {
+  const featureFlags = useUserGroupsFeatureFlag();
   const navigate = useNavigate();
   const location = useLocation();
   const { username } = useUserDetails();
@@ -335,10 +338,10 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     if (egressStatus === "failed" && egressError) {
       if (egressError.code === 404) {
         navigate(
-          `/case/${caseId}/case-management/egress-connection-error?operation-name=${operationName}`,
+          `/case/${caseId}/case-management/egress-connection-error?${getUrlSearchParam("operation-name", operationName)}`,
           {
             state: {
-              isValid: true,
+              isRouteValid: true,
             },
           },
         );
@@ -347,6 +350,11 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       if (egressError.code === 401) {
         navigate(
           `/case/${caseId}/case-management/connection-error?type=egress`,
+          {
+            state: {
+              isRouteValid: true,
+            },
+          },
         );
         return;
       } else {
@@ -355,10 +363,10 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
     } else if (netAppStatus === "failed" && netAppError) {
       if (netAppError.code === 404) {
         navigate(
-          `/case/${caseId}/case-management/shared-drive-connection-error?operation-name=${operationName}`,
+          `/case/${caseId}/case-management/shared-drive-connection-error?${getUrlSearchParam("operation-name", operationName)}`,
           {
             state: {
-              isValid: true,
+              isRouteValid: true,
             },
           },
         );
@@ -367,6 +375,11 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       if (netAppError.code === 401) {
         navigate(
           `/case/${caseId}/case-management/connection-error?type=shareddrive`,
+          {
+            state: {
+              isRouteValid: true,
+            },
+          },
         );
         return;
       } else {
@@ -860,13 +873,15 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
                     {`${transferSource === "egress" ? "from the Shared Drive to Egress" : "from Egress to the Shared Drive"}`}
                   </LinkButton>
                 </InsetText>
-                <Button
-                  className={`govuk-button--secondary ${styles.disconnectButton}`}
-                  name="secondary"
-                  onClick={handleDisconnectSharedDrive}
-                >
-                  Disconnect Shared Drive
-                </Button>
+                {featureFlags.disconnectSharedDrive && (
+                  <Button
+                    className={`govuk-button--secondary ${styles.disconnectButton}`}
+                    name="secondary"
+                    onClick={handleDisconnectSharedDrive}
+                  >
+                    Disconnect Shared Drive
+                  </Button>
+                )}
               </div>
             </div>
             <div

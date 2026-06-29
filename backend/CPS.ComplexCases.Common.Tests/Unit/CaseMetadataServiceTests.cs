@@ -37,16 +37,19 @@ public class CaseMetadataServiceTests
         // Arrange
         var caseId = _fixture.Create<int>();
         var egressWorkspaceId = _fixture.Create<string>();
+        var egressWorkspaceName = _fixture.Create<string>();
         var existingMetadata = new CaseMetadata
         {
             CaseId = caseId,
-            EgressWorkspaceId = _fixture.Create<string>()
+            EgressWorkspaceId = _fixture.Create<string>(),
+            EgressWorkspaceName = _fixture.Create<string>()
         };
 
         var createDto = new CreateEgressConnectionDto
         {
             CaseId = caseId,
-            EgressWorkspaceId = egressWorkspaceId
+            EgressWorkspaceId = egressWorkspaceId,
+            EgressWorkspaceName = egressWorkspaceName
         };
 
         _repositoryMock
@@ -62,6 +65,7 @@ public class CaseMetadataServiceTests
 
         // Assert
         Assert.Equal(egressWorkspaceId, existingMetadata.EgressWorkspaceId);
+        Assert.Equal(egressWorkspaceName, existingMetadata.EgressWorkspaceName);
 
         _repositoryMock.Verify(
             r => r.GetByCaseIdAsync(caseId),
@@ -70,7 +74,8 @@ public class CaseMetadataServiceTests
         _repositoryMock.Verify(
             r => r.UpdateAsync(It.Is<CaseMetadata>(m =>
                 m.CaseId == caseId &&
-                m.EgressWorkspaceId == egressWorkspaceId)),
+                m.EgressWorkspaceId == egressWorkspaceId &&
+                m.EgressWorkspaceName == egressWorkspaceName)),
             Times.Once);
 
         _repositoryMock.Verify(
@@ -84,16 +89,19 @@ public class CaseMetadataServiceTests
         // Arrange
         var caseId = _fixture.Create<int>();
         var egressWorkspaceId = _fixture.Create<string>();
+        var egressWorkspaceName = _fixture.Create<string>();
         var newMetadata = new CaseMetadata
         {
             CaseId = caseId,
-            EgressWorkspaceId = egressWorkspaceId
+            EgressWorkspaceId = egressWorkspaceId,
+            EgressWorkspaceName = egressWorkspaceName
         };
 
         var createDto = new CreateEgressConnectionDto
         {
             CaseId = caseId,
-            EgressWorkspaceId = egressWorkspaceId
+            EgressWorkspaceId = egressWorkspaceId,
+            EgressWorkspaceName = egressWorkspaceName
         };
 
         _repositoryMock
@@ -119,7 +127,8 @@ public class CaseMetadataServiceTests
         _repositoryMock.Verify(
             r => r.AddAsync(It.Is<CaseMetadata>(m =>
                 m.CaseId == caseId &&
-                m.EgressWorkspaceId == egressWorkspaceId)),
+                m.EgressWorkspaceId == egressWorkspaceId &&
+                m.EgressWorkspaceName == egressWorkspaceName)),
             Times.Once);
     }
 
@@ -134,7 +143,8 @@ public class CaseMetadataServiceTests
         var createDto = new CreateEgressConnectionDto
         {
             CaseId = caseId,
-            EgressWorkspaceId = egressWorkspaceId
+            EgressWorkspaceId = egressWorkspaceId,
+            EgressWorkspaceName = _fixture.Create<string>()
         };
 
         _repositoryMock
@@ -604,6 +614,70 @@ public class CaseMetadataServiceTests
         // Assert
         Assert.Equal(CaseMetadataState.Success, result.State);
         Assert.Equal(existingPath, result.ClearedPath);
+        Assert.Equal(existingPath, result.Key);
+    }
+
+    [Fact]
+    public async Task ClearEgressConnectionAsync_WhenWorkspaceNameExists_ReturnsNameAndIdAsKey()
+    {
+        // Arrange
+        var caseId = _fixture.Create<int>();
+        var existingWorkspaceId = _fixture.Create<string>();
+        var existingWorkspaceName = _fixture.Create<string>();
+        var existingMetadata = new CaseMetadata
+        {
+            CaseId = caseId,
+            ActiveTransferId = null,
+            EgressWorkspaceId = existingWorkspaceId,
+            EgressWorkspaceName = existingWorkspaceName
+        };
+
+        _repositoryMock
+            .Setup(r => r.GetByCaseIdAsync(caseId))
+            .ReturnsAsync(existingMetadata);
+
+        _repositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<CaseMetadata>()))
+            .ReturnsAsync(existingMetadata);
+
+        // Act
+        var result = await _service.ClearEgressConnectionAsync(caseId);
+
+        // Assert
+        Assert.Equal(CaseMetadataState.Success, result.State);
+        Assert.Equal(existingWorkspaceName, result.ClearedPath);
+        Assert.Equal(existingWorkspaceId, result.Key);
+    }
+
+    [Fact]
+    public async Task ClearEgressConnectionAsync_WhenWorkspaceNameIsNull_FallsBackToWorkspaceId()
+    {
+        // Arrange
+        var caseId = _fixture.Create<int>();
+        var existingWorkspaceId = _fixture.Create<string>();
+        var existingMetadata = new CaseMetadata
+        {
+            CaseId = caseId,
+            ActiveTransferId = null,
+            EgressWorkspaceId = existingWorkspaceId,
+            EgressWorkspaceName = null
+        };
+
+        _repositoryMock
+            .Setup(r => r.GetByCaseIdAsync(caseId))
+            .ReturnsAsync(existingMetadata);
+
+        _repositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<CaseMetadata>()))
+            .ReturnsAsync(existingMetadata);
+
+        // Act
+        var result = await _service.ClearEgressConnectionAsync(caseId);
+
+        // Assert
+        Assert.Equal(CaseMetadataState.Success, result.State);
+        Assert.Equal(existingWorkspaceId, result.ClearedPath);
+        Assert.Equal(existingWorkspaceId, result.Key);
     }
 
     [Fact]

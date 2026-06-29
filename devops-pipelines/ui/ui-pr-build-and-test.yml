@@ -8,73 +8,73 @@ pr:
     include:
       - ui-spa/*
 
-pool: 'LACC PreProd Pool'
+pool: "LACC PreProd Pool"
 
 variables:
   - name: nodeVersion
-    value: '20.x'
+    value: "20.x"
   - name: workingDir
     value: ui-spa
   - name: covDir
-    value: 'coverage'
+    value: "coverage"
 
 stages:
   - stage: Build_and_Test_UI
-    displayName: 'Build & Test UI SPA'
+    displayName: "Build & Test UI SPA"
     jobs:
       - job: Build_and_Test
-        displayName: 'Build & Test App'
+        displayName: "Build & Test App"
         steps:
           - task: UseNode@1
-            displayName: 'Use Node.js'
+            displayName: "Use Node.js"
             inputs:
-              version: '$(nodeVersion)'
+              version: "$(nodeVersion)"
 
           - task: Npm@1
-            displayName: 'Clean Install NPM Dependencies'
+            displayName: "Clean Install NPM Dependencies"
             inputs:
-              command: 'ci'
-              workingDir: '$(workingDir)'
+              command: "ci"
+              workingDir: "$(workingDir)"
 
           - task: Npm@1
-            displayName: 'Lint Code'
+            displayName: "Lint Code"
             inputs:
-              command: 'custom'
-              customCommand: 'run lint'
-              workingDir: 'ui-spa'
+              command: "custom"
+              customCommand: "run lint"
+              workingDir: "ui-spa"
 
           - task: Npm@1
-            displayName: 'Build Web App Package'
+            displayName: "Build Web App Package"
             inputs:
-              command: 'custom'
-              customCommand: 'run build'
-              workingDir: '$(workingDir)'
+              command: "custom"
+              customCommand: "run build"
+              workingDir: "$(workingDir)"
 
-# ---------- UNIT TESTS (Vitest) ----------
+          # ---------- UNIT TESTS (Vitest) ----------
           - task: Npm@1
-            displayName: 'Run UI Unit Tests with Coverage'
+            displayName: "Run UI Unit Tests with Coverage"
             inputs:
-              command: 'custom'
-              customCommand: 'run unit:coverage'
-              workingDir: '$(workingDir)'
+              command: "custom"
+              customCommand: "run unit:coverage"
+              workingDir: "$(workingDir)"
 
           - task: PublishTestResults@2
-            displayName: 'Publish Unit Test Results (JUnit)'
+            displayName: "Publish Unit Test Results (JUnit)"
             inputs:
-              testResultsFormat: 'JUnit'
-              testResultsFiles: '$(workingDir)/unit-test-results.xml'
+              testResultsFormat: "JUnit"
+              testResultsFiles: "$(workingDir)/unit-test-results.xml"
               publishRunAttachments: false
             condition: always()
-          
+
           - task: UseDotNet@2
-            displayName: 'Use .NET SDK to publish Code Coverage'
+            displayName: "Use .NET SDK to publish Code Coverage"
             inputs:
-              packageType: 'sdk'
-              version: '10.x'
+              packageType: "sdk"
+              version: "10.x"
 
           - script: |
               export PATH="$PATH:$HOME/.dotnet/tools"
-              
+
               if ! dotnet reportgenerator --version &> /dev/null; then
                 dotnet tool install --global dotnet-reportgenerator-globaltool
               fi
@@ -83,33 +83,33 @@ stages:
                 -reports:"$(covDir)/unit/cobertura-coverage.xml" \
                 -targetdir:"$(covDir)/unit" \
                 -reporttypes:"HtmlInline_AzurePipelines"
-            displayName: 'Generate Unit HTML Coverage Report'
-            workingDirectory: '$(workingDir)'
-          
-          - publish: '$(workingDir)/$(covDir)/unit/index.html'
-            artifact: '$(System.JobId)-unit-coverage-report'
-            displayName: 'Publish Unit Test Coverage Report as Pipeline Artifact'
+            displayName: "Generate Unit HTML Coverage Report"
+            workingDirectory: "$(workingDir)"
 
-# ---------- INTEGRATION TESTS (Playwright) ----------
+          - publish: "$(workingDir)/$(covDir)/unit/index.html"
+            artifact: "$(System.JobId)-unit-coverage-report"
+            displayName: "Publish Unit Test Coverage Report as Pipeline Artifact"
+
+          # ---------- INTEGRATION TESTS (Playwright) ----------
           - task: Npm@1
-            displayName: 'Install Playwright Browsers'
+            displayName: "Install Playwright Browsers"
             inputs:
-              command: 'custom'
-              customCommand: 'exec playwright install -- --with-deps'
-              workingDir: '$(workingDir)'
+              command: "custom"
+              customCommand: "exec playwright install -- --with-deps"
+              workingDir: "$(workingDir)"
 
           - task: Npm@1
-            displayName: 'Run Integration Tests with Coverage'
+            displayName: "Run Integration Tests with Coverage"
             inputs:
-              command: 'custom'
-              customCommand: 'run integration:coverage:cobertura'
-              workingDir: '$(workingDir)'
-          
+              command: "custom"
+              customCommand: "run integration:coverage:cobertura"
+              workingDir: "$(workingDir)"
+
           - task: PublishTestResults@2
-            displayName: 'Publish Integration Test Results (JUnit)'
+            displayName: "Publish Integration Test Results (JUnit)"
             inputs:
-              testResultsFormat: 'JUnit'
-              testResultsFiles: '$(workingDir)/playwright/integration-test-results.xml'
+              testResultsFormat: "JUnit"
+              testResultsFiles: "$(workingDir)/playwright/integration-test-results.xml"
               publishRunAttachments: false
             condition: always()
 
@@ -120,13 +120,13 @@ stages:
                 -reports:"$(covDir)/integration/cobertura-coverage.xml" \
                 -targetdir:"$(covDir)/integration" \
                 -reporttypes:"HtmlInline_AzurePipelines"
-            displayName: 'Generate Integration HTML Coverage Report'
-            workingDirectory: '$(workingDir)'
+            displayName: "Generate Integration HTML Coverage Report"
+            workingDirectory: "$(workingDir)"
 
-          - publish: '$(workingDir)/$(covDir)/integration/index.html'
-            artifact: '$(System.JobId)-integration-coverage-report'
-            displayName: 'Publish Integration Coverage Report as Pipeline Artifact'
-          
+          - publish: "$(workingDir)/$(covDir)/integration/index.html"
+            artifact: "$(System.JobId)-integration-coverage-report"
+            displayName: "Publish Integration Coverage Report as Pipeline Artifact"
+
           - script: |
               export PATH="$PATH:$HOME/.dotnet/tools"
 
@@ -134,11 +134,11 @@ stages:
                 -reports:"$(covDir)/unit/cobertura-coverage.xml;$(covDir)/integration/cobertura-coverage.xml" \
                 -targetdir:"$(covDir)/merged" \
                 -reporttypes:"Cobertura"
-            displayName: 'Generate Combined Coverage Report'
-            workingDirectory: '$(workingDir)'
+            displayName: "Generate Combined Coverage Report"
+            workingDirectory: "$(workingDir)"
 
           - task: PublishCodeCoverageResults@2
-            displayName: 'Publish Combined Code Coverage'
+            displayName: "Publish Combined Code Coverage"
             inputs:
-              summaryFileLocation: '$(workingDir)/$(covDir)/merged/Cobertura.xml'
+              summaryFileLocation: "$(workingDir)/$(covDir)/merged/Cobertura.xml"
               failIfCoverageEmpty: true
