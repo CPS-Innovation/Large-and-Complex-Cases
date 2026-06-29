@@ -738,7 +738,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
       {!transferId &&
         transferStatus !== "validating" &&
         transferStatus !== "transferring" && (
-          <div>
+          <div data-testid="transfer-source-wrapper">
             <div>
               <h2>{getMainTexts().title}</h2>
               <p data-testid="transfer-source-description">

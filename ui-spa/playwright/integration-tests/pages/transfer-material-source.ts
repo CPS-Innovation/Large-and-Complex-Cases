@@ -1,6 +1,4 @@
 import { type Page, expect } from "@playwright/test";
-import { a } from "vitest/dist/chunks/suite.qtkXWc6R.js";
-
 export class TransferMaterialsSourcePage {
   private readonly page: Page;
 
@@ -15,12 +13,58 @@ export class TransferMaterialsSourcePage {
   async verifyPageElements() {
     await expect(this.page.locator("h1")).toHaveText("Thunderstruck");
     await expect(this.page.getByTestId("case-urn")).toHaveText("45AA2098221");
-    await expect(
-      this.page.getByRole("button", { name: "Disconnect Shared Drive" }),
-    ).toBeVisible();
     await expect(this.page.getByTestId("tab-active")).toHaveText(
       "Transfer materials",
     );
+  }
+
+  async verifyTransferLoaderVisible(
+    sameUser: boolean,
+    userName: string = "dev_user@example.org",
+  ) {
+    await expect(
+      this.page.getByTestId("transfer-source-wrapper"),
+    ).not.toBeVisible();
+    await expect(this.page.getByTestId("transfer-spinner")).toBeVisible({
+      timeout: 30000,
+    });
+    if (sameUser) {
+      await expect(
+        this.page.getByTestId("tab-content-transfer-materials"),
+      ).toContainText("Completing transfer from Egress to Shared Drive...");
+    }
+    if (!sameUser) {
+      await expect(
+        this.page.getByTestId("tab-content-transfer-materials"),
+      ).toContainText(`${userName} is currently transferring`);
+    }
+  }
+
+  async verifyTransferLoaderHidden() {
+    await expect(this.page.getByTestId("transfer-spinner")).not.toBeVisible({
+      timeout: 30000,
+    });
+  }
+
+  async verifyTransferStats(value: string) {
+    await expect(
+      this.page.getByTestId("transfer-progress-metrics"),
+    ).toBeVisible();
+    await expect(
+      this.page.getByTestId("transfer-progress-metrics"),
+    ).toContainText(value);
+  }
+
+  async verifyTransferStatsHidden() {
+    await expect(
+      this.page.getByTestId("transfer-progress-metrics"),
+    ).not.toBeVisible();
+  }
+
+  async verifyTransferSourceHidden() {
+    await expect(
+      this.page.getByTestId("transfer-source-wrapper"),
+    ).not.toBeVisible();
   }
 
   async verifyTransferSourceTableLoader(
@@ -48,6 +92,9 @@ export class TransferMaterialsSourcePage {
   }
 
   async verifyEgressTransferSourceElements() {
+    await expect(
+      this.page.getByTestId("transfer-source-wrapper"),
+    ).toBeVisible();
     await expect(this.page.locator("h2")).toHaveText(
       "Transfer from Egress to the Shared Drive",
     );
@@ -60,6 +107,9 @@ export class TransferMaterialsSourcePage {
       this.page.getByTestId("toggle-transfer-direction").first(),
     ).toHaveText("View Shared Drive");
     await expect(this.page.getByTestId("transfer-controls")).toHaveCount(2);
+    await expect(
+      this.page.getByRole("button", { name: "Disconnect Shared Drive" }),
+    ).toBeVisible();
   }
 
   async verifySharedDriveTransferSourceElements() {
@@ -187,6 +237,7 @@ export class TransferMaterialsSourcePage {
 
   async validateTransferSuccessBanner(
     relativePaths: { folderPath: string; files: string[] }[],
+    transferType: "copy" | "move",
   ) {
     const successBanner = this.page.getByTestId(
       "transfer-success-notification-banner",
@@ -205,7 +256,7 @@ export class TransferMaterialsSourcePage {
     ).toHaveText("folder-2-0");
 
     await expect(successBanner.locator("details>summary")).toHaveText(
-      "Show copied materials",
+      `Show ${transferType === "copy" ? "copied" : "moved"} materials`,
     );
     await expect(successBanner.getByTestId("transfer-files")).not.toBeVisible();
     await successBanner.locator("details>summary").click();
@@ -236,5 +287,12 @@ export class TransferMaterialsSourcePage {
     await expect(successBanner.getByTestId("transfer-files")).not.toBeVisible({
       timeout: 50000,
     });
+  }
+
+  async validateTransferSuccessBannerHidden() {
+    const successBanner = this.page.getByTestId(
+      "transfer-success-notification-banner",
+    );
+    await expect(successBanner).not.toBeVisible();
   }
 }
