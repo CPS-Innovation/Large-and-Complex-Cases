@@ -48,7 +48,7 @@ public class S3ClientFactoryTests
         _telemetryHandlerMock = new Mock<IS3TelemetryHandler>();
         _netAppCertFactoryMock = new Mock<INetAppCertFactory>();
 
-        var testCert = new X509Certificate2([]);
+        var testCert = GenerateSelfSignedCertificate("CN=TestCA");
         var testCertCollection = new X509Certificate2Collection { testCert };
 
         _netAppCertFactoryMock

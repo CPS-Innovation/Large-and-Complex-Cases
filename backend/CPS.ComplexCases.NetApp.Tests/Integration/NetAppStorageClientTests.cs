@@ -38,7 +38,6 @@ public class NetAppStorageClientTests : IDisposable
 
     public NetAppStorageClientTests()
     {
-        System.Net.ServicePointManager.ServerCertificateValidationCallback = (sender, cert, chain, sslPolicyErrors) => true;
         _server = WireMockServer.Start(new WireMockServerSettings
         {
             UseSSL = true

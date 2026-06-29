@@ -17,12 +17,10 @@ public class ExceptionHandlingMiddlewareTests
   }
 
   [Fact]
-  public void MapExceptionToStatusCode_TypedBrokenCircuitException_MapsToServiceUnavailable()
+  public void MapExceptionToStatusCode_BrokenCircuitExceptionWithMessage_MapsToServiceUnavailable()
   {
     var statusCode = ExceptionHandlingMiddleware.MapExceptionToStatusCode(
-        new BrokenCircuitException<HttpResponseMessage>(
-            "Circuit open",
-            new HttpResponseMessage(HttpStatusCode.InternalServerError)));
+        new BrokenCircuitException("Circuit open"));
 
     Assert.Equal(HttpStatusCode.ServiceUnavailable, statusCode);
   }

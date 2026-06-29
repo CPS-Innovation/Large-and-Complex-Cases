@@ -12,9 +12,9 @@ variables:
   - name: buildConfiguration
     value: 'Release'
   - name: dotNetVersion
-    value: '8.x'
+    value: '10.x'
   - name: efVersion
-    value: '8.0.*'
+    value: '10.0.*'
   - name: testResultsDirectory
     value: '$(Agent.TempDirectory)/TestResults'
 

@@ -34,7 +34,7 @@ steps:
         package: "$(Pipeline.Workspace)/${{ parameters.buildArtifactName }}/*.zip"
       ${{ else }}:
         package: "$(Pipeline.Workspace)/${{ parameters.pipelineResource}}/${{ parameters.buildArtifactName }}/*.zip"
-      runtimeStack: "DOTNET-ISOLATED|8.0"
+      runtimeStack: "DOTNET-ISOLATED|10.0"
       deploymentMethod: "runFromPackage"
       deployToSlotOrASE: ${{ parameters.deployToSlot }}
       slotName: ${{ parameters.slotName }}

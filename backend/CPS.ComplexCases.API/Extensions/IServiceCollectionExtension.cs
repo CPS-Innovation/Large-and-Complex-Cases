@@ -3,9 +3,9 @@ using CPS.ComplexCases.API.Clients.FileTransfer;
 using CPS.ComplexCases.API.Domain.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
 using Polly;
-using Polly.Contrib.WaitAndRetry;
 
 namespace CPS.ComplexCases.API.Extensions;
 
@@ -25,29 +25,23 @@ public static class IServiceCollectionExtension
             client.BaseAddress = new Uri(options.BaseUrl);
             client.Timeout = TimeSpan.FromSeconds(options.RequestTimeoutSeconds);
         })
-        .AddPolicyHandler((serviceProvider, request) =>
+        .AddResilienceHandler("file-transfer-retry", (pipeline, context) =>
         {
-            var options = serviceProvider.GetRequiredService<IOptions<FileTransferApiOptions>>().Value;
-            return CreateRetryPolicy(options);
+            var options = context.ServiceProvider.GetRequiredService<IOptions<FileTransferApiOptions>>().Value;
+            var retryAttempts = options.RetryAttempts > 0 ? options.RetryAttempts : 2;
+            var firstRetryDelaySeconds = options.FirstRetryDelaySeconds > 0 ? options.FirstRetryDelaySeconds : 1;
+
+            pipeline.AddRetry(new HttpRetryStrategyOptions
+            {
+                MaxRetryAttempts = retryAttempts,
+                Delay = TimeSpan.FromSeconds(firstRetryDelaySeconds),
+                BackoffType = DelayBackoffType.Exponential,
+                UseJitter = true,
+                ShouldHandle = static args =>
+                    ValueTask.FromResult(args.Outcome.Result?.StatusCode >= HttpStatusCode.InternalServerError)
+            });
         });
 
         services.AddTransient<IRequestFactory, RequestFactory>();
-    }
-
-    private static IAsyncPolicy<HttpResponseMessage> CreateRetryPolicy(FileTransferApiOptions options)
-    {
-        var retryAttempts = options.RetryAttempts > 0 ? options.RetryAttempts : 2;
-        var firstRetryDelaySeconds = options.FirstRetryDelaySeconds > 0 ? options.FirstRetryDelaySeconds : 1;
-
-        return Policy
-            .HandleResult<HttpResponseMessage>(ShouldRetry)
-            .WaitAndRetryAsync(Backoff.DecorrelatedJitterBackoffV2(
-                medianFirstRetryDelay: TimeSpan.FromSeconds(firstRetryDelaySeconds),
-                retryCount: retryAttempts));
-    }
-
-    private static bool ShouldRetry(HttpResponseMessage response)
-    {
-        return response.StatusCode >= HttpStatusCode.InternalServerError;
     }
 }
