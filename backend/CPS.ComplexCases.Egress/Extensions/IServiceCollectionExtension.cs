@@ -6,9 +6,6 @@ using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Http.Resilience;
-using Microsoft.Extensions.Logging;
-using Polly;
 
 namespace CPS.ComplexCases.Egress.Extensions;
 
@@ -30,6 +27,22 @@ public static class IServiceCollectionExtension
     services.AddTransient<IEgressRequestFactory, EgressRequestFactory>();
     services.AddTransient<IEgressArgFactory, EgressArgFactory>();
     services.Configure<EgressOptions>(configuration.GetSection("EgressOptions"));
+
+    var configureResilience = ResiliencePipelineExtensions.ConfigureStandardResilience(
+        "CPS.ComplexCases.Egress.CircuitBreaker",
+        new HttpResilienceOptions
+        {
+          ServiceName = "Egress",
+          RetryAttempts = RetryAttempts,
+          FirstRetryDelay = TimeSpan.FromSeconds(FirstRetryDelaySeconds),
+          CircuitBreakerFailureThreshold = CircuitBreakerFailureThreshold,
+          CircuitBreakerSamplingDuration = TimeSpan.FromSeconds(CircuitBreakerSamplingDurationSeconds),
+          CircuitBreakerMinimumThroughput = CircuitBreakerMinimumThroughput,
+          CircuitBreakerDurationOfBreak = TimeSpan.FromSeconds(CircuitBreakerDurationOfBreakSeconds),
+          ConcurrencyLimit = ConcurrencyLimit,
+          AdditionalRetryableStatusCodes = [HttpStatusCode.TooManyRequests],
+        });
+
     services.AddHttpClient<IEgressClient, EgressClient>(client =>
     {
       var egressServiceUrl = configuration["EgressOptions:Url"];
@@ -41,7 +54,7 @@ public static class IServiceCollectionExtension
       client.Timeout = TimeSpan.FromSeconds(configuration.GetValue("EgressOptions:ManagementTimeoutSeconds", 100));
     })
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-    .AddResilienceHandler("egress-resilience", ConfigureResiliencePipeline);
+    .AddResilienceHandler("egress-resilience", configureResilience);
 
     services.AddHttpClient<EgressStorageClient>(client =>
     {
@@ -58,28 +71,6 @@ public static class IServiceCollectionExtension
       client.Timeout = Timeout.InfiniteTimeSpan;
     })
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-    .AddResilienceHandler("egress-storage-resilience", ConfigureResiliencePipeline);
-  }
-
-  private static void ConfigureResiliencePipeline(
-      ResiliencePipelineBuilder<HttpResponseMessage> pipeline,
-      ResilienceHandlerContext context)
-  {
-    var logger = context.ServiceProvider
-        .GetRequiredService<ILoggerFactory>()
-        .CreateLogger("CPS.ComplexCases.Egress.CircuitBreaker");
-
-    pipeline.AddStandardHttpResilience(new HttpResilienceOptions
-    {
-      ServiceName = "Egress",
-      RetryAttempts = RetryAttempts,
-      FirstRetryDelay = TimeSpan.FromSeconds(FirstRetryDelaySeconds),
-      CircuitBreakerFailureThreshold = CircuitBreakerFailureThreshold,
-      CircuitBreakerSamplingDuration = TimeSpan.FromSeconds(CircuitBreakerSamplingDurationSeconds),
-      CircuitBreakerMinimumThroughput = CircuitBreakerMinimumThroughput,
-      CircuitBreakerDurationOfBreak = TimeSpan.FromSeconds(CircuitBreakerDurationOfBreakSeconds),
-      ConcurrencyLimit = ConcurrencyLimit,
-      AdditionalRetryableStatusCodes = [HttpStatusCode.TooManyRequests],
-    }, logger);
+    .AddResilienceHandler("egress-storage-resilience", configureResilience);
   }
 }

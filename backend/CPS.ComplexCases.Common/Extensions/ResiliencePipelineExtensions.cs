@@ -1,5 +1,6 @@
 using System.Net;
 using CPS.ComplexCases.Common.Resilience;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Logging;
 using Polly;
@@ -8,6 +9,20 @@ namespace CPS.ComplexCases.Common.Extensions;
 
 public static class ResiliencePipelineExtensions
 {
+  // Builds the standard resilience-handler configuration delegate shared by every service client.
+  // Each caller supplies only the logger category and its tuned options; the logger creation and
+  // pipeline wiring are identical, so they live here to avoid duplicating them per project.
+  public static Action<ResiliencePipelineBuilder<HttpResponseMessage>, ResilienceHandlerContext>
+      ConfigureStandardResilience(string loggerCategory, HttpResilienceOptions options) =>
+      (pipeline, context) =>
+      {
+        var logger = context.ServiceProvider
+            .GetRequiredService<ILoggerFactory>()
+            .CreateLogger(loggerCategory);
+
+        pipeline.AddStandardHttpResilience(options, logger);
+      };
+
   // Configures a standard HTTP resilience pipeline built on Microsoft.Extensions.Http.Resilience
   // (Polly v8). Strategies are added outer-to-inner: concurrency limiter, then retry, then circuit
   // breaker. Retry sits outside the breaker so a retry attempt re-enters the (possibly open) circuit

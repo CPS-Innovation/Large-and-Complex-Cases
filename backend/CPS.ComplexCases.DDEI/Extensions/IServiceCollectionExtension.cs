@@ -9,10 +9,7 @@ using CPS.ComplexCases.DDEI.Mappers;
 using CPS.ComplexCases.DDEI.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Http.Resilience;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Polly;
 
 namespace CPS.ComplexCases.DDEI.Extensions;
 
@@ -32,9 +29,28 @@ public static class IServiceCollectionExtension
   {
     services.Configure<DDEIOptions>(configuration.GetSection(nameof(DDEIOptions)));
     services.AddTransient<IDdeiArgFactory, DdeiArgFactory>();
+
+    // A 404 is retried (MDS occasionally returns one transiently) but is not a health signal, so it is
+    // deliberately excluded from the breaker. Connection failures are also retried for this service.
+    var configureResilience = ResiliencePipelineExtensions.ConfigureStandardResilience(
+        "CPS.ComplexCases.DDEI.CircuitBreaker",
+        new HttpResilienceOptions
+        {
+          ServiceName = "MDS (DDEI)",
+          RetryAttempts = RetryAttempts,
+          FirstRetryDelay = TimeSpan.FromSeconds(FirstRetryDelaySeconds),
+          CircuitBreakerFailureThreshold = CircuitBreakerFailureThreshold,
+          CircuitBreakerSamplingDuration = TimeSpan.FromSeconds(CircuitBreakerSamplingDurationSeconds),
+          CircuitBreakerMinimumThroughput = CircuitBreakerMinimumThroughput,
+          CircuitBreakerDurationOfBreak = TimeSpan.FromSeconds(CircuitBreakerDurationOfBreakSeconds),
+          ConcurrencyLimit = 0,
+          RetryOnConnectionFailure = true,
+          AdditionalRetryableStatusCodes = [HttpStatusCode.NotFound],
+        });
+
     services.AddHttpClient<IDdeiClient, DdeiClient>(AddDdeiClient)
       .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-      .AddResilienceHandler("ddei-resilience", ConfigureResiliencePipeline);
+      .AddResilienceHandler("ddei-resilience", configureResilience);
     services.AddTransient<IDdeiRequestFactory, DdeiRequestFactory>();
     services.AddTransient<ICaseDetailsMapper, CaseDetailsMapper>();
     services.AddTransient<IAreasMapper, AreasMapper>();
@@ -53,30 +69,5 @@ public static class IServiceCollectionExtension
     {
       client.DefaultRequestHeaders.Add(DDEIOptions.DevtunnelTokenKey, opts.DevtunnelToken);
     }
-  }
-
-  // A 404 is retried (MDS occasionally returns one transiently) but is not a health signal, so it is
-  // deliberately excluded from the breaker. Connection failures are also retried for this service.
-  private static void ConfigureResiliencePipeline(
-      ResiliencePipelineBuilder<HttpResponseMessage> pipeline,
-      ResilienceHandlerContext context)
-  {
-    var logger = context.ServiceProvider
-        .GetRequiredService<ILoggerFactory>()
-        .CreateLogger("CPS.ComplexCases.DDEI.CircuitBreaker");
-
-    pipeline.AddStandardHttpResilience(new HttpResilienceOptions
-    {
-      ServiceName = "MDS (DDEI)",
-      RetryAttempts = RetryAttempts,
-      FirstRetryDelay = TimeSpan.FromSeconds(FirstRetryDelaySeconds),
-      CircuitBreakerFailureThreshold = CircuitBreakerFailureThreshold,
-      CircuitBreakerSamplingDuration = TimeSpan.FromSeconds(CircuitBreakerSamplingDurationSeconds),
-      CircuitBreakerMinimumThroughput = CircuitBreakerMinimumThroughput,
-      CircuitBreakerDurationOfBreak = TimeSpan.FromSeconds(CircuitBreakerDurationOfBreakSeconds),
-      ConcurrencyLimit = 0,
-      RetryOnConnectionFailure = true,
-      AdditionalRetryableStatusCodes = [HttpStatusCode.NotFound],
-    }, logger);
   }
 }
