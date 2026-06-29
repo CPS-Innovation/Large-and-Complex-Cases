@@ -1,5 +1,5 @@
 import { test } from "../utils/test";
-import type { Page } from "@playwright/test";
+import { type Page, expect } from "@playwright/test";
 import { delay, HttpResponse, http } from "msw";
 import { TransferMaterialsSourcePage } from "../pages/transfer-material-source";
 import { TransferMaterialsDestinationPage } from "../pages/transfer-material-destination";
@@ -133,7 +133,7 @@ async function runTransferScenario(page: Page, transferType: "copy" | "move") {
     transferType,
   );
 }
-test.describe("transfer material egress list", () => {
+test.describe("transfer material egress netapp transfer", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/case/12/case-management");
   });
@@ -448,5 +448,100 @@ test.describe("transfer material egress list", () => {
 
     await transferMaterialsSourcePage.validateTransferSuccessBannerHidden();
     await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
+  });
+
+  test("Should not show the transfer move option if the transferMove feature flag is disabled", async ({
+    page,
+  }) => {
+    await page.goto("/case/12/case-management?transfer-move=false");
+    const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
+    await transferMaterialsSourcePage.verifyPageElements();
+    await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
+    await transferMaterialsSourcePage.verifyMoveBtnEnabled(false);
+  });
+
+  test("Should show the egress connection error screen, if user who does not have access to egress come to the application when there is an active transfer Id", async ({
+    page,
+    worker,
+  }) => {
+    await worker.use(
+      http.get(
+        "https://mocked-out-api/api/v1/egress/workspaces/egress_1/files",
+        async () => {
+          await delay(500);
+          return new HttpResponse(null, { status: 401 });
+        },
+      ),
+    );
+    await worker.use(
+      http.get("https://mocked-out-api/api/v1/cases/12", async () => {
+        await delay(10);
+        return HttpResponse.json({
+          caseId: 12,
+          egressWorkspaceId: "egress_1",
+          netappFolderPath: "netapp/",
+          operationName: "Thunderstruck",
+          urn: "45AA2098221",
+          activeTransferId: "mock-transfer-id",
+        });
+      }),
+    );
+    await worker.use(
+      http.get(
+        "https://mocked-out-api/api/v1/filetransfer/mock-transfer-id/status",
+        async () => {
+          await delay(10);
+          return HttpResponse.json({
+            id: "00000000-0000-4000-8000-000000000001",
+            startedAt: null,
+            successfulFiles: 0,
+            failedFiles: 0,
+            status: "InProgress",
+            transferType: "Copy",
+            direction: "EgressToNetApp",
+            completedAt: null,
+            failedItems: [],
+            userName: "abc@example.org",
+            totalFiles: 30,
+            processedFiles: 2,
+            successfulItems: [],
+            destinationPath: "",
+          });
+        },
+      ),
+    );
+
+    let statusApiCall = false;
+    page.on("request", (request) => {
+      if (
+        request
+          .url()
+          .includes(
+            "https://mocked-out-api/api/v1/filetransfer/mock-transfer-id/status",
+          )
+      ) {
+        statusApiCall = true;
+      }
+    });
+    await page.goto("/case/12/case-management");
+    const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
+    await transferMaterialsSourcePage.verifyPageElements();
+    await transferMaterialsSourcePage.verifyTransferLoaderHidden();
+
+    //Note: convert to connectionError page class
+    await expect(page).toHaveURL(
+      "/case/12/case-management/connection-error?type=egress",
+    );
+    await expect(page.locator("h1")).toHaveText(
+      "There is a problem connecting to Egress",
+    );
+    const listItems = page.locator("ul > li");
+    await expect(listItems).toHaveCount(2);
+    await expect(listItems).toHaveText([
+      "check the case exists and you have access on the Case Management System",
+      "contact the product team if you need help",
+    ]);
+
+    expect(statusApiCall).toBe(false);
   });
 });

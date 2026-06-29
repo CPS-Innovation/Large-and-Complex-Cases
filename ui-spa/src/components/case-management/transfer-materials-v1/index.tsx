@@ -673,7 +673,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!transferId) {
+    if (!transferId || !netAppData || !egressData) {
       return;
     }
 
@@ -686,6 +686,8 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
     );
   }, [
     transferId,
+    netAppData,
+    egressData,
     setTransferStatus,
     isComponentUnmounted,
     handleStatusResponse,
