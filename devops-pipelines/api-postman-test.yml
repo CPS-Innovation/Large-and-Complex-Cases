@@ -1,7 +1,17 @@
+schedules:
+  - cron: "0 5 * * Tue-Sat"
+    displayName: "Weekday 5am UTC Api Test"
+    branches:
+      include:
+        - main
+    always: true
+
+trigger: none
+
 parameters:
   - name: environment
     type: string
-    default: dev
+    default: staging
   - name: agentPool
     type: string
     default: LACC PreProd Pool

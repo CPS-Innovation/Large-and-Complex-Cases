@@ -252,7 +252,7 @@ function Install-Newman {
 
     $newman = Get-Command newman -ErrorAction SilentlyContinue
     if (-not $newman) {
-        Write-Ouput "Newman not found. Installing..." -ForegroundColor Yellow
+        write-output "Newman not found. Installing..." -ForegroundColor Yellow
         npm install -g --ignore-scripts newman
         $packageInstalled = $true
     }
