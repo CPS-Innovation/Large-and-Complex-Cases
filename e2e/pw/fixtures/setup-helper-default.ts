@@ -178,5 +178,7 @@ export async function setupDefaultTestData(
     caseId: Number.isFinite(caseIdNum) ? caseIdNum : undefined,
     uploadSubfolder,
     destinationSubfolderId,
+    egressToken,
+    egressBaseUrl: config.egressBaseUrl,
   };
 }

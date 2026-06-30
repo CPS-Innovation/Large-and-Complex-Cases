@@ -494,3 +494,20 @@ export async function deleteWorkspace(
   }
 }
 
+// ---------------- Added for Move test ------------------
+export async function isFileInEgress(
+  baseUrl: string,
+  token: string,
+  workspaceId: string,
+  folderId: string,
+  fileName: string
+): Promise<boolean> {
+  const files = await listEgressWorkspaceFilesByFolderId(
+    baseUrl,
+    token,
+    workspaceId,
+    folderId
+  );
+
+  return files.some(f => f.fileName === fileName);
+}
