@@ -1,0 +1,86 @@
+schedules:
+  - cron: '0 5 * * Mon-Fri'
+    displayName: 'Weekday 5am UTC test'
+    branches:
+      include:
+        - task/FCT2-20209_Test-Move-functionality
+    always: true
+
+trigger: none
+
+parameters:
+  - name: environment
+    type: string
+    default: staging
+  - name: agentPool
+    type: string
+    default: "LACC PreProd Pool"
+  - name: testFileSizeMb
+    type: number
+    default: 1024
+
+jobs:
+  - job: runMoveTest
+    displayName: "Run Move Test with Playwright"
+    pool: ${{ parameters.agentPool }}
+    variables:
+      - group: lacc-automated-testing-${{ parameters.environment }}
+      - group: lacc-backend-config-${{ parameters.environment }}
+      - name: nodeVersion
+        value: "20.x"
+      - name: workingDir
+        value: "$(System.DefaultWorkingDirectory)/e2e/pw"
+
+    steps:
+      - task: UseNode@1
+        displayName: "Use Node.js"
+        inputs:
+          version: "$(nodeVersion)"
+
+      - task: Npm@1
+        displayName: "Install NPM Dependencies"
+        inputs:
+          command: "ci"
+          workingDir: "$(workingDir)"
+
+      - script: node_modules/.bin/playwright install --with-deps chromium
+        displayName: "Install Browsers"
+        workingDirectory: $(workingDir)
+
+      - script: |
+          npx --no-install --ignore-scripts \
+            playwright test egress-to-netapp-move-default.spec.ts
+        workingDirectory: $(workingDir)
+        displayName: "Run E2E Tests"
+        env:
+          CI: true
+          TEST_FILE_SIZE_MB: ${{ parameters.testFileSizeMb }}
+          BASE_URL: $(RedirectUrlLccUi)
+          CMS_LOGIN_PAGE: "$(LccApiBaseUrl)/api/tactical/login"
+          EGRESS_BASE_URL: $(EgressOptionsUrl)
+          TENANT_ID: $(TenantId)
+          LCC_API_CLIENT_ID: $(CallingAppValidAudience)
+          E2E_AD_USER: $(AadUserName)
+          E2E_AD_PASSWORD: $(AadUserPassword)
+          CMS_USERNAME: $(CmsUserName)
+          CMS_PASSWORD: $(CmsUserPassword)
+          EGRESS_SERVICE_ACCOUNT_AUTH: $(EgressServiceAccountAuth)
+          DEFAULT_WORKSPACE_ID: $(E2eEgressWorkspaceId)
+          DEFAULT_WORKSPACE_NAME: $(E2eEgressWorkspaceName)
+          DEFAULT_CASE_URN: $(E2eTestsCaseUrn)
+          DEFAULT_CASE_ID: $(E2eTestsCaseId)
+          LCC_API_BASE_URL: $(LccApiBaseUrl)
+          NETAPP_OPERATION_NAME: $(E2eNetAppFolderName)
+
+      - task: PublishTestResults@2
+        displayName: "Publish Test Results (JUnit)"
+        inputs:
+          testResultsFormat: JUnit
+          testResultsFiles: "$(workingDir)/playwright-report/e2e-test-report.xml"
+          publishRunAttachments: false
+        condition: succeededOrFailed()
+
+      - publish: "$(workingDir)/playwright-report"
+        artifact: "$(System.JobId)-e2e-playwright-report"
+        displayName: "Publish Report Artifact"
+        condition: succeededOrFailed()
