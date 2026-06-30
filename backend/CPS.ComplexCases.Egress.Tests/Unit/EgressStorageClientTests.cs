@@ -744,6 +744,19 @@ public class EgressStorageClientTests : IDisposable
         Assert.Equal("Statements/document.txt", result);
     }
 
+    [Theory]
+    [InlineData("Statements", "", "rootfile.txt", "rootfile.txt")]
+    [InlineData("", "", "rootfile.txt", "rootfile.txt")]
+    public void ConstructRelativePath_WhenFilePathIsEmpty_ReturnsFileNameWithoutThrowing(
+        string baseFolderPath, string filePath, string fileName, string expected)
+    {
+        // A recursive workspace listing can surface files at the workspace root (empty path);
+        // Path.GetRelativePath throws on an empty path, so this must be handled gracefully.
+        var result = InvokeConstructRelativePath(baseFolderPath, filePath, fileName);
+
+        Assert.Equal(expected, result);
+    }
+
     [Fact]
     public async Task UploadChunkAsync_WhenChunkReturns500ThenSucceeds_RetriesAndSucceeds()
     {

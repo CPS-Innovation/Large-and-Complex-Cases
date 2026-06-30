@@ -414,6 +414,14 @@ public class EgressStorageClient(
 
     private static string ConstructRelativePath(string baseFolderPath, string filePath, string fileName)
     {
+        // A file at the workspace root has an empty path. Path.GetRelativePath throws on an empty
+        // path, and a recursive listing (folderId "") can legitimately surface such root-level
+        // entries, so there is no sub-structure to preserve — fall back to the file name.
+        if (string.IsNullOrEmpty(filePath))
+        {
+            return fileName;
+        }
+
         // Get the folder name from the base path (selected folder)
         var baseFolderName = Path.GetFileName(baseFolderPath.TrimEnd('/'));
 
