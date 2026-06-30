@@ -97,6 +97,27 @@ public class TransferFile(
 
             using (sourceStream)
             {
+                if (totalSize <= 0)
+                {
+                    // A 0-byte or unknown-length source cannot be transferred as a sized multipart
+                    // upload and has produced fast 0-byte failures in production. 
+                    // Fail fast with a clear, classified error and record the size so this
+                    // mode is distinguishable in telemetry from chunk-500 / create-upload-404 failures.
+                    _logger.LogWarning(
+                        "Source returned a non-positive content length ({Size}) for {Path}; failing fast.",
+                        totalSize, payload.SourcePath.Path);
+
+                    telemetryEvent.FileSizeInBytes = totalSize;
+                    telemetryEvent.ErrorCode = TransferErrorCode.GeneralError.ToString();
+                    telemetryEvent.ErrorMessage =
+                        $"Source content length was {totalSize} (zero or unknown); the file could not be transferred.";
+
+                    return CreateFailureResult(
+                        payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
+                        TransferErrorCode.GeneralError,
+                        MapUserMessage(TransferErrorCode.GeneralError));
+                }
+
                 bool needsMd5 = destinationClient is EgressStorageClient;
                 bool isNetApp = destinationClient is NetAppStorageClient;
 
@@ -177,10 +198,15 @@ public class TransferFile(
                 errorMessage,
                 ex);
         }
-        catch (HttpRequestException ex) when ((int?)ex.StatusCode >= 500)
+        catch (HttpRequestException ex) when ((int?)ex.StatusCode >= 500
+            || ex.StatusCode == System.Net.HttpStatusCode.NotFound
+            || ex.StatusCode == System.Net.HttpStatusCode.Conflict)
         {
-            var errorMessage = $"Transient S3 error (HTTP {(int)ex.StatusCode}): {ex.Message}";
-            _logger.LogWarning(ex, "S3 error during transfer: {Path}", payload.SourcePath.Path);
+            // 404/409 on the Egress create-upload path are not file-specific: they happen when the
+            // destination folder is not yet visible (404) or a concurrent create races (409). Treat
+            // them as transient so the orchestrator can recover instead of failing the file outright.
+            var errorMessage = $"Transient destination error (HTTP {(int)ex.StatusCode}): {ex.Message}";
+            _logger.LogWarning(ex, "Destination returned a retryable HTTP error during transfer: {Path}", payload.SourcePath.Path);
             telemetryEvent.ErrorCode = TransferErrorCode.Transient.ToString();
             telemetryEvent.ErrorMessage = errorMessage;
             return CreateFailureResult(
@@ -220,14 +246,16 @@ public class TransferFile(
         }
         catch (Exception ex)
         {
-            var errorMessage =
-                $"Exception: {ex.GetType().FullName}: {ex.Message}{Environment.NewLine}StackTrace: {ex.StackTrace}";
+            // Keep the exception type and message in telemetry for diagnosis (the full stack trace is
+            // captured by the logger in CreateFailureResult), but surface only a short, actionable
+            // message to the user instead of a raw type-plus-stack-trace string.
+            var diagnosticDetail = $"Exception: {ex.GetType().FullName}: {ex.Message}";
             telemetryEvent.ErrorCode = TransferErrorCode.GeneralError.ToString();
-            telemetryEvent.ErrorMessage = errorMessage;
+            telemetryEvent.ErrorMessage = diagnosticDetail;
             return CreateFailureResult(
                 payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
                 TransferErrorCode.GeneralError,
-                errorMessage,
+                MapUserMessage(TransferErrorCode.GeneralError),
                 ex);
         }
         finally
@@ -499,6 +527,20 @@ public class TransferFile(
 
         return new TransferResult { IsSuccess = false, FailedItem = failedItem };
     }
+
+    // Maps an internal error code to a short, user-facing message. Detailed exception information is
+    // retained in telemetry and logs; only this concise message is surfaced to the user.
+    private static string MapUserMessage(TransferErrorCode errorCode) => errorCode switch
+    {
+        TransferErrorCode.FileExists =>
+            "A file with the same name already exists at the destination.",
+        TransferErrorCode.IntegrityVerificationFailed =>
+            "The file was uploaded but failed integrity verification, so the transfer was not completed.",
+        TransferErrorCode.Transient =>
+            "The destination service was temporarily unavailable. The transfer will be retried automatically.",
+        _ =>
+            "The file could not be transferred due to an unexpected error. Please try again, and contact support if the problem continues."
+    };
 
     // NetApp exception when the access key has been rotated since the
     // S3 client was created. Treating this as transient ensures the orchestrator

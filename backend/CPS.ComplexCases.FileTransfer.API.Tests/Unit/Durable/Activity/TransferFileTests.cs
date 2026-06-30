@@ -250,7 +250,9 @@ public class TransferFileTests
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.GeneralError, result.FailedItem.ErrorCode);
         Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
-        Assert.Contains("System.InvalidOperationException", result.FailedItem.ErrorMessage);
+        // The user-facing message is mapped, not a raw exception/stack-trace dump.
+        Assert.Contains("unexpected error", result.FailedItem.ErrorMessage);
+        Assert.DoesNotContain("System.InvalidOperationException", result.FailedItem.ErrorMessage);
     }
 
     [Fact]
@@ -379,7 +381,8 @@ public class TransferFileTests
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.GeneralError, result.FailedItem.ErrorCode);
         Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
-        Assert.Contains("System.InvalidOperationException", result.FailedItem.ErrorMessage);
+        Assert.Contains("unexpected error", result.FailedItem.ErrorMessage);
+        Assert.DoesNotContain("System.InvalidOperationException", result.FailedItem.ErrorMessage);
 
         _sourceClientMock.Verify(x => x.OpenReadStreamAsync(
                 It.IsAny<string>(),
@@ -765,7 +768,89 @@ public class TransferFileTests
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.GeneralError, result.FailedItem.ErrorCode);
-        Assert.Contains("Simulated upload failure", result.FailedItem.ErrorMessage);
+        // Detailed exception text stays in telemetry; the user message is mapped.
+        Assert.Contains("unexpected error", result.FailedItem.ErrorMessage);
+        Assert.DoesNotContain("Simulated upload failure", result.FailedItem.ErrorMessage);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.NotFound, "HTTP 404")]
+    [InlineData(HttpStatusCode.Conflict, "HTTP 409")]
+    public async Task Run_CreateUploadThrowsHttpRequestException404Or409_ReturnsTransientErrorCode(
+        HttpStatusCode statusCode, string expectedFragment)
+    {
+        // Arrange — create-upload (InitiateUpload) returns 404/409, which are not file-specific and
+        // must be treated as transient so the orchestrator can recover.
+        var payload = CreatePayload();
+        var content = Encoding.UTF8.GetBytes("abcd");
+        var stream = new MemoryStream(content);
+        var contentLength = content.Length;
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(payload.SourcePath.Path,
+                payload.WorkspaceId,
+                payload.SourcePath.FileId,
+                payload.BearerToken,
+                payload.BucketName))
+            .ReturnsAsync((stream, contentLength));
+
+        _destinationClientMock
+            .Setup(x => x.InitiateUploadAsync(
+                It.IsAny<string>(),
+                It.IsAny<long>(),
+                It.IsAny<string>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>()))
+            .ThrowsAsync(new HttpRequestException("error", null, statusCode));
+
+        // Act
+        var result = await _activity.Run(payload);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.FailedItem);
+        Assert.Equal(TransferErrorCode.Transient, result.FailedItem.ErrorCode);
+        Assert.Contains(expectedFragment, result.FailedItem.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task Run_ZeroLengthSource_ReturnsGeneralErrorAndDoesNotUpload()
+    {
+        // Arrange — a 0-byte / unknown-length source should fail fast with a classified error.
+        var payload = CreatePayload();
+        var stream = new MemoryStream(Array.Empty<byte>());
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(payload.SourcePath.Path,
+                payload.WorkspaceId,
+                payload.SourcePath.FileId,
+                payload.BearerToken,
+                payload.BucketName))
+            .ReturnsAsync((stream, 0L));
+
+        // Act
+        var result = await _activity.Run(payload);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.FailedItem);
+        Assert.Equal(TransferErrorCode.GeneralError, result.FailedItem.ErrorCode);
+
+        _destinationClientMock.Verify(x => x.InitiateUploadAsync(
+                It.IsAny<string>(), It.IsAny<long>(), It.IsAny<string>(), It.IsAny<string?>(),
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>()),
+            Times.Never);
     }
 
     [Fact]

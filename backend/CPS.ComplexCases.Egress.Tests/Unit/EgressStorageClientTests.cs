@@ -744,6 +744,204 @@ public class EgressStorageClientTests : IDisposable
         Assert.Equal("Statements/document.txt", result);
     }
 
+    [Fact]
+    public async Task UploadChunkAsync_WhenChunkReturns500ThenSucceeds_RetriesAndSucceeds()
+    {
+        // Arrange
+        var uploadId = _fixture.Create<string>();
+        var workspaceId = _fixture.Create<string>();
+        var session = new UploadSession { UploadId = uploadId, WorkspaceId = workspaceId };
+        var chunkData = Encoding.UTF8.GetBytes("chunk");
+        var token = _fixture.Create<string>();
+
+        var client = CreateClientWithChunkRetryOptions(maxAttempts: 3, baseDelaySeconds: 1);
+
+        SetupTokenRequest(token);
+        _requestFactoryMock
+            .Setup(f => f.UploadChunkRequest(It.IsAny<UploadChunkArg>(), It.IsAny<string>()))
+            .Returns(() => new HttpRequestMessage(HttpMethod.Patch, $"{TestUrl}/api/v1/uploads/{uploadId}/"));
+
+        SetupHttpMockResponsesWithStatus(
+            ("token", new GetWorkspaceTokenResponse { Token = token }, HttpStatusCode.OK),
+            ("chunkFail", "Internal Server Error", HttpStatusCode.InternalServerError),
+            ("chunkOk", new { Success = true }, HttpStatusCode.OK)
+        );
+
+        // Act
+        var result = await client.UploadChunkAsync(session, 1, chunkData, 0, chunkData.Length - 1, chunkData.Length);
+
+        // Assert
+        Assert.NotNull(result);
+        _requestFactoryMock.Verify(
+            f => f.UploadChunkRequest(It.IsAny<UploadChunkArg>(), It.IsAny<string>()),
+            Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task UploadChunkAsync_WhenChunkAlwaysReturns500_ThrowsAfterMaxAttempts()
+    {
+        // Arrange
+        var uploadId = _fixture.Create<string>();
+        var workspaceId = _fixture.Create<string>();
+        var session = new UploadSession { UploadId = uploadId, WorkspaceId = workspaceId };
+        var chunkData = Encoding.UTF8.GetBytes("chunk");
+        var token = _fixture.Create<string>();
+
+        var client = CreateClientWithChunkRetryOptions(maxAttempts: 2, baseDelaySeconds: 1);
+
+        SetupTokenRequest(token);
+        _requestFactoryMock
+            .Setup(f => f.UploadChunkRequest(It.IsAny<UploadChunkArg>(), It.IsAny<string>()))
+            .Returns(() => new HttpRequestMessage(HttpMethod.Patch, $"{TestUrl}/api/v1/uploads/{uploadId}/"));
+
+        SetupHttpMockResponsesWithStatus(
+            ("token", new GetWorkspaceTokenResponse { Token = token }, HttpStatusCode.OK),
+            ("chunkFail1", "Internal Server Error", HttpStatusCode.InternalServerError),
+            ("chunkFail2", "Internal Server Error", HttpStatusCode.InternalServerError)
+        );
+
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpRequestException>(
+            () => client.UploadChunkAsync(session, 1, chunkData, 0, chunkData.Length - 1, chunkData.Length));
+
+        _requestFactoryMock.Verify(
+            f => f.UploadChunkRequest(It.IsAny<UploadChunkArg>(), It.IsAny<string>()),
+            Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task CreateFolderAsync_CreatesEachMissingSegment()
+    {
+        // Arrange
+        var workspaceId = _fixture.Create<string>();
+        var token = _fixture.Create<string>();
+
+        SetupTokenRequest(token);
+        SetupCreateFolderRequest(workspaceId, token);
+
+        // "a/b/c": segment "a" is skipped (empty parent); "a/b" and "a/b/c" each trigger a create.
+        SetupHttpMockResponsesWithStatus(
+            ("token", new GetWorkspaceTokenResponse { Token = token }, HttpStatusCode.OK),
+            ("folder1", new { Success = true }, HttpStatusCode.OK),
+            ("folder2", new { Success = true }, HttpStatusCode.OK)
+        );
+
+        // Act
+        var result = await _client.CreateFolderAsync("a/b/c", workspaceId);
+
+        // Assert
+        Assert.True(result);
+        _requestFactoryMock.Verify(
+            f => f.CreateFolderRequest(It.IsAny<CreateFolderArg>(), token),
+            Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task CreateFolderAsync_WithNullWorkspaceId_ThrowsArgumentNullException()
+    {
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _client.CreateFolderAsync("a/b", null));
+
+        Assert.Equal("workspaceId", exception.ParamName);
+    }
+
+    [Theory]
+    [InlineData("uploads", "Statements/report.pdf", "Statements", "uploads")]
+    [InlineData("uploads", "Statements/Witness/report.pdf", "Statements", "uploads/Witness")]
+    [InlineData("dest", "Case/Evidence/Photos/crime.jpg", "Case/Evidence", "dest/Photos")]
+    public void GetDestinationFolderPath_ComputesFolderForRelativePath(
+        string destinationPath, string relativePath, string sourceRootFolderPath, string expected)
+    {
+        var result = EgressStorageClient.GetDestinationFolderPath(destinationPath, relativePath, sourceRootFolderPath);
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public async Task InitiateUploadAsync_When404ThenFolderCreatedThen404ThenSuccess_Retries()
+    {
+        // Arrange — create-upload 404, folder created, create-upload still 404 once, then succeeds.
+        var destinationPath = "uploads/documents";
+        var fileSize = 1024L;
+        var sourcePath = "test.txt";
+        var workspaceId = _fixture.Create<string>();
+        var relativePath = "test.txt";
+        var token = _fixture.Create<string>();
+        var uploadId = _fixture.Create<string>();
+
+        SetupTokenRequest(token);
+        SetupCreateFolderRequest(workspaceId, token);
+        _requestFactoryMock
+            .Setup(f => f.CreateUploadRequest(It.IsAny<CreateUploadArg>(), It.IsAny<string>()))
+            .Returns(() => new HttpRequestMessage(HttpMethod.Post, $"{TestUrl}/api/v1/uploads"));
+
+        // token, create-upload 404, folder created, create-upload still 404 once, then success.
+        SetupHttpMockResponsesWithStatus(
+            ("token", new GetWorkspaceTokenResponse { Token = token }, HttpStatusCode.OK),
+            ("uploadFail404", "Not Found", HttpStatusCode.NotFound),
+            ("folderCreate", new { Success = true }, HttpStatusCode.OK),
+            ("retry404", "Not Found", HttpStatusCode.NotFound),
+            ("uploadOk", new CreateUploadResponse { Id = uploadId }, HttpStatusCode.OK)
+        );
+
+        // Act
+        var result = await _client.InitiateUploadAsync(destinationPath, fileSize, sourcePath, workspaceId, relativePath);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(uploadId, result.UploadId);
+    }
+
+    [Fact]
+    public async Task CompleteUploadAsync_CalledTwiceOnSameClient_FetchesTokenOnce()
+    {
+        // Arrange
+        var uploadId = _fixture.Create<string>();
+        var workspaceId = _fixture.Create<string>();
+        var md5Hash = _fixture.Create<string>();
+        var session = new UploadSession { UploadId = uploadId, WorkspaceId = workspaceId };
+        var token = _fixture.Create<string>();
+
+        SetupTokenRequest(token);
+        SetupCompleteUploadRequest(uploadId, workspaceId, md5Hash, token);
+
+        SetupHttpMockResponses(
+            ("token", new GetWorkspaceTokenResponse { Token = token }),
+            ("complete1", new { Success = true }),
+            ("complete2", new { Success = true })
+        );
+
+        // Act
+        await _client.CompleteUploadAsync(session, md5Hash);
+        await _client.CompleteUploadAsync(session, md5Hash);
+
+        // Assert — the cached token means only one token request is made.
+        _requestFactoryMock.Verify(
+            f => f.GetWorkspaceTokenRequest(It.IsAny<string>(), It.IsAny<string>()),
+            Times.Once);
+    }
+
+    private EgressStorageClient CreateClientWithChunkRetryOptions(int maxAttempts, int baseDelaySeconds)
+    {
+        var egressOptions = new EgressOptions
+        {
+            Url = TestUrl,
+            Username = _fixture.Create<string>(),
+            Password = _fixture.Create<string>(),
+            MaxChunkUploadAttempts = maxAttempts,
+            ChunkRetryBaseDelaySeconds = baseDelaySeconds
+        };
+
+        var optionsMock = new Mock<IOptions<EgressOptions>>();
+        optionsMock.Setup(o => o.Value).Returns(egressOptions);
+
+        return new EgressStorageClient(
+            _loggerMock.Object,
+            optionsMock.Object,
+            _httpClient,
+            _requestFactoryMock.Object,
+            _telemtryClientMock.Object);
+    }
+
     #region Setup Methods
 
     private void SetupTokenRequest(string token)

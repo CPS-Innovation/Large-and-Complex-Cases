@@ -210,6 +210,11 @@ steps:
             "slotSetting": false
           },
           {
+            "name": "SizeConfig__MaxConcurrentPartUploads",
+            "value": "$(SizeConfigMaxConcurrentPartUploads)",
+            "slotSetting": false
+          },
+          {
             "name": "CryptoOptions__SaltSizeBytes",
             "value": "$(CryptoOptionsSaltSizeBytes)",
             "slotSetting": false
