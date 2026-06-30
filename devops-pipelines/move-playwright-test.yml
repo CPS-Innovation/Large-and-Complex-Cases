@@ -1,6 +1,6 @@
 schedules:
-  - cron: '0 5 * * Mon-Fri'
-    displayName: 'Weekday 5am UTC test'
+  - cron: '0 1 * * Mon-Fri'
+    displayName: 'Weekday 1am UTC test'
     branches:
       include:
         - task/FCT2-20209_Test-Move-functionality
@@ -17,7 +17,7 @@ parameters:
     default: "LACC PreProd Pool"
   - name: testFileSizeMb
     type: number
-    default: 1024
+    default: 2048 # 2GB
 
 jobs:
   - job: runMoveTest
@@ -49,7 +49,7 @@ jobs:
 
       - script: |
           npx --no-install --ignore-scripts \
-            playwright test egress-to-netapp-move-default.spec.ts
+            playwright test egress-to-netapp-move-large-default.spec.ts
         workingDirectory: $(workingDir)
         displayName: "Run E2E Tests"
         env:

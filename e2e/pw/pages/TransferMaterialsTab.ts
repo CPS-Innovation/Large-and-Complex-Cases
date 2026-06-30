@@ -241,4 +241,69 @@ export class TransferMaterialsTab
       `Timed out waiting for ${expectedCount} files (timeout: ${timeout}ms)`,
     );
   }
+
+  // ------------------- Added for Move Test-----------------------------------
+  // Confirm a file exists and is of the expected size (in MB)
+  async verifyNetAppFileSizeByExactName(
+    fileName: string,
+    expectedSizeMB: number,
+  ): Promise<void> {
+    const row = this.page
+      .getByTestId("netapp-table-wrapper")
+      .locator("tbody tr", { hasText: fileName });
+
+    if ((await row.count()) === 0) {
+      throw new Error(
+        `A file named '${fileName}' was not found in the NetApp panel.`
+      );
+    }
+
+    const sizeCell = row.locator("td").nth(1);
+    await sizeCell.scrollIntoViewIfNeeded();
+
+    const sizeText = (await sizeCell.textContent())?.trim();
+
+    if (!sizeText) {
+      throw new Error(
+        `File '${fileName}' was found but its size could not be determined.`
+      );
+    }
+
+    // Convert to MB
+    const match = sizeText.match(/^(\d+(?:\.\d+)?)\s?(KB|MB|GB)$/i);
+
+    if (!match) {
+      throw new Error(`Invalid size format for '${fileName}': ${sizeText}`);
+    }
+
+    const value = parseFloat(match[1]);
+    const unit = match[2].toUpperCase();
+
+    let actualSizeMB: number;
+
+    switch (unit) {
+      case "KB":
+        actualSizeMB = value / 1000;
+        break;
+      case "MB":
+        actualSizeMB = value;
+        break;
+      case "GB":
+        actualSizeMB = value * 1000;
+        break;
+      default:
+        throw new Error(`Unsupported unit for '${fileName}': ${unit}`);
+    }
+
+    // Compare (with tolerance)
+    const tolerance = 0.1;
+
+    expect(
+      Math.abs(actualSizeMB - expectedSizeMB),
+      `File size check for '${fileName}'.\n` +
+        `Expected: ${expectedSizeMB.toFixed(2)} MB\n` +
+        `Actual:   ${actualSizeMB} MB`
+    ).toBeLessThanOrEqual(tolerance);
+  }
+  // --------------------------------------------------------------------------
 }
