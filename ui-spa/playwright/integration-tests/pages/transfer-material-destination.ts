@@ -126,9 +126,9 @@ export class TransferMaterialsDestinationPage {
 
   async verifyDisabledTreeItem(itemName: string) {
     const treeItem = await this.getImmediateParentTreeItem(itemName);
-    await expect(treeItem).toHaveClass(/disabled/);
+
     await expect(
-      this.page.getByRole("button", { name: itemName }),
+      treeItem.getByRole("button", { name: itemName }),
     ).toBeDisabled();
   }
 

@@ -19,6 +19,7 @@ export class TransferMaterialsSourcePage {
   }
 
   async verifyTransferLoaderVisible(
+    transferSource: "egress" | "shared-drive",
     sameUser: boolean,
     userName: string = "dev_user@example.org",
   ) {
@@ -31,7 +32,9 @@ export class TransferMaterialsSourcePage {
     if (sameUser) {
       await expect(
         this.page.getByTestId("tab-content-transfer-materials"),
-      ).toContainText("Completing transfer from Egress to Shared Drive...");
+      ).toContainText(
+        `${transferSource === "egress" ? "Completing transfer from Egress to Shared Drive..." : "Completing transfer from Shared Drive to Egress..."}`,
+      );
     }
     if (!sameUser) {
       await expect(
@@ -195,9 +198,12 @@ export class TransferMaterialsSourcePage {
     await this.page.getByTestId("toggle-transfer-direction").first().click();
   }
 
-  async toggleCheckbox(index: number) {
+  async toggleCheckbox(
+    index: number,
+    sourceType: "egress" | "shared-drive" = "egress",
+  ) {
     const checkboxes = this.page
-      .getByTestId("egress-table-wrapper")
+      .getByTestId(`${sourceType}-table-wrapper`)
       .locator('input[type="checkbox"]');
     await checkboxes.nth(index).click();
   }
@@ -223,6 +229,12 @@ export class TransferMaterialsSourcePage {
       await expect(moveBtns.nth(0)).toBeDisabled();
       await expect(moveBtns.nth(1)).toBeDisabled();
     }
+  }
+
+  async verifyMoveBtnHidden() {
+    await expect(
+      this.page.getByRole("button", { name: "Move selected" }),
+    ).toHaveCount(0);
   }
 
   async clickCopyBtn() {

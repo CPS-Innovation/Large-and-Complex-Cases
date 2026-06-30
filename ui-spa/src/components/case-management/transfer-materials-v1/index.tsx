@@ -200,7 +200,6 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
     queryFn: () => getNetAppFolders(netAppFolderPath),
     retry: false,
     enabled: !!netAppFolderPath,
-    throwOnError: true,
     staleTime: 0,
     gcTime: 0,
   });

@@ -154,7 +154,7 @@ const TransferDestinationPage: React.FC = () => {
     const folders = [
       {
         id: "root",
-        name: `Egress : ${operationName}`,
+        name: `Egress: ${operationName}`,
         path: "",
         isFolder: true,
         isRootNode: true,
