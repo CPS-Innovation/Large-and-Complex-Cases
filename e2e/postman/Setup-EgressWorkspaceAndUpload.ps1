@@ -720,8 +720,6 @@ if ($SkipUpload) {
             if ($i -gt 1) { Start-Sleep -Seconds $retryDelay }
             Write-Host "  Attempt $i/$retryCount..." -NoNewline
 
-            Start-Sleep -Seconds $retryDelay
-
             $filesResult = & $curl --silent --location "$BaseUrl/api/v1/workspaces/$WorkspaceId/files?path=$encodedFolder" `
                 --header "Authorization: Basic $TokenBase64"
 

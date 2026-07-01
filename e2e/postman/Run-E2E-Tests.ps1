@@ -148,7 +148,7 @@ $Config = @{
     DefaultCaseUrn     = if ($env:LCC_DEFAULT_CASE_URN) { $env:LCC_DEFAULT_CASE_URN } else { "" }
     DefaultWorkspaceId   = if ($env:LCC_DEFAULT_WORKSPACE_ID) { $env:LCC_DEFAULT_WORKSPACE_ID } else { "" }
     DefaultWorkspaceName = if ($env:LCC_DEFAULT_WORKSPACE_NAME) { $env:LCC_DEFAULT_WORKSPACE_NAME } else { "ExistingCaseAutomation" }
-    NetappFolderPath = if ($env:LCC_NETAPP_FOLDER_PATH) { $env:LCC_NETAPP_FOLDER_PATH } else { "${defaultNetappFolderName}/" }
+    NetappFolderPath = if ($env:LCC_NETAPP_FOLDER_PATH) { $env:LCC_NETAPP_FOLDER_PATH } else { $defaultNetappFolderName }
     NetappMoveFolderPath = if ($env:LCC_NETAPP_MOVE_FOLDER_PATH) { $env:LCC_NETAPP_MOVE_FOLDER_PATH } else { "Automation-Testing-Move/" }
 }
 
@@ -252,14 +252,14 @@ function Install-Newman {
 
     $newman = Get-Command newman -ErrorAction SilentlyContinue
     if (-not $newman) {
-        write-output "Newman not found. Installing..." -ForegroundColor Yellow
+        Write-Host "Newman not found. Installing..." -ForegroundColor Yellow
         npm install -g --ignore-scripts newman
         $packageInstalled = $true
     }
 
     $htmlExtra = Get-Command newman-reporter-htmlextra -ErrorAction SilentlyContinue
     if (-not $htmlExtra) {
-        Write-Output "newman-reporter-htmlextra not found. Installing..." -ForegroundColor Yellow
+        Write-Host "newman-reporter-htmlextra not found. Installing..." -ForegroundColor Yellow
         npm install -g --ignore-scripts newman-reporter-htmlextra
         $packageInstalled = $true
     }
@@ -270,9 +270,9 @@ function Install-Newman {
 
     if ($newman -and $htmlExtra) {
         if ($packageInstalled) {
-            Write-Output "Newman and required reporters installed successfully." -ForegroundColor Green
+            Write-Host "Newman and required reporters installed successfully." -ForegroundColor Green
         } else {
-            Write-Output "Newman and reporters already installed." -ForegroundColor Green
+            Write-Host "Newman and reporters already installed." -ForegroundColor Green
         }
         return $true
     }
