@@ -83,6 +83,7 @@ test.describe("Egress to NetApp Move (Default Mode)", () => {
     }
 
     // Step 10: Confirm files removed from Egress
+    console.log(`Source Folder ID: ${testData.sourceSubfolderId}`)
     for (const file of testData.files) {
       await test.step(
         `Verify file '${file.fileName}' is no longer present in Egress`,
@@ -91,7 +92,7 @@ test.describe("Egress to NetApp Move (Default Mode)", () => {
             testData.egressBaseUrl,
             testData.egressToken,
             testData.workspace.id,
-            testData.destinationSubfolderId!,
+            testData.sourceSubfolderId!,
             file.fileName
           );
 
