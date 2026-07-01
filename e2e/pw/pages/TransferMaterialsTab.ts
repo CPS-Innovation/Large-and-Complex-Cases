@@ -232,12 +232,14 @@ export class TransferMaterialsTab {
     while (Date.now() - start < timeout) {
       console.log(`  Waiting for ${fileName} to be indexed; refreshing...`);
       await this.page.waitForTimeout(5_000);
-      await this.page.reload();
+      // await this.page.reload();
+        // page.reload() redirects back to landing page after 2 attempts, which breaks the test.
       await this.waitForEgressFiles();
-      for (const folder of folderPath) {
+        for (const folder of folderPath) {
         await this.navigateToFolder(folder);
         await this.waitForEgressFiles();
       }
+
       if (await fileVisible()) return;
     }
     throw new Error(
@@ -321,13 +323,15 @@ export class TransferMaterialsTab {
     }
 
     // Compare (with tolerance)
-    const tolerance = 0.1;
+    const diff = Math.abs(actualSizeMB - expectedSizeMB);
+    const tolerance = expectedSizeMB * 0.01;
 
     expect(
-      Math.abs(actualSizeMB - expectedSizeMB),
+      diff,
       `File size check for '${fileName}'.\n` +
         `Expected: ${expectedSizeMB.toFixed(2)} MB\n` +
-        `Actual:   ${actualSizeMB} MB`
+        `Actual:   ${actualSizeMB} MB\n` +
+        `Diff:     ${diff.toFixed(2)} MB (should not exceed ${tolerance.toFixed(2)} MB)`
     ).toBeLessThanOrEqual(tolerance);
   }
   // --------------------------------------------------------------------------
