@@ -232,8 +232,7 @@ export class TransferMaterialsTab {
     while (Date.now() - start < timeout) {
       console.log(`  Waiting for ${fileName} to be indexed; refreshing...`);
       await this.page.waitForTimeout(5_000);
-      // await this.page.reload();
-        // On a 3rd attempt, page.reload() redirects back to the landing page, which breaks the test.
+      // Skipping page.reload(): On a third retry, it consistently redirects back to the Case Search page.
       await this.waitForEgressFiles();
       for (const folder of folderPath) {
         await this.navigateToFolder(folder);
