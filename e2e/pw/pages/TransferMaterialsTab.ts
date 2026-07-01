@@ -276,7 +276,7 @@ export class TransferMaterialsTab
       throw new Error(`Invalid size format for '${fileName}': ${sizeText}`);
     }
 
-    const value = parseFloat(match[1]);
+    const value = Number.parseFloat(match[1]);
     const unit = match[2].toUpperCase();
 
     let actualSizeMB: number;
