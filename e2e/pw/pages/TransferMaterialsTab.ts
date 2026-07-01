@@ -296,13 +296,15 @@ export class TransferMaterialsTab
     }
 
     // Compare (with tolerance)
-    const tolerance = 0.1;
+    const diff = Math.abs(actualSizeMB - expectedSizeMB);
+    const tolerance = expectedSizeMB * 0.01;
 
     expect(
-      Math.abs(actualSizeMB - expectedSizeMB),
+      diff,
       `File size check for '${fileName}'.\n` +
         `Expected: ${expectedSizeMB.toFixed(2)} MB\n` +
-        `Actual:   ${actualSizeMB} MB`
+        `Actual:   ${actualSizeMB} MB\n` +
+        `Diff:     ${diff.toFixed(2)} MB (should not exceed ${tolerance.toFixed(2)} MB)`
     ).toBeLessThanOrEqual(tolerance);
   }
   // --------------------------------------------------------------------------
