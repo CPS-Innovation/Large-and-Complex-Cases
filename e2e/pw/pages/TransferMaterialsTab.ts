@@ -232,12 +232,13 @@ export class TransferMaterialsTab {
     while (Date.now() - start < timeout) {
       console.log(`  Waiting for ${fileName} to be indexed; refreshing...`);
       await this.page.waitForTimeout(5_000);
-      await this.page.reload();
+      // Skipping page.reload(): On a third retry, it consistently redirects back to the Case Search page.
       await this.waitForEgressFiles();
       for (const folder of folderPath) {
         await this.navigateToFolder(folder);
         await this.waitForEgressFiles();
       }
+
       if (await fileVisible()) return;
     }
     throw new Error(
@@ -266,4 +267,71 @@ export class TransferMaterialsTab {
     }
     throw new Error(`Timed out waiting for ${expectedCount} files (timeout: ${timeout}ms)`);
   }
+
+  // ------------------- Added for Move Test-----------------------------------
+  // Confirm a file exists and is of the expected size (in MB)
+  async verifyNetAppFileSizeByExactName(
+    fileName: string,
+    expectedSizeMB: number,
+  ): Promise<void> {
+    const row = this.page
+      .getByTestId("netapp-table-wrapper")
+      .locator("tbody tr", { hasText: fileName });
+
+    if ((await row.count()) === 0) {
+      throw new Error(
+        `A file named '${fileName}' was not found in the NetApp panel.`
+      );
+    }
+
+    const sizeCell = row.locator("td").nth(1);
+    await sizeCell.scrollIntoViewIfNeeded();
+
+    const sizeText = (await sizeCell.textContent())?.trim();
+
+    if (!sizeText) {
+      throw new Error(
+        `File '${fileName}' was found but its size could not be determined.`
+      );
+    }
+
+    // Convert to MB
+    const match = sizeText.match(/^(\d+(?:\.\d+)?)\s?(KB|MB|GB)$/i);
+
+    if (!match) {
+      throw new Error(`Invalid size format for '${fileName}': ${sizeText}`);
+    }
+
+    const value = Number.parseFloat(match[1]);
+    const unit = match[2].toUpperCase();
+
+    let actualSizeMB: number;
+
+    switch (unit) {
+      case "KB":
+        actualSizeMB = value / 1000;
+        break;
+      case "MB":
+        actualSizeMB = value;
+        break;
+      case "GB":
+        actualSizeMB = value * 1000;
+        break;
+      default:
+        throw new Error(`Unsupported unit for '${fileName}': ${unit}`);
+    }
+
+    // Compare (with tolerance)
+    const diff = Math.abs(actualSizeMB - expectedSizeMB);
+    const tolerance = expectedSizeMB * 0.01;
+
+    expect(
+      diff,
+      `File size check for '${fileName}'.\n` +
+        `Expected: ${expectedSizeMB.toFixed(2)} MB\n` +
+        `Actual:   ${actualSizeMB} MB\n` +
+        `Diff:     ${diff.toFixed(2)} MB (should not exceed ${tolerance.toFixed(2)} MB)`
+    ).toBeLessThanOrEqual(tolerance);
+  }
+  // --------------------------------------------------------------------------
 }

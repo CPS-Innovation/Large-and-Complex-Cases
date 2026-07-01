@@ -75,7 +75,8 @@ export async function setupDefaultTestData(
   console.log(
     `[2/3] Ensuring subfolder ${uploadSubfolder} exists in source + destination...`
   );
-  await createFolder(
+  // Capture the source folder id for Move test verification
+  const sourceSubfolderId = await createFolder(
     config.egressBaseUrl,
     egressToken,
     workspaceId,
@@ -177,6 +178,9 @@ export async function setupDefaultTestData(
     caseUrn,
     caseId: Number.isFinite(caseIdNum) ? caseIdNum : undefined,
     uploadSubfolder,
+    sourceSubfolderId,
     destinationSubfolderId,
+    egressToken,
+    egressBaseUrl: config.egressBaseUrl,
   };
 }
