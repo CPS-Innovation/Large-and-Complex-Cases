@@ -17,6 +17,7 @@ using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
+using CPS.ComplexCases.FileTransfer.API.Telemetry;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
@@ -45,11 +46,28 @@ public class TransferFileTests
 
     private readonly TransferFile _activity;
 
+    private readonly List<FileTransferEvent> _capturedTransferEvents = [];
+
     public TransferFileTests()
     {
+        _telemetryClientMock
+            .Setup(x => x.TrackEvent(It.IsAny<BaseTelemetryEvent>()))
+            .Callback<BaseTelemetryEvent>(e =>
+            {
+                if (e is FileTransferEvent transferEvent)
+                {
+                    _capturedTransferEvents.Add(transferEvent);
+                }
+            });
+
         _activity = new TransferFile(_storageClientFactoryMock.Object, _loggerMock.Object, _sizeConfig,
             _egressOptions, _initializationHandlerMock.Object, _telemetryClientMock.Object);
     }
+
+    // The raw diagnostic detail (HTTP status / exception text) is kept on the telemetry event, while
+    // only a mapped, user-friendly message is surfaced on the failure result.
+    private string GetLastTransferEventErrorMessage() =>
+        _capturedTransferEvents[^1].ErrorMessage ?? string.Empty;
 
     private static TransferFilePayload CreatePayload()
     {
@@ -205,7 +223,7 @@ public class TransferFileTests
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.IntegrityVerificationFailed, result.FailedItem.ErrorCode);
         Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
-        Assert.Equal("Upload completed but failed to verify.", result.FailedItem.ErrorMessage);
+        Assert.Contains("failed integrity verification", result.FailedItem.ErrorMessage);
     }
 
     [Fact]
@@ -250,7 +268,9 @@ public class TransferFileTests
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.GeneralError, result.FailedItem.ErrorCode);
         Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
-        Assert.Contains("System.InvalidOperationException", result.FailedItem.ErrorMessage);
+        // The user-facing message is mapped, not a raw exception/stack-trace dump.
+        Assert.Contains("unexpected error", result.FailedItem.ErrorMessage);
+        Assert.DoesNotContain("System.InvalidOperationException", result.FailedItem.ErrorMessage);
     }
 
     [Fact]
@@ -299,7 +319,8 @@ public class TransferFileTests
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.FileExists, result.FailedItem.ErrorCode);
         Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
-        Assert.Contains(payload.DestinationPath + payload.SourcePath.Path, result.FailedItem.ErrorMessage);
+        Assert.Contains("already exists at the destination", result.FailedItem.ErrorMessage);
+        Assert.Contains(payload.DestinationPath + payload.SourcePath.Path, GetLastTransferEventErrorMessage());
 
         _sourceClientMock.Verify(x => x.InitiateUploadAsync(
                 It.IsAny<string>(),
@@ -345,7 +366,8 @@ public class TransferFileTests
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.Transient, result.FailedItem.ErrorCode);
         Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
-        Assert.Contains("HTTP 500", result.FailedItem.ErrorMessage);
+        Assert.Contains("temporarily unavailable", result.FailedItem.ErrorMessage);
+        Assert.Contains("HTTP 500", GetLastTransferEventErrorMessage());
 
         _sourceClientMock.Verify(x => x.OpenReadStreamAsync(
                 It.IsAny<string>(),
@@ -379,7 +401,8 @@ public class TransferFileTests
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.GeneralError, result.FailedItem.ErrorCode);
         Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
-        Assert.Contains("System.InvalidOperationException", result.FailedItem.ErrorMessage);
+        Assert.Contains("unexpected error", result.FailedItem.ErrorMessage);
+        Assert.DoesNotContain("System.InvalidOperationException", result.FailedItem.ErrorMessage);
 
         _sourceClientMock.Verify(x => x.OpenReadStreamAsync(
                 It.IsAny<string>(),
@@ -409,7 +432,8 @@ public class TransferFileTests
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.GeneralError, result.FailedItem.ErrorCode);
-        Assert.Contains("HTTP request timed out", result.FailedItem.ErrorMessage);
+        Assert.Contains("unexpected error", result.FailedItem.ErrorMessage);
+        Assert.Contains("HTTP request timed out", GetLastTransferEventErrorMessage());
     }
 
     [Fact]
@@ -765,7 +789,90 @@ public class TransferFileTests
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.GeneralError, result.FailedItem.ErrorCode);
-        Assert.Contains("Simulated upload failure", result.FailedItem.ErrorMessage);
+        // Detailed exception text stays in telemetry; the user message is mapped.
+        Assert.Contains("unexpected error", result.FailedItem.ErrorMessage);
+        Assert.DoesNotContain("Simulated upload failure", result.FailedItem.ErrorMessage);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.NotFound, "HTTP 404")]
+    [InlineData(HttpStatusCode.Conflict, "HTTP 409")]
+    public async Task Run_CreateUploadThrowsHttpRequestException404Or409_ReturnsTransientErrorCode(
+        HttpStatusCode statusCode, string expectedFragment)
+    {
+        // Arrange — create-upload (InitiateUpload) returns 404/409, which are not file-specific and
+        // must be treated as transient so the orchestrator can recover.
+        var payload = CreatePayload();
+        var content = Encoding.UTF8.GetBytes("abcd");
+        var stream = new MemoryStream(content);
+        var contentLength = content.Length;
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(payload.SourcePath.Path,
+                payload.WorkspaceId,
+                payload.SourcePath.FileId,
+                payload.BearerToken,
+                payload.BucketName))
+            .ReturnsAsync((stream, contentLength));
+
+        _destinationClientMock
+            .Setup(x => x.InitiateUploadAsync(
+                It.IsAny<string>(),
+                It.IsAny<long>(),
+                It.IsAny<string>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>()))
+            .ThrowsAsync(new HttpRequestException("error", null, statusCode));
+
+        // Act
+        var result = await _activity.Run(payload);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.FailedItem);
+        Assert.Equal(TransferErrorCode.Transient, result.FailedItem.ErrorCode);
+        Assert.Contains("temporarily unavailable", result.FailedItem.ErrorMessage);
+        Assert.Contains(expectedFragment, GetLastTransferEventErrorMessage());
+    }
+
+    [Fact]
+    public async Task Run_ZeroLengthSource_ReturnsGeneralErrorAndDoesNotUpload()
+    {
+        // Arrange — a 0-byte / unknown-length source should fail fast with a classified error.
+        var payload = CreatePayload();
+        var stream = new MemoryStream(Array.Empty<byte>());
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(payload.SourcePath.Path,
+                payload.WorkspaceId,
+                payload.SourcePath.FileId,
+                payload.BearerToken,
+                payload.BucketName))
+            .ReturnsAsync((stream, 0L));
+
+        // Act
+        var result = await _activity.Run(payload);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.FailedItem);
+        Assert.Equal(TransferErrorCode.GeneralError, result.FailedItem.ErrorCode);
+
+        _destinationClientMock.Verify(x => x.InitiateUploadAsync(
+                It.IsAny<string>(), It.IsAny<long>(), It.IsAny<string>(), It.IsAny<string?>(),
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>()),
+            Times.Never);
     }
 
     [Fact]
@@ -958,7 +1065,8 @@ public class TransferFileTests
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.Transient, result.FailedItem.ErrorCode);
-        Assert.Contains("HTTP 500", result.FailedItem.ErrorMessage);
+        Assert.Contains("temporarily unavailable", result.FailedItem.ErrorMessage);
+        Assert.Contains("HTTP 500", GetLastTransferEventErrorMessage());
         Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
     }
 
@@ -982,7 +1090,8 @@ public class TransferFileTests
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.Transient, result.FailedItem.ErrorCode);
-        Assert.Contains("HTTP 404", result.FailedItem.ErrorMessage);
+        Assert.Contains("temporarily unavailable", result.FailedItem.ErrorMessage);
+        Assert.Contains("HTTP 404", GetLastTransferEventErrorMessage());
         Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
     }
 
@@ -1120,7 +1229,8 @@ public class TransferFileTests
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.Transient, result.FailedItem.ErrorCode);
-        Assert.Contains("Transient stream error", result.FailedItem.ErrorMessage);
+        Assert.Contains("temporarily unavailable", result.FailedItem.ErrorMessage);
+        Assert.Contains("Transient stream error", GetLastTransferEventErrorMessage());
         Assert.Equal(payload.SourcePath.FullFilePath, result.FailedItem.SourcePath);
     }
 
@@ -1179,7 +1289,8 @@ public class TransferFileTests
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.Transient, result.FailedItem.ErrorCode);
-        Assert.Contains("Transient stream timeout", result.FailedItem.ErrorMessage);
+        Assert.Contains("temporarily unavailable", result.FailedItem.ErrorMessage);
+        Assert.Contains("Transient stream timeout", GetLastTransferEventErrorMessage());
         // Comfortably under the 12h function timeout; the 1s idle timeout should fire quickly.
         Assert.True(elapsed < TimeSpan.FromSeconds(30), $"Stalled read took {elapsed} to fail.");
     }
@@ -1281,7 +1392,8 @@ public class TransferFileTests
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.Transient, result.FailedItem.ErrorCode);
-        Assert.Contains("Transient stream timeout", result.FailedItem.ErrorMessage);
+        Assert.Contains("temporarily unavailable", result.FailedItem.ErrorMessage);
+        Assert.Contains("Transient stream timeout", GetLastTransferEventErrorMessage());
 
         Assert.True(elapsed < TimeSpan.FromSeconds(30), $"Stalled single PUT read took {elapsed} to fail.");
     }

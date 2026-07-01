@@ -2,6 +2,7 @@ using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.Common.Telemetry;
+using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
@@ -122,6 +123,50 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                 cleanFiles = input.SourcePaths;
             }
 
+            // Pre-create the Egress destination folder tree once, before fanning out. This stops many
+            // concurrent uploads from racing the lazy create-upload 404-recovery path (attempt-1 cause).
+            if (input.TransferDirection == TransferDirection.NetAppToEgress && cleanFiles.Count > 0)
+            {
+                var destinationFolderPaths = cleanFiles
+                    .Select(sp => EgressStorageClient.GetDestinationFolderPath(input.DestinationPath, sp.RelativePath, input.SourceRootFolderPath))
+                    .Where(p => !string.IsNullOrEmpty(p))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                if (destinationFolderPaths.Count > 0)
+                {
+                    // Pre-creation is an optimisation to avoid the concurrent create-upload 404 race,
+                    // not a hard prerequisite: InitiateUploadAsync still lazily creates the folder tree
+                    // on a 404. So (a) retry the activity to ride out transient Egress blips (a 500 or a
+                    // management timeout on one folder segment), and (b) treat exhausted retries as
+                    // best-effort.
+                    try
+                    {
+                        await context.CallActivityAsync(
+                            nameof(CreateEgressDestinationFolders),
+                            new CreateEgressFoldersPayload
+                            {
+                                WorkspaceId = input.WorkspaceId!,
+                                FolderPaths = destinationFolderPaths,
+                                CaseId = input.CaseId,
+                                UserName = input.UserName,
+                                CorrelationId = input.CorrelationId
+                            },
+                            new TaskOptions(TaskRetryOptions.FromRetryPolicy(new RetryPolicy(
+                                maxNumberOfAttempts: 3,
+                                firstRetryInterval: TimeSpan.FromSeconds(5),
+                                backoffCoefficient: 2.0))));
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex,
+                            "Pre-creation of Egress destination folders failed after retries for TransferId {TransferId}; " +
+                            "continuing so files fall back to the lazy folder-creation path during upload.",
+                            input.TransferId);
+                    }
+                }
+            }
+
             // 2. Fan-out: TransferFileActivity for each item, throttled in batches
             await context.CallActivityAsync(
                 nameof(UpdateTransferStatus),
@@ -190,9 +235,11 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                     "Orchestrator retry attempt {Attempt}/{MaxRetries}: re-attempting {Count} transiently failed files.",
                     attempt + 1, maxOrchestratorRetries, retryableFailures.Count);
 
-                // Durable timer backoff ÔÇö no compute consumed during wait
+                // Durable timer backoff — no compute consumed during wait. Back off harder than the
+                // first pass (60s, 120s, 240s) so a load-driven Egress 500 window has time to recover
+                // before we re-upload, instead of hammering it again immediately.
                 await context.CreateTimer(
-                    context.CurrentUtcDateTime.Add(TimeSpan.FromSeconds(30 * (attempt + 1))),
+                    context.CurrentUtcDateTime.Add(TimeSpan.FromSeconds(60 * Math.Pow(2, attempt))),
                     CancellationToken.None);
 
                 // Match failed paths back to original TransferSourcePath objects
@@ -212,28 +259,40 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                 // Correct telemetry counters
                 transferOrchestrationEvent.TotalFilesFailed -= retryableFailures.Count;
 
-                // Re-dispatch as fresh TransferFile activities
-                var retryBatch = retrySourcePaths.Select(sp =>
-                    context.CallActivityAsync<TransferResult>(
-                        nameof(TransferFile),
-                        new TransferFilePayload
-                        {
-                            CaseId = input.CaseId,
-                            SourcePath = sp,
-                            DestinationPath = transferEntity.DestinationPath,
-                            TransferId = transferEntity.Id,
-                            TransferType = transferEntity.TransferType,
-                            TransferDirection = transferEntity.Direction,
-                            WorkspaceId = input.WorkspaceId,
-                            SourceRootFolderPath = input.SourceRootFolderPath,
-                            BearerToken = input.BearerToken,
-                            BucketName = input.BucketName,
-                            UserName = input.UserName!,
-                            CorrelationId = input.CorrelationId!
-                        })).ToList();
+                // Re-dispatch as fresh TransferFile activities, but at reduced concurrency
+                // (RetryBatchSize). A whole-file retry re-initiates a new Egress upload session and
+                // re-sends every part, so retrying many files at once would amplify load on an
+                // already-erroring Egress. Note: re-initiation starts a fresh uploadId; the previous
+                // partial uploadId is left for Egress to expire, as there is no abort-upload API.
+                int retryBatchSize = Math.Max(1, _sizeConfig.RetryBatchSize);
+                var retryResults = new List<TransferResult>();
 
-                var retryResults = await Task.WhenAll(retryBatch);
-                await ProcessTransferResults(context, entityId, retryResults, transferOrchestrationEvent, isRetry: true);
+                for (int i = 0; i < retrySourcePaths.Count; i += retryBatchSize)
+                {
+                    var chunk = retrySourcePaths.Skip(i).Take(retryBatchSize);
+                    var retryBatch = chunk.Select(sp =>
+                        context.CallActivityAsync<TransferResult>(
+                            nameof(TransferFile),
+                            new TransferFilePayload
+                            {
+                                CaseId = input.CaseId,
+                                SourcePath = sp,
+                                DestinationPath = transferEntity.DestinationPath,
+                                TransferId = transferEntity.Id,
+                                TransferType = transferEntity.TransferType,
+                                TransferDirection = transferEntity.Direction,
+                                WorkspaceId = input.WorkspaceId,
+                                SourceRootFolderPath = input.SourceRootFolderPath,
+                                BearerToken = input.BearerToken,
+                                BucketName = input.BucketName,
+                                UserName = input.UserName!,
+                                CorrelationId = input.CorrelationId!
+                            })).ToList();
+
+                    var batchResults = await Task.WhenAll(retryBatch);
+                    await ProcessTransferResults(context, entityId, batchResults, transferOrchestrationEvent, isRetry: true);
+                    retryResults.AddRange(batchResults);
+                }
 
                 // Replace transient failures with retry results for next iteration
                 allResults.RemoveAll(r => r != null && !r.IsSuccess && r.FailedItem?.ErrorCode == TransferErrorCode.Transient);
