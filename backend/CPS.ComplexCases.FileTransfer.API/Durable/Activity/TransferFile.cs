@@ -103,6 +103,7 @@ public class TransferFile(
                     // upload and has produced fast 0-byte failures in production. 
                     // Fail fast with a clear, classified error and record the size so this
                     // mode is distinguishable in telemetry from chunk-500 / create-upload-404 failures.
+                    // Deliberate: genuinely empty 0-byte files are out of scope and are rejected here too.
                     _logger.LogWarning(
                         "Source returned a non-positive content length ({Size}) for {Path}; failing fast.",
                         totalSize, payload.SourcePath.Path);
@@ -171,7 +172,7 @@ public class TransferFile(
             telemetryEvent.ErrorCode = TransferErrorCode.FileExists.ToString();
             telemetryEvent.ErrorMessage = ex.Message;
             return CreateFailureResult(payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
-                TransferErrorCode.FileExists, ex.Message, ex);
+                TransferErrorCode.FileExists, MapUserMessage(TransferErrorCode.FileExists), ex);
         }
         catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
@@ -182,7 +183,7 @@ public class TransferFile(
             return CreateFailureResult(
                 payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
                 TransferErrorCode.GeneralError,
-                errorMessage,
+                MapUserMessage(TransferErrorCode.GeneralError),
                 ex);
         }
         catch (AmazonS3Exception ex) when ((int)ex.StatusCode >= 500
@@ -195,7 +196,7 @@ public class TransferFile(
             return CreateFailureResult(
                 payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
                 TransferErrorCode.Transient,
-                errorMessage,
+                MapUserMessage(TransferErrorCode.Transient),
                 ex);
         }
         catch (HttpRequestException ex) when ((int?)ex.StatusCode >= 500
@@ -212,7 +213,7 @@ public class TransferFile(
             return CreateFailureResult(
                 payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
                 TransferErrorCode.Transient,
-                errorMessage,
+                MapUserMessage(TransferErrorCode.Transient),
                 ex);
         }
         catch (HttpIOException ex)
@@ -224,7 +225,7 @@ public class TransferFile(
             return CreateFailureResult(
                 payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
                 TransferErrorCode.Transient,
-                errorMessage,
+                MapUserMessage(TransferErrorCode.Transient),
                 ex);
         }
         catch (TimeoutException ex)
@@ -236,7 +237,7 @@ public class TransferFile(
             return CreateFailureResult(
                 payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
                 TransferErrorCode.Transient,
-                errorMessage,
+                MapUserMessage(TransferErrorCode.Transient),
                 ex);
         }
         catch (OperationCanceledException ex)
@@ -452,7 +453,7 @@ public class TransferFile(
                 return CreateFailureResult(
                     payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
                     TransferErrorCode.IntegrityVerificationFailed,
-                    "Upload completed but failed to verify.");
+                    MapUserMessage(TransferErrorCode.IntegrityVerificationFailed));
             }
 
             _logger.LogInformation("Completed parallel multipart transfer for {Source} -> {Dest}",

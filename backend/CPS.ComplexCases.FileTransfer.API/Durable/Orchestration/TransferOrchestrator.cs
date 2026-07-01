@@ -135,16 +135,35 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
 
                 if (destinationFolderPaths.Count > 0)
                 {
-                    await context.CallActivityAsync(
-                        nameof(CreateEgressDestinationFolders),
-                        new CreateEgressFoldersPayload
-                        {
-                            WorkspaceId = input.WorkspaceId!,
-                            FolderPaths = destinationFolderPaths,
-                            CaseId = input.CaseId,
-                            UserName = input.UserName,
-                            CorrelationId = input.CorrelationId
-                        });
+                    // Pre-creation is an optimisation to avoid the concurrent create-upload 404 race,
+                    // not a hard prerequisite: InitiateUploadAsync still lazily creates the folder tree
+                    // on a 404. So (a) retry the activity to ride out transient Egress blips (a 500 or a
+                    // management timeout on one folder segment), and (b) treat exhausted retries as
+                    // best-effort.
+                    try
+                    {
+                        await context.CallActivityAsync(
+                            nameof(CreateEgressDestinationFolders),
+                            new CreateEgressFoldersPayload
+                            {
+                                WorkspaceId = input.WorkspaceId!,
+                                FolderPaths = destinationFolderPaths,
+                                CaseId = input.CaseId,
+                                UserName = input.UserName,
+                                CorrelationId = input.CorrelationId
+                            },
+                            new TaskOptions(TaskRetryOptions.FromRetryPolicy(new RetryPolicy(
+                                maxNumberOfAttempts: 3,
+                                firstRetryInterval: TimeSpan.FromSeconds(5),
+                                backoffCoefficient: 2.0))));
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex,
+                            "Pre-creation of Egress destination folders failed after retries for TransferId {TransferId}; " +
+                            "continuing so files fall back to the lazy folder-creation path during upload.",
+                            input.TransferId);
+                    }
                 }
             }
 
