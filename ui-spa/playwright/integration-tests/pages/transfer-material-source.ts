@@ -98,9 +98,9 @@ export class TransferMaterialsSourcePage {
     await expect(
       this.page.getByTestId("transfer-source-wrapper"),
     ).toBeVisible();
-    await expect(this.page.locator("h2")).toHaveText(
-      "Transfer from Egress to the Shared Drive",
-    );
+    await expect(
+      this.page.getByTestId("transfer-source-wrapper").locator("h2"),
+    ).toHaveText("Transfer from Egress to the Shared Drive");
     await expect(
       this.page.getByTestId("transfer-source-description"),
     ).toHaveText(

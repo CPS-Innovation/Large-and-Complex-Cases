@@ -27,9 +27,9 @@ test.describe("transfer material shared-drive list", () => {
     await transferMaterialsSourcePage.validateTableColumnHeaders();
 
     const folderRows = [
-      ["", "netapp-folder-1-0", "--", "--"],
-      ["", "netapp-folder-1-1", "--", "--"],
-      ["", "netapp-file-1-0.pdf", "02/01/2000", "1.23 KB"],
+      ["", "folder-1-0", "--", "--"],
+      ["", "folder-1-1", "--", "--"],
+      ["", "file-1-0.pdf", "02/01/2000", "1.23 KB"],
     ];
     await transferMaterialsSourcePage.validateTableRowValues(folderRows);
   });
@@ -56,12 +56,12 @@ test.describe("transfer material shared-drive list", () => {
     await transferMaterialsSourcePage.validateTableColumnHeaders();
 
     await transferMaterialsSourcePage.validateTableRowValues([
-      ["", "netapp-folder-1-0", "--", "--"],
-      ["", "netapp-folder-1-1", "--", "--"],
-      ["", "netapp-file-1-0.pdf", "02/01/2000", "1.23 KB"],
+      ["", "folder-1-0", "--", "--"],
+      ["", "folder-1-1", "--", "--"],
+      ["", "file-1-0.pdf", "02/01/2000", "1.23 KB"],
     ]);
     await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 4);
-    await transferMaterialsSourcePage.handleFolderClick("netapp-folder-1-0");
+    await transferMaterialsSourcePage.handleFolderClick("folder-1-0");
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
       "shared-drive",
       true,
@@ -72,15 +72,15 @@ test.describe("transfer material shared-drive list", () => {
     );
     await transferMaterialsSourcePage.verifyFolderPath([
       "Shared Drive: Thunderstruck",
-      "netapp-folder-1-0",
+      "folder-1-0",
     ]);
     await transferMaterialsSourcePage.validateTableRowValues([
-      ["", "netapp-folder-2-0", "--", "--"],
-      ["", "netapp-folder-2-1", "--", "--"],
-      ["", "netapp-file-2-0.pdf", "02/01/2000", "1.23 KB"],
+      ["", "folder-2-0", "--", "--"],
+      ["", "folder-2-1", "--", "--"],
+      ["", "file-2-0.pdf", "02/01/2000", "1.23 KB"],
     ]);
     await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 4);
-    await transferMaterialsSourcePage.handleFolderClick("netapp-folder-2-0");
+    await transferMaterialsSourcePage.handleFolderClick("folder-2-0");
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
       "shared-drive",
       true,
@@ -91,16 +91,16 @@ test.describe("transfer material shared-drive list", () => {
     );
     await transferMaterialsSourcePage.verifyFolderPath([
       "Shared Drive: Thunderstruck",
-      "netapp-folder-1-0",
-      "netapp-folder-2-0",
+      "folder-1-0",
+      "folder-2-0",
     ]);
     await transferMaterialsSourcePage.validateTableRowValues([
-      ["", "netapp-folder-3-0", "--", "--"],
-      ["", "netapp-folder-3-1", "--", "--"],
-      ["", "netapp-file-3-0.pdf", "02/01/2000", "1.23 KB"],
+      ["", "folder-3-0", "--", "--"],
+      ["", "folder-3-1", "--", "--"],
+      ["", "file-3-0.pdf", "02/01/2000", "1.23 KB"],
     ]);
     await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 4);
-    await transferMaterialsSourcePage.handleFolderClick("netapp-folder-3-0");
+    await transferMaterialsSourcePage.handleFolderClick("folder-3-0");
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
       "shared-drive",
       true,
@@ -111,14 +111,14 @@ test.describe("transfer material shared-drive list", () => {
     );
     await transferMaterialsSourcePage.verifyFolderPath([
       "Shared Drive: Thunderstruck",
-      "netapp-folder-1-0",
-      "netapp-folder-2-0",
-      "netapp-folder-3-0",
+      "folder-1-0",
+      "folder-2-0",
+      "folder-3-0",
     ]);
     await transferMaterialsSourcePage.verifyCheckboxesVisibility(false, 1);
     await transferMaterialsSourcePage.verifyNoResults();
 
-    await transferMaterialsSourcePage.handleFolderClick("netapp-folder-1-0");
+    await transferMaterialsSourcePage.handleFolderClick("folder-1-0");
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
       "shared-drive",
       true,
@@ -129,12 +129,12 @@ test.describe("transfer material shared-drive list", () => {
     );
     await transferMaterialsSourcePage.verifyFolderPath([
       "Shared Drive: Thunderstruck",
-      "netapp-folder-1-0",
+      "folder-1-0",
     ]);
     await transferMaterialsSourcePage.validateTableRowValues([
-      ["", "netapp-folder-2-0", "--", "--"],
-      ["", "netapp-folder-2-1", "--", "--"],
-      ["", "netapp-file-2-0.pdf", "02/01/2000", "1.23 KB"],
+      ["", "folder-2-0", "--", "--"],
+      ["", "folder-2-1", "--", "--"],
+      ["", "file-2-0.pdf", "02/01/2000", "1.23 KB"],
     ]);
     await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 4);
     await transferMaterialsSourcePage.handleFolderClick(
@@ -152,9 +152,9 @@ test.describe("transfer material shared-drive list", () => {
       "Shared Drive: Thunderstruck",
     ]);
     await transferMaterialsSourcePage.validateTableRowValues([
-      ["", "netapp-folder-1-0", "--", "--"],
-      ["", "netapp-folder-1-1", "--", "--"],
-      ["", "netapp-file-1-0.pdf", "02/01/2000", "1.23 KB"],
+      ["", "folder-1-0", "--", "--"],
+      ["", "folder-1-1", "--", "--"],
+      ["", "file-1-0.pdf", "02/01/2000", "1.23 KB"],
     ]);
     await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 4);
   });
