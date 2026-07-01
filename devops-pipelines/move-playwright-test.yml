@@ -1,5 +1,5 @@
 schedules:
-  - cron: '0 1 * * Mon-Fri'
+  - cron: '0 1 * * Tue-Sat'
     displayName: 'Weekday 1am UTC test'
     branches:
       include:
