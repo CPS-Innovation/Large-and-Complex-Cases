@@ -50,6 +50,8 @@
     # Override credentials via command line
 #>
 
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '', Scope='Function', Target='^Write-.*')]
+
 param(
     [Parameter(Mandatory=$false)]
     [double]$SizeGB = 1,
@@ -252,14 +254,14 @@ function Install-Newman {
 
     $newman = Get-Command newman -ErrorAction SilentlyContinue
     if (-not $newman) {
-        Write-Host "Newman not found. Installing..." -ForegroundColor Yellow
+        Write-Info "Newman not found. Installing..."
         npm install -g --ignore-scripts newman
         $packageInstalled = $true
     }
 
     $htmlExtra = Get-Command newman-reporter-htmlextra -ErrorAction SilentlyContinue
     if (-not $htmlExtra) {
-        Write-Host "newman-reporter-htmlextra not found. Installing..." -ForegroundColor Yellow
+        Write-Info "newman-reporter-htmlextra not found. Installing..."
         npm install -g --ignore-scripts newman-reporter-htmlextra
         $packageInstalled = $true
     }
@@ -270,9 +272,9 @@ function Install-Newman {
 
     if ($newman -and $htmlExtra) {
         if ($packageInstalled) {
-            Write-Host "Newman and required reporters installed successfully." -ForegroundColor Green
+            Write-Success "Newman and required reporters installed successfully."
         } else {
-            Write-Host "Newman and reporters already installed." -ForegroundColor Green
+            Write-Success "Newman and reporters already installed."
         }
         return $true
     }
