@@ -36,8 +36,8 @@ export interface TestSetupResult {
   // when the folder already existed at setup time (rare timestamp
   // collision); teardown skips destination cleanup in that case.
   destinationSubfolderId?: string;
-  egressToken: string;
-  egressBaseUrl: string;
+  egressToken?: string;
+  egressBaseUrl?: string;
 }
 
 export interface AuthTokens {
