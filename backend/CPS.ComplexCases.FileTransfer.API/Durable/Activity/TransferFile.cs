@@ -200,12 +200,15 @@ public class TransferFile(
                 ex);
         }
         catch (HttpRequestException ex) when ((int?)ex.StatusCode >= 500
-            || ex.StatusCode == System.Net.HttpStatusCode.NotFound
-            || ex.StatusCode == System.Net.HttpStatusCode.Conflict)
+            || ((ex.StatusCode == System.Net.HttpStatusCode.NotFound
+                || ex.StatusCode == System.Net.HttpStatusCode.Conflict)
+                && payload.TransferDirection == TransferDirection.NetAppToEgress))
         {
             // 404/409 on the Egress create-upload path are not file-specific: they happen when the
             // destination folder is not yet visible (404) or a concurrent create races (409). Treat
             // them as transient so the orchestrator can recover instead of failing the file outright.
+            // The 404/409 is gated on NetAppToEgress so that a genuine
+            // 404 on an EgressToNetApp read fails fast with a clear message.
             var errorMessage = $"Transient destination error (HTTP {(int)ex.StatusCode}): {ex.Message}";
             _logger.LogWarning(ex, "Destination returned a retryable HTTP error during transfer: {Path}", payload.SourcePath.Path);
             telemetryEvent.ErrorCode = TransferErrorCode.Transient.ToString();

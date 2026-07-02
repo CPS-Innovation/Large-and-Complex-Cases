@@ -800,9 +800,9 @@ public class TransferFileTests
     public async Task Run_CreateUploadThrowsHttpRequestException404Or409_ReturnsTransientErrorCode(
         HttpStatusCode statusCode, string expectedFragment)
     {
-        // Arrange — create-upload (InitiateUpload) returns 404/409, which are not file-specific and
-        // must be treated as transient so the orchestrator can recover.
+        // Arrange
         var payload = CreatePayload();
+        payload.TransferDirection = TransferDirection.NetAppToEgress;
         var content = Encoding.UTF8.GetBytes("abcd");
         var stream = new MemoryStream(content);
         var contentLength = content.Length;
@@ -840,6 +840,46 @@ public class TransferFileTests
         Assert.Equal(TransferErrorCode.Transient, result.FailedItem.ErrorCode);
         Assert.Contains("temporarily unavailable", result.FailedItem.ErrorMessage);
         Assert.Contains(expectedFragment, GetLastTransferEventErrorMessage());
+    }
+
+    [Fact]
+    public async Task Run_EgressToNetApp_SourceReadThrowsHttpRequestException404_ReturnsGeneralErrorAndFailsFast()
+    {
+        // Arrange — on an EgressToNetApp transfer the Egress client is the source. A genuine source-side
+        // 404 (a file listed then deleted before the read) must NOT be reclassified as transient, or the
+        // orchestrator would retry it across its 60s/120s/240s backoff and surface a misleading
+        // "temporarily unavailable". It should fall through to the general handler and fail fast.
+        var payload = CreatePayload(); // EgressToNetApp
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _destinationClientMock
+            .Setup(x => x.FileExistsAsync(
+                It.IsAny<string>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>()))
+            .ReturnsAsync(false);
+
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(
+                payload.SourcePath.Path,
+                payload.WorkspaceId,
+                payload.SourcePath.FileId,
+                payload.BearerToken,
+                payload.BucketName))
+            .ThrowsAsync(new HttpRequestException("Not Found", null, HttpStatusCode.NotFound));
+
+        // Act
+        var result = await _activity.Run(payload);
+
+        // Assert — classified as a general (non-transient) error with an accurate message.
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.FailedItem);
+        Assert.Equal(TransferErrorCode.GeneralError, result.FailedItem.ErrorCode);
+        Assert.DoesNotContain("temporarily unavailable", result.FailedItem.ErrorMessage);
     }
 
     [Fact]
