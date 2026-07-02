@@ -82,8 +82,7 @@ test.describe("Egress to NetApp Move (Default Mode)", () => {
       await transferTab.verifyNetAppFileSizeByExactName(file.fileName, fileSizeMb);
     }
 
-    // Step 10: Confirm files removed from Egress
-    console.log(`Source Folder ID: ${testData.sourceSubfolderId}`)
+    // Step 10: Confirm files removed from Egres
     for (const file of testData.files) {
       await test.step(
         `Verify file '${file.fileName}' is no longer present in Egress`,
