@@ -18,4 +18,9 @@ public class SizeConfig
     // re-initiates and re-uploads every part, so retrying many files at once amplifies load on an
     // already-erroring Egress. Keep this at or below BatchSize.
     public int RetryBatchSize { get; set; } = 2;
+
+    // Retry policy for the pre-flight Egress destination folder pre creation activity
+    public int FolderPreCreateRetryAttempts { get; set; } = 3;
+    public int FolderPreCreateFirstRetryIntervalSeconds { get; set; } = 5;
+    public double FolderPreCreateBackoffCoefficient { get; set; } = 2.0;
 }

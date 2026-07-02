@@ -23,6 +23,9 @@
     "FileTransfer__PurgeRetention__RetentionDays": "30",
     "FileTransferPurgeRetentionSchedule": "0 0 2 * * *",
     "SizeConfig__MaxOrchestratorRetries": "3",
+    "SizeConfig__FolderPreCreateRetryAttempts": "3",
+    "SizeConfig__FolderPreCreateFirstRetryIntervalSeconds": "5",
+    "SizeConfig__FolderPreCreateBackoffCoefficient": "2.0",
     "ManageMaterialsCleanupSchedule": "0 0 2 * * *",
     "FileTransfer__ManageMaterialsCleanup__MaxAgeHours": "24"
   },

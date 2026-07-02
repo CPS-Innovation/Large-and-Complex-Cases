@@ -285,6 +285,21 @@ steps:
             "slotSetting": false
           },
           {
+            "name": "SizeConfig__FolderPreCreateRetryAttempts",
+            "value": "$(SizeConfigFolderPreCreateRetryAttempts)",
+            "slotSetting": false
+          },
+          {
+            "name": "SizeConfig__FolderPreCreateFirstRetryIntervalSeconds",
+            "value": "$(SizeConfigFolderPreCreateFirstRetryIntervalSeconds)",
+            "slotSetting": false
+          },
+          {
+            "name": "SizeConfig__FolderPreCreateBackoffCoefficient",
+            "value": "$(SizeConfigFolderPreCreateBackoffCoefficient)",
+            "slotSetting": false
+          },
+          {
             "name": "Postgres__AuthMode",
             "value": "AAD",
             "slotSetting": false

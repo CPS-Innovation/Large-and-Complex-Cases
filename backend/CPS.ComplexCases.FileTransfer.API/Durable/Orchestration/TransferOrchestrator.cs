@@ -153,9 +153,9 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                                 CorrelationId = input.CorrelationId
                             },
                             new TaskOptions(TaskRetryOptions.FromRetryPolicy(new RetryPolicy(
-                                maxNumberOfAttempts: 3,
-                                firstRetryInterval: TimeSpan.FromSeconds(5),
-                                backoffCoefficient: 2.0))));
+                                maxNumberOfAttempts: _sizeConfig.FolderPreCreateRetryAttempts,
+                                firstRetryInterval: TimeSpan.FromSeconds(_sizeConfig.FolderPreCreateFirstRetryIntervalSeconds),
+                                backoffCoefficient: _sizeConfig.FolderPreCreateBackoffCoefficient))));
                     }
                     catch (Exception ex)
                     {
