@@ -82,10 +82,14 @@ public class ExceptionHandlingMiddleware : IFunctionsWorkerMiddleware
   internal static HttpStatusCode MapExceptionToStatusCode(Exception exception) => exception switch
   {
     ArgumentNullException or BadRequestException => HttpStatusCode.BadRequest,
-    CmsUnauthorizedException or CpsAuthenticationException or NetAppUnauthorizedException => HttpStatusCode.Unauthorized,
+    CmsUnauthorizedException or CpsAuthenticationException or NetAppUnauthorizedException or OntapUnauthorizedException => HttpStatusCode.Unauthorized,
     MissingSecurityGroupException or NetAppAccessDeniedException => HttpStatusCode.Forbidden,
-    BrokenCircuitException => HttpStatusCode.ServiceUnavailable,
+    NetAppNotFoundException or OntapNotFoundException => HttpStatusCode.NotFound,
+    NetAppConflictException or OntapConflictException => HttpStatusCode.Conflict,
     DdeiClientException ddeiException => ddeiException.StatusCode,
+    NetAppClientException netAppException => netAppException.StatusCode,
+    OntapClientException ontapException => ontapException.StatusCode,
+    BrokenCircuitException => HttpStatusCode.ServiceUnavailable,
     _ => HttpStatusCode.InternalServerError,
   };
 

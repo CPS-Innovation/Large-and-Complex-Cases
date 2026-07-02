@@ -21,13 +21,6 @@ public static class IServiceCollectionExtension
   private const int CircuitBreakerMinimumThroughput = 10;
   private const int CircuitBreakerDurationOfBreakSeconds = 30;
 
-  // Built once per client and reused so circuit-breaker state is shared across all calls for that client.
-  private static IServiceProvider? _serviceProvider;
-  private static readonly Lazy<IAsyncPolicy<HttpResponseMessage>> _egressClientPolicy =
-      new(() => GetResiliencePolicy(_serviceProvider!.GetRequiredService<ILoggerFactory>()));
-  private static readonly Lazy<IAsyncPolicy<HttpResponseMessage>> _egressStorageClientPolicy =
-      new(() => GetResiliencePolicy(_serviceProvider!.GetRequiredService<ILoggerFactory>()));
-
   public static void AddEgressClient(this IServiceCollection services, IConfiguration configuration)
   {
     services.AddTransient<IEgressRequestFactory, EgressRequestFactory>();
@@ -41,14 +34,10 @@ public static class IServiceCollectionExtension
         throw new ArgumentNullException(nameof(egressServiceUrl), "EgressOptions:Url configuration is missing or empty.");
       }
       client.BaseAddress = new Uri(egressServiceUrl);
-      client.Timeout = TimeSpan.FromMinutes(10);
+      client.Timeout = TimeSpan.FromSeconds(configuration.GetValue("EgressOptions:ManagementTimeoutSeconds", 100));
     })
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-    .AddPolicyHandler((sp, _) =>
-    {
-      _serviceProvider ??= sp;
-      return _egressClientPolicy.Value;
-    });
+    .AddResiliencePolicyHandler(GetResiliencePolicy);
 
     services.AddHttpClient<EgressStorageClient>(client =>
     {
@@ -58,14 +47,14 @@ public static class IServiceCollectionExtension
         throw new ArgumentNullException(nameof(egressServiceUrl), "EgressOptions:Url configuration is missing or empty.");
       }
       client.BaseAddress = new Uri(egressServiceUrl);
-      client.Timeout = TimeSpan.FromMinutes(10);
+      // EgressStorageClient mixes short management calls with file streamed downloads and
+      // chunk uploads. The body read of a streamed download is bound by HttpClient.Timeout, so a
+      // single short value would break large downloads. Per-operation timeouts are enforced inside
+      // BaseEgressClient via CancellationToken instead, leaving the client itself uncapped.
+      client.Timeout = Timeout.InfiniteTimeSpan;
     })
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-    .AddPolicyHandler((sp, _) =>
-    {
-      _serviceProvider ??= sp;
-      return _egressStorageClientPolicy.Value;
-    });
+    .AddResiliencePolicyHandler(GetResiliencePolicy);
   }
 
   internal static IAsyncPolicy<HttpResponseMessage> GetResiliencePolicy(ILoggerFactory loggerFactory)

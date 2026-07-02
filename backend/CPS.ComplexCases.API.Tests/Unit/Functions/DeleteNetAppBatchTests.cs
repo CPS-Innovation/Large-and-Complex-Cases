@@ -25,6 +25,7 @@ using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
 using Moq;
+using CPS.ComplexCases.Data.Enums;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions;
 
@@ -70,6 +71,7 @@ public class DeleteNetAppBatchTests
             new() {
                 Id = _fixture.Create<Guid>(),
                 BucketName = _testBucketName,
+                VolumeUuid = _fixture.Create<Guid>(),
                 DisplayName = "Test Security Group"
             }
         ];
@@ -800,8 +802,8 @@ public class DeleteNetAppBatchTests
             .Setup(s => s.GetUserSecurityGroupsAsync(_testBearerToken))
             .ReturnsAsync(
             [
-                new() { Id = _fixture.Create<Guid>(), BucketName = firstBucket, DisplayName = "First" },
-                new() { Id = _fixture.Create<Guid>(), BucketName = secondBucket, DisplayName = "Second" }
+                new() { Id = _fixture.Create<Guid>(), BucketName = firstBucket, VolumeUuid = _fixture.Create<Guid>(), DisplayName = "First" },
+                new() { Id = _fixture.Create<Guid>(), BucketName = secondBucket, VolumeUuid = _fixture.Create<Guid>(), DisplayName = "Second" }
             ]);
 
         _netAppClientMock
@@ -975,10 +977,10 @@ public class DeleteNetAppBatchTests
         new() { CaseId = caseId, Operations = operations };
 
     private static DeleteNetAppBatchOperationDto MaterialOp(string sourcePath) =>
-        new() { Type = NetAppDeleteOperationType.Material, SourcePath = sourcePath };
+        new() { Type = NetAppOperationType.Material, SourcePath = sourcePath };
 
     private static DeleteNetAppBatchOperationDto FolderOp(string sourcePath) =>
-        new() { Type = NetAppDeleteOperationType.Folder, SourcePath = sourcePath };
+        new() { Type = NetAppOperationType.Folder, SourcePath = sourcePath };
 
     private void SetupRequestValidator(DeleteNetAppBatchDto dto, bool isValid, List<string>? errors = null)
     {

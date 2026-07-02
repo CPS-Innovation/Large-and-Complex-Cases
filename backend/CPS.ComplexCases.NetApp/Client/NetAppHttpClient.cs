@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.NetApp.Exceptions;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
@@ -8,11 +9,27 @@ using CPS.ComplexCases.NetApp.Models.NetApp;
 
 namespace CPS.ComplexCases.NetApp.Client;
 
-public class NetAppHttpClient(HttpClient httpClient, INetAppRequestFactory netAppRequestFactory, ILogger<NetAppHttpClient> logger) : INetAppHttpClient
+public class NetAppHttpClient(
+    HttpClient httpClient,
+    INetAppRequestFactory netAppRequestFactory,
+    ILogger<NetAppHttpClient> logger,
+    IHttpResponseHandler httpResponseHandler) : INetAppHttpClient
 {
+    private static readonly HttpResponseHandlerConfig HttpResponseHandlerConfig = new()
+    {
+        StatusCodeExceptionFactories = new Dictionary<HttpStatusCode, Func<HttpResponseMessage, Exception>>
+        {
+            [HttpStatusCode.Unauthorized] = response => new NetAppUnauthorizedException(response.ReasonPhrase ?? "Unauthorized access to NetApp."),
+            [HttpStatusCode.NotFound] = response => new NetAppNotFoundException(response.ReasonPhrase ?? "User not found."),
+            [HttpStatusCode.Conflict] = response => new NetAppConflictException(response.ReasonPhrase ?? "Conflict occurred while accessing NetApp API.")
+        },
+        DefaultExceptionFactory = (statusCode, httpRequestException) => new NetAppClientException(statusCode, httpRequestException)
+    };
+
     private readonly HttpClient _httpClient = httpClient;
     private readonly INetAppRequestFactory _netAppRequestFactory = netAppRequestFactory;
     private readonly ILogger<NetAppHttpClient> _logger = logger;
+    private readonly IHttpResponseHandler _httpResponseHandler = httpResponseHandler;
 
     public Task<NetAppUserResponse> RegisterUserAsync(RegisterUserArg arg)
     {
@@ -50,37 +67,6 @@ public class NetAppHttpClient(HttpClient httpClient, INetAppRequestFactory netAp
         return result;
     }
 
-    private async Task<HttpResponseMessage> CallNetApp(HttpRequestMessage request, params HttpStatusCode[] expectedUnhappyStatusCodes)
-    {
-        var response = await _httpClient.SendAsync(request);
-        try
-        {
-            if (response.IsSuccessStatusCode || expectedUnhappyStatusCodes.Contains(response.StatusCode))
-            {
-                return response;
-            }
-
-            if (response.StatusCode == HttpStatusCode.Unauthorized)
-            {
-                throw new NetAppUnauthorizedException(response.ReasonPhrase ?? "Unauthorized access to NetApp.");
-            }
-
-            if (response.StatusCode == HttpStatusCode.NotFound)
-            {
-                throw new NetAppNotFoundException(response.ReasonPhrase ?? "User not found.");
-            }
-
-            if (response.StatusCode == HttpStatusCode.Conflict)
-            {
-                throw new NetAppConflictException(response.ReasonPhrase ?? "Conflict occurred while accessing NetApp API.");
-            }
-
-            var content = await response.Content.ReadAsStringAsync();
-            throw new HttpRequestException(content);
-        }
-        catch (HttpRequestException exception)
-        {
-            throw new NetAppClientException(response.StatusCode, exception);
-        }
-    }
+    private Task<HttpResponseMessage> CallNetApp(HttpRequestMessage request, params HttpStatusCode[] expectedUnhappyStatusCodes)
+        => _httpResponseHandler.SendAsync(_httpClient, request, HttpResponseHandlerConfig, expectedUnhappyStatusCodes);
 }

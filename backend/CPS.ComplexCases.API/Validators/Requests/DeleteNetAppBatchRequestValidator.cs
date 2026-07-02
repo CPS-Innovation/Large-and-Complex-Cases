@@ -1,3 +1,4 @@
+using CPS.ComplexCases.Data.Enums;
 using CPS.ComplexCases.Data.Models.Requests;
 using FluentValidation;
 
@@ -40,7 +41,7 @@ public class DeleteNetAppBatchRequestValidator : AbstractValidator<DeleteNetAppB
                 .WithMessage("SourcePath cannot start with a '/'.");
 
             op.RuleFor(x => x.SourcePath)
-                .Must((operation, path) => operation.Type != NetAppDeleteOperationType.Folder || path.EndsWith('/'))
+                .Must((operation, path) => operation.Type != NetAppOperationType.Folder || path.EndsWith('/'))
                 .WithMessage("SourcePath for a Folder operation must end with a '/'.");
         });
     }

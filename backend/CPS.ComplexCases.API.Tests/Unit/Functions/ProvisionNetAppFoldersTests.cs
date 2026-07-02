@@ -86,6 +86,7 @@ public class ProvisionNetAppFoldersTests
                 {
                     Id = _fixture.Create<Guid>(),
                     BucketName = _bucketName,
+                    VolumeUuid = _fixture.Create<Guid>(),
                     DisplayName = "Test Security Group"
                 }
             ]);

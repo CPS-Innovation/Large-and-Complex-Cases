@@ -5,10 +5,12 @@ import {
   type BatchDeleteDetails,
   type BatchCopyDetails,
   type BatchMoveDetails,
+  type BatchRenameDetails,
   type TransferDetails,
   isBatchCopyDetails,
   isBatchDeleteDetails,
   isBatchMoveDetails,
+  isBatchRenameDetails,
   isTransferDetails,
 } from "../../../schemas";
 import { Details, Tag, Button } from "../../govuk";
@@ -258,6 +260,42 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
     </div>
   );
 
+  const renderBatchRenameDetails = (details: BatchRenameDetails) => (
+    <div>
+      <Details summaryChildren="View renamed items">
+        <ul className={styles.batchDeleteList}>
+          {details.items.map((item, i) => (
+            <li key={i} className={styles.batchCopyItem}>
+              <div className={styles.batchCopyPaths}>
+                <div data-testid="batch-rename-source">
+                  <span className={styles.locationTitle}>Source:</span>
+                  <span className={styles.locationPath}>
+                    {getCleanPath(item.previousPath).replace(/\//g, " > ")}
+                  </span>
+                </div>
+                {item.newPath && (
+                  <div data-testid="batch-rename-destination">
+                    <span className={styles.locationTitle}>Destination:</span>
+                    <span className={styles.locationPath}>
+                      {getCleanPath(item.newPath).replace(/\//g, " > ")}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <Tag
+                gdsTagColour={item.outcome === "Renamed" ? "green" : "grey"}
+                className={styles.batchRenameTag}
+                data-testid="batch-rename-outcome-tag"
+              >
+                {item.outcome}
+              </Tag>
+            </li>
+          ))}
+        </ul>
+      </Details>
+    </div>
+  );
+
   const MOVE_ACTION_TYPES = [
     "FOLDER_MOVED",
     "MATERIAL_MOVED",
@@ -285,6 +323,10 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
 
     if (isBatchDeleteDetails(details)) {
       return renderBatchDeleteDetails(details);
+    }
+
+    if (isBatchRenameDetails(details)) {
+      return renderBatchRenameDetails(details);
     }
 
     return null;

@@ -1,13 +1,7 @@
 using System.Text.Json.Serialization;
+using CPS.ComplexCases.Data.Enums;
 
 namespace CPS.ComplexCases.Data.Models.Requests;
-
-[JsonConverter(typeof(JsonStringEnumConverter))]
-public enum NetAppDeleteOperationType
-{
-    Material,
-    Folder
-}
 
 public class DeleteNetAppBatchDto
 {
@@ -21,7 +15,7 @@ public class DeleteNetAppBatchDto
 public class DeleteNetAppBatchOperationDto
 {
     [JsonPropertyName("type")]
-    public required NetAppDeleteOperationType Type { get; set; }
+    public required NetAppOperationType Type { get; set; }
 
     [JsonPropertyName("sourcePath")]
     public required string SourcePath { get; set; }
