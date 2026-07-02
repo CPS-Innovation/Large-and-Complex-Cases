@@ -354,7 +354,7 @@ if ($ExistingWorkspaceId) {
     # ============================================================
     Write-Host "[3/8] Creating workspace..." -ForegroundColor Yellow
 
-    $bodyFile = Join-Path $env:TEMP "egress_create.json"
+    $bodyFile = Join-Path $TempFolder "egress_create.json"
     @{
         name = $WorkspaceName
         template_id = $TemplateId
@@ -391,7 +391,7 @@ if ($ExistingWorkspaceId) {
         Write-Host "[4/8] Adding user: $UserEmail..." -ForegroundColor Yellow
 
         $addUserBody = '[{"switch_id":"' + $UserEmail + '","role_id":"' + $AdminRoleId + '"}]'
-        $bodyFile = Join-Path $env:TEMP "egress_adduser.json"
+        $bodyFile = Join-Path $TempFolder "egress_adduser.json"
         $addUserBody | Set-Content $bodyFile -Encoding UTF8
 
         $addResult = & $curl --silent --location --request POST "$BaseUrl/api/v1/workspaces/$WorkspaceId/users/" `

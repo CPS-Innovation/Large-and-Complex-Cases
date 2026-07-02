@@ -67,7 +67,7 @@ Set these environment variables in your pipeline:
 |----------|-------------|----------|
 | `LCC_TENANT_ID` | Azure AD Tenant ID | Yes |
 | `LCC_REGISTER_CASE_CLIENT_ID` | Client ID for Case Registration API | Yes |
-| `LCC_API_ID` | LCC API Application ID (used in token scope) | Yes |
+| `LCC_API_CLIENT_ID` | LCC API Application ID (used in token scope) | Yes |
 | `LCC_API_CLIENT_SECRET` | LCC API Client Secret (confidential client flows) | Yes |
 | `LCC_AZURE_USERNAME` | Azure AD email | Yes |
 | `LCC_AZURE_PASSWORD` | Azure AD password | Yes |
