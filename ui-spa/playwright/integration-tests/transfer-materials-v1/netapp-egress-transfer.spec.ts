@@ -1,5 +1,5 @@
 import { test } from "../utils/test";
-import { type Page, expect } from "@playwright/test";
+import { expect } from "@playwright/test";
 import { delay, HttpResponse, http } from "msw";
 import { TransferMaterialsSourcePage } from "../pages/transfer-material-source";
 import { TransferMaterialsDestinationPage } from "../pages/transfer-material-destination";

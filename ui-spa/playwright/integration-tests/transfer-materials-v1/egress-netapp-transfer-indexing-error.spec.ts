@@ -79,65 +79,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
     );
     await transferMaterialsDestinationPage.clickTransferActionButton();
   };
-  const caseManagementPageLoad = async (page: Page) => {
-    await page.goto("/case/12/case-management");
-    await expect(page.locator("h1")).toHaveText(`Thunderstruck`);
 
-    await expect(page.getByTestId("tab-active")).toHaveText(
-      "Transfer materials",
-    );
-    await expect(
-      page.getByTestId("tab-content-transfer-materials").locator("h2"),
-    ).toHaveText("Transfer materials to the Shared Drive");
-  };
-  const startEgressToNetAppTransfer = async (
-    page: Page,
-    transferType: "Copy" | "Move" = "Copy",
-  ) => {
-    await page
-      .getByTestId("egress-table-wrapper")
-      .locator('role=button[name="folder-1-0"]')
-      .click();
-    const checkboxes = page
-      .getByTestId("egress-table-wrapper")
-      .locator('input[type="checkbox"]');
-    await checkboxes.nth(0).check();
-    await expect(page.getByTestId("transfer-actions-dropdown-0")).toBeVisible();
-    await expect(page.getByTestId("transfer-actions-dropdown-1")).toBeVisible();
-    await expect(page.getByTestId("netapp-inset-text")).toBeVisible();
-    await page
-      .getByTestId("netapp-inset-text")
-      .getByRole("button", { name: transferType })
-      .click();
-    const confirmationModal = await page.getByTestId("div-modal");
-    await expect(confirmationModal).toBeVisible();
-    await expect(confirmationModal).toContainText("Confirm");
-    const modalLabelText =
-      transferType === "Copy"
-        ? "I want to copy 2 folders and 1 file to netapp"
-        : "I want to move 2 folders and 1 file to netapp";
-    await expect(confirmationModal.getByLabel(modalLabelText)).toBeVisible();
-    await expect(
-      confirmationModal.getByRole("button", { name: "Continue" }),
-    ).toBeDisabled();
-    await confirmationModal.getByLabel(modalLabelText).click();
-    await expect(
-      confirmationModal.getByRole("button", { name: "Continue" }),
-    ).not.toBeDisabled();
-    await confirmationModal.getByRole("button", { name: "Continue" }).click();
-    await expect(confirmationModal).not.toBeVisible();
-    await expect(page.getByTestId("transfer-spinner")).toBeVisible();
-    await expect(
-      page.getByTestId("tab-content-transfer-materials").locator("h2", {
-        hasText: "Transfer materials to the Shared Drive",
-      }),
-    ).not.toBeVisible();
-    await expect(page.getByTestId("egress-table-wrapper")).not.toBeVisible();
-    await expect(page.getByTestId("netapp-table-wrapper")).not.toBeVisible();
-    await expect(
-      page.getByTestId("tab-content-transfer-materials"),
-    ).toContainText("Indexing transfer from Egress to Shared Drive...");
-  };
   test.describe("Long file path issue", () => {
     const validateFilePathErrorSection = async (
       section: Locator,
