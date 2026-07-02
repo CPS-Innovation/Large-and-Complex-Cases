@@ -119,6 +119,8 @@ export const test = base.extend<
       caseUrn: shared.caseUrn,
       files,
       uploadSubfolder,
+      egressBaseUrl: config.egressBaseUrl,
+      egressToken: token
     });
 
     // Per-test teardown. On failure we leave the uploaded files in the
@@ -134,7 +136,7 @@ export const test = base.extend<
       netAppFolder: REGISTER_CASE_NETAPP_FOLDER,
       caseId: shared.caseId,
       testInfo,
-      egressToken: token,
+      egressToken: token
     });
   }, { timeout: 300_000 }],
 });
