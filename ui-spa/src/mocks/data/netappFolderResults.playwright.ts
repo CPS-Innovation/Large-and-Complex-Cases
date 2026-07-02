@@ -7,6 +7,11 @@ export const netAppRootFolderResultsPlaywright: NetAppFolderResponse = {
         lastModified: "2000-01-02",
         filesize: 1234,
       },
+      {
+        path: "netapp/file-1-1.pdf",
+        lastModified: "2000-01-03",
+        filesize: 2268979,
+      },
     ],
     folderData: [
       {

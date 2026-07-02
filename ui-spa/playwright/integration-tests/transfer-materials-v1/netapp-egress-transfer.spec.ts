@@ -70,10 +70,11 @@ test.describe("transfer material netapp to egress transfer", () => {
       ["", "folder-1-0", "--", "--"],
       ["", "folder-1-1", "--", "--"],
       ["", "file-1-0.pdf", "02/01/2000", "1.23 KB"],
+      ["", "file-1-1.pdf", "03/01/2000", "2.26 MB"],
     ];
     await transferMaterialsSourcePage.validateTableRowValues(folderRows);
     await transferMaterialsSourcePage.verifySharedDriveTransferSourceElements();
-    await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 4);
+    await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 5);
     await transferMaterialsSourcePage.verifyCopyBtnEnabled(false);
     await transferMaterialsSourcePage.verifyMoveBtnHidden();
 
@@ -94,8 +95,9 @@ test.describe("transfer material netapp to egress transfer", () => {
       ["", "folder-2-0", "--", "--"],
       ["", "folder-2-1", "--", "--"],
       ["", "file-2-0.pdf", "02/01/2000", "1.23 KB"],
+      ["", "file-2-1.pdf", "03/01/2000", "2.26 MB"],
     ]);
-    await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 4);
+    await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 5);
     await transferMaterialsSourcePage.verifyCopyBtnEnabled(false);
     await transferMaterialsSourcePage.toggleCheckbox(0, "shared-drive");
     await transferMaterialsSourcePage.verifyCopyBtnEnabled(true);
@@ -109,7 +111,7 @@ test.describe("transfer material netapp to egress transfer", () => {
     );
     await transferMaterialsDestinationPage.verifyPageElements(
       "shared-drive",
-      3,
+      4,
       "copy",
     );
     await transferMaterialsDestinationPage.verifyDisabledTreeItem(

@@ -30,6 +30,7 @@ test.describe("transfer material shared-drive list", () => {
       ["", "folder-1-0", "--", "--"],
       ["", "folder-1-1", "--", "--"],
       ["", "file-1-0.pdf", "02/01/2000", "1.23 KB"],
+      ["", "file-1-1.pdf", "03/01/2000", "2.26 MB"],
     ];
     await transferMaterialsSourcePage.validateTableRowValues(folderRows);
   });
@@ -59,8 +60,9 @@ test.describe("transfer material shared-drive list", () => {
       ["", "folder-1-0", "--", "--"],
       ["", "folder-1-1", "--", "--"],
       ["", "file-1-0.pdf", "02/01/2000", "1.23 KB"],
+      ["", "file-1-1.pdf", "03/01/2000", "2.26 MB"],
     ]);
-    await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 4);
+    await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 5);
     await transferMaterialsSourcePage.handleFolderClick("folder-1-0");
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
       "shared-drive",
@@ -78,8 +80,9 @@ test.describe("transfer material shared-drive list", () => {
       ["", "folder-2-0", "--", "--"],
       ["", "folder-2-1", "--", "--"],
       ["", "file-2-0.pdf", "02/01/2000", "1.23 KB"],
+      ["", "file-2-1.pdf", "03/01/2000", "2.26 MB"],
     ]);
-    await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 4);
+    await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 5);
     await transferMaterialsSourcePage.handleFolderClick("folder-2-0");
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
       "shared-drive",
@@ -98,8 +101,9 @@ test.describe("transfer material shared-drive list", () => {
       ["", "folder-3-0", "--", "--"],
       ["", "folder-3-1", "--", "--"],
       ["", "file-3-0.pdf", "02/01/2000", "1.23 KB"],
+      ["", "file-3-1.pdf", "03/01/2000", "2.26 MB"],
     ]);
-    await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 4);
+    await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 5);
     await transferMaterialsSourcePage.handleFolderClick("folder-3-0");
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
       "shared-drive",
@@ -135,8 +139,9 @@ test.describe("transfer material shared-drive list", () => {
       ["", "folder-2-0", "--", "--"],
       ["", "folder-2-1", "--", "--"],
       ["", "file-2-0.pdf", "02/01/2000", "1.23 KB"],
+      ["", "file-2-1.pdf", "03/01/2000", "2.26 MB"],
     ]);
-    await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 4);
+    await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 5);
     await transferMaterialsSourcePage.handleFolderClick(
       "Shared Drive: Thunderstruck",
     );
@@ -155,7 +160,8 @@ test.describe("transfer material shared-drive list", () => {
       ["", "folder-1-0", "--", "--"],
       ["", "folder-1-1", "--", "--"],
       ["", "file-1-0.pdf", "02/01/2000", "1.23 KB"],
+      ["", "file-1-1.pdf", "03/01/2000", "2.26 MB"],
     ]);
-    await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 4);
+    await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 5);
   });
 });
