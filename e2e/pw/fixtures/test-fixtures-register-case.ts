@@ -119,8 +119,6 @@ export const test = base.extend<
       caseUrn: shared.caseUrn,
       files,
       uploadSubfolder,
-      egressBaseUrl: config.egressBaseUrl,
-      egressToken: token
     });
 
     // Per-test teardown. On failure we leave the uploaded files in the
