@@ -538,7 +538,7 @@ public class TransferFile(
         TransferErrorCode.IntegrityVerificationFailed =>
             "The file was uploaded but failed integrity verification, so the transfer was not completed.",
         TransferErrorCode.Transient =>
-            "The destination service was temporarily unavailable. The transfer will be retried automatically.",
+            "The destination service was temporarily unavailable, so the file was not transferred. Please try again.",
         _ =>
             "The file could not be transferred due to an unexpected error. Please try again, and contact support if the problem continues."
     };
