@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 import dotenv from "dotenv";
 
-dotenv.config({ path: ".env.playwright" });
+dotenv.config({ path: ".env.playwright", override: false });
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -35,16 +35,20 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
-    // {
-    //   name: "transfer-material-v0",
-    //   use: { ...devices["Desktop Chrome"] },
-    //   testMatch: ["*.spec.ts", "transfer-materials-v0/*.spec.ts"],
-    //   // use: { ...devices["Desktop Chrome"], baseURL: "http://localhost:5173" },
-    // },
+    {
+      name: "common",
+      use: { ...devices["Desktop Chrome"] },
+      testIgnore: ["transfer-material-v0/**", "transfer-materials-v1/**"],
+    },
+    {
+      name: "transfer-material-v0",
+      use: { ...devices["Desktop Chrome"] },
+      testMatch: ["transfer-material-v0/**"],
+    },
     {
       name: "transfer-material-v1",
       use: { ...devices["Desktop Chrome"] },
-      testMatch: ["*.spec.ts", "transfer-materials-v1/*.spec.ts"],
+      testMatch: ["transfer-materials-v1/**"],
     },
   ],
 

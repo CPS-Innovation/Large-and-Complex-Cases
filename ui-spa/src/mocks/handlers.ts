@@ -100,7 +100,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
               folderId as string,
               path as string,
             );
-        await delay(400);
+        await delay(500);
         console.log("egressRootFolderResults:", egressRootFolderResults);
         return HttpResponse.json(egressRootFolderResults);
       },
@@ -113,7 +113,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       const netAppRootFolderResults = isDevMock()
         ? getNetAppFolderResultsDev(path as string)
         : getNetAppFolderResultsPlaywright(path as string);
-      await delay(400);
+      await delay(500);
       return HttpResponse.json(netAppRootFolderResults);
     }),
 

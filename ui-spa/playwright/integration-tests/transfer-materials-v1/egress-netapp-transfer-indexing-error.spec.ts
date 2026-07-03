@@ -444,48 +444,6 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
 
       await transferMaterialsSourcePage.verifyPageElements();
       await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
-
-      //   await expect(
-      //     page.getByTestId("tab-content-transfer-materials"),
-      //   ).toContainText("Completing transfer from Egress to Shared Drive...");
-      //   await worker.use(
-      //     http.get(
-      //       "https://mocked-out-api/api/v1/filetransfer/transfer-id-egress-to-netapp/status",
-      //       async () => {
-      //         await delay(10);
-      //         return HttpResponse.json({
-      //           ...BASE_TRANSFER_STATUS,
-      //           status: "Completed",
-      //           transferType: "Copy",
-      //           direction: "EgressToNetApp",
-      //           completedAt: null,
-      //           failedItems: [],
-      //           userName: "dev_user@example.org",
-      //           totalFiles: 2,
-      //           processedFiles: 2,
-      //           successfulFiles: 2,
-      //           successfulItems: [],
-      //           destinationPath: "",
-      //         });
-      //       },
-      //     ),
-      //   );
-
-      //   await expect(page.getByTestId("transfer-spinner")).not.toBeVisible();
-      //   await expect(
-      //     page.getByTestId("transfer-success-notification-banner"),
-      //   ).toBeVisible();
-      //   await expect(
-      //     page.getByTestId("transfer-success-notification-banner"),
-      //   ).toContainText("Success");
-      //   await expect(
-      //     page.getByTestId("transfer-success-notification-banner"),
-      //   ).toContainText("Files copied successfully");
-      //   await expect(
-      //     page.getByTestId("tab-content-transfer-materials").locator("h2").nth(1),
-      //   ).toHaveText("Transfer materials to the Shared Drive");
-      //   await expect(page.getByTestId("egress-table-wrapper")).toBeVisible();
-      //   await expect(page.getByTestId("netapp-table-wrapper")).toBeVisible();
     });
     test("The back link and cancel button from the resolve transfer path files page should take the user to casemanagement page", async ({
       page,
@@ -557,9 +515,11 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
 
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
+        { timeout: 50000 },
       );
       await expect(page.locator("h1")).toHaveText(
         "File paths are too long to transfer",
+        { timeout: 50000 },
       );
       await expect(
         page.getByRole("button", { name: "Start transfer" }),

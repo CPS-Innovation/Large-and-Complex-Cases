@@ -2,25 +2,22 @@ import { test } from "../utils/test";
 import { TransferMaterialsSourcePage } from "../pages/transfer-material-source";
 
 test.describe("transfer material shared-drive list", () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto("/case/12/case-management");
-  });
-
   test("Should show the transfer material tab with correct initial content", async ({
     page,
   }) => {
+    await page.goto("/case/12/case-management");
     const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
     await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
     await transferMaterialsSourcePage.verifyPageElements();
-    await transferMaterialsSourcePage.clickToggleTransferDirection();
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
-      "shared-drive",
+      "egress",
       true,
     );
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
-      "shared-drive",
+      "egress",
       false,
     );
+    await transferMaterialsSourcePage.clickToggleTransferDirection();
     await transferMaterialsSourcePage.verifyFolderPath([
       "Shared Drive: Thunderstruck",
     ]);
@@ -38,19 +35,20 @@ test.describe("transfer material shared-drive list", () => {
   test("Should correctly navigate through the shared-drive folders and validate checkbox visibility", async ({
     page,
   }) => {
+    await page.goto("/case/12/case-management");
     const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
     await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
     await transferMaterialsSourcePage.verifyPageElements();
-    await transferMaterialsSourcePage.clickToggleTransferDirection();
-    await transferMaterialsSourcePage.verifySharedDriveTransferSourceElements();
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
-      "shared-drive",
+      "egress",
       true,
     );
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
-      "shared-drive",
+      "egress",
       false,
     );
+    await transferMaterialsSourcePage.clickToggleTransferDirection();
+    await transferMaterialsSourcePage.verifySharedDriveTransferSourceElements();
     await transferMaterialsSourcePage.verifyFolderPath([
       "Shared Drive: Thunderstruck",
     ]);
