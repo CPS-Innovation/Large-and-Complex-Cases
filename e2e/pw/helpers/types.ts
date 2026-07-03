@@ -26,6 +26,9 @@ export interface TestSetupResult {
   // "4. Served Evidence/<uploadSubfolder>/", NetApp->Egress copies land in
   // "2. Counsel only/<uploadSubfolder>/". Undefined for register-case mode.
   uploadSubfolder?: string;
+  // Egress folder path for "4. Counsel only/<uploadSubfolder>/". 
+  // Used by the Move (large file) test for clear logging.
+  uploadPath?: string;
   // Egress folder id for "4. Counsel only/<uploadSubfolder>/", captured at
   // createFolder time. Used by the Move (large file) test to verify files were 
   // deleted from the source folder after transfer.

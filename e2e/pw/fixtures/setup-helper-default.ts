@@ -178,6 +178,7 @@ export async function setupDefaultTestData(
     caseUrn,
     caseId: Number.isFinite(caseIdNum) ? caseIdNum : undefined,
     uploadSubfolder,
+    uploadPath,
     sourceSubfolderId,
     destinationSubfolderId,
     egressToken,

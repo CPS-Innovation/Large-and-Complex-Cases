@@ -84,16 +84,21 @@ test.describe("Egress to NetApp Move (Default Mode)", () => {
 
     // Step 10: Confirm files removed from Egres
     for (const file of testData.files) {
+      console.log(`\nVerifying file '${file.fileName}' has been deleted from source '${testData.uploadPath}'...`)
       await test.step(
         `Verify file '${file.fileName}' is no longer present in Egress`,
         async () => {
           const exists = await isFileInEgress(
-            testData.egressBaseUrl,
-            testData.egressToken,
+            testData.egressBaseUrl!,
+            testData.egressToken!,
             testData.workspace.id,
             testData.sourceSubfolderId!,
             file.fileName
           );
+
+          if (!exists) {
+            console.log(`File '${file.fileName}' was not found in '${testData.uploadPath}'`)
+          }
 
           expect(
             exists,
