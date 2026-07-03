@@ -79,6 +79,7 @@ public class GetTransferStatusTests
         Assert.Equal(transferEntity.TransferType, returnedDto.TransferType);
         Assert.Equal(transferEntity.Direction, returnedDto.Direction);
         Assert.Equal(transferEntity.DestinationPath, returnedDto.DestinationPath);
+        Assert.Equal(transferEntity.SourceRootFolderPath, returnedDto.SourceRootFolderPath);
         Assert.Equal(transferEntity.TotalFiles, returnedDto.TotalFiles);
         Assert.Equal(transferEntity.ProcessedFiles, returnedDto.ProcessedFiles);
         Assert.Equal(transferEntity.UserName, returnedDto.UserName);
@@ -361,6 +362,7 @@ public class GetTransferStatusTests
             Id = Guid.Parse(_transferId),
             Status = _fixture.Create<TransferStatus>(),
             DestinationPath = _fixture.Create<string>(),
+            SourceRootFolderPath = _fixture.Create<string>(),
             SourcePaths = _fixture.CreateMany<TransferSourcePath>(2).ToList(),
             CaseId = _fixture.Create<int>(),
             TransferType = _fixture.Create<TransferType>(),

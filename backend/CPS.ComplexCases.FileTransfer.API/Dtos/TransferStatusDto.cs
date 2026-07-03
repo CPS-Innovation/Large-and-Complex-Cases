@@ -11,6 +11,7 @@ public class TransferStatusDto
     public TransferType TransferType { get; init; }
     public TransferDirection Direction { get; init; }
     public required string DestinationPath { get; init; }
+    public string? SourceRootFolderPath { get; init; }
     public DateTime? StartedAt { get; init; }
     public DateTime? CompletedAt { get; init; }
     public List<TransferFailedItemDto> FailedItems { get; init; } = [];
@@ -28,6 +29,7 @@ public class TransferStatusDto
         TransferType = entity.TransferType,
         Direction = entity.Direction,
         DestinationPath = entity.DestinationPath,
+        SourceRootFolderPath = entity.SourceRootFolderPath,
         StartedAt = entity.StartedAt,
         CompletedAt = entity.CompletedAt,
         FailedItems = entity.FailedItems.Select(TransferFailedItemDto.From).ToList(),
