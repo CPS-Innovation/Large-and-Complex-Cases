@@ -3,7 +3,7 @@ import { TransferMaterialsSourcePage } from "../pages/transfer-material-source";
 
 test.describe("transfer material egress list", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/case/12/case-management");
+    await page.goto("/case/12/case-management?transfer-materials-v1=true");
   });
 
   test("Should show the transfer material tab with correct initial content", async ({

@@ -5,7 +5,7 @@ test.describe("transfer material shared-drive list", () => {
   test("Should show the transfer material tab with correct initial content", async ({
     page,
   }) => {
-    await page.goto("/case/12/case-management");
+    await page.goto("/case/12/case-management?transfer-materials-v1=true");
     const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
     await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
     await transferMaterialsSourcePage.verifyPageElements();
@@ -35,7 +35,7 @@ test.describe("transfer material shared-drive list", () => {
   test("Should correctly navigate through the shared-drive folders and validate checkbox visibility", async ({
     page,
   }) => {
-    await page.goto("/case/12/case-management");
+    await page.goto("/case/12/case-management?transfer-materials-v1=true");
     const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
     await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
     await transferMaterialsSourcePage.verifyPageElements();

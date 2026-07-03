@@ -43,7 +43,7 @@ test.describe("transfer material netapp to egress transfer", () => {
         },
       ),
     );
-    await page.goto("/case/12/case-management");
+    await page.goto("/case/12/case-management?transfer-materials-v1=true");
     const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
     await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
@@ -220,7 +220,7 @@ test.describe("transfer material netapp to egress transfer", () => {
         },
       ),
     );
-    await page.goto("/case/12/case-management");
+    await page.goto("/case/12/case-management?transfer-materials-v1=true");
     const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
     await transferMaterialsSourcePage.verifyPageElements();
     await transferMaterialsSourcePage.verifyTransferLoaderVisible(
@@ -382,7 +382,7 @@ test.describe("transfer material netapp to egress transfer", () => {
         },
       ),
     );
-    await page.goto("/case/12/case-management");
+    await page.goto("/case/12/case-management?transfer-materials-v1=true");
     const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
     await transferMaterialsSourcePage.verifyPageElements();
     await transferMaterialsSourcePage.verifyTransferLoaderVisible(
@@ -513,7 +513,7 @@ test.describe("transfer material netapp to egress transfer", () => {
         statusApiCall = true;
       }
     });
-    await page.goto("/case/12/case-management");
+    await page.goto("/case/12/case-management?transfer-materials-v1=true");
     const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
     await transferMaterialsSourcePage.verifyPageElements();
     await transferMaterialsSourcePage.verifyTransferLoaderHidden();

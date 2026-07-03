@@ -16,7 +16,7 @@ const BASE_TRANSFER_STATUS = {
 test.describe("transfer-error-page", () => {
   const startTransfer = async (page: Page) => {
     const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
-    await page.goto("/case/12/case-management");
+    await page.goto("/case/12/case-management?transfer-materials-v1=true");
     await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
       "egress",

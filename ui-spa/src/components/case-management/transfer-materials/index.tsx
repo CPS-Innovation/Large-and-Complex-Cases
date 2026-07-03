@@ -1,4 +1,11 @@
-import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import {
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+  useContext,
+} from "react";
 import { useApi } from "../../../common/hooks/useApi";
 import { LinkButton, InsetText, NotificationBanner, Button } from "../../govuk";
 import NetAppFolderContainer from "./NetAppFolderContainer";
@@ -34,7 +41,7 @@ import {
   type EgressTransferPayloadSourcePath,
   type NetAppTransferPayloadSourcePath,
 } from "../../../schemas/requests/initiateFileTransferPayload";
-import { useUserGroupsFeatureFlag } from "../../../common/hooks/useUserGroupsFeatureFlag";
+import { MainStateContext } from "../../../providers/MainStateProvider";
 import { getUrlSearchParam } from "../../../common/utils/getUrlSearchParam";
 import styles from "./index.module.scss";
 
@@ -57,7 +64,8 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   activeTransferId,
   urn,
 }) => {
-  const featureFlags = useUserGroupsFeatureFlag();
+  const { state } = useContext(MainStateContext);
+  const { appData: { featureFlags } = {} } = state;
   const navigate = useNavigate();
   const location = useLocation();
   const { username } = useUserDetails();
@@ -873,7 +881,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
                     {`${transferSource === "egress" ? "from the Shared Drive to Egress" : "from Egress to the Shared Drive"}`}
                   </LinkButton>
                 </InsetText>
-                {featureFlags.disconnectSharedDrive && (
+                {featureFlags?.disconnectSharedDrive && (
                   <Button
                     className={`govuk-button--secondary ${styles.disconnectButton}`}
                     name="secondary"

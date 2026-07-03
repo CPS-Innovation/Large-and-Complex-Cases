@@ -1,4 +1,6 @@
 import { msalInstance } from "../../auth/msal/msalInstance";
+import { useContext } from "react";
+import { MainStateContext } from "../../providers/MainStateProvider";
 import {
   FEATURE_FLAG_CASE_DETAILS,
   FEATURE_FLAG_TRANSFER_MOVE,
@@ -41,7 +43,8 @@ export const useUserGroupsFeatureFlag = (): FeatureFlagData => {
     () => (account?.idTokenClaims?.groups as string[]) ?? [],
     [account?.idTokenClaims?.groups],
   );
-
+  const { state, dispatch } = useContext(MainStateContext);
+  const { appData: { featureFlags } = {} } = state;
   const getFeatureFlags = useCallback(
     () => ({
       caseDetails: shouldShowFeature(
@@ -92,5 +95,17 @@ export const useUserGroupsFeatureFlag = (): FeatureFlagData => {
     }),
     [groups, searchParams, userDetails.username],
   );
-  return useMemo(() => getFeatureFlags(), [getFeatureFlags]);
+
+  if (!featureFlags) {
+    const featureFlagsData = getFeatureFlags();
+    dispatch({
+      type: "SET_FEATURE_FLAGS",
+      payload: {
+        featureFlags: featureFlagsData,
+      },
+    });
+    return featureFlagsData;
+  }
+
+  return featureFlags;
 };

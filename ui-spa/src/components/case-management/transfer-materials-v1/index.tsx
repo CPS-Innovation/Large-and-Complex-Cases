@@ -1,4 +1,11 @@
-import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import {
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+  useContext,
+} from "react";
 import { NotificationBanner, Button, Details, LinkButton } from "../../govuk";
 import { Spinner } from "../../common/Spinner";
 import {
@@ -15,7 +22,6 @@ import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPa
 import { useUserDetails } from "../../../auth";
 import { ApiError } from "../../../common/errors/ApiError";
 import { pollTransferStatus } from "../../../common/utils/pollTransferStatus";
-import { useUserGroupsFeatureFlag } from "../../../common/hooks/useUserGroupsFeatureFlag";
 import { getUrlSearchParam } from "../../../common/utils/getUrlSearchParam";
 import TransferSourceNavigationTableContainer from "./TransferSourceNavigationTableContainer";
 import {
@@ -32,6 +38,7 @@ import {
   sortByDateProperty,
   sortByNumberProperty,
 } from "../../../common/utils/sortUtils";
+import { MainStateContext } from "../../../providers/MainStateProvider";
 import styles from "./index.module.scss";
 
 type TransferMaterialsV1PageProps = {
@@ -60,7 +67,8 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
   transferEgressFolderPathInitialValue,
   transferNetAppFolderPathInitialValue,
 }) => {
-  const featureFlags = useUserGroupsFeatureFlag();
+  const { state } = useContext(MainStateContext);
+  const { appData: { featureFlags } = {} } = state;
   const navigate = useNavigate();
   const { username } = useUserDetails();
   const [transferSource, setTransferSource] = useState<"egress" | "netapp">(
@@ -767,7 +775,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
                   onCopy={() => handleTransferAction("copy")}
                   onMove={() => handleTransferAction("move")}
                 />
-                {featureFlags.disconnectSharedDrive && (
+                {featureFlags?.disconnectSharedDrive && (
                   <Button
                     className={`govuk-button--secondary ${styles.disconnectButton}`}
                     name="secondary"

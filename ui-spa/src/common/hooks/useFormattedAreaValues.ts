@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { useMainStateContext } from "../../providers/MainStateProvider";
+import { useMemo, useContext } from "react";
+import { MainStateContext } from "../../providers/MainStateProvider";
 import { type CaseDivisionsOrArea } from "../../schemas";
 
 const mapGroupHeader = (text: string) => ({
@@ -14,11 +14,8 @@ const mapOption = (item: CaseDivisionsOrArea) => ({
 });
 
 export const useFormattedAreaValues = () => {
-  const {
-    state: {
-      apiData: { caseDivisionsOrAreas },
-    },
-  } = useMainStateContext()!;
+  const { state } = useContext(MainStateContext) ?? {};
+  const { apiData: { caseDivisionsOrAreas } = {} } = state;
 
   const formattedAreaValues = useMemo(() => {
     if (!caseDivisionsOrAreas) return { defaultValue: undefined, options: [] };

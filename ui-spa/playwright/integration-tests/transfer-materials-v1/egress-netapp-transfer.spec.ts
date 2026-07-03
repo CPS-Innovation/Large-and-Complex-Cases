@@ -133,7 +133,7 @@ async function runTransferScenario(page: Page, transferType: "copy" | "move") {
 }
 test.describe("transfer material egress netapp transfer", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/case/12/case-management");
+    await page.goto("/case/12/case-management?transfer-materials-v1=true");
   });
 
   test("Should successfully handle the copy of materials from egress to shared drive", async ({
@@ -529,7 +529,7 @@ test.describe("transfer material egress netapp transfer", () => {
         statusApiCall = true;
       }
     });
-    await page.goto("/case/12/case-management");
+    await page.goto("/case/12/case-management?transfer-materials-v1=true");
     const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
     await transferMaterialsSourcePage.verifyPageElements();
     await transferMaterialsSourcePage.verifyTransferLoaderHidden();

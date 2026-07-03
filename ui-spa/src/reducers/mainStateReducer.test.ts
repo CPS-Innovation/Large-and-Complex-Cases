@@ -3,6 +3,7 @@ import * as areaLookups from "./utils/mapAreaLookups";
 
 describe("mainStateReducer", () => {
   const initialState = {
+    appData: { featureFlags: {} as any },
     apiData: {
       caseDivisionsOrAreas: null,
     },

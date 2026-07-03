@@ -5,7 +5,7 @@ import { TransferMaterialsDestinationPage } from "../pages/transfer-material-des
 test.describe("transfer-error-handling", () => {
   test.beforeEach(async ({ page }) => {
     const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
-    await page.goto("/case/12/case-management");
+    await page.goto("/case/12/case-management?transfer-materials-v1=true");
     await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
       "egress",
