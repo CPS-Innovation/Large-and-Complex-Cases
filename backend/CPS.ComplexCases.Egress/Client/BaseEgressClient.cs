@@ -24,24 +24,50 @@ public abstract class BaseEgressClient(
     protected readonly IEgressRequestFactory _egressRequestFactory = egressRequestFactory;
     protected readonly ITelemetryClient _telemetryClient = telemetryClient;
 
+    // Cache the workspace token for its lifetime. Previously a fresh token was fetched on every Egress
+    // call (one transfer logged ~1009 fetches in 24 minutes, dominated by the per-chunk PATCHes).
+    // Caching collapses those to one fetch per token lifetime per client instance.
+    private string? _cachedToken;
+    private DateTime _cachedTokenExpiresAtUtc = DateTime.MinValue;
+    private readonly SemaphoreSlim _tokenLock = new(1, 1);
+    private static readonly TimeSpan TokenRefreshSkew = TimeSpan.FromSeconds(60);
+    private const int DefaultTokenLifetimeSeconds = 300;
+
     protected async Task<string> GetWorkspaceToken()
     {
-        // TEMPORARY DIAGNOSTIC: verify Key Vault references are resolving
-        var usernameHint = string.IsNullOrEmpty(_egressOptions.Username)
-            ? "<EMPTY>"
-            : $"{_egressOptions.Username[..Math.Min(3, _egressOptions.Username.Length)]}***" +
-              $" (len={_egressOptions.Username.Length})";
-        var passwordHint = string.IsNullOrEmpty(_egressOptions.Password)
-            ? "<EMPTY>"
-            : $"{_egressOptions.Password[..Math.Min(3, _egressOptions.Password.Length)]}***" +
-              $" (len={_egressOptions.Password.Length})";
-        _logger.LogWarning(
-            "[DIAG] Egress credential check — Username: {UsernameHint}, Password: {PasswordHint}",
-            usernameHint, passwordHint);
+        if (_cachedToken is not null && DateTime.UtcNow < _cachedTokenExpiresAtUtc)
+        {
+            return _cachedToken;
+        }
 
-        var response = await SendRequestAsync<GetWorkspaceTokenResponse>(
-            _egressRequestFactory.GetWorkspaceTokenRequest(_egressOptions.Username, _egressOptions.Password));
-        return response.Token;
+        await _tokenLock.WaitAsync();
+        try
+        {
+            // Re-check after acquiring the lock in case another caller just refreshed the token.
+            if (_cachedToken is not null && DateTime.UtcNow < _cachedTokenExpiresAtUtc)
+            {
+                return _cachedToken;
+            }
+
+            var response = await SendRequestAsync<GetWorkspaceTokenResponse>(
+                _egressRequestFactory.GetWorkspaceTokenRequest(_egressOptions.Username, _egressOptions.Password));
+
+            var lifetimeSeconds = response.Expiration is > 0 ? response.Expiration.Value : DefaultTokenLifetimeSeconds;
+            var ttl = TimeSpan.FromSeconds(lifetimeSeconds) - TokenRefreshSkew;
+            if (ttl <= TimeSpan.Zero)
+            {
+                // Token lives shorter than the refresh skew; keep half of its life to avoid thrashing.
+                ttl = TimeSpan.FromSeconds(Math.Max(1, lifetimeSeconds / 2.0));
+            }
+
+            _cachedToken = response.Token;
+            _cachedTokenExpiresAtUtc = DateTime.UtcNow.Add(ttl);
+            return _cachedToken;
+        }
+        finally
+        {
+            _tokenLock.Release();
+        }
     }
 
     protected async Task<T> SendRequestAsync<T>(HttpRequestMessage request,
@@ -91,12 +117,13 @@ public abstract class BaseEgressClient(
         telemetryEvent.ResponseStatusCode = response.StatusCode;
         _telemetryClient.TrackEvent(telemetryEvent);
 
-        // TEMPORARY DIAGNOSTIC: log response body before EnsureSuccessStatusCode discards it
+        // Log the response body before EnsureSuccessStatusCode discards it, so Egress-side error
+        // detail (e.g. the generic 500 body) is captured in telemetry for diagnosis.
         if (!response.IsSuccessStatusCode)
         {
             var responseBody = await response.Content.ReadAsStringAsync();
             _logger.LogError(
-                "[DIAG] Egress non-success response — Status: {StatusCode}, URL: {RequestUrl}, Body: {ResponseBody}",
+                "Egress non-success response — Status: {StatusCode}, URL: {RequestUrl}, Body: {ResponseBody}",
                 (int)response.StatusCode, request.RequestUri, responseBody);
         }
 

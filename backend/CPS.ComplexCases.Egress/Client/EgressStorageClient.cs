@@ -50,9 +50,7 @@ public class EgressStorageClient(
 
         var fileName = Path.GetFileName(relativePath);
 
-        var relativePathFromSourceRoot = GetRelativePathFromSourceRoot(relativePath, sourceRootFolderPath);
-        var sourceDirectory = Path.GetDirectoryName(relativePathFromSourceRoot) ?? string.Empty;
-        var fullDestinationPath = Path.Combine(destinationPath, sourceDirectory).Replace('\\', '/');
+        var fullDestinationPath = GetDestinationFolderPath(destinationPath, relativePath, sourceRootFolderPath);
 
         var arg = new CreateUploadArg
         {
@@ -73,20 +71,53 @@ public class EgressStorageClient(
                 Md5Hash = response.Md5Hash,
             };
         }
-        catch (HttpRequestException ex) when (ex.Message.Contains("404"))
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound || ex.Message.Contains("404"))
         {
             _logger.LogInformation("Folder structure doesn't exist for path {FolderPath}, creating it", fullDestinationPath);
 
             await CreateFolderStructureAsync(fullDestinationPath, workspaceId, token);
 
-            var response = await SendRequestAsync<CreateUploadResponse>(_egressRequestFactory.CreateUploadRequest(arg, token));
-            return new UploadSession
+            // The newly created folder is not always immediately visible to create-upload, so retry
+            // the create-upload a few times with a short settle delay rather than a single bare retry.
+            var maxAttempts = Math.Max(1, _egressOptions.CreateUploadRetryAttempts);
+            for (var attempt = 1; ; attempt++)
             {
-                UploadId = response.Id,
-                WorkspaceId = workspaceId,
-                Md5Hash = response.Md5Hash,
-            };
+                await Task.Delay(GetCreateUploadSettleDelay(attempt));
+
+                try
+                {
+                    var response = await SendRequestAsync<CreateUploadResponse>(_egressRequestFactory.CreateUploadRequest(arg, token));
+                    return new UploadSession
+                    {
+                        UploadId = response.Id,
+                        WorkspaceId = workspaceId,
+                        Md5Hash = response.Md5Hash,
+                    };
+                }
+                catch (HttpRequestException retryEx) when (attempt < maxAttempts
+                    && (retryEx.StatusCode == HttpStatusCode.NotFound || retryEx.Message.Contains("404")))
+                {
+                    _logger.LogWarning(retryEx,
+                        "Create-upload still returns 404 after folder creation for {FolderPath} (attempt {Attempt}/{MaxAttempts}); retrying after settle delay.",
+                        fullDestinationPath, attempt, maxAttempts);
+                }
+            }
         }
+    }
+
+    // Computes the Egress destination folder (directory) for a source file's relative path, mirroring
+    // the path logic used by create-upload so pre-creation and create-upload target the same folder.
+    public static string GetDestinationFolderPath(string destinationPath, string? relativePath, string? sourceRootFolderPath)
+    {
+        var relativePathFromSourceRoot = GetRelativePathFromSourceRoot(relativePath ?? string.Empty, sourceRootFolderPath);
+        var sourceDirectory = Path.GetDirectoryName(relativePathFromSourceRoot) ?? string.Empty;
+        return Path.Combine(destinationPath, sourceDirectory).Replace('\\', '/');
+    }
+
+    private TimeSpan GetCreateUploadSettleDelay(int attempt)
+    {
+        var baseSeconds = Math.Max(1, _egressOptions.CreateUploadSettleDelaySeconds);
+        return TimeSpan.FromSeconds(baseSeconds * attempt);
     }
 
     public async Task<UploadChunkResult> UploadChunkAsync(UploadSession session, int chunkNumber, byte[] chunkData, long? start = null, long? end = null, long? totalSize = null, string? BearerToken = null, string? bucketName = null)
@@ -103,11 +134,47 @@ public class EgressStorageClient(
             TotalSize = totalSize
         };
 
-        await SendRequestAsync(
-            _egressRequestFactory.UploadChunkRequest(uploadArg, token),
-            timeout: TimeSpan.FromSeconds(_egressOptions.TransferTimeoutSeconds));
+        var maxAttempts = Math.Max(1, _egressOptions.MaxChunkUploadAttempts);
+        var transferTimeout = TimeSpan.FromSeconds(_egressOptions.TransferTimeoutSeconds);
 
-        return new UploadChunkResult(TransferDirection.NetAppToEgress);
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                // Rebuild the request on every attempt: the chunk body is MultipartFormDataContent,
+                // which cannot be re-sent, so a retry must construct a fresh HttpRequestMessage.
+                await SendRequestAsync(
+                    _egressRequestFactory.UploadChunkRequest(uploadArg, token),
+                    timeout: transferTimeout);
+
+                return new UploadChunkResult(TransferDirection.NetAppToEgress);
+            }
+            catch (Exception ex) when (attempt < maxAttempts && IsRetryableChunkError(ex))
+            {
+                var delay = GetChunkRetryDelay(attempt);
+                _logger.LogWarning(ex,
+                    "Chunk {ChunkNumber} upload for upload {UploadId} failed with a retryable error (attempt {Attempt}/{MaxAttempts}). Retrying in {DelayMs}ms.",
+                    chunkNumber, session.UploadId, attempt, maxAttempts, delay.TotalMilliseconds);
+                await Task.Delay(delay);
+            }
+        }
+    }
+
+    // Egress chunk PATCH's fail intermittently with 5xx/429 under load, and a slow link can trip the
+    // per-chunk timeout. All of these are worth a bounded retry before failing the whole file.
+    private static bool IsRetryableChunkError(Exception ex) =>
+        (ex is HttpRequestException httpEx
+            && ((int?)httpEx.StatusCode >= 500 || httpEx.StatusCode == HttpStatusCode.TooManyRequests))
+        || ex is OperationCanceledException
+        || ex is TimeoutException;
+
+    // Exponential backoff with jitter, so concurrent chunk retries do not synchronise into a storm.
+    private TimeSpan GetChunkRetryDelay(int attempt)
+    {
+        var baseSeconds = Math.Max(1, _egressOptions.ChunkRetryBaseDelaySeconds);
+        var exponentialSeconds = baseSeconds * Math.Pow(2, attempt - 1);
+        var jitterMs = Random.Shared.Next(0, 1000);
+        return TimeSpan.FromSeconds(exponentialSeconds) + TimeSpan.FromMilliseconds(jitterMs);
     }
 
     public async Task<bool> CompleteUploadAsync(UploadSession session, string? md5hash = null, Dictionary<int, string>? etags = null, string? BearerToken = null, string? bucketName = null, string? filePath = null)
@@ -231,9 +298,17 @@ public class EgressStorageClient(
             await GetWorkspaceToken());
     }
 
-    public Task<bool> CreateFolderAsync(string folderPath, string? workspaceId = null, string? bearerToken = null, string? bucketName = null)
+    public async Task<bool> CreateFolderAsync(string folderPath, string? workspaceId = null, string? bearerToken = null, string? bucketName = null)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrEmpty(workspaceId))
+            throw new ArgumentNullException(nameof(workspaceId), "Workspace ID cannot be null.");
+
+        var token = await GetWorkspaceToken();
+
+        // CreateFolderStructureAsync creates each missing segment and swallows folder-level 409s, so
+        // this is idempotent and safe to call once up front before the transfer fans out.
+        await CreateFolderStructureAsync(folderPath, workspaceId, token);
+        return true;
     }
 
     private async Task CreateFolderStructureAsync(string folderPath, string workspaceId, string token)
@@ -339,6 +414,14 @@ public class EgressStorageClient(
 
     private static string ConstructRelativePath(string baseFolderPath, string filePath, string fileName)
     {
+        // A file at the workspace root has an empty path. Path.GetRelativePath throws on an empty
+        // path, and a recursive listing (folderId "") can legitimately surface such root-level
+        // entries, so there is no sub-structure to preserve — fall back to the file name.
+        if (string.IsNullOrEmpty(filePath))
+        {
+            return fileName;
+        }
+
         // Get the folder name from the base path (selected folder)
         var baseFolderName = Path.GetFileName(baseFolderPath.TrimEnd('/'));
 
