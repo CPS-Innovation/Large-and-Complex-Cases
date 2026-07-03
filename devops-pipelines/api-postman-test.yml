@@ -1,0 +1,98 @@
+schedules:
+  - cron: "0 5 * * Tue-Sat"
+    displayName: "Weekday 5am UTC Api Test"
+    branches:
+      include:
+        - main
+    always: true
+
+trigger: none
+
+parameters:
+  - name: environment
+    type: string
+    default: staging
+  - name: agentPool
+    type: string
+    default: LACC PreProd Pool
+  - name: dependsOn
+    type: object
+    default: []
+
+jobs:
+  - job: run_e2e_tests
+    pool: ${{ parameters.agentPool }}
+    dependsOn: ${{ parameters.dependsOn }}
+    variables:
+      - group: lacc-backend-config-${{ parameters.environment }}
+      - group: lacc-automated-testing-${{ parameters.environment }}
+
+    steps:
+      - task: UseNode@1
+        displayName: "Use Node.js"
+        inputs:
+          version: "20.x"
+
+      - script: |
+          if command -v pwsh &> /dev/null; then 
+            echo "PowerShell already installed. Skipping installation."
+          else 
+            echo "Installing PowerShell..."
+            bash '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/installPowershell.sh'
+            echo "Powershel version: $(pwsh -v)"
+          fi
+        displayName: "Install PowerShell"
+
+      - task: PowerShell@2
+        displayName: "Run E2E Tests"
+        inputs:
+          workingDirectory: "$(System.DefaultWorkingDirectory)/e2e/postman"
+          filePath: "$(System.DefaultWorkingDirectory)/e2e/postman/Run-E2E-Tests.ps1"
+          arguments: >
+            -SizeMB 7 
+            -StopOnFailure
+        env:
+          LCC_BASE_URL: $(LccApiBaseUrl)
+          LCC_TENANT_ID: $(TenantId)
+          LCC_API_CLIENT_ID: $(CallingAppValidAudience)
+          LCC_AZURE_USERNAME: $(AadUserName)
+          LCC_AZURE_PASSWORD: $(AadUserPassword)
+          LCC_CMS_USERNAME: $(CmsUserName)
+          LCC_CMS_PASSWORD: $(CmsUserPassword)
+          LCC_DDEI_BASE_URL: $(DDEIOptionsBaseUrl)
+          LCC_DDEI_ACCESS_KEY: $(DDEIOptionsAccessKey)
+          LCC_EGRESS_BASE_URL: $(EgressOptionsUrl)
+          LCC_EGRESS_SERVICE_ACCOUNT_AUTH: $(EgressServiceAccountAuth)
+          LCC_DEFAULT_CASE_ID: $(E2eTestsCaseId)
+          LCC_DEFAULT_CASE_URN: $(E2eTestsCaseUrn)
+          LCC_DEFAULT_WORKSPACE_ID: $(E2eEgressWorkspaceId)
+          LCC_DEFAULT_WORKSPACE_NAME: $(E2eEgressWorkspaceName)
+          LCC_NETAPP_FOLDER_PATH: $(E2eNetAppFolderName)
+
+      - script: |
+          echo "Moving newman reports to Artifact Staging Directory..."
+          mv -f $(System.DefaultWorkingDirectory)/e2e/postman/newman-reports/* $(Build.ArtifactStagingDirectory)
+
+          echo "Showing contents of Artifact Staging Directory:"
+          cd $(Build.ArtifactStagingDirectory)
+          ls .
+
+          echo "Moving HTML reports into a newly created html-reports directory..."
+          mkdir html-reports
+          mv -- *.html html-reports
+
+          echo "Showing contents of html-reports directory:"
+          ls html-reports
+        displayName: "Stage Reports for Publishing"
+        condition: succeededOrFailed()
+
+      - task: PublishTestResults@2
+        inputs:
+          testResultsFormat: "JUnit"
+          testResultsFiles: "$(Build.ArtifactStagingDirectory)/*.xml"
+        displayName: "Publish Newman Report"
+        condition: succeededOrFailed()
+
+      - publish: "$(Build.ArtifactStagingDirectory)/html-reports"
+        artifact: "${{parameters.environment}}-NewmanReportsHTML"
+        condition: succeededOrFailed()

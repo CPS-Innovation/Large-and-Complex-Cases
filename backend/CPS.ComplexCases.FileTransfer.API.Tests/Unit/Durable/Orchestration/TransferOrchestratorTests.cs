@@ -8,6 +8,7 @@ using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.Common.Telemetry;
+using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 using CPS.ComplexCases.FileTransfer.API.Durable.Orchestration;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
@@ -545,6 +546,90 @@ public class TransferOrchestratorTests
         _contextMock.Verify(c => c.CallActivityAsync<HashSet<string>>(
                 It.Is<TaskName>(t => t.Name == "ListDestinationFilePaths"),
                 It.IsAny<object>(),
+                It.IsAny<TaskOptions>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task RunOrchestrator_WhenNetAppToEgress_PreCreatesDistinctDestinationFolders()
+    {
+        // Arrange
+        var transferPayload = CreateNetAppToEgressPayloadWithRoot();
+        var preCreatePayloads = new List<CreateEgressFoldersPayload>();
+
+        _contextMock.Setup(c => c.GetInput<TransferPayload>()).Returns(transferPayload);
+
+        _contextMock.Setup(c => c.CallActivityAsync<HashSet<string>>(
+                It.Is<TaskName>(t => t.Name == "ListDestinationFilePaths"),
+                It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ReturnsAsync([]);
+
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.CompletedTask)
+            .Callback<TaskName, object, TaskOptions>((taskName, payload, _) =>
+            {
+                if (taskName.Name == nameof(CreateEgressDestinationFolders) && payload is CreateEgressFoldersPayload p)
+                    preCreatePayloads.Add(p);
+            });
+
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ReturnsAsync(new TransferResult { IsSuccess = true, SuccessfulItem = _fixture.Create<TransferItem>() });
+
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        // Assert
+        var payload = Assert.Single(preCreatePayloads);
+        Assert.Equal(transferPayload.WorkspaceId, payload.WorkspaceId);
+        Assert.NotEmpty(payload.FolderPaths);
+        Assert.Equal(payload.FolderPaths.Count, payload.FolderPaths.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+    }
+
+    [Fact]
+    public async Task RunOrchestrator_WhenPreCreateFoldersFailsAfterRetries_ContinuesTransferInsteadOfFailing()
+    {
+        // Arrange
+        var transferPayload = CreateNetAppToEgressPayloadWithRoot();
+        var transferFileCalled = false;
+
+        _contextMock.Setup(c => c.GetInput<TransferPayload>()).Returns(transferPayload);
+
+        _contextMock.Setup(c => c.CallActivityAsync<HashSet<string>>(
+                It.Is<TaskName>(t => t.Name == "ListDestinationFilePaths"),
+                It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ReturnsAsync([]);
+
+        _contextMock.Setup(c => c.CallActivityAsync(
+                It.Is<TaskName>(t => t.Name == nameof(CreateEgressDestinationFolders)),
+                It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ThrowsAsync(new InvalidOperationException("Egress unavailable"));
+
+        _contextMock.Setup(c => c.CallActivityAsync(
+                It.Is<TaskName>(t => t.Name != nameof(CreateEgressDestinationFolders)),
+                It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.CompletedTask);
+
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ReturnsAsync(new TransferResult { IsSuccess = true, SuccessfulItem = _fixture.Create<TransferItem>() })
+            .Callback<TaskName, object, TaskOptions>((taskName, _, __) =>
+            {
+                if (taskName.Name == "TransferFile") transferFileCalled = true;
+            });
+
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        // Assert
+        Assert.True(transferFileCalled);
+        _contextMock.Verify(c => c.CallActivityAsync(
+                It.Is<TaskName>(t => t.Name == "UpdateTransferStatus"),
+                It.Is<object>(o => ((UpdateTransferStatusPayload)o).Status == TransferStatus.Failed),
                 It.IsAny<TaskOptions>()),
             Times.Never);
     }
