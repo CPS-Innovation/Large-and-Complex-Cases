@@ -112,22 +112,6 @@ test.describe("transfer-error-page", () => {
       ),
     );
     await startTransfer(page);
-
-    // await expect(page.getByTestId("transfer-spinner")).toBeVisible();
-    // await expect(
-    //   page.getByTestId("tab-content-transfer-materials").locator("h2", {
-    //     hasText: "Transfer materials to the Shared Drive",
-    //   }),
-    // ).not.toBeVisible();
-    // await expect(page.getByTestId("egress-table-wrapper")).not.toBeVisible();
-    // await expect(page.getByTestId("netapp-table-wrapper")).not.toBeVisible();
-    // await expect(
-    //   page.getByTestId("tab-content-transfer-materials"),
-    // ).toContainText("Indexing transfer from Egress to Shared Drive...");
-    // await expect(
-    //   page.getByTestId("tab-content-transfer-materials"),
-    // ).toContainText("Completing transfer from Egress to Shared Drive...");
-    // await expect(page.getByTestId("transfer-spinner")).not.toBeVisible();
     await expect(page).toHaveURL("/case/12/case-management", {
       timeout: 50000,
     });
@@ -244,23 +228,7 @@ test.describe("transfer-error-page", () => {
         },
       ),
     );
-    // await startTransfer(page);
-    // await expect(page.getByTestId("transfer-spinner")).toBeVisible();
-    // await expect(
-    //   page.getByTestId("tab-content-transfer-materials").locator("h2", {
-    //     hasText: "Transfer materials to the Shared Drive",
-    //   }),
-    // ).not.toBeVisible();
-    // await expect(page.getByTestId("egress-table-wrapper")).not.toBeVisible();
-    // await expect(page.getByTestId("netapp-table-wrapper")).not.toBeVisible();
-    // await expect(
-    //   page.getByTestId("tab-content-transfer-materials"),
-    // ).toContainText("Indexing transfer from Egress to Shared Drive...");
-    // await expect(
-    //   page.getByTestId("tab-content-transfer-materials"),
-    // ).toContainText("Completing transfer from Egress to Shared Drive...");
-    // await expect(page.getByTestId("transfer-spinner")).not.toBeVisible();
-    // await expect(page).toHaveURL("/case/12/case-management/transfer-errors");
+
     await startTransfer(page);
     await expect(page).toHaveURL("/case/12/case-management", {
       timeout: 50000,
@@ -358,23 +326,7 @@ test.describe("transfer-error-page", () => {
         },
       ),
     );
-    // await startTransfer(page);
-    // await expect(page.getByTestId("transfer-spinner")).toBeVisible();
-    // await expect(
-    //   page.getByTestId("tab-content-transfer-materials").locator("h2", {
-    //     hasText: "Transfer materials to the Shared Drive",
-    //   }),
-    // ).not.toBeVisible();
-    // await expect(page.getByTestId("egress-table-wrapper")).not.toBeVisible();
-    // await expect(page.getByTestId("netapp-table-wrapper")).not.toBeVisible();
-    // await expect(
-    //   page.getByTestId("tab-content-transfer-materials"),
-    // ).toContainText("Indexing transfer from Egress to Shared Drive...");
-    // await expect(
-    //   page.getByTestId("tab-content-transfer-materials"),
-    // ).toContainText("Completing transfer from Egress to Shared Drive...");
-    // await expect(page.getByTestId("transfer-spinner")).not.toBeVisible();
-    // await expect(page).toHaveURL("/case/12/case-management/transfer-errors");
+
     await startTransfer(page);
     await expect(page).toHaveURL("/case/12/case-management", {
       timeout: 50000,

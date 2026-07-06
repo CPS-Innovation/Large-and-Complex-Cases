@@ -38,7 +38,6 @@ export default defineConfig({
     {
       name: "common",
       use: { ...devices["Desktop Chrome"] },
-      // testIgnore: ["transfer-materials-v1/**"],
     },
   ],
 

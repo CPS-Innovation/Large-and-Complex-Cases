@@ -1,5 +1,4 @@
 import { msalInstance } from "../../auth/msal/msalInstance";
-import { useContext } from "react";
 import { MainStateContext } from "../../providers/MainStateProvider";
 import {
   FEATURE_FLAG_CASE_DETAILS,
@@ -12,7 +11,7 @@ import {
 } from "../../config";
 import { useUserDetails } from "../../auth";
 import { FeatureFlagData } from "../types/FeatureFlagData";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useContext } from "react";
 import { useSearchParams } from "react-router-dom";
 
 const automationTestUsers = ["dev_user@example.org"];
