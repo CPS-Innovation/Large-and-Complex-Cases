@@ -336,6 +336,7 @@ nuget.config
 
 # E2E Postman Tests
 e2e/*/secrets.config.ps1
+e2e/*/*.secrets.config.ps1
 e2e/postman/*.postman_environment
 !e2e/postman/*.postman_environment.template
 e2e/postman/newman-reports/

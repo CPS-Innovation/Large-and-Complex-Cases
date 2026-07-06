@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.Extensions.Logging;
@@ -892,6 +893,102 @@ public class S3ClientFactoryTests
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateS3Client_WhenForceRegenerationAndPropagationDelaySet_WaitsForDelayBeforeUse()
+    {
+        // Arrange
+        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
+        var factory = CreateFactoryWithPropagationDelay(1);
+        var bearerToken = GenerateTestJwtToken(TestOid, TestUserName);
+
+        _credentialServiceMock
+            .Setup(x => x.GetCredentialKeysAsync(bearerToken))
+            .ReturnsAsync(("initial-key", "initial-secret"));
+
+        _credentialServiceMock
+            .Setup(x => x.RegenerateCredentialKeysAsync(bearerToken))
+            .ReturnsAsync(("regenerated-key", "regenerated-secret"));
+
+        // Initial client uses the normal (no-delay) path.
+        await factory.GetS3ClientAsync(bearerToken);
+
+        // Force the regeneration path for the next call.
+        await factory.InvalidateClientAsync();
+
+        // Act - measure only the regeneration call, which should wait out the settle delay.
+        var stopwatch = Stopwatch.StartNew();
+        await factory.GetS3ClientAsync(bearerToken);
+        stopwatch.Stop();
+
+        // Assert - a 1s configured delay means the call cannot complete near-instantly.
+        Assert.True(stopwatch.Elapsed >= TimeSpan.FromMilliseconds(750),
+            $"Expected the regenerate path to wait for the propagation delay, but it took {stopwatch.ElapsedMilliseconds}ms.");
+
+        _credentialServiceMock.Verify(x => x.RegenerateCredentialKeysAsync(bearerToken), Times.Once);
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("propagate before use")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateS3Client_WhenForceRegenerationAndPropagationDelayZero_SkipsDelay()
+    {
+        // Arrange
+        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
+        var factory = CreateFactoryWithPropagationDelay(0);
+        var bearerToken = GenerateTestJwtToken(TestOid, TestUserName);
+
+        _credentialServiceMock
+            .Setup(x => x.GetCredentialKeysAsync(bearerToken))
+            .ReturnsAsync(("initial-key", "initial-secret"));
+
+        _credentialServiceMock
+            .Setup(x => x.RegenerateCredentialKeysAsync(bearerToken))
+            .ReturnsAsync(("regenerated-key", "regenerated-secret"));
+
+        await factory.GetS3ClientAsync(bearerToken);
+        await factory.InvalidateClientAsync();
+
+        // Act
+        await factory.GetS3ClientAsync(bearerToken);
+
+        // Assert - the regenerate path still runs, but the delay branch is skipped entirely.
+        _credentialServiceMock.Verify(x => x.RegenerateCredentialKeysAsync(bearerToken), Times.Once);
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("propagate before use")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Never);
+    }
+
+    private S3ClientFactory CreateFactoryWithPropagationDelay(int delaySeconds)
+    {
+        var options = new NetAppOptions
+        {
+            Url = "https://netapp.test.local",
+            RegionName = "eu-west-2",
+            CredentialPropagationDelaySeconds = delaySeconds
+        };
+        var optionsMock = new Mock<IOptions<NetAppOptions>>();
+        optionsMock.Setup(x => x.Value).Returns(options);
+
+        return new S3ClientFactory(
+            optionsMock.Object,
+            _credentialServiceMock.Object,
+            _keyVaultServiceMock.Object,
+            _loggerMock.Object,
+            _telemetryHandlerMock.Object,
+            _netAppCertFactoryMock.Object);
     }
 
     private static X509Certificate2 GenerateSelfSignedCertificate(string subjectName)

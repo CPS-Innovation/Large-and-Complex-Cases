@@ -27,5 +27,5 @@ sudo apt-get update
 # Install PowerShell
 sudo apt-get install -y powershell
 
-# Start PowerShell
+# Validate PowerShell
 pwsh -v

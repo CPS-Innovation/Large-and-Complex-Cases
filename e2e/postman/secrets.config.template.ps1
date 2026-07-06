@@ -15,7 +15,7 @@
 # Azure AD Configuration
 $env:LCC_TENANT_ID = "YOUR_AZURE_TENANT_ID"
 $env:LCC_REGISTER_CASE_CLIENT_ID = ""  # Client ID for Register Case API
-$env:LCC_API_ID = ""                    # LCC API Application/Client ID (auth and scope)
+$env:LCC_API_CLIENT_ID = ""                    # LCC API Application/Client ID (auth and scope)
 $env:LCC_API_CLIENT_SECRET = ""         # LCC API Client Secret (for confidential client flows)
 
 # Azure AD User Credentials (for ROPC flow)
@@ -33,7 +33,6 @@ $env:LCC_DDEI_ACCESS_KEY_REGCASE = "your-ddei-access-key-case-register"
 
 # API Endpoints
 $env:LCC_BASE_URL = "your-lacc-api-base-url"
-$env:LCC_UI_URL
 $env:LCC_CASE_API_BASE_URL = "your-case-api-base-url"
 $env:LCC_DDEI_BASE_URL = "your-ddei-api-base-url"
 

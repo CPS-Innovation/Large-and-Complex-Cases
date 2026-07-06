@@ -38,10 +38,6 @@ parameters:
 stages:
   - ${{ if eq(parameters.requireValidation, true) }}:
       - stage: Approve_Deployment_${{ parameters.environment }}
-        ${{ if eq(parameters.environment, 'staging') }}:
-          dependsOn: Deploy_Backend_dev
-        ${{ if eq(parameters.environment, 'prod') }}:
-          dependsOn: Run_E2E_Tests
         displayName: "${{ parameters.environment }} - Approve Deployment"
         jobs:
           - template: ./manual-validation-jobs.yml

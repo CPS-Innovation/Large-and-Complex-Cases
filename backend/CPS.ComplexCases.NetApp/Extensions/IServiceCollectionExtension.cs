@@ -87,11 +87,7 @@ public static class IServiceCollectionExtension
 		})
 		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment))
 		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
-		.AddPolicyHandler((sp, _) =>
-		{
-			_serviceProvider ??= sp;
-			return _netAppHttpClientPolicy.Value;
-		});
+		.AddResiliencePolicyHandler(GetResiliencePolicy);
 
 		services.AddHttpClient<INetAppS3HttpClient, NetAppS3HttpClient>(client =>
 		{
@@ -107,11 +103,22 @@ public static class IServiceCollectionExtension
 		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment)
 		)
 		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
-		.AddPolicyHandler((sp, _) =>
+		.AddResiliencePolicyHandler(GetResiliencePolicy);
+
+		services.AddHttpClient<IOntapHttpClient, OntapHttpClient>(client =>
 		{
-			_serviceProvider ??= sp;
-			return _netAppS3HttpClientPolicy.Value;
-		});
+			var ontapBaseUrl = configuration["NetAppOptions:ClusterUrl"];
+			if (string.IsNullOrEmpty(ontapBaseUrl))
+			{
+				throw new InvalidOperationException("NetAppOptions:ClusterUrl configuration is missing or empty.");
+			}
+			client.BaseAddress = new Uri(ontapBaseUrl);
+			client.Timeout = TimeSpan.FromSeconds(configuration.GetValue("NetAppOptions:RequestTimeoutSeconds", 100));
+
+		})
+		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment))
+		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
+		.AddResiliencePolicyHandler(GetResiliencePolicy);
 
 		services.AddHttpClient<IOntapHttpClient, OntapHttpClient>(client =>
 		{
