@@ -414,7 +414,9 @@ test.describe("egress-netapp-transfer", () => {
       await expect(
         page.getByTestId("tab-content-transfer-materials"),
       ).toContainText("Completing transfer from Egress to Shared Drive...");
-      await expect(page.getByTestId("transfer-spinner")).not.toBeVisible();
+      await expect(page.getByTestId("transfer-spinner")).not.toBeVisible({
+        timeout: 50000,
+      });
       await expect(
         page.getByTestId("transfer-success-notification-banner"),
       ).toBeVisible();
@@ -663,7 +665,9 @@ test.describe("egress-netapp-transfer", () => {
         },
       ),
     );
-    await page.waitForTimeout(500);
+    await expect(page.getByTestId("transfer-spinner")).not.toBeVisible({
+      timeout: 50000,
+    });
     await expect(page.getByTestId("transfer-spinner")).not.toBeVisible();
     await expect(
       page.getByTestId("transfer-success-notification-banner"),
@@ -787,7 +791,9 @@ test.describe("egress-netapp-transfer", () => {
         },
       ),
     );
-    await page.waitForTimeout(500);
+    await expect(page.getByTestId("transfer-spinner")).not.toBeVisible({
+      timeout: 50000,
+    });
     await expect(page.getByTestId("transfer-spinner")).not.toBeVisible();
     await expect(
       page.getByTestId("transfer-success-notification-banner"),

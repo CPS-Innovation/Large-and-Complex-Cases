@@ -327,7 +327,7 @@ test.describe("transfer material egress netapp transfer", () => {
         },
       ),
     );
-    await page.waitForTimeout(500);
+
     await transferMaterialsSourcePage.verifyTransferLoaderHidden();
     await transferMaterialsSourcePage.verifyTransferStatsHidden();
     await transferMaterialsSourcePage.validateTransferSuccessBanner(
@@ -448,7 +448,6 @@ test.describe("transfer material egress netapp transfer", () => {
         },
       ),
     );
-    await page.waitForTimeout(500);
     await transferMaterialsSourcePage.verifyTransferLoaderHidden();
     await transferMaterialsSourcePage.verifyTransferStatsHidden();
 

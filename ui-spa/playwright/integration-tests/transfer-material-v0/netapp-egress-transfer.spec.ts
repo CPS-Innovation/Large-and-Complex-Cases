@@ -555,7 +555,9 @@ test.describe("netapp-egress-transfer", () => {
         },
       ),
     );
-    await page.waitForTimeout(500);
+    await expect(page.getByTestId("transfer-spinner")).not.toBeVisible({
+      timeout: 50000,
+    });
     await expect(page.getByTestId("transfer-spinner")).not.toBeVisible();
     await expect(
       page.getByTestId("transfer-success-notification-banner"),
@@ -679,8 +681,9 @@ test.describe("netapp-egress-transfer", () => {
         },
       ),
     );
-    await page.waitForTimeout(500);
-    await expect(page.getByTestId("transfer-spinner")).not.toBeVisible();
+    await expect(page.getByTestId("transfer-spinner")).not.toBeVisible({
+      timeout: 50000,
+    });
     await expect(
       page.getByTestId("transfer-success-notification-banner"),
     ).not.toBeVisible();

@@ -429,7 +429,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
 
       await expect(page).toHaveURL("/case/12/case-management");
 
-      await page.waitForTimeout(500);
+      await delay(500);
       const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
       await transferMaterialsSourcePage.verifyTransferLoaderHidden();
       await transferMaterialsSourcePage.verifyTransferStatsHidden();
