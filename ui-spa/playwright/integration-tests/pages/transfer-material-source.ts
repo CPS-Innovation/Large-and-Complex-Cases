@@ -7,9 +7,11 @@ export class TransferMaterialsSourcePage {
   }
 
   async verifyUrl(url: string) {
-    const current = this.page.url();
-    const pathname = new URL(current).pathname;
-    expect(pathname).toBe(url);
+    await this.page.waitForFunction(
+      (expected) => location.pathname === expected,
+      url,
+      { timeout: 50000 },
+    );
   }
 
   async verifyPageElements() {

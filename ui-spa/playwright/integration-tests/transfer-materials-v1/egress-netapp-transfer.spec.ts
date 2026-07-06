@@ -459,7 +459,9 @@ test.describe("transfer material egress netapp transfer", () => {
   test("Should not show the transfer move option if the transferMove feature flag is disabled", async ({
     page,
   }) => {
-    await page.goto("/case/12/case-management?transfer-move=false");
+    await page.goto(
+      "/case/12/case-management?transfer-materials-v1=true&transfer-move=false",
+    );
     const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
     await transferMaterialsSourcePage.verifyPageElements();
     await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
