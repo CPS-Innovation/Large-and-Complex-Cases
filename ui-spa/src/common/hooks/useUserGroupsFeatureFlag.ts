@@ -1,5 +1,4 @@
 import { msalInstance } from "../../auth/msal/msalInstance";
-import { MainStateContext } from "../../providers/MainStateProvider";
 import {
   FEATURE_FLAG_CASE_DETAILS,
   FEATURE_FLAG_TRANSFER_MOVE,
@@ -11,7 +10,7 @@ import {
 } from "../../config";
 import { useUserDetails } from "../../auth";
 import { FeatureFlagData } from "../types/FeatureFlagData";
-import { useCallback, useMemo, useContext } from "react";
+import { useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 
 const automationTestUsers = ["dev_user@example.org"];
@@ -42,8 +41,6 @@ export const useUserGroupsFeatureFlag = (): FeatureFlagData => {
     () => (account?.idTokenClaims?.groups as string[]) ?? [],
     [account?.idTokenClaims?.groups],
   );
-  const { state, dispatch } = useContext(MainStateContext);
-  const { appData: { featureFlags } = {} } = state;
   const getFeatureFlags = useCallback(
     () => ({
       caseDetails: shouldShowFeature(
@@ -95,16 +92,5 @@ export const useUserGroupsFeatureFlag = (): FeatureFlagData => {
     [groups, searchParams, userDetails.username],
   );
 
-  if (!featureFlags) {
-    const featureFlagsData = getFeatureFlags();
-    dispatch({
-      type: "SET_FEATURE_FLAGS",
-      payload: {
-        featureFlags: featureFlagsData,
-      },
-    });
-    return featureFlagsData;
-  }
-
-  return featureFlags;
+  return useMemo(() => getFeatureFlags(), [getFeatureFlags]);
 };

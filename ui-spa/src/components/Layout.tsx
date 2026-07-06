@@ -1,7 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useContext } from "react";
 import Footer from "./Footer";
 import Header from "./Header";
-import { useUserGroupsFeatureFlag } from "../common/hooks/useUserGroupsFeatureFlag";
+import { MainStateContext } from "../providers/MainStateProvider";
 import { useLocation } from "react-router-dom";
 import { SkipLink } from "../components/govuk";
 import styles from "./Layout.module.scss";
@@ -13,8 +13,10 @@ export default function RootLayout({
 }>) {
   const location = useLocation();
   const skipLinkSiblingRef = useRef(null);
-  const featureFlags = useUserGroupsFeatureFlag();
-
+  const { state } = useContext(MainStateContext);
+  const {
+    appData: { featureFlags },
+  } = state;
   useEffect(() => {
     /*This is a way to bring the focus back to the top of the page
     whenever location change. We bring the focus to the dummy element just above the skip link and the call the blur(for the screen reader not to say it loud),
@@ -29,12 +31,12 @@ export default function RootLayout({
   return (
     <div ref={skipLinkSiblingRef} tabIndex={-1} className={styles.rootLayout}>
       <SkipLink href="#main-content">Skip to main content</SkipLink>
-      {featureFlags.globalNav && (
+      {featureFlags?.globalNav && (
         <div className="govuk-width-container">
           <cps-global-header></cps-global-header>
         </div>
       )}
-      {!featureFlags.globalNav && <Header />}
+      {featureFlags !== null && !featureFlags?.globalNav && <Header />}
       <div className={styles.mainContent}>{children}</div>
       <Footer />
     </div>

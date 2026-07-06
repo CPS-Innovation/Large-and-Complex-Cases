@@ -35,7 +35,9 @@ const CaseManagementPage = () => {
   const [activeTabId, setActiveTabId] = useState<TabId>("transfer-materials");
 
   const { state } = useContext(MainStateContext);
-  const { appData: { featureFlags } = {} } = state;
+  const {
+    appData: { featureFlags },
+  } = state;
   const handleTabSelection = (tabId: TabId) => {
     setActiveTabId(tabId);
   };
@@ -100,7 +102,7 @@ const CaseManagementPage = () => {
   const tabItems = useMemo(() => {
     const items: ItemProps<TabId>[] = [];
 
-    if (featureFlags?.transferMaterialsV1) {
+    if (featureFlags !== null && featureFlags?.transferMaterialsV1) {
       items.push({
         id: "transfer-materials",
         label: "Transfer materials",
@@ -133,7 +135,7 @@ const CaseManagementPage = () => {
       });
     }
 
-    if (!featureFlags?.transferMaterialsV1) {
+    if (featureFlags !== null && !featureFlags?.transferMaterialsV1) {
       items.push({
         id: "transfer-materials",
         label: "Transfer materials",
@@ -190,14 +192,7 @@ const CaseManagementPage = () => {
       });
     }
     return items;
-  }, [
-    activeTabId,
-    caseId,
-    caseMetaData,
-    routeState,
-    featureFlags?.caseDetails,
-    featureFlags?.transferMaterialsV1,
-  ]);
+  }, [activeTabId, caseId, caseMetaData, routeState, featureFlags]);
   if (isCaseMetaDataLoading) {
     return <PageContentWrapper>loading...</PageContentWrapper>;
   }
