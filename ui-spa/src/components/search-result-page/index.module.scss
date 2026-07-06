@@ -6,16 +6,15 @@
 .inputWrapper {
   display: flex;
   flex-direction: row;
-  align-items: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 0.5rem;
   & button {
     margin: 0;
     height: 2.375rem;
     margin-bottom: 0.125rem;
   }
-  .btnWrapper {
-    min-height: 4.375rem;
-  }
+
   & :global(.govuk-error-message) {
     max-width: 25rem;
   }

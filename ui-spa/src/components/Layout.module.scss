@@ -3,17 +3,8 @@
 }
 .mainContent {
   min-height: 75vh;
-  max-width: 87.5rem;
-  padding-right: 1.5625rem;
-  padding-left: 1.5625rem;
-  margin: 0 auto;
 }
 .rootLayout {
-  & :global(.govuk-width-container) {
-    max-width: 87.5rem;
-    padding-right: 1.5625rem;
-    padding-left: 1.5625rem;
-  }
   & :global(.govuk-footer) {
     margin-top: 1.875rem;
   }

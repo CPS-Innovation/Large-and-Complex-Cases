@@ -1,15 +1,12 @@
 .inputWrapper {
   display: flex;
   flex-direction: row;
-  align-items: flex-end;
+  align-items: center;
   gap: 0.5rem;
   & button {
     margin: 0;
     height: 2.375rem;
     margin-bottom: 0.125rem;
-  }
-  .btnWrapper {
-    min-height: 4.375rem;
   }
 
   & :global(.govuk-form-group):first-of-type {

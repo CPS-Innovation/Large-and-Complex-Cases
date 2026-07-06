@@ -35,7 +35,9 @@ export default function RootLayout({
         </div>
       )}
       {!featureFlags.globalNav && <Header />}
-      <div className={styles.mainContent}>{children}</div>
+      <div className={`govuk-width-container ${styles.mainContent}`}>
+        {children}
+      </div>
       <Footer />
     </div>
   );

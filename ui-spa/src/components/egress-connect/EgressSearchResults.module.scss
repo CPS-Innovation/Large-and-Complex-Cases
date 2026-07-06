@@ -1,4 +1,6 @@
 .results {
+  max-width: 100%;
+  overflow: scroll;
   .statusTag {
     text-transform: none;
     font-weight: normal;
