@@ -48,6 +48,9 @@ const CaseManagementPage = () => {
     staleTime: 0,
     gcTime: 0,
   });
+  const operationNameOrDefendantName = useMemo(() => {
+    return caseMetaData?.operationName || caseMetaData?.leadDefendantName || "";
+  }, [caseMetaData]);
 
   useEffect(() => {
     if (caseMetaData) {
@@ -56,7 +59,7 @@ const CaseManagementPage = () => {
       }
       if (!caseMetaData.egressWorkspaceId && caseMetaData.netappFolderPath) {
         navigate(
-          `/case/${caseId}/case-management/egress-connection-error?${getUrlSearchParam("operation-name", caseMetaData.operationName)}`,
+          `/case/${caseId}/case-management/egress-connection-error?${getUrlSearchParam("operation-name", operationNameOrDefendantName)}`,
           {
             state: {
               isRouteValid: true,
@@ -66,7 +69,7 @@ const CaseManagementPage = () => {
       }
       if (caseMetaData.egressWorkspaceId && !caseMetaData.netappFolderPath) {
         navigate(
-          `/case/${caseId}/case-management/shared-drive-connection-error?${getUrlSearchParam("operation-name", caseMetaData.operationName)}`,
+          `/case/${caseId}/case-management/shared-drive-connection-error?${getUrlSearchParam("operation-name", operationNameOrDefendantName)}`,
           {
             state: {
               isRouteValid: true,
@@ -75,7 +78,7 @@ const CaseManagementPage = () => {
         );
       }
     }
-  }, [caseMetaData, navigate, caseId]);
+  }, [caseMetaData, navigate, caseId, operationNameOrDefendantName]);
 
   const validateRoute = useCallback(() => {
     if (
@@ -108,7 +111,7 @@ const CaseManagementPage = () => {
             <TransferMaterialsV1Page
               isTabActive={activeTabId === "transfer-materials"}
               caseId={caseId}
-              operationName={caseMetaData.operationName}
+              operationName={operationNameOrDefendantName}
               egressWorkspaceId={caseMetaData.egressWorkspaceId}
               netAppPath={caseMetaData.netappFolderPath}
               activeTransferId={
@@ -141,7 +144,7 @@ const CaseManagementPage = () => {
             <TransferMaterialsPage
               isTabActive={activeTabId === "transfer-materials"}
               caseId={caseId}
-              operationName={caseMetaData.operationName}
+              operationName={operationNameOrDefendantName}
               egressWorkspaceId={caseMetaData.egressWorkspaceId}
               netAppPath={caseMetaData.netappFolderPath}
               activeTransferId={
@@ -163,7 +166,7 @@ const CaseManagementPage = () => {
         children: caseMetaData ? (
           <div>
             <ActivityLogPage
-              operationName={caseMetaData.operationName}
+              operationName={operationNameOrDefendantName}
               isTabActive={activeTabId === "activity-log"}
             />
           </div>
@@ -196,6 +199,7 @@ const CaseManagementPage = () => {
     routeState,
     featureFlags.caseDetails,
     featureFlags.transferMaterialsV1,
+    operationNameOrDefendantName,
   ]);
   if (isCaseMetaDataLoading) {
     return <PageContentWrapper>loading...</PageContentWrapper>;
@@ -208,7 +212,7 @@ const CaseManagementPage = () => {
 
   return (
     <PageContentWrapper>
-      <h1 className={styles.workspaceName}>{caseMetaData?.operationName}</h1>
+      <h1 className={styles.workspaceName}>{operationNameOrDefendantName}</h1>
       <div className={styles.urnText}>
         <span>{caseMetaData?.urn}</span>
       </div>
