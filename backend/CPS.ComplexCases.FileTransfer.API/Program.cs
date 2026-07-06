@@ -76,7 +76,7 @@ var host = new HostBuilder()
         services.AddScoped<ICaseActiveManageMaterialsService, CaseActiveManageMaterialsService>();
 
         services.Configure<SizeConfig>(
-            configuration.GetSection("FileTransfer:SizeConfig"));
+            configuration.GetSection(SizeConfig.SectionName));
 
         services.Configure<PurgeRetentionConfig>(
             configuration.GetSection(PurgeRetentionConfig.SectionName));
