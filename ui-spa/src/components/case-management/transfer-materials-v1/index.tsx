@@ -679,22 +679,26 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
     return unMounting.current;
   }, []);
 
+  const shouldStartTransferStatusPolling = useMemo(() => {
+    //need to wait until netAppData and egressData are available otherwise we will show the active transfer status to users who do not have permission
+    return Boolean(transferId && netAppData && egressData);
+  }, [transferId, netAppData, egressData]);
+
   useEffect(() => {
-    if (!transferId || !netAppData || !egressData) {
+    if (!shouldStartTransferStatusPolling) {
       return;
     }
 
     setTransferStatus("transferring");
     pollTransferStatus(
-      transferId,
+      transferId!,
       isComponentUnmounted,
       handleStatusResponse,
       setApiRequestError,
     );
   }, [
+    shouldStartTransferStatusPolling,
     transferId,
-    netAppData,
-    egressData,
     setTransferStatus,
     isComponentUnmounted,
     handleStatusResponse,
