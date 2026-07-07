@@ -154,7 +154,7 @@ stages:
       runPostmanSmokeTest: true
 
   - stage: Run_E2E_Tests
-    displayName: 'Run E2E tests'
+    displayName: "Run E2E tests"
     jobs:
       - template: ../templates/e2e-playwright-test-job.yml
         parameters:

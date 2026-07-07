@@ -108,6 +108,18 @@ public class S3ClientFactory(
         var (accessKey, secretKey) = forceRegeneration
             ? await _s3CredentialsService.RegenerateCredentialKeysAsync(bearerToken)
             : await _s3CredentialsService.GetCredentialKeysAsync(bearerToken);
+
+        // A force-regenerated key (credential-error recovery path) may not yet be accepted by the S3
+        // data endpoint. Wait briefly so it propagates before the retry uses it, otherwise the retry
+        // can immediately 403 again against the still-unrecognised key.
+        if (forceRegeneration && _options.CredentialPropagationDelaySeconds > 0)
+        {
+            _logger.LogInformation(
+                "Waiting {DelaySeconds}s for the regenerated NetApp key to propagate before use.",
+                _options.CredentialPropagationDelaySeconds);
+            await Task.Delay(TimeSpan.FromSeconds(_options.CredentialPropagationDelaySeconds));
+        }
+
         var credentials = new BasicAWSCredentials(accessKey, secretKey);
 
         var s3Config = new AmazonS3Config

@@ -36,9 +36,17 @@ variables:
   - name: SessionTimeoutMinutes
     value: "60"
   - name: SizeConfigBatchSize
-    value: "10"
+    value: "4"
+  - name: SizeConfigMaxConcurrentPartUploads
+    value: "2"
   - name: SizeConfigChunkSizeBytes
     value: "5242880"
+  - name: SizeConfigFolderPreCreateRetryAttempts
+    value: "3"
+  - name: SizeConfigFolderPreCreateFirstRetryIntervalSeconds
+    value: "5"
+  - name: SizeConfigFolderPreCreateBackoffCoefficient
+    value: "2.0"
   - name: NetAppOptionsSearchMaxSubstringScanItems
     value: "10000"
   - name: FeatureFlagsManageMaterials

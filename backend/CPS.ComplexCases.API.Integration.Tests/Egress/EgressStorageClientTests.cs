@@ -2,6 +2,7 @@ using CPS.ComplexCases.API.Integration.Tests.Fixtures;
 using CPS.ComplexCases.API.Integration.Tests.Helpers;
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
+using CPS.ComplexCases.Egress.Client;
 
 namespace CPS.ComplexCases.API.Integration.Tests.Egress;
 
@@ -237,6 +238,89 @@ public class EgressStorageClientTests : IClassFixture<IntegrationTestFixture>
         // Assert
         Assert.NotNull(session);
         Assert.False(string.IsNullOrEmpty(session.UploadId));
+    }
+
+    [SkippableFact]
+    public async Task PreCreateFoldersThenUpload_SmallTransfer_FilesLandInExpectedFolders()
+    {
+        Skip.If(!_fixture.IsEgressConfigured, "Egress not configured");
+
+        // Arrange - a small NetApp to Egress transfer with a nested source structure, so the
+        // pre-create folder path (GetDestinationFolderPath) and the upload path must agree.
+        var workspaceId = _fixture.EgressWorkspaceId!;
+        var destinationPath = TestDataHelper.GenerateTestFolderPath();
+        const string sourceRootFolderPath = "source-root";
+
+        var rootFileName = TestDataHelper.GenerateTestFileName();
+        var nestedFileName = TestDataHelper.GenerateTestFileName();
+        var files = new[]
+        {
+            (RelativePath: $"{sourceRootFolderPath}/{rootFileName}", FileName: rootFileName),
+            (RelativePath: $"{sourceRootFolderPath}/nested/{nestedFileName}", FileName: nestedFileName)
+        };
+
+        var destinationFolderPaths = files
+            .Select(f => EgressStorageClient.GetDestinationFolderPath(destinationPath, f.RelativePath, sourceRootFolderPath))
+            .Where(p => !string.IsNullOrEmpty(p))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        foreach (var folderPath in destinationFolderPaths)
+        {
+            await _fixture.EgressStorageClient!.CreateFolderAsync(folderPath, workspaceId);
+        }
+
+        // Act - upload each file into the pre created tree via the chunked-upload flow.
+        foreach (var (relativePath, fileName) in files)
+        {
+            var content = TestDataHelper.GenerateTestContent(512);
+
+            var session = await _fixture.EgressStorageClient!.InitiateUploadAsync(
+                destinationPath: destinationPath,
+                fileSize: content.Length,
+                sourcePath: fileName,
+                workspaceId: workspaceId,
+                relativePath: relativePath,
+                sourceRootFolderPath: sourceRootFolderPath);
+
+            Assert.NotNull(session);
+            Assert.False(string.IsNullOrEmpty(session.UploadId));
+
+            await _fixture.EgressStorageClient.UploadChunkAsync(
+                session: session,
+                chunkNumber: 1,
+                chunkData: content,
+                start: 0,
+                end: content.Length - 1,
+                totalSize: content.Length);
+
+            await _fixture.EgressStorageClient.CompleteUploadAsync(
+                session,
+                TestDataHelper.ComputeMd5Hash(content));
+        }
+
+        // Assert
+        List<string> landedPaths = [];
+        for (var attempt = 1; attempt <= 5; attempt++)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(3));
+
+            landedPaths =
+                (await _fixture.EgressStorageClient!.GetAllFilesFromFolderAsync(destinationPath, workspaceId))
+                .Where(f => !string.IsNullOrEmpty(f.FullFilePath)
+                            && f.FullFilePath!.StartsWith(destinationPath, StringComparison.OrdinalIgnoreCase))
+                .Select(f => f.FullFilePath!.Replace('\\', '/'))
+                .ToList();
+
+            if (landedPaths.Any(p => p.EndsWith(rootFileName, StringComparison.OrdinalIgnoreCase))
+                && landedPaths.Any(p => p.EndsWith($"nested/{nestedFileName}", StringComparison.OrdinalIgnoreCase)))
+            {
+                break;
+            }
+        }
+
+        Assert.Contains(landedPaths, p => p.EndsWith(rootFileName, StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(landedPaths, p => p.EndsWith($"nested/{nestedFileName}", StringComparison.OrdinalIgnoreCase));
     }
 
     [SkippableFact]

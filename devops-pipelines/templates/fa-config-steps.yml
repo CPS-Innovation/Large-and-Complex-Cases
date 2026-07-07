@@ -210,6 +210,11 @@ steps:
             "slotSetting": false
           },
           {
+            "name": "SizeConfig__MaxConcurrentPartUploads",
+            "value": "$(SizeConfigMaxConcurrentPartUploads)",
+            "slotSetting": false
+          },
+          {
             "name": "CryptoOptions__SaltSizeBytes",
             "value": "$(CryptoOptionsSaltSizeBytes)",
             "slotSetting": false
@@ -277,6 +282,21 @@ steps:
           {
             "name": "SizeConfig__MaxOrchestratorRetries",
             "value": "$(MaxOrchestratorRetries)",
+            "slotSetting": false
+          },
+          {
+            "name": "SizeConfig__FolderPreCreateRetryAttempts",
+            "value": "$(SizeConfigFolderPreCreateRetryAttempts)",
+            "slotSetting": false
+          },
+          {
+            "name": "SizeConfig__FolderPreCreateFirstRetryIntervalSeconds",
+            "value": "$(SizeConfigFolderPreCreateFirstRetryIntervalSeconds)",
+            "slotSetting": false
+          },
+          {
+            "name": "SizeConfig__FolderPreCreateBackoffCoefficient",
+            "value": "$(SizeConfigFolderPreCreateBackoffCoefficient)",
             "slotSetting": false
           },
           {

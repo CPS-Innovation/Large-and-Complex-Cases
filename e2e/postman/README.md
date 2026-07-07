@@ -67,7 +67,7 @@ Set these environment variables in your pipeline:
 |----------|-------------|----------|
 | `LCC_TENANT_ID` | Azure AD Tenant ID | Yes |
 | `LCC_REGISTER_CASE_CLIENT_ID` | Client ID for Case Registration API | Yes |
-| `LCC_API_ID` | LCC API Application ID (used in token scope) | Yes |
+| `LCC_API_CLIENT_ID` | LCC API Application ID (used in token scope) | Yes |
 | `LCC_API_CLIENT_SECRET` | LCC API Client Secret (confidential client flows) | Yes |
 | `LCC_AZURE_USERNAME` | Azure AD email | Yes |
 | `LCC_AZURE_PASSWORD` | Azure AD password | Yes |
@@ -96,13 +96,13 @@ variables:
 
 steps:
   - task: PowerShell@2
-    displayName: 'Run E2E Tests'
+    displayName: "Run E2E Tests"
     inputs:
-      filePath: '$(Build.SourcesDirectory)/e2e/postman/Run-E2E-Tests.ps1'
-      arguments: '-SizeMB 100 -TestsToRun all'
+      filePath: "$(Build.SourcesDirectory)/e2e/postman/Run-E2E-Tests.ps1"
+      arguments: "-SizeMB 100 -TestsToRun all"
     env:
       LCC_TENANT_ID: $(LCC_TENANT_ID)
-      LCC_API_ID: $(LCC_API_ID)
+      LCC_API_CLIENT_ID: $(LCC_API_CLIENT_ID)
       LCC_API_CLIENT_SECRET: $(LCC_API_CLIENT_SECRET)
       LCC_REGISTER_CASE_CLIENT_ID: $(LCC_REGISTER_CASE_CLIENT_ID)
       LCC_AZURE_USERNAME: $(LCC_AZURE_USERNAME)
@@ -184,6 +184,21 @@ Creates an Egress workspace and uploads test files.
 
 # Workspace only, no upload
 .\Setup-EgressWorkspaceAndUpload.ps1 -SkipUpload
+
+# Upload file only, to an existing workspace
+.\Setup-EgressWorkspaceAndUpload.ps1 -SizeMB 1 -ExistingWorkspaceId <existing-workspace-id> -WorkspaceName <existing-workspace-name>
+```
+
+### Teardown-EgressTestFiles.ps1
+
+Deletes test materials uploaded to Egress.
+
+```powershell
+# Delete files uploaded to a workspace
+.\Teardown-EgressTestFiles -DeleteFiles -WorkspaceId <workspace-id> -FileIds id1,id2,id3 -Force
+
+# Delete an entire workspace
+.\Teardown-EgressTestFiles -DeleteWorkspace -WorkspaceId <workspace-id> -Force
 ```
 
 ---
