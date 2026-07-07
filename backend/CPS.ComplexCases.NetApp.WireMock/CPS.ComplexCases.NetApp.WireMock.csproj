@@ -17,6 +17,8 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.5" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.5" />
     <PackageReference Include="WireMock.Net" Version="1.7.2" />
+    <!-- Override transitive Scriban.Signed 5.5.0 (pulled in by WireMock.Net) which has known vulnerabilities; 7.x is patched -->
+    <PackageReference Include="Scriban.Signed" Version="7.2.5" />
   </ItemGroup>
 
   <ItemGroup>
