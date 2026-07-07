@@ -14,7 +14,7 @@ const mapOption = (item: CaseDivisionsOrArea) => ({
 });
 
 export const useFormattedAreaValues = () => {
-  const { state } = useContext(MainStateContext) ?? {};
+  const { state } = useContext(MainStateContext);
   const { apiData: { caseDivisionsOrAreas } = {} } = state;
 
   const formattedAreaValues = useMemo(() => {

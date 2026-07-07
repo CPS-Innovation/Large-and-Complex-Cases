@@ -36,7 +36,7 @@ export default function RootLayout({
           <cps-global-header></cps-global-header>
         </div>
       )}
-      {featureFlags !== null && !featureFlags?.globalNav && <Header />}
+      {!featureFlags?.globalNav && <Header />}
       <div className={styles.mainContent}>{children}</div>
       <Footer />
     </div>

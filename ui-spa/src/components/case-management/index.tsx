@@ -102,7 +102,7 @@ const CaseManagementPage = () => {
   const tabItems = useMemo(() => {
     const items: ItemProps<TabId>[] = [];
 
-    if (featureFlags !== null && featureFlags?.transferMaterialsV1) {
+    if (featureFlags?.transferMaterialsV1) {
       items.push({
         id: "transfer-materials",
         label: "Transfer materials",

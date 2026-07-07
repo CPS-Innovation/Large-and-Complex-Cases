@@ -27,7 +27,7 @@ const AppRoutes = () => {
   const { appData: { featureFlags } = {} } = state;
   const featureFlagsData = useUserGroupsFeatureFlag();
   useEffect(() => {
-    //dont want to update if featureFlags is already set as it need to be set only once
+    //set feature flag data, when there is a valid value and  when the featureFlags are not set.
     if (featureFlagsData && !featureFlags) {
       dispatch({
         type: "SET_FEATURE_FLAGS",

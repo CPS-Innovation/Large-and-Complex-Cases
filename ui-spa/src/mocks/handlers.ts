@@ -92,8 +92,6 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
 
         const folderId = url.searchParams.get("folder-id");
         const path = url.searchParams.get("path");
-        console.log("folderId:", folderId);
-        console.log("path:", path);
         const egressRootFolderResults = isDevMock()
           ? getEgressFolderResultsDev(folderId as string, path as string)
           : getEgressFolderResultsPlaywright(
@@ -101,7 +99,6 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
               path as string,
             );
         await delay(500);
-        console.log("egressRootFolderResults:", egressRootFolderResults);
         return HttpResponse.json(egressRootFolderResults);
       },
     ),
