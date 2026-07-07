@@ -17,7 +17,7 @@ const TransferControls = ({
   toggleTransferDirection,
 }: TransferControlsProps) => {
   return (
-    <div className={styles.transferControls}>
+    <div className={styles.transferControls} data-testid="transfer-controls">
       <Button
         className="govuk-button--secondary"
         onClick={onCopy}
@@ -34,7 +34,10 @@ const TransferControls = ({
           Move selected
         </Button>
       )}
-      <LinkButton onClick={toggleTransferDirection}>
+      <LinkButton
+        onClick={toggleTransferDirection}
+        dataTestId="toggle-transfer-direction"
+      >
         {transferSource === "egress" ? "View Shared Drive" : "View Egress"}
       </LinkButton>
     </div>

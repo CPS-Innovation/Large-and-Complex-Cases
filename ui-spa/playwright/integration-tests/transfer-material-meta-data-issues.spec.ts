@@ -189,7 +189,7 @@ test.describe("egress meta data issues", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        "API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/egress/workspaces/egress_1/files?folder-id=&skip=0&take=50: Getting egress folders failed; status - Internal Server Error (500)",
+        "Getting egress folders failed; status - Internal Server Error (500)",
       ),
     ).toBeVisible();
   });

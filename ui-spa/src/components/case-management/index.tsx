@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useContext } from "react";
 import { Tabs } from "../common/tabs/Tabs";
 import { TabId } from "../../common/types/CaseManagement";
 import { ItemProps } from "../common/tabs/types";
@@ -8,7 +8,7 @@ import TransferResolveFilePathPage from "./transfer-materials/TransferResolveFil
 import ActivityLogPage from "./activity-log/index";
 import { getCaseMetaData } from "../../apis/gateway-api";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
-import { useUserGroupsFeatureFlag } from "../../common/hooks/useUserGroupsFeatureFlag";
+import { MainStateContext } from "../../providers/MainStateProvider";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
 import TransferTreeViewPage from "../case-management/transfer-materials/TransferTreeViewPage";
 import { useQuery } from "@tanstack/react-query";
@@ -34,7 +34,10 @@ const CaseManagementPage = () => {
 
   const [activeTabId, setActiveTabId] = useState<TabId>("transfer-materials");
 
-  const featureFlags = useUserGroupsFeatureFlag();
+  const { state } = useContext(MainStateContext);
+  const {
+    appData: { featureFlags },
+  } = state;
   const handleTabSelection = (tabId: TabId) => {
     setActiveTabId(tabId);
   };
@@ -99,7 +102,7 @@ const CaseManagementPage = () => {
   const tabItems = useMemo(() => {
     const items: ItemProps<TabId>[] = [];
 
-    if (featureFlags.transferMaterialsV1) {
+    if (featureFlags?.transferMaterialsV1) {
       items.push({
         id: "transfer-materials",
         label: "Transfer materials",
@@ -132,7 +135,7 @@ const CaseManagementPage = () => {
       });
     }
 
-    if (!featureFlags.transferMaterialsV1) {
+    if (featureFlags !== null && !featureFlags?.transferMaterialsV1) {
       items.push({
         id: "transfer-materials",
         label: "Transfer materials",
@@ -172,7 +175,7 @@ const CaseManagementPage = () => {
         ),
       },
     });
-    if (featureFlags.caseDetails) {
+    if (featureFlags?.caseDetails) {
       items.push({
         id: "case-details",
         label: "Case Details",
@@ -189,14 +192,7 @@ const CaseManagementPage = () => {
       });
     }
     return items;
-  }, [
-    activeTabId,
-    caseId,
-    caseMetaData,
-    routeState,
-    featureFlags.caseDetails,
-    featureFlags.transferMaterialsV1,
-  ]);
+  }, [activeTabId, caseId, caseMetaData, routeState, featureFlags]);
   if (isCaseMetaDataLoading) {
     return <PageContentWrapper>loading...</PageContentWrapper>;
   }
@@ -209,7 +205,7 @@ const CaseManagementPage = () => {
   return (
     <PageContentWrapper>
       <h1 className={styles.workspaceName}>{caseMetaData?.operationName}</h1>
-      <div className={styles.urnText}>
+      <div className={styles.urnText} data-testid="case-urn">
         <span>{caseMetaData?.urn}</span>
       </div>
       <Tabs

@@ -19,7 +19,7 @@ const FolderPath: React.FC<FolderPathProps> = ({
   handleFolderPathClick,
 }) => {
   return (
-    <div>
+    <div data-testid="folder-path">
       <ol className={styles.orderedList}>
         {folders.map((folder, index) => {
           return (

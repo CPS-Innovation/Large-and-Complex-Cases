@@ -32,7 +32,7 @@ const TransferWidget: React.FC<TransferWidgetProps> = ({
 
   return (
     <div>
-      <h3>Transfer Files</h3>
+      <h2>Transfer Files</h2>
       <TreeView
         data={data}
         onSelect={onSelect}
@@ -44,6 +44,7 @@ const TransferWidget: React.FC<TransferWidgetProps> = ({
           onClick={handleBtnClickHandler}
           className={styles.transferButton}
           disabled={!selectedNode}
+          data-testid="transfer-action-button"
         >
           {selectedNode
             ? `${transferAction} to ${selectedNode?.name}`
