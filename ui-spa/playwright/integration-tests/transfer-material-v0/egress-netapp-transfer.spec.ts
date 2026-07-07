@@ -536,6 +536,7 @@ test.describe("egress-netapp-transfer", () => {
           egressWorkspaceId: "egress_1",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
+          leadDefendantName: "John Doe",
           urn: "45AA2098221",
           activeTransferId: "mock-transfer-id",
         });
@@ -696,6 +697,7 @@ test.describe("egress-netapp-transfer", () => {
           egressWorkspaceId: "egress_1",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
+          leadDefendantName: "John Doe",
           urn: "45AA2098221",
           activeTransferId: "mock-transfer-id",
         });
@@ -912,6 +914,7 @@ test.describe("egress-netapp-transfer", () => {
           egressWorkspaceId: "egress_1",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
+          leadDefendantName: "John Doe",
           urn: "45AA2098221",
           activeTransferId: "mock-transfer-id",
         });

@@ -14,8 +14,8 @@ export class TransferMaterialsSourcePage {
     );
   }
 
-  async verifyPageElements() {
-    await expect(this.page.locator("h1")).toHaveText("Thunderstruck");
+  async verifyPageElements(h1Text: string = "Thunderstruck") {
+    await expect(this.page.locator("h1")).toHaveText(h1Text);
     await expect(this.page.getByTestId("case-urn")).toHaveText("45AA2098221");
     await expect(this.page.getByTestId("tab-active")).toHaveText(
       "Transfer materials",

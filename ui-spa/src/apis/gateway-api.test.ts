@@ -820,6 +820,7 @@ describe("gateway apis", () => {
         egressWorkspaceId: "egress_1",
         netappFolderPath: "netapp/",
         operationName: "Thunderstruck",
+        leadDefendantName: "John Doe",
         urn: "45AA2098221",
         activeTransferId: "",
       };
@@ -903,6 +904,30 @@ describe("gateway apis", () => {
       (v4 as any).mockReturnValue("id_123");
       (getAccessToken as any).mockResolvedValue("access_token");
       (fetch as any).mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        json: async () => mockData,
+      });
+
+      await expect(getCaseMetaData("12")).rejects.toBeInstanceOf(ApiError);
+      await expect(getCaseMetaData("12")).rejects.toThrow(
+        "An error occurred contacting the server at gateway_url/api/v1/cases/12: response schema validation failed; status - OK (200)",
+      );
+    });
+    it("getCaseMetaData - response schema validation should fail if both operationName and leadDefendantName are null", async () => {
+      const mockData = [
+        {
+          operationName: null,
+          urn: "urn",
+          caseId: "123",
+          leadDefendantName: null,
+          egressWorkspaceId: "abcdef",
+          netappFolderPath: null,
+          registrationDate: null,
+        },
+      ];
+      (globalThis.fetch as any).mockResolvedValue({
         ok: true,
         status: 200,
         statusText: "OK",
