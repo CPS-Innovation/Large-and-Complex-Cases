@@ -685,11 +685,14 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
   }, [transferId, netAppData, egressData]);
 
   useEffect(() => {
+    if (!transferId) return;
+    setTransferStatus("transferring");
+  }, [transferId, setTransferStatus]);
+
+  useEffect(() => {
     if (!shouldStartTransferStatusPolling) {
       return;
     }
-
-    setTransferStatus("transferring");
     pollTransferStatus(
       transferId!,
       isComponentUnmounted,

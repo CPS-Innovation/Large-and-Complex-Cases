@@ -294,9 +294,11 @@ export class TransferMaterialsSourcePage {
           .nth(index)
           .locator("ul")
           .locator("li");
-        relativePath.files.forEach(async (file, i) => {
-          await expect(fileItems.nth(i)).toHaveText(file);
-        });
+        await Promise.all(
+          relativePath.files.map((file, i) =>
+            expect(fileItems.nth(i)).toHaveText(file),
+          ),
+        );
       }),
     );
     await successBanner.locator("details>summary").click();
