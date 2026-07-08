@@ -11,10 +11,10 @@ export const caseMetaDataResponseSchema = z
     urn: z.string(),
   })
   .superRefine((val, ctx) => {
-    // both operationName and leadDefendantName cannot be null at the same time
-    if (val.operationName === null && val.leadDefendantName === null) {
+    // both operationName and leadDefendantName cannot be falsy at the same time
+    if (!val.operationName && !val.leadDefendantName) {
       ctx.addIssue(
-        "Both `operationName` and `leadDefendantName` cannot both be null",
+        "At least one of operationName or leadDefendantName must be provided (they cannot both be empty or null).",
       );
     }
   });

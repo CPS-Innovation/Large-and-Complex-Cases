@@ -48,7 +48,19 @@ describe("caseMetaDataResponseSchema", () => {
     if (!result.success) {
       const messages = result.error.issues.map((i) => i.message);
       expect(messages).toContain(
-        "Both `operationName` and `leadDefendantName` cannot both be null",
+        "At least one of operationName or leadDefendantName must be provided (they cannot both be empty or null).",
+      );
+    }
+  });
+
+  it("rejects when both operationName and leadDefendantName are empty", () => {
+    const input = { ...base, operationName: "", leadDefendantName: "" };
+    const result = caseMetaDataResponseSchema.safeParse(input);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const messages = result.error.issues.map((i) => i.message);
+      expect(messages).toContain(
+        "At least one of operationName or leadDefendantName must be provided (they cannot both be empty or null).",
       );
     }
   });
