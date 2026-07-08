@@ -14,6 +14,7 @@ test.describe("egress meta data issues", () => {
           egressWorkspaceId: "",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
+          leadDefendantName: "John Doe",
           urn: "45AA2098221",
           activeTransferId: "",
         });
@@ -53,6 +54,7 @@ test.describe("egress meta data issues", () => {
           egressWorkspaceId: "",
           netappFolderPath: "",
           operationName: "Thunderstruck",
+          leadDefendantName: "John Doe",
           urn: "45AA2098221",
           activeTransferId: "",
         });
@@ -208,6 +210,7 @@ test.describe("netapp meta data issues", () => {
           egressWorkspaceId: "egress_1",
           netappFolderPath: "",
           operationName: "Thunderstruck",
+          leadDefendantName: "John Doe",
           urn: "45AA2098221",
           activeTransferId: "",
         });
@@ -346,5 +349,49 @@ test.describe("netapp meta data issues", () => {
       "/case/12/case-management/shared-drive-connection-error?operation-name=Thunderstruck",
     );
     await expect(page).toHaveURL("/");
+  });
+
+  test("Should show the lead defendant name as h1 text if the operation name is empty", async ({
+    page,
+    worker,
+  }) => {
+    await worker.use(
+      http.get("https://mocked-out-api/api/v1/cases/12", async () => {
+        await delay(10);
+        return HttpResponse.json({
+          caseId: 12,
+          egressWorkspaceId: "egress_1",
+          netappFolderPath: "netapp/",
+          operationName: null,
+          leadDefendantName: "John Doe",
+          urn: "45AA2098221",
+          activeTransferId: "mock-transfer-id",
+        });
+      }),
+    );
+    await page.goto(`/case/12/case-management`);
+    await expect(page.locator("h1")).toHaveText("John Doe");
+  });
+
+  test("Should show the operation name as h1 if the operation name is not null", async ({
+    page,
+    worker,
+  }) => {
+    await worker.use(
+      http.get("https://mocked-out-api/api/v1/cases/12", async () => {
+        await delay(10);
+        return HttpResponse.json({
+          caseId: 12,
+          egressWorkspaceId: "egress_1",
+          netappFolderPath: "netapp/",
+          operationName: "Thunderstruck",
+          leadDefendantName: "John Doe",
+          urn: "45AA2098221",
+          activeTransferId: "mock-transfer-id",
+        });
+      }),
+    );
+    await page.goto(`/case/12/case-management`);
+    await expect(page.locator("h1")).toHaveText("Thunderstruck");
   });
 });
