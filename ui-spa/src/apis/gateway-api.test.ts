@@ -918,13 +918,13 @@ describe("gateway apis", () => {
     it("getCaseMetaData - response schema validation should fail if both operationName and leadDefendantName are null", async () => {
       const mockData = [
         {
+          caseId: 12,
+          egressWorkspaceId: "egress_1",
+          netappFolderPath: "netapp/",
           operationName: null,
-          urn: "urn",
-          caseId: "123",
           leadDefendantName: null,
-          egressWorkspaceId: "abcdef",
-          netappFolderPath: null,
-          registrationDate: null,
+          urn: "45AA2098221",
+          activeTransferId: "",
         },
       ];
       (globalThis.fetch as any).mockResolvedValue({
@@ -935,6 +935,7 @@ describe("gateway apis", () => {
       });
 
       await expect(getCaseMetaData("12")).rejects.toBeInstanceOf(ApiError);
+      
       await expect(getCaseMetaData("12")).rejects.toThrow(
         "An error occurred contacting the server at gateway_url/api/v1/cases/12: response schema validation failed; status - OK (200)",
       );

@@ -3,13 +3,10 @@ import { test } from "../utils/test";
 import { TransferMaterialsSourcePage } from "../pages/transfer-material-source";
 
 test.describe("transfer material egress list", () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto("/case/12/case-management?transfer-materials-v1=true");
-  });
-
   test("Should show the transfer material tab with correct initial content", async ({
     page,
   }) => {
+    await page.goto("/case/12/case-management?transfer-materials-v1=true");
     const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
     await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
     await transferMaterialsSourcePage.verifyPageElements();
@@ -38,6 +35,7 @@ test.describe("transfer material egress list", () => {
   test("Should correctly navigate through the egress folders and validate checkbox visibility", async ({
     page,
   }) => {
+    await page.goto("/case/12/case-management?transfer-materials-v1=true");
     const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
     await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
     await transferMaterialsSourcePage.verifyPageElements();
@@ -158,6 +156,7 @@ test.describe("transfer material egress list", () => {
     ]);
     await transferMaterialsSourcePage.verifyCheckboxesVisibility(false, 4);
   });
+
   test("Should show the leadDefendant name in the Home path for Egress if the operation name is null", async ({
     page,
     worker,
@@ -176,6 +175,7 @@ test.describe("transfer material egress list", () => {
         });
       }),
     );
+    await page.goto("/case/12/case-management?transfer-materials-v1=true");
     const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
     await transferMaterialsSourcePage.verifyUrl("/case/12/case-management");
     await transferMaterialsSourcePage.verifyPageElements("John Doe");
