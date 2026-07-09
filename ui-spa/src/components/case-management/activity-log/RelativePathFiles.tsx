@@ -9,12 +9,14 @@ type RelativePathFilesProps = {
   successFiles: { path: string }[];
   errorFiles: { path: string }[];
   sourcePath: string;
+  name: string;
 };
 
 const RelativePathFiles: React.FC<RelativePathFilesProps> = ({
   successFiles,
   errorFiles,
   sourcePath,
+  name,
 }) => {
   const groupedFiles = useMemo(
     () => getGroupedActivityFilePaths(successFiles, errorFiles, sourcePath),
@@ -22,13 +24,13 @@ const RelativePathFiles: React.FC<RelativePathFilesProps> = ({
   );
 
   return (
-    <div data-testid="activity-files">
+    <div data-testid={`${name}-files`}>
       {sortRelativePaths(Object.keys(groupedFiles)).map((key) => {
         return (
           <section key={key}>
             <div
               className={styles.relativePathWrapper}
-              data-testid="activity-relative-path"
+              data-testid={`${name}-relative-path`}
             >
               {key && <FolderIcon />}
               <span className={styles.relativePathText}>{key}</span>

@@ -12,7 +12,7 @@ test.describe("Case Details", () => {
   };
 
   test("Should show the case details tab correctly", async ({ page }) => {
-    await goToCaseManagement(page);
+    await goToCaseManagement(page, "case-details=true");
     await page.getByTestId("tab-2").click();
     await expect(page.getByTestId("tab-active")).toHaveText("Case Details");
   });

@@ -36,6 +36,42 @@ describe("useUserGroupsFeatureFlag", () => {
   afterEach(() => {
     vi.resetAllMocks();
   });
+  describe("null value validation", () => {
+    test("Should return null, if user account is not available if it is a non automation test user", () => {
+      (msalInstanceModule.msalInstance.getAllAccounts as Mock).mockReturnValue(
+        [],
+      );
+      const { result } = renderHook(() => useUserGroupsFeatureFlag());
+      expect(result.current).toBeNull();
+    });
+
+    test("Should not return null, if user account is not available if it is an automation test user", () => {
+      (msalInstanceModule.msalInstance.getAllAccounts as Mock).mockReturnValue(
+        [],
+      );
+      (auth.useUserDetails as Mock).mockReturnValue({
+        username: "dev_user@example.org",
+      });
+      const { result } = renderHook(() => useUserGroupsFeatureFlag());
+      expect(result.current).not.toBeNull();
+    });
+
+    test("Should return null, if username is not available", () => {
+      (msalInstanceModule.msalInstance.getAllAccounts as Mock).mockReturnValue([
+        {
+          name: "test_name",
+          idTokenClaims: {
+            groups: ["private_beta_feature_group2"],
+          },
+        },
+      ]);
+      (auth.useUserDetails as Mock).mockReturnValue({});
+
+      const { result } = renderHook(() => useUserGroupsFeatureFlag());
+      expect(result.current).toBeNull();
+    });
+  });
+
   describe("caseDetails feature flag", () => {
     test("Should return caseDetails feature false, if FEATURE_FLAG_CASE_DETAILS is false for normal user", () => {
       (msalInstanceModule.msalInstance.getAllAccounts as Mock).mockReturnValue([

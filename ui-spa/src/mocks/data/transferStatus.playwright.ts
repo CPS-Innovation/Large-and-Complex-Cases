@@ -12,8 +12,18 @@ export const egressToNetAppTransferStatusPlaywright: TransferStatusResponse = {
   processedFiles: 30,
   successfulFiles: 30,
   failedFiles: 0,
-  successfulItems: [],
-  destinationPath: "egress/folder-1-1/",
+  successfulItems: [
+    {
+      sourcePath: "folder1/folder2/file1.txt",
+    },
+    {
+      sourcePath: "folder1/folder2/file2.txt",
+    },
+    {
+      sourcePath: "folder1/folder3/file3.txt",
+    },
+  ],
+  destinationPath: "folder-1-0/folder-2-0/",
 };
 
 export const netAppToEgressTransferStatusPlaywright: TransferStatusResponse = {
