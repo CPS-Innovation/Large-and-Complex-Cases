@@ -71,6 +71,8 @@ public class GetCase(ILogger<GetCase> logger,
             NetappFolderPath = caseResponse.NetappFolderPath,
             Urn = cmsResponse.Urn,
             OperationName = cmsResponse.OperationName,
+            LeadDefendantName = cmsResponse.LeadDefendantName,
+            RegistrationDate = cmsResponse.RegistrationDate,
             ActiveTransferId = caseResponse.ActiveTransferId,
             ActiveManageMaterialsOperations = activeManageMaterialsOperations.Select(op => new ActiveManageMaterialsOperationResponse
             {
