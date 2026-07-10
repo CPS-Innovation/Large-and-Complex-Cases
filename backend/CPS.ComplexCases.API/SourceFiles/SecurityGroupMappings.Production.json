@@ -1,4 +1,11 @@
 [
+    {
+    "id": "50ded1de-01e7-4db8-bc13-ca73e6ae7741",
+    "displayName": "Rose-Court-S3-Users",
+    "bucketName": "",
+    "volumeUuid": "",
+    "description": "SCD London Users security group for CPS Complex Cases"
+  },
   {
     "id": "09abbcd6-345f-468f-a46b-d2ef64072eff",
     "displayName": "York-CTD-Cases",
