@@ -4,7 +4,8 @@ import { SearchResultsPage } from "../pages/SearchResultsPage";
 import { CaseManagementPage } from "../pages/CaseManagementPage";
 import { TransferMaterialsTab } from "../pages/TransferMaterialsTab";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
-import { isFileInEgress } from '../helpers/egress-api';
+import { verifyNetAppFileSizeByName, isFileInEgress } from "../helpers/transfer-verify";
+import { getAzureADToken } from "../helpers/auth-api";
 import { expect } from "@playwright/test";
 
 test.describe("Egress to NetApp Move (Default Mode)", () => {
@@ -75,30 +76,28 @@ test.describe("Egress to NetApp Move (Default Mode)", () => {
     await activityLog.downloadCsv();
     await activityLog.verifyDownloadSuccess();
   
-    // Step 9: Confirm complete files appear in Shared Drive panel
-    await caseMgmt.switchToTab("transfer-materials");
+    // Step 9: Confirm complete files exist in shared drive
     for (const file of testData.files) {
-      const fileSizeMb = file.fileSize / 1000000
-      await transferTab.verifyNetAppFileSizeByExactName(file.fileName, fileSizeMb);
+      console.log(`\nVerifying file '${file.fileName}' exists in NetApp in its original size (${file.fileSize} bytes)`)
+      await verifyNetAppFileSizeByName(
+        file.fileName,
+        testData.caseId!,
+        file.fileSize,
+      );
     }
 
-    // Step 10: Confirm files removed from Egres
+    // Step 10: Confirm files removed from Egress
     for (const file of testData.files) {
-      console.log(`\nVerifying file '${file.fileName}' has been deleted from source '${testData.uploadPath}'...`)
+      console.log(`\nVerifying file '${file.fileName}' has been deleted from source '${testData.uploadPath}'.`)
       await test.step(
         `Verify file '${file.fileName}' is no longer present in Egress`,
         async () => {
           const exists = await isFileInEgress(
-            testData.egressBaseUrl!,
             testData.egressToken!,
             testData.workspace.id,
             testData.sourceSubfolderId!,
             file.fileName
           );
-
-          if (!exists) {
-            console.log(`File '${file.fileName}' was not found in '${testData.uploadPath}'`)
-          }
 
           expect(
             exists,
