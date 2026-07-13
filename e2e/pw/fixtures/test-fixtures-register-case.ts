@@ -6,6 +6,7 @@ import {
   authenticateEgress,
   createFolder,
   uploadFile,
+  getUploadedFile,
 } from "../helpers/egress-api";
 import { REGISTER_CASE_NETAPP_FOLDER } from "../helpers/constants";
 import type { TestSetupResult, UploadedFile } from "../helpers/types";
@@ -90,14 +91,15 @@ export const test = base.extend<
       `  Uploading ${testOptions.fileCount} x ${testOptions.fileSizeMb}MB file(s) to ${uploadPath}...`
     );
     const fileSizeBytes = testOptions.fileSizeMb * 1024 * 1024;
-    const files: UploadedFile[] = [];
+    const uploadIds: string[] = [];
+
     for (let i = 1; i <= testOptions.fileCount; i++) {
       const timestamp = new Date()
         .toISOString()
         .replace(/[:.]/g, "-")
         .slice(0, 19);
       const fileName = `generated-${testOptions.fileSizeMb}MB-${timestamp}-file${i}.txt`;
-      const file = await uploadFile(
+      const uploadId = await uploadFile(
         config.egressBaseUrl,
         token,
         shared.workspace.id,
@@ -105,8 +107,24 @@ export const test = base.extend<
         fileName,
         uploadPath
       );
-      files.push(file);
+      uploadIds.push(uploadId);
     }
+
+    console.log ("  Getting the uploaded file ID(s)...\n")
+      const files = await Promise.all(
+        uploadIds.map(uploadId =>
+          getUploadedFile(
+            config.egressBaseUrl,
+            token,
+            shared.workspace.id,
+            uploadId,
+            {
+              timeoutMs: Math.max(30000, testOptions.fileSizeMb * 15000),
+              retryDelay: Math.min(10000,Math.max(2000, testOptions.fileSizeMb * 5)),
+            },
+          )
+        )
+      );
 
     // Refresh the tactical + AD session per test and wait for the search
     // radios to be enabled before handing control to the spec. This mirrors
@@ -119,6 +137,7 @@ export const test = base.extend<
       caseUrn: shared.caseUrn,
       files,
       uploadSubfolder,
+      caseId: shared.caseId,
     });
 
     // Per-test teardown. On failure we leave the uploaded files in the

@@ -5,6 +5,7 @@ import { SearchResultsPage } from "../pages/SearchResultsPage";
 import { CaseManagementPage } from "../pages/CaseManagementPage";
 import { TransferMaterialsTab } from "../pages/TransferMaterialsTab";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
+import { verifyNetAppFileSizeByName } from "../helpers/transfer-verify";
 
 const fileSize = loadEnvConfig().largeTestFileSizeMb;
 
@@ -69,5 +70,15 @@ test.describe(`Egress to NetApp Copy - Large File ${fileSize}MB (Default Mode)`,
     await activityLog.expandFileList();
     await activityLog.downloadCsv();
     await activityLog.verifyDownloadSuccess();
+
+    // Step 9: Confirm complete files exist in shared drive
+    for (const file of testData.files) {
+      console.log(`\nVerifying file '${file.fileName}' exists in NetApp in its original size (${file.fileSize} bytes)`)
+      await verifyNetAppFileSizeByName(
+        file.fileName,
+        testData.caseId!,
+        file.fileSize,
+      );
+    }
   });
 });

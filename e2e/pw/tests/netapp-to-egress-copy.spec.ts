@@ -4,6 +4,8 @@ import { SearchResultsPage } from "../pages/SearchResultsPage";
 import { CaseManagementPage } from "../pages/CaseManagementPage";
 import { TransferMaterialsTab } from "../pages/TransferMaterialsTab";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
+import { isFileInEgress } from "../helpers/transfer-verify";
+import { expect } from "@playwright/test";
 
 test.describe("NetApp to Egress Copy", () => {
   test.use({ testOptions: { fileSizeMb: 100, fileCount: 1 } });
@@ -75,5 +77,7 @@ test.describe("NetApp to Egress Copy", () => {
     await activityLog.expandFileList();
     await activityLog.downloadCsv();
     await activityLog.verifyDownloadSuccess();
+
+    // No further verification added as currently we're not using a predictable file name
   });
 });
