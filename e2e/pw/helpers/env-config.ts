@@ -23,6 +23,15 @@ function positiveIntEnv(name: string, defaultValue: string): number {
   return parsed;
 }
 
+function boolEnv(name: string, defaultValue: string): boolean {
+  const raw = optionalEnv(name, defaultValue).trim().toLowerCase();
+  if (["true", "1", "yes", "on"].includes(raw)) return true;
+  if (["false", "0", "no", "off", ""].includes(raw)) return false;
+  throw new Error(
+    `Invalid ${name}: expected a boolean (true/false), got "${raw}"`,
+  );
+}
+
 export function loadEnvConfig() {
   return {
     baseUrl: requireEnv("BASE_URL"),
@@ -56,6 +65,12 @@ export function loadEnvConfig() {
     testFileSizeMb: positiveIntEnv("TEST_FILE_SIZE_MB", "10"),
     testFileCount: positiveIntEnv("TEST_FILE_COUNT", "1"),
     largeTestFileSizeMb: positiveIntEnv("LARGE_TEST_FILE_SIZE_MB", "50"),
+
+    // Selects which Transfer Materials screen the suite drives. `true` when
+    // the target environment renders the redesigned (v1) screen for the E2E
+    // user; `false` drives the old screen. This is a which-screen-to-expect
+    // switch only — it does not enable the SPA feature flag (see README).
+    transferMaterialsV1: boolEnv("TRANSFER_MATERIALS_V1", "false"),
 
     defaultWorkspaceId: process.env.DEFAULT_WORKSPACE_ID || "",
     defaultWorkspaceName: process.env.DEFAULT_WORKSPACE_NAME || "",

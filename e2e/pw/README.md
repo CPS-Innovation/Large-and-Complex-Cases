@@ -13,20 +13,31 @@ Tests run in two modes:
 
 ### Test Matrix
 
-| Test | Files | Default Mode | Register Case Mode |
-|------|-------|--------------|--------------------|
-| Egress to NetApp Copy | 10MB x 1 | ✓ | ✓ |
-| Egress to NetApp Copy - Large | 50MB x 1 | ✓ | ✓ |
-| Egress to NetApp Copy - Multifile | 10MB x 3 | -- | ✓ |
-| Egress to NetApp Move | 10MB x 1 | ✓ | ✓ |
-| NetApp to Egress Copy | 10MB x 1 | ✓ (uses seeded fixture) | ✓ (sort + row 0) |
-| Full Flow (login, search, connect) | 10MB x 1 | -- | ✓ |
+The two modes use different file sizes for the same logical test — default
+mode stays small for fast iteration, register-case mode exercises larger
+transfers. The Default / Register columns show each mode's size (`--` = not
+run in that mode).
+
+| Test | Default Mode | Register Case Mode |
+|------|--------------|--------------------|
+| Egress to NetApp Copy | ✓ 10MB x 1 | ✓ 100MB x 1 |
+| Egress to NetApp Copy - Large | ✓ 50MB x 1 | ✓ 200MB x 1 |
+| Egress to NetApp Copy - Multifile | -- | ✓ 10MB x 3 |
+| Egress to NetApp Move | ✓ 10MB x 1 | ✓ 100MB x 1 |
+| NetApp to Egress Copy | ✓ 10MB x 1 (uses seeded fixture) | ✓ 100MB x 1 (sort + row 0) |
+| Full Flow (login, search, connect) | -- | ✓ 100MB x 1 |
+
+Default-mode sizes come from `TEST_FILE_SIZE_MB` (10) and
+`LARGE_TEST_FILE_SIZE_MB` (50); register-case sizes are set per spec via
+`test.use({ testOptions: { fileSizeMb, fileCount } })`.
 
 NetApp -> Egress Move is descoped — the product UI doesn't expose a Move
-button in that direction (`EgressFolderContainer.tsx` has no Move
-references; only `NetAppFolderContainer.tsx` does, gated on the
+button in that direction on either screen. Old screen: `EgressFolderContainer.tsx`
+has no Move references; only `NetAppFolderContainer.tsx` does, gated on the
 `transferMove` feature flag, which renders Move in the Egress -> NetApp
-direction only).
+direction only. New screen (`transfer-materials-v1/`): `TransferControls.tsx`
+renders the `Move selected` button only when the source is Egress. Either way,
+Move is available in the Egress -> NetApp direction only.
 
 ## Project Structure
 
@@ -48,6 +59,12 @@ e2e/pw/
     register-case-state.ts            # Shared state file paths for the setup project
     types.ts                          # TypeScript type definitions
   pages/                              # Page Object Models
+    getTransferMaterialsTab.ts        # Picks the screen POM from TRANSFER_MATERIALS_V1
+    TransferMaterialsTabApi.ts        # Screen-agnostic Transfer Materials contract
+    TransferMaterialsTab.ts           # Old-screen implementation
+    TransferMaterialsTabV1.ts         # New-screen (v1) implementation
+    TransferDestinationPage.ts        # New-screen destination-tree page (pick folder + confirm)
+    ...                               # CaseSearch, SearchResults, CaseManagement, ActivityLog, login/connect POMs
   tests/
     register-case.setup.ts            # Setup project: register + connect once per run
     register-case.teardown.ts         # 24h workspace sweep, run after register-case-tests
@@ -189,6 +206,37 @@ standard auth set.
 | `LCC_API_BASE_URL` | LCC backend URL — used by NetApp file teardown + disassociate | Default mode (recommended); register-case (recommended) |
 | `NETAPP_OPERATION_NAME` | Connected NetApp folder for default mode | Default mode (recommended) |
 | `LCC_API_CLIENT_SECRET` | Secret for `LCC_API_CLIENT_ID` | Register-case (recommended) |
+| `TRANSFER_MATERIALS_V1` | Which Transfer Materials screen to drive (see below) | No (default: false) |
+
+## Transfer Materials screen: `TRANSFER_MATERIALS_V1`
+
+Selects which screen the specs drive: `false` (default) = old screen, `true` =
+redesigned screen. It is a **selector only** — it must match what the
+environment renders for `E2E_AD_USER`, or the specs drive the wrong screen and fail.
+
+Specs never branch on this flag directly. They build the Transfer Materials
+page object via `getTransferMaterialsTab(page)`, which reads the switch and
+returns either `TransferMaterialsTab` (old screen) or `TransferMaterialsTabV1`
+(new screen). Both implement the shared `TransferMaterialsTabApi` contract, so
+a spec depends only on that surface and stays screen-agnostic. The new screen
+adds a destination-tree step after Copy/Move — driven by `TransferDestinationPage`
+— because it has no confirm modal. A spec that must diverge (e.g.
+`netapp-to-egress-copy-default`) reads `loadEnvConfig().transferMaterialsV1`
+explicitly rather than referencing screen-specific selectors.
+
+For a real Azure AD user the new screen renders only when **both** hold:
+
+1. The deployed SPA at `BASE_URL` was built with
+   `VITE_FEATURE_FLAG_TRANSFER_MATERIALS_V1=true` (baked in at build time via the
+   env's Azure DevOps variable group — not in this repo, not runtime-toggleable).
+2. `E2E_AD_USER` is a member of the Azure AD group set as that environment's
+   `VITE_PRIVATE_BETA_FEATURE_USER_GROUP2`.
+
+The `?transfer-materials-v1=true` query override does **not** apply to
+`E2E_AD_USER` — only to the mock-auth user `dev_user@example.org` in ui-spa's own
+mocked integration tests. Neither (1) nor (2) is readable from this repo; confirm
+by signing in as `E2E_AD_USER` on the target environment and checking the tab,
+then set `TRANSFER_MATERIALS_V1` to match.
 
 ## Environment Profiles
 

@@ -1,6 +1,7 @@
 import { Page, expect } from "@playwright/test";
+import { TransferMaterialsTabApi } from "./TransferMaterialsTabApi";
 
-export class TransferMaterialsTab {
+export class TransferMaterialsTab implements TransferMaterialsTabApi {
   private readonly page: Page;
 
   constructor(page: Page) {
@@ -47,6 +48,25 @@ export class TransferMaterialsTab {
       .locator("tbody tr");
     for (const index of indices) {
       await rows.nth(index).locator('input[type="checkbox"]').check();
+    }
+  }
+
+  /**
+   * Sort the NetApp panel by last-modified date descending (two header clicks).
+   * The NetApp panel's date sort doesn't reliably toggle to descending, so this
+   * mirrors the click-twice approach specs relied on inline.
+   */
+  async sortNetAppByDateDescending() {
+    const header = this.page
+      .getByTestId("netapp-table-wrapper")
+      .getByRole("button", { name: "Last modified date" });
+    try {
+      await header.click({ timeout: 20_000 });
+      await this.waitForNetAppFiles();
+      await header.click({ timeout: 20_000 });
+      await this.waitForNetAppFiles();
+    } catch {
+      console.log("  [sortNetAppByDateDescending] date sort skipped (best-effort)");
     }
   }
 
@@ -198,6 +218,27 @@ export class TransferMaterialsTab {
     throw new Error(
       `Timed out waiting for ${fileName} to be selectable in NetApp panel (timeout: ${timeout}ms, last row count: ${lastRowCount})`
     );
+  }
+
+  /**
+   * The old screen keeps the transfer view mounted through transfer errors
+   * (the error is shown inline, not as a separate route), so there is no
+   * error page to leave. No-op — present to satisfy the shared contract.
+   */
+  async dismissTransferErrorIfPresent(): Promise<void> {}
+
+  /**
+   * Verify a file landed in the NetApp panel. The old screen shows both
+   * panels side by side, so the NetApp table is already visible — assert
+   * it contains the file in place (no source switch needed).
+   */
+  async verifyNetAppContainsFile(
+    fileName: string,
+    timeout: number = 30_000,
+  ): Promise<void> {
+    const netappTable = this.page.getByTestId("netapp-table-wrapper");
+    await expect(netappTable).toBeVisible({ timeout });
+    await expect(netappTable).toContainText(fileName, { timeout });
   }
 
   async navigateToFolder(folderName: string) {

@@ -10,7 +10,7 @@ import { browserLogin } from "../fixtures/setup-helper";
 import { CaseSearchPage } from "../pages/CaseSearchPage";
 import { SearchResultsPage } from "../pages/SearchResultsPage";
 import { CaseManagementPage } from "../pages/CaseManagementPage";
-import { TransferMaterialsTab } from "../pages/TransferMaterialsTab";
+import { getTransferMaterialsTab } from "../pages/getTransferMaterialsTab";
 import { NETAPP_FIXTURE_FILENAME } from "../helpers/constants";
 
 // One-shot seed: puts the canonical NetApp source fixture at
@@ -82,7 +82,7 @@ setup("seed lcc-e2e-fixture-source.txt to NetApp", async ({ page }) => {
   await caseMgmt.waitForLoad();
   await caseMgmt.switchToTab("transfer-materials");
 
-  const transferTab = new TransferMaterialsTab(page);
+  const transferTab = getTransferMaterialsTab(page);
   await transferTab.waitForEgressFiles();
   await transferTab.navigateToFolder(SEED_PARENT);
   await transferTab.waitForEgressFiles();
@@ -112,6 +112,19 @@ setup("seed lcc-e2e-fixture-source.txt to NetApp", async ({ page }) => {
       throw err;
     }
   }
+
+  // The new screen leaves the transfer-materials view after a transfer
+  // attempt: a duplicate-file rejection lands on the transfer-errors
+  // route, and a successful transfer lands back on case management with
+  // the success banner. Either way the "View Shared Drive" toggle is
+  // gone, so return to case management and re-enter the Transfer
+  // Materials tab before verifying. On the old screen the view is
+  // retained, so `dismissTransferErrorIfPresent` is a no-op and
+  // re-selecting the tab is harmless.
+  await transferTab.dismissTransferErrorIfPresent();
+  await caseMgmt.waitForLoad();
+  await caseMgmt.switchToTab("transfer-materials");
+  await transferTab.waitForEgressFiles();
 
   // Verify the fixture is at the path the default-mode spec actually
   // selects from — i.e. selectable by exact basename at NetApp source

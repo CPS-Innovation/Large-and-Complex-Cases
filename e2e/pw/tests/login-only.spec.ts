@@ -1,8 +1,8 @@
-import { test, expect } from "../fixtures/test-fixtures-register-case";
+import { test } from "../fixtures/test-fixtures-register-case";
 import { CaseSearchPage } from "../pages/CaseSearchPage";
 import { SearchResultsPage } from "../pages/SearchResultsPage";
 import { CaseManagementPage } from "../pages/CaseManagementPage";
-import { TransferMaterialsTab } from "../pages/TransferMaterialsTab";
+import { getTransferMaterialsTab } from "../pages/getTransferMaterialsTab";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
 
 test.describe("Full-flow smoke", () => {
@@ -27,7 +27,7 @@ test.describe("Full-flow smoke", () => {
     const caseMgmt = new CaseManagementPage(page);
     await caseMgmt.waitForLoad();
 
-    const transferTab = new TransferMaterialsTab(page);
+    const transferTab = getTransferMaterialsTab(page);
     await transferTab.waitForEgressFiles();
     await transferTab.navigateToFolder("4. Served Evidence");
     await transferTab.waitForEgressFiles();
@@ -50,11 +50,10 @@ test.describe("Full-flow smoke", () => {
     await transferTab.confirmTransfer();
     await transferTab.waitForTransferComplete();
 
-    // Step 3: Verify file shows up in NetApp destination panel
-    const fileName = files[0].fileName;
-    const netappTable = page.getByTestId("netapp-table-wrapper");
-    await expect(netappTable).toBeVisible({ timeout: 30_000 });
-    await expect(netappTable).toContainText(fileName, { timeout: 30_000 });
+    // Step 3: Verify file shows up in NetApp destination panel. Screen-
+    // agnostic: the old screen checks the always-visible NetApp panel in
+    // place; the new screen switches to the shared-drive source first.
+    await transferTab.verifyNetAppContainsFile(files[0].fileName);
 
     // Step 4: Verify Activity Log entry
     await caseMgmt.switchToTab("activity-log");
