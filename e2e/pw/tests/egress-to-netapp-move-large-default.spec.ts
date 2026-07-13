@@ -5,7 +5,6 @@ import { CaseManagementPage } from "../pages/CaseManagementPage";
 import { TransferMaterialsTab } from "../pages/TransferMaterialsTab";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
 import { verifyNetAppFileSizeByName, isFileInEgress } from "../helpers/transfer-verify";
-import { getAzureADToken } from "../helpers/auth-api";
 import { expect } from "@playwright/test";
 
 test.describe("Egress to NetApp Move (Default Mode)", () => {
@@ -93,10 +92,10 @@ test.describe("Egress to NetApp Move (Default Mode)", () => {
         `Verify file '${file.fileName}' is no longer present in Egress`,
         async () => {
           const exists = await isFileInEgress(
-            testData.egressToken!,
             testData.workspace.id,
             testData.sourceSubfolderId!,
-            file.fileName
+            file.fileName,
+            testData.egressToken!,
           );
 
           expect(

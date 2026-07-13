@@ -20,6 +20,41 @@ export async function authenticateEgress(
   return Buffer.from(data.token, "utf-8").toString("base64");
 }
 
+async function fetchWithTokenRefresh(
+  baseUrl: string,
+  serviceAccountAuth: string,
+  tokenRef: { value: string },
+  url: string,
+  init: RequestInit
+): Promise<Response> {
+  let response = await fetch(url, {
+    ...init,
+    headers: {
+      ...init.headers,
+      Authorization: `Basic ${tokenRef.value}`,
+    },
+  });
+
+  if (response.status === 401) {
+    console.log("Token expired, obtaining a new Egress token...");
+
+    tokenRef.value = await authenticateEgress(
+      baseUrl,
+      serviceAccountAuth
+    );
+
+    response = await fetch(url, {
+      ...init,
+      headers: {
+        ...init.headers,
+        Authorization: `Basic ${tokenRef.value}`,
+      },
+    });
+  }
+
+  return response;
+}
+
 export interface EgressWorkspaceInfo {
   id: string;
   name: string;
@@ -229,19 +264,24 @@ export async function addUserToWorkspace(
 export async function uploadFile(
   baseUrl: string,
   token: string,
+  serviceAccountAuth: string,
   workspaceId: string,
   fileSizeBytes: number,
   fileName: string,
   folderPath: string = "4. Served Evidence/",
   chunkSizeMB: number = 5
-): Promise<UploadedFile> {
+): Promise<string> {
+  const tokenRef = { value: token };
+
   // Step 1: Initiate upload
-  const initiateResponse = await fetch(
+  const initiateResponse = await fetchWithTokenRefresh(
+    baseUrl,
+    serviceAccountAuth,
+    tokenRef,
     `${baseUrl}/api/v1/workspaces/${workspaceId}/uploads`,
     {
       method: "POST",
       headers: {
-        Authorization: `Basic ${token}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -278,12 +318,14 @@ export async function uploadFile(
 
     let uploaded = false;
     for (let attempt = 0; attempt < 3; attempt++) {
-      const chunkResponse = await fetch(
+      const chunkResponse = await fetchWithTokenRefresh(
+        baseUrl,
+        serviceAccountAuth,
+        tokenRef,
         `${baseUrl}/api/v1/workspaces/${workspaceId}/uploads/${uploadId}/`,
         {
           method: "PATCH",
           headers: {
-            Authorization: `Basic ${token}`,
             "Content-Range": `bytes ${offset}-${end - 1}/${fileSizeBytes}`,
           },
           body: formData,
@@ -316,7 +358,10 @@ export async function uploadFile(
   }
 
   // Step 3: Complete upload
-  const completeResponse = await fetch(
+  const completeResponse = await fetchWithTokenRefresh(
+      baseUrl,
+      serviceAccountAuth,
+      tokenRef,
     `${baseUrl}/api/v1/workspaces/${workspaceId}/uploads/${uploadId}/`,
     {
       method: "PUT",
@@ -339,10 +384,72 @@ export async function uploadFile(
   // the response shape changes so callers that need an id for teardown
   // always get something to work with.
   const completeData = await completeResponse.json().catch(() => ({}));
-  const fileId: string = completeData?.id ?? uploadId;
 
-  console.log(`  Upload complete: ${fileId}`);
-  return { id: fileId, fileName, fileSize: fileSizeBytes };
+  console.log(`  Upload complete: ${uploadId}`);
+  return uploadId;
+}
+
+export async function getUploadedFile(
+  baseUrl: string,
+  token: string,
+  serviceAccountAuth: string,
+  workspaceId: string,
+  uploadId: string,
+  {
+    timeoutMs = 60000,
+    retryDelay = 1000, 
+  }: {
+    timeoutMs?: number,
+    retryDelay?: number,
+  } = {}
+): Promise<UploadedFile>{
+  const tokenRef = { value: token };
+
+  const start = Date.now();
+  let i = 1
+
+  while (Date.now() - start < timeoutMs) {
+    console.log(`   Attempt number ${i}...`)
+
+    const response = await fetchWithTokenRefresh(
+        baseUrl,
+        serviceAccountAuth,
+        tokenRef,
+      `${baseUrl}/api/v1/workspaces/${workspaceId}/uploads/${uploadId}?view=full`,
+      {
+        headers: {
+          Authorization: `Basic ${token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        ` Failed to get upload status (${response.status})`
+      );
+    }
+
+    const status = await response.json();
+
+    if (status.file_id) {
+      console.log(` Upload complete. File ID found: ${status.file_id}`)
+      return {
+        fileId: status.file_id,
+        fileName: status.file_name,
+        fileSize: status.file_size,
+        parentFolderId: status.parent_folder_id
+      };
+    }
+
+    i++;
+
+    console.log(`   Retrying in ${retryDelay / 1000}s...`)
+    await new Promise(r => setTimeout(r, retryDelay));
+  }
+
+  throw new Error(
+    ` Timed out waiting for upload ${uploadId}`
+  );
 }
 
 /**

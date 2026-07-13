@@ -1,7 +1,6 @@
 import { loadEnvConfig } from "../helpers/env-config";
-import { listEgressWorkspaceFilesByFolderId } from "./egress-api";
+import { listEgressWorkspaceFilesByFolderId, authenticateEgress } from "./egress-api";
 import { getAzureADToken } from "./auth-api";
-import { authenticateEgress } from "./egress-api";
 import { expect } from "@playwright/test";
 
 export async function verifyNetAppFileSizeByName(
@@ -76,7 +75,6 @@ export async function verifyNetAppFileSizeByName(
 }
 
 export async function isFileInEgress(
-  token: string,
   workspaceId: string,
   folderId: string,
   fileName: string,
@@ -93,7 +91,7 @@ export async function isFileInEgress(
 
   const files = await listEgressWorkspaceFilesByFolderId(
     config.egressBaseUrl,
-    token,
+    egressToken,
     workspaceId,
     folderId
   );
