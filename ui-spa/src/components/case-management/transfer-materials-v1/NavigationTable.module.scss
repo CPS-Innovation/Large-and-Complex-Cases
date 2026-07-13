@@ -1,7 +1,5 @@
 .navigationTable {
   position: relative;
-  max-width: 100%;
-  overflow-x: auto;
   .spinnerWrapper {
     width: 100%;
     display: flex;
@@ -12,5 +10,9 @@
     & .spinnerText {
       margin-top: 1rem;
     }
+  }
+  .tableWrapper {
+    max-width: 100%;
+    overflow-x: auto;
   }
 }
