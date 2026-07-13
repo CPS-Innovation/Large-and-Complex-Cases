@@ -4,6 +4,7 @@ import { SearchResultsPage } from "../pages/SearchResultsPage";
 import { CaseManagementPage } from "../pages/CaseManagementPage";
 import { getTransferMaterialsTab } from "../pages/getTransferMaterialsTab";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
+import { verifyNetAppFileSizeByName } from "../helpers/transfer-verify";
 
 test.describe("Egress to NetApp Copy (Default Mode)", () => {
   test("should copy files from Egress to NetApp using existing case", async ({
@@ -71,5 +72,16 @@ test.describe("Egress to NetApp Copy (Default Mode)", () => {
     await activityLog.expandFileList();
     await activityLog.downloadCsv();
     await activityLog.verifyDownloadSuccess();
+
+    // Step 9: Confirm complete files exist in shared drive
+    for (const file of testData.files) {
+      console.log(`\nVerifying file '${file.fileName}' exists in NetApp in its original size (${file.fileSize} bytes)`)
+      await verifyNetAppFileSizeByName(
+        file.fileName,
+        testData.caseId!,
+        file.fileSize,
+        "Automation-Testing"
+      );
+    }
   });
 });

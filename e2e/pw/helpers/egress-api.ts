@@ -234,7 +234,7 @@ export async function uploadFile(
   fileName: string,
   folderPath: string = "4. Served Evidence/",
   chunkSizeMB: number = 5
-): Promise<UploadedFile> {
+): Promise<string> {
   // Step 1: Initiate upload
   const initiateResponse = await fetch(
     `${baseUrl}/api/v1/workspaces/${workspaceId}/uploads`,
@@ -339,10 +339,66 @@ export async function uploadFile(
   // the response shape changes so callers that need an id for teardown
   // always get something to work with.
   const completeData = await completeResponse.json().catch(() => ({}));
-  const fileId: string = completeData?.id ?? uploadId;
 
-  console.log(`  Upload complete: ${fileId}`);
-  return { id: fileId, fileName, fileSize: fileSizeBytes };
+  console.log(`  Upload complete: ${uploadId}`);
+  return uploadId;
+}
+
+export async function getUploadedFile(
+  baseUrl: string,
+  token: string,
+  workspaceId: string,
+  uploadId: string,
+  {
+    timeoutMs = 60000,
+    retryDelay = 2000, 
+  }: {
+    timeoutMs?: number,
+    retryDelay?: number,
+  } = {}
+): Promise<UploadedFile>{
+  const start = Date.now();
+  let i = 1
+
+  while (Date.now() - start < timeoutMs) {
+    console.log(`   Attempt number ${i}...`)
+
+    const response = await fetch(
+      `${baseUrl}/api/v1/workspaces/${workspaceId}/uploads/${uploadId}?view=full`,
+      {
+        headers: {
+          Authorization: `Basic ${token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        ` Failed to get upload status (${response.status})`
+      );
+    }
+
+    const status = await response.json();
+
+    if (status.file_id) {
+      console.log(` Upload complete. File ID found: ${status.file_id}`)
+      return {
+        fileId: status.file_id,
+        fileName: status.file_name,
+        fileSize: status.file_size,
+        parentFolderId: status.parent_folder_id
+      };
+    }
+
+    i++;
+
+    console.log(`   Retrying in ${retryDelay / 1000}s...`)
+    await new Promise(r => setTimeout(r, retryDelay));
+  }
+
+  throw new Error(
+    ` Timed out waiting for upload ${uploadId}`
+  );
 }
 
 /**
@@ -382,7 +438,7 @@ export async function listEgressWorkspaceFilesByFolderId(
     try {
       for (let page = 0; page < maxPages; page++) {
         const skip = page * pageSize;
-        const url = `${baseUrl}/api/v1/workspaces/${workspaceId}/files?view=full&skip=${skip}&limit=${pageSize}&folder=${encodeURIComponent(folderId)}`;
+        const url = `${baseUrl}/api/v1/workspaces/${workspaceId}/files?folder=${encodeURIComponent(folderId)}`;
         const response = await fetch(url, {
           headers: { Authorization: `Basic ${token}` },
         });
@@ -492,22 +548,4 @@ export async function deleteWorkspace(
       err
     );
   }
-}
-
-// ---------------- Added for Move test ------------------
-export async function isFileInEgress(
-  baseUrl: string,
-  token: string,
-  workspaceId: string,
-  folderId: string,
-  fileName: string
-): Promise<boolean> {
-  const files = await listEgressWorkspaceFilesByFolderId(
-    baseUrl,
-    token,
-    workspaceId,
-    folderId
-  );
-
-  return files.some(f => f.fileName === fileName);
 }

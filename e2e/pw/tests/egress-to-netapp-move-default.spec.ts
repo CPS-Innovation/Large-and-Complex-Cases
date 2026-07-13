@@ -4,6 +4,9 @@ import { SearchResultsPage } from "../pages/SearchResultsPage";
 import { CaseManagementPage } from "../pages/CaseManagementPage";
 import { getTransferMaterialsTab } from "../pages/getTransferMaterialsTab";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
+import { verifyNetAppFileSizeByName, isFileInEgress } from "../helpers/transfer-verify";
+import { expect } from "@playwright/test";
+
 
 test.describe("Egress to NetApp Move (Default Mode)", () => {
   test("should move files from Egress to NetApp using existing case", async ({
@@ -72,5 +75,35 @@ test.describe("Egress to NetApp Move (Default Mode)", () => {
     await activityLog.expandFileList();
     await activityLog.downloadCsv();
     await activityLog.verifyDownloadSuccess();
+
+    // Step 9: Confirm complete files exist in shared drive
+    for (const file of testData.files) {
+      console.log(`\nVerifying file '${file.fileName}' exists in NetApp in its original size (${file.fileSize} bytes)`)
+      await verifyNetAppFileSizeByName(
+        file.fileName,
+        testData.caseId!,
+        file.fileSize,
+      );
+    }
+
+    // Step 10: Confirm files removed from Egress
+    for (const file of testData.files) {
+      console.log(`\nVerifying file '${file.fileName}' has been deleted from source '${testData.uploadPath}'.`)
+      await test.step(
+        `Verify file '${file.fileName}' is no longer present in Egress`,
+        async () => {
+          const exists = await isFileInEgress(
+            testData.workspace.id,
+            testData.sourceSubfolderId!,
+            file.fileName,
+          );
+
+          expect(
+            exists,
+            `File '${file.fileName}' still exists in Egress`
+          ).toBeFalsy();
+        }
+      );
+    }
   });
 });

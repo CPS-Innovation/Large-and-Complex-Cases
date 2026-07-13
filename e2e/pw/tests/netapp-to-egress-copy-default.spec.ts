@@ -7,6 +7,9 @@ import { TransferDestinationPage } from "../pages/TransferDestinationPage";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
 import { loadEnvConfig } from "../helpers/env-config";
 import { NETAPP_FIXTURE_FILENAME } from "../helpers/constants";
+import { isFileInEgress } from "../helpers/transfer-verify";
+import { expect } from "@playwright/test";
+
 
 test.describe("NetApp to Egress Copy (Default Mode)", () => {
   test("should copy files from NetApp to Egress using existing case", async ({
@@ -71,5 +74,27 @@ test.describe("NetApp to Egress Copy (Default Mode)", () => {
     await activityLog.expandFileList();
     await activityLog.downloadCsv();
     await activityLog.verifyDownloadSuccess();
+
+    console.log(`Subfolder ID: ${testData.destinationSubfolderId}`)
+
+    // Confirm files exist in Egress
+    for (const file of testData.files) {
+      console.log(`\nVerifying file '${NETAPP_FIXTURE_FILENAME}' exists in destination '2. Counsel only/${testData.uploadSubfolder}'.`)
+      await test.step(
+        `Verify file '${NETAPP_FIXTURE_FILENAME}' is present in Egress`,
+        async () => {
+          const exists = await isFileInEgress(
+            testData.workspace.id,
+            testData.destinationSubfolderId!,
+            NETAPP_FIXTURE_FILENAME,
+          );
+
+          expect(
+            exists,
+            `File '${NETAPP_FIXTURE_FILENAME}' could not be found in destination.`
+          ).toBeTruthy();
+        }
+      );
+    }
   });
 });

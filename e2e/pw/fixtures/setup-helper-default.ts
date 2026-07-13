@@ -4,6 +4,7 @@ import {
   authenticateEgress,
   createFolder,
   uploadFile,
+  getUploadedFile,
 } from "../helpers/egress-api";
 import { TacticalLoginPage } from "../pages/TacticalLoginPage";
 import { AzureADLoginPage } from "../pages/AzureADLoginPage";
@@ -99,7 +100,7 @@ export async function setupDefaultTestData(
     `[3/3] Uploading ${fileCount} test file(s) of ${fileSizeMb}MB to ${workspaceName} (${workspaceId}) at ${uploadPath}...`
   );
   const fileSizeBytes = fileSizeMb * 1024 * 1024;
-  const files: UploadedFile[] = [];
+  const uploadIds: string[] = [];
 
   for (let i = 1; i <= fileCount; i++) {
     const timestamp = new Date()
@@ -108,7 +109,7 @@ export async function setupDefaultTestData(
       .slice(0, 19);
     const fileName = `generated-${fileSizeMb}MB-${timestamp}-file${i}.txt`;
     console.log(`  Uploading ${fileName} (${i}/${fileCount})...`);
-    const file = await uploadFile(
+    const uploadId = await uploadFile(
       config.egressBaseUrl,
       egressToken,
       workspaceId,
@@ -116,8 +117,24 @@ export async function setupDefaultTestData(
       fileName,
       uploadPath
     );
-    files.push(file);
+    uploadIds.push(uploadId);
   }
+
+  console.log ("  Getting the uploaded file ID(s)...")
+  const files = await Promise.all(
+    uploadIds.map(uploadId =>
+      getUploadedFile(
+        config.egressBaseUrl,
+        egressToken,
+        workspaceId,
+        uploadId,
+        {
+          timeoutMs: Math.max(30000, fileSizeMb * 15000),
+          retryDelay: Math.min(10000,Math.max(2000, fileSizeMb * 5)),
+        }
+      )
+    )
+  );
 
   console.log("=== Upload Complete ===\n");
 
@@ -182,6 +199,5 @@ export async function setupDefaultTestData(
     sourceSubfolderId,
     destinationSubfolderId,
     egressToken,
-    egressBaseUrl: config.egressBaseUrl,
   };
 }
