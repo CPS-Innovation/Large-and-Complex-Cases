@@ -1,11 +1,11 @@
 .results {
   max-width: 100%;
-  overflow: scroll;
+  overflow-x: auto;
   .statusTag {
     text-transform: none;
     font-weight: normal;
     letter-spacing: normal;
-    font-size: 19px;
+    font-size: 1.1875rem;
   }
   & :global(.govuk-button--secondary) {
     margin-bottom: 0;

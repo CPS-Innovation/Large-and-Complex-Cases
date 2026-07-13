@@ -1,6 +1,8 @@
 .transferControls {
   display: flex;
-  gap: 12px;
+  flex-direction: row;
+  gap: 0.75rem;
+
   & :global(.govuk-button--secondary) {
     margin-bottom: 0;
   }
