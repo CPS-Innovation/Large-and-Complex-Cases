@@ -186,9 +186,6 @@ const DisconnectSharedDriveConfirmationPage = () => {
           <Button type="submit" disabled={disableButtons}>
             Continue
           </Button>
-          {!disableButtons && (
-            <Link to={`/case/${caseId}/case-management`}>cancel</Link>
-          )}
         </div>
       </form>
     </div>
