@@ -1,14 +1,10 @@
-import { useEffect } from "react";
-import { useMainStateContext } from "../../providers/MainStateProvider";
+import { useEffect, useContext } from "react";
+import { MainStateContext } from "../../providers/MainStateProvider";
 import { getCaseDivisionsOrAreas } from "../../apis/gateway-api";
 import { useQuery } from "@tanstack/react-query";
 export const useGetCaseDivisionsOrAreas = () => {
-  const {
-    state: {
-      apiData: { caseDivisionsOrAreas },
-    },
-    dispatch,
-  } = useMainStateContext()!;
+  const { state, dispatch } = useContext(MainStateContext);
+  const { apiData: { caseDivisionsOrAreas } = {} } = state;
   const { data: divisionsOrAreas, isLoading } = useQuery({
     queryKey: [`caseDivisionsOrAreas`],
     queryFn: () => getCaseDivisionsOrAreas(),

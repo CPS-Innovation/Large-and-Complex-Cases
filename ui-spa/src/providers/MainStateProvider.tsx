@@ -1,15 +1,10 @@
-import { ReactNode, useMemo, createContext, useContext } from "react";
+import { ReactNode, useMemo, createContext, useReducer } from "react";
 import {
   mainStateReducer,
   initialState,
   MainStateActions,
   MainState,
 } from "../reducers/mainStateReducer";
-import { useReducerAsync } from "use-reducer-async";
-import {
-  AsyncActions,
-  asyncActionHandlers,
-} from "../reducers/asyncActionHandlers";
 
 interface MainStateProviderProps {
   children: ReactNode;
@@ -17,30 +12,30 @@ interface MainStateProviderProps {
 
 interface MainStateContextProps {
   state: MainState;
-  dispatch: React.Dispatch<MainStateActions | AsyncActions>;
+  dispatch: React.Dispatch<MainStateActions>;
 }
 
-const MainStateContext = createContext<MainStateContextProps | undefined>(
-  undefined,
-);
+const MainStateContext = createContext<MainStateContextProps>({
+  state: initialState,
+  dispatch: () => null,
+});
 
-export const MainStateProvider: React.FC<MainStateProviderProps> = (props) => {
-  const [state, dispatch]: [
-    MainState,
-    React.Dispatch<MainStateActions | AsyncActions>,
-  ] = useReducerAsync(mainStateReducer, initialState, asyncActionHandlers);
-  const memoisedState = useMemo(() => {
-    return state;
-  }, [state]);
+const MainStateProvider: React.FC<MainStateProviderProps> = ({ children }) => {
+  const [state, dispatch]: [MainState, React.Dispatch<MainStateActions>] =
+    useReducer(mainStateReducer, initialState);
+  const contextValue = useMemo(
+    () => ({
+      state,
+      dispatch,
+    }),
+    [state],
+  );
 
   return (
-    <MainStateContext.Provider value={{ state: memoisedState, dispatch }}>
-      {props.children}
+    <MainStateContext.Provider value={contextValue}>
+      {children}
     </MainStateContext.Provider>
   );
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
-export const useMainStateContext = () => {
-  return useContext(MainStateContext);
-};
+export { MainStateProvider, MainStateContext };

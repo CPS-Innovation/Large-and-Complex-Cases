@@ -33,11 +33,7 @@ test.describe("disconnect-shared-drive", () => {
     await expect(page.locator("label").nth(1)).toHaveText(
       "No, keep this folder connected",
     );
-    await expect(page.getByRole("link", { name: "Cancel" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Cancel" })).toHaveAttribute(
-      "href",
-      "/case/12/case-management",
-    );
+
     await page.getByRole("button", { name: "Continue" }).click();
     await expect(
       page.getByTestId("disconnect-shared-drive-error-summary"),
@@ -59,7 +55,6 @@ test.describe("disconnect-shared-drive", () => {
     await page.getByLabel("Yes, disconnect this folder").check();
     await page.getByRole("button", { name: "Continue" }).click();
     await expect(page.getByRole("button", { name: "Continue" })).toBeDisabled();
-    await expect(page.getByRole("link", { name: "Cancel" })).not.toBeVisible();
     await expect(page).toHaveURL(
       "/case/12/case-management/disconnect-shared-drive-success",
     );

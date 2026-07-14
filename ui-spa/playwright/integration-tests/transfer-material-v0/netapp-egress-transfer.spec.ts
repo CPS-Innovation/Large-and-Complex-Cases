@@ -1,4 +1,4 @@
-import { expect, test } from "./utils/test";
+import { expect, test } from "../utils/test";
 import { delay, HttpResponse, http } from "msw";
 
 const MOCK_TRANSFER_ID = "00000000-0000-4000-8000-000000000001";
@@ -426,6 +426,7 @@ test.describe("netapp-egress-transfer", () => {
           egressWorkspaceId: "egress_1",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
+          leadDefendantName: "John Doe",
           urn: "45AA2098221",
           activeTransferId: "mock-transfer-id",
         });
@@ -555,7 +556,9 @@ test.describe("netapp-egress-transfer", () => {
         },
       ),
     );
-    await page.waitForTimeout(500);
+    await expect(page.getByTestId("transfer-spinner")).not.toBeVisible({
+      timeout: 50000,
+    });
     await expect(page.getByTestId("transfer-spinner")).not.toBeVisible();
     await expect(
       page.getByTestId("transfer-success-notification-banner"),
@@ -584,6 +587,7 @@ test.describe("netapp-egress-transfer", () => {
           egressWorkspaceId: "egress_1",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
+          leadDefendantName: "John Doe",
           urn: "45AA2098221",
           activeTransferId: "mock-transfer-id",
         });
@@ -679,8 +683,9 @@ test.describe("netapp-egress-transfer", () => {
         },
       ),
     );
-    await page.waitForTimeout(500);
-    await expect(page.getByTestId("transfer-spinner")).not.toBeVisible();
+    await expect(page.getByTestId("transfer-spinner")).not.toBeVisible({
+      timeout: 50000,
+    });
     await expect(
       page.getByTestId("transfer-success-notification-banner"),
     ).not.toBeVisible();
@@ -709,6 +714,7 @@ test.describe("netapp-egress-transfer", () => {
           egressWorkspaceId: "egress_1",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
+          leadDefendantName: "John Doe",
           urn: "45AA2098221",
           activeTransferId: "mock-transfer-id",
         });

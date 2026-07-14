@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback, useMemo } from "react";
 import { Radios, Button, ErrorSummary } from "../../govuk";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { disconnectNetAppFolder } from "../../../apis/gateway-api";
 import styles from "./DisconnectSharedDriveConfirmationPage.module.scss";
 
@@ -186,9 +186,6 @@ const DisconnectSharedDriveConfirmationPage = () => {
           <Button type="submit" disabled={disableButtons}>
             Continue
           </Button>
-          {!disableButtons && (
-            <Link to={`/case/${caseId}/case-management`}>cancel</Link>
-          )}
         </div>
       </form>
     </div>

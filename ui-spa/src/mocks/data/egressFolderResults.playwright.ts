@@ -65,7 +65,6 @@ export const getEgressFolderResultsPlaywright = (
       .map((part) => part.replace("folder-", ""))
       .join(",");
   }
-
   const lastSegment = getLastSegment(id);
   const newId = parseInt(lastSegment.split("-")[0]) + 1;
   if (newId > 3) {
@@ -79,7 +78,10 @@ export const getEgressFolderResultsPlaywright = (
       return {
         ...item,
         id: `${id},${newId}-${index}`,
-        name: index === 8 ? `files-${newId}-0.pdf` : `folder-${newId}-${index}`,
+        name:
+          index === 2
+            ? `file-${newId}-${index}.pdf`
+            : `folder-${newId}-${index}`,
         path: `${getFolderPathFromId(id)}`,
       };
     },

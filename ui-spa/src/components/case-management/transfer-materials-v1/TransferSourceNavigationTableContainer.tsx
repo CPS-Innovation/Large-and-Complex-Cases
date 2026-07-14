@@ -126,7 +126,7 @@ const TransferSourceNavigationTableContainer: React.FC<
             ? "egress files and folders table, column headers with buttons are sortable"
             : "shared drive files and folders table, column headers with buttons are sortable"
         }
-        tableName={folderData.type === "egress" ? "egress" : "shared drive"}
+        tableName={folderData.type === "egress" ? "egress" : "shared-drive"}
         loaderText={
           folderData.type === "egress"
             ? "Loading folders from Egress"
