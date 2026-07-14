@@ -3,37 +3,27 @@ import { TransferMaterialsTabApi } from "./TransferMaterialsTabApi";
 import { TransferDestinationPage } from "./TransferDestinationPage";
 
 /**
- * New-screen (redesigned / v1) Transfer Materials page object.
- *
- * Selected by `getTransferMaterialsTab` when `TRANSFER_MATERIALS_V1` is on.
- * The old-screen page object (`TransferMaterialsTab`) is unchanged; this class
- * carries the new-screen selectors and flow:
- *   - the NetApp table is now named "shared drive" (wrapper id
- *     `shared drive-table-wrapper`, loader `shared drive-folder-table-loader`);
- *   - Copy/Move are `Copy selected` / `Move selected` buttons in
- *     TransferControls, not per-panel inset text;
- *   - the direction toggle is a `View Shared Drive` / `View Egress` link button;
- *   - there is no confirm modal — `Copy selected` / `Move selected` navigate to
- *     a destination-tree page where you pick a folder and confirm with
- *     `<Copy|Move> to <folder>` (driven via `TransferDestinationPage`);
- *   - success/error use the unchanged success banner + the new error routes
- *     (`transfer-errors` / `transfer-permissions-error` / `transfer-resolve-file-path`).
- * The Egress table keeps its name, per-row checkboxes and select-all label.
+ * New-screen (v1) Transfer Materials page object, selected by
+ * `getTransferMaterialsTab` when `TRANSFER_MATERIALS_V1` is on. Differs from the
+ * old screen: NetApp table renamed "shared drive"; Copy/Move are
+ * `Copy selected` / `Move selected` buttons; direction toggles via a
+ * `View Shared Drive` / `View Egress` link; no confirm modal (Copy/Move navigate
+ * to a destination-tree page, driven by `TransferDestinationPage`); errors use
+ * the new `transfer-errors` / `transfer-permissions-error` /
+ * `transfer-resolve-file-path` routes. The Egress table is unchanged.
  */
 export class TransferMaterialsTabV1 implements TransferMaterialsTabApi {
   private readonly page: Page;
-  // Remembered from selectAction/selectReverseAction so confirmTransfer knows
-  // whether the destination-page confirm button reads "Copy to …" or "Move to …".
+  // Remembered so confirmTransfer knows whether the destination-page button
+  // reads "Copy to …" or "Move to …".
   private lastAction: "Copy" | "Move" = "Copy";
 
   constructor(page: Page) {
     this.page = page;
   }
 
-  /** Click the shared Copy/Move control in TransferControls. On the new screen
-   * both transfer directions use the same `Copy selected` / `Move selected`
-   * buttons (Move only renders when the source is Egress). The controls render
-   * in both a top and bottom bar, so target the first. */
+  /** Click the shared Copy/Move control. Renders in a top and bottom bar (target
+   * the first); Move only appears when the source is Egress. */
   private async clickTransferControl(action: "Copy" | "Move"): Promise<void> {
     this.lastAction = action;
     await this.page
@@ -43,13 +33,10 @@ export class TransferMaterialsTabV1 implements TransferMaterialsTabApi {
   }
 
   /**
-   * Wait until a source panel's folder listing has finished loading. The loader
-   * spinner mounts a tick *after* navigation kicks off the fetch, so a bare
-   * wait-for-hidden races: Playwright treats the not-yet-mounted spinner as
-   * "hidden" and returns instantly, before the list has actually loaded — and a
-   * subsequent instantaneous `.count()` check then sees an empty table. Wait for
-   * the spinner to appear first, then disappear; tolerate a rare instant load
-   * where it never shows.
+   * Wait for a source panel's listing to load. The loader mounts a tick after
+   * the fetch starts, so wait for it to appear then disappear; a bare
+   * wait-for-hidden races and returns against an empty table. Tolerate a rare
+   * instant load where the spinner never shows.
    */
   private async waitForFolderSettled(tableName: string): Promise<void> {
     const loader = this.page.getByTestId(`${tableName}-folder-table-loader`);
@@ -66,7 +53,7 @@ export class TransferMaterialsTabV1 implements TransferMaterialsTabApi {
   }
 
   async switchToNetAppSource(): Promise<void> {
-    // The toggle renders in both a top and bottom control bar; target the first.
+    // Toggle renders in a top and bottom bar; target the first.
     await this.page
       .getByRole("button", { name: "View Shared Drive" })
       .first()
@@ -81,11 +68,9 @@ export class TransferMaterialsTabV1 implements TransferMaterialsTabApi {
   }
 
   async selectNetAppFiles(indices: number[]): Promise<void> {
-    // Target the per-row checkboxes by their aria-label ("select file …" /
-    // "select folder …", set by the Checkbox component), page-scoped. On the
-    // new screen only the shared-drive panel is shown while it's the source, so
-    // these are its rows. This avoids a `tbody tr` chain that doesn't interact
-    // reliably against the real shared-drive table.
+    // Select per-row checkboxes by aria-label (page-scoped, forced). Only the
+    // shared-drive panel shows while it's the source, so these are its rows;
+    // a `tbody tr` chain doesn't interact reliably against the real table.
     const checkboxes = this.page.locator(
       'input[type="checkbox"][aria-label^="select file"], input[type="checkbox"][aria-label^="select folder"]',
     );
@@ -98,9 +83,8 @@ export class TransferMaterialsTabV1 implements TransferMaterialsTabApi {
 
   /**
    * Sort the shared-drive panel by last-modified date descending (two header
-   * clicks). Best-effort: the panel's date sort is unreliable and source
-   * identity doesn't matter for the transfer, so a flaky/slow header (e.g. a
-   * folder churning through many subfolders) is tolerated — proceed unsorted.
+   * clicks). Best-effort: the date sort is unreliable and source identity
+   * doesn't matter, so a flaky/slow header is tolerated — proceed unsorted.
    */
   async sortNetAppByDateDescending(): Promise<void> {
     const header = this.page
@@ -117,22 +101,14 @@ export class TransferMaterialsTabV1 implements TransferMaterialsTabApi {
   }
 
   /**
-   * Select a shared-drive (NetApp) source row by exact filename. Throws with a
-   * clear fixture-missing message if the row isn't in the loaded listing — the
-   * default-mode NetApp -> Egress spec runs against a stable pre-seeded fixture
-   * (see `helpers/constants.ts` NETAPP_FIXTURE_FILENAME and
-   * `tests/seed-netapp-fixture.setup.ts`).
+   * Select a shared-drive source row by exact filename; throws a clear
+   * fixture-missing message if absent (see `tests/seed-netapp-fixture.setup.ts`).
    */
   async selectNetAppFileByExactName(fileName: string): Promise<void> {
-    // Gate on the target row's checkbox by its exact aria-label
-    // ("select file <name>"), page-scoped — this is the same element the
-    // selection uses, so if it attaches we can select it. We deliberately
-    // wait for `attached` rather than a `visible` `tbody tr`: on the real
-    // shared-drive table rows can be present in the DOM yet not "visible"
-    // to Playwright, and switching source doesn't reliably re-trigger the
-    // loader spinner, so a wrapper/`tbody tr` visibility gate spuriously
-    // reports a present fixture as missing. The busy environment's listing
-    // can also take well over 30s to populate, hence the generous timeout.
+    // Gate on the row checkbox being `attached`, not a `visible` `tbody tr`:
+    // shared-drive rows can be in the DOM but not "visible" to Playwright,
+    // source switches don't reliably re-trigger the loader, and the listing
+    // can take well over 30s — so a visibility gate false-negatives.
     const checkbox = this.page
       .locator(`input[type="checkbox"][aria-label="select file ${fileName}"]`)
       .first();
@@ -169,11 +145,9 @@ export class TransferMaterialsTabV1 implements TransferMaterialsTabApi {
   }
 
   /**
-   * Confirm the transfer. On the new screen there is no modal: `Copy selected` /
-   * `Move selected` (via selectAction/selectReverseAction) navigated to the
-   * destination page. Pick the target folder in the tree — the connected root
-   * folder for Egress→NetApp, or the first Egress subfolder for NetApp→Egress —
-   * then click the `<Copy|Move> to <folder>` confirm button.
+   * Confirm the transfer. No modal on the new screen: Copy/Move already
+   * navigated to the destination tree — pick the first selectable folder (the
+   * connected root) and click the `<Copy|Move> to <folder>` button.
    */
   async confirmTransfer(): Promise<void> {
     const destination = new TransferDestinationPage(this.page);
@@ -183,10 +157,8 @@ export class TransferMaterialsTabV1 implements TransferMaterialsTabApi {
   }
 
   /**
-   * Wait for the transfer to finish. After confirming, the screen shows the
-   * validating/indexing spinner, then returns to case management and shows the
-   * success banner (`transfer-success-notification-banner`, unchanged). A failed
-   * transfer instead navigates to one of the new error routes.
+   * Wait for completion: race the (unchanged) success banner against the new
+   * error routes, throwing with the page's error text if a transfer fails.
    */
   async waitForTransferComplete(timeout: number = 300_000): Promise<void> {
     const successBanner = this.page.getByTestId(
@@ -214,12 +186,9 @@ export class TransferMaterialsTabV1 implements TransferMaterialsTabApi {
   }
 
   /**
-   * If the new screen is parked on a transfer error route (reached after a
-   * failed or duplicate-file-rejected transfer), follow the page's "Back"
-   * link to return to case management, where the tablist is available again
-   * for re-entering the Transfer Materials tab. No-op when not on an error
-   * route (e.g. after a successful transfer, which lands on case management
-   * with the success banner already).
+   * If parked on a transfer error route (after a failed or duplicate-rejected
+   * transfer), follow the page's "Back" link to case management so the tab can
+   * be re-entered. No-op otherwise.
    */
   async dismissTransferErrorIfPresent(): Promise<void> {
     const errorRoute =
@@ -229,13 +198,9 @@ export class TransferMaterialsTabV1 implements TransferMaterialsTabApi {
   }
 
   /**
-   * Verify a file landed in the shared-drive panel. The new screen shows
-   * only the source panel, so switch to the shared drive to view what
-   * landed there, then wait for the file's row checkbox (by exact
-   * aria-label) to attach — the same attached-not-visible gate
-   * `selectNetAppFileByExactName` uses, since shared-drive rows can be in
-   * the DOM without being "visible" to Playwright. The generous timeout
-   * absorbs both the slow listing load and any post-copy indexing lag.
+   * Verify a file landed in the shared drive: switch to it as source and wait
+   * for the file's row checkbox to attach (attached-not-visible, as in
+   * selectNetAppFileByExactName). Timeout covers slow load + indexing lag.
    */
   async verifyNetAppContainsFile(
     fileName: string,
@@ -254,13 +219,10 @@ export class TransferMaterialsTabV1 implements TransferMaterialsTabApi {
   }
 
   /**
-   * Wait until a file with the given name appears in the Egress panel. Egress
-   * fetches a folder's list when you navigate into it and doesn't auto-refresh,
-   * so each retry does a full `page.reload()` (which busts the React Query cache
-   * so the freshly-indexed file is actually re-fetched — an in-app re-navigation
-   * serves the stale cached listing) and re-navigates the folder path from the
-   * top. On the new screen the transfer-materials route + Egress-as-source
-   * survive the reload, so the panel comes back and shows the updated listing.
+   * Wait for a file to appear in the Egress panel. Egress doesn't auto-refresh,
+   * so each retry does a full `page.reload()` (busts the React Query cache;
+   * in-app re-navigation serves the stale listing) and re-navigates the folder
+   * path. The transfer route + Egress-as-source survive the reload.
    */
   async waitForEgressFileByName(
     fileName: string,

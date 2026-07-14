@@ -1,24 +1,15 @@
 import { Page, Locator } from "@playwright/test";
 
 /**
- * New-screen destination page (`/case/:caseId/case-management/transfer-destination-page`).
+ * New-screen destination page (`.../case-management/transfer-destination-page`),
+ * reached after "Copy selected" / "Move selected" instead of a confirm modal.
+ * Renders a folder tree; you expand nodes, pick a target, then confirm with a
+ * "<Copy|Move> to <folder>" button.
  *
- * After "Copy selected" / "Move selected" the new screen navigates here instead
- * of showing a confirm modal. The page renders a folder tree (TransferWidget /
- * TreeViewComponent); you expand nodes, pick a target folder, then confirm with
- * a "<Copy|Move> to <folder>" button.
- *
- * Selectors confirmed against the rendered DOM:
- *   - tree:            role="tree", accessible name "Folders"
- *   - folder node:     a <button> whose accessible name is the folder name
- *                      *lowercased* (aria-label = node.name.toLowerCase())
- *   - expand toggle:   sibling <button> with aria-label "plus" (collapsed) /
- *                      "minus" (expanded)
- *   - confirm button:  "<Copy|Move> to <folder>" (folder name in original case);
- *                      reads just "Copy"/"Move" and is disabled until a node is
- *                      selected
- *   - cancel:          <button> "Cancel"
- *   - initial loader:  data-testid "destination-loader"
+ * DOM: tree = role "tree" name "Folders"; folder node = a <button> whose
+ * aria-label is the folder name *lowercased*; expand toggle = sibling button
+ * aria-label "plus"/"minus"; confirm = "<Copy|Move> to <folder>" (disabled
+ * until a node is selected); initial loader = testid "destination-loader".
  */
 export class TransferDestinationPage {
   private readonly page: Page;
@@ -29,7 +20,7 @@ export class TransferDestinationPage {
     this.tree = page.getByRole("tree", { name: "Folders" });
   }
 
-  /** Wait until the folder tree has loaded (initial folder fetch complete). */
+  /** Wait for the folder tree to finish its initial load. */
   async waitForLoaded(timeout: number = 60_000): Promise<void> {
     await this.page
       .getByTestId("destination-loader")
@@ -38,11 +29,8 @@ export class TransferDestinationPage {
     await this.tree.waitFor({ state: "visible", timeout });
   }
 
-  /**
-   * The folder node button. Its accessible name is the folder name lowercased
-   * (aria-label), so match on the lowercased name exactly to avoid substring
-   * collisions between sibling folders.
-   */
+  /** Folder node button — aria-label is the lowercased name; match exactly to
+   * avoid sibling substring collisions. */
   private folderNode(folderName: string): Locator {
     return this.tree.getByRole("button", {
       name: folderName.toLowerCase(),
@@ -50,9 +38,8 @@ export class TransferDestinationPage {
     });
   }
 
-  /** Expand a folder node (no-op if it is already expanded). */
+  /** Expand a folder node (no-op if already expanded). */
   async expandFolder(folderName: string): Promise<void> {
-    // The expand toggle is a sibling button inside the same node container.
     const toggle = this.folderNode(folderName)
       .locator("xpath=..")
       .getByRole("button", { name: "plus" });
@@ -67,11 +54,10 @@ export class TransferDestinationPage {
   }
 
   /**
-   * Select the first selectable (non-disabled) folder in the tree and return its
-   * accessible name. For Egress→NetApp the root ("Shared drive: …") is selectable
-   * and is the connected folder root; for NetApp→Egress the root ("Egress : …")
-   * is disabled, so the first enabled node is its first child folder (the root is
-   * expanded on load). Handy when the target is just "the connected root folder".
+   * Select the first enabled folder and return its label. For Egress→NetApp the
+   * root is selectable (the connected folder); for NetApp→Egress the root is
+   * disabled so this picks its first child. Use when the target is just "the
+   * connected root".
    */
   async selectFirstSelectableFolder(): Promise<string> {
     const folders = this.tree.locator(
@@ -89,11 +75,8 @@ export class TransferDestinationPage {
     throw new Error("No selectable folder found in the destination tree");
   }
 
-  /**
-   * Click the confirm button. Once a folder is selected the button reads
-   * "<Copy|Move> to <folder>"; it is the only such button on the page, so the
-   * "<action> to " prefix identifies it without needing the folder name.
-   */
+  /** Click confirm. Once a folder is selected the button reads
+   * "<Copy|Move> to <folder>" and is the only such button. */
   async confirm(action: "Copy" | "Move"): Promise<void> {
     await this.page
       .getByRole("button", { name: new RegExp(`^${action} to `) })
@@ -104,11 +87,8 @@ export class TransferDestinationPage {
     await this.page.getByRole("button", { name: "Cancel" }).click();
   }
 
-  /**
-   * Convenience: open to a target folder and confirm. `folderPath` is the
-   * sequence of folder names from a tree root down to the target; ancestors are
-   * expanded, the final folder is selected, then the transfer is confirmed.
-   */
+  /** Expand ancestors, select the final folder, and confirm. `folderPath` runs
+   * from a tree root down to the target. */
   async chooseFolder(
     action: "Copy" | "Move",
     folderPath: string[],

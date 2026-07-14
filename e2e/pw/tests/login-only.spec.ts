@@ -50,9 +50,7 @@ test.describe("Full-flow smoke", () => {
     await transferTab.confirmTransfer();
     await transferTab.waitForTransferComplete();
 
-    // Step 3: Verify file shows up in NetApp destination panel. Screen-
-    // agnostic: the old screen checks the always-visible NetApp panel in
-    // place; the new screen switches to the shared-drive source first.
+    // Step 3: Verify file landed in the NetApp panel (screen-agnostic).
     await transferTab.verifyNetAppContainsFile(files[0].fileName);
 
     // Step 4: Verify Activity Log entry

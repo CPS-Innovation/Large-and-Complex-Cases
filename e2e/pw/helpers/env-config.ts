@@ -66,10 +66,9 @@ export function loadEnvConfig() {
     testFileCount: positiveIntEnv("TEST_FILE_COUNT", "1"),
     largeTestFileSizeMb: positiveIntEnv("LARGE_TEST_FILE_SIZE_MB", "50"),
 
-    // Selects which Transfer Materials screen the suite drives. `true` when
-    // the target environment renders the redesigned (v1) screen for the E2E
-    // user; `false` drives the old screen. This is a which-screen-to-expect
-    // switch only — it does not enable the SPA feature flag (see README).
+    // Which Transfer Materials screen to drive: `true` = new (v1), `false` =
+    // old. Must match what the environment renders for the E2E user; it does
+    // not enable the SPA feature flag (see README).
     transferMaterialsV1: boolEnv("TRANSFER_MATERIALS_V1", "false"),
 
     defaultWorkspaceId: process.env.DEFAULT_WORKSPACE_ID || "",

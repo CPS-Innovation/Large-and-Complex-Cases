@@ -113,14 +113,9 @@ setup("seed lcc-e2e-fixture-source.txt to NetApp", async ({ page }) => {
     }
   }
 
-  // The new screen leaves the transfer-materials view after a transfer
-  // attempt: a duplicate-file rejection lands on the transfer-errors
-  // route, and a successful transfer lands back on case management with
-  // the success banner. Either way the "View Shared Drive" toggle is
-  // gone, so return to case management and re-enter the Transfer
-  // Materials tab before verifying. On the old screen the view is
-  // retained, so `dismissTransferErrorIfPresent` is a no-op and
-  // re-selecting the tab is harmless.
+  // A transfer attempt leaves the transfer-materials view (error route on a
+  // duplicate rejection; case management on success), so return there and
+  // re-enter the tab before verifying. Harmless on the old screen.
   await transferTab.dismissTransferErrorIfPresent();
   await caseMgmt.waitForLoad();
   await caseMgmt.switchToTab("transfer-materials");

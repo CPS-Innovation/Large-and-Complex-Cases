@@ -7,10 +7,9 @@ import { TransferMaterialsTabApi } from "./TransferMaterialsTabApi";
 export type { TransferMaterialsTabApi };
 
 /**
- * Construct the Transfer Materials page object for the screen the target
- * environment is running. Specs call this instead of `new TransferMaterialsTab`
- * so they stay agnostic of which screen is active; the `TRANSFER_MATERIALS_V1`
- * switch (see helpers/env-config.ts) decides.
+ * Build the Transfer Materials page object for the active screen — the
+ * `TRANSFER_MATERIALS_V1` switch decides. Specs call this to stay
+ * screen-agnostic.
  */
 export function getTransferMaterialsTab(page: Page): TransferMaterialsTabApi {
   const { transferMaterialsV1 } = loadEnvConfig();

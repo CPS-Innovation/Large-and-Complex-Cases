@@ -221,16 +221,22 @@ export class TransferMaterialsTab implements TransferMaterialsTabApi {
   }
 
   /**
-   * The old screen keeps the transfer view mounted through transfer errors
-   * (the error is shown inline, not as a separate route), so there is no
-   * error page to leave. No-op — present to satisfy the shared contract.
+   * Both screens navigate to a shared full-page transfer error (no tablist) on a
+   * failed or duplicate-rejected transfer. If on it, follow "Back" to case
+   * management so the tab can be re-entered. Keyed off the error heading (the
+   * old screen detects by text, not route). No-op otherwise.
    */
-  async dismissTransferErrorIfPresent(): Promise<void> {}
+  async dismissTransferErrorIfPresent(): Promise<void> {
+    const errorHeading = this.page.getByRole("heading", {
+      name: "There is a problem transferring files",
+    });
+    if (!(await errorHeading.isVisible().catch(() => false))) return;
+    await this.page.getByRole("link", { name: "Back", exact: true }).click();
+  }
 
   /**
-   * Verify a file landed in the NetApp panel. The old screen shows both
-   * panels side by side, so the NetApp table is already visible — assert
-   * it contains the file in place (no source switch needed).
+   * Verify a file landed in the NetApp panel. Both panels are visible on the old
+   * screen, so assert the NetApp table contains the file in place.
    */
   async verifyNetAppContainsFile(
     fileName: string,
