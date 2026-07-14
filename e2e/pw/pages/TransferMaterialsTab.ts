@@ -66,7 +66,9 @@ export class TransferMaterialsTab implements TransferMaterialsTabApi {
       await header.click({ timeout: 20_000 });
       await this.waitForNetAppFiles();
     } catch {
-      console.log("  [sortNetAppByDateDescending] date sort skipped (best-effort)");
+      console.log(
+        "  [sortNetAppByDateDescending] date sort skipped (best-effort)",
+      );
     }
   }
 
@@ -99,8 +101,12 @@ export class TransferMaterialsTab implements TransferMaterialsTabApi {
   }
 
   async waitForTransferComplete(timeout: number = 300_000) {
-    const successBanner = this.page.getByTestId("transfer-success-notification-banner");
-    const errorHeading = this.page.locator('text="There is a problem transferring files"');
+    const successBanner = this.page.getByTestId(
+      "transfer-success-notification-banner",
+    );
+    const errorHeading = this.page.locator(
+      'text="There is a problem transferring files"',
+    );
 
     // Wait for either success banner or error page to appear
     await Promise.race([
@@ -119,9 +125,7 @@ export class TransferMaterialsTab implements TransferMaterialsTabApi {
   }
 
   async getTransferProgress(): Promise<string> {
-    return await this.page
-      .getByTestId("transfer-progress-metrics")
-      .innerText();
+    return await this.page.getByTestId("transfer-progress-metrics").innerText();
   }
 
   async selectEgressFileByName(fileName: string) {
@@ -165,7 +169,7 @@ export class TransferMaterialsTab implements TransferMaterialsTabApi {
           `  Seed it via:\n` +
           `    bash:       RUN_SEED=1 npx playwright test --project=seed-netapp-fixture\n` +
           `    powershell: $env:RUN_SEED=1; npx playwright test --project=seed-netapp-fixture\n` +
-          `  See README "Required NetApp fixture" for details.`
+          `  See README "Required NetApp fixture" for details.`,
       );
     }
     const checkbox = row.locator('input[type="checkbox"]').first();
@@ -182,7 +186,7 @@ export class TransferMaterialsTab implements TransferMaterialsTabApi {
    */
   async selectNetAppFileByNameWithScroll(
     fileName: string,
-    timeout: number = 180_000
+    timeout: number = 180_000,
   ) {
     const netappTable = this.page.getByTestId("netapp-table-wrapper");
     const fileRow = netappTable.locator("tbody tr", { hasText: fileName });
@@ -216,7 +220,7 @@ export class TransferMaterialsTab implements TransferMaterialsTabApi {
       await this.page.waitForTimeout(1_500);
     }
     throw new Error(
-      `Timed out waiting for ${fileName} to be selectable in NetApp panel (timeout: ${timeout}ms, last row count: ${lastRowCount})`
+      `Timed out waiting for ${fileName} to be selectable in NetApp panel (timeout: ${timeout}ms, last row count: ${lastRowCount})`,
     );
   }
 
@@ -264,15 +268,14 @@ export class TransferMaterialsTab implements TransferMaterialsTabApi {
   async waitForEgressFileByName(
     fileName: string,
     folderPath: string[],
-    timeout: number = 300_000
+    timeout: number = 300_000,
   ) {
     const egressTable = this.page.getByTestId("egress-table-wrapper");
     const start = Date.now();
 
     const fileVisible = async () =>
-      (await egressTable
-        .locator("tbody tr", { hasText: fileName })
-        .count()) > 0;
+      (await egressTable.locator("tbody tr", { hasText: fileName }).count()) >
+      0;
 
     if (await fileVisible()) return;
 
@@ -288,20 +291,28 @@ export class TransferMaterialsTab implements TransferMaterialsTabApi {
       if (await fileVisible()) return;
     }
     throw new Error(
-      `Timed out waiting for ${fileName} to appear in Egress panel (timeout: ${timeout}ms)`
+      `Timed out waiting for ${fileName} to appear in Egress panel (timeout: ${timeout}ms)`,
     );
   }
 
   /** Wait until at least `expectedCount` file rows appear in the Egress panel folder, refreshing periodically. */
-  async waitForFileCount(expectedCount: number, folderName: string, timeout: number = 120_000) {
-    const egressTable = this.page.getByTestId("egress-table-wrapper").locator("table");
+  async waitForFileCount(
+    expectedCount: number,
+    folderName: string,
+    timeout: number = 120_000,
+  ) {
+    const egressTable = this.page
+      .getByTestId("egress-table-wrapper")
+      .locator("table");
     const start = Date.now();
     // Check current count first (already navigated into folder)
     let rows = await egressTable.locator("tbody tr").all();
     if (rows.length >= expectedCount) return;
 
     while (Date.now() - start < timeout) {
-      console.log(`  Waiting for files: ${rows.length}/${expectedCount} visible, refreshing...`);
+      console.log(
+        `  Waiting for files: ${rows.length}/${expectedCount} visible, refreshing...`,
+      );
       await this.page.waitForTimeout(5_000);
       // Full reload required: Egress file list is fetched once on page load and not auto-refreshed
       await this.page.reload();
@@ -311,6 +322,8 @@ export class TransferMaterialsTab implements TransferMaterialsTabApi {
       rows = await egressTable.locator("tbody tr").all();
       if (rows.length >= expectedCount) return;
     }
-    throw new Error(`Timed out waiting for ${expectedCount} files (timeout: ${timeout}ms)`);
+    throw new Error(
+      `Timed out waiting for ${expectedCount} files (timeout: ${timeout}ms)`,
+    );
   }
 }

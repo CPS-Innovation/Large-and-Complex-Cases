@@ -34,7 +34,7 @@ const SEED_SIZE_MB = 1;
 setup("seed lcc-e2e-fixture-source.txt to NetApp", async ({ page }) => {
   setup.skip(
     !process.env.RUN_SEED,
-    "Opt-in seed — run with RUN_SEED=1 npx playwright test --project=seed-netapp-fixture"
+    "Opt-in seed — run with RUN_SEED=1 npx playwright test --project=seed-netapp-fixture",
   );
   setup.setTimeout(300_000);
 
@@ -49,14 +49,14 @@ setup("seed lcc-e2e-fixture-source.txt to NetApp", async ({ page }) => {
   console.log("Authenticating with Egress + uploading seed source...");
   const egressToken = await authenticateEgress(
     config.egressBaseUrl,
-    config.egressServiceAccountAuth
+    config.egressServiceAccountAuth,
   );
   await createFolder(
     config.egressBaseUrl,
     egressToken,
     config.defaultWorkspaceId,
     SEED_PARENT,
-    SEED_SUBFOLDER
+    SEED_SUBFOLDER,
   );
   const uploaded = await uploadFile(
     config.egressBaseUrl,
@@ -64,7 +64,7 @@ setup("seed lcc-e2e-fixture-source.txt to NetApp", async ({ page }) => {
     config.defaultWorkspaceId,
     SEED_SIZE_MB * 1024 * 1024,
     NETAPP_FIXTURE_FILENAME,
-    `${SEED_PARENT}/${SEED_SUBFOLDER}/`
+    `${SEED_PARENT}/${SEED_SUBFOLDER}/`,
   );
 
   console.log("Logging in via browser...");
@@ -106,7 +106,7 @@ setup("seed lcc-e2e-fixture-source.txt to NetApp", async ({ page }) => {
     const message = err instanceof Error ? err.message : String(err);
     if (/files? already exist/i.test(message)) {
       console.log(
-        `Fixture already present at <NetApp>/${NETAPP_FIXTURE_FILENAME} — seed is a no-op.`
+        `Fixture already present at <NetApp>/${NETAPP_FIXTURE_FILENAME} — seed is a no-op.`,
       );
     } else {
       throw err;
@@ -129,7 +129,7 @@ setup("seed lcc-e2e-fixture-source.txt to NetApp", async ({ page }) => {
   // would otherwise silently "succeed" while the default test fails
   // with a fixture-missing error.
   console.log(
-    `Verifying fixture is selectable from NetApp root by exact name...`
+    `Verifying fixture is selectable from NetApp root by exact name...`,
   );
   await transferTab.switchToNetAppSource();
   await transferTab.waitForNetAppFiles();
@@ -142,11 +142,11 @@ setup("seed lcc-e2e-fixture-source.txt to NetApp", async ({ page }) => {
       config.egressBaseUrl,
       egressToken,
       config.defaultWorkspaceId,
-      [uploaded.id]
+      [uploaded.id],
     );
   }
 
   console.log(
-    `\n=== Done ===\nFixture seeded at: <NetApp>/${NETAPP_FIXTURE_FILENAME}`
+    `\n=== Done ===\nFixture seeded at: <NetApp>/${NETAPP_FIXTURE_FILENAME}`,
   );
 });

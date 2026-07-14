@@ -96,7 +96,9 @@ export class TransferMaterialsTabV1 implements TransferMaterialsTabApi {
       await header.click({ timeout: 20_000 });
       await this.waitForNetAppFiles();
     } catch {
-      console.log("  [sortNetAppByDateDescending] date sort skipped (best-effort)");
+      console.log(
+        "  [sortNetAppByDateDescending] date sort skipped (best-effort)",
+      );
     }
   }
 
@@ -233,9 +235,8 @@ export class TransferMaterialsTabV1 implements TransferMaterialsTabApi {
     const start = Date.now();
 
     const fileVisible = async () =>
-      (await egressTable
-        .locator("tbody tr", { hasText: fileName })
-        .count()) > 0;
+      (await egressTable.locator("tbody tr", { hasText: fileName }).count()) >
+      0;
 
     if (await fileVisible()) return;
 

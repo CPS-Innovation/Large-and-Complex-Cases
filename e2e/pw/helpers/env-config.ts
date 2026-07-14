@@ -49,7 +49,7 @@ export function loadEnvConfig() {
     e2eAdPassword: requireEnv("E2E_AD_PASSWORD"),
     cmsUsername: requireEnv("CMS_USERNAME"),
     cmsPassword: requireEnv("CMS_PASSWORD"),
-    // DDEI base url and function key for the register-case endpoint. 
+    // DDEI base url and function key for the register-case endpoint.
     // The register-case path validates presence at the callsite and
     // throws a clear error if missing.
     ddeiBaseUrl: process.env.DDEI_BASE_URL || "",

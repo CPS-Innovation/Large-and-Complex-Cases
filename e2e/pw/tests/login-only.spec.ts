@@ -43,7 +43,7 @@ test.describe("Full-flow smoke", () => {
       files[0].fileName,
       uploadSubfolder
         ? ["4. Served Evidence", uploadSubfolder]
-        : ["4. Served Evidence"]
+        : ["4. Served Evidence"],
     );
     await transferTab.selectAllEgressFiles();
     await transferTab.selectAction("Copy");
