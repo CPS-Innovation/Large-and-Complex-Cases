@@ -55,7 +55,7 @@ test.describe("Move Soak Tests", () => {
       const start = Date.now();
 
       if (scenario.injectFailure) {
-        harness.enableTokenExpiryDuringStatusPolling(3);
+        harness.enableTokenExpiryDuringStatusPolling(10);
       }
 
       while (true) {

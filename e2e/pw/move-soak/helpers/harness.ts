@@ -231,8 +231,6 @@ export class MoveSoakHarness {
     const responseBody = JSON.parse(responseText);
 
     return responseBody as InitiateTransferResponse;
-
-    // return (await res.json()) as InitiateTransferResponse;
   }
 
   // Check transfer status
