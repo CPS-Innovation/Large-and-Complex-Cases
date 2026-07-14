@@ -1,12 +1,17 @@
-import { Page, expect } from "@playwright/test";
+import { expect } from "@playwright/test";
 import { TransferMaterialsTabApi } from "./TransferMaterialsTabApi";
+import { BaseTransferMaterialsTab } from "./BaseTransferMaterialsTab";
 
-export class TransferMaterialsTab implements TransferMaterialsTabApi {
-  private readonly page: Page;
-
-  constructor(page: Page) {
-    this.page = page;
-  }
+/**
+ * Old-screen Transfer Materials page object. Egress-side and common helpers come
+ * from `BaseTransferMaterialsTab`; this class carries the old-screen selectors
+ * (two side-by-side panels, per-panel inset Copy/Move, confirm modal).
+ */
+export class TransferMaterialsTab
+  extends BaseTransferMaterialsTab
+  implements TransferMaterialsTabApi
+{
+  protected readonly netAppWrapperTestId = "netapp-table-wrapper";
 
   async waitForEgressFiles() {
     await this.page
@@ -26,13 +31,6 @@ export class TransferMaterialsTab implements TransferMaterialsTabApi {
       .click();
   }
 
-  async selectAllEgressFiles() {
-    await this.page
-      .getByTestId("egress-table-wrapper")
-      .getByLabel("Select folders and files")
-      .check();
-  }
-
   async selectEgressFiles(indices: number[]) {
     const rows = this.page
       .getByTestId("egress-table-wrapper")
@@ -48,27 +46,6 @@ export class TransferMaterialsTab implements TransferMaterialsTabApi {
       .locator("tbody tr");
     for (const index of indices) {
       await rows.nth(index).locator('input[type="checkbox"]').check();
-    }
-  }
-
-  /**
-   * Sort the NetApp panel by last-modified date descending (two header clicks).
-   * The NetApp panel's date sort doesn't reliably toggle to descending, so this
-   * mirrors the click-twice approach specs relied on inline.
-   */
-  async sortNetAppByDateDescending() {
-    const header = this.page
-      .getByTestId("netapp-table-wrapper")
-      .getByRole("button", { name: "Last modified date" });
-    try {
-      await header.click({ timeout: 20_000 });
-      await this.waitForNetAppFiles();
-      await header.click({ timeout: 20_000 });
-      await this.waitForNetAppFiles();
-    } catch {
-      console.log(
-        "  [sortNetAppByDateDescending] date sort skipped (best-effort)",
-      );
     }
   }
 
@@ -128,15 +105,6 @@ export class TransferMaterialsTab implements TransferMaterialsTabApi {
     return await this.page.getByTestId("transfer-progress-metrics").innerText();
   }
 
-  async selectEgressFileByName(fileName: string) {
-    const row = this.page
-      .getByTestId("egress-table-wrapper")
-      .locator("tbody tr", { hasText: fileName });
-    const checkbox = row.locator('input[type="checkbox"]');
-    await checkbox.scrollIntoViewIfNeeded();
-    await checkbox.check();
-  }
-
   async selectNetAppFileByName(fileName: string) {
     const row = this.page
       .getByTestId("netapp-table-wrapper")
@@ -147,30 +115,17 @@ export class TransferMaterialsTab implements TransferMaterialsTabApi {
   }
 
   /**
-   * Select a NetApp source row by exact filename. Throws with a clear
-   * fixture-missing message if the row isn't in the loaded listing.
-   *
-   * The NetApp panel's date sort doesn't reliably toggle to descending
-   * and pagination isn't triggered by Playwright scrolls, so locating a
-   * just-uploaded file is unreliable. The story's contract is therefore
-   * that the default-mode NetApp -> Egress spec works against a stable
-   * pre-seeded fixture file — see `helpers/constants.ts`
-   * (NETAPP_FIXTURE_FILENAME) and `tests/seed-netapp-fixture.setup.ts`.
-   * The fixture's name pattern keeps it outside the automated cleanup
-   * helpers' scope.
+   * Select a NetApp source row by exact filename; throws a clear fixture-missing
+   * message if absent. The panel's unreliable sort + pagination make locating a
+   * just-uploaded file flaky, so the default-mode spec runs against a stable
+   * pre-seeded fixture (see `tests/seed-netapp-fixture.setup.ts`).
    */
   async selectNetAppFileByExactName(fileName: string) {
     const row = this.page
       .getByTestId("netapp-table-wrapper")
       .locator("tbody tr", { hasText: fileName });
     if ((await row.count()) === 0) {
-      throw new Error(
-        `Required NetApp fixture '${fileName}' not found in the NetApp panel.\n` +
-          `  Seed it via:\n` +
-          `    bash:       RUN_SEED=1 npx playwright test --project=seed-netapp-fixture\n` +
-          `    powershell: $env:RUN_SEED=1; npx playwright test --project=seed-netapp-fixture\n` +
-          `  See README "Required NetApp fixture" for details.`,
-      );
+      throw this.fixtureMissingError(fileName, "NetApp panel");
     }
     const checkbox = row.locator('input[type="checkbox"]').first();
     await checkbox.scrollIntoViewIfNeeded();
@@ -178,11 +133,10 @@ export class TransferMaterialsTab implements TransferMaterialsTabApi {
   }
 
   /**
-   * Scroll the NetApp panel until a row containing `fileName` appears in
-   * the DOM, then select its checkbox. Needed because the NetApp listing
-   * paginates via continuation tokens — a freshly-uploaded file with a
-   * recent date is at the bottom of the default ascending sort and won't
-   * be in the DOM until the panel scrolls and triggers more page loads.
+   * Scroll the NetApp panel until a row containing `fileName` appears, then
+   * select it. The listing paginates via continuation tokens, so a
+   * freshly-uploaded file at the bottom of the ascending sort isn't in the DOM
+   * until scrolling triggers more page loads.
    */
   async selectNetAppFileByNameWithScroll(
     fileName: string,
@@ -249,50 +203,6 @@ export class TransferMaterialsTab implements TransferMaterialsTabApi {
     const netappTable = this.page.getByTestId("netapp-table-wrapper");
     await expect(netappTable).toBeVisible({ timeout });
     await expect(netappTable).toContainText(fileName, { timeout });
-  }
-
-  async navigateToFolder(folderName: string) {
-    await this.page.getByRole("button", { name: folderName }).click();
-  }
-
-  /**
-   * Wait until a file with the given name appears in the Egress panel,
-   * reloading and re-navigating into the supplied folder path on each
-   * retry. Egress fetches the file list once on page load and does not
-   * auto-refresh, so a plain `waitFor` will spin against a stale DOM if
-   * the upload is still being indexed when navigation lands.
-   *
-   * `folderPath` is the sequence of folder names to click into after the
-   * page reload (e.g. ["4. Served Evidence", uploadSubfolder]).
-   */
-  async waitForEgressFileByName(
-    fileName: string,
-    folderPath: string[],
-    timeout: number = 300_000,
-  ) {
-    const egressTable = this.page.getByTestId("egress-table-wrapper");
-    const start = Date.now();
-
-    const fileVisible = async () =>
-      (await egressTable.locator("tbody tr", { hasText: fileName }).count()) >
-      0;
-
-    if (await fileVisible()) return;
-
-    while (Date.now() - start < timeout) {
-      console.log(`  Waiting for ${fileName} to be indexed; refreshing...`);
-      await this.page.waitForTimeout(5_000);
-      await this.page.reload();
-      await this.waitForEgressFiles();
-      for (const folder of folderPath) {
-        await this.navigateToFolder(folder);
-        await this.waitForEgressFiles();
-      }
-      if (await fileVisible()) return;
-    }
-    throw new Error(
-      `Timed out waiting for ${fileName} to appear in Egress panel (timeout: ${timeout}ms)`,
-    );
   }
 
   /** Wait until at least `expectedCount` file rows appear in the Egress panel folder, refreshing periodically. */
