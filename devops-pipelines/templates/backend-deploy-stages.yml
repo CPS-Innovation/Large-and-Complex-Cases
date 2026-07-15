@@ -51,15 +51,11 @@ stages:
     ${{ if eq(parameters.requireValidation, true) }}:
       dependsOn:
         - Approve_Deployment_${{ parameters.environment }}
-        - Preflight  # Stage 'Preflight' is defined in the caller pipeline
     ${{ else }}:
       dependsOn:
         - Build_API  # Stage 'Build_API' is defined in the caller pipeline
-        - Preflight
     displayName: "${{ parameters.environment }} - Deploy Backend Services"
     variables:
-      - name: runDbMigration  # The Preflight stage outputs the flag 'runDbMigrationSteps'
-        value: $[ eq(stageDependencies.Preflight.Check_DB_Diff.outputs['Diff_Check.runDbMigrationSteps'],'true') ]
       - template: ./variables/backend-deploy-vars.yml
         parameters:
           environment: ${{ parameters.environment }}
@@ -75,18 +71,11 @@ stages:
           runOnce:
             deploy:
               steps:
-                - bash: |
-                    echo "Database migration is not required. The next steps will be skipped."
-                  condition: eq(variables.runDbMigration, 'false')
-                  displayName: "Print skip message"
-
                 - checkout: self
-                  condition: eq(variables.runDbMigration, 'true')
                   sparseCheckoutDirectories: devops-pipelines/scripts
                   fetchDepth: 1
 
                 - task: Bash@3
-                  condition: eq(variables.runDbMigration, 'true')
                   displayName: "Ensure Azure CLI"
                   inputs:
                     targetType: "inline"
@@ -105,10 +94,8 @@ stages:
 
                 - download: current
                   artifact: "database-scripts-drop"
-                  condition: eq(variables.runDbMigration, 'true')
 
                 - task: AzureCLI@2
-                  condition: eq(variables.runDbMigration, 'true')
                   displayName: "Run Database Migration"
                   inputs:
                     azureSubscription: ${{ parameters.azureSubscription }}
@@ -135,7 +122,7 @@ stages:
 
                 - template: ./runner-cleanup-steps.yml
                   parameters:
-                    condition: eq(variables.runDbMigration, 'true')
+
                     buildArtifact: "database-scripts-drop"
 
       - deployment: Deploy_Main_API

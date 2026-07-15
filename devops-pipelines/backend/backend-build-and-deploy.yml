@@ -25,22 +25,6 @@ stages:
     displayName: 'Preflight Checks & Preparation'
     pool: 'LACC PreProd Pool'
     jobs:
-      - job: Check_DB_Diff
-        displayName: 'Check for Database Migration Changes'
-        steps:
-          - checkout: self
-            fetchDepth: 0
-
-          - task: Bash@3
-            name: Diff_Check
-            displayName: 'Detect Database Migration Changes'
-            inputs:
-              targetType: filePath
-              filePath: $(System.DefaultWorkingDirectory)/devops-pipelines/scripts/detectGitDiff.sh
-            env:
-              PATH_TO_CHECK: $(System.DefaultWorkingDirectory)/backend/CPS.ComplexCases.Data/Migrations
-              OUTPUT_VAR_NAME: runDbMigrationSteps
-
       - job: Package_NuGet
         displayName: 'Pack and Publish NuGet Package'
         steps:
@@ -70,11 +54,9 @@ stages:
     displayName: 'Build APIs for Deployment'
     dependsOn: Preflight
     pool: 'LACC PreProd Pool'
-    variables:
-      runDbMigrationSteps: $[ eq(stageDependencies.Preflight.Check_DB_Diff.outputs['Diff_Check.runDbMigrationSteps'],'true') ]
     jobs:
-      - job: Build_Main_API
-        displayName: 'Build Main API & DB Migration Scripts if Needed'
+      - job: Build_Main_API_And_DB
+        displayName: 'Build Main API & DB Migration Scripts'
         steps:
           - task: DownloadSecureFile@1
             inputs:
@@ -100,7 +82,6 @@ stages:
               runTests: false
 
           - task: DotNetCoreCLI@2
-            condition: eq(variables.runDbMigrationSteps, true)
             displayName: 'Build Database Project'
             inputs:
               command: 'build'
@@ -108,7 +89,6 @@ stages:
               arguments: '--configuration $(buildConfiguration) '
 
           - task: Bash@3
-            condition: eq(variables.runDbMigrationSteps, true)
             displayName: 'Generate Migration Scripts'
             inputs:
               filePath: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/generateDBMigrationScripts.sh'
@@ -122,7 +102,6 @@ stages:
           - publish: 'database-artifact'
             artifact: 'database-scripts-drop'
             displayName: 'Publish Database Scripts'
-            condition: eq(variables.runDbMigrationSteps, true)
 
       - job: Build_FileTransfer_API
         displayName: 'Build FileTransfer API'
