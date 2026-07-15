@@ -79,8 +79,7 @@ test.describe("Egress to NetApp Copy (Default Mode)", () => {
       await verifyNetAppFileSizeByName(
         file.fileName,
         testData.caseId!,
-        file.fileSize,
-        "Automation-Testing"
+        file.fileSize
       );
     }
   });
