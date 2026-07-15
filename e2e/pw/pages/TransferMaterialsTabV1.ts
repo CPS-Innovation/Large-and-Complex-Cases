@@ -114,11 +114,12 @@ export class TransferMaterialsTabV1
     await checkbox.check({ force: true });
   }
 
-  async selectAction(action: "Copy" | "Move"): Promise<void> {
-    await this.clickTransferControl(action);
-  }
-
-  async selectReverseAction(action: "Copy" | "Move"): Promise<void> {
+  async selectAction(
+    action: "Copy" | "Move",
+    _direction?: "egressToNetApp" | "netAppToEgress",
+  ): Promise<void> {
+    // New screen: one shared control for both directions (Move renders only when
+    // the source is Egress), so the direction is implied by the current source.
     await this.clickTransferControl(action);
   }
 

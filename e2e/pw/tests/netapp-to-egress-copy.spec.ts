@@ -53,7 +53,7 @@ test.describe("NetApp to Egress Copy", () => {
     if (loadEnvConfig().transferMaterialsV1) {
       // New screen: no second panel — Copy selected navigates to the
       // destination-tree page where the target folder is chosen.
-      await transferTab.selectReverseAction("Copy");
+      await transferTab.selectAction("Copy", "netAppToEgress");
       await new TransferDestinationPage(page).chooseFolder("Copy", [
         "2. Counsel only",
         uploadSubfolder!,
@@ -66,7 +66,7 @@ test.describe("NetApp to Egress Copy", () => {
         await transferTab.navigateToFolder(uploadSubfolder);
         await transferTab.waitForEgressFiles();
       }
-      await transferTab.selectReverseAction("Copy");
+      await transferTab.selectAction("Copy", "netAppToEgress");
       await transferTab.confirmTransfer("Copy");
     }
     await transferTab.waitForTransferComplete();

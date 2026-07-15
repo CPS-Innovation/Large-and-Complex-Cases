@@ -56,16 +56,18 @@ export class TransferMaterialsTab
       .check();
   }
 
-  async selectAction(action: "Copy" | "Move") {
+  async selectAction(
+    action: "Copy" | "Move",
+    direction: "egressToNetApp" | "netAppToEgress" = "egressToNetApp",
+  ) {
+    // Old screen has a Copy/Move control in each panel's inset: the NetApp inset
+    // drives Egress → NetApp, the Egress inset drives NetApp → Egress.
+    const inset =
+      direction === "egressToNetApp"
+        ? "netapp-inset-text"
+        : "egress-inset-text";
     await this.page
-      .getByTestId("netapp-inset-text")
-      .getByRole("button", { name: action })
-      .click();
-  }
-
-  async selectReverseAction(action: "Copy" | "Move") {
-    await this.page
-      .getByTestId("egress-inset-text")
+      .getByTestId(inset)
       .getByRole("button", { name: action })
       .click();
   }

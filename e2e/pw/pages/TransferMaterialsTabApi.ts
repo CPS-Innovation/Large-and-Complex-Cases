@@ -14,8 +14,16 @@ export interface TransferMaterialsTabApi {
   /** Sort the shared-drive/NetApp panel by last-modified date descending. */
   sortNetAppByDateDescending(): Promise<void>;
   selectEgressFileByName(fileName: string): Promise<void>;
-  selectAction(action: "Copy" | "Move"): Promise<void>;
-  selectReverseAction(action: "Copy" | "Move"): Promise<void>;
+  /**
+   * Initiate a transfer in the given direction (default Egress → NetApp).
+   * `direction` only matters on the old screen, which has a Copy/Move control in
+   * each panel's inset; the new screen has a single shared control and ignores
+   * it (direction is implied by the current source).
+   */
+  selectAction(
+    action: "Copy" | "Move",
+    direction?: "egressToNetApp" | "netAppToEgress",
+  ): Promise<void>;
   /** Confirm the pending transfer. `action` must match the Copy/Move just
    * initiated — the new screen's confirm button reads "<action> to <folder>". */
   confirmTransfer(action: "Copy" | "Move"): Promise<void>;
