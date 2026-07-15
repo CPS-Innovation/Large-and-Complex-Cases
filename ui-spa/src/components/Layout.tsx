@@ -29,7 +29,11 @@ export default function RootLayout({
     }
   }, [location.pathname]);
   return (
-    <div ref={skipLinkSiblingRef} tabIndex={-1} className={styles.rootLayout}>
+    <div
+      ref={skipLinkSiblingRef}
+      tabIndex={-1}
+      className={`${styles.rootLayout} ${!featureFlags?.transferMaterialsV1 ? styles.rootLayoutV0 : ""}`}
+    >
       <SkipLink href="#main-content">Skip to main content</SkipLink>
       {featureFlags?.globalNav && (
         <div className="govuk-width-container">
