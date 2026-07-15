@@ -77,24 +77,22 @@ test.describe("NetApp to Egress Copy (Default Mode)", () => {
 
     console.log(`Subfolder ID: ${testData.destinationSubfolderId}`)
 
-    // Confirm files exist in Egress
-    for (const file of testData.files) {
-      console.log(`\nVerifying file '${NETAPP_FIXTURE_FILENAME}' exists in destination '2. Counsel only/${testData.uploadSubfolder}'.`)
-      await test.step(
-        `Verify file '${NETAPP_FIXTURE_FILENAME}' is present in Egress`,
-        async () => {
-          const exists = await isFileInEgress(
-            testData.workspace.id,
-            testData.destinationSubfolderId!,
-            NETAPP_FIXTURE_FILENAME,
-          );
+    // Confirm file exists in Egress
+    console.log(`\nVerifying file '${NETAPP_FIXTURE_FILENAME}' exists in destination '2. Counsel only/${testData.uploadSubfolder}'.`)
+    await test.step(
+      `Verify file '${NETAPP_FIXTURE_FILENAME}' is present in Egress`,
+      async () => {
+        const exists = await isFileInEgress(
+          testData.workspace.id,
+          testData.destinationSubfolderId!,
+          NETAPP_FIXTURE_FILENAME,
+        );
 
-          expect(
-            exists,
-            `File '${NETAPP_FIXTURE_FILENAME}' could not be found in destination.`
-          ).toBeTruthy();
-        }
-      );
-    }
+        expect(
+          exists,
+          `File '${NETAPP_FIXTURE_FILENAME}' could not be found in destination.`
+        ).toBeTruthy();
+      }
+    );
   });
 });
