@@ -64,11 +64,25 @@ export class TransferMaterialsTabV1
   }
 
   async switchToNetAppSource(): Promise<void> {
-    // Toggle renders in a top and bottom bar; target the first.
-    await this.page
+    // The direction toggle is a single button whose label flips: "View Shared
+    // Drive" while Egress is the source, "View Egress" once the shared drive
+    // is. It renders in a top and bottom bar, so target the first of each.
+    // Wait for the toggle to render (either label), then only click when Egress
+    // is still the source — clicking is a no-op (and a missing-button timeout)
+    // if the shared drive is already showing.
+    const viewShared = this.page
       .getByRole("button", { name: "View Shared Drive" })
-      .first()
-      .click();
+      .first();
+    const viewEgress = this.page
+      .getByRole("button", { name: "View Egress" })
+      .first();
+    await Promise.race([
+      viewShared.waitFor({ state: "visible", timeout: 30_000 }),
+      viewEgress.waitFor({ state: "visible", timeout: 30_000 }),
+    ]).catch(() => {});
+    if (await viewShared.isVisible().catch(() => false)) {
+      await viewShared.click();
+    }
   }
 
   async selectNetAppFiles(indices: number[]): Promise<void> {
