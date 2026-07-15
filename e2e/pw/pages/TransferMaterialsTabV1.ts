@@ -139,6 +139,18 @@ export class TransferMaterialsTabV1
     ]);
 
     if (TRANSFER_ERROR_ROUTE.test(this.page.url())) {
+      // waitForURL resolves on the URL change, before React renders the error
+      // page — so wait for its heading before reading <main>, or innerText()
+      // can return the stale transfer-materials <main> (every page wraps its
+      // content in <main id="main-content">). Best-effort: the rarer
+      // permissions / resolve-file-path routes use a different heading, so the
+      // wait lapses and we still surface whatever the page shows.
+      await this.page
+        .getByRole("heading", {
+          name: "There is a problem transferring files",
+        })
+        .waitFor({ state: "visible", timeout: 15_000 })
+        .catch(() => {});
       const detail = await this.page
         .locator("main")
         .innerText()
