@@ -1,6 +1,7 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useContext } from "react";
 import { type CaseSearchParams } from "../types/CaseSearchParams";
 import { validateUrn } from "../utils/validateUrn";
+import { MainStateContext } from "../../providers/MainStateProvider";
 
 export enum SearchFormField {
   searchType = "searchType",
@@ -31,10 +32,12 @@ type SearchFormDataErrors = {
   [SearchFormField.urn]?: ErrorText;
 };
 const MAX_CHARACTERS = 50;
-export const useCaseSearchForm = (initialData: SearchFromData) => {
+export const useCaseSearchForm = () => {
   const initialErrorState: SearchFormDataErrors = {};
-
-  const [formData, setFormData] = useState<SearchFromData>(initialData);
+  const {
+    state: { formData },
+    dispatch,
+  } = useContext(MainStateContext);
 
   const [formDataErrors, setFormDataErrors] =
     useState<SearchFormDataErrors>(initialErrorState);
@@ -164,14 +167,39 @@ export const useCaseSearchForm = (initialData: SearchFromData) => {
     return isValid;
   };
 
-  const handleFormChange = (
-    field: SearchFormField,
-    value: string | number | boolean,
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+  const handleFormChange = (field: SearchFormField, value: string) => {
+    let payload = {};
+    const resetOperationNameFields = {
+      [SearchFormField.operationName]: "",
+      [SearchFormField.operationArea]: "",
+    };
+    const resetDefendantNameFields = {
+      [SearchFormField.defendantName]: "",
+      [SearchFormField.defendantArea]: "",
+    };
+
+    if (field === SearchFormField.searchType && value === "urn") {
+      payload = {
+        ...resetOperationNameFields,
+        ...resetDefendantNameFields,
+      };
+    }
+    if (field === SearchFormField.searchType && value === "operation name") {
+      payload = {
+        ...resetDefendantNameFields,
+        [SearchFormField.urn]: "",
+      };
+    }
+    if (field === SearchFormField.searchType && value === "defendant name") {
+      payload = {
+        ...resetOperationNameFields,
+        [SearchFormField.urn]: "",
+      };
+    }
+    dispatch({
+      type: "SET_FORM_DATA_FIELD",
+      payload: { ...payload, [field]: value },
+    });
   };
 
   const getSearchParams = () => {

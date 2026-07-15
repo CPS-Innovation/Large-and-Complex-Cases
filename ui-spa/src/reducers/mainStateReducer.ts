@@ -2,10 +2,20 @@ import { type CaseDivisionsOrAreaResponse } from "../schemas";
 import { mapAreaLookups } from "./utils/mapAreaLookups";
 import { FeatureFlagData } from "../common/types/FeatureFlagData";
 
+export type FormData = {
+  searchType: "urn" | "operation name" | "defendant name";
+  operationName: string;
+  operationArea: string;
+  defendantArea: string;
+  defendantName: string;
+  urn: string;
+};
+
 export type MainState = {
   appData: {
     featureFlags: FeatureFlagData | null;
   };
+  formData: FormData;
   apiData: {
     caseDivisionsOrAreas: CaseDivisionsOrAreaResponse | null;
   };
@@ -15,12 +25,24 @@ export const initialState: MainState = {
   appData: {
     featureFlags: null,
   },
+  formData: {
+    searchType: "urn",
+    operationName: "",
+    operationArea: "",
+    defendantArea: "",
+    defendantName: "",
+    urn: "",
+  },
   apiData: {
     caseDivisionsOrAreas: null,
   },
 };
 
 export type MainStateActions =
+  | {
+      type: "SET_FORM_DATA_FIELD";
+      payload: Partial<FormData>;
+    }
   | {
       type: "SET_CASE_DIVISIONS_OR_AREAS";
       payload: {
@@ -59,6 +81,15 @@ export const mainStateReducer = (
         appData: {
           ...state.appData,
           featureFlags: action.payload.featureFlags,
+        },
+      };
+    }
+    case "SET_FORM_DATA_FIELD": {
+      return {
+        ...state,
+        formData: {
+          ...state.formData,
+          ...action.payload,
         },
       };
     }

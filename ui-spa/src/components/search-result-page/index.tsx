@@ -1,11 +1,11 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useContext } from "react";
 import { Button, Input, Select, ErrorSummary, BackLink } from "../govuk";
+import { MainStateContext } from "../../providers/MainStateProvider";
 import { getCaseSearchResults } from "../../apis/gateway-api";
 import useSearchNavigation from "../../common/hooks/useSearchNavigation";
 import {
   useCaseSearchForm,
   SearchFormField,
-  SearchFromData,
 } from "../../common/hooks/useCaseSearchForm";
 import SearchResults from "./SearchResults";
 import { useFormattedAreaValues } from "../../common/hooks/useFormattedAreaValues";
@@ -18,49 +18,58 @@ const CaseSearchResultPage = () => {
   const [triggerSearchApi, setTriggerSearchApi] = useState(false);
   const [validatedAreaValues, setValidatedAreaValues] = useState(false);
   const errorSummaryRef = useRef<HTMLInputElement>(null);
+  const { state, dispatch } = useContext(MainStateContext);
   const { updateSearchParams, searchParams, queryString } =
     useSearchNavigation();
-
-  const getInitialState = () => {
+  const { formData } = state;
+  useEffect(() => {
     const searchParamKeys = Object.keys(searchParams);
-    const initialData: SearchFromData = {
-      searchType: "urn",
-      operationName: "",
-      operationArea: "",
-      defendantName: "",
-      defendantArea: "",
-      urn: "",
-    };
-
     if (
       searchParamKeys.includes("defendant-name") &&
-      searchParamKeys.includes("area")
+      searchParamKeys.includes("area") &&
+      !formData[SearchFormField.defendantName]
     ) {
-      initialData.searchType = "defendant name";
-      initialData.defendantName = searchParams["defendant-name"] ?? "";
-      return initialData;
+      dispatch({
+        type: "SET_FORM_DATA_FIELD",
+        payload: {
+          searchType: "defendant name",
+          defendantName: searchParams["defendant-name"] ?? "",
+          defendantArea: searchParams["area"] ?? "",
+        },
+      });
     }
     if (
       searchParamKeys.includes("operation-name") &&
-      searchParamKeys.includes("area")
+      searchParamKeys.includes("area") &&
+      !formData[SearchFormField.operationName]
     ) {
-      initialData.searchType = "operation name";
-      initialData.operationName = searchParams["operation-name"] ?? "";
-      return initialData;
+      dispatch({
+        type: "SET_FORM_DATA_FIELD",
+        payload: {
+          searchType: "operation name",
+          operationName: searchParams["operation-name"] ?? "",
+          operationArea: searchParams["area"] ?? "",
+        },
+      });
     }
-
-    initialData.urn = searchParams["urn"] ?? "";
-    return initialData;
-  };
+    if (searchParamKeys.includes("urn") && !formData[SearchFormField.urn]) {
+      dispatch({
+        type: "SET_FORM_DATA_FIELD",
+        payload: {
+          searchType: "urn",
+          urn: searchParams["urn"] ?? "",
+        },
+      });
+    }
+  }, [dispatch, formData, searchParams]);
 
   const {
-    formData,
     formDataErrors,
     errorList,
     validateFormData,
     handleFormChange,
     getSearchParams,
-  } = useCaseSearchForm(getInitialState());
+  } = useCaseSearchForm();
 
   const formattedAreaValues = useFormattedAreaValues();
 
@@ -106,7 +115,7 @@ const CaseSearchResultPage = () => {
     }
     if (formattedAreaValues.options.length) setValidatedAreaValues(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formattedAreaValues]);
+  }, [formattedAreaValues, formData]);
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
