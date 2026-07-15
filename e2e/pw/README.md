@@ -214,15 +214,19 @@ Selects which screen the specs drive: `false` (default) = old screen, `true` =
 redesigned screen. It is a **selector only** — it must match what the
 environment renders for `E2E_AD_USER`, or the specs drive the wrong screen and fail.
 
-Specs never branch on this flag directly. They build the Transfer Materials
-page object via `getTransferMaterialsTab(page)`, which reads the switch and
-returns either `TransferMaterialsTab` (old screen) or `TransferMaterialsTabV1`
-(new screen). Both implement the shared `TransferMaterialsTabApi` contract, so
-a spec depends only on that surface and stays screen-agnostic. The new screen
-adds a destination-tree step after Copy/Move — driven by `TransferDestinationPage`
-— because it has no confirm modal. A spec that must diverge (e.g.
-`netapp-to-egress-copy-default`) reads `loadEnvConfig().transferMaterialsV1`
-explicitly rather than referencing screen-specific selectors.
+Specs stay screen-agnostic by building the Transfer Materials page object via
+`getTransferMaterialsTab(page)`, which reads the switch and returns either
+`TransferMaterialsTab` (old screen) or `TransferMaterialsTabV1` (new screen).
+Both implement the shared `TransferMaterialsTabApi` contract, so a spec depends
+only on that surface — no screen-specific selectors.
+
+The one place the flow genuinely differs is the NetApp → Egress destination:
+the old screen navigates the second Egress panel and confirms in a modal, while
+the new screen has no second panel and instead navigates a destination tree
+(`TransferDestinationPage`). The two specs that do this —
+`netapp-to-egress-copy.spec.ts` and `netapp-to-egress-copy-default.spec.ts` —
+branch on `loadEnvConfig().transferMaterialsV1` to pick the right path, rather
+than referencing screen-specific selectors directly.
 
 For a real Azure AD user the new screen renders only when **both** hold:
 
