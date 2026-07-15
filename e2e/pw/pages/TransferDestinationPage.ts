@@ -38,13 +38,22 @@ export class TransferDestinationPage {
     });
   }
 
-  /** Expand a folder node (no-op if already expanded). */
+  /**
+   * Expand a folder node. Waits for the node to render first — children load via
+   * an async fetch, so a bare `count()` can snapshot 0 and silently skip before
+   * the node (or a parent's children) has arrived. Once the node is present,
+   * only click when it's collapsed: the toggle reads "plus" when collapsed and
+   * "minus" when already expanded, so an already-expanded node is a no-op.
+   */
   async expandFolder(folderName: string): Promise<void> {
-    const toggle = this.folderNode(folderName)
+    const node = this.folderNode(folderName);
+    await node.waitFor({ state: "visible", timeout: 30_000 });
+    const toggle = node
       .locator("xpath=..")
-      .getByRole("button", { name: "plus" });
-    if ((await toggle.count()) > 0) {
-      await toggle.first().click();
+      .getByRole("button", { name: "plus" })
+      .first();
+    if (await toggle.isVisible().catch(() => false)) {
+      await toggle.click();
     }
   }
 
@@ -81,10 +90,6 @@ export class TransferDestinationPage {
     await this.page
       .getByRole("button", { name: new RegExp(`^${action} to `) })
       .click();
-  }
-
-  async cancel(): Promise<void> {
-    await this.page.getByRole("button", { name: "Cancel" }).click();
   }
 
   /** Expand ancestors, select the final folder, and confirm. `folderPath` runs
