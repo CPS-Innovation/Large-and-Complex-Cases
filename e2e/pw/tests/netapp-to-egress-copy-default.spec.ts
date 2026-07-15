@@ -2,8 +2,10 @@ import { test } from "../fixtures/test-fixtures-default";
 import { CaseSearchPage } from "../pages/CaseSearchPage";
 import { SearchResultsPage } from "../pages/SearchResultsPage";
 import { CaseManagementPage } from "../pages/CaseManagementPage";
-import { TransferMaterialsTab } from "../pages/TransferMaterialsTab";
+import { getTransferMaterialsTab } from "../pages/getTransferMaterialsTab";
+import { TransferDestinationPage } from "../pages/TransferDestinationPage";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
+import { loadEnvConfig } from "../helpers/env-config";
 import { NETAPP_FIXTURE_FILENAME } from "../helpers/constants";
 
 test.describe("NetApp to Egress Copy (Default Mode)", () => {
@@ -25,7 +27,7 @@ test.describe("NetApp to Egress Copy (Default Mode)", () => {
     await caseMgmt.waitForLoad();
     await caseMgmt.switchToTab("transfer-materials");
 
-    const transferTab = new TransferMaterialsTab(page);
+    const transferTab = getTransferMaterialsTab(page);
     await transferTab.waitForEgressFiles();
     await transferTab.waitForNetAppFiles();
 
@@ -40,15 +42,25 @@ test.describe("NetApp to Egress Copy (Default Mode)", () => {
 
     // Egress destination — different parent folder than upload source,
     // per-run timestamped subfolder so repeat runs never collide.
-    await transferTab.navigateToFolder("2. Counsel only");
-    await transferTab.waitForEgressFiles();
-    if (uploadSubfolder) {
-      await transferTab.navigateToFolder(uploadSubfolder);
+    if (loadEnvConfig().transferMaterialsV1) {
+      // New screen: no second panel — Copy selected navigates to the
+      // destination-tree page where the target folder is chosen.
+      await transferTab.selectReverseAction("Copy");
+      await new TransferDestinationPage(page).chooseFolder("Copy", [
+        "2. Counsel only",
+        uploadSubfolder!,
+      ]);
+    } else {
+      // Old screen: navigate the Egress panel to the destination, then confirm.
+      await transferTab.navigateToFolder("2. Counsel only");
       await transferTab.waitForEgressFiles();
+      if (uploadSubfolder) {
+        await transferTab.navigateToFolder(uploadSubfolder);
+        await transferTab.waitForEgressFiles();
+      }
+      await transferTab.selectReverseAction("Copy");
+      await transferTab.confirmTransfer();
     }
-
-    await transferTab.selectReverseAction("Copy");
-    await transferTab.confirmTransfer();
     await transferTab.waitForTransferComplete();
 
     await caseMgmt.switchToTab("activity-log");

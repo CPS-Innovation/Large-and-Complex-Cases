@@ -2,7 +2,7 @@ import { test } from "../fixtures/test-fixtures-register-case";
 import { CaseSearchPage } from "../pages/CaseSearchPage";
 import { SearchResultsPage } from "../pages/SearchResultsPage";
 import { CaseManagementPage } from "../pages/CaseManagementPage";
-import { TransferMaterialsTab } from "../pages/TransferMaterialsTab";
+import { getTransferMaterialsTab } from "../pages/getTransferMaterialsTab";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
 
 test.describe("Egress to NetApp Copy - Large File (200MB)", () => {
@@ -29,7 +29,7 @@ test.describe("Egress to NetApp Copy - Large File (200MB)", () => {
     await caseMgmt.switchToTab("transfer-materials");
 
     // Step 3: Select this test's uploaded file by name and initiate Copy
-    const transferTab = new TransferMaterialsTab(page);
+    const transferTab = getTransferMaterialsTab(page);
     await transferTab.waitForEgressFiles();
     await transferTab.navigateToFolder("4. Served Evidence");
     await transferTab.waitForEgressFiles();
