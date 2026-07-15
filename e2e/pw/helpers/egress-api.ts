@@ -361,8 +361,6 @@ export async function getUploadedFile(
   let i = 1
 
   while (Date.now() - start < timeoutMs) {
-    console.log(`   Attempt number ${i}...`)
-
     const response = await fetch(
       `${baseUrl}/api/v1/workspaces/${workspaceId}/uploads/${uploadId}?view=full`,
       {
@@ -390,9 +388,6 @@ export async function getUploadedFile(
       };
     }
 
-    i++;
-
-    console.log(`   Retrying in ${retryDelay / 1000}s...`)
     await new Promise(r => setTimeout(r, retryDelay));
   }
 
