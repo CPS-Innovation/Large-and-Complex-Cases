@@ -1,7 +1,9 @@
 .contentWrapper {
-  max-width: 80%;
-  & :global(.govuk-inset-text) {
+  @media (min-width: 60rem) {
     max-width: 80%;
+    & :global(.govuk-inset-text) {
+      max-width: 80%;
+    }
   }
   .btnStartTransfer {
     margin-bottom: 3rem;
