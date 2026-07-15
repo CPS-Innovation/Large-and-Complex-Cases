@@ -90,11 +90,55 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             Assert.Equal(caseMetadata.NetappFolderPath, response.NetappFolderPath);
             Assert.Equal(cmsResponse.Urn, response.Urn);
             Assert.Equal(cmsResponse.OperationName, response.OperationName);
+            Assert.Equal(cmsResponse.LeadDefendantName, response.LeadDefendantName);
+            Assert.Equal(cmsResponse.RegistrationDate, response.RegistrationDate);
             Assert.Equal(caseMetadata.ActiveTransferId, response.ActiveTransferId);
 
             _caseClientMock.Verify(c => c.GetCaseMetadataForCaseIdAsync(caseId), Times.Once);
             _ddeiArgFactoryMock.Verify(f => f.CreateCaseArg(cmsAuthValues, correlationId, caseId), Times.Once);
             _ddeiClientMock.Verify(c => c.GetCaseAsync(caseArg), Times.Once);
+        }
+
+        [Fact]
+        public async Task Run_ReturnsLeadDefendantName_WhenOperationNameIsNull()
+        {
+            // Arrange
+            var caseId = _fixture.Create<int>();
+            var correlationId = _fixture.Create<Guid>();
+            var cmsAuthValues = _fixture.Create<string>();
+            var caseMetadata = _fixture.Build<CaseMetadata>()
+                                      .With(c => c.CaseId, caseId)
+                                      .Create();
+            var cmsResponse = _fixture.Build<CaseDto>()
+                                      .With(c => c.OperationName, (string?)null)
+                                      .With(c => c.LeadDefendantName, "Doe, John")
+                                      .Create();
+            var caseArg = _fixture.Create<DdeiCaseIdArgDto>();
+
+            _caseClientMock
+                .Setup(c => c.GetCaseMetadataForCaseIdAsync(caseId))
+                .ReturnsAsync(caseMetadata);
+
+            _ddeiArgFactoryMock
+                .Setup(f => f.CreateCaseArg(cmsAuthValues, correlationId, caseId))
+                .Returns(caseArg);
+
+            _ddeiClientMock
+                .Setup(c => c.GetCaseAsync(caseArg))
+                .ReturnsAsync(cmsResponse);
+
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(correlationId, cmsAuthValues, _fixture.Create<string>(), _fixture.Create<string>());
+            var httpRequest = HttpRequestStubHelper.CreateHttpRequest(correlationId);
+
+            // Act
+            var result = await _function.Run(httpRequest, functionContext, caseId);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<CaseWithMetadataResponse>(okResult.Value);
+
+            Assert.Null(response.OperationName);
+            Assert.Equal("Doe, John", response.LeadDefendantName);
         }
 
         [Fact]
