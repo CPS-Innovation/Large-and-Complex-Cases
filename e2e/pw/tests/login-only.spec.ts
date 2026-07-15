@@ -47,7 +47,7 @@ test.describe("Full-flow smoke", () => {
     );
     await transferTab.selectAllEgressFiles();
     await transferTab.selectAction("Copy");
-    await transferTab.confirmTransfer();
+    await transferTab.confirmTransfer("Copy");
     await transferTab.waitForTransferComplete();
 
     // Step 3: Verify file landed in the NetApp panel (screen-agnostic).

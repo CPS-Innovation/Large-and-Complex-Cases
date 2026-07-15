@@ -45,7 +45,7 @@ test.describe("Egress to NetApp Move", () => {
     await transferTab.selectAction("Move");
 
     // Step 4: Confirm and wait for completion
-    await transferTab.confirmTransfer();
+    await transferTab.confirmTransfer("Move");
     await transferTab.waitForTransferComplete();
 
     // Step 5: Verify in Activity Log

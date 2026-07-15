@@ -16,7 +16,9 @@ export interface TransferMaterialsTabApi {
   selectEgressFileByName(fileName: string): Promise<void>;
   selectAction(action: "Copy" | "Move"): Promise<void>;
   selectReverseAction(action: "Copy" | "Move"): Promise<void>;
-  confirmTransfer(): Promise<void>;
+  /** Confirm the pending transfer. `action` must match the Copy/Move just
+   * initiated — the new screen's confirm button reads "<action> to <folder>". */
+  confirmTransfer(action: "Copy" | "Move"): Promise<void>;
   waitForTransferComplete(timeout?: number): Promise<void>;
   /** Recover from a transfer error page back to case management so the tab can
    * be re-entered. No-op when not on an error page. */

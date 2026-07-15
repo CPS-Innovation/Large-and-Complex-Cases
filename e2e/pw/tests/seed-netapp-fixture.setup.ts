@@ -95,7 +95,7 @@ setup("seed lcc-e2e-fixture-source.txt to NetApp", async ({ page }) => {
   ]);
   await transferTab.selectEgressFileByName(NETAPP_FIXTURE_FILENAME);
   await transferTab.selectAction("Copy");
-  await transferTab.confirmTransfer();
+  await transferTab.confirmTransfer("Copy");
 
   // Idempotent: if the fixture is already on NetApp, the UI's pre-flight
   // rejects the transfer with "Some files already exist in the destination

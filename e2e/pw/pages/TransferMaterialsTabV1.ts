@@ -22,9 +22,6 @@ export class TransferMaterialsTabV1
   implements TransferMaterialsTabApi
 {
   protected readonly netAppWrapperTestId = "shared drive-table-wrapper";
-  // Remembered so confirmTransfer knows whether the destination-page button
-  // reads "Copy to …" or "Move to …".
-  private lastAction: "Copy" | "Move" = "Copy";
 
   /** Row checkbox for a shared-drive file, by its exact aria-label. */
   private fileCheckbox(fileName: string): Locator {
@@ -36,7 +33,6 @@ export class TransferMaterialsTabV1
   /** Click the shared Copy/Move control. Renders in a top and bottom bar (target
    * the first); Move only appears when the source is Egress. */
   private async clickTransferControl(action: "Copy" | "Move"): Promise<void> {
-    this.lastAction = action;
     await this.page
       .getByRole("button", { name: `${action} selected` })
       .first()
@@ -129,13 +125,14 @@ export class TransferMaterialsTabV1
   /**
    * Confirm the transfer. No modal on the new screen: Copy/Move already
    * navigated to the destination tree — pick the first selectable folder (the
-   * connected root) and click the `<Copy|Move> to <folder>` button.
+   * connected root) and click the `<action> to <folder>` button. `action` must
+   * match the Copy/Move just initiated (the button label depends on it).
    */
-  async confirmTransfer(): Promise<void> {
+  async confirmTransfer(action: "Copy" | "Move"): Promise<void> {
     const destination = new TransferDestinationPage(this.page);
     await destination.waitForLoaded();
     await destination.selectFirstSelectableFolder();
-    await destination.confirm(this.lastAction);
+    await destination.confirm(action);
   }
 
   /**

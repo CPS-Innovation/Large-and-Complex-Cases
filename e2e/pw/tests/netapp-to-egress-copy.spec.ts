@@ -67,7 +67,7 @@ test.describe("NetApp to Egress Copy", () => {
         await transferTab.waitForEgressFiles();
       }
       await transferTab.selectReverseAction("Copy");
-      await transferTab.confirmTransfer();
+      await transferTab.confirmTransfer("Copy");
     }
     await transferTab.waitForTransferComplete();
 

@@ -55,7 +55,7 @@ test.describe("Egress to NetApp Copy - Multiple Files (10MB x 3)", () => {
     await transferTab.selectAction("Copy");
 
     // Step 4: Confirm and wait for completion
-    await transferTab.confirmTransfer();
+    await transferTab.confirmTransfer("Copy");
     await transferTab.waitForTransferComplete(300_000);
 
     // Step 5: Verify in Activity Log

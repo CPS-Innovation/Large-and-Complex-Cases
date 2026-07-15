@@ -56,7 +56,7 @@ test.describe("Egress to NetApp Copy (Default Mode)", () => {
     await transferTab.selectAction("Copy");
 
     // Step 5: Confirm transfer
-    await transferTab.confirmTransfer();
+    await transferTab.confirmTransfer("Copy");
 
     // Step 6: Wait for transfer to complete
     await transferTab.waitForTransferComplete();

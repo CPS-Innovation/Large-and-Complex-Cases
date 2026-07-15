@@ -54,7 +54,7 @@ test.describe(`Egress to NetApp Copy - Large File ${fileSize}MB (Default Mode)`,
     await transferTab.selectAction("Copy");
 
     // Step 5: Confirm transfer
-    await transferTab.confirmTransfer();
+    await transferTab.confirmTransfer("Copy");
 
     // Step 6: Wait for transfer to complete (5 min timeout for large file)
     await transferTab.waitForTransferComplete(300_000);

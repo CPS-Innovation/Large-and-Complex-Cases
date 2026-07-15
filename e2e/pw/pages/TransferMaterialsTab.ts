@@ -70,7 +70,10 @@ export class TransferMaterialsTab
       .click();
   }
 
-  async confirmTransfer() {
+  async confirmTransfer(_action: "Copy" | "Move") {
+    // The old-screen confirm modal is action-agnostic (the "I want to
+    // copy/move" radio matches either), so `_action` is accepted only to
+    // satisfy the shared contract.
     const modal = this.page.getByTestId("div-modal");
     await modal.waitFor({ state: "visible", timeout: 30000 });
     await modal.getByLabel(/I want to (copy|move)/).click();
