@@ -433,7 +433,7 @@ export async function listEgressWorkspaceFilesByFolderId(
     try {
       for (let page = 0; page < maxPages; page++) {
         const skip = page * pageSize;
-        const url = `${baseUrl}/api/v1/workspaces/${workspaceId}/files?folder=${encodeURIComponent(folderId)}`;
+        const url = `${baseUrl}/api/v1/workspaces/${workspaceId}/files?view=full&skip=${skip}&limit=${pageSize}&folder=${encodeURIComponent(folderId)}`;
         const response = await fetch(url, {
           headers: { Authorization: `Basic ${token}` },
         });
