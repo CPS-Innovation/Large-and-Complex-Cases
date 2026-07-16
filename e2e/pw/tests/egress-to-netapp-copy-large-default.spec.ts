@@ -3,7 +3,7 @@ import { loadEnvConfig } from "../helpers/env-config";
 import { CaseSearchPage } from "../pages/CaseSearchPage";
 import { SearchResultsPage } from "../pages/SearchResultsPage";
 import { CaseManagementPage } from "../pages/CaseManagementPage";
-import { TransferMaterialsTab } from "../pages/TransferMaterialsTab";
+import { getTransferMaterialsTab } from "../pages/getTransferMaterialsTab";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
 
 const fileSize = loadEnvConfig().largeTestFileSizeMb;
@@ -31,7 +31,7 @@ test.describe(`Egress to NetApp Copy - Large File ${fileSize}MB (Default Mode)`,
     await caseMgmt.switchToTab("transfer-materials");
 
     // Step 4: Select files from Egress panel and initiate Copy
-    const transferTab = new TransferMaterialsTab(page);
+    const transferTab = getTransferMaterialsTab(page);
     await transferTab.waitForEgressFiles();
     await transferTab.navigateToFolder("4. Served Evidence");
     await transferTab.waitForEgressFiles();
@@ -54,7 +54,7 @@ test.describe(`Egress to NetApp Copy - Large File ${fileSize}MB (Default Mode)`,
     await transferTab.selectAction("Copy");
 
     // Step 5: Confirm transfer
-    await transferTab.confirmTransfer();
+    await transferTab.confirmTransfer("Copy");
 
     // Step 6: Wait for transfer to complete (5 min timeout for large file)
     await transferTab.waitForTransferComplete(300_000);
