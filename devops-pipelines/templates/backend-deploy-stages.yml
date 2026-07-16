@@ -137,7 +137,8 @@ stages:
 
       - ${{ if eq(parameters.deployMainApi, true) }}:
           - deployment: Deploy_Main_API
-            dependsOn: Deploy_Database_Changes
+            ${{ if eq(parameters.deployDB, true) }}:
+              dependsOn: Deploy_Database_Changes
             displayName: "${{ parameters.environment }} - Deploy Main API Function App"
             environment: "LACC-Backend-${{ parameters.environment }}"
             strategy:
@@ -161,7 +162,8 @@ stages:
 
       - ${{ if eq(parameters.deployFiletransfer, true) }}:
           - deployment: Deploy_FileTransfer_API
-            dependsOn: Deploy_Database_Changes
+            ${{ if eq(parameters.deployDB, true) }}:
+              dependsOn: Deploy_Database_Changes
             displayName: "${{ parameters.environment }} - Deploy FileTransfer API Function App"
             environment: "LACC-Backend-${{ parameters.environment }}"
             strategy:
