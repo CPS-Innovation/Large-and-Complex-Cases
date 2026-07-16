@@ -402,8 +402,11 @@ public class InitiateBatchMoveTests
         var okResult = Assert.IsType<OkObjectResult>(result);
         var response = Assert.IsType<MoveNetAppBatchResponse>(okResult.Value);
         Assert.Equal("NoOp", response.Status);
+        Assert.Equal(1, response.TotalRequested);
         Assert.Equal(0, response.Failed);
         Assert.Equal(0, response.Succeeded);
+        Assert.Equal(0, response.NotFound);
+        Assert.Equal(1, response.AlreadyInPlace);
         Assert.Equal(OperationResultStatus.AlreadyInPlace, response.Results[0].Status);
         Assert.Equal("The item is already in the destination location.", response.Results[0].Error);
         _ontapHttpClientMock.Verify(

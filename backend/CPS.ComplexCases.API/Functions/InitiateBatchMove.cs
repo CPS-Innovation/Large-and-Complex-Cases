@@ -317,6 +317,7 @@ public class InitiateBatchMove(
             TotalRequested = totalRequested,
             Succeeded = succeeded,
             NotFound = notFound,
+            AlreadyInPlace = alreadyInPlace,
             Failed = failed,
             Results = results,
         };
