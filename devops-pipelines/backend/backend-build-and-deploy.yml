@@ -7,31 +7,42 @@ trigger:
     include:
       - backend/*
 
+parameters:
+  - name: deployDB
+    type: boolean
+    default: true
+  - name: deployMainApi
+    type: boolean
+    default: true
+  - name: deployFiletransfer
+    type: boolean
+    default: true
+
 pr: none
 
 variables:
   - group: lacc-deployment-global
   - name: buildConfiguration
-    value: 'Release'
+    value: "Release"
   - name: dotNetVersion
-    value: '8.x'
+    value: "8.x"
   - name: efVersion
-    value: '8.0.*'
+    value: "8.0.*"
   - name: asposeLicenceFileName
-    value: 'Aspose.Total.NET.lic'
+    value: "Aspose.Total.NET.lic"
 
 stages:
-  - stage: Preflight
-    displayName: 'Preflight Checks & Preparation'
-    pool: 'LACC PreProd Pool'
+  - stage: Build_Local_NuGet
+    displayName: "Pack and Publish NuGet Package"
+    pool: "LACC PreProd Pool"
     jobs:
       - job: Package_NuGet
-        displayName: 'Pack and Publish NuGet Package'
+        displayName: "Pack and Publish NuGet Package"
         steps:
           - template: ../templates/dotnet-build-steps.yml
             parameters:
-              projectPath: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-              projectName: 'HttpTelemetry'
+              projectPath: "backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj"
+              projectName: "HttpTelemetry"
               buildConfiguration: $(buildConfiguration)
               dotNetVersion: $(dotNetVersion)
               useLocalNuGet: false
@@ -39,88 +50,100 @@ stages:
               runTests: false
 
           - task: DotNetCoreCLI@2
-            displayName: 'Pack HttpTelemetry'
+            displayName: "Pack HttpTelemetry"
             inputs:
-              command: 'pack'
-              packagesToPack: 'backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj'
-              outputDir: '$(Build.ArtifactStagingDirectory)'
-              arguments: '--configuration $(buildConfiguration) --no-build'
+              command: "pack"
+              packagesToPack: "backend/CPS.ComplexCases.API.HttpTelemetry/CPS.ComplexCases.API.HttpTelemetry.csproj"
+              outputDir: "$(Build.ArtifactStagingDirectory)"
+              arguments: "--configuration $(buildConfiguration) --no-build"
 
-          - publish: '$(Build.ArtifactStagingDirectory)'
-            artifact: 'localnuget'
-            displayName: 'Publish HttpTelemetry Package'
+          - publish: "$(Build.ArtifactStagingDirectory)"
+            artifact: "localnuget"
+            displayName: "Publish HttpTelemetry Package"
 
-  - stage: Build_API
-    displayName: 'Build APIs for Deployment'
-    dependsOn: Preflight
-    pool: 'LACC PreProd Pool'
+  - stage: Build_Backend
+    displayName: "Generate Build Artifacts for Deployment"
+    dependsOn: Build_Local_NuGet
+    pool: "LACC PreProd Pool"
     jobs:
-      - job: Build_Main_API_And_DB
-        displayName: 'Build Main API & DB Migration Scripts'
-        steps:
-          - task: DownloadSecureFile@1
-            inputs:
-              secureFile: $(asposeLicenceFileName)
-            displayName: 'Download Aspose Licence File'
+      - ${{ if or(eq(parameters.deployMainApi, true), eq(parameters.deployDB, true)) }}:
+          - job: Build_Main_API_And_DB
+            displayName: "Build Main API & DB Migration Scripts"
+            steps:
+              - ${{ if eq(parameters.deployMainApi, true) }}:
+                  - task: DownloadSecureFile@1
+                    inputs:
+                      secureFile: $(asposeLicenceFileName)
+                    displayName: "Download Aspose Licence File"
 
-          - task: CopyFiles@2
-            inputs:
-              sourceFolder: $(Agent.TempDirectory)
-              contents: $(asposeLicenceFileName)
-              targetFolder: 'backend/CPS.ComplexCases.API/Licences'
-              OverWrite: true
-            displayName: 'Copy Aspose Licence File to Project Folder'
+                  - task: CopyFiles@2
+                    inputs:
+                      sourceFolder: $(Agent.TempDirectory)
+                      contents: $(asposeLicenceFileName)
+                      targetFolder: "backend/CPS.ComplexCases.API/Licences"
+                      OverWrite: true
+                    displayName: "Copy Aspose Licence File to Project Folder"
 
-          - template: ../templates/dotnet-build-steps.yml
-            parameters:
-              projectPath: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-              projectName: 'lacc-main-api'
-              buildConfiguration: $(buildConfiguration)
-              dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: true
-              publishOutput: true
-              runTests: false
+              # When buildMainApi=false, the project still needs building
+              # as the startup project for the database migration script
+              - template: ../templates/dotnet-build-steps.yml
+                parameters:
+                  projectPath: "backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj"
+                  projectName: "lacc-main-api"
+                  buildConfiguration: $(buildConfiguration)
+                  dotNetVersion: $(dotNetVersion)
+                  useLocalNuGet: true
+                  ${{ if eq(parameters.deployMainApi, true) }}:
+                    publishOutput: true
+                  ${{ else }}:
+                    publishOutput: false
+                  runTests: false
 
-          - task: DotNetCoreCLI@2
-            displayName: 'Build Database Project'
-            inputs:
-              command: 'build'
-              projects: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
-              arguments: '--configuration $(buildConfiguration) '
+              - ${{ if eq(parameters.deployDB, true) }}:
+                  - task: DotNetCoreCLI@2
+                    displayName: "Build Database Project"
+                    inputs:
+                      command: "build"
+                      projects: "backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj"
+                      arguments: "--configuration $(buildConfiguration)"
 
-          - task: Bash@3
-            displayName: 'Generate Migration Scripts'
-            inputs:
-              filePath: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/generateDBMigrationScripts.sh'
-            env:
-              EF_VERSION: $(efVersion)
-              DATA_PROJECT_PATH: 'backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj'
-              STARTUP_PROJECT_PATH: 'backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj'
-              MIGRATION_SCRIPT_OUT: 'database-artifact/migration-script.sql'
-              ROLLBACK_SCRIPT_OUT: 'database-artifact/rollback-migration-script.sql'
+                  - task: Bash@3
+                    displayName: "Generate Migration Scripts"
+                    inputs:
+                      filePath: "$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/generateDBMigrationScripts.sh"
+                    env:
+                      EF_VERSION: $(efVersion)
+                      DATA_PROJECT_PATH: "backend/CPS.ComplexCases.Data/CPS.ComplexCases.Data.csproj"
+                      STARTUP_PROJECT_PATH: "backend/CPS.ComplexCases.API/CPS.ComplexCases.API.csproj"
+                      MIGRATION_SCRIPT_OUT: "database-artifact/migration-script.sql"
+                      ROLLBACK_SCRIPT_OUT: "database-artifact/rollback-migration-script.sql"
 
-          - publish: 'database-artifact'
-            artifact: 'database-scripts-drop'
-            displayName: 'Publish Database Scripts'
+                  - publish: "database-artifact"
+                    artifact: "database-scripts-drop"
+                    displayName: "Publish Database Scripts"
 
-      - job: Build_FileTransfer_API
-        displayName: 'Build FileTransfer API'
-        steps:
-          - template: ../templates/dotnet-build-steps.yml
-            parameters:
-              projectPath: 'backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj'
-              projectName: 'lacc-filetransfer-api'
-              buildConfiguration: $(buildConfiguration)
-              dotNetVersion: $(dotNetVersion)
-              useLocalNuGet: true
-              publishOutput: true
-              runTests: false
+      - ${{ if eq(parameters.deployFiletransfer, true) }}:
+          - job: Build_FileTransfer_API
+            displayName: "Build FileTransfer API"
+            steps:
+              - template: ../templates/dotnet-build-steps.yml
+                parameters:
+                  projectPath: "backend/CPS.ComplexCases.FileTransfer.API/CPS.ComplexCases.FileTransfer.API.csproj"
+                  projectName: "lacc-filetransfer-api"
+                  buildConfiguration: $(buildConfiguration)
+                  dotNetVersion: $(dotNetVersion)
+                  useLocalNuGet: true
+                  publishOutput: true
+                  runTests: false
 
   # Deployment stages:
   - template: ../templates/backend-deploy-stages.yml
     parameters:
       environment: dev
       requireValidation: false
+      deployMainApi: ${{ parameters.deployMainApi }}
+      deployFiletransfer: ${{ parameters.deployFiletransfer }}
+      deployDB: ${{ parameters.deployDB }}
 
   - template: ../templates/backend-deploy-stages.yml
     parameters:
@@ -129,8 +152,11 @@ stages:
       notifyUsers: $(preprodNotifyUsers)
       approvers: $(preprodApprovers)
       deployToSlot: true
-      slotName: 'stg'
+      slotName: "stg"
       runPostmanSmokeTest: true
+      deployMainApi: ${{ parameters.deployMainApi }}
+      deployFiletransfer: ${{ parameters.deployFiletransfer }}
+      deployDB: ${{ parameters.deployDB }}
 
   - stage: Run_E2E_Tests
     displayName: "Run E2E tests"
@@ -145,7 +171,10 @@ stages:
       requireValidation: true
       notifyUsers: $(prodNotifyUsers)
       approvers: $(prodApprovers)
-      agentPool: 'LACC Prod Pool'
-      azureSubscription: 'Azure Pipeline: Large and Complex Cases - Prod'
+      agentPool: "LACC Prod Pool"
+      azureSubscription: "Azure Pipeline: Large and Complex Cases - Prod"
       deployToSlot: true
-      slotName: 'stg'
+      slotName: "stg"
+      deployMainApi: ${{ parameters.deployMainApi }}
+      deployFiletransfer: ${{ parameters.deployFiletransfer }}
+      deployDB: ${{ parameters.deployDB }}
