@@ -33,15 +33,16 @@ public static class NetAppBatchCopyValidationRules
         IEnumerable<(string Type, string SourcePath)> operations,
         string destinationPrefix)
     {
-        foreach (var op in operations)
+        var operationList = operations.ToList();
+
+        foreach (var op in operationList)
         {
             if (string.IsNullOrEmpty(op.SourcePath))
                 continue;
 
             if (IsMaterialType(op.Type))
             {
-                var fileName = Path.GetFileName(op.SourcePath);
-                var computedDest = destinationPrefix + fileName;
+                var computedDest = ComputeDestinationPath(op.Type, op.SourcePath, destinationPrefix);
                 if (string.Equals(op.SourcePath, computedDest, StringComparison.OrdinalIgnoreCase))
                     yield return $"Source and destination are the same for path '{op.SourcePath}'.";
             }
@@ -53,6 +54,37 @@ public static class NetAppBatchCopyValidationRules
                     yield return $"Folder copy destination '{destinationPrefix}' is a child of source '{op.SourcePath}'. Cannot copy a folder into itself.";
             }
         }
+
+        foreach (var error in GetDuplicateDestinationErrors(operationList, destinationPrefix))
+            yield return error;
+    }
+
+    public static IEnumerable<string> GetDuplicateDestinationErrors(
+        IEnumerable<(string Type, string SourcePath)> operations,
+        string destinationPrefix)
+    {
+        var destinations = operations
+            .Where(op => !string.IsNullOrEmpty(op.SourcePath))
+            .Select(op => ComputeDestinationPath(op.Type, op.SourcePath, destinationPrefix))
+            .Where(dest => !string.IsNullOrEmpty(dest))
+            .ToList();
+
+        return destinations
+            .GroupBy(dest => dest, StringComparer.OrdinalIgnoreCase)
+            .Where(g => g.Count() > 1)
+            .Select(g => $"Duplicate destination within batch: {g.Key}");
+    }
+
+    public static string ComputeDestinationPath(string type, string sourcePath, string destinationPrefix)
+    {
+        var trimmed = sourcePath.TrimEnd('/');
+        var lastSlash = trimmed.LastIndexOf('/');
+        var name = lastSlash >= 0 ? trimmed[(lastSlash + 1)..] : trimmed;
+
+        if (IsFolderType(type))
+            return $"{destinationPrefix}{name}/";
+
+        return $"{destinationPrefix}{name}";
     }
 
     public static bool PathsOverlap(string pathA, string pathB)
