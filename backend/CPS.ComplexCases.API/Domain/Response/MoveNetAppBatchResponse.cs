@@ -4,10 +4,10 @@ public class MoveNetAppBatchResponse
 {
     /// <summary>
     /// Overall outcome of the batch.
-    /// Completed: all items moved with no failures.
-    /// PartiallyCompleted: at least one item moved and at least one failed.
-    /// Failed: no items moved; all that were attempted resulted in failure/conflict.
-    /// NoOp: no items needed moving (all were NotFound).
+    /// Completed: every item moved successfully.
+    /// PartiallyCompleted: at least one item moved and at least one was NotFound, AlreadyInPlace, Failed, or Conflict.
+    /// Failed: no items moved; at least one Failed or Conflict.
+    /// NoOp: no items needed moving (all were NotFound and/or AlreadyInPlace).
     /// </summary>
     public string Status { get; set; } = string.Empty;
     public int TotalRequested { get; set; }

@@ -184,6 +184,38 @@ public class InitiateBatchMoveTests
     }
 
     [Fact]
+    public async Task Run_WhenActiveTransferIdIsSet_ReturnsConflict()
+    {
+        SetupValidRequest(ValidDto());
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForCaseIdAsync(It.IsAny<int>()))
+            .ReturnsAsync(new CaseMetadata
+            {
+                CaseId = 1,
+                NetappFolderPath = TestNetAppFolder,
+                ActiveTransferId = Guid.NewGuid(),
+            });
+
+        var req = HttpRequestStubHelper.CreateHttpRequest(_testCorrelationId);
+
+        var result = await _function.Run(req, CreateFunctionContext());
+
+        var conflict = Assert.IsType<ConflictObjectResult>(result);
+        Assert.Equal(
+            "A case-wide file transfer is in progress. Please wait for it to complete before starting a move operation.",
+            conflict.Value);
+        _caseActiveManageMaterialsServiceMock.Verify(
+            s => s.CheckConflictAndInsertAsync(
+                It.IsAny<CaseActiveManageMaterialsOperation>(),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<IEnumerable<string>>()),
+            Times.Never);
+        _ontapHttpClientMock.Verify(
+            c => c.RenameMaterialAsync(It.IsAny<MaterialRenameArg>()),
+            Times.Never);
+    }
+
+    [Fact]
     public async Task Run_WhenConflictLockNotAcquired_ReturnsConflict()
     {
         SetupValidRequest(ValidDto());
@@ -268,6 +300,53 @@ public class InitiateBatchMoveTests
     }
 
     [Fact]
+    public async Task Run_WhenMixedMovedAndNotFound_ReturnsPartiallyCompleted()
+    {
+        var dto = new MoveNetAppBatchDto
+        {
+            CaseId = 1,
+            DestinationPrefix = $"{TestNetAppFolder}/Folder-B/",
+            Operations =
+            [
+                new() { Type = NetAppBatchOperationType.Material, SourcePath = $"{TestNetAppFolder}/file1.txt" },
+                new() { Type = NetAppBatchOperationType.Material, SourcePath = $"{TestNetAppFolder}/missing.txt" },
+            ]
+        };
+        SetupValidRequest(dto);
+
+        _ontapArgFactoryMock
+            .Setup(f => f.CreateMaterialRenameArg(
+                It.IsAny<string>(),
+                It.IsAny<Guid>(),
+                It.IsAny<string>(),
+                It.IsAny<string>()))
+            .Returns((string token, Guid uuid, string sourcePath, string destinationPath) =>
+                new MaterialRenameArg
+                {
+                    BearerToken = token,
+                    OntapVolumeUuid = uuid,
+                    CurrentFilePath = sourcePath,
+                    NewFilePath = destinationPath
+                });
+
+        _ontapHttpClientMock
+            .SetupSequence(c => c.RenameMaterialAsync(It.IsAny<MaterialRenameArg>()))
+            .ReturnsAsync(new MaterialRenameResult(Success: true, WasFound: true, KeysRenamed: 1, ErrorMessage: null, ErrorStatusCode: null))
+            .ReturnsAsync(new MaterialRenameResult(Success: false, WasFound: false, KeysRenamed: 0, ErrorMessage: "Not found", ErrorStatusCode: 404));
+
+        var req = HttpRequestStubHelper.CreateHttpRequest(_testCorrelationId);
+
+        var result = await _function.Run(req, CreateFunctionContext());
+
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<MoveNetAppBatchResponse>(okResult.Value);
+        Assert.Equal("PartiallyCompleted", response.Status);
+        Assert.Equal(1, response.Succeeded);
+        Assert.Equal(1, response.NotFound);
+        Assert.Equal(0, response.Failed);
+    }
+
+    [Fact]
     public async Task Run_WhenOntapReturnsConflict_IncludesConflictInResults()
     {
         SetupValidRequest(ValidDto());
@@ -307,6 +386,42 @@ public class InitiateBatchMoveTests
     }
 
     [Fact]
+    public async Task Run_WhenFolderAlreadyInDestination_ReturnsAlreadyInPlaceAsNoOp()
+    {
+        var dto = new MoveNetAppBatchDto
+        {
+            CaseId = 1,
+            DestinationPrefix = $"{TestNetAppFolder}/",
+            Operations = [new() { Type = NetAppBatchOperationType.Folder, SourcePath = $"{TestNetAppFolder}/Folder-A/" }]
+        };
+        SetupValidRequest(dto);
+        var req = HttpRequestStubHelper.CreateHttpRequest(_testCorrelationId);
+
+        var result = await _function.Run(req, CreateFunctionContext());
+
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<MoveNetAppBatchResponse>(okResult.Value);
+        Assert.Equal("NoOp", response.Status);
+        Assert.Equal(0, response.Failed);
+        Assert.Equal(0, response.Succeeded);
+        Assert.Equal(OperationResultStatus.AlreadyInPlace, response.Results[0].Status);
+        Assert.Equal("The item is already in the destination location.", response.Results[0].Error);
+        _ontapHttpClientMock.Verify(
+            c => c.RenameMaterialAsync(It.IsAny<MaterialRenameArg>()),
+            Times.Never);
+        _activityLogServiceMock.Verify(
+            s => s.CreateActivityLogAsync(
+                It.IsAny<ActivityLog.Enums.ActionType>(),
+                It.IsAny<ActivityLog.Enums.ResourceType>(),
+                It.IsAny<int>(),
+                It.IsAny<string>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<System.Text.Json.JsonDocument?>()),
+            Times.Never);
+    }
+
+    [Fact]
     public async Task Run_WhenOntapUnauthorizedExceptionOccurs_PropagatesUnauthorized()
     {
         SetupValidRequest(ValidDto());
@@ -316,6 +431,74 @@ public class InitiateBatchMoveTests
         var exception = await Assert.ThrowsAsync<OntapUnauthorizedException>(() => _function.Run(req, CreateFunctionContext()));
 
         Assert.Equal("Unauthorized access to ONTAP.", exception.Message);
+        _activityLogServiceMock.Verify(
+            s => s.CreateActivityLogAsync(
+                It.IsAny<ActivityLog.Enums.ActionType>(),
+                It.IsAny<ActivityLog.Enums.ResourceType>(),
+                It.IsAny<int>(),
+                It.IsAny<string>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<System.Text.Json.JsonDocument?>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_WhenAuthFailsMidBatch_WritesActivityLogForCompletedMovesThenRethrows()
+    {
+        var dto = new MoveNetAppBatchDto
+        {
+            CaseId = 1,
+            DestinationPrefix = $"{TestNetAppFolder}/Folder-B/",
+            Operations =
+            [
+                new() { Type = NetAppBatchOperationType.Material, SourcePath = $"{TestNetAppFolder}/file1.txt" },
+                new() { Type = NetAppBatchOperationType.Material, SourcePath = $"{TestNetAppFolder}/file2.txt" },
+                new() { Type = NetAppBatchOperationType.Material, SourcePath = $"{TestNetAppFolder}/file3.txt" },
+            ]
+        };
+        SetupValidRequest(dto);
+
+        _ontapArgFactoryMock
+            .Setup(f => f.CreateMaterialRenameArg(
+                It.IsAny<string>(),
+                It.IsAny<Guid>(),
+                It.IsAny<string>(),
+                It.IsAny<string>()))
+            .Returns((string token, Guid uuid, string sourcePath, string destinationPath) =>
+                new MaterialRenameArg
+                {
+                    BearerToken = token,
+                    OntapVolumeUuid = uuid,
+                    CurrentFilePath = sourcePath,
+                    NewFilePath = destinationPath
+                });
+
+        var success = new MaterialRenameResult(Success: true, WasFound: true, KeysRenamed: 1, ErrorMessage: null, ErrorStatusCode: null);
+        _ontapHttpClientMock
+            .SetupSequence(c => c.RenameMaterialAsync(It.IsAny<MaterialRenameArg>()))
+            .ReturnsAsync(success)
+            .ReturnsAsync(success)
+            .ThrowsAsync(new OntapUnauthorizedException("Unauthorized access to ONTAP."));
+
+        var req = HttpRequestStubHelper.CreateHttpRequest(_testCorrelationId);
+
+        var exception = await Assert.ThrowsAsync<OntapUnauthorizedException>(() => _function.Run(req, CreateFunctionContext()));
+
+        Assert.Equal("Unauthorized access to ONTAP.", exception.Message);
+        _activityLogServiceMock.Verify(
+            s => s.CreateActivityLogAsync(
+                ActivityLog.Enums.ActionType.MaterialMoved,
+                ActivityLog.Enums.ResourceType.Material,
+                dto.CaseId,
+                dto.CaseId.ToString(),
+                null,
+                _testUsername,
+                It.IsAny<System.Text.Json.JsonDocument?>()),
+            Times.Once);
+        _caseActiveManageMaterialsServiceMock.Verify(
+            s => s.DeleteOperationAsync(It.IsAny<Guid>()),
+            Times.Once);
     }
 
     [Fact]

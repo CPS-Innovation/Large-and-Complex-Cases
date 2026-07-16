@@ -146,6 +146,8 @@ public class MaterialBatchRename(
             }
             catch (Exception ex) when (ex is OntapUnauthorizedException or OntapClientException { StatusCode: HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden })
             {
+                // Items already renamed must be audited before the auth failure propagates.
+                await WriteRenameActivityLogAsync(renameRequest.Value, results, context.Username);
                 throw;
             }
             catch (Exception ex)
@@ -165,71 +167,74 @@ public class MaterialBatchRename(
         var notFound = results.Count(r => r.Status == OperationResultStatus.NotFound);
         var failed = results.Count(r => r.Status == OperationResultStatus.Failed);
 
-        if (succeeded > 0 || notFound > 0)
-        {
-            try
-            {
-                var auditedPaths = results
-                    .Where(r => r.Status is OperationResultStatus.Renamed or OperationResultStatus.NotFound)
-                    .Select(r => r.PreviousPath)
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-                var auditedOps = renameRequest.Value.Operations
-                    .Where(op => auditedPaths.Contains(op.CurrentPath, StringComparer.OrdinalIgnoreCase))
-                    .ToList();
-
-                var hasFolder = auditedOps.Any(op => op.Type == NetAppOperationType.Folder);
-                var hasMaterial = auditedOps.Any(op => op.Type == NetAppOperationType.Material);
-
-                var (actionType, resourceType) = (hasFolder, hasMaterial) switch
-                {
-                    (true, true) => (ActivityLog.Enums.ActionType.FolderAndMaterialRenamed, ActivityLog.Enums.ResourceType.Material),
-                    (true, false) => (ActivityLog.Enums.ActionType.FolderRenamed, ActivityLog.Enums.ResourceType.NetAppFolder),
-                    _ => (ActivityLog.Enums.ActionType.MaterialRenamed, ActivityLog.Enums.ResourceType.Material)
-                };
-
-                var details = new
-                {
-                    items = results.Select(r => new
-                    {
-                        previousPath = r.PreviousPath,
-                        newPath = r.NewPath,
-                        outcome = r.Status,
-                        error = r.Error
-                    })
-                }.SerializeToJsonDocument(_logger);
-
-                await _activityLogService.CreateActivityLogAsync(
-                    actionType,
-                    resourceType,
-                    renameRequest.Value.CaseId,
-                    renameRequest.Value.CaseId.ToString(),
-                    null,
-                    context.Username,
-                    details);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to write batch activity log for case {CaseId}.", renameRequest.Value.CaseId);
-            }
-        }
-
-        var batchStatus = (succeeded > 0, failed > 0) switch
-        {
-            (false, false) => "NoOp",
-            (true, false) => "Completed",
-            (false, true) => "Failed",
-            _ => "PartiallyCompleted"
-        };
+        await WriteRenameActivityLogAsync(renameRequest.Value, results, context.Username);
 
         return new OkObjectResult(new MaterialRenameBatchResponse
         {
-            Status = batchStatus,
+            Status = NetAppBatchOutcome.ResolveStatus(succeeded, failed, notFound),
             TotalRequested = renameRequest.Value.Operations.Count,
             Succeeded = succeeded,
             NotFound = notFound,
             Failed = failed,
             Results = results
         });
+    }
+
+    private async Task WriteRenameActivityLogAsync(
+        MaterialBatchRenameRequestDto request,
+        List<MaterialRenameBatchItemResult> results,
+        string userName)
+    {
+        var hasAuditableResult = results.Any(r => r.Status is OperationResultStatus.Renamed or OperationResultStatus.NotFound);
+        if (!hasAuditableResult)
+        {
+            return;
+        }
+
+        try
+        {
+            var auditedPaths = results
+                .Where(r => r.Status is OperationResultStatus.Renamed or OperationResultStatus.NotFound)
+                .Select(r => r.PreviousPath)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var auditedOps = request.Operations
+                .Where(op => auditedPaths.Contains(op.CurrentPath, StringComparer.OrdinalIgnoreCase))
+                .ToList();
+
+            var hasFolder = auditedOps.Any(op => op.Type == NetAppOperationType.Folder);
+            var hasMaterial = auditedOps.Any(op => op.Type == NetAppOperationType.Material);
+
+            var (actionType, resourceType) = (hasFolder, hasMaterial) switch
+            {
+                (true, true) => (ActivityLog.Enums.ActionType.FolderAndMaterialRenamed, ActivityLog.Enums.ResourceType.Material),
+                (true, false) => (ActivityLog.Enums.ActionType.FolderRenamed, ActivityLog.Enums.ResourceType.NetAppFolder),
+                _ => (ActivityLog.Enums.ActionType.MaterialRenamed, ActivityLog.Enums.ResourceType.Material)
+            };
+
+            var details = new
+            {
+                items = results.Select(r => new
+                {
+                    previousPath = r.PreviousPath,
+                    newPath = r.NewPath,
+                    outcome = r.Status,
+                    error = r.Error
+                })
+            }.SerializeToJsonDocument(_logger);
+
+            await _activityLogService.CreateActivityLogAsync(
+                actionType,
+                resourceType,
+                request.CaseId,
+                request.CaseId.ToString(),
+                null,
+                userName,
+                details);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to write batch activity log for case {CaseId}.", request.CaseId);
+        }
     }
 }

@@ -100,9 +100,20 @@ public class InitiateBatchMove(
             return new ConflictObjectResult("A conflicting manage materials operation is already in progress for one or more of the selected paths.");
         }
 
+        var results = new List<MoveNetAppBatchItemResult>();
         try
         {
-            var results = await ExecuteMovesAsync(request.Operations, destinationPrefix, context.BearerToken, volumeUuid);
+            try
+            {
+                await ExecuteMovesAsync(request.Operations, destinationPrefix, context.BearerToken, volumeUuid, results);
+            }
+            catch (Exception ex) when (IsAuthException(ex))
+            {
+                // Items already relocated must be audited before the auth failure propagates.
+                await WriteMoveActivityLogAsync(request, results, context.Username);
+                throw;
+            }
+
             await WriteMoveActivityLogAsync(request, results, context.Username);
             return new OkObjectResult(BuildBatchResponse(request.Operations.Count, results));
         }
@@ -120,6 +131,15 @@ public class InitiateBatchMove(
             _logger.LogWarning("Case metadata or NetApp folder path missing for CaseId: {CaseId}. CorrelationId: {CorrelationId}",
                 request.CaseId, correlationId);
             return new BadRequestObjectResult(new[] { "Case metadata or NetApp folder path is missing." });
+        }
+
+        if (caseMetadata.ActiveTransferId.HasValue)
+        {
+            _logger.LogWarning(
+                "Active transfer {TransferId} in progress for CaseId: {CaseId}. CorrelationId: {CorrelationId}",
+                caseMetadata.ActiveTransferId.Value, request.CaseId, correlationId);
+            return new ConflictObjectResult(
+                "A case-wide file transfer is in progress. Please wait for it to complete before starting a move operation.");
         }
 
         var casePrefix = EnsureTrailingSlash(caseMetadata.NetappFolderPath);
@@ -147,20 +167,17 @@ public class InitiateBatchMove(
         return new BadRequestObjectResult(new[] { $"The following source paths are not within the case's NetApp folder: {string.Join(", ", invalidPaths)}" });
     }
 
-    private async Task<List<MoveNetAppBatchItemResult>> ExecuteMovesAsync(
+    private async Task ExecuteMovesAsync(
         IEnumerable<MoveNetAppBatchOperationDto> operations,
         string destinationPrefix,
         string bearerToken,
-        Guid volumeUuid)
+        Guid volumeUuid,
+        List<MoveNetAppBatchItemResult> results)
     {
-        var results = new List<MoveNetAppBatchItemResult>();
-
         foreach (var operation in operations)
         {
             results.Add(await MoveSingleOperationAsync(operation, destinationPrefix, bearerToken, volumeUuid));
         }
-
-        return results;
     }
 
     private async Task<MoveNetAppBatchItemResult> MoveSingleOperationAsync(
@@ -172,11 +189,12 @@ public class InitiateBatchMove(
         var isFolder = operation.Type == NetAppBatchOperationType.Folder;
         var destinationPath = BuildDestinationPath(operation.SourcePath, destinationPrefix, isFolder);
 
-        var validationError = ValidateOperation(operation.SourcePath, destinationPath, isFolder);
-        if (validationError is not null)
+        var preMoveResult = ValidateOperation(operation, destinationPath, isFolder);
+        if (preMoveResult is not null)
         {
-            _logger.LogWarning("Skipping move for {SourcePath}: {Error}", operation.SourcePath, validationError);
-            return CreateItemResult(operation, destinationPath, OperationResultStatus.Failed, validationError);
+            _logger.LogWarning("Skipping move for {SourcePath}: {Status} - {Error}",
+                operation.SourcePath, preMoveResult.Status, preMoveResult.Error);
+            return preMoveResult;
         }
 
         var arg = _ontapArgFactory.CreateMaterialRenameArg(bearerToken, volumeUuid, operation.SourcePath, destinationPath);
@@ -290,19 +308,12 @@ public class InitiateBatchMove(
     {
         var succeeded = results.Count(r => r.Status == OperationResultStatus.Moved);
         var notFound = results.Count(r => r.Status == OperationResultStatus.NotFound);
+        var alreadyInPlace = results.Count(r => r.Status == OperationResultStatus.AlreadyInPlace);
         var failed = results.Count(r => r.Status is OperationResultStatus.Failed or OperationResultStatus.Conflict);
-
-        var batchStatus = (succeeded > 0, failed > 0) switch
-        {
-            (false, false) => "NoOp",
-            (true, false) => "Completed",
-            (false, true) => "Failed",
-            _ => "PartiallyCompleted",
-        };
 
         return new MoveNetAppBatchResponse
         {
-            Status = batchStatus,
+            Status = NetAppBatchOutcome.ResolveStatus(succeeded, failed, notFound + alreadyInPlace),
             TotalRequested = totalRequested,
             Succeeded = succeeded,
             NotFound = notFound,
@@ -349,18 +360,29 @@ public class InitiateBatchMove(
         return isFolder ? $"{destinationPrefix}{name}/" : $"{destinationPrefix}{name}";
     }
 
-    private static string? ValidateOperation(string sourcePath, string destinationPath, bool isFolder)
+    private static MoveNetAppBatchItemResult? ValidateOperation(
+        MoveNetAppBatchOperationDto operation,
+        string destinationPath,
+        bool isFolder)
     {
-        if (string.Equals(destinationPath, sourcePath, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(destinationPath, operation.SourcePath, StringComparison.OrdinalIgnoreCase))
         {
-            return "The item is already in the destination location.";
+            return CreateItemResult(
+                operation,
+                destinationPath,
+                OperationResultStatus.AlreadyInPlace,
+                "The item is already in the destination location.");
         }
 
         // For folders, sourcePath ends with '/', so a destination that starts with it is the
         // folder itself or one of its descendants - a move into its own subtree.
-        if (isFolder && destinationPath.StartsWith(sourcePath, StringComparison.OrdinalIgnoreCase))
+        if (isFolder && destinationPath.StartsWith(operation.SourcePath, StringComparison.OrdinalIgnoreCase))
         {
-            return "Cannot move a folder into itself or one of its subfolders.";
+            return CreateItemResult(
+                operation,
+                destinationPath,
+                OperationResultStatus.Failed,
+                "Cannot move a folder into itself or one of its subfolders.");
         }
 
         return null;

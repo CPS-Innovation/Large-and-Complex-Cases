@@ -9,4 +9,5 @@ public static class OperationResultStatus
     public const string Renamed = "Renamed";
     public const string Moved = "Moved";
     public const string Conflict = "Conflict";
+    public const string AlreadyInPlace = "AlreadyInPlace";
 }
