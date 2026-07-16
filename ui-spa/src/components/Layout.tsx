@@ -32,7 +32,7 @@ export default function RootLayout({
     <div
       ref={skipLinkSiblingRef}
       tabIndex={-1}
-      className={`${styles.rootLayout} ${!featureFlags?.transferMaterialsV1 ? styles.rootLayoutV0 : ""}`}
+      className={`${styles.rootLayout} ${featureFlags !== null && !featureFlags?.transferMaterialsV1 ? styles.rootLayoutV0 : ""}`}
     >
       <SkipLink href="#main-content">Skip to main content</SkipLink>
       {featureFlags?.globalNav && (

@@ -1,8 +1,13 @@
 .inputWrapper {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  margin-bottom: 1rem;
+  @media (min-width: 40rem) {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
   & button {
     margin: 0;
     height: 2.375rem;
