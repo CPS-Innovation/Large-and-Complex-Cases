@@ -90,6 +90,47 @@ public abstract class NetAppBatchDtoValidatorTestsBase<TDto, TOperation, TValida
     }
 
     [Fact]
+    public void Validate_WhenDuplicateDestinationPaths_ReturnsValidationError()
+    {
+        var ops = new List<TOperation>
+        {
+            CreateOperation(NetAppBatchOperationType.Material, "CaseRoot/Folder-A/report.pdf"),
+            CreateOperation(NetAppBatchOperationType.Material, "CaseRoot/Folder-B/report.pdf"),
+        };
+        var result = _validator.Validate(CreateValidBatch(ops));
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e =>
+            e.ErrorMessage == "Duplicate destination within batch: CaseRoot/Folder-B/report.pdf");
+    }
+
+    [Fact]
+    public void Validate_WhenDuplicateDestinationPathsCaseInsensitive_ReturnsValidationError()
+    {
+        var ops = new List<TOperation>
+        {
+            CreateOperation(NetAppBatchOperationType.Material, "CaseRoot/Folder-A/Report.pdf"),
+            CreateOperation(NetAppBatchOperationType.Material, "CaseRoot/Folder-B/report.pdf"),
+        };
+        var result = _validator.Validate(CreateValidBatch(ops));
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage.StartsWith("Duplicate destination within batch:"));
+    }
+
+    [Fact]
+    public void Validate_WhenDuplicateFolderDestinationPaths_ReturnsValidationError()
+    {
+        var ops = new List<TOperation>
+        {
+            CreateOperation(NetAppBatchOperationType.Folder, "CaseRoot/Folder-A/Reports/"),
+            CreateOperation(NetAppBatchOperationType.Folder, "CaseRoot/Folder-B/Reports/"),
+        };
+        var result = _validator.Validate(CreateValidBatch(ops));
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e =>
+            e.ErrorMessage == "Duplicate destination within batch: CaseRoot/Folder-B/Reports/");
+    }
+
+    [Fact]
     public void Validate_WhenDuplicateSourcePathsCaseInsensitive_ReturnsValidationError()
     {
         var ops = new List<TOperation>
