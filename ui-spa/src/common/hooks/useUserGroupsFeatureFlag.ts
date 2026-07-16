@@ -32,7 +32,7 @@ const shouldShowFeature = (
     : isUIFeatureFlagOn;
 };
 
-export const useUserGroupsFeatureFlag = (): FeatureFlagData => {
+export const useUserGroupsFeatureFlag = (): FeatureFlagData | null => {
   const [account] = msalInstance.getAllAccounts();
   const userDetails = useUserDetails();
   const [searchParams] = useSearchParams();
@@ -42,8 +42,15 @@ export const useUserGroupsFeatureFlag = (): FeatureFlagData => {
     [account?.idTokenClaims?.groups],
   );
 
-  const getFeatureFlags = useCallback(
-    () => ({
+  const getFeatureFlags = useCallback(() => {
+    //skip the account check for automation user, ideally if the account is not available normal user shouldn't be here
+    if (
+      (!account && userDetails.username !== "dev_user@example.org") ||
+      !userDetails.username
+    )
+      return null;
+
+    return {
       caseDetails: shouldShowFeature(
         userDetails.username,
         FEATURE_FLAG_CASE_DETAILS,
@@ -89,8 +96,8 @@ export const useUserGroupsFeatureFlag = (): FeatureFlagData => {
           groupKey: PRIVATE_BETA_FEATURE_USER_GROUP2,
         },
       ),
-    }),
-    [groups, searchParams, userDetails.username],
-  );
+    };
+  }, [groups, searchParams, userDetails.username]);
+
   return useMemo(() => getFeatureFlags(), [getFeatureFlags]);
 };

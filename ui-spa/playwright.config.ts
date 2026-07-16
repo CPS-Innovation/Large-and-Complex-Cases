@@ -36,7 +36,7 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: [
     {
-      name: "chromium",
+      name: "common",
       use: { ...devices["Desktop Chrome"] },
     },
   ],

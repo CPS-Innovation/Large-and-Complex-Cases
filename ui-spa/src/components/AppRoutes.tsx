@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router";
+import { useEffect, useContext } from "react";
 import CaseSearchPage from "./search-page";
 import CaseSearchResultPage from "./search-result-page";
 import EgressPage from "./egress-connect";
@@ -16,9 +17,27 @@ import DisconnectSharedDriveConfirmationPage from "./case-management/netapp-disc
 import DisconnectSharedDriveSuccessPage from "./case-management/netapp-disconnect/DisconnectSharedDriveSuccessPage";
 import DisconnectSharedDriveFailurePage from "./case-management/netapp-disconnect/DisconnectSharedDriveFailurePage";
 import TransferDestinationPage from "./case-management/transfer-materials-v1/TransferDestinationPage";
+import { MainStateContext } from "../providers/MainStateProvider";
+import { useUserGroupsFeatureFlag } from "../common/hooks/useUserGroupsFeatureFlag";
 
 import ProtectedRoutes from "./ProtectedRoutes";
+
 const AppRoutes = () => {
+  const { state, dispatch } = useContext(MainStateContext);
+  const { appData: { featureFlags } = {} } = state;
+  const featureFlagsData = useUserGroupsFeatureFlag();
+  useEffect(() => {
+    //set feature flag data, when there is a valid value and  when the featureFlags are not set.
+    if (featureFlagsData && !featureFlags) {
+      dispatch({
+        type: "SET_FEATURE_FLAGS",
+        payload: {
+          featureFlags: featureFlagsData,
+        },
+      });
+    }
+  }, [featureFlagsData, featureFlags, dispatch]);
+
   return (
     <Routes>
       <Route index element={<CaseSearchPage />} />

@@ -64,13 +64,16 @@ export const getNetAppFolderResultsDev = (path: string) => {
     (item, index) => {
       return {
         ...item,
-        path: `${path}folder-${levels.length}-${index}/`,
+        path: `${path}netapp-folder-${levels.length}-${index}/`,
       };
     },
   );
   const newFiles = netAppRootFolderResultsDev.data.fileData.map(
     (item, index) => {
-      return { ...item, path: `${path}files-${levels.length}-${index}.pdf` };
+      return {
+        ...item,
+        path: `${path}netapp-files-${levels.length}-${index}.pdf`,
+      };
     },
   );
 

@@ -127,6 +127,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
               successFiles={details.files}
               errorFiles={details.errors}
               sourcePath={details.sourcePath}
+              name="activity"
             />
           </Details>
           <div className={styles.downloadBtnWrapper}>
@@ -295,7 +296,11 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
     </div>
   );
 
-  const MOVE_ACTION_TYPES = ["FOLDER_MOVED", "MATERIAL_MOVED", "FOLDER_AND_MATERIAL_MOVED"];
+  const MOVE_ACTION_TYPES = [
+    "FOLDER_MOVED",
+    "MATERIAL_MOVED",
+    "FOLDER_AND_MATERIAL_MOVED",
+  ];
 
   const renderDetails = (activity: ActivityItem) => {
     const { details } = activity;
@@ -305,7 +310,10 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
       return renderTransferDetails(activity.id, activity.timestamp, details);
     }
 
-    if (MOVE_ACTION_TYPES.includes(activity.actionType) && isBatchMoveDetails(details)) {
+    if (
+      MOVE_ACTION_TYPES.includes(activity.actionType) &&
+      isBatchMoveDetails(details)
+    ) {
       return renderBatchMoveDetails(details);
     }
 

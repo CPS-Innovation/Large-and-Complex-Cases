@@ -9,8 +9,9 @@ test.describe("netapp connect", () => {
   });
 
   const validateFolderPath = async (page: Page, expectedResult: string[]) => {
-    const texts = await page.locator("ol>li").allTextContents();
-    expect(texts).toEqual(expectedResult);
+    await expect(page.locator("ol>li")).toHaveText(expectedResult, {
+      timeout: 50000,
+    });
   };
 
   test("Should successfully connect to an netapp folder", async ({ page }) => {

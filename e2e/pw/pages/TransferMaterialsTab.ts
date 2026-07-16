@@ -1,11 +1,17 @@
-import { Page, expect } from "@playwright/test";
+import { expect } from "@playwright/test";
+import { TransferMaterialsTabApi } from "./TransferMaterialsTabApi";
+import { BaseTransferMaterialsTab } from "./BaseTransferMaterialsTab";
 
-export class TransferMaterialsTab {
-  private readonly page: Page;
-
-  constructor(page: Page) {
-    this.page = page;
-  }
+/**
+ * Old-screen Transfer Materials page object. Egress-side and common helpers come
+ * from `BaseTransferMaterialsTab`; this class carries the old-screen selectors
+ * (two side-by-side panels, per-panel inset Copy/Move, confirm modal).
+ */
+export class TransferMaterialsTab
+  extends BaseTransferMaterialsTab
+  implements TransferMaterialsTabApi
+{
+  protected readonly netAppWrapperTestId = "netapp-table-wrapper";
 
   async waitForEgressFiles() {
     await this.page
@@ -23,13 +29,6 @@ export class TransferMaterialsTab {
     await this.page
       .getByRole("button", { name: /from the Shared Drive to Egress/i })
       .click();
-  }
-
-  async selectAllEgressFiles() {
-    await this.page
-      .getByTestId("egress-table-wrapper")
-      .getByLabel("Select folders and files")
-      .check();
   }
 
   async selectEgressFiles(indices: number[]) {
@@ -57,21 +56,26 @@ export class TransferMaterialsTab {
       .check();
   }
 
-  async selectAction(action: "Copy" | "Move") {
+  async selectAction(
+    action: "Copy" | "Move",
+    direction: "egressToNetApp" | "netAppToEgress" = "egressToNetApp",
+  ) {
+    // Old screen has a Copy/Move control in each panel's inset: the NetApp inset
+    // drives Egress → NetApp, the Egress inset drives NetApp → Egress.
+    const inset =
+      direction === "egressToNetApp"
+        ? "netapp-inset-text"
+        : "egress-inset-text";
     await this.page
-      .getByTestId("netapp-inset-text")
+      .getByTestId(inset)
       .getByRole("button", { name: action })
       .click();
   }
 
-  async selectReverseAction(action: "Copy" | "Move") {
-    await this.page
-      .getByTestId("egress-inset-text")
-      .getByRole("button", { name: action })
-      .click();
-  }
-
-  async confirmTransfer() {
+  async confirmTransfer(_action: "Copy" | "Move") {
+    // The old-screen confirm modal is action-agnostic (the "I want to
+    // copy/move" radio matches either), so `_action` is accepted only to
+    // satisfy the shared contract.
     const modal = this.page.getByTestId("div-modal");
     await modal.waitFor({ state: "visible", timeout: 30000 });
     await modal.getByLabel(/I want to (copy|move)/).click();
@@ -79,8 +83,12 @@ export class TransferMaterialsTab {
   }
 
   async waitForTransferComplete(timeout: number = 300_000) {
-    const successBanner = this.page.getByTestId("transfer-success-notification-banner");
-    const errorHeading = this.page.locator('text="There is a problem transferring files"');
+    const successBanner = this.page.getByTestId(
+      "transfer-success-notification-banner",
+    );
+    const errorHeading = this.page.locator(
+      'text="There is a problem transferring files"',
+    );
 
     // Wait for either success banner or error page to appear
     await Promise.race([
@@ -99,18 +107,7 @@ export class TransferMaterialsTab {
   }
 
   async getTransferProgress(): Promise<string> {
-    return await this.page
-      .getByTestId("transfer-progress-metrics")
-      .innerText();
-  }
-
-  async selectEgressFileByName(fileName: string) {
-    const row = this.page
-      .getByTestId("egress-table-wrapper")
-      .locator("tbody tr", { hasText: fileName });
-    const checkbox = row.locator('input[type="checkbox"]');
-    await checkbox.scrollIntoViewIfNeeded();
-    await checkbox.check();
+    return await this.page.getByTestId("transfer-progress-metrics").innerText();
   }
 
   async selectNetAppFileByName(fileName: string) {
@@ -123,30 +120,17 @@ export class TransferMaterialsTab {
   }
 
   /**
-   * Select a NetApp source row by exact filename. Throws with a clear
-   * fixture-missing message if the row isn't in the loaded listing.
-   *
-   * The NetApp panel's date sort doesn't reliably toggle to descending
-   * and pagination isn't triggered by Playwright scrolls, so locating a
-   * just-uploaded file is unreliable. The story's contract is therefore
-   * that the default-mode NetApp -> Egress spec works against a stable
-   * pre-seeded fixture file — see `helpers/constants.ts`
-   * (NETAPP_FIXTURE_FILENAME) and `tests/seed-netapp-fixture.setup.ts`.
-   * The fixture's name pattern keeps it outside the automated cleanup
-   * helpers' scope.
+   * Select a NetApp source row by exact filename; throws a clear fixture-missing
+   * message if absent. The panel's unreliable sort + pagination make locating a
+   * just-uploaded file flaky, so the default-mode spec runs against a stable
+   * pre-seeded fixture (see `tests/seed-netapp-fixture.setup.ts`).
    */
   async selectNetAppFileByExactName(fileName: string) {
     const row = this.page
       .getByTestId("netapp-table-wrapper")
       .locator("tbody tr", { hasText: fileName });
     if ((await row.count()) === 0) {
-      throw new Error(
-        `Required NetApp fixture '${fileName}' not found in the NetApp panel.\n` +
-          `  Seed it via:\n` +
-          `    bash:       RUN_SEED=1 npx playwright test --project=seed-netapp-fixture\n` +
-          `    powershell: $env:RUN_SEED=1; npx playwright test --project=seed-netapp-fixture\n` +
-          `  See README "Required NetApp fixture" for details.`
-      );
+      throw this.fixtureMissingError(fileName, "NetApp panel");
     }
     const checkbox = row.locator('input[type="checkbox"]').first();
     await checkbox.scrollIntoViewIfNeeded();
@@ -154,15 +138,14 @@ export class TransferMaterialsTab {
   }
 
   /**
-   * Scroll the NetApp panel until a row containing `fileName` appears in
-   * the DOM, then select its checkbox. Needed because the NetApp listing
-   * paginates via continuation tokens — a freshly-uploaded file with a
-   * recent date is at the bottom of the default ascending sort and won't
-   * be in the DOM until the panel scrolls and triggers more page loads.
+   * Scroll the NetApp panel until a row containing `fileName` appears, then
+   * select it. The listing paginates via continuation tokens, so a
+   * freshly-uploaded file at the bottom of the ascending sort isn't in the DOM
+   * until scrolling triggers more page loads.
    */
   async selectNetAppFileByNameWithScroll(
     fileName: string,
-    timeout: number = 180_000
+    timeout: number = 180_000,
   ) {
     const netappTable = this.page.getByTestId("netapp-table-wrapper");
     const fileRow = netappTable.locator("tbody tr", { hasText: fileName });
@@ -196,65 +179,55 @@ export class TransferMaterialsTab {
       await this.page.waitForTimeout(1_500);
     }
     throw new Error(
-      `Timed out waiting for ${fileName} to be selectable in NetApp panel (timeout: ${timeout}ms, last row count: ${lastRowCount})`
+      `Timed out waiting for ${fileName} to be selectable in NetApp panel (timeout: ${timeout}ms, last row count: ${lastRowCount})`,
     );
-  }
-
-  async navigateToFolder(folderName: string) {
-    await this.page.getByRole("button", { name: folderName }).click();
   }
 
   /**
-   * Wait until a file with the given name appears in the Egress panel,
-   * reloading and re-navigating into the supplied folder path on each
-   * retry. Egress fetches the file list once on page load and does not
-   * auto-refresh, so a plain `waitFor` will spin against a stale DOM if
-   * the upload is still being indexed when navigation lands.
-   *
-   * `folderPath` is the sequence of folder names to click into after the
-   * page reload (e.g. ["4. Served Evidence", uploadSubfolder]).
+   * Both screens navigate to a shared full-page transfer error (no tablist) on a
+   * failed or duplicate-rejected transfer. If on it, follow "Back" to case
+   * management so the tab can be re-entered. Keyed off the error heading (the
+   * old screen detects by text, not route). No-op otherwise.
    */
-  async waitForEgressFileByName(
+  async dismissTransferErrorIfPresent(): Promise<void> {
+    const errorHeading = this.page.getByRole("heading", {
+      name: "There is a problem transferring files",
+    });
+    if (!(await errorHeading.isVisible().catch(() => false))) return;
+    await this.page.getByRole("link", { name: "Back", exact: true }).click();
+  }
+
+  /**
+   * Verify a file landed in the NetApp panel. Both panels are visible on the old
+   * screen, so assert the NetApp table contains the file in place.
+   */
+  async verifyNetAppContainsFile(
     fileName: string,
-    folderPath: string[],
-    timeout: number = 300_000
-  ) {
-    const egressTable = this.page.getByTestId("egress-table-wrapper");
-    const start = Date.now();
-
-    const fileVisible = async () =>
-      (await egressTable
-        .locator("tbody tr", { hasText: fileName })
-        .count()) > 0;
-
-    if (await fileVisible()) return;
-
-    while (Date.now() - start < timeout) {
-      console.log(`  Waiting for ${fileName} to be indexed; refreshing...`);
-      await this.page.waitForTimeout(5_000);
-      await this.page.reload();
-      await this.waitForEgressFiles();
-      for (const folder of folderPath) {
-        await this.navigateToFolder(folder);
-        await this.waitForEgressFiles();
-      }
-      if (await fileVisible()) return;
-    }
-    throw new Error(
-      `Timed out waiting for ${fileName} to appear in Egress panel (timeout: ${timeout}ms)`
-    );
+    timeout: number = 30_000,
+  ): Promise<void> {
+    const netappTable = this.page.getByTestId("netapp-table-wrapper");
+    await expect(netappTable).toBeVisible({ timeout });
+    await expect(netappTable).toContainText(fileName, { timeout });
   }
 
   /** Wait until at least `expectedCount` file rows appear in the Egress panel folder, refreshing periodically. */
-  async waitForFileCount(expectedCount: number, folderName: string, timeout: number = 120_000) {
-    const egressTable = this.page.getByTestId("egress-table-wrapper").locator("table");
+  async waitForFileCount(
+    expectedCount: number,
+    folderName: string,
+    timeout: number = 120_000,
+  ) {
+    const egressTable = this.page
+      .getByTestId("egress-table-wrapper")
+      .locator("table");
     const start = Date.now();
     // Check current count first (already navigated into folder)
     let rows = await egressTable.locator("tbody tr").all();
     if (rows.length >= expectedCount) return;
 
     while (Date.now() - start < timeout) {
-      console.log(`  Waiting for files: ${rows.length}/${expectedCount} visible, refreshing...`);
+      console.log(
+        `  Waiting for files: ${rows.length}/${expectedCount} visible, refreshing...`,
+      );
       await this.page.waitForTimeout(5_000);
       // Full reload required: Egress file list is fetched once on page load and not auto-refreshed
       await this.page.reload();
@@ -264,6 +237,8 @@ export class TransferMaterialsTab {
       rows = await egressTable.locator("tbody tr").all();
       if (rows.length >= expectedCount) return;
     }
-    throw new Error(`Timed out waiting for ${expectedCount} files (timeout: ${timeout}ms)`);
+    throw new Error(
+      `Timed out waiting for ${expectedCount} files (timeout: ${timeout}ms)`,
+    );
   }
 }

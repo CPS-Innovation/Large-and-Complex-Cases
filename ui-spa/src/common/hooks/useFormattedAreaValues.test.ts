@@ -1,10 +1,8 @@
 import { renderHook } from "@testing-library/react";
 import { useFormattedAreaValues } from "./useFormattedAreaValues";
-import { vi, Mock } from "vitest";
-import { useMainStateContext } from "../../providers/MainStateProvider";
-vi.mock("../../providers/MainStateProvider", () => {
-  return { useMainStateContext: vi.fn() };
-});
+import { vi } from "vitest";
+import { MainStateContext } from "../../providers/MainStateProvider";
+import { createElement } from "react";
 
 vi.mock("react-router", () => {
   return {
@@ -21,15 +19,19 @@ describe("useFormattedAreaValues", () => {
 
   it("Should return correct values when caseDivisionsOrAreas is not available", () => {
     const mockState = {
+      appData: { featureFlags: {} as any },
       apiData: {
         caseDivisionsOrAreas: null,
       },
     };
-    (useMainStateContext as Mock).mockReturnValue({
-      state: mockState,
-      dispatch: () => {},
-    });
-    const { result } = renderHook(() => useFormattedAreaValues());
+    const wrapper = ({ children }: any) =>
+      createElement(
+        MainStateContext.Provider,
+        { value: { state: mockState, dispatch: () => {} } },
+        children,
+      );
+
+    const { result } = renderHook(() => useFormattedAreaValues(), { wrapper });
     expect(result.current).toStrictEqual({
       defaultValue: undefined,
       options: [],
@@ -37,6 +39,7 @@ describe("useFormattedAreaValues", () => {
   });
   it("should return formatted area values correctly when caseDivisionsOrAreas is available", async () => {
     const mockState = {
+      appData: { featureFlags: {} as any },
       apiData: {
         caseDivisionsOrAreas: {
           allAreas: [
@@ -53,12 +56,14 @@ describe("useFormattedAreaValues", () => {
         },
       },
     };
+    const wrapper = ({ children }: any) =>
+      createElement(
+        MainStateContext.Provider,
+        { value: { state: mockState, dispatch: () => {} } },
+        children,
+      );
 
-    (useMainStateContext as Mock).mockReturnValue({
-      state: mockState,
-      dispatch: () => {},
-    });
-    const { result } = renderHook(() => useFormattedAreaValues());
+    const { result } = renderHook(() => useFormattedAreaValues(), { wrapper });
 
     const expectedResult = {
       defaultValue: 3,

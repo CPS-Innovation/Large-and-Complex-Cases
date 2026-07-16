@@ -248,6 +248,89 @@ public class MaterialBatchRenameTests
 
         // Assert
         Assert.Equal("Unauthorized access to ONTAP.", exception.Message);
+        _activityLogServiceMock.Verify(
+            s => s.CreateActivityLogAsync(
+                It.IsAny<ActivityLog.Enums.ActionType>(),
+                It.IsAny<ActivityLog.Enums.ResourceType>(),
+                It.IsAny<int>(),
+                It.IsAny<string>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<System.Text.Json.JsonDocument?>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_WhenAuthFailsMidBatch_WritesActivityLogForCompletedRenamesThenRethrows()
+    {
+        var requestDto = new MaterialBatchRenameRequestDto
+        {
+            CaseId = 42,
+            Operations =
+            [
+                new()
+                {
+                    Type = NetAppOperationType.Material,
+                    CurrentPath = "CASE-PREFIX/file1.txt",
+                    NewPath = "CASE-PREFIX/renamed1.txt"
+                },
+                new()
+                {
+                    Type = NetAppOperationType.Material,
+                    CurrentPath = "CASE-PREFIX/file2.txt",
+                    NewPath = "CASE-PREFIX/renamed2.txt"
+                },
+                new()
+                {
+                    Type = NetAppOperationType.Material,
+                    CurrentPath = "CASE-PREFIX/file3.txt",
+                    NewPath = "CASE-PREFIX/renamed3.txt"
+                }
+            ]
+        };
+        SetupRequestValidator(requestDto, isValid: true);
+        SetupCaseMetadata(requestDto.CaseId);
+        SetupSecurityGroups();
+
+        _ontapArgFactoryMock
+            .Setup(f => f.CreateMaterialRenameArg(
+                It.IsAny<string>(),
+                It.IsAny<Guid>(),
+                It.IsAny<string>(),
+                It.IsAny<string>()))
+            .Returns((string token, Guid uuid, string currentPath, string newPath) =>
+                new MaterialRenameArg
+                {
+                    BearerToken = token,
+                    OntapVolumeUuid = uuid,
+                    CurrentFilePath = currentPath,
+                    NewFilePath = newPath
+                });
+
+        var success = new MaterialRenameResult(Success: true, WasFound: true, KeysRenamed: 1, ErrorMessage: null, ErrorStatusCode: null);
+        _ontapHttpClientMock
+            .SetupSequence(c => c.RenameMaterialAsync(It.IsAny<MaterialRenameArg>()))
+            .ReturnsAsync(success)
+            .ReturnsAsync(success)
+            .ThrowsAsync(new OntapUnauthorizedException("Unauthorized access to ONTAP."));
+
+        var function = CreateFunction(materialRenameEnabled: true);
+        var request = HttpRequestStubHelper.CreateHttpRequestFor(requestDto);
+        var context = CreateFunctionContext();
+
+        var exception = await Assert.ThrowsAsync<OntapUnauthorizedException>(() => function.Run(request, context));
+
+        Assert.Equal("Unauthorized access to ONTAP.", exception.Message);
+        _activityLogServiceMock.Verify(
+            s => s.CreateActivityLogAsync(
+                ActivityLog.Enums.ActionType.MaterialRenamed,
+                ActivityLog.Enums.ResourceType.Material,
+                requestDto.CaseId,
+                requestDto.CaseId.ToString(),
+                null,
+                _testUsername,
+                It.IsAny<System.Text.Json.JsonDocument?>()),
+            Times.Once);
     }
 
     [Fact]
