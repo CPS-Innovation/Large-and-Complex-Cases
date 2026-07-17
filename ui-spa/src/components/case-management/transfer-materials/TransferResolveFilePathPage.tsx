@@ -291,7 +291,6 @@ const TransferResolveFilePathPage = () => {
             {resolvePathFiles.length > 0 && (
               <div className={styles.btnWrapper}>
                 <Button
-                  className={styles.btnStartTransfer}
                   disabled={disableBtns || largePathFilesCount > 0}
                   onClick={handleStartTransferBtnClick}
                 >
