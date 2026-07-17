@@ -2,9 +2,10 @@
   & :global(.govuk-heading-xl) {
     margin-bottom: 25px;
   }
-
-  .fileNameInput {
-    width: 70%;
+  @media (min-width: 60rem) {
+    .fileNameInput {
+      width: 90%;
+    }
   }
 
   .statusTag {
@@ -17,7 +18,12 @@
   .btnWrapper {
     margin-top: 2.5rem;
     display: flex;
-    gap: 0.75rem;
-    align-items: baseline;
+    flex-direction: column;
+    align-items: center;
+    @media (min-width: 40rem) {
+      flex-direction: row;
+      gap: 0.75rem;
+      align-items: baseline;
+    }
   }
 }

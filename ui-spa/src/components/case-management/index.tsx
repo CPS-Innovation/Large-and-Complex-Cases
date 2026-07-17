@@ -204,7 +204,11 @@ const CaseManagementPage = () => {
     operationNameOrDefendantName,
   ]);
   if (isCaseMetaDataLoading) {
-    return <PageContentWrapper>loading...</PageContentWrapper>;
+    return (
+      <PageContentWrapper>
+        <div aria-live="polite">Loading...</div>
+      </PageContentWrapper>
+    );
   }
   if (
     location.pathname.endsWith("/transfer-resolve-file-path") ||
