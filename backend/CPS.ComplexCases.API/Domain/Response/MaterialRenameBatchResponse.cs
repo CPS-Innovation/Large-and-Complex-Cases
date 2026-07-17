@@ -4,9 +4,9 @@ public class MaterialRenameBatchResponse
 {
     /// <summary>
     /// Overall outcome of the batch.
-    /// Completed: all items processed with no failures (some may be NotFound).
-    /// PartiallyCompleted: at least one item succeeded and at least one failed.
-    /// Failed: no items succeeded; all that were attempted resulted in failure.
+    /// Completed: every item renamed successfully.
+    /// PartiallyCompleted: at least one item renamed and at least one was NotFound or Failed.
+    /// Failed: no items renamed; at least one Failed.
     /// NoOp: no items needed renaming (all were NotFound).
     /// </summary>
     public string Status { get; set; } = string.Empty;

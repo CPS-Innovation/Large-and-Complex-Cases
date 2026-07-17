@@ -66,7 +66,7 @@ const NavigationTable: React.FC<NavigationTableProps> = ({
             </div>
           </div>
         ) : (
-          <div>
+          <div className={styles.tableWrapper}>
             <SortableTable
               captionClassName="govuk-visually-hidden"
               caption={caption}

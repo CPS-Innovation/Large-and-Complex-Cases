@@ -804,7 +804,9 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
                     : { type: "netapp", data: netAppDataSorted }
                 }
                 isLoading={
-                  isEgressFolderDataLoading || isNetAppFolderDataLoading
+                  transferSource === "egress"
+                    ? isEgressFolderDataLoading
+                    : isNetAppFolderDataLoading
                 }
                 hideCheckboxesColumn={hideCheckboxesColumn}
                 handleFolderClick={handleFolderClick}

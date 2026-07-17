@@ -5,6 +5,10 @@
     text-align: right;
   }
   .tableContainer {
-    max-width: 66%;
+    max-width: 100%;
+    overflow-x: auto;
+    @media (min-width: 40.0625em) {
+      max-width: 66%;
+    }
   }
 }

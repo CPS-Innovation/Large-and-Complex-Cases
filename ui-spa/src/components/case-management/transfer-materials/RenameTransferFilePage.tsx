@@ -58,6 +58,8 @@ export const RenameTransferFilePage: React.FC<RenameTransferFilePageProps> = ({
           <h1 className="govuk-heading-xl">Rename file</h1>
 
           <Input
+            id="file-name-input"
+            aria-label="file name"
             value={inputValue}
             onChange={handleInputValueChange}
             className={styles.fileNameInput}
