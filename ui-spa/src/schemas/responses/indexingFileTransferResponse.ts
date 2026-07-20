@@ -3,6 +3,7 @@ import { z } from "zod";
 export const indexingErrorSchema = z.object({
   id: z.string(),
   sourcePath: z.string(),
+  destinationFullPath: z.string().optional(),
 });
 
 export const indexingFileTransferResponseSchema = z.object({

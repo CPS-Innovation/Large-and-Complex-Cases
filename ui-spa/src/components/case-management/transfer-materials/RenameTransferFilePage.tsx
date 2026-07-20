@@ -25,10 +25,11 @@ export const RenameTransferFilePage: React.FC<RenameTransferFilePageProps> = ({
     setInputValue(val);
   };
 
+  const characterCount = `${relativeFilePath}${inputValue}`.length;
+  const exceedsLimit = characterCount > MAX_FILE_PATH_CHARACTERS;
+
   const getCharactersText = useCallback(() => {
-    const characterCount = `${relativeFilePath}${inputValue}`.length;
-    const tagColor =
-      characterCount > MAX_FILE_PATH_CHARACTERS ? "red" : "green";
+    const tagColor = exceedsLimit ? "red" : "green";
 
     return (
       <>
@@ -47,7 +48,7 @@ export const RenameTransferFilePage: React.FC<RenameTransferFilePageProps> = ({
         </p>
       </>
     );
-  }, [relativeFilePath, inputValue]);
+  }, [characterCount, exceedsLimit]);
   return (
     <div>
       <BackLink to={backLinkUrl} replace state={{ isRouteValid: true }}>
@@ -65,10 +66,12 @@ export const RenameTransferFilePage: React.FC<RenameTransferFilePageProps> = ({
             className={styles.fileNameInput}
           />
           {getCharactersText()}
-          <p>
-            You must reduce this to {MAX_FILE_PATH_CHARACTERS} characters or
-            fewer.
-          </p>
+          {exceedsLimit && (
+            <p>
+              You must reduce this to {MAX_FILE_PATH_CHARACTERS} characters or
+              fewer.
+            </p>
+          )}
           <div className={styles.btnWrapper}>
             <Button onClick={() => handleContinue(inputValue)}>Continue</Button>
             <LinkButton onClick={handleCancel}>Cancel</LinkButton>

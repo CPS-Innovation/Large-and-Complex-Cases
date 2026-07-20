@@ -53,4 +53,38 @@ describe("getMappedResolvePathFiles", () => {
     const result = getMappedResolvePathFiles(indexingErrors, "destination/");
     expect(result).toEqual(expectedResult);
   });
+
+  it("Should prefer destinationFullPath for display path length", () => {
+    const longDirectory =
+      "\\\\cps-fileshare\\netapp01\\Area Shares\\CCU Manchester\\Op Milton\\1. Incoming Master Copy\\17. Egress 160726\\Billing data for all suspects\\Billing data\\" +
+      "a".repeat(100);
+    const fileName = "CP_0000_TEST_billing_summary.xlsx";
+    const destinationFullPath = `${longDirectory}\\${fileName}`;
+
+    const indexingErrors: IndexingError[] = [
+      {
+        id: "1",
+        sourcePath: `Billing data/${fileName}`,
+        destinationFullPath,
+      },
+    ];
+
+    const result = getMappedResolvePathFiles(indexingErrors, "Area Shares/");
+    const normalizedFullPath = destinationFullPath.replace(/\\/g, "/");
+    const expectedFinalPath = `${normalizedFullPath.slice(0, normalizedFullPath.lastIndexOf("/") + 1)}`;
+
+    expect(result).toEqual([
+      {
+        id: "1",
+        relativeSourcePath: "Billing data",
+        sourceName: fileName,
+        relativeFinalPath: expectedFinalPath,
+      },
+    ]);
+
+    const fullPathLength = `${result[0].relativeFinalPath}${result[0].sourceName}`
+      .length;
+    expect(fullPathLength).toBeGreaterThan(260);
+    expect(fullPathLength).toBe(normalizedFullPath.length);
+  });
 });
