@@ -1,11 +1,11 @@
-using System.Net;
 using CPS.ComplexCases.API.Clients.FileTransfer;
 using CPS.ComplexCases.API.Domain.Configuration;
+using CPS.ComplexCases.Common.Extensions;
+using CPS.ComplexCases.Common.Resilience;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Http.Resilience;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Polly;
 
 namespace CPS.ComplexCases.API.Extensions;
 
@@ -28,18 +28,25 @@ public static class IServiceCollectionExtension
         .AddResilienceHandler("file-transfer-retry", (pipeline, context) =>
         {
             var options = context.ServiceProvider.GetRequiredService<IOptions<FileTransferApiOptions>>().Value;
-            var retryAttempts = options.RetryAttempts > 0 ? options.RetryAttempts : 2;
-            var firstRetryDelaySeconds = options.FirstRetryDelaySeconds > 0 ? options.FirstRetryDelaySeconds : 1;
+            var logger = context.ServiceProvider
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger("CPS.ComplexCases.API.FileTransfer");
 
-            pipeline.AddRetry(new HttpRetryStrategyOptions
+            // Shared helper keeps POST/PUT out of status-code retries. Circuit breaker is off —
+            // FileTransfer only needs the common retry policy, not fail-fast shedding.
+            pipeline.AddStandardHttpResilience(new HttpResilienceOptions
             {
-                MaxRetryAttempts = retryAttempts,
-                Delay = TimeSpan.FromSeconds(firstRetryDelaySeconds),
-                BackoffType = DelayBackoffType.Exponential,
-                UseJitter = true,
-                ShouldHandle = static args =>
-                    ValueTask.FromResult(args.Outcome.Result?.StatusCode >= HttpStatusCode.InternalServerError)
-            });
+                ServiceName = "FileTransfer",
+                RetryAttempts = options.RetryAttempts > 0 ? options.RetryAttempts : 2,
+                FirstRetryDelay = TimeSpan.FromSeconds(
+                    options.FirstRetryDelaySeconds > 0 ? options.FirstRetryDelaySeconds : 1),
+                CircuitBreakerFailureThreshold = 0.5,
+                CircuitBreakerSamplingDuration = TimeSpan.FromSeconds(30),
+                CircuitBreakerMinimumThroughput = 10,
+                CircuitBreakerDurationOfBreak = TimeSpan.FromSeconds(30),
+                EnableCircuitBreaker = false,
+                ConcurrencyLimit = 0,
+            }, logger);
         });
 
         services.AddTransient<IRequestFactory, RequestFactory>();

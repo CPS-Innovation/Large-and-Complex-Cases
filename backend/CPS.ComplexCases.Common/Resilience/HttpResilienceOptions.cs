@@ -12,6 +12,10 @@ public sealed record HttpResilienceOptions
   public required int CircuitBreakerMinimumThroughput { get; init; }
   public required TimeSpan CircuitBreakerDurationOfBreak { get; init; }
 
+  // When false, the circuit breaker is omitted. Used by clients that only need the shared retry
+  // (and optional concurrency) semantics — e.g. FileTransfer — without fail-fast shedding.
+  public bool EnableCircuitBreaker { get; init; } = true;
+
   // Maximum number of concurrent requests allowed through to the service. Set to 0 to disable the
   // concurrency limiter (e.g. for low-volume request/response services).
   public int ConcurrencyLimit { get; init; }

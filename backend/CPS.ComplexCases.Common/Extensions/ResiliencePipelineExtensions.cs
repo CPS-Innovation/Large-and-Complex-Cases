@@ -24,20 +24,19 @@ public static class ResiliencePipelineExtensions
       };
 
   // Configures a standard HTTP resilience pipeline built on Microsoft.Extensions.Http.Resilience
-  // (Polly v8). Strategies are added outer-to-inner: concurrency limiter, then retry, then circuit
-  // breaker. Retry sits outside the breaker so a retry attempt re-enters the (possibly open) circuit
-  // and fails fast instead of bypassing it, matching the Microsoft standard resilience ordering.
+  // (Polly v8). Strategies are added outer-to-inner: retry, then optional circuit breaker, then
+  // concurrency limiter. Retry sits outside the breaker so a retry attempt re-enters the (possibly
+  // open) circuit and fails fast instead of bypassing it. The concurrency limiter sits innermost so
+  // a permit is held only for a single attempt and released during retry backoff — matching the
+  // previous Polly v7 WrapAsync(retry, breaker, bulkhead) ordering. An outermost limiter with
+  // queueLimit: int.MaxValue would hold permits across the full retry+backoff window and stall
+  // throughput under a burst of transient 5xx. Set EnableCircuitBreaker = false when only the
+  // shared retry (and optional concurrency) semantics are required.
   public static ResiliencePipelineBuilder<HttpResponseMessage> AddStandardHttpResilience(
       this ResiliencePipelineBuilder<HttpResponseMessage> pipeline,
       HttpResilienceOptions options,
       ILogger logger)
   {
-    // Concurrency limiter outermost: shed excess load before doing any work.
-    if (options.ConcurrencyLimit > 0)
-    {
-      pipeline.AddConcurrencyLimiter(permitLimit: options.ConcurrencyLimit, queueLimit: int.MaxValue);
-    }
-
     // https://learn.microsoft.com/en-us/dotnet/core/resilience/http-resilience
     if (options.RetryAttempts > 0)
     {
@@ -72,47 +71,56 @@ public static class ResiliencePipelineExtensions
 
     // Only "service is down" signals (5xx and connection failures) trip the breaker. Non-health
     // signals such as 404 or 429 are deliberately excluded even when retry handles them.
-    pipeline.AddCircuitBreaker(new HttpCircuitBreakerStrategyOptions
+    if (options.EnableCircuitBreaker)
     {
-      FailureRatio = options.CircuitBreakerFailureThreshold,
-      SamplingDuration = options.CircuitBreakerSamplingDuration,
-      MinimumThroughput = options.CircuitBreakerMinimumThroughput,
-      BreakDuration = options.CircuitBreakerDurationOfBreak,
-      ShouldHandle = args =>
+      pipeline.AddCircuitBreaker(new HttpCircuitBreakerStrategyOptions
       {
-        if (args.Outcome.Exception is HttpRequestException)
+        FailureRatio = options.CircuitBreakerFailureThreshold,
+        SamplingDuration = options.CircuitBreakerSamplingDuration,
+        MinimumThroughput = options.CircuitBreakerMinimumThroughput,
+        BreakDuration = options.CircuitBreakerDurationOfBreak,
+        ShouldHandle = args =>
         {
-          return ValueTask.FromResult(true);
-        }
+          if (args.Outcome.Exception is HttpRequestException)
+          {
+            return ValueTask.FromResult(true);
+          }
 
-        if (args.Outcome.Result is null)
+          if (args.Outcome.Result is null)
+          {
+            return ValueTask.FromResult(false);
+          }
+
+          return ValueTask.FromResult(args.Outcome.Result.StatusCode >= HttpStatusCode.InternalServerError);
+        },
+        OnOpened = args =>
         {
-          return ValueTask.FromResult(false);
+          logger.LogError(
+              args.Outcome.Exception,
+              "{ServiceName} circuit opened for {BreakDelaySeconds}s after status {StatusCode}.",
+              options.ServiceName,
+              args.BreakDuration.TotalSeconds,
+              args.Outcome.Result?.StatusCode);
+          return default;
+        },
+        OnClosed = _ =>
+        {
+          logger.LogInformation("{ServiceName} circuit reset; calls are flowing again.", options.ServiceName);
+          return default;
+        },
+        OnHalfOpened = _ =>
+        {
+          logger.LogInformation("{ServiceName} circuit half-open; testing the next call.", options.ServiceName);
+          return default;
         }
+      });
+    }
 
-        return ValueTask.FromResult(args.Outcome.Result.StatusCode >= HttpStatusCode.InternalServerError);
-      },
-      OnOpened = args =>
-      {
-        logger.LogError(
-            args.Outcome.Exception,
-            "{ServiceName} circuit opened for {BreakDelaySeconds}s after status {StatusCode}.",
-            options.ServiceName,
-            args.BreakDuration.TotalSeconds,
-            args.Outcome.Result?.StatusCode);
-        return default;
-      },
-      OnClosed = _ =>
-      {
-        logger.LogInformation("{ServiceName} circuit reset; calls are flowing again.", options.ServiceName);
-        return default;
-      },
-      OnHalfOpened = _ =>
-      {
-        logger.LogInformation("{ServiceName} circuit half-open; testing the next call.", options.ServiceName);
-        return default;
-      }
-    });
+    // Innermost: permit held only during the attempt itself, freed while waiting to retry.
+    if (options.ConcurrencyLimit > 0)
+    {
+      pipeline.AddConcurrencyLimiter(permitLimit: options.ConcurrencyLimit, queueLimit: int.MaxValue);
+    }
 
     return pipeline;
   }
