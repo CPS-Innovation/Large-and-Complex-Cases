@@ -5,29 +5,41 @@ import useSearchNavigation from "../../common/hooks/useSearchNavigation";
 import {
   useCaseSearchForm,
   SearchFormField,
+  SearchFormData,
 } from "../../common/hooks/useCaseSearchForm";
 import { useFormattedAreaValues } from "../../common/hooks/useFormattedAreaValues";
 import { useGetCaseDivisionsOrAreas } from "../../common/hooks/useGetCaseDivisionsOrAreas";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
+import { getSearchFieldPayload } from "../../common/utils/getSearchFieldPayload";
 
 import styles from "./index.module.scss";
 
 const CaseSearchPage = () => {
   const errorSummaryRef = useRef<HTMLInputElement>(null);
-  const {
-    state: { formData },
-  } = useContext(MainStateContext);
+  const { state, dispatch } = useContext(MainStateContext);
   const { navigateWithParams } = useSearchNavigation();
   useGetCaseDivisionsOrAreas();
   const formattedAreaValues = useFormattedAreaValues();
+  const getInitialState = () => {
+    const initialData: SearchFormData = {
+      searchType: state.formData.searchType,
+      operationName: state.formData.operationName,
+      operationArea: state.formData.operationArea,
+      defendantName: state.formData.defendantName,
+      defendantArea: state.formData.defendantArea,
+      urn: state.formData.urn,
+    };
+    return initialData;
+  };
 
   const {
+    formData,
     formDataErrors,
     errorList,
     validateFormData,
     handleFormChange,
     getSearchParams,
-  } = useCaseSearchForm();
+  } = useCaseSearchForm(getInitialState());
 
   useEffect(() => {
     if (
@@ -59,6 +71,11 @@ const CaseSearchPage = () => {
     e.preventDefault();
     const isFromValid = validateFormData();
     if (isFromValid) {
+      const payload = getSearchFieldPayload(formData);
+      dispatch({
+        type: "SET_FORM_DATA_FIELD",
+        payload: payload,
+      });
       const searchParams = getSearchParams();
       navigateWithParams(searchParams);
     }

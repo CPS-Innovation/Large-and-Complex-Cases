@@ -6,11 +6,13 @@ import useSearchNavigation from "../../common/hooks/useSearchNavigation";
 import {
   useCaseSearchForm,
   SearchFormField,
+  SearchFormData,
 } from "../../common/hooks/useCaseSearchForm";
 import SearchResults from "./SearchResults";
 import { useFormattedAreaValues } from "../../common/hooks/useFormattedAreaValues";
 import { useGetCaseDivisionsOrAreas } from "../../common/hooks/useGetCaseDivisionsOrAreas";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
+import { getSearchFieldPayload } from "../../common/utils/getSearchFieldPayload";
 import { useQuery } from "@tanstack/react-query";
 import styles from "./index.module.scss";
 
@@ -18,58 +20,50 @@ const CaseSearchResultPage = () => {
   const [triggerSearchApi, setTriggerSearchApi] = useState(false);
   const [validatedAreaValues, setValidatedAreaValues] = useState(false);
   const errorSummaryRef = useRef<HTMLInputElement>(null);
-  const { state, dispatch } = useContext(MainStateContext);
+  const { dispatch } = useContext(MainStateContext);
   const { updateSearchParams, searchParams, queryString } =
     useSearchNavigation();
-  const { formData } = state;
-  useEffect(() => {
+
+  const getInitialState = () => {
+    const initialData: SearchFormData = {
+      searchType: "urn",
+      operationName: "",
+      operationArea: "",
+      defendantName: "",
+      defendantArea: "",
+      urn: "",
+    };
+
     const searchParamKeys = Object.keys(searchParams);
     if (
       searchParamKeys.includes("defendant-name") &&
-      searchParamKeys.includes("area") &&
-      !formData[SearchFormField.defendantName]
+      searchParamKeys.includes("area")
     ) {
-      dispatch({
-        type: "SET_FORM_DATA_FIELD",
-        payload: {
-          searchType: "defendant name",
-          defendantName: searchParams["defendant-name"] ?? "",
-          defendantArea: searchParams["area"] ?? "",
-        },
-      });
+      initialData.searchType = "defendant name";
+      initialData.defendantName = searchParams["defendant-name"] ?? "";
+      return initialData;
     }
     if (
       searchParamKeys.includes("operation-name") &&
-      searchParamKeys.includes("area") &&
-      !formData[SearchFormField.operationName]
+      searchParamKeys.includes("area")
     ) {
-      dispatch({
-        type: "SET_FORM_DATA_FIELD",
-        payload: {
-          searchType: "operation name",
-          operationName: searchParams["operation-name"] ?? "",
-          operationArea: searchParams["area"] ?? "",
-        },
-      });
+      initialData.searchType = "operation name";
+      initialData.operationName = searchParams["operation-name"] ?? "";
+      return initialData;
     }
-    if (searchParamKeys.includes("urn") && !formData[SearchFormField.urn]) {
-      dispatch({
-        type: "SET_FORM_DATA_FIELD",
-        payload: {
-          searchType: "urn",
-          urn: searchParams["urn"] ?? "",
-        },
-      });
-    }
-  }, [dispatch, formData, searchParams]);
+
+    initialData.urn = searchParams["urn"] ?? "";
+    return initialData;
+  };
 
   const {
+    formData,
     formDataErrors,
     errorList,
     validateFormData,
     handleFormChange,
     getSearchParams,
-  } = useCaseSearchForm();
+  } = useCaseSearchForm(getInitialState());
 
   const formattedAreaValues = useFormattedAreaValues();
 
@@ -87,7 +81,14 @@ const CaseSearchResultPage = () => {
   useEffect(() => {
     if (formData[SearchFormField.searchType] === "urn" || validatedAreaValues) {
       const isValid = validateFormData();
-      if (!triggerSearchApi && isValid) setTriggerSearchApi(true);
+      if (!triggerSearchApi && isValid) {
+        const payload = getSearchFieldPayload(formData);
+        dispatch({
+          type: "SET_FORM_DATA_FIELD",
+          payload: payload,
+        });
+        setTriggerSearchApi(true);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryString, validatedAreaValues]);
@@ -121,6 +122,11 @@ const CaseSearchResultPage = () => {
     e.preventDefault();
     const isFromValid = validateFormData();
     if (isFromValid) {
+      const payload = getSearchFieldPayload(formData);
+      dispatch({
+        type: "SET_FORM_DATA_FIELD",
+        payload: payload,
+      });
       const searchParams = getSearchParams();
       updateSearchParams(searchParams);
     }

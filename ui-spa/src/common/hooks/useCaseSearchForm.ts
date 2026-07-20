@@ -1,7 +1,6 @@
-import { useState, useCallback, useMemo, useContext } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { type CaseSearchParams } from "../types/CaseSearchParams";
 import { validateUrn } from "../utils/validateUrn";
-import { MainStateContext } from "../../providers/MainStateProvider";
 
 export enum SearchFormField {
   searchType = "searchType",
@@ -12,7 +11,7 @@ export enum SearchFormField {
   urn = "urn",
 }
 
-export type SearchFromData = {
+export type SearchFormData = {
   [SearchFormField.searchType]: "operation name" | "defendant name" | "urn";
   [SearchFormField.operationName]: string;
   [SearchFormField.operationArea]: string;
@@ -32,12 +31,21 @@ type SearchFormDataErrors = {
   [SearchFormField.urn]?: ErrorText;
 };
 const MAX_CHARACTERS = 50;
-export const useCaseSearchForm = () => {
+
+const DEFAULT_FORM_DATA: SearchFormData = {
+  searchType: "urn",
+  operationName: "",
+  operationArea: "",
+  defendantName: "",
+  defendantArea: "",
+  urn: "",
+};
+
+export const useCaseSearchForm = (initialFormData?: SearchFormData) => {
+  const [formData, setFormData] = useState<SearchFormData>(
+    initialFormData ?? DEFAULT_FORM_DATA,
+  );
   const initialErrorState: SearchFormDataErrors = {};
-  const {
-    state: { formData },
-    dispatch,
-  } = useContext(MainStateContext);
 
   const [formDataErrors, setFormDataErrors] =
     useState<SearchFormDataErrors>(initialErrorState);
@@ -79,6 +87,16 @@ export const useCaseSearchForm = () => {
     },
     [formDataErrors],
   );
+
+  const handleFormChange = (
+    field: SearchFormField,
+    value: string | number | boolean,
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
   const errorList = useMemo(() => {
     const validErrorKeys = Object.keys(formDataErrors).filter(
@@ -165,41 +183,6 @@ export const useCaseSearchForm = () => {
 
     setFormDataErrors(errorTexts);
     return isValid;
-  };
-
-  const handleFormChange = (field: SearchFormField, value: string) => {
-    let payload = {};
-    const resetOperationNameFields = {
-      [SearchFormField.operationName]: "",
-      [SearchFormField.operationArea]: "",
-    };
-    const resetDefendantNameFields = {
-      [SearchFormField.defendantName]: "",
-      [SearchFormField.defendantArea]: "",
-    };
-
-    if (field === SearchFormField.searchType && value === "urn") {
-      payload = {
-        ...resetOperationNameFields,
-        ...resetDefendantNameFields,
-      };
-    }
-    if (field === SearchFormField.searchType && value === "operation name") {
-      payload = {
-        ...resetDefendantNameFields,
-        [SearchFormField.urn]: "",
-      };
-    }
-    if (field === SearchFormField.searchType && value === "defendant name") {
-      payload = {
-        ...resetOperationNameFields,
-        [SearchFormField.urn]: "",
-      };
-    }
-    dispatch({
-      type: "SET_FORM_DATA_FIELD",
-      payload: { ...payload, [field]: value },
-    });
   };
 
   const getSearchParams = () => {

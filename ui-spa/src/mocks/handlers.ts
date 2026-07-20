@@ -22,7 +22,7 @@ import {
   egressToNetAppTransferStatusPlaywright,
   netAppToEgressTransferStatusDev,
   netAppToEgressTransferStatusPlaywright,
-  // egressToNetAppIndexingErrorDev,
+  egressToNetAppIndexingErrorDev,
   activityLogDev,
   activityLogPlaywright,
 } from "./data";
@@ -120,7 +120,7 @@ export const setupHandlers = (baseUrl: string, apiMockSource: string) => {
       let response = {};
       if (requestPayload.transferDirection === "EgressToNetApp") {
         response = isDevMock()
-          ? egressToNetAppIndexingTransferDev
+          ? egressToNetAppIndexingErrorDev
           : egressToNetAppIndexingTransferPlaywright;
       }
       if (requestPayload.transferDirection === "NetAppToEgress") {
