@@ -19,7 +19,8 @@ describe("useFormattedAreaValues", () => {
 
   it("Should return correct values when caseDivisionsOrAreas is not available", () => {
     const mockState = {
-      appData: { featureFlags: {} as any },
+      appData: { featureFlags: {} } as any,
+      formData: {} as any,
       apiData: {
         caseDivisionsOrAreas: null,
       },
@@ -39,7 +40,8 @@ describe("useFormattedAreaValues", () => {
   });
   it("should return formatted area values correctly when caseDivisionsOrAreas is available", async () => {
     const mockState = {
-      appData: { featureFlags: {} as any },
+      appData: { featureFlags: {} } as any,
+      formData: {} as any,
       apiData: {
         caseDivisionsOrAreas: {
           allAreas: [

@@ -1,18 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { getEgressSearchResults } from "../../apis/gateway-api";
-import {
-  useNavigate,
-  useSearchParams,
-  useLocation,
-  useParams,
-} from "react-router-dom";
-import { EgressConnectRouteState } from "../../common/types/EgressConnectRouteState";
-import { EgressConnectConfirmationRouteState } from "../../common/types/EgressConnectConfirmationRouteState";
+import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 import { getUrlSearchParam } from "../../common/utils/getUrlSearchParam";
 import { useQuery } from "@tanstack/react-query";
+import { MainStateContext } from "../../providers/MainStateProvider";
 import EgressSearchPage from "./EgressSearchPage";
 
 const EgressPage = () => {
+  const { state, dispatch } = useContext(MainStateContext);
   const navigate = useNavigate();
   const { caseId } = useParams();
   const [searchParams] = useSearchParams();
@@ -20,13 +15,9 @@ const EgressPage = () => {
   const [workspaceName, setWorkspaceName] = useState("");
   const [formDataErrorText, setFormDataErrorText] = useState("");
   const [formValue, setFormValue] = useState("");
-  const {
-    state,
-  }: {
-    state: EgressConnectRouteState;
-  } = useLocation();
 
-  const { isNetAppConnected, searchQueryString } = state;
+  const { isNetAppConnected, searchQueryString } =
+    state.appData.connectEgressPage;
 
   const { data: egressSearchResults, isLoading: isEgressSearchResultLoading } =
     useQuery({
@@ -56,16 +47,8 @@ const EgressPage = () => {
     }
     setFormDataErrorText("");
 
-    const payload: EgressConnectRouteState = {
-      isRouteValid: true,
-      searchQueryString,
-      isNetAppConnected,
-    };
     navigate(
       `/case/${caseId}/egress-connect?${getUrlSearchParam("workspace-name", formValue)}`,
-      {
-        state: payload,
-      },
     );
   };
 
@@ -79,20 +62,19 @@ const EgressPage = () => {
     );
     if (!selectedWorkSpace) return;
 
-    const payload: EgressConnectConfirmationRouteState = {
-      isRouteValid: true,
-      backLinkUrl: `/case/${caseId}/egress-connect?${getUrlSearchParam("workspace-name", formValue)}`,
-      caseId: caseId!,
-      searchQueryString,
-      isNetAppConnected,
-      selectedWorkspace: {
-        id: selectedWorkSpace?.id,
-        name: selectedWorkSpace?.name,
+    dispatch({
+      type: "SET_EGRESS_CONNECT_CONFIRMATION_PAGE",
+      payload: {
+        backLinkUrl: `/case/${caseId}/egress-connect?${getUrlSearchParam("workspace-name", formValue)}`,
+        searchQueryString,
+        isNetAppConnected,
+        selectedWorkspace: {
+          id: selectedWorkSpace?.id,
+          name: selectedWorkSpace?.name,
+        },
       },
-    };
-    navigate(`/case/${caseId}/egress-connect/confirmation`, {
-      state: payload,
     });
+    navigate(`/case/${caseId}/egress-connect/confirmation`);
   };
 
   return (

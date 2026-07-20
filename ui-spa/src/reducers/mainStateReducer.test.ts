@@ -7,7 +7,7 @@ describe("mainStateReducer", () => {
     apiData: {
       caseDivisionsOrAreas: null,
     },
-  };
+  } as any;
   it("Should return the state, if there are no matching action types found", () => {
     const newState = mainStateReducer(initialState, {} as any);
     expect(newState).toStrictEqual(initialState);

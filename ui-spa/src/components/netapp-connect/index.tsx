@@ -1,9 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import NetAppFolderResultsPage from "./NetAppFolderResultsPage";
 import { getConnectNetAppFolders } from "../../apis/gateway-api";
-import { SharedDriveConnectRouteState } from "../../common/types/SharedDriveConnectRouteState";
-import { SharedDriveConnectConfirmationRouteState } from "../../common/types/SharedDriveConnectConfirmationRouteState";
 import { getUrlSearchParam } from "../../common/utils/getUrlSearchParam";
+import { MainStateContext } from "../../providers/MainStateProvider";
 import { useQuery } from "@tanstack/react-query";
 import {
   useNavigate,
@@ -13,17 +12,14 @@ import {
 } from "react-router-dom";
 
 const NetAppPage = () => {
+  const { state, dispatch } = useContext(MainStateContext);
   const navigate = useNavigate();
   const { caseId } = useParams();
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const {
-    state,
-  }: {
-    state: SharedDriveConnectRouteState;
-  } = useLocation();
 
-  const { searchQueryString, netappRootFolderPath } = state;
+  const { searchQueryString, netappRootFolderPath } =
+    state.appData.connectSharedDrivePage;
 
   const [operationName, setOperationName] = useState<string>("");
   const [rootFolderPath, setRootFolderPath] = useState(
@@ -57,20 +53,19 @@ const NetAppPage = () => {
   };
 
   const handleConnectFolder = (path: string) => {
-    const payload: SharedDriveConnectConfirmationRouteState = {
-      isRouteValid: true,
-      operationName: operationName,
-      caseId: caseId!,
-      searchQueryString: searchQueryString,
-      netappRootFolderPath: rootFolderPath,
-      backLinkUrl: `/case/${caseId}/netapp-connect?${getUrlSearchParam("operation-name", operationName)}`,
-      selectedWorkspace: {
-        folderPath: path,
+    dispatch({
+      type: "SET_SHARED_DRIVE_CONNECT_CONFIRMATION_PAGE",
+      payload: {
+        operationName: operationName,
+        searchQueryString: searchQueryString,
+        netappRootFolderPath: rootFolderPath,
+        backLinkUrl: `/case/${caseId}/netapp-connect?${getUrlSearchParam("operation-name", operationName)}`,
+        selectedWorkspace: {
+          folderPath: path,
+        },
       },
-    };
-    navigate(`/case/${caseId}/netapp-connect/confirmation`, {
-      state: payload,
     });
+    navigate(`/case/${caseId}/netapp-connect/confirmation`);
   };
 
   return (
