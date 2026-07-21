@@ -6,6 +6,7 @@ import {
   createWorkspace,
   addUserToWorkspace,
   uploadFile,
+  getUploadedFile,
 } from "../helpers/egress-api";
 import { getAuthTokens } from "../helpers/auth-api";
 import { registerCase } from "../helpers/case-api";
@@ -82,12 +83,24 @@ export async function setupTestData(
       .slice(0, 19);
     const fileName = `generated-${fileSizeMb}MB-${timestamp}-file${i}.txt`;
     console.log(`  Uploading ${fileName} (${i}/${fileCount})...`);
-    const file = await uploadFile(
+    const uploadId = await uploadFile(
       config.egressBaseUrl,
       egressToken,
+      config.egressServiceAccountAuth,
       workspaceId,
       fileSizeBytes,
       fileName,
+    );
+    const file = await getUploadedFile(
+      config.egressBaseUrl,
+      egressToken,
+      config.egressServiceAccountAuth,
+      workspaceId,
+      uploadId,
+      {
+        timeoutMs: Math.max(30000, fileSizeMb * 15000),
+        retryDelay: Math.min(10000, Math.max(1000, fileSizeMb * 5)),
+      },
     );
     files.push(file);
   }

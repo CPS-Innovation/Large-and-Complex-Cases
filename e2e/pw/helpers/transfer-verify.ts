@@ -1,7 +1,45 @@
 import { loadEnvConfig } from "../helpers/env-config";
-import { listEgressWorkspaceFilesByFolderId, authenticateEgress } from "./egress-api";
+import {
+  listEgressWorkspaceFilesByFolderId,
+  authenticateEgress,
+} from "./egress-api";
 import { getAzureADToken } from "./auth-api";
 import { expect } from "@playwright/test";
+
+// These verify helpers run once per file. Fetching a fresh token on every call
+// hammers the auth endpoints — over a long soak run the AAD ROPC endpoint
+// returns transient 400s (throttling). Cache each token at module scope and
+// reuse it; the AAD token is refreshed once on a 401 so a run that outlives the
+// token still recovers.
+let cachedAadToken: string | undefined;
+let cachedEgressToken: string | undefined;
+
+async function getVerifyAadToken(
+  config: ReturnType<typeof loadEnvConfig>,
+  forceRefresh = false,
+): Promise<string> {
+  if (forceRefresh || !cachedAadToken) {
+    cachedAadToken = await getAzureADToken(
+      config.tenantId,
+      config.lccApiClientId,
+      config.e2eAdUser,
+      config.e2eAdPassword,
+    );
+  }
+  return cachedAadToken;
+}
+
+async function getVerifyEgressToken(
+  config: ReturnType<typeof loadEnvConfig>,
+): Promise<string> {
+  if (!cachedEgressToken) {
+    cachedEgressToken = await authenticateEgress(
+      config.egressBaseUrl,
+      config.egressServiceAccountAuth,
+    );
+  }
+  return cachedEgressToken;
+}
 
 export async function verifyNetAppFileSizeByName(
   filePath: string,
@@ -10,30 +48,25 @@ export async function verifyNetAppFileSizeByName(
   accessToken?: string | undefined,
 ): Promise<void> {
   const config = loadEnvConfig();
-
-  if (!accessToken) {
-    accessToken = await getAzureADToken(
-      config.tenantId,
-      config.lccApiClientId,
-      config.e2eAdUser,
-      config.e2eAdPassword,
-    );
-  }
-
-  const response = await fetch(
-    `${config.lccApiBaseUrl}/api/v1/netapp/search?case-id=${caseId}&query=${encodeURIComponent(filePath)}`,
-    {
+  const url = `${config.lccApiBaseUrl}/api/v1/netapp/search?case-id=${caseId}&query=${encodeURIComponent(filePath)}`;
+  const search = (token: string) =>
+    fetch(url, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      }
-    }
-  );
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+  // Use the caller's token if provided; otherwise the shared cached one.
+  let response = await search(accessToken ?? (await getVerifyAadToken(config)));
+
+  // A cached token can expire on a long run — refresh once on 401 and retry.
+  if (response.status === 401 && !accessToken) {
+    response = await search(await getVerifyAadToken(config, true));
+  }
 
   if (!response.ok) {
     const text = await response.text();
     throw new Error(
-      `NetApp search failed (${response.status}) for '${filePath}': ${text.slice(0, 200)}`
+      `NetApp search failed (${response.status}) for '${filePath}': ${text.slice(0, 200)}`,
     );
   }
 
@@ -52,7 +85,9 @@ export async function verifyNetAppFileSizeByName(
       file = data[0];
       break;
     default:
-      throw new Error(`Search response must not match more than a single file.`);
+      throw new Error(
+        `Search response must not match more than a single file.`,
+      );
   }
 
   const folderPrefix = config.netAppOperationName.endsWith("/")
@@ -64,14 +99,13 @@ export async function verifyNetAppFileSizeByName(
   if (file.key !== fullPath) {
     throw new Error(
       `The file path returned does not match '${fullPath}'.\n` +
-      `Returned: '${file.key}'.`
+        `Returned: '${file.key}'.`,
     );
   }
 
-  expect(
-    file.size,
-    `NetApp file '${filePath}' has unexpected size`
-  ).toBe(expectedSizeBytes);
+  expect(file.size, `NetApp file '${filePath}' has unexpected size`).toBe(
+    expectedSizeBytes,
+  );
 }
 
 export async function isFileInEgress(
@@ -80,21 +114,14 @@ export async function isFileInEgress(
   fileName: string,
   egressToken?: string | undefined,
 ): Promise<boolean> {
-  const config =loadEnvConfig()
-
-  if (!egressToken) {
-    egressToken = await authenticateEgress(
-      config.egressBaseUrl,
-      config.egressServiceAccountAuth,
-    )
-  }
+  const config = loadEnvConfig();
 
   const files = await listEgressWorkspaceFilesByFolderId(
     config.egressBaseUrl,
-    egressToken,
+    egressToken ?? (await getVerifyEgressToken(config)),
     workspaceId,
-    folderId
+    folderId,
   );
 
-  return files.some(f => f.fileName === fileName);
+  return files.some((f) => f.fileName === fileName);
 }
