@@ -6,5 +6,5 @@ public class FileTransferFailedInfo : FileTransferInfo
 {
     public string Message { get; set; } = string.Empty;
     public TransferFailedType ErrorType { get; set; }
-    public string? DestinationFullPath { get; set; }
+    public string DestinationFullPath { get; set; } = string.Empty;
 }

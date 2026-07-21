@@ -52,7 +52,7 @@ const TransferResolveFilePathPage = () => {
   );
 
   // Count unresolved files from the backend-flagged list using the same full
-  // path string shown in tags/Rename (destinationFullPath when provided).
+  // path string shown in tags/Rename (from destinationFullPath).
   const largePathFilesCount = useMemo(() => {
     return resolvePathFiles.filter(
       (file) => getFullTransferPath(file).length > MAX_FILE_PATH_CHARACTERS,
@@ -68,10 +68,9 @@ const TransferResolveFilePathPage = () => {
   }, []);
 
   useEffect(() => {
-    if (location?.state?.validationErrors && location?.state?.destinationPath) {
+    if (location?.state?.validationErrors) {
       const initialValue = getMappedResolvePathFiles(
         location?.state?.validationErrors ?? [],
-        location?.state?.destinationPath,
       );
       setResolvePathFiles(initialValue);
       if (!locationState) {
