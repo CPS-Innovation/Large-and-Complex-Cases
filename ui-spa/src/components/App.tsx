@@ -12,17 +12,17 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <BrowserRouter>
-      <ErrorBoundary fallbackRender={ErrorBoundaryFallback}>
-        <QueryClientProvider client={queryClient}>
-          <Auth>
-            <MainStateProvider>
+      <MainStateProvider>
+        <ErrorBoundary fallbackRender={ErrorBoundaryFallback}>
+          <QueryClientProvider client={queryClient}>
+            <Auth>
               <Layout>
                 <AppRoutes />
               </Layout>
-            </MainStateProvider>
-          </Auth>
-        </QueryClientProvider>
-      </ErrorBoundary>
+            </Auth>
+          </QueryClientProvider>
+        </ErrorBoundary>
+      </MainStateProvider>
     </BrowserRouter>
   );
 }

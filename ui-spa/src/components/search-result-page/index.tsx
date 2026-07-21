@@ -345,7 +345,11 @@ const CaseSearchResultPage = () => {
     }
   };
   if ((isSearchResultsLoading || isDivisionsOrAreasLoading) && !searchResults) {
-    return <div>Loading...</div>;
+    return (
+      <PageContentWrapper>
+        <div aria-live="polite">Loading...</div>
+      </PageContentWrapper>
+    );
   }
   return (
     <div>

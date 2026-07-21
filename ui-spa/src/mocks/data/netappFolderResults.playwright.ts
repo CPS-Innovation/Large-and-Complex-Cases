@@ -52,7 +52,10 @@ export const getNetAppFolderResultsPlaywright = (path: string) => {
   );
   const newFiles = netAppRootFolderResultsPlaywright.data.fileData.map(
     (item, index) => {
-      return { ...item, path: `${path}files-${levels.length}-${index}.pdf` };
+      return {
+        ...item,
+        path: `${path}file-${levels.length}-${index}.pdf`,
+      };
     },
   );
 

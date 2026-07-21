@@ -4,6 +4,7 @@ export const caseMetaDataDev: CaseMetaDataResponse = {
   egressWorkspaceId: "egress_1",
   netappFolderPath: "netapp/",
   operationName: "Thunderstruck",
+  leadDefendantName: "John Doe",
   urn: "45AA2098221",
   activeTransferId: "",
 };

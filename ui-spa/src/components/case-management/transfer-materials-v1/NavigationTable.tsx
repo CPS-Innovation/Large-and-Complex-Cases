@@ -56,17 +56,17 @@ const NavigationTable: React.FC<NavigationTableProps> = ({
       </div>
       <div>
         {isLoading ? (
-          <div className={styles.spinnerWrapper}>
-            <Spinner
-              data-testid={`${tableName}-folder-table-loader`}
-              diameterPx={50}
-            />
+          <div
+            className={styles.spinnerWrapper}
+            data-testid={"folder-table-loader"}
+          >
+            <Spinner diameterPx={50} />
             <div className={styles.spinnerText} aria-live="polite">
               {loaderText}
             </div>
           </div>
         ) : (
-          <div>
+          <div className={styles.tableWrapper}>
             <SortableTable
               captionClassName="govuk-visually-hidden"
               caption={caption}

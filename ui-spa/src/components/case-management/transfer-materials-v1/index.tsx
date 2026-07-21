@@ -1,4 +1,11 @@
-import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import {
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+  useContext,
+} from "react";
 import { NotificationBanner, Button, Details, LinkButton } from "../../govuk";
 import { Spinner } from "../../common/Spinner";
 import {
@@ -15,7 +22,6 @@ import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPa
 import { useUserDetails } from "../../../auth";
 import { ApiError } from "../../../common/errors/ApiError";
 import { pollTransferStatus } from "../../../common/utils/pollTransferStatus";
-import { useUserGroupsFeatureFlag } from "../../../common/hooks/useUserGroupsFeatureFlag";
 import { getUrlSearchParam } from "../../../common/utils/getUrlSearchParam";
 import TransferSourceNavigationTableContainer from "./TransferSourceNavigationTableContainer";
 import {
@@ -32,6 +38,7 @@ import {
   sortByDateProperty,
   sortByNumberProperty,
 } from "../../../common/utils/sortUtils";
+import { MainStateContext } from "../../../providers/MainStateProvider";
 import styles from "./index.module.scss";
 
 type TransferMaterialsV1PageProps = {
@@ -60,7 +67,8 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
   transferEgressFolderPathInitialValue,
   transferNetAppFolderPathInitialValue,
 }) => {
-  const featureFlags = useUserGroupsFeatureFlag();
+  const { state } = useContext(MainStateContext);
+  const { appData: { featureFlags } = {} } = state;
   const navigate = useNavigate();
   const { username } = useUserDetails();
   const [transferSource, setTransferSource] = useState<"egress" | "netapp">(
@@ -200,7 +208,6 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
     queryFn: () => getNetAppFolders(netAppFolderPath),
     retry: false,
     enabled: !!netAppFolderPath,
-    throwOnError: true,
     staleTime: 0,
     gcTime: 0,
   });
@@ -672,19 +679,28 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
     return unMounting.current;
   }, []);
 
+  const shouldStartTransferStatusPolling = useMemo(() => {
+    //need to wait until netAppData and egressData are available otherwise we will show the active transfer status to users who do not have permission
+    return Boolean(transferId && netAppData && egressData);
+  }, [transferId, netAppData, egressData]);
+
   useEffect(() => {
-    if (!transferId) {
+    if (!transferId) return;
+    setTransferStatus("transferring");
+  }, [transferId, setTransferStatus]);
+
+  useEffect(() => {
+    if (!shouldStartTransferStatusPolling) {
       return;
     }
-
-    setTransferStatus("transferring");
     pollTransferStatus(
-      transferId,
+      transferId!,
       isComponentUnmounted,
       handleStatusResponse,
       setApiRequestError,
     );
   }, [
+    shouldStartTransferStatusPolling,
     transferId,
     setTransferStatus,
     isComponentUnmounted,
@@ -708,7 +724,10 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
               </b>
               <p>
                 They are in :{" "}
-                <LinkButton onClick={handleGotoFolderClick}>
+                <LinkButton
+                  onClick={handleGotoFolderClick}
+                  dataTestId="transfer-success-destination-folder"
+                >
                   {getFolderNameFromPath(activeTransferData?.destinationPath)}
                 </LinkButton>
               </p>
@@ -726,6 +745,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
                   sourcePath={getCommonPath(
                     activeTransferData?.successfulItems.map(({ path }) => path),
                   )}
+                  name="transfer"
                 />
               </Details>
             </NotificationBanner>
@@ -734,12 +754,13 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
       {!transferId &&
         transferStatus !== "validating" &&
         transferStatus !== "transferring" && (
-          <div>
-            <div className={styles.headerText}>
+          <div data-testid="transfer-source-wrapper">
+            <div>
               <h2>{getMainTexts().title}</h2>
-              <div className={styles.insetTextWrapper}>
-                <p>{getMainTexts().description}</p>
-              </div>
+              <p data-testid="transfer-source-description">
+                {getMainTexts().description}
+              </p>
+
               <FolderPath
                 folders={
                   transferSource === "egress"
@@ -761,7 +782,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
                   onCopy={() => handleTransferAction("copy")}
                   onMove={() => handleTransferAction("move")}
                 />
-                {featureFlags.disconnectSharedDrive && (
+                {featureFlags?.disconnectSharedDrive && (
                   <Button
                     className={`govuk-button--secondary ${styles.disconnectButton}`}
                     name="secondary"
@@ -783,7 +804,9 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
                     : { type: "netapp", data: netAppDataSorted }
                 }
                 isLoading={
-                  isEgressFolderDataLoading || isNetAppFolderDataLoading
+                  transferSource === "egress"
+                    ? isEgressFolderDataLoading
+                    : isNetAppFolderDataLoading
                 }
                 hideCheckboxesColumn={hideCheckboxesColumn}
                 handleFolderClick={handleFolderClick}

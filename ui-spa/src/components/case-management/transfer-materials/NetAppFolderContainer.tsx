@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useContext } from "react";
 import { LinkButton, InsetText } from "../../govuk";
 import Checkbox from "../../common/Checkbox";
 import { type NetAppFolderData } from "../../../schemas";
@@ -16,7 +16,7 @@ import FileIcon from "../../../components/svgs/file.svg?react";
 import { formatDate } from "../../../common/utils/formatDate";
 import { DropdownButton } from "../../common/DropdownButton";
 import { TransferAction } from "../../../common/types/TransferAction";
-import { useUserGroupsFeatureFlag } from "../../../common/hooks/useUserGroupsFeatureFlag";
+import { MainStateContext } from "../../../providers/MainStateProvider";
 import styles from "./NetAppFolderContainer.module.scss";
 
 type NetAppFolderContainerProps = {
@@ -48,7 +48,8 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
     name: string;
     type: "ascending" | "descending";
   }>();
-  const featureFlags = useUserGroupsFeatureFlag();
+  const { state } = useContext(MainStateContext);
+  const { appData: { featureFlags } = {} } = state;
 
   const netAppDataSorted = useMemo(() => {
     if (sortValues?.name === "folder-name")
@@ -279,7 +280,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
       },
     ];
 
-    if (featureFlags.transferMove) {
+    if (featureFlags?.transferMove) {
       items = [
         ...items,
         {
@@ -323,7 +324,7 @@ const NetAppFolderContainer: React.FC<NetAppFolderContainerProps> = ({
         >
           Copy
         </LinkButton>
-        {featureFlags.transferMove && (
+        {featureFlags?.transferMove && (
           <>
             |
             <LinkButton

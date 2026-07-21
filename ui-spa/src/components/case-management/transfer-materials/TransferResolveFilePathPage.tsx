@@ -61,13 +61,15 @@ const TransferResolveFilePathPage = () => {
   }, []);
 
   useEffect(() => {
-    const initialValue = getMappedResolvePathFiles(
-      location?.state?.validationErrors,
-      location?.state?.destinationPath,
-    );
-    setResolvePathFiles(initialValue);
-    if (!locationState) {
-      setLocationState(location.state);
+    if (location?.state?.validationErrors && location?.state?.destinationPath) {
+      const initialValue = getMappedResolvePathFiles(
+        location?.state?.validationErrors ?? [],
+        location?.state?.destinationPath,
+      );
+      setResolvePathFiles(initialValue);
+      if (!locationState) {
+        setLocationState(location.state);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -87,7 +89,10 @@ const TransferResolveFilePathPage = () => {
   }, []);
 
   const handleRenameButtonClick = (id: string) => {
-    const selectedFile = resolvePathFiles.find((file) => file.id === id)!;
+    const selectedFile = resolvePathFiles.find((file) => file.id === id);
+    if (!selectedFile) {
+      return;
+    }
     setSelectedRenameFile(selectedFile);
     navigate(`/case/${caseId}/case-management/transfer-rename-file`, {
       replace: true,
@@ -104,9 +109,12 @@ const TransferResolveFilePathPage = () => {
   };
 
   const handleRenameContinue = (newName: string) => {
+    if (!selectedRenameFile) {
+      return;
+    }
     setResolvePathFiles((prevValues) =>
       prevValues.map((value) =>
-        value.id === selectedRenameFile!.id
+        value.id === selectedRenameFile.id
           ? { ...value, sourceName: newName }
           : value,
       ),
@@ -283,7 +291,6 @@ const TransferResolveFilePathPage = () => {
             {resolvePathFiles.length > 0 && (
               <div className={styles.btnWrapper}>
                 <Button
-                  className={styles.btnStartTransfer}
                   disabled={disableBtns || largePathFilesCount > 0}
                   onClick={handleStartTransferBtnClick}
                 >
