@@ -12,6 +12,7 @@ using CPS.ComplexCases.API.Domain.Response;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Services;
@@ -20,6 +21,7 @@ using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Constants;
 using CPS.ComplexCases.NetApp.Factories;
+using CPS.ComplexCases.NetApp.Models;
 
 namespace CPS.ComplexCases.API.Functions;
 
@@ -69,9 +71,7 @@ public class DeleteNetAppBatch(
         if (caseMetadata == null || string.IsNullOrEmpty(caseMetadata.NetappFolderPath))
             return new BadRequestObjectResult(new[] { "Case metadata or NetApp folder path is missing." });
 
-        var casePrefix = caseMetadata.NetappFolderPath.EndsWith('/')
-            ? caseMetadata.NetappFolderPath
-            : caseMetadata.NetappFolderPath + "/";
+        var casePrefix = caseMetadata.NetappFolderPath.EnsureTrailingSlash();
 
         var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
         var bucket = securityGroups.First().BucketName;
@@ -80,143 +80,192 @@ public class DeleteNetAppBatch(
 
         foreach (var op in batchRequest.Value.Operations)
         {
-            if (!op.SourcePath.StartsWith(casePrefix, StringComparison.OrdinalIgnoreCase))
+            var outOfCaseFailure = CreateOutOfCaseDeleteFailure(op, casePrefix);
+            if (outOfCaseFailure is not null)
             {
                 _logger.LogWarning(
                     "Path {SourcePath} is not within case folder {CasePrefix}. Skipping.",
                     op.SourcePath, casePrefix);
-                results.Add(new DeleteNetAppBatchItemResult
-                {
-                    SourcePath = op.SourcePath,
-                    Status = OperationResultStatus.Failed,
-                    Error = "Path is not within the case's NetApp folder."
-                });
+                results.Add(outOfCaseFailure);
                 continue;
             }
 
-            var isFolder = op.Type == NetAppOperationType.Folder;
-            var arg = _netAppArgFactory.CreateDeleteFileOrFolderArg(
-                context.BearerToken, bucket, string.Empty, op.SourcePath, isFolder);
-
-            try
-            {
-                _logger.LogInformation(
-                    "Deleting {Type} from NetApp: SourcePath={SourcePath}",
-                    op.Type, op.SourcePath);
-
-                var result = await _netAppClient.DeleteFileOrFolderAsync(arg);
-
-                if (!result.Success)
-                {
-                    results.Add(new DeleteNetAppBatchItemResult
-                    {
-                        SourcePath = op.SourcePath,
-                        Status = OperationResultStatus.Failed,
-                        Error = result.ErrorMessage
-                    });
-                }
-                else if (!result.WasFound)
-                {
-                    _logger.LogInformation("Path {SourcePath} was not found in NetApp; treating as already deleted.", op.SourcePath);
-                    results.Add(new DeleteNetAppBatchItemResult
-                    {
-                        SourcePath = op.SourcePath,
-                        Status = OperationResultStatus.NotFound,
-                    });
-                }
-                else
-                {
-                    results.Add(new DeleteNetAppBatchItemResult
-                    {
-                        SourcePath = op.SourcePath,
-                        Status = OperationResultStatus.Deleted,
-                        KeysDeleted = result.KeysDeleted > 1 ? result.KeysDeleted : null
-                    });
-                }
-            }
-            catch (Amazon.S3.AmazonS3Exception ex) when ((int)ex.StatusCode == 423)
-            {
-                _logger.LogWarning("File {SourcePath} is locked via SMB (HTTP 423).", op.SourcePath);
-                results.Add(new DeleteNetAppBatchItemResult
-                {
-                    SourcePath = op.SourcePath,
-                    Status = OperationResultStatus.Failed,
-                    Error = "File is open via SMB (HTTP 423). Close the file and retry."
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error deleting {SourcePath} from bucket {BucketName}.", op.SourcePath, bucket);
-                results.Add(new DeleteNetAppBatchItemResult
-                {
-                    SourcePath = op.SourcePath,
-                    Status = OperationResultStatus.Failed,
-                    Error = ex.Message
-                });
-            }
+            results.Add(await DeleteSingleOperationAsync(op, context.BearerToken, bucket));
         }
 
+        await WriteDeleteActivityLogAsync(batchRequest.Value, results, context.Username);
+
+        return new OkObjectResult(BuildBatchResponse(batchRequest.Value.Operations.Count, results));
+    }
+
+    private async Task<DeleteNetAppBatchItemResult> DeleteSingleOperationAsync(
+        DeleteNetAppBatchOperationDto op,
+        string bearerToken,
+        string bucket)
+    {
+        var isFolder = op.Type == NetAppOperationType.Folder;
+        var arg = _netAppArgFactory.CreateDeleteFileOrFolderArg(
+            bearerToken, bucket, string.Empty, op.SourcePath, isFolder);
+
+        try
+        {
+            _logger.LogInformation(
+                "Deleting {Type} from NetApp: SourcePath={SourcePath}",
+                op.Type, op.SourcePath);
+
+            var result = await _netAppClient.DeleteFileOrFolderAsync(arg);
+            return MapDeleteResultToItemResult(op, result, _logger);
+        }
+        catch (Amazon.S3.AmazonS3Exception ex) when ((int)ex.StatusCode == 423)
+        {
+            _logger.LogWarning("File {SourcePath} is locked via SMB (HTTP 423).", op.SourcePath);
+            return new DeleteNetAppBatchItemResult
+            {
+                SourcePath = op.SourcePath,
+                Status = OperationResultStatus.Failed,
+                Error = "File is open via SMB (HTTP 423). Close the file and retry."
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error deleting {SourcePath} from bucket {BucketName}.", op.SourcePath, bucket);
+            return new DeleteNetAppBatchItemResult
+            {
+                SourcePath = op.SourcePath,
+                Status = OperationResultStatus.Failed,
+                Error = ex.Message
+            };
+        }
+    }
+
+    internal static DeleteNetAppBatchItemResult? CreateOutOfCaseDeleteFailure(
+        DeleteNetAppBatchOperationDto op,
+        string casePrefix)
+    {
+        if (op.SourcePath.StartsWith(casePrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        return new DeleteNetAppBatchItemResult
+        {
+            SourcePath = op.SourcePath,
+            Status = OperationResultStatus.Failed,
+            Error = "Path is not within the case's NetApp folder."
+        };
+    }
+
+    internal static DeleteNetAppBatchItemResult MapDeleteResultToItemResult(
+        DeleteNetAppBatchOperationDto op,
+        DeleteNetAppResult result,
+        ILogger? logger = null)
+    {
+        if (!result.Success)
+        {
+            return new DeleteNetAppBatchItemResult
+            {
+                SourcePath = op.SourcePath,
+                Status = OperationResultStatus.Failed,
+                Error = result.ErrorMessage
+            };
+        }
+
+        if (!result.WasFound)
+        {
+            logger?.LogInformation("Path {SourcePath} was not found in NetApp; treating as already deleted.", op.SourcePath);
+            return new DeleteNetAppBatchItemResult
+            {
+                SourcePath = op.SourcePath,
+                Status = OperationResultStatus.NotFound,
+            };
+        }
+
+        return new DeleteNetAppBatchItemResult
+        {
+            SourcePath = op.SourcePath,
+            Status = OperationResultStatus.Deleted,
+            KeysDeleted = result.KeysDeleted > 1 ? result.KeysDeleted : null
+        };
+    }
+
+    internal static (ActivityLog.Enums.ActionType ActionType, ActivityLog.Enums.ResourceType ResourceType)
+        ResolveDeleteActivityTypes(bool hasFolder, bool hasMaterial) =>
+        (hasFolder, hasMaterial) switch
+        {
+            (true, true) => (ActivityLog.Enums.ActionType.FolderAndMaterialDeleted, ActivityLog.Enums.ResourceType.Material),
+            (true, false) => (ActivityLog.Enums.ActionType.FolderDeleted, ActivityLog.Enums.ResourceType.NetAppFolder),
+            _ => (ActivityLog.Enums.ActionType.MaterialDeleted, ActivityLog.Enums.ResourceType.Material)
+        };
+
+    internal static DeleteNetAppBatchResponse BuildBatchResponse(
+        int totalRequested,
+        List<DeleteNetAppBatchItemResult> results)
+    {
         var succeeded = results.Count(r => r.Status == OperationResultStatus.Deleted);
         var notFound = results.Count(r => r.Status == OperationResultStatus.NotFound);
         var failed = results.Count(r => r.Status == OperationResultStatus.Failed);
 
-        if (succeeded > 0 || notFound > 0)
-        {
-            try
-            {
-                var auditedPaths = results
-                    .Where(r => r.Status is OperationResultStatus.Deleted or OperationResultStatus.NotFound)
-                    .Select(r => r.SourcePath)
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-                var auditedOps = batchRequest.Value.Operations
-                    .Where(op => auditedPaths.Contains(op.SourcePath))
-                    .ToList();
-
-                var hasFolder = auditedOps.Any(op => op.Type == NetAppOperationType.Folder);
-                var hasMaterial = auditedOps.Any(op => op.Type == NetAppOperationType.Material);
-
-                var (actionType, resourceType) = (hasFolder, hasMaterial) switch
-                {
-                    (true, true) => (ActivityLog.Enums.ActionType.FolderAndMaterialDeleted, ActivityLog.Enums.ResourceType.Material),
-                    (true, false) => (ActivityLog.Enums.ActionType.FolderDeleted, ActivityLog.Enums.ResourceType.NetAppFolder),
-                    _ => (ActivityLog.Enums.ActionType.MaterialDeleted, ActivityLog.Enums.ResourceType.Material)
-                };
-
-                var details = new
-                {
-                    items = results.Select(r => new
-                    {
-                        sourcePath = r.SourcePath,
-                        outcome = r.Status,
-                        error = r.Error,
-                        keysDeleted = r.KeysDeleted
-                    })
-                }.SerializeToJsonDocument(_logger);
-
-                await _activityLogService.CreateActivityLogAsync(
-                    actionType,
-                    resourceType,
-                    batchRequest.Value.CaseId,
-                    batchRequest.Value.CaseId.ToString(),
-                    null,
-                    context.Username,
-                    details);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to write batch activity log for case {CaseId}.", batchRequest.Value.CaseId);
-            }
-        }
-
-        return new OkObjectResult(new DeleteNetAppBatchResponse
+        return new DeleteNetAppBatchResponse
         {
             Status = NetAppBatchOutcome.ResolveStatus(succeeded, failed, notFound),
-            TotalRequested = batchRequest.Value.Operations.Count,
+            TotalRequested = totalRequested,
             Succeeded = succeeded,
             NotFound = notFound,
             Failed = failed,
             Results = results
-        });
+        };
+    }
+
+    private async Task WriteDeleteActivityLogAsync(
+        DeleteNetAppBatchDto request,
+        List<DeleteNetAppBatchItemResult> results,
+        string userName)
+    {
+        var succeeded = results.Count(r => r.Status == OperationResultStatus.Deleted);
+        var notFound = results.Count(r => r.Status == OperationResultStatus.NotFound);
+        if (succeeded == 0 && notFound == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            var auditedPaths = results
+                .Where(r => r.Status is OperationResultStatus.Deleted or OperationResultStatus.NotFound)
+                .Select(r => r.SourcePath)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var auditedOps = request.Operations
+                .Where(op => auditedPaths.Contains(op.SourcePath))
+                .ToList();
+
+            var hasFolder = auditedOps.Any(op => op.Type == NetAppOperationType.Folder);
+            var hasMaterial = auditedOps.Any(op => op.Type == NetAppOperationType.Material);
+            var (actionType, resourceType) = ResolveDeleteActivityTypes(hasFolder, hasMaterial);
+
+            var details = new
+            {
+                items = results.Select(r => new
+                {
+                    sourcePath = r.SourcePath,
+                    outcome = r.Status,
+                    error = r.Error,
+                    keysDeleted = r.KeysDeleted
+                })
+            }.SerializeToJsonDocument(_logger);
+
+            await _activityLogService.CreateActivityLogAsync(
+                actionType,
+                resourceType,
+                request.CaseId,
+                request.CaseId.ToString(),
+                null,
+                userName,
+                details);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to write batch activity log for case {CaseId}.", request.CaseId);
+        }
     }
 }
