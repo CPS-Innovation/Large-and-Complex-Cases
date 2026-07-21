@@ -67,7 +67,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
   transferEgressFolderPathInitialValue,
   transferNetAppFolderPathInitialValue,
 }) => {
-  const { state } = useContext(MainStateContext);
+  const { state, dispatch } = useContext(MainStateContext);
   const { appData: { featureFlags } = {} } = state;
   const navigate = useNavigate();
   const { username } = useUserDetails();
@@ -498,18 +498,18 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
   };
 
   const handleTransferAction = (type: "copy" | "move") => {
-    navigate(`/case/${caseId}/case-management/transfer-destination-page`, {
-      state: {
-        isRouteValid: true,
+    dispatch({
+      type: "SET_TRANSFER_DESTINATION_PAGE",
+      payload: {
         transferSource: transferSource,
         selectedTransferAction: type,
         sourcePaths: getTransferSourcePath(),
         egressWorkspaceId,
-        caseId: Number.parseInt(caseId),
         netAppPath,
         operationName,
       },
     });
+    navigate(`/case/${caseId}/case-management/transfer-destination-page`);
   };
 
   const handleDisconnectSharedDrive = async () => {

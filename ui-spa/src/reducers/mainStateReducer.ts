@@ -48,6 +48,20 @@ export type MainState = {
     connectSharedDriveFailurePage: {
       backLinkUrl: string;
     };
+    transferDestinationPage: {
+      transferSource: "egress" | "netapp" | null;
+      selectedTransferAction: "copy" | "move" | null;
+      sourcePaths:
+        | {
+            fileId: string;
+            path: string;
+            isFolder: boolean;
+          }[]
+        | { path: string }[];
+      egressWorkspaceId: string;
+      netAppPath: string;
+      operationName: string;
+    };
   };
   formData: FormData;
   apiData: {
@@ -90,6 +104,14 @@ export const initialState: MainState = {
     },
     connectSharedDriveFailurePage: {
       backLinkUrl: "",
+    },
+    transferDestinationPage: {
+      transferSource: null,
+      selectedTransferAction: null,
+      sourcePaths: [],
+      egressWorkspaceId: "",
+      netAppPath: "",
+      operationName: "",
     },
   },
   formData: {
@@ -177,6 +199,23 @@ export type MainStateActions =
       type: "SET_SHARED_DRIVE_CONNECT_FAILURE_PAGE";
       payload: {
         backLinkUrl: string;
+      };
+    }
+  | {
+      type: "SET_TRANSFER_DESTINATION_PAGE";
+      payload: {
+        transferSource: "egress" | "netapp" | null;
+        selectedTransferAction: "copy" | "move" | null;
+        sourcePaths:
+          | {
+              fileId: string;
+              path: string;
+              isFolder: boolean;
+            }[]
+          | { path: string }[];
+        egressWorkspaceId: string;
+        netAppPath: string;
+        operationName: string;
       };
     };
 
@@ -288,6 +327,18 @@ export const mainStateReducer = (
         appData: {
           ...state.appData,
           connectSharedDriveFailurePage: {
+            ...action.payload,
+          },
+        },
+      };
+    }
+
+    case "SET_TRANSFER_DESTINATION_PAGE": {
+      return {
+        ...state,
+        appData: {
+          ...state.appData,
+          transferDestinationPage: {
             ...action.payload,
           },
         },

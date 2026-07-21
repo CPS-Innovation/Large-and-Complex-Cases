@@ -1,6 +1,6 @@
 import { BackLink } from "../../govuk";
-import { useState, useMemo } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useState, useMemo, useContext } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { PageContentWrapper } from "../../govuk/PageContentWrapper";
 import { Spinner } from "../../common/Spinner";
 import { InitiateFileTransferPayload } from "../../../schemas/requests/initiateFileTransferPayload";
@@ -27,38 +27,20 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
 import { ApiError } from "../../../common/errors/ApiError";
 import { type TreeNode } from "../../common/tree-view-component/TreeViewComponent";
+import { MainStateContext } from "../../../providers/MainStateProvider";
 import styles from "./TransferDestinationPage.module.scss";
 
 const TransferDestinationPage: React.FC = () => {
-  const {
-    state,
-  }: {
-    state: {
-      sourcePaths:
-        | {
-            fileId: string;
-            path: string;
-            isFolder: boolean;
-          }[]
-        | { path: string }[];
-      transferSource: "egress" | "netapp";
-      egressWorkspaceId: string;
-      selectedTransferAction: "copy" | "move";
-      caseId: number;
-      netAppPath: string;
-      operationName: string;
-    };
-  } = useLocation();
-
+  const { state } = useContext(MainStateContext);
+  const { caseId } = useParams() as { caseId: string };
   const {
     transferSource,
     sourcePaths,
-    caseId,
     egressWorkspaceId,
     selectedTransferAction,
     netAppPath,
     operationName,
-  } = state || {};
+  } = state.appData.transferDestinationPage;
 
   const { data: netAppData, isLoading: isNetAppFolderDataLoading } = useQuery({
     queryKey: [netAppPath],
@@ -190,7 +172,7 @@ const TransferDestinationPage: React.FC = () => {
     const paths = sourcePaths.map(({ path }) => path);
 
     const payload = {
-      caseId: caseId,
+      caseId: Number.parseInt(caseId),
       transferDirection:
         transferSource === "egress"
           ? ("EgressToNetApp" as const)
@@ -290,7 +272,7 @@ const TransferDestinationPage: React.FC = () => {
             initiateTransferPayload: getInitiateTransferPayload(
               response,
               egressWorkspaceId,
-              caseId,
+              Number.parseInt(caseId),
             ),
             baseFolderName: validationPayload.sourceRootFolderPath,
           },
@@ -301,7 +283,7 @@ const TransferDestinationPage: React.FC = () => {
       const initiateTransferPayload = getInitiateTransferPayload(
         response,
         egressWorkspaceId,
-        caseId,
+        Number.parseInt(caseId),
       );
       handleInitiateFileTransfer(initiateTransferPayload);
     } catch (error) {

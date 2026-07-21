@@ -18,7 +18,7 @@ import {
   handleFileTransferClear,
 } from "../../../apis/gateway-api";
 import EgressFolderContainer from "./EgressFolderContainer";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import TransferConfirmationModal from "./TransferConfirmationModal";
 import { getGroupedFolderFileData } from "../../../common/utils/getGroupedFolderFileData";
 import { TransferAction } from "../../../common/types/TransferAction";
@@ -67,7 +67,6 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   const { state } = useContext(MainStateContext);
   const { appData: { featureFlags } = {} } = state;
   const navigate = useNavigate();
-  const location = useLocation();
   const { username } = useUserDetails();
   const [transferSource, setTransferSource] = useState<"egress" | "netapp">(
     "egress",
@@ -683,17 +682,6 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       },
     );
   };
-
-  useEffect(() => {
-    unMounting.current = false;
-    if (location.state) {
-      window.history.replaceState({}, "", location.pathname + location.search);
-    }
-    return () => {
-      unMounting.current = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     if (
