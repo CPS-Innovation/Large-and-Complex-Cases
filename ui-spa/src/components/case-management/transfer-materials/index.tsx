@@ -62,9 +62,8 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   egressWorkspaceId,
   netAppPath,
   activeTransferId,
-  urn,
 }) => {
-  const { state } = useContext(MainStateContext);
+  const { state, dispatch } = useContext(MainStateContext);
   const { appData: { featureFlags } = {} } = state;
   const navigate = useNavigate();
   const { username } = useUserDetails();
@@ -537,9 +536,9 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       response = await indexingFileTransfer(validationPayload);
       if (response.isInvalid) {
         setTransferStatus("validated-with-errors");
-        navigate(`/case/${caseId}/case-management/transfer-resolve-file-path`, {
-          state: {
-            isRouteValid: true,
+        dispatch({
+          type: "SET_TRANSFER_RESOLVE_FILE_PATH_PAGE",
+          payload: {
             validationErrors: response.validationErrors,
             destinationPath: response.destinationPath,
             initiateTransferPayload: getInitiateTransferPayload(response),
@@ -549,6 +548,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
                 : "",
           },
         });
+        navigate(`/case/${caseId}/case-management/transfer-resolve-file-path`);
         return;
       }
 
@@ -673,13 +673,6 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   const handleDisconnectSharedDrive = async () => {
     navigate(
       `/case/${caseId}/case-management/disconnect-shared-drive-confirmation`,
-      {
-        state: {
-          isRouteValid: true,
-          caseId: caseId,
-          urn: urn,
-        },
-      },
     );
   };
 

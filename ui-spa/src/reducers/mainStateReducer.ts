@@ -4,6 +4,7 @@ import {
 } from "../schemas";
 import { mapAreaLookups } from "./utils/mapAreaLookups";
 import { FeatureFlagData } from "../common/types/FeatureFlagData";
+import { InitiateFileTransferPayload } from "../schemas/requests/initiateFileTransferPayload";
 export type FormData = {
   searchType: "urn" | "operation name" | "defendant name";
   operationName: string;
@@ -62,6 +63,15 @@ export type MainState = {
       netAppPath: string;
       operationName: string;
     };
+    transferResolveFilePathPage: {
+      validationErrors: {
+        id: string;
+        sourcePath: string;
+      }[];
+      destinationPath: string;
+      initiateTransferPayload: InitiateFileTransferPayload | null;
+      baseFolderName: string;
+    };
   };
   formData: FormData;
   apiData: {
@@ -112,6 +122,12 @@ export const initialState: MainState = {
       egressWorkspaceId: "",
       netAppPath: "",
       operationName: "",
+    },
+    transferResolveFilePathPage: {
+      validationErrors: [],
+      destinationPath: "",
+      initiateTransferPayload: null,
+      baseFolderName: "",
     },
   },
   formData: {
@@ -216,6 +232,18 @@ export type MainStateActions =
         egressWorkspaceId: string;
         netAppPath: string;
         operationName: string;
+      };
+    }
+  | {
+      type: "SET_TRANSFER_RESOLVE_FILE_PATH_PAGE";
+      payload: {
+        validationErrors: {
+          id: string;
+          sourcePath: string;
+        }[];
+        destinationPath: string;
+        initiateTransferPayload: InitiateFileTransferPayload | null;
+        baseFolderName: string;
       };
     };
 
@@ -339,6 +367,17 @@ export const mainStateReducer = (
         appData: {
           ...state.appData,
           transferDestinationPage: {
+            ...action.payload,
+          },
+        },
+      };
+    }
+    case "SET_TRANSFER_RESOLVE_FILE_PATH_PAGE": {
+      return {
+        ...state,
+        appData: {
+          ...state.appData,
+          transferResolveFilePathPage: {
             ...action.payload,
           },
         },

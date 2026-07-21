@@ -89,25 +89,6 @@ const CaseManagementPage = () => {
     }
   }, [caseMetaData, navigate, caseId, operationNameOrDefendantName, dispatch]);
 
-  const validateRoute = useCallback(() => {
-    if (
-      location.pathname.endsWith("/transfer-resolve-file-path") &&
-      !location?.state?.isRouteValid
-    ) {
-      navigate(`/`);
-    }
-    if (
-      location.pathname.endsWith("/transfer-rename-file") &&
-      !location?.state?.isRouteValid
-    ) {
-      navigate(`/`);
-    }
-  }, [location, navigate]);
-
-  useEffect(() => {
-    validateRoute();
-  }, [location, validateRoute]);
-
   const tabItems = useMemo(() => {
     const items: ItemProps<TabId>[] = [];
 

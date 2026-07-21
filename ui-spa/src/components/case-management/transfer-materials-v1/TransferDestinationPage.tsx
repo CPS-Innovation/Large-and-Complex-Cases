@@ -31,7 +31,7 @@ import { MainStateContext } from "../../../providers/MainStateProvider";
 import styles from "./TransferDestinationPage.module.scss";
 
 const TransferDestinationPage: React.FC = () => {
-  const { state } = useContext(MainStateContext);
+  const { state, dispatch } = useContext(MainStateContext);
   const { caseId } = useParams() as { caseId: string };
   const {
     transferSource,
@@ -264,9 +264,9 @@ const TransferDestinationPage: React.FC = () => {
       const response: IndexingFileTransferResponse =
         await indexingFileTransferMutation.mutateAsync(validationPayload);
       if (response.isInvalid) {
-        navigate(`/case/${caseId}/case-management/transfer-resolve-file-path`, {
-          state: {
-            isRouteValid: true,
+        dispatch({
+          type: "SET_TRANSFER_RESOLVE_FILE_PATH_PAGE",
+          payload: {
             validationErrors: response.validationErrors,
             destinationPath: response.destinationPath,
             initiateTransferPayload: getInitiateTransferPayload(
@@ -274,9 +274,10 @@ const TransferDestinationPage: React.FC = () => {
               egressWorkspaceId,
               Number.parseInt(caseId),
             ),
-            baseFolderName: validationPayload.sourceRootFolderPath,
+            baseFolderName: validationPayload.sourceRootFolderPath, //do we need this
           },
         });
+        navigate(`/case/${caseId}/case-management/transfer-resolve-file-path`);
         return;
       }
 
@@ -292,11 +293,7 @@ const TransferDestinationPage: React.FC = () => {
         error.code == 403 &&
         validationPayload.transferType === "Move"
       ) {
-        navigate(`/case/${caseId}/case-management/transfer-permissions-error`, {
-          state: {
-            isRouteValid: true,
-          },
-        });
+        navigate(`/case/${caseId}/case-management/transfer-permissions-error`);
         return;
       }
       return;

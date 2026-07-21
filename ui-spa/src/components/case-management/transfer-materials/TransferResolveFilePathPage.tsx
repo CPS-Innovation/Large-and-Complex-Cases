@@ -1,4 +1,4 @@
-import { useCallback, useState, useMemo, useEffect } from "react";
+import { useCallback, useState, useMemo, useEffect, useContext } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   BackLink,
@@ -18,19 +18,18 @@ import { getMappedResolvePathFiles } from "../../../common/utils/getMappedResolv
 import { RenameTransferFilePage } from "./RenameTransferFilePage";
 import { initiateFileTransfer } from "../../../apis/gateway-api";
 import { EgressTransferPayloadSourcePath } from "../../../schemas/requests/initiateFileTransferPayload";
-import { TransferResolvePageLocationState } from "../../../common/types/TransferResolvePageLocationState";
 import { PageContentWrapper } from "../../govuk/PageContentWrapper";
+import { MainStateContext } from "../../../providers/MainStateProvider";
 import styles from "./TransferResolveFilePathPage.module.scss";
 
 const MAX_FILE_PATH_CHARACTERS = 260;
 
 const TransferResolveFilePathPage = () => {
+  const { state } = useContext(MainStateContext);
   const navigate = useNavigate();
   const location = useLocation();
   const { caseId } = useParams();
   const [ariaLiveText, setAriaLiveText] = useState("");
-  const [locationState, setLocationState] =
-    useState<TransferResolvePageLocationState>();
 
   const [resolvePathFiles, setResolvePathFiles] = useState<
     ResolvePathFileType[]
@@ -61,15 +60,14 @@ const TransferResolveFilePathPage = () => {
   }, []);
 
   useEffect(() => {
-    if (location?.state?.validationErrors && location?.state?.destinationPath) {
+    const { validationErrors, destinationPath } =
+      state.appData.transferResolveFilePathPage;
+    if (validationErrors && destinationPath) {
       const initialValue = getMappedResolvePathFiles(
-        location?.state?.validationErrors ?? [],
-        location?.state?.destinationPath,
+        validationErrors,
+        destinationPath,
       );
       setResolvePathFiles(initialValue);
-      if (!locationState) {
-        setLocationState(location.state);
-      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -96,14 +94,12 @@ const TransferResolveFilePathPage = () => {
     setSelectedRenameFile(selectedFile);
     navigate(`/case/${caseId}/case-management/transfer-rename-file`, {
       replace: true,
-      state: { isRouteValid: true },
     });
   };
 
   const handleRenameCancel = () => {
     navigate(`/case/${caseId}/case-management/transfer-resolve-file-path`, {
       replace: true,
-      state: { isRouteValid: true },
     });
     setSelectedRenameFile(null);
   };
@@ -122,12 +118,13 @@ const TransferResolveFilePathPage = () => {
     setSelectedRenameFile(null);
     navigate(`/case/${caseId}/case-management/transfer-resolve-file-path`, {
       replace: true,
-      state: { isRouteValid: true },
     });
   };
 
   const handleStartTransferBtnClick = async () => {
-    if (!locationState?.initiateTransferPayload) {
+    const { initiateTransferPayload } =
+      state.appData.transferResolveFilePathPage;
+    if (!initiateTransferPayload) {
       return;
     }
     setDisableBtns(true);
@@ -143,9 +140,9 @@ const TransferResolveFilePathPage = () => {
       }));
 
     const initiatePayload = {
-      ...locationState?.initiateTransferPayload,
+      ...initiateTransferPayload,
       sourcePaths: [
-        ...(locationState?.initiateTransferPayload?.sourcePaths ?? []),
+        ...(initiateTransferPayload?.sourcePaths ?? []),
         ...resolvedFiles,
       ],
     };
