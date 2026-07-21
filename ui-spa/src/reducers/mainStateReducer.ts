@@ -1,4 +1,7 @@
-import { type CaseDivisionsOrAreaResponse } from "../schemas";
+import {
+  type CaseDivisionsOrAreaResponse,
+  type CaseMetaDataResponse,
+} from "../schemas";
 import { mapAreaLookups } from "./utils/mapAreaLookups";
 import { FeatureFlagData } from "../common/types/FeatureFlagData";
 export type FormData = {
@@ -49,6 +52,7 @@ export type MainState = {
   formData: FormData;
   apiData: {
     caseDivisionsOrAreas: CaseDivisionsOrAreaResponse | null;
+    caseMetaData: CaseMetaDataResponse | null;
   };
 };
 
@@ -98,6 +102,7 @@ export const initialState: MainState = {
   },
   apiData: {
     caseDivisionsOrAreas: null,
+    caseMetaData: null,
   },
 };
 
@@ -110,6 +115,12 @@ export type MainStateActions =
       type: "SET_CASE_DIVISIONS_OR_AREAS";
       payload: {
         caseDivisionsOrAreas: CaseDivisionsOrAreaResponse;
+      };
+    }
+  | {
+      type: "SET_CASE_META_DATA";
+      payload: {
+        caseMetaData: CaseMetaDataResponse;
       };
     }
   | {
@@ -184,6 +195,15 @@ export const mainStateReducer = (
           caseDivisionsOrAreas: mapAreaLookups(
             action.payload.caseDivisionsOrAreas,
           ),
+        },
+      };
+    }
+    case "SET_CASE_META_DATA": {
+      return {
+        ...state,
+        apiData: {
+          ...state.apiData,
+          caseMetaData: action.payload.caseMetaData,
         },
       };
     }

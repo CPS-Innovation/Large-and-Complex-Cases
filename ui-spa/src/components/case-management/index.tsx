@@ -34,7 +34,7 @@ const CaseManagementPage = () => {
 
   const [activeTabId, setActiveTabId] = useState<TabId>("transfer-materials");
 
-  const { state } = useContext(MainStateContext);
+  const { state, dispatch } = useContext(MainStateContext);
   const {
     appData: { featureFlags },
   } = state;
@@ -57,6 +57,12 @@ const CaseManagementPage = () => {
 
   useEffect(() => {
     if (caseMetaData) {
+      dispatch({
+        type: "SET_CASE_META_DATA",
+        payload: {
+          caseMetaData,
+        },
+      });
       if (!caseMetaData.egressWorkspaceId && !caseMetaData.netappFolderPath) {
         navigate("/");
       }
@@ -81,7 +87,7 @@ const CaseManagementPage = () => {
         );
       }
     }
-  }, [caseMetaData, navigate, caseId, operationNameOrDefendantName]);
+  }, [caseMetaData, navigate, caseId, operationNameOrDefendantName, dispatch]);
 
   const validateRoute = useCallback(() => {
     if (

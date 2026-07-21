@@ -23,7 +23,7 @@ describe("useFormattedAreaValues", () => {
       formData: {} as any,
       apiData: {
         caseDivisionsOrAreas: null,
-      },
+      } as any,
     };
     const wrapper = ({ children }: any) =>
       createElement(
@@ -56,7 +56,7 @@ describe("useFormattedAreaValues", () => {
 
           homeArea: { id: 3, description: "allAreas_3" },
         },
-      },
+      } as any,
     };
     const wrapper = ({ children }: any) =>
       createElement(
