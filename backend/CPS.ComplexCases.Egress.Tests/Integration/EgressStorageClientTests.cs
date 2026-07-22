@@ -234,8 +234,11 @@ public class EgressStorageClientTests : IDisposable
         const string md5Hash = "d41d8cd98f00b204e9800998ecf8427e";
         var etags = new Dictionary<int, string> { { 1, "etag1" }, { 2, "etag2" } };
 
-        // Act & Assert (should not throw)
-        await _client.CompleteUploadAsync(session, md5Hash, etags);
+        // Act
+        var result = await _client.CompleteUploadAsync(session, md5Hash, etags);
+
+        // Assert
+        Assert.True(result);
     }
 
     [Fact]
@@ -267,8 +270,11 @@ public class EgressStorageClientTests : IDisposable
             Md5Hash = "d41d8cd98f00b204e9800998ecf8427e"
         };
 
-        // Act & Assert (should not throw)
-        await _client.CompleteUploadAsync(session);
+        // Act
+        var result = await _client.CompleteUploadAsync(session);
+
+        // Assert
+        Assert.True(result);
     }
 
     [Fact]
