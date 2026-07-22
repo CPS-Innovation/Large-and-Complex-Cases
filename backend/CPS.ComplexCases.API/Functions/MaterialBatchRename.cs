@@ -7,6 +7,7 @@ using CPS.ComplexCases.API.Domain.Response;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models.Configuration;
@@ -16,6 +17,7 @@ using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Constants;
 using CPS.ComplexCases.NetApp.Exceptions;
 using CPS.ComplexCases.NetApp.Factories;
+using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Requests;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -80,9 +82,7 @@ public class MaterialBatchRename(
         if (caseMetadata == null || string.IsNullOrEmpty(caseMetadata.NetappFolderPath))
             return new BadRequestObjectResult(new[] { "Case metadata or NetApp folder path is missing." });
 
-        var casePrefix = caseMetadata.NetappFolderPath.EndsWith('/')
-            ? caseMetadata.NetappFolderPath
-            : caseMetadata.NetappFolderPath + "/";
+        var casePrefix = caseMetadata.NetappFolderPath.EnsureTrailingSlash();
 
         var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
         var volumeUuid = securityGroups[0].VolumeUuid;
@@ -91,93 +91,140 @@ public class MaterialBatchRename(
 
         foreach (var operation in renameRequest.Value.Operations)
         {
-            if (!operation.CurrentPath.StartsWith(casePrefix, StringComparison.OrdinalIgnoreCase) ||
-                !operation.NewPath.StartsWith(casePrefix, StringComparison.OrdinalIgnoreCase))
+            var outOfCaseFailure = CreateOutOfCaseRenameFailure(operation, casePrefix);
+            if (outOfCaseFailure is not null)
             {
                 _logger.LogWarning(
                     "Either the current path {CurrentPath} or the new path {NewPath} is not within case folder {CasePrefix}. Skipping.",
                     operation.CurrentPath, operation.NewPath, casePrefix);
-                results.Add(new MaterialRenameBatchItemResult
-                {
-                    PreviousPath = operation.CurrentPath,
-                    NewPath = operation.NewPath,
-                    Status = OperationResultStatus.Failed,
-                    Error = "Path is not within the case's NetApp folder."
-                });
+                results.Add(outOfCaseFailure);
                 continue;
             }
 
-            var arg = _ontapArgFactory.CreateMaterialRenameArg(context.BearerToken, volumeUuid, operation.CurrentPath, operation.NewPath);
-
             try
             {
-                var result = await _ontapHttpClient.RenameMaterialAsync(arg);
-
-                if (result.Success)
-                {
-                    results.Add(new MaterialRenameBatchItemResult
-                    {
-                        PreviousPath = operation.CurrentPath,
-                        NewPath = operation.NewPath,
-                        Status = OperationResultStatus.Renamed
-                    });
-                }
-                else if (!result.WasFound)
-                {
-                    _logger.LogInformation("Material not found for {CurrentPath}.", operation.CurrentPath);
-                    results.Add(new MaterialRenameBatchItemResult
-                    {
-                        PreviousPath = operation.CurrentPath,
-                        NewPath = operation.NewPath,
-                        Status = OperationResultStatus.NotFound
-                    });
-                }
-                else
-                {
-                    _logger.LogInformation("Failed to rename material from {CurrentPath} to {NewPath}. Error: {ErrorMessage}", operation.CurrentPath, operation.NewPath, result.ErrorMessage);
-                    results.Add(new MaterialRenameBatchItemResult
-                    {
-                        PreviousPath = operation.CurrentPath,
-                        NewPath = operation.NewPath,
-                        Status = OperationResultStatus.Failed,
-                        Error = result.ErrorMessage
-                    });
-                }
+                results.Add(await RenameSingleOperationAsync(operation, context.BearerToken, volumeUuid));
             }
-            catch (Exception ex) when (ex is OntapUnauthorizedException or OntapClientException { StatusCode: HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden })
+            catch (Exception ex) when (IsAuthException(ex))
             {
                 // Items already renamed must be audited before the auth failure propagates.
                 await WriteRenameActivityLogAsync(renameRequest.Value, results, context.Username);
                 throw;
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error renaming material from {CurrentPath} to {NewPath}.", operation.CurrentPath, operation.NewPath);
-                results.Add(new MaterialRenameBatchItemResult
-                {
-                    PreviousPath = operation.CurrentPath,
-                    NewPath = operation.NewPath,
-                    Status = OperationResultStatus.Failed,
-                    Error = ex.Message
-                });
-            }
         }
 
+        await WriteRenameActivityLogAsync(renameRequest.Value, results, context.Username);
+
+        return new OkObjectResult(BuildBatchResponse(renameRequest.Value.Operations.Count, results));
+    }
+
+    private async Task<MaterialRenameBatchItemResult> RenameSingleOperationAsync(
+        RenameNetAppMaterialBatchOperationDto operation,
+        string bearerToken,
+        Guid volumeUuid)
+    {
+        var arg = _ontapArgFactory.CreateMaterialRenameArg(bearerToken, volumeUuid, operation.CurrentPath, operation.NewPath);
+
+        try
+        {
+            var result = await _ontapHttpClient.RenameMaterialAsync(arg);
+            return MapRenameResultToItemResult(operation, result, _logger);
+        }
+        catch (Exception ex) when (IsAuthException(ex))
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error renaming material from {CurrentPath} to {NewPath}.", operation.CurrentPath, operation.NewPath);
+            return new MaterialRenameBatchItemResult
+            {
+                PreviousPath = operation.CurrentPath,
+                NewPath = operation.NewPath,
+                Status = OperationResultStatus.Failed,
+                Error = ex.Message
+            };
+        }
+    }
+
+    internal static MaterialRenameBatchItemResult? CreateOutOfCaseRenameFailure(
+        RenameNetAppMaterialBatchOperationDto operation,
+        string casePrefix)
+    {
+        if (operation.CurrentPath.StartsWith(casePrefix, StringComparison.OrdinalIgnoreCase) &&
+            operation.NewPath.StartsWith(casePrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        return new MaterialRenameBatchItemResult
+        {
+            PreviousPath = operation.CurrentPath,
+            NewPath = operation.NewPath,
+            Status = OperationResultStatus.Failed,
+            Error = "Path is not within the case's NetApp folder."
+        };
+    }
+
+    internal static MaterialRenameBatchItemResult MapRenameResultToItemResult(
+        RenameNetAppMaterialBatchOperationDto operation,
+        MaterialRenameResult result,
+        ILogger? logger = null)
+    {
+        if (result.Success)
+        {
+            return new MaterialRenameBatchItemResult
+            {
+                PreviousPath = operation.CurrentPath,
+                NewPath = operation.NewPath,
+                Status = OperationResultStatus.Renamed
+            };
+        }
+
+        if (!result.WasFound)
+        {
+            logger?.LogInformation("Material not found for {CurrentPath}.", operation.CurrentPath);
+            return new MaterialRenameBatchItemResult
+            {
+                PreviousPath = operation.CurrentPath,
+                NewPath = operation.NewPath,
+                Status = OperationResultStatus.NotFound
+            };
+        }
+
+        logger?.LogInformation(
+            "Failed to rename material from {CurrentPath} to {NewPath}. Error: {ErrorMessage}",
+            operation.CurrentPath, operation.NewPath, result.ErrorMessage);
+        return new MaterialRenameBatchItemResult
+        {
+            PreviousPath = operation.CurrentPath,
+            NewPath = operation.NewPath,
+            Status = OperationResultStatus.Failed,
+            Error = result.ErrorMessage
+        };
+    }
+
+    internal static bool IsAuthException(Exception ex) =>
+        ex is OntapUnauthorizedException
+            or OntapClientException { StatusCode: HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden };
+
+    internal static MaterialRenameBatchResponse BuildBatchResponse(
+        int totalRequested,
+        List<MaterialRenameBatchItemResult> results)
+    {
         var succeeded = results.Count(r => r.Status == OperationResultStatus.Renamed);
         var notFound = results.Count(r => r.Status == OperationResultStatus.NotFound);
         var failed = results.Count(r => r.Status == OperationResultStatus.Failed);
 
-        await WriteRenameActivityLogAsync(renameRequest.Value, results, context.Username);
-
-        return new OkObjectResult(new MaterialRenameBatchResponse
+        return new MaterialRenameBatchResponse
         {
             Status = NetAppBatchOutcome.ResolveStatus(succeeded, failed, notFound),
-            TotalRequested = renameRequest.Value.Operations.Count,
+            TotalRequested = totalRequested,
             Succeeded = succeeded,
             NotFound = notFound,
             Failed = failed,
             Results = results
-        });
+        };
     }
 
     private async Task WriteRenameActivityLogAsync(

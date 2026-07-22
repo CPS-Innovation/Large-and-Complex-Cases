@@ -70,199 +70,287 @@ public class InitiateBatchCopy(
         var request = validatedRequest.Value;
         _initializationHandler.Initialize(request.UserName ?? string.Empty, correlationId, request.CaseId);
 
-        // Check for an active case-wide transfer (ActiveTransferId blocks all MM operations)
-        var caseMetadata = await _caseMetadataService.GetCaseMetadataForCaseIdAsync(request.CaseId);
-        if (caseMetadata?.ActiveTransferId.HasValue == true)
+        var activeTransferConflict = await TryGetBlockingActiveTransferConflictAsync(
+            request.CaseId, correlationId, orchestrationClient);
+        if (activeTransferConflict is not null)
         {
-            var entityId = new EntityInstanceId(nameof(TransferEntityState), caseMetadata.ActiveTransferId.Value.ToString());
-            var entityState = await orchestrationClient.Entities.GetEntityAsync<TransferEntity>(entityId);
+            return activeTransferConflict;
+        }
 
-            if (entityState?.State?.Status == TransferStatus.InProgress)
-            {
-                _logger.LogInformation(
-                    "Active transfer blocking batch copy for CaseId: {CaseId}, TransferId: {TransferId}. CorrelationId: {CorrelationId}",
-                    request.CaseId, caseMetadata.ActiveTransferId.Value, correlationId);
-                return new ConflictObjectResult("A case-wide file transfer is in progress. Please wait for it to complete before starting a copy operation.");
-            }
+        var preflight = await BuildPreflightCopyPlanAsync(request);
+        var preflightResult = ToPreflightActionResult(
+            preflight, request.CaseId, correlationId);
+        if (preflightResult is not null)
+        {
+            return preflightResult;
         }
 
         var sourcePaths = request.Operations.Select(op => op.SourcePath).ToList();
         var destinationPaths = new List<string> { request.DestinationPrefix };
+        var transferId = Guid.NewGuid();
+        var now = DateTime.UtcNow;
 
-        // Pre-flight checks and folder expansion
-        var copyFileItems = new List<CopyFileItem>();
-        var originalOperations = new List<CopyBatchOriginalOperation>();
-        var preflight409Errors = new List<string>();
-        var preflight404Errors = new List<string>();
+        var lockConflict = await TryAcquireManageMaterialsLockAsync(
+            transferId, request, sourcePaths, destinationPaths, now, correlationId);
+        if (lockConflict is not null)
+        {
+            return lockConflict;
+        }
+
+        await ScheduleCopyOrchestrationOrRollbackAsync(
+            orchestrationClient,
+            transferId,
+            request,
+            correlationId,
+            preflight.CopyFileItems,
+            preflight.OriginalOperations);
+
+        _logger.LogInformation("Batch copy scheduled. TransferId: {TransferId}, CaseId: {CaseId}, Files: {FileCount}. CorrelationId: {CorrelationId}",
+            transferId, request.CaseId, preflight.CopyFileItems.Count, correlationId);
+
+        return new AcceptedResult($"/api/v1/filetransfer/{transferId}/status", new TransferResponse
+        {
+            Id = transferId,
+            Status = TransferStatus.Initiated,
+            CreatedAt = now,
+        });
+    }
+
+    private async Task<IActionResult?> TryGetBlockingActiveTransferConflictAsync(
+        int caseId,
+        Guid? correlationId,
+        DurableTaskClient orchestrationClient)
+    {
+        var caseMetadata = await _caseMetadataService.GetCaseMetadataForCaseIdAsync(caseId);
+        var activeTransferId = caseMetadata?.ActiveTransferId;
+        if (activeTransferId is null)
+        {
+            return null;
+        }
+
+        var entityId = new EntityInstanceId(nameof(TransferEntityState), activeTransferId.Value.ToString());
+        var entityState = await orchestrationClient.Entities.GetEntityAsync<TransferEntity>(entityId);
+
+        if (entityState?.State?.Status != TransferStatus.InProgress)
+        {
+            return null;
+        }
+
+        _logger.LogInformation(
+            "Active transfer blocking batch copy for CaseId: {CaseId}, TransferId: {TransferId}. CorrelationId: {CorrelationId}",
+            caseId, activeTransferId.Value, correlationId);
+        return new ConflictObjectResult(
+            "A case-wide file transfer is in progress. Please wait for it to complete before starting a copy operation.");
+    }
+
+    private async Task<PreflightCopyPlan> BuildPreflightCopyPlanAsync(CopyNetAppBatchRequest request)
+    {
+        var plan = new PreflightCopyPlan();
 
         foreach (var op in request.Operations)
         {
             if (string.Equals(op.Type, "Folder", StringComparison.OrdinalIgnoreCase))
             {
-                var sourcePrefix = op.SourcePath.EndsWith('/') ? op.SourcePath : op.SourcePath + "/";
-                var folderName = Path.GetFileName(op.SourcePath.TrimEnd('/'));
-                var destFolderPrefix = request.DestinationPrefix + folderName + "/";
-
-                // Verify source folder exists (MaxKeys=1)
-                var existsArg = _netAppArgFactory.CreateListObjectsInBucketArg(
-                    request.BearerToken, request.BucketName, maxKeys: 1, prefix: sourcePrefix);
-                var existsResult = await _netAppClient.ListObjectsInBucketAsync(existsArg);
-
-                if (existsResult == null || !existsResult.Data.FileData.Any())
-                {
-                    preflight404Errors.Add($"Source folder not found or empty: {op.SourcePath}");
-                    continue;
-                }
-
-                // Expand all keys in the folder with pagination
-                var expandedFiles = new List<(string SourceKey, string RelativeKey)>();
-                string? continuationToken = null;
-                do
-                {
-                    var listArg = _netAppArgFactory.CreateListObjectsInBucketArg(
-                        request.BearerToken, request.BucketName,
-                        continuationToken: continuationToken,
-                        prefix: sourcePrefix);
-
-                    var listResult = await _netAppClient.ListObjectsInBucketAsync(listArg);
-                    if (listResult == null) break;
-
-                    foreach (var file in listResult.Data.FileData)
-                    {
-                        var relativeKey = file.Path.Substring(sourcePrefix.Length);
-                        expandedFiles.Add((file.Path, relativeKey));
-                    }
-
-                    continuationToken = listResult.Pagination.NextContinuationToken;
-                }
-                while (!string.IsNullOrEmpty(continuationToken));
-
-                // List the destination folder once to detect any pre-existing files that would be overwritten
-                var existingDestKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                string? destContinuationToken = null;
-                do
-                {
-                    var destListArg = _netAppArgFactory.CreateListObjectsInBucketArg(
-                        request.BearerToken, request.BucketName,
-                        continuationToken: destContinuationToken,
-                        prefix: destFolderPrefix);
-                    var destListResult = await _netAppClient.ListObjectsInBucketAsync(destListArg);
-                    if (destListResult == null) break;
-                    foreach (var f in destListResult.Data.FileData)
-                        existingDestKeys.Add(f.Path);
-                    destContinuationToken = destListResult.Pagination.NextContinuationToken;
-                }
-                while (!string.IsNullOrEmpty(destContinuationToken));
-
-                // Schedule non-colliding files; track scheduled keys so WriteCopyActivityLog can
-                // compare all expected keys against successes and detect partial folder copies.
-                var scheduledFolderKeys = new List<string>();
-                foreach (var (sourceKey, relativeKey) in expandedFiles)
-                {
-                    var destKey = destFolderPrefix + relativeKey;
-                    if (existingDestKeys.Contains(destKey))
-                    {
-                        preflight409Errors.Add($"A file already exists at the destination: {destKey}");
-                        continue;
-                    }
-                    copyFileItems.Add(new CopyFileItem
-                    {
-                        SourceKey = sourceKey,
-                        DestinationPrefix = destFolderPrefix,
-                        DestinationFileName = relativeKey,
-                    });
-                    scheduledFolderKeys.Add(sourceKey);
-                }
-
-                originalOperations.Add(new CopyBatchOriginalOperation
-                {
-                    Type = op.Type,
-                    SourcePath = op.SourcePath,
-                    DestinationPrefix = destFolderPrefix,
-                    ExpectedSourceKeys = scheduledFolderKeys,
-                });
+                await ExpandFolderOperationAsync(request, op, plan);
             }
             else
             {
-                // Material operation
-                var sourceArg = _netAppArgFactory.CreateGetObjectArg(request.BearerToken, request.BucketName, op.SourcePath);
-                var sourceExists = await _netAppClient.DoesObjectExistAsync(sourceArg);
-                if (!sourceExists)
-                {
-                    preflight404Errors.Add($"Source file not found: {op.SourcePath}");
-                    continue;
-                }
-
-                var fileName = Path.GetFileName(op.SourcePath);
-                var computedDest = request.DestinationPrefix + fileName;
-
-                var destArg = _netAppArgFactory.CreateGetObjectArg(request.BearerToken, request.BucketName, computedDest);
-                var destExists = await _netAppClient.DoesObjectExistAsync(destArg);
-                if (destExists)
-                {
-                    preflight409Errors.Add($"A file already exists at the destination: {computedDest}");
-                    continue;
-                }
-
-                // Case-insensitive clash check: list destination prefix and look for same name case-insensitively
-                var caseCheckArg = _netAppArgFactory.CreateListObjectsInBucketArg(
-                    request.BearerToken, request.BucketName,
-                    prefix: request.DestinationPrefix);
-                var caseCheckResult = await _netAppClient.ListObjectsInBucketAsync(caseCheckArg);
-                if (caseCheckResult != null)
-                {
-                    var clash = caseCheckResult.Data.FileData
-                        .Any(f => string.Equals(
-                            Path.GetFileName(f.Path), fileName, StringComparison.OrdinalIgnoreCase)
-                            && !string.Equals(f.Path, computedDest, StringComparison.Ordinal));
-
-                    if (clash)
-                    {
-                        preflight409Errors.Add($"A case-insensitive name clash exists at the destination for: {op.SourcePath}");
-                        continue;
-                    }
-                }
-
-                copyFileItems.Add(new CopyFileItem
-                {
-                    SourceKey = op.SourcePath,
-                    DestinationPrefix = request.DestinationPrefix,
-                    DestinationFileName = fileName,
-                });
-
-                originalOperations.Add(new CopyBatchOriginalOperation
-                {
-                    Type = op.Type,
-                    SourcePath = op.SourcePath,
-                    DestinationPrefix = request.DestinationPrefix,
-                });
+                await ValidateAndPlanMaterialCopyAsync(request, op, plan);
             }
         }
 
-        if (preflight404Errors.Count > 0)
+        return plan;
+    }
+
+    private async Task ExpandFolderOperationAsync(
+        CopyNetAppBatchRequest request,
+        CopyNetAppBatchOperationRequest op,
+        PreflightCopyPlan plan)
+    {
+        var sourcePrefix = op.SourcePath.EndsWith('/') ? op.SourcePath : op.SourcePath + "/";
+        var folderName = Path.GetFileName(op.SourcePath.TrimEnd('/'));
+        var destFolderPrefix = request.DestinationPrefix + folderName + "/";
+
+        var existsArg = _netAppArgFactory.CreateListObjectsInBucketArg(
+            request.BearerToken, request.BucketName, maxKeys: 1, prefix: sourcePrefix);
+        var existsResult = await _netAppClient.ListObjectsInBucketAsync(existsArg);
+
+        if (existsResult == null || !existsResult.Data.FileData.Any())
         {
-            _logger.LogWarning("Pre-flight 404 errors for CaseId: {CaseId}. CorrelationId: {CorrelationId}. Errors: {Errors}",
-                request.CaseId, correlationId, preflight404Errors);
-            return new NotFoundObjectResult(preflight404Errors);
+            plan.Errors404.Add($"Source folder not found or empty: {op.SourcePath}");
+            return;
         }
 
-        if (preflight409Errors.Count > 0)
+        var expandedFiles = await ListAllObjectKeysUnderPrefixAsync(
+            request.BearerToken, request.BucketName, sourcePrefix);
+        var existingDestKeys = new HashSet<string>(
+            await ListAllObjectKeysUnderPrefixAsync(
+                request.BearerToken, request.BucketName, destFolderPrefix),
+            StringComparer.OrdinalIgnoreCase);
+
+        var scheduledFolderKeys = new List<string>();
+        foreach (var sourceKey in expandedFiles)
         {
-            _logger.LogWarning("Pre-flight conflict errors for CaseId: {CaseId}. CorrelationId: {CorrelationId}. Errors: {Errors}",
-                request.CaseId, correlationId, preflight409Errors);
-            return new ConflictObjectResult(preflight409Errors);
+            var relativeKey = sourceKey.Substring(sourcePrefix.Length);
+            var destKey = destFolderPrefix + relativeKey;
+            if (existingDestKeys.Contains(destKey))
+            {
+                plan.Errors409.Add($"A file already exists at the destination: {destKey}");
+                continue;
+            }
+
+            plan.CopyFileItems.Add(new CopyFileItem
+            {
+                SourceKey = sourceKey,
+                DestinationPrefix = destFolderPrefix,
+                DestinationFileName = relativeKey,
+            });
+            scheduledFolderKeys.Add(sourceKey);
         }
 
-        if (copyFileItems.Count == 0)
+        plan.OriginalOperations.Add(new CopyBatchOriginalOperation
+        {
+            Type = op.Type,
+            SourcePath = op.SourcePath,
+            DestinationPrefix = destFolderPrefix,
+            ExpectedSourceKeys = scheduledFolderKeys,
+        });
+    }
+
+    private async Task<List<string>> ListAllObjectKeysUnderPrefixAsync(
+        string bearerToken,
+        string bucketName,
+        string prefix)
+    {
+        var keys = new List<string>();
+        string? continuationToken = null;
+        do
+        {
+            var listArg = _netAppArgFactory.CreateListObjectsInBucketArg(
+                bearerToken, bucketName,
+                continuationToken: continuationToken,
+                prefix: prefix);
+
+            var listResult = await _netAppClient.ListObjectsInBucketAsync(listArg);
+            if (listResult == null) break;
+
+            foreach (var file in listResult.Data.FileData)
+            {
+                keys.Add(file.Path);
+            }
+
+            continuationToken = listResult.Pagination.NextContinuationToken;
+        }
+        while (!string.IsNullOrEmpty(continuationToken));
+
+        return keys;
+    }
+
+    private async Task ValidateAndPlanMaterialCopyAsync(
+        CopyNetAppBatchRequest request,
+        CopyNetAppBatchOperationRequest op,
+        PreflightCopyPlan plan)
+    {
+        var sourceArg = _netAppArgFactory.CreateGetObjectArg(request.BearerToken, request.BucketName, op.SourcePath);
+        var sourceExists = await _netAppClient.DoesObjectExistAsync(sourceArg);
+        if (!sourceExists)
+        {
+            plan.Errors404.Add($"Source file not found: {op.SourcePath}");
+            return;
+        }
+
+        var fileName = Path.GetFileName(op.SourcePath);
+        var computedDest = request.DestinationPrefix + fileName;
+
+        var destArg = _netAppArgFactory.CreateGetObjectArg(request.BearerToken, request.BucketName, computedDest);
+        var destExists = await _netAppClient.DoesObjectExistAsync(destArg);
+        if (destExists)
+        {
+            plan.Errors409.Add($"A file already exists at the destination: {computedDest}");
+            return;
+        }
+
+        if (await HasCaseInsensitiveDestinationClashAsync(
+                request.BearerToken, request.BucketName, request.DestinationPrefix, fileName, computedDest))
+        {
+            plan.Errors409.Add($"A case-insensitive name clash exists at the destination for: {op.SourcePath}");
+            return;
+        }
+
+        plan.CopyFileItems.Add(new CopyFileItem
+        {
+            SourceKey = op.SourcePath,
+            DestinationPrefix = request.DestinationPrefix,
+            DestinationFileName = fileName,
+        });
+
+        plan.OriginalOperations.Add(new CopyBatchOriginalOperation
+        {
+            Type = op.Type,
+            SourcePath = op.SourcePath,
+            DestinationPrefix = request.DestinationPrefix,
+        });
+    }
+
+    private async Task<bool> HasCaseInsensitiveDestinationClashAsync(
+        string bearerToken,
+        string bucketName,
+        string destinationPrefix,
+        string fileName,
+        string computedDest)
+    {
+        var caseCheckArg = _netAppArgFactory.CreateListObjectsInBucketArg(
+            bearerToken, bucketName, prefix: destinationPrefix);
+        var caseCheckResult = await _netAppClient.ListObjectsInBucketAsync(caseCheckArg);
+        if (caseCheckResult == null)
+        {
+            return false;
+        }
+
+        return caseCheckResult.Data.FileData.Any(f =>
+            string.Equals(Path.GetFileName(f.Path), fileName, StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(f.Path, computedDest, StringComparison.Ordinal));
+    }
+
+    internal static IActionResult? ToPreflightActionResult(
+        PreflightCopyPlan plan,
+        int caseId,
+        Guid? correlationId,
+        ILogger? logger = null)
+    {
+        if (plan.Errors404.Count > 0)
+        {
+            logger?.LogWarning("Pre-flight 404 errors for CaseId: {CaseId}. CorrelationId: {CorrelationId}. Errors: {Errors}",
+                caseId, correlationId, plan.Errors404);
+            return new NotFoundObjectResult(plan.Errors404);
+        }
+
+        if (plan.Errors409.Count > 0)
+        {
+            logger?.LogWarning("Pre-flight conflict errors for CaseId: {CaseId}. CorrelationId: {CorrelationId}. Errors: {Errors}",
+                caseId, correlationId, plan.Errors409);
+            return new ConflictObjectResult(plan.Errors409);
+        }
+
+        if (plan.CopyFileItems.Count == 0)
         {
             return new BadRequestObjectResult("No files found to copy after expanding all operations.");
         }
 
-        var transferId = Guid.NewGuid();
-        var now = DateTime.UtcNow;
+        return null;
+    }
 
-        // Atomically check for a conflicting operation and insert the lock row in one serializable
-        // transaction, so two concurrent requests cannot both observe no conflict and both proceed.
+    private IActionResult? ToPreflightActionResult(PreflightCopyPlan plan, int caseId, Guid? correlationId) =>
+        ToPreflightActionResult(plan, caseId, correlationId, _logger);
+
+    private async Task<IActionResult?> TryAcquireManageMaterialsLockAsync(
+        Guid transferId,
+        CopyNetAppBatchRequest request,
+        List<string> sourcePaths,
+        List<string> destinationPaths,
+        DateTime now,
+        Guid? correlationId)
+    {
         var mmOperation = new CaseActiveManageMaterialsOperation
         {
             Id = transferId,
@@ -277,13 +365,25 @@ public class InitiateBatchCopy(
         var inserted = await _caseActiveManageMaterialsService.CheckConflictAndInsertAsync(
             mmOperation, sourcePaths, destinationPaths);
 
-        if (!inserted)
+        if (inserted)
         {
-            _logger.LogWarning("Conflicting manage materials operation detected for CaseId: {CaseId}. CorrelationId: {CorrelationId}",
-                request.CaseId, correlationId);
-            return new ConflictObjectResult("A conflicting manage materials operation is already in progress for one or more of the specified paths.");
+            return null;
         }
 
+        _logger.LogWarning("Conflicting manage materials operation detected for CaseId: {CaseId}. CorrelationId: {CorrelationId}",
+            request.CaseId, correlationId);
+        return new ConflictObjectResult(
+            "A conflicting manage materials operation is already in progress for one or more of the specified paths.");
+    }
+
+    private async Task ScheduleCopyOrchestrationOrRollbackAsync(
+        DurableTaskClient orchestrationClient,
+        Guid transferId,
+        CopyNetAppBatchRequest request,
+        Guid? correlationId,
+        List<CopyFileItem> copyFileItems,
+        List<CopyBatchOriginalOperation> originalOperations)
+    {
         try
         {
             await orchestrationClient.ScheduleNewOrchestrationInstanceAsync(
@@ -312,15 +412,13 @@ public class InitiateBatchCopy(
             await _caseActiveManageMaterialsService.DeleteOperationAsync(transferId);
             throw;
         }
+    }
 
-        _logger.LogInformation("Batch copy scheduled. TransferId: {TransferId}, CaseId: {CaseId}, Files: {FileCount}. CorrelationId: {CorrelationId}",
-            transferId, request.CaseId, copyFileItems.Count, correlationId);
-
-        return new AcceptedResult($"/api/v1/filetransfer/{transferId}/status", new TransferResponse
-        {
-            Id = transferId,
-            Status = TransferStatus.Initiated,
-            CreatedAt = now,
-        });
+    internal sealed class PreflightCopyPlan
+    {
+        public List<CopyFileItem> CopyFileItems { get; } = [];
+        public List<CopyBatchOriginalOperation> OriginalOperations { get; } = [];
+        public List<string> Errors404 { get; } = [];
+        public List<string> Errors409 { get; } = [];
     }
 }
