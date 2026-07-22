@@ -112,6 +112,12 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   const [transferId, setTransferId] = useState(activeTransferId);
   const [apiRequestError, setApiRequestError] = useState<null | Error>(null);
 
+  useEffect(() => {
+    if (activeTransferId) {
+      setTransferId(activeTransferId);
+    }
+  }, [activeTransferId]);
+
   const currentEgressFolder = useMemo(() => {
     if (egressPathFolders.length)
       return egressPathFolders[egressPathFolders.length - 1];

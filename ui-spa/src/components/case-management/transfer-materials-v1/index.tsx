@@ -509,6 +509,14 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
         operationName,
       },
     });
+    dispatch({
+      type: "SET_TRANSFER_PAGE",
+      payload: {
+        transferSource: transferSource,
+        transferSourceEgressFolderPath: egressFolderPath,
+        transferSourceNetAppFolderPath: netAppFolderPath,
+      },
+    });
     navigate(`/case/${caseId}/case-management/transfer-destination-page`);
   };
 

@@ -9,7 +9,6 @@ import type {
   EgressFolderData,
   NetAppFolder,
   IndexingFileTransferResponse,
-  InitiateFileTransferResponse,
 } from "../../../schemas";
 import {
   type EgressTransferPayloadSourcePath,
@@ -189,29 +188,16 @@ const TransferDestinationPage: React.FC = () => {
     return payload;
   };
 
-  const caseManagementRouteState = useMemo(() => {
-    const paths = sourcePaths.map(({ path }) => path);
-    const sourceCurrentFolderPath = getCommonPath(paths);
-    return {
-      transferSource: transferSource,
-      transferEgressFolderPathInitialValue:
-        transferSource === "egress" ? sourceCurrentFolderPath : undefined,
-      transferNetAppFolderPathInitialValue:
-        transferSource === "netapp" ? sourceCurrentFolderPath : undefined,
-    };
-  }, [sourcePaths, transferSource]);
-
   const handleInitiateFileTransfer = async (
     initiatePayload: InitiateFileTransferPayload,
   ) => {
-    const initiateFileTransferResponse: InitiateFileTransferResponse =
+    const initiateFileTransferResponse =
       await initiateFileTransferMutation.mutateAsync(initiatePayload);
 
     navigate(`/case/${caseId}/case-management`, {
       replace: true,
       state: {
         transferId: initiateFileTransferResponse.id,
-        ...caseManagementRouteState,
       },
     });
   };
@@ -323,9 +309,6 @@ const TransferDestinationPage: React.FC = () => {
   const handleCancelClick = () => {
     navigate(`/case/${caseId}/case-management`, {
       replace: true,
-      state: {
-        ...caseManagementRouteState,
-      },
     });
   };
 
@@ -354,13 +337,7 @@ const TransferDestinationPage: React.FC = () => {
 
   return (
     <div>
-      <BackLink
-        to={`/case/${caseId}/case-management`}
-        state={{
-          ...caseManagementRouteState,
-        }}
-        replace
-      >
+      <BackLink to={`/case/${caseId}/case-management`} replace>
         Back
       </BackLink>
       <PageContentWrapper>

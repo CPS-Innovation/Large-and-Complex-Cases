@@ -57,12 +57,16 @@ const NetAppPage = () => {
       type: "SET_SHARED_DRIVE_CONNECT_CONFIRMATION_PAGE",
       payload: {
         operationName: operationName,
-        searchQueryString: searchQueryString,
-        netappRootFolderPath: rootFolderPath,
         backLinkUrl: `/case/${caseId}/netapp-connect?${getUrlSearchParam("operation-name", operationName)}`,
         selectedWorkspace: {
           folderPath: path,
         },
+      },
+    });
+    dispatch({
+      type: "SET_SHARED_DRIVE_CONNECT_PAGE",
+      payload: {
+        netappRootFolderPath: rootFolderPath,
       },
     });
     navigate(`/case/${caseId}/netapp-connect/confirmation`);

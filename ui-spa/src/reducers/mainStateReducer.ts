@@ -37,8 +37,6 @@ export type MainState = {
     };
     connectSharedDriveConfirmationPage: {
       operationName: string;
-      searchQueryString: string;
-      netappRootFolderPath: string;
       backLinkUrl: string;
       selectedWorkspace: {
         folderPath: string;
@@ -77,6 +75,11 @@ export type MainState = {
       transferId: string;
       failedItems: TransferFailedItem[];
     } | null;
+    transferPage: {
+      transferSource: "egress" | "netapp";
+      transferSourceEgressFolderPath: string;
+      transferSourceNetAppFolderPath: string;
+    } | null;
   };
   formData: FormData;
   apiData: {
@@ -107,8 +110,6 @@ export const initialState: MainState = {
     },
     connectSharedDriveConfirmationPage: {
       operationName: "",
-      searchQueryString: "",
-      netappRootFolderPath: "",
       backLinkUrl: "",
       selectedWorkspace: {
         folderPath: "",
@@ -135,6 +136,7 @@ export const initialState: MainState = {
       baseFolderName: "",
     },
     transferErrorsPage: null,
+    transferPage: null,
   },
   formData: {
     searchType: "urn",
@@ -182,10 +184,10 @@ export type MainStateActions =
     }
   | {
       type: "SET_SHARED_DRIVE_CONNECT_PAGE";
-      payload: {
+      payload: Partial<{
         searchQueryString: string;
         netappRootFolderPath: string;
-      };
+      }>;
     }
   | {
       type: "SET_EGRESS_CONNECT_CONFIRMATION_PAGE";
@@ -203,8 +205,6 @@ export type MainStateActions =
       type: "SET_SHARED_DRIVE_CONNECT_CONFIRMATION_PAGE";
       payload: {
         operationName: string;
-        searchQueryString: string;
-        netappRootFolderPath: string;
         backLinkUrl: string;
         selectedWorkspace: {
           folderPath: string;
@@ -257,6 +257,14 @@ export type MainStateActions =
       payload: {
         transferId: string;
         failedItems: TransferFailedItem[];
+      };
+    }
+  | {
+      type: "SET_TRANSFER_PAGE";
+      payload: {
+        transferSource: "egress" | "netapp";
+        transferSourceEgressFolderPath: string;
+        transferSourceNetAppFolderPath: string;
       };
     };
 
@@ -324,6 +332,7 @@ export const mainStateReducer = (
         appData: {
           ...state.appData,
           connectSharedDrivePage: {
+            ...state.appData.connectSharedDrivePage,
             ...action.payload,
           },
         },
@@ -403,6 +412,18 @@ export const mainStateReducer = (
         appData: {
           ...state.appData,
           transferErrorsPage: {
+            ...action.payload,
+          },
+        },
+      };
+    }
+
+    case "SET_TRANSFER_PAGE": {
+      return {
+        ...state,
+        appData: {
+          ...state.appData,
+          transferPage: {
             ...action.payload,
           },
         },

@@ -23,10 +23,7 @@ const CaseManagementPage = () => {
     state: routeState,
   }: {
     state?: {
-      transferId: string;
-      transferSource: "egress" | "netapp";
-      transferEgressFolderPathInitialValue?: string;
-      transferNetAppFolderPathInitialValue?: string;
+      transferId?: string;
     };
   } = location;
   const { caseId } = useParams() as { caseId: string };
@@ -36,7 +33,7 @@ const CaseManagementPage = () => {
 
   const { state, dispatch } = useContext(MainStateContext);
   const {
-    appData: { featureFlags },
+    appData: { featureFlags, transferPage },
   } = state;
   const handleTabSelection = (tabId: TabId) => {
     setActiveTabId(tabId);
@@ -109,13 +106,13 @@ const CaseManagementPage = () => {
               }
               urn={caseMetaData.urn}
               transferSourceInitialValue={
-                routeState?.transferSource ?? "egress"
+                transferPage?.transferSource ?? "egress"
               }
               transferEgressFolderPathInitialValue={
-                routeState?.transferEgressFolderPathInitialValue ?? null
+                transferPage?.transferSourceEgressFolderPath ?? null
               }
               transferNetAppFolderPathInitialValue={
-                routeState?.transferNetAppFolderPathInitialValue ?? null
+                transferPage?.transferSourceNetAppFolderPath ?? null
               }
             />
           ) : (
@@ -188,6 +185,7 @@ const CaseManagementPage = () => {
     caseMetaData,
     routeState,
     featureFlags,
+    transferPage,
     operationNameOrDefendantName,
   ]);
   if (isCaseMetaDataLoading) {
