@@ -65,7 +65,7 @@ setup("seed lcc-e2e-fixture-source.txt to NetApp", async ({ page }) => {
     config.defaultWorkspaceId,
     SEED_SIZE_MB * 1024 * 1024,
     NETAPP_FIXTURE_FILENAME,
-    `${SEED_PARENT}/${SEED_SUBFOLDER}/`,
+    { folderPath: `${SEED_PARENT}/${SEED_SUBFOLDER}/` },
   );
 
   console.log("Logging in via browser...");

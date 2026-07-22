@@ -11,15 +11,13 @@ import {
   authenticateEgress,
   uploadFile,
   getUploadedFile,
-  listEgressWorkspaceFilesByFolderId,
-  deleteFiles,
 } from "../../helpers/egress-api";
 import { getAzureADToken } from "../../helpers/auth-api";
 
 export class MoveSoakHarness {
-  constructor(private config: HarnessConfig) {}
+  constructor(private readonly config: HarnessConfig) {}
 
-  private correlationId = crypto.randomUUID();
+  private readonly correlationId = crypto.randomUUID();
   private egressToken!: string;
 
   private aadAccessToken?: string;
@@ -112,7 +110,7 @@ export class MoveSoakHarness {
           this.config.workspaceId,
           spec.fileSizeMb * 1024 * 1024,
           `soak-${spec.fileSizeMb}MB-${Date.now()}-${fileIndex}.txt`,
-          this.config.egressSourceFolder,
+          { folderPath: this.config.egressSourceFolder },
         );
 
         uploadIds.push({ 

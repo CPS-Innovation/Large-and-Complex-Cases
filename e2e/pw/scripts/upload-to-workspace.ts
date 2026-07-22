@@ -74,7 +74,7 @@ async function main() {
       workspaceId,
       fileSizeBytes,
       fileName,
-      uploadPath
+      { folderPath: uploadPath },
     );
     uploaded.push({ id: uploadId, fileName });
   }

@@ -268,9 +268,9 @@ export async function uploadFile(
   workspaceId: string,
   fileSizeBytes: number,
   fileName: string,
-  folderPath: string = "4. Served Evidence/",
-  chunkSizeMB: number = 5
+  options: { folderPath?: string; chunkSizeMB?: number } = {}
 ): Promise<string> {
+  const { folderPath = "4. Served Evidence/", chunkSizeMB = 5 } = options;
   const tokenRef = { value: token };
 
   // Step 1: Initiate upload
@@ -379,11 +379,6 @@ export async function uploadFile(
       `Upload completion failed (${completeResponse.status}): ${text}`
     );
   }
-
-  // Egress returns the file record on completion. Fall back to uploadId if
-  // the response shape changes so callers that need an id for teardown
-  // always get something to work with.
-  const completeData = await completeResponse.json().catch(() => ({}));
 
   console.log(`  Upload complete: ${uploadId}`);
   return uploadId;
