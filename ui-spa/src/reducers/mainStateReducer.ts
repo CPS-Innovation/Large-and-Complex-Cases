@@ -5,6 +5,7 @@ import {
 import { mapAreaLookups } from "./utils/mapAreaLookups";
 import { FeatureFlagData } from "../common/types/FeatureFlagData";
 import { InitiateFileTransferPayload } from "../schemas/requests/initiateFileTransferPayload";
+import { TransferFailedItem } from "../schemas";
 export type FormData = {
   searchType: "urn" | "operation name" | "defendant name";
   operationName: string;
@@ -72,6 +73,10 @@ export type MainState = {
       initiateTransferPayload: InitiateFileTransferPayload | null;
       baseFolderName: string;
     };
+    transferErrorsPage: {
+      transferId: string;
+      failedItems: TransferFailedItem[];
+    } | null;
   };
   formData: FormData;
   apiData: {
@@ -129,6 +134,7 @@ export const initialState: MainState = {
       initiateTransferPayload: null,
       baseFolderName: "",
     },
+    transferErrorsPage: null,
   },
   formData: {
     searchType: "urn",
@@ -244,6 +250,13 @@ export type MainStateActions =
         destinationPath: string;
         initiateTransferPayload: InitiateFileTransferPayload | null;
         baseFolderName: string;
+      };
+    }
+  | {
+      type: "SET_TRANSFER_ERROR_PAGE";
+      payload: {
+        transferId: string;
+        failedItems: TransferFailedItem[];
       };
     };
 
@@ -378,6 +391,18 @@ export const mainStateReducer = (
         appData: {
           ...state.appData,
           transferResolveFilePathPage: {
+            ...action.payload,
+          },
+        },
+      };
+    }
+
+    case "SET_TRANSFER_ERROR_PAGE": {
+      return {
+        ...state,
+        appData: {
+          ...state.appData,
+          transferErrorsPage: {
             ...action.payload,
           },
         },

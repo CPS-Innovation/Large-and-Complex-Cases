@@ -105,7 +105,7 @@ const CaseManagementPage = () => {
               egressWorkspaceId={caseMetaData.egressWorkspaceId}
               netAppPath={caseMetaData.netappFolderPath}
               activeTransferId={
-                routeState?.transferId ?? caseMetaData.activeTransferId
+                routeState?.transferId ?? caseMetaData.activeTransferId ?? ""
               }
               urn={caseMetaData.urn}
               transferSourceInitialValue={
@@ -138,7 +138,7 @@ const CaseManagementPage = () => {
               egressWorkspaceId={caseMetaData.egressWorkspaceId}
               netAppPath={caseMetaData.netappFolderPath}
               activeTransferId={
-                routeState?.transferId ?? caseMetaData.activeTransferId
+                routeState?.transferId ?? caseMetaData.activeTransferId ?? ""
               }
               urn={caseMetaData.urn}
             />

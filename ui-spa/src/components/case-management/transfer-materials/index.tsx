@@ -51,7 +51,7 @@ type TransferMaterialsPageProps = {
   operationName: string;
   egressWorkspaceId: string;
   netAppPath: string;
-  activeTransferId: string | null;
+  activeTransferId: string;
   urn: string;
 };
 
@@ -642,6 +642,13 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         response.status === "Failed"
       ) {
         setTransferStatus("completed-with-errors");
+        dispatch({
+          type: "SET_TRANSFER_ERROR_PAGE",
+          payload: {
+            transferId: transferId,
+            failedItems: response.failedItems,
+          },
+        });
         navigate(`/case/${caseId}/case-management/transfer-errors`, {
           state: {
             isRouteValid: true,
@@ -664,6 +671,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       transferId,
       egressRefetch,
       netAppRefetch,
+      dispatch,
     ],
   );
   const isComponentUnmounted = useCallback(() => {

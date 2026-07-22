@@ -47,7 +47,7 @@ type TransferMaterialsV1PageProps = {
   operationName: string;
   egressWorkspaceId: string;
   netAppPath: string;
-  activeTransferId: string | null;
+  activeTransferId: string;
   urn: string;
   transferEgressFolderPathInitialValue: string | null;
   transferNetAppFolderPathInitialValue: string | null;
@@ -650,13 +650,14 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
         response.status === "Failed"
       ) {
         setTransferStatus("completed-with-errors");
-        navigate(`/case/${caseId}/case-management/transfer-errors`, {
-          state: {
-            isRouteValid: true,
+        dispatch({
+          type: "SET_TRANSFER_ERROR_PAGE",
+          payload: {
             transferId: transferId,
             failedItems: response.failedItems,
           },
         });
+        navigate(`/case/${caseId}/case-management/transfer-errors`);
         if (response.userName === username && transferId)
           handleFileTransferClear(transferId);
         setTransferId("");
@@ -673,6 +674,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
       transferSource,
       egressRefetch,
       netAppRefetch,
+      dispatch,
     ],
   );
   const isComponentUnmounted = useCallback(() => {
