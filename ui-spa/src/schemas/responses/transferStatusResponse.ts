@@ -35,13 +35,13 @@ export const transferStatusResponseSchema = z.object({
   processedFiles: z.number(),
   successfulFiles: z.number(),
   failedFiles: z.number(),
-  skippedFiles: z.number().optional().default(0),
+  skippedFiles: z.number().optional(),
   successfulItems: z.array(
     z.object({
       sourcePath: z.string(),
     }),
   ),
-  skippedItems: z.array(transferSkippedItemSchema).optional().default([]),
+  skippedItems: z.array(transferSkippedItemSchema).optional(),
   destinationPath: z.string(),
 });
 
