@@ -138,12 +138,16 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
                   id: "id_3",
                   sourcePath:
                     "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+                  destinationFullPath:
+                    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
                   errorType: "",
                 },
                 {
                   id: "id_5",
                   sourcePath:
                     "egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
+                  destinationFullPath:
+                    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
                   errorType: "",
                 },
               ],
@@ -272,6 +276,9 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page.getByTestId("character-tag")).toHaveText(
         "257 characters",
       );
+      await expect(
+        page.getByText("You must reduce this to 260 characters or fewer."),
+      ).not.toBeVisible();
 
       await page.getByRole("button", { name: "Continue" }).click();
       await expect(page).toHaveURL(
@@ -341,6 +348,9 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page.getByTestId("character-tag")).toHaveText(
         "260 characters",
       );
+      await expect(
+        page.getByText("You must reduce this to 260 characters or fewer."),
+      ).not.toBeVisible();
 
       await page.getByRole("button", { name: "Continue" }).click();
       await expect(page).toHaveURL(
@@ -374,6 +384,14 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(
         page.getByTestId("resolve-path-success-notification-banner"),
       ).toBeVisible();
+      await expect(
+        page.getByRole("heading", {
+          name: "File paths are too long to transfer",
+        }),
+      ).not.toBeVisible();
+      await expect(
+        page.getByTestId("resolve-file-path-inset-text"),
+      ).not.toBeVisible();
       await expect(
         page.getByTestId("resolve-path-success-notification-banner"),
       ).toContainText("Success");
@@ -471,12 +489,16 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
                   id: "id_3",
                   sourcePath:
                     "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+                  destinationFullPath:
+                    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
                   errorType: "",
                 },
                 {
                   id: "id_5",
                   sourcePath:
                     "egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
+                  destinationFullPath:
+                    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
                   errorType: "",
                 },
               ],
@@ -556,12 +578,16 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
                   id: "id_3",
                   sourcePath:
                     "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+                  destinationFullPath:
+                    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
                   errorType: "",
                 },
                 {
                   id: "id_5",
                   sourcePath:
                     "egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
+                  destinationFullPath:
+                    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
                   errorType: "",
                 },
               ],
@@ -656,36 +682,48 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
                   id: "id_6",
                   sourcePath:
                     "file6qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+                  destinationFullPath:
+                    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/file6qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
                   errorType: "",
                 },
                 {
                   id: "id_6_1",
                   sourcePath:
                     "file6_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+                  destinationFullPath:
+                    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/file6_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
                   errorType: "",
                 },
                 {
                   id: "id_3",
                   sourcePath:
                     "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+                  destinationFullPath:
+                    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
                   errorType: "",
                 },
                 {
                   id: "id_3_1",
                   sourcePath:
                     "egress/folder3/file3_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+                  destinationFullPath:
+                    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3/file3_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
                   errorType: "",
                 },
                 {
                   id: "id_5",
                   sourcePath:
                     "egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
+                  destinationFullPath:
+                    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
                   errorType: "",
                 },
                 {
                   id: "id_5_1",
                   sourcePath:
                     "egress/folder4/folder5/file5_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
+                  destinationFullPath:
+                    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5/file5_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
                   errorType: "",
                 },
               ],
