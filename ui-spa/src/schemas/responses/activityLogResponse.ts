@@ -37,9 +37,13 @@ export const transferDetailsSchema = z.object({
   transferType: z.enum(["Move", "Copy"]),
   errorFileCount: z.number(),
   transferedFileCount: z.number(),
+  skippedFileCount: z.number().optional(),
   totalFiles: z.number(),
   files: z.array(z.object({ path: z.string() })),
   errors: z.array(z.object({ path: z.string() })),
+  skipped: z
+    .array(z.object({ path: z.string(), errorMessage: z.string().optional() }))
+    .optional(),
   deletionErrors: z.array(z.object({ path: z.string() })),
 });
 

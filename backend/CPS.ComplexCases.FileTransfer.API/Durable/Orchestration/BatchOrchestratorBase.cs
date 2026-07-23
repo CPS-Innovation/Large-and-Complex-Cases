@@ -3,6 +3,7 @@ using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
+using CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Durable.State;
@@ -195,7 +196,7 @@ public abstract class BatchOrchestratorBase<TPayload, TFileItem>(
             if (batch.Count >= batchSize)
             {
                 var batchResults = await Task.WhenAll(batch);
-                await ProcessTransferResults(context, entityId, batchResults, telemetryEvent);
+                await TransferResultProcessor.ProcessAsync(context, entityId, batchResults, telemetryEvent);
                 allResults.AddRange(batchResults);
                 batch.Clear();
             }
@@ -204,7 +205,7 @@ public abstract class BatchOrchestratorBase<TPayload, TFileItem>(
         if (batch.Count > 0)
         {
             var remainingResults = await Task.WhenAll(batch);
-            await ProcessTransferResults(context, entityId, remainingResults, telemetryEvent);
+            await TransferResultProcessor.ProcessAsync(context, entityId, remainingResults, telemetryEvent);
             allResults.AddRange(remainingResults);
         }
 
@@ -250,43 +251,10 @@ public abstract class BatchOrchestratorBase<TPayload, TFileItem>(
                 .ToList();
 
             var retryResults = await Task.WhenAll(retryBatch);
-            await ProcessTransferResults(context, entityId, retryResults, telemetryEvent, isRetry: true);
+            await TransferResultProcessor.ProcessAsync(context, entityId, retryResults, telemetryEvent, isRetry: true);
 
             allResults.RemoveAll(r => r != null && !r.IsSuccess && r.FailedItem?.ErrorCode == TransferErrorCode.Transient);
             allResults.AddRange(retryResults);
-        }
-    }
-
-    protected static async Task ProcessTransferResults(
-        TaskOrchestrationContext context,
-        EntityInstanceId entityId,
-        TransferResult[] results,
-        TransferOrchestrationEvent telemetryEvent,
-        bool isRetry = false)
-    {
-        foreach (var result in results)
-        {
-            if (result != null && result.IsSuccess && result.SuccessfulItem != null)
-            {
-                await context.Entities.CallEntityAsync(
-                    entityId,
-                    isRetry ? nameof(TransferEntityState.AddSuccessfulRetryItem)
-                            : nameof(TransferEntityState.AddSuccessfulItem),
-                    result.SuccessfulItem);
-
-                telemetryEvent.TotalFilesTransferred++;
-                telemetryEvent.TotalBytesTransferred += result.SuccessfulItem.Size;
-            }
-            else if (result != null && !result.IsSuccess && result.FailedItem != null)
-            {
-                await context.Entities.CallEntityAsync(
-                    entityId,
-                    isRetry ? nameof(TransferEntityState.AddFailedRetryItem)
-                            : nameof(TransferEntityState.AddFailedItem),
-                    result.FailedItem);
-
-                telemetryEvent.TotalFilesFailed++;
-            }
         }
     }
 

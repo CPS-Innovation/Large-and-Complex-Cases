@@ -80,6 +80,13 @@ public class UpdateActivityLog(IActivityLogService activityLogService, ILogger<U
             ErrorMessage = x.ErrorMessage
         }).ToList();
 
+        var skippedItems = entity.State.SkippedItems.Select(x => new FileTransferError
+        {
+            Path = x.SourcePath,
+            ErrorCode = "EmptyFileSkipped",
+            ErrorMessage = "Empty (0-byte) files cannot be uploaded to Egress and were skipped."
+        }).ToList();
+
         var sourcePath = entity.State.SourceRootFolderPath
             ?? Path.GetDirectoryName(entity.State.SourcePaths[0].FullFilePath)
             ?? entity.State.SourcePaths[0].Path;
@@ -116,6 +123,7 @@ public class UpdateActivityLog(IActivityLogService activityLogService, ILogger<U
             DestinationPath = entity.State.DestinationPath,
             Files = successfulItems,
             Errors = errorItems,
+            Skipped = skippedItems,
             DeletionErrors = deletionErrors,
             ExceptionMessage = payload.ExceptionMessage,
             StartTime = entity.State.StartedAt,

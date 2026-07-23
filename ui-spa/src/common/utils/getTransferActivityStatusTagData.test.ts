@@ -79,6 +79,7 @@ describe("getTransferActivityStatusTagData", () => {
         details: {
           ...activity.details!,
           transferedFileCount: 0,
+          skippedFileCount: 0,
         },
       }),
     ).toEqual({ color: "red", name: "Failed" });
@@ -92,10 +93,30 @@ describe("getTransferActivityStatusTagData", () => {
           ...activity.details!,
           transferedFileCount: 6,
           errorFileCount: 0,
+          skippedFileCount: 0,
         },
       }),
     ).toEqual({ color: "green", name: "Completed" });
   });
+
+  it("Should return Completed when only empty files were skipped", () => {
+    expect(
+      getTransferActivityStatusTagData({
+        ...activity,
+        details: {
+          ...activity.details!,
+          totalFiles: 1,
+          transferedFileCount: 0,
+          errorFileCount: 0,
+          skippedFileCount: 1,
+          files: [],
+          errors: [],
+          skipped: [{ path: "shared/empty.txt" }],
+        },
+      }),
+    ).toEqual({ color: "green", name: "Completed" });
+  });
+
   it("Should return Completed with errors tag name and green yellow when the there are non zero transferred file count and non zero error file count ", () => {
     expect(
       getTransferActivityStatusTagData({
