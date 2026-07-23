@@ -4,8 +4,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
 import { connectNetAppFolder } from "../../apis/gateway-api";
 import { getFolderNameFromPath } from "../../common/utils/getFolderNameFromPath";
-// import { SharedDriveConnectFailureRouteState } from "../../common/types/SharedDriveConnectFailureRouteState";
-// import { SharedDriveConnectRouteState } from "../../common/types/SharedDriveConnectRouteState";
 import { MainStateContext } from "../../providers/MainStateProvider";
 import styles from "./NetAppConnectConfirmationPage.module.scss";
 
