@@ -180,6 +180,7 @@ public class ListFilesForTransferTests
         Assert.Equal(TransferFailedType.PathLengthExceeded, error.ErrorType);
         Assert.Equal(expectedErrorMessage, error.Message);
         Assert.Equal(sourcePath, error.SourcePath);
+        Assert.Equal($"{destinationPath}/{sourcePath}", error.DestinationFullPath);
     }
 
     [Fact]
