@@ -5,7 +5,7 @@ import {
 import { mapAreaLookups } from "./utils/mapAreaLookups";
 import { FeatureFlagData } from "../common/types/FeatureFlagData";
 import { InitiateFileTransferPayload } from "../schemas/requests/initiateFileTransferPayload";
-import { TransferFailedItem } from "../schemas";
+import { TransferFailedItem, IndexingError } from "../schemas";
 export type FormData = {
   searchType: "urn" | "operation name" | "defendant name";
   operationName: string;
@@ -13,6 +13,21 @@ export type FormData = {
   defendantArea: string;
   defendantName: string;
   urn: string;
+};
+
+type TransferDestinationPageData = {
+  transferSource: "egress" | "netapp" | null;
+  selectedTransferAction: "copy" | "move" | null;
+  sourcePaths:
+    | {
+        fileId: string;
+        path: string;
+        isFolder: boolean;
+      }[]
+    | { path: string }[];
+  egressWorkspaceId: string;
+  netAppPath: string;
+  operationName: string;
 };
 
 export type MainState = {
@@ -48,26 +63,9 @@ export type MainState = {
     connectSharedDriveFailurePage: {
       backLinkUrl: string;
     };
-    transferDestinationPage: {
-      transferSource: "egress" | "netapp" | null;
-      selectedTransferAction: "copy" | "move" | null;
-      sourcePaths:
-        | {
-            fileId: string;
-            path: string;
-            isFolder: boolean;
-          }[]
-        | { path: string }[];
-      egressWorkspaceId: string;
-      netAppPath: string;
-      operationName: string;
-    };
+    transferDestinationPage: TransferDestinationPageData;
     transferResolveFilePathPage: {
-      validationErrors: {
-        id: string;
-        sourcePath: string;
-        destinationFullPath: string;
-      }[];
+      validationErrors: IndexingError[];
       destinationPath: string;
       initiateTransferPayload: InitiateFileTransferPayload | null;
       baseFolderName: string;
@@ -226,29 +224,12 @@ export type MainStateActions =
     }
   | {
       type: "SET_TRANSFER_DESTINATION_PAGE";
-      payload: {
-        transferSource: "egress" | "netapp" | null;
-        selectedTransferAction: "copy" | "move" | null;
-        sourcePaths:
-          | {
-              fileId: string;
-              path: string;
-              isFolder: boolean;
-            }[]
-          | { path: string }[];
-        egressWorkspaceId: string;
-        netAppPath: string;
-        operationName: string;
-      };
+      payload: TransferDestinationPageData;
     }
   | {
       type: "SET_TRANSFER_RESOLVE_FILE_PATH_PAGE";
       payload: {
-        validationErrors: {
-          id: string;
-          sourcePath: string;
-          destinationFullPath: string;
-        }[];
+        validationErrors: IndexingError[];
         destinationPath: string;
         initiateTransferPayload: InitiateFileTransferPayload | null;
         baseFolderName: string;

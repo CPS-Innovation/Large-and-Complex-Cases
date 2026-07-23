@@ -97,7 +97,7 @@ export const useUserGroupsFeatureFlag = (): FeatureFlagData | null => {
         },
       ),
     };
-  }, [groups, searchParams, userDetails.username]);
+  }, [groups, searchParams, account, userDetails.username]);
 
   return useMemo(() => getFeatureFlags(), [getFeatureFlags]);
 };
