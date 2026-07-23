@@ -18,12 +18,14 @@ public class TransferEntity
     public int ProcessedFiles { get; set; }
     public int SuccessfulFiles { get; set; }
     public int FailedFiles { get; set; }
+    public int SkippedFiles { get; set; }
     public DateTime? StartedAt { get; set; } = DateTime.UtcNow;
     public DateTime? CompletedAt { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public List<TransferItem> SuccessfulItems { get; set; } = new List<TransferItem>();
     public List<TransferFailedItem> FailedItems { get; set; } = new List<TransferFailedItem>();
+    public List<TransferItem> SkippedItems { get; set; } = new List<TransferItem>();
     public List<DeletionError> DeletionErrors { get; set; } = new List<DeletionError>();
     public bool? IsRetry { get; set; } = false;
     public bool? MovedFilesDeletedSuccessfully { get; set; } = false;

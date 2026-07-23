@@ -883,10 +883,11 @@ public class TransferFileTests
     }
 
     [Fact]
-    public async Task Run_ZeroLengthSource_ReturnsGeneralErrorAndDoesNotUpload()
+    public async Task Run_ZeroLengthSource_NetAppToEgress_SkipsWithoutUploading()
     {
-        // Arrange — a 0-byte / unknown-length source should fail fast with a classified error.
+        // Arrange — Egress cannot materialise a 0-byte object; skip instead of false success.
         var payload = CreatePayload();
+        payload.TransferDirection = TransferDirection.NetAppToEgress;
         var stream = new MemoryStream(Array.Empty<byte>());
 
         _storageClientFactoryMock
@@ -905,6 +906,56 @@ public class TransferFileTests
         var result = await _activity.Run(payload);
 
         // Assert
+        Assert.True(result.IsSkipped);
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.SkippedItem);
+        Assert.Equal(0L, result.SkippedItem.Size);
+        Assert.Equal(TransferItemStatus.Skipped, result.SkippedItem.Status);
+
+        _destinationClientMock.Verify(x => x.InitiateUploadAsync(
+                It.IsAny<string>(), It.IsAny<long>(), It.IsAny<string>(), It.IsAny<string?>(),
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>()),
+            Times.Never);
+
+        _destinationClientMock.Verify(x => x.UploadChunkAsync(
+                It.IsAny<UploadSession>(), It.IsAny<int>(), It.IsAny<byte[]>(),
+                It.IsAny<long?>(), It.IsAny<long?>(), It.IsAny<long?>(),
+                It.IsAny<string?>(), It.IsAny<string?>()),
+            Times.Never);
+
+        _destinationClientMock.Verify(x => x.CompleteUploadAsync(
+                It.IsAny<UploadSession>(),
+                It.IsAny<string?>(),
+                It.IsAny<Dictionary<int, string>?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_UnknownLengthSource_ReturnsGeneralErrorAndDoesNotUpload()
+    {
+        // Arrange — an unreadable length (totalSize < 0) should still fail fast.
+        var payload = CreatePayload();
+        var stream = new MemoryStream(Array.Empty<byte>());
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, _destinationClientMock.Object));
+
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(payload.SourcePath.Path,
+                payload.WorkspaceId,
+                payload.SourcePath.FileId,
+                payload.BearerToken,
+                payload.BucketName))
+            .ReturnsAsync((stream, -1L));
+
+        // Act
+        var result = await _activity.Run(payload);
+
+        // Assert
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.FailedItem);
         Assert.Equal(TransferErrorCode.GeneralError, result.FailedItem.ErrorCode);
@@ -913,6 +964,72 @@ public class TransferFileTests
                 It.IsAny<string>(), It.IsAny<long>(), It.IsAny<string>(), It.IsAny<string?>(),
                 It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>()),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_ZeroLengthSource_NetAppDestination_UsesSinglePut()
+    {
+        // Arrange — 0 KB transfers to NetApp must still succeed via the single PUT path.
+        var payload = CreatePayload(); // EgressToNetApp → NetApp destination
+        var stream = new MemoryStream(Array.Empty<byte>());
+
+        var netAppArgFactoryMock = new Mock<INetAppArgFactory>();
+        netAppArgFactoryMock
+            .Setup(f => f.CreateUploadObjectArg(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<Stream>(),
+                It.IsAny<long>(),
+                It.IsAny<bool>()))
+            .Returns((string bearerToken, string bucketName, string objectName, Stream fileStream, long length,
+                bool disablePayloadSigning) => new UploadObjectArg
+                {
+                    BearerToken = bearerToken,
+                    BucketName = bucketName,
+                    ObjectKey = objectName,
+                    Stream = fileStream,
+                    ContentLength = length,
+                    DisablePayloadSigning = disablePayloadSigning
+                });
+
+        var netAppClientMock = new Mock<INetAppClient>();
+        // FileExistsAsync → DoesObjectExistAsync defaults to false under Moq (loose).
+        netAppClientMock
+            .Setup(c => c.UploadObjectAsync(It.IsAny<UploadObjectArg>()))
+            .ReturnsAsync(true);
+
+        var netAppDestinationClient = new NetAppStorageClient(
+            netAppClientMock.Object,
+            netAppArgFactoryMock.Object,
+            Mock.Of<ICaseMetadataService>(),
+            Mock.Of<INetAppS3HttpClient>(),
+            Mock.Of<INetAppS3HttpArgFactory>(),
+            Mock.Of<ILogger<NetAppStorageClient>>());
+
+        _storageClientFactoryMock
+            .Setup(x => x.GetClientsForDirection(payload.TransferDirection))
+            .Returns((_sourceClientMock.Object, netAppDestinationClient));
+
+        _sourceClientMock
+            .Setup(x => x.OpenReadStreamAsync(payload.SourcePath.Path,
+                payload.WorkspaceId,
+                payload.SourcePath.FileId,
+                payload.BearerToken,
+                payload.BucketName))
+            .ReturnsAsync((stream, 0L));
+
+        // Act
+        var result = await _activity.Run(payload);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.SuccessfulItem);
+        Assert.Equal(0L, result.SuccessfulItem.Size);
+
+        netAppClientMock.Verify(
+            c => c.UploadObjectAsync(It.Is<UploadObjectArg>(a => a.ContentLength == 0)),
+            Times.Once);
     }
 
     [Fact]

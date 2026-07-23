@@ -13,7 +13,8 @@ public class FileTransferDetails
     public int TotalFiles { get; set; }
     public int TransferedFileCount => Files.Count;
     public int ErrorFileCount => Errors.Count;
-    public bool IsCompleted => TransferedFileCount == TotalFiles && ErrorFileCount == 0;
+    public int SkippedFileCount => Skipped.Count;
+    public bool IsCompleted => TransferedFileCount + SkippedFileCount == TotalFiles && ErrorFileCount == 0;
     public bool SourceFilesDeletedSuccessfully => TransferType == nameof(DomainEnums.TransferType.Move) &&
                                                   TransferDirection == nameof(DomainEnums.TransferDirection.EgressToNetApp) &&
                                                   DeletionErrors.Count == 0;
@@ -21,6 +22,7 @@ public class FileTransferDetails
     public long TotalBytesTransferred => GetTotalBytesTransferred();
     public required List<FileTransferItem> Files { get; set; } = [];
     public required List<FileTransferError> Errors { get; set; } = [];
+    public List<FileTransferError> Skipped { get; set; } = [];
     public List<FileTransferError> DeletionErrors { get; set; } = [];
     public string? ExceptionMessage { get; set; }
     public DateTime? StartTime { get; set; }

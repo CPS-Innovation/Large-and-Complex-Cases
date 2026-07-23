@@ -81,6 +81,61 @@ public class TransferEntityStateTests
     }
 
     [Fact]
+    public void AddSkippedItem_UpdatesStateCorrectly()
+    {
+        // Arrange
+        var state = new TransferEntityState();
+        state.Initialize(new TransferEntity { DestinationPath = "dest", BearerToken = "fakeBearerToken" });
+
+        var item = new TransferItem
+        {
+            SourcePath = "empty.txt",
+            Size = 0,
+            Status = TransferItemStatus.Skipped,
+            IsRenamed = false
+        };
+
+        // Act
+        state.AddSkippedItem(item);
+
+        // Assert
+        Assert.Single(state.CurrentState.SkippedItems);
+        Assert.Equal(1, state.CurrentState.SkippedFiles);
+        Assert.Equal(1, state.CurrentState.ProcessedFiles);
+        Assert.Equal(0, state.CurrentState.FailedFiles);
+        Assert.Contains(item, state.CurrentState.SkippedItems);
+    }
+
+    [Fact]
+    public void FinalizeTransfer_WithOnlySkippedItems_SetsStatusToCompleted()
+    {
+        // Arrange
+        var state = new TransferEntityState();
+        state.Initialize(new TransferEntity
+        {
+            DestinationPath = "dest",
+            BearerToken = "fakeBearerToken",
+            SkippedItems =
+            [
+                new TransferItem
+                {
+                    SourcePath = "empty.txt",
+                    Status = TransferItemStatus.Skipped,
+                    IsRenamed = false,
+                    Size = 0
+                }
+            ],
+            FailedItems = []
+        });
+
+        // Act
+        state.FinalizeTransfer();
+
+        // Assert — skips alone must not mark the batch failed / partially completed.
+        Assert.Equal(TransferStatus.Completed, state.CurrentState.Status);
+    }
+
+    [Fact]
     public void FinalizeTransfer_WithOnlySuccessfulItems_SetsStatusToCompleted()
     {
         // Arrange

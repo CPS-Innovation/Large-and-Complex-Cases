@@ -50,6 +50,14 @@ public class TransferEntityState : TaskEntity<TransferEntity>
         State.UpdatedAt = DateTime.UtcNow;
     }
 
+    public void AddSkippedItem(TransferItem skippedItem)
+    {
+        State.SkippedItems.Add(skippedItem);
+        State.SkippedFiles++;
+        State.ProcessedFiles++;
+        State.UpdatedAt = DateTime.UtcNow;
+    }
+
     public void DeleteMovedItemsCompleted(List<DeletionError> failedToDeleteItems)
     {
         State.MovedFilesDeletedSuccessfully = failedToDeleteItems.Count == 0;

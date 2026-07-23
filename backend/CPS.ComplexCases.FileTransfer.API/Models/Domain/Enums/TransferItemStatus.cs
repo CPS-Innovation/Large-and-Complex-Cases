@@ -6,5 +6,6 @@ namespace CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 public enum TransferItemStatus
 {
     Completed,
-    Failed
+    Failed,
+    Skipped
 }

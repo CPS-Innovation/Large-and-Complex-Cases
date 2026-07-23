@@ -15,17 +15,17 @@ export const getTransferActivityStatusTagData = (
   if (!isTransferDetails(activity.details)) return null;
 
   const { details } = activity;
+  const skippedFileCount = details.skippedFileCount ?? 0;
+  const accountedFor = details.transferedFileCount + skippedFileCount;
 
-  if (!details.transferedFileCount)
+  // Skip-only batches (e.g. empty files to Egress) still complete successfully.
+  if (!accountedFor)
     return {
       name: "Failed",
       color: "red",
     };
 
-  if (
-    details.totalFiles === details.transferedFileCount &&
-    !details.errorFileCount
-  )
+  if (details.totalFiles === accountedFor && !details.errorFileCount)
     return {
       name: "Completed",
       color: "green",

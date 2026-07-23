@@ -384,7 +384,14 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
     {
         foreach (var result in results)
         {
-            if (result != null && result.IsSuccess && result.SuccessfulItem != null)
+            if (result != null && result.IsSkipped && result.SkippedItem != null)
+            {
+                await context.Entities.CallEntityAsync(
+                    entityId,
+                    nameof(TransferEntityState.AddSkippedItem),
+                    result.SkippedItem);
+            }
+            else if (result != null && result.IsSuccess && result.SuccessfulItem != null)
             {
                 // Use CallEntityAsync for synchronous entity updates
                 await context.Entities.CallEntityAsync(
