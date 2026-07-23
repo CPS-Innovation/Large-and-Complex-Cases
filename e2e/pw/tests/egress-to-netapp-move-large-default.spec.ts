@@ -4,7 +4,11 @@ import { SearchResultsPage } from "../pages/SearchResultsPage";
 import { CaseManagementPage } from "../pages/CaseManagementPage";
 import { getTransferMaterialsTab } from "../pages/getTransferMaterialsTab";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
-import { verifyNetAppFileSizeByName, isFileInEgress } from "../helpers/transfer-verify";
+import {
+  verifyNetAppFileSizeByName,
+  isFileInEgress,
+  waitForFileInEgress,
+} from "../helpers/transfer-verify";
 import { expect } from "@playwright/test";
 
 test.describe("Egress to NetApp Move (Default Mode)", () => {
@@ -12,7 +16,9 @@ test.describe("Egress to NetApp Move (Default Mode)", () => {
     page,
     testData,
   }) => {
-    test.setTimeout(900_000);
+    // 30 min total: a 2GB file can take several minutes to index in Egress
+    // (API-gated below) plus up to 10 min for the move itself.
+    test.setTimeout(1_800_000);
     const { caseUrn, uploadSubfolder } = testData;
 
     // Step 1: Search for case by URN
@@ -39,15 +45,26 @@ test.describe("Egress to NetApp Move (Default Mode)", () => {
       await transferTab.waitForEgressFiles();
     }
 
-    // Wait for the just-uploaded file to be indexed before selecting.
-    // Egress doesn't auto-refresh the file list, so the helper reloads +
-    // re-navigates on each retry.
+    // Gate on the API listing first: a 2GB file is confirmed via the uploads
+    // endpoint before Egress finishes processing it into the workspace listing
+    // the UI reads, so wait (cheaply, no browser) for it to actually appear in
+    // the folder before asking the panel to render it.
+    const lastFileName = testData.files[testData.files.length - 1].fileName;
+    await waitForFileInEgress(
+      testData.workspace.id,
+      testData.sourceSubfolderId!,
+      lastFileName,
+      { timeoutMs: 720_000, egressToken: testData.egressToken! },
+    );
+
+    // Now that Egress lists the file, the panel only needs a reload to show it.
     const sourceFolderPath = uploadSubfolder
       ? ["4. Served Evidence", uploadSubfolder]
       : ["4. Served Evidence"];
     await transferTab.waitForEgressFileByName(
-      testData.files[testData.files.length - 1].fileName,
-      sourceFolderPath
+      lastFileName,
+      sourceFolderPath,
+      180_000,
     );
 
     // Select by name (not index) so we don't pick a stranger's old file

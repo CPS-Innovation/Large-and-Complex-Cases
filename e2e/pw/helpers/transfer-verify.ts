@@ -125,3 +125,39 @@ export async function isFileInEgress(
 
   return files.some((f) => f.fileName === fileName);
 }
+
+// Poll the Egress folder listing (API, no browser) until the file appears.
+// A large file is present via the uploads endpoint before Egress finishes
+// processing it into the workspace listing the UI reads, so gate the UI wait
+// on this cheap API check rather than burning the browser timeout reloading a
+// panel that can't show the file yet.
+export async function waitForFileInEgress(
+  workspaceId: string,
+  folderId: string,
+  fileName: string,
+  options: {
+    timeoutMs?: number;
+    pollIntervalMs?: number;
+    egressToken?: string;
+  } = {},
+): Promise<void> {
+  const {
+    timeoutMs = 15 * 60 * 1000,
+    pollIntervalMs = 10_000,
+    egressToken,
+  } = options;
+  const start = Date.now();
+
+  for (;;) {
+    if (await isFileInEgress(workspaceId, folderId, fileName, egressToken)) {
+      return;
+    }
+    if (Date.now() - start > timeoutMs) {
+      throw new Error(
+        `Timed out after ${Math.round(timeoutMs / 1000)}s waiting for '${fileName}' ` +
+          `to appear in the Egress folder listing (folder id: ${folderId}).`,
+      );
+    }
+    await new Promise((r) => setTimeout(r, pollIntervalMs));
+  }
+}
