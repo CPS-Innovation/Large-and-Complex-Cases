@@ -1,11 +1,11 @@
-using System.Net;
 using CPS.ComplexCases.API.Clients.FileTransfer;
 using CPS.ComplexCases.API.Domain.Configuration;
+using CPS.ComplexCases.Common.Extensions;
+using CPS.ComplexCases.Common.Resilience;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Polly;
-using Polly.Contrib.WaitAndRetry;
 
 namespace CPS.ComplexCases.API.Extensions;
 
@@ -25,29 +25,30 @@ public static class IServiceCollectionExtension
             client.BaseAddress = new Uri(options.BaseUrl);
             client.Timeout = TimeSpan.FromSeconds(options.RequestTimeoutSeconds);
         })
-        .AddPolicyHandler((serviceProvider, request) =>
+        .AddResilienceHandler("file-transfer-retry", (pipeline, context) =>
         {
-            var options = serviceProvider.GetRequiredService<IOptions<FileTransferApiOptions>>().Value;
-            return CreateRetryPolicy(options);
+            var options = context.ServiceProvider.GetRequiredService<IOptions<FileTransferApiOptions>>().Value;
+            var logger = context.ServiceProvider
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger("CPS.ComplexCases.API.FileTransfer");
+
+            // Shared helper keeps POST/PUT out of status-code retries. Circuit breaker is off —
+            // FileTransfer only needs the common retry policy, not fail-fast shedding.
+            pipeline.AddStandardHttpResilience(new HttpResilienceOptions
+            {
+                ServiceName = "FileTransfer",
+                RetryAttempts = options.RetryAttempts > 0 ? options.RetryAttempts : 2,
+                FirstRetryDelay = TimeSpan.FromSeconds(
+                    options.FirstRetryDelaySeconds > 0 ? options.FirstRetryDelaySeconds : 1),
+                CircuitBreakerFailureThreshold = 0.5,
+                CircuitBreakerSamplingDuration = TimeSpan.FromSeconds(30),
+                CircuitBreakerMinimumThroughput = 10,
+                CircuitBreakerDurationOfBreak = TimeSpan.FromSeconds(30),
+                EnableCircuitBreaker = false,
+                ConcurrencyLimit = 0,
+            }, logger);
         });
 
         services.AddTransient<IRequestFactory, RequestFactory>();
-    }
-
-    private static IAsyncPolicy<HttpResponseMessage> CreateRetryPolicy(FileTransferApiOptions options)
-    {
-        var retryAttempts = options.RetryAttempts > 0 ? options.RetryAttempts : 2;
-        var firstRetryDelaySeconds = options.FirstRetryDelaySeconds > 0 ? options.FirstRetryDelaySeconds : 1;
-
-        return Policy
-            .HandleResult<HttpResponseMessage>(ShouldRetry)
-            .WaitAndRetryAsync(Backoff.DecorrelatedJitterBackoffV2(
-                medianFirstRetryDelay: TimeSpan.FromSeconds(firstRetryDelaySeconds),
-                retryCount: retryAttempts));
-    }
-
-    private static bool ShouldRetry(HttpResponseMessage response)
-    {
-        return response.StatusCode >= HttpStatusCode.InternalServerError;
     }
 }
