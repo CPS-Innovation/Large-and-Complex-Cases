@@ -21,7 +21,7 @@ public class EgressRequestFactory : IEgressRequestFactory
 
     if (!string.IsNullOrEmpty(arg.Name))
     {
-      relativeUrl.Append($"&name={arg.Name}");
+      relativeUrl.Append($"&name={Uri.EscapeDataString(arg.Name)}");
     }
 
     var request = new HttpRequestMessage(HttpMethod.Get, relativeUrl.ToString());

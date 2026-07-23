@@ -66,6 +66,7 @@ export type MainState = {
       validationErrors: {
         id: string;
         sourcePath: string;
+        destinationFullPath: string;
       }[];
       destinationPath: string;
       initiateTransferPayload: InitiateFileTransferPayload | null;
@@ -246,6 +247,7 @@ export type MainStateActions =
         validationErrors: {
           id: string;
           sourcePath: string;
+          destinationFullPath: string;
         }[];
         destinationPath: string;
         initiateTransferPayload: InitiateFileTransferPayload | null;
