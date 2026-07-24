@@ -1,6 +1,6 @@
 import { BackLink } from "../../govuk";
-import { useState, useMemo } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useState, useMemo, useContext } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { PageContentWrapper } from "../../govuk/PageContentWrapper";
 import { Spinner } from "../../common/Spinner";
 import { InitiateFileTransferPayload } from "../../../schemas/requests/initiateFileTransferPayload";
@@ -9,7 +9,6 @@ import type {
   EgressFolderData,
   NetAppFolder,
   IndexingFileTransferResponse,
-  InitiateFileTransferResponse,
 } from "../../../schemas";
 import {
   type EgressTransferPayloadSourcePath,
@@ -27,38 +26,20 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { getFolderNameFromPath } from "../../../common/utils/getFolderNameFromPath";
 import { ApiError } from "../../../common/errors/ApiError";
 import { type TreeNode } from "../../common/tree-view-component/TreeViewComponent";
+import { MainStateContext } from "../../../providers/MainStateProvider";
 import styles from "./TransferDestinationPage.module.scss";
 
 const TransferDestinationPage: React.FC = () => {
-  const {
-    state,
-  }: {
-    state: {
-      sourcePaths:
-        | {
-            fileId: string;
-            path: string;
-            isFolder: boolean;
-          }[]
-        | { path: string }[];
-      transferSource: "egress" | "netapp";
-      egressWorkspaceId: string;
-      selectedTransferAction: "copy" | "move";
-      caseId: number;
-      netAppPath: string;
-      operationName: string;
-    };
-  } = useLocation();
-
+  const { state, dispatch } = useContext(MainStateContext);
+  const { caseId } = useParams() as { caseId: string };
   const {
     transferSource,
     sourcePaths,
-    caseId,
     egressWorkspaceId,
     selectedTransferAction,
     netAppPath,
     operationName,
-  } = state || {};
+  } = state.appData.transferDestinationPage;
 
   const { data: netAppData, isLoading: isNetAppFolderDataLoading } = useQuery({
     queryKey: [netAppPath],
@@ -190,7 +171,7 @@ const TransferDestinationPage: React.FC = () => {
     const paths = sourcePaths.map(({ path }) => path);
 
     const payload = {
-      caseId: caseId,
+      caseId: Number.parseInt(caseId),
       transferDirection:
         transferSource === "egress"
           ? ("EgressToNetApp" as const)
@@ -207,29 +188,16 @@ const TransferDestinationPage: React.FC = () => {
     return payload;
   };
 
-  const caseManagementRouteState = useMemo(() => {
-    const paths = sourcePaths.map(({ path }) => path);
-    const sourceCurrentFolderPath = getCommonPath(paths);
-    return {
-      transferSource: transferSource,
-      transferEgressFolderPathInitialValue:
-        transferSource === "egress" ? sourceCurrentFolderPath : undefined,
-      transferNetAppFolderPathInitialValue:
-        transferSource === "netapp" ? sourceCurrentFolderPath : undefined,
-    };
-  }, [sourcePaths, transferSource]);
-
   const handleInitiateFileTransfer = async (
     initiatePayload: InitiateFileTransferPayload,
   ) => {
-    const initiateFileTransferResponse: InitiateFileTransferResponse =
+    const initiateFileTransferResponse =
       await initiateFileTransferMutation.mutateAsync(initiatePayload);
 
     navigate(`/case/${caseId}/case-management`, {
       replace: true,
       state: {
         transferId: initiateFileTransferResponse.id,
-        ...caseManagementRouteState,
       },
     });
   };
@@ -282,26 +250,27 @@ const TransferDestinationPage: React.FC = () => {
       const response: IndexingFileTransferResponse =
         await indexingFileTransferMutation.mutateAsync(validationPayload);
       if (response.isInvalid) {
-        navigate(`/case/${caseId}/case-management/transfer-resolve-file-path`, {
-          state: {
-            isRouteValid: true,
+        dispatch({
+          type: "SET_TRANSFER_RESOLVE_FILE_PATH_PAGE",
+          payload: {
             validationErrors: response.validationErrors,
             destinationPath: response.destinationPath,
             initiateTransferPayload: getInitiateTransferPayload(
               response,
               egressWorkspaceId,
-              caseId,
+              Number.parseInt(caseId),
             ),
-            baseFolderName: validationPayload.sourceRootFolderPath,
+            baseFolderName: validationPayload.sourceRootFolderPath, //do we need this
           },
         });
+        navigate(`/case/${caseId}/case-management/transfer-resolve-file-path`);
         return;
       }
 
       const initiateTransferPayload = getInitiateTransferPayload(
         response,
         egressWorkspaceId,
-        caseId,
+        Number.parseInt(caseId),
       );
       handleInitiateFileTransfer(initiateTransferPayload);
     } catch (error) {
@@ -310,11 +279,7 @@ const TransferDestinationPage: React.FC = () => {
         error.code == 403 &&
         validationPayload.transferType === "Move"
       ) {
-        navigate(`/case/${caseId}/case-management/transfer-permissions-error`, {
-          state: {
-            isRouteValid: true,
-          },
-        });
+        navigate(`/case/${caseId}/case-management/transfer-permissions-error`);
         return;
       }
       return;
@@ -344,9 +309,6 @@ const TransferDestinationPage: React.FC = () => {
   const handleCancelClick = () => {
     navigate(`/case/${caseId}/case-management`, {
       replace: true,
-      state: {
-        ...caseManagementRouteState,
-      },
     });
   };
 
@@ -375,13 +337,7 @@ const TransferDestinationPage: React.FC = () => {
 
   return (
     <div>
-      <BackLink
-        to={`/case/${caseId}/case-management`}
-        state={{
-          ...caseManagementRouteState,
-        }}
-        replace
-      >
+      <BackLink to={`/case/${caseId}/case-management`} replace>
         Back
       </BackLink>
       <PageContentWrapper>

@@ -1,21 +1,15 @@
 import { Button, BackLink, Details } from "../../govuk";
-import { useParams, useLocation, useNavigate } from "react-router-dom";
+import { useContext } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { PageContentWrapper } from "../../govuk/PageContentWrapper";
 import FileIcon from "../../../components/svgs/file.svg?react";
-import { type TransferFailedItem } from "../../../schemas";
+import { MainStateContext } from "../../../providers/MainStateProvider";
 import styles from "./TransferErrorPage.module.scss";
 
 const TransferErrorPage: React.FC = () => {
-  const {
-    state,
-  }: {
-    state: {
-      transferId: string;
-      failedItems: TransferFailedItem[];
-    };
-  } = useLocation();
-
-  const { transferId = "", failedItems = [] } = state || {};
+  const { state } = useContext(MainStateContext);
+  const { transferId = "", failedItems = [] } =
+    state.appData?.transferErrorsPage || {};
   const { caseId } = useParams();
   const navigate = useNavigate();
 

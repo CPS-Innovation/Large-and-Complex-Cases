@@ -51,7 +51,7 @@ export const RenameTransferFilePage: React.FC<RenameTransferFilePageProps> = ({
   }, [characterCount, exceedsLimit]);
   return (
     <div>
-      <BackLink to={backLinkUrl} replace state={{ isRouteValid: true }}>
+      <BackLink to={backLinkUrl} replace>
         Back
       </BackLink>
       <PageContentWrapper>

@@ -11,7 +11,7 @@ export enum SearchFormField {
   urn = "urn",
 }
 
-export type SearchFromData = {
+export type SearchFormData = {
   [SearchFormField.searchType]: "operation name" | "defendant name" | "urn";
   [SearchFormField.operationName]: string;
   [SearchFormField.operationArea]: string;
@@ -31,10 +31,21 @@ type SearchFormDataErrors = {
   [SearchFormField.urn]?: ErrorText;
 };
 const MAX_CHARACTERS = 50;
-export const useCaseSearchForm = (initialData: SearchFromData) => {
-  const initialErrorState: SearchFormDataErrors = {};
 
-  const [formData, setFormData] = useState<SearchFromData>(initialData);
+const DEFAULT_FORM_DATA: SearchFormData = {
+  searchType: "urn",
+  operationName: "",
+  operationArea: "",
+  defendantName: "",
+  defendantArea: "",
+  urn: "",
+};
+
+export const useCaseSearchForm = (initialFormData?: SearchFormData) => {
+  const [formData, setFormData] = useState<SearchFormData>(
+    initialFormData ?? DEFAULT_FORM_DATA,
+  );
+  const initialErrorState: SearchFormDataErrors = {};
 
   const [formDataErrors, setFormDataErrors] =
     useState<SearchFormDataErrors>(initialErrorState);
@@ -76,6 +87,16 @@ export const useCaseSearchForm = (initialData: SearchFromData) => {
     },
     [formDataErrors],
   );
+
+  const handleFormChange = (
+    field: SearchFormField,
+    value: string | number | boolean,
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
   const errorList = useMemo(() => {
     const validErrorKeys = Object.keys(formDataErrors).filter(
@@ -162,16 +183,6 @@ export const useCaseSearchForm = (initialData: SearchFromData) => {
 
     setFormDataErrors(errorTexts);
     return isValid;
-  };
-
-  const handleFormChange = (
-    field: SearchFormField,
-    value: string | number | boolean,
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
   };
 
   const getSearchParams = () => {

@@ -47,7 +47,7 @@ type TransferMaterialsV1PageProps = {
   operationName: string;
   egressWorkspaceId: string;
   netAppPath: string;
-  activeTransferId: string | null;
+  activeTransferId: string;
   urn: string;
   transferEgressFolderPathInitialValue: string | null;
   transferNetAppFolderPathInitialValue: string | null;
@@ -67,7 +67,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
   transferEgressFolderPathInitialValue,
   transferNetAppFolderPathInitialValue,
 }) => {
-  const { state } = useContext(MainStateContext);
+  const { state, dispatch } = useContext(MainStateContext);
   const { appData: { featureFlags } = {} } = state;
   const navigate = useNavigate();
   const { username } = useUserDetails();
@@ -498,18 +498,26 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
   };
 
   const handleTransferAction = (type: "copy" | "move") => {
-    navigate(`/case/${caseId}/case-management/transfer-destination-page`, {
-      state: {
-        isRouteValid: true,
+    dispatch({
+      type: "SET_TRANSFER_DESTINATION_PAGE",
+      payload: {
         transferSource: transferSource,
         selectedTransferAction: type,
         sourcePaths: getTransferSourcePath(),
         egressWorkspaceId,
-        caseId: Number.parseInt(caseId),
         netAppPath,
         operationName,
       },
     });
+    dispatch({
+      type: "SET_TRANSFER_PAGE",
+      payload: {
+        transferSource: transferSource,
+        transferSourceEgressFolderPath: egressFolderPath,
+        transferSourceNetAppFolderPath: netAppFolderPath,
+      },
+    });
+    navigate(`/case/${caseId}/case-management/transfer-destination-page`);
   };
 
   const handleDisconnectSharedDrive = async () => {
@@ -650,13 +658,14 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
         response.status === "Failed"
       ) {
         setTransferStatus("completed-with-errors");
-        navigate(`/case/${caseId}/case-management/transfer-errors`, {
-          state: {
-            isRouteValid: true,
+        dispatch({
+          type: "SET_TRANSFER_ERROR_PAGE",
+          payload: {
             transferId: transferId,
             failedItems: response.failedItems,
           },
         });
+        navigate(`/case/${caseId}/case-management/transfer-errors`);
         if (response.userName === username && transferId)
           handleFileTransferClear(transferId);
         setTransferId("");
@@ -673,6 +682,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
       transferSource,
       egressRefetch,
       netAppRefetch,
+      dispatch,
     ],
   );
   const isComponentUnmounted = useCallback(() => {

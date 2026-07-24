@@ -1,16 +1,18 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useContext } from "react";
 import { Button, Input, Select, ErrorSummary, BackLink } from "../govuk";
+import { MainStateContext } from "../../providers/MainStateProvider";
 import { getCaseSearchResults } from "../../apis/gateway-api";
 import useSearchNavigation from "../../common/hooks/useSearchNavigation";
 import {
   useCaseSearchForm,
   SearchFormField,
-  SearchFromData,
+  SearchFormData,
 } from "../../common/hooks/useCaseSearchForm";
 import SearchResults from "./SearchResults";
 import { useFormattedAreaValues } from "../../common/hooks/useFormattedAreaValues";
 import { useGetCaseDivisionsOrAreas } from "../../common/hooks/useGetCaseDivisionsOrAreas";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
+import { getSearchFieldPayload } from "../../common/utils/getSearchFieldPayload";
 import { useQuery } from "@tanstack/react-query";
 import styles from "./index.module.scss";
 
@@ -18,12 +20,12 @@ const CaseSearchResultPage = () => {
   const [triggerSearchApi, setTriggerSearchApi] = useState(false);
   const [validatedAreaValues, setValidatedAreaValues] = useState(false);
   const errorSummaryRef = useRef<HTMLInputElement>(null);
+  const { dispatch } = useContext(MainStateContext);
   const { updateSearchParams, searchParams, queryString } =
     useSearchNavigation();
 
   const getInitialState = () => {
-    const searchParamKeys = Object.keys(searchParams);
-    const initialData: SearchFromData = {
+    const initialData: SearchFormData = {
       searchType: "urn",
       operationName: "",
       operationArea: "",
@@ -32,6 +34,7 @@ const CaseSearchResultPage = () => {
       urn: "",
     };
 
+    const searchParamKeys = Object.keys(searchParams);
     if (
       searchParamKeys.includes("defendant-name") &&
       searchParamKeys.includes("area")
@@ -78,7 +81,14 @@ const CaseSearchResultPage = () => {
   useEffect(() => {
     if (formData[SearchFormField.searchType] === "urn" || validatedAreaValues) {
       const isValid = validateFormData();
-      if (!triggerSearchApi && isValid) setTriggerSearchApi(true);
+      if (!triggerSearchApi && isValid) {
+        const payload = getSearchFieldPayload(formData);
+        dispatch({
+          type: "SET_FORM_DATA_FIELD",
+          payload: payload,
+        });
+        setTriggerSearchApi(true);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryString, validatedAreaValues]);
@@ -106,12 +116,17 @@ const CaseSearchResultPage = () => {
     }
     if (formattedAreaValues.options.length) setValidatedAreaValues(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formattedAreaValues]);
+  }, [formattedAreaValues, formData]);
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const isFromValid = validateFormData();
     if (isFromValid) {
+      const payload = getSearchFieldPayload(formData);
+      dispatch({
+        type: "SET_FORM_DATA_FIELD",
+        payload: payload,
+      });
       const searchParams = getSearchParams();
       updateSearchParams(searchParams);
     }

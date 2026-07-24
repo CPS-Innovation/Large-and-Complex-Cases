@@ -15,6 +15,7 @@ const BASE_TRANSFER_STATUS = {
 test.describe("egress-netapp-transfer-indexing-error", () => {
   const startTransfer = async (
     page: Page,
+    isRootFolder: boolean = true,
     skipPageElementValidation: boolean = false,
     transferType: "copy" | "move" = "copy",
   ) => {
@@ -33,18 +34,20 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await transferMaterialsSourcePage.verifyPageElements();
       await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
     }
-    await transferMaterialsSourcePage.verifyFolderPath([
-      "Egress: Thunderstruck",
-    ]);
-    await transferMaterialsSourcePage.handleFolderClick("folder-1-0");
-    await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
-      "egress",
-      true,
-    );
-    await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
-      "egress",
-      false,
-    );
+    if (isRootFolder) {
+      await transferMaterialsSourcePage.verifyFolderPath([
+        "Egress: Thunderstruck",
+      ]);
+      await transferMaterialsSourcePage.handleFolderClick("folder-1-0");
+      await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
+        "egress",
+        true,
+      );
+      await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
+        "egress",
+        false,
+      );
+    }
     await transferMaterialsSourcePage.verifyFolderPath([
       "Egress: Thunderstruck",
       "folder-1-0",
@@ -537,7 +540,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page.getByRole("link", { name: "Back" })).not.toBeDisabled();
       await page.getByRole("button", { name: "Cancel" }).click();
       await expect(page).toHaveURL("/case/12/case-management");
-      await startTransfer(page);
+      await startTransfer(page, false);
 
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
@@ -845,7 +848,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
         ),
       );
       await page.goto("/case/12/case-management?transfer-materials-v1=true");
-      await startTransfer(page, false, "move");
+      await startTransfer(page, true, false, "move");
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-permissions-error",
       );
