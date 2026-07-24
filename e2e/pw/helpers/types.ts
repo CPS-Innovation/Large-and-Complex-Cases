@@ -7,9 +7,10 @@ export interface UploadedFile {
   // Egress file id from the completed-upload response. Used by teardown
   // (deleteFile) to remove the file after the test passes. Optional because
   // older callers may not capture it.
-  id?: string;
+  fileId: string;
   fileName: string;
   fileSize: number;
+  parentFolderId: string;
 }
 
 export interface TestSetupResult {
@@ -26,12 +27,20 @@ export interface TestSetupResult {
   // "4. Served Evidence/<uploadSubfolder>/", NetApp->Egress copies land in
   // "2. Counsel only/<uploadSubfolder>/". Undefined for register-case mode.
   uploadSubfolder?: string;
+  // Egress folder path for "4. Counsel only/<uploadSubfolder>/". 
+  // Used by the Move (large file) test for clear logging.
+  uploadPath?: string;
+  // Egress folder id for "4. Counsel only/<uploadSubfolder>/", captured at
+  // createFolder time. Used by the Move (large file) test to verify files were 
+  // deleted from the source folder after transfer.
+  sourceSubfolderId?: string;
   // Egress folder id for "2. Counsel only/<uploadSubfolder>/", captured at
   // createFolder time. Used by per-test teardown to list and delete files
   // the LCC backend wrote there during NetApp->Egress copy specs. Undefined
   // when the folder already existed at setup time (rare timestamp
   // collision); teardown skips destination cleanup in that case.
   destinationSubfolderId?: string;
+  egressToken?: string;
 }
 
 export interface AuthTokens {
