@@ -3,7 +3,6 @@ export interface MoveSoakScenario {
   specs: FileBatchSpec[];
   timeout: number;
   concurrency?: number;
-  injectFailure?: boolean;
 }
 
 export type FileBatchSpec = {

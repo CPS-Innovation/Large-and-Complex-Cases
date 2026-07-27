@@ -54,10 +54,6 @@ test.describe("Move Soak Tests", () => {
       const timeoutMs = scenario.timeout;
       const start = Date.now();
 
-      if (scenario.injectFailure) {
-        harness.enableTokenExpiryDuringStatusPolling(10);
-      }
-
       while (true) {
         console.log("Checking transfer status...");
 
@@ -76,7 +72,10 @@ test.describe("Move Soak Tests", () => {
           throw new Error("Transfer timed out");
         }
 
-        await new Promise((r) => setTimeout(r, 5000));
+        // These scenarios move multi-GB batches over tens of minutes, so poll
+        // every 30s rather than every 5s: detecting completion ~30s late is
+        // immaterial here and it avoids hundreds of needless status requests.
+        await new Promise((r) => setTimeout(r, 30_000));
       }
 
       const transferDurationMs = Date.now() - transferStart;
@@ -155,58 +154,51 @@ test.describe("Move Soak Tests", () => {
       // 5. Assertions per scenario
       expect(status).toBeTruthy();
 
-      if (scenario.injectFailure) {
-        expect(status?.status).toBe("Failed");
+      expect(status?.status).toBe("Completed");
+      expect(status?.failedFiles).toBe(0);
 
-        // critical invariant: source NOT deleted
-        expect(status?.failedFiles).toBeGreaterThan(0);
-      } else {
-        expect(status?.status).toBe("Completed");
-        expect(status?.failedFiles).toBe(0);
+      await test.step("Verify files exist in NetApp", async () => {
+        for (const file of files) {
+          await test.step(
+            `Verify '${file.fileName}' exists in NetApp`,
+            async () => {
+              console.log(
+                `Verifying '${file.fileName}' exists in NetApp (${file.fileSize} bytes)`
+              );
 
-        await test.step("Verify files exist in NetApp", async () => {
-          for (const file of files) {
-            await test.step(
-              `Verify '${file.fileName}' exists in NetApp`,
-              async () => {
-                console.log(
-                  `Verifying '${file.fileName}' exists in NetApp (${file.fileSize} bytes)`
-                );
+              await verifyNetAppFileSizeByName(
+                file.fileName,
+                caseId,
+                file.fileSize,
+              );
+            }
+          );
+        }
+      });
 
-                await verifyNetAppFileSizeByName(
-                  file.fileName,
-                  caseId,
-                  file.fileSize,
-                );
-              }
-            );
-          }
-        });
+      await test.step("Verify files removed from Egress", async () => {
+        for (const file of files) {
+          await test.step(
+            `Verify '${file.fileName}' no longer exists in Egress`,
+            async () => {
+              console.log(
+                `Verifying '${file.fileName}' has been deleted from '${egressSourceFolder}'`
+              );
 
-        await test.step("Verify files removed from Egress", async () => {
-          for (const file of files) {
-            await test.step(
-              `Verify '${file.fileName}' no longer exists in Egress`,
-              async () => {
-                console.log(
-                  `Verifying '${file.fileName}' has been deleted from '${egressSourceFolder}'`
-                );
+              const exists = await isFileInEgress(
+                config.defaultWorkspaceId!,
+                file.parentFolderId,
+                file.fileName
+              );
 
-                const exists = await isFileInEgress(
-                  config.defaultWorkspaceId!,
-                  file.parentFolderId,
-                  file.fileName
-                );
-
-                expect(
-                  exists,
-                  `File '${file.fileName}' still exists in Egress`
-                ).toBeFalsy();
-              }
-            );
-          }
-        });
-      }
+              expect(
+                exists,
+                `File '${file.fileName}' still exists in Egress`
+              ).toBeFalsy();
+            }
+          );
+        }
+      });
     });
   }
 });

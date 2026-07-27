@@ -191,6 +191,15 @@ export async function setupDefaultTestData(
   // DEFAULT_CASE_ID isn't configured (NetApp teardown silently skips then).
   const caseIdNum = caseId ? Number.parseInt(caseId, 10) : undefined;
 
+  // Re-authenticate before returning: the token from step 1 was obtained
+  // before the upload, and a large upload + move + verification can outlast its
+  // lifetime. The specs use this token for the post-move Egress verification,
+  // so return a fresh one rather than the stale step-1 token.
+  const verificationEgressToken = await authenticateEgress(
+    config.egressBaseUrl,
+    config.egressServiceAccountAuth,
+  );
+
   return {
     workspace: { id: workspaceId, name: workspaceName },
     files,
@@ -200,6 +209,6 @@ export async function setupDefaultTestData(
     uploadPath,
     sourceSubfolderId,
     destinationSubfolderId,
-    egressToken,
+    egressToken: verificationEgressToken,
   };
 }

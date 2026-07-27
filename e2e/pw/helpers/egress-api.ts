@@ -401,11 +401,8 @@ export async function getUploadedFile(
   const tokenRef = { value: token };
 
   const start = Date.now();
-  let i = 1
 
   while (Date.now() - start < timeoutMs) {
-    console.log(`   Attempt number ${i}...`)
-
     const response = await fetchWithTokenRefresh(
         baseUrl,
         serviceAccountAuth,
@@ -436,9 +433,6 @@ export async function getUploadedFile(
       };
     }
 
-    i++;
-
-    console.log(`   Retrying in ${retryDelay / 1000}s...`)
     await new Promise(r => setTimeout(r, retryDelay));
   }
 

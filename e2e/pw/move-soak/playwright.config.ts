@@ -16,8 +16,8 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: 1,
   reporter: [
-    ["list"], 
-["html", { outputFolder: `./playwright-report/${runId}` }],
+    ["list"],
+    ["html", { outputFolder: `./playwright-report/${runId}` }],
     ["junit", { outputFile: `./playwright-report/e2e-test-report-${runId}.xml` }],
   ],
   timeout: 120_000,

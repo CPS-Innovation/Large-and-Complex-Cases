@@ -145,6 +145,14 @@ export const test = base.extend<
     // dated subfolder so they can be inspected in the Egress UI or via the
     // Playwright trace. The shared workspace itself is torn down by the
     // register-case-teardown project at end of run.
+    //
+    // Re-authenticate first: `token` was obtained before the upload, and a
+    // large upload + move can outlast its lifetime, so teardown's Egress
+    // cleanup needs a fresh token rather than the stale one.
+    const teardownEgressToken = await authenticateEgress(
+      config.egressBaseUrl,
+      config.egressServiceAccountAuth
+    );
     await teardownTestData({
       workspaceId: shared.workspace.id,
       files,
@@ -154,7 +162,7 @@ export const test = base.extend<
       netAppFolder: REGISTER_CASE_NETAPP_FOLDER,
       caseId: shared.caseId,
       testInfo,
-      egressToken: token
+      egressToken: teardownEgressToken
     });
   }, { timeout: 300_000 }],
 });

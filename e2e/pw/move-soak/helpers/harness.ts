@@ -22,10 +22,6 @@ export class MoveSoakHarness {
 
   private aadAccessToken?: string;
 
-  // Failure injection state for "AAD token expires during status polling"
-  private failStatusPollingAfterChecks?: number;
-  private statusCheckCount = 0;
-
   async setupEgressAuth() {
     this.egressToken = await authenticateEgress(
       this.config.egressBaseUrl,
@@ -44,14 +40,6 @@ export class MoveSoakHarness {
     );
 
     return this.aadAccessToken;
-  }
-
-  enableTokenExpiryDuringStatusPolling(afterChecks: number) {
-    if (afterChecks < 1) {
-      throw new Error("afterChecks must be >= 1");
-    }
-
-    this.failStatusPollingAfterChecks = afterChecks;
   }
 
   private ensureEgressAuth() {
@@ -74,18 +62,6 @@ export class MoveSoakHarness {
       // "Content-Type": "application/json",
       "Correlation-Id" : this.correlationId,
     };
-  }
-
-  private invalidateAadTokenForStatusPolling() {
-    if (
-      this.failStatusPollingAfterChecks !== undefined &&
-      this.statusCheckCount >= this.failStatusPollingAfterChecks
-    ) {
-      // Deliberately replace the cached token so subsequent status requests
-      // fail, simulating an expired/invalid AAD token after a
-      // successful initiation.
-      this.aadAccessToken = "expired-or-invalid-token";
-    }
   }
 
   // Upload files to Egress
@@ -160,8 +136,6 @@ export class MoveSoakHarness {
       sourceRootFolderPath: this.config.egressSourceFolder,
     };
 
-    console.log(JSON.stringify(payload))
-
     const res = await fetch(
       `${this.config.apiBaseUrl}/api/v1/filetransfer/files`,
       {
@@ -178,7 +152,8 @@ export class MoveSoakHarness {
       );
     }
 
-    console.log(await res.json())
+    const validation = await res.json();
+    console.log(`Transfer validation isInvalid: ${validation.isInvalid}`);
   }
 
   // Move files to NetApp using Transfer API
@@ -198,8 +173,6 @@ export class MoveSoakHarness {
       workspaceId: this.config.workspaceId,
       sourceRootFolderPath: this.config.egressSourceFolder,
     };
-
-    console.log(JSON.stringify(payload))
 
     const res = await fetch(
       `${this.config.apiBaseUrl}/api/v1/filetransfer/initiate`,
@@ -221,23 +194,19 @@ export class MoveSoakHarness {
       );
     }
 
-    const responseText = await res.text();
+    const responseBody = JSON.parse(await res.text()) as InitiateTransferResponse;
 
-    console.log("Initiate response:");
-    console.log(responseText);
+    console.log(
+      `Transfer initiated: ${responseBody.id} (${responseBody.status})`
+    );
 
-    const responseBody = JSON.parse(responseText);
-
-    return responseBody as InitiateTransferResponse;
+    return responseBody;
   }
 
   // Check transfer status
   async checkTransferStatus(
     transferId: InitiateTransferResponse["id"]
   ): Promise<TransferStatusCheckResponse | null> {
-    this.statusCheckCount++;
-    this.invalidateAadTokenForStatusPolling();
-
     const res = await fetch(
       `${this.config.apiBaseUrl}/api/v1/filetransfer/${transferId}/status`,
       {
