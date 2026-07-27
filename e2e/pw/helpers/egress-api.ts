@@ -477,6 +477,37 @@ export async function listEgressWorkspaceFilesByFolderId(
 }
 
 /**
+ * Checks whether a specific file still exists in a workspace by its file id.
+ * GET /api/v1/workspaces/{workspaceId}/files/{fileId}: 200 => exists,
+ * 404 => gone. (Same endpoint the backend uses to open a document stream —
+ * see EgressRequestFactory.GetWorkspaceDocumentRequest.)
+ *
+ * Unlike listing a folder, this is a single deterministic call keyed on the
+ * exact id, so it needs no retry/settle — ideal for asserting a Move removed
+ * its source. It's fast when the file is gone (immediate 404 instead of the
+ * folder-listing retries) and it won't mask a genuine delete miss the way a
+ * retrying listing would.
+ */
+export async function egressFileExistsById(
+  baseUrl: string,
+  token: string,
+  workspaceId: string,
+  fileId: string
+): Promise<boolean> {
+  const response = await fetch(
+    `${baseUrl}/api/v1/workspaces/${workspaceId}/files/${fileId}`,
+    { headers: { Authorization: `Basic ${token}` } }
+  );
+  if (response.status === 404) return false;
+  if (response.ok) return true;
+
+  const text = await response.text();
+  throw new Error(
+    `Egress file lookup failed (${response.status}) for '${fileId}': ${text.slice(0, 200)}`
+  );
+}
+
+/**
  * Best-effort bulk file delete. Logs and swallows errors so teardown never
  * fails a passing test — the dated subfolder + manual sweep acts as a
  * safety net. Endpoint shape matches EgressRequestFactory.DeleteFilesRequest

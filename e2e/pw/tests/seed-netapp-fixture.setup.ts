@@ -58,7 +58,7 @@ setup("seed lcc-e2e-fixture-source.txt to NetApp", async ({ page }) => {
     SEED_PARENT,
     SEED_SUBFOLDER,
   );
-  const uploaded = await uploadFile(
+  const uploadId = await uploadFile(
     config.egressBaseUrl,
     egressToken,
     config.defaultWorkspaceId,
@@ -137,12 +137,12 @@ setup("seed lcc-e2e-fixture-source.txt to NetApp", async ({ page }) => {
   await transferTab.selectNetAppFileByExactName(NETAPP_FIXTURE_FILENAME);
 
   console.log("Deleting Egress-side seed source...");
-  if (uploaded.id) {
+  if (uploadId) {
     await deleteFiles(
       config.egressBaseUrl,
       egressToken,
       config.defaultWorkspaceId,
-      [uploaded.id],
+      [uploadId],
     );
   }
 

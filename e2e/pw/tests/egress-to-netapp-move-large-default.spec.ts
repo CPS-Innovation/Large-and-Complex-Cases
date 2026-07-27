@@ -4,7 +4,7 @@ import { SearchResultsPage } from "../pages/SearchResultsPage";
 import { CaseManagementPage } from "../pages/CaseManagementPage";
 import { TransferMaterialsTab } from "../pages/TransferMaterialsTab";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
-import { verifyNetAppFileSizeByName, isFileInEgress } from "../helpers/transfer-verify";
+import { verifyNetAppFileSizeByName, isFileInEgressById } from "../helpers/transfer-verify";
 import { expect } from "@playwright/test";
 
 test.describe("Egress to NetApp Move (Default Mode)", () => {
@@ -59,7 +59,7 @@ test.describe("Egress to NetApp Move (Default Mode)", () => {
     await transferTab.selectAction("Move");
 
     // Step 5: Confirm transfer
-    await transferTab.confirmTransfer();
+    await transferTab.confirmTransfer("Move");
 
     // Step 6: Wait for transfer to complete (10 min timeout)
     await transferTab.waitForTransferComplete(600_000); 
@@ -91,10 +91,10 @@ test.describe("Egress to NetApp Move (Default Mode)", () => {
       await test.step(
         `Verify file '${file.fileName}' is no longer present in Egress`,
         async () => {
-          const exists = await isFileInEgress(
+          const exists = await isFileInEgressById(
             testData.workspace.id,
-            testData.sourceSubfolderId!,
-            file.fileName,
+            file.fileId,
+            testData.egressToken,
           );
 
           expect(
