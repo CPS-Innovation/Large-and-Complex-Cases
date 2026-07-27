@@ -234,7 +234,7 @@ export async function uploadFile(
   fileName: string,
   folderPath: string = "4. Served Evidence/",
   chunkSizeMB: number = 5
-): Promise<UploadedFile> {
+): Promise<string> {
   // Step 1: Initiate upload
   const initiateResponse = await fetch(
     `${baseUrl}/api/v1/workspaces/${workspaceId}/uploads`,
@@ -335,14 +335,60 @@ export async function uploadFile(
     );
   }
 
-  // Egress returns the file record on completion. Fall back to uploadId if
-  // the response shape changes so callers that need an id for teardown
-  // always get something to work with.
-  const completeData = await completeResponse.json().catch(() => ({}));
-  const fileId: string = completeData?.id ?? uploadId;
+  console.log(`  Upload complete: ${uploadId}`);
+  return uploadId;
+}
 
-  console.log(`  Upload complete: ${fileId}`);
-  return { id: fileId, fileName, fileSize: fileSizeBytes };
+export async function getUploadedFile(
+  baseUrl: string,
+  token: string,
+  workspaceId: string,
+  uploadId: string,
+  {
+    timeoutMs = 60000,
+    retryDelay = 2000, 
+  }: {
+    timeoutMs?: number,
+    retryDelay?: number,
+  } = {}
+): Promise<UploadedFile>{
+  const start = Date.now();
+  let i = 1
+
+  while (Date.now() - start < timeoutMs) {
+    const response = await fetch(
+      `${baseUrl}/api/v1/workspaces/${workspaceId}/uploads/${uploadId}?view=full`,
+      {
+        headers: {
+          Authorization: `Basic ${token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        ` Failed to get upload status (${response.status})`
+      );
+    }
+
+    const status = await response.json();
+
+    if (status.file_id) {
+      console.log(` Upload complete. File ID found: ${status.file_id}`)
+      return {
+        fileId: status.file_id,
+        fileName: status.file_name,
+        fileSize: status.file_size,
+        parentFolderId: status.parent_folder_id
+      };
+    }
+
+    await new Promise(r => setTimeout(r, retryDelay));
+  }
+
+  throw new Error(
+    ` Timed out waiting for upload ${uploadId}`
+  );
 }
 
 /**
@@ -426,6 +472,37 @@ export async function listEgressWorkspaceFilesByFolderId(
 }
 
 /**
+ * Checks whether a specific file still exists in a workspace by its file id.
+ * GET /api/v1/workspaces/{workspaceId}/files/{fileId}: 200 => exists,
+ * 404 => gone. (Same endpoint the backend uses to open a document stream —
+ * see EgressRequestFactory.GetWorkspaceDocumentRequest.)
+ *
+ * Unlike listing a folder, this is a single deterministic call keyed on the
+ * exact id, so it needs no retry/settle — ideal for asserting a Move removed
+ * its source. It's fast when the file is gone (immediate 404 instead of the
+ * folder-listing retries) and it won't mask a genuine delete miss the way a
+ * retrying listing would.
+ */
+export async function egressFileExistsById(
+  baseUrl: string,
+  token: string,
+  workspaceId: string,
+  fileId: string
+): Promise<boolean> {
+  const response = await fetch(
+    `${baseUrl}/api/v1/workspaces/${workspaceId}/files/${fileId}`,
+    { headers: { Authorization: `Basic ${token}` } }
+  );
+  if (response.status === 404) return false;
+  if (response.ok) return true;
+
+  const text = await response.text();
+  throw new Error(
+    `Egress file lookup failed (${response.status}) for '${fileId}': ${text.slice(0, 200)}`
+  );
+}
+
+/**
  * Best-effort bulk file delete. Logs and swallows errors so teardown never
  * fails a passing test — the dated subfolder + manual sweep acts as a
  * safety net. Endpoint shape matches EgressRequestFactory.DeleteFilesRequest
@@ -493,4 +570,3 @@ export async function deleteWorkspace(
     );
   }
 }
-

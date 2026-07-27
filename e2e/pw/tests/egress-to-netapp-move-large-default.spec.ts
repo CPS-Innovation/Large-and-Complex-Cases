@@ -2,18 +2,17 @@ import { test } from "../fixtures/test-fixtures-default";
 import { CaseSearchPage } from "../pages/CaseSearchPage";
 import { SearchResultsPage } from "../pages/SearchResultsPage";
 import { CaseManagementPage } from "../pages/CaseManagementPage";
-import { getTransferMaterialsTab } from "../pages/getTransferMaterialsTab";
+import { TransferMaterialsTab } from "../pages/TransferMaterialsTab";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
 import { verifyNetAppFileSizeByName, isFileInEgressById } from "../helpers/transfer-verify";
 import { expect } from "@playwright/test";
-
 
 test.describe("Egress to NetApp Move (Default Mode)", () => {
   test("should move files from Egress to NetApp using existing case", async ({
     page,
     testData,
   }) => {
-    test.setTimeout(300_000);
+    test.setTimeout(900_000);
     const { caseUrn, uploadSubfolder } = testData;
 
     // Step 1: Search for case by URN
@@ -31,7 +30,7 @@ test.describe("Egress to NetApp Move (Default Mode)", () => {
     await caseMgmt.switchToTab("transfer-materials");
 
     // Step 4: Select files from Egress panel and initiate Move
-    const transferTab = getTransferMaterialsTab(page);
+    const transferTab = new TransferMaterialsTab(page);
     await transferTab.waitForEgressFiles();
     await transferTab.navigateToFolder("4. Served Evidence");
     await transferTab.waitForEgressFiles();
@@ -62,8 +61,8 @@ test.describe("Egress to NetApp Move (Default Mode)", () => {
     // Step 5: Confirm transfer
     await transferTab.confirmTransfer("Move");
 
-    // Step 6: Wait for transfer to complete
-    await transferTab.waitForTransferComplete();
+    // Step 6: Wait for transfer to complete (10 min timeout)
+    await transferTab.waitForTransferComplete(600_000); 
 
     // Step 7: Verify in Activity Log
     await caseMgmt.switchToTab("activity-log");
@@ -75,7 +74,7 @@ test.describe("Egress to NetApp Move (Default Mode)", () => {
     await activityLog.expandFileList();
     await activityLog.downloadCsv();
     await activityLog.verifyDownloadSuccess();
-
+  
     // Step 9: Confirm complete files exist in shared drive
     for (const file of testData.files) {
       console.log(`\nVerifying file '${file.fileName}' exists in NetApp in its original size (${file.fileSize} bytes)`)

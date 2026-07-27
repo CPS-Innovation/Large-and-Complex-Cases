@@ -67,7 +67,7 @@ async function main() {
       .replace(/[:.]/g, "-")
       .slice(0, 19);
     const fileName = `generated-${fileSizeMb}MB-${timestamp}-file${i}.txt`;
-    const file = await uploadFile(
+    const uploadId = await uploadFile(
       config.egressBaseUrl,
       token,
       workspaceId,
@@ -75,7 +75,7 @@ async function main() {
       fileName,
       uploadPath
     );
-    uploaded.push({ id: file.id, fileName: file.fileName });
+    uploaded.push({ id: uploadId, fileName });
   }
 
   console.log("\n=== Done ===");
