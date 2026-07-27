@@ -8,6 +8,7 @@ import styles from "./RelativePathFiles.module.scss";
 type RelativePathFilesProps = {
   successFiles: { path: string }[];
   errorFiles: { path: string }[];
+  skippedFiles?: { path: string }[];
   sourcePath: string;
   name: string;
 };
@@ -15,17 +16,29 @@ type RelativePathFilesProps = {
 const RelativePathFiles: React.FC<RelativePathFilesProps> = ({
   successFiles,
   errorFiles,
+  skippedFiles = [],
   sourcePath,
   name,
 }) => {
   const groupedFiles = useMemo(
-    () => getGroupedActivityFilePaths(successFiles, errorFiles, sourcePath),
-    [successFiles, errorFiles, sourcePath],
+    () =>
+      getGroupedActivityFilePaths(
+        successFiles,
+        errorFiles,
+        sourcePath,
+        skippedFiles,
+      ),
+    [successFiles, errorFiles, skippedFiles, sourcePath],
   );
 
   return (
     <div data-testid={`${name}-files`}>
       {sortRelativePaths(Object.keys(groupedFiles)).map((key) => {
+        const group = groupedFiles[`${key}`];
+        const hasErrors = !!group.errors.length;
+        const hasSkipped = !!group.skipped.length;
+        const hasSuccess = !!group.success.length;
+
         return (
           <section key={key}>
             <div
@@ -36,9 +49,9 @@ const RelativePathFiles: React.FC<RelativePathFilesProps> = ({
               <span className={styles.relativePathText}>{key}</span>
             </div>
 
-            {!!groupedFiles[`${key}`].errors.length && (
+            {hasErrors && (
               <ul className={styles.list}>
-                {groupedFiles[`${key}`].errors.map((file) => (
+                {group.errors.map((file) => (
                   <li
                     key={`${key}-err-${file.fileName}`}
                     className={styles.listItem}
@@ -62,13 +75,39 @@ const RelativePathFiles: React.FC<RelativePathFilesProps> = ({
                 ))}
               </ul>
             )}
-            {!!groupedFiles[`${key}`].errors.length &&
-              !!groupedFiles[`${key}`].success.length && (
-                <div className={styles.seperator} />
-              )}
-            {!!groupedFiles[`${key}`].success.length && (
+            {hasErrors && (hasSkipped || hasSuccess) && (
+              <div className={styles.seperator} />
+            )}
+            {hasSkipped && (
               <ul className={styles.list}>
-                {groupedFiles[`${key}`].success.map((file) => (
+                {group.skipped.map((file) => (
+                  <li
+                    key={`${key}-skip-${file.fileName}`}
+                    className={styles.listItem}
+                  >
+                    <div className={styles.listContent}>
+                      <Tag
+                        gdsTagColour="yellow"
+                        className={styles.statusTag}
+                        data-testid="character-tag"
+                      >
+                        Skipped
+                      </Tag>{" "}
+                      <div className={styles.fileNameWrapper}>
+                        <FileIcon />
+                        <span className={styles.fileNameText}>
+                          {file.fileName}
+                        </span>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {hasSkipped && hasSuccess && <div className={styles.seperator} />}
+            {hasSuccess && (
+              <ul className={styles.list}>
+                {group.success.map((file) => (
                   <li
                     key={`${key}-ok-${file.fileName}`}
                     className={styles.listItem}
