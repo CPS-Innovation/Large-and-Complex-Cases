@@ -1,36 +1,36 @@
-import { useRef, useEffect, useMemo } from "react";
+import { useRef, useEffect, useContext } from "react";
+import { MainStateContext } from "../../providers/MainStateProvider";
 import { Button, Radios, Input, Select, ErrorSummary } from "../govuk";
 import useSearchNavigation from "../../common/hooks/useSearchNavigation";
 import {
   useCaseSearchForm,
   SearchFormField,
-  SearchFromData,
+  SearchFormData,
 } from "../../common/hooks/useCaseSearchForm";
-import { useLocation } from "react-router";
 import { useFormattedAreaValues } from "../../common/hooks/useFormattedAreaValues";
 import { useGetCaseDivisionsOrAreas } from "../../common/hooks/useGetCaseDivisionsOrAreas";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
+import { getSearchFieldPayload } from "../../common/utils/getSearchFieldPayload";
 
 import styles from "./index.module.scss";
 
 const CaseSearchPage = () => {
   const errorSummaryRef = useRef<HTMLInputElement>(null);
+  const { state, dispatch } = useContext(MainStateContext);
   const { navigateWithParams } = useSearchNavigation();
   useGetCaseDivisionsOrAreas();
   const formattedAreaValues = useFormattedAreaValues();
-  const location = useLocation();
-
-  const initialData: SearchFromData = useMemo(
-    () => ({
-      searchType: location.state?.searchType ?? "urn",
-      operationName: location.state?.operationName ?? "",
-      operationArea: location.state?.operationArea ?? "",
-      defendantName: location.state?.defendantName ?? "",
-      defendantArea: location.state?.defendantArea ?? "",
-      urn: location.state?.urn ?? "",
-    }),
-    [location],
-  );
+  const getInitialState = () => {
+    const initialData: SearchFormData = {
+      searchType: state.formData.searchType,
+      operationName: state.formData.operationName,
+      operationArea: state.formData.operationArea,
+      defendantName: state.formData.defendantName,
+      defendantArea: state.formData.defendantArea,
+      urn: state.formData.urn,
+    };
+    return initialData;
+  };
 
   const {
     formData,
@@ -39,7 +39,7 @@ const CaseSearchPage = () => {
     validateFormData,
     handleFormChange,
     getSearchParams,
-  } = useCaseSearchForm(initialData);
+  } = useCaseSearchForm(getInitialState());
 
   useEffect(() => {
     if (
@@ -61,7 +61,7 @@ const CaseSearchPage = () => {
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formattedAreaValues]);
+  }, [formattedAreaValues, formData]);
 
   useEffect(() => {
     if (errorList.length) errorSummaryRef.current?.focus();
@@ -71,6 +71,11 @@ const CaseSearchPage = () => {
     e.preventDefault();
     const isFromValid = validateFormData();
     if (isFromValid) {
+      const payload = getSearchFieldPayload(formData);
+      dispatch({
+        type: "SET_FORM_DATA_FIELD",
+        payload: payload,
+      });
       const searchParams = getSearchParams();
       navigateWithParams(searchParams);
     }
@@ -157,7 +162,7 @@ const CaseSearchPage = () => {
                           }}
                           id="search-operation-area"
                           data-testid="search-operation-area"
-                          value={formData.operationArea}
+                          value={formData[SearchFormField.operationArea]}
                           items={formattedAreaValues.options}
                           formGroup={{
                             className: styles.select,
@@ -227,7 +232,7 @@ const CaseSearchPage = () => {
                         />,
 
                         <Select
-                          key="2"
+                          key="search-defendant-area"
                           label={{
                             htmlFor: "search-defendant-area",
                             children: "Select Area",

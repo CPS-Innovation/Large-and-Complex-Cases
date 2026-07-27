@@ -15,6 +15,7 @@ const BASE_TRANSFER_STATUS = {
 test.describe("egress-netapp-transfer-indexing-error", () => {
   const startTransfer = async (
     page: Page,
+    isRootFolder: boolean = true,
     skipPageElementValidation: boolean = false,
     transferType: "copy" | "move" = "copy",
   ) => {
@@ -33,18 +34,20 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await transferMaterialsSourcePage.verifyPageElements();
       await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
     }
-    await transferMaterialsSourcePage.verifyFolderPath([
-      "Egress: Thunderstruck",
-    ]);
-    await transferMaterialsSourcePage.handleFolderClick("folder-1-0");
-    await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
-      "egress",
-      true,
-    );
-    await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
-      "egress",
-      false,
-    );
+    if (isRootFolder) {
+      await transferMaterialsSourcePage.verifyFolderPath([
+        "Egress: Thunderstruck",
+      ]);
+      await transferMaterialsSourcePage.handleFolderClick("folder-1-0");
+      await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
+        "egress",
+        true,
+      );
+      await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
+        "egress",
+        false,
+      );
+    }
     await transferMaterialsSourcePage.verifyFolderPath([
       "Egress: Thunderstruck",
       "folder-1-0",
@@ -138,12 +141,16 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
                   id: "id_3",
                   sourcePath:
                     "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+                  destinationFullPath:
+                    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
                   errorType: "",
                 },
                 {
                   id: "id_5",
                   sourcePath:
                     "egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
+                  destinationFullPath:
+                    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
                   errorType: "",
                 },
               ],
@@ -272,6 +279,9 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page.getByTestId("character-tag")).toHaveText(
         "257 characters",
       );
+      await expect(
+        page.getByText("You must reduce this to 260 characters or fewer."),
+      ).not.toBeVisible();
 
       await page.getByRole("button", { name: "Continue" }).click();
       await expect(page).toHaveURL(
@@ -341,6 +351,9 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page.getByTestId("character-tag")).toHaveText(
         "260 characters",
       );
+      await expect(
+        page.getByText("You must reduce this to 260 characters or fewer."),
+      ).not.toBeVisible();
 
       await page.getByRole("button", { name: "Continue" }).click();
       await expect(page).toHaveURL(
@@ -374,6 +387,14 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(
         page.getByTestId("resolve-path-success-notification-banner"),
       ).toBeVisible();
+      await expect(
+        page.getByRole("heading", {
+          name: "File paths are too long to transfer",
+        }),
+      ).not.toBeVisible();
+      await expect(
+        page.getByTestId("resolve-file-path-inset-text"),
+      ).not.toBeVisible();
       await expect(
         page.getByTestId("resolve-path-success-notification-banner"),
       ).toContainText("Success");
@@ -471,12 +492,16 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
                   id: "id_3",
                   sourcePath:
                     "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+                  destinationFullPath:
+                    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
                   errorType: "",
                 },
                 {
                   id: "id_5",
                   sourcePath:
                     "egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
+                  destinationFullPath:
+                    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
                   errorType: "",
                 },
               ],
@@ -515,7 +540,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       await expect(page.getByRole("link", { name: "Back" })).not.toBeDisabled();
       await page.getByRole("button", { name: "Cancel" }).click();
       await expect(page).toHaveURL("/case/12/case-management");
-      await startTransfer(page);
+      await startTransfer(page, false);
 
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-resolve-file-path",
@@ -556,12 +581,16 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
                   id: "id_3",
                   sourcePath:
                     "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+                  destinationFullPath:
+                    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
                   errorType: "",
                 },
                 {
                   id: "id_5",
                   sourcePath:
                     "egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
+                  destinationFullPath:
+                    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
                   errorType: "",
                 },
               ],
@@ -656,36 +685,48 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
                   id: "id_6",
                   sourcePath:
                     "file6qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+                  destinationFullPath:
+                    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/file6qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
                   errorType: "",
                 },
                 {
                   id: "id_6_1",
                   sourcePath:
                     "file6_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+                  destinationFullPath:
+                    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/file6_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
                   errorType: "",
                 },
                 {
                   id: "id_3",
                   sourcePath:
                     "egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+                  destinationFullPath:
+                    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3/file3qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
                   errorType: "",
                 },
                 {
                   id: "id_3_1",
                   sourcePath:
                     "egress/folder3/file3_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
+                  destinationFullPath:
+                    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder3/file3_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssssssswwee.pdf",
                   errorType: "",
                 },
                 {
                   id: "id_5",
                   sourcePath:
                     "egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
+                  destinationFullPath:
+                    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5/file5qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
                   errorType: "",
                 },
                 {
                   id: "id_5_1",
                   sourcePath:
                     "egress/folder4/folder5/file5_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
+                  destinationFullPath:
+                    "egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/folder1/egress/destination/egress/folder4/folder5/file5_1qeeweweweweewwwweeewwwwwwwwwwwwwwwwwwwwwwwssweesss.pdf",
                   errorType: "",
                 },
               ],
@@ -807,7 +848,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
         ),
       );
       await page.goto("/case/12/case-management?transfer-materials-v1=true");
-      await startTransfer(page, false, "move");
+      await startTransfer(page, true, false, "move");
       await expect(page).toHaveURL(
         "/case/12/case-management/transfer-permissions-error",
       );

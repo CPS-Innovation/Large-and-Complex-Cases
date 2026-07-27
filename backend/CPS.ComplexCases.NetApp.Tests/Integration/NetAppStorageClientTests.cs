@@ -1,3 +1,4 @@
+using System.Net;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
@@ -9,6 +10,7 @@ using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
+using CPS.ComplexCases.NetApp.Models.Dto;
 using CPS.ComplexCases.NetApp.WireMock.Mappings;
 using CPS.ComplexCases.WireMock.Core;
 using Moq;
@@ -161,6 +163,7 @@ public class NetAppStorageClientTests : IDisposable
     [Fact]
     public async Task CompleteUploadAsync_CallsClientWithCorrectArgs()
     {
+        const string finalETag = "final-etag-67890";
         var session = new UploadSession
         {
             WorkspaceId = ObjectKey,
@@ -186,14 +189,31 @@ public class NetAppStorageClientTests : IDisposable
             PartETags = []
         };
 
+        var headObjectArg = new GetHeadObjectArg
+        {
+            BearerToken = BearerToken,
+            BucketName = BucketName,
+            ObjectKey = ObjectKey
+        };
+
         _netAppArgFactoryMock.Setup(f => f.CreateCompleteMultipartUploadArg(BearerToken, BucketName, ObjectKey, UploadId, etags)).Returns(arg);
         _netAppRequestFactoryMock.Setup(c => c.CompleteMultipartUploadRequest(arg)).Returns(request);
         _netAppClient.Setup(c => c.CompleteMultipartUploadAsync(arg, It.IsAny<CancellationToken>())).ReturnsAsync(new CompleteMultipartUploadResponse
         {
-            ETag = "final-etag-67890"
+            ETag = finalETag
+        });
+        _netAppS3HttpArgFactoryMock.Setup(f => f.CreateGetHeadObjectArg(BearerToken, BucketName, ObjectKey)).Returns(headObjectArg);
+        _netAppS3HttpClientMock.Setup(c => c.GetHeadObjectAsync(headObjectArg)).ReturnsAsync(new HeadObjectResponseDto
+        {
+            ETag = finalETag,
+            StatusCode = HttpStatusCode.OK
         });
 
-        await _client.CompleteUploadAsync(session, null, etags, BearerToken, BucketName, ObjectKey);
+        var result = await _client.CompleteUploadAsync(session, null, etags, BearerToken, BucketName, ObjectKey);
+
+        Assert.True(result);
+        _netAppArgFactoryMock.Verify(f => f.CreateCompleteMultipartUploadArg(BearerToken, BucketName, ObjectKey, UploadId, etags), Times.Once);
+        _netAppClient.Verify(c => c.CompleteMultipartUploadAsync(arg, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

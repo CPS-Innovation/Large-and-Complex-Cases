@@ -46,16 +46,16 @@ const AppRoutes = () => {
         path="/case/:caseId/case-management"
         element={<CaseManagementPage />}
       />
-      <Route
-        path="/case/:caseId/case-management/transfer-resolve-file-path"
-        element={<CaseManagementPage />}
-      />
-      <Route
-        path="/case/:caseId/case-management/transfer-rename-file"
-        element={<CaseManagementPage />}
-      />
 
       <Route element={<ProtectedRoutes />}>
+        <Route
+          path="/case/:caseId/case-management/transfer-resolve-file-path"
+          element={<CaseManagementPage />}
+        />
+        <Route
+          path="/case/:caseId/case-management/transfer-rename-file"
+          element={<CaseManagementPage />}
+        />
         <Route
           path="/case/:caseId/case-management/disconnect-shared-drive-confirmation"
           element={<DisconnectSharedDriveConfirmationPage />}

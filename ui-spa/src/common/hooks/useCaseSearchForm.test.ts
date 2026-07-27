@@ -2,7 +2,7 @@ import { renderHook, waitFor, act } from "@testing-library/react";
 import { vi } from "vitest";
 import {
   useCaseSearchForm,
-  SearchFromData,
+  SearchFormData,
   SearchFormField,
 } from "./useCaseSearchForm";
 
@@ -11,7 +11,7 @@ describe("useCaseSearchForm", () => {
     vi.clearAllMocks();
   });
   it("Should initialize the formdata correctly", async () => {
-    const initialFormData: SearchFromData = {
+    const initialFormData: SearchFormData = {
       searchType: "urn",
       operationName: "",
       operationArea: "",
@@ -24,7 +24,7 @@ describe("useCaseSearchForm", () => {
   });
 
   it("Should initialize the formdata correctly", async () => {
-    const initialFormData: SearchFromData = {
+    const initialFormData: SearchFormData = {
       searchType: "urn",
       operationName: "",
       operationArea: "",
@@ -37,7 +37,7 @@ describe("useCaseSearchForm", () => {
   });
 
   it("Should be able to validate the formdata for urn type search, when urn is empty", async () => {
-    const initialFormData: SearchFromData = {
+    const initialFormData: SearchFormData = {
       searchType: "urn",
       operationName: "",
       operationArea: "",
@@ -75,7 +75,7 @@ describe("useCaseSearchForm", () => {
   });
 
   it("Should be able to validate the formdata for urn type search, when urn is invalid", async () => {
-    const initialFormData: SearchFromData = {
+    const initialFormData: SearchFormData = {
       searchType: "urn",
       operationName: "",
       operationArea: "",
@@ -114,7 +114,7 @@ describe("useCaseSearchForm", () => {
   });
 
   it("Should be able to validate the formdata for operation name type search, when fields are empty", async () => {
-    const initialFormData: SearchFromData = {
+    const initialFormData: SearchFormData = {
       searchType: "operation name",
       operationName: "",
       operationArea: "",
@@ -160,7 +160,7 @@ describe("useCaseSearchForm", () => {
     });
   });
   it("Should be able to validate the formdata for operation name type search, when operation name crosses max character limit", async () => {
-    const initialFormData: SearchFromData = {
+    const initialFormData: SearchFormData = {
       searchType: "operation name",
       operationName: "operation1operation2operation3operation4operation5_",
       operationArea: "",
@@ -205,7 +205,7 @@ describe("useCaseSearchForm", () => {
     });
   });
   it("Should be able to validate the formdata for defendant name type search, when fields are empty", async () => {
-    const initialFormData: SearchFromData = {
+    const initialFormData: SearchFormData = {
       searchType: "defendant name",
       operationName: "",
       operationArea: "",
@@ -252,7 +252,7 @@ describe("useCaseSearchForm", () => {
     });
   });
   it("Should be able to validate the formdata for defendant name type search, when defendant  surname crosses max character limit", async () => {
-    const initialFormData: SearchFromData = {
+    const initialFormData: SearchFormData = {
       searchType: "defendant name",
       operationName: "",
       operationArea: "",
@@ -300,7 +300,7 @@ describe("useCaseSearchForm", () => {
   });
 
   it("Should be able to update the formdata", async () => {
-    const initialFormData: SearchFromData = {
+    const initialFormData: SearchFormData = {
       searchType: "urn",
       operationName: "",
       operationArea: "",
@@ -374,7 +374,7 @@ describe("useCaseSearchForm", () => {
   });
 
   it("Should be able to get the search params correctly based on the formData", async () => {
-    const initialFormData: SearchFromData = {
+    const initialFormData: SearchFormData = {
       searchType: "urn",
       operationName: "",
       operationArea: "",

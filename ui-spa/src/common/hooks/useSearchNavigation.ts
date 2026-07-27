@@ -1,5 +1,6 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { type CaseSearchParams } from "../types/CaseSearchParams";
+import { useMemo } from "react";
 
 const useSearchNavigation = () => {
   const navigate = useNavigate();
@@ -31,7 +32,10 @@ const useSearchNavigation = () => {
 
     return validParams as CaseSearchParams;
   };
-  const filteredSearchParams = validateSearchParams(searchParams);
+  const filteredSearchParams = useMemo(
+    () => validateSearchParams(searchParams),
+    [searchParams],
+  );
   return {
     updateSearchParams,
     navigateWithParams,

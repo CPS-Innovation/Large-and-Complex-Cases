@@ -1,16 +1,9 @@
 import { Button } from "../../govuk";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import styles from "./DisconnectSharedDriveFailurePage.module.scss";
 
 const DisconnectSharedDriveFailurePage = () => {
-  const {
-    state,
-  }: {
-    state: {
-      caseId: number;
-    };
-  } = useLocation();
-  const { caseId } = state || {};
+  const { caseId } = useParams() as { caseId: string };
   const navigate = useNavigate();
 
   const handleSubmit = async (event: React.FormEvent) => {
