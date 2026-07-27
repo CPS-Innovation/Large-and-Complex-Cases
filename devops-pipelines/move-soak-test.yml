@@ -1,0 +1,126 @@
+schedules:
+  - cron: '0 1 * * Sun'
+    displayName: 'Sun 1am UTC test'
+    branches:
+      include:
+        - task/add-move-soak-test-sceduled-run
+    always: true
+
+trigger: none
+
+parameters:
+  - name: environment
+    type: string
+    default: dev
+  - name: agentPool
+    type: string
+    default: "LACC PreProd Pool"
+  - name: testFileSizeMb
+    type: number
+    default: 2048 # 2GB
+
+variables:
+  - group: lacc-automated-testing-${{ parameters.environment }}
+  - group: lacc-backend-config-${{ parameters.environment }}
+
+jobs:
+  - job: runMoveSoakTest
+    displayName: "Run Move Soak Test with Playwright"
+    pool: ${{ parameters.agentPool }}
+    variables:
+      - name: nodeVersion
+        value: "20.x"
+      - name: workingDir
+        value: "$(System.DefaultWorkingDirectory)/e2e/pw"
+
+    steps:
+      - task: UseNode@1
+        displayName: "Use Node.js"
+        inputs:
+          version: "$(nodeVersion)"
+
+      - task: Npm@1
+        displayName: "Install NPM Dependencies"
+        inputs:
+          command: "ci"
+          workingDir: "$(workingDir)"
+
+      - script: node_modules/.bin/playwright install --with-deps chromium
+        displayName: "Install Browsers"
+        workingDirectory: $(workingDir)
+
+      - script: |
+          npm run move-soak
+        workingDirectory: $(workingDir)
+        displayName: "Run Move Soak Test Scenarios"
+        env:
+          BASE_URL: $(RedirectUrlLccUi)
+          CMS_LOGIN_PAGE: "$(LccApiBaseUrl)/api/tactical/login"
+          EGRESS_BASE_URL: $(EgressOptionsUrl)
+          TENANT_ID: $(TenantId)
+          LCC_API_CLIENT_ID: $(CallingAppValidAudience)
+          E2E_AD_USER: $(AadUserName)
+          E2E_AD_PASSWORD: $(AadUserPassword)
+          CMS_USERNAME: $(CmsUserName)
+          CMS_PASSWORD: $(CmsUserPassword)
+          EGRESS_SERVICE_ACCOUNT_AUTH: $(EgressServiceAccountAuth)
+          DEFAULT_WORKSPACE_ID: $(E2eEgressWorkspaceId)
+          DEFAULT_WORKSPACE_NAME: $(E2eEgressWorkspaceName)
+          DEFAULT_CASE_URN: $(E2eTestsCaseUrn)
+          DEFAULT_CASE_ID: $(E2eTestsCaseId)
+          LCC_API_BASE_URL: $(LccApiBaseUrl)
+          NETAPP_OPERATION_NAME: $(E2eNetAppFolderName)
+
+      - task: PublishTestResults@2
+        displayName: "Publish Test Results (JUnit)"
+        inputs:
+          testResultsFormat: JUnit
+          testResultsFiles: "$(workingDir)/playwright-report/e2e-test-report.xml"
+          publishRunAttachments: false
+        condition: succeededOrFailed()
+
+      - publish: "$(workingDir)/playwright-report"
+        artifact: "$(System.JobId)-e2e-playwright-report"
+        displayName: "Publish Report Artifact"
+        condition: succeededOrFailed()
+
+  - job: cleanupTestFiles
+    displayName: "Cleanup Test Files from Egress and Shared Drive"
+    dependsOn: runMoveSoakTest
+    steps:
+      - script: |
+          if command -v pwsh &> /dev/null; then
+            echo "PowerShell already installed. Skipping installation."
+          else
+            echo "Installing PowerShell..."
+            bash '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/installPowershell.sh'
+            echo "Powershel version: $(pwsh -v)"
+          fi
+        displayName: "Install PowerShell"
+
+      - task: PowerShell@2
+        displayName: "Cleanup existingCaseAutomation NetApp folder"
+        inputs:
+          filePath: "$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/test-automation-cleanup/Remove-SharedDriveFolderContent.ps1"
+          arguments: >
+            -ClientId $(CallingAppValidAudience)
+            -TenantId $(TenantId)
+            -AadUsername $(AadUserName)
+            -AadPassword $(AadUserPassword)
+            -CaseId $(E2eTestsCaseId)
+            -FolderPath "existingCaseAutomation"
+            -BaseUrl $(LccApiBaseUrl)
+            -ExcludePatterns "lcc-e2e-fixture-source"
+            -Force
+
+      - task: PowerShell@2
+        displayName: "Clear ExistingCaseAutomation Egress folder"
+        condition: succeededOrFailed()
+        inputs:
+          filePath: "$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/test-automation-cleanup/Clear-EgressFolder.ps1"
+          arguments: >
+            -BaseUrl "$(EgressOptionsUrl)" `
+            -ServiceAccountAuth "$(EgressServiceAccountAuth)" `
+            -WorkspaceId "$(E2eEgressWorkspaceId)" `
+            -FolderName "1. ABEs for Transcript" `
+            -Force
