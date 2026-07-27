@@ -119,13 +119,16 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
         </div>
       </div>
 
-      {(!!details.files.length || !!details.errors.length) && (
+      {(!!details.files.length ||
+        !!details.errors.length ||
+        !!details.skipped?.length) && (
         <div>
           <p>Below is a list of documents/folders copied:</p>
           <Details summaryChildren="View files">
             <RelativePathFiles
               successFiles={details.files}
               errorFiles={details.errors}
+              skippedFiles={details.skipped}
               sourcePath={details.sourcePath}
               name="activity"
             />

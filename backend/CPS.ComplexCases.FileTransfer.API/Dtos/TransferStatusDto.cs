@@ -16,11 +16,13 @@ public class TransferStatusDto
     public DateTime? CompletedAt { get; init; }
     public List<TransferFailedItemDto> FailedItems { get; init; } = [];
     public List<TransferSuccessfulItemDto> SuccessfulItems { get; init; } = [];
+    public List<TransferSkippedItemDto> SkippedItems { get; init; } = [];
     public string? UserName { get; init; }
     public int TotalFiles { get; init; }
     public int ProcessedFiles { get; init; }
     public int SuccessfulFiles { get; init; }
     public int FailedFiles { get; init; }
+    public int SkippedFiles { get; init; }
 
     public static TransferStatusDto From(TransferEntity entity) => new()
     {
@@ -37,11 +39,16 @@ public class TransferStatusDto
                 or TransferStatus.PartiallyCompleted or TransferStatus.Failed
             ? entity.SuccessfulItems.Select(TransferSuccessfulItemDto.From).ToList()
             : [],
+        SkippedItems = entity.Status is TransferStatus.Completed
+                or TransferStatus.PartiallyCompleted or TransferStatus.Failed
+            ? entity.SkippedItems.Select(TransferSkippedItemDto.From).ToList()
+            : [],
         UserName = entity.UserName,
         TotalFiles = entity.TotalFiles,
         ProcessedFiles = entity.ProcessedFiles,
         SuccessfulFiles = entity.SuccessfulFiles,
         FailedFiles = entity.FailedFiles,
+        SkippedFiles = entity.SkippedFiles,
     };
 }
 
@@ -63,6 +70,19 @@ public class TransferSuccessfulItemDto
     public long Size { get; init; }
 
     public static TransferSuccessfulItemDto From(TransferItem item) => new()
+    {
+        SourcePath = item.SourcePath,
+        Size = item.Size,
+    };
+}
+
+public class TransferSkippedItemDto
+{
+    public required string SourcePath { get; init; }
+    public long Size { get; init; }
+    public string Reason { get; init; } = "Empty (0-byte) files cannot be uploaded to Egress.";
+
+    public static TransferSkippedItemDto From(TransferItem item) => new()
     {
         SourcePath = item.SourcePath,
         Size = item.Size,
