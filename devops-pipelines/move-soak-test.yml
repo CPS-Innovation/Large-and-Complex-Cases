@@ -3,7 +3,7 @@ schedules:
     displayName: 'Sun 1am UTC test'
     branches:
       include:
-        - task/add-move-soak-test-sceduled-run
+        - main
     always: true
 
 trigger: none
