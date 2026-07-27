@@ -9,7 +9,7 @@ import {
 import { TacticalLoginPage } from "../pages/TacticalLoginPage";
 import { AzureADLoginPage } from "../pages/AzureADLoginPage";
 import { CaseSearchPage } from "../pages/CaseSearchPage";
-import type { TestSetupResult, UploadedFile } from "../helpers/types";
+import type { TestSetupResult } from "../helpers/types";
 
 export interface DefaultSetupOptions {
   fileSizeMb?: number;

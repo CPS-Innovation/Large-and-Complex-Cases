@@ -335,11 +335,6 @@ export async function uploadFile(
     );
   }
 
-  // Egress returns the file record on completion. Fall back to uploadId if
-  // the response shape changes so callers that need an id for teardown
-  // always get something to work with.
-  const completeData = await completeResponse.json().catch(() => ({}));
-
   console.log(`  Upload complete: ${uploadId}`);
   return uploadId;
 }

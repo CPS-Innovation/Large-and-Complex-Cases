@@ -9,7 +9,7 @@ import {
   getUploadedFile,
 } from "../helpers/egress-api";
 import { REGISTER_CASE_NETAPP_FOLDER } from "../helpers/constants";
-import type { TestSetupResult, UploadedFile } from "../helpers/types";
+import type { TestSetupResult } from "../helpers/types";
 import {
   STATE_FILE,
   type RegisterCaseSharedState,
