@@ -54,6 +54,11 @@ jobs:
         displayName: "Run E2E Tests"
         env:
           CI: true
+          # Staging renders the v1 ("Shared Drive") transfer screen for the E2E
+          # user, so drive it with the v1 page object. Without this the tests
+          # default to the old screen and the Egress panel never reads its rows
+          # (file appears in the UI but the old-screen selectors miss it).
+          TRANSFER_MATERIALS_V1: true
           TEST_FILE_SIZE_MB: ${{ parameters.testFileSizeMb }}
           BASE_URL: $(RedirectUrlLccUi)
           CMS_LOGIN_PAGE: "$(LccApiBaseUrl)/api/tactical/login"
