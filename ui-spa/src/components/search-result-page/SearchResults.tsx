@@ -1,51 +1,73 @@
+import { useContext } from "react";
 import type { SearchResultData, SearchResult } from "../../schemas";
 import { Table, Tag } from "../govuk";
-import { Link } from "react-router";
-import { SearchFromData } from "../../common/hooks/useCaseSearchForm";
+import { Link, useNavigate } from "react-router";
+import { SearchFormData } from "../../common/hooks/useCaseSearchForm";
 import { formatDate } from "../../common/utils/formatDate";
-import { SharedDriveConnectRouteState } from "../../common/types/SharedDriveConnectRouteState";
-import { EgressConnectRouteState } from "../../common/types/EgressConnectRouteState";
 import { getUrlSearchParam } from "../../common/utils/getUrlSearchParam";
+import { MainStateContext } from "../../providers/MainStateProvider";
 import styles from "./SearchResults.module.scss";
 
 type SearchResultsProps = {
   searchQueryString: string;
   searchApiResults: SearchResultData;
-  searchType: SearchFromData["searchType"];
+  searchType: SearchFormData["searchType"];
 };
 
 const SearchResults: React.FC<SearchResultsProps> = ({
   searchQueryString,
   searchApiResults,
 }) => {
+  const navigate = useNavigate();
+  const { dispatch } = useContext(MainStateContext);
+
   const renderLink = (data: SearchResult, operationName: string) => {
     if (!data.egressWorkspaceId) {
-      const payload: EgressConnectRouteState = {
-        isRouteValid: true,
-        searchQueryString: searchQueryString,
-        isNetAppConnected: !!data.netappFolderPath,
+      const egressConnectUrl = `/case/${data.caseId}/egress-connect?${getUrlSearchParam("workspace-name", operationName)}`;
+      const handleClick = (
+        e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
+      ) => {
+        e.preventDefault();
+        dispatch({
+          type: "SET_EGRESS_CONNECT_PAGE",
+          payload: {
+            searchQueryString: searchQueryString,
+            isNetAppConnected: !!data.netappFolderPath,
+          },
+        });
+        navigate(egressConnectUrl);
       };
       return (
         <Link
-          to={`/case/${data.caseId}/egress-connect?${getUrlSearchParam("workspace-name", operationName)}`}
-          state={payload}
+          to={egressConnectUrl}
           className={styles.link}
+          onClick={handleClick}
         >
           Connect
         </Link>
       );
     }
     if (!data.netappFolderPath) {
-      const payload: SharedDriveConnectRouteState = {
-        isRouteValid: true,
-        searchQueryString,
-        netappRootFolderPath: "",
+      const netAppConnectUrl = `/case/${data.caseId}/netapp-connect?${getUrlSearchParam("operation-name", operationName)}`;
+      const handleClick = (
+        e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
+      ) => {
+        e.preventDefault();
+        dispatch({
+          type: "SET_SHARED_DRIVE_CONNECT_PAGE",
+          payload: {
+            searchQueryString: searchQueryString,
+            netappRootFolderPath: "",
+          },
+        });
+
+        navigate(netAppConnectUrl);
       };
       return (
         <Link
-          to={`/case/${data.caseId}/netapp-connect?${getUrlSearchParam("operation-name", operationName)}`}
-          state={payload}
+          to={netAppConnectUrl}
           className={styles.link}
+          onClick={handleClick}
         >
           Connect
         </Link>

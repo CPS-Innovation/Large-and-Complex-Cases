@@ -120,6 +120,7 @@ public class ListFilesForTransfer(
                         Id = file.Id,
                         SourcePath = file.SourcePath,
                         RelativePath = file.RelativePath,
+                        DestinationFullPath = fullDestinationPath,
                         Message = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)),
                         ErrorType = TransferFailedType.PathLengthExceeded
                     });

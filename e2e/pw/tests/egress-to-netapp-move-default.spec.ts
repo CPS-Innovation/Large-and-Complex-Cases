@@ -2,7 +2,7 @@ import { test } from "../fixtures/test-fixtures-default";
 import { CaseSearchPage } from "../pages/CaseSearchPage";
 import { SearchResultsPage } from "../pages/SearchResultsPage";
 import { CaseManagementPage } from "../pages/CaseManagementPage";
-import { TransferMaterialsTab } from "../pages/TransferMaterialsTab";
+import { getTransferMaterialsTab } from "../pages/getTransferMaterialsTab";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
 
 test.describe("Egress to NetApp Move (Default Mode)", () => {
@@ -28,7 +28,7 @@ test.describe("Egress to NetApp Move (Default Mode)", () => {
     await caseMgmt.switchToTab("transfer-materials");
 
     // Step 4: Select files from Egress panel and initiate Move
-    const transferTab = new TransferMaterialsTab(page);
+    const transferTab = getTransferMaterialsTab(page);
     await transferTab.waitForEgressFiles();
     await transferTab.navigateToFolder("4. Served Evidence");
     await transferTab.waitForEgressFiles();
@@ -57,7 +57,7 @@ test.describe("Egress to NetApp Move (Default Mode)", () => {
     await transferTab.selectAction("Move");
 
     // Step 5: Confirm transfer
-    await transferTab.confirmTransfer();
+    await transferTab.confirmTransfer("Move");
 
     // Step 6: Wait for transfer to complete
     await transferTab.waitForTransferComplete();

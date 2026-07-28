@@ -114,6 +114,19 @@ public abstract class NetAppBatchRequestValidatorTestsBase<TRequest, TOperation,
     }
 
     [Fact]
+    public void Validate_WhenDuplicateDestinationPaths_ReturnsValidationError()
+    {
+        var ops = new List<TOperation>
+        {
+            CreateOperation("Material", "CaseRoot/Folder-A/report.pdf"),
+            CreateOperation("Material", "CaseRoot/Folder-B/report.pdf"),
+        };
+        var result = _validator.TestValidate(CreateValidRequest(ops));
+        result.ShouldHaveValidationErrorFor(x => x.Operations)
+            .WithErrorMessage("Duplicate destination within batch: CaseRoot/Folder-B/report.pdf");
+    }
+
+    [Fact]
     public void Validate_WhenDuplicateSourcePathsCaseInsensitive_ReturnsValidationError()
     {
         var ops = new List<TOperation>

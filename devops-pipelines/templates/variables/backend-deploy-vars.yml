@@ -7,6 +7,6 @@ variables:
   - name: resourceGroupName
     value: "rg-lacc-${{ parameters.environment }}"
   - name: keyVaultName
-    value: "kv-lacc-${{ parameters.environment }}"
+    value: "kv-lacc-api-${{ parameters.environment }}"
   - name: scripts_directory
     value: "$(System.DefaultWorkingDirectory)/devops-pipelines/scripts"

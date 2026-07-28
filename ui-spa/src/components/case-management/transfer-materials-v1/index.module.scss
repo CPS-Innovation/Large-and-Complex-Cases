@@ -29,7 +29,6 @@
 
 .successBanner {
   margin-top: 2rem;
-  width: 50%;
   .successMessage {
     font-size: 1.5rem;
   }
@@ -57,11 +56,20 @@
 }
 
 .controlWrapper {
-  display: flex;
-  justify-content: space-between;
+  position: relative;
+  width: 100%;
   margin-bottom: 1.875rem;
+  & :global(.govuk-button) {
+    width: fit-content;
+  }
+
   .disconnectButton {
-    margin-bottom: 0;
-    margin-top: 0;
+    position: relative;
+    margin: 0.65rem 0 0 0;
+    @media (min-width: 50rem) {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+    }
   }
 }

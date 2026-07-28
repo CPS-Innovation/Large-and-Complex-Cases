@@ -4,9 +4,9 @@ public class DeleteNetAppBatchResponse
 {
     /// <summary>
     /// Overall outcome of the batch.
-    /// Completed: all items processed with no failures (some may be NotFound).
-    /// PartiallyCompleted: at least one item succeeded and at least one failed.
-    /// Failed: no items succeeded; all that were attempted resulted in failure.
+    /// Completed: every item deleted successfully.
+    /// PartiallyCompleted: at least one item deleted and at least one was NotFound or Failed.
+    /// Failed: no items deleted; at least one Failed.
     /// NoOp: no items needed deleting (all were NotFound).
     /// </summary>
     public string Status { get; set; } = string.Empty;

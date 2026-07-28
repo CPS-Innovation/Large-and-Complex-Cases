@@ -209,17 +209,9 @@ public class DeleteNetAppBatch(
             }
         }
 
-        var batchStatus = (succeeded > 0, failed > 0) switch
-        {
-            (false, false) => "NoOp",
-            (true, false) => "Completed",
-            (false, true) => "Failed",
-            _ => "PartiallyCompleted"
-        };
-
         return new OkObjectResult(new DeleteNetAppBatchResponse
         {
-            Status = batchStatus,
+            Status = NetAppBatchOutcome.ResolveStatus(succeeded, failed, notFound),
             TotalRequested = batchRequest.Value.Operations.Count,
             Succeeded = succeeded,
             NotFound = notFound,

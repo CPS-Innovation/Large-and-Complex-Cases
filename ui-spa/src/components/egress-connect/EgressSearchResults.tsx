@@ -116,34 +116,36 @@ const EgressSearchResults: React.FC<EgressSearchResultsProps> = ({
             </b>{" "}
             matching <b>{workspaceName}</b>.
           </div>
-          <SortableTable
-            caption="egress cases table, column headers with buttons are sortable"
-            captionClassName="govuk-visually-hidden"
-            head={[
-              {
-                children: "Operation or defendant last name",
-                sortable: true,
-                sortName: "workspace-name",
-              },
-              {
-                children: "Status",
-                sortable: true,
-                sortName: "status",
-              },
+          <div className={styles.tableWrapper}>
+            <SortableTable
+              caption="egress cases table, column headers with buttons are sortable"
+              captionClassName="govuk-visually-hidden"
+              head={[
+                {
+                  children: "Operation or defendant last name",
+                  sortable: true,
+                  sortName: "workspace-name",
+                },
+                {
+                  children: "Status",
+                  sortable: true,
+                  sortName: "status",
+                },
 
-              {
-                children: "Date created",
-                sortable: true,
-                sortName: "date-created",
-              },
-              {
-                children: "",
-                sortable: false,
-              },
-            ]}
-            rows={getTableRowData()}
-            handleTableSort={handleTableSort}
-          />
+                {
+                  children: "Date created",
+                  sortable: true,
+                  sortName: "date-created",
+                },
+                {
+                  children: "",
+                  sortable: false,
+                },
+              ]}
+              rows={getTableRowData()}
+              handleTableSort={handleTableSort}
+            />
+          </div>
         </>
       )}
       {!egressSearchResultsData.length && (

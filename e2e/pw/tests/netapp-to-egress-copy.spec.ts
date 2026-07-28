@@ -1,8 +1,10 @@
 import { test } from "../fixtures/test-fixtures-register-case";
+import { loadEnvConfig } from "../helpers/env-config";
 import { CaseSearchPage } from "../pages/CaseSearchPage";
 import { SearchResultsPage } from "../pages/SearchResultsPage";
 import { CaseManagementPage } from "../pages/CaseManagementPage";
-import { TransferMaterialsTab } from "../pages/TransferMaterialsTab";
+import { getTransferMaterialsTab } from "../pages/getTransferMaterialsTab";
+import { TransferDestinationPage } from "../pages/TransferDestinationPage";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
 
 test.describe("NetApp to Egress Copy", () => {
@@ -28,7 +30,7 @@ test.describe("NetApp to Egress Copy", () => {
     await caseMgmt.waitForLoad();
     await caseMgmt.switchToTab("transfer-materials");
 
-    const transferTab = new TransferMaterialsTab(page);
+    const transferTab = getTransferMaterialsTab(page);
     await transferTab.waitForEgressFiles();
     await transferTab.waitForNetAppFiles();
 
@@ -40,30 +42,33 @@ test.describe("NetApp to Egress Copy", () => {
     // Pre-condition: REGISTER_CASE_NETAPP_FOLDER must contain >=1 file.
     // Source identity doesn't matter — destination is a fresh per-run
     // workspace, no collisions. See README "NetApp source pre-condition".
-    const dateHeader = page
-      .getByTestId("netapp-table-wrapper")
-      .getByRole("button", { name: "Last modified date" });
-    await dateHeader.click();
-    await transferTab.waitForNetAppFiles();
-    await dateHeader.click();
-    await transferTab.waitForNetAppFiles();
+    await transferTab.sortNetAppByDateDescending();
 
     await transferTab.selectNetAppFiles([0]);
 
-    // Step 5: Navigate into Egress destination subfolder.
-    // Use a different top-level folder than the upload source (4. Served
-    // Evidence), then into this test's dated subfolder so repeat runs don't
-    // collide with files already copied there on previous runs.
-    await transferTab.navigateToFolder("2. Counsel only");
-    await transferTab.waitForEgressFiles();
-    if (uploadSubfolder) {
-      await transferTab.navigateToFolder(uploadSubfolder);
+    // Step 5+6: Initiate Copy to an Egress destination subfolder. The
+    // destination is "2. Counsel only" -> this run's dated subfolder (a
+    // different top-level folder than the "4. Served Evidence" source, so
+    // repeat runs don't collide).
+    if (loadEnvConfig().transferMaterialsV1) {
+      // New screen: no second panel — Copy selected navigates to the
+      // destination-tree page where the target folder is chosen.
+      await transferTab.selectAction("Copy", "netAppToEgress");
+      await new TransferDestinationPage(page).chooseFolder("Copy", [
+        "2. Counsel only",
+        uploadSubfolder!,
+      ]);
+    } else {
+      // Old screen: navigate the Egress panel to the destination, then confirm.
+      await transferTab.navigateToFolder("2. Counsel only");
       await transferTab.waitForEgressFiles();
+      if (uploadSubfolder) {
+        await transferTab.navigateToFolder(uploadSubfolder);
+        await transferTab.waitForEgressFiles();
+      }
+      await transferTab.selectAction("Copy", "netAppToEgress");
+      await transferTab.confirmTransfer("Copy");
     }
-
-    // Step 6: Initiate Copy to Egress
-    await transferTab.selectReverseAction("Copy");
-    await transferTab.confirmTransfer();
     await transferTab.waitForTransferComplete();
 
     // Step 7: Verify in Activity Log

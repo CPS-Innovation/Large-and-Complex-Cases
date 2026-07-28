@@ -77,7 +77,7 @@ jobs:
     pool: ${{ parameters.agentPool }}
     variables:
       - name: keyVaultName
-        value: 'kv-lacc-${{ parameters.environment }}'
+        value: 'kv-lacc-api-${{ parameters.environment }}'
       - name: scriptsDirectory
         value: '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts'
     steps:

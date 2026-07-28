@@ -15,15 +15,15 @@ describe("useSearchNavigation", () => {
       ),
       vi.fn(),
     ]);
-    const { result } = renderHook(() => useSearchNavigation);
+    const { result } = renderHook(() => useSearchNavigation());
 
-    expect(result?.current().searchParams).toEqual({
+    expect(result.current.searchParams).toEqual({
       area: "123",
       "defendant-name": "def1",
       "operation-name": "op1",
       urn: "abc",
     });
-    expect(result?.current().queryString).toEqual(
+    expect(result.current.queryString).toEqual(
       "urn=abc&operation-name=op1&defendant-name=def1&area=123",
     );
   });
@@ -34,10 +34,10 @@ describe("useSearchNavigation", () => {
       ),
       vi.fn(),
     ]);
-    const { result } = renderHook(() => useSearchNavigation);
+    const { result } = renderHook(() => useSearchNavigation());
 
-    expect(result?.current().searchParams).toEqual({});
-    expect(result?.current().queryString).toEqual("");
+    expect(result.current.searchParams).toEqual({});
+    expect(result.current.queryString).toEqual("");
 
     (useSearchParams as Mock).mockReturnValue([
       new URLSearchParams(
@@ -45,10 +45,10 @@ describe("useSearchNavigation", () => {
       ),
       vi.fn(),
     ]);
-    const { result: newResult } = renderHook(() => useSearchNavigation);
+    const { result: newResult } = renderHook(() => useSearchNavigation());
 
-    expect(newResult?.current().searchParams).toEqual({ area: "123" });
-    expect(newResult?.current().queryString).toEqual("area=123");
+    expect(newResult.current.searchParams).toEqual({ area: "123" });
+    expect(newResult.current.queryString).toEqual("area=123");
   });
   it("Should update the searchParam by calling the updateSearchParams", () => {
     const setParamMock = vi.fn();
@@ -56,14 +56,14 @@ describe("useSearchNavigation", () => {
       new URLSearchParams(""),
       setParamMock,
     ]);
-    const { result } = renderHook(() => useSearchNavigation);
+    const { result } = renderHook(() => useSearchNavigation());
     const newParams = {
       urn: "abc",
       "operation-name": "op-name",
       "defendant-name": "def-name",
       area: "123",
     };
-    result?.current().updateSearchParams(newParams);
+    result.current.updateSearchParams(newParams);
     expect(setParamMock).toHaveBeenCalledOnce();
     expect(setParamMock).toHaveBeenCalledWith(newParams);
   });
@@ -71,14 +71,14 @@ describe("useSearchNavigation", () => {
   it("Should call navigate with correct params when calling navigateWithParams ", () => {
     const navigateMock = vi.fn();
     (useNavigate as Mock).mockReturnValue(navigateMock);
-    const { result } = renderHook(() => useSearchNavigation);
+    const { result } = renderHook(() => useSearchNavigation());
     const newParams = {
       urn: "abc",
       "operation-name": "op-name",
       "defendant-name": "def-name",
       area: "123",
     };
-    result?.current().navigateWithParams(newParams);
+    result.current.navigateWithParams(newParams);
     expect(navigateMock).toHaveBeenCalledOnce();
     expect(navigateMock).toHaveBeenCalledWith(
       `/search-results?urn=abc&operation-name=op-name&defendant-name=def-name&area=123`,

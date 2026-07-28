@@ -1,4 +1,4 @@
-import { useCallback, useState, useMemo, useEffect } from "react";
+import { useCallback, useState, useMemo, useEffect, useContext } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   BackLink,
@@ -18,19 +18,18 @@ import { getMappedResolvePathFiles } from "../../../common/utils/getMappedResolv
 import { RenameTransferFilePage } from "./RenameTransferFilePage";
 import { initiateFileTransfer } from "../../../apis/gateway-api";
 import { EgressTransferPayloadSourcePath } from "../../../schemas/requests/initiateFileTransferPayload";
-import { TransferResolvePageLocationState } from "../../../common/types/TransferResolvePageLocationState";
 import { PageContentWrapper } from "../../govuk/PageContentWrapper";
+import { MainStateContext } from "../../../providers/MainStateProvider";
 import styles from "./TransferResolveFilePathPage.module.scss";
 
 const MAX_FILE_PATH_CHARACTERS = 260;
 
 const TransferResolveFilePathPage = () => {
+  const { state } = useContext(MainStateContext);
   const navigate = useNavigate();
   const location = useLocation();
   const { caseId } = useParams();
   const [ariaLiveText, setAriaLiveText] = useState("");
-  const [locationState, setLocationState] =
-    useState<TransferResolvePageLocationState>();
 
   const [resolvePathFiles, setResolvePathFiles] = useState<
     ResolvePathFileType[]
@@ -45,14 +44,21 @@ const TransferResolveFilePathPage = () => {
       return getGroupedResolvePaths(resolvePathFiles);
     }, [resolvePathFiles]);
 
+  const getFullTransferPath = useCallback(
+    (file: ResolvePathFileType) =>
+      `${file.relativeFinalPath}${file.sourceName}`,
+    [],
+  );
+
+  // Count unresolved files from the backend-flagged list using the same full
+  // path string shown in tags/Rename (from destinationFullPath).
   const largePathFilesCount = useMemo(() => {
-    const longPathFiles = resolvePathFiles.filter(
-      (file) =>
-        `${file.relativeFinalPath}${file.sourceName}`.length >
-        MAX_FILE_PATH_CHARACTERS,
-    );
-    return longPathFiles.length;
-  }, [resolvePathFiles]);
+    return resolvePathFiles.filter(
+      (file) => getFullTransferPath(file).length > MAX_FILE_PATH_CHARACTERS,
+    ).length;
+  }, [resolvePathFiles, getFullTransferPath]);
+
+  const hasUnresolvedPathErrors = largePathFilesCount > 0;
 
   useEffect(() => {
     setAriaLiveText(
@@ -61,15 +67,11 @@ const TransferResolveFilePathPage = () => {
   }, []);
 
   useEffect(() => {
-    if (location?.state?.validationErrors && location?.state?.destinationPath) {
-      const initialValue = getMappedResolvePathFiles(
-        location?.state?.validationErrors ?? [],
-        location?.state?.destinationPath,
-      );
+    const { validationErrors, destinationPath } =
+      state.appData.transferResolveFilePathPage;
+    if (validationErrors && destinationPath) {
+      const initialValue = getMappedResolvePathFiles(validationErrors);
       setResolvePathFiles(initialValue);
-      if (!locationState) {
-        setLocationState(location.state);
-      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -96,14 +98,12 @@ const TransferResolveFilePathPage = () => {
     setSelectedRenameFile(selectedFile);
     navigate(`/case/${caseId}/case-management/transfer-rename-file`, {
       replace: true,
-      state: { isRouteValid: true },
     });
   };
 
   const handleRenameCancel = () => {
     navigate(`/case/${caseId}/case-management/transfer-resolve-file-path`, {
       replace: true,
-      state: { isRouteValid: true },
     });
     setSelectedRenameFile(null);
   };
@@ -122,12 +122,13 @@ const TransferResolveFilePathPage = () => {
     setSelectedRenameFile(null);
     navigate(`/case/${caseId}/case-management/transfer-resolve-file-path`, {
       replace: true,
-      state: { isRouteValid: true },
     });
   };
 
   const handleStartTransferBtnClick = async () => {
-    if (!locationState?.initiateTransferPayload) {
+    const { initiateTransferPayload } =
+      state.appData.transferResolveFilePathPage;
+    if (!initiateTransferPayload) {
       return;
     }
     setDisableBtns(true);
@@ -143,9 +144,9 @@ const TransferResolveFilePathPage = () => {
       }));
 
     const initiatePayload = {
-      ...locationState?.initiateTransferPayload,
+      ...initiateTransferPayload,
       sourcePaths: [
-        ...(locationState?.initiateTransferPayload?.sourcePaths ?? []),
+        ...(initiateTransferPayload?.sourcePaths ?? []),
         ...resolvedFiles,
       ],
     };
@@ -184,13 +185,13 @@ const TransferResolveFilePathPage = () => {
       <BackLink to={`/case/${caseId}/case-management`} replace>
         Back
       </BackLink>
-      {largePathFilesCount > 0 && (
+      {hasUnresolvedPathErrors && (
         <span role="alert" aria-live="polite" className="govuk-visually-hidden">
           {ariaLiveText}
         </span>
       )}
       <PageContentWrapper>
-        {!largePathFilesCount && resolvePathFiles.length > 0 && (
+        {!hasUnresolvedPathErrors && resolvePathFiles.length > 0 && (
           <div className={styles.successBanner}>
             <NotificationBanner
               type="success"
@@ -204,38 +205,42 @@ const TransferResolveFilePathPage = () => {
           </div>
         )}
         <div className={styles.contentWrapper}>
-          <h1 className="govuk-heading-xl">
-            File paths are too long to transfer
-          </h1>
-          <InsetText data-testid="resolve-file-path-inset-text">
-            {largePathFilesCount === 1 ? (
-              <p>
-                <b>1 file</b> file exceed the 260 character limit.
-              </p>
-            ) : (
-              <p>
-                <b>{largePathFilesCount} files</b> exceed the 260 character
-                limit.
-              </p>
-            )}
+          {hasUnresolvedPathErrors && (
+            <>
+              <h1 className="govuk-heading-xl">
+                File paths are too long to transfer
+              </h1>
+              <InsetText data-testid="resolve-file-path-inset-text">
+                {largePathFilesCount === 1 ? (
+                  <p>
+                    <b>1 file</b> exceeds the 260 character limit.
+                  </p>
+                ) : (
+                  <p>
+                    <b>{largePathFilesCount} files</b> exceed the 260 character
+                    limit.
+                  </p>
+                )}
 
-            <div>
-              <p>The full file path includes:</p>
-              <ul>
-                <li>the destination folder</li>
-                <li> the existing folder structure</li>
-                <li> the file name</li>
-              </ul>
-            </div>
+                <div>
+                  <p>The full file path includes:</p>
+                  <ul>
+                    <li>the destination folder</li>
+                    <li> the existing folder structure</li>
+                    <li> the file name</li>
+                  </ul>
+                </div>
 
-            <div>
-              <p>To continue, you can:</p>
-              <ul>
-                <li>shorten the file names</li>
-                <li>move the files to a folder with a shorter path</li>
-              </ul>
-            </div>
-          </InsetText>
+                <div>
+                  <p>To continue, you can:</p>
+                  <ul>
+                    <li>shorten the file names</li>
+                    <li>move the files to a folder with a shorter path</li>
+                  </ul>
+                </div>
+              </InsetText>
+            </>
+          )}
 
           <div>
             <div>
@@ -265,9 +270,7 @@ const TransferResolveFilePathPage = () => {
                               </span>
                             </div>
                             <div data-testid="character-tag">
-                              {getCharactersTag(
-                                `${file.relativeFinalPath}${file.sourceName}`,
-                              )}
+                              {getCharactersTag(getFullTransferPath(file))}
                             </div>
                             <div className={styles.renameButton}>
                               <Button
@@ -291,8 +294,7 @@ const TransferResolveFilePathPage = () => {
             {resolvePathFiles.length > 0 && (
               <div className={styles.btnWrapper}>
                 <Button
-                  className={styles.btnStartTransfer}
-                  disabled={disableBtns || largePathFilesCount > 0}
+                  disabled={disableBtns || hasUnresolvedPathErrors}
                   onClick={handleStartTransferBtnClick}
                 >
                   Start transfer

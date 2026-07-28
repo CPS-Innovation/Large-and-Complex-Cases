@@ -97,21 +97,17 @@ public class TransferFile(
 
             using (sourceStream)
             {
-                if (totalSize <= 0)
+                // Unknown length cannot drive a sized multipart upload.
+                if (totalSize < 0)
                 {
-                    // A 0-byte or unknown-length source cannot be transferred as a sized multipart
-                    // upload and has produced fast 0-byte failures in production. 
-                    // Fail fast with a clear, classified error and record the size so this
-                    // mode is distinguishable in telemetry from chunk-500 / create-upload-404 failures.
-                    // Deliberate: genuinely empty 0-byte files are out of scope and are rejected here too.
                     _logger.LogWarning(
-                        "Source returned a non-positive content length ({Size}) for {Path}; failing fast.",
+                        "Source returned an unreadable content length ({Size}) for {Path}; failing fast.",
                         totalSize, payload.SourcePath.Path);
 
                     telemetryEvent.FileSizeInBytes = totalSize;
                     telemetryEvent.ErrorCode = TransferErrorCode.GeneralError.ToString();
                     telemetryEvent.ErrorMessage =
-                        $"Source content length was {totalSize} (zero or unknown); the file could not be transferred.";
+                        $"Source content length was {totalSize} (unknown); the file could not be transferred.";
 
                     return CreateFailureResult(
                         payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
@@ -122,9 +118,27 @@ public class TransferFile(
                 bool needsMd5 = destinationClient is EgressStorageClient;
                 bool isNetApp = destinationClient is NetAppStorageClient;
 
+                // Egress has no single-PUT path and cannot materialise a 0-byte object via multipart
+                // (create-upload + complete with no parts returns OK but leaves no file). Skip so the
+                // batch is not failed and the item is reported rather than falsely marked transferred.
+                if (totalSize == 0 && payload.TransferDirection == TransferDirection.NetAppToEgress)
+                {
+                    _logger.LogInformation(
+                        "Skipping empty (0-byte) file for NetApp→Egress transfer: {Path}",
+                        payload.SourcePath.Path);
+
+                    telemetryEvent.FileSizeInBytes = 0;
+                    telemetryEvent.IsSuccessful = true;
+                    telemetryEvent.ErrorCode = "EmptyFileSkipped";
+                    telemetryEvent.ErrorMessage =
+                        "Empty (0-byte) files cannot be uploaded to Egress and were skipped.";
+
+                    return CreateSkippedResult(payload, totalSize, startTime);
+                }
+
                 TransferResult result;
 
-                // Small NetApp files use single PUT
+                // Small NetApp files (including 0-byte) use single PUT
                 if (isNetApp && totalSize <= _sizeConfig.MinMultipartSizeBytes)
                 {
                     result = await HandleSingleUpload(
@@ -150,12 +164,13 @@ public class TransferFile(
                 }
 
                 telemetryEvent.FileSizeInBytes = totalSize;
-                telemetryEvent.TransferEndTime = result.SuccessfulItem?.EndTime ?? DateTime.UtcNow;
-                telemetryEvent.IsSuccessful = result.IsSuccess;
+                telemetryEvent.TransferEndTime =
+                    result.SuccessfulItem?.EndTime ?? result.SkippedItem?.EndTime ?? DateTime.UtcNow;
+                telemetryEvent.IsSuccessful = result.IsSuccess || result.IsSkipped;
                 telemetryEvent.IsMultipart = result.IsSuccess && result.SuccessfulItem!.TotalPartsCount > 1;
                 telemetryEvent.TotalPartsCount = result.IsSuccess ? result.SuccessfulItem!.TotalPartsCount : 0;
 
-                if (!result.IsSuccess && result.FailedItem != null)
+                if (!result.IsSuccess && !result.IsSkipped && result.FailedItem != null)
                 {
                     telemetryEvent.ErrorCode = result.FailedItem.ErrorCode.ToString();
                     telemetryEvent.ErrorMessage = result.FailedItem.ErrorMessage;
@@ -504,6 +519,25 @@ public class TransferFile(
         };
 
         return new TransferResult { IsSuccess = true, SuccessfulItem = item };
+    }
+
+    private static TransferResult CreateSkippedResult(TransferFilePayload payload, long totalSize, DateTime startTime)
+    {
+        var endTime = DateTime.UtcNow;
+
+        var item = new TransferItem
+        {
+            SourcePath = payload.SourcePath.FullFilePath ?? payload.SourcePath.Path,
+            Status = TransferItemStatus.Skipped,
+            Size = totalSize,
+            IsRenamed = payload.SourcePath.ModifiedPath != null,
+            FileId = payload.SourcePath.FileId,
+            StartTime = startTime,
+            EndTime = endTime,
+            TotalPartsCount = 0
+        };
+
+        return new TransferResult { IsSkipped = true, SkippedItem = item };
     }
 
     private TransferResult CreateFailureResult(

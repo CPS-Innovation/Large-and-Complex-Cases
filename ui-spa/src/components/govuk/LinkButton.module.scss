@@ -5,10 +5,13 @@
   border-width: 0;
   cursor: pointer;
   text-decoration: underline;
-  font-size: 1.187rem;
+  font-size: 1rem;
   width: fit-content;
   color: #1d70b8;
   font-family: "NewTransport", "Arial", sans-serif;
+  @media (min-width: 40.0625em) {
+    font-size: 1.1875rem;
+  }
 
   &:hover:not(:disabled):not(:focus) {
     text-decoration-thickness: max(3px, 0.1875rem, 0.12em);

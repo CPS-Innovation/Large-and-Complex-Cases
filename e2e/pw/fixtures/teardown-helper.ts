@@ -56,8 +56,8 @@ export async function teardownTestData(ctx: TeardownContext): Promise<void> {
     ));
 
   const fileIds = ctx.files
-    .map((f) => f.id)
-    .filter((id): id is string => !!id);
+    .map((f) => f.fileId)
+    .filter((fileId): fileId is string => !!fileId);
   await deleteFiles(config.egressBaseUrl, token, ctx.workspaceId, fileIds);
 
   if (ctx.destinationSubfolderId) {

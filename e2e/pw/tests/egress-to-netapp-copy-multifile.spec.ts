@@ -2,7 +2,7 @@ import { test } from "../fixtures/test-fixtures-register-case";
 import { CaseSearchPage } from "../pages/CaseSearchPage";
 import { SearchResultsPage } from "../pages/SearchResultsPage";
 import { CaseManagementPage } from "../pages/CaseManagementPage";
-import { TransferMaterialsTab } from "../pages/TransferMaterialsTab";
+import { getTransferMaterialsTab } from "../pages/getTransferMaterialsTab";
 import { ActivityLogTab } from "../pages/ActivityLogTab";
 
 test.describe("Egress to NetApp Copy - Multiple Files (10MB x 3)", () => {
@@ -29,7 +29,7 @@ test.describe("Egress to NetApp Copy - Multiple Files (10MB x 3)", () => {
     await caseMgmt.switchToTab("transfer-materials");
 
     // Step 3: Select this test's uploaded files by name and initiate Copy
-    const transferTab = new TransferMaterialsTab(page);
+    const transferTab = getTransferMaterialsTab(page);
     await transferTab.waitForEgressFiles();
     await transferTab.navigateToFolder("4. Served Evidence");
     await transferTab.waitForEgressFiles();
@@ -55,7 +55,7 @@ test.describe("Egress to NetApp Copy - Multiple Files (10MB x 3)", () => {
     await transferTab.selectAction("Copy");
 
     // Step 4: Confirm and wait for completion
-    await transferTab.confirmTransfer();
+    await transferTab.confirmTransfer("Copy");
     await transferTab.waitForTransferComplete(300_000);
 
     // Step 5: Verify in Activity Log

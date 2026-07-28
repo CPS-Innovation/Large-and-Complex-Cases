@@ -955,7 +955,7 @@ public class DeleteNetAppBatchTests
         var ok = Assert.IsType<OkObjectResult>(result);
         var response = Assert.IsType<DeleteNetAppBatchResponse>(ok.Value);
 
-        Assert.Equal("Completed", response.Status);
+        Assert.Equal("PartiallyCompleted", response.Status);
         Assert.Equal(2, response.TotalRequested);
         Assert.Equal(1, response.Succeeded);
         Assert.Equal(1, response.NotFound);
