@@ -4,6 +4,7 @@ using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.FileTransfer.API.Durable.Activity;
+using CPS.ComplexCases.FileTransfer.API.Durable.Helpers;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Durable.State;
@@ -269,7 +270,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
             if (batch.Count >= batchSize)
             {
                 var batchResults = await Task.WhenAll(batch);
-                await ProcessTransferResults(context, entityId, batchResults, transferOrchestrationEvent);
+                await TransferResultProcessor.ProcessAsync(context, entityId, batchResults, transferOrchestrationEvent);
                 allResults.AddRange(batchResults);
                 batch.Clear();
             }
@@ -278,7 +279,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
         if (batch.Count > 0)
         {
             var remainingResults = await Task.WhenAll(batch);
-            await ProcessTransferResults(context, entityId, remainingResults, transferOrchestrationEvent);
+            await TransferResultProcessor.ProcessAsync(context, entityId, remainingResults, transferOrchestrationEvent);
             allResults.AddRange(remainingResults);
         }
 
@@ -338,7 +339,7 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
                         BuildTransferFilePayload(input, transferEntity, sp))).ToList();
 
                 var batchResults = await Task.WhenAll(retryBatch);
-                await ProcessTransferResults(context, entityId, batchResults, transferOrchestrationEvent, isRetry: true);
+                await TransferResultProcessor.ProcessAsync(context, entityId, batchResults, transferOrchestrationEvent, isRetry: true);
                 retryResults.AddRange(batchResults);
             }
 
@@ -434,44 +435,6 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
             UserName = input.UserName!,
             CorrelationId = input.CorrelationId!
         };
-
-    /// <summary>
-    /// Processes transfer results and updates the entity synchronously
-    /// This eliminates the race condition by ensuring all entity updates are completed
-    /// before the orchestrator continues
-    /// </summary>
-    private static async Task ProcessTransferResults(
-        TaskOrchestrationContext context,
-        EntityInstanceId entityId,
-        TransferResult[] results,
-        TransferOrchestrationEvent telemetryEvent,
-        bool isRetry = false)
-    {
-        foreach (var result in results)
-        {
-            if (result != null && result.IsSuccess && result.SuccessfulItem != null)
-            {
-                await context.Entities.CallEntityAsync(
-                    entityId,
-                    isRetry ? nameof(TransferEntityState.AddSuccessfulRetryItem)
-                            : nameof(TransferEntityState.AddSuccessfulItem),
-                    result.SuccessfulItem);
-
-                telemetryEvent.TotalFilesTransferred++;
-                telemetryEvent.TotalBytesTransferred += result.SuccessfulItem.Size;
-            }
-            else if (result != null && !result.IsSuccess && result.FailedItem != null)
-            {
-                await context.Entities.CallEntityAsync(
-                    entityId,
-                    isRetry ? nameof(TransferEntityState.AddFailedRetryItem)
-                            : nameof(TransferEntityState.AddFailedItem),
-                    result.FailedItem);
-
-                telemetryEvent.TotalFilesFailed++;
-            }
-        }
-    }
 
     internal static string GetEgressDestinationPath(string destinationPath, string? sourcePath, string? sourceRootFolderPath)
     {

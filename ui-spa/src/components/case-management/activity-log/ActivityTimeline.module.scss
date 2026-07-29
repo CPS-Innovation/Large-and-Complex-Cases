@@ -56,6 +56,8 @@
   }
   .userId {
     color: #505a5f;
+    overflow-wrap: break-word;
+    word-break: break-all;
   }
   .activityText {
     font-size: 1rem;

@@ -1,15 +1,12 @@
 import { Panel } from "../../govuk";
-import { useLocation, Link } from "react-router-dom";
+import { useContext } from "react";
+import { Link } from "react-router-dom";
+import { MainStateContext } from "../../../providers/MainStateProvider";
 import styles from "./DisconnectSharedDriveSuccessPage.module.scss";
 const DisconnectSharedDriveSuccessPage = () => {
-  const {
-    state,
-  }: {
-    state: {
-      urn: string;
-    };
-  } = useLocation();
-  const { urn } = state || {};
+  const { state } = useContext(MainStateContext);
+
+  const { urn } = state.apiData.caseMetaData || {};
   return (
     <div className={styles.contentWrapper}>
       <Panel titleChildren="Shared Drive disconnected"></Panel>

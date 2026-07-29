@@ -18,7 +18,7 @@ import {
   handleFileTransferClear,
 } from "../../../apis/gateway-api";
 import EgressFolderContainer from "./EgressFolderContainer";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import TransferConfirmationModal from "./TransferConfirmationModal";
 import { getGroupedFolderFileData } from "../../../common/utils/getGroupedFolderFileData";
 import { TransferAction } from "../../../common/types/TransferAction";
@@ -51,7 +51,7 @@ type TransferMaterialsPageProps = {
   operationName: string;
   egressWorkspaceId: string;
   netAppPath: string;
-  activeTransferId: string | null;
+  activeTransferId: string;
   urn: string;
 };
 
@@ -62,12 +62,10 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   egressWorkspaceId,
   netAppPath,
   activeTransferId,
-  urn,
 }) => {
-  const { state } = useContext(MainStateContext);
+  const { state, dispatch } = useContext(MainStateContext);
   const { appData: { featureFlags } = {} } = state;
   const navigate = useNavigate();
-  const location = useLocation();
   const { username } = useUserDetails();
   const [transferSource, setTransferSource] = useState<"egress" | "netapp">(
     "egress",
@@ -113,6 +111,12 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   >(null);
   const [transferId, setTransferId] = useState(activeTransferId);
   const [apiRequestError, setApiRequestError] = useState<null | Error>(null);
+
+  useEffect(() => {
+    if (activeTransferId) {
+      setTransferId(activeTransferId);
+    }
+  }, [activeTransferId]);
 
   const currentEgressFolder = useMemo(() => {
     if (egressPathFolders.length)
@@ -538,9 +542,9 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       response = await indexingFileTransfer(validationPayload);
       if (response.isInvalid) {
         setTransferStatus("validated-with-errors");
-        navigate(`/case/${caseId}/case-management/transfer-resolve-file-path`, {
-          state: {
-            isRouteValid: true,
+        dispatch({
+          type: "SET_TRANSFER_RESOLVE_FILE_PATH_PAGE",
+          payload: {
             validationErrors: response.validationErrors,
             destinationPath: response.destinationPath,
             initiateTransferPayload: getInitiateTransferPayload(response),
@@ -550,6 +554,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
                 : "",
           },
         });
+        navigate(`/case/${caseId}/case-management/transfer-resolve-file-path`);
         return;
       }
 
@@ -643,6 +648,13 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
         response.status === "Failed"
       ) {
         setTransferStatus("completed-with-errors");
+        dispatch({
+          type: "SET_TRANSFER_ERROR_PAGE",
+          payload: {
+            transferId: transferId,
+            failedItems: response.failedItems,
+          },
+        });
         navigate(`/case/${caseId}/case-management/transfer-errors`, {
           state: {
             isRouteValid: true,
@@ -665,6 +677,7 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
       transferId,
       egressRefetch,
       netAppRefetch,
+      dispatch,
     ],
   );
   const isComponentUnmounted = useCallback(() => {
@@ -674,26 +687,8 @@ const TransferMaterialsPage: React.FC<TransferMaterialsPageProps> = ({
   const handleDisconnectSharedDrive = async () => {
     navigate(
       `/case/${caseId}/case-management/disconnect-shared-drive-confirmation`,
-      {
-        state: {
-          isRouteValid: true,
-          caseId: caseId,
-          urn: urn,
-        },
-      },
     );
   };
-
-  useEffect(() => {
-    unMounting.current = false;
-    if (location.state) {
-      window.history.replaceState({}, "", location.pathname + location.search);
-    }
-    return () => {
-      unMounting.current = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     if (

@@ -290,12 +290,7 @@ test.describe("transfer-error-handling", () => {
       `Copy to folder-1-0`,
     );
     await transferMaterialsDestinationPage.clickTransferActionButton();
-    //   await expect(
-    //     page.getByTestId("tab-content-transfer-materials"),
-    //   ).toContainText("Indexing transfer from Egress to Shared Drive...");
-    //   await expect(
-    //     page.getByTestId("tab-content-transfer-materials"),
-    //   ).toContainText("Completing transfer from Egress to Shared Drive...");
+
     await expect(page.locator("h1")).toHaveText(
       "Sorry, there is a problem with the service",
       {

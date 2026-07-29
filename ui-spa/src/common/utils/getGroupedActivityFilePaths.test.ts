@@ -23,28 +23,34 @@ describe("getGroupedActivityFilePaths", () => {
 
     const expectedResult = {
       "": {
-        success: [{ fileName: "file1.pdf" }],
         errors: [{ fileName: "file9.pdf" }],
+        skipped: [],
+        success: [{ fileName: "file1.pdf" }],
       },
       folder1: {
-        success: [{ fileName: "file1.pdf" }, { fileName: "file2.pdf" }],
         errors: [{ fileName: "file6.pdf" }],
+        skipped: [],
+        success: [{ fileName: "file1.pdf" }, { fileName: "file2.pdf" }],
       },
       "folder1 > folder2": {
-        success: [{ fileName: "file3.pdf" }],
         errors: [{ fileName: "file7.pdf" }, { fileName: "file8.pdf" }],
+        skipped: [],
+        success: [{ fileName: "file3.pdf" }],
       },
       "folder1 > folder2 > folder3": {
-        success: [{ fileName: "file3.pdf" }, { fileName: "file4.pdf" }],
         errors: [{ fileName: "file9.pdf" }],
+        skipped: [],
+        success: [{ fileName: "file3.pdf" }, { fileName: "file4.pdf" }],
       },
       folder3: {
-        success: [{ fileName: "file4.pdf" }],
         errors: [],
+        skipped: [],
+        success: [{ fileName: "file4.pdf" }],
       },
       folder5: {
-        success: [],
         errors: [{ fileName: "file11.pdf" }],
+        skipped: [],
+        success: [],
       },
     };
 
@@ -65,8 +71,9 @@ describe("getGroupedActivityFilePaths", () => {
 
     const expectedResult = {
       "folder1 > subfolder": {
-        success: [{ fileName: "file1.txt" }],
         errors: [{ fileName: "file2.txt" }, { fileName: "file3.txt" }],
+        skipped: [],
+        success: [{ fileName: "file1.txt" }],
       },
     };
 
@@ -90,14 +97,16 @@ describe("getGroupedActivityFilePaths", () => {
 
     const expectedResult = {
       "": {
+        errors: [],
+        skipped: [],
         success: [
           { fileName: "generated-100MB-2026-02-12-01-41-46-file1.txt" },
         ],
-        errors: [],
       },
       "abc.1": {
-        success: [],
         errors: [{ fileName: "generated-100MB-2026-02-12-01-41-46-file2.txt" }],
+        skipped: [],
+        success: [],
       },
     };
 
@@ -134,28 +143,32 @@ describe("getGroupedActivityFilePaths", () => {
 
     const expectedResult = {
       "": {
+        errors: [],
+        skipped: [],
         success: [
           { fileName: "generated-100MB-2026-02-12-01-41-46-file1.txt" },
         ],
-        errors: [],
       },
       "4. Served Evidence": {
+        errors: [{ fileName: "generated-100MB-2026-02-12-01-41-46-file5.txt" }],
+        skipped: [],
         success: [
           { fileName: "generated-100MB-2026-02-12-01-41-46-file2.txt" },
         ],
-        errors: [{ fileName: "generated-100MB-2026-02-12-01-41-46-file5.txt" }],
       },
       "4. Served Evidence > abc3": {
+        errors: [],
+        skipped: [],
         success: [
           { fileName: "generated-100MB-2026-02-12-01-41-46-file7.txt" },
         ],
-        errors: [],
       },
       "Served Evidence2 > abc3": {
+        errors: [{ fileName: "generated-100MB-2026-02-12-01-41-46-file6.txt" }],
+        skipped: [],
         success: [
           { fileName: "generated-100MB-2026-02-12-01-41-46-file3.txt" },
         ],
-        errors: [{ fileName: "generated-100MB-2026-02-12-01-41-46-file6.txt" }],
       },
     };
 
@@ -192,33 +205,59 @@ describe("getGroupedActivityFilePaths", () => {
 
     const expectedResult = {
       "": {
+        errors: [],
+        skipped: [],
         success: [
           { fileName: "generated-100MB-2026-02-12-01-41-46-file1.txt" },
         ],
-        errors: [],
       },
       "4. Served Evidence": {
+        errors: [{ fileName: "generated-100MB-2026-02-12-01-41-46-file5.txt" }],
+        skipped: [],
         success: [
           { fileName: "generated-100MB-2026-02-12-01-41-46-file2.txt" },
         ],
-        errors: [{ fileName: "generated-100MB-2026-02-12-01-41-46-file5.txt" }],
       },
       "4. Served Evidence > abc3": {
+        errors: [],
+        skipped: [],
         success: [
           { fileName: "generated-100MB-2026-02-12-01-41-46-file7.txt" },
         ],
-        errors: [],
       },
       "Served Evidence2 > abc3": {
+        errors: [{ fileName: "generated-100MB-2026-02-12-01-41-46-file6.txt" }],
+        skipped: [],
         success: [
           { fileName: "generated-100MB-2026-02-12-01-41-46-file3.txt" },
         ],
-        errors: [{ fileName: "generated-100MB-2026-02-12-01-41-46-file6.txt" }],
       },
     };
 
     expect(
       getGroupedActivityFilePaths(successFiles, failedFiles, sourcePath),
     ).toStrictEqual(expectedResult);
+  });
+
+  test("should group skipped files with a Skipped outcome", () => {
+    const successFiles = [{ path: "abc/file1.pdf" }];
+    const failedFiles: { path: string }[] = [];
+    const skippedFiles = [{ path: "abc/empty.txt" }];
+    const sourcePath = "abc";
+
+    expect(
+      getGroupedActivityFilePaths(
+        successFiles,
+        failedFiles,
+        sourcePath,
+        skippedFiles,
+      ),
+    ).toStrictEqual({
+      "": {
+        errors: [],
+        skipped: [{ fileName: "empty.txt" }],
+        success: [{ fileName: "file1.pdf" }],
+      },
+    });
   });
 });
