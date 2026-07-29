@@ -3,7 +3,7 @@ schedules:
     displayName: 'Weekday 1am UTC test'
     branches:
       include:
-        - task/FCT2-20209_Test-Move-functionality
+        - main
     always: true
 
 trigger: none
