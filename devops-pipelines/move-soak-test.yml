@@ -80,7 +80,7 @@ jobs:
           publishRunAttachments: false
         condition: succeededOrFailed()
 
-      - publish: "$(workingDir)/playwright-report/*"
+      - publish: "$(workingDir)/move-soak/playwright-report"
         artifact: "$(System.JobId)-e2e-playwright-report"
         displayName: "Publish Report Artifact"
         condition: succeededOrFailed()
