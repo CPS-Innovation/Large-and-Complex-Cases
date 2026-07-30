@@ -1,9 +1,10 @@
 using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.API.Domain.Response;
+using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.DDEI.Models.Dto;
 using CPS.ComplexCases.Egress.Models.Dto;
 using CPS.ComplexCases.NetApp.Models.Dto;
-using CPS.ComplexCases.Common.Services;
 
 namespace CPS.ComplexCases.API.Services;
 
@@ -107,11 +108,18 @@ public class CaseEnrichmentService : ICaseEnrichmentService
 
     try
     {
-      var folderPaths = folders.Data.FolderData.Where(d => d.Path != null)
-                      .Select(d => $"{folders.Data.BucketName}:{d.Path}")
-                      .ToList();
+      var folderPaths = folders.Data.FolderData
+          .Where(d => d.Path != null)
+          .Select(d => d.Path!)
+          .ToList();
 
-      var metadata = await _caseMetadataService.GetCaseMetadataForNetAppFolderPathsAsync(folderPaths);
+      // Look up plain paths (as stored on connect) and bucket:path variants for any legacy rows
+      var lookupPaths = folderPaths
+          .SelectMany(path => new[] { path, $"{folders.Data.BucketName}:{path}" })
+          .Distinct()
+          .ToList();
+
+      var metadata = await _caseMetadataService.GetCaseMetadataForNetAppFolderPathsAsync(lookupPaths);
       var metadataLookup = metadata
           .Where(m => m.NetappFolderPath != null)
           .ToDictionary(m => m.NetappFolderPath!);
@@ -119,10 +127,10 @@ public class CaseEnrichmentService : ICaseEnrichmentService
       // Enrich data with metadata
       response.Data = new ListNetAppObjectsDataResponse
       {
-        Folders = folderPaths.Select(folder => new ListNetAppFoldersDataResponse
+        Folders = folderPaths.Select(folderPath => new ListNetAppFoldersDataResponse
         {
-          FolderPath = folder[(folder.LastIndexOf(':') + 1)..] ?? string.Empty,
-          CaseId = metadataLookup.TryGetValue(folder, out var caseMetadata) ? caseMetadata.CaseId : null
+          FolderPath = folderPath,
+          CaseId = ResolveNetAppFolderCaseId(folderPath, folders.Data.BucketName, metadataLookup)
         }).ToList(),
         Files = new List<ListNetAppFilesDataResponse>(),
         RootPath = folders.Data.RootPath
@@ -135,6 +143,24 @@ public class CaseEnrichmentService : ICaseEnrichmentService
       _logger.LogWarning(ex, "Failed to retrieve or apply metadata for NetApp folders");
       return response;
     }
+  }
+
+  private static int? ResolveNetAppFolderCaseId(
+      string folderPath,
+      string bucketName,
+      IReadOnlyDictionary<string, CaseMetadata> metadataLookup)
+  {
+    if (metadataLookup.TryGetValue(folderPath, out var caseMetadata))
+    {
+      return caseMetadata.CaseId;
+    }
+
+    if (metadataLookup.TryGetValue($"{bucketName}:{folderPath}", out caseMetadata))
+    {
+      return caseMetadata.CaseId;
+    }
+
+    return null;
   }
 
   private static CaseWithMetadataResponse MapCaseToResponse(CaseDto caseDto)

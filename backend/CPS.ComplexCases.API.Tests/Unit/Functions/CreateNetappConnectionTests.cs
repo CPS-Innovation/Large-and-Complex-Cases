@@ -12,6 +12,7 @@ using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models;
 using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
@@ -172,6 +173,10 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 .ReturnsAsync(netAppResponse);
 
             _caseMetadataServiceMock
+                .Setup(x => x.GetCaseMetadataForNetAppFolderPathsAsync(It.IsAny<IEnumerable<string>>()))
+                .ReturnsAsync(Enumerable.Empty<CaseMetadata>());
+
+            _caseMetadataServiceMock
                 .Setup(x => x.CreateNetAppConnectionAsync(netAppConnectionRequest))
                 .Returns(Task.CompletedTask);
 
@@ -202,6 +207,65 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 netAppConnectionRequest.NetAppFolderPath,
                 netAppConnectionRequest.NetAppFolderPath,
                 _testUsername, null), Times.Once);
+        }
+
+        [Fact]
+        public async Task Run_WhenFolderPathAlreadyConnected_ReturnsConflict()
+        {
+            // Arrange
+            var netAppConnectionRequest = _fixture.Create<CreateNetAppConnectionDto>();
+            var netAppArg = _fixture.Create<ListFoldersInBucketArg>();
+            var netAppResponse = _fixture.Create<ListNetAppObjectsDto>();
+            var existingCaseId = _fixture.Create<int>();
+
+            _requestValidatorMock
+                .Setup(x => x.GetJsonBody<CreateNetAppConnectionDto, CreateNetAppConnectionValidator>(It.IsAny<HttpRequest>()))
+                .ReturnsAsync(new ValidatableRequest<CreateNetAppConnectionDto>
+                {
+                    IsValid = true,
+                    Value = netAppConnectionRequest
+                });
+
+            _netAppArgFactoryMock
+                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, netAppConnectionRequest.OperationName, null, 1, null))
+                .Returns(netAppArg);
+
+            _netAppClientMock
+                .Setup(x => x.ListFoldersInBucketAsync(netAppArg))
+                .ReturnsAsync(netAppResponse);
+
+            _caseMetadataServiceMock
+                .Setup(x => x.GetCaseMetadataForNetAppFolderPathsAsync(It.Is<IEnumerable<string>>(paths =>
+                    paths.Single() == netAppConnectionRequest.NetAppFolderPath)))
+                .ReturnsAsync([
+                    new CaseMetadata
+                    {
+                        CaseId = existingCaseId,
+                        NetappFolderPath = netAppConnectionRequest.NetAppFolderPath
+                    }
+                ]);
+
+            var request = HttpRequestStubHelper.CreateHttpRequestFor(netAppConnectionRequest);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+            // Act
+            var result = await _function.Run(request, functionContext);
+
+            // Assert
+            var conflict = Assert.IsType<ConflictObjectResult>(result);
+            Assert.Equal(
+                $"Folder path '{netAppConnectionRequest.NetAppFolderPath}' is already connected to case {existingCaseId}.",
+                conflict.Value);
+
+            _caseMetadataServiceMock.Verify(x => x.CreateNetAppConnectionAsync(It.IsAny<CreateNetAppConnectionDto>()), Times.Never);
+            _activityLogServiceMock.Verify(x => x.CreateActivityLogAsync(
+                It.IsAny<ActivityLog.Enums.ActionType>(),
+                It.IsAny<ActivityLog.Enums.ResourceType>(),
+                It.IsAny<int>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                null), Times.Never);
         }
 
         [Fact]
@@ -339,6 +403,10 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _netAppClientMock
                 .Setup(x => x.ListFoldersInBucketAsync(netAppArg))
                 .ReturnsAsync(netAppResponse);
+
+            _caseMetadataServiceMock
+                .Setup(x => x.GetCaseMetadataForNetAppFolderPathsAsync(It.IsAny<IEnumerable<string>>()))
+                .ReturnsAsync(Enumerable.Empty<CaseMetadata>());
 
             _caseMetadataServiceMock
                 .Setup(x => x.CreateNetAppConnectionAsync(netAppConnectionRequest))

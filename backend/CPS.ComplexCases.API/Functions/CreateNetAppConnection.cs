@@ -47,6 +47,7 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Forbidden, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Forbidden)]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.Conflict, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Conflict)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.InternalServerError)]
     public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "v1/netapp/connections")] HttpRequest req, FunctionContext functionContext)
     {
@@ -69,6 +70,15 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
         if (hasNetAppPermission == null)
         {
             return new UnauthorizedResult();
+        }
+
+        var folderPath = netAppConnectionRequest.Value.NetAppFolderPath;
+        var existingConnections = await _caseMetadataService.GetCaseMetadataForNetAppFolderPathsAsync([folderPath]);
+        var existingConnection = existingConnections.FirstOrDefault();
+
+        if (existingConnection != null)
+        {
+            return new ConflictObjectResult($"Folder path '{folderPath}' is already connected to case {existingConnection.CaseId}.");
         }
 
         await _caseMetadataService.CreateNetAppConnectionAsync(netAppConnectionRequest.Value);
