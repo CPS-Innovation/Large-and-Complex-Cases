@@ -36,7 +36,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
     }
     if (isRootFolder) {
       await transferMaterialsSourcePage.verifyFolderPath([
-        "Egress: Thunderstruck",
+        "Egress: Workspace-Alpha",
       ]);
       await transferMaterialsSourcePage.handleFolderClick("folder-1-0");
       await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
@@ -49,7 +49,7 @@ test.describe("egress-netapp-transfer-indexing-error", () => {
       );
     }
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Egress: Thunderstruck",
+      "Egress: Workspace-Alpha",
       "folder-1-0",
     ]);
 

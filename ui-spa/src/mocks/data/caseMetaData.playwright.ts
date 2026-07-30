@@ -2,7 +2,7 @@ import { type CaseMetaDataResponse } from "../../schemas";
 export const caseMetaDataPlaywright: CaseMetaDataResponse = {
   caseId: 12,
   egressWorkspaceId: "egress_1",
-  egressWorkspaceName: "Thunderstruck",
+  egressWorkspaceName: "Workspace-Alpha",
   netappFolderPath: "netapp/",
   operationName: "Thunderstruck",
   leadDefendantName: null,

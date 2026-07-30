@@ -20,7 +20,7 @@ test.describe("transfer material egress list", () => {
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Egress: Thunderstruck",
+      "Egress: Workspace-Alpha",
     ]);
     await transferMaterialsSourcePage.validateTableColumnHeaders();
 
@@ -49,7 +49,7 @@ test.describe("transfer material egress list", () => {
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Egress: Thunderstruck",
+      "Egress: Workspace-Alpha",
     ]);
     await transferMaterialsSourcePage.validateTableColumnHeaders();
 
@@ -69,7 +69,7 @@ test.describe("transfer material egress list", () => {
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Egress: Thunderstruck",
+      "Egress: Workspace-Alpha",
       "folder-1-0",
     ]);
     await transferMaterialsSourcePage.validateTableRowValues([
@@ -88,7 +88,7 @@ test.describe("transfer material egress list", () => {
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Egress: Thunderstruck",
+      "Egress: Workspace-Alpha",
       "folder-1-0",
       "folder-2-0",
     ]);
@@ -108,7 +108,7 @@ test.describe("transfer material egress list", () => {
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Egress: Thunderstruck",
+      "Egress: Workspace-Alpha",
       "folder-1-0",
       "folder-2-0",
       "folder-3-0",
@@ -126,7 +126,7 @@ test.describe("transfer material egress list", () => {
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Egress: Thunderstruck",
+      "Egress: Workspace-Alpha",
       "folder-1-0",
     ]);
     await transferMaterialsSourcePage.validateTableRowValues([
@@ -136,7 +136,7 @@ test.describe("transfer material egress list", () => {
     ]);
     await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 4);
     await transferMaterialsSourcePage.handleFolderClick(
-      "Egress: Thunderstruck",
+      "Egress: Workspace-Alpha",
     );
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
       "egress",
@@ -147,7 +147,7 @@ test.describe("transfer material egress list", () => {
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Egress: Thunderstruck",
+      "Egress: Workspace-Alpha",
     ]);
     await transferMaterialsSourcePage.validateTableRowValues([
       ["", "folder-1-0", "02/01/2000", "--"],
@@ -167,7 +167,7 @@ test.describe("transfer material egress list", () => {
         return HttpResponse.json({
           caseId: 12,
           egressWorkspaceId: "egress_1",
-          egressWorkspaceName: "Thunderstruck",
+          egressWorkspaceName: "Workspace-Alpha",
           netappFolderPath: "netapp/",
           operationName: null,
           leadDefendantName: "John Doe",
@@ -190,7 +190,7 @@ test.describe("transfer material egress list", () => {
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Egress: Thunderstruck",
+      "Egress: Workspace-Alpha",
     ]);
   });
 });

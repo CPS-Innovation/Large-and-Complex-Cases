@@ -16,7 +16,7 @@ async function runTransferScenario(page: Page, transferType: "copy" | "move") {
     "egress",
     false,
   );
-  await transferMaterialsSourcePage.verifyFolderPath(["Egress: Thunderstruck"]);
+  await transferMaterialsSourcePage.verifyFolderPath(["Egress: Workspace-Alpha"]);
   await transferMaterialsSourcePage.validateTableColumnHeaders();
 
   const folderRows = [
@@ -38,7 +38,7 @@ async function runTransferScenario(page: Page, transferType: "copy" | "move") {
     false,
   );
   await transferMaterialsSourcePage.verifyFolderPath([
-    "Egress: Thunderstruck",
+    "Egress: Workspace-Alpha",
     "folder-1-0",
   ]);
   await transferMaterialsSourcePage.validateTableRowValues([
@@ -193,7 +193,7 @@ test.describe("transfer material egress netapp transfer", () => {
         return HttpResponse.json({
           caseId: 12,
           egressWorkspaceId: "egress_1",
-          egressWorkspaceName: "Thunderstruck",
+          egressWorkspaceName: "Workspace-Alpha",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
           leadDefendantName: "John Doe",
@@ -357,7 +357,7 @@ test.describe("transfer material egress netapp transfer", () => {
         return HttpResponse.json({
           caseId: 12,
           egressWorkspaceId: "egress_1",
-          egressWorkspaceName: "Thunderstruck",
+          egressWorkspaceName: "Workspace-Alpha",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
           leadDefendantName: "John Doe",
@@ -490,7 +490,7 @@ test.describe("transfer material egress netapp transfer", () => {
         return HttpResponse.json({
           caseId: 12,
           egressWorkspaceId: "egress_1",
-          egressWorkspaceName: "Thunderstruck",
+          egressWorkspaceName: "Workspace-Alpha",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
           leadDefendantName: "John Doe",

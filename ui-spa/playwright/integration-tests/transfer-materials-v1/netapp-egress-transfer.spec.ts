@@ -57,7 +57,7 @@ test.describe("transfer material netapp to egress transfer", () => {
     await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
 
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Egress: Thunderstruck",
+      "Egress: Workspace-Alpha",
     ]);
     await transferMaterialsSourcePage.clickToggleTransferDirection();
 
@@ -115,26 +115,26 @@ test.describe("transfer material netapp to egress transfer", () => {
       "copy",
     );
     await transferMaterialsDestinationPage.verifyDisabledTreeItem(
-      "Egress: Thunderstruck",
+      "Egress: Workspace-Alpha",
     );
     await transferMaterialsDestinationPage.verifyFolderExpanded(
-      "Egress: Thunderstruck",
+      "Egress: Workspace-Alpha",
       true,
       ["folder-1-0", "folder-1-1"],
     );
     await transferMaterialsDestinationPage.clickMinimizeFolder(
-      "Egress: Thunderstruck",
+      "Egress: Workspace-Alpha",
     );
     await transferMaterialsDestinationPage.verifyFolderExpanded(
-      "Egress: Thunderstruck",
+      "Egress: Workspace-Alpha",
       false,
       [],
     );
     await transferMaterialsDestinationPage.clickExpandFolder(
-      "Egress: Thunderstruck",
+      "Egress: Workspace-Alpha",
     );
     await transferMaterialsDestinationPage.verifyFolderExpanded(
-      "Egress: Thunderstruck",
+      "Egress: Workspace-Alpha",
       true,
       ["folder-1-0", "folder-1-1"],
     );
@@ -189,7 +189,7 @@ test.describe("transfer material netapp to egress transfer", () => {
         return HttpResponse.json({
           caseId: 12,
           egressWorkspaceId: "egress_1",
-          egressWorkspaceName: "Thunderstruck",
+          egressWorkspaceName: "Workspace-Alpha",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
           leadDefendantName: "John Doe",
@@ -352,7 +352,7 @@ test.describe("transfer material netapp to egress transfer", () => {
         return HttpResponse.json({
           caseId: 12,
           egressWorkspaceId: "egress_1",
-          egressWorkspaceName: "Thunderstruck",
+          egressWorkspaceName: "Workspace-Alpha",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
           leadDefendantName: "John Doe",
@@ -471,7 +471,7 @@ test.describe("transfer material netapp to egress transfer", () => {
         return HttpResponse.json({
           caseId: 12,
           egressWorkspaceId: "egress_1",
-          egressWorkspaceName: "Thunderstruck",
+          egressWorkspaceName: "Workspace-Alpha",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
           leadDefendantName: "John Doe",

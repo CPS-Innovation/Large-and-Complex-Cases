@@ -818,7 +818,7 @@ describe("gateway apis", () => {
       const mockData = {
         caseId: 12,
         egressWorkspaceId: "egress_1",
-        egressWorkspaceName: "Thunderstruck",
+        egressWorkspaceName: "Workspace-Alpha",
         netappFolderPath: "netapp/",
         operationName: "Thunderstruck",
         leadDefendantName: "John Doe",
@@ -921,7 +921,7 @@ describe("gateway apis", () => {
         {
           caseId: 12,
           egressWorkspaceId: "egress_1",
-          egressWorkspaceName: "Thunderstruck",
+          egressWorkspaceName: "Workspace-Alpha",
           netappFolderPath: "netapp/",
           operationName: null,
           leadDefendantName: null,

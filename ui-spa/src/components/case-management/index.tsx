@@ -100,7 +100,10 @@ const CaseManagementPage = () => {
               caseId={caseId}
               operationName={operationNameOrDefendantName}
               egressWorkspaceId={caseMetaData.egressWorkspaceId}
-              egressWorkspaceName={caseMetaData.egressWorkspaceName ?? ""}
+              egressWorkspaceName={
+                caseMetaData.egressWorkspaceName ||
+                operationNameOrDefendantName
+              }
               netAppPath={caseMetaData.netappFolderPath}
               activeTransferId={
                 routeState?.transferId ?? caseMetaData.activeTransferId ?? ""

@@ -174,7 +174,7 @@ test.describe("transfer material shared-drive list", () => {
         return HttpResponse.json({
           caseId: 12,
           egressWorkspaceId: "egress_1",
-          egressWorkspaceName: "Thunderstruck",
+          egressWorkspaceName: "Workspace-Alpha",
           netappFolderPath: "netapp/",
           operationName: null,
           leadDefendantName: "John Doe",

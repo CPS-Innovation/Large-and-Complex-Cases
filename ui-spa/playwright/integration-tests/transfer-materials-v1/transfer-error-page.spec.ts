@@ -30,7 +30,7 @@ test.describe("transfer-error-page", () => {
     await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
 
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Egress: Thunderstruck",
+      "Egress: Workspace-Alpha",
     ]);
     await transferMaterialsSourcePage.handleFolderClick("folder-1-0");
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
@@ -42,7 +42,7 @@ test.describe("transfer-error-page", () => {
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Egress: Thunderstruck",
+      "Egress: Workspace-Alpha",
       "folder-1-0",
     ]);
 
