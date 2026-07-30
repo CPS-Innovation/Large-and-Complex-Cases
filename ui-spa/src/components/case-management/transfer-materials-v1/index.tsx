@@ -46,6 +46,7 @@ type TransferMaterialsV1PageProps = {
   caseId: string;
   operationName: string;
   egressWorkspaceId: string;
+  egressWorkspaceName: string;
   netAppPath: string;
   activeTransferId: string;
   urn: string;
@@ -60,6 +61,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
   caseId,
   operationName,
   egressWorkspaceId,
+  egressWorkspaceName,
   netAppPath,
   activeTransferId,
   urn,
@@ -91,7 +93,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
       currentFolderPath: string,
       homeName: string,
       rootPath: string,
-      operationName: string,
+      homeLabel: string,
     ) => {
       const replacedString = currentFolderPath.replace(rootPath, "");
       const parts = replacedString.split("/").filter(Boolean);
@@ -102,7 +104,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
       }));
       const withHome = [
         {
-          folderName: `${homeName}: ${operationName}`,
+          folderName: `${homeName}: ${homeLabel}`,
           folderPath: rootPath,
         },
         ...result,
@@ -119,16 +121,21 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
     transferEgressFolderPathInitialValue ?? "",
   );
   const egressPathFolders = useMemo(() => {
-    return getPathFolders(egressFolderPath, "Egress", "", operationName);
-  }, [egressFolderPath, getPathFolders, operationName]);
+    return getPathFolders(
+      egressFolderPath,
+      "Egress",
+      "",
+      egressWorkspaceName,
+    );
+  }, [egressFolderPath, getPathFolders, egressWorkspaceName]);
   const netAppPathFolders = useMemo(() => {
     return getPathFolders(
       netAppFolderPath,
       "Shared Drive",
       netAppPath,
-      operationName,
+      getFolderNameFromPath(netAppPath),
     );
-  }, [netAppFolderPath, netAppPath, getPathFolders, operationName]);
+  }, [netAppFolderPath, netAppPath, getPathFolders]);
 
   const [selectedSourceFoldersOrFiles, setSelectedSourceFoldersOrFiles] =
     useState<string[]>([]);
@@ -505,6 +512,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
         selectedTransferAction: type,
         sourcePaths: getTransferSourcePath(),
         egressWorkspaceId,
+        egressWorkspaceName,
         netAppPath,
         operationName,
       },

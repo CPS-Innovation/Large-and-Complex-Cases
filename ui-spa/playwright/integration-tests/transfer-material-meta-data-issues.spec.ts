@@ -12,6 +12,7 @@ test.describe("egress meta data issues", () => {
         return HttpResponse.json({
           caseId: 12,
           egressWorkspaceId: "",
+          egressWorkspaceName: "Workspace-Alpha",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
           leadDefendantName: "John Doe",
@@ -52,6 +53,7 @@ test.describe("egress meta data issues", () => {
         return HttpResponse.json({
           caseId: 12,
           egressWorkspaceId: "",
+          egressWorkspaceName: "Workspace-Alpha",
           netappFolderPath: "",
           operationName: "Thunderstruck",
           leadDefendantName: "John Doe",
@@ -208,6 +210,7 @@ test.describe("netapp meta data issues", () => {
         return HttpResponse.json({
           caseId: 12,
           egressWorkspaceId: "egress_1",
+          egressWorkspaceName: "Workspace-Alpha",
           netappFolderPath: "",
           operationName: "Thunderstruck",
           leadDefendantName: "John Doe",
@@ -361,6 +364,7 @@ test.describe("netapp meta data issues", () => {
         return HttpResponse.json({
           caseId: 12,
           egressWorkspaceId: "egress_1",
+          egressWorkspaceName: "Workspace-Alpha",
           netappFolderPath: "netapp/",
           operationName: null,
           leadDefendantName: "John Doe",
@@ -383,6 +387,7 @@ test.describe("netapp meta data issues", () => {
         return HttpResponse.json({
           caseId: 12,
           egressWorkspaceId: "egress_1",
+          egressWorkspaceName: "Workspace-Alpha",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
           leadDefendantName: "John Doe",

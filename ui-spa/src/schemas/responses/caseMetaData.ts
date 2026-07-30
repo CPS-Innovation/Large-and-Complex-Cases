@@ -4,6 +4,7 @@ export const caseMetaDataResponseSchema = z
   .object({
     caseId: z.number(),
     egressWorkspaceId: z.string(),
+    egressWorkspaceName: z.string().nullable(),
     netappFolderPath: z.string(),
     operationName: z.string().nullable(),
     leadDefendantName: z.string().nullable(),

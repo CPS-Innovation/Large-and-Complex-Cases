@@ -120,6 +120,7 @@ describe("mainStateReducer", () => {
     const caseMeta = {
       caseId: 1,
       egressWorkspaceId: "ew1",
+      egressWorkspaceName: "Workspace",
       netappFolderPath: "path",
       operationName: "Op",
       leadDefendantName: "John",
@@ -223,6 +224,7 @@ describe("mainStateReducer", () => {
       selectedTransferAction: null,
       sourcePaths: [],
       egressWorkspaceId: "e",
+      egressWorkspaceName: "workspace",
       netAppPath: "n",
       operationName: "op",
     } as any;
