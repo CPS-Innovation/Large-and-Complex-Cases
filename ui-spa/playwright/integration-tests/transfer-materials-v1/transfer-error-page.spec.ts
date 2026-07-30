@@ -60,7 +60,7 @@ test.describe("transfer-error-page", () => {
       "copy",
     );
     await transferMaterialsDestinationPage.verifyFolderExpanded(
-      "Shared Drive: Thunderstruck",
+      "Shared Drive: netapp/",
       true,
       ["folder-1-0", "folder-1-1"],
     );

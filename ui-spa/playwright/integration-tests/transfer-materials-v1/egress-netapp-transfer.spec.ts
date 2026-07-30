@@ -71,23 +71,23 @@ async function runTransferScenario(page: Page, transferType: "copy" | "move") {
     transferType,
   );
   await transferMaterialsDestinationPage.verifyFolderExpanded(
-    "Shared Drive: Thunderstruck",
+    "Shared Drive: netapp/",
     true,
     ["folder-1-0", "folder-1-1"],
   );
   await transferMaterialsDestinationPage.clickMinimizeFolder(
-    "Shared Drive: Thunderstruck",
+    "Shared Drive: netapp/",
   );
   await transferMaterialsDestinationPage.verifyFolderExpanded(
-    "Shared Drive: Thunderstruck",
+    "Shared Drive: netapp/",
     false,
     [],
   );
   await transferMaterialsDestinationPage.clickExpandFolder(
-    "Shared Drive: Thunderstruck",
+    "Shared Drive: netapp/",
   );
   await transferMaterialsDestinationPage.verifyFolderExpanded(
-    "Shared Drive: Thunderstruck",
+    "Shared Drive: netapp/",
     true,
     ["folder-1-0", "folder-1-1"],
   );
@@ -193,6 +193,7 @@ test.describe("transfer material egress netapp transfer", () => {
         return HttpResponse.json({
           caseId: 12,
           egressWorkspaceId: "egress_1",
+          egressWorkspaceName: "Thunderstruck",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
           leadDefendantName: "John Doe",
@@ -356,6 +357,7 @@ test.describe("transfer material egress netapp transfer", () => {
         return HttpResponse.json({
           caseId: 12,
           egressWorkspaceId: "egress_1",
+          egressWorkspaceName: "Thunderstruck",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
           leadDefendantName: "John Doe",
@@ -488,6 +490,7 @@ test.describe("transfer material egress netapp transfer", () => {
         return HttpResponse.json({
           caseId: 12,
           egressWorkspaceId: "egress_1",
+          egressWorkspaceName: "Thunderstruck",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
           leadDefendantName: "John Doe",

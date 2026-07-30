@@ -157,7 +157,7 @@ test.describe("transfer material egress list", () => {
     await transferMaterialsSourcePage.verifyCheckboxesVisibility(false, 4);
   });
 
-  test("Should show the leadDefendant name in the Home path for Egress if the operation name is null", async ({
+  test("Should show the egress workspace name in the Home path for Egress if the operation name is null", async ({
     page,
     worker,
   }) => {
@@ -167,6 +167,7 @@ test.describe("transfer material egress list", () => {
         return HttpResponse.json({
           caseId: 12,
           egressWorkspaceId: "egress_1",
+          egressWorkspaceName: "Thunderstruck",
           netappFolderPath: "netapp/",
           operationName: null,
           leadDefendantName: "John Doe",
@@ -188,6 +189,8 @@ test.describe("transfer material egress list", () => {
       "egress",
       false,
     );
-    await transferMaterialsSourcePage.verifyFolderPath(["Egress: John Doe"]);
+    await transferMaterialsSourcePage.verifyFolderPath([
+      "Egress: Thunderstruck",
+    ]);
   });
 });
