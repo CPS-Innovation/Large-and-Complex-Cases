@@ -130,6 +130,7 @@ public class MaterialBatchRename(
             var result = await _ontapHttpClient.RenameMaterialAsync(arg);
             return MapRenameResultToItemResult(operation, result, _logger);
         }
+        // Re-throw auth failures so the outer handler can audit already-renamed items before propagating.
         catch (Exception ex) when (IsAuthException(ex))
         {
             throw;

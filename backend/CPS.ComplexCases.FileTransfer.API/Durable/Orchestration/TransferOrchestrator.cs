@@ -69,8 +69,6 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
             await FinalizeAndLogCompletionAsync(context, input);
 
             transferOrchestrationEvent.IsSuccessful = transferOrchestrationEvent.TotalFilesFailed == 0;
-            transferOrchestrationEvent.OrchestrationEndTime = context.CurrentUtcDateTime;
-            _telemetryClient.TrackEvent(transferOrchestrationEvent);
         }
         catch (Exception ex)
         {

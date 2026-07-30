@@ -115,7 +115,6 @@ public class TransferFile(
                     startTime);
 
                 ApplyTransferResultTelemetry(telemetryEvent, totalSize, result);
-                TrackTransferTelemetry(telemetryEvent);
 
                 return result;
             }
@@ -145,7 +144,9 @@ public class TransferFile(
         }
         finally
         {
-            telemetryEvent.TransferEndTime = DateTime.UtcNow;
+            telemetryEvent.TransferEndTime = telemetryEvent.TransferEndTime == default
+                ? DateTime.UtcNow
+                : telemetryEvent.TransferEndTime;
             TrackTransferTelemetry(telemetryEvent);
         }
     }
@@ -362,6 +363,7 @@ public class TransferFile(
             };
         }
 
+        // True cancellation (token was triggered) - rethrow to let the framework handle it.
         if (ex is OperationCanceledException cancel)
         {
             logger?.LogInformation(cancel, "Transfer cancelled");
