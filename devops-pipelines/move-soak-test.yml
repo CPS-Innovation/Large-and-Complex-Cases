@@ -88,6 +88,7 @@ jobs:
   - job: cleanupTestFiles
     displayName: "Cleanup Test Files from Egress and Shared Drive"
     dependsOn: runMoveSoakTest
+    pool: ${{ parameters.agentPool }}
     steps:
       - script: |
           if command -v pwsh &> /dev/null; then
