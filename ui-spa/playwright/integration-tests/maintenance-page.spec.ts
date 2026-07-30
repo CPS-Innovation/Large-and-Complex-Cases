@@ -66,4 +66,14 @@ test.describe("Maintenance Page", () => {
     );
     await expect(page.locator("h1")).toHaveText("Search results");
   });
+
+  test("Should navigate the user to home page if they try to access maintenance page, when maintenance is off", async ({
+    page,
+  }) => {
+    await page.goto(`/maintenance`);
+    await expect(page).toHaveURL("http://localhost:5173/");
+    await expect(
+      page.getByRole("radio", { name: "Operation name" }),
+    ).toBeVisible();
+  });
 });

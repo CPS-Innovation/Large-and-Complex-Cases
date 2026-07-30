@@ -38,8 +38,15 @@ const AppRoutes = () => {
         },
       });
     }
-    if (featureFlagsData?.maintenanceMode) {
+
+    if (featureFlags?.maintenanceMode && location.pathname !== "/maintenance") {
       navigate("/maintenance", { replace: true });
+    }
+    if (
+      !featureFlags?.maintenanceMode &&
+      location.pathname === "/maintenance"
+    ) {
+      navigate("/", { replace: true });
     }
   }, [featureFlagsData, featureFlags, dispatch, navigate]);
 
