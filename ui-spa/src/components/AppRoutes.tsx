@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router";
+import { Routes, Route, Navigate, useNavigate } from "react-router";
 import { useEffect, useContext } from "react";
 import CaseSearchPage from "./search-page";
 import CaseSearchResultPage from "./search-result-page";
@@ -17,12 +17,14 @@ import DisconnectSharedDriveConfirmationPage from "./case-management/netapp-disc
 import DisconnectSharedDriveSuccessPage from "./case-management/netapp-disconnect/DisconnectSharedDriveSuccessPage";
 import DisconnectSharedDriveFailurePage from "./case-management/netapp-disconnect/DisconnectSharedDriveFailurePage";
 import TransferDestinationPage from "./case-management/transfer-materials-v1/TransferDestinationPage";
+import MaintenancePage from "./maintenance-page";
 import { MainStateContext } from "../providers/MainStateProvider";
 import { useUserGroupsFeatureFlag } from "../common/hooks/useUserGroupsFeatureFlag";
 
 import ProtectedRoutes from "./ProtectedRoutes";
 
 const AppRoutes = () => {
+  const navigate = useNavigate();
   const { state, dispatch } = useContext(MainStateContext);
   const { appData: { featureFlags } = {} } = state;
   const featureFlagsData = useUserGroupsFeatureFlag();
@@ -36,7 +38,10 @@ const AppRoutes = () => {
         },
       });
     }
-  }, [featureFlagsData, featureFlags, dispatch]);
+    if (featureFlagsData?.maintenanceMode) {
+      navigate("/maintenance", { replace: true });
+    }
+  }, [featureFlagsData, featureFlags, dispatch, navigate]);
 
   return (
     <Routes>
@@ -46,6 +51,7 @@ const AppRoutes = () => {
         path="/case/:caseId/case-management"
         element={<CaseManagementPage />}
       />
+      <Route path="/maintenance" element={<MaintenancePage />} />
 
       <Route element={<ProtectedRoutes />}>
         <Route

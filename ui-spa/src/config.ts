@@ -18,5 +18,11 @@ export const PRIVATE_BETA_FEATURE_USER_GROUP2 = `${import.meta.env.VITE_PRIVATE_
 export const GLOBAL_NAV_SCRIPT_URL = `${import.meta.env.VITE_GLOBAL_NAV_SCRIPT_URL}`;
 export const FEATURE_FLAG_GLOBAL_NAV =
   `${import.meta.env.VITE_FEATURE_FLAG_GLOBAL_NAV}` === "true";
+export const FEATURE_FLAG_MAINTENANCE_MODE =
+  `${import.meta.env.VITE_FEATURE_FLAG_MAINTENANCE_MODE}` === "true";
+export const MAINTENANCE_MODE_MESSAGE1 = import.meta.env
+  .VITE_MAINTENANCE_MODE_MESSAGE1;
+export const MAINTENANCE_MODE_MESSAGE2 = import.meta.env
+  .VITE_MAINTENANCE_MODE_MESSAGE2;
 
 console.log(JSON.stringify(import.meta.env));

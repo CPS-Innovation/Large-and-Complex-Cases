@@ -88,6 +88,7 @@ describe("mainStateReducer", () => {
       globalNav: false,
       disconnectSharedDrive: true,
       transferMaterialsV1: true,
+      maintenanceMode: true,
     };
 
     const newState = mainStateReducer(initialState, {
