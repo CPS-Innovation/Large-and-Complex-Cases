@@ -20,7 +20,7 @@ test.describe("transfer material shared-drive list", () => {
     );
     await transferMaterialsSourcePage.clickToggleTransferDirection();
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Shared Drive: netapp/",
+      "Shared Drive: netapp",
     ]);
     await transferMaterialsSourcePage.validateTableColumnHeaders();
 
@@ -51,7 +51,7 @@ test.describe("transfer material shared-drive list", () => {
     await transferMaterialsSourcePage.clickToggleTransferDirection();
     await transferMaterialsSourcePage.verifySharedDriveTransferSourceElements();
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Shared Drive: netapp/",
+      "Shared Drive: netapp",
     ]);
     await transferMaterialsSourcePage.validateTableColumnHeaders();
 
@@ -72,7 +72,7 @@ test.describe("transfer material shared-drive list", () => {
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Shared Drive: netapp/",
+      "Shared Drive: netapp",
       "folder-1-0",
     ]);
     await transferMaterialsSourcePage.validateTableRowValues([
@@ -92,7 +92,7 @@ test.describe("transfer material shared-drive list", () => {
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Shared Drive: netapp/",
+      "Shared Drive: netapp",
       "folder-1-0",
       "folder-2-0",
     ]);
@@ -113,7 +113,7 @@ test.describe("transfer material shared-drive list", () => {
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Shared Drive: netapp/",
+      "Shared Drive: netapp",
       "folder-1-0",
       "folder-2-0",
       "folder-3-0",
@@ -131,7 +131,7 @@ test.describe("transfer material shared-drive list", () => {
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Shared Drive: netapp/",
+      "Shared Drive: netapp",
       "folder-1-0",
     ]);
     await transferMaterialsSourcePage.validateTableRowValues([
@@ -142,7 +142,7 @@ test.describe("transfer material shared-drive list", () => {
     ]);
     await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 5);
     await transferMaterialsSourcePage.handleFolderClick(
-      "Shared Drive: netapp/",
+      "Shared Drive: netapp",
     );
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
       "shared-drive",
@@ -153,7 +153,7 @@ test.describe("transfer material shared-drive list", () => {
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Shared Drive: netapp/",
+      "Shared Drive: netapp",
     ]);
     await transferMaterialsSourcePage.validateTableRowValues([
       ["", "folder-1-0", "--", "--"],
@@ -197,7 +197,7 @@ test.describe("transfer material shared-drive list", () => {
     );
     await transferMaterialsSourcePage.clickToggleTransferDirection();
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Shared Drive: netapp/",
+      "Shared Drive: netapp",
     ]);
   });
 });

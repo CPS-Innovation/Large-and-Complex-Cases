@@ -71,23 +71,23 @@ async function runTransferScenario(page: Page, transferType: "copy" | "move") {
     transferType,
   );
   await transferMaterialsDestinationPage.verifyFolderExpanded(
-    "Shared Drive: netapp/",
+    "Shared Drive: netapp",
     true,
     ["folder-1-0", "folder-1-1"],
   );
   await transferMaterialsDestinationPage.clickMinimizeFolder(
-    "Shared Drive: netapp/",
+    "Shared Drive: netapp",
   );
   await transferMaterialsDestinationPage.verifyFolderExpanded(
-    "Shared Drive: netapp/",
+    "Shared Drive: netapp",
     false,
     [],
   );
   await transferMaterialsDestinationPage.clickExpandFolder(
-    "Shared Drive: netapp/",
+    "Shared Drive: netapp",
   );
   await transferMaterialsDestinationPage.verifyFolderExpanded(
-    "Shared Drive: netapp/",
+    "Shared Drive: netapp",
     true,
     ["folder-1-0", "folder-1-1"],
   );

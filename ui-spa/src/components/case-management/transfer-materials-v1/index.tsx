@@ -133,7 +133,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
       netAppFolderPath,
       "Shared Drive",
       netAppPath,
-      netAppPath,
+      getFolderNameFromPath(netAppPath),
     );
   }, [netAppFolderPath, netAppPath, getPathFolders]);
 

@@ -62,7 +62,7 @@ test.describe("transfer material netapp to egress transfer", () => {
     await transferMaterialsSourcePage.clickToggleTransferDirection();
 
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Shared Drive: netapp/",
+      "Shared Drive: netapp",
     ]);
     await transferMaterialsSourcePage.validateTableColumnHeaders();
 
@@ -88,7 +88,7 @@ test.describe("transfer material netapp to egress transfer", () => {
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Shared Drive: netapp/",
+      "Shared Drive: netapp",
       "folder-1-0",
     ]);
     await transferMaterialsSourcePage.validateTableRowValues([

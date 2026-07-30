@@ -118,7 +118,7 @@ const TransferDestinationPage: React.FC = () => {
     const folders = [
       {
         id: netAppPath,
-        name: `Shared Drive: ${netAppPath}`,
+        name: `Shared Drive: ${getFolderNameFromPath(netAppPath)}`,
         path: netAppPath,
         isFolder: true,
         isRootNode: true,
