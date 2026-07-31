@@ -68,6 +68,7 @@ public class GetCase(ILogger<GetCase> logger,
         {
             CaseId = caseResponse.CaseId,
             EgressWorkspaceId = caseResponse.EgressWorkspaceId,
+            EgressWorkspaceName = caseResponse.EgressWorkspaceName,
             NetappFolderPath = caseResponse.NetappFolderPath,
             Urn = cmsResponse.Urn,
             OperationName = cmsResponse.OperationName,

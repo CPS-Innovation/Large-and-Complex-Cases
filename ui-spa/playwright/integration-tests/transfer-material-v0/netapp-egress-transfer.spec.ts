@@ -424,6 +424,7 @@ test.describe("netapp-egress-transfer", () => {
         return HttpResponse.json({
           caseId: 12,
           egressWorkspaceId: "egress_1",
+          egressWorkspaceName: "Workspace-Alpha",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
           leadDefendantName: "John Doe",
@@ -585,6 +586,7 @@ test.describe("netapp-egress-transfer", () => {
         return HttpResponse.json({
           caseId: 12,
           egressWorkspaceId: "egress_1",
+          egressWorkspaceName: "Workspace-Alpha",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
           leadDefendantName: "John Doe",
@@ -712,6 +714,7 @@ test.describe("netapp-egress-transfer", () => {
         return HttpResponse.json({
           caseId: 12,
           egressWorkspaceId: "egress_1",
+          egressWorkspaceName: "Workspace-Alpha",
           netappFolderPath: "netapp/",
           operationName: "Thunderstruck",
           leadDefendantName: "John Doe",

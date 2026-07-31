@@ -16,6 +16,8 @@ public class CaseWithMetadataResponse
   public string? RegistrationDate { get; set; }
   [JsonPropertyName("egressWorkspaceId")]
   public string? EgressWorkspaceId { get; set; }
+  [JsonPropertyName("egressWorkspaceName")]
+  public string? EgressWorkspaceName { get; set; }
   [JsonPropertyName("netappFolderPath")]
   public string? NetappFolderPath { get; set; }
   [JsonPropertyName("activeTransferId")]
