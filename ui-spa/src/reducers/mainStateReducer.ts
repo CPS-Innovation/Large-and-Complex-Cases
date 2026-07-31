@@ -26,6 +26,7 @@ type TransferDestinationPageData = {
       }[]
     | { path: string }[];
   egressWorkspaceId: string;
+  egressWorkspaceName: string;
   netAppPath: string;
   operationName: string;
 };
@@ -125,6 +126,7 @@ export const initialState: MainState = {
       selectedTransferAction: null,
       sourcePaths: [],
       egressWorkspaceId: "",
+      egressWorkspaceName: "",
       netAppPath: "",
       operationName: "",
     },

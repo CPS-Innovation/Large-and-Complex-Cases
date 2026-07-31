@@ -36,9 +36,9 @@ const TransferDestinationPage: React.FC = () => {
     transferSource,
     sourcePaths,
     egressWorkspaceId,
+    egressWorkspaceName,
     selectedTransferAction,
     netAppPath,
-    operationName,
   } = state.appData.transferDestinationPage;
 
   const { data: netAppData, isLoading: isNetAppFolderDataLoading } = useQuery({
@@ -118,7 +118,7 @@ const TransferDestinationPage: React.FC = () => {
     const folders = [
       {
         id: netAppPath,
-        name: `Shared Drive: ${operationName}`,
+        name: `Shared Drive: ${getFolderNameFromPath(netAppPath)}`,
         path: netAppPath,
         isFolder: true,
         isRootNode: true,
@@ -129,13 +129,13 @@ const TransferDestinationPage: React.FC = () => {
     ];
 
     return folders;
-  }, [netAppPath, netAppData, operationName]);
+  }, [netAppPath, netAppData]);
 
   const initialEgressFolderData = useMemo(() => {
     const folders = [
       {
         id: "root",
-        name: `Egress: ${operationName}`,
+        name: `Egress: ${egressWorkspaceName}`,
         path: "",
         isFolder: true,
         isRootNode: true,
@@ -145,7 +145,7 @@ const TransferDestinationPage: React.FC = () => {
     ];
 
     return folders;
-  }, [operationName, egressData]);
+  }, [egressWorkspaceName, egressData]);
 
   const [transferStatus, setTransferStatus] = useState<"validating" | null>(
     null,

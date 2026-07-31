@@ -71,7 +71,7 @@ test.describe("Transfer v1 skip link test ", () => {
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Egress: Thunderstruck",
+      "Egress: Workspace-Alpha",
       "folder-1-0",
     ]);
     await transferMaterialsSourcePage.toggleCheckbox(0);
@@ -193,7 +193,7 @@ test.describe("Transfer v1 skip link test ", () => {
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Egress: Thunderstruck",
+      "Egress: Workspace-Alpha",
       "folder-1-0",
     ]);
     await transferMaterialsSourcePage.toggleCheckbox(0);

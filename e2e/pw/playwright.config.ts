@@ -71,6 +71,12 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
 
+    {
+      name: "move-large-test",
+      testMatch: "**/egress-to-netapp-move-large-default.spec.ts",
+      use: { ...devices["Desktop Chrome"] },
+    },
+
     // One-off project for seeding the canonical NetApp source fixture in
     // default mode. Run manually via:
     //   npx playwright test --project=seed-netapp-fixture
