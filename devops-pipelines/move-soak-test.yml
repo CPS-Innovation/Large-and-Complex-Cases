@@ -1,6 +1,6 @@
 schedules:
-  - cron: '0 1 * * Sun'
-    displayName: 'Sun 1am UTC test'
+  - cron: "0 1 * * Sun"
+    displayName: "Sun 1am UTC test"
     branches:
       include:
         - main
@@ -26,9 +26,10 @@ jobs:
   - job: runMoveSoakTest
     displayName: "Run Move Soak Test with Playwright"
     pool: ${{ parameters.agentPool }}
+    timeoutInMinutes: 150
     variables:
       - name: nodeVersion
-        value: "20.x"
+        value: "24.x"
       - name: workingDir
         value: "$(System.DefaultWorkingDirectory)/e2e/pw"
 
@@ -71,7 +72,6 @@ jobs:
           LCC_API_BASE_URL: $(LccApiBaseUrl)
           NETAPP_OPERATION_NAME: $(E2eNetAppFolderName)
 
-
       - task: PublishTestResults@2
         displayName: "Publish Test Results (JUnit)"
         inputs:
@@ -88,6 +88,7 @@ jobs:
   - job: cleanupTestFiles
     displayName: "Cleanup Test Files from Egress and Shared Drive"
     dependsOn: runMoveSoakTest
+    condition: succeededOrFailed()
     pool: ${{ parameters.agentPool }}
     steps:
       - script: |
@@ -121,8 +122,8 @@ jobs:
         inputs:
           filePath: "$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/test-automation-cleanup/Clear-EgressFolder.ps1"
           arguments: >
-            -BaseUrl "$(EgressOptionsUrl)" `
-            -ServiceAccountAuth "$(EgressServiceAccountAuth)" `
-            -WorkspaceId "$(E2eEgressWorkspaceId)" `
-            -FolderName "1. ABEs for Transcript" `
+            -BaseUrl "$(EgressOptionsUrl)"
+            -ServiceAccountAuth "$(EgressServiceAccountAuth)"
+            -WorkspaceId "$(E2eEgressWorkspaceId)"
+            -FolderName "1. ABEs for Transcript"
             -Force
