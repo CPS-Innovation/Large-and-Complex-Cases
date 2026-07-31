@@ -54,7 +54,7 @@ stages:
         variables:
           - group: lacc-ui-config-${{ parameters.environment }}
           - name: nodeVersion
-            value: "20.x"
+            value: "24.x"
           - name: workingDir
             value: ui-spa
         steps:
@@ -125,7 +125,7 @@ stages:
                     deployToSlotOrASE: ${{ parameters.deployToSlot }}
                     slotName: ${{ parameters.slotName }}
                     packageForLinux: "$(Pipeline.Workspace)/$(buildArtifact)"
-                    RuntimeStack: "NODE|20-lts"
+                    RuntimeStack: "NODE|24-lts"
                     StartupCommand: "pm2 serve /home/site/wwwroot/ --no-daemon --spa"
                   displayName: "Deploy app to ${{ parameters.environment }}"
 
