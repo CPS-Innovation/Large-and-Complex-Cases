@@ -7,6 +7,7 @@ import {
   FEATURE_FLAG_DISCONNECT_SHARED_DRIVE,
   PRIVATE_BETA_FEATURE_USER_GROUP2,
   FEATURE_FLAG_TRANSFER_MATERIALS_V1,
+  FEATURE_FLAG_MAINTENANCE_MODE,
 } from "../../config";
 import { useUserDetails } from "../../auth";
 import { FeatureFlagData } from "../types/FeatureFlagData";
@@ -95,6 +96,11 @@ export const useUserGroupsFeatureFlag = (): FeatureFlagData | null => {
           groups: groups,
           groupKey: PRIVATE_BETA_FEATURE_USER_GROUP2,
         },
+      ),
+      maintenanceMode: shouldShowFeature(
+        userDetails.username,
+        FEATURE_FLAG_MAINTENANCE_MODE,
+        searchParams?.get("maintenance-mode"),
       ),
     };
   }, [groups, searchParams, account, userDetails.username]);

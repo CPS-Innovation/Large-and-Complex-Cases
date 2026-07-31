@@ -20,7 +20,7 @@ test.describe("transfer material shared-drive list", () => {
     );
     await transferMaterialsSourcePage.clickToggleTransferDirection();
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Shared Drive: Thunderstruck",
+      "Shared Drive: netapp",
     ]);
     await transferMaterialsSourcePage.validateTableColumnHeaders();
 
@@ -51,7 +51,7 @@ test.describe("transfer material shared-drive list", () => {
     await transferMaterialsSourcePage.clickToggleTransferDirection();
     await transferMaterialsSourcePage.verifySharedDriveTransferSourceElements();
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Shared Drive: Thunderstruck",
+      "Shared Drive: netapp",
     ]);
     await transferMaterialsSourcePage.validateTableColumnHeaders();
 
@@ -72,7 +72,7 @@ test.describe("transfer material shared-drive list", () => {
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Shared Drive: Thunderstruck",
+      "Shared Drive: netapp",
       "folder-1-0",
     ]);
     await transferMaterialsSourcePage.validateTableRowValues([
@@ -92,7 +92,7 @@ test.describe("transfer material shared-drive list", () => {
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Shared Drive: Thunderstruck",
+      "Shared Drive: netapp",
       "folder-1-0",
       "folder-2-0",
     ]);
@@ -113,7 +113,7 @@ test.describe("transfer material shared-drive list", () => {
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Shared Drive: Thunderstruck",
+      "Shared Drive: netapp",
       "folder-1-0",
       "folder-2-0",
       "folder-3-0",
@@ -131,7 +131,7 @@ test.describe("transfer material shared-drive list", () => {
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Shared Drive: Thunderstruck",
+      "Shared Drive: netapp",
       "folder-1-0",
     ]);
     await transferMaterialsSourcePage.validateTableRowValues([
@@ -142,7 +142,7 @@ test.describe("transfer material shared-drive list", () => {
     ]);
     await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 5);
     await transferMaterialsSourcePage.handleFolderClick(
-      "Shared Drive: Thunderstruck",
+      "Shared Drive: netapp",
     );
     await transferMaterialsSourcePage.verifyTransferSourceTableLoader(
       "shared-drive",
@@ -153,7 +153,7 @@ test.describe("transfer material shared-drive list", () => {
       false,
     );
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Shared Drive: Thunderstruck",
+      "Shared Drive: netapp",
     ]);
     await transferMaterialsSourcePage.validateTableRowValues([
       ["", "folder-1-0", "--", "--"],
@@ -164,7 +164,7 @@ test.describe("transfer material shared-drive list", () => {
     await transferMaterialsSourcePage.verifyCheckboxesVisibility(true, 5);
   });
 
-  test("Should show the leadDefendant name in the Home path for Shared Drive if the operation name is null", async ({
+  test("Should show the netapp folder path in the Home path for Shared Drive if the operation name is null", async ({
     page,
     worker,
   }) => {
@@ -174,6 +174,7 @@ test.describe("transfer material shared-drive list", () => {
         return HttpResponse.json({
           caseId: 12,
           egressWorkspaceId: "egress_1",
+          egressWorkspaceName: "Workspace-Alpha",
           netappFolderPath: "netapp/",
           operationName: null,
           leadDefendantName: "John Doe",
@@ -196,7 +197,7 @@ test.describe("transfer material shared-drive list", () => {
     );
     await transferMaterialsSourcePage.clickToggleTransferDirection();
     await transferMaterialsSourcePage.verifyFolderPath([
-      "Shared Drive: John Doe",
+      "Shared Drive: netapp",
     ]);
   });
 });
