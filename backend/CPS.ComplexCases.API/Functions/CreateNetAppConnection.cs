@@ -73,12 +73,17 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
         }
 
         var folderPath = netAppConnectionRequest.Value.NetAppFolderPath;
-        var existingConnections = await _caseMetadataService.GetCaseMetadataForNetAppFolderPathsAsync([folderPath]);
+        var bucketName = securityGroups.First().BucketName;
+        var lookupPaths = new[] { folderPath, $"{bucketName}:{folderPath}" };
+        var existingConnections = await _caseMetadataService.GetCaseMetadataForNetAppFolderPathsAsync(lookupPaths);
         var existingConnection = existingConnections.FirstOrDefault();
 
         if (existingConnection != null)
         {
-            return new ConflictObjectResult($"Folder path '{folderPath}' is already connected to case {existingConnection.CaseId}.");
+            _logger.LogWarning(
+                "Duplicate NetApp connection attempt: folder path '{FolderPath}' is already connected to case {ExistingCaseId}. Requested by case {RequestedCaseId}.",
+                folderPath, existingConnection.CaseId, netAppConnectionRequest.Value.CaseId);
+            return new ConflictObjectResult($"Folder path '{folderPath}' is already connected to another case.");
         }
 
         await _caseMetadataService.CreateNetAppConnectionAsync(netAppConnectionRequest.Value);
