@@ -28,8 +28,12 @@ jobs:
     pool: ${{ parameters.agentPool }}
     timeoutInMinutes: 150
     variables:
+      # Pin Node.js to v22 because Node.js v24 has a memory retention issue when
+      # using Undici multipart FormData uploads. Chunked uploads cause RSS to grow
+      # by approximately the total uploaded file size. This does not reproduce on
+      # Node.js v22. Revisit when the Node.js/Undici issue is resolved.
       - name: nodeVersion
-        value: "24.x"
+        value: "22.x"
       - name: workingDir
         value: "$(System.DefaultWorkingDirectory)/e2e/pw"
 
