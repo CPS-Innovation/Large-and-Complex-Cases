@@ -254,9 +254,9 @@ describe("pollTransferStatus", async () => {
       100,
     );
 
-    // The grace window is 30s of wall-clock. Just before it elapses the loop is
+    // The grace window is 90s of wall-clock. Just before it elapses the loop is
     // still polling and has not surfaced an error.
-    await vi.advanceTimersByTimeAsync(29900);
+    await vi.advanceTimersByTimeAsync(89900);
     expect(handleResponse).to.toHaveBeenCalledTimes(0);
     expect(handleError).to.toHaveBeenCalledTimes(0);
     expect(getTransferStatus).to.toHaveBeenCalled();
@@ -270,7 +270,7 @@ describe("pollTransferStatus", async () => {
 
     // The loop has given up: no further polling and no further errors.
     const callsAfterStop = (getTransferStatus as Mock).mock.calls.length;
-    await vi.advanceTimersByTimeAsync(30000);
+    await vi.advanceTimersByTimeAsync(90000);
     expect(getTransferStatus).to.toHaveBeenCalledTimes(callsAfterStop);
     expect(handleError).to.toHaveBeenCalledTimes(1);
   });

@@ -9,7 +9,7 @@ The Large and Complex Cases (LACC) project aims to deliver a secure, auditable, 
 ### Prerequisites
 
 - [.NET 8 SDK](https://dotnet.microsoft.com/download)
-- [Node.js (v20+)](https://nodejs.org/)
+- [Node.js (v24+)](https://nodejs.org/)
 - [npm](https://www.npmjs.com/)
 - PowerShell (for local scripts)
 - PostgreSQL (see [Local Development Guide](doc/local-development.md) for setup details)

@@ -418,7 +418,7 @@ public class CaseEnrichmentServiceTests
     var folders = CreateSampleNetAppFolders(3);
     var folderPaths = folders.Data.FolderData
         .Where(d => d.Path != null)
-        .Select(d => $"{folders.Data.BucketName}:{d.Path}")
+        .Select(d => d.Path!)
         .ToList();
 
     var metadata = folderPaths.Select(path => new CaseMetadata
@@ -430,7 +430,7 @@ public class CaseEnrichmentServiceTests
 
     _caseMetadataServiceMock
         .Setup(s => s.GetCaseMetadataForNetAppFolderPathsAsync(It.Is<IEnumerable<string>>(paths =>
-            paths.All(p => folderPaths.Contains(p)) && paths.Count() == folderPaths.Count)))
+            folderPaths.All(p => paths.Contains(p)))))
         .ReturnsAsync(metadata);
 
     // Act
@@ -441,8 +441,7 @@ public class CaseEnrichmentServiceTests
 
     foreach (var folderResponse in result.Data.Folders)
     {
-      var expectedPath = $"{folders.Data.BucketName}:{folderResponse.FolderPath}";
-      var expectedMetadata = metadata.First(m => m.NetappFolderPath == expectedPath);
+      var expectedMetadata = metadata.First(m => m.NetappFolderPath == folderResponse.FolderPath);
       Assert.Equal(expectedMetadata.CaseId, folderResponse.CaseId);
     }
 
@@ -451,7 +450,7 @@ public class CaseEnrichmentServiceTests
 
     _caseMetadataServiceMock.Verify(
         s => s.GetCaseMetadataForNetAppFolderPathsAsync(It.Is<IEnumerable<string>>(paths =>
-            paths.All(p => folderPaths.Contains(p)) && paths.Count() == folderPaths.Count)),
+            folderPaths.All(p => paths.Contains(p)))),
         Times.Once);
   }
 
@@ -462,7 +461,7 @@ public class CaseEnrichmentServiceTests
     var folders = CreateSampleNetAppFolders(3);
     var folderPaths = folders.Data.FolderData
         .Where(d => d.Path != null)
-        .Select(d => $"{folders.Data.BucketName}:{d.Path}")
+        .Select(d => d.Path!)
         .ToList();
 
     var metadata = new List<CaseMetadata>
@@ -492,6 +491,35 @@ public class CaseEnrichmentServiceTests
     {
       Assert.Null(folderResponse.CaseId);
     }
+  }
+
+  [Fact]
+  public async Task EnrichNetAppFoldersWithMetadataAsync_WhenMetadataStoredAsBucketPath_StillEnriches()
+  {
+    // Arrange
+    var folders = CreateSampleNetAppFolders(1);
+    var folderPath = folders.Data.FolderData.First().Path!;
+    var legacyPath = $"{folders.Data.BucketName}:{folderPath}";
+    var metadata = new List<CaseMetadata>
+    {
+        new CaseMetadata
+        {
+            CaseId = _fixture.Create<int>(),
+            NetappFolderPath = legacyPath
+        }
+    };
+
+    _caseMetadataServiceMock
+        .Setup(s => s.GetCaseMetadataForNetAppFolderPathsAsync(It.Is<IEnumerable<string>>(paths =>
+            paths.Contains(folderPath) && paths.Contains(legacyPath))))
+        .ReturnsAsync(metadata);
+
+    // Act
+    var result = await _service.EnrichNetAppFoldersWithMetadataAsync(folders);
+
+    // Assert
+    Assert.Equal(metadata.First().CaseId, result.Data.Folders.Single().CaseId);
+    Assert.Equal(folderPath, result.Data.Folders.Single().FolderPath);
   }
 
   [Fact]
@@ -608,7 +636,7 @@ public class CaseEnrichmentServiceTests
     var folders = CreateSampleNetAppFolders(2);
     var folderPaths = folders.Data.FolderData
         .Where(d => d.Path != null)
-        .Select(d => $"{folders.Data.BucketName}:{d.Path}")
+        .Select(d => d.Path!)
         .ToList();
 
     var metadata = new List<CaseMetadata>
