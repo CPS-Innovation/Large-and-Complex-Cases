@@ -18,7 +18,7 @@ export default defineConfig({
   reporter: [
     ["list"],
     ["html", { outputFolder: `./playwright-report/${runId}` }],
-    ["junit", { outputFile: `./playwright-report/e2e-test-report-${runId}.xml` }],
+    ["junit", { outputFile: `./playwright-report/${runId}-e2e-test-report.xml` }],
   ],
   timeout: 120_000,
   expect: { timeout: 500_000 },
