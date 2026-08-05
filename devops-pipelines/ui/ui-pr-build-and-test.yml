@@ -12,7 +12,7 @@ pool: "LACC PreProd Pool"
 
 variables:
   - name: nodeVersion
-    value: "20.x"
+    value: "24.x"
   - name: workingDir
     value: ui-spa
   - name: covDir

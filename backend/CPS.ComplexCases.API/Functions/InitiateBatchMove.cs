@@ -13,6 +13,7 @@ using CPS.ComplexCases.API.Domain.Response;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Services;
@@ -83,7 +84,7 @@ public class InitiateBatchMove(
             return pathError;
         }
 
-        var destinationPrefix = EnsureTrailingSlash(request.DestinationPrefix);
+        var destinationPrefix = request.DestinationPrefix.EnsureTrailingSlash();
         var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
         var volumeUuid = securityGroups[0].VolumeUuid;
 
@@ -142,8 +143,8 @@ public class InitiateBatchMove(
                 "A case-wide file transfer is in progress. Please wait for it to complete before starting a move operation.");
         }
 
-        var casePrefix = EnsureTrailingSlash(caseMetadata.NetappFolderPath);
-        var destinationPrefix = EnsureTrailingSlash(request.DestinationPrefix);
+        var casePrefix = caseMetadata.NetappFolderPath.EnsureTrailingSlash();
+        var destinationPrefix = request.DestinationPrefix.EnsureTrailingSlash();
 
         if (!destinationPrefix.StartsWith(casePrefix, StringComparison.OrdinalIgnoreCase))
         {
@@ -349,9 +350,6 @@ public class InitiateBatchMove(
     private static bool IsAuthException(Exception ex) =>
         ex is OntapUnauthorizedException
             or OntapClientException { StatusCode: HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden };
-
-    private static string EnsureTrailingSlash(string path) =>
-        path.EndsWith('/') ? path : path + "/";
 
     private static string BuildDestinationPath(string sourcePath, string destinationPrefix, bool isFolder)
     {

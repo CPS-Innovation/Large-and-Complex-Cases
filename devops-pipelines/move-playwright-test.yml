@@ -1,6 +1,6 @@
 schedules:
-  - cron: '0 1 * * Tue-Sat'
-    displayName: 'Weekday 1am UTC test'
+  - cron: "0 1 * * Tue-Sat"
+    displayName: "Weekday 1am UTC test"
     branches:
       include:
         - main
@@ -27,7 +27,7 @@ jobs:
       - group: lacc-automated-testing-${{ parameters.environment }}
       - group: lacc-backend-config-${{ parameters.environment }}
       - name: nodeVersion
-        value: "20.x"
+        value: "24.x"
       - name: workingDir
         value: "$(System.DefaultWorkingDirectory)/e2e/pw"
 
