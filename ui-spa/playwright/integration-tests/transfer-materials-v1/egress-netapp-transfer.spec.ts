@@ -468,7 +468,7 @@ test.describe("transfer material egress netapp transfer", () => {
     const transferMaterialsSourcePage = new TransferMaterialsSourcePage(page);
     await transferMaterialsSourcePage.verifyPageElements();
     await transferMaterialsSourcePage.verifyEgressTransferSourceElements();
-    await transferMaterialsSourcePage.verifyMoveBtnEnabled(false);
+    await transferMaterialsSourcePage.verifyMoveBtnHidden();
   });
 
   test("Should show the egress connection error screen, if user who does not have access to egress come to the application when there is an active transfer Id", async ({

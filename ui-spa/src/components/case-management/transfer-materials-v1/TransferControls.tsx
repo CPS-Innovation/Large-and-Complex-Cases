@@ -25,7 +25,7 @@ const TransferControls = ({
       >
         Copy selected
       </Button>
-      {transferSource === "egress" && (
+      {transferSource === "egress" && onMove && (
         <Button
           className="govuk-button--secondary"
           onClick={onMove}
