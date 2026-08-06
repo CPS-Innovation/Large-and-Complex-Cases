@@ -21,6 +21,7 @@ using CPS.ComplexCases.API.OpenApi;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Validators;
 using CPS.ComplexCases.API.Validators.Requests;
+using CPS.ComplexCases.API.Telemetry;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models.Configuration;
@@ -175,6 +176,7 @@ var host = new HostBuilder()
                 ConnectionString = context.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]
             })
             .ConfigureFunctionsApplicationInsights();
+        services.AddApplicationInsightsTelemetryProcessor<HealthCheckTelemetryFilter>();
         services.Configure<LoggerFilterOptions>(options =>
         {
             // See: https://learn.microsoft.com/en-us/azure/azure-functions/dotnet-isolated-process-guide?tabs=windows#managing-log-levels
