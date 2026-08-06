@@ -798,7 +798,11 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
                   toggleTransferDirection={toggleTransferDirection}
                   disableControls={!selectedSourceFoldersOrFiles.length}
                   onCopy={() => handleTransferAction("copy")}
-                  onMove={() => handleTransferAction("move")}
+                  onMove={
+                    featureFlags?.transferMove
+                      ? () => handleTransferAction("move")
+                      : undefined
+                  }
                 />
                 {featureFlags?.disconnectSharedDrive && (
                   <Button
@@ -839,7 +843,11 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
                 toggleTransferDirection={toggleTransferDirection}
                 disableControls={!selectedSourceFoldersOrFiles.length}
                 onCopy={() => handleTransferAction("copy")}
-                onMove={() => handleTransferAction("move")}
+                onMove={
+                    featureFlags?.transferMove
+                      ? () => handleTransferAction("move")
+                      : undefined
+                  }
               />
             </div>
           </div>
