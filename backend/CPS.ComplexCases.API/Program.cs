@@ -21,7 +21,6 @@ using CPS.ComplexCases.API.OpenApi;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Validators;
 using CPS.ComplexCases.API.Validators.Requests;
-using CPS.ComplexCases.API.Telemetry;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models.Configuration;

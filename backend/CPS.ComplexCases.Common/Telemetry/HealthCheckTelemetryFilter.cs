@@ -2,7 +2,7 @@ using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.ApplicationInsights.DataContracts;
 
-namespace CPS.ComplexCases.FileTransfer.API.Telemetry;
+namespace CPS.ComplexCases.Common.Telemetry;
 
 public class HealthCheckTelemetryFilter(ITelemetryProcessor next) : ITelemetryProcessor
 {
