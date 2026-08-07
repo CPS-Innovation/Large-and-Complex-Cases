@@ -12,14 +12,24 @@ public class HealthCheckTelemetryFilter(ITelemetryProcessor next) : ITelemetryPr
     {
         if (item is ISupportProperties props)
         {
-            if (props.Properties.TryGetValue("RequestPath", out var path) &&
-                path.Equals("/api/status", StringComparison.OrdinalIgnoreCase))
+            if (props.Properties.TryGetValue(
+                    "AzureFunctions_FunctionName",
+                    out var functionName) &&
+                string.Equals(
+                    functionName,
+                    "Status",
+                    StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
 
-            if (props.Properties.TryGetValue("AzureFunctions_FunctionName", out var functionName) &&
-                functionName.Equals("Status", StringComparison.OrdinalIgnoreCase))
+            if (props.Properties.TryGetValue(
+                    "RequestPath",
+                    out var path) &&
+                string.Equals(
+                    path,
+                    "/api/status",
+                    StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
