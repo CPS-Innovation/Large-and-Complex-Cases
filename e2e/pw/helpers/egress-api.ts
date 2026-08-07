@@ -461,55 +461,73 @@ export async function getUploadedFile(
  * Returns ids of leaf files only — folders are skipped. Best-effort: on
  * any HTTP failure logs a warning and returns [].
  */
+/**
+ * Lists files in a workspace folder.
+ *
+ * Egress tokens expire well inside a long run (the soak scenarios run for
+ * ~an hour), and an expired token here is particularly harmful: the 401 path
+ * below returns an empty list, which callers read as "the file is not there".
+ * Pass `serviceAccountAuth` to route the request through
+ * `fetchWithTokenRefresh` so a 401 re-authenticates and retries instead.
+ *
+ * `token` accepts a mutable `{ value }` ref as well as a plain string. Pass a
+ * ref and the refreshed token is written back, so a caller caching the token
+ * across many calls refreshes once rather than eating a 401 on every call.
+ */
 export async function listEgressWorkspaceFilesByFolderId(
   baseUrl: string,
-  token: string,
+  token: string | { value: string },
   workspaceId: string,
   folderId: string,
-  expectFile: boolean = false
+  expectFile: boolean = false,
+  serviceAccountAuth?: string
 ): Promise<{ id: string; fileName: string }[]> {
   const pageSize = 50;
   const maxPages = 50;
   const maxAttempts = expectFile ? 10 : 1;
   const retryDelayMs = 3000;
+  const tokenRef = typeof token === "string" ? { value: token } : token;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const results: { id: string; fileName: string }[] = [];
-    try {
-      for (let page = 0; page < maxPages; page++) {
-        const skip = page * pageSize;
-        const url = `${baseUrl}/api/v1/workspaces/${workspaceId}/files?view=full&skip=${skip}&limit=${pageSize}&folder=${encodeURIComponent(folderId)}`;
-        const response = await fetch(url, {
-          headers: { Authorization: `Basic ${token}` },
-        });
-        if (!response.ok) {
-          const text = await response.text();
-          console.warn(
-            `  [teardown] listEgressWorkspaceFilesByFolderId ${folderId} failed (${response.status}): ${text}`
-          );
-          return results;
-        }
-
-        const body: {
-          data?: { id: string; filename: string; is_folder?: boolean }[];
-        } = await response.json();
-        const items = body.data ?? [];
-        if (items.length === 0) break;
-
-        for (const item of items) {
-          if (!item.is_folder) {
-            results.push({ id: item.id, fileName: item.filename });
-          }
-        }
-
-        if (items.length < pageSize) break;
+    for (let page = 0; page < maxPages; page++) {
+      const skip = page * pageSize;
+      const url = `${baseUrl}/api/v1/workspaces/${workspaceId}/files?view=full&skip=${skip}&limit=${pageSize}&folder=${encodeURIComponent(folderId)}`;
+      const response = serviceAccountAuth
+        ? await fetchWithTokenRefresh(
+            baseUrl,
+            serviceAccountAuth,
+            tokenRef,
+            url,
+            {}
+          )
+        : await fetch(url, {
+            headers: { Authorization: `Basic ${tokenRef.value}` },
+          });
+      if (!response.ok) {
+        const text = await response.text();
+        // Returning [] here would read as "file not in the folder", turning
+        // an auth failure into a passing deletion assertion. Teardown
+        // catches this itself.
+        throw new Error(
+          `listEgressWorkspaceFilesByFolderId failed for folder ${folderId} ` +
+            `(${response.status}): ${text.slice(0, 300)}`
+        );
       }
-    } catch (err) {
-      console.warn(
-        `  [teardown] listEgressWorkspaceFilesByFolderId threw:`,
-        err
-      );
-      return results;
+
+      const body: {
+        data?: { id: string; filename: string; is_folder?: boolean }[];
+      } = await response.json();
+      const items = body.data ?? [];
+      if (items.length === 0) break;
+
+      for (const item of items) {
+        if (!item.is_folder) {
+          results.push({ id: item.id, fileName: item.filename });
+        }
+      }
+
+      if (items.length < pageSize) break;
     }
 
     if (results.length > 0 || !expectFile) return results;
