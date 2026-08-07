@@ -1,8 +1,10 @@
+using System.Net;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
+using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
@@ -11,7 +13,6 @@ using CPS.ComplexCases.NetApp.Services;
 using CPS.ComplexCases.NetApp.Telemetry;
 using CPS.ComplexCases.NetApp.Wrappers;
 using CPS.ComplexCases.Common.Resilience;
-using Polly;
 
 namespace CPS.ComplexCases.NetApp.Extensions;
 
@@ -19,6 +20,7 @@ public static class IServiceCollectionExtension
 {
 	private const int RetryAttempts = 3;
 	private const int FirstRetryDelaySeconds = 1;
+	private const int ConcurrencyLimit = 30;
 
 	// NetApp transfers can legitimately run for minutes and run at lower request volumes, so the
 	// breaker uses a longer sampling window, a lower throughput requirement and a longer break.
@@ -64,6 +66,21 @@ public static class IServiceCollectionExtension
 
 		var isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
 
+		var configureResilience = ResiliencePipelineExtensions.ConfigureStandardResilience(
+			"CPS.ComplexCases.NetApp.CircuitBreaker",
+			new HttpResilienceOptions
+			{
+				ServiceName = "NetApp",
+				RetryAttempts = RetryAttempts,
+				FirstRetryDelay = TimeSpan.FromSeconds(FirstRetryDelaySeconds),
+				CircuitBreakerFailureThreshold = CircuitBreakerFailureThreshold,
+				CircuitBreakerSamplingDuration = TimeSpan.FromSeconds(CircuitBreakerSamplingDurationSeconds),
+				CircuitBreakerMinimumThroughput = CircuitBreakerMinimumThroughput,
+				CircuitBreakerDurationOfBreak = TimeSpan.FromSeconds(CircuitBreakerDurationOfBreakSeconds),
+				ConcurrencyLimit = ConcurrencyLimit,
+				AdditionalRetryableStatusCodes = [HttpStatusCode.TooManyRequests],
+			});
+
 		services.AddHttpClient<INetAppHttpClient, NetAppHttpClient>(client =>
 		{
 			var netAppServiceUrl = configuration["NetAppOptions:ClusterUrl"];
@@ -77,7 +94,7 @@ public static class IServiceCollectionExtension
 		})
 		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment))
 		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
-		.AddResiliencePolicyHandler(GetResiliencePolicy);
+		.AddResilienceHandler("netapp-resilience", configureResilience);
 
 		services.AddHttpClient<INetAppS3HttpClient, NetAppS3HttpClient>(client =>
 		{
@@ -93,7 +110,7 @@ public static class IServiceCollectionExtension
 		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment)
 		)
 		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
-		.AddResiliencePolicyHandler(GetResiliencePolicy);
+		.AddResilienceHandler("netapp-s3-resilience", configureResilience);
 
 		services.AddHttpClient<IOntapHttpClient, OntapHttpClient>(client =>
 		{
@@ -108,7 +125,7 @@ public static class IServiceCollectionExtension
 		})
 		.ConfigurePrimaryHttpMessageHandler(sp => CreateHttpClientHandler(sp, isDevelopment))
 		.SetHandlerLifetime(TimeSpan.FromMinutes(5))
-		.AddResiliencePolicyHandler(GetResiliencePolicy);
+		.AddResilienceHandler("ontap-resilience", configureResilience);
 
 		services.AddTransient<NetAppStorageClient>();
 	}
@@ -138,22 +155,5 @@ public static class IServiceCollectionExtension
 				"No trusted CA certificates were loaded. SSL certificate validation cannot be bypassed in non-development environments. " +
 				"Ensure RootCaCert, IssuingCaCert, and/or IssuingCaCert2 are correctly configured.");
 		}
-	}
-
-	internal static IAsyncPolicy<HttpResponseMessage> GetResiliencePolicy(ILoggerFactory loggerFactory)
-	{
-		var logger = loggerFactory.CreateLogger("CPS.ComplexCases.NetApp.CircuitBreaker");
-
-		return HttpResiliencePolicyFactory.CreateRateLimitedResiliencePolicy(logger, new HttpResilienceOptions
-		{
-			ServiceName = "NetApp",
-			RetryAttempts = RetryAttempts,
-			FirstRetryDelay = TimeSpan.FromSeconds(FirstRetryDelaySeconds),
-			CircuitBreakerFailureThreshold = CircuitBreakerFailureThreshold,
-			CircuitBreakerSamplingDuration = TimeSpan.FromSeconds(CircuitBreakerSamplingDurationSeconds),
-			CircuitBreakerMinimumThroughput = CircuitBreakerMinimumThroughput,
-			CircuitBreakerDurationOfBreak = TimeSpan.FromSeconds(CircuitBreakerDurationOfBreakSeconds),
-			BulkheadMaxParallelization = 30,
-		});
 	}
 }
