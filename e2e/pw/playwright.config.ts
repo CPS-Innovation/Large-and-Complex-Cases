@@ -87,25 +87,5 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
 
-    // One-off project that seeds a complete fixture from nothing: workspace +
-    // files + a freshly registered case + the Egress connection. Headless, so
-    // it works on environments where the UI login is unavailable. Run via:
-    //   ENVIRONMENT=<env> npx playwright test --project=seed-fixture
-    {
-      name: "seed-fixture",
-      testMatch: "**/seed-dev-fixture.setup.ts",
-    },
-
-    // One-off project for rebuilding the default-mode Egress workspace when
-    // DEFAULT_WORKSPACE_ID no longer exists (every *-default.spec.ts then
-    // fails in setup with Egress 404 "The Case was not found on the server").
-    // Creates the workspace, uploads the path-length fixture and connects it
-    // to DEFAULT_CASE_ID, then prints the ids to put in the env file.
-    //   ENVIRONMENT=staging npx playwright test --project=rebuild-default-fixture
-    {
-      name: "rebuild-default-fixture",
-      testMatch: "**/rebuild-default-fixture.setup.ts",
-      use: { ...devices["Desktop Chrome"] },
-    },
   ],
 });
