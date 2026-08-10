@@ -154,17 +154,17 @@ test.describe("Move Soak Tests", () => {
       // 5. Assertions per scenario
       expect(status).toBeTruthy();
 
-      expect(status?.status).toBe("Completed");
-      // Name the files the backend rejected: without them a partial transfer
-      // reports only "expected 0, received 2", and the next failure is
-      // "file still exists in Egress" - which is correct for a failed move
-      // and points away from the cause.
+      // Before the status assertion: only a PartiallyCompleted transfer
+      // carries failedFiles, and asserting Completed first would stop the run
+      // before these names are reported.
       expect(
         status?.failedFiles,
         `Transfer ${transfer.id} finished as ${status?.status}, ` +
           `${status?.failedFiles}/${status?.totalFiles} file(s) failed: ` +
           `${(status?.failedItems ?? []).join(", ")}`
       ).toBe(0);
+
+      expect(status?.status).toBe("Completed");
 
       await test.step("Verify files exist in NetApp", async () => {
         for (const file of files) {
