@@ -127,19 +127,6 @@ test.describe("Move Soak Tests", () => {
         contentType: "application/json",
       });
 
-      // The poll loop exits on PartiallyCompleted and Failed as well as
-      // Completed, so a transfer that dropped files still reaches the
-      // verification steps below. A failed move correctly leaves its source
-      // file in Egress, so the first thing to break is the "removed from
-      // Egress" assertion - which reports the symptom and hides the cause.
-      // Assert here, after the attachments so the status is still captured.
-      expect(
-        status?.failedFiles ?? 0,
-        `Transfer ${transfer.id} finished as ${status?.status} with ` +
-          `${status?.failedFiles}/${status?.totalFiles} file(s) failed: ` +
-          `${(status?.failedItems ?? []).join(", ")}`
-      ).toBe(0);
-
       await test.step(
         `Transfer Performance: ${transferDurationSeconds.toFixed(
           2
@@ -168,7 +155,16 @@ test.describe("Move Soak Tests", () => {
       expect(status).toBeTruthy();
 
       expect(status?.status).toBe("Completed");
-      expect(status?.failedFiles).toBe(0);
+      // Name the files the backend rejected: without them a partial transfer
+      // reports only "expected 0, received 2", and the next failure is
+      // "file still exists in Egress" - which is correct for a failed move
+      // and points away from the cause.
+      expect(
+        status?.failedFiles,
+        `Transfer ${transfer.id} finished as ${status?.status}, ` +
+          `${status?.failedFiles}/${status?.totalFiles} file(s) failed: ` +
+          `${(status?.failedItems ?? []).join(", ")}`
+      ).toBe(0);
 
       await test.step("Verify files exist in NetApp", async () => {
         for (const file of files) {
