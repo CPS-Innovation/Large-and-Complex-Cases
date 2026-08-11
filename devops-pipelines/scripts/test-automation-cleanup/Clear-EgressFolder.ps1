@@ -23,63 +23,17 @@ Import-Module (Join-Path $PSScriptRoot 'EgressCleanupHelperModule.psm1')
 # ============================================================
 Write-Host "[1/3] Authenticating to Egress..." -ForegroundColor Yellow
 
-$maxAttempts = 3
-$retryDelaySeconds = 15
-
-for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
-  try {
-
-    Write-Host "Authentication attempt $attempt/$maxAttempts"
-
-    $AuthHeader = Connect-EgressServiceAccount `
-      -BaseUrl $BaseUrl `
-      -AuthToken $ServiceAccountAuth
-
-    Write-Host "  [OK] Authenticated" -ForegroundColor Green
-    break
-  }
-  catch {
-    Write-Warning "Authentication attempt $attempt failed."
-
-    Write-Warning "Exception type: $($_.Exception.GetType().FullName)"
-    Write-Warning "Exception message: $($_.Exception.Message)"
-
-    if ($_.Exception.Response) {
-      try {
-        $statusCode = [int]$_.Exception.Response.StatusCode
-        $statusDescription = $_.Exception.Response.StatusDescription
-
-        Write-Warning "HTTP Status: $statusCode $statusDescription"
-      }
-      catch {}
-
-      try {
-        $responseStream = $_.Exception.Response.GetResponseStream()
-
-        if ($responseStream) {
-          $reader = New-Object System.IO.StreamReader($responseStream)
-          $responseBody = $reader.ReadToEnd()
-
-          if (-not [string]::IsNullOrWhiteSpace($responseBody)) {
-            Write-Warning "Response body:"
-            Write-Warning $responseBody
-          }
-        }
-      }
-      catch {
-        Write-Warning "Unable to read error response body."
-      }
-    }
-
-    if ($attempt -eq $maxAttempts) {
-      Write-Error "Authentication failed after $maxAttempts attempts."
-      exit 1
-    }
-
-    Write-Host "Retrying in $retryDelaySeconds seconds..."
-    Start-Sleep -Seconds $retryDelaySeconds
-  }
+try {
+  $AuthHeader = Connect-EgressServiceAccount `
+    -BaseUrl $BaseUrl `
+    -AuthToken $ServiceAccountAuth
 }
+catch {
+  Write-Error $_.Exception.Message
+  exit 1
+}
+
+Write-Host "  [OK] Authenticated" -ForegroundColor Green
 
 # ============================================================
 # LIST FILES
