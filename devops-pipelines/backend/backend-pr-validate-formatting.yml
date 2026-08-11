@@ -12,7 +12,7 @@ pool: "LACC PreProd Pool"
 
 variables:
   - name: dotNetVersion
-    value: "10.x"
+    value: "10.0.102"
 
 jobs:
   - job: Validate_formatting
@@ -38,40 +38,6 @@ jobs:
           version: $(dotnetVersion)
 
       - task: PowerShell@2
-        displayName: "Debug .NET Formatting"
-        inputs:
-          targetType: "inline"
-          workingDirectory: "$(System.DefaultWorkingDirectory)/backend"
-          script: |
-            Write-Host "=== Environment ==="
-            Write-Host "Working directory: $(Get-Location)"
-            Write-Host "SDK:"
-            dotnet --version
-
-            Write-Host ""
-            Write-Host "=== HEAD ==="
-            git log -1 --format="%H %s"
-
-            Write-Host ""
-            Write-Host "=== Status before format ==="
-            git status --short
-
-            Write-Host ""
-            Write-Host "=== Running dotnet format ==="
-            dotnet format --no-restore
-
-            Write-Host ""
-            Write-Host "=== Status after format ==="
-            git status --short
-
-            Write-Host ""
-            Write-Host "=== Formatting diff ==="
-            git diff --stat
-
-            Write-Host ""
-            git diff
-
-      - task: PowerShell@2
         displayName: "Validate .NET Formatting"
         inputs:
           targetType: "inline"
@@ -82,7 +48,7 @@ jobs:
             Write-Host "Running dotnet format..."
 
             # Capture both stdout and stderr.
-            & dotnet format --verify-no-changes *> $outputFile
+            & dotnet format --no-restore --verify-no-changes *> $outputFile
             $formatExitCode = $LASTEXITCODE
 
             $lines = Get-Content $outputFile
