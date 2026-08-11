@@ -72,6 +72,7 @@ stages:
               dotNetVersion: $(dotNetVersion)
               useLocalNuGet: true
               publishOutput: false
+              checkFormatting: true
               runTests: true
               testResultsDirectory: $(testResultsDirectory)
 
