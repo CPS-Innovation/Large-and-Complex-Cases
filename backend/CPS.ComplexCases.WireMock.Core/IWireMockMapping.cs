@@ -4,5 +4,5 @@ namespace CPS.ComplexCases.WireMock.Core;
 
 public interface IWireMockMapping
 {
-  void Configure(WireMockServer server);
+    void Configure(WireMockServer server);
 }

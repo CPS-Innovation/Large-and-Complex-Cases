@@ -1,6 +1,5 @@
 using System.Net;
 using Amazon.S3.Model;
-using Microsoft.Extensions.Logging;
 using AutoFixture;
 using AutoFixture.AutoMoq;
 using CPS.ComplexCases.Common.Extensions;
@@ -12,6 +11,7 @@ using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace CPS.ComplexCases.NetApp.Tests.Unit;
@@ -583,7 +583,7 @@ public class NetAppStorageClientTests
         _netAppS3HttpClientMock
             .Setup(c => c.GetHeadObjectAsync(arg))
             .ReturnsAsync(new Models.Dto.HeadObjectResponseDto
-                { ETag = _fixture.Create<string>(), StatusCode = HttpStatusCode.OK });
+            { ETag = _fixture.Create<string>(), StatusCode = HttpStatusCode.OK });
 
         // Act
         var result =

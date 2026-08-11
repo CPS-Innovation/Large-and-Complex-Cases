@@ -9,25 +9,25 @@ namespace CPS.ComplexCases.Egress.Tests.Unit;
 // client to run must resolve against its own live provider, not a retained, disposed scope.
 public class ResiliencePolicyOrderingTests
 {
-  private static ServiceProvider BuildProvider() =>
-      new ServiceCollection().AddLogging().BuildServiceProvider();
+    private static ServiceProvider BuildProvider() =>
+        new ServiceCollection().AddLogging().BuildServiceProvider();
 
-  [Fact]
-  public void SecondClientResolvesPolicy_AfterFirstClientScopeDisposed()
-  {
-    var firstClient = new SharedResiliencePolicy(IServiceCollectionExtension.GetResiliencePolicy);
-    var secondClient = new SharedResiliencePolicy(IServiceCollectionExtension.GetResiliencePolicy);
+    [Fact]
+    public void SecondClientResolvesPolicy_AfterFirstClientScopeDisposed()
+    {
+        var firstClient = new SharedResiliencePolicy(IServiceCollectionExtension.GetResiliencePolicy);
+        var secondClient = new SharedResiliencePolicy(IServiceCollectionExtension.GetResiliencePolicy);
 
-    var firstProvider = BuildProvider();
-    var firstPolicy = firstClient.GetPolicy(firstProvider);
+        var firstProvider = BuildProvider();
+        var firstPolicy = firstClient.GetPolicy(firstProvider);
 
-    // The first client's handler scope rotates and is disposed before the second client first runs.
-    firstProvider.Dispose();
+        // The first client's handler scope rotates and is disposed before the second client first runs.
+        firstProvider.Dispose();
 
-    using var secondProvider = BuildProvider();
-    var exception = Record.Exception(() => secondClient.GetPolicy(secondProvider));
+        using var secondProvider = BuildProvider();
+        var exception = Record.Exception(() => secondClient.GetPolicy(secondProvider));
 
-    Assert.Null(exception);
-    Assert.NotNull(firstPolicy);
-  }
+        Assert.Null(exception);
+        Assert.NotNull(firstPolicy);
+    }
 }

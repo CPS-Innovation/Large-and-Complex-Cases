@@ -8,48 +8,48 @@ namespace CPS.ComplexCases.API.Tests.Unit.Middleware;
 
 public class ExceptionHandlingMiddlewareTests
 {
-  [Fact]
-  public void MapExceptionToStatusCode_BrokenCircuitException_MapsToServiceUnavailable()
-  {
-    var statusCode = ExceptionHandlingMiddleware.MapExceptionToStatusCode(new BrokenCircuitException());
+    [Fact]
+    public void MapExceptionToStatusCode_BrokenCircuitException_MapsToServiceUnavailable()
+    {
+        var statusCode = ExceptionHandlingMiddleware.MapExceptionToStatusCode(new BrokenCircuitException());
 
-    Assert.Equal(HttpStatusCode.ServiceUnavailable, statusCode);
-  }
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, statusCode);
+    }
 
-  [Fact]
-  public void MapExceptionToStatusCode_TypedBrokenCircuitException_MapsToServiceUnavailable()
-  {
-    var statusCode = ExceptionHandlingMiddleware.MapExceptionToStatusCode(
-        new BrokenCircuitException<HttpResponseMessage>(
-            "Circuit open",
-            new HttpResponseMessage(HttpStatusCode.InternalServerError)));
+    [Fact]
+    public void MapExceptionToStatusCode_TypedBrokenCircuitException_MapsToServiceUnavailable()
+    {
+        var statusCode = ExceptionHandlingMiddleware.MapExceptionToStatusCode(
+            new BrokenCircuitException<HttpResponseMessage>(
+                "Circuit open",
+                new HttpResponseMessage(HttpStatusCode.InternalServerError)));
 
-    Assert.Equal(HttpStatusCode.ServiceUnavailable, statusCode);
-  }
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, statusCode);
+    }
 
-  [Fact]
-  public void MapExceptionToStatusCode_BadRequestException_MapsToBadRequest()
-  {
-    var statusCode = ExceptionHandlingMiddleware.MapExceptionToStatusCode(
-        new BadRequestException("invalid", "param"));
+    [Fact]
+    public void MapExceptionToStatusCode_BadRequestException_MapsToBadRequest()
+    {
+        var statusCode = ExceptionHandlingMiddleware.MapExceptionToStatusCode(
+            new BadRequestException("invalid", "param"));
 
-    Assert.Equal(HttpStatusCode.BadRequest, statusCode);
-  }
+        Assert.Equal(HttpStatusCode.BadRequest, statusCode);
+    }
 
-  [Fact]
-  public void MapExceptionToStatusCode_DdeiClientException_UsesItsStatusCode()
-  {
-    var statusCode = ExceptionHandlingMiddleware.MapExceptionToStatusCode(
-        new DdeiClientException(HttpStatusCode.NotFound, new HttpRequestException()));
+    [Fact]
+    public void MapExceptionToStatusCode_DdeiClientException_UsesItsStatusCode()
+    {
+        var statusCode = ExceptionHandlingMiddleware.MapExceptionToStatusCode(
+            new DdeiClientException(HttpStatusCode.NotFound, new HttpRequestException()));
 
-    Assert.Equal(HttpStatusCode.NotFound, statusCode);
-  }
+        Assert.Equal(HttpStatusCode.NotFound, statusCode);
+    }
 
-  [Fact]
-  public void MapExceptionToStatusCode_UnknownException_MapsToInternalServerError()
-  {
-    var statusCode = ExceptionHandlingMiddleware.MapExceptionToStatusCode(new InvalidOperationException());
+    [Fact]
+    public void MapExceptionToStatusCode_UnknownException_MapsToInternalServerError()
+    {
+        var statusCode = ExceptionHandlingMiddleware.MapExceptionToStatusCode(new InvalidOperationException());
 
-    Assert.Equal(HttpStatusCode.InternalServerError, statusCode);
-  }
+        Assert.Equal(HttpStatusCode.InternalServerError, statusCode);
+    }
 }

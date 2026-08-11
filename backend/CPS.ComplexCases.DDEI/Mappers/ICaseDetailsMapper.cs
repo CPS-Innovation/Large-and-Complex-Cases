@@ -5,5 +5,5 @@ namespace CPS.ComplexCases.DDEI.Mappers;
 
 public interface ICaseDetailsMapper
 {
-  CaseDto MapCaseDetails(DdeiCaseSummaryDto caseDetails);
+    CaseDto MapCaseDetails(DdeiCaseSummaryDto caseDetails);
 }

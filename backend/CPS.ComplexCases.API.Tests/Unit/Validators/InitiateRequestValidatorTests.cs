@@ -1,5 +1,5 @@
-using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.API.Domain.Request;
+using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Validators;

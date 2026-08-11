@@ -1,8 +1,8 @@
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
+using CPS.ComplexCases.NetApp.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using CPS.ComplexCases.NetApp.Models;
 
 namespace CPS.ComplexCases.NetApp.Factories;
 

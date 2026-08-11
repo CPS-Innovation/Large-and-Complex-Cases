@@ -1,4 +1,5 @@
 using Amazon.S3.Model;
+using AutoFixture;
 using Azure;
 using Azure.Storage.Blobs;
 using CPS.ComplexCases.API.Services;
@@ -8,7 +9,6 @@ using CPS.ComplexCases.NetApp.Models.Args;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
-using AutoFixture;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Services;
 

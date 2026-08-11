@@ -1,10 +1,10 @@
 
-using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
+using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
-using Microsoft.Extensions.DependencyInjection;
 using CPS.ComplexCases.NetApp.Client;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CPS.ComplexCases.FileTransfer.API.Factories;
 

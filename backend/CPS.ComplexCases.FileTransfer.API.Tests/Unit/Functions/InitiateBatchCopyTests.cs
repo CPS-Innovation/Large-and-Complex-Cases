@@ -1,8 +1,3 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.DurableTask;
-using Microsoft.DurableTask.Client.Entities;
-using Microsoft.Extensions.Logging;
 using AutoFixture;
 using CPS.ComplexCases.Common.Constants;
 using CPS.ComplexCases.Common.Handlers;
@@ -23,6 +18,11 @@ using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Models.Dto;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.DurableTask;
+using Microsoft.DurableTask.Client.Entities;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Functions;
