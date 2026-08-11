@@ -41,6 +41,7 @@ jobs:
         displayName: "Check .NET formatting"
         inputs:
           targetType: "inline"
+          workingDirectory: "(System.DefaultWorkingDirectory)/backend"
           script: |
             $ErrorActionPreference = "Continue"
 
