@@ -175,6 +175,7 @@ var host = new HostBuilder()
                 ConnectionString = context.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]
             })
             .ConfigureFunctionsApplicationInsights();
+        services.AddApplicationInsightsTelemetryProcessor<HealthCheckTelemetryFilter>();
         services.Configure<LoggerFilterOptions>(options =>
         {
             // See: https://learn.microsoft.com/en-us/azure/azure-functions/dotnet-isolated-process-guide?tabs=windows#managing-log-levels
