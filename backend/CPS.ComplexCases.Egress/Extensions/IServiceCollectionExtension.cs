@@ -15,12 +15,12 @@ public static class IServiceCollectionExtension
   private const int FirstRetryDelaySeconds = 1;
   private const int ConcurrencyLimit = 30;
 
-  // Egress rate-limits us with 429s (excluded from the breaker), so a slightly longer sampling window
-  // avoids tripping on normal throttling while still catching a genuinely failing service.
-  private const double CircuitBreakerFailureThreshold = 0.5;
-  private const int CircuitBreakerSamplingDurationSeconds = 60;
-  private const int CircuitBreakerMinimumThroughput = 10;
-  private const int CircuitBreakerDurationOfBreakSeconds = 30;
+    // Egress rate-limits us with 429s (excluded from the breaker), so a slightly longer sampling window
+    // avoids tripping on normal throttling while still catching a genuinely failing service.
+    private const double CircuitBreakerFailureThreshold = 0.5;
+    private const int CircuitBreakerSamplingDurationSeconds = 60;
+    private const int CircuitBreakerMinimumThroughput = 10;
+    private const int CircuitBreakerDurationOfBreakSeconds = 30;
 
   public static void AddEgressClient(this IServiceCollection services, IConfiguration configuration)
   {
@@ -56,7 +56,25 @@ public static class IServiceCollectionExtension
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
     .AddResilienceHandler("egress-resilience", configureResilience);
 
-    services.AddHttpClient<EgressStorageClient>(client =>
+        services.AddHttpClient<EgressStorageClient>(client =>
+        {
+            var egressServiceUrl = configuration["EgressOptions:Url"];
+            if (string.IsNullOrEmpty(egressServiceUrl))
+            {
+                throw new ArgumentNullException(nameof(egressServiceUrl), "EgressOptions:Url configuration is missing or empty.");
+            }
+            client.BaseAddress = new Uri(egressServiceUrl);
+            // EgressStorageClient mixes short management calls with file streamed downloads and
+            // chunk uploads. The body read of a streamed download is bound by HttpClient.Timeout, so a
+            // single short value would break large downloads. Per-operation timeouts are enforced inside
+            // BaseEgressClient via CancellationToken instead, leaving the client itself uncapped.
+            client.Timeout = Timeout.InfiniteTimeSpan;
+        })
+        .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+        .AddResiliencePolicyHandler(GetResiliencePolicy);
+    }
+
+    internal static IAsyncPolicy<HttpResponseMessage> GetResiliencePolicy(ILoggerFactory loggerFactory)
     {
       var egressServiceUrl = configuration["EgressOptions:Url"];
       if (string.IsNullOrEmpty(egressServiceUrl))

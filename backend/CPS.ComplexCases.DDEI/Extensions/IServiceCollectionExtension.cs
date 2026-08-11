@@ -15,15 +15,15 @@ namespace CPS.ComplexCases.DDEI.Extensions;
 
 public static class IServiceCollectionExtension
 {
-  private const int RetryAttempts = 1;
-  private const int FirstRetryDelaySeconds = 1;
+    private const int RetryAttempts = 1;
+    private const int FirstRetryDelaySeconds = 1;
 
-  // MDS (via DDEI) is a standard request/response service, so a 30s sampling window
-  // with a moderate throughput requirement is enough to spot a failing service quickly.
-  private const double CircuitBreakerFailureThreshold = 0.5;
-  private const int CircuitBreakerSamplingDurationSeconds = 30;
-  private const int CircuitBreakerMinimumThroughput = 10;
-  private const int CircuitBreakerDurationOfBreakSeconds = 30;
+    // MDS (via DDEI) is a standard request/response service, so a 30s sampling window
+    // with a moderate throughput requirement is enough to spot a failing service quickly.
+    private const double CircuitBreakerFailureThreshold = 0.5;
+    private const int CircuitBreakerSamplingDurationSeconds = 30;
+    private const int CircuitBreakerMinimumThroughput = 10;
+    private const int CircuitBreakerDurationOfBreakSeconds = 30;
 
   public static void AddDdeiClient(this IServiceCollection services, IConfiguration configuration)
   {
@@ -67,7 +67,16 @@ public static class IServiceCollectionExtension
 
     if (opts.BaseUrl.Contains(DDEIOptions.DevtunnelUrlFragment) && !string.IsNullOrWhiteSpace(DDEIOptions.DevtunnelTokenKey))
     {
-      client.DefaultRequestHeaders.Add(DDEIOptions.DevtunnelTokenKey, opts.DevtunnelToken);
+        services.Configure<DDEIOptions>(configuration.GetSection(nameof(DDEIOptions)));
+        services.AddTransient<IDdeiArgFactory, DdeiArgFactory>();
+        services.AddHttpClient<IDdeiClient, DdeiClient>(AddDdeiClient)
+          .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+          .AddResiliencePolicyHandler(GetResiliencePolicy);
+        services.AddTransient<IDdeiRequestFactory, DdeiRequestFactory>();
+        services.AddTransient<ICaseDetailsMapper, CaseDetailsMapper>();
+        services.AddTransient<IAreasMapper, AreasMapper>();
+        services.AddTransient<IMockSwitch, MockSwitch>();
+        services.AddSingleton<ICaseNamingService, CaseNamingService>();
     }
   }
 }

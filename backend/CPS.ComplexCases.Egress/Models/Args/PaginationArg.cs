@@ -4,8 +4,8 @@ namespace CPS.ComplexCases.Egress.Models.Args;
 
 public class PaginationArg
 {
-  [JsonPropertyName("skip")]
-  public int Skip { get; set; }
-  [JsonPropertyName("take")]
-  public int Take { get; set; }
+    [JsonPropertyName("skip")]
+    public int Skip { get; set; }
+    [JsonPropertyName("take")]
+    public int Take { get; set; }
 }

@@ -1,12 +1,11 @@
 using System.Net;
 using System.Text.Json;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using AutoFixture;
 using CPS.ComplexCases.API.Clients.FileTransfer;
+using CPS.ComplexCases.API.Domain.Models;
 using CPS.ComplexCases.API.Domain.Request;
 using CPS.ComplexCases.API.Functions.Transfer;
+using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
 using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Helpers;
@@ -14,9 +13,10 @@ using CPS.ComplexCases.Common.Models;
 using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Requests;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
-using CPS.ComplexCases.API.Services;
-using CPS.ComplexCases.API.Domain.Models;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
 {

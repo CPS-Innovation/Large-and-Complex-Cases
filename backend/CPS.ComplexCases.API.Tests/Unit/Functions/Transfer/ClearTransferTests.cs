@@ -2,9 +2,9 @@ using CPS.ComplexCases.API.Functions.Transfer;
 using CPS.ComplexCases.Common.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Microsoft.Azure.Functions.Worker;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer;
 

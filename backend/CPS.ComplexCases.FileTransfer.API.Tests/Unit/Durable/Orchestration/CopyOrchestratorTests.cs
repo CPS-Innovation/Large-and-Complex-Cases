@@ -1,7 +1,3 @@
-using Microsoft.DurableTask;
-using Microsoft.DurableTask.Entities;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using AutoFixture;
 using AutoFixture.AutoMoq;
 using CPS.ComplexCases.Common.Handlers;
@@ -12,6 +8,10 @@ using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Durable.State;
 using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
+using Microsoft.DurableTask;
+using Microsoft.DurableTask.Entities;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Durable.Orchestration;

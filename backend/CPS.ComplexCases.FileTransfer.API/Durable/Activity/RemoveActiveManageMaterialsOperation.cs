@@ -1,6 +1,6 @@
+using CPS.ComplexCases.Common.Services;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
-using CPS.ComplexCases.Common.Services;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 

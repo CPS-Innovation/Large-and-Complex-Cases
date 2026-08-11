@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using AutoFixture;
 using CPS.ComplexCases.ActivityLog.Models.Responses;
 using CPS.ComplexCases.ActivityLog.Services;
@@ -8,6 +6,8 @@ using CPS.ComplexCases.API.Functions;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Data.Dtos;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions

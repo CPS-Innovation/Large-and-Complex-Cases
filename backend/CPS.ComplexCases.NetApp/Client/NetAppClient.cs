@@ -1,6 +1,4 @@
 using System.Net;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Amazon.S3;
 using Amazon.S3.Model;
 using CPS.ComplexCases.Common.Extensions;
@@ -12,6 +10,8 @@ using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Models.Dto;
 using CPS.ComplexCases.NetApp.Wrappers;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Polly;
 using Polly.Retry;
 

@@ -1,8 +1,4 @@
 using System.Net;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Logging;
 using Amazon.S3;
 using AutoFixture;
 using CPS.ComplexCases.ActivityLog.Enums;
@@ -19,13 +15,17 @@ using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Entities;
+using CPS.ComplexCases.Data.Enums;
 using CPS.ComplexCases.Data.Models.Requests;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Logging;
 using Moq;
-using CPS.ComplexCases.Data.Enums;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions;
 

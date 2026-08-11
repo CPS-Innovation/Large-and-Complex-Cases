@@ -7,6 +7,8 @@ using Amazon.S3;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Services;
 using CPS.ComplexCases.NetApp.Telemetry;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace CPS.ComplexCases.NetApp.Factories;
 

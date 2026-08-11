@@ -1,6 +1,3 @@
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.DurableTask.Client;
-using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
@@ -11,6 +8,9 @@ using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Factories;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 using CPS.ComplexCases.FileTransfer.API.Telemetry;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.DurableTask.Client;
+using Microsoft.Extensions.Logging;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 

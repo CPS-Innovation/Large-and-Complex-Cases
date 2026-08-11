@@ -1,11 +1,11 @@
 using System.Text;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using AutoFixture;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Functions;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
 using CPS.ComplexCases.Common.Handlers;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions

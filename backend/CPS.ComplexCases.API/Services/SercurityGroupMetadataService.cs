@@ -1,8 +1,8 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
-using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.API.Domain.Models;
 using CPS.ComplexCases.API.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace CPS.ComplexCases.API.Services;
 
