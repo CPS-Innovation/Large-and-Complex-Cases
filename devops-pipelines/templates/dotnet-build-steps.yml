@@ -71,20 +71,42 @@ steps:
   # Check formatting
   - ${{ if eq(parameters.checkFormatting, true) }}:
       - task: Bash@3
+        displayName: "Debug .NET Formatting"
+        inputs:
+          targetType: "inline"
+          script: |
+            echo "=== SDK ==="
+            dotnet --version
+
+            echo "=== dotnet format version ==="
+            dotnet format --version
+
+            echo "=== Working directory ==="
+            pwd
+
+            echo "=== EditorConfig files ==="
+            find .. -name ".editorconfig" -print
+
+            echo "=== Git HEAD ==="
+            git rev-parse HEAD
+
+            echo "=== RequestContext ==="
+            sed -n '1,40p' CPS.ComplexCases.API/Context/RequestContext.cs
+
+            echo "=== DDEIMappings ==="
+            sed -n '70,85p' CPS.ComplexCases.DDEI.WireMock/Mappings/DDEIMappings.cs
+
+      - task: Bash@3
         displayName: "Check Formatting"
         inputs:
           targetType: "inline"
           script: |
             set +e
 
-            # output=$(dotnet format ${{ parameters.projectPath }} --no-restore --verify-no-changes 2>&1)
-            output=$(dotnet format ${{ parameters.projectPath }} --no-restore 2>&1)
+            output=$(dotnet format ${{ parameters.projectPath }} --no-restore --verify-no-changes 2>&1)
             exit_code=$?
 
-            git diff -- backend/CPS.ComplexCases.API/Context/RequestContext.cs
-            git diff -- backend/CPS.ComplexCases.DDEI.WireMock/Mappings/DDEIMappings.cs
-
-            # echo "$output"
+            echo "$output"
 
             if [ $exit_code -ne 0 ]; then
               echo "##vso[task.logissue type=warning]dotnet format found formatting issues. Please run 'dotnet format ${{ parameters.projectPath }}' and commit the changes."
