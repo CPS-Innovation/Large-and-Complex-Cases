@@ -154,8 +154,17 @@ test.describe("Move Soak Tests", () => {
       // 5. Assertions per scenario
       expect(status).toBeTruthy();
 
+      // Before the status assertion: only a PartiallyCompleted transfer
+      // carries failedFiles, and asserting Completed first would stop the run
+      // before these names are reported.
+      expect(
+        status?.failedFiles,
+        `Transfer ${transfer.id} finished as ${status?.status}, ` +
+          `${status?.failedFiles}/${status?.totalFiles} file(s) failed: ` +
+          `${(status?.failedItems ?? []).join(", ")}`
+      ).toBe(0);
+
       expect(status?.status).toBe("Completed");
-      expect(status?.failedFiles).toBe(0);
 
       await test.step("Verify files exist in NetApp", async () => {
         for (const file of files) {

@@ -62,13 +62,25 @@ export async function teardownTestData(ctx: TeardownContext): Promise<void> {
 
   if (ctx.destinationSubfolderId) {
     const expectFile = /netapp-to-egress/i.test(ctx.testInfo.file);
-    const destinationFiles = await listEgressWorkspaceFilesByFolderId(
-      config.egressBaseUrl,
-      token,
-      ctx.workspaceId,
-      ctx.destinationSubfolderId,
-      expectFile
-    );
+    // The helper throws on a non-OK response so verification can't mistake an
+    // auth failure for "file deleted". Teardown wants the opposite: warn and
+    // carry on, so a cleanup hiccup never fails a passing test.
+    let destinationFiles: { id: string; fileName: string }[] = [];
+    try {
+      destinationFiles = await listEgressWorkspaceFilesByFolderId(
+        config.egressBaseUrl,
+        token,
+        ctx.workspaceId,
+        ctx.destinationSubfolderId,
+        expectFile,
+        // Teardown runs at the end of a long test, by which point the token
+        // minted during setup may have expired; refresh rather than silently
+        // list nothing and leave the files behind.
+        config.egressServiceAccountAuth
+      );
+    } catch (err) {
+      console.warn(`  [teardown] listing destination files failed:`, err);
+    }
     if (destinationFiles.length > 0) {
       console.log(
         `  [teardown] Deleting ${destinationFiles.length} destination file(s) from ${ctx.destinationParentLabel}/${ctx.uploadSubfolder ?? ""}/`

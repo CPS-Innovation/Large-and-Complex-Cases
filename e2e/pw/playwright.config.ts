@@ -86,5 +86,6 @@ export default defineConfig({
       testMatch: "**/seed-netapp-fixture.setup.ts",
       use: { ...devices["Desktop Chrome"] },
     },
+
   ],
 });
