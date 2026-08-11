@@ -5,9 +5,9 @@ namespace CPS.ComplexCases.Data;
 
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
 {
-    public DbSet<CaseMetadata>? CaseMetadata { get; set; }
-    public DbSet<ActivityLog>? ActivityLogs { get; set; }
-    public DbSet<CaseActiveManageMaterialsOperation>? CaseActiveManageMaterialsOperations { get; set; }
+    public DbSet<CaseMetadata> CaseMetadata { get; set; } = null!;
+    public DbSet<ActivityLog> ActivityLogs { get; set; } = null!;
+    public DbSet<CaseActiveManageMaterialsOperation> CaseActiveManageMaterialsOperations { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
