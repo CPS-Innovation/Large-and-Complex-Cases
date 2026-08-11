@@ -103,73 +103,73 @@ steps:
             --verbosity diagnostic
         displayName: "Check Formatting"
 
-  #     - task: Bash@3
-  #       displayName: "Check Formatting"
-  #       inputs:
-  #         targetType: "inline"
-  #         script: |
-  #           set +e
+      # - task: Bash@3
+      #   displayName: "Check Formatting"
+      #   inputs:
+      #     targetType: "inline"
+      #     script: |
+      #       set +e
 
-  #           output=$(dotnet format ${{ parameters.projectPath }} --no-restore --verify-no-changes 2>&1)
-  #           exit_code=$?
+      #       output=$(dotnet format ${{ parameters.projectPath }} --no-restore --verify-no-changes 2>&1)
+      #       exit_code=$?
 
-  #           echo "$output"
+      #       echo "$output"
 
-  #           if [ $exit_code -ne 0 ]; then
-  #             echo "##vso[task.logissue type=warning]dotnet format found formatting issues. Please run 'dotnet format ${{ parameters.projectPath }}' and commit the changes."
-  #             exit $exit_code
-  #           fi
+      #       if [ $exit_code -ne 0 ]; then
+      #         echo "##vso[task.logissue type=warning]dotnet format found formatting issues. Please run 'dotnet format ${{ parameters.projectPath }}' and commit the changes."
+      #         exit $exit_code
+      #       fi
 
-  # # Build project
-  # - task: DotNetCoreCLI@2
-  #   displayName: "Build ${{ parameters.projectName }}"
-  #   inputs:
-  #     command: "build"
-  #     projects: "${{ parameters.projectPath }}"
-  #     arguments: "--configuration ${{ parameters.buildConfiguration }} --no-restore"
+  # Build project
+  - task: DotNetCoreCLI@2
+    displayName: "Build ${{ parameters.projectName }}"
+    inputs:
+      command: "build"
+      projects: "${{ parameters.projectPath }}"
+      arguments: "--configuration ${{ parameters.buildConfiguration }} --no-restore"
 
-  # # Run tests if enabled
-  # - ${{ if eq(parameters.runTests, true) }}:
-  #     - task: DotNetCoreCLI@2
-  #       displayName: "Run Tests"
-  #       inputs:
-  #         command: "test"
-  #         projects: "${{ parameters.projectPath }}"
-  #         arguments: >
-  #           --configuration ${{ parameters.buildConfiguration }}
-  #           --no-build
-  #           --collect "XPlat Code Coverage;Format=cobertura"
-  #           --settings "$(Build.SourcesDirectory)/backend/CodeCoverage.runsettings"
-  #         publishTestResults: true
-  #         testResultsFormat: "VSTest"
-  #         testResultsFiles: "**/*.trx"
-  #         testRunTitle: "${{ parameters.projectName }} Tests"
-  #         workingDirectory: "$(Build.SourcesDirectory)"
-  #         resultsDirectory: "${{ parameters.testResultsDirectory }}"
+  # Run tests if enabled
+  - ${{ if eq(parameters.runTests, true) }}:
+      - task: DotNetCoreCLI@2
+        displayName: "Run Tests"
+        inputs:
+          command: "test"
+          projects: "${{ parameters.projectPath }}"
+          arguments: >
+            --configuration ${{ parameters.buildConfiguration }}
+            --no-build
+            --collect "XPlat Code Coverage;Format=cobertura"
+            --settings "$(Build.SourcesDirectory)/backend/CodeCoverage.runsettings"
+          publishTestResults: true
+          testResultsFormat: "VSTest"
+          testResultsFiles: "**/*.trx"
+          testRunTitle: "${{ parameters.projectName }} Tests"
+          workingDirectory: "$(Build.SourcesDirectory)"
+          resultsDirectory: "${{ parameters.testResultsDirectory }}"
 
-  #     - task: PublishCodeCoverageResults@2
-  #       displayName: "Publish Code Coverage"
-  #       inputs:
-  #         summaryFileLocation: "$(Agent.TempDirectory)/**/coverage.cobertura.xml"
-  #         failIfCoverageEmpty: true
-  #       condition: succeededOrFailed()
+      - task: PublishCodeCoverageResults@2
+        displayName: "Publish Code Coverage"
+        inputs:
+          summaryFileLocation: "$(Agent.TempDirectory)/**/coverage.cobertura.xml"
+          failIfCoverageEmpty: true
+        condition: succeededOrFailed()
 
-  # # Publish if enabled
-  # - ${{ if eq(parameters.publishOutput, true) }}:
-  #     - task: DotNetCoreCLI@2
-  #       displayName: "Dotnet Publish ${{ parameters.projectName }}"
-  #       inputs:
-  #         command: "publish"
-  #         projects: "${{ parameters.projectPath }}"
-  #         publishWebProjects: false
-  #         arguments: >
-  #           --configuration ${{ parameters.buildConfiguration }}
-  #           --output $(Build.ArtifactStagingDirectory)/${{ parameters.projectName }}
-  #           --no-restore
-  #           --self-contained false
-  #           /p:PublishReadyToRun=false
-  #           /p:SourceRevisionId=$(Build.SourceVersion)
+  # Publish if enabled
+  - ${{ if eq(parameters.publishOutput, true) }}:
+      - task: DotNetCoreCLI@2
+        displayName: "Dotnet Publish ${{ parameters.projectName }}"
+        inputs:
+          command: "publish"
+          projects: "${{ parameters.projectPath }}"
+          publishWebProjects: false
+          arguments: >
+            --configuration ${{ parameters.buildConfiguration }}
+            --output $(Build.ArtifactStagingDirectory)/${{ parameters.projectName }}
+            --no-restore
+            --self-contained false
+            /p:PublishReadyToRun=false
+            /p:SourceRevisionId=$(Build.SourceVersion)
 
-  #     - publish: "$(Build.ArtifactStagingDirectory)/${{ parameters.projectName }}"
-  #       artifact: "${{ parameters.projectName }}-drop"
-  #       displayName: "Publish Artifact ${{ parameters.projectName }}"
+      - publish: "$(Build.ArtifactStagingDirectory)/${{ parameters.projectName }}"
+        artifact: "${{ parameters.projectName }}-drop"
+        displayName: "Publish Artifact ${{ parameters.projectName }}"
