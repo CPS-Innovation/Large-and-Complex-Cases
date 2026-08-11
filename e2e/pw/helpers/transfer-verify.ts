@@ -12,7 +12,6 @@ import { expect } from "@playwright/test";
 // reuse it; the AAD token is refreshed once on a 401 so a run that outlives the
 // token still recovers.
 let cachedAadToken: string | undefined;
-let cachedEgressToken: string | undefined;
 
 async function getVerifyAadToken(
   config: ReturnType<typeof loadEnvConfig>,
@@ -29,16 +28,22 @@ async function getVerifyAadToken(
   return cachedAadToken;
 }
 
-async function getVerifyEgressToken(
+// Mutable ref rather than a plain string: it is handed to
+// listEgressWorkspaceFilesByFolderId, which writes a refreshed token back into
+// it after a 401. Without that, every call on a long run would start from the
+// same expired token and pay a wasted 401 before refreshing.
+const verifyEgressTokenRef = { value: "" };
+
+async function getVerifyEgressTokenRef(
   config: ReturnType<typeof loadEnvConfig>,
-): Promise<string> {
-  if (!cachedEgressToken) {
-    cachedEgressToken = await authenticateEgress(
+): Promise<{ value: string }> {
+  if (!verifyEgressTokenRef.value) {
+    verifyEgressTokenRef.value = await authenticateEgress(
       config.egressBaseUrl,
       config.egressServiceAccountAuth,
     );
   }
-  return cachedEgressToken;
+  return verifyEgressTokenRef;
 }
 
 export async function verifyNetAppFileSizeByName(
@@ -118,9 +123,14 @@ export async function isFileInEgress(
 
   const files = await listEgressWorkspaceFilesByFolderId(
     config.egressBaseUrl,
-    egressToken ?? (await getVerifyEgressToken(config)),
+    egressToken ?? (await getVerifyEgressTokenRef(config)),
     workspaceId,
     folderId,
+    false,
+    // Enables the 401 -> re-authenticate -> retry path. Long runs (the soak
+    // scenarios take ~an hour) outlive an Egress token, and without this a
+    // 401 returns an empty listing that reads as "the file is gone".
+    config.egressServiceAccountAuth,
   );
 
   return files.some((f) => f.fileName === fileName);
