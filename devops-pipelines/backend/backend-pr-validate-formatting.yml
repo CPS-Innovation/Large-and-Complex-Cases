@@ -1,0 +1,240 @@
+trigger: none
+
+pr:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - backend/*
+
+pool: "LACC PreProd Pool"
+
+variables:
+  - name: dotNetVersion
+    value: "10.x"
+
+jobs:
+  - job: Validate_formatting
+    displayName: "Validate Dotnet Formatting"
+    steps:
+      - checkout: self
+        clean: true
+      
+      - script: |
+          if command -v pwsh &> /dev/null; then
+            echo "PowerShell already installed. Skipping installation."
+          else
+            echo "Installing PowerShell..."
+            bash '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/installPowershell.sh'
+            echo "Powershel version: $(pwsh -v)"
+          fi
+        displayName: "Install PowerShell"
+
+      - task: UseDotNet@2
+        displayName: "Use .NET SDK"
+        inputs:
+          packageType: "sdk"
+          version: $(dotnetVersion)
+
+      - task: PowerShell@2
+        displayName: "Check .NET formatting"
+        inputs:
+          targetType: "inline"
+          script: |
+            $ErrorActionPreference = "Continue"
+
+            Write-Host "Running dotnet format..."
+
+            dotnet format --no-restore
+
+            $formatExitCode = $LASTEXITCODE
+
+            # Capture the changes from dotnet format
+            git diff --no-ext-diff --unified=3 > "$(Build.SourcesDirectory)/formatting.diff"
+
+            $diff = Get-Content "$(Build.SourcesDirectory)/formatting.diff" -Raw
+
+            if ([string]::IsNullOrWhiteSpace($diff)) {
+              Write-Host "No formatting changes required."
+              Write-Host "##vso[task.setvariable variable=formattingRequired]false"
+            }
+            else {
+              Write-Host "Formatting changes are required."
+              Write-Host "##vso[task.setvariable variable=formattingRequired]true"
+
+              Write-Host "Formatting diff:"
+              Write-Host $diff
+            }
+
+            if ($formatExitCode -ne 0) {
+              Write-Error "dotnet format failed with exit code $formatExitCode."
+              exit $formatExitCode
+            }
+
+      # Create/update/resolve the PR comment.
+      - task: PowerShell@2
+        displayName: "Update PR formatting comment"
+        condition: always()
+        env:
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+        inputs:
+          targetType: "inline"
+          script: |
+            $ErrorActionPreference = "Stop"
+
+            # This job is also potentially usable outside a PR.
+            if ("$(Build.Reason)" -ne "PullRequest") {
+              Write-Host "Not a PR build. Skipping PR comment."
+              exit 0
+            }
+
+            $collectionUri = "$(System.CollectionUri)"
+            $project = "$(System.TeamProject)"
+            $repositoryId = "$(Build.Repository.ID)"
+            $pullRequestId = "$(System.PullRequest.PullRequestId)"
+
+            $baseUrl = "$collectionUri$project/_apis/git/repositories/$repositoryId/pullRequests/$pullRequestId/threads"
+
+            $headers = @{
+              Authorization = "Bearer $env:SYSTEM_ACCESSTOKEN"
+              "Content-Type" = "application/json"
+            }
+
+            $marker = "<!-- dotnet-format-validation -->"
+
+            $diffPath = "$(Build.SourcesDirectory)/formatting.diff"
+
+            $formattingRequired = "$(formattingRequired)"
+
+            # Get existing PR threads.
+            $threads = Invoke-RestMethod `
+              -Uri "$baseUrl`?api-version=7.1" `
+              -Headers $headers `
+              -Method Get
+
+            $existingThread = $null
+
+            foreach ($thread in $threads.value) {
+              foreach ($comment in $thread.comments) {
+                if ($comment.content -like "*$marker*") {
+                  $existingThread = $thread
+                  break
+                }
+              }
+
+              if ($existingThread) {
+                break
+              }
+            }
+
+            # Formatting is valid.
+            if ($formattingRequired -ne "true") {
+
+              if ($existingThread) {
+                Write-Host "Formatting is now valid. Resolving existing PR thread $($existingThread.id)."
+
+                $body = @{
+                  status = "fixed"
+                } | ConvertTo-Json -Depth 10
+
+                Invoke-RestMethod `
+                  -Uri "$baseUrl/$($existingThread.id)?api-version=7.1" `
+                  -Headers $headers `
+                  -Method Patch `
+                  -Body $body | Out-Null
+              }
+              else {
+                Write-Host "Formatting is valid and there is no existing PR thread."
+              }
+
+              exit 0
+            }
+
+            # Formatting is invalid.
+            $diff = Get-Content $diffPath -Raw
+
+            $content = @"
+            $marker
+
+            ## .NET formatting changes required
+
+            The code in this PR does not match the repository's configured .NET formatting rules.
+
+            Please run:
+
+            ````text
+            dotnet format
+            ````
+
+            and commit the resulting changes.
+
+            The following changes would be made by `dotnet format`:
+
+            ````diff
+            $diff
+            ````
+            "@
+
+            # Update the existing thread if one exists.
+            if ($existingThread) {
+
+              Write-Host "Updating existing PR formatting thread $($existingThread.id)."
+
+              $commentId = $existingThread.comments[0].id
+
+              $commentBody = @{
+                content = $content
+              } | ConvertTo-Json -Depth 10
+
+              Invoke-RestMethod `
+                -Uri "$baseUrl/$($existingThread.id)/comments/$commentId`?api-version=7.1" `
+                -Headers $headers `
+                -Method Patch `
+                -Body $commentBody | Out-Null
+
+              # Make sure the thread is active again if it was previously resolved.
+              $threadBody = @{
+                status = "active"
+              } | ConvertTo-Json -Depth 10
+
+              Invoke-RestMethod `
+                -Uri "$baseUrl/$($existingThread.id)?api-version=7.1" `
+                -Headers $headers `
+                -Method Patch `
+                -Body $threadBody | Out-Null
+            }
+            else {
+              Write-Host "Creating new PR formatting thread."
+
+              $body = @{
+                comments = @(
+                  @{
+                    parentCommentId = 0
+                    content = $content
+                    commentType = 1
+                  }
+                )
+                status = "active"
+              } | ConvertTo-Json -Depth 10
+
+              Invoke-RestMethod `
+                -Uri "$baseUrl`?api-version=7.1" `
+                -Headers $headers `
+                -Method Post `
+                -Body $body | Out-Null
+            }
+
+      # Fail the job after the PR comment has been created/updated.
+      - task: PowerShell@2
+        displayName: "Fail if formatting is invalid"
+        condition: always()
+        inputs:
+          targetType: "inline"
+          script: |
+            if ("$(formattingRequired)" -eq "true") {
+              Write-Error "Formatting changes are required. See the PR comment for details."
+              exit 1
+            }
+
+            Write-Host "Formatting validation passed."
