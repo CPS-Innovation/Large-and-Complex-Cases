@@ -73,6 +73,7 @@ stages:
               useLocalNuGet: true
               publishOutput: false
               runTests: true
+              checkFormatting: true
               testResultsDirectory: $(testResultsDirectory)
 
       - ${{ if or(eq(parameters.buildMainApi, true), eq(parameters.buildDB, true)) }}:
