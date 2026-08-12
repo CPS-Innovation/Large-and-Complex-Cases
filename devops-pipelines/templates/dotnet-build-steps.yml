@@ -2,7 +2,7 @@ parameters:
   projectPath: ""
   projectName: ""
   buildConfiguration: "Release"
-  dotNetVersion: "8.x"
+  dotNetVersion: "10.x"
   useLocalNuGet: false
   nugetArtifact: "localnuget"
   nugetArtifactDownloadPath: "$(Build.SourcesDirectory)/localnuget"
@@ -75,27 +75,22 @@ steps:
         inputs:
           targetType: "inline"
           script: |
-            echo "=== SDK ==="
-            dotnet --version
+            echo "=== Git line ending configuration ==="
+            git config --get core.autocrlf || true
+            git config --get core.eol || true
 
-            echo "=== dotnet format version ==="
-            dotnet format --version
+            echo "=== File type ==="
+            file backend/CPS.ComplexCases.API/Context/RequestContext.cs
+            file backend/CPS.ComplexCases.DDEI.WireMock/Mappings/DDEIMappings.cs
 
-            echo "=== Git HEAD ==="
-            git rev-parse HEAD
-
-            echo "=== RequestContext ==="
-            sed -n '1,40p' ./backend/CPS.ComplexCases.API/Context/RequestContext.cs
-
-            echo "=== DDEIMappings ==="
-            sed -n '70,85p' ./backend/CPS.ComplexCases.DDEI.WireMock/Mappings/DDEIMappings.cs
+            echo "=== Git attributes ==="
+            git check-attr text eol -- \
+              backend/CPS.ComplexCases.API/Context/RequestContext.cs \
+              backend/CPS.ComplexCases.DDEI.WireMock/Mappings/DDEIMappings.cs
 
       - bash: |
-          dotnet format backend/CPS.ComplexCases.sln \
-            --no-restore \
-            --verify-no-changes \
-            --verbosity diagnostic
-        displayName: "Check Formatting"
+           dotnet list backend\CPS.ComplexCases.sln package --include-transitive | Select-String "CodeAnalysis"
+        displayName: "List packages"
 
       # - task: Bash@3
       #   displayName: "Check Formatting"
