@@ -39,7 +39,7 @@ jobs:
           else 
             echo "Installing PowerShell..."
             bash '$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/installPowershell.sh'
-            echo "Powershel version: $(pwsh -v)"
+            echo "PowerShell version: $(pwsh -v)"
           fi
         displayName: "Install PowerShell"
 
