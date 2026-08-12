@@ -81,20 +81,14 @@ steps:
             echo "=== dotnet format version ==="
             dotnet format --version
 
-            echo "=== Working directory ==="
-            pwd
-
-            echo "=== EditorConfig files ==="
-            find .. -name ".editorconfig" -print
-
             echo "=== Git HEAD ==="
             git rev-parse HEAD
 
             echo "=== RequestContext ==="
-            sed -n '1,40p' CPS.ComplexCases.API/Context/RequestContext.cs
+            sed -n '1,40p' ./backend/CPS.ComplexCases.API/Context/RequestContext.cs
 
             echo "=== DDEIMappings ==="
-            sed -n '70,85p' CPS.ComplexCases.DDEI.WireMock/Mappings/DDEIMappings.cs
+            sed -n '70,85p' ./backend/CPS.ComplexCases.DDEI.WireMock/Mappings/DDEIMappings.cs
 
       - bash: |
           dotnet format backend/CPS.ComplexCases.sln \
