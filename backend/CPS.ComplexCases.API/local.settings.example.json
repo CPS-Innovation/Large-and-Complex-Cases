@@ -19,7 +19,7 @@
     "NetAppOptions__Url": "https://<NetApp URL>/",
     "NetAppOptions__ClusterUrl": "https://<NetApp Cluster URL>/",
     "NetAppOptions__RegionName": "eu-west-1",
-    "NetAppOptions__SessionDurationSeconds": "3600",
+    "NetAppOptions__SessionDurationSeconds": "14400",
     "NetAppOptions__S3ServiceUuid": "<Your NetApp S3 service UUID>",
     "NetAppOptions__PepperVersion": "v1",
     "NetAppOptions__SearchMaxSubstringScanItems": "10000",
