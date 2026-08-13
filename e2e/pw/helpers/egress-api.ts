@@ -20,6 +20,41 @@ export async function authenticateEgress(
   return Buffer.from(data.token, "utf-8").toString("base64");
 }
 
+async function fetchWithTokenRefresh(
+  baseUrl: string,
+  serviceAccountAuth: string,
+  tokenRef: { value: string },
+  url: string,
+  init: RequestInit
+): Promise<Response> {
+  let response = await fetch(url, {
+    ...init,
+    headers: {
+      ...init.headers,
+      Authorization: `Basic ${tokenRef.value}`,
+    },
+  });
+
+  if (response.status === 401) {
+    console.log("Token expired, obtaining a new Egress token...");
+
+    tokenRef.value = await authenticateEgress(
+      baseUrl,
+      serviceAccountAuth
+    );
+
+    response = await fetch(url, {
+      ...init,
+      headers: {
+        ...init.headers,
+        Authorization: `Basic ${tokenRef.value}`,
+      },
+    });
+  }
+
+  return response;
+}
+
 export interface EgressWorkspaceInfo {
   id: string;
   name: string;
@@ -229,19 +264,24 @@ export async function addUserToWorkspace(
 export async function uploadFile(
   baseUrl: string,
   token: string,
+  serviceAccountAuth: string,
   workspaceId: string,
   fileSizeBytes: number,
   fileName: string,
-  folderPath: string = "4. Served Evidence/",
-  chunkSizeMB: number = 5
-): Promise<UploadedFile> {
+  options: { folderPath?: string; chunkSizeMB?: number } = {}
+): Promise<string> {
+  const { folderPath = "4. Served Evidence/", chunkSizeMB = 5 } = options;
+  const tokenRef = { value: token };
+
   // Step 1: Initiate upload
-  const initiateResponse = await fetch(
+  const initiateResponse = await fetchWithTokenRefresh(
+    baseUrl,
+    serviceAccountAuth,
+    tokenRef,
     `${baseUrl}/api/v1/workspaces/${workspaceId}/uploads`,
     {
       method: "POST",
       headers: {
-        Authorization: `Basic ${token}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -278,12 +318,14 @@ export async function uploadFile(
 
     let uploaded = false;
     for (let attempt = 0; attempt < 3; attempt++) {
-      const chunkResponse = await fetch(
+      const chunkResponse = await fetchWithTokenRefresh(
+        baseUrl,
+        serviceAccountAuth,
+        tokenRef,
         `${baseUrl}/api/v1/workspaces/${workspaceId}/uploads/${uploadId}/`,
         {
           method: "PATCH",
           headers: {
-            Authorization: `Basic ${token}`,
             "Content-Range": `bytes ${offset}-${end - 1}/${fileSizeBytes}`,
           },
           body: formData,
@@ -316,7 +358,10 @@ export async function uploadFile(
   }
 
   // Step 3: Complete upload
-  const completeResponse = await fetch(
+  const completeResponse = await fetchWithTokenRefresh(
+      baseUrl,
+      serviceAccountAuth,
+      tokenRef,
     `${baseUrl}/api/v1/workspaces/${workspaceId}/uploads/${uploadId}/`,
     {
       method: "PUT",
@@ -335,14 +380,65 @@ export async function uploadFile(
     );
   }
 
-  // Egress returns the file record on completion. Fall back to uploadId if
-  // the response shape changes so callers that need an id for teardown
-  // always get something to work with.
-  const completeData = await completeResponse.json().catch(() => ({}));
-  const fileId: string = completeData?.id ?? uploadId;
+  console.log(`  Upload complete: ${uploadId}`);
+  return uploadId;
+}
 
-  console.log(`  Upload complete: ${fileId}`);
-  return { id: fileId, fileName, fileSize: fileSizeBytes };
+export async function getUploadedFile(
+  baseUrl: string,
+  token: string,
+  serviceAccountAuth: string,
+  workspaceId: string,
+  uploadId: string,
+  {
+    timeoutMs = 60000,
+    retryDelay = 1000, 
+  }: {
+    timeoutMs?: number,
+    retryDelay?: number,
+  } = {}
+): Promise<UploadedFile>{
+  const tokenRef = { value: token };
+
+  const start = Date.now();
+
+  while (Date.now() - start < timeoutMs) {
+    const response = await fetchWithTokenRefresh(
+        baseUrl,
+        serviceAccountAuth,
+        tokenRef,
+      `${baseUrl}/api/v1/workspaces/${workspaceId}/uploads/${uploadId}?view=full`,
+      {
+        headers: {
+          Authorization: `Basic ${token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        ` Failed to get upload status (${response.status})`
+      );
+    }
+
+    const status = await response.json();
+
+    if (status.file_id) {
+      console.log(` Upload complete. File ID found: ${status.file_id}`)
+      return {
+        fileId: status.file_id,
+        fileName: status.file_name,
+        fileSize: status.file_size,
+        parentFolderId: status.parent_folder_id
+      };
+    }
+
+    await new Promise(r => setTimeout(r, retryDelay));
+  }
+
+  throw new Error(
+    ` Timed out waiting for upload ${uploadId}`
+  );
 }
 
 /**
@@ -365,55 +461,73 @@ export async function uploadFile(
  * Returns ids of leaf files only — folders are skipped. Best-effort: on
  * any HTTP failure logs a warning and returns [].
  */
+/**
+ * Lists files in a workspace folder.
+ *
+ * Egress tokens expire well inside a long run (the soak scenarios run for
+ * ~an hour), and an expired token here is particularly harmful: the 401 path
+ * below returns an empty list, which callers read as "the file is not there".
+ * Pass `serviceAccountAuth` to route the request through
+ * `fetchWithTokenRefresh` so a 401 re-authenticates and retries instead.
+ *
+ * `token` accepts a mutable `{ value }` ref as well as a plain string. Pass a
+ * ref and the refreshed token is written back, so a caller caching the token
+ * across many calls refreshes once rather than eating a 401 on every call.
+ */
 export async function listEgressWorkspaceFilesByFolderId(
   baseUrl: string,
-  token: string,
+  token: string | { value: string },
   workspaceId: string,
   folderId: string,
-  expectFile: boolean = false
+  expectFile: boolean = false,
+  serviceAccountAuth?: string
 ): Promise<{ id: string; fileName: string }[]> {
   const pageSize = 50;
   const maxPages = 50;
   const maxAttempts = expectFile ? 10 : 1;
   const retryDelayMs = 3000;
+  const tokenRef = typeof token === "string" ? { value: token } : token;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const results: { id: string; fileName: string }[] = [];
-    try {
-      for (let page = 0; page < maxPages; page++) {
-        const skip = page * pageSize;
-        const url = `${baseUrl}/api/v1/workspaces/${workspaceId}/files?view=full&skip=${skip}&limit=${pageSize}&folder=${encodeURIComponent(folderId)}`;
-        const response = await fetch(url, {
-          headers: { Authorization: `Basic ${token}` },
-        });
-        if (!response.ok) {
-          const text = await response.text();
-          console.warn(
-            `  [teardown] listEgressWorkspaceFilesByFolderId ${folderId} failed (${response.status}): ${text}`
-          );
-          return results;
-        }
-
-        const body: {
-          data?: { id: string; filename: string; is_folder?: boolean }[];
-        } = await response.json();
-        const items = body.data ?? [];
-        if (items.length === 0) break;
-
-        for (const item of items) {
-          if (!item.is_folder) {
-            results.push({ id: item.id, fileName: item.filename });
-          }
-        }
-
-        if (items.length < pageSize) break;
+    for (let page = 0; page < maxPages; page++) {
+      const skip = page * pageSize;
+      const url = `${baseUrl}/api/v1/workspaces/${workspaceId}/files?view=full&skip=${skip}&limit=${pageSize}&folder=${encodeURIComponent(folderId)}`;
+      const response = serviceAccountAuth
+        ? await fetchWithTokenRefresh(
+            baseUrl,
+            serviceAccountAuth,
+            tokenRef,
+            url,
+            {}
+          )
+        : await fetch(url, {
+            headers: { Authorization: `Basic ${tokenRef.value}` },
+          });
+      if (!response.ok) {
+        const text = await response.text();
+        // Returning [] here would read as "file not in the folder", turning
+        // an auth failure into a passing deletion assertion. Teardown
+        // catches this itself.
+        throw new Error(
+          `listEgressWorkspaceFilesByFolderId failed for folder ${folderId} ` +
+            `(${response.status}): ${text.slice(0, 300)}`
+        );
       }
-    } catch (err) {
-      console.warn(
-        `  [teardown] listEgressWorkspaceFilesByFolderId threw:`,
-        err
-      );
-      return results;
+
+      const body: {
+        data?: { id: string; filename: string; is_folder?: boolean }[];
+      } = await response.json();
+      const items = body.data ?? [];
+      if (items.length === 0) break;
+
+      for (const item of items) {
+        if (!item.is_folder) {
+          results.push({ id: item.id, fileName: item.filename });
+        }
+      }
+
+      if (items.length < pageSize) break;
     }
 
     if (results.length > 0 || !expectFile) return results;
@@ -493,4 +607,3 @@ export async function deleteWorkspace(
     );
   }
 }
-

@@ -44,6 +44,7 @@ var host = new HostBuilder()
             })
             .ConfigureFunctionsApplicationInsights();
         services.AddApplicationInsightsTelemetryProcessor<AzureSdkTraceFilter>();
+        services.AddApplicationInsightsTelemetryProcessor<HealthCheckTelemetryFilter>();
         services.Configure<LoggerFilterOptions>(options =>
         {
             // See: https://learn.microsoft.com/en-us/azure/azure-functions/dotnet-isolated-process-guide?tabs=windows#managing-log-levels

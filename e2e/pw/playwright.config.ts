@@ -67,6 +67,13 @@ export default defineConfig({
     {
       name: "default-mode-tests",
       testMatch: "**/*-default.spec.ts",
+      testIgnore: "**/egress-to-netapp-move-large-default.spec.ts",
+      use: { ...devices["Desktop Chrome"] },
+    },
+
+    {
+      name: "move-large-test",
+      testMatch: "**/egress-to-netapp-move-large-default.spec.ts",
       use: { ...devices["Desktop Chrome"] },
     },
 
@@ -79,5 +86,6 @@ export default defineConfig({
       testMatch: "**/seed-netapp-fixture.setup.ts",
       use: { ...devices["Desktop Chrome"] },
     },
+
   ],
 });

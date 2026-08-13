@@ -1,29 +1,17 @@
+import { useContext } from "react";
 import { BackLink } from "../govuk";
 import { Link } from "react-router";
-import { useLocation } from "react-router-dom";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
-import { EgressConnectRouteState } from "../../common/types/EgressConnectRouteState";
-import { EgressConnectFailureRouteState } from "../../common/types/EgressConnectFailureRouteState";
+import { MainStateContext } from "../../providers/MainStateProvider";
 import styles from "./EgressConnectFailurePage.module.scss";
 
 const EgressConnectFailurePage: React.FC = () => {
-  const {
-    state,
-  }: {
-    state: EgressConnectFailureRouteState;
-  } = useLocation();
-  const { backLinkUrl, searchQueryString, isNetAppConnected } = state;
-  const backLinkPayload: EgressConnectRouteState = {
-    isRouteValid: true,
-    searchQueryString,
-    isNetAppConnected,
-  };
+  const { state } = useContext(MainStateContext);
+  const { backLinkUrl } = state.appData.connectEgressFailurePage;
 
   return (
     <div>
-      <BackLink to={backLinkUrl} state={backLinkPayload}>
-        Back
-      </BackLink>
+      <BackLink to={backLinkUrl}>Back</BackLink>
 
       <PageContentWrapper>
         <div className={styles.contentWrapper}>

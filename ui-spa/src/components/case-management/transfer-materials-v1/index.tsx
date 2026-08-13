@@ -46,8 +46,9 @@ type TransferMaterialsV1PageProps = {
   caseId: string;
   operationName: string;
   egressWorkspaceId: string;
+  egressWorkspaceName: string;
   netAppPath: string;
-  activeTransferId: string | null;
+  activeTransferId: string;
   urn: string;
   transferEgressFolderPathInitialValue: string | null;
   transferNetAppFolderPathInitialValue: string | null;
@@ -60,6 +61,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
   caseId,
   operationName,
   egressWorkspaceId,
+  egressWorkspaceName,
   netAppPath,
   activeTransferId,
   urn,
@@ -67,7 +69,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
   transferEgressFolderPathInitialValue,
   transferNetAppFolderPathInitialValue,
 }) => {
-  const { state } = useContext(MainStateContext);
+  const { state, dispatch } = useContext(MainStateContext);
   const { appData: { featureFlags } = {} } = state;
   const navigate = useNavigate();
   const { username } = useUserDetails();
@@ -91,7 +93,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
       currentFolderPath: string,
       homeName: string,
       rootPath: string,
-      operationName: string,
+      homeLabel: string,
     ) => {
       const replacedString = currentFolderPath.replace(rootPath, "");
       const parts = replacedString.split("/").filter(Boolean);
@@ -102,7 +104,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
       }));
       const withHome = [
         {
-          folderName: `${homeName}: ${operationName}`,
+          folderName: `${homeName}: ${homeLabel}`,
           folderPath: rootPath,
         },
         ...result,
@@ -119,16 +121,21 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
     transferEgressFolderPathInitialValue ?? "",
   );
   const egressPathFolders = useMemo(() => {
-    return getPathFolders(egressFolderPath, "Egress", "", operationName);
-  }, [egressFolderPath, getPathFolders, operationName]);
+    return getPathFolders(
+      egressFolderPath,
+      "Egress",
+      "",
+      egressWorkspaceName,
+    );
+  }, [egressFolderPath, getPathFolders, egressWorkspaceName]);
   const netAppPathFolders = useMemo(() => {
     return getPathFolders(
       netAppFolderPath,
       "Shared Drive",
       netAppPath,
-      operationName,
+      getFolderNameFromPath(netAppPath),
     );
-  }, [netAppFolderPath, netAppPath, getPathFolders, operationName]);
+  }, [netAppFolderPath, netAppPath, getPathFolders]);
 
   const [selectedSourceFoldersOrFiles, setSelectedSourceFoldersOrFiles] =
     useState<string[]>([]);
@@ -498,18 +505,27 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
   };
 
   const handleTransferAction = (type: "copy" | "move") => {
-    navigate(`/case/${caseId}/case-management/transfer-destination-page`, {
-      state: {
-        isRouteValid: true,
+    dispatch({
+      type: "SET_TRANSFER_DESTINATION_PAGE",
+      payload: {
         transferSource: transferSource,
         selectedTransferAction: type,
         sourcePaths: getTransferSourcePath(),
         egressWorkspaceId,
-        caseId: Number.parseInt(caseId),
+        egressWorkspaceName,
         netAppPath,
         operationName,
       },
     });
+    dispatch({
+      type: "SET_TRANSFER_PAGE",
+      payload: {
+        transferSource: transferSource,
+        transferSourceEgressFolderPath: egressFolderPath,
+        transferSourceNetAppFolderPath: netAppFolderPath,
+      },
+    });
+    navigate(`/case/${caseId}/case-management/transfer-destination-page`);
   };
 
   const handleDisconnectSharedDrive = async () => {
@@ -650,13 +666,14 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
         response.status === "Failed"
       ) {
         setTransferStatus("completed-with-errors");
-        navigate(`/case/${caseId}/case-management/transfer-errors`, {
-          state: {
-            isRouteValid: true,
+        dispatch({
+          type: "SET_TRANSFER_ERROR_PAGE",
+          payload: {
             transferId: transferId,
             failedItems: response.failedItems,
           },
         });
+        navigate(`/case/${caseId}/case-management/transfer-errors`);
         if (response.userName === username && transferId)
           handleFileTransferClear(transferId);
         setTransferId("");
@@ -673,6 +690,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
       transferSource,
       egressRefetch,
       netAppRefetch,
+      dispatch,
     ],
   );
   const isComponentUnmounted = useCallback(() => {
@@ -780,7 +798,11 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
                   toggleTransferDirection={toggleTransferDirection}
                   disableControls={!selectedSourceFoldersOrFiles.length}
                   onCopy={() => handleTransferAction("copy")}
-                  onMove={() => handleTransferAction("move")}
+                  onMove={
+                    featureFlags?.transferMove
+                      ? () => handleTransferAction("move")
+                      : undefined
+                  }
                 />
                 {featureFlags?.disconnectSharedDrive && (
                   <Button
@@ -821,7 +843,11 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
                 toggleTransferDirection={toggleTransferDirection}
                 disableControls={!selectedSourceFoldersOrFiles.length}
                 onCopy={() => handleTransferAction("copy")}
-                onMove={() => handleTransferAction("move")}
+                onMove={
+                    featureFlags?.transferMove
+                      ? () => handleTransferAction("move")
+                      : undefined
+                  }
               />
             </div>
           </div>

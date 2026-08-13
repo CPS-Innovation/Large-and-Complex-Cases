@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback, useMemo } from "react";
 import { Radios, Button, ErrorSummary } from "../../govuk";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { disconnectNetAppFolder } from "../../../apis/gateway-api";
 import styles from "./DisconnectSharedDriveConfirmationPage.module.scss";
 
@@ -8,16 +8,9 @@ type GeneralRadioValue = "yes" | "no" | "";
 
 const DisconnectSharedDriveConfirmationPage = () => {
   const navigate = useNavigate();
-  const {
-    state,
-  }: {
-    state?: {
-      caseId: number;
-      urn: string;
-    };
-  } = useLocation();
 
-  const { caseId, urn } = state || {};
+  const { caseId } = useParams() as { caseId: string };
+
   type ErrorText = {
     errorSummaryText: string;
     inputErrorText?: string;
@@ -94,7 +87,7 @@ const DisconnectSharedDriveConfirmationPage = () => {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!caseId || !urn) return;
+    if (!caseId) return;
 
     if (!validateFormData()) return;
 
@@ -104,11 +97,10 @@ const DisconnectSharedDriveConfirmationPage = () => {
     }
     setDisableButtons(true);
     try {
-      const response = await disconnectNetAppFolder(caseId);
+      const response = await disconnectNetAppFolder(parseInt(caseId));
       if (!response.ok) {
         navigate(
           `/case/${caseId}/case-management/disconnect-shared-drive-failure`,
-          { state: { caseId, urn, isRouteValid: true } },
         );
         return;
       }
@@ -116,17 +108,13 @@ const DisconnectSharedDriveConfirmationPage = () => {
       console.error(e);
       navigate(
         `/case/${caseId}/case-management/disconnect-shared-drive-failure`,
-        { state: { caseId, urn, isRouteValid: true } },
       );
       return;
     } finally {
       setDisableButtons(false);
     }
 
-    navigate(
-      `/case/${caseId}/case-management/disconnect-shared-drive-success`,
-      { state: { urn, isRouteValid: true } },
-    );
+    navigate(`/case/${caseId}/case-management/disconnect-shared-drive-success`);
   };
 
   return (

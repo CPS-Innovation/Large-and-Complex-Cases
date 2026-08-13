@@ -28,7 +28,7 @@ variables:
   - name: NetAppOptionsPepperVersion
     value: "v1"
   - name: NetAppOptionsSessionDurationSeconds
-    value: "3600"
+    value: "14400"
   - name: RateLimitingIntervalInSeconds
     value: "60"
   - name: RateLimitingPermitLimit

@@ -7,6 +7,7 @@ import {
   FEATURE_FLAG_DISCONNECT_SHARED_DRIVE,
   PRIVATE_BETA_FEATURE_USER_GROUP2,
   FEATURE_FLAG_TRANSFER_MATERIALS_V1,
+  FEATURE_FLAG_MAINTENANCE_MODE,
 } from "../../config";
 import { useUserDetails } from "../../auth";
 import { FeatureFlagData } from "../types/FeatureFlagData";
@@ -82,22 +83,19 @@ export const useUserGroupsFeatureFlag = (): FeatureFlagData | null => {
         userDetails.username,
         FEATURE_FLAG_DISCONNECT_SHARED_DRIVE,
         searchParams?.get("disconnect-shared-drive"),
-        {
-          groups: groups,
-          groupKey: PRIVATE_BETA_FEATURE_USER_GROUP2,
-        },
       ),
       transferMaterialsV1: shouldShowFeature(
         userDetails.username,
         FEATURE_FLAG_TRANSFER_MATERIALS_V1,
         searchParams?.get("transfer-materials-v1"),
-        {
-          groups: groups,
-          groupKey: PRIVATE_BETA_FEATURE_USER_GROUP2,
-        },
+      ),
+      maintenanceMode: shouldShowFeature(
+        userDetails.username,
+        FEATURE_FLAG_MAINTENANCE_MODE,
+        searchParams?.get("maintenance-mode"),
       ),
     };
-  }, [groups, searchParams, userDetails.username]);
+  }, [groups, searchParams, account, userDetails.username]);
 
   return useMemo(() => getFeatureFlags(), [getFeatureFlags]);
 };

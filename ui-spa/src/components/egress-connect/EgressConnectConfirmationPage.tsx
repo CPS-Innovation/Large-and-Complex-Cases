@@ -1,46 +1,32 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { Button, Radios, BackLink } from "../govuk";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { connectEgressWorkspace } from "../../apis/gateway-api";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
-import { SharedDriveConnectRouteState } from "../../common/types/SharedDriveConnectRouteState";
-import { EgressConnectConfirmationRouteState } from "../../common/types/EgressConnectConfirmationRouteState";
-import { EgressConnectRouteState } from "../../common/types/EgressConnectRouteState";
-import { EgressConnectFailureRouteState } from "../../common/types/EgressConnectFailureRouteState";
 import { getUrlSearchParam } from "../../common/utils/getUrlSearchParam";
+import { MainStateContext } from "../../providers/MainStateProvider";
 import styles from "./EgressConnectConfirmationPage.module.scss";
 
 const EgressConnectConfirmationPage: React.FC = () => {
+  const { state, dispatch } = useContext(MainStateContext);
   const {
-    state,
-  }: {
-    state: EgressConnectConfirmationRouteState;
-  } = useLocation();
-
-  const {
-    caseId,
     backLinkUrl,
     selectedWorkspace,
     searchQueryString,
     isNetAppConnected,
-  } = state;
+  } = state.appData.egressConnectConfirmationPage;
+  const { caseId } = useParams() as { caseId: string };
   const [formValue, setFormValue] = useState("yes");
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (formValue === "no" && backLinkUrl) {
-      navigate(backLinkUrl, {
-        state: {
-          isRouteValid: true,
-          searchQueryString,
-          isNetAppConnected,
-        },
-      });
+      navigate(backLinkUrl);
       return;
     }
     try {
-      if (selectedWorkspace?.id && caseId) {
+      if (selectedWorkspace.id && caseId) {
         await connectEgressWorkspace({
           workspaceId: selectedWorkspace.id,
           workspaceName: selectedWorkspace.name,
@@ -48,16 +34,15 @@ const EgressConnectConfirmationPage: React.FC = () => {
         });
 
         if (!isNetAppConnected) {
-          const payload: SharedDriveConnectRouteState = {
-            isRouteValid: true,
-            searchQueryString: searchQueryString,
-            netappRootFolderPath: "",
-          };
+          dispatch({
+            type: "SET_SHARED_DRIVE_CONNECT_PAGE",
+            payload: {
+              searchQueryString,
+              netappRootFolderPath: "",
+            },
+          });
           navigate(
             `/case/${caseId}/netapp-connect?${getUrlSearchParam("operation-name", selectedWorkspace.name)}`,
-            {
-              state: payload,
-            },
           );
           return;
         }
@@ -65,29 +50,18 @@ const EgressConnectConfirmationPage: React.FC = () => {
       }
     } catch (error) {
       if (error) {
-        const payload: EgressConnectFailureRouteState = {
-          isRouteValid: true,
-          backLinkUrl,
-          searchQueryString,
-          isNetAppConnected,
-        };
-        navigate(`/case/${caseId}/egress-connect/error`, {
-          state: payload,
+        dispatch({
+          type: "SET_EGRESS_CONNECT_FAILURE_PAGE",
+          payload: { backLinkUrl },
         });
+        navigate(`/case/${caseId}/egress-connect/error`);
       }
     }
   };
 
-  const backLinkPayload: EgressConnectRouteState = {
-    isRouteValid: true,
-    searchQueryString,
-    isNetAppConnected,
-  };
   return (
     <div className={styles.confirmationWrapper}>
-      <BackLink to={backLinkUrl} state={backLinkPayload}>
-        Back
-      </BackLink>
+      <BackLink to={backLinkUrl}>Back</BackLink>
       <PageContentWrapper>
         <form onSubmit={handleSubmit}>
           <Radios
