@@ -120,14 +120,15 @@ jobs:
             -ExcludePatterns "lcc-e2e-fixture-source"
             -Force
 
-      - task: PowerShell@2
-        displayName: "Clear ExistingCaseAutomation Egress folder"
-        condition: succeededOrFailed()
-        inputs:
-          filePath: "$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/test-automation-cleanup/Clear-EgressFolder.ps1"
-          arguments: >
-            -BaseUrl "$(EgressOptionsUrl)"
-            -ServiceAccountAuth "$(EgressServiceAccountAuth)"
-            -WorkspaceId "$(E2eEgressWorkspaceId)"
-            -FolderName "1. ABEs for Transcript"
-            -Force
+      # # Egress cleanup disabled to investigate failed post-move delete from source
+      # - task: PowerShell@2
+      #   displayName: "Clear ExistingCaseAutomation Egress folder"
+      #   condition: succeededOrFailed()
+      #   inputs:
+      #     filePath: "$(System.DefaultWorkingDirectory)/devops-pipelines/scripts/test-automation-cleanup/Clear-EgressFolder.ps1"
+      #     arguments: >
+      #       -BaseUrl "$(EgressOptionsUrl)"
+      #       -ServiceAccountAuth "$(EgressServiceAccountAuth)"
+      #       -WorkspaceId "$(E2eEgressWorkspaceId)"
+      #       -FolderName "1. ABEs for Transcript"
+      #       -Force
