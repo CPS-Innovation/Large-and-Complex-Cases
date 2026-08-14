@@ -15,7 +15,7 @@ Tick what applies before you raise. Delete anything that doesn't.
 - [ ] No leftover debug logging or commented-out code
 
 ## Code Quality
-- [ ] All commits ran with pre-commit hooks enabled
+- [ ] Pre-commit hooks were run for all commits in this PR
 
 ## Easy to miss (a green pipeline won't flag these)
 - [ ] One logical change, not a pile of unrelated stuff
