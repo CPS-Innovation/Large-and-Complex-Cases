@@ -1,16 +1,15 @@
 
 using System.Net;
 using System.Net.Http.Headers;
+using CPS.ComplexCases.Common.Extensions;
+using CPS.ComplexCases.Common.Resilience;
 using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
 using CPS.ComplexCases.DDEI.Mappers;
 using CPS.ComplexCases.DDEI.Services;
-using CPS.ComplexCases.Common.Resilience;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Polly;
 
 namespace CPS.ComplexCases.DDEI.Extensions;
 
@@ -30,9 +29,28 @@ public static class IServiceCollectionExtension
   {
     services.Configure<DDEIOptions>(configuration.GetSection(nameof(DDEIOptions)));
     services.AddTransient<IDdeiArgFactory, DdeiArgFactory>();
+
+    // A 404 is retried (MDS occasionally returns one transiently) but is not a health signal, so it is
+    // deliberately excluded from the breaker. Connection failures are also retried for this service.
+    var configureResilience = ResiliencePipelineExtensions.ConfigureStandardResilience(
+        "CPS.ComplexCases.DDEI.CircuitBreaker",
+        new HttpResilienceOptions
+        {
+          ServiceName = "MDS (DDEI)",
+          RetryAttempts = RetryAttempts,
+          FirstRetryDelay = TimeSpan.FromSeconds(FirstRetryDelaySeconds),
+          CircuitBreakerFailureThreshold = CircuitBreakerFailureThreshold,
+          CircuitBreakerSamplingDuration = TimeSpan.FromSeconds(CircuitBreakerSamplingDurationSeconds),
+          CircuitBreakerMinimumThroughput = CircuitBreakerMinimumThroughput,
+          CircuitBreakerDurationOfBreak = TimeSpan.FromSeconds(CircuitBreakerDurationOfBreakSeconds),
+          ConcurrencyLimit = 0,
+          RetryOnConnectionFailure = true,
+          AdditionalRetryableStatusCodes = [HttpStatusCode.NotFound],
+        });
+
     services.AddHttpClient<IDdeiClient, DdeiClient>(AddDdeiClient)
       .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-      .AddResiliencePolicyHandler(GetResiliencePolicy);
+      .AddResilienceHandler("ddei-resilience", configureResilience);
     services.AddTransient<IDdeiRequestFactory, DdeiRequestFactory>();
     services.AddTransient<ICaseDetailsMapper, CaseDetailsMapper>();
     services.AddTransient<IAreasMapper, AreasMapper>();
@@ -51,34 +69,5 @@ public static class IServiceCollectionExtension
     {
       client.DefaultRequestHeaders.Add(DDEIOptions.DevtunnelTokenKey, opts.DevtunnelToken);
     }
-  }
-
-  // Retry is kept outermost so a retry attempt re-enters the (possibly open) circuit and fails fast
-  // instead of bypassing the breaker.
-  internal static IAsyncPolicy<HttpResponseMessage> GetResiliencePolicy(ILoggerFactory loggerFactory)
-  {
-    var logger = loggerFactory.CreateLogger("CPS.ComplexCases.DDEI.CircuitBreaker");
-
-    // A 404 is retried but is not a health signal, so it is deliberately excluded from the breaker.
-    static bool shouldRetry(HttpResponseMessage response) =>
-        (response.StatusCode >= HttpStatusCode.InternalServerError
-            || response.StatusCode == HttpStatusCode.NotFound)
-        && HttpResiliencePolicyFactory.ExcludesPostAndPut(response);
-
-    var retryPolicy = HttpResiliencePolicyFactory.CreateRetryPolicy(
-        RetryAttempts,
-        TimeSpan.FromSeconds(FirstRetryDelaySeconds),
-        shouldRetry,
-        handleHttpRequestException: true);
-
-    var circuitBreaker = HttpResiliencePolicyFactory.CreateCircuitBreakerPolicy(
-        logger,
-        "MDS (DDEI)",
-        CircuitBreakerFailureThreshold,
-        TimeSpan.FromSeconds(CircuitBreakerSamplingDurationSeconds),
-        CircuitBreakerMinimumThroughput,
-        TimeSpan.FromSeconds(CircuitBreakerDurationOfBreakSeconds));
-
-    return Policy.WrapAsync(retryPolicy, circuitBreaker);
   }
 }

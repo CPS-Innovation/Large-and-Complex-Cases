@@ -1,11 +1,11 @@
+using System.Net;
+using CPS.ComplexCases.Common.Extensions;
+using CPS.ComplexCases.Common.Resilience;
 using CPS.ComplexCases.Egress.Client;
 using CPS.ComplexCases.Egress.Factories;
 using CPS.ComplexCases.Egress.Models;
-using CPS.ComplexCases.Common.Resilience;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Polly;
 
 namespace CPS.ComplexCases.Egress.Extensions;
 
@@ -13,6 +13,7 @@ public static class IServiceCollectionExtension
 {
   private const int RetryAttempts = 3;
   private const int FirstRetryDelaySeconds = 1;
+  private const int ConcurrencyLimit = 30;
 
   // Egress rate-limits us with 429s (excluded from the breaker), so a slightly longer sampling window
   // avoids tripping on normal throttling while still catching a genuinely failing service.
@@ -26,6 +27,22 @@ public static class IServiceCollectionExtension
     services.AddTransient<IEgressRequestFactory, EgressRequestFactory>();
     services.AddTransient<IEgressArgFactory, EgressArgFactory>();
     services.Configure<EgressOptions>(configuration.GetSection("EgressOptions"));
+
+    var configureResilience = ResiliencePipelineExtensions.ConfigureStandardResilience(
+        "CPS.ComplexCases.Egress.CircuitBreaker",
+        new HttpResilienceOptions
+        {
+          ServiceName = "Egress",
+          RetryAttempts = RetryAttempts,
+          FirstRetryDelay = TimeSpan.FromSeconds(FirstRetryDelaySeconds),
+          CircuitBreakerFailureThreshold = CircuitBreakerFailureThreshold,
+          CircuitBreakerSamplingDuration = TimeSpan.FromSeconds(CircuitBreakerSamplingDurationSeconds),
+          CircuitBreakerMinimumThroughput = CircuitBreakerMinimumThroughput,
+          CircuitBreakerDurationOfBreak = TimeSpan.FromSeconds(CircuitBreakerDurationOfBreakSeconds),
+          ConcurrencyLimit = ConcurrencyLimit,
+          AdditionalRetryableStatusCodes = [HttpStatusCode.TooManyRequests],
+        });
+
     services.AddHttpClient<IEgressClient, EgressClient>(client =>
     {
       var egressServiceUrl = configuration["EgressOptions:Url"];
@@ -37,7 +54,7 @@ public static class IServiceCollectionExtension
       client.Timeout = TimeSpan.FromSeconds(configuration.GetValue("EgressOptions:ManagementTimeoutSeconds", 100));
     })
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-    .AddResiliencePolicyHandler(GetResiliencePolicy);
+    .AddResilienceHandler("egress-resilience", configureResilience);
 
     services.AddHttpClient<EgressStorageClient>(client =>
     {
@@ -54,23 +71,6 @@ public static class IServiceCollectionExtension
       client.Timeout = Timeout.InfiniteTimeSpan;
     })
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-    .AddResiliencePolicyHandler(GetResiliencePolicy);
-  }
-
-  internal static IAsyncPolicy<HttpResponseMessage> GetResiliencePolicy(ILoggerFactory loggerFactory)
-  {
-    var logger = loggerFactory.CreateLogger("CPS.ComplexCases.Egress.CircuitBreaker");
-
-    return HttpResiliencePolicyFactory.CreateRateLimitedResiliencePolicy(logger, new HttpResilienceOptions
-    {
-      ServiceName = "Egress",
-      RetryAttempts = RetryAttempts,
-      FirstRetryDelay = TimeSpan.FromSeconds(FirstRetryDelaySeconds),
-      CircuitBreakerFailureThreshold = CircuitBreakerFailureThreshold,
-      CircuitBreakerSamplingDuration = TimeSpan.FromSeconds(CircuitBreakerSamplingDurationSeconds),
-      CircuitBreakerMinimumThroughput = CircuitBreakerMinimumThroughput,
-      CircuitBreakerDurationOfBreak = TimeSpan.FromSeconds(CircuitBreakerDurationOfBreakSeconds),
-      BulkheadMaxParallelization = 30,
-    });
+    .AddResilienceHandler("egress-storage-resilience", configureResilience);
   }
 }
