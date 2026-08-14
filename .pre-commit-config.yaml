@@ -13,3 +13,11 @@ repos:
           --auto-fix,
           --no-sort-keys
         ]
+
+  - repo: local
+    hooks:
+      - id: dotnet-format
+        name: dotnet format
+        language: system
+        entry: powershell ./scripts/pre-commit-dotnet-format.ps1
+        files: ^backend/.*\.cs$
