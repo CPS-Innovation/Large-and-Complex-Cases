@@ -1,6 +1,6 @@
+using CPS.ComplexCases.API.Constants;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using CPS.ComplexCases.API.Constants;
 
 namespace CPS.ComplexCases.API.Extensions;
 

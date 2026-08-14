@@ -1,10 +1,10 @@
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.ActivityLog.Enums;
 using CPS.ComplexCases.ActivityLog.Extensions;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Logging;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 

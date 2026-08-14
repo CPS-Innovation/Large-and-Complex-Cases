@@ -4,85 +4,85 @@ namespace CPS.ComplexCases.DDEI.Factories;
 
 public class DdeiArgFactory : IDdeiArgFactory
 {
-  public DdeiCaseIdArgDto CreateCaseArgFromUrnArg(DdeiUrnArgDto arg, int caseId)
-  {
-    return new DdeiCaseIdArgDto
+    public DdeiCaseIdArgDto CreateCaseArgFromUrnArg(DdeiUrnArgDto arg, int caseId)
     {
-      CmsAuthValues = arg.CmsAuthValues,
-      CorrelationId = arg.CorrelationId,
-      CaseId = caseId
-    };
-  }
+        return new DdeiCaseIdArgDto
+        {
+            CmsAuthValues = arg.CmsAuthValues,
+            CorrelationId = arg.CorrelationId,
+            CaseId = caseId
+        };
+    }
 
-  public DdeiCaseIdArgDto CreateCaseArgFromDefendantArg(DdeiDefendantNameArgDto arg, int caseId)
-  {
-    return new DdeiCaseIdArgDto
+    public DdeiCaseIdArgDto CreateCaseArgFromDefendantArg(DdeiDefendantNameArgDto arg, int caseId)
     {
-      CmsAuthValues = arg.CmsAuthValues,
-      CorrelationId = arg.CorrelationId,
-      CaseId = caseId
-    };
-  }
+        return new DdeiCaseIdArgDto
+        {
+            CmsAuthValues = arg.CmsAuthValues,
+            CorrelationId = arg.CorrelationId,
+            CaseId = caseId
+        };
+    }
 
-  public DdeiCaseIdArgDto CreateCaseArgFromOperationNameArg(DdeiOperationNameArgDto arg, int caseId)
-  {
-    return new DdeiCaseIdArgDto
+    public DdeiCaseIdArgDto CreateCaseArgFromOperationNameArg(DdeiOperationNameArgDto arg, int caseId)
     {
-      CmsAuthValues = arg.CmsAuthValues,
-      CorrelationId = arg.CorrelationId,
-      CaseId = caseId
-    };
-  }
+        return new DdeiCaseIdArgDto
+        {
+            CmsAuthValues = arg.CmsAuthValues,
+            CorrelationId = arg.CorrelationId,
+            CaseId = caseId
+        };
+    }
 
-  public DdeiUrnArgDto CreateUrnArg(string cmsAuthValues, Guid correlationId, string urn)
-  {
-    return new DdeiUrnArgDto
+    public DdeiUrnArgDto CreateUrnArg(string cmsAuthValues, Guid correlationId, string urn)
     {
-      CmsAuthValues = cmsAuthValues,
-      CorrelationId = correlationId,
-      Urn = urn
-    };
-  }
+        return new DdeiUrnArgDto
+        {
+            CmsAuthValues = cmsAuthValues,
+            CorrelationId = correlationId,
+            Urn = urn
+        };
+    }
 
-  public DdeiDefendantNameArgDto CreateDefendantArg(string cmsAuthValues, Guid correlationId, string leadDefendantLastName, string cmsAreaCode)
-  {
-    return new DdeiDefendantNameArgDto
+    public DdeiDefendantNameArgDto CreateDefendantArg(string cmsAuthValues, Guid correlationId, string leadDefendantLastName, string cmsAreaCode)
     {
-      CmsAuthValues = cmsAuthValues,
-      CorrelationId = correlationId,
-      LastName = leadDefendantLastName,
-      CmsAreaCode = cmsAreaCode
-    };
-  }
+        return new DdeiDefendantNameArgDto
+        {
+            CmsAuthValues = cmsAuthValues,
+            CorrelationId = correlationId,
+            LastName = leadDefendantLastName,
+            CmsAreaCode = cmsAreaCode
+        };
+    }
 
-  public DdeiOperationNameArgDto CreateOperationNameArg(string cmsAuthValues, Guid correlationId, string operationName, string cmsAreaCode)
-  {
-    return new DdeiOperationNameArgDto
+    public DdeiOperationNameArgDto CreateOperationNameArg(string cmsAuthValues, Guid correlationId, string operationName, string cmsAreaCode)
     {
-      CmsAuthValues = cmsAuthValues,
-      CorrelationId = correlationId,
-      OperationName = operationName,
-      CmsAreaCode = cmsAreaCode
-    };
-  }
+        return new DdeiOperationNameArgDto
+        {
+            CmsAuthValues = cmsAuthValues,
+            CorrelationId = correlationId,
+            OperationName = operationName,
+            CmsAreaCode = cmsAreaCode
+        };
+    }
 
-  public DdeiBaseArgDto CreateBaseArg(string cmsAuthValues, Guid correlationId)
-  {
-    return new DdeiBaseArgDto
+    public DdeiBaseArgDto CreateBaseArg(string cmsAuthValues, Guid correlationId)
     {
-      CmsAuthValues = cmsAuthValues,
-      CorrelationId = correlationId
-    };
-  }
+        return new DdeiBaseArgDto
+        {
+            CmsAuthValues = cmsAuthValues,
+            CorrelationId = correlationId
+        };
+    }
 
-  public DdeiCaseIdArgDto CreateCaseArg(string cmsAuthValues, Guid correlationId, int caseId)
-  {
-    return new DdeiCaseIdArgDto
+    public DdeiCaseIdArgDto CreateCaseArg(string cmsAuthValues, Guid correlationId, int caseId)
     {
-      CmsAuthValues = cmsAuthValues,
-      CorrelationId = correlationId,
-      CaseId = caseId
-    };
-  }
+        return new DdeiCaseIdArgDto
+        {
+            CmsAuthValues = cmsAuthValues,
+            CorrelationId = correlationId,
+            CaseId = caseId
+        };
+    }
 
 }

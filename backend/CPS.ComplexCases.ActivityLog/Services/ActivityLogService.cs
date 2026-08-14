@@ -1,17 +1,17 @@
 using System.Text.Json;
-using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.ActivityLog.Enums;
+using CPS.ComplexCases.ActivityLog.Extensions;
 using CPS.ComplexCases.ActivityLog.Models;
 using CPS.ComplexCases.ActivityLog.Models.Responses;
 using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models.Domain.Dto;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
+using CPS.ComplexCases.Common.Telemetry;
+using CPS.ComplexCases.Common.TelemetryEvents;
 using CPS.ComplexCases.Data.Dtos;
 using CPS.ComplexCases.Data.Repositories;
-using CPS.ComplexCases.Common.Helpers;
-using CPS.ComplexCases.ActivityLog.Extensions;
-using CPS.ComplexCases.Common.TelemetryEvents;
-using CPS.ComplexCases.Common.Telemetry;
+using Microsoft.Extensions.Logging;
 
 namespace CPS.ComplexCases.ActivityLog.Services;
 

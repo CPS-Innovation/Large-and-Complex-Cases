@@ -13,91 +13,90 @@ namespace CPS.ComplexCases.API.Middleware;
 
 public class ExceptionHandlingMiddleware : IFunctionsWorkerMiddleware
 {
-  private readonly ILogger<ExceptionHandlingMiddleware> _logger;
+    private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
-  public ExceptionHandlingMiddleware(ILogger<ExceptionHandlingMiddleware> logger)
-  {
-    _logger = logger;
-  }
-
-  public async Task Invoke(FunctionContext context, FunctionExecutionDelegate next)
-  {
-    try
+    public ExceptionHandlingMiddleware(ILogger<ExceptionHandlingMiddleware> logger)
     {
-      await next(context);
+        _logger = logger;
     }
-    catch (Exception exception)
+
+    public async Task Invoke(FunctionContext context, FunctionExecutionDelegate next)
     {
-      var statusCode = MapExceptionToStatusCode(exception);
-
-      var httpRequestData = await context.GetHttpRequestDataAsync();
-
-      if (httpRequestData != null)
-      {
-        var correlationId = Guid.NewGuid();
         try
         {
-          correlationId = context.GetRequestContext().CorrelationId;
+            await next(context);
         }
-        catch
+        catch (Exception exception)
         {
-          _logger.LogTrace("Using fallback CorrelationId: {CorrelationId}", correlationId);
+            var statusCode = MapExceptionToStatusCode(exception);
+
+            var httpRequestData = await context.GetHttpRequestDataAsync();
+
+            if (httpRequestData != null)
+            {
+                var correlationId = Guid.NewGuid();
+                try
+                {
+                    correlationId = context.GetRequestContext().CorrelationId;
+                }
+                catch
+                {
+                    _logger.LogTrace("Using fallback CorrelationId: {CorrelationId}", correlationId);
+                }
+
+                _logger.LogError(exception, "Unhandled exception. CorrelationId: {CorrelationId}", correlationId);
+
+                var errorMessage = statusCode == HttpStatusCode.ServiceUnavailable
+                  ? "A downstream service is temporarily unavailable. Please retry shortly."
+                  : "An unexpected error occurred. Please contact support with the CorrelationId.";
+
+                var response = httpRequestData.CreateResponse(statusCode);
+                await response.WriteAsJsonAsync(new
+                {
+                    ErrorMessage = errorMessage,
+                    CorrelationId = correlationId
+                });
+
+                var invocationResult = context.GetInvocationResult();
+                var httpOutputBinding = GetHttpOutputBindingFromMultipleOutputBinding(context);
+
+                if (httpOutputBinding is not null)
+                {
+                    httpOutputBinding.Value = response;
+                }
+                else
+                {
+                    invocationResult.Value = response;
+                }
+            }
+            else
+            {
+                // If no HTTP request context exists, still log safely
+                _logger.LogError(exception, "Unhandled exception outside HTTP context.");
+            }
         }
-
-        _logger.LogError(exception, "Unhandled exception. CorrelationId: {CorrelationId}", correlationId);
-
-        var errorMessage = statusCode == HttpStatusCode.ServiceUnavailable
-          ? "A downstream service is temporarily unavailable. Please retry shortly."
-          : "An unexpected error occurred. Please contact support with the CorrelationId.";
-
-        var response = httpRequestData.CreateResponse(statusCode);
-        await response.WriteAsJsonAsync(new
-        {
-          ErrorMessage = errorMessage,
-          CorrelationId = correlationId
-        });
-
-        var invocationResult = context.GetInvocationResult();
-        var httpOutputBinding = GetHttpOutputBindingFromMultipleOutputBinding(context);
-
-        if (httpOutputBinding is not null)
-        {
-          httpOutputBinding.Value = response;
-        }
-        else
-        {
-          invocationResult.Value = response;
-        }
-      }
-      else
-      {
-        // If no HTTP request context exists, still log safely
-        _logger.LogError(exception, "Unhandled exception outside HTTP context.");
-      }
     }
-  }
 
-  // An open circuit surfaces as a BrokenCircuitException; map it to 503 so callers get a clear
-  // "try again" signal rather than an unhandled 500.
-  internal static HttpStatusCode MapExceptionToStatusCode(Exception exception) => exception switch
-  {
-    ArgumentNullException or BadRequestException => HttpStatusCode.BadRequest,
-    CmsUnauthorizedException or CpsAuthenticationException or NetAppUnauthorizedException or OntapUnauthorizedException => HttpStatusCode.Unauthorized,
-    MissingSecurityGroupException or NetAppAccessDeniedException => HttpStatusCode.Forbidden,
-    NetAppNotFoundException or OntapNotFoundException => HttpStatusCode.NotFound,
-    NetAppConflictException or OntapConflictException => HttpStatusCode.Conflict,
-    DdeiClientException ddeiException => ddeiException.StatusCode,
-    NetAppClientException netAppException => netAppException.StatusCode,
-    OntapClientException ontapException => ontapException.StatusCode,
-    BrokenCircuitException => HttpStatusCode.ServiceUnavailable,
-    _ => HttpStatusCode.InternalServerError,
-  };
+    // An open circuit surfaces as a BrokenCircuitException; map it to 503 so callers get a clear
+    // "try again" signal rather than an unhandled 500.
+    internal static HttpStatusCode MapExceptionToStatusCode(Exception exception) => exception switch
+    {
+        ArgumentNullException or BadRequestException => HttpStatusCode.BadRequest,
+        CmsUnauthorizedException or CpsAuthenticationException or NetAppUnauthorizedException or OntapUnauthorizedException => HttpStatusCode.Unauthorized,
+        MissingSecurityGroupException or NetAppAccessDeniedException => HttpStatusCode.Forbidden,
+        NetAppNotFoundException or OntapNotFoundException => HttpStatusCode.NotFound,
+        NetAppConflictException or OntapConflictException => HttpStatusCode.Conflict,
+        DdeiClientException ddeiException => ddeiException.StatusCode,
+        NetAppClientException netAppException => netAppException.StatusCode,
+        OntapClientException ontapException => ontapException.StatusCode,
+        BrokenCircuitException => HttpStatusCode.ServiceUnavailable,
+        _ => HttpStatusCode.InternalServerError,
+    };
 
-  private static OutputBindingData<HttpResponseData>? GetHttpOutputBindingFromMultipleOutputBinding(FunctionContext context)
-  {
-    // The output binding entry name will be "$return" only when the function return type is HttpResponseData
-    return context.GetOutputBindings<HttpResponseData>()
-        .FirstOrDefault(b => b.BindingType == "http" && b.Name != "$return");
-  }
+    private static OutputBindingData<HttpResponseData>? GetHttpOutputBindingFromMultipleOutputBinding(FunctionContext context)
+    {
+        // The output binding entry name will be "$return" only when the function return type is HttpResponseData
+        return context.GetOutputBindings<HttpResponseData>()
+            .FirstOrDefault(b => b.BindingType == "http" && b.Name != "$return");
+    }
 }
-

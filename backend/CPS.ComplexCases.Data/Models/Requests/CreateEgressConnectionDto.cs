@@ -4,10 +4,10 @@ namespace CPS.ComplexCases.Data.Models.Requests;
 
 public class CreateEgressConnectionDto
 {
-  [JsonPropertyName("caseId")]
-  public required int CaseId { get; set; }
-  [JsonPropertyName("egressWorkspaceId")]
-  public required string EgressWorkspaceId { get; set; }
-  [JsonPropertyName("egressWorkspaceName")]
-  public required string EgressWorkspaceName { get; set; }
+    [JsonPropertyName("caseId")]
+    public required int CaseId { get; set; }
+    [JsonPropertyName("egressWorkspaceId")]
+    public required string EgressWorkspaceId { get; set; }
+    [JsonPropertyName("egressWorkspaceName")]
+    public required string EgressWorkspaceName { get; set; }
 }

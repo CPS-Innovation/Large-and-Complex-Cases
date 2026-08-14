@@ -5,16 +5,16 @@ namespace CPS.ComplexCases.DDEI.Mappers;
 
 public class CaseDetailsMapper : ICaseDetailsMapper
 {
-  public CaseDto MapCaseDetails(DdeiCaseSummaryDto caseDetails)
-  {
-    return new CaseDto
+    public CaseDto MapCaseDetails(DdeiCaseSummaryDto caseDetails)
     {
-      CaseId = caseDetails.Id,
-      Urn = caseDetails.Urn,
-      LeadDefendantName = $"{caseDetails.LeadDefendantFirstNames} {caseDetails.LeadDefendantSurname}",
-      LeadDefendantSurname = caseDetails.LeadDefendantSurname,
-      OperationName = caseDetails.Operation,
-      RegistrationDate = caseDetails.RegistrationDate
-    };
-  }
+        return new CaseDto
+        {
+            CaseId = caseDetails.Id,
+            Urn = caseDetails.Urn,
+            LeadDefendantName = $"{caseDetails.LeadDefendantFirstNames} {caseDetails.LeadDefendantSurname}",
+            LeadDefendantSurname = caseDetails.LeadDefendantSurname,
+            OperationName = caseDetails.Operation,
+            RegistrationDate = caseDetails.RegistrationDate
+        };
+    }
 }

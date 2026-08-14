@@ -20,445 +20,445 @@ namespace CPS.ComplexCases.DDEI.Tests.Client;
 
 public class DdeiClientTests
 {
-  private readonly Fixture _fixture;
-  private readonly Mock<ILogger<DdeiClient>> _loggerMock;
-  private readonly Mock<IDdeiRequestFactory> _ddeiRequestFactoryMock;
-  private readonly Mock<IDdeiArgFactory> _ddeiArgFactoryMock;
-  private readonly Mock<HttpMessageHandler> _httpMessageHandlerMock;
-  private readonly Mock<ICaseDetailsMapper> _caseDetailsMapperMock;
-  private readonly Mock<IAreasMapper> _areasMapperMock;
-  private readonly HttpClient _httpClient;
-  private readonly DdeiClient _client;
-  private readonly DdeiUrnArgDto _ddeiCaseIdentifiersArgDto;
-  private readonly DdeiOperationNameArgDto _ddeiOperationNameArgDto;
-  private readonly DdeiDefendantNameArgDto _ddeiDefendantNameArgDto;
-  private readonly Mock<IDdeiRequestFactoryTactical> _ddeiRequestFactoryTactical;
-  private readonly Mock<IAuthenticationResponseMapper> _authenticationResponseMapper;
-  private readonly Mock<ITelemetryClient> _telemetryClientMock;
+    private readonly Fixture _fixture;
+    private readonly Mock<ILogger<DdeiClient>> _loggerMock;
+    private readonly Mock<IDdeiRequestFactory> _ddeiRequestFactoryMock;
+    private readonly Mock<IDdeiArgFactory> _ddeiArgFactoryMock;
+    private readonly Mock<HttpMessageHandler> _httpMessageHandlerMock;
+    private readonly Mock<ICaseDetailsMapper> _caseDetailsMapperMock;
+    private readonly Mock<IAreasMapper> _areasMapperMock;
+    private readonly HttpClient _httpClient;
+    private readonly DdeiClient _client;
+    private readonly DdeiUrnArgDto _ddeiCaseIdentifiersArgDto;
+    private readonly DdeiOperationNameArgDto _ddeiOperationNameArgDto;
+    private readonly DdeiDefendantNameArgDto _ddeiDefendantNameArgDto;
+    private readonly Mock<IDdeiRequestFactoryTactical> _ddeiRequestFactoryTactical;
+    private readonly Mock<IAuthenticationResponseMapper> _authenticationResponseMapper;
+    private readonly Mock<ITelemetryClient> _telemetryClientMock;
 
-  private const string TestUrl = "https://example.com";
+    private const string TestUrl = "https://example.com";
 
-  public DdeiClientTests()
-  {
-    _fixture = new Fixture();
-    _fixture.Customize(new AutoMoqCustomization());
-
-    _loggerMock = _fixture.Freeze<Mock<ILogger<DdeiClient>>>();
-    _ddeiRequestFactoryMock = new Mock<IDdeiRequestFactory>();
-    _ddeiArgFactoryMock = new Mock<IDdeiArgFactory>();
-    _caseDetailsMapperMock = new Mock<ICaseDetailsMapper>();
-    _httpMessageHandlerMock = new Mock<HttpMessageHandler>();
-    _areasMapperMock = new Mock<IAreasMapper>();
-    _ddeiRequestFactoryTactical = new Mock<IDdeiRequestFactoryTactical>();
-    _authenticationResponseMapper = new Mock<IAuthenticationResponseMapper>();
-    _telemetryClientMock = new Mock<ITelemetryClient>();
-
-    _httpClient = new HttpClient(_httpMessageHandlerMock.Object)
+    public DdeiClientTests()
     {
-      BaseAddress = new Uri(TestUrl)
-    };
+        _fixture = new Fixture();
+        _fixture.Customize(new AutoMoqCustomization());
 
-    _ddeiCaseIdentifiersArgDto = _fixture.Create<DdeiUrnArgDto>();
-    _ddeiOperationNameArgDto = _fixture.Create<DdeiOperationNameArgDto>();
-    _ddeiDefendantNameArgDto = _fixture.Create<DdeiDefendantNameArgDto>();
+        _loggerMock = _fixture.Freeze<Mock<ILogger<DdeiClient>>>();
+        _ddeiRequestFactoryMock = new Mock<IDdeiRequestFactory>();
+        _ddeiArgFactoryMock = new Mock<IDdeiArgFactory>();
+        _caseDetailsMapperMock = new Mock<ICaseDetailsMapper>();
+        _httpMessageHandlerMock = new Mock<HttpMessageHandler>();
+        _areasMapperMock = new Mock<IAreasMapper>();
+        _ddeiRequestFactoryTactical = new Mock<IDdeiRequestFactoryTactical>();
+        _authenticationResponseMapper = new Mock<IAuthenticationResponseMapper>();
+        _telemetryClientMock = new Mock<ITelemetryClient>();
 
-    _client = new DdeiClient(
-      _loggerMock.Object,
-      _httpClient,
-      _ddeiRequestFactoryMock.Object,
-      _ddeiArgFactoryMock.Object,
-      _caseDetailsMapperMock.Object,
-      _areasMapperMock.Object,
-      _ddeiRequestFactoryTactical.Object,
-      _authenticationResponseMapper.Object,
-      _telemetryClientMock.Object
-    );
-  }
+        _httpClient = new HttpClient(_httpMessageHandlerMock.Object)
+        {
+            BaseAddress = new Uri(TestUrl)
+        };
 
-  [Fact]
-  public async Task ListCasesByUrnAsync_ThrowsHttpExceptionWhenResponseStatusCodeIsNotSuccess()
-  {
-    var mockRequest = new HttpRequestMessage(HttpMethod.Get, $"api/urns/{_fixture.Create<string>()}/cases");
-    _ddeiRequestFactoryMock
-        .Setup(f => f.CreateListCasesByUrnRequest(_ddeiCaseIdentifiersArgDto))
-        .Returns(mockRequest);
+        _ddeiCaseIdentifiersArgDto = _fixture.Create<DdeiUrnArgDto>();
+        _ddeiOperationNameArgDto = _fixture.Create<DdeiOperationNameArgDto>();
+        _ddeiDefendantNameArgDto = _fixture.Create<DdeiDefendantNameArgDto>();
 
-    var urnListResponse = _fixture.Create<IEnumerable<DdeiCaseIdentifiersDto>>();
-    SetupHttpMockResponses(
-        ("urn", urnListResponse, HttpStatusCode.BadRequest)
-    );
+        _client = new DdeiClient(
+          _loggerMock.Object,
+          _httpClient,
+          _ddeiRequestFactoryMock.Object,
+          _ddeiArgFactoryMock.Object,
+          _caseDetailsMapperMock.Object,
+          _areasMapperMock.Object,
+          _ddeiRequestFactoryTactical.Object,
+          _authenticationResponseMapper.Object,
+          _telemetryClientMock.Object
+        );
+    }
 
-    await Assert.ThrowsAsync<DdeiClientException>(() => _client.ListCasesByUrnAsync(_ddeiCaseIdentifiersArgDto));
-  }
+    [Fact]
+    public async Task ListCasesByUrnAsync_ThrowsHttpExceptionWhenResponseStatusCodeIsNotSuccess()
+    {
+        var mockRequest = new HttpRequestMessage(HttpMethod.Get, $"api/urns/{_fixture.Create<string>()}/cases");
+        _ddeiRequestFactoryMock
+            .Setup(f => f.CreateListCasesByUrnRequest(_ddeiCaseIdentifiersArgDto))
+            .Returns(mockRequest);
 
-  [Fact]
-  public async Task ListCasesByUrnAsync_ReturnsMappedCases_WhenResponseIsSuccessful()
-  {
-    // Arrange
-    var mockUrnRequest = new HttpRequestMessage(HttpMethod.Get, $"api/urns/{_fixture.Create<string>()}/cases");
-    _ddeiRequestFactoryMock
-        .Setup(f => f.CreateListCasesByUrnRequest(_ddeiCaseIdentifiersArgDto))
-        .Returns(mockUrnRequest);
+        var urnListResponse = _fixture.Create<IEnumerable<DdeiCaseIdentifiersDto>>();
+        SetupHttpMockResponses(
+            ("urn", urnListResponse, HttpStatusCode.BadRequest)
+        );
 
-    var caseIdentifiers = _fixture.CreateMany<DdeiCaseIdentifiersDto>(3).ToList();
-    var mockCaseRequests = new List<HttpRequestMessage>();
-    var mockCaseArgs = new List<DdeiCaseIdArgDto>();
-    var caseDetailsDtos = new List<DdeiCaseSummaryDto>();
-    var expectedCaseDtos = new List<CaseDto>();
+        await Assert.ThrowsAsync<DdeiClientException>(() => _client.ListCasesByUrnAsync(_ddeiCaseIdentifiersArgDto));
+    }
 
-    var responseSetup = new List<(string type, object response, HttpStatusCode statusCode)>
+    [Fact]
+    public async Task ListCasesByUrnAsync_ReturnsMappedCases_WhenResponseIsSuccessful()
+    {
+        // Arrange
+        var mockUrnRequest = new HttpRequestMessage(HttpMethod.Get, $"api/urns/{_fixture.Create<string>()}/cases");
+        _ddeiRequestFactoryMock
+            .Setup(f => f.CreateListCasesByUrnRequest(_ddeiCaseIdentifiersArgDto))
+            .Returns(mockUrnRequest);
+
+        var caseIdentifiers = _fixture.CreateMany<DdeiCaseIdentifiersDto>(3).ToList();
+        var mockCaseRequests = new List<HttpRequestMessage>();
+        var mockCaseArgs = new List<DdeiCaseIdArgDto>();
+        var caseDetailsDtos = new List<DdeiCaseSummaryDto>();
+        var expectedCaseDtos = new List<CaseDto>();
+
+        var responseSetup = new List<(string type, object response, HttpStatusCode statusCode)>
         {
             ("urnList", caseIdentifiers, HttpStatusCode.OK)
         };
 
-    for (int i = 0; i < caseIdentifiers.Count; i++)
-    {
-      var caseArg = _fixture.Create<DdeiCaseIdArgDto>();
-      mockCaseArgs.Add(caseArg);
+        for (int i = 0; i < caseIdentifiers.Count; i++)
+        {
+            var caseArg = _fixture.Create<DdeiCaseIdArgDto>();
+            mockCaseArgs.Add(caseArg);
 
-      _ddeiArgFactoryMock
-          .Setup(f => f.CreateCaseArgFromUrnArg(_ddeiCaseIdentifiersArgDto, caseIdentifiers[i].Id))
-          .Returns(caseArg);
+            _ddeiArgFactoryMock
+                .Setup(f => f.CreateCaseArgFromUrnArg(_ddeiCaseIdentifiersArgDto, caseIdentifiers[i].Id))
+                .Returns(caseArg);
 
-      var caseRequest = new HttpRequestMessage(HttpMethod.Get, $"api/cases/{caseIdentifiers[i].Id}");
-      mockCaseRequests.Add(caseRequest);
+            var caseRequest = new HttpRequestMessage(HttpMethod.Get, $"api/cases/{caseIdentifiers[i].Id}");
+            mockCaseRequests.Add(caseRequest);
 
-      _ddeiRequestFactoryMock
-          .Setup(f => f.CreateGetCaseRequest(caseArg))
-          .Returns(caseRequest);
+            _ddeiRequestFactoryMock
+                .Setup(f => f.CreateGetCaseRequest(caseArg))
+                .Returns(caseRequest);
 
-      var caseDetailsDto = _fixture.Create<DdeiCaseSummaryDto>();
-      caseDetailsDtos.Add(caseDetailsDto);
+            var caseDetailsDto = _fixture.Create<DdeiCaseSummaryDto>();
+            caseDetailsDtos.Add(caseDetailsDto);
 
-      var caseDto = _fixture.Create<CaseDto>();
-      expectedCaseDtos.Add(caseDto);
+            var caseDto = _fixture.Create<CaseDto>();
+            expectedCaseDtos.Add(caseDto);
 
-      _caseDetailsMapperMock
-          .Setup(m => m.MapCaseDetails(It.Is<DdeiCaseSummaryDto>(dto =>
-              dto.Id == caseDetailsDto.Id)))
-          .Returns(caseDto);
+            _caseDetailsMapperMock
+                .Setup(m => m.MapCaseDetails(It.Is<DdeiCaseSummaryDto>(dto =>
+                    dto.Id == caseDetailsDto.Id)))
+                .Returns(caseDto);
 
-      responseSetup.Add(("caseDetails", caseDetailsDto, HttpStatusCode.OK));
+            responseSetup.Add(("caseDetails", caseDetailsDto, HttpStatusCode.OK));
+        }
+
+        SetupHttpMockResponses(responseSetup.ToArray());
+
+        // Act
+        var result = await _client.ListCasesByUrnAsync(_ddeiCaseIdentifiersArgDto);
+
+        // Assert
+        var resultList = result.ToList();
+        Assert.Equal(expectedCaseDtos.Count, resultList.Count);
+        for (int i = 0; i < expectedCaseDtos.Count; i++)
+        {
+            Assert.Same(expectedCaseDtos[i], resultList[i]);
+        }
     }
 
-    SetupHttpMockResponses(responseSetup.ToArray());
-
-    // Act
-    var result = await _client.ListCasesByUrnAsync(_ddeiCaseIdentifiersArgDto);
-
-    // Assert
-    var resultList = result.ToList();
-    Assert.Equal(expectedCaseDtos.Count, resultList.Count);
-    for (int i = 0; i < expectedCaseDtos.Count; i++)
+    [Fact]
+    public async Task ListCasesByOperationNameAsync_ThrowsHttpExceptionWhenResponseStatusCodeIsNotSuccess()
     {
-      Assert.Same(expectedCaseDtos[i], resultList[i]);
+        // Arrange
+        var mockRequest = new HttpRequestMessage(HttpMethod.Get, $"api/cases/search?operationName={_fixture.Create<string>()}&cmsAreaCode={_fixture.Create<string>()}");
+        _ddeiRequestFactoryMock
+            .Setup(f => f.CreateListCasesByOperationNameRequest(_ddeiOperationNameArgDto))
+            .Returns(mockRequest);
+
+        var operationNameList = _fixture.Create<IEnumerable<DdeiCaseIdentifiersDto>>();
+        SetupHttpMockResponses(
+            ("operationName", operationNameList, HttpStatusCode.BadRequest)
+        );
+
+        // Act & Assert
+        await Assert.ThrowsAsync<DdeiClientException>(() => _client.ListCasesByOperationNameAsync(_ddeiOperationNameArgDto));
     }
-  }
 
-  [Fact]
-  public async Task ListCasesByOperationNameAsync_ThrowsHttpExceptionWhenResponseStatusCodeIsNotSuccess()
-  {
-    // Arrange
-    var mockRequest = new HttpRequestMessage(HttpMethod.Get, $"api/cases/search?operationName={_fixture.Create<string>()}&cmsAreaCode={_fixture.Create<string>()}");
-    _ddeiRequestFactoryMock
-        .Setup(f => f.CreateListCasesByOperationNameRequest(_ddeiOperationNameArgDto))
-        .Returns(mockRequest);
+    [Fact]
+    public async Task ListCasesByOperationNameAsync_ReturnsMappedCases_WhenResponseIsSuccessful()
+    {
+        // Arrange
+        var mockUrnRequest = new HttpRequestMessage(HttpMethod.Get, $"api/cases/search?operationName={_fixture.Create<string>()}&cmsAreaCode={_fixture.Create<string>()}");
+        _ddeiRequestFactoryMock
+            .Setup(f => f.CreateListCasesByOperationNameRequest(_ddeiOperationNameArgDto))
+            .Returns(mockUrnRequest);
 
-    var operationNameList = _fixture.Create<IEnumerable<DdeiCaseIdentifiersDto>>();
-    SetupHttpMockResponses(
-        ("operationName", operationNameList, HttpStatusCode.BadRequest)
-    );
+        var caseIdentifiers = _fixture.CreateMany<DdeiCaseIdentifiersDto>(3).ToList();
+        var mockCaseRequests = new List<HttpRequestMessage>();
+        var mockCaseArgs = new List<DdeiCaseIdArgDto>();
+        var caseDetailsDtos = new List<DdeiCaseSummaryDto>();
+        var expectedCaseDtos = new List<CaseDto>();
 
-    // Act & Assert
-    await Assert.ThrowsAsync<DdeiClientException>(() => _client.ListCasesByOperationNameAsync(_ddeiOperationNameArgDto));
-  }
-
-  [Fact]
-  public async Task ListCasesByOperationNameAsync_ReturnsMappedCases_WhenResponseIsSuccessful()
-  {
-    // Arrange
-    var mockUrnRequest = new HttpRequestMessage(HttpMethod.Get, $"api/cases/search?operationName={_fixture.Create<string>()}&cmsAreaCode={_fixture.Create<string>()}");
-    _ddeiRequestFactoryMock
-        .Setup(f => f.CreateListCasesByOperationNameRequest(_ddeiOperationNameArgDto))
-        .Returns(mockUrnRequest);
-
-    var caseIdentifiers = _fixture.CreateMany<DdeiCaseIdentifiersDto>(3).ToList();
-    var mockCaseRequests = new List<HttpRequestMessage>();
-    var mockCaseArgs = new List<DdeiCaseIdArgDto>();
-    var caseDetailsDtos = new List<DdeiCaseSummaryDto>();
-    var expectedCaseDtos = new List<CaseDto>();
-
-    var responseSetup = new List<(string type, object response, HttpStatusCode statusCode)>
+        var responseSetup = new List<(string type, object response, HttpStatusCode statusCode)>
         {
             ("operationList", caseIdentifiers, HttpStatusCode.OK)
         };
 
-    for (int i = 0; i < caseIdentifiers.Count; i++)
-    {
-      var caseArg = _fixture.Create<DdeiCaseIdArgDto>();
-      mockCaseArgs.Add(caseArg);
+        for (int i = 0; i < caseIdentifiers.Count; i++)
+        {
+            var caseArg = _fixture.Create<DdeiCaseIdArgDto>();
+            mockCaseArgs.Add(caseArg);
 
-      _ddeiArgFactoryMock
-          .Setup(f => f.CreateCaseArgFromOperationNameArg(_ddeiOperationNameArgDto, caseIdentifiers[i].Id))
-          .Returns(caseArg);
+            _ddeiArgFactoryMock
+                .Setup(f => f.CreateCaseArgFromOperationNameArg(_ddeiOperationNameArgDto, caseIdentifiers[i].Id))
+                .Returns(caseArg);
 
-      var caseRequest = new HttpRequestMessage(HttpMethod.Get, $"api/cases/{caseIdentifiers[i].Id}");
-      mockCaseRequests.Add(caseRequest);
+            var caseRequest = new HttpRequestMessage(HttpMethod.Get, $"api/cases/{caseIdentifiers[i].Id}");
+            mockCaseRequests.Add(caseRequest);
 
-      _ddeiRequestFactoryMock
-          .Setup(f => f.CreateGetCaseRequest(caseArg))
-          .Returns(caseRequest);
+            _ddeiRequestFactoryMock
+                .Setup(f => f.CreateGetCaseRequest(caseArg))
+                .Returns(caseRequest);
 
-      var caseDetailsDto = _fixture.Create<DdeiCaseSummaryDto>();
-      caseDetailsDtos.Add(caseDetailsDto);
+            var caseDetailsDto = _fixture.Create<DdeiCaseSummaryDto>();
+            caseDetailsDtos.Add(caseDetailsDto);
 
-      var caseDto = _fixture.Create<CaseDto>();
-      expectedCaseDtos.Add(caseDto);
+            var caseDto = _fixture.Create<CaseDto>();
+            expectedCaseDtos.Add(caseDto);
 
-      _caseDetailsMapperMock
-          .Setup(m => m.MapCaseDetails(It.Is<DdeiCaseSummaryDto>(dto =>
-              dto.Id == caseDetailsDto.Id)))
-          .Returns(caseDto);
+            _caseDetailsMapperMock
+                .Setup(m => m.MapCaseDetails(It.Is<DdeiCaseSummaryDto>(dto =>
+                    dto.Id == caseDetailsDto.Id)))
+                .Returns(caseDto);
 
-      responseSetup.Add(("caseDetails", caseDetailsDto, HttpStatusCode.OK));
+            responseSetup.Add(("caseDetails", caseDetailsDto, HttpStatusCode.OK));
+        }
+
+        SetupHttpMockResponses(responseSetup.ToArray());
+
+        // Act
+        var result = await _client.ListCasesByOperationNameAsync(_ddeiOperationNameArgDto);
+
+        // Assert
+        var resultList = result.ToList();
+        Assert.Equal(expectedCaseDtos.Count, resultList.Count);
+        for (int i = 0; i < expectedCaseDtos.Count; i++)
+        {
+            Assert.Same(expectedCaseDtos[i], resultList[i]);
+        }
     }
 
-    SetupHttpMockResponses(responseSetup.ToArray());
-
-    // Act
-    var result = await _client.ListCasesByOperationNameAsync(_ddeiOperationNameArgDto);
-
-    // Assert
-    var resultList = result.ToList();
-    Assert.Equal(expectedCaseDtos.Count, resultList.Count);
-    for (int i = 0; i < expectedCaseDtos.Count; i++)
+    [Fact]
+    public async Task ListCasesByDefendantNameAsync_ThrowsHttpExceptionWhenResponseStatusCodeIsNotSuccess()
     {
-      Assert.Same(expectedCaseDtos[i], resultList[i]);
+        // Arrange
+        var mockRequest = new HttpRequestMessage(HttpMethod.Get, $"api/cases/search?defendantLastName={_fixture.Create<string>()}&cmsAreaCode={_fixture.Create<string>()}");
+        _ddeiRequestFactoryMock
+            .Setup(f => f.CreateListCasesByDefendantRequest(_ddeiDefendantNameArgDto))
+            .Returns(mockRequest);
+
+        var defendantNameList = _fixture.Create<IEnumerable<DdeiCaseIdentifiersDto>>();
+        SetupHttpMockResponses(
+            ("defendantName", defendantNameList, HttpStatusCode.BadRequest)
+        );
+
+        // Act & Assert
+        await Assert.ThrowsAsync<DdeiClientException>(() => _client.ListCasesByDefendantNameAsync(_ddeiDefendantNameArgDto));
     }
-  }
 
-  [Fact]
-  public async Task ListCasesByDefendantNameAsync_ThrowsHttpExceptionWhenResponseStatusCodeIsNotSuccess()
-  {
-    // Arrange
-    var mockRequest = new HttpRequestMessage(HttpMethod.Get, $"api/cases/search?defendantLastName={_fixture.Create<string>()}&cmsAreaCode={_fixture.Create<string>()}");
-    _ddeiRequestFactoryMock
-        .Setup(f => f.CreateListCasesByDefendantRequest(_ddeiDefendantNameArgDto))
-        .Returns(mockRequest);
+    [Fact]
+    public async Task ListCasesByDefendantAsync_ReturnsMappedCases_WhenResponseIsSuccessful()
+    {
+        // Arrange
+        var mockUrnRequest = new HttpRequestMessage(HttpMethod.Get, $"api/cases/search?defendantLastName={_fixture.Create<string>()}&cmsAreaCode={_fixture.Create<string>()}");
+        _ddeiRequestFactoryMock
+            .Setup(f => f.CreateListCasesByDefendantRequest(_ddeiDefendantNameArgDto))
+            .Returns(mockUrnRequest);
 
-    var defendantNameList = _fixture.Create<IEnumerable<DdeiCaseIdentifiersDto>>();
-    SetupHttpMockResponses(
-        ("defendantName", defendantNameList, HttpStatusCode.BadRequest)
-    );
+        var caseIdentifiers = _fixture.CreateMany<DdeiCaseIdentifiersDto>(3).ToList();
+        var mockCaseRequests = new List<HttpRequestMessage>();
+        var mockCaseArgs = new List<DdeiCaseIdArgDto>();
+        var caseDetailsDtos = new List<DdeiCaseSummaryDto>();
+        var expectedCaseDtos = new List<CaseDto>();
 
-    // Act & Assert
-    await Assert.ThrowsAsync<DdeiClientException>(() => _client.ListCasesByDefendantNameAsync(_ddeiDefendantNameArgDto));
-  }
-
-  [Fact]
-  public async Task ListCasesByDefendantAsync_ReturnsMappedCases_WhenResponseIsSuccessful()
-  {
-    // Arrange
-    var mockUrnRequest = new HttpRequestMessage(HttpMethod.Get, $"api/cases/search?defendantLastName={_fixture.Create<string>()}&cmsAreaCode={_fixture.Create<string>()}");
-    _ddeiRequestFactoryMock
-        .Setup(f => f.CreateListCasesByDefendantRequest(_ddeiDefendantNameArgDto))
-        .Returns(mockUrnRequest);
-
-    var caseIdentifiers = _fixture.CreateMany<DdeiCaseIdentifiersDto>(3).ToList();
-    var mockCaseRequests = new List<HttpRequestMessage>();
-    var mockCaseArgs = new List<DdeiCaseIdArgDto>();
-    var caseDetailsDtos = new List<DdeiCaseSummaryDto>();
-    var expectedCaseDtos = new List<CaseDto>();
-
-    var responseSetup = new List<(string type, object response, HttpStatusCode statusCode)>
+        var responseSetup = new List<(string type, object response, HttpStatusCode statusCode)>
         {
             ("defendantList", caseIdentifiers, HttpStatusCode.OK)
         };
 
-    for (int i = 0; i < caseIdentifiers.Count; i++)
-    {
-      var caseArg = _fixture.Create<DdeiCaseIdArgDto>();
-      mockCaseArgs.Add(caseArg);
+        for (int i = 0; i < caseIdentifiers.Count; i++)
+        {
+            var caseArg = _fixture.Create<DdeiCaseIdArgDto>();
+            mockCaseArgs.Add(caseArg);
 
-      _ddeiArgFactoryMock
-          .Setup(f => f.CreateCaseArgFromDefendantArg(_ddeiDefendantNameArgDto, caseIdentifiers[i].Id))
-          .Returns(caseArg);
+            _ddeiArgFactoryMock
+                .Setup(f => f.CreateCaseArgFromDefendantArg(_ddeiDefendantNameArgDto, caseIdentifiers[i].Id))
+                .Returns(caseArg);
 
-      var caseRequest = new HttpRequestMessage(HttpMethod.Get, $"api/cases/{caseIdentifiers[i].Id}");
-      mockCaseRequests.Add(caseRequest);
+            var caseRequest = new HttpRequestMessage(HttpMethod.Get, $"api/cases/{caseIdentifiers[i].Id}");
+            mockCaseRequests.Add(caseRequest);
 
-      _ddeiRequestFactoryMock
-          .Setup(f => f.CreateGetCaseRequest(caseArg))
-          .Returns(caseRequest);
+            _ddeiRequestFactoryMock
+                .Setup(f => f.CreateGetCaseRequest(caseArg))
+                .Returns(caseRequest);
 
-      var caseDetailsDto = _fixture.Create<DdeiCaseSummaryDto>();
-      caseDetailsDtos.Add(caseDetailsDto);
+            var caseDetailsDto = _fixture.Create<DdeiCaseSummaryDto>();
+            caseDetailsDtos.Add(caseDetailsDto);
 
-      var caseDto = _fixture.Create<CaseDto>();
-      expectedCaseDtos.Add(caseDto);
+            var caseDto = _fixture.Create<CaseDto>();
+            expectedCaseDtos.Add(caseDto);
 
-      _caseDetailsMapperMock
-          .Setup(m => m.MapCaseDetails(It.Is<DdeiCaseSummaryDto>(dto =>
-              dto.Id == caseDetailsDto.Id)))
-          .Returns(caseDto);
+            _caseDetailsMapperMock
+                .Setup(m => m.MapCaseDetails(It.Is<DdeiCaseSummaryDto>(dto =>
+                    dto.Id == caseDetailsDto.Id)))
+                .Returns(caseDto);
 
-      responseSetup.Add(("caseDetails", caseDetailsDto, HttpStatusCode.OK));
+            responseSetup.Add(("caseDetails", caseDetailsDto, HttpStatusCode.OK));
+        }
+
+        SetupHttpMockResponses(responseSetup.ToArray());
+
+        // Act
+        var result = await _client.ListCasesByDefendantNameAsync(_ddeiDefendantNameArgDto);
+
+        // Assert
+        var resultList = result.ToList();
+        Assert.Equal(expectedCaseDtos.Count, resultList.Count);
+        for (int i = 0; i < expectedCaseDtos.Count; i++)
+        {
+            Assert.Same(expectedCaseDtos[i], resultList[i]);
+        }
     }
 
-    SetupHttpMockResponses(responseSetup.ToArray());
-
-    // Act
-    var result = await _client.ListCasesByDefendantNameAsync(_ddeiDefendantNameArgDto);
-
-    // Assert
-    var resultList = result.ToList();
-    Assert.Equal(expectedCaseDtos.Count, resultList.Count);
-    for (int i = 0; i < expectedCaseDtos.Count; i++)
+    [Fact]
+    public async Task GetCmsModernTokenAsync_ThrowsHttpExceptionWhenResponseStatusCodeIsNotSuccess()
     {
-      Assert.Same(expectedCaseDtos[i], resultList[i]);
-    }
-  }
+        // Arrange
+        var ddeiBaseArgDto = _fixture.Create<DdeiBaseArgDto>();
+        var mockRequest = new HttpRequestMessage(HttpMethod.Get, $"api/cms-modern-token");
 
-  [Fact]
-  public async Task GetCmsModernTokenAsync_ThrowsHttpExceptionWhenResponseStatusCodeIsNotSuccess()
-  {
-    // Arrange
-    var ddeiBaseArgDto = _fixture.Create<DdeiBaseArgDto>();
-    var mockRequest = new HttpRequestMessage(HttpMethod.Get, $"api/cms-modern-token");
+        _ddeiRequestFactoryMock
+            .Setup(f => f.CreateGetCmsModernTokenRequest(ddeiBaseArgDto))
+            .Returns(mockRequest);
 
-    _ddeiRequestFactoryMock
-        .Setup(f => f.CreateGetCmsModernTokenRequest(ddeiBaseArgDto))
-        .Returns(mockRequest);
-
-    var tokenResponse = _fixture.Create<DdeiCmsModernTokenDto>();
-    SetupHttpMockResponses(
-        ("cmsModernToken", tokenResponse, HttpStatusCode.BadRequest)
-    );
-
-    // Act & Assert
-    await Assert.ThrowsAsync<DdeiClientException>(() => _client.GetCmsModernTokenAsync(ddeiBaseArgDto));
-  }
-
-  [Fact]
-  public async Task GetCmsModernTokenAsync_ReturnsToken_WhenResponseIsSuccessful()
-  {
-    // Arrange
-    var ddeiBaseArgDto = _fixture.Create<DdeiBaseArgDto>();
-    var mockRequest = new HttpRequestMessage(HttpMethod.Get, $"api/cms-modern-token");
-    var expectedToken = _fixture.Create<string>();
-
-    _ddeiRequestFactoryMock
-        .Setup(f => f.CreateGetCmsModernTokenRequest(ddeiBaseArgDto))
-        .Returns(mockRequest);
-
-    var tokenResponse = new DdeiCmsModernTokenDto
-    {
-      CmsModernToken = expectedToken
-    };
-
-    SetupHttpMockResponses(
-        ("cmsModernToken", tokenResponse, HttpStatusCode.OK)
-    );
-
-    // Act
-    var result = await _client.GetCmsModernTokenAsync(ddeiBaseArgDto);
-
-    // Assert
-    Assert.Equal(expectedToken, result);
-  }
-
-  [Fact]
-  public async Task GetCmsModernTokenAsync_ReturnsNull_WhenTokenIsNull()
-  {
-    // Arrange
-    var ddeiBaseArgDto = _fixture.Create<DdeiBaseArgDto>();
-    var mockRequest = new HttpRequestMessage(HttpMethod.Get, $"api/cms-modern-token");
-
-    _ddeiRequestFactoryMock
-        .Setup(f => f.CreateGetCmsModernTokenRequest(ddeiBaseArgDto))
-        .Returns(mockRequest);
-
-    var tokenResponse = new DdeiCmsModernTokenDto
-    {
-      CmsModernToken = null!
-    };
-
-    SetupHttpMockResponses(
-        ("cmsModernToken", tokenResponse, HttpStatusCode.OK)
-    );
-
-    // Act
-    var result = await _client.GetCmsModernTokenAsync(ddeiBaseArgDto);
-
-    // Assert
-    Assert.Null(result);
-  }
-
-  [Fact]
-  public async Task GetCmsModernTokenAsync_ReturnsEmptyString_WhenTokenIsEmpty()
-  {
-    // Arrange
-    var ddeiBaseArgDto = _fixture.Create<DdeiBaseArgDto>();
-    var mockRequest = new HttpRequestMessage(HttpMethod.Get, $"api/cms-modern-token");
-
-    _ddeiRequestFactoryMock
-        .Setup(f => f.CreateGetCmsModernTokenRequest(ddeiBaseArgDto))
-        .Returns(mockRequest);
-
-    var tokenResponse = new DdeiCmsModernTokenDto
-    {
-      CmsModernToken = string.Empty
-    };
-
-    SetupHttpMockResponses(
-        ("cmsModernToken", tokenResponse, HttpStatusCode.OK)
-    );
-
-    // Act
-    var result = await _client.GetCmsModernTokenAsync(ddeiBaseArgDto);
-
-    // Assert
-    Assert.Equal(string.Empty, result);
-  }
-
-  [Fact]
-  public async Task GetCmsModernTokenAsync_ThrowsUnauthorizedException_WhenStatusCodeIsUnauthorized()
-  {
-    // Arrange
-    var ddeiBaseArgDto = _fixture.Create<DdeiBaseArgDto>();
-    var mockRequest = new HttpRequestMessage(HttpMethod.Get, $"api/cms-modern-token");
-
-    _ddeiRequestFactoryMock
-        .Setup(f => f.CreateGetCmsModernTokenRequest(ddeiBaseArgDto))
-        .Returns(mockRequest);
-
-    var tokenResponse = _fixture.Create<DdeiCmsModernTokenDto>();
-    SetupHttpMockResponses(
-        ("cmsModernToken", tokenResponse, HttpStatusCode.Unauthorized)
-    );
-
-    // Act & Assert
-    await Assert.ThrowsAsync<CmsUnauthorizedException>(() => _client.GetCmsModernTokenAsync(ddeiBaseArgDto));
-  }
-
-  private void SetupHttpMockResponses(params (string type, object response, HttpStatusCode statusCode)[] responses)
-  {
-    var sequence = _httpMessageHandlerMock
-        .Protected()
-        .SetupSequence<Task<HttpResponseMessage>>(
-            "SendAsync",
-            ItExpr.IsAny<HttpRequestMessage>(),
-            ItExpr.IsAny<CancellationToken>()
+        var tokenResponse = _fixture.Create<DdeiCmsModernTokenDto>();
+        SetupHttpMockResponses(
+            ("cmsModernToken", tokenResponse, HttpStatusCode.BadRequest)
         );
 
-    foreach (var (_, response, statusCode) in responses)
-    {
-      var content = JsonSerializer.Serialize(response);
-      sequence = sequence.ReturnsAsync(new HttpResponseMessage
-      {
-        StatusCode = statusCode,
-        Content = new StringContent(content)
-      });
+        // Act & Assert
+        await Assert.ThrowsAsync<DdeiClientException>(() => _client.GetCmsModernTokenAsync(ddeiBaseArgDto));
     }
-  }
+
+    [Fact]
+    public async Task GetCmsModernTokenAsync_ReturnsToken_WhenResponseIsSuccessful()
+    {
+        // Arrange
+        var ddeiBaseArgDto = _fixture.Create<DdeiBaseArgDto>();
+        var mockRequest = new HttpRequestMessage(HttpMethod.Get, $"api/cms-modern-token");
+        var expectedToken = _fixture.Create<string>();
+
+        _ddeiRequestFactoryMock
+            .Setup(f => f.CreateGetCmsModernTokenRequest(ddeiBaseArgDto))
+            .Returns(mockRequest);
+
+        var tokenResponse = new DdeiCmsModernTokenDto
+        {
+            CmsModernToken = expectedToken
+        };
+
+        SetupHttpMockResponses(
+            ("cmsModernToken", tokenResponse, HttpStatusCode.OK)
+        );
+
+        // Act
+        var result = await _client.GetCmsModernTokenAsync(ddeiBaseArgDto);
+
+        // Assert
+        Assert.Equal(expectedToken, result);
+    }
+
+    [Fact]
+    public async Task GetCmsModernTokenAsync_ReturnsNull_WhenTokenIsNull()
+    {
+        // Arrange
+        var ddeiBaseArgDto = _fixture.Create<DdeiBaseArgDto>();
+        var mockRequest = new HttpRequestMessage(HttpMethod.Get, $"api/cms-modern-token");
+
+        _ddeiRequestFactoryMock
+            .Setup(f => f.CreateGetCmsModernTokenRequest(ddeiBaseArgDto))
+            .Returns(mockRequest);
+
+        var tokenResponse = new DdeiCmsModernTokenDto
+        {
+            CmsModernToken = null!
+        };
+
+        SetupHttpMockResponses(
+            ("cmsModernToken", tokenResponse, HttpStatusCode.OK)
+        );
+
+        // Act
+        var result = await _client.GetCmsModernTokenAsync(ddeiBaseArgDto);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetCmsModernTokenAsync_ReturnsEmptyString_WhenTokenIsEmpty()
+    {
+        // Arrange
+        var ddeiBaseArgDto = _fixture.Create<DdeiBaseArgDto>();
+        var mockRequest = new HttpRequestMessage(HttpMethod.Get, $"api/cms-modern-token");
+
+        _ddeiRequestFactoryMock
+            .Setup(f => f.CreateGetCmsModernTokenRequest(ddeiBaseArgDto))
+            .Returns(mockRequest);
+
+        var tokenResponse = new DdeiCmsModernTokenDto
+        {
+            CmsModernToken = string.Empty
+        };
+
+        SetupHttpMockResponses(
+            ("cmsModernToken", tokenResponse, HttpStatusCode.OK)
+        );
+
+        // Act
+        var result = await _client.GetCmsModernTokenAsync(ddeiBaseArgDto);
+
+        // Assert
+        Assert.Equal(string.Empty, result);
+    }
+
+    [Fact]
+    public async Task GetCmsModernTokenAsync_ThrowsUnauthorizedException_WhenStatusCodeIsUnauthorized()
+    {
+        // Arrange
+        var ddeiBaseArgDto = _fixture.Create<DdeiBaseArgDto>();
+        var mockRequest = new HttpRequestMessage(HttpMethod.Get, $"api/cms-modern-token");
+
+        _ddeiRequestFactoryMock
+            .Setup(f => f.CreateGetCmsModernTokenRequest(ddeiBaseArgDto))
+            .Returns(mockRequest);
+
+        var tokenResponse = _fixture.Create<DdeiCmsModernTokenDto>();
+        SetupHttpMockResponses(
+            ("cmsModernToken", tokenResponse, HttpStatusCode.Unauthorized)
+        );
+
+        // Act & Assert
+        await Assert.ThrowsAsync<CmsUnauthorizedException>(() => _client.GetCmsModernTokenAsync(ddeiBaseArgDto));
+    }
+
+    private void SetupHttpMockResponses(params (string type, object response, HttpStatusCode statusCode)[] responses)
+    {
+        var sequence = _httpMessageHandlerMock
+            .Protected()
+            .SetupSequence<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            );
+
+        foreach (var (_, response, statusCode) in responses)
+        {
+            var content = JsonSerializer.Serialize(response);
+            sequence = sequence.ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = statusCode,
+                Content = new StringContent(content)
+            });
+        }
+    }
 }

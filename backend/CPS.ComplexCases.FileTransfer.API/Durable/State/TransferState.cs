@@ -1,7 +1,7 @@
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.DurableTask.Entities;
 using CPS.ComplexCases.FileTransfer.API.Durable.Payloads.Domain;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.DurableTask.Entities;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.State;
 

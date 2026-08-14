@@ -1,8 +1,3 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using AutoFixture;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Domain.Models;
@@ -16,15 +11,20 @@ using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models;
 using CPS.ComplexCases.Common.Models.Configuration;
 using CPS.ComplexCases.Common.Services;
-using CPS.ComplexCases.Data.Enums;
 using CPS.ComplexCases.Data.Entities;
-using CPS.ComplexCases.NetApp.Factories;
+using CPS.ComplexCases.Data.Enums;
+using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Exceptions;
+using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Models.Requests;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
-using CPS.ComplexCases.NetApp.Client;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions;
 

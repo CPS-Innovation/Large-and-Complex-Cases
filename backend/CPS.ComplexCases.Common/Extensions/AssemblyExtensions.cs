@@ -1,7 +1,7 @@
 using System.Net;
 using System.Reflection;
-using Microsoft.AspNetCore.Mvc;
 using CPS.ComplexCases.Common.Models.Domain;
+using Microsoft.AspNetCore.Mvc;
 
 namespace CPS.ComplexCases.Common.Extensions;
 

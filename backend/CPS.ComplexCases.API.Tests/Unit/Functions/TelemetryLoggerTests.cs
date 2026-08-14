@@ -4,9 +4,9 @@ using AutoFixture;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Domain.Models;
 using CPS.ComplexCases.API.Functions;
+using CPS.ComplexCases.API.Tests.Unit.Helpers;
 using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.Common.TelemetryEvents;
-using CPS.ComplexCases.API.Tests.Unit.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 

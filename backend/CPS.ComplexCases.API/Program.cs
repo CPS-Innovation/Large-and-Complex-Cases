@@ -1,16 +1,4 @@
 using System.IdentityModel.Tokens.Jwt;
-using Microsoft.ApplicationInsights.Extensibility;
-using Microsoft.ApplicationInsights.WorkerService;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Abstractions;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.ApplicationInsights;
-using Microsoft.IdentityModel.Protocols;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
-using Microsoft.Net.Http.Headers;
 using Azure.Identity;
 using Azure.Storage.Blobs;
 using CPS.ComplexCases.ActivityLog.Extensions;
@@ -32,6 +20,18 @@ using CPS.ComplexCases.DDEI.Tactical.Extensions;
 using CPS.ComplexCases.Egress.Extensions;
 using CPS.ComplexCases.NetApp.Extensions;
 using FluentValidation;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.ApplicationInsights.WorkerService;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Abstractions;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.ApplicationInsights;
+using Microsoft.IdentityModel.Protocols;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.Net.Http.Headers;
 using ThrottlingTroll;
 
 // Create a temporary logger for configuration phase
@@ -126,7 +126,7 @@ var host = new HostBuilder()
                             PermitLimit = int.Parse(configuration["RateLimiting:PermitLimit"] ?? "100"),
                             IntervalInSeconds = int.Parse(configuration["RateLimiting:IntervalInSeconds"] ?? "60")
                         },
-                        
+
                         // Exclude the file transfer status endpoint from rate limiting as it is polled frequently
                         UriPattern = "^(?!.*/v1/filetransfer/.*/status).*$",
 

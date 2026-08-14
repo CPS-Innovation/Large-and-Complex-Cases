@@ -5,10 +5,10 @@ namespace CPS.ComplexCases.DDEI.Client;
 
 public interface IDdeiClient
 {
-  Task<IEnumerable<CaseDto>> ListCasesByUrnAsync(DdeiUrnArgDto arg);
-  Task<IEnumerable<CaseDto>> ListCasesByOperationNameAsync(DdeiOperationNameArgDto arg);
-  Task<IEnumerable<CaseDto>> ListCasesByDefendantNameAsync(DdeiDefendantNameArgDto arg);
-  Task<AreasDto> GetAreasAsync(DdeiBaseArgDto arg);
-  Task<CaseDto> GetCaseAsync(DdeiCaseIdArgDto arg);
-  Task<string?> GetCmsModernTokenAsync(DdeiBaseArgDto arg);
+    Task<IEnumerable<CaseDto>> ListCasesByUrnAsync(DdeiUrnArgDto arg);
+    Task<IEnumerable<CaseDto>> ListCasesByOperationNameAsync(DdeiOperationNameArgDto arg);
+    Task<IEnumerable<CaseDto>> ListCasesByDefendantNameAsync(DdeiDefendantNameArgDto arg);
+    Task<AreasDto> GetAreasAsync(DdeiBaseArgDto arg);
+    Task<CaseDto> GetCaseAsync(DdeiCaseIdArgDto arg);
+    Task<string?> GetCmsModernTokenAsync(DdeiBaseArgDto arg);
 }
