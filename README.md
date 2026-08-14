@@ -18,7 +18,7 @@ The Large and Complex Cases (LACC) project aims to deliver a secure, auditable, 
 ### Pre-Commit Hooks
 This repo contains pre-commit hooks for maintaining formatting standards. Please install these before commiting any work.
 1. Install the [pre-commit package manager](https://pre-commit.com/#install).
-2. Run pre-commit install to install the hooks.
+2. Run `pre-commit install` to install the hooks.
 
 ### Local Development
 
