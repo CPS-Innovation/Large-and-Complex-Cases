@@ -1,1 +1,17 @@
-*.cs text eol=lf
+# Backend
+*.cs      text eol=lf
+*.csproj  text eol=lf
+*.props   text eol=lf
+*.targets text eol=lf
+
+# Frontend
+*.ts      text eol=lf
+*.tsx     text eol=lf
+*.js      text eol=lf
+*.jsx     text eol=lf
+*.json    text eol=lf
+
+# Config
+*.yml     text eol=lf
+*.yaml    text eol=lf
+*.md      text eol=lf
