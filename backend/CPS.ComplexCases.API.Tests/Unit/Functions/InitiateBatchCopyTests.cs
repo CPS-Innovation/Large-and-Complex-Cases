@@ -1,8 +1,5 @@
 using System.Net;
 using AutoFixture;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.API.Clients.FileTransfer;
 using CPS.ComplexCases.API.Domain.Models;
 using CPS.ComplexCases.API.Functions;
@@ -15,6 +12,9 @@ using CPS.ComplexCases.Common.Models.Requests;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.Data.Models.Requests;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions;

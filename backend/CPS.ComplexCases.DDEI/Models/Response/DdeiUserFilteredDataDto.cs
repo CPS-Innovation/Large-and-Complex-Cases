@@ -4,14 +4,14 @@ namespace CPS.ComplexCases.DDEI.Models.Response;
 
 public class DdeiUserFilteredDataDto
 {
-  [JsonPropertyName("areas")]
-  public required List<DdeiAreaDto> Areas { get; set; }
+    [JsonPropertyName("areas")]
+    public required List<DdeiAreaDto> Areas { get; set; }
 }
 
 public class DdeiAreaDto
 {
-  [JsonPropertyName("id")]
-  public int Id { get; set; }
-  [JsonPropertyName("description")]
-  public required string Description { get; set; }
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+    [JsonPropertyName("description")]
+    public required string Description { get; set; }
 }

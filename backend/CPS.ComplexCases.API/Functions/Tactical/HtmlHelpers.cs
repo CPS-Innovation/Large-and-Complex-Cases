@@ -2,11 +2,11 @@ using System.Text.Json;
 
 namespace CPS.ComplexCases.API.Functions.Tactical
 {
-  public static class HtmlHelpers
-  {
-    public static string LoginForm()
+    public static class HtmlHelpers
     {
-      return string.Concat(@$"
+        public static string LoginForm()
+        {
+            return string.Concat(@$"
                   <html>
                       <head>
                         <style>
@@ -48,11 +48,11 @@ namespace CPS.ComplexCases.API.Functions.Tactical
                         </div>
                       </body>
                   </html>");
-    }
+        }
 
-    public static string LoginFormResult(string username, bool isLoggedInOk, string rawCookiesStrings)
-    {
-      return $@"
+        public static string LoginFormResult(string username, bool isLoggedInOk, string rawCookiesStrings)
+        {
+            return $@"
                 <html>
                     <head>
                       <style>
@@ -80,8 +80,8 @@ namespace CPS.ComplexCases.API.Functions.Tactical
                         <div class='user'>
                           Hi {username} <br>
                           We believe you {(isLoggedInOk
-                            ? "<strong class='ok' data-testid='login-ok'>ARE</strong>"
-                            : "<strong class='not-ok'>ARE NOT</strong>")} logged in to CMS<br/>
+                                  ? "<strong class='ok' data-testid='login-ok'>ARE</strong>"
+                                  : "<strong class='not-ok'>ARE NOT</strong>")} logged in to CMS<br/>
                         </div>
                         <div class='feedback'>
                           <code>
@@ -90,11 +90,11 @@ namespace CPS.ComplexCases.API.Functions.Tactical
                         </div>
                     </body>
                 </html>";
-    }
+        }
 
-    public static string FullCookieResult(string serializedCmsAuthValues, string modernUrl, string modernAuthToken)
-    {
-      return $@"
+        public static string FullCookieResult(string serializedCmsAuthValues, string modernUrl, string modernAuthToken)
+        {
+            return $@"
 <html>
 <body>
 <pre>
@@ -106,6 +106,6 @@ Encoded Cms-Auth-Value Cookie =>
 </pre>  
 </body>
 </html>";
+        }
     }
-  }
 }

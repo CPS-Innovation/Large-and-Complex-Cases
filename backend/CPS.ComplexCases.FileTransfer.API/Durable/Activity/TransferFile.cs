@@ -1,7 +1,4 @@
 using System.Buffers;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Amazon.S3;
 using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Handlers;
@@ -19,6 +16,9 @@ using CPS.ComplexCases.FileTransfer.API.Models.Configuration;
 using CPS.ComplexCases.FileTransfer.API.Models.Domain.Enums;
 using CPS.ComplexCases.FileTransfer.API.Telemetry;
 using CPS.ComplexCases.NetApp.Client;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace CPS.ComplexCases.FileTransfer.API.Durable.Activity;
 

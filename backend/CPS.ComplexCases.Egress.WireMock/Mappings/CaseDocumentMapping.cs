@@ -7,19 +7,19 @@ namespace CPS.ComplexCases.Egress.WireMock.Mappings;
 
 public class CaseDocumentMapping : IWireMockMapping
 {
-  public void Configure(WireMockServer server)
-  {
-    var testContent = "Test file content from WireMock";
-    var contentBytes = System.Text.Encoding.UTF8.GetBytes(testContent);
+    public void Configure(WireMockServer server)
+    {
+        var testContent = "Test file content from WireMock";
+        var contentBytes = System.Text.Encoding.UTF8.GetBytes(testContent);
 
-    server
-        .Given(Request.Create()
-            .WithPath("/api/v1/workspaces/workspace-id/files/file-id")
-            .UsingGet())
-        .RespondWith(Response.Create()
-            .WithStatusCode(200)
-            .WithHeader("Content-Type", "application/octet-stream")
-            .WithHeader("Content-Length", contentBytes.Length.ToString())
-            .WithBody(contentBytes));
-  }
+        server
+            .Given(Request.Create()
+                .WithPath("/api/v1/workspaces/workspace-id/files/file-id")
+                .UsingGet())
+            .RespondWith(Response.Create()
+                .WithStatusCode(200)
+                .WithHeader("Content-Type", "application/octet-stream")
+                .WithHeader("Content-Length", contentBytes.Length.ToString())
+                .WithBody(contentBytes));
+    }
 }

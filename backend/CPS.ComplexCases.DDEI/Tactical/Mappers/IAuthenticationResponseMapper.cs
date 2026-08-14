@@ -7,5 +7,5 @@ namespace CPS.ComplexCases.DDEI.Tactical.Mappers;
 
 public interface IAuthenticationResponseMapper
 {
-  Domain.AuthenticationResponse Map(Dto.AuthenticationResponse response);
+    Domain.AuthenticationResponse Map(Dto.AuthenticationResponse response);
 }

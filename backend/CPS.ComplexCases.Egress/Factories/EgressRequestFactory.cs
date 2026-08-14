@@ -7,236 +7,236 @@ namespace CPS.ComplexCases.Egress.Factories;
 
 public class EgressRequestFactory : IEgressRequestFactory
 {
-  public HttpRequestMessage GetWorkspaceTokenRequest(string serviceAccountUsername, string serviceAccountPassword)
-  {
-    var request = new HttpRequestMessage(HttpMethod.Get, "api/v1/user/auth/");
-    request.Headers.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{serviceAccountUsername}:{serviceAccountPassword}")));
-
-    return request;
-  }
-
-  public HttpRequestMessage ListWorkspacesRequest(ListEgressWorkspacesArg arg, string token)
-  {
-    var relativeUrl = new StringBuilder($"/api/v1/workspaces?view=full&skip={arg.Skip}&limit={arg.Take}");
-
-    if (!string.IsNullOrEmpty(arg.Name))
+    public HttpRequestMessage GetWorkspaceTokenRequest(string serviceAccountUsername, string serviceAccountPassword)
     {
-      relativeUrl.Append($"&name={Uri.EscapeDataString(arg.Name)}");
+        var request = new HttpRequestMessage(HttpMethod.Get, "api/v1/user/auth/");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{serviceAccountUsername}:{serviceAccountPassword}")));
+
+        return request;
     }
 
-    var request = new HttpRequestMessage(HttpMethod.Get, relativeUrl.ToString());
-
-    AppendToken(request, token);
-
-    return request;
-  }
-
-  public HttpRequestMessage ListEgressMaterialRequest(ListWorkspaceMaterialArg arg, string token)
-  {
-    var relativeUrl = new StringBuilder($"/api/v1/workspaces/{arg.WorkspaceId}/files?view=full&skip={arg.Skip}&limit={arg.Take}");
-
-    if (!string.IsNullOrEmpty(arg.FolderId))
+    public HttpRequestMessage ListWorkspacesRequest(ListEgressWorkspacesArg arg, string token)
     {
-      relativeUrl.Append($"&folder={arg.FolderId}");
+        var relativeUrl = new StringBuilder($"/api/v1/workspaces?view=full&skip={arg.Skip}&limit={arg.Take}");
+
+        if (!string.IsNullOrEmpty(arg.Name))
+        {
+            relativeUrl.Append($"&name={Uri.EscapeDataString(arg.Name)}");
+        }
+
+        var request = new HttpRequestMessage(HttpMethod.Get, relativeUrl.ToString());
+
+        AppendToken(request, token);
+
+        return request;
     }
 
-    if (!string.IsNullOrEmpty(arg.Path))
+    public HttpRequestMessage ListEgressMaterialRequest(ListWorkspaceMaterialArg arg, string token)
     {
-      relativeUrl.Append($"&path={Uri.EscapeDataString(arg.Path)}");
+        var relativeUrl = new StringBuilder($"/api/v1/workspaces/{arg.WorkspaceId}/files?view=full&skip={arg.Skip}&limit={arg.Take}");
+
+        if (!string.IsNullOrEmpty(arg.FolderId))
+        {
+            relativeUrl.Append($"&folder={arg.FolderId}");
+        }
+
+        if (!string.IsNullOrEmpty(arg.Path))
+        {
+            relativeUrl.Append($"&path={Uri.EscapeDataString(arg.Path)}");
+        }
+
+        if (arg.ViewFullDetails.HasValue && arg.ViewFullDetails.Value)
+        {
+            relativeUrl.Append("&view=full");
+        }
+
+        var request = new HttpRequestMessage(HttpMethod.Get, relativeUrl.ToString());
+
+        AppendToken(request, token);
+
+        return request;
     }
 
-    if (arg.ViewFullDetails.HasValue && arg.ViewFullDetails.Value)
+    public HttpRequestMessage GetWorkspacePermissionsRequest(GetWorkspacePermissionArg arg, string token)
     {
-      relativeUrl.Append("&view=full");
+        // pagination is not being used internally here because we always filter on the users email (switch_id in Egress)
+        var relativeUrl = new StringBuilder($"/api/v1/workspaces/{arg.WorkspaceId}/users?skip=0&limit=100");
+
+        if (!string.IsNullOrEmpty(arg.Email))
+        {
+            relativeUrl.Append($"&switch_id={arg.Email}");
+        }
+
+        var request = new HttpRequestMessage(HttpMethod.Get, relativeUrl.ToString());
+
+        AppendToken(request, token);
+
+        return request;
     }
 
-    var request = new HttpRequestMessage(HttpMethod.Get, relativeUrl.ToString());
-
-    AppendToken(request, token);
-
-    return request;
-  }
-
-  public HttpRequestMessage GetWorkspacePermissionsRequest(GetWorkspacePermissionArg arg, string token)
-  {
-    // pagination is not being used internally here because we always filter on the users email (switch_id in Egress)
-    var relativeUrl = new StringBuilder($"/api/v1/workspaces/{arg.WorkspaceId}/users?skip=0&limit=100");
-
-    if (!string.IsNullOrEmpty(arg.Email))
+    public HttpRequestMessage GetWorkspacePermissionsByRoleIdRequest(GetWorkspacePermissionsByRoleIdArg arg, string token)
     {
-      relativeUrl.Append($"&switch_id={arg.Email}");
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/workspaces/{arg.WorkspaceId}/roles/{arg.RoleId}?view=full");
+
+        AppendToken(request, token);
+
+        return request;
     }
 
-    var request = new HttpRequestMessage(HttpMethod.Get, relativeUrl.ToString());
-
-    AppendToken(request, token);
-
-    return request;
-  }
-
-  public HttpRequestMessage GetWorkspacePermissionsByRoleIdRequest(GetWorkspacePermissionsByRoleIdArg arg, string token)
-  {
-    var request = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/workspaces/{arg.WorkspaceId}/roles/{arg.RoleId}?view=full");
-
-    AppendToken(request, token);
-
-    return request;
-  }
-
-  public HttpRequestMessage GetWorkspaceDocumentRequest(GetWorkspaceDocumentArg arg, string token)
-  {
-    var request = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/workspaces/{arg.WorkspaceId}/files/{arg.FileId}");
-
-    AppendToken(request, token);
-
-    return request;
-  }
-
-  public HttpRequestMessage CreateUploadRequest(CreateUploadArg arg, string token)
-  {
-    var uploadData = new
+    public HttpRequestMessage GetWorkspaceDocumentRequest(GetWorkspaceDocumentArg arg, string token)
     {
-      filename = arg.FileName,
-      filesize = arg.FileSize,
-      folder_path = arg.FolderPath,
-    };
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/workspaces/{arg.WorkspaceId}/files/{arg.FileId}");
 
-    var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/workspaces/{arg.WorkspaceId}/uploads")
-    {
-      Content = new StringContent(JsonSerializer.Serialize(uploadData), Encoding.UTF8, "application/json")
-    };
+        AppendToken(request, token);
 
-    AppendToken(request, token);
-
-    return request;
-  }
-
-  public HttpRequestMessage UploadChunkRequest(UploadChunkArg arg, string token)
-  {
-    var request = new HttpRequestMessage(HttpMethod.Patch, $"/api/v1/workspaces/{arg.WorkspaceId}/uploads/{arg.UploadId}/");
-
-    var content = new MultipartFormDataContent();
-    var fileContent = new ByteArrayContent(arg.ChunkData);
-    content.Add(fileContent, "file_content");
-    request.Content = content;
-
-    if (arg.Start.HasValue && arg.End.HasValue && arg.TotalSize.HasValue)
-    {
-      request.Content.Headers.ContentRange = new ContentRangeHeaderValue(arg.Start.Value, arg.End.Value, arg.TotalSize.Value);
+        return request;
     }
 
-    AppendToken(request, token);
-
-    return request;
-  }
-
-  public HttpRequestMessage CompleteUploadRequest(CompleteUploadArg arg, string token)
-  {
-    var completeData = new
+    public HttpRequestMessage CreateUploadRequest(CreateUploadArg arg, string token)
     {
-      done = true,
-      md5_hash = arg.Md5Hash,
-    };
+        var uploadData = new
+        {
+            filename = arg.FileName,
+            filesize = arg.FileSize,
+            folder_path = arg.FolderPath,
+        };
 
-    var request = new HttpRequestMessage(HttpMethod.Put, $"/api/v1/workspaces/{arg.WorkspaceId}/uploads/{arg.UploadId}/")
+        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/workspaces/{arg.WorkspaceId}/uploads")
+        {
+            Content = new StringContent(JsonSerializer.Serialize(uploadData), Encoding.UTF8, "application/json")
+        };
+
+        AppendToken(request, token);
+
+        return request;
+    }
+
+    public HttpRequestMessage UploadChunkRequest(UploadChunkArg arg, string token)
     {
-      Content = new StringContent(JsonSerializer.Serialize(completeData), Encoding.UTF8, "application/json")
-    };
+        var request = new HttpRequestMessage(HttpMethod.Patch, $"/api/v1/workspaces/{arg.WorkspaceId}/uploads/{arg.UploadId}/");
 
-    AppendToken(request, token);
+        var content = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(arg.ChunkData);
+        content.Add(fileContent, "file_content");
+        request.Content = content;
 
-    return request;
-  }
+        if (arg.Start.HasValue && arg.End.HasValue && arg.TotalSize.HasValue)
+        {
+            request.Content.Headers.ContentRange = new ContentRangeHeaderValue(arg.Start.Value, arg.End.Value, arg.TotalSize.Value);
+        }
 
-  public HttpRequestMessage CreateFolderRequest(CreateFolderArg arg, string token)
-  {
-    var folderData = new
+        AppendToken(request, token);
+
+        return request;
+    }
+
+    public HttpRequestMessage CompleteUploadRequest(CompleteUploadArg arg, string token)
     {
-      folder_name = arg.FolderName,
-    };
+        var completeData = new
+        {
+            done = true,
+            md5_hash = arg.Md5Hash,
+        };
 
-    var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/workspaces/{arg.WorkspaceId}/files?path={Uri.EscapeDataString(arg.Path ?? string.Empty)}")
+        var request = new HttpRequestMessage(HttpMethod.Put, $"/api/v1/workspaces/{arg.WorkspaceId}/uploads/{arg.UploadId}/")
+        {
+            Content = new StringContent(JsonSerializer.Serialize(completeData), Encoding.UTF8, "application/json")
+        };
+
+        AppendToken(request, token);
+
+        return request;
+    }
+
+    public HttpRequestMessage CreateFolderRequest(CreateFolderArg arg, string token)
     {
-      Content = new StringContent(JsonSerializer.Serialize(folderData), Encoding.UTF8, "application/json")
-    };
+        var folderData = new
+        {
+            folder_name = arg.FolderName,
+        };
 
-    AppendToken(request, token);
+        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/workspaces/{arg.WorkspaceId}/files?path={Uri.EscapeDataString(arg.Path ?? string.Empty)}")
+        {
+            Content = new StringContent(JsonSerializer.Serialize(folderData), Encoding.UTF8, "application/json")
+        };
 
-    return request;
-  }
+        AppendToken(request, token);
 
-  public HttpRequestMessage DeleteFilesRequest(DeleteFilesArg arg, string token)
-  {
-    var fileData = new
+        return request;
+    }
+
+    public HttpRequestMessage DeleteFilesRequest(DeleteFilesArg arg, string token)
     {
-      file_ids = arg.FileIds
-    };
+        var fileData = new
+        {
+            file_ids = arg.FileIds
+        };
 
-    var request = new HttpRequestMessage(HttpMethod.Delete, $"/api/v1/workspaces/{arg.WorkspaceId}/files")
+        var request = new HttpRequestMessage(HttpMethod.Delete, $"/api/v1/workspaces/{arg.WorkspaceId}/files")
+        {
+            Content = new StringContent(JsonSerializer.Serialize(fileData), Encoding.UTF8, "application/json")
+        };
+
+        AppendToken(request, token);
+        return request;
+    }
+
+    public HttpRequestMessage ListTemplatesRequest(PaginationArg arg, string token)
     {
-      Content = new StringContent(JsonSerializer.Serialize(fileData), Encoding.UTF8, "application/json")
-    };
+        var relativeUrl = new StringBuilder($"/api/v1/templates?skip={arg.Skip}&limit={arg.Take}");
 
-    AppendToken(request, token);
-    return request;
-  }
+        var request = new HttpRequestMessage(HttpMethod.Get, relativeUrl.ToString());
 
-  public HttpRequestMessage ListTemplatesRequest(PaginationArg arg, string token)
-  {
-    var relativeUrl = new StringBuilder($"/api/v1/templates?skip={arg.Skip}&limit={arg.Take}");
+        AppendToken(request, token);
 
-    var request = new HttpRequestMessage(HttpMethod.Get, relativeUrl.ToString());
+        return request;
+    }
 
-    AppendToken(request, token);
-
-    return request;
-  }
-
-  public HttpRequestMessage CreateWorkspaceRequest(CreateEgressWorkspaceArg arg, string token)
-  {
-
-    var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/workspaces?view=full")
+    public HttpRequestMessage CreateWorkspaceRequest(CreateEgressWorkspaceArg arg, string token)
     {
-      Content = new StringContent(JsonSerializer.Serialize(arg), Encoding.UTF8, "application/json")
-    };
 
-    AppendToken(request, token);
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/workspaces?view=full")
+        {
+            Content = new StringContent(JsonSerializer.Serialize(arg), Encoding.UTF8, "application/json")
+        };
 
-    return request;
-  }
+        AppendToken(request, token);
 
-  public HttpRequestMessage GrantWorkspacePermissionRequest(GrantWorkspacePermissionArg arg, string token)
-  {
-    var permissionData = new
+        return request;
+    }
+
+    public HttpRequestMessage GrantWorkspacePermissionRequest(GrantWorkspacePermissionArg arg, string token)
     {
-      switch_ids = new[] { arg.Username },
-      role_id = arg.RoleId
-    };
+        var permissionData = new
+        {
+            switch_ids = new[] { arg.Username },
+            role_id = arg.RoleId
+        };
 
-    var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/workspaces/{arg.WorkspaceId}/users")
+        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/workspaces/{arg.WorkspaceId}/users")
+        {
+            Content = new StringContent(JsonSerializer.Serialize(permissionData), Encoding.UTF8, "application/json")
+        };
+
+        AppendToken(request, token);
+
+        return request;
+    }
+
+    public HttpRequestMessage ListWorkspaceRolesRequest(ListWorkspaceRolesArg arg, string token)
     {
-      Content = new StringContent(JsonSerializer.Serialize(permissionData), Encoding.UTF8, "application/json")
-    };
+        var relativeUrl = new StringBuilder($"/api/v1/workspaces/{arg.WorkspaceId}/roles?skip={arg.Skip}&limit={arg.Take}");
 
-    AppendToken(request, token);
+        var request = new HttpRequestMessage(HttpMethod.Get, relativeUrl.ToString());
 
-    return request;
-  }
+        AppendToken(request, token);
 
-  public HttpRequestMessage ListWorkspaceRolesRequest(ListWorkspaceRolesArg arg, string token)
-  {
-    var relativeUrl = new StringBuilder($"/api/v1/workspaces/{arg.WorkspaceId}/roles?skip={arg.Skip}&limit={arg.Take}");
+        return request;
+    }
 
-    var request = new HttpRequestMessage(HttpMethod.Get, relativeUrl.ToString());
-
-    AppendToken(request, token);
-
-    return request;
-  }
-
-  private static void AppendToken(HttpRequestMessage request, string token)
-  {
-    var basicAuthValue = Convert.ToBase64String(Encoding.UTF8.GetBytes(token));
-    request.Headers.Authorization = new AuthenticationHeaderValue("Basic", basicAuthValue);
-  }
+    private static void AppendToken(HttpRequestMessage request, string token)
+    {
+        var basicAuthValue = Convert.ToBase64String(Encoding.UTF8.GetBytes(token));
+        request.Headers.Authorization = new AuthenticationHeaderValue("Basic", basicAuthValue);
+    }
 }

@@ -1,15 +1,14 @@
 using System.Net;
+using CPS.ComplexCases.API.Constants;
+using CPS.ComplexCases.API.Handlers;
+using CPS.ComplexCases.Common.Attributes;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.OpenApi.Models;
-using CPS.ComplexCases.API.Constants;
-using CPS.ComplexCases.API.Handlers;
-using CPS.ComplexCases.Common.Attributes;
-
-using ContentType = CPS.ComplexCases.API.Constants.ContentType;
 using ApiResponseDescriptions = CPS.ComplexCases.API.Constants.ApiResponseDescriptions;
+using ContentType = CPS.ComplexCases.API.Constants.ContentType;
 
 namespace CPS.ComplexCases.API.Functions;
 

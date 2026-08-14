@@ -15,7 +15,7 @@ namespace CPS.ComplexCases.FileTransfer.API.Functions;
 public class Status(ILogger<Status> logger)
 {
     private readonly ILogger<Status> _logger = logger;
-  
+
     [Function(nameof(Status))]
     [OpenApiOperation(operationId: nameof(Status), tags: ["Health"], Description = "Gets the current status of the FileTransfer function app.")]
     [OpenApiNoSecurity]

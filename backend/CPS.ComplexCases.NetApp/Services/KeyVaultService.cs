@@ -1,8 +1,8 @@
 using System.Text.Json;
-using Microsoft.Extensions.Logging;
 using Azure.Security.KeyVault.Secrets;
 using CPS.ComplexCases.NetApp.Exceptions;
 using CPS.ComplexCases.NetApp.Models.S3.Credentials;
+using Microsoft.Extensions.Logging;
 
 namespace CPS.ComplexCases.NetApp.Services;
 

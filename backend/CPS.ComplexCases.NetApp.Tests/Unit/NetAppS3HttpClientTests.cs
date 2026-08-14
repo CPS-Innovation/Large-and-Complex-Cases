@@ -1,10 +1,10 @@
 using System.Net;
-using Microsoft.Extensions.Options;
 using AutoFixture;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Models;
 using CPS.ComplexCases.NetApp.Models.Args;
 using CPS.ComplexCases.NetApp.Services;
+using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
 

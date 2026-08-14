@@ -10,10 +10,10 @@ namespace CPS.ComplexCases.DDEI.Tactical.Extensions;
 
 public static class IServiceCollectionExtension
 {
-  public static void AddDdeiClientTactical(this IServiceCollection services)
-  {
-    services.AddSingleton<IDdeiRequestFactoryTactical, DdeiRequestFactoryTactical>();
-    services.AddSingleton<IAuthenticationResponseMapper, AuthenticationResponseMapper>();
-    services.AddHttpClient<IDdeiClientTactical, DdeiClient>(DDEI.Extensions.IServiceCollectionExtension.AddDdeiClient);
-  }
+    public static void AddDdeiClientTactical(this IServiceCollection services)
+    {
+        services.AddSingleton<IDdeiRequestFactoryTactical, DdeiRequestFactoryTactical>();
+        services.AddSingleton<IAuthenticationResponseMapper, AuthenticationResponseMapper>();
+        services.AddHttpClient<IDdeiClientTactical, DdeiClient>(DDEI.Extensions.IServiceCollectionExtension.AddDdeiClient);
+    }
 }

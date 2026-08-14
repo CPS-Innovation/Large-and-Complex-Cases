@@ -1,7 +1,6 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Text;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Amazon.S3;
 using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Handlers;
@@ -9,6 +8,7 @@ using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Domain.Exceptions;
 using CPS.ComplexCases.Common.Models.Requests;
+using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Common.Storage;
 using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.Egress.Models;
@@ -21,9 +21,9 @@ using CPS.ComplexCases.FileTransfer.API.Telemetry;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
-using CPS.ComplexCases.Common.Services;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
-using System.Collections.Concurrent;
 
 namespace CPS.ComplexCases.FileTransfer.API.Tests.Unit.Durable.Activity;
 
@@ -1215,7 +1215,7 @@ public class TransferFileTests
             .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(),
                 It.IsAny<string?>(), It.IsAny<string>()))
             .ThrowsAsync(new AmazonS3Exception("We encountered an internal error. Please try again.")
-                { StatusCode = HttpStatusCode.InternalServerError });
+            { StatusCode = HttpStatusCode.InternalServerError });
 
         var result = await _activity.Run(payload);
 
@@ -1240,7 +1240,7 @@ public class TransferFileTests
             .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(),
                 It.IsAny<string?>(), It.IsAny<string>()))
             .ThrowsAsync(new AmazonS3Exception("The specified upload does not exist.")
-                { StatusCode = HttpStatusCode.NotFound });
+            { StatusCode = HttpStatusCode.NotFound });
 
         var result = await _activity.Run(payload);
 
@@ -1288,7 +1288,7 @@ public class TransferFileTests
         _sourceClientMock
             .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>()))
             .ThrowsAsync(new AmazonS3Exception("The AWS access key ID you provided does not exist in our records.")
-                { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "InvalidAccessKeyId" });
+            { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "InvalidAccessKeyId" });
 
         var result = await _activity.Run(payload);
 
@@ -1310,7 +1310,7 @@ public class TransferFileTests
         _sourceClientMock
             .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>()))
             .ThrowsAsync(new AmazonS3Exception("The provided token has expired.")
-                { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "ExpiredToken" });
+            { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "ExpiredToken" });
 
         var result = await _activity.Run(payload);
 
@@ -1332,7 +1332,7 @@ public class TransferFileTests
         _sourceClientMock
             .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>()))
             .ThrowsAsync(new AmazonS3Exception("The AWS access key ID you provided does not exist in our records.")
-                { StatusCode = HttpStatusCode.Forbidden });
+            { StatusCode = HttpStatusCode.Forbidden });
 
         var result = await _activity.Run(payload);
 
@@ -1356,7 +1356,7 @@ public class TransferFileTests
         _sourceClientMock
             .Setup(x => x.OpenReadStreamAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>()))
             .ThrowsAsync(new AmazonS3Exception("Access Denied")
-                { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" });
+            { StatusCode = HttpStatusCode.Forbidden, ErrorCode = "AccessDenied" });
 
         var result = await _activity.Run(payload);
 

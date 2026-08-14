@@ -1,11 +1,4 @@
 using System.Net;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Microsoft.OpenApi.Models;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Domain.Response;
@@ -15,6 +8,13 @@ using CPS.ComplexCases.Common.Models.Configuration;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.DDEI.Client;
 using CPS.ComplexCases.DDEI.Factories;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Microsoft.OpenApi.Models;
 
 namespace CPS.ComplexCases.API.Functions;
 

@@ -1,6 +1,6 @@
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
-using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.Common.Telemetry;
 using CPS.ComplexCases.DDEI.Exceptions;
 using CPS.ComplexCases.DDEI.Factories;
@@ -12,9 +12,8 @@ using CPS.ComplexCases.DDEI.Tactical.Client;
 using CPS.ComplexCases.DDEI.Tactical.Factories;
 using CPS.ComplexCases.DDEI.Tactical.Mappers;
 using CPS.ComplexCases.DDEI.Tactical.Models.Dto;
-
+using Microsoft.Extensions.Logging;
 using TacticalDomain = CPS.ComplexCases.DDEI.Tactical.Models.Response;
-using System.Runtime.CompilerServices;
 
 namespace CPS.ComplexCases.DDEI.Client;
 
@@ -28,129 +27,129 @@ public class DdeiClient(ILogger<DdeiClient> logger,
  IAuthenticationResponseMapper authenticationResponseMapper,
  ITelemetryClient telemetryClient) : IDdeiClient, IDdeiClientTactical
 {
-  private readonly HttpClient _httpClient = httpClient;
-  private readonly ILogger<DdeiClient> _logger = logger;
-  private readonly IDdeiRequestFactory _ddeiRequestFactory = ddeiRequestFactory;
-  private readonly IDdeiArgFactory _ddeiArgFactory = ddeiArgFactory;
-  private readonly ICaseDetailsMapper _caseDetailsMapper = caseDetailsMapper;
-  private readonly IAreasMapper _areasMapper = areasMapper;
-  private readonly IDdeiRequestFactoryTactical _ddeiRequestFactoryTactical = ddeiRequestFactoryTactical;
-  private readonly IAuthenticationResponseMapper _authenticationResponseMapper = authenticationResponseMapper;
-  private readonly ITelemetryClient _telemetryClient = telemetryClient;
+    private readonly HttpClient _httpClient = httpClient;
+    private readonly ILogger<DdeiClient> _logger = logger;
+    private readonly IDdeiRequestFactory _ddeiRequestFactory = ddeiRequestFactory;
+    private readonly IDdeiArgFactory _ddeiArgFactory = ddeiArgFactory;
+    private readonly ICaseDetailsMapper _caseDetailsMapper = caseDetailsMapper;
+    private readonly IAreasMapper _areasMapper = areasMapper;
+    private readonly IDdeiRequestFactoryTactical _ddeiRequestFactoryTactical = ddeiRequestFactoryTactical;
+    private readonly IAuthenticationResponseMapper _authenticationResponseMapper = authenticationResponseMapper;
+    private readonly ITelemetryClient _telemetryClient = telemetryClient;
 
-  public async Task<TacticalDomain.AuthenticationResponse> AuthenticateAsync(string username, string password)
-  {
-    var response = await CallDdei<AuthenticationResponse>(_ddeiRequestFactoryTactical.CreateAuthenticateRequest(username, password));
-    return _authenticationResponseMapper.Map(response);
-  }
-
-  public async Task<IEnumerable<CaseDto>> ListCasesByUrnAsync(DdeiUrnArgDto arg)
-  {
-    var caseIdentifiers = await CallDdei<IEnumerable<DdeiCaseIdentifiersDto>>(_ddeiRequestFactory.CreateListCasesByUrnRequest(arg));
-
-    var calls = caseIdentifiers.Select(async caseIdentifier =>
-         await GetCaseInternalAsync(_ddeiArgFactory.CreateCaseArgFromUrnArg(arg, caseIdentifier.Id)));
-
-    var cases = await Task.WhenAll(calls);
-    return cases.Select(_caseDetailsMapper.MapCaseDetails);
-  }
-
-  public async Task<IEnumerable<CaseDto>> ListCasesByOperationNameAsync(DdeiOperationNameArgDto arg)
-  {
-    var caseIdentifiers = await CallDdei<IEnumerable<DdeiCaseIdentifiersDto>>(_ddeiRequestFactory.CreateListCasesByOperationNameRequest(arg));
-
-    var calls = caseIdentifiers.Select(async caseIdentifier =>
-     await GetCaseInternalAsync(_ddeiArgFactory.CreateCaseArgFromOperationNameArg(arg, caseIdentifier.Id)));
-
-    var cases = await Task.WhenAll(calls);
-    return cases.Select(_caseDetailsMapper.MapCaseDetails);
-  }
-
-  public async Task<IEnumerable<CaseDto>> ListCasesByDefendantNameAsync(DdeiDefendantNameArgDto arg)
-  {
-    var caseIdentifiers = await CallDdei<IEnumerable<DdeiCaseIdentifiersDto>>(_ddeiRequestFactory.CreateListCasesByDefendantRequest(arg));
-
-    var calls = caseIdentifiers.Select(async caseIdentifier =>
-     await GetCaseInternalAsync(_ddeiArgFactory.CreateCaseArgFromDefendantArg(arg, caseIdentifier.Id)));
-
-    var cases = await Task.WhenAll(calls);
-    return cases.Select(_caseDetailsMapper.MapCaseDetails);
-  }
-
-  public async Task<AreasDto> GetAreasAsync(DdeiBaseArgDto arg)
-  {
-    var userFilteredDataTask = CallDdei<DdeiUserFilteredDataDto>(_ddeiRequestFactory.CreateUserFilteredDataRequest(arg));
-    var allUnitsTask = CallDdei<IEnumerable<DdeiUnitDto>>(_ddeiRequestFactory.CreateListUnitsRequest(arg));
-    var userDataTask = CallDdei<DdeiUserDataDto>(_ddeiRequestFactory.CreateUserDataRequest(arg));
-
-    await Task.WhenAll(userFilteredDataTask, allUnitsTask, userDataTask);
-
-    var userFilteredData = await userFilteredDataTask;
-    var allUnits = await allUnitsTask;
-    var userData = await userDataTask;
-
-    return _areasMapper.MapAreas(userFilteredData, userData, allUnits);
-  }
-
-  public async Task<CaseDto> GetCaseAsync(DdeiCaseIdArgDto arg)
-  {
-    var caseSummary = await GetCaseInternalAsync(arg);
-    return _caseDetailsMapper.MapCaseDetails(caseSummary);
-  }
-
-  public async Task<string?> GetCmsModernTokenAsync(DdeiBaseArgDto arg)
-  {
-    try
+    public async Task<TacticalDomain.AuthenticationResponse> AuthenticateAsync(string username, string password)
     {
-      var response = await CallDdei<DdeiCmsModernTokenDto>(_ddeiRequestFactory.CreateGetCmsModernTokenRequest(arg));
-      return response.CmsModernToken;
+        var response = await CallDdei<AuthenticationResponse>(_ddeiRequestFactoryTactical.CreateAuthenticateRequest(username, password));
+        return _authenticationResponseMapper.Map(response);
     }
-    catch (Exception ex)
+
+    public async Task<IEnumerable<CaseDto>> ListCasesByUrnAsync(DdeiUrnArgDto arg)
     {
-      _logger.LogError(ex, $"Error in {nameof(GetCmsModernTokenAsync)}) - Correlation {arg.CorrelationId}");
-      throw;
+        var caseIdentifiers = await CallDdei<IEnumerable<DdeiCaseIdentifiersDto>>(_ddeiRequestFactory.CreateListCasesByUrnRequest(arg));
+
+        var calls = caseIdentifiers.Select(async caseIdentifier =>
+             await GetCaseInternalAsync(_ddeiArgFactory.CreateCaseArgFromUrnArg(arg, caseIdentifier.Id)));
+
+        var cases = await Task.WhenAll(calls);
+        return cases.Select(_caseDetailsMapper.MapCaseDetails);
     }
-  }
 
-  private async Task<DdeiCaseSummaryDto> GetCaseInternalAsync(DdeiCaseIdArgDto arg) =>
-      await CallDdei<DdeiCaseSummaryDto>(_ddeiRequestFactory.CreateGetCaseRequest(arg));
-
-  private async Task<T> CallDdei<T>(HttpRequestMessage request, [CallerMemberName] string operation = "")
-  {
-    var telemetryEvent = new ExternalApiCallEvent(nameof(DdeiClient), request, operation);
-
-    using var response = await CallDdei(request);
-
-    telemetryEvent.CallEndTime = DateTime.UtcNow;
-    telemetryEvent.ResponseStatusCode = response.StatusCode;
-    _telemetryClient.TrackEvent(telemetryEvent);
-
-    var content = await response.Content.ReadAsStringAsync();
-    var result = JsonSerializer.Deserialize<T>(content) ?? throw new InvalidOperationException("Deserialization returned null.");
-    return result;
-  }
-
-  private async Task<HttpResponseMessage> CallDdei(HttpRequestMessage request, params HttpStatusCode[] expectedUnhappyStatusCodes)
-  {
-    var response = await _httpClient.SendAsync(request);
-    try
+    public async Task<IEnumerable<CaseDto>> ListCasesByOperationNameAsync(DdeiOperationNameArgDto arg)
     {
-      if (response.IsSuccessStatusCode || expectedUnhappyStatusCodes.Contains(response.StatusCode))
-      {
-        return response;
-      }
+        var caseIdentifiers = await CallDdei<IEnumerable<DdeiCaseIdentifiersDto>>(_ddeiRequestFactory.CreateListCasesByOperationNameRequest(arg));
 
-      if (response.StatusCode == HttpStatusCode.Unauthorized)
-      {
-        throw new CmsUnauthorizedException();
-      }
+        var calls = caseIdentifiers.Select(async caseIdentifier =>
+         await GetCaseInternalAsync(_ddeiArgFactory.CreateCaseArgFromOperationNameArg(arg, caseIdentifier.Id)));
 
-      var content = await response.Content.ReadAsStringAsync();
-      throw new HttpRequestException(content);
+        var cases = await Task.WhenAll(calls);
+        return cases.Select(_caseDetailsMapper.MapCaseDetails);
     }
-    catch (HttpRequestException exception)
+
+    public async Task<IEnumerable<CaseDto>> ListCasesByDefendantNameAsync(DdeiDefendantNameArgDto arg)
     {
-      throw new DdeiClientException(response.StatusCode, exception);
+        var caseIdentifiers = await CallDdei<IEnumerable<DdeiCaseIdentifiersDto>>(_ddeiRequestFactory.CreateListCasesByDefendantRequest(arg));
+
+        var calls = caseIdentifiers.Select(async caseIdentifier =>
+         await GetCaseInternalAsync(_ddeiArgFactory.CreateCaseArgFromDefendantArg(arg, caseIdentifier.Id)));
+
+        var cases = await Task.WhenAll(calls);
+        return cases.Select(_caseDetailsMapper.MapCaseDetails);
     }
-  }
+
+    public async Task<AreasDto> GetAreasAsync(DdeiBaseArgDto arg)
+    {
+        var userFilteredDataTask = CallDdei<DdeiUserFilteredDataDto>(_ddeiRequestFactory.CreateUserFilteredDataRequest(arg));
+        var allUnitsTask = CallDdei<IEnumerable<DdeiUnitDto>>(_ddeiRequestFactory.CreateListUnitsRequest(arg));
+        var userDataTask = CallDdei<DdeiUserDataDto>(_ddeiRequestFactory.CreateUserDataRequest(arg));
+
+        await Task.WhenAll(userFilteredDataTask, allUnitsTask, userDataTask);
+
+        var userFilteredData = await userFilteredDataTask;
+        var allUnits = await allUnitsTask;
+        var userData = await userDataTask;
+
+        return _areasMapper.MapAreas(userFilteredData, userData, allUnits);
+    }
+
+    public async Task<CaseDto> GetCaseAsync(DdeiCaseIdArgDto arg)
+    {
+        var caseSummary = await GetCaseInternalAsync(arg);
+        return _caseDetailsMapper.MapCaseDetails(caseSummary);
+    }
+
+    public async Task<string?> GetCmsModernTokenAsync(DdeiBaseArgDto arg)
+    {
+        try
+        {
+            var response = await CallDdei<DdeiCmsModernTokenDto>(_ddeiRequestFactory.CreateGetCmsModernTokenRequest(arg));
+            return response.CmsModernToken;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error in {nameof(GetCmsModernTokenAsync)}) - Correlation {arg.CorrelationId}");
+            throw;
+        }
+    }
+
+    private async Task<DdeiCaseSummaryDto> GetCaseInternalAsync(DdeiCaseIdArgDto arg) =>
+        await CallDdei<DdeiCaseSummaryDto>(_ddeiRequestFactory.CreateGetCaseRequest(arg));
+
+    private async Task<T> CallDdei<T>(HttpRequestMessage request, [CallerMemberName] string operation = "")
+    {
+        var telemetryEvent = new ExternalApiCallEvent(nameof(DdeiClient), request, operation);
+
+        using var response = await CallDdei(request);
+
+        telemetryEvent.CallEndTime = DateTime.UtcNow;
+        telemetryEvent.ResponseStatusCode = response.StatusCode;
+        _telemetryClient.TrackEvent(telemetryEvent);
+
+        var content = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<T>(content) ?? throw new InvalidOperationException("Deserialization returned null.");
+        return result;
+    }
+
+    private async Task<HttpResponseMessage> CallDdei(HttpRequestMessage request, params HttpStatusCode[] expectedUnhappyStatusCodes)
+    {
+        var response = await _httpClient.SendAsync(request);
+        try
+        {
+            if (response.IsSuccessStatusCode || expectedUnhappyStatusCodes.Contains(response.StatusCode))
+            {
+                return response;
+            }
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                throw new CmsUnauthorizedException();
+            }
+
+            var content = await response.Content.ReadAsStringAsync();
+            throw new HttpRequestException(content);
+        }
+        catch (HttpRequestException exception)
+        {
+            throw new DdeiClientException(response.StatusCode, exception);
+        }
+    }
 }

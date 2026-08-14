@@ -1,10 +1,5 @@
 using System.Net;
 using System.Text.Json;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
-using Microsoft.Extensions.Logging;
 using CPS.ComplexCases.ActivityLog.Extensions;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Constants;
@@ -24,6 +19,11 @@ using CPS.ComplexCases.NetApp.Constants;
 using CPS.ComplexCases.NetApp.Exceptions;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
+using Microsoft.Extensions.Logging;
 
 namespace CPS.ComplexCases.API.Functions;
 

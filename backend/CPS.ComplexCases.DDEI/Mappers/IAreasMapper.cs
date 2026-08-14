@@ -5,5 +5,5 @@ namespace CPS.ComplexCases.DDEI.Mappers;
 
 public interface IAreasMapper
 {
-  AreasDto MapAreas(DdeiUserFilteredDataDto userFilteredData, DdeiUserDataDto userData, IEnumerable<DdeiUnitDto> allAreas);
+    AreasDto MapAreas(DdeiUserFilteredDataDto userFilteredData, DdeiUserDataDto userData, IEnumerable<DdeiUnitDto> allAreas);
 }

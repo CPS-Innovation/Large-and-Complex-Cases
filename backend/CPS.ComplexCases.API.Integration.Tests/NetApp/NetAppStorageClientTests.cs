@@ -1,13 +1,13 @@
 using System.Text;
 using Amazon.S3;
-using Moq;
 using CPS.ComplexCases.API.Integration.Tests.Fixtures;
 using CPS.ComplexCases.API.Integration.Tests.Helpers;
+using CPS.ComplexCases.Common.Models.Domain;
 using CPS.ComplexCases.Common.Models.Domain.Dtos;
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.NetApp.Client;
-using CPS.ComplexCases.Common.Models.Domain;
+using Moq;
 
 namespace CPS.ComplexCases.API.Integration.Tests.NetApp;
 

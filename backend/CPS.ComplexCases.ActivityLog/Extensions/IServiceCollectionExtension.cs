@@ -1,5 +1,5 @@
-using Microsoft.Extensions.DependencyInjection;
 using CPS.ComplexCases.ActivityLog.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CPS.ComplexCases.ActivityLog.Extensions;
 
