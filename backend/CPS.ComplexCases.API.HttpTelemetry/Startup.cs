@@ -36,4 +36,3 @@ internal class HttpTelemetryExtensionConfigProvider : IExtensionConfigProvider
         bindingRule.BindToInput<string?>(attr => "");
     }
 }
-

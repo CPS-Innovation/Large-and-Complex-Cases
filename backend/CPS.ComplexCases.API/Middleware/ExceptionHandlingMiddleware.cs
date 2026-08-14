@@ -100,4 +100,3 @@ public class ExceptionHandlingMiddleware : IFunctionsWorkerMiddleware
             .FirstOrDefault(b => b.BindingType == "http" && b.Name != "$return");
     }
 }
-

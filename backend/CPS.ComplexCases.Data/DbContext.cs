@@ -5,8 +5,8 @@ namespace CPS.ComplexCases.Data;
 
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
 {
-// DbSet properties are initialized by EF Core at runtime. Suppress CS8618 rather than using
-// null-forgiving operators, which are unnecessary here and flagged by SonarQube.
+    // DbSet properties are initialized by EF Core at runtime. Suppress CS8618 rather than using
+    // null-forgiving operators, which are unnecessary here and flagged by SonarQube.
 #pragma warning disable CS8618
     public DbSet<CaseMetadata> CaseMetadata { get; set; }
     public DbSet<ActivityLog> ActivityLogs { get; set; }

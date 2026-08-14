@@ -63,11 +63,11 @@ namespace CPS.ComplexCases.API.Functions.Tactical
                           margin: 100px auto;
                           width: 400px;
                           font-size: 2em;
-                        }}        
+                        }}
                         div.feedback {{
                           width: 1400px;
                           margin: 20px auto;
-                        }}  
+                        }}
                         .ok{{
                           color: green;
                         }}
@@ -101,9 +101,9 @@ namespace CPS.ComplexCases.API.Functions.Tactical
 Cms-Auth-Value Cookie =>
   {serializedCmsAuthValues}
 
-Encoded Cms-Auth-Value Cookie => 
+Encoded Cms-Auth-Value Cookie =>
   {Uri.EscapeDataString(serializedCmsAuthValues)}
-</pre>  
+</pre>
 </body>
 </html>";
         }

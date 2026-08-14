@@ -126,7 +126,7 @@ var host = new HostBuilder()
                             PermitLimit = int.Parse(configuration["RateLimiting:PermitLimit"] ?? "100"),
                             IntervalInSeconds = int.Parse(configuration["RateLimiting:IntervalInSeconds"] ?? "60")
                         },
-                        
+
                         // Exclude the file transfer status endpoint from rate limiting as it is polled frequently
                         UriPattern = "^(?!.*/v1/filetransfer/.*/status).*$",
 
