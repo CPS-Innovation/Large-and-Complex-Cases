@@ -14,11 +14,13 @@ The Large and Complex Cases (LACC) project aims to deliver a secure, auditable, 
 - PowerShell (for local scripts)
 - PostgreSQL (see [Local Development Guide](doc/local-development.md) for setup details)
 - Azure Functions Core Tools (see [Local Development Guide](doc/local-development.md))
+- [Python](https://www.python.org/downloads/) (to install pre-commit hooks)
 
 ### Pre-Commit Hooks
 This repo contains pre-commit hooks for maintaining formatting standards. Please install these before commiting any work.
-1. Install the [pre-commit package manager](https://pre-commit.com/#install).
-2. Run `pre-commit install` to install the hooks.
+1. If not already installed, download and install [Python](https://www.python.org/downloads/).
+2. Install the [pre-commit package manager](https://pre-commit.com/#install).
+3. Run `pre-commit install` to install the hooks.
 
 ### Local Development
 
