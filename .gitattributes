@@ -15,3 +15,6 @@
 *.yml     text eol=lf
 *.yaml    text eol=lf
 *.md      text eol=lf
+
+# Scripts
+*.ps1     text eol=lf
