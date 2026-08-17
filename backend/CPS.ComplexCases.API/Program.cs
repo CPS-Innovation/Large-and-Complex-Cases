@@ -228,6 +228,7 @@ var host = new HostBuilder()
         services.AddSingleton<IOpenApiConfigurationOptions, OpenApiConfigurationOptions>();
         services.AddSingleton<IRequestValidator, RequestValidator>();
         services.AddSingleton<ISecurityGroupMetadataService, SecurityGroupMetadataService>();
+        services.AddSingleton<IUserBucketAccessService, UserBucketAccessService>();
 
         services.AddSingleton<BlobServiceClient>(provider =>
         {

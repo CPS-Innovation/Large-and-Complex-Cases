@@ -21,10 +21,10 @@ public class InitiateBatchCopy(
     ILogger<InitiateBatchCopy> logger,
     IFileTransferClient transferClient,
     IRequestValidator requestValidator,
-    ISecurityGroupMetadataService securityGroupMetadataService,
+    IUserBucketAccessService userBucketAccessService,
     ICaseMetadataService caseMetadataService,
     IInitializationHandler initializationHandler)
-    : InitiateBatchOperationBase(logger, transferClient, requestValidator, securityGroupMetadataService, caseMetadataService, initializationHandler)
+    : InitiateBatchOperationBase(logger, transferClient, requestValidator, userBucketAccessService, caseMetadataService, initializationHandler)
 {
     [Function(nameof(InitiateBatchCopy))]
     [OpenApiOperation(operationId: nameof(InitiateBatchCopy), tags: ["NetApp"], Description = "Initiates an asynchronous batch copy of files and folders within NetApp. Returns a transferId that can be polled for status.")]

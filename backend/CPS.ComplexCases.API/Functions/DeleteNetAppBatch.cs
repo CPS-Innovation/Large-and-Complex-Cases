@@ -31,7 +31,7 @@ public class DeleteNetAppBatch(
     INetAppArgFactory netAppArgFactory,
     IActivityLogService activityLogService,
     IRequestValidator requestValidator,
-    ISecurityGroupMetadataService securityGroupMetadataService,
+    IUserBucketAccessService userBucketAccessService,
     ICaseMetadataService caseMetadataService,
     IInitializationHandler initializationHandler)
 {
@@ -40,7 +40,7 @@ public class DeleteNetAppBatch(
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
     private readonly IActivityLogService _activityLogService = activityLogService;
     private readonly IRequestValidator _requestValidator = requestValidator;
-    private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
+    private readonly IUserBucketAccessService _userBucketAccessService = userBucketAccessService;
     private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
     private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
@@ -73,8 +73,8 @@ public class DeleteNetAppBatch(
 
         var casePrefix = caseMetadata.NetappFolderPath.EnsureTrailingSlash();
 
-        var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
-        var bucket = securityGroups.First().BucketName;
+        var bucket = (await _userBucketAccessService.ResolveBucketAsync(
+            context.BearerToken, caseMetadata.NetappBucketName, null)).BucketName;
 
         var results = new List<DeleteNetAppBatchItemResult>();
 

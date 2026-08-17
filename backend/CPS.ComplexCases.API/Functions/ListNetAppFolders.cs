@@ -5,6 +5,7 @@ using CPS.ComplexCases.API.Domain.Response;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Common.Handlers;
+using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using Microsoft.AspNetCore.Http;
@@ -20,14 +21,16 @@ public class ListNetAppFolders(ILogger<ListNetAppFolders> logger,
     INetAppClient netAppClient,
     INetAppArgFactory netAppArgFactory,
     ICaseEnrichmentService caseEnrichmentService,
-    ISecurityGroupMetadataService securityGroupMetadataService,
+    IUserBucketAccessService userBucketAccessService,
+    ICaseMetadataService caseMetadataService,
     IInitializationHandler initializationHandler)
 {
     private readonly ILogger<ListNetAppFolders> _logger = logger;
     private readonly INetAppClient _netAppClient = netAppClient;
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
     private readonly ICaseEnrichmentService _caseEnrichmentService = caseEnrichmentService;
-    private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
+    private readonly IUserBucketAccessService _userBucketAccessService = userBucketAccessService;
+    private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
     private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
     [Function(nameof(ListNetAppFolders))]
@@ -38,6 +41,8 @@ public class ListNetAppFolders(ILogger<ListNetAppFolders> logger,
     [OpenApiParameter(name: InputParameters.Path, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The path to the destination folder.")]
     [OpenApiParameter(name: InputParameters.Take, In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The number of items to take.")]
     [OpenApiParameter(name: InputParameters.ContinuationToken, In = ParameterLocation.Query, Type = typeof(string), Description = "The continuation token for pagination.")]
+    [OpenApiParameter(name: InputParameters.CaseId, In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The case ID, used to read the bucket already connected to the case.")]
+    [OpenApiParameter(name: InputParameters.BucketName, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The bucket to browse, for use before the case has a connected bucket.")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(ListNetAppObjectsResponse), Description = ApiResponseDescriptions.Success)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]
@@ -52,10 +57,19 @@ public class ListNetAppFolders(ILogger<ListNetAppFolders> logger,
         var continuationToken = req.Query[InputParameters.ContinuationToken];
         var take = int.TryParse(req.Query[InputParameters.Take], out var takeValue) ? takeValue : 100;
         var path = req.Query[InputParameters.Path];
+        var requestedBucketName = req.Query[InputParameters.BucketName].FirstOrDefault();
 
-        var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
+        string? persistedBucketName = null;
+        if (int.TryParse(req.Query[InputParameters.CaseId], out var caseId) && caseId > 0)
+        {
+            var caseMetadata = await _caseMetadataService.GetCaseMetadataForCaseIdAsync(caseId);
+            persistedBucketName = caseMetadata?.NetappBucketName;
+        }
 
-        var arg = _netAppArgFactory.CreateListFoldersInBucketArg(context.BearerToken, securityGroups.First().BucketName, operationName, continuationToken, take, path);
+        var bucket = await _userBucketAccessService.ResolveBucketAsync(
+            context.BearerToken, persistedBucketName, requestedBucketName);
+
+        var arg = _netAppArgFactory.CreateListFoldersInBucketArg(context.BearerToken, bucket.BucketName, operationName, continuationToken, take, path);
         var response = await _netAppClient.ListFoldersInBucketAsync(arg);
 
         if (response == null)

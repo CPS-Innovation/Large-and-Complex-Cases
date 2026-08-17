@@ -17,6 +17,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
+<<<<<<< Updated upstream
+=======
+using CPS.ComplexCases.API.Services;
+using CPS.ComplexCases.API.Domain.Models;
+using CPS.ComplexCases.Common.Services;
+>>>>>>> Stashed changes
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
 {
@@ -25,7 +31,8 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
         private readonly Mock<IFileTransferClient> _transferClientMock;
         private readonly Mock<ILogger<GetFilesForTransfer>> _loggerMock;
         private readonly Mock<IRequestValidator> _requestValidatorMock;
-        private readonly Mock<ISecurityGroupMetadataService> _securityGroupMetadataServiceMock;
+        private readonly Mock<IUserBucketAccessService> _userBucketAccessServiceMock;
+        private readonly Mock<ICaseMetadataService> _caseMetadataServiceMock;
         private readonly string _testBucketName;
         private readonly GetFilesForTransfer _function;
         private readonly Guid _correlationId;
@@ -39,26 +46,26 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
             _transferClientMock = new Mock<IFileTransferClient>();
             _loggerMock = new Mock<ILogger<GetFilesForTransfer>>();
             _requestValidatorMock = new Mock<IRequestValidator>();
-            _securityGroupMetadataServiceMock = new Mock<ISecurityGroupMetadataService>();
+            _userBucketAccessServiceMock = new Mock<IUserBucketAccessService>();
+            _caseMetadataServiceMock = new Mock<ICaseMetadataService>();
             _testBucketName = _fixture.Create<string>();
 
-            _securityGroupMetadataServiceMock
-                .Setup(s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()))
-                .ReturnsAsync([
-                    new SecurityGroup
-            {
-                Id = _fixture.Create<Guid>(),
-                BucketName = _testBucketName,
-                VolumeUuid = _fixture.Create<Guid>(),
-                DisplayName = "Test Security Group"
-            }
-                ]);
+            _userBucketAccessServiceMock
+                .Setup(s => s.ResolveBucketAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()))
+                .ReturnsAsync(new SecurityGroup
+                {
+                    Id = _fixture.Create<Guid>(),
+                    BucketName = _testBucketName,
+                    VolumeUuid = _fixture.Create<Guid>(),
+                    DisplayName = "Test Security Group"
+                });
 
             _function = new GetFilesForTransfer(
                 _transferClientMock.Object,
                 _loggerMock.Object,
                 _requestValidatorMock.Object,
-                _securityGroupMetadataServiceMock.Object);
+                _userBucketAccessServiceMock.Object,
+                _caseMetadataServiceMock.Object);
         }
 
         [Fact]

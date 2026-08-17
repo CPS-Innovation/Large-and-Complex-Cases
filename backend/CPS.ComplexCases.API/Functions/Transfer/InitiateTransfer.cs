@@ -16,15 +16,22 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+<<<<<<< Updated upstream
+=======
+using CPS.ComplexCases.Common.Attributes;
+using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.API.Services;
+>>>>>>> Stashed changes
 
 namespace CPS.ComplexCases.API.Functions.Transfer;
 
-public class InitiateTransfer(ILogger<InitiateTransfer> logger, IFileTransferClient transferClient, IRequestValidator requestValidator, ISecurityGroupMetadataService securityGroupMetadataService)
+public class InitiateTransfer(ILogger<InitiateTransfer> logger, IFileTransferClient transferClient, IRequestValidator requestValidator, IUserBucketAccessService userBucketAccessService, ICaseMetadataService caseMetadataService)
 {
     private readonly ILogger<InitiateTransfer> _logger = logger;
     private readonly IFileTransferClient _transferClient = transferClient;
     private readonly IRequestValidator _requestValidator = requestValidator;
-    private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
+    private readonly IUserBucketAccessService _userBucketAccessService = userBucketAccessService;
+    private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
 
     [Function(nameof(InitiateTransfer))]
     [OpenApiOperation(operationId: nameof(Run), tags: ["FileTransfer"], Description = "Initiate a file transfer.")]
@@ -52,7 +59,11 @@ public class InitiateTransfer(ILogger<InitiateTransfer> logger, IFileTransferCli
             return new BadRequestObjectResult(transferRequest.ValidationErrors);
         }
 
-        var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
+        var caseMetadata = await _caseMetadataService.GetCaseMetadataForCaseIdAsync(transferRequest.Value.CaseId);
+
+        // Snapshotted onto the transfer so in-flight work is unaffected by later bucket changes.
+        var bucket = await _userBucketAccessService.ResolveBucketAsync(
+            context.BearerToken, caseMetadata?.NetappBucketName, null);
 
         var request = new TransferRequest
         {
@@ -71,7 +82,7 @@ public class InitiateTransfer(ILogger<InitiateTransfer> logger, IFileTransferCli
                 CaseId = transferRequest.Value.CaseId,
                 WorkspaceId = transferRequest.Value.WorkspaceId,
                 BearerToken = context.BearerToken,
-                BucketName = securityGroups.First().BucketName
+                BucketName = bucket.BucketName
             },
             TransferDirection = transferRequest.Value.TransferDirection,
             SourceRootFolderPath = transferRequest.Value.SourceRootFolderPath

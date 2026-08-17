@@ -25,6 +25,7 @@ public class CaseMetadataService : ICaseMetadataService
         {
             var existingMetadata = await _caseMetadataRepository.GetByCaseIdAsync(createEgressConnectionDto.CaseId);
 
+<<<<<<< Updated upstream
             if (existingMetadata != null)
             {
                 existingMetadata.EgressWorkspaceId = createEgressConnectionDto.EgressWorkspaceId;
@@ -49,6 +50,40 @@ public class CaseMetadataService : ICaseMetadataService
             _logger.LogError(ex, "Error creating Egress connection for case {CaseId}", createEgressConnectionDto.CaseId);
             throw;
         }
+=======
+  public async Task CreateNetAppConnectionAsync(CreateNetAppConnectionDto createNetAppConnectionDto)
+  {
+    _logger.LogInformation("Creating NetApp connection for case {CaseId}", createNetAppConnectionDto.CaseId);
+    try
+    {
+      var existingMetadata = await _caseMetadataRepository.GetByCaseIdAsync(createNetAppConnectionDto.CaseId);
+
+      if (existingMetadata != null)
+      {
+        existingMetadata.NetappFolderPath = createNetAppConnectionDto.NetAppFolderPath;
+
+        // Only overwrite when a bucket was supplied, so callers that do not resolve one
+        // cannot wipe an already-persisted value.
+        if (!string.IsNullOrEmpty(createNetAppConnectionDto.BucketName))
+        {
+          existingMetadata.NetappBucketName = createNetAppConnectionDto.BucketName;
+        }
+
+        await _caseMetadataRepository.UpdateAsync(existingMetadata);
+        return;
+      }
+      else
+      {
+        var newMetadata = new CaseMetadata
+        {
+          CaseId = createNetAppConnectionDto.CaseId,
+          NetappFolderPath = createNetAppConnectionDto.NetAppFolderPath,
+          NetappBucketName = createNetAppConnectionDto.BucketName
+        };
+        await _caseMetadataRepository.AddAsync(newMetadata);
+        return;
+      }
+>>>>>>> Stashed changes
     }
 
     public async Task CreateNetAppConnectionAsync(CreateNetAppConnectionDto createNetAppConnectionDto)
@@ -160,7 +195,48 @@ public class CaseMetadataService : ICaseMetadataService
         }
     }
 
+<<<<<<< Updated upstream
     public async Task<bool> ClearActiveTransferIdAsync(Guid transferId)
+=======
+  public Task<ClearFolderPathResult> ClearNetAppFolderPathAsync(int caseId) =>
+    ClearConnectionAsync(
+      caseId,
+      logContext: "NetApp folder path",
+      getDisplayValue: m => m.NetappFolderPath,
+      getKeyValue: m => m.NetappFolderPath,
+      clearValue: m =>
+      {
+        m.NetappFolderPath = null;
+        m.NetappBucketName = null;
+      },
+      missingValueState: CaseMetadataState.NetAppFolderPathIsNull
+    );
+
+  public Task<ClearFolderPathResult> ClearEgressConnectionAsync(int caseId) =>
+    ClearConnectionAsync(
+      caseId,
+      logContext: "Egress workspace connection",
+      getDisplayValue: m => m.EgressWorkspaceName ?? m.EgressWorkspaceId,
+      getKeyValue: m => m.EgressWorkspaceId,
+      clearValue: m =>
+      {
+        m.EgressWorkspaceId = null;
+        m.EgressWorkspaceName = null;
+      },
+      missingValueState: CaseMetadataState.EgressConnectionIsNull
+    );
+
+  private async Task<ClearFolderPathResult> ClearConnectionAsync(
+    int caseId,
+    string logContext,
+    Func<CaseMetadata, string?> getDisplayValue,
+    Func<CaseMetadata, string?> getKeyValue,
+    Action<CaseMetadata> clearValue,
+    CaseMetadataState missingValueState)
+  {
+    _logger.LogInformation("Clearing {LogContext} for case {CaseId}", logContext, caseId);
+    try
+>>>>>>> Stashed changes
     {
         _logger.LogInformation("Clearing active transfer ID for transfer {TransferId}", transferId);
         try

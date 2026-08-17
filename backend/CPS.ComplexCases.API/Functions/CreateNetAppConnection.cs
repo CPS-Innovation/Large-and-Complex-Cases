@@ -26,7 +26,7 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
     INetAppArgFactory netAppArgFactory,
     IActivityLogService activityLogService,
     IRequestValidator requestValidator,
-    ISecurityGroupMetadataService securityGroupMetadataService,
+    IUserBucketAccessService userBucketAccessService,
     IInitializationHandler initializationHandler)
 {
     private readonly ILogger<CreateNetAppConnection> _logger = logger;
@@ -35,7 +35,7 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
     private readonly INetAppArgFactory _netAppArgFactory = netAppArgFactory;
     private readonly IActivityLogService _activityLogService = activityLogService;
     private readonly IRequestValidator _requestValidator = requestValidator;
-    private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
+    private readonly IUserBucketAccessService _userBucketAccessService = userBucketAccessService;
     private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
     [Function(nameof(CreateNetAppConnection))]
@@ -62,9 +62,10 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
 
         _initializationHandler.Initialize(context.Username, context.CorrelationId, netAppConnectionRequest.Value.CaseId);
 
-        var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
+        var bucketName = (await _userBucketAccessService.ResolveBucketAsync(
+            context.BearerToken, null, netAppConnectionRequest.Value.BucketName)).BucketName;
 
-        var netAppArg = _netAppArgFactory.CreateListFoldersInBucketArg(context.BearerToken, securityGroups.First().BucketName, netAppConnectionRequest.Value.OperationName, null, 1, null);
+        var netAppArg = _netAppArgFactory.CreateListFoldersInBucketArg(context.BearerToken, bucketName, netAppConnectionRequest.Value.OperationName, null, 1, null);
         var hasNetAppPermission = await _netAppClient.ListFoldersInBucketAsync(netAppArg);
 
         if (hasNetAppPermission == null)
@@ -73,7 +74,6 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
         }
 
         var folderPath = netAppConnectionRequest.Value.NetAppFolderPath;
-        var bucketName = securityGroups.First().BucketName;
         var lookupPaths = new[] { folderPath, $"{bucketName}:{folderPath}" };
         var existingConnections = await _caseMetadataService.GetCaseMetadataForNetAppFolderPathsAsync(lookupPaths);
         var existingConnection = existingConnections.FirstOrDefault();
@@ -85,6 +85,9 @@ public class CreateNetAppConnection(ILogger<CreateNetAppConnection> logger,
                 folderPath, existingConnection.CaseId, netAppConnectionRequest.Value.CaseId);
             return new ConflictObjectResult($"Folder path '{folderPath}' is already connected to another case.");
         }
+
+        // Persist the resolved bucket even when the client sent none, so every new row is populated.
+        netAppConnectionRequest.Value.BucketName = bucketName;
 
         await _caseMetadataService.CreateNetAppConnectionAsync(netAppConnectionRequest.Value);
 

@@ -10,4 +10,6 @@ public class CreateNetAppConnectionDto
     public required string OperationName { get; set; }
     [JsonPropertyName("folderPath")]
     public required string NetAppFolderPath { get; set; }
+    [JsonPropertyName("bucketName")]
+    public string? BucketName { get; set; }
 }
