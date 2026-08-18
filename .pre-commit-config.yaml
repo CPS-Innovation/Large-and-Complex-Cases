@@ -10,7 +10,7 @@ repos:
       - id: check-json
       - id: pretty-format-json
         args: [
-          --auto-fix,
+          --autofix,
           --no-sort-keys
         ]
 

@@ -71,7 +71,7 @@
       "label": "run-backend-file-transfer",
       "type": "shell",
       "options": {
-        "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.FileTransfer.API/bin/Debug/net10.0",
+        "cwd": "${workspaceFolder}/backend/CPS.ComplexCases.FileTransfer.API/bin/Debug/net10.0"
       },
       "command": "func start --no-build --verbose --password CPS.ComplexCases.FileTransfer.API",
       "isBackground": true,
