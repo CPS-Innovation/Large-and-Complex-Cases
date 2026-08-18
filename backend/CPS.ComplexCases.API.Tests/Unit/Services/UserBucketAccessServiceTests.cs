@@ -1,8 +1,8 @@
-using Microsoft.Extensions.Logging;
 using AutoFixture;
 using CPS.ComplexCases.API.Domain.Models;
 using CPS.ComplexCases.API.Exceptions;
 using CPS.ComplexCases.API.Services;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Services;

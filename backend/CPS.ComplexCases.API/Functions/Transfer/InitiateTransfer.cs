@@ -10,18 +10,13 @@ using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Common.Extensions;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models.Requests;
+using CPS.ComplexCases.Common.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-<<<<<<< Updated upstream
-=======
-using CPS.ComplexCases.Common.Attributes;
-using CPS.ComplexCases.Common.Services;
-using CPS.ComplexCases.API.Services;
->>>>>>> Stashed changes
 
 namespace CPS.ComplexCases.API.Functions.Transfer;
 

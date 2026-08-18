@@ -12,17 +12,12 @@ using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models;
 using CPS.ComplexCases.Common.Models.Domain.Enums;
 using CPS.ComplexCases.Common.Models.Requests;
+using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.Data.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
-<<<<<<< Updated upstream
-=======
-using CPS.ComplexCases.API.Services;
-using CPS.ComplexCases.API.Domain.Models;
-using CPS.ComplexCases.Common.Services;
-using CPS.ComplexCases.Data.Entities;
->>>>>>> Stashed changes
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions.Transfer
 {

@@ -4,15 +4,12 @@ using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Common.Handlers;
-<<<<<<< Updated upstream
+using CPS.ComplexCases.Common.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
-=======
-using CPS.ComplexCases.Common.Services;
->>>>>>> Stashed changes
 
 namespace CPS.ComplexCases.API.Functions;
 

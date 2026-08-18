@@ -5,13 +5,10 @@ using CPS.ComplexCases.API.Functions;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
 using CPS.ComplexCases.Common.Handlers;
-<<<<<<< Updated upstream
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-=======
 using CPS.ComplexCases.Common.Services;
 using CPS.ComplexCases.Data.Entities;
->>>>>>> Stashed changes
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace CPS.ComplexCases.API.Tests.Unit.Functions;
