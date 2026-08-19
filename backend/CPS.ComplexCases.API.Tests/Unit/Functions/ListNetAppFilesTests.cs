@@ -1,6 +1,7 @@
 using AutoFixture;
 using CPS.ComplexCases.API.Constants;
 using CPS.ComplexCases.API.Domain.Models;
+using CPS.ComplexCases.API.Exceptions;
 using CPS.ComplexCases.API.Functions;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
@@ -216,5 +217,58 @@ public class ListNetAppFilesTests
         _userBucketAccessServiceMock.Verify(
             s => s.ResolveBucketAsync(_testBearerToken, null, null), Times.Once);
         _caseMetadataServiceMock.Verify(s => s.GetCaseMetadataForCaseIdAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Run_WhenBucketNameSupplied_PassesItThroughForValidation()
+    {
+        // Arrange
+        var requestedBucket = "manchester-bucket";
+
+        var queryParams = new Dictionary<string, string>
+        {
+            [InputParameters.Take] = "50",
+            [InputParameters.Path] = "/some/path",
+            [InputParameters.BucketName] = requestedBucket
+        };
+        var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(queryParams);
+
+        _netAppArgFactoryMock
+            .Setup(f => f.CreateListObjectsInBucketArg(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<string?>(), It.IsAny<bool>()))
+            .Returns(_fixture.Create<ListObjectsInBucketArg>());
+
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+        // Act
+        await _function.Run(httpRequest, functionContext);
+
+        // Assert
+        _userBucketAccessServiceMock.Verify(
+            s => s.ResolveBucketAsync(_testBearerToken, null, requestedBucket), Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_WhenUserNotEntitledToRequestedBucket_ThrowsMissingSecurityGroupException()
+    {
+        // Arrange
+        var queryParams = new Dictionary<string, string>
+        {
+            [InputParameters.Take] = "50",
+            [InputParameters.Path] = "/some/path",
+            [InputParameters.BucketName] = "not-entitled-bucket"
+        };
+
+        _userBucketAccessServiceMock
+            .Setup(s => s.ResolveBucketAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()))
+            .ThrowsAsync(new MissingSecurityGroupException("User is not entitled to bucket 'not-entitled-bucket'."));
+
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+        // Act & Assert — the exception middleware maps this to a 403
+        await Assert.ThrowsAsync<MissingSecurityGroupException>(() =>
+            _function.Run(HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(queryParams), functionContext));
+
+        _netAppClientMock.Verify(c => c.ListObjectsInBucketAsync(It.IsAny<ListObjectsInBucketArg>()), Times.Never);
     }
 }

@@ -33,7 +33,7 @@ public class MaterialBatchRename(
     IActivityLogService activityLogService,
     IRequestValidator requestValidator,
     IInitializationHandler initializationHandler,
-    ISecurityGroupMetadataService securityGroupMetadataService,
+    IUserBucketAccessService userBucketAccessService,
     ICaseMetadataService caseMetadataService,
     IOntapArgFactory ontapArgFactory,
     IOntapHttpClient ontapHttpClient,
@@ -43,7 +43,7 @@ public class MaterialBatchRename(
     private readonly IActivityLogService _activityLogService = activityLogService;
     private readonly IRequestValidator _requestValidator = requestValidator;
     private readonly IInitializationHandler _initializationHandler = initializationHandler;
-    private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
+    private readonly IUserBucketAccessService _userBucketAccessService = userBucketAccessService;
     private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
     private readonly IOntapArgFactory _ontapArgFactory = ontapArgFactory;
     private readonly IOntapHttpClient _ontapHttpClient = ontapHttpClient;
@@ -84,8 +84,9 @@ public class MaterialBatchRename(
 
         var casePrefix = caseMetadata.NetappFolderPath.EnsureTrailingSlash();
 
-        var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
-        var volumeUuid = securityGroups[0].VolumeUuid;
+        var bucket = await _userBucketAccessService.ResolveBucketAsync(
+            context.BearerToken, caseMetadata.NetappBucketName, null);
+        var volumeUuid = bucket.VolumeUuid;
 
         var results = new List<MaterialRenameBatchItemResult>();
 

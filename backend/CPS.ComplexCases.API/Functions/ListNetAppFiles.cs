@@ -34,6 +34,7 @@ public class ListNetAppFiles(ILogger<ListNetAppFiles> logger, INetAppClient netA
     [OpenApiParameter(name: InputParameters.Take, In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The number of items to take.")]
     [OpenApiParameter(name: InputParameters.ContinuationToken, In = ParameterLocation.Query, Type = typeof(string), Description = "The continuation token for pagination.")]
     [OpenApiParameter(name: InputParameters.CaseId, In = ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The case ID, used to read the bucket already connected to the case.")]
+    [OpenApiParameter(name: InputParameters.BucketName, In = ParameterLocation.Query, Required = false, Type = typeof(string), Description = "The bucket to browse, for use before the case has a connected bucket.")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: ContentType.ApplicationJson, bodyType: typeof(ListNetAppObjectsDto), Description = ApiResponseDescriptions.Success)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.Unauthorized, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.Unauthorized)]
@@ -47,6 +48,7 @@ public class ListNetAppFiles(ILogger<ListNetAppFiles> logger, INetAppClient netA
         var continuationToken = req.Query[InputParameters.ContinuationToken];
         var take = int.TryParse(req.Query[InputParameters.Take], out var takeValue) ? takeValue : 100;
         var path = req.Query[InputParameters.Path];
+        var requestedBucketName = req.Query[InputParameters.BucketName].FirstOrDefault();
 
         string? persistedBucketName = null;
         if (int.TryParse(req.Query[InputParameters.CaseId], out var caseId) && caseId > 0)
@@ -56,7 +58,7 @@ public class ListNetAppFiles(ILogger<ListNetAppFiles> logger, INetAppClient netA
         }
 
         var bucket = await _userBucketAccessService.ResolveBucketAsync(
-            context.BearerToken, persistedBucketName, null);
+            context.BearerToken, persistedBucketName, requestedBucketName);
 
         var arg = _netAppArgFactory.CreateListObjectsInBucketArg(context.BearerToken, bucket.BucketName, continuationToken, take, path, true);
         var response = await _netAppClient.ListObjectsInBucketAsync(arg);

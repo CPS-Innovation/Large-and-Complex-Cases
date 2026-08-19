@@ -2,6 +2,7 @@ using AutoFixture;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Domain.Models;
 using CPS.ComplexCases.API.Domain.Response;
+using CPS.ComplexCases.API.Exceptions;
 using CPS.ComplexCases.API.Functions;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
@@ -34,7 +35,7 @@ public class MaterialBatchRenameTests
     private readonly Mock<IActivityLogService> _activityLogServiceMock;
     private readonly Mock<IRequestValidator> _requestValidatorMock;
     private readonly Mock<IInitializationHandler> _initializationHandlerMock;
-    private readonly Mock<ISecurityGroupMetadataService> _securityGroupMetadataServiceMock;
+    private readonly Mock<IUserBucketAccessService> _userBucketAccessServiceMock;
     private readonly Mock<ICaseMetadataService> _caseMetadataServiceMock;
     private readonly Mock<IOntapArgFactory> _ontapArgFactoryMock;
     private readonly Mock<IOntapHttpClient> _ontapHttpClientMock;
@@ -51,7 +52,7 @@ public class MaterialBatchRenameTests
         _activityLogServiceMock = new Mock<IActivityLogService>();
         _requestValidatorMock = new Mock<IRequestValidator>();
         _initializationHandlerMock = new Mock<IInitializationHandler>();
-        _securityGroupMetadataServiceMock = new Mock<ISecurityGroupMetadataService>();
+        _userBucketAccessServiceMock = new Mock<IUserBucketAccessService>();
         _caseMetadataServiceMock = new Mock<ICaseMetadataService>();
         _ontapArgFactoryMock = new Mock<IOntapArgFactory>();
         _ontapHttpClientMock = new Mock<IOntapHttpClient>();
@@ -79,8 +80,8 @@ public class MaterialBatchRenameTests
         _requestValidatorMock.Verify(
             v => v.GetJsonBody<MaterialBatchRenameRequestDto, MaterialRenameRequestValidator>(It.IsAny<HttpRequest>()),
             Times.Never);
-        _securityGroupMetadataServiceMock.Verify(
-            s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()),
+        _userBucketAccessServiceMock.Verify(
+            s => s.ResolveBucketAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()),
             Times.Never);
         _ontapHttpClientMock.Verify(
             c => c.RenameMaterialAsync(It.IsAny<MaterialRenameArg>()),
@@ -109,8 +110,8 @@ public class MaterialBatchRenameTests
         _initializationHandlerMock.Verify(
             i => i.Initialize(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<int?>()),
             Times.Never);
-        _securityGroupMetadataServiceMock.Verify(
-            s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()),
+        _userBucketAccessServiceMock.Verify(
+            s => s.ResolveBucketAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()),
             Times.Never);
         _ontapHttpClientMock.Verify(
             c => c.RenameMaterialAsync(It.IsAny<MaterialRenameArg>()),
@@ -138,6 +139,9 @@ public class MaterialBatchRenameTests
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
         var errors = Assert.IsType<string[]>(badRequest.Value);
         Assert.Contains("Case metadata or NetApp folder path is missing.", errors);
+        _userBucketAccessServiceMock.Verify(
+            s => s.ResolveBucketAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()),
+            Times.Never);
     }
 
     [Fact]
@@ -354,6 +358,83 @@ public class MaterialBatchRenameTests
         Assert.Equal(System.Net.HttpStatusCode.Forbidden, exception.StatusCode);
     }
 
+    [Fact]
+    public async Task Run_WhenCaseHasNoPersistedBucket_FallsBackToResolvedBucket()
+    {
+        var requestDto = CreateValidRequestDto();
+        var volumeUuid = _fixture.Create<Guid>();
+        SetupRequestValidator(requestDto, isValid: true);
+        SetupCaseMetadata(requestDto.CaseId);
+        SetupSecurityGroups(volumeUuid);
+        SetupOntapClientForSuccessfulRename();
+
+        var function = CreateFunction(materialRenameEnabled: true);
+        var request = HttpRequestStubHelper.CreateHttpRequestFor(requestDto);
+        var context = CreateFunctionContext();
+
+        await function.Run(request, context);
+
+        _userBucketAccessServiceMock.Verify(
+            s => s.ResolveBucketAsync(_testBearerToken, null, null), Times.Once);
+        _ontapArgFactoryMock.Verify(
+            f => f.CreateMaterialRenameArg(
+                _testBearerToken,
+                volumeUuid,
+                requestDto.Operations[0].CurrentPath,
+                requestDto.Operations[0].NewPath),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_WhenCaseHasPersistedBucket_UsesPersistedBucket()
+    {
+        const string persistedBucket = "manchester-bucket";
+        var requestDto = CreateValidRequestDto();
+        var volumeUuid = _fixture.Create<Guid>();
+        SetupRequestValidator(requestDto, isValid: true);
+        SetupCaseMetadata(requestDto.CaseId, netappBucketName: persistedBucket);
+        SetupSecurityGroups(volumeUuid, persistedBucket);
+        SetupOntapClientForSuccessfulRename();
+
+        var function = CreateFunction(materialRenameEnabled: true);
+        var request = HttpRequestStubHelper.CreateHttpRequestFor(requestDto);
+        var context = CreateFunctionContext();
+
+        await function.Run(request, context);
+
+        _userBucketAccessServiceMock.Verify(
+            s => s.ResolveBucketAsync(_testBearerToken, persistedBucket, null), Times.Once);
+        _ontapArgFactoryMock.Verify(
+            f => f.CreateMaterialRenameArg(
+                _testBearerToken,
+                volumeUuid,
+                requestDto.Operations[0].CurrentPath,
+                requestDto.Operations[0].NewPath),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_MissingSecurityGroup_ThrowsMissingSecurityGroupException()
+    {
+        var requestDto = CreateValidRequestDto();
+        SetupRequestValidator(requestDto, isValid: true);
+        SetupCaseMetadata(requestDto.CaseId);
+
+        _userBucketAccessServiceMock
+            .Setup(s => s.ResolveBucketAsync(_testBearerToken, It.IsAny<string?>(), It.IsAny<string?>()))
+            .ThrowsAsync(new MissingSecurityGroupException("No security groups found."));
+
+        var function = CreateFunction(materialRenameEnabled: true);
+        var request = HttpRequestStubHelper.CreateHttpRequestFor(requestDto);
+        var context = CreateFunctionContext();
+
+        await Assert.ThrowsAsync<MissingSecurityGroupException>(() => function.Run(request, context));
+
+        _ontapHttpClientMock.Verify(
+            c => c.RenameMaterialAsync(It.IsAny<MaterialRenameArg>()),
+            Times.Never);
+    }
+
     private MaterialBatchRename CreateFunction(bool materialRenameEnabled)
     {
         var featureFlags = Options.Create(new FeatureFlagConfig
@@ -366,7 +447,7 @@ public class MaterialBatchRenameTests
             _activityLogServiceMock.Object,
             _requestValidatorMock.Object,
             _initializationHandlerMock.Object,
-            _securityGroupMetadataServiceMock.Object,
+            _userBucketAccessServiceMock.Object,
             _caseMetadataServiceMock.Object,
             _ontapArgFactoryMock.Object,
             _ontapHttpClientMock.Object,
@@ -385,32 +466,33 @@ public class MaterialBatchRenameTests
             });
     }
 
-    private void SetupCaseMetadata(int caseId, string netappPath = "CASE-PREFIX")
+    private void SetupCaseMetadata(int caseId, string netappPath = "CASE-PREFIX", string? netappBucketName = null)
     {
         _caseMetadataServiceMock
             .Setup(s => s.GetCaseMetadataForCaseIdAsync(caseId))
             .ReturnsAsync(new CaseMetadata
             {
                 CaseId = caseId,
-                NetappFolderPath = netappPath
+                NetappFolderPath = netappPath,
+                NetappBucketName = netappBucketName
             });
     }
 
-    private void SetupSecurityGroups()
+    private SecurityGroup SetupSecurityGroups(Guid? volumeUuid = null, string bucketName = "test-bucket")
     {
-        var volumeUuid = _fixture.Create<Guid>();
-        _securityGroupMetadataServiceMock
-            .Setup(s => s.GetUserSecurityGroupsAsync(_testBearerToken))
-            .ReturnsAsync(new List<SecurityGroup>
-            {
-                new()
-                {
-                    Id = _fixture.Create<Guid>(),
-                    DisplayName = "TestSG",
-                    BucketName = "test-bucket",
-                    VolumeUuid = volumeUuid
-                }
-            });
+        var securityGroup = new SecurityGroup
+        {
+            Id = _fixture.Create<Guid>(),
+            DisplayName = "TestSG",
+            BucketName = bucketName,
+            VolumeUuid = volumeUuid ?? _fixture.Create<Guid>()
+        };
+
+        _userBucketAccessServiceMock
+            .Setup(s => s.ResolveBucketAsync(_testBearerToken, It.IsAny<string?>(), It.IsAny<string?>()))
+            .ReturnsAsync(securityGroup);
+
+        return securityGroup;
     }
 
     private void SetupOntapClientForSuccessfulRename()
