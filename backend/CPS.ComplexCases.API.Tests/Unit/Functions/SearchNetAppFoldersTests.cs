@@ -27,7 +27,7 @@ public class SearchNetAppFoldersTests
     private readonly Mock<INetAppClient> _netAppClientMock;
     private readonly Mock<INetAppArgFactory> _netAppArgFactoryMock;
     private readonly Mock<ICaseMetadataService> _caseMetadataServiceMock;
-    private readonly Mock<ISecurityGroupMetadataService> _securityGroupMetadataServiceMock;
+    private readonly Mock<IUserBucketAccessService> _userBucketAccessServiceMock;
     private readonly Mock<IInitializationHandler> _initializationHandlerMock;
     private readonly IValidator<SearchNetAppFoldersDto> _validator;
     private readonly SearchNetAppFolders _function;
@@ -44,7 +44,7 @@ public class SearchNetAppFoldersTests
         _netAppClientMock = new Mock<INetAppClient>();
         _netAppArgFactoryMock = new Mock<INetAppArgFactory>();
         _caseMetadataServiceMock = new Mock<ICaseMetadataService>();
-        _securityGroupMetadataServiceMock = new Mock<ISecurityGroupMetadataService>();
+        _userBucketAccessServiceMock = new Mock<IUserBucketAccessService>();
         _initializationHandlerMock = new Mock<IInitializationHandler>();
         _validator = new SearchNetAppFoldersRequestValidator();
         _fixture = new Fixture();
@@ -55,24 +55,22 @@ public class SearchNetAppFoldersTests
         _testUsername = _fixture.Create<string>();
         _testCmsAuthValues = _fixture.Create<string>();
 
-        _securityGroupMetadataServiceMock
-            .Setup(s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()))
-            .ReturnsAsync([
-                new SecurityGroup
-                {
-                    Id = _fixture.Create<Guid>(),
-                    BucketName = _testBucketName,
-                    VolumeUuid = _fixture.Create<Guid>(),
-                    DisplayName = "Test Security Group"
-                }
-            ]);
+        _userBucketAccessServiceMock
+            .Setup(s => s.ResolveBucketAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()))
+            .ReturnsAsync(new SecurityGroup
+            {
+                Id = _fixture.Create<Guid>(),
+                BucketName = _testBucketName,
+                VolumeUuid = _fixture.Create<Guid>(),
+                DisplayName = "Test Security Group"
+            });
 
         _function = new SearchNetAppFolders(
             _loggerMock.Object,
             _netAppClientMock.Object,
             _netAppArgFactoryMock.Object,
             _caseMetadataServiceMock.Object,
-            _securityGroupMetadataServiceMock.Object,
+            _userBucketAccessServiceMock.Object,
             _initializationHandlerMock.Object,
             _validator);
     }

@@ -61,6 +61,14 @@ public class CaseMetadataService : ICaseMetadataService
             if (existingMetadata != null)
             {
                 existingMetadata.NetappFolderPath = createNetAppConnectionDto.NetAppFolderPath;
+
+                // Only overwrite when a bucket was supplied, so callers that do not resolve one
+                // cannot wipe an already-persisted value.
+                if (!string.IsNullOrEmpty(createNetAppConnectionDto.BucketName))
+                {
+                    existingMetadata.NetappBucketName = createNetAppConnectionDto.BucketName;
+                }
+
                 await _caseMetadataRepository.UpdateAsync(existingMetadata);
                 return;
             }
@@ -69,7 +77,8 @@ public class CaseMetadataService : ICaseMetadataService
                 var newMetadata = new CaseMetadata
                 {
                     CaseId = createNetAppConnectionDto.CaseId,
-                    NetappFolderPath = createNetAppConnectionDto.NetAppFolderPath
+                    NetappFolderPath = createNetAppConnectionDto.NetAppFolderPath,
+                    NetappBucketName = createNetAppConnectionDto.BucketName
                 };
                 await _caseMetadataRepository.AddAsync(newMetadata);
                 return;
@@ -192,7 +201,11 @@ public class CaseMetadataService : ICaseMetadataService
         logContext: "NetApp folder path",
         getDisplayValue: m => m.NetappFolderPath,
         getKeyValue: m => m.NetappFolderPath,
-        clearValue: m => m.NetappFolderPath = null,
+        clearValue: m =>
+        {
+            m.NetappFolderPath = null;
+            m.NetappBucketName = null;
+        },
         missingValueState: CaseMetadataState.NetAppFolderPathIsNull
       );
 

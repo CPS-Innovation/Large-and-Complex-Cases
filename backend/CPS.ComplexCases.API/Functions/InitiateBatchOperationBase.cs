@@ -18,14 +18,14 @@ public abstract class InitiateBatchOperationBase(
     ILogger logger,
     IFileTransferClient transferClient,
     IRequestValidator requestValidator,
-    ISecurityGroupMetadataService securityGroupMetadataService,
+    IUserBucketAccessService userBucketAccessService,
     ICaseMetadataService caseMetadataService,
     IInitializationHandler initializationHandler)
 {
     private readonly ILogger _logger = logger;
     protected readonly IFileTransferClient _transferClient = transferClient;
     private readonly IRequestValidator _requestValidator = requestValidator;
-    private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
+    private readonly IUserBucketAccessService _userBucketAccessService = userBucketAccessService;
     private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
     private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
@@ -84,12 +84,13 @@ public abstract class InitiateBatchOperationBase(
             return new BadRequestObjectResult(new[] { "The destination prefix is not within the case's NetApp folder." });
         }
 
-        var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
+        var bucket = await _userBucketAccessService.ResolveBucketAsync(
+            context.BearerToken, caseMetadata.NetappBucketName, null);
 
         var response = await executeAsync(
             batchRequest.Value,
             context.BearerToken,
-            securityGroups.First().BucketName,
+            bucket.BucketName,
             context.Username,
             context.CorrelationId);
 

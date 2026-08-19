@@ -5,6 +5,8 @@ using CPS.ComplexCases.API.Functions;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
 using CPS.ComplexCases.Common.Handlers;
+using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.Data.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -14,7 +16,8 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions;
 public class GetCaseMaterialPreviewTests
 {
     private readonly Mock<ILogger<GetCaseMaterialPreview>> _loggerMock;
-    private readonly Mock<ISecurityGroupMetadataService> _securityGroupMetadataServiceMock;
+    private readonly Mock<IUserBucketAccessService> _userBucketAccessServiceMock;
+    private readonly Mock<ICaseMetadataService> _caseMetadataServiceMock;
     private readonly Mock<IDocumentService> _documentServiceMock;
     private readonly Mock<IInitializationHandler> _initializationHandlerMock;
     private readonly Fixture _fixture;
@@ -27,7 +30,8 @@ public class GetCaseMaterialPreviewTests
     public GetCaseMaterialPreviewTests()
     {
         _loggerMock = new Mock<ILogger<GetCaseMaterialPreview>>();
-        _securityGroupMetadataServiceMock = new Mock<ISecurityGroupMetadataService>();
+        _userBucketAccessServiceMock = new Mock<IUserBucketAccessService>();
+        _caseMetadataServiceMock = new Mock<ICaseMetadataService>();
         _documentServiceMock = new Mock<IDocumentService>();
         _initializationHandlerMock = new Mock<IInitializationHandler>();
         _fixture = new Fixture();
@@ -37,21 +41,20 @@ public class GetCaseMaterialPreviewTests
         _testCorrelationId = _fixture.Create<Guid>();
         _testUsername = _fixture.Create<string>();
 
-        _securityGroupMetadataServiceMock
-            .Setup(s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()))
-            .ReturnsAsync([
-                new SecurityGroup
-                {
-                    Id = _fixture.Create<Guid>(),
-                    BucketName = _testBucketName,
-                    VolumeUuid = _fixture.Create<Guid>(),
-                    DisplayName = "Test Security Group"
-                }
-            ]);
+        _userBucketAccessServiceMock
+            .Setup(s => s.ResolveBucketAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()))
+            .ReturnsAsync(new SecurityGroup
+            {
+                Id = _fixture.Create<Guid>(),
+                BucketName = _testBucketName,
+                VolumeUuid = _fixture.Create<Guid>(),
+                DisplayName = "Test Security Group"
+            });
 
         _function = new GetCaseMaterialPreview(
             _loggerMock.Object,
-            _securityGroupMetadataServiceMock.Object,
+            _userBucketAccessServiceMock.Object,
+            _caseMetadataServiceMock.Object,
             _documentServiceMock.Object,
             _initializationHandlerMock.Object);
     }
@@ -88,6 +91,34 @@ public class GetCaseMaterialPreviewTests
         // Assert
         Assert.IsType<BadRequestObjectResult>(result);
         _documentServiceMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task Run_WhenCaseIdSupplied_ResolvesUsingPersistedBucket()
+    {
+        // Arrange
+        var path = "/case/documents/evidence.pdf";
+        var caseId = 12345;
+        var persistedBucket = "manchester-bucket";
+
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForCaseIdAsync(caseId))
+            .ReturnsAsync(new CaseMetadata { CaseId = caseId, NetappBucketName = persistedBucket });
+
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(
+            _testCorrelationId, _fixture.Create<string>(), _testUsername, _testBearerToken);
+        var httpRequest = HttpRequestStubHelper.CreateHttpRequestWithQueryParameters(new Dictionary<string, string>
+        {
+            [InputParameters.Path] = path,
+            [InputParameters.CaseId] = caseId.ToString()
+        });
+
+        // Act
+        await _function.Run(httpRequest, functionContext);
+
+        // Assert
+        _userBucketAccessServiceMock.Verify(
+            s => s.ResolveBucketAsync(_testBearerToken, persistedBucket, null), Times.Once);
     }
 
     [Fact]

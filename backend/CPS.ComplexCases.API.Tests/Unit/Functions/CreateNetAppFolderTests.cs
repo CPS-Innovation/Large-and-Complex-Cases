@@ -11,6 +11,8 @@ using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Handlers;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models;
+using CPS.ComplexCases.Common.Services;
+using CPS.ComplexCases.Data.Entities;
 using CPS.ComplexCases.NetApp.Client;
 using CPS.ComplexCases.NetApp.Factories;
 using CPS.ComplexCases.NetApp.Models.Args;
@@ -30,7 +32,8 @@ public class CreateNetAppFolderTests
     private readonly Mock<INetAppArgFactory> _netAppArgFactoryMock;
     private readonly Mock<IActivityLogService> _activityLogServiceMock;
     private readonly Mock<IRequestValidator> _requestValidatorMock;
-    private readonly Mock<ISecurityGroupMetadataService> _securityGroupMetadataServiceMock;
+    private readonly Mock<IUserBucketAccessService> _userBucketAccessServiceMock;
+    private readonly Mock<ICaseMetadataService> _caseMetadataServiceMock;
     private readonly Mock<IInitializationHandler> _initializationHandlerMock;
     private readonly CreateNetAppFolder _function;
     private readonly Fixture _fixture;
@@ -48,7 +51,8 @@ public class CreateNetAppFolderTests
         _netAppArgFactoryMock = new Mock<INetAppArgFactory>();
         _activityLogServiceMock = new Mock<IActivityLogService>();
         _requestValidatorMock = new Mock<IRequestValidator>();
-        _securityGroupMetadataServiceMock = new Mock<ISecurityGroupMetadataService>();
+        _userBucketAccessServiceMock = new Mock<IUserBucketAccessService>();
+        _caseMetadataServiceMock = new Mock<ICaseMetadataService>();
         _initializationHandlerMock = new Mock<IInitializationHandler>();
 
         _fixture = new Fixture();
@@ -74,7 +78,8 @@ public class CreateNetAppFolderTests
             _netAppArgFactoryMock.Object,
             _activityLogServiceMock.Object,
             _requestValidatorMock.Object,
-            _securityGroupMetadataServiceMock.Object,
+            _userBucketAccessServiceMock.Object,
+            _caseMetadataServiceMock.Object,
             _initializationHandlerMock.Object);
     }
 
@@ -133,7 +138,7 @@ public class CreateNetAppFolderTests
         Assert.Equal(validationErrors, errors);
 
         _initializationHandlerMock.Verify(h => h.Initialize(_testUsername, _testCorrelationId, null), Times.Once);
-        _securityGroupMetadataServiceMock.Verify(s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()), Times.Never);
+        _userBucketAccessServiceMock.Verify(s => s.ResolveBucketAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
         _netAppClientMock.Verify(c => c.ListFoldersInBucketAsync(It.IsAny<ListFoldersInBucketArg>()), Times.Never);
         _netAppClientMock.Verify(c => c.CreateFolderAsync(It.IsAny<CreateFolderArg>()), Times.Never);
     }
@@ -150,9 +155,9 @@ public class CreateNetAppFolderTests
         var dto = new CreateNetAppFolderDto { Path = folderPath, CaseId = 42 };
         SetupValidRequest(dto);
 
-        _securityGroupMetadataServiceMock
-            .Setup(s => s.GetUserSecurityGroupsAsync(_testBearerToken))
-            .ReturnsAsync(_defaultSecurityGroups);
+        _userBucketAccessServiceMock
+            .Setup(s => s.ResolveBucketAsync(_testBearerToken, It.IsAny<string?>(), It.IsAny<string?>()))
+            .ReturnsAsync(_defaultSecurityGroups[0]);
 
         var parentPath = folderPath.Contains('/') ? folderPath[..folderPath.LastIndexOf('/')] : string.Empty;
         var listFoldersArg = _fixture.Create<ListFoldersInBucketArg>();
@@ -197,9 +202,9 @@ public class CreateNetAppFolderTests
         var dto = new CreateNetAppFolderDto { Path = folderPath, CaseId = 42 };
         SetupValidRequest(dto);
 
-        _securityGroupMetadataServiceMock
-            .Setup(s => s.GetUserSecurityGroupsAsync(_testBearerToken))
-            .ReturnsAsync(_defaultSecurityGroups);
+        _userBucketAccessServiceMock
+            .Setup(s => s.ResolveBucketAsync(_testBearerToken, It.IsAny<string?>(), It.IsAny<string?>()))
+            .ReturnsAsync(_defaultSecurityGroups[0]);
 
         SetupNoExistingFolders(folderPath);
 
@@ -236,9 +241,9 @@ public class CreateNetAppFolderTests
         var dto = new CreateNetAppFolderDto { Path = folderPath, CaseId = caseId };
         SetupValidRequest(dto);
 
-        _securityGroupMetadataServiceMock
-            .Setup(s => s.GetUserSecurityGroupsAsync(_testBearerToken))
-            .ReturnsAsync(_defaultSecurityGroups);
+        _userBucketAccessServiceMock
+            .Setup(s => s.ResolveBucketAsync(_testBearerToken, It.IsAny<string?>(), It.IsAny<string?>()))
+            .ReturnsAsync(_defaultSecurityGroups[0]);
 
         SetupNoExistingFolders(folderPath);
 
@@ -262,7 +267,7 @@ public class CreateNetAppFolderTests
         Assert.True((bool)okResult.Value!);
 
         _initializationHandlerMock.Verify(h => h.Initialize(_testUsername, _testCorrelationId, null), Times.Once);
-        _securityGroupMetadataServiceMock.Verify(s => s.GetUserSecurityGroupsAsync(_testBearerToken), Times.Once);
+        _userBucketAccessServiceMock.Verify(s => s.ResolveBucketAsync(_testBearerToken, It.IsAny<string?>(), It.IsAny<string?>()), Times.Once);
         _netAppArgFactoryMock.Verify(f => f.CreateCreateFolderArg(_testBearerToken, _testBucketName, folderPath), Times.Once);
         _netAppClientMock.Verify(c => c.CreateFolderAsync(createArg), Times.Once);
     }
@@ -277,9 +282,9 @@ public class CreateNetAppFolderTests
         var dto = new CreateNetAppFolderDto { Path = folderPath, CaseId = caseId };
         SetupValidRequest(dto);
 
-        _securityGroupMetadataServiceMock
-            .Setup(s => s.GetUserSecurityGroupsAsync(_testBearerToken))
-            .ReturnsAsync(_defaultSecurityGroups);
+        _userBucketAccessServiceMock
+            .Setup(s => s.ResolveBucketAsync(_testBearerToken, It.IsAny<string?>(), It.IsAny<string?>()))
+            .ReturnsAsync(_defaultSecurityGroups[0]);
 
         SetupNoExistingFolders(folderPath);
 
@@ -320,9 +325,9 @@ public class CreateNetAppFolderTests
         var dto = new CreateNetAppFolderDto { Path = folderPath, CaseId = caseId };
         SetupValidRequest(dto);
 
-        _securityGroupMetadataServiceMock
-            .Setup(s => s.GetUserSecurityGroupsAsync(_testBearerToken))
-            .ReturnsAsync(_defaultSecurityGroups);
+        _userBucketAccessServiceMock
+            .Setup(s => s.ResolveBucketAsync(_testBearerToken, It.IsAny<string?>(), It.IsAny<string?>()))
+            .ReturnsAsync(_defaultSecurityGroups[0]);
 
         SetupNoExistingFolders(folderPath);
 
@@ -366,9 +371,9 @@ public class CreateNetAppFolderTests
         var dto = new CreateNetAppFolderDto { Path = folderPath, CaseId = 1 };
         SetupValidRequest(dto);
 
-        _securityGroupMetadataServiceMock
-            .Setup(s => s.GetUserSecurityGroupsAsync(_testBearerToken))
-            .ReturnsAsync(_defaultSecurityGroups);
+        _userBucketAccessServiceMock
+            .Setup(s => s.ResolveBucketAsync(_testBearerToken, It.IsAny<string?>(), It.IsAny<string?>()))
+            .ReturnsAsync(_defaultSecurityGroups[0]);
 
         SetupNoExistingFolders(folderPath);
 
@@ -405,9 +410,9 @@ public class CreateNetAppFolderTests
         var dto = new CreateNetAppFolderDto { Path = folderPath, CaseId = caseId };
         SetupValidRequest(dto);
 
-        _securityGroupMetadataServiceMock
-            .Setup(s => s.GetUserSecurityGroupsAsync(_testBearerToken))
-            .ReturnsAsync(_defaultSecurityGroups);
+        _userBucketAccessServiceMock
+            .Setup(s => s.ResolveBucketAsync(_testBearerToken, It.IsAny<string?>(), It.IsAny<string?>()))
+            .ReturnsAsync(_defaultSecurityGroups[0]);
 
         SetupNoExistingFolders(folderPath);
 
@@ -447,9 +452,9 @@ public class CreateNetAppFolderTests
         var dto = new CreateNetAppFolderDto { Path = folderPathWithSlash, CaseId = 5 };
         SetupValidRequest(dto);
 
-        _securityGroupMetadataServiceMock
-            .Setup(s => s.GetUserSecurityGroupsAsync(_testBearerToken))
-            .ReturnsAsync(_defaultSecurityGroups);
+        _userBucketAccessServiceMock
+            .Setup(s => s.ResolveBucketAsync(_testBearerToken, It.IsAny<string?>(), It.IsAny<string?>()))
+            .ReturnsAsync(_defaultSecurityGroups[0]);
 
         SetupNoExistingFolders(normalised);
 
@@ -488,8 +493,8 @@ public class CreateNetAppFolderTests
         var dto = new CreateNetAppFolderDto { Path = "op/folder", CaseId = 1 };
         SetupValidRequest(dto);
 
-        _securityGroupMetadataServiceMock
-            .Setup(s => s.GetUserSecurityGroupsAsync(_testBearerToken))
+        _userBucketAccessServiceMock
+            .Setup(s => s.ResolveBucketAsync(_testBearerToken, It.IsAny<string?>(), It.IsAny<string?>()))
             .ThrowsAsync(new MissingSecurityGroupException("No matching security groups found for the provided IDs."));
 
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestFor(dto);
@@ -500,46 +505,36 @@ public class CreateNetAppFolderTests
             _function.Run(httpRequest, functionContext));
 
         _initializationHandlerMock.Verify(h => h.Initialize(_testUsername, _testCorrelationId, null), Times.Once);
-        _securityGroupMetadataServiceMock.Verify(s => s.GetUserSecurityGroupsAsync(_testBearerToken), Times.Once);
+        _userBucketAccessServiceMock.Verify(s => s.ResolveBucketAsync(_testBearerToken, It.IsAny<string?>(), It.IsAny<string?>()), Times.Once);
         _netAppClientMock.Verify(c => c.ListFoldersInBucketAsync(It.IsAny<ListFoldersInBucketArg>()), Times.Never);
         _netAppClientMock.Verify(c => c.CreateFolderAsync(It.IsAny<CreateFolderArg>()), Times.Never);
     }
 
     [Fact]
-    public async Task Run_UsesFirstSecurityGroupBucketName()
+    public async Task Run_WhenCaseHasNoPersistedBucket_FallsBackToResolvedBucket()
     {
-        // Arrange
-        var firstBucketName = "first-bucket";
-        var secondBucketName = "second-bucket";
+        // Arrange — covers cases connected before the bucket was persisted on CaseMetadata
+        var fallbackBucketName = "first-bucket";
         var folderPath = "operation-123/my-folder";
-        var dto = new CreateNetAppFolderDto { Path = folderPath, CaseId = 1 };
+        var caseId = 1;
+        var dto = new CreateNetAppFolderDto { Path = folderPath, CaseId = caseId };
         SetupValidRequest(dto);
 
-        var securityGroups = new List<SecurityGroup>
-        {
-            new() { Id = _fixture.Create<Guid>(), BucketName = firstBucketName, VolumeUuid = _fixture.Create<Guid>(), DisplayName = "First" },
-            new() { Id = _fixture.Create<Guid>(), BucketName = secondBucketName, VolumeUuid = _fixture.Create<Guid>(), DisplayName = "Second" }
-        };
-        _securityGroupMetadataServiceMock
-            .Setup(s => s.GetUserSecurityGroupsAsync(_testBearerToken))
-            .ReturnsAsync(securityGroups);
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForCaseIdAsync(caseId))
+            .ReturnsAsync(new CaseMetadata { CaseId = caseId, NetappBucketName = null });
 
-        var parentPath = folderPath.Contains('/') ? folderPath[..folderPath.LastIndexOf('/')] : string.Empty;
-        var listFoldersArg = _fixture.Create<ListFoldersInBucketArg>();
-        _netAppArgFactoryMock
-            .Setup(f => f.CreateListFoldersInBucketArg(_testBearerToken, firstBucketName, null, null, null, parentPath))
-            .Returns(listFoldersArg);
-        _netAppClientMock
-            .Setup(c => c.ListFoldersInBucketAsync(listFoldersArg))
-            .ReturnsAsync((ListNetAppObjectsDto?)null);
+        _userBucketAccessServiceMock
+            .Setup(s => s.ResolveBucketAsync(_testBearerToken, null, null))
+            .ReturnsAsync(new SecurityGroup
+            {
+                Id = _fixture.Create<Guid>(),
+                BucketName = fallbackBucketName,
+                VolumeUuid = _fixture.Create<Guid>(),
+                DisplayName = "First"
+            });
 
-        var createArg = _fixture.Create<CreateFolderArg>();
-        _netAppArgFactoryMock
-            .Setup(f => f.CreateCreateFolderArg(_testBearerToken, firstBucketName, folderPath))
-            .Returns(createArg);
-        _netAppClientMock
-            .Setup(c => c.CreateFolderAsync(createArg))
-            .ReturnsAsync(true);
+        ArrangeFolderCreation(folderPath, fallbackBucketName);
 
         var httpRequest = HttpRequestStubHelper.CreateHttpRequestFor(dto);
         var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
@@ -548,7 +543,64 @@ public class CreateNetAppFolderTests
         await _function.Run(httpRequest, functionContext);
 
         // Assert
-        _netAppArgFactoryMock.Verify(f => f.CreateCreateFolderArg(_testBearerToken, firstBucketName, folderPath), Times.Once);
-        _netAppArgFactoryMock.Verify(f => f.CreateCreateFolderArg(It.IsAny<string>(), secondBucketName, It.IsAny<string>()), Times.Never);
+        _userBucketAccessServiceMock.Verify(s => s.ResolveBucketAsync(_testBearerToken, null, null), Times.Once);
+        _netAppArgFactoryMock.Verify(f => f.CreateCreateFolderArg(_testBearerToken, fallbackBucketName, folderPath), Times.Once);
+    }
+
+    [Fact]
+    public async Task Run_WhenCaseHasPersistedBucket_UsesPersistedBucket()
+    {
+        // Arrange
+        var persistedBucketName = "manchester-bucket";
+        var folderPath = "operation-123/my-folder";
+        var caseId = 1;
+        var dto = new CreateNetAppFolderDto { Path = folderPath, CaseId = caseId };
+        SetupValidRequest(dto);
+
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForCaseIdAsync(caseId))
+            .ReturnsAsync(new CaseMetadata { CaseId = caseId, NetappBucketName = persistedBucketName });
+
+        _userBucketAccessServiceMock
+            .Setup(s => s.ResolveBucketAsync(_testBearerToken, persistedBucketName, null))
+            .ReturnsAsync(new SecurityGroup
+            {
+                Id = _fixture.Create<Guid>(),
+                BucketName = persistedBucketName,
+                VolumeUuid = _fixture.Create<Guid>(),
+                DisplayName = "Manchester"
+            });
+
+        ArrangeFolderCreation(folderPath, persistedBucketName);
+
+        var httpRequest = HttpRequestStubHelper.CreateHttpRequestFor(dto);
+        var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+        // Act
+        await _function.Run(httpRequest, functionContext);
+
+        // Assert
+        _userBucketAccessServiceMock.Verify(s => s.ResolveBucketAsync(_testBearerToken, persistedBucketName, null), Times.Once);
+        _netAppArgFactoryMock.Verify(f => f.CreateCreateFolderArg(_testBearerToken, persistedBucketName, folderPath), Times.Once);
+    }
+
+    private void ArrangeFolderCreation(string folderPath, string bucketName)
+    {
+        var parentPath = folderPath.Contains('/') ? folderPath[..folderPath.LastIndexOf('/')] : string.Empty;
+        var listFoldersArg = _fixture.Create<ListFoldersInBucketArg>();
+        _netAppArgFactoryMock
+            .Setup(f => f.CreateListFoldersInBucketArg(_testBearerToken, bucketName, null, null, null, parentPath))
+            .Returns(listFoldersArg);
+        _netAppClientMock
+            .Setup(c => c.ListFoldersInBucketAsync(listFoldersArg))
+            .ReturnsAsync((ListNetAppObjectsDto?)null);
+
+        var createArg = _fixture.Create<CreateFolderArg>();
+        _netAppArgFactoryMock
+            .Setup(f => f.CreateCreateFolderArg(_testBearerToken, bucketName, folderPath))
+            .Returns(createArg);
+        _netAppClientMock
+            .Setup(c => c.CreateFolderAsync(createArg))
+            .ReturnsAsync(true);
     }
 }

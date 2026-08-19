@@ -1,6 +1,7 @@
 using AutoFixture;
 using CPS.ComplexCases.ActivityLog.Services;
 using CPS.ComplexCases.API.Domain.Models;
+using CPS.ComplexCases.API.Exceptions;
 using CPS.ComplexCases.API.Functions;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.API.Tests.Unit.Helpers;
@@ -30,7 +31,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
         private readonly Mock<INetAppArgFactory> _netAppArgFactoryMock;
         private readonly Mock<IActivityLogService> _activityLogServiceMock;
         private readonly Mock<IRequestValidator> _requestValidatorMock;
-        private readonly Mock<ISecurityGroupMetadataService> _securityGroupMetadataServiceMock;
+        private readonly Mock<IUserBucketAccessService> _userBucketAccessServiceMock;
         private readonly Mock<IInitializationHandler> _initializationHandlerMock;
         private readonly CreateNetAppConnection _function;
         private readonly Fixture _fixture;
@@ -49,7 +50,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _netAppArgFactoryMock = new Mock<INetAppArgFactory>();
             _activityLogServiceMock = new Mock<IActivityLogService>();
             _requestValidatorMock = new Mock<IRequestValidator>();
-            _securityGroupMetadataServiceMock = new Mock<ISecurityGroupMetadataService>();
+            _userBucketAccessServiceMock = new Mock<IUserBucketAccessService>();
             _initializationHandlerMock = new Mock<IInitializationHandler>();
 
             _testCorrelationId = _fixture.Create<Guid>();
@@ -57,17 +58,15 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
             _testCmsAuthValues = _fixture.Create<string>();
             _testBearerToken = _fixture.Create<string>();
 
-            _securityGroupMetadataServiceMock
-                .Setup(s => s.GetUserSecurityGroupsAsync(It.IsAny<string>()))
-                .ReturnsAsync([
-                    new SecurityGroup
-                    {
-                        Id = _fixture.Create<Guid>(),
-                        BucketName = _testBucketName,
-                        VolumeUuid = _fixture.Create<Guid>(),
-                        DisplayName = "Test Security Group"
-                    }
-                ]);
+            _userBucketAccessServiceMock
+                .Setup(s => s.ResolveBucketAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()))
+                .ReturnsAsync(new SecurityGroup
+                {
+                    Id = _fixture.Create<Guid>(),
+                    BucketName = _testBucketName,
+                    VolumeUuid = _fixture.Create<Guid>(),
+                    DisplayName = "Test Security Group"
+                });
 
             _function = new CreateNetAppConnection(
                 _loggerMock.Object,
@@ -76,7 +75,7 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
                 _netAppArgFactoryMock.Object,
                 _activityLogServiceMock.Object,
                 _requestValidatorMock.Object,
-                _securityGroupMetadataServiceMock.Object,
+                _userBucketAccessServiceMock.Object,
                 _initializationHandlerMock.Object
                 );
         }
@@ -499,6 +498,135 @@ namespace CPS.ComplexCases.API.Tests.Unit.Functions
 
             // Assert — connection creation succeeded; logging failure must not surface as an error
             Assert.IsType<OkResult>(result);
+        }
+
+        [Fact]
+        public async Task Run_WhenNoBucketNameSupplied_PersistsResolvedBucket()
+        {
+            // Arrange
+            var netAppConnectionRequest = _fixture.Create<CreateNetAppConnectionDto>();
+            netAppConnectionRequest.BucketName = null;
+
+            ArrangeSuccessfulConnect(netAppConnectionRequest);
+
+            var request = HttpRequestStubHelper.CreateHttpRequestFor(netAppConnectionRequest);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+            // Act
+            var result = await _function.Run(request, functionContext);
+
+            // Assert
+            Assert.IsType<OkResult>(result);
+            _caseMetadataServiceMock.Verify(
+                x => x.CreateNetAppConnectionAsync(It.Is<CreateNetAppConnectionDto>(dto => dto.BucketName == _testBucketName)),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task Run_WhenBucketNameSupplied_ValidatesAgainstEntitlementAndPersistsIt()
+        {
+            // Arrange
+            var requestedBucket = "manchester-bucket";
+            var netAppConnectionRequest = _fixture.Create<CreateNetAppConnectionDto>();
+            netAppConnectionRequest.BucketName = requestedBucket;
+
+            _userBucketAccessServiceMock
+                .Setup(s => s.ResolveBucketAsync(_testBearerToken, null, requestedBucket))
+                .ReturnsAsync(new SecurityGroup
+                {
+                    Id = _fixture.Create<Guid>(),
+                    BucketName = requestedBucket,
+                    VolumeUuid = _fixture.Create<Guid>(),
+                    DisplayName = "Manchester"
+                });
+
+            var netAppArg = _fixture.Create<ListFoldersInBucketArg>();
+
+            _requestValidatorMock
+                .Setup(x => x.GetJsonBody<CreateNetAppConnectionDto, CreateNetAppConnectionValidator>(It.IsAny<HttpRequest>()))
+                .ReturnsAsync(new ValidatableRequest<CreateNetAppConnectionDto>
+                {
+                    IsValid = true,
+                    Value = netAppConnectionRequest
+                });
+
+            _netAppArgFactoryMock
+                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, requestedBucket, netAppConnectionRequest.OperationName, null, 1, null))
+                .Returns(netAppArg);
+
+            _netAppClientMock
+                .Setup(x => x.ListFoldersInBucketAsync(netAppArg))
+                .ReturnsAsync(_fixture.Create<ListNetAppObjectsDto>());
+
+            _caseMetadataServiceMock
+                .Setup(x => x.GetCaseMetadataForNetAppFolderPathsAsync(It.IsAny<IEnumerable<string>>()))
+                .ReturnsAsync(Enumerable.Empty<CaseMetadata>());
+
+            var request = HttpRequestStubHelper.CreateHttpRequestFor(netAppConnectionRequest);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+            // Act
+            var result = await _function.Run(request, functionContext);
+
+            // Assert
+            Assert.IsType<OkResult>(result);
+            _userBucketAccessServiceMock.Verify(s => s.ResolveBucketAsync(_testBearerToken, null, requestedBucket), Times.Once);
+            _caseMetadataServiceMock.Verify(
+                x => x.CreateNetAppConnectionAsync(It.Is<CreateNetAppConnectionDto>(dto => dto.BucketName == requestedBucket)),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task Run_WhenUserNotEntitledToRequestedBucket_ThrowsMissingSecurityGroupException()
+        {
+            // Arrange
+            var netAppConnectionRequest = _fixture.Create<CreateNetAppConnectionDto>();
+            netAppConnectionRequest.BucketName = "not-entitled-bucket";
+
+            _requestValidatorMock
+                .Setup(x => x.GetJsonBody<CreateNetAppConnectionDto, CreateNetAppConnectionValidator>(It.IsAny<HttpRequest>()))
+                .ReturnsAsync(new ValidatableRequest<CreateNetAppConnectionDto>
+                {
+                    IsValid = true,
+                    Value = netAppConnectionRequest
+                });
+
+            _userBucketAccessServiceMock
+                .Setup(s => s.ResolveBucketAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()))
+                .ThrowsAsync(new MissingSecurityGroupException("User is not entitled to bucket 'not-entitled-bucket'."));
+
+            var request = HttpRequestStubHelper.CreateHttpRequestFor(netAppConnectionRequest);
+            var functionContext = FunctionContextStubHelper.CreateFunctionContextStub(_testCorrelationId, _testCmsAuthValues, _testUsername, _testBearerToken);
+
+            // Act & Assert — the exception middleware maps this to a 403
+            await Assert.ThrowsAsync<MissingSecurityGroupException>(() => _function.Run(request, functionContext));
+
+            _caseMetadataServiceMock.Verify(x => x.CreateNetAppConnectionAsync(It.IsAny<CreateNetAppConnectionDto>()), Times.Never);
+        }
+
+        private void ArrangeSuccessfulConnect(CreateNetAppConnectionDto netAppConnectionRequest)
+        {
+            var netAppArg = _fixture.Create<ListFoldersInBucketArg>();
+
+            _requestValidatorMock
+                .Setup(x => x.GetJsonBody<CreateNetAppConnectionDto, CreateNetAppConnectionValidator>(It.IsAny<HttpRequest>()))
+                .ReturnsAsync(new ValidatableRequest<CreateNetAppConnectionDto>
+                {
+                    IsValid = true,
+                    Value = netAppConnectionRequest
+                });
+
+            _netAppArgFactoryMock
+                .Setup(x => x.CreateListFoldersInBucketArg(_testBearerToken, _testBucketName, netAppConnectionRequest.OperationName, null, 1, null))
+                .Returns(netAppArg);
+
+            _netAppClientMock
+                .Setup(x => x.ListFoldersInBucketAsync(netAppArg))
+                .ReturnsAsync(_fixture.Create<ListNetAppObjectsDto>());
+
+            _caseMetadataServiceMock
+                .Setup(x => x.GetCaseMetadataForNetAppFolderPathsAsync(It.IsAny<IEnumerable<string>>()))
+                .ReturnsAsync(Enumerable.Empty<CaseMetadata>());
         }
     }
 }

@@ -7,5 +7,6 @@ public class CaseMetadata
     public string? EgressWorkspaceId { get; set; }
     public string? EgressWorkspaceName { get; set; }
     public string? NetappFolderPath { get; set; }
+    public string? NetappBucketName { get; set; }
     public Guid? ActiveTransferId { get; set; }
 }

@@ -9,6 +9,7 @@ using CPS.ComplexCases.API.Validators.Requests;
 using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Common.Helpers;
 using CPS.ComplexCases.Common.Models.Requests;
+using CPS.ComplexCases.Common.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
@@ -18,12 +19,13 @@ using Microsoft.OpenApi.Models;
 
 namespace CPS.ComplexCases.API.Functions.Transfer;
 
-public class GetFilesForTransfer(IFileTransferClient transferClient, ILogger<GetFilesForTransfer> logger, IRequestValidator requestValidator, ISecurityGroupMetadataService securityGroupMetadataService)
+public class GetFilesForTransfer(IFileTransferClient transferClient, ILogger<GetFilesForTransfer> logger, IRequestValidator requestValidator, IUserBucketAccessService userBucketAccessService, ICaseMetadataService caseMetadataService)
 {
     private readonly IFileTransferClient _transferClient = transferClient;
     private readonly ILogger<GetFilesForTransfer> _logger = logger;
     private readonly IRequestValidator _requestValidator = requestValidator;
-    private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
+    private readonly IUserBucketAccessService _userBucketAccessService = userBucketAccessService;
+    private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
 
     [Function(nameof(GetFilesForTransfer))]
     [OpenApiOperation(operationId: nameof(GetFilesForTransfer), tags: ["FileTransfer"], Description = "Gets the complete list of files to be transferred from the source storage.")]
@@ -49,7 +51,10 @@ public class GetFilesForTransfer(IFileTransferClient transferClient, ILogger<Get
             return new BadRequestObjectResult(request.ValidationErrors);
         }
 
-        var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
+        var caseMetadata = await _caseMetadataService.GetCaseMetadataForCaseIdAsync(request.Value.CaseId);
+
+        var bucket = await _userBucketAccessService.ResolveBucketAsync(
+            context.BearerToken, caseMetadata?.NetappBucketName, null);
 
         var listFilesForTransferRequest = new ListFilesForTransferRequest
         {
@@ -61,7 +66,7 @@ public class GetFilesForTransfer(IFileTransferClient transferClient, ILogger<Get
             WorkspaceId = request.Value.WorkspaceId,
             Username = context.Username,
             BearerToken = context.BearerToken,
-            BucketName = securityGroups.First().BucketName,
+            BucketName = bucket.BucketName,
             SourceRootFolderPath = request.Value.SourceRootFolderPath,
             SourcePaths = request.Value.SourcePaths.Select(path => new SelectedSourcePath
             {

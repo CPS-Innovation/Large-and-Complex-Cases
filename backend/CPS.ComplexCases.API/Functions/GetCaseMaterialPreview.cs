@@ -4,6 +4,7 @@ using CPS.ComplexCases.API.Context;
 using CPS.ComplexCases.API.Services;
 using CPS.ComplexCases.Common.Attributes;
 using CPS.ComplexCases.Common.Handlers;
+using CPS.ComplexCases.Common.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
@@ -14,12 +15,14 @@ namespace CPS.ComplexCases.API.Functions;
 
 public class GetCaseMaterialPreview(
     ILogger<GetCaseMaterialPreview> logger,
-    ISecurityGroupMetadataService securityGroupMetadataService,
+    IUserBucketAccessService userBucketAccessService,
+    ICaseMetadataService caseMetadataService,
     IDocumentService documentService,
     IInitializationHandler initializationHandler)
 {
     private readonly ILogger<GetCaseMaterialPreview> _logger = logger;
-    private readonly ISecurityGroupMetadataService _securityGroupMetadataService = securityGroupMetadataService;
+    private readonly IUserBucketAccessService _userBucketAccessService = userBucketAccessService;
+    private readonly ICaseMetadataService _caseMetadataService = caseMetadataService;
     private readonly IDocumentService _documentService = documentService;
     private readonly IInitializationHandler _initializationHandler = initializationHandler;
 
@@ -27,6 +30,7 @@ public class GetCaseMaterialPreview(
     [OpenApiOperation(operationId: nameof(GetCaseMaterialPreview), tags: ["NetApp"], Description = "Retrieves a case material document from NetApp and returns it as a PDF preview.")]
     [BearerTokenAuth]
     [OpenApiParameter(name: InputParameters.Path, In = Microsoft.OpenApi.Models.ParameterLocation.Query, Required = true, Type = typeof(string), Description = "The NetApp path of the document to preview.")]
+    [OpenApiParameter(name: InputParameters.CaseId, In = Microsoft.OpenApi.Models.ParameterLocation.Query, Required = false, Type = typeof(int), Description = "The case ID, used to read the bucket already connected to the case.")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/pdf", bodyType: typeof(FileStreamResult), Description = ApiResponseDescriptions.Success)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.BadRequest)]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.NotFound, contentType: ContentType.TextPlain, typeof(string), Description = ApiResponseDescriptions.NotFound)]
@@ -47,8 +51,15 @@ public class GetCaseMaterialPreview(
             return new BadRequestObjectResult($"Query parameter '{InputParameters.Path}' is required.");
         }
 
-        var securityGroups = await _securityGroupMetadataService.GetUserSecurityGroupsAsync(context.BearerToken);
-        var bucketName = securityGroups.First().BucketName;
+        string? persistedBucketName = null;
+        if (int.TryParse(req.Query[InputParameters.CaseId], out var caseId) && caseId > 0)
+        {
+            var caseMetadata = await _caseMetadataService.GetCaseMetadataForCaseIdAsync(caseId);
+            persistedBucketName = caseMetadata?.NetappBucketName;
+        }
+
+        var bucketName = (await _userBucketAccessService.ResolveBucketAsync(
+            context.BearerToken, persistedBucketName, null)).BucketName;
 
         var result = await _documentService.GetMaterialPreviewAsync(path, context.BearerToken, bucketName);
 
