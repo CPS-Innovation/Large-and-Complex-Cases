@@ -974,6 +974,84 @@ namespace CPS.ComplexCases.NetApp.Tests.Unit
         }
 
         [Fact]
+        public async Task CompleteMultipartUploadAsync_RetriesOn404InternalError_AndSucceeds()
+        {
+            var arg = new CompleteMultipartUploadArg
+            {
+                BearerToken = BearerToken,
+                ObjectKey = "file.txt",
+                BucketName = "bucket",
+                UploadId = "uploadid",
+                CompletedParts = []
+            };
+            var expectedResponse = new CompleteMultipartUploadResponse();
+
+            var callCount = 0;
+            _amazonS3Mock
+                .Setup(s => s.CompleteMultipartUploadAsync(It.IsAny<CompleteMultipartUploadRequest>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() =>
+                {
+                    callCount++;
+                    if (callCount == 1)
+                    {
+                        throw new AmazonS3Exception("We encountered an internal error. Please try again.")
+                        {
+                            StatusCode = HttpStatusCode.NotFound,
+                            ErrorCode = S3ErrorCodes.InternalError
+                        };
+                    }
+
+                    return expectedResponse;
+                });
+
+            var result = await _client.CompleteMultipartUploadAsync(arg);
+
+            Assert.Equal(expectedResponse, result);
+            _amazonS3Mock.Verify(
+                s => s.CompleteMultipartUploadAsync(It.IsAny<CompleteMultipartUploadRequest>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Exactly(2));
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) =>
+                        v != null && v!.ToString()!.Contains("CompleteMultipartUpload retry attempt")),
+                    It.IsAny<AmazonS3Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task CompleteMultipartUploadAsync_DoesNotRetryOnNoSuchUpload404()
+        {
+            var arg = new CompleteMultipartUploadArg
+            {
+                BearerToken = BearerToken,
+                ObjectKey = "file.txt",
+                BucketName = "bucket",
+                UploadId = "uploadid",
+                CompletedParts = []
+            };
+
+            _amazonS3Mock
+                .Setup(s => s.CompleteMultipartUploadAsync(It.IsAny<CompleteMultipartUploadRequest>(),
+                    It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new AmazonS3Exception("The specified upload does not exist.")
+                {
+                    StatusCode = HttpStatusCode.NotFound,
+                    ErrorCode = S3ErrorCodes.NoSuchUpload
+                });
+
+            await Assert.ThrowsAsync<AmazonS3Exception>(() => _client.CompleteMultipartUploadAsync(arg));
+            _amazonS3Mock.Verify(
+                s => s.CompleteMultipartUploadAsync(It.IsAny<CompleteMultipartUploadRequest>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
         public async Task DoesObjectExistAsync_ReturnsTrue_OnSuccess()
         {
             var arg = new GetObjectArg { BearerToken = BearerToken, ObjectKey = "file.txt", BucketName = "bucket" };
