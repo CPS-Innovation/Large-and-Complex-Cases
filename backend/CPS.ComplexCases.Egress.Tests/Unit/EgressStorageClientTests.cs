@@ -16,6 +16,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
+using Polly.CircuitBreaker;
 
 namespace CPS.ComplexCases.Egress.Tests.Unit;
 
@@ -823,6 +824,92 @@ public class EgressStorageClientTests : IDisposable
     }
 
     [Fact]
+    public async Task UploadChunkAsync_WhenConnectionDropsThenSucceeds_RetriesAndSucceeds()
+    {
+        var uploadId = _fixture.Create<string>();
+        var workspaceId = _fixture.Create<string>();
+        var session = new UploadSession { UploadId = uploadId, WorkspaceId = workspaceId };
+        var chunkData = Encoding.UTF8.GetBytes("chunk");
+        var token = _fixture.Create<string>();
+
+        var client = CreateClientWithChunkRetryOptions(maxAttempts: 3, baseDelaySeconds: 1);
+
+        SetupTokenRequest(token);
+        _requestFactoryMock
+            .Setup(f => f.UploadChunkRequest(It.IsAny<UploadChunkArg>(), It.IsAny<string>()))
+            .Returns(() => new HttpRequestMessage(HttpMethod.Patch, $"{TestUrl}/api/v1/uploads/{uploadId}/"));
+
+        SetupHttpMockSequence(
+            JsonResponse(new GetWorkspaceTokenResponse { Token = token }),
+            new HttpRequestException("Connection reset"),
+            JsonResponse(new { Success = true }));
+
+        var result = await client.UploadChunkAsync(session, 1, chunkData, 0, chunkData.Length - 1, chunkData.Length);
+
+        Assert.NotNull(result);
+        _requestFactoryMock.Verify(
+            f => f.UploadChunkRequest(It.IsAny<UploadChunkArg>(), It.IsAny<string>()),
+            Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task UploadChunkAsync_WhenConnectionAlwaysDrops_ThrowsAfterMaxAttempts()
+    {
+        var uploadId = _fixture.Create<string>();
+        var workspaceId = _fixture.Create<string>();
+        var session = new UploadSession { UploadId = uploadId, WorkspaceId = workspaceId };
+        var chunkData = Encoding.UTF8.GetBytes("chunk");
+        var token = _fixture.Create<string>();
+
+        var client = CreateClientWithChunkRetryOptions(maxAttempts: 2, baseDelaySeconds: 1);
+
+        SetupTokenRequest(token);
+        _requestFactoryMock
+            .Setup(f => f.UploadChunkRequest(It.IsAny<UploadChunkArg>(), It.IsAny<string>()))
+            .Returns(() => new HttpRequestMessage(HttpMethod.Patch, $"{TestUrl}/api/v1/uploads/{uploadId}/"));
+
+        SetupHttpMockSequence(
+            JsonResponse(new GetWorkspaceTokenResponse { Token = token }),
+            new HttpRequestException("Connection reset"),
+            new HttpRequestException("Connection reset"));
+
+        await Assert.ThrowsAsync<HttpRequestException>(
+            () => client.UploadChunkAsync(session, 1, chunkData, 0, chunkData.Length - 1, chunkData.Length));
+
+        _requestFactoryMock.Verify(
+            f => f.UploadChunkRequest(It.IsAny<UploadChunkArg>(), It.IsAny<string>()),
+            Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task UploadChunkAsync_WhenCircuitIsOpen_DoesNotRetry()
+    {
+        var uploadId = _fixture.Create<string>();
+        var workspaceId = _fixture.Create<string>();
+        var session = new UploadSession { UploadId = uploadId, WorkspaceId = workspaceId };
+        var chunkData = Encoding.UTF8.GetBytes("chunk");
+        var token = _fixture.Create<string>();
+
+        var client = CreateClientWithChunkRetryOptions(maxAttempts: 4, baseDelaySeconds: 1);
+
+        SetupTokenRequest(token);
+        _requestFactoryMock
+            .Setup(f => f.UploadChunkRequest(It.IsAny<UploadChunkArg>(), It.IsAny<string>()))
+            .Returns(() => new HttpRequestMessage(HttpMethod.Patch, $"{TestUrl}/api/v1/uploads/{uploadId}/"));
+
+        SetupHttpMockSequence(
+            JsonResponse(new GetWorkspaceTokenResponse { Token = token }),
+            new BrokenCircuitException());
+
+        await Assert.ThrowsAsync<BrokenCircuitException>(
+            () => client.UploadChunkAsync(session, 1, chunkData, 0, chunkData.Length - 1, chunkData.Length));
+
+        _requestFactoryMock.Verify(
+            f => f.UploadChunkRequest(It.IsAny<UploadChunkArg>(), It.IsAny<string>()),
+            Times.Once);
+    }
+
+    [Fact]
     public async Task CreateFolderAsync_CreatesEachMissingSegment()
     {
         // Arrange
@@ -1233,6 +1320,32 @@ public class EgressStorageClientTests : IDisposable
             sequence = sequence.ReturnsAsync(httpResponse);
         }
     }
+
+    private void SetupHttpMockSequence(params object[] outcomes)
+    {
+        var sequence = _httpMessageHandlerMock
+            .Protected()
+            .SetupSequence<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>());
+
+        foreach (var outcome in outcomes)
+        {
+            sequence = outcome switch
+            {
+                Exception ex => sequence.ThrowsAsync(ex),
+                HttpResponseMessage response => sequence.ReturnsAsync(response),
+                _ => throw new ArgumentException($"Unexpected mock outcome type {outcome.GetType()}"),
+            };
+        }
+    }
+
+    private static HttpResponseMessage JsonResponse(object body, HttpStatusCode statusCode = HttpStatusCode.OK) =>
+        new(statusCode)
+        {
+            Content = new StringContent(JsonSerializer.Serialize(body))
+        };
 
     /// <summary>
     /// Invokes the private ConstructRelativePath method using reflection for testing.

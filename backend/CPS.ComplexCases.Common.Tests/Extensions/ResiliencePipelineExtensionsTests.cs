@@ -163,8 +163,11 @@ public class ResiliencePipelineExtensionsTests
         Assert.Equal(3, attempts);
     }
 
-    [Fact]
-    public async Task Retry_DoesNotRetryNonIdempotentMethods()
+    [Theory]
+    [InlineData("POST")]
+    [InlineData("PUT")]
+    [InlineData("PATCH")]
+    public async Task Retry_DoesNotRetryNonIdempotentMethods(string method)
     {
         var pipeline = new ResiliencePipelineBuilder<HttpResponseMessage>()
             .AddStandardHttpResilience(new HttpResilienceOptions
@@ -186,7 +189,7 @@ public class ResiliencePipelineExtensionsTests
         await pipeline.ExecuteAsync(_ =>
         {
             attempts++;
-            var request = new HttpRequestMessage(HttpMethod.Post, "https://example.test");
+            var request = new HttpRequestMessage(new HttpMethod(method), "https://example.test");
             return ValueTask.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError) { RequestMessage = request });
         });
 

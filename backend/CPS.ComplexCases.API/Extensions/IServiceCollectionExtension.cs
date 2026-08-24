@@ -32,7 +32,7 @@ public static class IServiceCollectionExtension
                 .GetRequiredService<ILoggerFactory>()
                 .CreateLogger("CPS.ComplexCases.API.FileTransfer");
 
-            // Shared helper keeps POST/PUT out of status-code retries. Circuit breaker is off —
+            // Shared helper keeps POST/PUT/PATCH out of status-code retries. Circuit breaker is off —
             // FileTransfer only needs the common retry policy, not fail-fast shedding.
             pipeline.AddStandardHttpResilience(new HttpResilienceOptions
             {

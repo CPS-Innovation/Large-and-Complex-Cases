@@ -49,7 +49,7 @@ public static class ResiliencePipelineExtensions
                 ShouldHandle = args =>
                 {
                     // Connection failures are retried regardless of method, since there is no response to
-                    // inspect. POST/PUT are only excluded on the status-code path below.
+                    // inspect. POST/PUT/PATCH are only excluded on the status-code path below.
                     if (options.RetryOnConnectionFailure && args.Outcome.Exception is HttpRequestException)
                     {
                         return ValueTask.FromResult(true);
@@ -64,7 +64,7 @@ public static class ResiliencePipelineExtensions
                     var isRetryableStatus = response.StatusCode >= HttpStatusCode.InternalServerError
                 || options.AdditionalRetryableStatusCodes.Contains(response.StatusCode);
 
-                    return ValueTask.FromResult(isRetryableStatus && ExcludesPostAndPut(response));
+                    return ValueTask.FromResult(isRetryableStatus && ExcludesNonIdempotentMethods(response));
                 }
             });
         }
@@ -125,8 +125,9 @@ public static class ResiliencePipelineExtensions
         return pipeline;
     }
 
-    // Retries are only safe for idempotent methods, so POST and PUT are excluded.
-    private static bool ExcludesPostAndPut(HttpResponseMessage response) =>
+    // Retries are only safe for idempotent methods, so POST, PUT, and PATCH are excluded.
+    private static bool ExcludesNonIdempotentMethods(HttpResponseMessage response) =>
         response.RequestMessage?.Method != HttpMethod.Post
-        && response.RequestMessage?.Method != HttpMethod.Put;
+        && response.RequestMessage?.Method != HttpMethod.Put
+        && response.RequestMessage?.Method != HttpMethod.Patch;
 }
