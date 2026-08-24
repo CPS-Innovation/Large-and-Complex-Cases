@@ -26,7 +26,7 @@ public sealed record HttpResilienceOptions
     public bool RetryOnConnectionFailure { get; init; }
 
     // Status codes (in addition to 5xx) that should be retried, e.g. 404 for MDS or 429 for
-    // rate-limited services. POST/PUT are always excluded because retries are only safe for
+    // rate-limited services. POST/PUT/PATCH are always excluded because retries are only safe for
     // idempotent methods.
     public IReadOnlyCollection<HttpStatusCode> AdditionalRetryableStatusCodes { get; init; } = [];
 }

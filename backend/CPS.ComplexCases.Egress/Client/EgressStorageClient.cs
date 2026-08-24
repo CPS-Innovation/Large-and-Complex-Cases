@@ -166,11 +166,13 @@ public class EgressStorageClient(
             $"Chunk {chunkNumber} upload for upload {session.UploadId} failed after {maxAttempts} attempts.");
     }
 
-    // Egress chunk PATCH's fail intermittently with 5xx/429 under load, and a slow link can trip the
-    // per-chunk timeout. All of these are worth a bounded retry before failing the whole file.
+    // Egress chunk PATCHes fail intermittently with 5xx/429 under load, a dropped connection has no
+    // status code, and a slow link can trip the per-chunk timeout. All of these are worth a bounded
+    // retry before failing the whole file. BrokenCircuitException is not retried: fail-fast while the
+    // circuit is open, and let the transfer orchestrator resume the file after the break.
     private static bool IsRetryableChunkError(Exception ex) =>
         (ex is HttpRequestException httpEx
-            && ((int?)httpEx.StatusCode >= 500 || httpEx.StatusCode == HttpStatusCode.TooManyRequests))
+            && httpEx.StatusCode is null or >= HttpStatusCode.InternalServerError or HttpStatusCode.TooManyRequests)
         || ex is OperationCanceledException
         || ex is TimeoutException;
 
