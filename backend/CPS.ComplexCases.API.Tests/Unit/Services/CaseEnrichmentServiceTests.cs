@@ -523,6 +523,69 @@ public class CaseEnrichmentServiceTests
     }
 
     [Fact]
+    public async Task EnrichNetAppFoldersWithMetadataAsync_WhenFolderPathLinkedToMultipleCases_EnrichesWithLowestCaseIdAndLogsWarning()
+    {
+        // Arrange
+        var folders = CreateSampleNetAppFolders(2);
+        var folderPaths = folders.Data.FolderData
+            .Where(d => d.Path != null)
+            .Select(d => d.Path!)
+            .ToList();
+
+        var duplicatedPath = folderPaths.First();
+        var metadata = new List<CaseMetadata>
+        {
+            new CaseMetadata { CaseId = 77, NetappFolderPath = duplicatedPath },
+            new CaseMetadata { CaseId = 42, NetappFolderPath = duplicatedPath },
+            new CaseMetadata { CaseId = 99, NetappFolderPath = folderPaths.Last() }
+        };
+
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForNetAppFolderPathsAsync(It.IsAny<IEnumerable<string>>()))
+            .ReturnsAsync(metadata);
+
+        // Act
+        var result = await _service.EnrichNetAppFoldersWithMetadataAsync(folders);
+
+        // Assert
+        Assert.Equal(42, result.Data.Folders.First(f => f.FolderPath == duplicatedPath).CaseId);
+        Assert.Equal(99, result.Data.Folders.First(f => f.FolderPath == folderPaths.Last()).CaseId);
+
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(duplicatedPath) && v.ToString()!.Contains("42, 77")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task EnrichEgressWorkspacesWithMetadataAsync_WhenWorkspaceLinkedToMultipleCases_EnrichesWithLowestCaseId()
+    {
+        // Arrange
+        var workspaces = CreateSampleWorkspaces(1);
+        var workspaceId = workspaces.Data.First().Id;
+
+        var metadata = new List<CaseMetadata>
+        {
+            new CaseMetadata { CaseId = 8, EgressWorkspaceId = workspaceId },
+            new CaseMetadata { CaseId = 3, EgressWorkspaceId = workspaceId }
+        };
+
+        _caseMetadataServiceMock
+            .Setup(s => s.GetCaseMetadataForEgressWorkspaceIdsAsync(It.IsAny<IEnumerable<string>>()))
+            .ReturnsAsync(metadata);
+
+        // Act
+        var result = await _service.EnrichEgressWorkspacesWithMetadataAsync(workspaces);
+
+        // Assert
+        Assert.Equal(3, result.Data.Single().CaseId);
+    }
+
+    [Fact]
     public async Task EnrichNetAppFoldersWithMetadataAsync_WhenNoFoldersProvided_ReturnsEmptyCollection()
     {
         // Arrange
