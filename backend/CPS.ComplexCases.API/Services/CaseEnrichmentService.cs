@@ -73,9 +73,7 @@ public class CaseEnrichmentService : ICaseEnrichmentService
         {
             var workspaceIds = workspaces.Data.Select(w => w.Id).ToList();
             var metadata = await _caseMetadataService.GetCaseMetadataForEgressWorkspaceIdsAsync(workspaceIds);
-            var metadataLookup = metadata
-                .Where(m => m.EgressWorkspaceId != null)
-                .ToDictionary(m => m.EgressWorkspaceId!);
+            var metadataLookup = BuildMetadataLookup(metadata, m => m.EgressWorkspaceId, "Egress workspace");
 
             // Enrich data with metadata
             response.Data = workspaces.Data.Select(workspace => new ListWorkspaceDataResponse
@@ -120,9 +118,7 @@ public class CaseEnrichmentService : ICaseEnrichmentService
                 .ToList();
 
             var metadata = await _caseMetadataService.GetCaseMetadataForNetAppFolderPathsAsync(lookupPaths);
-            var metadataLookup = metadata
-                .Where(m => m.NetappFolderPath != null)
-                .ToDictionary(m => m.NetappFolderPath!);
+            var metadataLookup = BuildMetadataLookup(metadata, m => m.NetappFolderPath, "NetApp folder path");
 
             // Enrich data with metadata
             response.Data = new ListNetAppObjectsDataResponse
@@ -143,6 +139,36 @@ public class CaseEnrichmentService : ICaseEnrichmentService
             _logger.LogWarning(ex, "Failed to retrieve or apply metadata for NetApp folders");
             return response;
         }
+    }
+
+    // Only case_id is unique in case_metadata, so two cases can share a workspace or folder path.
+    // A duplicate must not cost the caller every result on the page, so pick the lowest case id.
+    private Dictionary<string, CaseMetadata> BuildMetadataLookup(
+        IEnumerable<CaseMetadata> metadata,
+        Func<CaseMetadata, string?> keySelector,
+        string keyDescription)
+    {
+        var lookup = new Dictionary<string, CaseMetadata>();
+
+        foreach (var group in metadata.Where(m => keySelector(m) != null).GroupBy(m => keySelector(m)!))
+        {
+            var orderedByCaseId = group.OrderBy(m => m.CaseId).ToList();
+
+            if (orderedByCaseId.Count > 1)
+            {
+                _logger.LogWarning(
+                    "{KeyDescription} {Key} is linked to {CaseCount} cases ({CaseIds}). Using case {CaseId}.",
+                    keyDescription,
+                    group.Key,
+                    orderedByCaseId.Count,
+                    string.Join(", ", orderedByCaseId.Select(m => m.CaseId)),
+                    orderedByCaseId[0].CaseId);
+            }
+
+            lookup[group.Key] = orderedByCaseId[0];
+        }
+
+        return lookup;
     }
 
     private static int? ResolveNetAppFolderCaseId(
