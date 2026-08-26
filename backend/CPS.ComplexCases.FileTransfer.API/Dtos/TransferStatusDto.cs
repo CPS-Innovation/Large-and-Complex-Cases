@@ -23,6 +23,7 @@ public class TransferStatusDto
     public int SuccessfulFiles { get; init; }
     public int FailedFiles { get; init; }
     public int SkippedFiles { get; init; }
+    public TransferRetryStateDto? RetryState { get; init; }
 
     public static TransferStatusDto From(TransferEntity entity) => new()
     {
@@ -49,6 +50,25 @@ public class TransferStatusDto
         SuccessfulFiles = entity.SuccessfulFiles,
         FailedFiles = entity.FailedFiles,
         SkippedFiles = entity.SkippedFiles,
+        RetryState = entity.RetryState is null ? null : TransferRetryStateDto.From(entity.RetryState),
+    };
+}
+
+public class TransferRetryStateDto
+{
+    public int RetryAttempt { get; init; }
+    public int MaxRetryAttempts { get; init; }
+    public int RetryingFileCount { get; init; }
+    public int RetryDelaySeconds { get; init; }
+    public DateTime? NextRetryAt { get; init; }
+
+    public static TransferRetryStateDto From(TransferRetryState retryState) => new()
+    {
+        RetryAttempt = retryState.RetryAttempt,
+        MaxRetryAttempts = retryState.MaxRetryAttempts,
+        RetryingFileCount = retryState.RetryingFileCount,
+        RetryDelaySeconds = retryState.RetryDelaySeconds,
+        NextRetryAt = retryState.NextRetryAt,
     };
 }
 

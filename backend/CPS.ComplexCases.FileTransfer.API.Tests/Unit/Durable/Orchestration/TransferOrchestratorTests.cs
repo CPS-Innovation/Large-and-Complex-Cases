@@ -634,6 +634,176 @@ public class TransferOrchestratorTests
             Times.Never);
     }
 
+    [Fact]
+    public async Task RunOrchestrator_WhenTransientFailureIsRetried_EmitsRetryStateAroundBackoffTimer()
+    {
+        // Arrange
+        var transferPayload = CreateValidTransferPayload();
+        var now = new DateTime(2026, 8, 25, 10, 0, 0, DateTimeKind.Utc);
+        var callOrder = new List<string>();
+        var retryStates = new List<TransferRetryState>();
+        DateTime? timerFireAt = null;
+
+        _contextMock.Setup(c => c.CurrentUtcDateTime).Returns(now);
+        _contextMock.Setup(c => c.GetInput<TransferPayload>()).Returns(transferPayload);
+
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.CompletedTask);
+
+        _contextMock.SetupSequence(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ReturnsAsync(new TransferResult
+            {
+                IsSuccess = false,
+                FailedItem = new TransferFailedItem
+                {
+                    SourcePath = transferPayload.SourcePaths[0].Path,
+                    ErrorCode = TransferErrorCode.Transient,
+                    ErrorMessage = "S3 500"
+                }
+            })
+            .ReturnsAsync(new TransferResult { IsSuccess = true, SuccessfulItem = _fixture.Create<TransferItem>() });
+
+        _contextMock.Setup(c => c.CreateTimer(It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask)
+            .Callback<DateTime, CancellationToken>((fireAt, _) =>
+            {
+                timerFireAt = fireAt;
+                callOrder.Add("CreateTimer");
+            });
+
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask)
+            .Callback<EntityInstanceId, string, object, CallEntityOptions>((_, operation, payload, __) =>
+            {
+                if (operation is nameof(TransferEntityState.UpdateRetryState) or nameof(TransferEntityState.ClearRetryState))
+                {
+                    callOrder.Add(operation);
+                }
+
+                if (payload is TransferRetryState retryState)
+                {
+                    retryStates.Add(retryState);
+                }
+            });
+
+        // Act
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        // Assert
+        Assert.Equal(
+            new[]
+            {
+                nameof(TransferEntityState.UpdateRetryState),
+                "CreateTimer",
+                nameof(TransferEntityState.UpdateRetryState),
+                nameof(TransferEntityState.ClearRetryState)
+            },
+            callOrder);
+
+        Assert.Equal(2, retryStates.Count);
+
+        var waiting = retryStates[0];
+        Assert.Equal(1, waiting.RetryAttempt);
+        Assert.Equal(3, waiting.MaxRetryAttempts);
+        Assert.Equal(1, waiting.RetryingFileCount);
+        Assert.Equal(60, waiting.RetryDelaySeconds);
+        Assert.Equal(now.AddSeconds(60), waiting.NextRetryAt);
+
+        var executing = retryStates[1];
+        Assert.Equal(1, executing.RetryAttempt);
+        Assert.Equal(1, executing.RetryingFileCount);
+        Assert.Null(executing.NextRetryAt);
+
+        Assert.Equal(now.AddSeconds(60), timerFireAt);
+    }
+
+    [Fact]
+    public async Task RunOrchestrator_WhenTransientFailuresPersist_EmitsRetryStateWithExponentialBackoffPerAttempt()
+    {
+        // Arrange
+        var transferPayload = CreateValidTransferPayload();
+        var now = new DateTime(2026, 8, 25, 10, 0, 0, DateTimeKind.Utc);
+        var waitingStates = new List<TransferRetryState>();
+
+        _contextMock.Setup(c => c.CurrentUtcDateTime).Returns(now);
+        _contextMock.Setup(c => c.GetInput<TransferPayload>()).Returns(transferPayload);
+
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.CompletedTask);
+
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ReturnsAsync(new TransferResult
+            {
+                IsSuccess = false,
+                FailedItem = new TransferFailedItem
+                {
+                    SourcePath = transferPayload.SourcePaths[0].Path,
+                    ErrorCode = TransferErrorCode.Transient,
+                    ErrorMessage = "S3 500"
+                }
+            });
+
+        _contextMock.Setup(c => c.CreateTimer(It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask)
+            .Callback<EntityInstanceId, string, object, CallEntityOptions>((_, __, payload, ___) =>
+            {
+                if (payload is TransferRetryState { NextRetryAt: not null } retryState)
+                {
+                    waitingStates.Add(retryState);
+                }
+            });
+
+        // Act
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        // Assert -- one waiting state per attempt, with 60/120/240 second backoff
+        Assert.Equal(new[] { 1, 2, 3 }, waitingStates.Select(s => s.RetryAttempt));
+        Assert.Equal(new[] { 60, 120, 240 }, waitingStates.Select(s => s.RetryDelaySeconds));
+        Assert.All(waitingStates, s => Assert.Equal(3, s.MaxRetryAttempts));
+
+        _contextMock.Verify(c => c.Entities.CallEntityAsync(
+                It.IsAny<EntityInstanceId>(),
+                nameof(TransferEntityState.ClearRetryState),
+                It.IsAny<object>(),
+                It.IsAny<CallEntityOptions>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task RunOrchestrator_WhenNoTransientFailures_DoesNotTouchRetryState()
+    {
+        // Arrange
+        var transferPayload = CreateValidTransferPayload();
+        var retryStateOperations = new List<string>();
+
+        _contextMock.Setup(c => c.GetInput<TransferPayload>()).Returns(transferPayload);
+
+        _contextMock.Setup(c => c.CallActivityAsync(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .Returns(Task.CompletedTask);
+
+        _contextMock.Setup(c => c.CallActivityAsync<TransferResult>(It.IsAny<TaskName>(), It.IsAny<object>(), It.IsAny<TaskOptions>()))
+            .ReturnsAsync(new TransferResult { IsSuccess = true, SuccessfulItem = _fixture.Create<TransferItem>() });
+
+        _contextMock.Setup(c => c.Entities.CallEntityAsync(It.IsAny<EntityInstanceId>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CallEntityOptions>()))
+            .Returns(Task.CompletedTask)
+            .Callback<EntityInstanceId, string, object, CallEntityOptions>((_, operation, __, ___) =>
+            {
+                if (operation is nameof(TransferEntityState.UpdateRetryState) or nameof(TransferEntityState.ClearRetryState))
+                {
+                    retryStateOperations.Add(operation);
+                }
+            });
+
+        // Act
+        await _orchestrator.RunOrchestrator(_contextMock.Object);
+
+        // Assert
+        Assert.Empty(retryStateOperations);
+    }
+
     private TransferPayload CreateValidTransferPayload()
     {
         return new TransferPayload

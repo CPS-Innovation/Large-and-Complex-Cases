@@ -24,6 +24,18 @@ public class TransferEntityState : TaskEntity<TransferEntity>
         State.UpdatedAt = DateTime.UtcNow;
     }
 
+    public void UpdateRetryState(TransferRetryState retryState)
+    {
+        State.RetryState = retryState;
+        State.UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void ClearRetryState()
+    {
+        State.RetryState = null;
+        State.UpdatedAt = DateTime.UtcNow;
+    }
+
     public void FinalizeTransfer()
     {
         // partially completed if any copy failed OR any source delete failed

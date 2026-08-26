@@ -223,38 +223,58 @@ public abstract class BatchOrchestratorBase<TPayload, TFileItem>(
         string orchestratorName)
     {
         int maxOrchestratorRetries = _sizeConfig.MaxOrchestratorRetries;
-        for (int attempt = 0; attempt < maxOrchestratorRetries; attempt++)
+        var retryStateWritten = false;
+
+        try
         {
-            var retryableFailures = allResults
-                .Where(r => r != null && !r.IsSuccess && r.FailedItem?.ErrorCode == TransferErrorCode.Transient)
-                .ToList();
+            for (int attempt = 0; attempt < maxOrchestratorRetries; attempt++)
+            {
+                var retryableFailures = allResults
+                    .Where(r => r != null && !r.IsSuccess && r.FailedItem?.ErrorCode == TransferErrorCode.Transient)
+                    .ToList();
 
-            if (retryableFailures.Count == 0) break;
+                if (retryableFailures.Count == 0) break;
 
-            logger.LogWarning(
-                "{OrchestratorName} retry attempt {Attempt}/{MaxRetries}: re-attempting {Count} transiently failed files.",
-                orchestratorName, attempt + 1, maxOrchestratorRetries, retryableFailures.Count);
+                logger.LogWarning(
+                    "{OrchestratorName} retry attempt {Attempt}/{MaxRetries}: re-attempting {Count} transiently failed files.",
+                    orchestratorName, attempt + 1, maxOrchestratorRetries, retryableFailures.Count);
 
-            await context.CreateTimer(
-                context.CurrentUtcDateTime.Add(TimeSpan.FromSeconds(30 * (attempt + 1))),
-                CancellationToken.None);
+                var delaySeconds = 30 * (attempt + 1);
+                var nextRetryAt = context.CurrentUtcDateTime.AddSeconds(delaySeconds);
 
-            var failedKeys = retryableFailures.Select(r => r.FailedItem!.SourcePath).ToHashSet();
-            var retryFileItems = files.Where(f => failedKeys.Contains(f.SourceKey)).ToList();
+                await TransferRetryStateNotifier.WaitingForRetryAsync(
+                    context, entityId, attempt + 1, maxOrchestratorRetries, retryableFailures.Count, delaySeconds, nextRetryAt);
+                retryStateWritten = true;
 
-            await context.Entities.CallEntityAsync(entityId, nameof(TransferEntityState.RemoveTransientFailures));
+                await context.CreateTimer(nextRetryAt, CancellationToken.None);
 
-            telemetryEvent.TotalFilesFailed -= retryableFailures.Count;
+                await TransferRetryStateNotifier.RetryInProgressAsync(
+                    context, entityId, attempt + 1, maxOrchestratorRetries, retryableFailures.Count, delaySeconds);
 
-            var retryBatch = retryFileItems
-                .Select(fileItem => context.CallActivityAsync<TransferResult>(nameof(TransferFile), buildPayload(fileItem)))
-                .ToList();
+                var failedKeys = retryableFailures.Select(r => r.FailedItem!.SourcePath).ToHashSet();
+                var retryFileItems = files.Where(f => failedKeys.Contains(f.SourceKey)).ToList();
 
-            var retryResults = await Task.WhenAll(retryBatch);
-            await TransferResultProcessor.ProcessAsync(context, entityId, retryResults, telemetryEvent, isRetry: true);
+                await context.Entities.CallEntityAsync(entityId, nameof(TransferEntityState.RemoveTransientFailures));
 
-            allResults.RemoveAll(r => r != null && !r.IsSuccess && r.FailedItem?.ErrorCode == TransferErrorCode.Transient);
-            allResults.AddRange(retryResults);
+                telemetryEvent.TotalFilesFailed -= retryableFailures.Count;
+
+                var retryBatch = retryFileItems
+                    .Select(fileItem => context.CallActivityAsync<TransferResult>(nameof(TransferFile), buildPayload(fileItem)))
+                    .ToList();
+
+                var retryResults = await Task.WhenAll(retryBatch);
+                await TransferResultProcessor.ProcessAsync(context, entityId, retryResults, telemetryEvent, isRetry: true);
+
+                allResults.RemoveAll(r => r != null && !r.IsSuccess && r.FailedItem?.ErrorCode == TransferErrorCode.Transient);
+                allResults.AddRange(retryResults);
+            }
+        }
+        finally
+        {
+            if (retryStateWritten)
+            {
+                await TransferRetryStateNotifier.ClearAsync(context, entityId);
+            }
         }
     }
 

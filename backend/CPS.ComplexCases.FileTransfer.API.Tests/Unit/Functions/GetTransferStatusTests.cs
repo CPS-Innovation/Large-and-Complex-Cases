@@ -355,6 +355,65 @@ public class GetTransferStatusTests
             });
     }
 
+    [Fact]
+    public async Task Run_WhenTransferIsWaitingToRetry_ReturnsRetryStateAlongsideInProgressStatus()
+    {
+        // Arrange
+        var nextRetryAt = new DateTime(2026, 8, 25, 10, 1, 0, DateTimeKind.Utc);
+        var transferEntity = CreateValidTransferEntity();
+        transferEntity.Status = TransferStatus.InProgress;
+        transferEntity.RetryState = new TransferRetryState
+        {
+            RetryAttempt = 2,
+            MaxRetryAttempts = 3,
+            RetryingFileCount = 3,
+            RetryDelaySeconds = 120,
+            NextRetryAt = nextRetryAt
+        };
+
+        var stub = new DurableEntityClientStub("FileTransferEntities")
+        {
+            OnGetEntityAsync = (id, _) => Task.FromResult<EntityMetadata<TransferEntity>?>(new EntityMetadata<TransferEntity>(id, transferEntity))
+        };
+        var durableTaskClientStub = new DurableTaskClientStub(stub);
+
+        // Act
+        var result = await _function.Run(_httpRequestMock.Object, durableTaskClientStub, _transferId);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var dto = Assert.IsType<TransferStatusDto>(okResult.Value);
+
+        Assert.Equal(TransferStatus.InProgress, dto.Status);
+        Assert.NotNull(dto.RetryState);
+        Assert.Equal(2, dto.RetryState!.RetryAttempt);
+        Assert.Equal(3, dto.RetryState.MaxRetryAttempts);
+        Assert.Equal(3, dto.RetryState.RetryingFileCount);
+        Assert.Equal(120, dto.RetryState.RetryDelaySeconds);
+        Assert.Equal(nextRetryAt, dto.RetryState.NextRetryAt);
+    }
+
+    [Fact]
+    public async Task Run_WhenTransferHasNoRetryState_ReturnsNullRetryState()
+    {
+        // Arrange
+        var transferEntity = CreateValidTransferEntity();
+
+        var stub = new DurableEntityClientStub("FileTransferEntities")
+        {
+            OnGetEntityAsync = (id, _) => Task.FromResult<EntityMetadata<TransferEntity>?>(new EntityMetadata<TransferEntity>(id, transferEntity))
+        };
+        var durableTaskClientStub = new DurableTaskClientStub(stub);
+
+        // Act
+        var result = await _function.Run(_httpRequestMock.Object, durableTaskClientStub, _transferId);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var dto = Assert.IsType<TransferStatusDto>(okResult.Value);
+        Assert.Null(dto.RetryState);
+    }
+
     private TransferEntity CreateValidTransferEntity()
     {
         return new TransferEntity
