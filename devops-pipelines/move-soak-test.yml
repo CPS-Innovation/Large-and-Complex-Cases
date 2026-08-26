@@ -19,8 +19,6 @@ parameters:
 variables:
   - group: lacc-automated-testing-${{ parameters.environment }}
   - group: lacc-backend-config-${{ parameters.environment }}
-  - name: transferMaterialsV1 # Staging renders the v1 ("Shared Drive") transfer screen for the E2E user.
-    value: ${{ ne(parameters.environment, 'dev') }}
 
 jobs:
   - job: runMoveSoakTest
@@ -58,7 +56,7 @@ jobs:
         workingDirectory: $(workingDir)
         displayName: "Run Move Soak Test Scenarios"
         env:
-          TRANSFER_MATERIALS_V1: $(transferMaterialsV1)
+          TRANSFER_MATERIALS_V1: true
           BASE_URL: $(RedirectUrlLccUi)
           CMS_LOGIN_PAGE: "$(LccApiBaseUrl)/api/tactical/login"
           EGRESS_BASE_URL: $(EgressOptionsUrl)
