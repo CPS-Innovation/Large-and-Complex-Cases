@@ -273,12 +273,14 @@ test.describe("Case Search/Results", async () => {
         }),
       );
       await page.goto("/");
+      await expect(page.getByText("Loading...")).toBeVisible();
       await expect(
         page.getByRole("radio", { name: "Operation name" }),
-      ).toBeDisabled();
+      ).not.toBeVisible();
       await expect(
         page.getByRole("radio", { name: "Defendant last name" }),
-      ).toBeDisabled();
+      ).not.toBeVisible();
+      await expect(page.getByText("Loading...")).not.toBeVisible();
       await expect(page.locator("h1")).toHaveText(
         "Sorry, there is a problem with the service",
       );
@@ -290,6 +292,35 @@ test.describe("Case Search/Results", async () => {
       await expect(
         page.getByText(
           "API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/areas: Getting case areas failed; status - Internal Server Error (500)",
+        ),
+      ).toBeVisible();
+    });
+
+    test("Should show unauthorised page if the caseAreas api return 401", async ({
+      page,
+      worker,
+    }) => {
+      await worker.use(
+        http.get("https://mocked-out-api/api/v1/areas", async () => {
+          await delay(100);
+          return new HttpResponse(null, { status: 401 });
+        }),
+      );
+      await page.goto("/");
+      await expect(page.getByText("Loading...")).toBeVisible();
+      await expect(
+        page.getByRole("radio", { name: "Operation name" }),
+      ).not.toBeVisible();
+      await expect(
+        page.getByRole("radio", { name: "Defendant last name" }),
+      ).not.toBeVisible();
+      await expect(page.getByText("Loading...")).not.toBeVisible();
+      await expect(page).toHaveURL("/unauthorised");
+      await expect(page.locator("h1")).toHaveText("Unauthorised");
+      await expect(page.getByText("Your session has timed out.")).toBeVisible();
+      await expect(
+        page.getByText(
+          "Please close this tab and re-launch the homepage screen from CMS Classic.",
         ),
       ).toBeVisible();
     });
@@ -620,6 +651,29 @@ test.describe("Case Search/Results", async () => {
       await expect(
         page.getByText(
           "API_ERROR: An error occurred contacting the server at https://mocked-out-api/api/v1/case-search?urn=11AA2222233: Searching for cases failed; status - Internal Server Error (500)",
+        ),
+      ).toBeVisible();
+    });
+
+    test("Should show unauthorised page if the caseAreas api return 401", async ({
+      page,
+      worker,
+    }) => {
+      await worker.use(
+        http.get("https://mocked-out-api/api/v1/areas", async () => {
+          await delay(100);
+          return new HttpResponse(null, { status: 401 });
+        }),
+      );
+      await page.goto("/search-results?operation-name=ww&area=1001");
+      await expect(page.getByText("Loading...")).toBeVisible();
+      await expect(page.getByText("Loading...")).not.toBeVisible();
+      await expect(page).toHaveURL("/unauthorised");
+      await expect(page.locator("h1")).toHaveText("Unauthorised");
+      await expect(page.getByText("Your session has timed out.")).toBeVisible();
+      await expect(
+        page.getByText(
+          "Please close this tab and re-launch the homepage screen from CMS Classic.",
         ),
       ).toBeVisible();
     });
