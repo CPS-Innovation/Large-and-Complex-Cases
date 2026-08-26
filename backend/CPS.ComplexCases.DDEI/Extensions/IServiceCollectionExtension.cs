@@ -15,7 +15,7 @@ namespace CPS.ComplexCases.DDEI.Extensions;
 
 public static class IServiceCollectionExtension
 {
-    private const int RetryAttempts = 1;
+    private const int RetryAttempts = 3;
     private const int FirstRetryDelaySeconds = 1;
 
     // MDS (via DDEI) is a standard request/response service, so a 30s sampling window
