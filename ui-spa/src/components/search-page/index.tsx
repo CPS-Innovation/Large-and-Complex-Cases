@@ -18,7 +18,7 @@ const CaseSearchPage = () => {
   const errorSummaryRef = useRef<HTMLInputElement>(null);
   const { state, dispatch } = useContext(MainStateContext);
   const { navigateWithParams } = useSearchNavigation();
-  useGetCaseDivisionsOrAreas();
+  const { isLoading: isDivisionsOrAreasLoading } = useGetCaseDivisionsOrAreas();
   const formattedAreaValues = useFormattedAreaValues();
   const getInitialState = () => {
     const initialData: SearchFormData = {
@@ -80,6 +80,14 @@ const CaseSearchPage = () => {
       navigateWithParams(searchParams);
     }
   };
+
+  if (isDivisionsOrAreasLoading) {
+    return (
+      <PageContentWrapper>
+        <div aria-live="polite">Loading...</div>
+      </PageContentWrapper>
+    );
+  }
 
   return (
     <div className={styles.pageWrapper}>

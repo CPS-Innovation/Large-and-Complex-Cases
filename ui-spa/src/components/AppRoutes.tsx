@@ -18,6 +18,7 @@ import DisconnectSharedDriveSuccessPage from "./case-management/netapp-disconnec
 import DisconnectSharedDriveFailurePage from "./case-management/netapp-disconnect/DisconnectSharedDriveFailurePage";
 import TransferDestinationPage from "./case-management/transfer-materials-v1/TransferDestinationPage";
 import MaintenancePage from "./maintenance-page";
+import UnAuthorisedPage from "./unauthorised";
 import { MainStateContext } from "../providers/MainStateProvider";
 import { useUserGroupsFeatureFlag } from "../common/hooks/useUserGroupsFeatureFlag";
 
@@ -59,6 +60,7 @@ const AppRoutes = () => {
         element={<CaseManagementPage />}
       />
       <Route path="/maintenance" element={<MaintenancePage />} />
+      <Route path="/unauthorised" element={<UnAuthorisedPage />} />
 
       <Route element={<ProtectedRoutes />}>
         <Route
