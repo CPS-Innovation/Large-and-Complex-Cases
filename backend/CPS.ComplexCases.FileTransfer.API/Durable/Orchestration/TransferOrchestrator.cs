@@ -295,54 +295,74 @@ public class TransferOrchestrator(IOptions<SizeConfig> sizeConfig, ITelemetryCli
         ILogger logger)
     {
         int maxOrchestratorRetries = _sizeConfig.MaxOrchestratorRetries;
-        for (int attempt = 0; attempt < maxOrchestratorRetries; attempt++)
+        var retryStateWritten = false;
+
+        try
         {
-            var retryableFailures = allResults
-                .Where(r => r != null && !r.IsSuccess && r.FailedItem?.ErrorCode == TransferErrorCode.Transient)
-                .ToList();
-
-            if (retryableFailures.Count == 0) break;
-
-            logger.LogWarning(
-                "Orchestrator retry attempt {Attempt}/{MaxRetries}: re-attempting {Count} transiently failed files.",
-                attempt + 1, maxOrchestratorRetries, retryableFailures.Count);
-
-            await context.CreateTimer(
-                context.CurrentUtcDateTime.Add(TimeSpan.FromSeconds(60 * Math.Pow(2, attempt))),
-                CancellationToken.None);
-
-            var failedPaths = retryableFailures
-                .Select(r => r.FailedItem!.SourcePath)
-                .ToHashSet();
-
-            var retrySourcePaths = cleanFiles
-                .Where(f => failedPaths.Contains(f.Path) || (f.FullFilePath != null && failedPaths.Contains(f.FullFilePath)))
-                .ToList();
-
-            await context.Entities.CallEntityAsync(
-                entityId,
-                nameof(TransferEntityState.RemoveTransientFailures));
-
-            transferOrchestrationEvent.TotalFilesFailed -= retryableFailures.Count;
-
-            int retryBatchSize = Math.Max(1, _sizeConfig.RetryBatchSize);
-            var retryResults = new List<TransferResult>();
-
-            for (int i = 0; i < retrySourcePaths.Count; i += retryBatchSize)
+            for (int attempt = 0; attempt < maxOrchestratorRetries; attempt++)
             {
-                var chunk = retrySourcePaths.Skip(i).Take(retryBatchSize);
-                var retryBatch = chunk.Select(sp =>
-                    context.CallActivityAsync<TransferResult>(
-                        nameof(TransferFile),
-                        BuildTransferFilePayload(input, transferEntity, sp))).ToList();
+                var retryableFailures = allResults
+                    .Where(r => r != null && !r.IsSuccess && r.FailedItem?.ErrorCode == TransferErrorCode.Transient)
+                    .ToList();
 
-                var batchResults = await Task.WhenAll(retryBatch);
-                await TransferResultProcessor.ProcessAsync(context, entityId, batchResults, transferOrchestrationEvent, isRetry: true);
-                retryResults.AddRange(batchResults);
+                if (retryableFailures.Count == 0) break;
+
+                logger.LogWarning(
+                    "Orchestrator retry attempt {Attempt}/{MaxRetries}: re-attempting {Count} transiently failed files.",
+                    attempt + 1, maxOrchestratorRetries, retryableFailures.Count);
+
+                var delaySeconds = (int)(60 * Math.Pow(2, attempt));
+                var nextRetryAt = context.CurrentUtcDateTime.AddSeconds(delaySeconds);
+
+                await TransferRetryStateNotifier.WaitingForRetryAsync(
+                    context, entityId, attempt + 1, maxOrchestratorRetries, retryableFailures.Count, delaySeconds, nextRetryAt);
+                retryStateWritten = true;
+
+                await context.CreateTimer(nextRetryAt, CancellationToken.None);
+
+                await TransferRetryStateNotifier.RetryInProgressAsync(
+                    context, entityId, attempt + 1, maxOrchestratorRetries, retryableFailures.Count, delaySeconds);
+
+                var failedPaths = retryableFailures
+                    .Select(r => r.FailedItem!.SourcePath)
+                    .ToHashSet();
+
+                var retrySourcePaths = cleanFiles
+                    .Where(f => failedPaths.Contains(f.Path) || (f.FullFilePath != null && failedPaths.Contains(f.FullFilePath)))
+                    .ToList();
+
+                await context.Entities.CallEntityAsync(
+                    entityId,
+                    nameof(TransferEntityState.RemoveTransientFailures));
+
+                transferOrchestrationEvent.TotalFilesFailed -= retryableFailures.Count;
+
+                int retryBatchSize = Math.Max(1, _sizeConfig.RetryBatchSize);
+                var retryResults = new List<TransferResult>();
+
+                for (int i = 0; i < retrySourcePaths.Count; i += retryBatchSize)
+                {
+                    var chunk = retrySourcePaths.Skip(i).Take(retryBatchSize);
+                    var retryBatch = chunk.Select(sp =>
+                        context.CallActivityAsync<TransferResult>(
+                            nameof(TransferFile),
+                            BuildTransferFilePayload(input, transferEntity, sp))).ToList();
+
+                    var batchResults = await Task.WhenAll(retryBatch);
+                    await TransferResultProcessor.ProcessAsync(context, entityId, batchResults, transferOrchestrationEvent, isRetry: true);
+                    retryResults.AddRange(batchResults);
+                }
+
+                allResults.RemoveAll(r => r != null && !r.IsSuccess && r.FailedItem?.ErrorCode == TransferErrorCode.Transient);
+                allResults.AddRange(retryResults);
             }
-
-            allResults.RemoveAll(r => r != null && !r.IsSuccess && r.FailedItem?.ErrorCode == TransferErrorCode.Transient);
-            allResults.AddRange(retryResults);
+        }
+        finally
+        {
+            if (retryStateWritten)
+            {
+                await TransferRetryStateNotifier.ClearAsync(context, entityId);
+            }
         }
     }
 
