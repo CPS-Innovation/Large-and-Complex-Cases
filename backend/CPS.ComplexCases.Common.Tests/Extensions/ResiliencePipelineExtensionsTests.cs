@@ -133,6 +133,43 @@ public class ResiliencePipelineExtensionsTests
         Assert.Equal(statusCode, response.StatusCode);
     }
 
+    // Mirrors DDEI/MDS options (RetryAttempts = 3, retry 404s and connection failures) so a
+    // transient 5xx or 404 is recovered before it can contribute to circuit-breaker sampling.
+    [Theory]
+    [InlineData(HttpStatusCode.InternalServerError)]
+    [InlineData(HttpStatusCode.NotFound)]
+    public async Task Retry_WithDdeiOptions_RecoversFromTransientFailures(HttpStatusCode transientStatus)
+    {
+        var pipeline = new ResiliencePipelineBuilder<HttpResponseMessage>()
+            .AddStandardHttpResilience(new HttpResilienceOptions
+            {
+                ServiceName = "MDS (DDEI)",
+                RetryAttempts = 3,
+                FirstRetryDelay = TimeSpan.FromMilliseconds(1),
+                CircuitBreakerFailureThreshold = 0.5,
+                CircuitBreakerSamplingDuration = TimeSpan.FromSeconds(30),
+                CircuitBreakerMinimumThroughput = 10,
+                CircuitBreakerDurationOfBreak = TimeSpan.FromSeconds(30),
+                ConcurrencyLimit = 0,
+                RetryOnConnectionFailure = true,
+                AdditionalRetryableStatusCodes = [HttpStatusCode.NotFound],
+            }, NullLogger.Instance)
+            .Build();
+
+        var attempts = 0;
+
+        var response = await pipeline.ExecuteAsync(_ =>
+        {
+            attempts++;
+            var request = new HttpRequestMessage(HttpMethod.Get, "https://example.test");
+            var status = attempts < 4 ? transientStatus : HttpStatusCode.OK;
+            return ValueTask.FromResult(new HttpResponseMessage(status) { RequestMessage = request });
+        });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(4, attempts);
+    }
+
     [Fact]
     public async Task Retry_RetriesConfiguredStatusCodesForIdempotentMethods()
     {
