@@ -351,7 +351,7 @@ const TransferDestinationPage: React.FC = () => {
             }.`}
           </p>
           <p>
-            {`Select the ${transferSource === "egress" ? "Shared Drive" : "Egress"} folder you want to ${selectedTransferAction} them into.`}
+            {`Select the ${transferSource === "egress" ? "Shared Drive" : "Egress"} folder you want to ${selectedTransferAction} ${sourcePaths.length === 1 ? "it" : "them"} into.`}
           </p>
         </div>
 
