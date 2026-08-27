@@ -14,6 +14,10 @@ dotnet format $solution `
     --include `
     $Files
 
+if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
+}
+
 git diff --name-only -- $Files
 
 exit $LASTEXITCODE

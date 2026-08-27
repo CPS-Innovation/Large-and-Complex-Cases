@@ -16,8 +16,20 @@ repos:
 
   - repo: local
     hooks:
-      - id: dotnet-format
-        name: dotnet format
-        language: system
+      - id: run-dotnet-format
+        name: run dotnet format
+        language: unsupported
         entry: powershell ./scripts/pre-commit-dotnet-format.ps1
         files: ^backend/.*\.cs$
+
+      - id: run-eslint
+        name: run eslint
+        language: unsupported
+        entry: powershell ./scripts/pre-commit-npm-eslint.ps1
+        files: \.(ts|tsx|js|jsx|json)$
+
+      - id: pretty-format-ts
+        name: pretty format ts
+        language: unsupported
+        entry: powershell ./scripts/pre-commit-npm-prettier.ps1
+        files: \.(ts|tsx)$
