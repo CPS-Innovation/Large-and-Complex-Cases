@@ -7,17 +7,24 @@ if (-not $Files -or $Files.Count -eq 0) {
     exit 0
 }
 
-$projectDir = "ui-spa"
+$projectGroups = $Files |
+    Group-Object { ($_ -split '[\\/]', 2)[0] }
 
-Push-Location $projectDir
+foreach ($group in $projectGroups) {
+    $projectDir = $group.Name
 
-try {
-    $Files = $Files | ForEach-Object { $_ -replace "^$projectDir[\\/]", "" }
+    Push-Location $projectDir
 
-    npx prettier --write $Files
+    try {
+        $projectFiles = $group.Group| ForEach-Object { $_ -replace "^$projectDir[\\/]", "" }
 
-    exit $LASTEXITCODE
-}
-finally {
-    Pop-Location
+        npx prettier --write $projectFiles
+
+        if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+        }
+    }
+    finally {
+        Pop-Location
+    }
 }
