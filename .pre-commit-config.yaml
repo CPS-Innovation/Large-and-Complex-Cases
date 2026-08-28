@@ -1,11 +1,15 @@
 # .pre-commit-config.yaml
-default_stages: [pre-commit]
+default_stages: [pre-push]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
       - id: trailing-whitespace
+        stages:
+          - pre-push
       - id: end-of-file-fixer
+        stages: 
+          - pre-push
       - id: mixed-line-ending
         name: fix line endings
         args: [--fix=lf]
