@@ -13,7 +13,7 @@ import {
   getNetAppFolders,
   handleFileTransferClear,
 } from "../../../apis/gateway-api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 
 import { getFormattedEgressFolderData } from "../../../common/utils/getFormattedEgressFolderData";
@@ -121,12 +121,7 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
     transferEgressFolderPathInitialValue ?? "",
   );
   const egressPathFolders = useMemo(() => {
-    return getPathFolders(
-      egressFolderPath,
-      "Egress",
-      "",
-      egressWorkspaceName,
-    );
+    return getPathFolders(egressFolderPath, "Egress", "", egressWorkspaceName);
   }, [egressFolderPath, getPathFolders, egressWorkspaceName]);
   const netAppPathFolders = useMemo(() => {
     return getPathFolders(
@@ -844,10 +839,10 @@ const TransferMaterialsV1Page: React.FC<TransferMaterialsV1PageProps> = ({
                 disableControls={!selectedSourceFoldersOrFiles.length}
                 onCopy={() => handleTransferAction("copy")}
                 onMove={
-                    featureFlags?.transferMove
-                      ? () => handleTransferAction("move")
-                      : undefined
-                  }
+                  featureFlags?.transferMove
+                    ? () => handleTransferAction("move")
+                    : undefined
+                }
               />
             </div>
           </div>

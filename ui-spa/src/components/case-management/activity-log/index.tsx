@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { useApi } from "../../../common/hooks/useApi";
 import { getActivityLog } from "../../../apis/gateway-api";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { formatDate } from "../../../common/utils/formatDate";
 import styles from "./index.module.scss";
 

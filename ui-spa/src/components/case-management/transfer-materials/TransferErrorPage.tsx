@@ -1,6 +1,6 @@
 import { Button, BackLink, Details } from "../../govuk";
 import { useContext } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router";
 import { PageContentWrapper } from "../../govuk/PageContentWrapper";
 import FileIcon from "../../../components/svgs/file.svg?react";
 import { MainStateContext } from "../../../providers/MainStateProvider";

@@ -1,6 +1,6 @@
 import { useState, useContext } from "react";
 import { Button, Radios, BackLink } from "../govuk";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router";
 import { connectEgressWorkspace } from "../../apis/gateway-api";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
 import { getUrlSearchParam } from "../../common/utils/getUrlSearchParam";

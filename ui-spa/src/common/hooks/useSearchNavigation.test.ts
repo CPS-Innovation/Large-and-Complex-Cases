@@ -1,9 +1,9 @@
 import { renderHook } from "@testing-library/react";
 import { vi, Mock } from "vitest";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router";
 import useSearchNavigation from "./useSearchNavigation";
 
-vi.mock("react-router-dom", () => {
+vi.mock("react-router", () => {
   return { useNavigate: vi.fn(), useSearchParams: vi.fn() };
 });
 

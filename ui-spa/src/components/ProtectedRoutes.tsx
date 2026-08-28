@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { Outlet, Navigate } from "react-router-dom";
+import { Outlet, Navigate } from "react-router";
 import { MainStateContext } from "../providers/MainStateProvider";
 
 const ProtectedRoutes = () => {

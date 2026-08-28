@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Button, LinkButton, BackLink } from "../../govuk";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router";
 import { EgressConnectRouteState } from "../../../common/types/EgressConnectRouteState";
 import { SharedDriveConnectRouteState } from "../../../common/types/SharedDriveConnectRouteState";
 import { getUrlSearchParam } from "../../../common/utils/getUrlSearchParam";

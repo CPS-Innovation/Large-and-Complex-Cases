@@ -7,7 +7,7 @@ import TransferMaterialsV1Page from "./transfer-materials-v1";
 import TransferResolveFilePathPage from "./transfer-materials/TransferResolveFilePathPage";
 import ActivityLogPage from "./activity-log/index";
 import { getCaseMetaData } from "../../apis/gateway-api";
-import { useNavigate, useLocation, useParams } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router";
 import { MainStateContext } from "../../providers/MainStateProvider";
 import { PageContentWrapper } from "../govuk/PageContentWrapper";
 import TransferTreeViewPage from "../case-management/transfer-materials/TransferTreeViewPage";
@@ -101,8 +101,7 @@ const CaseManagementPage = () => {
               operationName={operationNameOrDefendantName}
               egressWorkspaceId={caseMetaData.egressWorkspaceId}
               egressWorkspaceName={
-                caseMetaData.egressWorkspaceName ||
-                operationNameOrDefendantName
+                caseMetaData.egressWorkspaceName || operationNameOrDefendantName
               }
               netAppPath={caseMetaData.netappFolderPath}
               activeTransferId={

@@ -1,5 +1,5 @@
 import { Button } from "../../govuk";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router";
 import styles from "./DisconnectSharedDriveFailurePage.module.scss";
 
 const DisconnectSharedDriveFailurePage = () => {

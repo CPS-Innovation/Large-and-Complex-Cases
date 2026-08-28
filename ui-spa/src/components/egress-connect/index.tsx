@@ -1,6 +1,6 @@
 import { useEffect, useState, useContext } from "react";
 import { getEgressSearchResults } from "../../apis/gateway-api";
-import { useNavigate, useSearchParams, useParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useParams } from "react-router";
 import { getUrlSearchParam } from "../../common/utils/getUrlSearchParam";
 import { useQuery } from "@tanstack/react-query";
 import { MainStateContext } from "../../providers/MainStateProvider";

@@ -9,7 +9,7 @@ import {
   useSearchParams,
   useLocation,
   useParams,
-} from "react-router-dom";
+} from "react-router";
 
 const NetAppPage = () => {
   const { state, dispatch } = useContext(MainStateContext);

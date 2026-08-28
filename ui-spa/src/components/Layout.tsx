@@ -2,7 +2,7 @@ import { useEffect, useRef, useContext } from "react";
 import Footer from "./Footer";
 import Header from "./Header";
 import { MainStateContext } from "../providers/MainStateProvider";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 import { SkipLink } from "../components/govuk";
 import styles from "./Layout.module.scss";
 
