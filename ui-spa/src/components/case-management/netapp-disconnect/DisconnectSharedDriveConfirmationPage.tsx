@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback, useMemo } from "react";
 import { Radios, Button, ErrorSummary } from "../../govuk";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router";
 import { disconnectNetAppFolder } from "../../../apis/gateway-api";
 import styles from "./DisconnectSharedDriveConfirmationPage.module.scss";
 

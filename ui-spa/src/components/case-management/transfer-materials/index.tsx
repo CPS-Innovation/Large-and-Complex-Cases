@@ -18,7 +18,7 @@ import {
   handleFileTransferClear,
 } from "../../../apis/gateway-api";
 import EgressFolderContainer from "./EgressFolderContainer";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import TransferConfirmationModal from "./TransferConfirmationModal";
 import { getGroupedFolderFileData } from "../../../common/utils/getGroupedFolderFileData";
 import { TransferAction } from "../../../common/types/TransferAction";

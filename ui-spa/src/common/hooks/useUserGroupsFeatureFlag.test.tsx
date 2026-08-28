@@ -4,7 +4,7 @@ import { useUserGroupsFeatureFlag } from "./useUserGroupsFeatureFlag";
 import * as configModule from "../../config";
 import * as msalInstanceModule from "../../auth/msal/msalInstance";
 import * as auth from "../../auth";
-import * as router from "react-router-dom";
+import * as router from "react-router";
 
 vi.mock("../../config");
 vi.mock("../../auth/msal/msalInstance", () => ({
@@ -19,7 +19,7 @@ vi.mock("../../auth", () => {
     })),
   };
 });
-vi.mock("react-router-dom", () => {
+vi.mock("react-router", () => {
   return {
     useSearchParams: vi.fn(() => [new URLSearchParams("foo=bar"), vi.fn()]),
   };

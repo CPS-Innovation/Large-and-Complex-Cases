@@ -1,6 +1,6 @@
 import { Panel } from "../../govuk";
 import { useContext } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { MainStateContext } from "../../../providers/MainStateProvider";
 import styles from "./DisconnectSharedDriveSuccessPage.module.scss";
 const DisconnectSharedDriveSuccessPage = () => {

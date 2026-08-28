@@ -12,7 +12,7 @@ import {
 import { useUserDetails } from "../../auth";
 import { FeatureFlagData } from "../types/FeatureFlagData";
 import { useCallback, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 
 const automationTestUsers = ["dev_user@example.org"];
 
