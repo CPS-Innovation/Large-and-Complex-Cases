@@ -49,6 +49,6 @@ steps:
       CMS_BASE_URL: $(DDEIOptionsBaseUrl)
 
   - publish: "$(workingDir)/playwright/test-results/lh-report.html"
-    artifact: "lighthouse-report"
+    artifact: "$(System.JobId)-lighthouse-report"
     displayName: "Publish Lighthouse Report"
     condition: succeededOrFailed()
