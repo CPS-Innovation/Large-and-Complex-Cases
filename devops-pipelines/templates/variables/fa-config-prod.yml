@@ -47,6 +47,10 @@ variables:
     value: "5"
   - name: SizeConfigFolderPreCreateBackoffCoefficient
     value: "2.0"
+  - name: SizeConfigSourceValidationRetryAttempts
+    value: "5"
+  - name: SizeConfigSourceValidationRetryIntervalSeconds
+    value: "10"
   - name: NetAppOptionsSearchMaxSubstringScanItems
     value: "10000"
   - name: FeatureFlagsManageMaterials
