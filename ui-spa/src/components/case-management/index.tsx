@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useContext } from "react";
 import { Tabs } from "../common/tabs/Tabs";
 import { TabId } from "../../common/types/CaseManagement";
 import { ItemProps } from "../common/tabs/types";
-import TransferMaterialsV1Page from "./transfer-materials-v1";
+import TransferMaterialsV1Page from "./transfer-materials";
 import TransferResolveFilePathPage from "./transfer-materials/TransferResolveFilePathPage";
 import ActivityLogPage from "./activity-log/index";
 import { getCaseMetaData } from "../../apis/gateway-api";
